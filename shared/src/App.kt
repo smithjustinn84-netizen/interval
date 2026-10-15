@@ -9,9 +9,11 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.savedstate.serialization.SavedStateConfiguration
 import dev.justinsmith.interval.di.rememberAppKoin
-import dev.justinsmith.interval.home.HomeRoute
-import dev.justinsmith.interval.nav.Home
+import dev.justinsmith.interval.nav.Setup
+import dev.justinsmith.interval.nav.Workout
+import dev.justinsmith.interval.setup.SetupRoute
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.workout.WorkoutRoute
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.plus
 import kotlinx.serialization.modules.polymorphic
@@ -26,7 +28,8 @@ import org.koin.compose.KoinIsolatedContext
 private val navConfiguration = SavedStateConfiguration {
     serializersModule = serializersModule + SerializersModule {
         polymorphic(NavKey::class) {
-            subclass(Home::class)
+            subclass(Setup::class)
+            subclass(Workout::class)
         }
     }
 }
@@ -37,7 +40,7 @@ private val navConfiguration = SavedStateConfiguration {
 fun App() {
     KoinIsolatedContext(context = rememberAppKoin()) {
         IntervalTheme {
-            val backStack = rememberNavBackStack(navConfiguration, Home)
+            val backStack = rememberNavBackStack(navConfiguration, Setup)
             NavDisplay(
                 backStack = backStack,
                 onBack = { if (backStack.size > 1) backStack.removeLastOrNull() },
@@ -48,7 +51,11 @@ fun App() {
                     rememberViewModelStoreNavEntryDecorator(),
                 ),
                 entryProvider = entryProvider {
-                    entry<Home> { HomeRoute() }
+                    entry<Setup> {
+                        // A double tap on Start must not stack two workouts.
+                        SetupRoute(onStart = { if (backStack.lastOrNull() != Workout) backStack.add(Workout) })
+                    }
+                    entry<Workout> { WorkoutRoute(onExit = { backStack.removeLastOrNull() }) }
                 },
             )
         }

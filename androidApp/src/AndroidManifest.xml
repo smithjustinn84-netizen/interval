@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Haptic cues on phase changes. A normal permission: granted at install, no prompt. -->
+    <uses-permission android:name="android.permission.VIBRATE"/>
+
+    <!-- Android 11+ package visibility: lets TextToSpeech find the device's speech engine. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE"/>
+        </intent>
+    </queries>
+
     <application
             android:allowBackup="true"
             android:icon="@mipmap/ic_launcher"
