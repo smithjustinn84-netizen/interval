@@ -159,6 +159,9 @@ object Sizes {
     /** The round hit area of an icon-only top-bar action. */
     val iconButton = 48.dp
 
+    /** The circle drawn inside that hit area: its fill and its ripple. */
+    val iconButtonVisual = 40.dp
+
     /** Height of the bottom navigation bar, and width of the rail that replaces it sideways. */
     val navBar = 80.dp
 
