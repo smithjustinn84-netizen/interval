@@ -56,8 +56,8 @@ const val MAX_ROUND_MARKS = 12
 
 /**
  * A screen's top bar on one line: an optional navigation action (Back) first, the large title, and
- * the actions at the end. One row, so the title sits right under the status bar rather than under
- * an empty strip of icon height.
+ * the actions at the end. One row with no top padding of its own, so the title sits right under
+ * the status bar: the icon buttons' hit area already keeps it clear of the edge.
  */
 @Composable
 fun TitleBar(
@@ -70,7 +70,7 @@ fun TitleBar(
         modifier
             .fillMaxWidth()
             .heightIn(min = Sizes.iconButton)
-            .padding(start = Spacing.space4, end = Spacing.space8, top = Spacing.space12, bottom = Spacing.space8),
+            .padding(start = Spacing.space4, end = Spacing.space8, bottom = Spacing.space4),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         navigation()
