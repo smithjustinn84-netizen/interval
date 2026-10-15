@@ -16,12 +16,12 @@ captures/
 *.jks
 *.keystore
 
-# Xcode: keep the project file and shared schemes, ignore per-user state
+# Xcode: keep the project file, shared schemes and shared workspace settings (scheme autocreation
+# is off there, so Xcode doesn't add a duplicate of the app scheme); ignore per-user state
 **/module.xcodeproj/*
 !**/module.xcodeproj/project.pbxproj
 !**/module.xcodeproj/xcshareddata/
 !**/module.xcodeproj/project.xcworkspace/
-**/xcshareddata/WorkspaceSettings.xcsettings
 xcuserdata/
 DerivedData/
 
