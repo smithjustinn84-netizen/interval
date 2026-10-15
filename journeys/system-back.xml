@@ -1,9 +1,13 @@
 <journey name="System back">
   <description>
-    The system back gesture: from a tab it returns to Timer; during a workout it pauses and asks
-    before ending.
+    The system back gesture: from Settings and from a tab it returns to Timer; during a workout it
+    pauses and asks before ending.
   </description>
   <actions>
+    <action>Tap the "Settings" button</action>
+    <action>Verify that the Settings screen is shown with a "Sound cues" switch</action>
+    <action>Press the system back button</action>
+    <action>Verify that the Timer tab is shown with a "Start workout" button</action>
     <action>Tap the "History" tab</action>
     <action>Press the system back button</action>
     <action>Verify that the Timer tab is shown with a "Start workout" button</action>

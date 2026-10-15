@@ -55,5 +55,12 @@ expect fun KeepScreenOn()
 @Composable
 expect fun SystemBarIcons(lightIcons: Boolean)
 
+/**
+ * Whether a back swipe previews the page underneath the Material way, shrinking and rounding the
+ * page as it follows the finger (Android). Elsewhere navigation keeps its platform default, the
+ * native slide on iOS.
+ */
+expect val materialBackPreview: Boolean
+
 /** Milliseconds since the Unix epoch. */
 expect fun epochMillisNow(): Long

@@ -34,6 +34,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.defaultPredictivePopTransitionSpec
 import androidx.savedstate.serialization.SavedStateConfiguration
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.data.ThemeMode
@@ -47,11 +48,14 @@ import dev.justinsmith.interval.nav.Tab
 import dev.justinsmith.interval.nav.TimerTab
 import dev.justinsmith.interval.nav.Workout
 import dev.justinsmith.interval.platform.SystemBarIcons
+import dev.justinsmith.interval.platform.materialBackPreview
 import dev.justinsmith.interval.presets.PresetsRoute
 import dev.justinsmith.interval.settings.SettingsRoute
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.NavigationItems
 import dev.justinsmith.interval.ui.Sizes
+import dev.justinsmith.interval.ui.backPreviewCorners
+import dev.justinsmith.interval.ui.backPreviewTransition
 import dev.justinsmith.interval.ui.navigationSuiteColors
 import dev.justinsmith.interval.ui.navigationSuiteType
 import dev.justinsmith.interval.workout.WorkoutRoute
@@ -149,12 +153,19 @@ private fun AppShell(backStack: NavBackStack<NavKey>) {
                 backStack = backStack,
                 onBack = { if (backStack.size > 1) backStack.removeLastOrNull() },
                 // Passing this replaces NavDisplay's default list, so the saveable-state holder is
-                // repeated. The ViewModel store decorator goes last: it needs the holder above it.
-                entryDecorators = listOf(
+                // repeated. The ViewModel store decorator follows it: it needs the holder above it.
+                // On Android the back preview's corners clip each entry's content, innermost.
+                entryDecorators = listOfNotNull(
                     rememberSaveableStateHolderNavEntryDecorator(),
                     rememberViewModelStoreNavEntryDecorator(),
+                    if (materialBackPreview) backPreviewCorners() else null,
                 ),
                 sceneStrategies = listOf(supportingPane),
+                predictivePopTransitionSpec = if (materialBackPreview) {
+                    backPreviewTransition()
+                } else {
+                    defaultPredictivePopTransitionSpec()
+                },
                 modifier = Modifier
                     .fillMaxSize()
                     .then(if (bar) Modifier.hairlineAtBottom(palette.line) else Modifier)

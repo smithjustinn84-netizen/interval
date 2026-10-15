@@ -212,4 +212,13 @@ object Motion {
 
     /** …then steps this often. */
     const val STEPPER_REPEAT_MILLIS = 90L
+
+    /** A page being swiped back shrinks to this, as in Android's own back preview. */
+    const val BACK_PREVIEW_SCALE = 0.9f
+
+    /** …and drifts toward the far edge by this share of its width. */
+    const val BACK_PREVIEW_SHIFT = 0.05f
+
+    /** The page beneath slides in from this share of its width, on the side being swiped from. */
+    const val BACK_PREVIEW_REVEAL_SHIFT = 0.1f
 }

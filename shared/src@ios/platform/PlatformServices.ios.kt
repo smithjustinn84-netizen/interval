@@ -49,6 +49,8 @@ actual fun KeepScreenOn() {
 @Composable
 actual fun SystemBarIcons(lightIcons: Boolean) = Unit
 
+actual val materialBackPreview: Boolean = false
+
 actual fun epochMillisNow(): Long = NSDate().timeIntervalSince1970.seconds.inWholeMilliseconds
 
 private class UserDefaultsStore : KeyValueStore {

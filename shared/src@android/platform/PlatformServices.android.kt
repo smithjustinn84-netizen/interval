@@ -69,6 +69,8 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
     else -> null
 }
 
+actual val materialBackPreview: Boolean = true
+
 actual fun epochMillisNow(): Long = System.currentTimeMillis()
 
 private class SharedPreferencesStore(context: Context) : KeyValueStore {

@@ -28,6 +28,8 @@ actual fun KeepScreenOn() = Unit
 @Composable
 actual fun SystemBarIcons(lightIcons: Boolean) = Unit
 
+actual val materialBackPreview: Boolean = false
+
 actual fun epochMillisNow(): Long = System.currentTimeMillis()
 
 private class PreferencesStore : KeyValueStore {
