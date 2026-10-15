@@ -1,0 +1,14 @@
+product: ios/app
+
+dependencies:
+  - //shared
+  - $compose.ui
+
+settings:
+  compose: enabled
+  kotlin:
+    allWarningsAsErrors: true
+
+plugins:
+  lint-plugin:
+    enabled: true

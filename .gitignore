@@ -1,0 +1,42 @@
+# OS
+.DS_Store
+._*
+
+# Kotlin Toolchain / Amper build output
+build/
+.amper/
+.kotlin/
+
+# Android
+*.apk
+*.aab
+local.properties
+captures/
+.cxx/
+*.jks
+*.keystore
+
+# Xcode: keep the project file and shared schemes, ignore per-user state
+**/module.xcodeproj/*
+!**/module.xcodeproj/project.pbxproj
+!**/module.xcodeproj/xcshareddata/
+!**/module.xcodeproj/project.xcworkspace/
+**/xcshareddata/WorkspaceSettings.xcsettings
+xcuserdata/
+DerivedData/
+
+# IDEs
+.idea/
+*.iml
+.fleet/
+.vscode/
+
+# Logs and runtime files
+*.log
+*.hprof
+hs_err_pid*
+
+# Secrets
+.env
+.env.*
+!.env.example

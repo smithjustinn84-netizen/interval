@@ -1,0 +1,37 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{kt,kts}]
+indent_style = space
+indent_size = 4
+max_line_length = 120
+
+# `intellij_idea`, not the stricter `ktlint_official`: the official style forces multiline
+# signatures for anything with more than one parameter.
+ktlint_code_style = intellij_idea
+
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
+
+# Composables are PascalCase functions by convention; ktlint needs to be told.
+ktlint_function_naming_ignore_when_annotated_with = Composable
+
+# Entry-point and task-action files are named after the function they hold (main.kt, ktlint.kt).
+ktlint_standard_filename = disabled
+
+# Pure line-wrapping preferences that fight the trailing-comma multiline style, and would collapse
+# deliberately wrapped signatures back onto one line.
+ktlint_standard_function-signature = disabled
+ktlint_standard_class-signature = disabled
+
+[*.{yaml,yml}]
+indent_style = space
+indent_size = 2
+
+[*.bat]
+end_of_line = crlf

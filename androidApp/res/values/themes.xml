@@ -1,0 +1,7 @@
+<resources>
+    <!-- The launch theme. installSplashScreen() in MainActivity switches to postSplashScreenTheme. -->
+    <style name="Theme.Interval.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@android:style/Theme.Material.Light.NoActionBar</item>
+    </style>
+</resources>

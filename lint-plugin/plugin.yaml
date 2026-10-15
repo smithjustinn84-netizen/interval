@@ -1,0 +1,16 @@
+tasks:
+  lint:
+    action: !dev.justinsmith.interval.lint.lint
+      moduleRoot: ${module.rootDir}
+      warningsOnly: ${pluginSettings.warningsOnly}
+  format:
+    action: !dev.justinsmith.interval.lint.format
+      moduleRoot: ${module.rootDir}
+
+checks:
+  - name: lint
+    performedBy: lint
+
+commands:
+  - name: format
+    performedBy: format

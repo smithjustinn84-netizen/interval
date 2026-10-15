@@ -1,0 +1,9 @@
+modules:
+  - androidApp
+  - desktopApp
+  - iosApp
+  - lint-plugin
+  - shared
+
+plugins:
+  - ./lint-plugin

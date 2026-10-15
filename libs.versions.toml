@@ -1,0 +1,39 @@
+# Single source of truth for dependency versions. Modules reference an entry as `$libs.a.b.c`,
+# which is the alias `a-b-c` with dots for dashes. Compose itself is versioned by the toolchain
+# (`$compose.*`), not here.
+
+[versions]
+androidx-activity-compose = "1.13.0"
+androidx-core-splashscreen = "1.2.0"
+androidx-lifecycle = "2.11.0"
+# Two refs on purpose: the runtime is Google's androidx artifact and the UI is JetBrains' multiplatform
+# port, released on different cadences. navigation3-ui 1.1.2 was built against navigation3-runtime 1.1.7.
+androidx-navigation3-runtime = "1.1.7"
+androidx-navigation3-ui = "1.1.2"
+kermit = "2.2.0"
+koin = "4.2.2"
+kotlinx-coroutines = "1.11.0"
+ktlint = "1.8.0"
+logback = "1.6.5"
+slf4j = "2.0.20"
+turbine = "1.2.1"
+
+[libraries]
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity-compose" }
+androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "androidx-core-splashscreen" }
+androidx-lifecycle-runtime-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
+androidx-lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel", version.ref = "androidx-lifecycle" }
+androidx-lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
+androidx-lifecycle-viewmodel-navigation3 = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "androidx-lifecycle" }
+androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "androidx-navigation3-runtime" }
+androidx-navigation3-ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "androidx-navigation3-ui" }
+kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+ktlint-rule-engine = { module = "com.pinterest.ktlint:ktlint-rule-engine", version.ref = "ktlint" }
+ktlint-ruleset-standard = { module = "com.pinterest.ktlint:ktlint-ruleset-standard", version.ref = "ktlint" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4j" }
+turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }

@@ -1,0 +1,27 @@
+product: android/app
+
+dependencies:
+  - //shared
+  - $libs.androidx.activity.compose
+  - $libs.androidx.core.splashscreen
+  - $compose.preview
+  - $compose.uiTooling
+
+settings:
+  compose: enabled
+  android:
+    namespace: dev.justinsmith.interval
+    applicationId: dev.justinsmith.interval
+    # Pinned rather than left to the toolchain's defaults, so a toolchain upgrade cannot silently
+    # move the SDK level the app is compiled and tested against.
+    compileSdk: 37
+    targetSdk: 37
+    minSdk: 26
+    versionCode: 1
+    versionName: "0.1.0"
+  kotlin:
+    allWarningsAsErrors: true
+
+plugins:
+  lint-plugin:
+    enabled: true

@@ -1,0 +1,46 @@
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+dependencies:
+  - $compose.runtime
+  - $compose.foundation: exported
+  - $compose.material3: exported
+  - $compose.ui
+  - $compose.components.resources
+  - $compose.preview
+  - $compose.hotReload.runtimeApi
+  - $libs.androidx.lifecycle.viewmodel: exported
+  - $libs.androidx.lifecycle.viewmodel.compose: exported
+  - $libs.androidx.lifecycle.runtime.compose
+  - $libs.androidx.lifecycle.viewmodel.navigation3
+  - $libs.androidx.navigation3.runtime
+  - $libs.androidx.navigation3.ui
+  - $libs.koin.core
+  - $libs.koin.compose
+  - $libs.kermit
+
+test-dependencies:
+  - $libs.kotlinx.coroutines.test
+  - $libs.turbine
+
+dependencies@android:
+  - $compose.uiTooling
+
+settings:
+  compose:
+    enabled: true
+    resources:
+      packageName: dev.justinsmith.interval.resources
+      # Generate public accessors so other modules (and previews) can use Res.*
+      exposedAccessors: true
+  kotlin:
+    allWarningsAsErrors: true
+    serialization: json
+    # No module-wide `optIns`: opt in per file (`@file:OptIn`). Since toolchain 0.13 the module's
+    # flags reach the native compiler-cache build of every dependency, where a marker the library
+    # cannot see is an "unresolved" warning, which allWarningsAsErrors turns into a failed iOS link.
+
+plugins:
+  lint-plugin:
+    enabled: true
