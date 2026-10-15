@@ -2,8 +2,8 @@
 
 package dev.justinsmith.interval.home
 
-import dev.justinsmith.interval.data.FakeKeyValueStore
 import dev.justinsmith.interval.data.IntervalRepository
+import dev.justinsmith.interval.fakes.FakeKeyValueStore
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.builtInPresets
 import kotlinx.coroutines.Dispatchers

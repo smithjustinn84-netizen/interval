@@ -1,0 +1,21 @@
+<journey name="Settings">
+  <description>
+    Change a cue and the theme in Settings, then put the theme back. Run on a phone in portrait,
+    where Settings opens full screen.
+  </description>
+  <actions>
+    <action>Tap the "Settings" button on the Timer tab</action>
+    <action>Verify that the Settings screen shows "Cues", "Workout" and "Appearance"</action>
+    <action>Tap the "Voice" switch</action>
+    <action>Verify that the "Voice" switch is off</action>
+    <action>Tap "Dark" in the theme picker</action>
+    <action>Verify that "Dark" is selected and the screen has a dark background</action>
+    <action>Tap "Back"</action>
+    <action>Verify that the Timer tab is shown with a dark background</action>
+    <action>Tap the "Settings" button on the Timer tab</action>
+    <action>Verify that the "Voice" switch is still off</action>
+    <action>Tap "Voice" and tap "System" in the theme picker</action>
+    <action>Tap "Back"</action>
+    <action>Verify that the Timer tab is shown</action>
+  </actions>
+</journey>

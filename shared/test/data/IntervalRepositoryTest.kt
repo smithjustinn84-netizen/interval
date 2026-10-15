@@ -1,18 +1,10 @@
 package dev.justinsmith.interval.data
 
+import dev.justinsmith.interval.fakes.FakeKeyValueStore
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
 import kotlin.test.Test
 import kotlin.test.assertEquals
-
-/** An in-memory [KeyValueStore] for tests. */
-class FakeKeyValueStore(val values: MutableMap<String, String> = mutableMapOf()) : KeyValueStore {
-    override fun getString(key: String): String? = values[key]
-
-    override fun putString(key: String, value: String) {
-        values[key] = value
-    }
-}
 
 class IntervalRepositoryTest {
     private val store = FakeKeyValueStore()

@@ -2,9 +2,10 @@
 
 package dev.justinsmith.interval.history
 
-import dev.justinsmith.interval.data.FakeKeyValueStore
 import dev.justinsmith.interval.data.IntervalRepository
-import dev.justinsmith.interval.platform.TimestampFormatter
+import dev.justinsmith.interval.fakes.DAY_MILLIS
+import dev.justinsmith.interval.fakes.FakeKeyValueStore
+import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
 import kotlinx.coroutines.Dispatchers
@@ -18,23 +19,12 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-private const val DAY = 24L * 60 * 60 * 1000
-
-/** Days are numbered from the epoch in UTC, so tests don't depend on a time zone. Day 0 is a Monday. */
-private object DayNumbers : TimestampFormatter {
-    override fun day(epochMillis: Long, nowMillis: Long): String = "day ${(nowMillis - epochMillis) / DAY}"
-
-    override fun time(epochMillis: Long): String = "at $epochMillis"
-
-    override fun dayNumber(epochMillis: Long): Long = epochMillis / DAY
-
-    override fun weekday(epochMillis: Long): Int = (dayNumber(epochMillis) % 7).toInt() + 1
-}
+private const val DAY = DAY_MILLIS
 
 class HistoryViewModelTest {
     private var clock = 30 * DAY
     private val repository = IntervalRepository(FakeKeyValueStore(), now = { clock })
-    private val viewModel by lazy { HistoryViewModel(repository, DayNumbers, now = { clock }) }
+    private val viewModel by lazy { HistoryViewModel(repository, FixedTimestampFormatter, now = { clock }) }
 
     @BeforeTest
     fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())

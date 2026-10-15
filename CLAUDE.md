@@ -11,7 +11,7 @@ Compose Multiplatform app for **Android, iOS and desktop (JVM)**, built with the
 ```sh
 ./kotlin build                      # Everything. The only build that links iOS. Run before calling work done
 ./kotlin build -p jvm               # Fast compile loop (common + JVM)
-./kotlin test -p jvm                # Fast test loop
+./kotlin test -p jvm                # Fast test loop (logic + Compose UI tests)
 ./kotlin check lint                 # ktlint over every module
 ./kotlin do format                  # ktlint auto-format
 ./kotlin check detekt               # detekt + Compose rules over every module (config: detekt.yml)
@@ -80,6 +80,20 @@ toolchain (`$compose.*`).
 - **Logging**: Kermit (`co.touchlab.kermit.Logger`).
 - **Platform code**: `expect`/`actual` in `src/` + `src@<platform>/`. Prefer an interface injected via Koin
   over `expect class`.
+
+## Testing
+
+Strategy, commands and limits: [docs/testing.md](docs/testing.md).
+- Logic and ViewModel tests go in `shared/test/` and run on JVM, Android and iOS.
+- **Compose UI tests go in `shared/test@jvm/` only.** Common tests also run as Android local tests,
+  where `runComposeUiTest` fails (no Robolectric).
+- Use `androidx.compose.ui.test.v2.*` and the harness in `test@jvm/ui/UiTestHarness.kt`:
+  `runUiTest(Window.X)`, `setThemedContent`, and `StateRestoration`. Desktop's
+  `StateRestorationTester` is not implemented.
+- Fakes live in `shared/test/fakes/`. Whole-app tests compose `AppContent(testKoin())`. Never load
+  the real platform module in tests.
+- On-device end-to-end flows are android-CLI journeys in `journeys/*.xml`, run by an agent on
+  `amper-37`, not in CI.
 
 ## Gotchas
 

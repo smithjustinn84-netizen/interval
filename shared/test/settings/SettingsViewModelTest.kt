@@ -2,9 +2,9 @@
 
 package dev.justinsmith.interval.settings
 
-import dev.justinsmith.interval.data.FakeKeyValueStore
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.data.ThemeMode
+import dev.justinsmith.interval.fakes.FakeKeyValueStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher

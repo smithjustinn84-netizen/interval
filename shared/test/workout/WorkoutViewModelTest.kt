@@ -3,10 +3,9 @@
 package dev.justinsmith.interval.workout
 
 import dev.justinsmith.interval.data.CueSettings
-import dev.justinsmith.interval.data.FakeKeyValueStore
 import dev.justinsmith.interval.data.IntervalRepository
-import dev.justinsmith.interval.platform.Beep
-import dev.justinsmith.interval.platform.CuePlayer
+import dev.justinsmith.interval.fakes.FakeKeyValueStore
+import dev.justinsmith.interval.fakes.RecordingCuePlayer
 import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
@@ -25,30 +24,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-private class RecordingPlayer : CuePlayer {
-    val beeps = mutableListOf<Beep>()
-    val spoken = mutableListOf<String>()
-    val haptics = mutableListOf<Haptic>()
-
-    override fun beep(beep: Beep) {
-        beeps += beep
-    }
-
-    override fun speak(text: String) {
-        spoken += text
-    }
-
-    override fun vibrate(haptic: Haptic) {
-        haptics += haptic
-    }
-
-    override fun release() = Unit
-}
-
 class WorkoutViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val repository = IntervalRepository(FakeKeyValueStore(), now = { 7L })
-    private val player = RecordingPlayer()
+    private val player = RecordingCuePlayer()
 
     @BeforeTest
     fun setUp() {
@@ -77,6 +56,23 @@ class WorkoutViewModelTest {
         )
         assertEquals(listOf(Haptic.Work, Haptic.Rest, Haptic.Work, Haptic.Finished), player.haptics)
         assertEquals(7L, repository.history.value.single().finishedAtEpochMillis)
+    }
+
+    @Test
+    fun `back returns to the interval before and add time extends this one without cues`() = runTest(dispatcher) {
+        val viewModel = WorkoutViewModel(repository, player, testScheduler.timeSource)
+        viewModel.pause()
+        viewModel.skip()
+        assertEquals(Phase.Rest, viewModel.state.value.phase)
+        val cuesBefore = player.spoken.size
+
+        viewModel.back()
+        assertEquals(Phase.Work, viewModel.state.value.phase)
+        assertEquals("0:05", viewModel.state.value.clock)
+
+        viewModel.addTime()
+        assertEquals("0:15", viewModel.state.value.clock)
+        assertEquals(cuesBefore, player.spoken.size)
     }
 
     @Test

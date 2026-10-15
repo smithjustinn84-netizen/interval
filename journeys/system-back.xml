@@ -1,0 +1,19 @@
+<journey name="System back">
+  <description>
+    The system back gesture: from a tab it returns to Timer; during a workout it pauses and asks
+    before ending.
+  </description>
+  <actions>
+    <action>Tap the "History" tab</action>
+    <action>Press the system back button</action>
+    <action>Verify that the Timer tab is shown with a "Start workout" button</action>
+    <action>Tap "Start workout"</action>
+    <action>Press the system back button</action>
+    <action>Verify that a dialog titled "End workout?" is shown and the workout is paused</action>
+    <action>Tap "Resume" in the dialog</action>
+    <action>Verify that the workout screen shows a "Pause" button</action>
+    <action>Press the system back button</action>
+    <action>Tap "End workout" in the dialog</action>
+    <action>Verify that the Timer tab is shown with a "Start workout" button</action>
+  </actions>
+</journey>

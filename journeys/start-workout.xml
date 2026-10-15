@@ -1,0 +1,26 @@
+<journey name="Start a workout">
+  <description>
+    Edit the next workout's work time, start it, pause and resume, skip ahead, then end it before
+    any round is finished. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
+  </description>
+  <actions>
+    <action>Verify that the Timer tab is shown with a "Start workout" button</action>
+    <action>Tap the "Work" row under "Intervals"</action>
+    <action>Verify that a sheet titled "Work" is shown with "Quick picks"</action>
+    <action>Tap the "1:00" quick pick</action>
+    <action>Tap "Done"</action>
+    <action>Verify that the "Work" row shows 1:00</action>
+    <action>Tap "Start workout"</action>
+    <action>Verify that the workout screen shows "Get ready" and a countdown clock</action>
+    <action>Tap "Pause"</action>
+    <action>Verify that the screen shows "Paused" and a "Resume" button</action>
+    <action>Tap "Resume"</action>
+    <action>Verify that the screen shows a "Pause" button</action>
+    <action>Tap "Skip"</action>
+    <action>Verify that the screen shows "Work" and "Round 1 of 8"</action>
+    <action>Tap "End"</action>
+    <action>Verify that a dialog titled "End workout?" says nothing is saved</action>
+    <action>Tap "End workout" in the dialog</action>
+    <action>Verify that the Timer tab is shown with a "Start workout" button</action>
+  </actions>
+</journey>

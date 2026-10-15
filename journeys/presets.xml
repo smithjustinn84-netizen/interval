@@ -1,0 +1,21 @@
+<journey name="Presets">
+  <description>
+    Save the current settings as a preset, apply a built-in one, then delete the saved one. Run on
+    a fresh install (adb shell pm clear dev.justinsmith.interval), whose default workout matches no
+    preset.
+  </description>
+  <actions>
+    <action>Tap the "Presets" tab</action>
+    <action>Verify that "Built-in" and "Yours" groups are shown, and "Yours" says "Presets you save show up here."</action>
+    <action>Tap the "Save current settings as a preset" button</action>
+    <action>Verify that a dialog titled "Save as preset" is shown</action>
+    <action>Type "Journey" into the "Name" field</action>
+    <action>Tap "Save"</action>
+    <action>Verify that a "Journey" preset is shown under "Yours"</action>
+    <action>Tap the "Tabata" preset</action>
+    <action>Verify that the Timer tab is shown and its summary card is labelled "Tabata"</action>
+    <action>Tap the "Presets" tab</action>
+    <action>Tap the "Delete preset Journey" button</action>
+    <action>Verify that "Journey" is no longer shown and "Yours" says "Presets you save show up here."</action>
+  </actions>
+</journey>

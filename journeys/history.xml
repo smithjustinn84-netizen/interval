@@ -1,0 +1,25 @@
+<journey name="Workout history">
+  <description>
+    End a workout after its first round, find it in History, then clear History. Run on a fresh
+    install (adb shell pm clear dev.justinsmith.interval).
+  </description>
+  <actions>
+    <action>Tap "Start workout"</action>
+    <action>Tap "Skip"</action>
+    <action>Verify that the screen shows "Work"</action>
+    <action>Tap "Skip"</action>
+    <action>Verify that the screen shows "Rest"</action>
+    <action>Tap "End"</action>
+    <action>Verify that a dialog titled "End workout?" says "1 of 8 rounds done"</action>
+    <action>Tap "End workout" in the dialog</action>
+    <action>Verify that the summary shows "Ended" and "Saved to history"</action>
+    <action>Tap "Done"</action>
+    <action>Tap the "History" tab</action>
+    <action>Verify that a "Today" section lists one workout and "Last 7 days" shows 1 workout</action>
+    <action>Tap "More options"</action>
+    <action>Tap "Clear history"</action>
+    <action>Verify that a dialog titled "Clear history?" is shown</action>
+    <action>Tap "Clear"</action>
+    <action>Verify that the screen shows "Finished workouts show up here."</action>
+  </actions>
+</journey>

@@ -27,7 +27,7 @@ Run each module from the command line:
 
 ### Testing
 
-Run the project's tests with `./kotlin test`, or `./kotlin test -p jvm` for the fast loop. `./kotlin check` runs tests and ktlint.
+Run the project's tests with `./kotlin test`, or `./kotlin test -p jvm` for the fast loop (logic and Compose UI tests). `./kotlin check` runs tests, ktlint and detekt. See [docs/testing.md](./docs/testing.md) for the testing strategy and the on-device journeys.
 
 See [CLAUDE.md](./CLAUDE.md) for architecture and conventions.
 

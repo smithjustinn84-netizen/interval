@@ -62,12 +62,13 @@ import kotlinx.serialization.modules.subclass
 import org.jetbrains.compose.reload.DevelopmentEntryPoint
 import org.koin.compose.KoinIsolatedContext
 import org.koin.compose.currentKoinScope
+import org.koin.core.KoinApplication
 
 /**
  * Every [NavKey] the back stack can hold, registered explicitly so saving and restoring works on
  * every platform (native has no reflection-based serialization).
  */
-private val navConfiguration = SavedStateConfiguration {
+internal val navConfiguration = SavedStateConfiguration {
     serializersModule = serializersModule + SerializersModule {
         polymorphic(NavKey::class) {
             subclass(TimerTab::class)
@@ -83,7 +84,13 @@ private val navConfiguration = SavedStateConfiguration {
 @Composable
 @DevelopmentEntryPoint
 fun App() {
-    KoinIsolatedContext(context = rememberAppKoin()) {
+    AppContent(rememberAppKoin())
+}
+
+/** [App] with its container passed in, so tests can run the whole app over fake platform services. */
+@Composable
+internal fun AppContent(koin: KoinApplication) {
+    KoinIsolatedContext(context = koin) {
         val repository = currentKoinScope().get<IntervalRepository>()
         val settings by repository.appSettings.collectAsStateWithLifecycle()
         val dark = when (settings.theme) {
