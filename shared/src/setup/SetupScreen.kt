@@ -9,6 +9,8 @@ import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
@@ -27,11 +29,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -121,124 +126,209 @@ fun SetupScreen(
     onStart: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val palette = IntervalTheme.palette
-    Box(modifier.fillMaxSize().background(palette.background)) {
-        LazyColumn(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .widthIn(max = Sizes.content)
-                .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.safeDrawing),
-            // The bottom padding leaves room for the floating Start button.
-            contentPadding = PaddingValues(
-                start = Spacing.space16,
-                end = Spacing.space16,
-                top = Spacing.space16,
-                bottom = Spacing.space112,
-            ),
-            verticalArrangement = Arrangement.spacedBy(Spacing.space10),
-        ) {
-            item { Header(total = state.total) }
-            items(state.presets.chunked(2)) { row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-                    row.forEach { item ->
-                        PresetCard(
-                            item = item,
-                            onClick = { onApplyPreset(item.preset) },
-                            onDelete = { onDeletePreset(item.preset) },
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    if (row.size == 1) Spacer(Modifier.weight(1f))
-                }
-            }
-            item { SavePreset(enabled = state.canSavePreset, onSave = onSavePreset) }
-            item { Spacer(Modifier.height(Spacing.space4)) }
-            item {
-                FieldCard(
-                    label = "Get ready",
-                    hint = "Countdown before the first round",
-                    value = formatClock(state.config.prepSeconds),
-                    stripe = PhaseColors.prep,
-                    field = ConfigField.Prep,
-                    current = state.config.prepSeconds,
-                    noun = "prepare time",
-                    onStep = onStep,
-                )
-            }
-            item {
-                FieldCard(
-                    label = "Work",
-                    hint = "Effort interval",
-                    value = formatClock(state.config.workSeconds),
-                    stripe = PhaseColors.work,
-                    field = ConfigField.Work,
-                    current = state.config.workSeconds,
-                    noun = "work time",
-                    onStep = onStep,
-                )
-            }
-            item {
-                FieldCard(
-                    label = "Rest",
-                    hint = "Recovery between rounds",
-                    value = formatClock(state.config.restSeconds),
-                    stripe = PhaseColors.rest,
-                    field = ConfigField.Rest,
-                    current = state.config.restSeconds,
-                    noun = "rest time",
-                    onStep = onStep,
-                )
-            }
-            item {
-                FieldCard(
-                    label = "Rounds",
-                    hint = "Work intervals to complete",
-                    value = state.config.rounds.toString(),
-                    stripe = palette.accent,
-                    field = ConfigField.Rounds,
-                    current = state.config.rounds,
-                    noun = "rounds",
-                    onStep = onStep,
-                )
-            }
-            item {
-                ToggleRow("Sound cues", "Beeps for countdown and phase changes", state.cues.sound) {
-                    onToggle(CueToggle.Sound)
-                }
-            }
-            item {
-                ToggleRow("Voice cues", "Says “Work”, “Rest”, “Last round”", state.cues.voice) {
-                    onToggle(CueToggle.Voice)
-                }
-            }
-            item {
-                ToggleRow("Halfway cue", "Extra beep mid-interval, over 30s", state.cues.halfway) {
-                    onToggle(CueToggle.Halfway)
-                }
-            }
-            item {
-                ToggleRow("Vibrate on phase change", null, state.cues.vibrate) { onToggle(CueToggle.Vibrate) }
-            }
-            item { History(items = state.history, onClear = onClearHistory) }
+    BoxWithConstraints(modifier.fillMaxSize().background(IntervalTheme.palette.background)) {
+        if (maxWidth > maxHeight) {
+            LandscapeSetup(
+                state,
+                onStep,
+                onApplyPreset,
+                onSavePreset,
+                onDeletePreset,
+                onToggle,
+                onClearHistory,
+                onStart,
+            )
+        } else {
+            PortraitSetup(
+                state,
+                onStep,
+                onApplyPreset,
+                onSavePreset,
+                onDeletePreset,
+                onToggle,
+                onClearHistory,
+                onStart,
+            )
         }
-        StartButton(
-            onClick = onStart,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .widthIn(max = Sizes.content)
-                .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(Spacing.space16),
-        )
     }
 }
 
 @Composable
-private fun Header(total: String) {
+private fun BoxScope.PortraitSetup(
+    state: SetupUiState,
+    onStep: (ConfigField, Int) -> Unit,
+    onApplyPreset: (Preset) -> Unit,
+    onSavePreset: (String) -> Unit,
+    onDeletePreset: (Preset) -> Unit,
+    onToggle: (CueToggle) -> Unit,
+    onClearHistory: () -> Unit,
+    onStart: () -> Unit,
+) {
+    LazyColumn(
+        modifier = Modifier
+            .align(Alignment.TopCenter)
+            .widthIn(max = Sizes.content)
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.safeDrawing),
+        // The bottom padding leaves room for the floating Start button.
+        contentPadding = PaddingValues(
+            start = Spacing.space16,
+            end = Spacing.space16,
+            top = Spacing.space16,
+            bottom = Spacing.space112,
+        ),
+        verticalArrangement = Arrangement.spacedBy(Spacing.space10),
+    ) {
+        item { Header(total = state.total, Modifier.padding(top = Spacing.space8, bottom = Spacing.space8)) }
+        items(state.presets.chunked(2)) { row -> PresetRow(row, onApplyPreset, onDeletePreset) }
+        item { SavePreset(enabled = state.canSavePreset, onSave = onSavePreset) }
+        item { Spacer(Modifier.height(Spacing.space4)) }
+        settings(state, onStep, onToggle, onClearHistory)
+    }
+    StartButton(
+        onClick = onStart,
+        modifier = Modifier
+            .align(Alignment.BottomCenter)
+            .widthIn(max = Sizes.content)
+            .fillMaxWidth()
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(Spacing.space16),
+    )
+}
+
+/**
+ * Sideways: header, presets and Start on the left, so all four steppers sit beside Start without
+ * scrolling; the settings scroll on the right. Start is pinned under the presets rather than floating.
+ */
+@Composable
+private fun LandscapeSetup(
+    state: SetupUiState,
+    onStep: (ConfigField, Int) -> Unit,
+    onApplyPreset: (Preset) -> Unit,
+    onSavePreset: (String) -> Unit,
+    onDeletePreset: (Preset) -> Unit,
+    onToggle: (CueToggle) -> Unit,
+    onClearHistory: () -> Unit,
+    onStart: () -> Unit,
+) {
+    Row(
+        Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing),
+        // On a phone the two columns fill the width; on a tablet or desktop window they stay a
+        // centred pair instead of stretching the field cards across the screen.
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space16, Alignment.CenterHorizontally),
+    ) {
+        Column(
+            Modifier
+                .width(Sizes.setupColumnLandscape)
+                .fillMaxHeight()
+                .padding(start = Spacing.space20, top = Spacing.space16, bottom = Spacing.space16),
+            verticalArrangement = Arrangement.spacedBy(Spacing.space10),
+        ) {
+            // Custom presets add rows, so this part scrolls on its own and Start never moves.
+            Column(
+                Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(Spacing.space10),
+            ) {
+                Header(total = state.total, Modifier.padding(bottom = Spacing.space4))
+                state.presets.chunked(2).forEach { row -> PresetRow(row, onApplyPreset, onDeletePreset) }
+                SavePreset(enabled = state.canSavePreset, onSave = onSavePreset)
+            }
+            StartButton(onClick = onStart, modifier = Modifier.fillMaxWidth())
+        }
+        LazyColumn(
+            modifier = Modifier
+                .weight(1f, fill = false)
+                .widthIn(max = Sizes.content + Spacing.space20)
+                .fillMaxHeight(),
+            contentPadding = PaddingValues(end = Spacing.space20, top = Spacing.space16, bottom = Spacing.space16),
+            verticalArrangement = Arrangement.spacedBy(Spacing.space10),
+        ) {
+            settings(state, onStep, onToggle, onClearHistory)
+        }
+    }
+}
+
+/** The field cards, cue toggles and history, in both layouts. */
+private fun LazyListScope.settings(
+    state: SetupUiState,
+    onStep: (ConfigField, Int) -> Unit,
+    onToggle: (CueToggle) -> Unit,
+    onClearHistory: () -> Unit,
+) {
+    item {
+        FieldCard(
+            label = "Get ready",
+            hint = "Countdown before the first round",
+            value = formatClock(state.config.prepSeconds),
+            stripe = PhaseColors.prep,
+            field = ConfigField.Prep,
+            current = state.config.prepSeconds,
+            noun = "prepare time",
+            onStep = onStep,
+        )
+    }
+    item {
+        FieldCard(
+            label = "Work",
+            hint = "Effort interval",
+            value = formatClock(state.config.workSeconds),
+            stripe = PhaseColors.work,
+            field = ConfigField.Work,
+            current = state.config.workSeconds,
+            noun = "work time",
+            onStep = onStep,
+        )
+    }
+    item {
+        FieldCard(
+            label = "Rest",
+            hint = "Recovery between rounds",
+            value = formatClock(state.config.restSeconds),
+            stripe = PhaseColors.rest,
+            field = ConfigField.Rest,
+            current = state.config.restSeconds,
+            noun = "rest time",
+            onStep = onStep,
+        )
+    }
+    item {
+        FieldCard(
+            label = "Rounds",
+            hint = "Work intervals to complete",
+            value = state.config.rounds.toString(),
+            stripe = IntervalTheme.palette.accent,
+            field = ConfigField.Rounds,
+            current = state.config.rounds,
+            noun = "rounds",
+            onStep = onStep,
+        )
+    }
+    item {
+        ToggleRow("Sound cues", "Beeps for countdown and phase changes", state.cues.sound) {
+            onToggle(CueToggle.Sound)
+        }
+    }
+    item {
+        ToggleRow("Voice cues", "Says “Work”, “Rest”, “Last round”", state.cues.voice) {
+            onToggle(CueToggle.Voice)
+        }
+    }
+    item {
+        ToggleRow("Halfway cue", "Extra beep mid-interval, over 30s", state.cues.halfway) {
+            onToggle(CueToggle.Halfway)
+        }
+    }
+    item {
+        ToggleRow("Vibrate on phase change", null, state.cues.vibrate) { onToggle(CueToggle.Vibrate) }
+    }
+    item { History(items = state.history, onClear = onClearHistory) }
+}
+
+@Composable
+private fun Header(total: String, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     Row(
-        modifier = Modifier.fillMaxWidth().padding(top = Spacing.space8, bottom = Spacing.space8),
+        modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Bottom,
     ) {
@@ -252,6 +342,22 @@ private fun Header(total: String) {
             color = palette.textDim,
             modifier = Modifier.padding(bottom = Spacing.space6),
         )
+    }
+}
+
+/** Two presets side by side; an odd one out keeps half the row. */
+@Composable
+private fun PresetRow(row: List<PresetItem>, onApply: (Preset) -> Unit, onDelete: (Preset) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+        row.forEach { item ->
+            PresetCard(
+                item = item,
+                onClick = { onApply(item.preset) },
+                onDelete = { onDelete(item.preset) },
+                modifier = Modifier.weight(1f),
+            )
+        }
+        if (row.size == 1) Spacer(Modifier.weight(1f))
     }
 }
 
@@ -565,9 +671,8 @@ private fun StartButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
-@Preview
 @Composable
-private fun SetupScreenPreview() {
+private fun SetupPreview() {
     val config = IntervalConfig()
     IntervalTheme {
         SetupScreen(
@@ -590,4 +695,16 @@ private fun SetupScreenPreview() {
             onStart = {},
         )
     }
+}
+
+@Preview
+@Composable
+private fun SetupScreenPreview() {
+    SetupPreview()
+}
+
+@Preview(widthDp = 844, heightDp = 390)
+@Composable
+private fun SetupScreenLandscapePreview() {
+    SetupPreview()
 }

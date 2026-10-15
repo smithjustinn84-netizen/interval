@@ -57,6 +57,18 @@ object Corners {
 object Sizes {
     /** Maximum width of the setup column. */
     val content = 460.dp
+
+    /**
+     * Wider-than-tall windows get the landscape layouts; those shorter than this are phones held
+     * sideways, which keep the workout clock at its smaller landscape cap.
+     */
+    val landscapeMaxHeight = 480.dp
+
+    /** Width of the setup column holding the header, presets and Start in landscape. */
+    val setupColumnLandscape = 380.dp
+
+    /** Width of each side rail of workout controls in landscape. */
+    val rail = 120.dp
     val start = 68.dp
 
     /** Elevation of Start workout, the only raised element (`shadow-start`). */
