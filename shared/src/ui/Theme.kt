@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.barlow_condensed_extrabold
@@ -134,19 +135,19 @@ data class IntervalType(
 )
 
 private fun intervalType(body: TextStyle, label: TextStyle, condensed: FontFamily): IntervalType {
-    fun numerals(size: Int) = body.copy(fontFamily = condensed, fontWeight = FontWeight.ExtraBold, fontSize = size.sp)
-    fun heading(size: Int) = body.copy(fontFamily = condensed, fontWeight = FontWeight.SemiBold, fontSize = size.sp)
+    fun numerals(size: TextUnit) = body.copy(fontFamily = condensed, fontWeight = FontWeight.ExtraBold, fontSize = size)
+    fun heading(size: TextUnit) = body.copy(fontFamily = condensed, fontWeight = FontWeight.SemiBold, fontSize = size)
     return IntervalType(
-        clock = numerals(240).copy(lineHeight = 240.sp),
-        done = numerals(96),
-        phaseLabelLandscape = heading(40),
-        phaseLabel = heading(34),
-        screenTitle = numerals(32),
-        stepperValue = numerals(27),
-        startLabel = numerals(26),
-        primaryControl = numerals(22),
-        sectionTitle = numerals(20),
-        control = numerals(19),
+        clock = numerals(240.sp).copy(lineHeight = 240.sp),
+        done = numerals(96.sp),
+        phaseLabelLandscape = heading(40.sp),
+        phaseLabel = heading(34.sp),
+        screenTitle = numerals(32.sp),
+        stepperValue = numerals(27.sp),
+        startLabel = numerals(26.sp),
+        primaryControl = numerals(22.sp),
+        sectionTitle = numerals(20.sp),
+        control = numerals(19.sp),
         nextUp = body.copy(fontSize = 20.sp),
         summary = body.copy(fontSize = 18.sp),
         cardTitle = body.copy(fontWeight = FontWeight.SemiBold),
@@ -161,8 +162,10 @@ private fun intervalType(body: TextStyle, label: TextStyle, condensed: FontFamil
     )
 }
 
-private val localPalette = staticCompositionLocalOf { lightPalette }
-private val localType = staticCompositionLocalOf<IntervalType> { error("IntervalType is provided by IntervalTheme") }
+private val LocalIntervalPalette = staticCompositionLocalOf { lightPalette }
+private val LocalIntervalType = staticCompositionLocalOf<IntervalType> {
+    error("IntervalType is provided by IntervalTheme")
+}
 
 /** The app's single theme entry point: Barlow for text, Barlow Condensed for numbers and headings. */
 @Composable
@@ -205,7 +208,7 @@ fun IntervalTheme(
         )
     }
     val type = intervalType(typography.bodyLarge, typography.labelLarge, condensed)
-    CompositionLocalProvider(localPalette provides palette, localType provides type) {
+    CompositionLocalProvider(LocalIntervalPalette provides palette, LocalIntervalType provides type) {
         // MaterialTheme provides bodyLarge as the default text style, so unstyled Text is Barlow too.
         MaterialTheme(colorScheme = colors, typography = typography, content = content)
     }
@@ -215,9 +218,9 @@ fun IntervalTheme(
 object IntervalTheme {
     val palette: IntervalPalette
         @Composable @ReadOnlyComposable
-        get() = localPalette.current
+        get() = LocalIntervalPalette.current
 
     val type: IntervalType
         @Composable @ReadOnlyComposable
-        get() = localType.current
+        get() = LocalIntervalType.current
 }

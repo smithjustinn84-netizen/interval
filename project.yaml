@@ -1,9 +1,11 @@
 modules:
   - androidApp
   - desktopApp
+  - detekt-plugin
   - iosApp
   - lint-plugin
   - shared
 
 plugins:
+  - ./detekt-plugin
   - ./lint-plugin

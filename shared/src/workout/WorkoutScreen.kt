@@ -106,7 +106,8 @@ fun WorkoutScreen(
         } else {
             PortraitWorkout(
                 state = state,
-                clockSize = (maxWidth.value * 0.35f).coerceIn(96f, 240f).sp,
+                clockSize = (maxWidth.value * PORTRAIT_CLOCK_WIDTH_SHARE)
+                    .coerceIn(PORTRAIT_CLOCK_MIN, PORTRAIT_CLOCK_MAX).sp,
                 onTogglePause = onTogglePause,
                 onSkip = onSkip,
                 onBack = onBack,
@@ -535,6 +536,11 @@ private fun PillButton(
 }
 
 private const val MAX_DOTS = 12
+
+/** The portrait clock scales with the screen width, between a floor and the clock style's size. */
+private const val PORTRAIT_CLOCK_WIDTH_SHARE = 0.35f
+private const val PORTRAIT_CLOCK_MIN = 96f
+private const val PORTRAIT_CLOCK_MAX = 240f
 
 /** The landscape clock's size cap on a phone held sideways, as drawn on the design canvas. */
 private val LANDSCAPE_CLOCK_MAX = 200.sp

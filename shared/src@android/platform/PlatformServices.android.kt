@@ -98,15 +98,15 @@ private class AndroidCuePlayer(context: Context) : CuePlayer {
     }.getOrNull()
 
     override fun beep(beep: Beep) {
-        val (tone, millis) = when (beep) {
-            Beep.Countdown -> ToneGenerator.TONE_PROP_BEEP to 120
-            Beep.Halfway -> ToneGenerator.TONE_PROP_ACK to 150
-            Beep.Start -> ToneGenerator.TONE_PROP_BEEP2 to 200
-            Beep.Work -> ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD to 300
-            Beep.Rest -> ToneGenerator.TONE_PROP_BEEP2 to 300
-            Beep.Finished -> ToneGenerator.TONE_CDMA_CONFIRM to 600
+        val tone = when (beep) {
+            Beep.Countdown -> Tone(ToneGenerator.TONE_PROP_BEEP, millis = 120)
+            Beep.Halfway -> Tone(ToneGenerator.TONE_PROP_ACK, millis = 150)
+            Beep.Start -> Tone(ToneGenerator.TONE_PROP_BEEP2, millis = 200)
+            Beep.Work -> Tone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, millis = 300)
+            Beep.Rest -> Tone(ToneGenerator.TONE_PROP_BEEP2, millis = 300)
+            Beep.Finished -> Tone(ToneGenerator.TONE_CDMA_CONFIRM, millis = 600)
         }
-        runCatching { tones?.startTone(tone, millis) }.onFailure { log.w(it) { "Beep failed" } }
+        runCatching { tones?.startTone(tone.type, tone.millis) }.onFailure { log.w(it) { "Beep failed" } }
     }
 
     override fun speak(text: String) {
@@ -134,3 +134,6 @@ private class AndroidCuePlayer(context: Context) : CuePlayer {
         runCatching { speech.shutdown() }
     }
 }
+
+/** A [ToneGenerator] tone type and how long to play it. */
+private class Tone(val type: Int, val millis: Int)

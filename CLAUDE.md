@@ -14,14 +14,16 @@ Compose Multiplatform app for **Android, iOS and desktop (JVM)**, built with the
 ./kotlin test -p jvm                # Fast test loop
 ./kotlin check lint                 # ktlint over every module
 ./kotlin do format                  # ktlint auto-format
-./kotlin check                      # All checks (tests + lint)
+./kotlin check detekt               # detekt + Compose rules over every module (config: detekt.yml)
+./kotlin check                      # All checks (tests + lint + detekt)
 ./kotlin run -m desktopApp          # Desktop window (with Compose Hot Reload)
 ./kotlin package -m androidApp -f aab   # Release bundle (R8 on; rules in androidApp/proguard-rules.pro).
                                         # Unsigned until a keystore is set up (`./kotlin tool generate-keystore`)
 ./kotlin show modules | settings | dependencies | tasks
 ```
 
-`-m` takes the **leaf module name** (`shared`, `androidApp`, `iosApp`, `desktopApp`, `lint-plugin`).
+`-m` takes the **leaf module name** (`shared`, `androidApp`, `iosApp`, `desktopApp`, `lint-plugin`,
+`detekt-plugin`).
 
 ### Android (android CLI)
 ```sh
@@ -49,6 +51,7 @@ xcrun simctl launch booted dev.justinsmith.interval
 | `iosApp`      | `ios/app`        | SwiftUI shell + `ViewController()` hosting `App()`      |
 | `desktopApp`  | `jvm/app`        | `main.kt` window hosting `App()`                        |
 | `lint-plugin` | `jvm/amper-plugin` | ktlint `lint` check and `format` command              |
+| `detekt-plugin` | `jvm/amper-plugin` | `detekt` check: detekt 2 + Compose rules, light mode  |
 
 Amper source layout, not Gradle's:
 - `<module>/src/` common code; `src@android/`, `src@ios/` (both iOS targets), `src@jvm/` platform code
@@ -85,6 +88,10 @@ toolchain (`$compose.*`).
   an unresolved marker there fails the iOS link. Only a full `./kotlin build` catches it; `-p jvm` passes.
 - **Desktop needs `kotlinx-coroutines-swing`** (already in `desktopApp`). Without it `Dispatchers.Main` is
   missing and `viewModelScope` crashes at runtime.
+- **detekt is 2.0 alpha** (`dev.detekt`), and `compose-rules` is built against one exact detekt version: bump
+  the two together. `detekt.yml` holds only overrides of detekt's defaults and is validated, so an unknown
+  key fails the check. Rules run without type resolution (`--analysis-mode light`). Suppress with
+  `@Suppress("detekt.RuleName")`. HTML/SARIF reports land in `build/tasks/_<module>_detekt@detekt-plugin/`.
 - **The lint plugin needs `slf4j-nop`**: ktlint's rules bind kotlin-logging to slf4j at class-init time.
 - iOS `ViewController()` is PascalCase on purpose (Swift calls it by that name) and is suppressed for ktlint.
 

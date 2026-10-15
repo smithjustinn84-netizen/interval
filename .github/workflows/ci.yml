@@ -39,6 +39,9 @@ jobs:
       - name: Lint
         run: ./kotlin check lint
 
+      - name: Detekt
+        run: ./kotlin check detekt
+
       # Platform-filtered because a bare build would reach for the iOS targets, which need macOS.
       - name: Build
         run: ./kotlin build -p jvm -p android

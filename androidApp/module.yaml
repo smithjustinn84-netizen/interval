@@ -25,3 +25,5 @@ settings:
 plugins:
   lint-plugin:
     enabled: true
+  detekt-plugin:
+    enabled: true

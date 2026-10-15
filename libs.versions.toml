@@ -10,6 +10,9 @@ androidx-lifecycle = "2.11.0"
 # port, released on different cadences. navigation3-ui 1.1.2 was built against navigation3-runtime 1.1.7.
 androidx-navigation3-runtime = "1.1.7"
 androidx-navigation3-ui = "1.1.2"
+# compose-rules 0.6.8 is built against detekt 2.0.0-alpha.6; bump the two together.
+compose-rules = "0.6.8"
+detekt = "2.0.0-alpha.6"
 kermit = "2.2.0"
 koin = "4.2.2"
 kotlinx-coroutines = "1.11.0"
@@ -27,6 +30,8 @@ androidx-lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecy
 androidx-lifecycle-viewmodel-navigation3 = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "androidx-lifecycle" }
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "androidx-navigation3-runtime" }
 androidx-navigation3-ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "androidx-navigation3-ui" }
+compose-rules-detekt = { module = "io.nlopez.compose.rules:detekt", version.ref = "compose-rules" }
+detekt-cli = { module = "dev.detekt:detekt-cli", version.ref = "detekt" }
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }

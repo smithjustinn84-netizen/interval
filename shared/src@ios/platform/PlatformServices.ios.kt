@@ -19,6 +19,9 @@ import platform.Foundation.NSUserDefaults
 import platform.Foundation.dateWithTimeIntervalSince1970
 import platform.Foundation.timeIntervalSince1970
 import platform.UIKit.UIApplication
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.DurationUnit
 
 @Composable
 actual fun rememberPlatformModule(): Module = remember {
@@ -37,7 +40,7 @@ actual fun KeepScreenOn() {
     }
 }
 
-actual fun epochMillisNow(): Long = (NSDate().timeIntervalSince1970 * 1000).toLong()
+actual fun epochMillisNow(): Long = NSDate().timeIntervalSince1970.seconds.inWholeMilliseconds
 
 private class UserDefaultsStore : KeyValueStore {
     private val defaults = NSUserDefaults.standardUserDefaults
@@ -56,8 +59,10 @@ private class UserDefaultsStore : KeyValueStore {
 private class FoundationTimestampFormatter : TimestampFormatter {
     private val formatter = NSDateFormatter().apply { dateFormat = "EEE, MMM d, h:mm a" }
 
-    override fun format(epochMillis: Long): String =
-        formatter.stringFromDate(NSDate.dateWithTimeIntervalSince1970(epochMillis / 1000.0))
+    override fun format(epochMillis: Long): String {
+        val seconds = epochMillis.milliseconds.toDouble(DurationUnit.SECONDS)
+        return formatter.stringFromDate(NSDate.dateWithTimeIntervalSince1970(seconds))
+    }
 }
 
 /**

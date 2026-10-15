@@ -2,6 +2,9 @@ package dev.justinsmith.interval.timer
 
 import kotlinx.serialization.Serializable
 
+internal const val MILLIS_PER_SECOND = 1000L
+private const val SECONDS_PER_MINUTE = 60
+
 /** One workout's shape. Every duration is in whole seconds. */
 @Serializable
 data class IntervalConfig(
@@ -26,10 +29,10 @@ data class IntervalConfig(
 
 /** Which value a setup stepper changes. */
 enum class ConfigField(val step: Int, val range: IntRange) {
-    Prep(5, IntervalConfig.PREP_RANGE),
-    Work(5, IntervalConfig.WORK_RANGE),
-    Rest(5, IntervalConfig.REST_RANGE),
-    Rounds(1, IntervalConfig.ROUNDS_RANGE),
+    Prep(step = 5, range = IntervalConfig.PREP_RANGE),
+    Work(step = 5, range = IntervalConfig.WORK_RANGE),
+    Rest(step = 5, range = IntervalConfig.REST_RANGE),
+    Rounds(step = 1, range = IntervalConfig.ROUNDS_RANGE),
 }
 
 /** Moves [field] one step in [direction] (+1 or -1), clamped to the field's range. */
@@ -57,12 +60,15 @@ val builtInPresets: List<Preset> = listOf(
 /** "0:30", "12:05". Negative input reads as zero. */
 fun formatClock(seconds: Int): String {
     val s = seconds.coerceAtLeast(0)
-    return "${s / 60}:${(s % 60).toString().padStart(2, '0')}"
+    return "${s / SECONDS_PER_MINUTE}:${(s % SECONDS_PER_MINUTE).toString().padStart(2, '0')}"
 }
 
 /** Whole seconds left in [millis], rounded up, so a display never shows 0:00 while time remains. */
-fun ceilSeconds(millis: Long): Int = if (millis <= 0) 0 else ((millis + 999) / 1000).toInt()
+fun ceilSeconds(millis: Long): Int =
+    if (millis <= 0) 0 else ((millis + MILLIS_PER_SECOND - 1) / MILLIS_PER_SECOND).toInt()
 
 /** "45s", or "2m" for whole minutes. */
-fun shortDuration(seconds: Int): String =
-    if (seconds >= 60 && seconds % 60 == 0) "${seconds / 60}m" else "${seconds}s"
+fun shortDuration(seconds: Int): String {
+    val wholeMinutes = seconds >= SECONDS_PER_MINUTE && seconds % SECONDS_PER_MINUTE == 0
+    return if (wholeMinutes) "${seconds / SECONDS_PER_MINUTE}m" else "${seconds}s"
+}

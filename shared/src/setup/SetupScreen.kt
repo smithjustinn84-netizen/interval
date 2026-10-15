@@ -403,6 +403,9 @@ private fun PresetCard(
     }
 }
 
+/** The empty save slot's dashed outline, in px: 12 on, 8 off. */
+private val SaveSlotDash = PathEffect.dashPathEffect(floatArrayOf(12f, 8f))
+
 @Composable
 private fun SavePreset(enabled: Boolean, onSave: (String) -> Unit) {
     val palette = IntervalTheme.palette
@@ -458,7 +461,7 @@ private fun SavePreset(enabled: Boolean, onSave: (String) -> Unit) {
                     drawRoundRect(
                         color = palette.line,
                         cornerRadius = CornerRadius(radius.toPx()),
-                        style = Stroke(width = stroke, pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 8f))),
+                        style = Stroke(width = stroke, pathEffect = SaveSlotDash),
                     )
                 }
                 .clickable(enabled = enabled, role = Role.Button) { editing = true },

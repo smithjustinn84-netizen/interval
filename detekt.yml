@@ -1,0 +1,138 @@
+# Overrides on top of detekt's default config (the plugin passes --build-upon-default-config). Only
+# list what differs from https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-core/src/main/resources/default-detekt-config.yml
+# Formatting is ktlint's job (`./kotlin check lint`); detekt's ktlint wrapper is deliberately not added.
+
+naming:
+  FunctionNaming:
+    # Composables are PascalCase functions by convention.
+    ignoreAnnotated: ['Composable']
+    # The default only knows Gradle's test dirs; Amper also has test@<platform>/. Backticked test names.
+    excludes: ['**/test/**', '**/test@*/**']
+  InvalidPackageDeclaration:
+    # Amper's src/ is the package root, with no dev/justinsmith/interval/ directories above it.
+    rootPackage: 'dev.justinsmith.interval'
+    # The plugins keep their own package (…interval.lint, …interval.detekt) directly in src/.
+    excludes: ['**/lint-plugin/**', '**/detekt-plugin/**']
+  MatchingDeclarationName:
+    # Off for the same reason as ktlint's filename rule (.editorconfig): expect/actual files are named
+    # after the expect side (Platform.android.kt holds AndroidPlatform), plugin files after their role.
+    active: false
+
+complexity:
+  CyclomaticComplexMethod:
+    # A `when` that maps each enum value to one expression is a table, not branching logic.
+    ignoreSimpleWhenEntries: true
+  LongMethod:
+    # Compose layouts put one named argument per line, so a modest layout runs past the default 60.
+    allowedLines: 80
+  LongParameterList:
+    # Stateless screens take their state plus one callback per event; defaulted params are optional.
+    ignoreDefaultParameters: true
+  TooManyFunctions:
+    # A screen file is one public Route/Screen pair split into many small private composables.
+    ignorePrivate: true
+
+style:
+  MagicNumber:
+    # As FunctionNaming: cover Amper's test@<platform>/ dirs too.
+    excludes: ['**/test/**', '**/test@*/**']
+  ReturnCount:
+    # Early-return guards (`if (state.isDone) return state`) read better than nesting.
+    excludeGuardClauses: true
+  UnusedPrivateFunction:
+    # Previews are private and only reached by the IDE's preview tooling.
+    ignoreAnnotated: ['Preview']
+
+# Compose rules (io.nlopez.compose.rules:detekt). Rules that need type resolution are skipped, since the
+# plugin runs detekt in light mode.
+Compose:
+  ComposableAnnotationNaming:
+    active: true
+  ComposableNaming:
+    active: true
+  ComposableNestingDepth:
+    active: false
+  ComposableParamOrder:
+    active: true
+  CompositionLocalAllowlist:
+    active: true
+    # The theme's own locals, read through IntervalTheme like MaterialTheme's.
+    allowedCompositionLocals: ['LocalIntervalPalette', 'LocalIntervalType']
+  CompositionLocalNaming:
+    active: true
+  ConditionHoist:
+    active: true
+  ContentEmitterReturningValues:
+    active: true
+  ContentTrailingLambda:
+    active: true
+  ContentSlotReused:
+    active: true
+  DefaultsVisibility:
+    active: true
+  InvalidReadOnlyComposable:
+    active: true
+  LambdaParameterEventTrailing:
+    active: true
+  LambdaParameterInRestartableEffect:
+    active: true
+  Material2:
+    # The app is Material 3 only; this catches a stray androidx.compose.material import.
+    active: true
+  MissingNonRestartableComposable:
+    active: true
+  MissingReadOnlyComposable:
+    active: true
+  ModifierClickableOrder:
+    active: true
+  ModifierComposed:
+    active: true
+  ModifierMissing:
+    active: true
+  ModifierNaming:
+    active: true
+  ModifierNotUsedAtRoot:
+    active: true
+  ModifierReused:
+    active: true
+  ModifierShouldBeForwardedToEveryBranch:
+    active: true
+  ModifierWithoutDefault:
+    active: true
+  MultipleEmitters:
+    active: true
+  MutableParams:
+    active: true
+  MutableStateAutoboxing:
+    active: true
+  MutableStateParam:
+    active: true
+  ParameterNaming:
+    active: true
+  PreviewAnnotationNaming:
+    active: true
+  PreviewNaming:
+    active: false
+  PreviewPublic:
+    active: true
+  RememberContentMissing:
+    active: true
+  RememberMissing:
+    active: true
+  StaleRememberUpdatedStateInRemember:
+    active: true
+  StateParam:
+    active: true
+  UnnecessaryComposable:
+    active: true
+  UnnecessaryLaunchedEffect:
+    active: true
+  UnstableCollections:
+    active: false
+  VarsWithoutStateBacking:
+    active: true
+  ViewModelForwarding:
+    active: true
+  ViewModelInjection:
+    # XRoute exists to resolve the ViewModel from Koin; the stateless XScreen is the testable half.
+    active: false

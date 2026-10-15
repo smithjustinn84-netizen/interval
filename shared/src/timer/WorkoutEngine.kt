@@ -23,8 +23,8 @@ data class WorkoutState(
     val sessionRemainingMillis: Long
         get() {
             val roundsAfter = (config.rounds - round).toLong()
-            val work = config.workSeconds * 1000L
-            val rest = config.restSeconds * 1000L
+            val work = config.workSeconds * MILLIS_PER_SECOND
+            val rest = config.restSeconds * MILLIS_PER_SECOND
             val after = when (phase) {
                 Phase.Prep -> config.rounds * work + (config.rounds - 1) * rest
                 Phase.Work -> roundsAfter * (work + rest)
@@ -56,6 +56,8 @@ data class Step(val state: WorkoutState, val cues: List<Cue> = emptyList())
  * [tick], which makes every transition testable without waiting.
  */
 object WorkoutEngine {
+    /** Each of an interval's last this-many seconds gets a [Cue.Countdown]. */
+    const val COUNTDOWN_SECONDS = 3
     const val HALFWAY_MIN_SECONDS = 30
     const val ADD_TIME_MILLIS = 10_000L
 
@@ -82,8 +84,8 @@ object WorkoutEngine {
         val after = ceilSeconds(left)
         val cues = mutableListOf<Cue>()
         if (after < before) {
-            if (after in 1..3) cues += Cue.Countdown(after)
-            val length = (state.phaseMillis / 1000).toInt()
+            if (after in 1..COUNTDOWN_SECONDS) cues += Cue.Countdown(after)
+            val length = (state.phaseMillis / MILLIS_PER_SECOND).toInt()
             val half = length / 2
             if (state.phase != Phase.Prep && length > HALFWAY_MIN_SECONDS && after == half) cues += Cue.Halfway
         }
@@ -158,7 +160,7 @@ object WorkoutEngine {
             Phase.Work -> config.workSeconds
             Phase.Rest -> config.restSeconds
             Phase.Done -> 0
-        } * 1000L
+        } * MILLIS_PER_SECOND
         return WorkoutState(config, phase, round, remainingMillis = millis, phaseMillis = millis)
     }
 }
