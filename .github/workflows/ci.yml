@@ -1,0 +1,72 @@
+name: CI
+
+# All branches, not just `main`: jj pushes feature bookmarks as ordinary branches, and those
+# should get a run before they are merged.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  KOTLIN_CLI_NO_WELCOME_BANNER: "1"
+
+jobs:
+  check:
+    name: lint, build, test (linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # No setup-java: the ./kotlin wrapper provisions its own JRE and toolchain. This cache holds
+      # the toolchain, the JRE and the Android SDK components the toolchain installs itself.
+      - name: Cache Kotlin toolchain and dependencies
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cache/JetBrains/Kotlin
+            ~/.m2/repository
+          key: kotlin-${{ runner.os }}-${{ hashFiles('kotlin', 'project.yaml', '**/module.yaml', 'libs.versions.toml') }}
+          restore-keys: |
+            kotlin-${{ runner.os }}-
+
+      - name: Lint
+        run: ./kotlin check lint
+
+      # Platform-filtered because a bare build would reach for the iOS targets, which need macOS.
+      - name: Build
+        run: ./kotlin build -p jvm -p android
+
+      # -p android as well as -p jvm: the android fragment's tests are plain JVM unit tests.
+      - name: Test
+        run: ./kotlin test -p jvm -p android
+
+  ios:
+    name: build, test (macos)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Cache Kotlin toolchain and dependencies
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/Library/Caches/JetBrains/Kotlin
+            ~/.m2/repository
+          key: kotlin-${{ runner.os }}-${{ hashFiles('kotlin', 'project.yaml', '**/module.yaml', 'libs.versions.toml') }}
+          restore-keys: |
+            kotlin-${{ runner.os }}-
+
+      # The only place the Kotlin/Native link runs in CI, which is where module-wide opt-ins and
+      # expect/actual gaps fail. Built unsigned: the project sets no DEVELOPMENT_TEAM.
+      - name: Build the iOS app
+        run: ./kotlin build -m iosApp
+
+      - name: Test on the iOS simulator target
+        run: ./kotlin test -p iosSimulatorArm64
