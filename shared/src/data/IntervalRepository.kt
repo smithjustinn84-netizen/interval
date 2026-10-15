@@ -37,14 +37,19 @@ data class AppSettings(
     val keepScreenOn: Boolean = true,
 )
 
-/** A finished workout. [elapsedSeconds] is set when it was ended early; null means it ran to the end. */
+/** A finished workout, run to the end or [endedEarly]. */
 @Serializable
 data class HistoryEntry(
     val finishedAtEpochMillis: Long,
     val config: IntervalConfig,
+    /**
+     * Seconds the timer ran, pauses excluded. Null only on entries saved before it was recorded for
+     * workouts that ran to the end; those count their planned length.
+     */
     val elapsedSeconds: Int? = null,
+    /** Entries from before this field stored a time only when ended early, hence the default. */
+    val endedEarly: Boolean = elapsedSeconds != null,
 ) {
-    val endedEarly: Boolean get() = elapsedSeconds != null
     val durationSeconds: Int get() = elapsedSeconds ?: config.totalSeconds
 }
 
@@ -109,9 +114,9 @@ class IntervalRepository(
         save(KEY_PRESETS, presetList, _customPresets.value)
     }
 
-    /** Records a workout; pass [elapsedSeconds] when it was ended before the last round. */
-    fun recordWorkout(config: IntervalConfig, elapsedSeconds: Int? = null) {
-        val entry = HistoryEntry(now(), config, elapsedSeconds)
+    /** Records a workout that ran for [elapsedSeconds]; [endedEarly] when it stopped before the last round. */
+    fun recordWorkout(config: IntervalConfig, elapsedSeconds: Int? = null, endedEarly: Boolean = false) {
+        val entry = HistoryEntry(now(), config, elapsedSeconds, endedEarly)
         _history.update { entries -> (listOf(entry) + entries).take(MAX_HISTORY) }
         save(KEY_HISTORY, historyList, _history.value)
     }

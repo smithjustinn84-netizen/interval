@@ -8,6 +8,7 @@ import dev.justinsmith.interval.platform.Beep
 import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.timer.Cue
+import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.Step
 import dev.justinsmith.interval.timer.WorkoutEngine
@@ -58,9 +59,14 @@ data class WorkoutUiState(
 
 /**
  * The screen's view of an engine state. [ended] marks a workout stopped early; [presetName] is the
- * preset matching its shape, if any.
+ * preset matching its shape, if any; [elapsedSeconds] is the time the timer has run.
  */
-fun WorkoutState.toUiState(running: Boolean, ended: Boolean = false, presetName: String? = null): WorkoutUiState {
+fun WorkoutState.toUiState(
+    running: Boolean,
+    ended: Boolean = false,
+    presetName: String? = null,
+    elapsedSeconds: Int = 0,
+): WorkoutUiState {
     val finished = isDone || ended
     val paused = !running && !finished
     val rounds = config.rounds
@@ -115,14 +121,10 @@ fun WorkoutState.toUiState(running: Boolean, ended: Boolean = false, presetName:
         },
         ended = ended,
         shape = "${presetName ?: "Custom"} · ${config.description}",
-        elapsed = formatClock(if (ended) elapsedSeconds else config.totalSeconds),
+        elapsed = formatClock(elapsedSeconds),
         canSavePreset = presetName == null,
     )
 }
-
-/** Whole seconds of the session behind us, the get-ready countdown included. */
-val WorkoutState.elapsedSeconds: Int
-    get() = (config.totalSeconds - ceilSeconds(sessionRemainingMillis)).coerceAtLeast(0)
 
 /**
  * Runs one workout from the saved configuration: a coroutine ticker feeds elapsed time into
@@ -137,6 +139,10 @@ class WorkoutViewModel(
     private var engine: WorkoutState
     private var running = false
     private var ended = false
+
+    /** Time the timer has run, pauses excluded: skips shorten it, added time lengthens it. */
+    private var activeMillis = 0L
+    private val activeSeconds: Int get() = ((activeMillis + MILLIS_PER_SECOND / 2) / MILLIS_PER_SECOND).toInt()
     private var ticker: Job? = null
     private val _state: MutableStateFlow<WorkoutUiState>
 
@@ -174,6 +180,8 @@ class WorkoutViewModel(
                 delay(TICK_MILLIS)
                 val elapsed = (timeSource.markNow() - last).inWholeMilliseconds
                 last += elapsed.milliseconds
+                // Capped as the engine caps a tick, so a suspended app adds no more than the clock showed.
+                activeMillis += elapsed.coerceAtMost(WorkoutEngine.MAX_TICK_MILLIS)
                 applyStep(WorkoutEngine.tick(engine, elapsed))
             }
         }
@@ -204,7 +212,7 @@ class WorkoutViewModel(
         ticker = null
         running = false
         ended = true
-        repository.recordWorkout(config, elapsedSeconds = engine.elapsedSeconds)
+        repository.recordWorkout(config, elapsedSeconds = activeSeconds, endedEarly = true)
         publish()
     }
 
@@ -217,6 +225,7 @@ class WorkoutViewModel(
         ticker?.cancel()
         ticker = null
         ended = false
+        activeMillis = 0
         val start = WorkoutEngine.start(config)
         engine = start.state
         play(start.cues)
@@ -230,7 +239,7 @@ class WorkoutViewModel(
             running = false
             ticker?.cancel()
             ticker = null
-            repository.recordWorkout(config)
+            repository.recordWorkout(config, elapsedSeconds = activeSeconds)
         }
         publish()
     }
@@ -241,7 +250,7 @@ class WorkoutViewModel(
 
     private fun uiState(running: Boolean): WorkoutUiState {
         val name = presetEntries(repository.customPresets.value).matching(config)?.name
-        return engine.toUiState(running, ended, name)
+        return engine.toUiState(running, ended, name, activeSeconds)
     }
 
     private fun play(cues: List<Cue>) {

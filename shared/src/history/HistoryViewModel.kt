@@ -25,8 +25,11 @@ data class HistoryItem(
 /** One day's workouts, under its heading ("Today", "Yesterday", "Sunday, Oct 11"). */
 data class HistorySection(val day: String, val items: List<HistoryItem>)
 
-/** One bar of the week chart: the day's initial, how long was worked out, and whether it is today. */
-data class DayTally(val label: String, val seconds: Int, val today: Boolean)
+/**
+ * One bar of the week chart: the day's initial, its name for screen readers ("Tuesday", "Today"),
+ * how long was worked out, and whether it is today.
+ */
+data class DayTally(val label: String, val name: String, val seconds: Int, val today: Boolean)
 
 data class HistoryUiState(
     val sections: List<HistorySection>,
@@ -36,6 +39,9 @@ data class HistoryUiState(
     /** Those seven days, oldest first, for the week chart. */
     val week: List<DayTally>,
 ) {
+    /** The week chart for screen readers: "Time per day this week: Tuesday 45 seconds, Today 4 minutes". */
+    val weekDescription: String get() = describeWeek(week)
+
     val isEmpty: Boolean get() = sections.isEmpty()
 
     /** The longest day's total, for scaling the week chart's bars. */
@@ -87,6 +93,7 @@ class HistoryViewModel(
             val weekday = (todayWeekday - 1 - daysAgo).mod(DAYS_PER_WEEK)
             DayTally(
                 label = WEEKDAY_INITIALS[weekday].toString(),
+                name = if (daysAgo == 0) "Today" else WEEKDAY_NAMES[weekday],
                 seconds = byDay[today - daysAgo]?.sumOf { it.durationSeconds } ?: 0,
                 today = daysAgo == 0,
             )
@@ -103,5 +110,22 @@ class HistoryViewModel(
     private companion object {
         const val DAYS_PER_WEEK = 7
         const val WEEKDAY_INITIALS = "MTWTFSS"
+        val WEEKDAY_NAMES = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
     }
+}
+
+private const val SECONDS_PER_MINUTE = 60
+
+/** The days with any time, by name, each with its time spoken as seconds under a minute and minutes from one. */
+internal fun describeWeek(week: List<DayTally>): String {
+    val days = week.filter { it.seconds > 0 }
+    if (days.isEmpty()) return "No workouts in the last 7 days"
+    return "Time per day this week: " + days.joinToString(", ") { "${it.name} ${spokenDuration(it.seconds)}" }
+}
+
+private fun spokenDuration(seconds: Int): String = if (seconds < SECONDS_PER_MINUTE) {
+    "$seconds second${if (seconds == 1) "" else "s"}"
+} else {
+    val minutes = (seconds + SECONDS_PER_MINUTE / 2) / SECONDS_PER_MINUTE
+    "$minutes minute${if (minutes == 1) "" else "s"}"
 }

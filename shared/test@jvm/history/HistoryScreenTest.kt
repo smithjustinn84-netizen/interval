@@ -14,7 +14,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 private val week = listOf("M", "T", "W", "T", "F", "S", "S").mapIndexed { i, label ->
-    DayTally(label, seconds = if (i == 6) 355 else 0, today = i == 6)
+    DayTally(label, if (i == 6) "Today" else "Day $i", seconds = if (i == 6) 355 else 0, today = i == 6)
 }
 
 private val oneWorkout = HistoryUiState(
@@ -42,6 +42,7 @@ class HistoryScreenTest {
         onNodeWithText("Today").assertExists()
         onNodeWithText("Tabata").assertExists()
         onNodeWithText("Last 7 days").assertExists()
+        onNodeWithContentDescription("Time per day this week: Today 6 minutes").assertExists()
     }
 
     @Test

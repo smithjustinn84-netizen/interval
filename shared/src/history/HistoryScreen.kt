@@ -179,10 +179,8 @@ private fun WeekSummary(state: HistoryUiState, modifier: Modifier = Modifier) {
 private fun WeekChart(state: HistoryUiState, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val max = state.weekMaxSeconds
-    val description = state.week.filter { it.seconds > 0 }
-        .joinToString(", ") { "${it.label} ${it.seconds / SECONDS_PER_MINUTE} min" }
     Row(
-        modifier.fillMaxWidth().semantics { contentDescription = "Minutes per day this week: $description" },
+        modifier.fillMaxWidth().semantics { contentDescription = state.weekDescription },
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
         verticalAlignment = Alignment.Bottom,
     ) {
@@ -218,8 +216,6 @@ private fun WeekChart(state: HistoryUiState, modifier: Modifier = Modifier) {
     }
 }
 
-private const val SECONDS_PER_MINUTE = 60
-
 @Composable
 private fun HistoryRow(item: HistoryItem, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
@@ -242,13 +238,13 @@ private fun HistoryRow(item: HistoryItem, modifier: Modifier = Modifier) {
 
 /** Thursday to Wednesday: a hangboard session, the two from yesterday, and today's Tabata. */
 private val PreviewWeek = listOf(
-    DayTally("T", seconds = 320, today = false),
-    DayTally("F", seconds = 0, today = false),
-    DayTally("S", seconds = 0, today = false),
-    DayTally("S", seconds = 0, today = false),
-    DayTally("M", seconds = 0, today = false),
-    DayTally("T", seconds = 860, today = false),
-    DayTally("W", seconds = 240, today = true),
+    DayTally("T", "Thursday", seconds = 320, today = false),
+    DayTally("F", "Friday", seconds = 0, today = false),
+    DayTally("S", "Saturday", seconds = 0, today = false),
+    DayTally("S", "Sunday", seconds = 0, today = false),
+    DayTally("M", "Monday", seconds = 0, today = false),
+    DayTally("T", "Tuesday", seconds = 860, today = false),
+    DayTally("W", "Today", seconds = 240, today = true),
 )
 
 @PreviewFormFactors

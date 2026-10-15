@@ -788,5 +788,5 @@ private fun WorkoutScreenPreview() {
 private fun WorkoutScreenSummaryPreview() {
     val done = generateSequence(WorkoutEngine.start(IntervalConfig()).state) { WorkoutEngine.advance(it).state }
         .first { it.isDone }
-    WorkoutPreview(done.toUiState(running = false))
+    WorkoutPreview(done.toUiState(running = false, elapsedSeconds = done.config.totalSeconds))
 }

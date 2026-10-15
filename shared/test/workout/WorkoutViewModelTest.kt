@@ -55,7 +55,30 @@ class WorkoutViewModelTest {
             player.spoken,
         )
         assertEquals(listOf(Haptic.Work, Haptic.Rest, Haptic.Work, Haptic.Finished), player.haptics)
-        assertEquals(7L, repository.history.value.single().finishedAtEpochMillis)
+        assertEquals("0:15", state.elapsed)
+        val entry = repository.history.value.single()
+        assertEquals(7L, entry.finishedAtEpochMillis)
+        assertEquals(15, entry.elapsedSeconds)
+        assertFalse(entry.endedEarly)
+    }
+
+    @Test
+    fun `time spent counts only the time the timer ran`() = runTest(dispatcher) {
+        val viewModel = WorkoutViewModel(repository, player, testScheduler.timeSource)
+        advanceTimeBy(2_000 + WorkoutViewModel.TICK_MILLIS)
+        runCurrent()
+        viewModel.pause()
+        advanceTimeBy(10_000)
+        viewModel.resume()
+        // Skipping the rest of the work interval adds nothing.
+        viewModel.skip()
+
+        viewModel.endEarly()
+        assertEquals("0:02", viewModel.state.value.elapsed)
+        assertEquals("1 of 2 rounds · 0:02", viewModel.state.value.summary)
+        val entry = repository.history.value.single()
+        assertEquals(2, entry.elapsedSeconds)
+        assertTrue(entry.endedEarly)
     }
 
     @Test
@@ -130,6 +153,7 @@ class WorkoutViewModelTest {
         assertEquals("1 of 2 rounds · 0:06", state.summary)
         assertEquals("0:06", state.elapsed)
         assertEquals(6, repository.history.value.single().elapsedSeconds)
+        assertTrue(repository.history.value.single().endedEarly)
 
         viewModel.resume()
         assertFalse(viewModel.state.value.running)
@@ -139,6 +163,8 @@ class WorkoutViewModelTest {
     fun `a summary offers saving only a shape no preset has`() = runTest(dispatcher) {
         val viewModel = WorkoutViewModel(repository, player, testScheduler.timeSource)
         repeat(3) { viewModel.skip() }
+        assertEquals("0:00", viewModel.state.value.elapsed)
+        assertEquals(0, repository.history.value.single().elapsedSeconds)
         assertTrue(viewModel.state.value.canSavePreset)
         assertEquals("Custom · 5s on · 5s off · ×2", viewModel.state.value.shape)
         viewModel.saveAsPreset("Short")

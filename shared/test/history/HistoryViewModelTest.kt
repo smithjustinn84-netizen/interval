@@ -39,7 +39,7 @@ class HistoryViewModelTest {
         repository.recordWorkout(builtInPresets.first().config)
         clock = 29 * DAY
         repository.recordWorkout(custom)
-        repository.recordWorkout(builtInPresets.first().config, elapsedSeconds = 90)
+        repository.recordWorkout(builtInPresets.first().config, elapsedSeconds = 90, endedEarly = true)
         clock = 30 * DAY
 
         val sections = viewModel.state.value.sections
@@ -80,6 +80,35 @@ class HistoryViewModelTest {
         assertEquals(listOf(240, 0, 0, 0, 0, 0, 90), week.map { it.seconds })
         assertEquals(listOf(false, false, false, false, false, false, true), week.map { it.today })
         assertEquals(240, viewModel.state.value.weekMaxSeconds)
+        assertEquals(
+            listOf("Thursday", "Friday", "Saturday", "Sunday", "Monday", "Tuesday", "Today"),
+            week.map { it.name },
+        )
+        // 90 seconds rounds to 2 minutes.
+        assertEquals(
+            "Time per day this week: Thursday 4 minutes, Today 2 minutes",
+            viewModel.state.value.weekDescription,
+        )
+    }
+
+    @Test
+    fun `the week chart reads each day's time in seconds or minutes`() {
+        clock = 29 * DAY + DAY / 2
+        repository.recordWorkout(builtInPresets.first().config, elapsedSeconds = 45)
+        clock = 30 * DAY + DAY / 2
+        repository.recordWorkout(builtInPresets.first().config, elapsedSeconds = 1)
+        assertEquals(
+            "Time per day this week: Tuesday 45 seconds, Today 1 second",
+            viewModel.state.value.weekDescription,
+        )
+    }
+
+    @Test
+    fun `a week with no workouts says so`() {
+        clock = 20 * DAY
+        repository.recordWorkout(IntervalConfig())
+        clock = 30 * DAY
+        assertEquals("No workouts in the last 7 days", viewModel.state.value.weekDescription)
     }
 
     @Test

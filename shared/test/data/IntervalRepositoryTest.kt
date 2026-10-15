@@ -5,6 +5,8 @@ import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class IntervalRepositoryTest {
     private val store = FakeKeyValueStore()
@@ -51,6 +53,28 @@ class IntervalRepositoryTest {
         assertEquals(clock, history.first().finishedAtEpochMillis)
         repository.clearHistory()
         assertEquals(emptyList(), repository().history.value)
+    }
+
+    @Test
+    fun `history saved before times were recorded for every workout still reads right`() {
+        // The old format: a time only when ended early, and no endedEarly field.
+        store.values["history"] = """[
+            {"finishedAtEpochMillis":2,"config":{"workSeconds":20},"elapsedSeconds":90},
+            {"finishedAtEpochMillis":1,"config":{"workSeconds":20}}
+        ]"""
+        val (ended, full) = repository().history.value
+        assertTrue(ended.endedEarly)
+        assertEquals(90, ended.durationSeconds)
+        assertFalse(full.endedEarly)
+        assertEquals(full.config.totalSeconds, full.durationSeconds)
+    }
+
+    @Test
+    fun `a finished workout keeps its time and is not read back as ended early`() {
+        repository().recordWorkout(IntervalConfig(), elapsedSeconds = 42)
+        val entry = repository().history.value.single()
+        assertEquals(42, entry.durationSeconds)
+        assertFalse(entry.endedEarly)
     }
 
     @Test

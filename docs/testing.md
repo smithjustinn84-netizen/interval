@@ -29,7 +29,7 @@ the same common UI code.
 ```
 
 CI (`.github/workflows/ci.yml`) runs the JVM and Android tests on Linux and the iOS tests on macOS.
-The UI tests render offscreen with Skiko. They have been verified on macOS; the first Linux CI run will confirm they need no display there.
+The UI tests render offscreen with Skiko and need no display, including on the Linux runner.
 
 ## Test infrastructure
 
