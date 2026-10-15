@@ -54,7 +54,7 @@ private val lightPalette = IntervalPalette(
     surface = Color(0xFFFFFFFF),
     surfaceVariant = Color(0xFFE3E8EF),
     text = Color(0xFF141A22),
-    textDim = Color(0xFF5F6B7A),
+    textDim = Color(0xFF5E6978),
     line = Color(0xFFD5DCE6),
     accent = Color(0xFF2456E6),
 )
@@ -66,7 +66,7 @@ private val darkPalette = IntervalPalette(
     text = Color(0xFFF1F4F8),
     textDim = Color(0xFF97A3B3),
     line = Color(0xFF2C3541),
-    accent = Color(0xFF4D7CFF),
+    accent = Color(0xFF356AFF),
 )
 
 private val localPalette = staticCompositionLocalOf { lightPalette }
