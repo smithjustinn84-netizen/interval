@@ -61,6 +61,24 @@ object Sizes {
     /** Maximum width of the setup column. */
     val content = 460.dp
 
+    /** Maximum width of the Timer tab's right-hand column of choices, when the window has room. */
+    val contentWide = 760.dp
+
+    /** Narrowest Intervals section that lays its rows out in two columns. */
+    val intervalGridMin = 640.dp
+
+    /** Narrowest column of the Presets and History grids; wider windows fit more columns. */
+    val listColumn = 360.dp
+
+    /** Maximum width of the Presets and History grids: two columns at most, so rows stay readable. */
+    val listMax = 960.dp
+
+    /** Narrowest window that gets a navigation rail instead of a bottom bar, as Material's medium width. */
+    val railMinWidth = 600.dp
+
+    /** The line between the content and the bottom navigation bar. */
+    val hairline = 1.dp
+
     /**
      * Wider-than-tall windows get the landscape layouts; those shorter than this are phones held
      * sideways, which keep the workout clock at its smaller landscape cap.

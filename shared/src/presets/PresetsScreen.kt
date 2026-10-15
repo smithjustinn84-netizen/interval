@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -35,7 +37,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.timer.Preset
@@ -47,6 +48,7 @@ import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.PhaseColors
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SavePresetDialog
 import dev.justinsmith.interval.ui.Sizes
@@ -86,11 +88,13 @@ fun PresetsScreen(
 ) {
     var saving by rememberSaveable { mutableStateOf(false) }
     Box(modifier.fillMaxSize().background(IntervalTheme.palette.background), contentAlignment = Alignment.TopCenter) {
-        LazyColumn(
-            Modifier.widthIn(max = Sizes.content).fillMaxSize(),
+        // One column on a phone; wider windows put the two groups side by side.
+        LazyVerticalStaggeredGrid(
+            columns = StaggeredGridCells.Adaptive(Sizes.listColumn),
+            modifier = Modifier.widthIn(max = Sizes.listMax).fillMaxSize(),
             contentPadding = PaddingValues(bottom = Spacing.space24),
         ) {
-            item {
+            item(span = StaggeredGridItemSpan.FullLine) {
                 TitleBar("Presets") {
                     IconAction(
                         IntervalIcons.Add,
@@ -100,33 +104,37 @@ fun PresetsScreen(
                     )
                 }
             }
-            item { GroupLabel("Built-in", Modifier.padding(horizontal = Spacing.space16)) }
             item {
-                ListCard(Modifier.padding(horizontal = Spacing.space16)) {
-                    state.builtIn.forEachIndexed { index, item ->
-                        if (index > 0) RowDivider()
-                        PresetRow(item, onClick = { onApply(item.preset) })
+                Column(Modifier.padding(horizontal = Spacing.space16)) {
+                    GroupLabel("Built-in")
+                    ListCard {
+                        state.builtIn.forEachIndexed { index, item ->
+                            if (index > 0) RowDivider()
+                            PresetRow(item, onClick = { onApply(item.preset) })
+                        }
                     }
                 }
             }
-            item { GroupLabel("Yours", Modifier.padding(horizontal = Spacing.space16)) }
             item {
-                ListCard(Modifier.padding(horizontal = Spacing.space16)) {
-                    if (state.custom.isEmpty()) {
-                        Text(
-                            "Presets you save show up here.",
-                            style = IntervalTheme.type.body,
-                            color = IntervalTheme.palette.textDim,
-                            modifier = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space14),
-                        )
-                    }
-                    state.custom.forEachIndexed { index, item ->
-                        if (index > 0) RowDivider()
-                        // Keyed so a deleted row's swipe state doesn't carry over to the row moving up.
-                        key(item.preset) {
-                            DeletablePresetRow(item, onClick = {
-                                onApply(item.preset)
-                            }, onDelete = { onDelete(item.preset) })
+                Column(Modifier.padding(horizontal = Spacing.space16)) {
+                    GroupLabel("Yours")
+                    ListCard {
+                        if (state.custom.isEmpty()) {
+                            Text(
+                                "Presets you save show up here.",
+                                style = IntervalTheme.type.body,
+                                color = IntervalTheme.palette.textDim,
+                                modifier = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space14),
+                            )
+                        }
+                        state.custom.forEachIndexed { index, item ->
+                            if (index > 0) RowDivider()
+                            // Keyed so a deleted row's swipe state doesn't carry over to the row moving up.
+                            key(item.preset) {
+                                DeletablePresetRow(item, onClick = {
+                                    onApply(item.preset)
+                                }, onDelete = { onDelete(item.preset) })
+                            }
                         }
                     }
                 }
@@ -229,7 +237,7 @@ private fun PresetRow(
     }
 }
 
-@Preview
+@PreviewFormFactors
 @Composable
 private fun PresetsScreenPreview() {
     fun row(preset: Preset, selected: Boolean = false) =

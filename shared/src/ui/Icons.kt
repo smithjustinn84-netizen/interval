@@ -34,6 +34,7 @@ object IntervalIcons {
     )
     val Add: ImageVector = lineIcon("Add", "M12 5v14M5 12h14")
     val Back: ImageVector = lineIcon("Back", "M19 12H5M12 19l-7-7 7-7")
+    val Close: ImageVector = lineIcon("Close", "M6 6l12 12M18 6L6 18")
     val Chevron: ImageVector = lineIcon("Chevron", "M9 6l6 6-6 6")
     val Check: ImageVector = lineIcon("Check", "M5 12l5 5L20 7")
     val More: ImageVector = ImageVector.Builder("More", 24.dp, 24.dp, VIEWPORT, VIEWPORT).apply {

@@ -1,22 +1,31 @@
+@file:OptIn(ExperimentalMaterial3AdaptiveApi::class)
+
 package dev.justinsmith.interval
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.plus
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
+import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
+import androidx.compose.material3.adaptive.navigation3.SupportingPaneSceneStrategy
+import androidx.compose.material3.adaptive.navigation3.rememberSupportingPaneSceneStrategy
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavBackStack
@@ -41,8 +50,10 @@ import dev.justinsmith.interval.platform.SystemBarIcons
 import dev.justinsmith.interval.presets.PresetsRoute
 import dev.justinsmith.interval.settings.SettingsRoute
 import dev.justinsmith.interval.ui.IntervalTheme
-import dev.justinsmith.interval.ui.NavBar
-import dev.justinsmith.interval.ui.NavRail
+import dev.justinsmith.interval.ui.NavigationItems
+import dev.justinsmith.interval.ui.Sizes
+import dev.justinsmith.interval.ui.navigationSuiteColors
+import dev.justinsmith.interval.ui.navigationSuiteType
 import dev.justinsmith.interval.workout.WorkoutRoute
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.plus
@@ -92,65 +103,94 @@ fun App() {
 /**
  * One back stack: the Timer tab at the root, at most one other tab above it, then whatever was
  * pushed (Settings, Workout). Back from Presets or History returns to Timer, as both platforms
- * expect. The navigation bar shows only while a tab is on top; sideways it becomes a rail.
+ * expect. The navigation bar or rail shows only while a tab is on top, or while Settings sits beside
+ * Timer: windows of Material's expanded width and up open Settings as a supporting pane.
  */
 @Composable
 private fun AppShell(backStack: NavBackStack<NavKey>) {
     val top = backStack.lastOrNull()
-    val currentTab = top as? Tab
+    // Side by side only: Material would also stack Timer over Settings on a tall tablet in portrait,
+    // which leaves both too short. There Settings opens full screen, as on a phone.
+    val directive = calculatePaneScaffoldDirective(currentWindowAdaptiveInfoV2())
+        .copy(maxVerticalPartitions = 1, verticalPartitionSpacerSize = 0.dp)
+    val supportingPane = rememberSupportingPaneSceneStrategy<NavKey>(directive = directive)
+    val twoPane = directive.maxHorizontalPartitions > 1
+    val currentTab = top as? Tab ?: TimerTab.takeIf { twoPane && top == Settings }
     val selectTab = { tab: Tab -> backStack.selectTab(tab) }
-    BoxWithConstraints(Modifier.fillMaxSize().background(IntervalTheme.palette.background)) {
-        val landscape = maxWidth > maxHeight
+    val palette = IntervalTheme.palette
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        // Full-screen destinations get no navigation area at all, rather than one animating away, so
+        // the workout lays out once at its full size.
+        val type = if (currentTab == null) NavigationSuiteType.None else navigationSuiteType(maxWidth, maxHeight)
+        val bar = type == NavigationSuiteType.NavigationBar
         // The bar or rail takes the system insets on its side; full-screen destinations (Settings,
         // Workout) handle their own, so the workout's colour runs under the system bars.
         val insets = when {
             currentTab == null -> null
-            landscape -> WindowInsets.safeDrawing.only(WindowInsetsSides.Vertical + WindowInsetsSides.End)
-            else -> WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+            bar -> WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+            else -> WindowInsets.safeDrawing.only(WindowInsetsSides.Vertical + WindowInsetsSides.End)
         }
-        // NavDisplay stays at one place in the tree whatever the bars do, so its entries keep their state.
-        Row(Modifier.fillMaxSize()) {
-            if (currentTab != null && landscape) NavRail(currentTab, selectTab, Modifier.fillMaxHeight())
-            Column(Modifier.weight(1f).fillMaxHeight()) {
-                NavDisplay(
-                    backStack = backStack,
-                    onBack = { if (backStack.size > 1) backStack.removeLastOrNull() },
-                    // Passing this replaces NavDisplay's default list, so the saveable-state holder is
-                    // repeated. The ViewModel store decorator goes last: it needs the holder above it.
-                    entryDecorators = listOf(
-                        rememberSaveableStateHolderNavEntryDecorator(),
-                        rememberViewModelStoreNavEntryDecorator(),
+        NavigationSuiteScaffold(
+            navigationItems = { currentTab?.let { NavigationItems(it, type, selectTab) } },
+            navigationSuiteType = type,
+            navigationSuiteColors = navigationSuiteColors(),
+            containerColor = palette.background,
+            contentColor = palette.text,
+        ) {
+            // NavDisplay stays at one place in the tree whatever the bars do, so its entries keep their state.
+            NavDisplay(
+                backStack = backStack,
+                onBack = { if (backStack.size > 1) backStack.removeLastOrNull() },
+                // Passing this replaces NavDisplay's default list, so the saveable-state holder is
+                // repeated. The ViewModel store decorator goes last: it needs the holder above it.
+                entryDecorators = listOf(
+                    rememberSaveableStateHolderNavEntryDecorator(),
+                    rememberViewModelStoreNavEntryDecorator(),
+                ),
+                sceneStrategies = listOf(supportingPane),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(if (bar) Modifier.hairlineAtBottom(palette.line) else Modifier)
+                    .then(
+                        if (insets != null) {
+                            Modifier.windowInsetsPadding(insets).consumeWindowInsets(insets)
+                        } else {
+                            Modifier
+                        },
                     ),
-                    modifier = Modifier
-                        .weight(1f)
-                        .then(
-                            if (insets !=
-                                null
-                            ) {
-                                Modifier.windowInsetsPadding(insets).consumeWindowInsets(insets)
-                            } else {
-                                Modifier
+                entryProvider = entryProvider {
+                    entry<TimerTab>(metadata = SupportingPaneSceneStrategy.mainPane()) {
+                        TimerRoute(
+                            // A double tap on Start must not stack two workouts.
+                            onStart = { if (backStack.lastOrNull() != Workout) backStack.add(Workout) },
+                            // Beside Timer, the gear closes Settings again.
+                            onOpenSettings = {
+                                when {
+                                    backStack.lastOrNull() != Settings -> backStack.add(Settings)
+                                    twoPane -> backStack.removeLastOrNull()
+                                }
                             },
-                        ),
-                    entryProvider = entryProvider {
-                        entry<TimerTab> {
-                            TimerRoute(
-                                // A double tap on Start must not stack two workouts.
-                                onStart = { if (backStack.lastOrNull() != Workout) backStack.add(Workout) },
-                                onOpenSettings = { if (backStack.lastOrNull() != Settings) backStack.add(Settings) },
-                                onSeeAllPresets = { selectTab(PresetsTab) },
-                            )
-                        }
-                        entry<PresetsTab> { PresetsRoute(onShowTimer = { selectTab(TimerTab) }) }
-                        entry<HistoryTab> { HistoryRoute() }
-                        entry<Settings> { SettingsRoute(onBack = { backStack.removeLastOrNull() }) }
-                        entry<Workout> { WorkoutRoute(onExit = { backStack.removeLastOrNull() }) }
-                    },
-                )
-                if (currentTab != null && !landscape) NavBar(currentTab, selectTab)
-            }
+                            onSeeAllPresets = { selectTab(PresetsTab) },
+                        )
+                    }
+                    entry<PresetsTab> { PresetsRoute(onShowTimer = { selectTab(TimerTab) }) }
+                    entry<HistoryTab> { HistoryRoute() }
+                    entry<Settings>(metadata = SupportingPaneSceneStrategy.supportingPane()) {
+                        SettingsRoute(onBack = { backStack.removeLastOrNull() }, inPane = twoPane)
+                    }
+                    entry<Workout> { WorkoutRoute(onExit = { backStack.removeLastOrNull() }) }
+                },
+            )
         }
     }
+}
+
+/** The line along the top of the bottom bar, drawn over the bottom edge of the content above it. */
+private fun Modifier.hairlineAtBottom(color: Color): Modifier = drawWithContent {
+    drawContent()
+    val stroke = Sizes.hairline.toPx()
+    val y = size.height - stroke / 2
+    drawLine(color, Offset(0f, y), Offset(size.width, y), stroke)
 }
 
 /** Shows [tab]: Timer is the root, so it pops back to it; any other tab replaces what is above Timer. */

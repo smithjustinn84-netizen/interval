@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
@@ -24,7 +26,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.platform.epochMillisNow
@@ -35,6 +36,7 @@ import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
@@ -59,11 +61,13 @@ fun HistoryScreen(state: HistoryUiState, onClear: () -> Unit, modifier: Modifier
     var menu by remember { mutableStateOf(false) }
     var confirming by rememberSaveable { mutableStateOf(false) }
     Box(modifier.fillMaxSize().background(IntervalTheme.palette.background), contentAlignment = Alignment.TopCenter) {
-        LazyColumn(
-            Modifier.widthIn(max = Sizes.content).fillMaxSize(),
+        // One column on a phone; wider windows lay the days out side by side.
+        LazyVerticalStaggeredGrid(
+            columns = StaggeredGridCells.Adaptive(Sizes.listColumn),
+            modifier = Modifier.widthIn(max = Sizes.listMax).fillMaxSize(),
             contentPadding = PaddingValues(bottom = Spacing.space24),
         ) {
-            item {
+            item(span = StaggeredGridItemSpan.FullLine) {
                 TitleBar("History") {
                     Box {
                         IconAction(IntervalIcons.More, "More options", onClick = {
@@ -82,7 +86,7 @@ fun HistoryScreen(state: HistoryUiState, onClear: () -> Unit, modifier: Modifier
                 }
             }
             if (state.isEmpty) {
-                item {
+                item(span = StaggeredGridItemSpan.FullLine) {
                     ListCard(Modifier.padding(horizontal = Spacing.space16)) {
                         Text(
                             "Finished workouts show up here.",
@@ -93,15 +97,20 @@ fun HistoryScreen(state: HistoryUiState, onClear: () -> Unit, modifier: Modifier
                     }
                 }
             } else {
-                item { WeekSummary(state, Modifier.padding(horizontal = Spacing.space16)) }
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    WeekSummary(state, Modifier.padding(horizontal = Spacing.space16))
+                }
             }
             state.sections.forEach { section ->
-                item(key = section.day) { GroupLabel(section.day, Modifier.padding(horizontal = Spacing.space16)) }
-                item(key = "${section.day} rows") {
-                    ListCard(Modifier.padding(horizontal = Spacing.space16)) {
-                        section.items.forEachIndexed { index, item ->
-                            if (index > 0) RowDivider()
-                            HistoryRow(item)
+                // A day is one cell, its label with its card, so a column never splits a day.
+                item(key = section.day) {
+                    Column(Modifier.padding(horizontal = Spacing.space16)) {
+                        GroupLabel(section.day)
+                        ListCard {
+                            section.items.forEachIndexed { index, item ->
+                                if (index > 0) RowDivider()
+                                HistoryRow(item)
+                            }
                         }
                     }
                 }
@@ -168,7 +177,7 @@ private fun HistoryRow(item: HistoryItem, modifier: Modifier = Modifier) {
     }
 }
 
-@Preview
+@PreviewFormFactors
 @Composable
 private fun HistoryScreenPreview() {
     IntervalTheme {

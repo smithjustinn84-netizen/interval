@@ -10,6 +10,9 @@ androidx-lifecycle = "2.11.0"
 # port, released on different cadences. navigation3-ui 1.1.2 was built against navigation3-runtime 1.1.7.
 androidx-navigation3-runtime = "1.1.7"
 androidx-navigation3-ui = "1.1.2"
+# The nav suite must match the toolchain's material3 (1.12.0-alpha03); a newer one drags material3 along.
+compose-material3-adaptive = "1.3.0"
+compose-material3-navigation-suite = "1.12.0-alpha03"
 # compose-rules 0.6.8 is built against detekt 2.0.0-alpha.6; bump the two together.
 compose-rules = "0.6.8"
 detekt = "2.0.0-alpha.6"
@@ -30,6 +33,8 @@ androidx-lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecy
 androidx-lifecycle-viewmodel-navigation3 = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "androidx-lifecycle" }
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "androidx-navigation3-runtime" }
 androidx-navigation3-ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "androidx-navigation3-ui" }
+compose-material3-adaptive-navigation3 = { module = "org.jetbrains.compose.material3.adaptive:adaptive-navigation3", version.ref = "compose-material3-adaptive" }
+compose-material3-navigation-suite = { module = "org.jetbrains.compose.material3:material3-adaptive-navigation-suite", version.ref = "compose-material3-navigation-suite" }
 compose-rules-detekt = { module = "io.nlopez.compose.rules:detekt", version.ref = "compose-rules" }
 detekt-cli = { module = "dev.detekt:detekt-cli", version.ref = "detekt" }
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }

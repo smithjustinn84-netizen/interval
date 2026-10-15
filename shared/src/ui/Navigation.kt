@@ -1,22 +1,17 @@
 package dev.justinsmith.interval.ui
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailItem
-import androidx.compose.material3.NavigationRailItemDefaults
+import androidx.compose.material3.ShortNavigationBarItemDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteColors
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteDefaults
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteItem
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import dev.justinsmith.interval.nav.HistoryTab
 import dev.justinsmith.interval.nav.PresetsTab
 import dev.justinsmith.interval.nav.Tab
@@ -30,52 +25,47 @@ private val Tabs = listOf(
     TabSpec(HistoryTab, "History", IntervalIcons.History),
 )
 
-/** The bottom navigation bar: Material 3's, in the app's colours, over a hairline. */
-@Composable
-fun NavBar(current: Tab, onSelect: (Tab) -> Unit, modifier: Modifier = Modifier) {
-    val palette = IntervalTheme.palette
-    Column(modifier) {
-        HorizontalDivider(color = palette.line)
-        NavigationBar(containerColor = palette.surface, tonalElevation = 0.dp) {
-            Tabs.forEach { spec ->
-                NavigationBarItem(
-                    selected = spec.tab == current,
-                    onClick = { onSelect(spec.tab) },
-                    icon = { Icon(spec.icon, contentDescription = null, modifier = Modifier.size(Sizes.icon)) },
-                    label = { Text(spec.label, style = IntervalTheme.type.navLabel) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = palette.accent,
-                        selectedTextColor = palette.text,
-                        indicatorColor = palette.accentTint,
-                        unselectedIconColor = palette.textDim,
-                        unselectedTextColor = palette.textDim,
-                    ),
-                )
-            }
-        }
+/**
+ * The navigation area for a window of [width] × [height]: a bottom bar only for portrait windows
+ * narrower than [Sizes.railMinWidth], a rail otherwise. Material's default would also give a phone
+ * held sideways a bar, since its height is compact; the rail keeps the little height there is.
+ */
+fun navigationSuiteType(width: Dp, height: Dp): NavigationSuiteType =
+    if (width >= Sizes.railMinWidth ||
+        width > height
+    ) {
+        NavigationSuiteType.NavigationRail
+    } else {
+        NavigationSuiteType.NavigationBar
     }
-}
 
-/** The navigation rail that replaces [NavBar] when the window is wider than tall. */
+/** The bar's and the rail's containers in the app's colours. */
 @Composable
-fun NavRail(current: Tab, onSelect: (Tab) -> Unit, modifier: Modifier = Modifier) {
+fun navigationSuiteColors(): NavigationSuiteColors = NavigationSuiteDefaults.colors(
+    navigationBarContainerColor = IntervalTheme.palette.surface,
+    navigationRailContainerColor = IntervalTheme.palette.surface,
+)
+
+/** The tabs as navigation suite items, for whichever bar or rail [type] is showing. */
+@Suppress("detekt.MultipleEmitters", "detekt.ModifierMissing") // The scaffold's item slot: one item per tab.
+@Composable
+fun NavigationItems(current: Tab, type: NavigationSuiteType, onSelect: (Tab) -> Unit) {
     val palette = IntervalTheme.palette
-    NavigationRail(modifier, containerColor = palette.surface) {
-        Spacer(Modifier.height(Spacing.space16))
-        Tabs.forEach { spec ->
-            NavigationRailItem(
-                selected = spec.tab == current,
-                onClick = { onSelect(spec.tab) },
-                icon = { Icon(spec.icon, contentDescription = null, modifier = Modifier.size(Sizes.icon)) },
-                label = { Text(spec.label, style = IntervalTheme.type.navLabel) },
-                colors = NavigationRailItemDefaults.colors(
-                    selectedIconColor = palette.accent,
-                    selectedTextColor = palette.text,
-                    indicatorColor = palette.accentTint,
-                    unselectedIconColor = palette.textDim,
-                    unselectedTextColor = palette.textDim,
-                ),
-            )
-        }
+    val colors = ShortNavigationBarItemDefaults.colors(
+        selectedIconColor = palette.accent,
+        selectedTextColor = palette.text,
+        selectedIndicatorColor = palette.accentTint,
+        unselectedIconColor = palette.textDim,
+        unselectedTextColor = palette.textDim,
+    )
+    Tabs.forEach { spec ->
+        NavigationSuiteItem(
+            selected = spec.tab == current,
+            onClick = { onSelect(spec.tab) },
+            icon = { Icon(spec.icon, contentDescription = null, modifier = Modifier.size(Sizes.icon)) },
+            label = { Text(spec.label, style = IntervalTheme.type.navLabel) },
+            navigationSuiteType = type,
+            colors = colors,
+        )
     }
 }

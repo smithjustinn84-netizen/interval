@@ -41,7 +41,7 @@ style:
     excludeGuardClauses: true
   UnusedPrivateFunction:
     # Previews are private and only reached by the IDE's preview tooling.
-    ignoreAnnotated: ['Preview']
+    ignoreAnnotated: ['Preview', 'PreviewFormFactors']
 
 # Compose rules (io.nlopez.compose.rules:detekt). Rules that need type resolution are skipped, since the
 # plugin runs detekt in light mode.

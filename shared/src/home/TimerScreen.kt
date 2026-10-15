@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalGridApi::class)
+
 package dev.justinsmith.interval.home
 
 import androidx.compose.foundation.background
@@ -7,6 +9,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalGridApi
+import androidx.compose.foundation.layout.Grid
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -40,7 +44,6 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.timer.ConfigField
@@ -55,6 +58,7 @@ import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SavePresetDialog
 import dev.justinsmith.interval.ui.Sizes
@@ -135,7 +139,7 @@ fun TimerScreen(
                 Column(
                     Modifier
                         .weight(1f, fill = false)
-                        .widthIn(max = Sizes.content)
+                        .widthIn(max = Sizes.contentWide)
                         .fillMaxHeight()
                         .verticalScroll(rememberScrollState())
                         .padding(top = Spacing.space16, bottom = Spacing.space16),
@@ -146,7 +150,8 @@ fun TimerScreen(
                 }
             }
         } else {
-            Column(Modifier.align(Alignment.TopCenter).widthIn(max = Sizes.content).fillMaxSize()) {
+            // A tablet or unfolded foldable held upright widens the column, and the Intervals with it.
+            Column(Modifier.align(Alignment.TopCenter).widthIn(max = Sizes.contentWide).fillMaxSize()) {
                 titleBar()
                 Column(
                     Modifier.weight(1f).verticalScroll(rememberScrollState()),
@@ -288,10 +293,33 @@ private fun Intervals(config: IntervalConfig, onEdit: (ConfigField) -> Unit, mod
             color = IntervalTheme.palette.text,
             modifier = Modifier.semantics { heading() },
         )
-        ListCard {
-            TimerFields.forEachIndexed { index, field ->
-                if (index > 0) RowDivider()
-                IntervalRow(field, field.format(config.valueOf(field)), onClick = { onEdit(field) })
+        BoxWithConstraints {
+            if (maxWidth >= Sizes.intervalGridMin) {
+                // Room for two columns: Work and Rest side by side, Rounds across both, each its own card.
+                Grid(config = {
+                    column(1.fr)
+                    column(1.fr)
+                    gap(Spacing.space8)
+                }) {
+                    TimerFields.forEach { field ->
+                        IntervalRow(
+                            field,
+                            field.format(config.valueOf(field)),
+                            onClick = { onEdit(field) },
+                            modifier = Modifier
+                                .gridItem(columnSpan = if (field == ConfigField.Rounds) 2 else 1)
+                                .clip(Corners.radius18)
+                                .background(IntervalTheme.palette.surface),
+                        )
+                    }
+                }
+            } else {
+                ListCard {
+                    TimerFields.forEachIndexed { index, field ->
+                        if (index > 0) RowDivider()
+                        IntervalRow(field, field.format(config.valueOf(field)), onClick = { onEdit(field) })
+                    }
+                }
             }
         }
     }
@@ -354,14 +382,8 @@ private fun TimerPreview() {
     }
 }
 
-@Preview
+@PreviewFormFactors
 @Composable
 private fun TimerScreenPreview() {
-    TimerPreview()
-}
-
-@Preview(widthDp = 844, heightDp = 390)
-@Composable
-private fun TimerScreenLandscapePreview() {
     TimerPreview()
 }

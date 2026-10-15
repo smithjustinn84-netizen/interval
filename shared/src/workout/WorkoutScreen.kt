@@ -5,6 +5,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,8 +37,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -46,7 +54,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -64,6 +71,7 @@ import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PhaseColors
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.SavePresetDialog
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
@@ -97,6 +105,9 @@ fun WorkoutRoute(onExit: () -> Unit, modifier: Modifier = Modifier) {
  *
  * End, or the system back gesture, pauses and asks first. A workout that ends, early or not, turns
  * into its summary.
+ *
+ * With a keyboard (desktop, a Chromebook, a tablet's keyboard cover): Space or Enter pauses and
+ * resumes, the arrow keys go back and skip, and Escape ends, the same as the End button.
  */
 @Composable
 fun WorkoutScreen(
@@ -127,7 +138,23 @@ fun WorkoutScreen(
         else -> PhaseColors.of(state.phase)
     }
     val background by animateColorAsState(target, tween(Motion.PHASE_CROSSFADE_MILLIS), label = "phase")
-    BoxWithConstraints(modifier.fillMaxSize().background(background)) {
+    val focus = remember { FocusRequester() }
+    // Key events only reach Compose through a focused node; take focus back after the dialog closes.
+    LaunchedEffect(confirmingEnd) { if (!confirmingEnd) focus.requestFocus() }
+    BoxWithConstraints(
+        modifier
+            .fillMaxSize()
+            .background(background)
+            .focusRequester(focus)
+            .focusable()
+            .workoutKeys(
+                enabled = !state.isDone && !confirmingEnd,
+                onTogglePause = onTogglePause,
+                onBack = onBack,
+                onSkip = onSkip,
+                onEnd = requestEnd,
+            ),
+    ) {
         if (state.isDone) {
             SummaryLayout(state, landscape = maxWidth > maxHeight, onRestart, onSavePreset, onExit)
         } else if (maxWidth > maxHeight) {
@@ -168,6 +195,29 @@ fun WorkoutScreen(
             },
         )
     }
+}
+
+/**
+ * Space or Enter pauses and resumes, the arrow keys go back and skip, and Escape ends. Handled after
+ * the focused control, so a button reached with Tab still answers to Enter and Space itself.
+ */
+private fun Modifier.workoutKeys(
+    enabled: Boolean,
+    onTogglePause: () -> Unit,
+    onBack: () -> Unit,
+    onSkip: () -> Unit,
+    onEnd: () -> Unit,
+): Modifier = onKeyEvent { event ->
+    val action = when (event.key) {
+        Key.Spacebar, Key.Enter, Key.NumPadEnter -> onTogglePause
+        Key.DirectionLeft -> onBack
+        Key.DirectionRight -> onSkip
+        Key.Escape -> onEnd
+        else -> null
+    }
+    if (!enabled || event.type != KeyEventType.KeyDown || action == null) return@onKeyEvent false
+    action()
+    true
 }
 
 @Composable
@@ -699,27 +749,13 @@ private fun WorkoutPreview(state: WorkoutUiState) {
 private fun previewWorkState(): WorkoutUiState =
     WorkoutEngine.advance(WorkoutEngine.start(IntervalConfig()).state).state.toUiState(running = true)
 
-@Preview
+@PreviewFormFactors
 @Composable
 private fun WorkoutScreenPreview() {
     WorkoutPreview(previewWorkState())
 }
 
-@Preview(widthDp = 844, heightDp = 390)
-@Composable
-private fun WorkoutScreenLandscapePreview() {
-    WorkoutPreview(previewWorkState())
-}
-
-@Preview(widthDp = 844, heightDp = 390)
-@Composable
-private fun WorkoutScreenDoneLandscapePreview() {
-    val done = generateSequence(WorkoutEngine.start(IntervalConfig()).state) { WorkoutEngine.advance(it).state }
-        .first { it.isDone }
-    WorkoutPreview(done.toUiState(running = false))
-}
-
-@Preview
+@PreviewFormFactors
 @Composable
 private fun WorkoutScreenSummaryPreview() {
     val done = generateSequence(WorkoutEngine.start(IntervalConfig()).state) { WorkoutEngine.advance(it).state }

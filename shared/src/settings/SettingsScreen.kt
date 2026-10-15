@@ -33,7 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.data.AppSettings
@@ -47,6 +46,7 @@ import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
@@ -60,7 +60,7 @@ import org.koin.compose.currentKoinScope
 
 /** Resolves the screen's ViewModel and binds it to [SettingsScreen]. */
 @Composable
-fun SettingsRoute(onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun SettingsRoute(onBack: () -> Unit, modifier: Modifier = Modifier, inPane: Boolean = false) {
     val scope = currentKoinScope()
     val viewModel = viewModel { SettingsViewModel(scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -73,10 +73,14 @@ fun SettingsRoute(onBack: () -> Unit, modifier: Modifier = Modifier) {
         onToggleKeepScreenOn = viewModel::toggleKeepScreenOn,
         onSetTheme = viewModel::setTheme,
         modifier = modifier,
+        inPane = inPane,
     )
 }
 
-/** The set-once preferences, out of the way of the workout itself. */
+/**
+ * The set-once preferences, out of the way of the workout itself. [inPane] when it sits beside the
+ * Timer tab on a wide window: there it closes rather than going back.
+ */
 @Composable
 fun SettingsScreen(
     state: SettingsUiState,
@@ -87,6 +91,7 @@ fun SettingsScreen(
     onToggleKeepScreenOn: () -> Unit,
     onSetTheme: (ThemeMode) -> Unit,
     modifier: Modifier = Modifier,
+    inPane: Boolean = false,
 ) {
     var editingPrep by rememberSaveable { mutableStateOf(false) }
     Box(modifier.fillMaxSize().background(IntervalTheme.palette.background), contentAlignment = Alignment.TopCenter) {
@@ -97,7 +102,11 @@ fun SettingsScreen(
                 .safeDrawingPadding()
                 .verticalScroll(rememberScrollState()),
         ) {
-            TitleBar("Settings", navigation = { IconAction(IntervalIcons.Back, "Back", onBack) })
+            TitleBar(
+                "Settings",
+                navigation = { if (!inPane) IconAction(IntervalIcons.Back, "Back", onBack) },
+                actions = { if (inPane) IconAction(IntervalIcons.Close, "Close settings", onBack) },
+            )
             Column(Modifier.padding(start = Spacing.space16, end = Spacing.space16, bottom = Spacing.space24)) {
                 GroupLabel("Cues")
                 ListCard {
@@ -216,7 +225,7 @@ private fun ThemePicker(selected: ThemeMode, onSelect: (ThemeMode) -> Unit, modi
     }
 }
 
-@Preview
+@PreviewFormFactors
 @Composable
 private fun SettingsScreenPreview() {
     IntervalTheme {
