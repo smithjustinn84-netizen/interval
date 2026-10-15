@@ -1,6 +1,8 @@
 package dev.justinsmith.interval.platform
 
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Build
@@ -10,9 +12,11 @@ import android.os.VibratorManager
 import android.speech.tts.TextToSpeech
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.data.KeyValueStore
 import org.koin.core.module.Module
@@ -47,6 +51,24 @@ actual fun KeepScreenOn() {
     }
 }
 
+@Composable
+actual fun SystemBarIcons(lightIcons: Boolean) {
+    val view = LocalView.current
+    SideEffect {
+        val window = view.context.findActivity()?.window ?: return@SideEffect
+        WindowCompat.getInsetsController(window, view).apply {
+            isAppearanceLightStatusBars = !lightIcons
+            isAppearanceLightNavigationBars = !lightIcons
+        }
+    }
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
+
 actual fun epochMillisNow(): Long = System.currentTimeMillis()
 
 private class SharedPreferencesStore(context: Context) : KeyValueStore {
@@ -60,10 +82,22 @@ private class SharedPreferencesStore(context: Context) : KeyValueStore {
 }
 
 private class JavaTimeFormatter : TimestampFormatter {
-    private val formatter = DateTimeFormatter.ofPattern("EEE, MMM d, h:mm a")
+    private val dayFormat = DateTimeFormatter.ofPattern("EEEE, MMM d")
+    private val timeFormat = DateTimeFormatter.ofPattern("h:mm a")
 
-    override fun format(epochMillis: Long): String =
-        formatter.format(Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()))
+    override fun day(epochMillis: Long, nowMillis: Long): String {
+        val date = zoned(epochMillis).toLocalDate()
+        val today = zoned(nowMillis).toLocalDate()
+        return when (date) {
+            today -> "Today"
+            today.minusDays(1) -> "Yesterday"
+            else -> dayFormat.format(date)
+        }
+    }
+
+    override fun time(epochMillis: Long): String = timeFormat.format(zoned(epochMillis))
+
+    private fun zoned(epochMillis: Long) = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault())
 }
 
 private class AndroidCuePlayer(context: Context) : CuePlayer {

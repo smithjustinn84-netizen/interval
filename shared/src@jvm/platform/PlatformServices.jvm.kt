@@ -24,6 +24,10 @@ actual fun rememberPlatformModule(): Module = remember {
 @Composable
 actual fun KeepScreenOn() = Unit
 
+/** Desktop windows have no system bars to restyle. */
+@Composable
+actual fun SystemBarIcons(lightIcons: Boolean) = Unit
+
 actual fun epochMillisNow(): Long = System.currentTimeMillis()
 
 private class PreferencesStore : KeyValueStore {
@@ -37,10 +41,22 @@ private class PreferencesStore : KeyValueStore {
 }
 
 private class JavaTimeFormatter : TimestampFormatter {
-    private val formatter = DateTimeFormatter.ofPattern("EEE, MMM d, h:mm a")
+    private val dayFormat = DateTimeFormatter.ofPattern("EEEE, MMM d")
+    private val timeFormat = DateTimeFormatter.ofPattern("h:mm a")
 
-    override fun format(epochMillis: Long): String =
-        formatter.format(Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()))
+    override fun day(epochMillis: Long, nowMillis: Long): String {
+        val date = zoned(epochMillis).toLocalDate()
+        val today = zoned(nowMillis).toLocalDate()
+        return when (date) {
+            today -> "Today"
+            today.minusDays(1) -> "Yesterday"
+            else -> dayFormat.format(date)
+        }
+    }
+
+    override fun time(epochMillis: Long): String = timeFormat.format(zoned(epochMillis))
+
+    private fun zoned(epochMillis: Long) = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault())
 }
 
 /** The system alert beep for every sound; desktops have no speech engine or vibration to drive. */

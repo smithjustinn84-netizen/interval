@@ -14,6 +14,8 @@ import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.timer.WorkoutState
 import dev.justinsmith.interval.timer.ceilSeconds
 import dev.justinsmith.interval.timer.formatClock
+import dev.justinsmith.interval.timer.matching
+import dev.justinsmith.interval.timer.presetEntries
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,24 +40,41 @@ data class WorkoutUiState(
     val next: String,
     val meta: String,
     val summary: String,
+    /** True once the workout was ended before its last round; it then shows its summary like a finished one. */
+    val ended: Boolean = false,
+    /** The summary's heading line: the preset's name, or "Custom", and the workout's shape. */
+    val shape: String = "",
+    /** Time spent, for the summary. */
+    val elapsed: String = "",
+    /** Offer "Save as preset" on the summary: no preset has this shape yet. */
+    val canSavePreset: Boolean = false,
 ) {
-    val isDone: Boolean get() = phase == Phase.Done
+    val isDone: Boolean get() = phase == Phase.Done || ended
     val paused: Boolean get() = !running && !isDone
+
+    /** Ending now keeps a summary and a history entry only once a round is finished. */
+    val hasProgress: Boolean get() = completedRounds > 0
 }
 
-fun WorkoutState.toUiState(running: Boolean): WorkoutUiState {
-    val paused = !running && !isDone
+/**
+ * The screen's view of an engine state. [ended] marks a workout stopped early; [presetName] is the
+ * preset matching its shape, if any.
+ */
+fun WorkoutState.toUiState(running: Boolean, ended: Boolean = false, presetName: String? = null): WorkoutUiState {
+    val finished = isDone || ended
+    val paused = !running && !finished
     val rounds = config.rounds
+    val completed = when (phase) {
+        Phase.Prep -> 0
+        Phase.Work -> round - 1
+        Phase.Rest -> round
+        Phase.Done -> rounds
+    }
     return WorkoutUiState(
         phase = phase,
         running = running,
         rounds = rounds,
-        completedRounds = when (phase) {
-            Phase.Prep -> 0
-            Phase.Work -> round - 1
-            Phase.Rest -> round
-            Phase.Done -> rounds
-        },
+        completedRounds = completed,
         activeRound = round.takeIf { phase == Phase.Work },
         clock = formatClock(ceilSeconds(remainingMillis)),
         progress = if (isDone) 0f else progress,
@@ -82,10 +101,28 @@ fun WorkoutState.toUiState(running: Boolean): WorkoutUiState {
 
             Phase.Done -> ""
         },
-        meta = if (isDone) "" else "Round $round of $rounds · ${formatClock(ceilSeconds(sessionRemainingMillis))} left",
-        summary = "$rounds round${if (rounds == 1) "" else "s"} · ${formatClock(config.totalSeconds)} total",
+        meta = if (finished) {
+            ""
+        } else {
+            "Round $round of $rounds · ${formatClock(
+                ceilSeconds(sessionRemainingMillis),
+            )} left"
+        },
+        summary = if (ended) {
+            "$completed of $rounds rounds · ${formatClock(elapsedSeconds)}"
+        } else {
+            "$rounds round${if (rounds == 1) "" else "s"} · ${formatClock(config.totalSeconds)} total"
+        },
+        ended = ended,
+        shape = "${presetName ?: "Custom"} · ${config.description}",
+        elapsed = formatClock(if (ended) elapsedSeconds else config.totalSeconds),
+        canSavePreset = presetName == null,
     )
 }
+
+/** Whole seconds of the session behind us, the get-ready countdown included. */
+val WorkoutState.elapsedSeconds: Int
+    get() = (config.totalSeconds - ceilSeconds(sessionRemainingMillis)).coerceAtLeast(0)
 
 /**
  * Runs one workout from the saved configuration: a coroutine ticker feeds elapsed time into
@@ -99,18 +136,22 @@ class WorkoutViewModel(
     private val config = repository.config.value
     private var engine: WorkoutState
     private var running = false
+    private var ended = false
     private var ticker: Job? = null
     private val _state: MutableStateFlow<WorkoutUiState>
 
     init {
         val start = WorkoutEngine.start(config)
         engine = start.state
-        _state = MutableStateFlow(engine.toUiState(running = true))
+        _state = MutableStateFlow(uiState(running = true))
         play(start.cues)
         resume()
     }
 
     val state: StateFlow<WorkoutUiState> = _state.asStateFlow()
+
+    /** Read once at start, like the configuration: a setting changed mid-workout applies next time. */
+    val keepScreenOn: Boolean = repository.appSettings.value.keepScreenOn
 
     fun togglePause() {
         if (running) pause() else resume()
@@ -124,7 +165,7 @@ class WorkoutViewModel(
     }
 
     fun resume() {
-        if (engine.isDone || ticker?.isActive == true) return
+        if (engine.isDone || ended || ticker?.isActive == true) return
         running = true
         publish()
         ticker = viewModelScope.launch {
@@ -153,9 +194,29 @@ class WorkoutViewModel(
         publish()
     }
 
+    /**
+     * Stops before the last round: records what was done and shows the summary. Without a finished
+     * round there is nothing worth keeping, so the screen just leaves instead of calling this.
+     */
+    fun endEarly() {
+        if (engine.isDone || ended) return
+        ticker?.cancel()
+        ticker = null
+        running = false
+        ended = true
+        repository.recordWorkout(config, elapsedSeconds = engine.elapsedSeconds)
+        publish()
+    }
+
+    fun saveAsPreset(name: String) {
+        repository.saveCurrentAsPreset(name)
+        publish()
+    }
+
     fun restart() {
         ticker?.cancel()
         ticker = null
+        ended = false
         val start = WorkoutEngine.start(config)
         engine = start.state
         play(start.cues)
@@ -175,7 +236,12 @@ class WorkoutViewModel(
     }
 
     private fun publish() {
-        _state.value = engine.toUiState(running)
+        _state.value = uiState(running)
+    }
+
+    private fun uiState(running: Boolean): WorkoutUiState {
+        val name = presetEntries(repository.customPresets.value).matching(config)?.name
+        return engine.toUiState(running, ended, name)
     }
 
     private fun play(cues: List<Cue>) {

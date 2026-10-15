@@ -132,6 +132,14 @@ data class IntervalType(
     val stepperGlyph: TextStyle,
     /** The × on a custom preset. */
     val deleteGlyph: TextStyle,
+    /** The Timer tab's big session total. */
+    val heroTotal: TextStyle,
+    /** The value being edited in the edit sheet. */
+    val sheetValue: TextStyle,
+    /** Tab labels in the navigation bar. */
+    val navLabel: TextStyle,
+    /** "Built-in", "Today", "Cues": the label over a group of list rows. */
+    val groupLabel: TextStyle,
 )
 
 private fun intervalType(body: TextStyle, label: TextStyle, condensed: FontFamily): IntervalType {
@@ -159,6 +167,10 @@ private fun intervalType(body: TextStyle, label: TextStyle, condensed: FontFamil
         hint = body.copy(fontSize = 13.sp),
         stepperGlyph = body.copy(fontSize = 24.sp),
         deleteGlyph = body.copy(fontSize = 18.sp),
+        heroTotal = numerals(64.sp).copy(lineHeight = 64.sp),
+        sheetValue = numerals(80.sp).copy(lineHeight = 80.sp),
+        navLabel = body.copy(fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold),
+        groupLabel = body.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
     )
 }
 

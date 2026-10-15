@@ -21,13 +21,16 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,25 +52,30 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import dev.justinsmith.interval.platform.KeepScreenOn
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.WorkoutEngine
+import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
+import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PhaseColors
+import dev.justinsmith.interval.ui.SavePresetDialog
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
-import kotlinx.coroutines.delay
 import org.koin.compose.currentKoinScope
 
 /** Resolves the screen's ViewModel, scoped to its back-stack entry, and binds it to [WorkoutScreen]. */
 @Composable
-fun WorkoutRoute(onExit: () -> Unit) {
+fun WorkoutRoute(onExit: () -> Unit, modifier: Modifier = Modifier) {
     val scope = currentKoinScope()
     val viewModel = viewModel { WorkoutViewModel(scope.get(), scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
-    if (state.running) KeepScreenOn()
+    if (state.running && viewModel.keepScreenOn) KeepScreenOn()
     WorkoutScreen(
         state = state,
         onTogglePause = viewModel::togglePause,
@@ -75,14 +83,20 @@ fun WorkoutRoute(onExit: () -> Unit) {
         onBack = viewModel::back,
         onAddTime = viewModel::addTime,
         onRestart = viewModel::restart,
-        onEnd = onExit,
+        onEndEarly = viewModel::endEarly,
+        onSavePreset = viewModel::saveAsPreset,
+        onExit = onExit,
+        modifier = modifier,
     )
 }
 
 /**
- * The full-screen timer. The whole background is the phase color so it reads from across a room;
- * tapping anywhere in the middle pauses or resumes. Wider-than-tall windows move the controls into
- * side rails at thumb reach, which leaves the middle for a much bigger clock.
+ * The full-screen timer, with no tab bar. The whole background is the phase color so it reads from
+ * across a room; tapping anywhere in the middle pauses or resumes. Wider-than-tall windows move the
+ * controls into side rails at thumb reach, which leaves the middle for a much bigger clock.
+ *
+ * End, or the system back gesture, pauses and asks first. A workout that ends, early or not, turns
+ * into its summary.
  */
 @Composable
 fun WorkoutScreen(
@@ -92,17 +106,35 @@ fun WorkoutScreen(
     onBack: () -> Unit,
     onAddTime: () -> Unit,
     onRestart: () -> Unit,
-    onEnd: () -> Unit,
+    onEndEarly: () -> Unit,
+    onSavePreset: (String) -> Unit,
+    onExit: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val target = if (state.paused) PhaseColors.paused else PhaseColors.of(state.phase)
+    var confirmingEnd by rememberSaveable { mutableStateOf(false) }
+    val requestEnd = {
+        if (state.running) onTogglePause()
+        confirmingEnd = true
+    }
+    NavigationBackHandler(
+        state = rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = !state.isDone,
+        onBackCompleted = requestEnd,
+    )
+    val target = when {
+        state.isDone -> PhaseColors.done
+        state.paused -> PhaseColors.paused
+        else -> PhaseColors.of(state.phase)
+    }
     val background by animateColorAsState(target, tween(Motion.PHASE_CROSSFADE_MILLIS), label = "phase")
     BoxWithConstraints(modifier.fillMaxSize().background(background)) {
-        if (maxWidth > maxHeight) {
+        if (state.isDone) {
+            SummaryLayout(state, landscape = maxWidth > maxHeight, onRestart, onSavePreset, onExit)
+        } else if (maxWidth > maxHeight) {
             // A phone held sideways keeps the canvas's cap; tablets and desktop windows have the room
             // for the clock style's full size.
             val clockMax = if (maxHeight < Sizes.landscapeMaxHeight) LANDSCAPE_CLOCK_MAX else LANDSCAPE_CLOCK_MAX_LARGE
-            LandscapeWorkout(state, clockMax, onTogglePause, onSkip, onBack, onAddTime, onRestart, onEnd)
+            LandscapeWorkout(state, clockMax, onTogglePause, onSkip, onBack, onAddTime, requestEnd)
         } else {
             PortraitWorkout(
                 state = state,
@@ -112,10 +144,29 @@ fun WorkoutScreen(
                 onSkip = onSkip,
                 onBack = onBack,
                 onAddTime = onAddTime,
-                onRestart = onRestart,
-                onEnd = onEnd,
+                onEnd = requestEnd,
             )
         }
+    }
+    if (confirmingEnd && !state.isDone) {
+        ConfirmDialog(
+            title = "End workout?",
+            text = if (state.hasProgress) {
+                "${state.completedRounds} of ${state.rounds} rounds done. What you finished is saved to history."
+            } else {
+                "No round is finished yet, so nothing is saved."
+            },
+            confirm = "End workout",
+            dismiss = "Resume",
+            onConfirm = {
+                confirmingEnd = false
+                if (state.hasProgress) onEndEarly() else onExit()
+            },
+            onDismiss = {
+                confirmingEnd = false
+                if (state.paused) onTogglePause()
+            },
+        )
     }
 }
 
@@ -127,7 +178,6 @@ private fun PortraitWorkout(
     onSkip: () -> Unit,
     onBack: () -> Unit,
     onAddTime: () -> Unit,
-    onRestart: () -> Unit,
     onEnd: () -> Unit,
 ) {
     Column(
@@ -144,7 +194,7 @@ private fun PortraitWorkout(
                 .tapToPause(state, onTogglePause),
             contentAlignment = Alignment.Center,
         ) {
-            if (state.isDone) Summary(state) else PortraitReadout(state, clockSize)
+            PortraitReadout(state, clockSize)
         }
         ProgressBar(state.progress, Modifier.padding(top = Spacing.space8, bottom = Spacing.space16))
         BottomControls(
@@ -152,7 +202,6 @@ private fun PortraitWorkout(
             onTogglePause = onTogglePause,
             onBack = onBack,
             onAddTime = onAddTime,
-            onRestart = onRestart,
         )
     }
 }
@@ -166,7 +215,6 @@ private fun LandscapeWorkout(
     onSkip: () -> Unit,
     onBack: () -> Unit,
     onAddTime: () -> Unit,
-    onRestart: () -> Unit,
     onEnd: () -> Unit,
 ) {
     Row(
@@ -180,15 +228,13 @@ private fun LandscapeWorkout(
             Modifier.width(Sizes.rail).fillMaxHeight(),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            EndPill(state, onEnd, Modifier.fillMaxWidth())
-            if (!state.isDone) {
-                BigButton(
-                    "Back",
-                    onBack,
-                    Modifier.fillMaxWidth().height(Sizes.control),
-                    description = "Back to previous interval",
-                )
-            }
+            EndPill(onEnd, Modifier.fillMaxWidth())
+            BigButton(
+                "Back",
+                onBack,
+                Modifier.fillMaxWidth().height(Sizes.control),
+                description = "Back to previous interval",
+            )
         }
         Column(
             Modifier
@@ -198,7 +244,7 @@ private fun LandscapeWorkout(
         ) {
             RoundStatus(state, Modifier.fillMaxWidth().padding(top = Spacing.space4))
             Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                if (state.isDone) Summary(state) else LandscapeReadout(state, clockMax)
+                LandscapeReadout(state, clockMax)
             }
             ProgressBar(state.progress)
         }
@@ -206,26 +252,20 @@ private fun LandscapeWorkout(
             Modifier.width(Sizes.rail).fillMaxHeight(),
             verticalArrangement = Arrangement.spacedBy(Spacing.space10),
         ) {
-            if (!state.isDone) {
-                PillButton(
-                    text = "Skip",
-                    onClick = onSkip,
-                    description = "Skip to next interval",
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
+            PillButton(
+                text = "Skip",
+                onClick = onSkip,
+                description = "Skip to next interval",
+                modifier = Modifier.fillMaxWidth(),
+            )
             Spacer(Modifier.weight(1f))
-            if (state.isDone) {
-                BigButton("Restart", onRestart, Modifier.fillMaxWidth().height(Sizes.control))
-            } else {
-                BigButton(
-                    "+10s",
-                    onAddTime,
-                    Modifier.fillMaxWidth().height(Sizes.control),
-                    description = "Add ten seconds",
-                )
-                PrimaryButton(state, onTogglePause, Modifier.fillMaxWidth().height(Sizes.control))
-            }
+            BigButton(
+                "+10s",
+                onAddTime,
+                Modifier.fillMaxWidth().height(Sizes.control),
+                description = "Add ten seconds",
+            )
+            PrimaryButton(state, onTogglePause, Modifier.fillMaxWidth().height(Sizes.control))
         }
     }
 }
@@ -247,40 +287,16 @@ private fun TopBar(state: WorkoutUiState, onEnd: () -> Unit, onSkip: () -> Unit)
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        EndPill(state, onEnd)
+        EndPill(onEnd)
         RoundStatus(state, Modifier.weight(1f).padding(horizontal = Spacing.space8))
-        if (state.isDone) {
-            Spacer(Modifier.width(Sizes.pillWidth))
-        } else {
-            PillButton(text = "Skip", onClick = onSkip, description = "Skip to next interval")
-        }
+        PillButton(text = "Skip", onClick = onSkip, description = "Skip to next interval")
     }
 }
 
+/** End pauses the workout and asks before throwing it away (see [WorkoutScreen]). */
 @Composable
-private fun EndPill(state: WorkoutUiState, onEnd: () -> Unit, modifier: Modifier = Modifier) {
-    // Ending takes two taps, so a sweaty palm can't throw away a session.
-    var armed by remember { mutableStateOf(false) }
-    LaunchedEffect(armed) {
-        if (armed) {
-            delay(Motion.END_CONFIRM_MILLIS)
-            armed = false
-        }
-    }
-    PillButton(
-        text = if (armed) "End?" else "End",
-        onClick = {
-            if (armed || state.isDone) {
-                onEnd()
-            } else {
-                armed = true
-            }
-        },
-        background = if (armed) PhaseColors.onPhase else PhaseColors.glass,
-        content = if (armed) PhaseColors.ink else PhaseColors.onPhase,
-        description = if (armed) "Tap again to end the workout" else "End workout",
-        modifier = modifier,
-    )
+private fun EndPill(onEnd: () -> Unit, modifier: Modifier = Modifier) {
+    PillButton(text = "End", onClick = onEnd, description = "End workout", modifier = modifier)
 }
 
 /** The round dots over the status line ("Round 3 of 8 · 4:03 left"). */
@@ -413,11 +429,125 @@ private fun TapHint(state: WorkoutUiState, modifier: Modifier = Modifier) {
     )
 }
 
+/**
+ * What the workout came to: Done (or Ended), its shape, time and rounds, that it was saved, and what
+ * next. Save as preset shows only for a shape no preset has.
+ */
 @Composable
-private fun Summary(state: WorkoutUiState) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("Done", style = IntervalTheme.type.done, color = PhaseColors.onPhase)
-        Text(state.summary, style = IntervalTheme.type.summary, color = PhaseColors.onPhase90)
+private fun SummaryLayout(
+    state: WorkoutUiState,
+    landscape: Boolean,
+    onRepeat: () -> Unit,
+    onSavePreset: (String) -> Unit,
+    onDone: () -> Unit,
+) {
+    var saving by rememberSaveable { mutableStateOf(false) }
+    val padding = Modifier
+        .fillMaxSize()
+        .safeDrawingPadding()
+        .padding(horizontal = Spacing.space20, vertical = Spacing.space16)
+    if (landscape) {
+        Row(
+            padding,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space28),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SummaryReadout(state, Modifier.weight(1f))
+            SummaryActions(state, onRepeat, { saving = true }, onDone, Modifier.width(Sizes.setupColumnLandscape))
+        }
+    } else {
+        Column(padding) {
+            SummaryReadout(state, Modifier.weight(1f).fillMaxWidth())
+            SummaryActions(state, onRepeat, { saving = true }, onDone, Modifier.fillMaxWidth())
+        }
+    }
+    if (saving) {
+        SavePresetDialog(
+            summary = state.shape,
+            onSave = {
+                onSavePreset(it)
+                saving = false
+            },
+            onDismiss = { saving = false },
+        )
+    }
+}
+
+@Composable
+private fun SummaryActions(
+    state: WorkoutUiState,
+    onRepeat: () -> Unit,
+    onSave: () -> Unit,
+    onDone: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space10)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space10)) {
+            BigButton("Repeat", onRepeat, Modifier.weight(1f).height(Sizes.save))
+            if (state.canSavePreset) {
+                BigButton("Save as preset", onSave, Modifier.weight(1f).height(Sizes.save))
+            }
+        }
+        BigButton(
+            "Done",
+            onDone,
+            Modifier.fillMaxWidth().height(Sizes.control),
+            background = PhaseColors.onPhase,
+            content = PhaseColors.ink,
+            style = IntervalTheme.type.primaryControl,
+        )
+    }
+}
+
+@Composable
+private fun SummaryReadout(state: WorkoutUiState, modifier: Modifier = Modifier) {
+    Column(
+        modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(if (state.ended) "Ended" else "Done", style = IntervalTheme.type.done, color = PhaseColors.onPhase)
+        Text(
+            state.summary,
+            style = IntervalTheme.type.summary,
+            color = PhaseColors.onPhase90,
+            textAlign = TextAlign.Center,
+        )
+        Text(state.shape, style = IntervalTheme.type.meta, color = PhaseColors.onPhase85, textAlign = TextAlign.Center)
+        Row(
+            Modifier.padding(top = Spacing.space28).widthIn(max = Sizes.content),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space10),
+        ) {
+            Stat(state.elapsed, "Time", Modifier.weight(1f))
+            Stat("${state.completedRounds}/${state.rounds}", "Rounds", Modifier.weight(1f))
+        }
+        Row(
+            Modifier.padding(top = Spacing.space20),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space6),
+        ) {
+            Icon(
+                IntervalIcons.Check,
+                contentDescription = null,
+                tint = PhaseColors.onPhase85,
+                modifier = Modifier.size(Sizes.icon),
+            )
+            Text("Saved to history", style = IntervalTheme.type.meta, color = PhaseColors.onPhase85)
+        }
+    }
+}
+
+@Composable
+private fun Stat(value: String, label: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier
+            .clip(Corners.radius16)
+            .background(PhaseColors.glass)
+            .padding(vertical = Spacing.space12),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(value, style = IntervalTheme.type.stepperValue, color = PhaseColors.onPhase)
+        Text(label, style = IntervalTheme.type.meta, color = PhaseColors.onPhase)
     }
 }
 
@@ -448,27 +578,22 @@ private fun BottomControls(
     onTogglePause: () -> Unit,
     onBack: () -> Unit,
     onAddTime: () -> Unit,
-    onRestart: () -> Unit,
 ) {
     val height = Sizes.control
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.space10)) {
-        if (state.isDone) {
-            BigButton("Restart", onRestart, Modifier.weight(1f).height(height))
-        } else {
-            BigButton(
-                "Back",
-                onBack,
-                Modifier.width(Sizes.controlSide).height(height),
-                description = "Back to previous interval",
-            )
-            PrimaryButton(state, onTogglePause, Modifier.weight(1f).height(height))
-            BigButton(
-                "+10s",
-                onAddTime,
-                Modifier.width(Sizes.controlSide).height(height),
-                description = "Add ten seconds",
-            )
-        }
+        BigButton(
+            "Back",
+            onBack,
+            Modifier.width(Sizes.controlSide).height(height),
+            description = "Back to previous interval",
+        )
+        PrimaryButton(state, onTogglePause, Modifier.weight(1f).height(height))
+        BigButton(
+            "+10s",
+            onAddTime,
+            Modifier.width(Sizes.controlSide).height(height),
+            description = "Add ten seconds",
+        )
     }
 }
 
@@ -564,7 +689,9 @@ private fun WorkoutPreview(state: WorkoutUiState) {
             onBack = {},
             onAddTime = {},
             onRestart = {},
-            onEnd = {},
+            onEndEarly = {},
+            onSavePreset = {},
+            onExit = {},
         )
     }
 }
@@ -587,6 +714,14 @@ private fun WorkoutScreenLandscapePreview() {
 @Preview(widthDp = 844, heightDp = 390)
 @Composable
 private fun WorkoutScreenDoneLandscapePreview() {
+    val done = generateSequence(WorkoutEngine.start(IntervalConfig()).state) { WorkoutEngine.advance(it).state }
+        .first { it.isDone }
+    WorkoutPreview(done.toUiState(running = false))
+}
+
+@Preview
+@Composable
+private fun WorkoutScreenSummaryPreview() {
     val done = generateSequence(WorkoutEngine.start(IntervalConfig()).state) { WorkoutEngine.advance(it).state }
         .first { it.isDone }
     WorkoutPreview(done.toUiState(running = false))

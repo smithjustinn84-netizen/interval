@@ -21,9 +21,13 @@ interface CuePlayer {
     fun release()
 }
 
-/** Formats a past moment for the workout history, in the device's time zone: "Wed, Oct 14, 7:12 PM". */
-fun interface TimestampFormatter {
-    fun format(epochMillis: Long): String
+/** Formats past moments for the workout history, in the device's time zone. */
+interface TimestampFormatter {
+    /** The history section a moment falls in, relative to [nowMillis]: "Today", "Yesterday", "Sunday, Oct 11". */
+    fun day(epochMillis: Long, nowMillis: Long): String
+
+    /** The time of day: "7:42 PM". */
+    fun time(epochMillis: Long): String
 }
 
 /**
@@ -36,6 +40,14 @@ expect fun rememberPlatformModule(): Module
 /** Keeps the display awake while this is in the composition. */
 @Composable
 expect fun KeepScreenOn()
+
+/**
+ * Sets the system bars' icons to suit what is drawn under them: [lightIcons] for dark or saturated
+ * content (the dark theme, the workout's phase colours). Android only; iOS and desktop follow the
+ * system appearance.
+ */
+@Composable
+expect fun SystemBarIcons(lightIcons: Boolean)
 
 /** Milliseconds since the Unix epoch. */
 expect fun epochMillisNow(): Long

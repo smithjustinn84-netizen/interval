@@ -51,6 +51,9 @@ object Corners {
 
     /** Progress bar track and fill. */
     val full = RoundedCornerShape(50)
+
+    /** A bottom sheet: rounded on top only. */
+    val sheet = RoundedCornerShape(topStart = Radius.radius18, topEnd = Radius.radius18)
 }
 
 /** Fixed dimensions: the design system's `size-*` tokens, mostly touch targets. */
@@ -90,6 +93,35 @@ object Sizes {
     val dotHalo = 3.dp
     val progress = 8.dp
     val border = 1.5.dp
+
+    /** Line icons: tabs and top-bar actions. */
+    val icon = 24.dp
+
+    /** The round hit area of an icon-only top-bar action. */
+    val iconButton = 48.dp
+
+    /** Height of the bottom navigation bar, and width of the rail that replaces it sideways. */
+    val navBar = 80.dp
+
+    /** The pill behind the selected tab's icon. */
+    val navIndicatorWidth = 64.dp
+    val navIndicatorHeight = 32.dp
+
+    /** A preset chip in the Timer tab's horizontal row. */
+    val presetChip = 148.dp
+
+    /** Minimum height of a list row (presets, history, settings). */
+    val listRow = 64.dp
+
+    /** Minimum height of a Timer tab interval row. */
+    val intervalRow = 68.dp
+
+    /** The edit sheet's − / + buttons, a size up from [stepper]. */
+    val sheetStepper = 64.dp
+
+    /** The edit sheet's drag handle. */
+    val handleWidth = 32.dp
+    val handleHeight = 4.dp
 }
 
 /** The design system's `opacity-*` tokens. */
@@ -115,7 +147,4 @@ object Motion {
 
     /** …then steps this often. */
     const val STEPPER_REPEAT_MILLIS = 90L
-
-    /** How long the armed "End?" pill waits for its second tap. */
-    const val END_CONFIRM_MILLIS = 2_500L
 }

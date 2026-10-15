@@ -27,15 +27,29 @@ data class CueSettings(
     val vibrate: Boolean = true,
 )
 
-/** A finished workout. */
+/** How the app picks light or dark. */
+enum class ThemeMode { System, Light, Dark }
+
+/** App-wide preferences that are not part of a workout's shape. */
+@Serializable
+data class AppSettings(
+    val theme: ThemeMode = ThemeMode.System,
+    val keepScreenOn: Boolean = true,
+)
+
+/** A finished workout. [elapsedSeconds] is set when it was ended early; null means it ran to the end. */
 @Serializable
 data class HistoryEntry(
     val finishedAtEpochMillis: Long,
     val config: IntervalConfig,
-)
+    val elapsedSeconds: Int? = null,
+) {
+    val endedEarly: Boolean get() = elapsedSeconds != null
+    val durationSeconds: Int get() = elapsedSeconds ?: config.totalSeconds
+}
 
 /**
- * The app's saved state: the current setup, cue toggles, custom presets and workout history.
+ * The app's saved state: the current setup, cue toggles, app settings, custom presets and workout history.
  * Values are held in memory as [StateFlow]s and written through to [store] on every change.
  */
 class IntervalRepository(
@@ -49,6 +63,9 @@ class IntervalRepository(
 
     private val _cueSettings = MutableStateFlow(load(KEY_CUES, CueSettings.serializer()) ?: CueSettings())
     val cueSettings: StateFlow<CueSettings> = _cueSettings.asStateFlow()
+
+    private val _appSettings = MutableStateFlow(load(KEY_APP, AppSettings.serializer()) ?: AppSettings())
+    val appSettings: StateFlow<AppSettings> = _appSettings.asStateFlow()
 
     private val _customPresets = MutableStateFlow(load(KEY_PRESETS, presetList) ?: emptyList())
     val customPresets: StateFlow<List<Preset>> = _customPresets.asStateFlow()
@@ -68,6 +85,16 @@ class IntervalRepository(
         save(KEY_CUES, CueSettings.serializer(), settings)
     }
 
+    fun setAppSettings(settings: AppSettings) {
+        _appSettings.value = settings
+        save(KEY_APP, AppSettings.serializer(), settings)
+    }
+
+    /** Takes [preset]'s work, rest and rounds; the get-ready countdown stays the user's own setting. */
+    fun applyPreset(preset: Preset) {
+        setConfig(preset.config.copy(prepSeconds = _config.value.prepSeconds))
+    }
+
     /** Saves the current configuration under [name]; a blank name becomes "Custom N". */
     fun saveCurrentAsPreset(name: String) {
         _customPresets.update { presets ->
@@ -82,8 +109,10 @@ class IntervalRepository(
         save(KEY_PRESETS, presetList, _customPresets.value)
     }
 
-    fun recordWorkout(config: IntervalConfig) {
-        _history.update { entries -> (listOf(HistoryEntry(now(), config)) + entries).take(MAX_HISTORY) }
+    /** Records a workout; pass [elapsedSeconds] when it was ended before the last round. */
+    fun recordWorkout(config: IntervalConfig, elapsedSeconds: Int? = null) {
+        val entry = HistoryEntry(now(), config, elapsedSeconds)
+        _history.update { entries -> (listOf(entry) + entries).take(MAX_HISTORY) }
         save(KEY_HISTORY, historyList, _history.value)
     }
 
@@ -107,6 +136,7 @@ class IntervalRepository(
 
         private const val KEY_CONFIG = "config"
         private const val KEY_CUES = "cues"
+        private const val KEY_APP = "app"
         private const val KEY_PRESETS = "presets"
         private const val KEY_HISTORY = "history"
 

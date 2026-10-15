@@ -24,31 +24,70 @@ data class IntervalConfig(
         val WORK_RANGE = 5..3600
         val REST_RANGE = 0..3600
         val ROUNDS_RANGE = 1..99
+
+        // The one-tap values the edit sheet offers for each field.
+        val PREP_PICKS = listOf(0, 5, 10, 15, 20, 30, 45, 60)
+        val WORK_PICKS = listOf(10, 20, 30, 45, 60, 90, 120, 180)
+        val REST_PICKS = listOf(0, 10, 15, 20, 30, 45, 60, 90)
+        val ROUNDS_PICKS = listOf(4, 6, 8, 10, 12, 15, 20, 30)
     }
 }
 
-/** Which value a setup stepper changes. */
-enum class ConfigField(val step: Int, val range: IntRange) {
-    Prep(step = 5, range = IntervalConfig.PREP_RANGE),
-    Work(step = 5, range = IntervalConfig.WORK_RANGE),
-    Rest(step = 5, range = IntervalConfig.REST_RANGE),
-    Rounds(step = 1, range = IntervalConfig.ROUNDS_RANGE),
+/** Which value a stepper or edit sheet changes. [quickPicks] are the common values offered as one-tap choices. */
+enum class ConfigField(val step: Int, val range: IntRange, val quickPicks: List<Int>) {
+    Prep(step = 5, range = IntervalConfig.PREP_RANGE, quickPicks = IntervalConfig.PREP_PICKS),
+    Work(step = 5, range = IntervalConfig.WORK_RANGE, quickPicks = IntervalConfig.WORK_PICKS),
+    Rest(step = 5, range = IntervalConfig.REST_RANGE, quickPicks = IntervalConfig.REST_PICKS),
+    Rounds(step = 1, range = IntervalConfig.ROUNDS_RANGE, quickPicks = IntervalConfig.ROUNDS_PICKS),
 }
+
+/** The current value of [field]. */
+fun IntervalConfig.valueOf(field: ConfigField): Int = when (field) {
+    ConfigField.Prep -> prepSeconds
+    ConfigField.Work -> workSeconds
+    ConfigField.Rest -> restSeconds
+    ConfigField.Rounds -> rounds
+}
+
+/** Sets [field] to [value], clamped to the field's range. */
+fun IntervalConfig.withValue(field: ConfigField, value: Int): IntervalConfig {
+    val clamped = value.coerceIn(field.range)
+    return when (field) {
+        ConfigField.Prep -> copy(prepSeconds = clamped)
+        ConfigField.Work -> copy(workSeconds = clamped)
+        ConfigField.Rest -> copy(restSeconds = clamped)
+        ConfigField.Rounds -> copy(rounds = clamped)
+    }
+}
+
+/** "0:30" for durations, "8" for rounds. */
+fun ConfigField.format(value: Int): String = if (this == ConfigField.Rounds) value.toString() else formatClock(value)
+
+/**
+ * Same work, rest and rounds. The get-ready countdown is an app setting rather than part of a
+ * workout's shape, so presets match and apply regardless of it.
+ */
+fun IntervalConfig.sameShape(other: IntervalConfig): Boolean =
+    workSeconds == other.workSeconds && restSeconds == other.restSeconds && rounds == other.rounds
 
 /** Moves [field] one step in [direction] (+1 or -1), clamped to the field's range. */
-fun IntervalConfig.stepped(field: ConfigField, direction: Int): IntervalConfig {
-    fun next(current: Int) = (current + direction * field.step).coerceIn(field.range)
-    return when (field) {
-        ConfigField.Prep -> copy(prepSeconds = next(prepSeconds))
-        ConfigField.Work -> copy(workSeconds = next(workSeconds))
-        ConfigField.Rest -> copy(restSeconds = next(restSeconds))
-        ConfigField.Rounds -> copy(rounds = next(rounds))
-    }
-}
+fun IntervalConfig.stepped(field: ConfigField, direction: Int): IntervalConfig =
+    withValue(field, valueOf(field) + direction * field.step)
 
 /** A named configuration. Built-ins ship with the app; custom ones are saved by the user. */
 @Serializable
 data class Preset(val name: String, val config: IntervalConfig)
+
+/** A preset as the lists show it: whether it is one of the user's own, and so deletable. */
+data class PresetEntry(val preset: Preset, val custom: Boolean)
+
+/** Built-ins first, then the user's own in the order they were saved. */
+fun presetEntries(custom: List<Preset>): List<PresetEntry> =
+    builtInPresets.map { PresetEntry(it, custom = false) } + custom.map { PresetEntry(it, custom = true) }
+
+/** The first preset with [config]'s shape, if any. */
+fun List<PresetEntry>.matching(config: IntervalConfig): Preset? =
+    firstOrNull { it.preset.config.sameShape(config) }?.preset
 
 val builtInPresets: List<Preset> = listOf(
     Preset("Tabata", IntervalConfig(prepSeconds = 10, workSeconds = 20, restSeconds = 10, rounds = 8)),

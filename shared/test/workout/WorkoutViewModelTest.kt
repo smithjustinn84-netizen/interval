@@ -119,4 +119,34 @@ class WorkoutViewModelTest {
         assertEquals("Round 1 of 2 · 0:15 left", state.meta)
         viewModel.pause()
     }
+
+    @Test
+    fun `ending early records the time spent and shows the summary`() = runTest(dispatcher) {
+        val viewModel = WorkoutViewModel(repository, player, testScheduler.timeSource)
+        advanceTimeBy(6_000 + WorkoutViewModel.TICK_MILLIS)
+        runCurrent()
+        assertTrue(viewModel.state.value.hasProgress)
+
+        viewModel.endEarly()
+        val state = viewModel.state.value
+        assertTrue(state.isDone && state.ended)
+        assertFalse(state.running)
+        assertEquals("1 of 2 rounds · 0:06", state.summary)
+        assertEquals("0:06", state.elapsed)
+        assertEquals(6, repository.history.value.single().elapsedSeconds)
+
+        viewModel.resume()
+        assertFalse(viewModel.state.value.running)
+    }
+
+    @Test
+    fun `a summary offers saving only a shape no preset has`() = runTest(dispatcher) {
+        val viewModel = WorkoutViewModel(repository, player, testScheduler.timeSource)
+        repeat(3) { viewModel.skip() }
+        assertTrue(viewModel.state.value.canSavePreset)
+        assertEquals("Custom · 5s on · 5s off · ×2", viewModel.state.value.shape)
+        viewModel.saveAsPreset("Short")
+        assertFalse(viewModel.state.value.canSavePreset)
+        assertEquals("Short · 5s on · 5s off · ×2", viewModel.state.value.shape)
+    }
 }

@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.data
 
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.builtInPresets
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -58,5 +59,19 @@ class IntervalRepositoryTest {
         assertEquals(clock, history.first().finishedAtEpochMillis)
         repository.clearHistory()
         assertEquals(emptyList(), repository().history.value)
+    }
+
+    @Test
+    fun `applying a preset keeps the user's get-ready countdown`() {
+        val repository = repository()
+        repository.setConfig(IntervalConfig(prepSeconds = 30))
+        repository.applyPreset(builtInPresets.first())
+        assertEquals(builtInPresets.first().config.copy(prepSeconds = 30), repository.config.value)
+    }
+
+    @Test
+    fun `app settings survive a restart`() {
+        repository().setAppSettings(AppSettings(theme = ThemeMode.Light, keepScreenOn = false))
+        assertEquals(AppSettings(theme = ThemeMode.Light, keepScreenOn = false), repository().appSettings.value)
     }
 }

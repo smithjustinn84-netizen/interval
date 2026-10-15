@@ -13,9 +13,11 @@ import platform.AVFAudio.AVSpeechBoundary
 import platform.AVFAudio.AVSpeechSynthesizer
 import platform.AVFAudio.AVSpeechUtterance
 import platform.AudioToolbox.AudioServicesPlaySystemSound
+import platform.Foundation.NSCalendar
 import platform.Foundation.NSDate
 import platform.Foundation.NSDateFormatter
 import platform.Foundation.NSUserDefaults
+import platform.Foundation.dateByAddingTimeInterval
 import platform.Foundation.dateWithTimeIntervalSince1970
 import platform.Foundation.timeIntervalSince1970
 import platform.UIKit.UIApplication
@@ -40,6 +42,10 @@ actual fun KeepScreenOn() {
     }
 }
 
+/** The status bar follows the system appearance. */
+@Composable
+actual fun SystemBarIcons(lightIcons: Boolean) = Unit
+
 actual fun epochMillisNow(): Long = NSDate().timeIntervalSince1970.seconds.inWholeMilliseconds
 
 private class UserDefaultsStore : KeyValueStore {
@@ -57,11 +63,28 @@ private class UserDefaultsStore : KeyValueStore {
 }
 
 private class FoundationTimestampFormatter : TimestampFormatter {
-    private val formatter = NSDateFormatter().apply { dateFormat = "EEE, MMM d, h:mm a" }
+    private val calendar = NSCalendar.currentCalendar
+    private val dayFormat = NSDateFormatter().apply { dateFormat = "EEEE, MMM d" }
+    private val timeFormat = NSDateFormatter().apply { dateFormat = "h:mm a" }
 
-    override fun format(epochMillis: Long): String {
-        val seconds = epochMillis.milliseconds.toDouble(DurationUnit.SECONDS)
-        return formatter.stringFromDate(NSDate.dateWithTimeIntervalSince1970(seconds))
+    override fun day(epochMillis: Long, nowMillis: Long): String {
+        val date = date(epochMillis)
+        val today = calendar.startOfDayForDate(date(nowMillis))
+        val yesterday = today.dateByAddingTimeInterval(-SECONDS_PER_DAY)
+        return when {
+            calendar.isDate(date, inSameDayAsDate = today) -> "Today"
+            calendar.isDate(date, inSameDayAsDate = yesterday) -> "Yesterday"
+            else -> dayFormat.stringFromDate(date)
+        }
+    }
+
+    override fun time(epochMillis: Long): String = timeFormat.stringFromDate(date(epochMillis))
+
+    private fun date(epochMillis: Long): NSDate =
+        NSDate.dateWithTimeIntervalSince1970(epochMillis.milliseconds.toDouble(DurationUnit.SECONDS))
+
+    private companion object {
+        const val SECONDS_PER_DAY = 86_400.0
     }
 }
 
