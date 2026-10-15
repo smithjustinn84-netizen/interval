@@ -54,8 +54,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -69,6 +69,7 @@ import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.MAX_ROUND_MARKS
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.PreviewFormFactors
@@ -165,8 +166,7 @@ fun WorkoutScreen(
         } else {
             PortraitWorkout(
                 state = state,
-                clockSize = (maxWidth.value * PORTRAIT_CLOCK_WIDTH_SHARE)
-                    .coerceIn(PORTRAIT_CLOCK_MIN, PORTRAIT_CLOCK_MAX).sp,
+                clockSize = portraitClockSize(maxWidth - Spacing.space20 * 2, state.clock.length),
                 onTogglePause = onTogglePause,
                 onSkip = onSkip,
                 onBack = onBack,
@@ -246,7 +246,7 @@ private fun PortraitWorkout(
         ) {
             PortraitReadout(state, clockSize)
         }
-        ProgressBar(state.progress, Modifier.padding(top = Spacing.space8, bottom = Spacing.space16))
+        ProgressBar(state.progress, Modifier.padding(top = Spacing.space8, bottom = Spacing.space18))
         BottomControls(
             state = state,
             onTogglePause = onTogglePause,
@@ -358,11 +358,11 @@ private fun RoundStatus(state: WorkoutUiState, modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(Spacing.space6),
     ) {
         // Dots stop being readable past a dozen rounds; the text below says the same thing.
-        if (state.rounds <= MAX_DOTS) RoundDots(state)
+        if (state.rounds <= MAX_ROUND_MARKS) RoundDots(state)
         if (state.meta.isNotEmpty()) {
             Text(
                 state.meta,
-                style = IntervalTheme.type.meta,
+                style = IntervalTheme.type.cardTitle,
                 color = PhaseColors.onPhase85,
                 textAlign = TextAlign.Center,
             )
@@ -373,7 +373,7 @@ private fun RoundStatus(state: WorkoutUiState, modifier: Modifier = Modifier) {
 @Composable
 private fun RoundDots(state: WorkoutUiState) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(Spacing.space6),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
         modifier = Modifier.clearAndSetSemantics {},
     ) {
         repeat(state.rounds) { index ->
@@ -556,12 +556,14 @@ private fun SummaryReadout(state: WorkoutUiState, modifier: Modifier = Modifier)
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
+        if (state.rounds <= MAX_ROUND_MARKS) SummaryDots(state, Modifier.padding(bottom = Spacing.space12))
         Text(if (state.ended) "Ended" else "Done", style = IntervalTheme.type.done, color = PhaseColors.onPhase)
         Text(
             state.summary,
             style = IntervalTheme.type.summary,
             color = PhaseColors.onPhase90,
             textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = Spacing.space8),
         )
         Text(state.shape, style = IntervalTheme.type.meta, color = PhaseColors.onPhase85, textAlign = TextAlign.Center)
         Row(
@@ -593,14 +595,35 @@ private fun Stat(value: String, label: String, modifier: Modifier = Modifier) {
         modifier
             .clip(Corners.radius16)
             .background(PhaseColors.glass)
-            .padding(vertical = Spacing.space12),
+            .padding(top = Spacing.space16, bottom = Spacing.space12),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(value, style = IntervalTheme.type.stepperValue, color = PhaseColors.onPhase)
-        Text(label, style = IntervalTheme.type.meta, color = PhaseColors.onPhase)
+        Text(value, style = IntervalTheme.type.stat, color = PhaseColors.onPhase)
+        Text(
+            label,
+            style = IntervalTheme.type.metaStrong,
+            color = PhaseColors.onPhase,
+            modifier = Modifier.padding(top = Spacing.space4),
+        )
     }
 }
 
+/** Every finished round as a filled dot, the rest as halos: the workout's dots, now at the end. */
+@Composable
+private fun SummaryDots(state: WorkoutUiState, modifier: Modifier = Modifier) {
+    Row(modifier.clearAndSetSemantics {}, horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+        repeat(state.rounds) { index ->
+            val done = index < state.completedRounds
+            Box(
+                Modifier.size(
+                    Sizes.dot,
+                ).background(if (done) PhaseColors.onPhase else PhaseColors.dotHalo, CircleShape),
+            )
+        }
+    }
+}
+
+/** How far through the current interval, as a bar. */
 @Composable
 private fun ProgressBar(progress: Float, modifier: Modifier = Modifier) {
     Box(
@@ -710,10 +733,15 @@ private fun PillButton(
     }
 }
 
-private const val MAX_DOTS = 12
+/**
+ * The portrait clock fills the width its digits allow, between a floor and the clock style's size:
+ * "0:14" on a phone comes out around 190sp, as the design canvas draws it, and "10:00" smaller.
+ */
+private fun portraitClockSize(width: Dp, chars: Int): TextUnit =
+    (width.value / (chars * PORTRAIT_CLOCK_EMS_PER_CHAR)).coerceIn(PORTRAIT_CLOCK_MIN, PORTRAIT_CLOCK_MAX).sp
 
-/** The portrait clock scales with the screen width, between a floor and the clock style's size. */
-private const val PORTRAIT_CLOCK_WIDTH_SHARE = 0.35f
+/** Width per clock character in portrait, where the tight tracking lets the digits sit closer. */
+private const val PORTRAIT_CLOCK_EMS_PER_CHAR = 0.46f
 private const val PORTRAIT_CLOCK_MIN = 96f
 private const val PORTRAIT_CLOCK_MAX = 240f
 

@@ -97,6 +97,10 @@ private class JavaTimeFormatter : TimestampFormatter {
 
     override fun time(epochMillis: Long): String = timeFormat.format(zoned(epochMillis))
 
+    override fun dayNumber(epochMillis: Long): Long = zoned(epochMillis).toLocalDate().toEpochDay()
+
+    override fun weekday(epochMillis: Long): Int = zoned(epochMillis).dayOfWeek.value
+
     private fun zoned(epochMillis: Long) = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault())
 }
 

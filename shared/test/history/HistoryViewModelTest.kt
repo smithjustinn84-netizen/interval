@@ -20,11 +20,15 @@ import kotlin.test.assertTrue
 
 private const val DAY = 24L * 60 * 60 * 1000
 
-/** Days are numbered back from now, so tests don't depend on a time zone. */
+/** Days are numbered from the epoch in UTC, so tests don't depend on a time zone. Day 0 is a Monday. */
 private object DayNumbers : TimestampFormatter {
     override fun day(epochMillis: Long, nowMillis: Long): String = "day ${(nowMillis - epochMillis) / DAY}"
 
     override fun time(epochMillis: Long): String = "at $epochMillis"
+
+    override fun dayNumber(epochMillis: Long): Long = epochMillis / DAY
+
+    override fun weekday(epochMillis: Long): Int = (dayNumber(epochMillis) % 7).toInt() + 1
 }
 
 class HistoryViewModelTest {
@@ -51,10 +55,11 @@ class HistoryViewModelTest {
         val sections = viewModel.state.value.sections
         assertEquals(listOf("day 1", "day 10"), sections.map { it.day })
         val (ended, customRow) = sections[0].items
-        assertEquals("Tabata · 20s on · 10s off · ×8 · ended early", ended.title)
+        assertEquals("Tabata", ended.title)
+        assertEquals("20s on · 10s off · ×8 · ended early · at ${29 * DAY}", ended.detail)
         assertEquals("1:30", ended.total)
         assertEquals("25s on · 5s off · ×4", customRow.title)
-        assertEquals("at ${29 * DAY}", customRow.time)
+        assertEquals("at ${29 * DAY}", customRow.detail)
     }
 
     @Test
@@ -69,6 +74,22 @@ class HistoryViewModelTest {
         val state = viewModel.state.value
         assertEquals(2, state.weekCount)
         assertEquals("5:00", state.weekTotal)
+    }
+
+    @Test
+    fun `the week chart has a bar per day ending today`() {
+        clock = 24 * DAY + DAY / 2
+        repository.recordWorkout(builtInPresets.first().config)
+        clock = 30 * DAY + DAY / 2
+        repository.recordWorkout(builtInPresets.first().config, elapsedSeconds = 60)
+        repository.recordWorkout(builtInPresets.first().config, elapsedSeconds = 30)
+
+        val week = viewModel.state.value.week
+        // Day 30 is a Wednesday (30 % 7 == 2), so the chart runs Thursday to Wednesday.
+        assertEquals("TFSSMTW", week.joinToString("") { it.label })
+        assertEquals(listOf(240, 0, 0, 0, 0, 0, 90), week.map { it.seconds })
+        assertEquals(listOf(false, false, false, false, false, false, true), week.map { it.today })
+        assertEquals(240, viewModel.state.value.weekMaxSeconds)
     }
 
     @Test

@@ -28,6 +28,12 @@ interface TimestampFormatter {
 
     /** The time of day: "7:42 PM". */
     fun time(epochMillis: Long): String
+
+    /** The moment's calendar day, counted from any fixed day: equal for two moments on the same local day. */
+    fun dayNumber(epochMillis: Long): Long
+
+    /** The moment's day of the week, 1 for Monday through 7 for Sunday. */
+    fun weekday(epochMillis: Long): Int
 }
 
 /**

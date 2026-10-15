@@ -54,7 +54,7 @@ class TimerViewModelTest {
         assertEquals("Tabata", state.presetName)
         assertEquals(tabata, state.presets.single { it.selected }.preset)
         assertEquals(25, state.config.prepSeconds)
-        assertEquals("Starts with 0:25 to get ready", state.prepLine)
+        assertEquals("0:25 to get ready", state.prepLine)
         assertFalse(state.canSavePreset)
     }
 

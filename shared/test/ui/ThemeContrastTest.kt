@@ -67,6 +67,16 @@ class ThemeContrastTest {
     }
 
     @Test
+    fun `values read on their phase tints`() {
+        palettes.forEach { (theme, p) ->
+            assertContrast(3.0, PhaseColors.work, p.tint(PhaseColors.work), "$theme work on its tint")
+            assertContrast(3.0, PhaseColors.rest, p.tint(PhaseColors.rest), "$theme rest on its tint")
+            assertContrast(3.0, p.onPrepTint, p.tint(PhaseColors.prep), "$theme onPrepTint on the prep tint")
+            assertContrast(4.5, p.text, p.tint(PhaseColors.work), "$theme text on the work tint")
+        }
+    }
+
+    @Test
     fun `accent tint matches the design system`() {
         assertEquals(Color(0xFFE8EFFF).toArgb(), lightPalette.accentTint.toArgb())
         assertEquals(Color(0xFF1D283B).toArgb(), darkPalette.accentTint.toArgb())

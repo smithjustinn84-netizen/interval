@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
@@ -26,6 +28,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.platform.epochMillisNow
@@ -36,6 +42,7 @@ import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Sizes
@@ -53,8 +60,8 @@ fun HistoryRoute(modifier: Modifier = Modifier) {
 }
 
 /**
- * Finished workouts by day, the last week's tally on top. Clearing lives in the overflow menu,
- * behind a confirmation.
+ * Finished workouts by day, the last week's tally and a bar per day on top. Clearing lives in the
+ * overflow menu, behind a confirmation.
  */
 @Composable
 fun HistoryScreen(state: HistoryUiState, onClear: () -> Unit, modifier: Modifier = Modifier) {
@@ -108,7 +115,7 @@ fun HistoryScreen(state: HistoryUiState, onClear: () -> Unit, modifier: Modifier
                         GroupLabel(section.day)
                         ListCard {
                             section.items.forEachIndexed { index, item ->
-                                if (index > 0) RowDivider()
+                                if (index > 0) RowDivider(Modifier.padding(start = Spacing.space18))
                                 HistoryRow(item)
                             }
                         }
@@ -132,31 +139,86 @@ fun HistoryScreen(state: HistoryUiState, onClear: () -> Unit, modifier: Modifier
     }
 }
 
+/** The week's count and time, over a bar for each of its seven days. */
 @Composable
 private fun WeekSummary(state: HistoryUiState, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
-    Row(
+    Column(
         modifier
             .fillMaxWidth()
             .clip(Corners.radius18)
             .background(palette.surface)
-            .padding(horizontal = Spacing.space16, vertical = Spacing.space14),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+            .padding(start = Spacing.space20, end = Spacing.space20, top = Spacing.space16, bottom = Spacing.space14),
+        verticalArrangement = Arrangement.spacedBy(Spacing.space14),
     ) {
-        Column(Modifier.weight(1f)) {
-            Text("Last 7 days", style = IntervalTheme.type.hint, color = palette.textDim)
-            Text(
-                "${state.weekCount} workout${if (state.weekCount == 1) "" else "s"}",
-                style = IntervalTheme.type.stepperValue,
-                color = palette.text,
-            )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+            Column(Modifier.weight(1f)) {
+                Text("Last 7 days", style = IntervalTheme.type.caption, color = palette.textDim)
+                Text(
+                    buildAnnotatedString {
+                        append(state.weekCount.toString())
+                        withStyle(IntervalTheme.type.weekStatUnit.copy(color = palette.textDim).toSpanStyle()) {
+                            append(if (state.weekCount == 1) " workout" else " workouts")
+                        }
+                    },
+                    style = IntervalTheme.type.weekStat,
+                    color = palette.text,
+                )
+            }
+            Column(Modifier.weight(1f)) {
+                Text("Time", style = IntervalTheme.type.caption, color = palette.textDim)
+                Text(state.weekTotal, style = IntervalTheme.type.weekStat, color = palette.accent)
+            }
         }
-        Column(Modifier.weight(1f)) {
-            Text("Time", style = IntervalTheme.type.hint, color = palette.textDim)
-            Text(state.weekTotal, style = IntervalTheme.type.stepperValue, color = palette.text)
+        WeekChart(state)
+    }
+}
+
+/** One bar per day, oldest first, scaled to the longest day; today's initial takes the accent. */
+@Composable
+private fun WeekChart(state: HistoryUiState, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    val max = state.weekMaxSeconds
+    val description = state.week.filter { it.seconds > 0 }
+        .joinToString(", ") { "${it.label} ${it.seconds / SECONDS_PER_MINUTE} min" }
+    Row(
+        modifier.fillMaxWidth().semantics { contentDescription = "Minutes per day this week: $description" },
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        state.week.forEach { day ->
+            Column(
+                Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(Spacing.space6),
+            ) {
+                Box(Modifier.fillMaxWidth().height(Sizes.weekBar), contentAlignment = Alignment.BottomCenter) {
+                    val height = if (day.seconds > 0 &&
+                        max > 0
+                    ) {
+                        Sizes.weekBar * (day.seconds.toFloat() / max)
+                    } else {
+                        Sizes.weekBarEmpty
+                    }
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(height.coerceAtLeast(Sizes.weekBarEmpty))
+                            .clip(Corners.radius10)
+                            .background(if (day.seconds > 0) palette.accent else palette.surfaceVariant),
+                    )
+                }
+                Text(
+                    day.label,
+                    style = IntervalTheme.type.caption,
+                    color = if (day.today) palette.accent else palette.textDim,
+                )
+            }
         }
     }
 }
+
+private const val SECONDS_PER_MINUTE = 60
 
 @Composable
 private fun HistoryRow(item: HistoryItem, modifier: Modifier = Modifier) {
@@ -165,17 +227,29 @@ private fun HistoryRow(item: HistoryItem, modifier: Modifier = Modifier) {
         modifier
             .fillMaxWidth()
             .heightIn(min = Sizes.listRow)
-            .padding(horizontal = Spacing.space16, vertical = Spacing.space8),
+            .padding(horizontal = Spacing.space16, vertical = Spacing.space10),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
+        Box(Modifier.size(Sizes.stripe, Sizes.historyMarkHeight).clip(Corners.full).background(PhaseColors.work))
         Column(Modifier.weight(1f)) {
-            Text(item.title, style = IntervalTheme.type.total, color = palette.text)
-            Text(item.time, style = IntervalTheme.type.hint, color = palette.textDim)
+            Text(item.title, style = IntervalTheme.type.cardTitle, color = palette.text, maxLines = 1)
+            Text(item.detail, style = IntervalTheme.type.hint, color = palette.textDim)
         }
-        Text(item.total, style = IntervalTheme.type.sectionTitle, color = palette.text)
+        Text(item.total, style = IntervalTheme.type.historyTotal, color = palette.text)
     }
 }
+
+/** Thursday to Wednesday: a hangboard session, the two from yesterday, and today's Tabata. */
+private val PreviewWeek = listOf(
+    DayTally("T", seconds = 320, today = false),
+    DayTally("F", seconds = 0, today = false),
+    DayTally("S", seconds = 0, today = false),
+    DayTally("S", seconds = 0, today = false),
+    DayTally("M", seconds = 0, today = false),
+    DayTally("T", seconds = 860, today = false),
+    DayTally("W", seconds = 240, today = true),
+)
 
 @PreviewFormFactors
 @Composable
@@ -184,17 +258,18 @@ private fun HistoryScreenPreview() {
         HistoryScreen(
             state = HistoryUiState(
                 sections = listOf(
-                    HistorySection("Today", listOf(HistoryItem("Tabata · 20s on · 10s off · ×8", "7:42 AM", "4:00"))),
+                    HistorySection("Today", listOf(HistoryItem("Tabata", "20s on · 10s off · ×8 · 7:42 AM", "4:00"))),
                     HistorySection(
                         "Yesterday",
                         listOf(
                             HistoryItem("25s on · 10s off · ×8", "6:15 PM", "4:40"),
-                            HistoryItem("HIIT 30/30 · 30s on · 30s off · ×10", "7:05 AM", "9:40"),
+                            HistoryItem("HIIT 30/30", "30s on · 30s off · ×10 · 7:05 AM", "9:40"),
                         ),
                     ),
                 ),
                 weekCount = 3,
                 weekTotal = "18:20",
+                week = PreviewWeek,
             ),
             onClear = {},
         )

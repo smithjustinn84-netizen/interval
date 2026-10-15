@@ -8,6 +8,11 @@ import androidx.compose.ui.unit.dp
 
 /** Gaps and padding: the design system's `space-*` tokens. */
 object Spacing {
+    /** The gap between segments of a small timeline. */
+    val space1 = 1.dp
+
+    /** The gap between segments of the hero timeline. */
+    val space2 = 2.dp
     val space4 = 4.dp
     val space6 = 6.dp
     val space8 = 8.dp
@@ -29,10 +34,13 @@ object Spacing {
 
 /** Corner radii: the design system's `radius-*` tokens. Radii grow with the element. */
 object Radius {
-    /** Stepper buttons, workout pills. */
+    /** A small value pill, and an option inside the theme picker. */
+    val radius10 = 10.dp
+
+    /** Stepper buttons, workout pills, value pills. */
     val radius12 = 12.dp
 
-    /** Preset cards, the save controls. */
+    /** Preset cards, the save controls, the theme picker. */
     val radius14 = 14.dp
 
     /** Workout bottom controls. */
@@ -40,20 +48,24 @@ object Radius {
 
     /** Field cards, the history card, Start workout. */
     val radius18 = 18.dp
+
+    /** The edit sheet's top corners. */
+    val radius24 = 24.dp
 }
 
 /** The [Radius] tokens as shapes, plus `radius-full`. */
 object Corners {
+    val radius10 = RoundedCornerShape(Radius.radius10)
     val radius12 = RoundedCornerShape(Radius.radius12)
     val radius14 = RoundedCornerShape(Radius.radius14)
     val radius16 = RoundedCornerShape(Radius.radius16)
     val radius18 = RoundedCornerShape(Radius.radius18)
 
-    /** Progress bar track and fill. */
+    /** Progress bar track and fill, timelines, dots. */
     val full = RoundedCornerShape(50)
 
     /** A bottom sheet: rounded on top only. */
-    val sheet = RoundedCornerShape(topStart = Radius.radius18, topEnd = Radius.radius18)
+    val sheet = RoundedCornerShape(topStart = Radius.radius24, topEnd = Radius.radius24)
 }
 
 /** Fixed dimensions: the design system's `size-*` tokens, mostly touch targets. */
@@ -90,26 +102,55 @@ object Sizes {
 
     /** Width of each side rail of workout controls in landscape. */
     val rail = 120.dp
-    val start = 68.dp
+    val start = 72.dp
 
     /** Elevation of Start workout, the only raised element (`shadow-start`). */
     val startElevation = 8.dp
-    val control = 68.dp
+
+    /** The play glyph inside Start workout. */
+    val playIcon = 26.dp
+    val control = 76.dp
     val controlLandscape = 54.dp
     val controlSide = 84.dp
     val stepper = 54.dp
     val pillWidth = 72.dp
     val pillHeight = 48.dp
+
+    /** A value in its phase-tinted pill on the Timer tab. */
+    val valuePill = 48.dp
+
+    /** The smaller value pill on a Settings row. */
+    val valuePillSmall = 40.dp
+
+    /** The hero card's workout timeline. */
+    val timeline = 12.dp
+
+    /** The timeline on a preset chip or card. */
+    val timelineMini = 6.dp
+
+    /** The tallest bar of the History tab's week chart. */
+    val weekBar = 56.dp
+
+    /** A day with no workout in the week chart. */
+    val weekBarEmpty = 6.dp
+
+    /** The pill of phase colour at the start of a History row. */
+    val historyMarkHeight = 40.dp
+
+    /** The badge naming the matching preset on the hero card. */
+    val badgeHeight = 32.dp
     val toggleRow = 56.dp
-    val save = 52.dp
-    val delete = 32.dp
+    val save = 56.dp
+
+    /** The hit area of a custom preset card's × delete button. */
+    val delete = 44.dp
     val valueMin = 64.dp
     val stripe = 6.dp
-    val dot = 10.dp
+    val dot = 14.dp
 
     /** Width of the ring around the current round dot. */
-    val dotHalo = 3.dp
-    val progress = 8.dp
+    val dotHalo = 4.dp
+    val progress = 12.dp
     val border = 1.5.dp
 
     /** Line icons: tabs and top-bar actions. */
@@ -126,20 +167,20 @@ object Sizes {
     val navIndicatorHeight = 32.dp
 
     /** A preset chip in the Timer tab's horizontal row. */
-    val presetChip = 148.dp
+    val presetChip = 150.dp
 
     /** Minimum height of a list row (presets, history, settings). */
     val listRow = 64.dp
 
     /** Minimum height of a Timer tab interval row. */
-    val intervalRow = 68.dp
+    val intervalRow = 72.dp
 
     /** The edit sheet's − / + buttons, a size up from [stepper]. */
-    val sheetStepper = 64.dp
+    val sheetStepper = 68.dp
 
     /** The edit sheet's drag handle. */
-    val handleWidth = 32.dp
-    val handleHeight = 4.dp
+    val handleWidth = 36.dp
+    val handleHeight = 5.dp
 }
 
 /** The design system's `opacity-*` tokens. */
@@ -149,6 +190,9 @@ object Opacity {
 
     /** A − or + glyph at the end of its range. */
     const val DISABLED_GLYPH = 0.5f
+
+    /** The accent-coloured shadow under Start workout. */
+    const val START_SHADOW = 0.35f
 }
 
 /** Timings from the design system's Motion section. */

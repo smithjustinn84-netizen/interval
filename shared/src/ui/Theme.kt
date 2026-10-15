@@ -36,9 +36,24 @@ data class IntervalPalette(
     val line: Color,
     val accent: Color,
     val onAccent: Color,
+    /**
+     * The Get ready value on its tint. Amber is too light to read on a pale tint, so light mode
+     * darkens it; dark mode uses [PhaseColors.prep] itself.
+     */
+    val onPrepTint: Color,
 ) {
     /** Selected preset card fill. */
-    val accentTint: Color get() = lerp(surface, accent, 0.1f)
+    val accentTint: Color get() = tint(accent)
+
+    /**
+     * A pale wash of [color] over [surface]: the fill behind a value shown in its phase colour, and
+     * the selected state of anything accent-coloured. One recipe, so every tint sits the same depth.
+     */
+    fun tint(color: Color): Color = lerp(surface, color, TINT_STRENGTH)
+
+    private companion object {
+        const val TINT_STRENGTH = 0.1f
+    }
 }
 
 /** Full-screen workout colors. The same in light and dark: the whole screen is the signal. */
@@ -88,6 +103,7 @@ internal val lightPalette = IntervalPalette(
     line = Color(0xFFD5DCE6),
     accent = Color(0xFF2456E6),
     onAccent = Color.White,
+    onPrepTint = Color(0xFFA86A05),
 )
 
 internal val darkPalette = IntervalPalette(
@@ -99,6 +115,7 @@ internal val darkPalette = IntervalPalette(
     line = Color(0xFF2C3541),
     accent = Color(0xFF356AFF),
     onAccent = Color.White,
+    onPrepTint = PhaseColors.prep,
 )
 
 /**
@@ -120,14 +137,19 @@ data class IntervalType(
     val sectionTitle: TextStyle,
     val control: TextStyle,
     val nextUp: TextStyle,
+    /** "8 rounds · 4:40 total" under Done. */
     val summary: TextStyle,
     val cardTitle: TextStyle,
     val body: TextStyle,
     val total: TextStyle,
     val meta: TextStyle,
+    /** [meta] with weight: the workout status line, stat labels. */
+    val metaStrong: TextStyle,
     val buttonLabel: TextStyle,
     val presetDescription: TextStyle,
     val hint: TextStyle,
+    /** A small label over a value: "Total", "This week". */
+    val caption: TextStyle,
     /** The − and + on a stepper. */
     val stepperGlyph: TextStyle,
     /** The × on a custom preset. */
@@ -136,6 +158,20 @@ data class IntervalType(
     val heroTotal: TextStyle,
     /** The value being edited in the edit sheet. */
     val sheetValue: TextStyle,
+    /** A value in its phase-tinted pill on the Timer tab. */
+    val valuePill: TextStyle,
+    /** A preset's total on a Timer tab chip. */
+    val presetTotal: TextStyle,
+    /** A preset's total on a Presets tab card. */
+    val presetCardTotal: TextStyle,
+    /** A summary stat: time, rounds. */
+    val stat: TextStyle,
+    /** The History tab's week tally. */
+    val weekStat: TextStyle,
+    /** The unit after a week tally: "workouts". */
+    val weekStatUnit: TextStyle,
+    /** A finished workout's length in its History row. */
+    val historyTotal: TextStyle,
     /** Tab labels in the navigation bar. */
     val navLabel: TextStyle,
     /** "Built-in", "Today", "Cues": the label over a group of list rows. */
@@ -147,28 +183,37 @@ private fun intervalType(body: TextStyle, label: TextStyle, condensed: FontFamil
     fun heading(size: TextUnit) = body.copy(fontFamily = condensed, fontWeight = FontWeight.SemiBold, fontSize = size)
     return IntervalType(
         clock = numerals(240.sp).copy(lineHeight = 240.sp),
-        done = numerals(96.sp),
-        phaseLabelLandscape = heading(40.sp),
-        phaseLabel = heading(34.sp),
-        screenTitle = numerals(32.sp),
+        done = numerals(128.sp).copy(lineHeight = 120.sp),
+        phaseLabelLandscape = numerals(40.sp),
+        phaseLabel = numerals(40.sp),
+        screenTitle = numerals(36.sp),
         stepperValue = numerals(27.sp),
-        startLabel = numerals(26.sp),
-        primaryControl = numerals(22.sp),
-        sectionTitle = numerals(20.sp),
-        control = numerals(19.sp),
-        nextUp = body.copy(fontSize = 20.sp),
-        summary = body.copy(fontSize = 18.sp),
+        startLabel = numerals(28.sp),
+        primaryControl = numerals(26.sp),
+        sectionTitle = numerals(22.sp),
+        control = numerals(22.sp),
+        nextUp = body.copy(fontSize = 20.sp, fontWeight = FontWeight.SemiBold),
+        summary = heading(26.sp).copy(lineHeight = 32.sp),
         cardTitle = body.copy(fontWeight = FontWeight.SemiBold),
         body = body,
         total = body.copy(fontSize = 15.sp),
         meta = body.copy(fontSize = 14.sp),
+        metaStrong = body.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
         buttonLabel = label.copy(fontWeight = FontWeight.SemiBold),
         presetDescription = body.copy(fontSize = 13.5.sp),
         hint = body.copy(fontSize = 13.sp),
+        caption = body.copy(fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold),
         stepperGlyph = body.copy(fontSize = 24.sp),
         deleteGlyph = body.copy(fontSize = 18.sp),
-        heroTotal = numerals(64.sp).copy(lineHeight = 64.sp),
-        sheetValue = numerals(80.sp).copy(lineHeight = 80.sp),
+        heroTotal = numerals(96.sp).copy(lineHeight = 96.sp, letterSpacing = (-1).sp),
+        sheetValue = numerals(104.sp).copy(lineHeight = 104.sp, letterSpacing = (-2).sp),
+        valuePill = numerals(36.sp),
+        presetTotal = numerals(20.sp).copy(lineHeight = 20.sp),
+        presetCardTotal = numerals(36.sp).copy(lineHeight = 36.sp),
+        stat = numerals(40.sp).copy(lineHeight = 40.sp),
+        weekStat = numerals(44.sp).copy(lineHeight = 44.sp),
+        weekStatUnit = heading(22.sp),
+        historyTotal = numerals(26.sp),
         navLabel = body.copy(fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold),
         groupLabel = body.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
     )

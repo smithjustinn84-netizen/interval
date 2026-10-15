@@ -37,6 +37,14 @@ object IntervalIcons {
     val Close: ImageVector = lineIcon("Close", "M6 6l12 12M18 6L6 18")
     val Chevron: ImageVector = lineIcon("Chevron", "M9 6l6 6-6 6")
     val Check: ImageVector = lineIcon("Check", "M5 12l5 5L20 7")
+
+    /** The filled triangle inside Start workout. */
+    val Play: ImageVector = ImageVector.Builder("Play", 24.dp, 24.dp, VIEWPORT, VIEWPORT).apply {
+        addPath(
+            addPathNodes("M7 4.5v15a1 1 0 0 0 1.52.85l12-7.5a1 1 0 0 0 0-1.7l-12-7.5A1 1 0 0 0 7 4.5z"),
+            fill = SolidColor(Color.Black),
+        )
+    }.build()
     val More: ImageVector = ImageVector.Builder("More", 24.dp, 24.dp, VIEWPORT, VIEWPORT).apply {
         listOf(5f, 12f, 19f).forEach { y ->
             addPath(addPathNodes("M14 ${y}a2 2 0 1 1 -4 0a2 2 0 1 1 4 0"), fill = SolidColor(Color.Black))

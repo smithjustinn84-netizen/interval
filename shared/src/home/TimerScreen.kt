@@ -64,11 +64,15 @@ import dev.justinsmith.interval.ui.SavePresetDialog
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StartButton
+import dev.justinsmith.interval.ui.Timeline
 import dev.justinsmith.interval.ui.TitleBar
+import dev.justinsmith.interval.ui.ValuePill
 import dev.justinsmith.interval.ui.ValueSheet
 import dev.justinsmith.interval.ui.hint
 import dev.justinsmith.interval.ui.label
 import dev.justinsmith.interval.ui.stripe
+import dev.justinsmith.interval.ui.tint
+import dev.justinsmith.interval.ui.valueColor
 import org.koin.compose.currentKoinScope
 
 /** The values the Timer tab edits. Get ready is a setting, edited from Settings. */
@@ -99,8 +103,9 @@ fun TimerRoute(
 }
 
 /**
- * Home: what the next workout is, at a glance, and Start within thumb reach. Each value opens an
- * edit sheet instead of carrying its own steppers; presets are one tap away in a scrolling row.
+ * Home: what the next workout is, at a glance, and Start within thumb reach. The hero card draws
+ * the workout as a timeline in the phase colours; each value opens an edit sheet instead of
+ * carrying its own steppers; presets are one tap away in a scrolling row.
  */
 @Composable
 fun TimerScreen(
@@ -143,7 +148,7 @@ fun TimerScreen(
                         .fillMaxHeight()
                         .verticalScroll(rememberScrollState())
                         .padding(top = Spacing.space16, bottom = Spacing.space16),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.space16),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.space14),
                 ) {
                     PresetRow(state.presets, onApplyPreset, onSeeAllPresets)
                     Intervals(state.config, onEdit, Modifier.padding(horizontal = Spacing.space16))
@@ -155,7 +160,7 @@ fun TimerScreen(
                 titleBar()
                 Column(
                     Modifier.weight(1f).verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.space16),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.space14),
                 ) {
                     Hero(state, Modifier.padding(horizontal = Spacing.space16))
                     PresetRow(state.presets, onApplyPreset, onSeeAllPresets)
@@ -169,7 +174,7 @@ fun TimerScreen(
                             start = Spacing.space16,
                             end = Spacing.space16,
                             top = Spacing.space12,
-                            bottom = Spacing.space16,
+                            bottom = Spacing.space14,
                         ),
                 )
             }
@@ -197,26 +202,50 @@ fun TimerScreen(
     }
 }
 
-/** The session total, and the preset it matches (or Custom, which the top bar's + saves). */
+/**
+ * The session total, the preset it matches (or Custom, which the top bar's + saves), and the
+ * workout drawn as a timeline: get ready, then every work and rest, to scale.
+ */
 @Composable
 private fun Hero(state: TimerUiState, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
-    Row(
+    Column(
         modifier
             .fillMaxWidth()
             .clip(Corners.radius18)
             .background(palette.surface)
-            .padding(horizontal = Spacing.space20, vertical = Spacing.space16),
-        verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+            .padding(start = Spacing.space20, end = Spacing.space20, top = Spacing.space18, bottom = Spacing.space16),
+        verticalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
-        Column(Modifier.weight(1f)) {
-            Text("Total", style = IntervalTheme.type.hint, color = palette.textDim)
-            Text(state.total, style = IntervalTheme.type.heroTotal, color = palette.text)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.space12)) {
+            Column(Modifier.weight(1f)) {
+                Text("Total", style = IntervalTheme.type.caption, color = palette.textDim)
+                Text(state.total, style = IntervalTheme.type.heroTotal, color = palette.text)
+            }
+            Box(
+                Modifier
+                    .padding(top = Spacing.space2)
+                    .height(Sizes.badgeHeight)
+                    .clip(Corners.full)
+                    .background(palette.accentTint)
+                    .padding(horizontal = Spacing.space12),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(state.presetName ?: "Custom", style = IntervalTheme.type.buttonLabel, color = palette.accent)
+            }
         }
-        Column(horizontalAlignment = Alignment.End) {
-            Text(state.presetName ?: "Custom", style = IntervalTheme.type.cardTitle, color = palette.text)
-            Text(state.config.description, style = IntervalTheme.type.presetDescription, color = palette.textDim)
+        Timeline(state.config)
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+        ) {
+            Text(
+                state.config.description,
+                style = IntervalTheme.type.cardTitle,
+                color = palette.text,
+                modifier = Modifier.weight(1f),
+            )
             if (state.prepLine != null) {
                 Text(
                     state.prepLine,
@@ -263,6 +292,7 @@ private fun PresetRow(
     }
 }
 
+/** A preset's name, total and shape, with a small timeline of its rounds. */
 @Composable
 private fun PresetCard(chip: PresetChip, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
@@ -270,17 +300,30 @@ private fun PresetCard(chip: PresetChip, onClick: () -> Unit, modifier: Modifier
     Column(
         modifier
             .width(Sizes.presetChip)
-            .heightIn(min = Sizes.listRow)
             .clip(shape)
             .background(if (chip.selected) palette.accentTint else palette.surface)
             .border(Sizes.border, if (chip.selected) palette.accent else palette.line, shape)
             .clickable(role = Role.Button, onClick = onClick)
             .semantics { selected = chip.selected }
-            .padding(horizontal = Spacing.space14, vertical = Spacing.space8),
-        verticalArrangement = Arrangement.Center,
+            .padding(horizontal = Spacing.space14, vertical = Spacing.space12),
+        verticalArrangement = Arrangement.spacedBy(Spacing.space6),
     ) {
-        Text(chip.preset.name, style = IntervalTheme.type.cardTitle, color = palette.text, maxLines = 1)
-        Text(chip.description, style = IntervalTheme.type.presetDescription, color = palette.textDim, maxLines = 1)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+            Text(
+                chip.preset.name,
+                style = IntervalTheme.type.cardTitle,
+                color = palette.text,
+                maxLines = 1,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                formatClock(chip.preset.config.totalSeconds),
+                style = IntervalTheme.type.presetTotal,
+                color = if (chip.selected) palette.accent else palette.text,
+            )
+        }
+        Text(chip.description, style = IntervalTheme.type.hint, color = palette.textDim, maxLines = 1)
+        Timeline(chip.preset.config, height = Sizes.timelineMini, gap = Spacing.space1, showPrep = false)
     }
 }
 
@@ -325,7 +368,10 @@ private fun Intervals(config: IntervalConfig, onEdit: (ConfigField) -> Unit, mod
     }
 }
 
-/** One value: its phase stripe, name and hint, and the value with a chevron; tapping opens the sheet. */
+/**
+ * One value: its phase stripe, name and hint, and the value in a pill of its colour with a chevron;
+ * tapping opens the sheet.
+ */
 @Composable
 private fun IntervalRow(field: ConfigField, value: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
@@ -343,10 +389,10 @@ private fun IntervalRow(field: ConfigField, value: String, onClick: () -> Unit, 
             Text(field.label, style = IntervalTheme.type.cardTitle, color = palette.text)
             Text(field.hint, style = IntervalTheme.type.hint, color = palette.textDim)
         }
-        Text(
+        ValuePill(
             if (field == ConfigField.Rounds) "×$value" else value,
-            style = IntervalTheme.type.stepperValue,
-            color = palette.text,
+            color = field.valueColor(),
+            tint = field.tint(),
         )
         Icon(
             IntervalIcons.Chevron,
@@ -366,7 +412,7 @@ private fun TimerPreview() {
                 config = config,
                 total = formatClock(config.totalSeconds),
                 presetName = "Tabata",
-                prepLine = "Starts with 0:10 to get ready",
+                prepLine = "0:10 to get ready",
                 presets = builtInPresets.mapIndexed { i, preset ->
                     PresetChip(preset, preset.config.description, selected = i == 0)
                 },

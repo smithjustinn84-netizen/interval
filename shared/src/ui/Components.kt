@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -36,17 +36,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
+import dev.justinsmith.interval.timer.IntervalConfig
 import kotlinx.coroutines.delay
 
 /**
- * A screen's top bar: an optional navigation action (Back) on the left, actions on the right, and
- * the large title under them, as on iOS large-title navigation bars and Material's large top app bar.
+ * Round-by-round marks (the workout's dots, a timeline's segments) stop being readable past a
+ * dozen rounds; beyond that the text carries the count and a timeline shows only the shares.
+ */
+const val MAX_ROUND_MARKS = 12
+
+/**
+ * A screen's top bar on one line: an optional navigation action (Back) first, the large title, and
+ * the actions at the end. One row, so the title sits right under the status bar rather than under
+ * an empty strip of icon height.
  */
 @Composable
 fun TitleBar(
@@ -55,30 +66,31 @@ fun TitleBar(
     navigation: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
 ) {
-    Column(modifier.fillMaxWidth()) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .heightIn(min = Sizes.iconButton)
-                .padding(start = Spacing.space4, end = Spacing.space8, top = Spacing.space12),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            navigation()
-            Spacer(Modifier.weight(1f))
-            actions()
-        }
+    Row(
+        modifier
+            .fillMaxWidth()
+            .heightIn(min = Sizes.iconButton)
+            .padding(start = Spacing.space4, end = Spacing.space8, top = Spacing.space12, bottom = Spacing.space8),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        navigation()
         Text(
             title,
             style = IntervalTheme.type.screenTitle,
             color = IntervalTheme.palette.text,
             modifier = Modifier
-                .padding(start = Spacing.space16, end = Spacing.space16, bottom = Spacing.space12)
+                .weight(1f)
+                .padding(start = Spacing.space12)
                 .semantics { heading() },
         )
+        actions()
     }
 }
 
-/** An icon-only top-bar action, with its [description] for screen readers. */
+/**
+ * An icon-only top-bar action, with its [description] for screen readers. A [background] fills its
+ * circle, for the one action a screen wants noticed (the + on Presets).
+ */
 @Composable
 fun IconAction(
     icon: ImageVector,
@@ -86,12 +98,15 @@ fun IconAction(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    background: Color = Color.Transparent,
+    tint: Color = IntervalTheme.palette.text,
 ) {
     val palette = IntervalTheme.palette
     Box(
         modifier
             .size(Sizes.iconButton)
             .clip(CircleShape)
+            .background(if (enabled) background else Color.Transparent)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
@@ -99,7 +114,7 @@ fun IconAction(
         Icon(
             icon,
             contentDescription = null,
-            tint = if (enabled) palette.text else palette.textDim.copy(alpha = Opacity.DISABLED),
+            tint = if (enabled) tint else palette.textDim.copy(alpha = Opacity.DISABLED),
             modifier = Modifier.size(Sizes.icon),
         )
     }
@@ -155,7 +170,7 @@ fun ToggleRow(
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
         Column(Modifier.weight(1f)) {
-            Text(title, style = IntervalTheme.type.body, color = palette.text)
+            Text(title, style = IntervalTheme.type.cardTitle, color = palette.text)
             if (subtitle != null) Text(subtitle, style = IntervalTheme.type.hint, color = palette.textDim)
         }
         Switch(
@@ -173,21 +188,94 @@ fun ToggleRow(
     }
 }
 
-/** The one raised, accent-filled action of a screen: Start workout. */
+/**
+ * The one raised, accent-filled action of a screen: Start workout. Its shadow is the accent itself,
+ * so the button glows rather than sits in a grey smudge.
+ */
 @Composable
 fun StartButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val shape = Corners.radius18
-    Box(
+    val glow = palette.accent.copy(alpha = Opacity.START_SHADOW)
+    Row(
         modifier
             .height(Sizes.start)
-            .shadow(elevation = Sizes.startElevation, shape = shape)
+            .shadow(elevation = Sizes.startElevation, shape = shape, ambientColor = glow, spotColor = glow)
             .clip(shape)
             .background(palette.accent)
             .clickable(role = Role.Button, onClick = onClick),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space10, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            IntervalIcons.Play,
+            contentDescription = null,
+            tint = palette.onAccent,
+            modifier = Modifier.size(Sizes.playIcon),
+        )
+        Text("Start workout", style = IntervalTheme.type.startLabel, color = palette.onAccent)
+    }
+}
+
+/**
+ * The workout's shape as a bar: get ready in amber, then each round's work in red and its rest in
+ * green, each as wide as it is long. Past [MAX_ROUND_MARKS] rounds the bar shows only the work and
+ * rest shares. Decorative: the text beside it says the same thing.
+ */
+@Composable
+fun Timeline(
+    config: IntervalConfig,
+    modifier: Modifier = Modifier,
+    height: Dp = Sizes.timeline,
+    gap: Dp = Spacing.space2,
+    showPrep: Boolean = true,
+) {
+    val segments = buildList {
+        if (showPrep && config.prepSeconds > 0) add(PhaseColors.prep to config.prepSeconds)
+        if (config.rounds <= MAX_ROUND_MARKS) {
+            repeat(config.rounds) { round ->
+                add(PhaseColors.work to config.workSeconds)
+                if (round < config.rounds - 1 && config.restSeconds > 0) add(PhaseColors.rest to config.restSeconds)
+            }
+        } else {
+            add(PhaseColors.work to config.rounds * config.workSeconds)
+            val rest = (config.rounds - 1) * config.restSeconds
+            if (rest > 0) add(PhaseColors.rest to rest)
+        }
+    }
+    Row(
+        modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(Corners.full)
+            .clearAndSetSemantics {},
+        horizontalArrangement = Arrangement.spacedBy(gap),
+    ) {
+        segments.forEach { (color, seconds) ->
+            Box(Modifier.weight(seconds.toFloat()).fillMaxHeight().background(color))
+        }
+    }
+}
+
+/** A value in a pill of its own colour, on a pale wash of it: "0:20" in work red, "×8" in accent. */
+@Composable
+fun ValuePill(
+    text: String,
+    color: Color,
+    tint: Color,
+    modifier: Modifier = Modifier,
+    height: Dp = Sizes.valuePill,
+    style: TextStyle = IntervalTheme.type.valuePill,
+) {
+    Box(
+        modifier
+            .height(height)
+            .clip(if (height < Sizes.valuePill) Corners.radius10 else Corners.radius12)
+            .background(tint)
+            .padding(horizontal = Spacing.space14),
         contentAlignment = Alignment.Center,
     ) {
-        Text("Start workout", style = IntervalTheme.type.startLabel, color = palette.onAccent)
+        Text(text, style = style, color = color)
     }
 }
 

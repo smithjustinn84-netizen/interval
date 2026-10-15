@@ -63,6 +63,17 @@ fun ConfigField.stripe(): Color = when (this) {
     ConfigField.Rounds -> IntervalTheme.palette.accent
 }
 
+/** The pale wash of the field's colour behind its value. */
+@Composable
+@ReadOnlyComposable
+fun ConfigField.tint(): Color = IntervalTheme.palette.tint(stripe())
+
+/** The field's value on its [tint]: its own colour, except Get ready, whose amber is darkened to read. */
+@Composable
+@ReadOnlyComposable
+fun ConfigField.valueColor(): Color =
+    if (this == ConfigField.Prep) IntervalTheme.palette.onPrepTint else stripe()
+
 private val ConfigField.less: String
     get() = if (this == ConfigField.Rounds) "Fewer rounds" else "Less ${label.lowercase()} time"
 
@@ -120,7 +131,7 @@ fun ValueSheet(
                         color = palette.textDim,
                         modifier = Modifier.weight(1f),
                     )
-                    Text(total, style = IntervalTheme.type.total, color = palette.text)
+                    Text(total, style = IntervalTheme.type.sectionTitle, color = palette.text)
                 }
             }
             AccentButton(
@@ -163,7 +174,7 @@ private fun SheetStepper(field: ConfigField, value: Int, onStep: (Int) -> Unit, 
             Text(
                 field.format(value),
                 style = IntervalTheme.type.sheetValue,
-                color = palette.text,
+                color = field.valueColor(),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.weight(1f),
             )
@@ -197,7 +208,9 @@ private fun QuickPicks(field: ConfigField, value: Int, onPick: (Int) -> Unit, mo
         field.quickPicks.chunked(QUICK_PICKS_PER_ROW).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
                 row.forEach { pick ->
-                    QuickPick(field.format(pick), selected = pick == value, { onPick(pick) }, Modifier.weight(1f))
+                    QuickPick(field, field.format(pick), selected = pick == value, {
+                        onPick(pick)
+                    }, Modifier.weight(1f))
                 }
             }
         }
@@ -207,19 +220,25 @@ private fun QuickPicks(field: ConfigField, value: Int, onPick: (Int) -> Unit, mo
 private const val QUICK_PICKS_PER_ROW = 4
 
 @Composable
-private fun QuickPick(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun QuickPick(
+    field: ConfigField,
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val palette = IntervalTheme.palette
     val shape = Corners.radius12
     Box(
         modifier
             .heightIn(min = Sizes.pillHeight)
             .clip(shape)
-            .background(if (selected) palette.accentTint else palette.surface)
-            .border(Sizes.border, if (selected) palette.accent else palette.line, shape)
+            .background(if (selected) field.tint() else palette.surface)
+            .border(Sizes.border, if (selected) field.stripe() else palette.line, shape)
             .clickable(role = Role.Button, onClick = onClick)
             .semantics { this.selected = selected },
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = IntervalTheme.type.control, color = palette.text)
+        Text(text, style = IntervalTheme.type.control, color = if (selected) field.valueColor() else palette.text)
     }
 }

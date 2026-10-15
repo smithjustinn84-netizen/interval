@@ -1,7 +1,6 @@
 package dev.justinsmith.interval.settings
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -52,10 +52,13 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TitleBar
 import dev.justinsmith.interval.ui.ToggleRow
+import dev.justinsmith.interval.ui.ValuePill
 import dev.justinsmith.interval.ui.ValueSheet
 import dev.justinsmith.interval.ui.hint
 import dev.justinsmith.interval.ui.label
 import dev.justinsmith.interval.ui.stripe
+import dev.justinsmith.interval.ui.tint
+import dev.justinsmith.interval.ui.valueColor
 import org.koin.compose.currentKoinScope
 
 /** Resolves the screen's ViewModel and binds it to [SettingsScreen]. */
@@ -172,10 +175,16 @@ private fun PrepRow(seconds: Int, onClick: () -> Unit, modifier: Modifier = Modi
     ) {
         Box(Modifier.width(Sizes.stripe).fillMaxHeight().background(field.stripe()))
         Column(Modifier.weight(1f).padding(vertical = Spacing.space6)) {
-            Text(field.label, style = IntervalTheme.type.body, color = palette.text)
+            Text(field.label, style = IntervalTheme.type.cardTitle, color = palette.text)
             Text(field.hint, style = IntervalTheme.type.hint, color = palette.textDim)
         }
-        Text(formatClock(seconds), style = IntervalTheme.type.primaryControl, color = palette.text)
+        ValuePill(
+            formatClock(seconds),
+            color = field.valueColor(),
+            tint = field.tint(),
+            height = Sizes.valuePillSmall,
+            style = IntervalTheme.type.stepperValue,
+        )
         Icon(
             IntervalIcons.Chevron,
             contentDescription = null,
@@ -185,28 +194,27 @@ private fun PrepRow(seconds: Int, onClick: () -> Unit, modifier: Modifier = Modi
     }
 }
 
-/** System / Light / Dark as a segmented control. */
+/** System / Light / Dark as a segmented control: the chosen option is a white card on the variant ground. */
 @Composable
 private fun ThemePicker(selected: ThemeMode, onSelect: (ThemeMode) -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
-    val shape = Corners.radius14
     Row(
         modifier
             .fillMaxWidth()
-            .height(IntrinsicSize.Min)
-            .clip(shape)
-            .border(Sizes.border, palette.textDim, shape)
-            .background(palette.surface)
+            .clip(Corners.radius14)
+            .background(palette.surfaceVariant)
+            .padding(Spacing.space4)
             .selectableGroup(),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space4),
     ) {
-        ThemeMode.entries.forEachIndexed { index, mode ->
-            if (index > 0) Box(Modifier.width(Sizes.border).fillMaxHeight().background(palette.textDim))
+        ThemeMode.entries.forEach { mode ->
             val isSelected = mode == selected
             Row(
                 Modifier
                     .weight(1f)
-                    .heightIn(min = Sizes.pillHeight)
-                    .background(if (isSelected) palette.accentTint else palette.surface)
+                    .heightIn(min = Sizes.toggleRow - Spacing.space12)
+                    .clip(Corners.radius10)
+                    .background(if (isSelected) palette.surface else Color.Transparent)
                     .selectable(selected = isSelected, role = Role.RadioButton, onClick = { onSelect(mode) }),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.space6, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,

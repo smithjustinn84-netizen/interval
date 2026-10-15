@@ -14,6 +14,9 @@ import platform.AVFAudio.AVSpeechSynthesizer
 import platform.AVFAudio.AVSpeechUtterance
 import platform.AudioToolbox.AudioServicesPlaySystemSound
 import platform.Foundation.NSCalendar
+import platform.Foundation.NSCalendarUnitDay
+import platform.Foundation.NSCalendarUnitEra
+import platform.Foundation.NSCalendarUnitWeekday
 import platform.Foundation.NSDate
 import platform.Foundation.NSDateFormatter
 import platform.Foundation.NSUserDefaults
@@ -80,11 +83,23 @@ private class FoundationTimestampFormatter : TimestampFormatter {
 
     override fun time(epochMillis: Long): String = timeFormat.stringFromDate(date(epochMillis))
 
+    override fun dayNumber(epochMillis: Long): Long =
+        calendar.ordinalityOfUnit(NSCalendarUnitDay, inUnit = NSCalendarUnitEra, forDate = date(epochMillis)).toLong()
+
+    // Foundation counts Sunday as 1; the app counts Monday as 1.
+    override fun weekday(epochMillis: Long): Int =
+        (
+            (calendar.component(NSCalendarUnitWeekday, fromDate = date(epochMillis)).toInt() + DAYS_PER_WEEK - 2) %
+                DAYS_PER_WEEK
+            ) +
+            1
+
     private fun date(epochMillis: Long): NSDate =
         NSDate.dateWithTimeIntervalSince1970(epochMillis.milliseconds.toDouble(DurationUnit.SECONDS))
 
     private companion object {
         const val SECONDS_PER_DAY = 86_400.0
+        const val DAYS_PER_WEEK = 7
     }
 }
 

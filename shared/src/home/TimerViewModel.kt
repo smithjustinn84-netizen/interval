@@ -66,7 +66,7 @@ class TimerViewModel(private val repository: IntervalRepository) : ViewModel() {
             config = config,
             total = formatClock(config.totalSeconds),
             presetName = entries.matching(config)?.name,
-            prepLine = if (prep > 0) "Starts with ${formatClock(prep)} to get ready" else null,
+            prepLine = if (prep > 0) "${formatClock(prep)} to get ready" else null,
             presets = entries.map { (preset, _) ->
                 PresetChip(preset, preset.config.description, selected = preset.config.sameShape(config))
             },

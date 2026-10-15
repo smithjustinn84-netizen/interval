@@ -15,21 +15,31 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
 data class HistoryItem(
+    /** The preset's name, or the shape itself for a workout no preset has. */
     val title: String,
-    val time: String,
+    /** The shape (when the title is a name), whether it ended early, and the time of day. */
+    val detail: String,
     val total: String,
 )
 
 /** One day's workouts, under its heading ("Today", "Yesterday", "Sunday, Oct 11"). */
 data class HistorySection(val day: String, val items: List<HistoryItem>)
 
+/** One bar of the week chart: the day's initial, how long was worked out, and whether it is today. */
+data class DayTally(val label: String, val seconds: Int, val today: Boolean)
+
 data class HistoryUiState(
     val sections: List<HistorySection>,
-    /** Workouts in the last seven days, and their combined time. */
+    /** Workouts over the last seven days (today and the six before), and their combined time. */
     val weekCount: Int,
     val weekTotal: String,
+    /** Those seven days, oldest first, for the week chart. */
+    val week: List<DayTally>,
 ) {
     val isEmpty: Boolean get() = sections.isEmpty()
+
+    /** The longest day's total, for scaling the week chart's bars. */
+    val weekMaxSeconds: Int get() = week.maxOfOrNull { it.seconds } ?: 0
 }
 
 class HistoryViewModel(
@@ -51,7 +61,6 @@ class HistoryViewModel(
     private fun buildState(history: List<HistoryEntry>, custom: List<Preset>): HistoryUiState {
         val presets = presetEntries(custom)
         val nowMillis = now()
-        val week = history.filter { nowMillis - it.finishedAtEpochMillis < WEEK_MILLIS }
         // History is newest first, so grouping keeps both the days and the rows within them in order.
         val sections = history
             .groupBy { timestamps.day(it.finishedAtEpochMillis, nowMillis) }
@@ -61,22 +70,38 @@ class HistoryViewModel(
                     entries.map { entry ->
                         val name = presets.matching(entry.config)?.name
                         val ended = if (entry.endedEarly) "ended early" else null
+                        val time = timestamps.time(entry.finishedAtEpochMillis)
                         HistoryItem(
-                            title = listOfNotNull(name, entry.config.description, ended).joinToString(" · "),
-                            time = timestamps.time(entry.finishedAtEpochMillis),
+                            title = name ?: entry.config.description,
+                            detail = listOfNotNull(entry.config.description.takeIf { name != null }, ended, time)
+                                .joinToString(" · "),
                             total = formatClock(entry.durationSeconds),
                         )
                     },
                 )
             }
+        val today = timestamps.dayNumber(nowMillis)
+        val todayWeekday = timestamps.weekday(nowMillis)
+        val byDay = history.groupBy { timestamps.dayNumber(it.finishedAtEpochMillis) }
+        val week = (DAYS_PER_WEEK - 1 downTo 0).map { daysAgo ->
+            val weekday = (todayWeekday - 1 - daysAgo).mod(DAYS_PER_WEEK)
+            DayTally(
+                label = WEEKDAY_INITIALS[weekday].toString(),
+                seconds = byDay[today - daysAgo]?.sumOf { it.durationSeconds } ?: 0,
+                today = daysAgo == 0,
+            )
+        }
+        val thisWeek = byDay.filterKeys { it in (today - DAYS_PER_WEEK + 1)..today }.values.flatten()
         return HistoryUiState(
             sections = sections,
-            weekCount = week.size,
-            weekTotal = formatClock(week.sumOf { it.durationSeconds }),
+            weekCount = thisWeek.size,
+            weekTotal = formatClock(thisWeek.sumOf { it.durationSeconds }),
+            week = week,
         )
     }
 
     private companion object {
-        const val WEEK_MILLIS = 7L * 24 * 60 * 60 * 1000
+        const val DAYS_PER_WEEK = 7
+        const val WEEKDAY_INITIALS = "MTWTFSS"
     }
 }
