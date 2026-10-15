@@ -46,6 +46,12 @@ data class IntervalPalette(
     val accentTint: Color get() = tint(accent)
 
     /**
+     * Rest on a timeline: a deeper wash of [accent] than [accentTint], so it still shows on a
+     * selected preset card. Work is [accent] itself; the two differ in lightness, not hue.
+     */
+    val timelineRest: Color get() = lerp(surface, accent, TIMELINE_REST_STRENGTH)
+
+    /**
      * A pale wash of [color] over [surface]: the fill behind a value shown in its phase colour, and
      * the selected state of anything accent-coloured. One recipe, so every tint sits the same depth.
      */
@@ -53,6 +59,7 @@ data class IntervalPalette(
 
     private companion object {
         const val TINT_STRENGTH = 0.1f
+        const val TIMELINE_REST_STRENGTH = 0.24f
     }
 }
 

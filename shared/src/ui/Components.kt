@@ -274,9 +274,11 @@ fun StartButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 /**
- * The workout's shape as a bar: get ready in amber, then each round's work in red and its rest in
- * green, each as wide as it is long. Past [MAX_ROUND_MARKS] rounds the bar shows only the work and
- * rest shares. Decorative: the text beside it says the same thing.
+ * The workout's shape as a bar in one hue: get ready in the surface variant, then each round's work
+ * in the accent and its rest in a pale wash of it, each as wide as it is long. Work and rest differ
+ * in lightness, not hue; phase colours stay on the workout screen and the field stripes. Past
+ * [MAX_ROUND_MARKS] rounds the bar shows only the work and rest shares. Decorative: the text
+ * beside it says the same thing.
  */
 @Composable
 fun Timeline(
@@ -286,17 +288,20 @@ fun Timeline(
     gap: Dp = Spacing.space2,
     showPrep: Boolean = true,
 ) {
+    val palette = IntervalTheme.palette
+    val work = palette.accent
+    val rest = palette.timelineRest
     val segments = buildList {
-        if (showPrep && config.prepSeconds > 0) add(PhaseColors.prep to config.prepSeconds)
+        if (showPrep && config.prepSeconds > 0) add(palette.surfaceVariant to config.prepSeconds)
         if (config.rounds <= MAX_ROUND_MARKS) {
             repeat(config.rounds) { round ->
-                add(PhaseColors.work to config.workSeconds)
-                if (round < config.rounds - 1 && config.restSeconds > 0) add(PhaseColors.rest to config.restSeconds)
+                add(work to config.workSeconds)
+                if (round < config.rounds - 1 && config.restSeconds > 0) add(rest to config.restSeconds)
             }
         } else {
-            add(PhaseColors.work to config.rounds * config.workSeconds)
-            val rest = (config.rounds - 1) * config.restSeconds
-            if (rest > 0) add(PhaseColors.rest to rest)
+            add(work to config.rounds * config.workSeconds)
+            val restTotal = (config.rounds - 1) * config.restSeconds
+            if (restTotal > 0) add(rest to restTotal)
         }
     }
     Row(
