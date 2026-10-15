@@ -11,8 +11,11 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.barlow_condensed_extrabold
 import dev.justinsmith.interval.resources.barlow_condensed_semibold
@@ -31,7 +34,11 @@ data class IntervalPalette(
     val textDim: Color,
     val line: Color,
     val accent: Color,
-)
+    val onAccent: Color,
+) {
+    /** Selected preset card fill. */
+    val accentTint: Color get() = lerp(surface, accent, 0.1f)
+}
 
 /** Full-screen workout colors. The same in light and dark: the whole screen is the signal. */
 object PhaseColors {
@@ -41,6 +48,28 @@ object PhaseColors {
     val done = Color(0xFF2456E6)
     val paused = Color(0xFF2A3038)
 
+    /** Clock, Done, progress fill, finished round dots, and the fill of the primary control. */
+    val onPhase = Color.White
+
+    /** Phase label and the Done summary. */
+    val onPhase90 = Color.White.copy(alpha = 0.9f)
+
+    /** Status and next-up lines. */
+    val onPhase85 = Color.White.copy(alpha = 0.85f)
+
+    /** The resting tap hint. */
+    val onPhase65 = Color.White.copy(alpha = 0.65f)
+
+    /** Upcoming round dots and the ring around the current one. */
+    val dotHalo = Color.White.copy(alpha = 0.35f)
+    val progressTrack = Color.White.copy(alpha = 0.25f)
+
+    /** Fill of the secondary controls: End, Skip, Back, +10s, Restart. */
+    val glass = Color.White.copy(alpha = 0.18f)
+
+    /** Label on an [onPhase] fill; only ever on white, so it doesn't follow the theme. */
+    val ink = Color(0xFF141A22)
+
     fun of(phase: Phase): Color = when (phase) {
         Phase.Prep -> prep
         Phase.Work -> work
@@ -49,7 +78,7 @@ object PhaseColors {
     }
 }
 
-private val lightPalette = IntervalPalette(
+internal val lightPalette = IntervalPalette(
     background = Color(0xFFEEF1F5),
     surface = Color(0xFFFFFFFF),
     surfaceVariant = Color(0xFFE3E8EF),
@@ -57,9 +86,10 @@ private val lightPalette = IntervalPalette(
     textDim = Color(0xFF5E6978),
     line = Color(0xFFD5DCE6),
     accent = Color(0xFF2456E6),
+    onAccent = Color.White,
 )
 
-private val darkPalette = IntervalPalette(
+internal val darkPalette = IntervalPalette(
     background = Color(0xFF0F1318),
     surface = Color(0xFF1A2028),
     surfaceVariant = Color(0xFF232B35),
@@ -67,10 +97,72 @@ private val darkPalette = IntervalPalette(
     textDim = Color(0xFF97A3B3),
     line = Color(0xFF2C3541),
     accent = Color(0xFF356AFF),
+    onAccent = Color.White,
 )
 
+/**
+ * The app's text styles, named after the design system's type tokens. Barlow Condensed for numbers
+ * and headings, Barlow for sentences. Every style is built from the theme's `bodyLarge` (or
+ * `labelLarge` for button labels), so it keeps the line height and tracking unstyled text gets.
+ */
+@Immutable
+data class IntervalType(
+    /** The workout countdown; callers size it to the window with `copy(fontSize, lineHeight)`. */
+    val clock: TextStyle,
+    val done: TextStyle,
+    val phaseLabelLandscape: TextStyle,
+    val phaseLabel: TextStyle,
+    val screenTitle: TextStyle,
+    val stepperValue: TextStyle,
+    val startLabel: TextStyle,
+    val primaryControl: TextStyle,
+    val sectionTitle: TextStyle,
+    val control: TextStyle,
+    val nextUp: TextStyle,
+    val summary: TextStyle,
+    val cardTitle: TextStyle,
+    val body: TextStyle,
+    val total: TextStyle,
+    val meta: TextStyle,
+    val buttonLabel: TextStyle,
+    val presetDescription: TextStyle,
+    val hint: TextStyle,
+    /** The − and + on a stepper. */
+    val stepperGlyph: TextStyle,
+    /** The × on a custom preset. */
+    val deleteGlyph: TextStyle,
+)
+
+private fun intervalType(body: TextStyle, label: TextStyle, condensed: FontFamily): IntervalType {
+    fun numerals(size: Int) = body.copy(fontFamily = condensed, fontWeight = FontWeight.ExtraBold, fontSize = size.sp)
+    fun heading(size: Int) = body.copy(fontFamily = condensed, fontWeight = FontWeight.SemiBold, fontSize = size.sp)
+    return IntervalType(
+        clock = numerals(240).copy(lineHeight = 240.sp),
+        done = numerals(96),
+        phaseLabelLandscape = heading(40),
+        phaseLabel = heading(34),
+        screenTitle = numerals(32),
+        stepperValue = numerals(27),
+        startLabel = numerals(26),
+        primaryControl = numerals(22),
+        sectionTitle = numerals(20),
+        control = numerals(19),
+        nextUp = body.copy(fontSize = 20.sp),
+        summary = body.copy(fontSize = 18.sp),
+        cardTitle = body.copy(fontWeight = FontWeight.SemiBold),
+        body = body,
+        total = body.copy(fontSize = 15.sp),
+        meta = body.copy(fontSize = 14.sp),
+        buttonLabel = label.copy(fontWeight = FontWeight.SemiBold),
+        presetDescription = body.copy(fontSize = 13.5.sp),
+        hint = body.copy(fontSize = 13.sp),
+        stepperGlyph = body.copy(fontSize = 24.sp),
+        deleteGlyph = body.copy(fontSize = 18.sp),
+    )
+}
+
 private val localPalette = staticCompositionLocalOf { lightPalette }
-private val localCondensed = staticCompositionLocalOf<FontFamily> { FontFamily.Default }
+private val localType = staticCompositionLocalOf<IntervalType> { error("IntervalType is provided by IntervalTheme") }
 
 /** The app's single theme entry point: Barlow for text, Barlow Condensed for numbers and headings. */
 @Composable
@@ -88,9 +180,9 @@ fun IntervalTheme(
         Font(Res.font.barlow_condensed_extrabold, FontWeight.ExtraBold),
     )
     val base = if (darkTheme) {
-        darkColorScheme(primary = palette.accent, onPrimary = Color.White)
+        darkColorScheme(primary = palette.accent, onPrimary = palette.onAccent)
     } else {
-        lightColorScheme(primary = palette.accent, onPrimary = Color.White)
+        lightColorScheme(primary = palette.accent, onPrimary = palette.onAccent)
     }
     val colors = base.copy(
         background = palette.background,
@@ -112,7 +204,8 @@ fun IntervalTheme(
             titleMedium = t.titleMedium.copy(fontFamily = barlow),
         )
     }
-    CompositionLocalProvider(localPalette provides palette, localCondensed provides condensed) {
+    val type = intervalType(typography.bodyLarge, typography.labelLarge, condensed)
+    CompositionLocalProvider(localPalette provides palette, localType provides type) {
         // MaterialTheme provides bodyLarge as the default text style, so unstyled Text is Barlow too.
         MaterialTheme(colorScheme = colors, typography = typography, content = content)
     }
@@ -124,7 +217,7 @@ object IntervalTheme {
         @Composable @ReadOnlyComposable
         get() = localPalette.current
 
-    val condensed: FontFamily
+    val type: IntervalType
         @Composable @ReadOnlyComposable
-        get() = localCondensed.current
+        get() = localType.current
 }

@@ -30,7 +30,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -60,7 +59,6 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -73,7 +71,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.data.CueSettings
@@ -83,8 +80,14 @@ import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.formatClock
+import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.Motion
+import dev.justinsmith.interval.ui.Opacity
 import dev.justinsmith.interval.ui.PhaseColors
+import dev.justinsmith.interval.ui.Radius
+import dev.justinsmith.interval.ui.Sizes
+import dev.justinsmith.interval.ui.Spacing
 import kotlinx.coroutines.delay
 import org.koin.compose.currentKoinScope
 
@@ -123,16 +126,21 @@ fun SetupScreen(
         LazyColumn(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .widthIn(max = 460.dp)
+                .widthIn(max = Sizes.content)
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.safeDrawing),
             // The bottom padding leaves room for the floating Start button.
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 112.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(
+                start = Spacing.space16,
+                end = Spacing.space16,
+                top = Spacing.space16,
+                bottom = Spacing.space112,
+            ),
+            verticalArrangement = Arrangement.spacedBy(Spacing.space10),
         ) {
             item { Header(total = state.total) }
             items(state.presets.chunked(2)) { row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
                     row.forEach { item ->
                         PresetCard(
                             item = item,
@@ -145,7 +153,7 @@ fun SetupScreen(
                 }
             }
             item { SavePreset(enabled = state.canSavePreset, onSave = onSavePreset) }
-            item { Spacer(Modifier.height(4.dp)) }
+            item { Spacer(Modifier.height(Spacing.space4)) }
             item {
                 FieldCard(
                     label = "Get ready",
@@ -218,10 +226,10 @@ fun SetupScreen(
             onClick = onStart,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .widthIn(max = 460.dp)
+                .widthIn(max = Sizes.content)
                 .fillMaxWidth()
                 .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(16.dp),
+                .padding(Spacing.space16),
         )
     }
 }
@@ -230,25 +238,19 @@ fun SetupScreen(
 private fun Header(total: String) {
     val palette = IntervalTheme.palette
     Row(
-        modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = Spacing.space8, bottom = Spacing.space8),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Bottom,
     ) {
-        Text(
-            "Interval Timer",
-            fontFamily = IntervalTheme.condensed,
-            fontWeight = FontWeight.ExtraBold,
-            fontSize = 32.sp,
-            color = palette.text,
-        )
+        Text("Interval Timer", style = IntervalTheme.type.screenTitle, color = palette.text)
         Text(
             buildAnnotatedString {
                 append("Total ")
                 withStyle(SpanStyle(color = palette.text, fontWeight = FontWeight.SemiBold)) { append(total) }
             },
-            fontSize = 15.sp,
+            style = IntervalTheme.type.total,
             color = palette.textDim,
-            modifier = Modifier.padding(bottom = 6.dp),
+            modifier = Modifier.padding(bottom = Spacing.space6),
         )
     }
 }
@@ -261,36 +263,35 @@ private fun PresetCard(
     modifier: Modifier = Modifier,
 ) {
     val palette = IntervalTheme.palette
-    val shape = RoundedCornerShape(14.dp)
+    val shape = Corners.radius14
     Box(
         modifier
             .clip(shape)
-            .background(if (item.selected) lerp(palette.surface, palette.accent, 0.1f) else palette.surface)
-            .border(1.5.dp, if (item.selected) palette.accent else palette.line, shape)
+            .background(if (item.selected) palette.accentTint else palette.surface)
+            .border(Sizes.border, if (item.selected) palette.accent else palette.line, shape)
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
+            .padding(horizontal = Spacing.space14, vertical = Spacing.space12),
     ) {
-        Column(Modifier.padding(end = if (item.custom) 24.dp else 0.dp)) {
-            Text(
-                item.preset.name,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 16.sp,
-                color = palette.text,
-                maxLines = 1,
-            )
-            Text(item.description, fontSize = 13.5.sp, color = palette.textDim)
+        Column(Modifier.padding(end = if (item.custom) Spacing.space24 else 0.dp)) {
+            Text(item.preset.name, style = IntervalTheme.type.cardTitle, color = palette.text, maxLines = 1)
+            Text(item.description, style = IntervalTheme.type.presetDescription, color = palette.textDim)
         }
         if (item.custom) {
             Box(
                 Modifier
                     .align(Alignment.TopEnd)
-                    .size(32.dp)
+                    .size(Sizes.delete)
                     .clip(CircleShape)
                     .clickable(role = Role.Button, onClick = onDelete)
                     .semantics { contentDescription = "Delete preset ${item.preset.name}" },
                 contentAlignment = Alignment.Center,
             ) {
-                Text("×", fontSize = 18.sp, color = palette.textDim, modifier = Modifier.clearAndSetSemantics {})
+                Text(
+                    "×",
+                    style = IntervalTheme.type.deleteGlyph,
+                    color = palette.textDim,
+                    modifier = Modifier.clearAndSetSemantics {},
+                )
             }
         }
     }
@@ -307,13 +308,16 @@ private fun SavePreset(enabled: Boolean, onSave: (String) -> Unit) {
             name = ""
             editing = false
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it.take(IntervalRepository.MAX_PRESET_NAME) },
                 placeholder = { Text("Preset name") },
                 singleLine = true,
-                shape = RoundedCornerShape(14.dp),
+                shape = Corners.radius14,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { save() }),
                 colors = OutlinedTextFieldDefaults.colors(
@@ -326,25 +330,25 @@ private fun SavePreset(enabled: Boolean, onSave: (String) -> Unit) {
             )
             Button(
                 onClick = { save() },
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = palette.accent, contentColor = Color.White),
-                modifier = Modifier.heightIn(min = 52.dp),
-            ) { Text("Save", fontWeight = FontWeight.SemiBold) }
+                shape = Corners.radius14,
+                colors = ButtonDefaults.buttonColors(containerColor = palette.accent, contentColor = palette.onAccent),
+                modifier = Modifier.heightIn(min = Sizes.save),
+            ) { Text("Save", style = IntervalTheme.type.buttonLabel) }
             TextButton(onClick = {
                 name = ""
                 editing = false
             }) { Text("Cancel", color = palette.textDim) }
         }
     } else {
-        val radius = 14.dp
+        val radius = Radius.radius14
         Box(
             Modifier
                 .fillMaxWidth()
-                .heightIn(min = 48.dp)
-                .alpha(if (enabled) 1f else 0.45f)
-                .clip(RoundedCornerShape(radius))
+                .heightIn(min = Sizes.pillHeight)
+                .alpha(if (enabled) 1f else Opacity.DISABLED)
+                .clip(Corners.radius14)
                 .drawBehind {
-                    val stroke = 1.5.dp.toPx()
+                    val stroke = Sizes.border.toPx()
                     drawRoundRect(
                         color = palette.line,
                         cornerRadius = CornerRadius(radius.toPx()),
@@ -354,7 +358,7 @@ private fun SavePreset(enabled: Boolean, onSave: (String) -> Unit) {
                 .clickable(enabled = enabled, role = Role.Button) { editing = true },
             contentAlignment = Alignment.Center,
         ) {
-            Text("+ Save current settings as a preset", fontWeight = FontWeight.SemiBold, color = palette.textDim)
+            Text("+ Save current settings as a preset", style = IntervalTheme.type.cardTitle, color = palette.textDim)
         }
     }
 }
@@ -375,17 +379,17 @@ private fun FieldCard(
         Modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Min)
-            .clip(RoundedCornerShape(18.dp))
+            .clip(Corners.radius18)
             .background(palette.surface),
     ) {
-        Box(Modifier.width(6.dp).fillMaxHeight().background(stripe))
+        Box(Modifier.width(Sizes.stripe).fillMaxHeight().background(stripe))
         Row(
-            Modifier.weight(1f).padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 12.dp),
+            Modifier.weight(1f).padding(Spacing.space12),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
-                Text(label, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = palette.text)
-                Text(hint, fontSize = 13.sp, color = palette.textDim)
+                Text(label, style = IntervalTheme.type.cardTitle, color = palette.text)
+                Text(hint, style = IntervalTheme.type.hint, color = palette.textDim)
             }
             RepeatButton(
                 symbol = "−",
@@ -395,12 +399,10 @@ private fun FieldCard(
             )
             Text(
                 value,
-                fontFamily = IntervalTheme.condensed,
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 27.sp,
+                style = IntervalTheme.type.stepperValue,
                 color = palette.text,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.widthIn(min = 64.dp),
+                modifier = Modifier.widthIn(min = Sizes.valueMin),
             )
             RepeatButton(
                 symbol = "+",
@@ -435,18 +437,18 @@ private fun RepeatButton(
     }
     LaunchedEffect(pressed, enabled) {
         if (pressed && enabled) {
-            delay(420)
+            delay(Motion.STEPPER_HOLD_MILLIS)
             repeated = true
             while (true) {
                 step()
-                delay(90)
+                delay(Motion.STEPPER_REPEAT_MILLIS)
             }
         }
     }
     Box(
         Modifier
-            .size(54.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .size(Sizes.stepper)
+            .clip(Corners.radius12)
             .background(palette.surfaceVariant)
             .clickable(
                 interactionSource = interaction,
@@ -462,8 +464,8 @@ private fun RepeatButton(
     ) {
         Text(
             symbol,
-            fontSize = 24.sp,
-            color = if (enabled) palette.text else palette.textDim.copy(alpha = 0.5f),
+            style = IntervalTheme.type.stepperGlyph,
+            color = if (enabled) palette.text else palette.textDim.copy(alpha = Opacity.DISABLED_GLYPH),
             modifier = Modifier.clearAndSetSemantics {},
         )
     }
@@ -480,24 +482,24 @@ private fun ToggleRow(
     Row(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = 56.dp)
+            .heightIn(min = Sizes.toggleRow)
             .toggleable(value = checked, role = Role.Switch, onValueChange = { onToggle() })
-            .padding(horizontal = 4.dp),
+            .padding(horizontal = Spacing.space4),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 16.sp, color = palette.text)
-            if (subtitle != null) Text(subtitle, fontSize = 13.sp, color = palette.textDim)
+            Text(title, style = IntervalTheme.type.body, color = palette.text)
+            if (subtitle != null) Text(subtitle, style = IntervalTheme.type.hint, color = palette.textDim)
         }
         Switch(
             checked = checked,
             onCheckedChange = null,
             colors = SwitchDefaults.colors(
                 checkedTrackColor = palette.accent,
-                checkedThumbColor = Color.White,
+                checkedThumbColor = palette.onAccent,
                 checkedBorderColor = palette.accent,
                 uncheckedTrackColor = palette.line,
-                uncheckedThumbColor = Color.White,
+                uncheckedThumbColor = palette.onAccent,
                 uncheckedBorderColor = palette.line,
             ),
         )
@@ -507,50 +509,39 @@ private fun ToggleRow(
 @Composable
 private fun History(items: List<HistoryItem>, onClear: () -> Unit) {
     val palette = IntervalTheme.palette
-    Column(Modifier.padding(top = 18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(Modifier.padding(top = Spacing.space18), verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                "Recent workouts",
-                fontFamily = IntervalTheme.condensed,
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 20.sp,
-                color = palette.text,
-            )
+            Text("Recent workouts", style = IntervalTheme.type.sectionTitle, color = palette.text)
             if (items.isNotEmpty()) {
                 TextButton(onClick = onClear) {
-                    Text("Clear", color = palette.textDim, fontWeight = FontWeight.SemiBold)
+                    Text("Clear", style = IntervalTheme.type.buttonLabel, color = palette.textDim)
                 }
             }
         }
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(palette.surface)) {
+        Column(Modifier.fillMaxWidth().clip(Corners.radius18).background(palette.surface)) {
             if (items.isEmpty()) {
                 Text(
                     "Finished workouts show up here.",
+                    style = IntervalTheme.type.body,
                     color = palette.textDim,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                    modifier = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space14),
                 )
             }
             items.forEachIndexed { index, item ->
                 if (index > 0) HorizontalDivider(color = palette.line)
                 Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                    Modifier.fillMaxWidth().padding(horizontal = Spacing.space16, vertical = Spacing.space12),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text(item.title, fontSize = 15.sp, color = palette.text)
-                        Text(item.finishedAt, fontSize = 13.sp, color = palette.textDim)
+                        Text(item.title, style = IntervalTheme.type.total, color = palette.text)
+                        Text(item.finishedAt, style = IntervalTheme.type.hint, color = palette.textDim)
                     }
-                    Text(
-                        item.total,
-                        fontFamily = IntervalTheme.condensed,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 20.sp,
-                        color = palette.text,
-                    )
+                    Text(item.total, style = IntervalTheme.type.sectionTitle, color = palette.text)
                 }
             }
         }
@@ -560,23 +551,17 @@ private fun History(items: List<HistoryItem>, onClear: () -> Unit) {
 @Composable
 private fun StartButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
-    val shape = RoundedCornerShape(18.dp)
+    val shape = Corners.radius18
     Box(
         modifier
-            .height(68.dp)
-            .shadow(elevation = 8.dp, shape = shape)
+            .height(Sizes.start)
+            .shadow(elevation = Sizes.startElevation, shape = shape)
             .clip(shape)
             .background(palette.accent)
             .clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            "Start workout",
-            fontFamily = IntervalTheme.condensed,
-            fontWeight = FontWeight.ExtraBold,
-            fontSize = 26.sp,
-            color = Color.White,
-        )
+        Text("Start workout", style = IntervalTheme.type.startLabel, color = palette.onAccent)
     }
 }
 
