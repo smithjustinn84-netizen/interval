@@ -128,8 +128,6 @@ object Sizes {
     /** A text field, such as a preset's name. */
     val field = 52.dp
 
-    /** The hit area of a custom preset card's × delete button. */
-    val delete = 44.dp
     val stripe = 6.dp
 
     /** A round's mark on the workout screen: a short bar, narrowing when many share a row. */

@@ -55,4 +55,24 @@ class PresetsViewModelTest {
         assertTrue(viewModel.state.value.custom.isEmpty())
         assertTrue(viewModel.state.value.canSaveCurrent)
     }
+
+    @Test
+    fun `timelines are scaled to the longest workout on the screen`() {
+        repository.updateConfig { builtInPresets.first().config }
+        val state = viewModel.state.value
+        val longest = state.builtIn.maxBy { it.share }
+        assertEquals("Long efforts", longest.preset.name)
+        assertEquals(1f, longest.share)
+        // Tabata, 4:00 with its countdown, against Long efforts' 11:55.
+        assertEquals(240f / 715f, state.builtIn.first().share)
+    }
+
+    @Test
+    fun `unsaved settings longer than every preset set the scale`() {
+        repository.updateConfig { IntervalConfig(prepSeconds = 10, workSeconds = 60, restSeconds = 30, rounds = 12) }
+        val state = viewModel.state.value
+        assertTrue(state.canSaveCurrent)
+        assertEquals(1f, state.currentShare)
+        assertTrue(state.builtIn.all { it.share < 1f })
+    }
 }

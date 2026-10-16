@@ -4,7 +4,6 @@ package dev.justinsmith.interval.presets
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -57,18 +56,19 @@ class PresetsScreenTest {
     }
 
     @Test
-    fun `the user's own presets can be deleted`() = runUiTest {
+    fun `the user's own presets are deleted from their menu`() = runUiTest {
         setThemedContent { Screen() }
-        onNodeWithContentDescription("Delete preset Morning").performClick()
+        onNodeWithContentDescription("More for Morning").performClick()
+        onNodeWithText("Delete").performClick()
         assertEquals(listOf(morning), deleted)
         // Built-ins are not deletable.
-        onNodeWithContentDescription("Delete preset Tabata").assertDoesNotExist()
+        onNodeWithContentDescription("More for Tabata").assertDoesNotExist()
     }
 
     @Test
     fun `the current settings can be saved as a preset`() = runUiTest {
         setThemedContent { Screen() }
-        onNodeWithContentDescription("Save current settings as a preset").performClick()
+        onNodeWithText("Save as preset").performClick()
         onNodeWithText("40s on · 20s off · ×6 · 5:50 total").assertExists()
         onNode(hasSetTextAction()).performTextInput("Evening")
         onNodeWithText("Save").performClick()
@@ -78,7 +78,7 @@ class PresetsScreenTest {
     @Test
     fun `a preset saved without a name is numbered`() = runUiTest {
         setThemedContent { Screen() }
-        onNodeWithContentDescription("Save current settings as a preset").performClick()
+        onNodeWithText("Save as preset").performClick()
         onNodeWithText("Save").performClick()
         assertEquals(listOf("Custom 2"), saved)
     }
@@ -90,9 +90,17 @@ class PresetsScreenTest {
     }
 
     @Test
-    fun `saving is off when the settings already match a preset`() = runUiTest {
+    fun `unsaved settings are shown to save`() = runUiTest {
+        setThemedContent { Screen() }
+        onNodeWithText("On the Timer · not saved").assertExists()
+        onNodeWithText("40s on · 20s off · ×6").assertExists()
+    }
+
+    @Test
+    fun `settings that match a preset offer nothing to save`() = runUiTest {
         setThemedContent { Screen(state(canSaveCurrent = false)) }
-        onNodeWithContentDescription("Save current settings as a preset").assertIsNotEnabled()
+        onNodeWithText("On the Timer · not saved").assertDoesNotExist()
+        onNodeWithText("Save as preset").assertDoesNotExist()
     }
 
     @Test

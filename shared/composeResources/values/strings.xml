@@ -79,12 +79,15 @@
 
     <!-- Presets tab -->
     <string name="presets_title">Presets</string>
-    <string name="presets_save_current_cd">Save current settings as a preset</string>
+    <!-- Over the current settings when they match no preset -->
+    <string name="presets_current_unsaved">On the Timer · not saved</string>
+    <string name="presets_save_current">Save as preset</string>
     <string name="presets_built_in">Built-in</string>
     <string name="presets_yours">Yours</string>
     <string name="presets_empty">Presets you save show up here.</string>
     <string name="presets_delete">Delete</string>
     <string name="presets_delete_named_cd">Delete preset %1$s</string>
+    <string name="presets_more_named_cd">More for %1$s</string>
     <string name="presets_selected_cd">Selected</string>
 
     <!-- History tab -->

@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalGridApi::class)
-
 package dev.justinsmith.interval.presets
 
 import androidx.compose.foundation.background
@@ -8,20 +6,17 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalGridApi
-import androidx.compose.foundation.layout.Grid
-import androidx.compose.foundation.layout.GridScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,26 +31,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.preset_default_name
 import dev.justinsmith.interval.resources.presets_built_in
+import dev.justinsmith.interval.resources.presets_current_unsaved
 import dev.justinsmith.interval.resources.presets_delete
 import dev.justinsmith.interval.resources.presets_delete_named_cd
 import dev.justinsmith.interval.resources.presets_empty
-import dev.justinsmith.interval.resources.presets_save_current_cd
+import dev.justinsmith.interval.resources.presets_more_named_cd
+import dev.justinsmith.interval.resources.presets_save_current
 import dev.justinsmith.interval.resources.presets_selected_cd
 import dev.justinsmith.interval.resources.presets_title
 import dev.justinsmith.interval.resources.presets_yours
+import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.formatClock
+import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
@@ -94,9 +92,10 @@ fun PresetsRoute(onShowTimer: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 /**
- * Every preset in two groups of two-up cards, each with its total and a small timeline of its
- * rounds. Tapping one makes it the next workout. The user's own presets carry a × to delete, and a
- * long press offers the same; both are also a screen-reader action.
+ * Every preset in two groups of full-width cards, each with its total and a timeline drawn to scale,
+ * so lengths compare at a glance. Tapping one makes it the next workout. Settings that match no preset
+ * sit on top with a button to save them. The user's own presets open a menu to delete them from ⋯ or
+ * a long press; deleting is also a screen-reader action.
  */
 @Composable
 fun PresetsScreen(
@@ -116,23 +115,24 @@ fun PresetsScreen(
             contentPadding = PaddingValues(bottom = Spacing.space24),
         ) {
             item(span = StaggeredGridItemSpan.FullLine) {
-                TitleBar(stringResource(Res.string.presets_title)) {
-                    IconAction(
-                        IntervalIcons.Add,
-                        stringResource(Res.string.presets_save_current_cd),
-                        onClick = { saving = true },
-                        enabled = state.canSaveCurrent,
-                        background = palette.accentTint,
-                        tint = palette.accent,
+                TitleBar(stringResource(Res.string.presets_title))
+            }
+            if (state.canSaveCurrent) {
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    CurrentCard(
+                        config = state.current,
+                        share = state.currentShare,
+                        onSave = { saving = true },
+                        modifier = Modifier.padding(horizontal = Spacing.space16).padding(bottom = Spacing.space4),
                     )
                 }
             }
             item {
                 Column(Modifier.padding(horizontal = Spacing.space16)) {
                     GroupLabel(stringResource(Res.string.presets_built_in))
-                    CardGrid {
+                    CardColumn {
                         state.builtIn.forEach { item ->
-                            PresetCard(item, onClick = { onApply(item.preset) }, modifier = Modifier.gridItem())
+                            PresetCard(item, onClick = { onApply(item.preset) })
                         }
                     }
                 }
@@ -150,7 +150,7 @@ fun PresetsScreen(
                             )
                         }
                     }
-                    CardGrid {
+                    CardColumn {
                         state.custom.forEach { item ->
                             // Keyed so a deleted card's menu state doesn't carry over to the card moving up.
                             key(item.preset) {
@@ -158,7 +158,6 @@ fun PresetsScreen(
                                     item,
                                     onClick = { onApply(item.preset) },
                                     onDelete = { onDelete(item.preset) },
-                                    modifier = Modifier.gridItem(),
                                 )
                             }
                         }
@@ -180,17 +179,72 @@ fun PresetsScreen(
     }
 }
 
-/** Two cards per row, as the design system lays presets out. */
 @Composable
-private fun CardGrid(content: @Composable GridScope.() -> Unit) {
-    Grid(
-        config = {
-            column(1.fr)
-            column(1.fr)
-            gap(Spacing.space8)
-        },
-        content = content,
-    )
+private fun CardColumn(content: @Composable () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) { content() }
+}
+
+/** The settings on the Timer tab when they match no preset: their total, shape and a button to save them. */
+@Composable
+private fun CurrentCard(config: IntervalConfig, share: Float, onSave: () -> Unit, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    Column(
+        modifier
+            .fillMaxWidth()
+            .selectableCard(selected = false)
+            .padding(start = Spacing.space16, end = Spacing.space16, top = Spacing.space12, bottom = Spacing.space16),
+        verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+    ) {
+        Text(
+            stringResource(Res.string.presets_current_unsaved),
+            style = IntervalTheme.type.caption,
+            color = palette.textDim,
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(formatClock(config.totalSeconds), style = IntervalTheme.type.stat, color = palette.text)
+                Text(configDescription(config), style = IntervalTheme.type.meta, color = palette.textDim, maxLines = 1)
+            }
+            SaveButton(onSave)
+        }
+        Timeline(
+            config,
+            modifier = Modifier.fillMaxWidth(share),
+            height = Sizes.timelineMini,
+            gap = Sizes.timelineMiniGap,
+            showPrep = false,
+        )
+    }
+}
+
+@Composable
+private fun SaveButton(onClick: () -> Unit) {
+    val palette = IntervalTheme.palette
+    Row(
+        Modifier
+            .heightIn(min = Sizes.pillHeight)
+            .clip(Corners.radius12)
+            .background(palette.accent)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(start = Spacing.space12, end = Spacing.space16),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+    ) {
+        Icon(
+            IntervalIcons.Add,
+            contentDescription = null,
+            tint = palette.onAccent,
+            modifier = Modifier.size(Sizes.icon),
+        )
+        Text(
+            stringResource(Res.string.presets_save_current),
+            style = IntervalTheme.type.label,
+            color = palette.onAccent,
+        )
+    }
 }
 
 @Composable
@@ -200,60 +254,51 @@ private fun DeletablePresetCard(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val palette = IntervalTheme.palette
     var menu by remember { mutableStateOf(false) }
     val deleteLabel = stringResource(Res.string.presets_delete_named_cd, item.preset.name)
-    // Long-press opens the menu; the card itself is the menu's anchor.
-    IntervalMenu(
-        expanded = menu,
-        onExpandedChange = { menu = it },
-        modifier = modifier,
-        items = { IntervalMenuItem(stringResource(Res.string.presets_delete), onClick = onDelete) },
-    ) {
-        Box {
-            PresetCard(
-                item,
-                onClick = onClick,
-                onLongClick = { menu = true },
-                deletable = true,
-                modifier = Modifier.semantics {
-                    customActions = listOf(
-                        CustomAccessibilityAction(deleteLabel) {
-                            onDelete()
-                            true
-                        },
-                    )
-                },
-            )
-            Box(
-                Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(Spacing.space4)
-                    .size(Sizes.delete)
-                    .clip(CircleShape)
-                    .clickable(role = Role.Button, onClick = onDelete)
-                    .semantics { contentDescription = deleteLabel },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    "×",
-                    style = IntervalTheme.type.control,
-                    color = palette.textDim,
-                    modifier = Modifier.clearAndSetSemantics {},
+    Box(modifier) {
+        PresetCard(
+            item,
+            onClick = onClick,
+            onLongClick = { menu = true },
+            endInset = Sizes.iconButton,
+            modifier = Modifier.semantics {
+                customActions = listOf(
+                    CustomAccessibilityAction(deleteLabel) {
+                        onDelete()
+                        true
+                    },
                 )
-            }
+            },
+        )
+        // The menu opens from ⋯, and a long press on the card opens the same one.
+        IntervalMenu(
+            expanded = menu,
+            onExpandedChange = { menu = it },
+            modifier = Modifier.align(Alignment.TopEnd).padding(Spacing.space4),
+            items = { IntervalMenuItem(stringResource(Res.string.presets_delete), onClick = onDelete) },
+        ) {
+            IconAction(
+                IntervalIcons.More,
+                stringResource(Res.string.presets_more_named_cd, item.preset.name),
+                onClick = { menu = true },
+                tint = IntervalTheme.palette.textDim,
+            )
         }
     }
 }
 
-/** A preset's name, total, shape and a small timeline; the selected one takes the accent. */
+/**
+ * A preset's name and total on one line, its shape under them, and its timeline at [PresetRowItem.share]
+ * of the card's width; the selected one takes the accent. [endInset] keeps the top line clear of ⋯.
+ */
 @Composable
 private fun PresetCard(
     item: PresetRowItem,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
-    deletable: Boolean = false,
+    endInset: Dp = 0.dp,
 ) {
     val palette = IntervalTheme.palette
     Column(
@@ -261,16 +306,20 @@ private fun PresetCard(
             .fillMaxWidth()
             .selectableCard(item.selected)
             .combinedClickable(role = Role.Button, onLongClick = onLongClick, onClick = onClick)
-            .padding(start = Spacing.space16, end = Spacing.space16, top = Spacing.space16, bottom = Spacing.space12),
-        verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+            .padding(start = Spacing.space16, end = Spacing.space16, top = Spacing.space12, bottom = Spacing.space16),
+        verticalArrangement = Arrangement.spacedBy(Spacing.space4),
     ) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.fillMaxWidth().padding(end = endInset),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+        ) {
             Text(
                 item.preset.name,
                 style = IntervalTheme.type.label,
                 color = palette.text,
                 maxLines = 1,
-                modifier = Modifier.weight(1f).padding(end = if (deletable) Sizes.delete - Spacing.space8 else 0.dp),
+                modifier = Modifier.weight(1f),
             )
             if (item.selected) {
                 Icon(
@@ -280,34 +329,45 @@ private fun PresetCard(
                     modifier = Modifier.size(Sizes.icon),
                 )
             }
+            Text(
+                item.total,
+                style = IntervalTheme.type.value,
+                color = if (item.selected) palette.accent else palette.text,
+            )
         }
-        Text(
-            item.total,
-            style = IntervalTheme.type.stat,
-            color = if (item.selected) palette.accent else palette.text,
-        )
         Text(
             configDescription(item.preset.config),
             style = IntervalTheme.type.meta,
             color = palette.textDim,
             maxLines = 1,
         )
-        Timeline(item.preset.config, height = Sizes.timelineMini, gap = Sizes.timelineMiniGap, showPrep = false)
+        Timeline(
+            item.preset.config,
+            modifier = Modifier.padding(top = Spacing.space4).fillMaxWidth(item.share),
+            height = Sizes.timelineMini,
+            gap = Sizes.timelineMiniGap,
+            showPrep = false,
+        )
     }
 }
 
 @PreviewFormFactors
 @Composable
 private fun PresetsScreenPreview() {
-    fun row(preset: Preset, selected: Boolean = false) =
-        PresetRowItem(preset, formatClock(preset.config.totalSeconds), selected)
+    val current = builtInPresets.first().config.copy(workSeconds = 25)
+    val longest = builtInPresets.maxOf { it.config.totalSeconds }.toFloat()
+    fun row(preset: Preset) =
+        PresetRowItem(preset, formatClock(preset.config.totalSeconds), false, preset.config.totalSeconds / longest)
     IntervalTheme {
         PresetsScreen(
             state = PresetsUiState(
-                builtIn = builtInPresets.mapIndexed { i, preset -> row(preset, selected = i == 0) },
-                custom = listOf(row(Preset("Morning 25/10", builtInPresets.first().config.copy(workSeconds = 25)))),
-                canSaveCurrent = false,
-                current = builtInPresets.first().config,
+                builtIn = builtInPresets.map(::row),
+                custom = listOf(
+                    row(Preset("Leg day 40/20", current.copy(workSeconds = 40, restSeconds = 20, rounds = 6))),
+                ),
+                canSaveCurrent = true,
+                current = current,
+                currentShare = current.totalSeconds / longest,
             ),
             onApply = {},
             onSaveCurrent = {},
