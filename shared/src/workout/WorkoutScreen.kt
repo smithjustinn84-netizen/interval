@@ -57,12 +57,16 @@ import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.LaneAnchor
 import dev.justinsmith.interval.ui.MAX_ROUND_MARKS
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.WorkoutLanes
+import dev.justinsmith.interval.ui.laneRing
+import dev.justinsmith.interval.ui.rememberLaneAnchor
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
@@ -126,6 +130,7 @@ fun WorkoutScreen(
     val accent = phaseColor(state, primary = false)
     val primaryFill = phaseColor(state, primary = true)
     val focus = remember { FocusRequester() }
+    val anchor = rememberLaneAnchor()
     // Key events only reach Compose through a focused node; take focus back after the dialog closes.
     LaunchedEffect(confirmingEnd) { if (!confirmingEnd) focus.requestFocus() }
     BoxWithConstraints(
@@ -143,16 +148,18 @@ fun WorkoutScreen(
             ),
     ) {
         val landscape = maxWidth > maxHeight
+        WorkoutLanes(anchor, accent, Modifier.matchParentSize())
         PhaseBand(accent, landscape)
         if (state.isDone) {
             SummaryLayout(state, landscape, onRestart, onSavePreset, onExit)
         } else if (landscape) {
-            LandscapeWorkout(state, accent, primaryFill, onTogglePause, onSkip, onBack, onAddTime, requestEnd)
+            LandscapeWorkout(state, accent, primaryFill, anchor, onTogglePause, onSkip, onBack, onAddTime, requestEnd)
         } else {
             PortraitWorkout(
                 state = state,
                 accent = accent,
                 primaryFill = primaryFill,
+                anchor = anchor,
                 onTogglePause = onTogglePause,
                 onSkip = onSkip,
                 onBack = onBack,
@@ -235,6 +242,7 @@ private fun PortraitWorkout(
     state: WorkoutUiState,
     accent: Color,
     primaryFill: Color,
+    anchor: LaneAnchor,
     onTogglePause: () -> Unit,
     onSkip: () -> Unit,
     onBack: () -> Unit,
@@ -256,12 +264,10 @@ private fun PortraitWorkout(
                 .tapToPause(state, onTogglePause),
             contentAlignment = Alignment.Center,
         ) {
-            // The ring's ticks reach past it, above and below, so the hint sits clear of them.
-            val reach = Sizes.ringTickReach
-            val diameter = minOf(maxWidth, maxHeight - Sizes.pillHeight - reach * 2, Sizes.ringMax)
+            val diameter = minOf(maxWidth, maxHeight - Sizes.pillHeight, Sizes.ringMax)
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                RingReadout(state, accent, diameter)
-                TapHint(state, Modifier.padding(top = reach + Spacing.space12))
+                RingReadout(state, accent, diameter, Modifier.laneRing(anchor))
+                TapHint(state, Modifier.padding(top = Spacing.space12))
             }
         }
         if (state.rounds <= MAX_ROUND_MARKS) {
@@ -287,6 +293,7 @@ private fun LandscapeWorkout(
     state: WorkoutUiState,
     accent: Color,
     primaryFill: Color,
+    anchor: LaneAnchor,
     onTogglePause: () -> Unit,
     onSkip: () -> Unit,
     onBack: () -> Unit,
@@ -315,8 +322,8 @@ private fun LandscapeWorkout(
                 .tapToPause(state, onTogglePause),
             contentAlignment = Alignment.Center,
         ) {
-            val diameter = minOf(maxHeight - Sizes.ringTickReach * 2, maxWidth / 2, Sizes.ringMax)
-            LandscapeReadout(state, accent, diameter, Modifier.fillMaxWidth())
+            val diameter = minOf(maxHeight, maxWidth / 2, Sizes.ringMax)
+            LandscapeReadout(state, accent, diameter, Modifier.fillMaxWidth(), ringModifier = Modifier.laneRing(anchor))
         }
         Column(
             Modifier.width(Sizes.rail).fillMaxHeight(),

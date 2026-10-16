@@ -63,6 +63,7 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.SavePresetDialog
+import dev.justinsmith.interval.ui.SetupLanes
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.Timeline
@@ -108,6 +109,7 @@ fun PresetsScreen(
     var saving by rememberSaveable { mutableStateOf(false) }
     val palette = IntervalTheme.palette
     Box(modifier.fillMaxSize().background(palette.background), contentAlignment = Alignment.TopCenter) {
+        SetupLanes(Modifier.widthIn(max = Sizes.listMax).fillMaxSize())
         // One column on a phone; wider windows put the two groups side by side.
         LazyVerticalStaggeredGrid(
             columns = StaggeredGridCells.Adaptive(Sizes.listColumn),

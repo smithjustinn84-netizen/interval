@@ -66,14 +66,18 @@ data class IntervalPalette(
     fun tint(color: Color): Color = lerp(surface, color, TINT_STRENGTH)
 
     /**
-     * The Dial's resting ticks behind the Timer total: between the page and a [line], quieter than
+     * The lanes behind a Setup tab: their lines sit between the page and a [line], quieter than
      * either border, so the artwork never competes with the text drawn over it.
      */
-    val dialTick: Color get() = lerp(background, line, DIAL_TICK_STRENGTH)
+    val laneLine: Color get() = lerp(background, line, LANE_LINE_STRENGTH)
+
+    /** Every other lane's fill: a whisper of [surface] over the page. */
+    val laneFill: Color get() = lerp(background, surface, LANE_FILL_STRENGTH)
 
     private companion object {
         const val TINT_STRENGTH = 0.1f
-        const val DIAL_TICK_STRENGTH = 0.6f
+        const val LANE_LINE_STRENGTH = 0.6f
+        const val LANE_FILL_STRENGTH = 0.45f
         const val TIMELINE_REST_STRENGTH = 0.24f
     }
 }
@@ -109,6 +113,12 @@ object PhaseColors {
 
     /** Label on a phase-coloured or [onGround] fill; it doesn't follow the theme. */
     val ink = Color(0xFF0B0D10)
+
+    /** The lanes round the ring: their lines, and every other lane's fill, a whisper of [control] over the ground. */
+    val laneLine = control
+    val laneFill = lerp(ground, control, LANE_FILL_STRENGTH)
+
+    private const val LANE_FILL_STRENGTH = 0.45f
 
     fun of(phase: Phase): Color = when (phase) {
         Phase.Prep -> prep

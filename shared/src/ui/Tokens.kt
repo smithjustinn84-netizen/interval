@@ -142,25 +142,28 @@ object Sizes {
     val ringMax = 420.dp
 
     /**
-     * The ticks just outside the workout ring: how far past the ring's outer edge they reach, how long
-     * they are (every fifth one longer), and their stroke.
+     * The lanes behind the Setup tabs: a track whose centre sits this far past the column's start
+     * edge and below its bottom, so the lanes sweep in from the side and bend down; the innermost
+     * lane's radius, the step out to the next, and the line between lanes.
      */
-    val ringTickReach = 17.dp
-    val ringTick = 8.dp
-    val ringTickLong = 12.dp
-    val ringTickStroke = 3.dp
+    val laneCentreOut = 700.dp
+    val laneCentreBelow = 56.dp
+    val laneFirst = 700.dp
+    val laneStep = 44.dp
+    val laneStroke = 1.5.dp
 
-    /**
-     * The Dial behind the Timer tab's total: its centre, in from the column's end and down from its
-     * top, so it sits half off the edge; the ticks' radii (every fifth one starts further in); strokes.
-     */
-    val dialCentreInset = 60.dp
-    val dialCentreTop = 106.dp
-    val dialOuter = 216.dp
-    val dialInner = 196.dp
-    val dialInnerLong = 180.dp
-    val dialStroke = 2.dp
-    val dialHandStroke = 3.dp
+    /** The workout's lanes circle the ring: the gap from the ring's edge to the first, and the step between. */
+    val workoutLaneGap = 27.dp
+    val workoutLaneStep = 40.dp
+
+    /** A comet: its stroke, how long its tail trails, and how far past the column's edge it starts and ends. */
+    val cometStroke = 4.dp
+    val cometTail = 160.dp
+    val cometMargin = 80.dp
+
+    /** The dim second comet on the workout's outer lane. */
+    val chaseStroke = 3.dp
+    val chaseTail = 120.dp
 
     /** The band of phase colour along the workout screen's top edge (its start edge in landscape). */
     val phaseBand = 10.dp
@@ -219,8 +222,12 @@ object Motion {
     const val CLOCK_POP_MILLIS = 300
     const val CLOCK_POP_SCALE = 1.06f
 
-    /** The Dial's lit tick steps on once this often: a second, like a watch's seconds hand. */
-    const val DIAL_STEP_MILLIS = 1000L
+    /** A Setup comet covers this much lane a second. */
+    const val COMET_SPEED_DP_PER_SECOND = 150
+
+    /** The workout's comets lap the ring in this long: the phase-coloured one, and the dim one further out. */
+    const val LEAD_COMET_TURN_MILLIS = 12_000f
+    const val CHASE_COMET_TURN_MILLIS = 22_000f
 
     /** A held stepper starts repeating after this long… */
     const val STEPPER_HOLD_MILLIS = 420L

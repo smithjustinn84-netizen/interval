@@ -79,6 +79,7 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
+import dev.justinsmith.interval.ui.SetupLanes
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TitleBar
@@ -105,6 +106,7 @@ fun HistoryScreen(state: HistoryUiState, onClear: () -> Unit, modifier: Modifier
     var menu by remember { mutableStateOf(false) }
     var confirming by rememberSaveable { mutableStateOf(false) }
     Box(modifier.fillMaxSize().background(IntervalTheme.palette.background), contentAlignment = Alignment.TopCenter) {
+        SetupLanes(Modifier.widthIn(max = Sizes.listMax).fillMaxSize())
         // One column on a phone; wider windows lay the days out side by side.
         LazyVerticalStaggeredGrid(
             columns = StaggeredGridCells.Adaptive(Sizes.listColumn),

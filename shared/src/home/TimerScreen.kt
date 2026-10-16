@@ -29,7 +29,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.semantics.Role
@@ -63,6 +62,7 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RepeatButton
 import dev.justinsmith.interval.ui.SavePresetDialog
+import dev.justinsmith.interval.ui.SetupLanes
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StartButton
@@ -74,7 +74,6 @@ import dev.justinsmith.interval.ui.labelRes
 import dev.justinsmith.interval.ui.lessRes
 import dev.justinsmith.interval.ui.moreRes
 import dev.justinsmith.interval.ui.stripe
-import dev.justinsmith.interval.ui.tickDialBehind
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
@@ -105,10 +104,9 @@ fun TimerRoute(
 }
 
 /**
- * Home: the session total over the Dial's stepping ticks, then Work, Rest and Rounds as three tall
- * rows, each with its own − and +
- * (hold to run), and Start within thumb reach beside the way to the presets. Tapping a value opens its
- * edit sheet for the quick picks.
+ * Home: the session total, then Work, Rest and Rounds as three tall rows, each with its own − and +
+ * (hold to run), and Start within thumb reach beside the way to the presets, all over the lanes.
+ * Tapping a value opens its edit sheet for the quick picks.
  */
 @Composable
 fun TimerScreen(
@@ -129,9 +127,10 @@ fun TimerScreen(
     val onSave = { saving = true }
     BoxWithConstraints(modifier.fillMaxSize().background(IntervalTheme.palette.background)) {
         if (maxWidth > maxHeight) {
-            // Sideways: the total and Start on the left, the three rows on the right.
+            // Sideways: the total and Start on the left, the three rows on the right, the lanes under both.
+            SetupLanes(Modifier.matchParentSize())
             Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center) {
-                Column(Modifier.width(Sizes.setupColumnLandscape).fillMaxHeight().clipToBounds().tickDialBehind()) {
+                Column(Modifier.width(Sizes.setupColumnLandscape).fillMaxHeight()) {
                     TimerTitleBar(state.canSavePreset, onSave, onOpenSettings)
                     Total(state, Modifier.padding(horizontal = Spacing.space20))
                     Spacer(Modifier.weight(1f))
@@ -148,24 +147,20 @@ fun TimerScreen(
                 }
             }
         } else {
-            Column(
-                Modifier
-                    .align(Alignment.TopCenter)
-                    .widthIn(max = Sizes.content)
-                    .fillMaxSize()
-                    .clipToBounds()
-                    .tickDialBehind(),
-            ) {
-                TimerTitleBar(state.canSavePreset, onSave, onOpenSettings)
-                Total(state, Modifier.padding(horizontal = Spacing.space20))
-                Column(Modifier.weight(1f).padding(horizontal = Spacing.space16, vertical = Spacing.space12)) {
-                    StepperRows(state.config, onStep, onEdit)
+            Box(Modifier.align(Alignment.TopCenter).widthIn(max = Sizes.content).fillMaxSize()) {
+                SetupLanes(Modifier.matchParentSize())
+                Column(Modifier.fillMaxSize()) {
+                    TimerTitleBar(state.canSavePreset, onSave, onOpenSettings)
+                    Total(state, Modifier.padding(horizontal = Spacing.space20))
+                    Column(Modifier.weight(1f).padding(horizontal = Spacing.space16, vertical = Spacing.space12)) {
+                        StepperRows(state.config, onStep, onEdit)
+                    }
+                    StartRow(
+                        onStart,
+                        onSeeAllPresets,
+                        Modifier.padding(start = Spacing.space16, end = Spacing.space16, bottom = Spacing.space16),
+                    )
                 }
-                StartRow(
-                    onStart,
-                    onSeeAllPresets,
-                    Modifier.padding(start = Spacing.space16, end = Spacing.space16, bottom = Spacing.space16),
-                )
             }
         }
     }
