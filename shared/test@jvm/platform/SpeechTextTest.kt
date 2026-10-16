@@ -27,13 +27,10 @@ class SpeechTextTest {
     @Test
     fun `a line that fails to speak doesn't stop the next`() = runBlocking {
         val tried = MutableStateFlow(emptyList<String>())
-        val queue = SpeechQueue(
-            say = { text ->
-                tried.value += text
-                check(text != "Rest") { "speech engine gone" }
-            },
-            dispatcher = Dispatchers.Default,
-        )
+        val queue = SpeechQueue(Dispatchers.Default) { text ->
+            tried.value += text
+            check(text != "Rest") { "speech engine gone" }
+        }
         queue.speak(Speech.Rest)
         withTimeout(5_000) { tried.first { it == listOf("Rest") } }
         queue.speak(Speech.Finished)

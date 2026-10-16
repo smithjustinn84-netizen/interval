@@ -34,8 +34,8 @@ internal suspend fun Speech.text(): String = when (this) {
  * next is stale, just as the players cut a line short when the next one starts.
  */
 internal class SpeechQueue(
-    private val say: (String) -> Unit,
     dispatcher: CoroutineDispatcher = Dispatchers.Main,
+    private val say: (String) -> Unit,
 ) {
     private val log = Logger.withTag("SpeechQueue")
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
