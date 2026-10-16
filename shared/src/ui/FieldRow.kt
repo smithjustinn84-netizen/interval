@@ -1,24 +1,23 @@
 package dev.justinsmith.interval.ui
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.semantics.Role
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.config_rounds_short
@@ -41,16 +40,28 @@ fun FieldRow(
     val palette = IntervalTheme.palette
     val text = field.format(value)
     val editLabel = stringResource(field.editRes)
+    val stripe = field.stripe()
+    val gap = if (compact) Spacing.space12 else Spacing.space16
+    val interaction = remember { MutableInteractionSource() }
     Row(
         modifier
             .fillMaxWidth()
-            .height(IntrinsicSize.Min)
             .heightIn(min = if (compact) Sizes.listRow else Sizes.intervalRow)
-            .clickable(role = Role.Button, onClickLabel = editLabel, onClick = onClick),
+            // Drawn, not laid out, so the stripe stays on the card's edge while the content shrinks.
+            .drawBehind { drawRect(stripe, size = Size(Sizes.stripe.toPx(), size.height)) }
+            .clickable(
+                interaction,
+                LocalIndication.current,
+                role = Role.Button,
+                onClickLabel = editLabel,
+                onClick = onClick,
+            )
+            // After the ripple, so the content shrinks while the ripple keeps the card's full width.
+            .pressScale(interaction)
+            .padding(start = Sizes.stripe + gap),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(if (compact) Spacing.space12 else Spacing.space16),
+        horizontalArrangement = Arrangement.spacedBy(gap),
     ) {
-        Box(Modifier.width(Sizes.stripe).fillMaxHeight().background(field.stripe()))
         Column(Modifier.weight(1f).padding(vertical = if (compact) Spacing.space8 else Spacing.space12)) {
             Text(stringResource(field.labelRes), style = IntervalTheme.type.label, color = palette.text)
             Text(stringResource(field.hintRes), style = IntervalTheme.type.meta, color = palette.textDim)

@@ -226,11 +226,14 @@ fun RowDivider(modifier: Modifier = Modifier) {
 @Composable
 fun LinkRow(title: String, subtitle: String?, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
+    val interaction = remember { MutableInteractionSource() }
     Row(
         modifier
             .fillMaxWidth()
             .heightIn(min = Sizes.listRow)
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(interaction, LocalIndication.current, role = Role.Button, onClick = onClick)
+            // After the ripple, so the content shrinks while the ripple keeps the card's full width.
+            .pressScale(interaction)
             .padding(start = Spacing.space16, end = Spacing.space12, top = Spacing.space8, bottom = Spacing.space8),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
@@ -291,14 +294,22 @@ fun ToggleRow(
         tween(Motion.STATE_MILLIS, easing = StandardEasing),
         label = "track",
     )
+    val interaction = remember { MutableInteractionSource() }
     Row(
         modifier
             .fillMaxWidth()
             .heightIn(min = Sizes.listRow)
-            .toggleable(value = checked, role = Role.Switch) { on ->
+            .toggleable(
+                value = checked,
+                interactionSource = interaction,
+                indication = LocalIndication.current,
+                role = Role.Switch,
+            ) { on ->
                 haptics.performHapticFeedback(if (on) HapticFeedbackType.ToggleOn else HapticFeedbackType.ToggleOff)
                 onToggle()
             }
+            // After the ripple, so the content shrinks while the ripple keeps the card's full width.
+            .pressScale(interaction)
             .padding(horizontal = Spacing.space16, vertical = Spacing.space8),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
