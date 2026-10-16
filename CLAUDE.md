@@ -83,6 +83,11 @@ toolchain (`$compose.*`).
   nothing until `repository.ready`. The DataStore lives for the process (one per file, DataStore's rule),
   not the Koin container, which Android rebuilds whenever the Activity reopens. A schema change bumps the `@Database` version, adds a migration, and
   commits the new `shared/schemas/` JSON.
+- **Text**: every user-facing string lives in `shared/composeResources/values/strings.xml`. ViewModels and
+  domain code expose typed data (enums, sealed types like `NextUp`/`HistoryDay`, numbers, clock strings
+  like `"0:30"`); screens put it into words with `stringResource`/`pluralStringResource`. Spoken cues are
+  the one non-composable path: `CuePlayer.speak(Speech)`, worded by `SpeechQueue` with `getString`. Never
+  load a resource from `shared/test/`: common tests also run as Android local tests.
 - **Theme**: `IntervalTheme` in `shared/src/ui/Theme.kt`.
 - **Logging**: Kermit (`co.touchlab.kermit.Logger`).
 - **Platform code**: `expect`/`actual` in `src/` + `src@<platform>/`. Prefer an interface injected via Koin

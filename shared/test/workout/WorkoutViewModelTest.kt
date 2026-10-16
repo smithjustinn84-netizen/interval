@@ -6,6 +6,7 @@ import dev.justinsmith.interval.data.CueSettings
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.RecordingCuePlayer
 import dev.justinsmith.interval.platform.Haptic
+import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
 import kotlinx.coroutines.Dispatchers
@@ -21,6 +22,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class WorkoutViewModelTest {
@@ -48,9 +50,12 @@ class WorkoutViewModelTest {
         val state = viewModel.state.value
         assertTrue(state.isDone)
         assertFalse(state.running)
-        assertEquals("2 rounds · 0:15 total", state.summary)
+        assertEquals(2, state.rounds)
+        assertEquals("0:15", state.total)
+        val countdown = listOf(Speech.Countdown(3), Speech.Countdown(2), Speech.Countdown(1))
         assertEquals(
-            listOf("Work", "3", "2", "1", "Rest", "3", "2", "1", "Last round. Work", "3", "2", "1", "Done. Nice work"),
+            listOf(Speech.Work(lastRound = false)) + countdown + Speech.Rest + countdown +
+                Speech.Work(lastRound = true) + countdown + Speech.Finished,
             player.spoken,
         )
         assertEquals(listOf(Haptic.Work, Haptic.Rest, Haptic.Work, Haptic.Finished), player.haptics)
@@ -74,7 +79,7 @@ class WorkoutViewModelTest {
 
         viewModel.endEarly()
         assertEquals("0:02", viewModel.state.value.elapsed)
-        assertEquals("1 of 2 rounds · 0:02", viewModel.state.value.summary)
+        assertEquals(1, viewModel.state.value.completedRounds)
         val entry = repository.history.value.single()
         assertEquals(2, entry.elapsedSeconds)
         assertTrue(entry.endedEarly)
@@ -105,7 +110,6 @@ class WorkoutViewModelTest {
         viewModel.pause()
         val paused = viewModel.state.value
         assertTrue(paused.paused)
-        assertEquals("Paused", paused.label)
 
         advanceTimeBy(10_000)
         assertEquals(paused.clock, viewModel.state.value.clock)
@@ -134,7 +138,9 @@ class WorkoutViewModelTest {
         viewModel.restart()
         val state = viewModel.state.value
         assertEquals(Phase.Work, state.phase)
-        assertEquals("Round 1 of 2 · 0:15 left", state.meta)
+        assertEquals(1, state.round)
+        assertEquals("0:15", state.sessionLeft)
+        assertEquals(NextUp.Rest("0:05"), state.next)
         viewModel.pause()
     }
 
@@ -149,7 +155,7 @@ class WorkoutViewModelTest {
         val state = viewModel.state.value
         assertTrue(state.isDone && state.ended)
         assertFalse(state.running)
-        assertEquals("1 of 2 rounds · 0:06", state.summary)
+        assertEquals(1, state.completedRounds)
         assertEquals("0:06", state.elapsed)
         assertEquals(6, repository.history.value.single().elapsedSeconds)
         assertTrue(repository.history.value.single().endedEarly)
@@ -165,9 +171,11 @@ class WorkoutViewModelTest {
         assertEquals("0:00", viewModel.state.value.elapsed)
         assertEquals(0, repository.history.value.single().elapsedSeconds)
         assertTrue(viewModel.state.value.canSavePreset)
-        assertEquals("Custom · 5s on · 5s off · ×2", viewModel.state.value.shape)
+        assertNull(viewModel.state.value.presetName)
+        assertEquals(1, viewModel.state.value.nextCustomNumber)
         viewModel.saveAsPreset("Short")
         assertFalse(viewModel.state.value.canSavePreset)
-        assertEquals("Short · 5s on · 5s off · ×2", viewModel.state.value.shape)
+        assertEquals("Short", viewModel.state.value.presetName)
+        assertEquals(2, viewModel.state.value.nextCustomNumber)
     }
 }

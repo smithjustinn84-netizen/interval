@@ -144,8 +144,14 @@ class WorkoutViewModel(
     }
 
     private fun uiState(running: Boolean): WorkoutUiState {
-        val name = repository.presets.value.matching(config)?.name
-        return engine.toUiState(running, ended, name, activeSeconds)
+        val presets = repository.presets.value
+        return engine.toUiState(
+            running = running,
+            ended = ended,
+            presetName = presets.matching(config)?.name,
+            elapsedSeconds = activeSeconds,
+            nextCustomNumber = presets.count { it.custom } + 1,
+        )
     }
 
     private fun play(cues: List<Cue>) {

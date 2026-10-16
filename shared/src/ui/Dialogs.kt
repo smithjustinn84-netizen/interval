@@ -29,7 +29,14 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.ImeAction
 import com.composeunstyled.TextInput
 import com.composeunstyled.UnstyledTextField
+import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.common_cancel
+import dev.justinsmith.interval.resources.common_save
+import dev.justinsmith.interval.resources.preset_name_count
+import dev.justinsmith.interval.resources.preset_name_label
+import dev.justinsmith.interval.resources.preset_save_title
 import dev.justinsmith.interval.timer.Preset
+import org.jetbrains.compose.resources.stringResource
 
 /** Asks before an action that can't be undone: title, one line of text, a dismiss and a confirm action. */
 @Composable
@@ -53,18 +60,21 @@ fun ConfirmDialog(
     }
 }
 
-/** Names and saves the current workout as a preset. [summary] is its shape: "25s on · 10s off · ×8 · 4:40 total". */
+/**
+ * Names and saves the current workout as a preset. [summary] is its shape: "25s on · 10s off · ×8 ·
+ * 4:40 total". Left blank, the name is [defaultName] ("Custom 3"), which the empty field shows.
+ */
 @Composable
-fun SavePresetDialog(summary: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
+fun SavePresetDialog(summary: String, defaultName: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
     val palette = IntervalTheme.palette
     val name = rememberTextFieldState()
-    val save = { onSave(name.text.toString()) }
+    val save = { onSave(name.text.toString().trim().ifEmpty { defaultName }) }
     IntervalDialog(
-        title = "Save as preset",
+        title = stringResource(Res.string.preset_save_title),
         onDismiss = onDismiss,
         actions = {
-            DialogButton("Cancel", onClick = onDismiss, primary = false)
-            DialogButton("Save", onClick = save, primary = true)
+            DialogButton(stringResource(Res.string.common_cancel), onClick = onDismiss, primary = false)
+            DialogButton(stringResource(Res.string.common_save), onClick = save, primary = true)
         },
     ) {
         Text(
@@ -74,26 +84,31 @@ fun SavePresetDialog(summary: String, onSave: (String) -> Unit, onDismiss: () ->
             modifier = Modifier.padding(bottom = Spacing.space6),
         )
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-            Text("Name", style = IntervalTheme.type.groupLabel, color = palette.textDim, modifier = Modifier.weight(1f))
             Text(
-                "${name.text.length} / ${Preset.MAX_NAME_LENGTH}",
+                stringResource(Res.string.preset_name_label),
+                style = IntervalTheme.type.groupLabel,
+                color = palette.textDim,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                stringResource(Res.string.preset_name_count, name.text.length, Preset.MAX_NAME_LENGTH),
                 style = IntervalTheme.type.hint,
                 color = palette.textDim,
             )
         }
-        NameField(name, onDone = save)
+        NameField(name, placeholder = defaultName, onDone = save)
     }
 }
 
 /** A filled single-line field; the accent ring appears only while it has focus. */
 @Composable
-private fun NameField(state: TextFieldState, onDone: () -> Unit) {
+private fun NameField(state: TextFieldState, placeholder: String, onDone: () -> Unit) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     UnstyledTextField(
         state = state,
-        accessibilityLabel = "Name",
+        accessibilityLabel = stringResource(Res.string.preset_name_label),
         textStyle = IntervalTheme.type.cardTitle,
         textColor = palette.text,
         cursorBrush = SolidColor(palette.accent),
@@ -115,7 +130,7 @@ private fun NameField(state: TextFieldState, onDone: () -> Unit) {
         Box(Modifier.fillMaxWidth().heightIn(min = Sizes.field), contentAlignment = Alignment.CenterStart) {
             TextInput(
                 Modifier.fillMaxWidth(),
-                placeholder = { Text("Custom", style = IntervalTheme.type.cardTitle, color = palette.textDim) },
+                placeholder = { Text(placeholder, style = IntervalTheme.type.cardTitle, color = palette.textDim) },
             )
         }
     }

@@ -53,7 +53,6 @@ class TimerViewModelTest {
         assertEquals("Tabata", state.presetName)
         assertEquals(tabata, state.presets.single { it.selected }.preset)
         assertEquals(25, state.config.prepSeconds)
-        assertEquals("0:25 to get ready", state.prepLine)
         assertFalse(state.canSavePreset)
     }
 
@@ -69,8 +68,9 @@ class TimerViewModelTest {
     }
 
     @Test
-    fun `no countdown means no get-ready line`() {
-        viewModel.set(ConfigField.Prep, 0)
-        assertNull(viewModel.state.value.prepLine)
+    fun `a preset saved without a name gets the next number`() {
+        assertEquals(1, viewModel.state.value.nextCustomNumber)
+        viewModel.savePreset("Mine")
+        assertEquals(2, viewModel.state.value.nextCustomNumber)
     }
 }

@@ -10,6 +10,7 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.speech.tts.TextToSpeech
+import android.text.format.DateFormat
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
@@ -28,6 +29,7 @@ import org.koin.dsl.module
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 actual fun rememberPlatformModule(): Module {
@@ -84,18 +86,11 @@ private class AndroidStorage(private val context: Context) : PlatformStorage {
 }
 
 private class JavaTimeFormatter : TimestampFormatter {
-    private val dayFormat = DateTimeFormatter.ofPattern("EEEE, MMM d")
-    private val timeFormat = DateTimeFormatter.ofPattern("h:mm a")
+    // Skeletons rather than fixed patterns, so each locale orders the parts and picks 12 or 24 hours its way.
+    private val dateFormat = localized("EEEEMMMd")
+    private val timeFormat = localized("jmm")
 
-    override fun day(epochMillis: Long, nowMillis: Long): String {
-        val date = zoned(epochMillis).toLocalDate()
-        val today = zoned(nowMillis).toLocalDate()
-        return when (date) {
-            today -> "Today"
-            today.minusDays(1) -> "Yesterday"
-            else -> dayFormat.format(date)
-        }
-    }
+    override fun date(epochMillis: Long): String = dateFormat.format(zoned(epochMillis))
 
     override fun time(epochMillis: Long): String = timeFormat.format(zoned(epochMillis))
 
@@ -104,6 +99,11 @@ private class JavaTimeFormatter : TimestampFormatter {
     override fun weekday(epochMillis: Long): Int = zoned(epochMillis).dayOfWeek.value
 
     private fun zoned(epochMillis: Long) = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault())
+
+    private fun localized(skeleton: String): DateTimeFormatter {
+        val locale = Locale.getDefault()
+        return DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, skeleton), locale)
+    }
 }
 
 private class AndroidCuePlayer(context: Context) : CuePlayer {
@@ -128,6 +128,8 @@ private class AndroidCuePlayer(context: Context) : CuePlayer {
         pendingSpeech = null
     }
 
+    private val lines = SpeechQueue { text -> if (speechReady) say(text) else pendingSpeech = text }
+
     private val vibrator: Vibrator? = runCatching {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             context.getSystemService(VibratorManager::class.java)?.defaultVibrator
@@ -149,8 +151,8 @@ private class AndroidCuePlayer(context: Context) : CuePlayer {
         runCatching { tones?.startTone(tone.type, tone.millis) }.onFailure { log.w(it) { "Beep failed" } }
     }
 
-    override fun speak(text: String) {
-        if (speechReady) say(text) else pendingSpeech = text
+    override fun speak(speech: Speech) {
+        lines.speak(speech)
     }
 
     private fun say(text: String) {
@@ -170,6 +172,7 @@ private class AndroidCuePlayer(context: Context) : CuePlayer {
     }
 
     override fun release() {
+        lines.close()
         runCatching { tones?.release() }
         runCatching { speech.shutdown() }
     }

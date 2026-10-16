@@ -16,7 +16,6 @@ import kotlinx.coroutines.flow.stateIn
 
 data class PresetRowItem(
     val preset: Preset,
-    val description: String,
     val total: String,
     val selected: Boolean,
 )
@@ -26,8 +25,10 @@ data class PresetsUiState(
     val custom: List<PresetRowItem>,
     /** False when the current settings already match a preset, so saving would duplicate it. */
     val canSaveCurrent: Boolean,
-    /** The current settings' shape, for the save dialog. */
-    val currentSummary: String,
+    /** The current settings, for the save dialog. */
+    val current: IntervalConfig,
+    /** The number a preset saved without a name gets: "Custom 3". */
+    val nextCustomNumber: Int = 1,
 )
 
 class PresetsViewModel(private val repository: IntervalRepository) : ViewModel() {
@@ -54,7 +55,6 @@ class PresetsViewModel(private val repository: IntervalRepository) : ViewModel()
         val rows = entries.map { entry ->
             entry.custom to PresetRowItem(
                 preset = entry.preset,
-                description = entry.preset.config.description,
                 total = formatClock(entry.preset.config.copy(prepSeconds = config.prepSeconds).totalSeconds),
                 selected = entry.preset.config.sameShape(config),
             )
@@ -63,7 +63,8 @@ class PresetsViewModel(private val repository: IntervalRepository) : ViewModel()
             builtIn = rows.filterNot { it.first }.map { it.second },
             custom = rows.filter { it.first }.map { it.second },
             canSaveCurrent = entries.matching(config) == null,
-            currentSummary = "${config.description} · ${formatClock(config.totalSeconds)} total",
+            current = config,
+            nextCustomNumber = entries.count { it.custom } + 1,
         )
     }
 }

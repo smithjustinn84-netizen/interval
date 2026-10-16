@@ -155,7 +155,10 @@ class IntervalRepository(
         updateConfig { preset.config.copy(prepSeconds = it.prepSeconds) }
     }
 
-    /** Saves the current configuration under [name]; a blank name becomes "Custom N". */
+    /**
+     * Saves the current configuration under [name]. The save dialog fills in a blank name in the user's
+     * language ("Custom N"); the English fallback here only guards callers that don't.
+     */
     fun saveCurrentAsPreset(name: String) {
         val label = name.trim().ifEmpty { "Custom ${_customPresets.value.size + 1}" }.take(Preset.MAX_NAME_LENGTH)
         val preset = Preset(label, _config.value)

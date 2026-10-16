@@ -58,8 +58,11 @@ import androidx.compose.ui.unit.dp
 import com.composeunstyled.Thumb
 import com.composeunstyled.Track
 import com.composeunstyled.UnstyledSwitch
+import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.timer_start_workout
 import dev.justinsmith.interval.timer.IntervalConfig
 import kotlinx.coroutines.delay
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Round-by-round marks (the workout's dots, a timeline's segments) stop being readable past a
@@ -279,7 +282,11 @@ fun StartButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
             tint = palette.onAccent,
             modifier = Modifier.size(Sizes.playIcon),
         )
-        Text("Start workout", style = IntervalTheme.type.startLabel, color = palette.onAccent)
+        Text(
+            stringResource(Res.string.timer_start_workout),
+            style = IntervalTheme.type.startLabel,
+            color = palette.onAccent,
+        )
     }
 }
 

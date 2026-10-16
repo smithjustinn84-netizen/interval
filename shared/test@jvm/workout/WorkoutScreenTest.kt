@@ -134,15 +134,41 @@ class WorkoutScreenTest {
     }
 
     @Test
+    fun `the readout says where the workout is and what comes next`() = runUiTest {
+        var state by mutableStateOf(states.first().toUiState(running = true))
+        setThemedContent { Screen(state) }
+        onNodeWithText("Get ready").assertExists()
+        onNodeWithText("Next: work 0:30").assertExists()
+        state = firstWork.toUiState(running = true)
+        onNodeWithText("Round 1 of 8 · 5:45 left").assertExists()
+        onNodeWithText("Next: rest 0:15").assertExists()
+        state = firstRest.toUiState(running = true)
+        onNodeWithText("Rest").assertExists()
+        onNodeWithText("Next: round 2 of 8").assertExists()
+        state = states.last { it.phase == Phase.Work }.toUiState(running = true)
+        onNodeWithText("Last round — finish strong").assertExists()
+    }
+
+    @Test
     fun `a finished workout shows its summary`() = runUiTest {
         setThemedContent { Screen(done.toUiState(running = false).copy(canSavePreset = true)) }
         onNodeWithText("Saved to history").assertExists()
+        onNodeWithText("8 rounds · 5:55 total").assertExists()
+        onNodeWithText("Custom · 30s on · 15s off · ×8").assertExists()
         onNodeWithText("Repeat").performClick()
         onNode(hasText("Done") and hasClickAction()).performClick()
         onNodeWithText("Save as preset").performClick()
         onNode(hasSetTextAction()).performTextInput("Classic")
         onNodeWithText("Save").performClick()
         assertEquals(listOf("restart", "exit", "save Classic"), calls)
+    }
+
+    @Test
+    fun `a workout ended early says how far it got`() = runUiTest {
+        setThemedContent { Screen(firstRest.toUiState(running = false, ended = true, elapsedSeconds = 50)) }
+        onNodeWithText("Ended").assertExists()
+        onNodeWithText("1 of 8 rounds · 0:50").assertExists()
+        onNodeWithText("1/8").assertExists()
     }
 
     @Test

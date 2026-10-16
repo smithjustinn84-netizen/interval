@@ -3,23 +3,73 @@ package dev.justinsmith.interval.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
+import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.field_prep_edit
+import dev.justinsmith.interval.resources.field_prep_hint
+import dev.justinsmith.interval.resources.field_prep_label
+import dev.justinsmith.interval.resources.field_prep_less
+import dev.justinsmith.interval.resources.field_prep_more
+import dev.justinsmith.interval.resources.field_rest_edit
+import dev.justinsmith.interval.resources.field_rest_hint
+import dev.justinsmith.interval.resources.field_rest_label
+import dev.justinsmith.interval.resources.field_rest_less
+import dev.justinsmith.interval.resources.field_rest_more
+import dev.justinsmith.interval.resources.field_rounds_edit
+import dev.justinsmith.interval.resources.field_rounds_hint
+import dev.justinsmith.interval.resources.field_rounds_label
+import dev.justinsmith.interval.resources.field_rounds_less
+import dev.justinsmith.interval.resources.field_rounds_more
+import dev.justinsmith.interval.resources.field_work_edit
+import dev.justinsmith.interval.resources.field_work_hint
+import dev.justinsmith.interval.resources.field_work_label
+import dev.justinsmith.interval.resources.field_work_less
+import dev.justinsmith.interval.resources.field_work_more
 import dev.justinsmith.interval.timer.ConfigField
+import org.jetbrains.compose.resources.StringResource
 
-/** How each [ConfigField] is named and described wherever it is edited. */
-val ConfigField.label: String
+/** How each [ConfigField] is named wherever it is edited. */
+val ConfigField.labelRes: StringResource
     get() = when (this) {
-        ConfigField.Prep -> "Get ready"
-        ConfigField.Work -> "Work"
-        ConfigField.Rest -> "Rest"
-        ConfigField.Rounds -> "Rounds"
+        ConfigField.Prep -> Res.string.field_prep_label
+        ConfigField.Work -> Res.string.field_work_label
+        ConfigField.Rest -> Res.string.field_rest_label
+        ConfigField.Rounds -> Res.string.field_rounds_label
     }
 
-val ConfigField.hint: String
+/** The line under the name, saying what the value is for. */
+val ConfigField.hintRes: StringResource
     get() = when (this) {
-        ConfigField.Prep -> "Countdown before the first round"
-        ConfigField.Work -> "Effort interval"
-        ConfigField.Rest -> "Recovery between rounds"
-        ConfigField.Rounds -> "Work intervals in the set"
+        ConfigField.Prep -> Res.string.field_prep_hint
+        ConfigField.Work -> Res.string.field_work_hint
+        ConfigField.Rest -> Res.string.field_rest_hint
+        ConfigField.Rounds -> Res.string.field_rounds_hint
+    }
+
+/** What tapping the value's row does, for screen readers: "Edit work". */
+val ConfigField.editRes: StringResource
+    get() = when (this) {
+        ConfigField.Prep -> Res.string.field_prep_edit
+        ConfigField.Work -> Res.string.field_work_edit
+        ConfigField.Rest -> Res.string.field_rest_edit
+        ConfigField.Rounds -> Res.string.field_rounds_edit
+    }
+
+/** The − stepper, for screen readers: "Less work time", "Fewer rounds". */
+val ConfigField.lessRes: StringResource
+    get() = when (this) {
+        ConfigField.Prep -> Res.string.field_prep_less
+        ConfigField.Work -> Res.string.field_work_less
+        ConfigField.Rest -> Res.string.field_rest_less
+        ConfigField.Rounds -> Res.string.field_rounds_less
+    }
+
+/** The + stepper, for screen readers: "More work time", "More rounds". */
+val ConfigField.moreRes: StringResource
+    get() = when (this) {
+        ConfigField.Prep -> Res.string.field_prep_more
+        ConfigField.Work -> Res.string.field_work_more
+        ConfigField.Rest -> Res.string.field_rest_more
+        ConfigField.Rounds -> Res.string.field_rounds_more
     }
 
 /** The phase stripe that ties a field to its workout colour; Rounds takes the accent. */

@@ -24,6 +24,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
+import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.common_custom
+import dev.justinsmith.interval.resources.common_done
+import dev.justinsmith.interval.resources.common_joined
+import dev.justinsmith.interval.resources.preset_default_name
+import dev.justinsmith.interval.resources.workout_done
+import dev.justinsmith.interval.resources.workout_ended
+import dev.justinsmith.interval.resources.workout_repeat
+import dev.justinsmith.interval.resources.workout_save_preset
+import dev.justinsmith.interval.resources.workout_saved
+import dev.justinsmith.interval.resources.workout_stat_rounds
+import dev.justinsmith.interval.resources.workout_stat_rounds_value
+import dev.justinsmith.interval.resources.workout_stat_time
+import dev.justinsmith.interval.resources.workout_summary_ended
+import dev.justinsmith.interval.resources.workout_summary_finished
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -32,6 +47,9 @@ import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.SavePresetDialog
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.configDescription
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * What the workout came to: Done (or Ended), its shape, time and rounds, that it was saved, and what
@@ -67,7 +85,8 @@ internal fun SummaryLayout(
     }
     if (saving) {
         SavePresetDialog(
-            summary = state.shape,
+            summary = shapeText(state),
+            defaultName = stringResource(Res.string.preset_default_name, state.nextCustomNumber),
             onSave = {
                 onSavePreset(it)
                 saving = false
@@ -87,13 +106,17 @@ private fun SummaryActions(
 ) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space10)) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space10)) {
-            BigButton("Repeat", onRepeat, Modifier.weight(1f).height(Sizes.save))
+            BigButton(stringResource(Res.string.workout_repeat), onRepeat, Modifier.weight(1f).height(Sizes.save))
             if (state.canSavePreset) {
-                BigButton("Save as preset", onSave, Modifier.weight(1f).height(Sizes.save))
+                BigButton(
+                    stringResource(Res.string.workout_save_preset),
+                    onSave,
+                    Modifier.weight(1f).height(Sizes.save),
+                )
             }
         }
         BigButton(
-            "Done",
+            stringResource(Res.string.common_done),
             onDone,
             Modifier.fillMaxWidth().height(Sizes.control),
             background = PhaseColors.onPhase,
@@ -111,21 +134,44 @@ private fun SummaryReadout(state: WorkoutUiState, modifier: Modifier = Modifier)
         verticalArrangement = Arrangement.Center,
     ) {
         if (state.rounds <= MAX_ROUND_MARKS) RoundDots(state, Modifier.padding(bottom = Spacing.space12))
-        Text(if (state.ended) "Ended" else "Done", style = IntervalTheme.type.done, color = PhaseColors.onPhase)
         Text(
-            state.summary,
+            stringResource(if (state.ended) Res.string.workout_ended else Res.string.workout_done),
+            style = IntervalTheme.type.done,
+            color = PhaseColors.onPhase,
+        )
+        Text(
+            if (state.ended) {
+                pluralStringResource(
+                    Res.plurals.workout_summary_ended,
+                    state.rounds,
+                    state.completedRounds,
+                    state.rounds,
+                    state.elapsed,
+                )
+            } else {
+                pluralStringResource(Res.plurals.workout_summary_finished, state.rounds, state.rounds, state.total)
+            },
             style = IntervalTheme.type.summary,
             color = PhaseColors.onPhase90,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = Spacing.space8),
         )
-        Text(state.shape, style = IntervalTheme.type.meta, color = PhaseColors.onPhase85, textAlign = TextAlign.Center)
+        Text(
+            shapeText(state),
+            style = IntervalTheme.type.meta,
+            color = PhaseColors.onPhase85,
+            textAlign = TextAlign.Center,
+        )
         Row(
             Modifier.padding(top = Spacing.space28).widthIn(max = Sizes.content),
             horizontalArrangement = Arrangement.spacedBy(Spacing.space10),
         ) {
-            Stat(state.elapsed, "Time", Modifier.weight(1f))
-            Stat("${state.completedRounds}/${state.rounds}", "Rounds", Modifier.weight(1f))
+            Stat(state.elapsed, stringResource(Res.string.workout_stat_time), Modifier.weight(1f))
+            Stat(
+                stringResource(Res.string.workout_stat_rounds_value, state.completedRounds, state.rounds),
+                stringResource(Res.string.workout_stat_rounds),
+                Modifier.weight(1f),
+            )
         }
         Row(
             Modifier.padding(top = Spacing.space20),
@@ -138,7 +184,11 @@ private fun SummaryReadout(state: WorkoutUiState, modifier: Modifier = Modifier)
                 tint = PhaseColors.onPhase85,
                 modifier = Modifier.size(Sizes.icon),
             )
-            Text("Saved to history", style = IntervalTheme.type.meta, color = PhaseColors.onPhase85)
+            Text(
+                stringResource(Res.string.workout_saved),
+                style = IntervalTheme.type.meta,
+                color = PhaseColors.onPhase85,
+            )
         }
     }
 }
@@ -161,3 +211,11 @@ private fun Stat(value: String, label: String, modifier: Modifier = Modifier) {
         )
     }
 }
+
+/** The workout's name and shape: "Tabata · 20s on · 10s off · ×8", or "Custom · …" for one no preset has. */
+@Composable
+private fun shapeText(state: WorkoutUiState): String = stringResource(
+    Res.string.common_joined,
+    state.presetName ?: stringResource(Res.string.common_custom),
+    configDescription(state.config),
+)

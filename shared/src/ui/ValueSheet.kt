@@ -41,17 +41,19 @@ import com.composeunstyled.Sheet
 import com.composeunstyled.SheetDetent
 import com.composeunstyled.UnstyledModalBottomSheet
 import com.composeunstyled.rememberModalBottomSheetState
+import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.common_done
+import dev.justinsmith.interval.resources.value_sheet_drag_handle_cd
+import dev.justinsmith.interval.resources.value_sheet_hint_hold
+import dev.justinsmith.interval.resources.value_sheet_hint_steps
+import dev.justinsmith.interval.resources.value_sheet_new_total
+import dev.justinsmith.interval.resources.value_sheet_quick_picks
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.format
 import kotlinx.coroutines.flow.dropWhile
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-
-private val ConfigField.less: String
-    get() = if (this == ConfigField.Rounds) "Fewer rounds" else "Less ${label.lowercase()} time"
-
-private val ConfigField.more: String
-    get() = if (this == ConfigField.Rounds) "More rounds" else "More ${label.lowercase()} time"
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * The edit sheet for one value: big − / + steppers (hold to repeat), one-tap common values, the
@@ -67,6 +69,8 @@ fun ValueSheet(
     onDismiss: () -> Unit,
 ) {
     val palette = IntervalTheme.palette
+    val label = stringResource(field.labelRes)
+    val dragHandle = stringResource(Res.string.value_sheet_drag_handle_cd)
     // No half-open stop: the sheet is short enough to show whole.
     val sheetState = rememberModalBottomSheetState(initialDetent = SheetDetent.Hidden)
     val scope = rememberCoroutineScope()
@@ -88,7 +92,7 @@ fun ValueSheet(
                 Column(
                     Modifier
                         // Screen readers announce the sheet by its field as it opens.
-                        .semantics { paneTitle = field.label }
+                        .semantics { paneTitle = label }
                         .widthIn(max = Sizes.sheet)
                         .fillMaxWidth()
                         .clip(Corners.sheet)
@@ -100,7 +104,7 @@ fun ValueSheet(
                     DragIndication(
                         Modifier
                             .size(Sizes.iconButton, Spacing.space24)
-                            .semantics { contentDescription = "Drag handle" }
+                            .semantics { contentDescription = dragHandle }
                             .drawBehind {
                                 val handle = Size(Sizes.handleWidth.toPx(), Sizes.handleHeight.toPx())
                                 drawRoundRect(
@@ -124,7 +128,7 @@ fun ValueSheet(
                         if (total != null) {
                             Row(Modifier.fillMaxWidth().padding(horizontal = Spacing.space4)) {
                                 Text(
-                                    "New total",
+                                    stringResource(Res.string.value_sheet_new_total),
                                     style = IntervalTheme.type.total,
                                     color = palette.textDim,
                                     modifier = Modifier.weight(1f),
@@ -132,7 +136,11 @@ fun ValueSheet(
                                 Text(total, style = IntervalTheme.type.sectionTitle, color = palette.text)
                             }
                         }
-                        AccentButton("Done", onClick = hide, modifier = Modifier.fillMaxWidth())
+                        AccentButton(
+                            stringResource(Res.string.common_done),
+                            onClick = hide,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                     }
                 }
             }
@@ -150,8 +158,8 @@ private fun SheetHeader(field: ConfigField, modifier: Modifier = Modifier) {
     ) {
         Box(Modifier.width(Sizes.stripe).height(Sizes.iconButton).clip(Corners.full).background(field.stripe()))
         Column {
-            Text(field.label, style = IntervalTheme.type.startLabel, color = palette.text)
-            Text(field.hint, style = IntervalTheme.type.hint, color = palette.textDim)
+            Text(stringResource(field.labelRes), style = IntervalTheme.type.startLabel, color = palette.text)
+            Text(stringResource(field.hintRes), style = IntervalTheme.type.hint, color = palette.textDim)
         }
     }
 }
@@ -163,7 +171,7 @@ private fun SheetStepper(field: ConfigField, value: Int, onStep: (Int) -> Unit, 
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             RepeatButton(
                 "−",
-                field.less,
+                stringResource(field.lessRes),
                 enabled = value > field.range.first,
                 onStep = { onStep(-1) },
                 modifier = Modifier.size(Sizes.sheetStepper),
@@ -177,16 +185,16 @@ private fun SheetStepper(field: ConfigField, value: Int, onStep: (Int) -> Unit, 
             )
             RepeatButton(
                 "+",
-                field.more,
+                stringResource(field.moreRes),
                 enabled = value < field.range.last,
                 onStep = { onStep(1) },
                 modifier = Modifier.size(Sizes.sheetStepper),
             )
         }
         val hint = if (field == ConfigField.Rounds) {
-            "Hold − or + to change faster."
+            stringResource(Res.string.value_sheet_hint_hold)
         } else {
-            "Steps of ${field.step}s. Hold to change faster."
+            stringResource(Res.string.value_sheet_hint_steps, field.step)
         }
         Text(
             hint,
@@ -200,7 +208,11 @@ private fun SheetStepper(field: ConfigField, value: Int, onStep: (Int) -> Unit, 
 @Composable
 private fun QuickPicks(field: ConfigField, value: Int, onPick: (Int) -> Unit, modifier: Modifier = Modifier) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-        Text("Quick picks", style = IntervalTheme.type.groupLabel, color = IntervalTheme.palette.textDim)
+        Text(
+            stringResource(Res.string.value_sheet_quick_picks),
+            style = IntervalTheme.type.groupLabel,
+            color = IntervalTheme.palette.textDim,
+        )
         field.quickPicks.chunked(QUICK_PICKS_PER_ROW).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
                 row.forEach { pick ->

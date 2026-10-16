@@ -4,6 +4,7 @@ import dev.justinsmith.interval.data.CueSettings
 import dev.justinsmith.interval.platform.Beep
 import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.Haptic
+import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.timer.Cue
 import dev.justinsmith.interval.timer.Phase
 
@@ -13,29 +14,29 @@ fun playCue(cue: Cue, settings: CueSettings, player: CuePlayer) {
         when (cue) {
             is Cue.Countdown -> {
                 beep(Beep.Countdown)
-                say(cue.secondsLeft.toString())
+                say(Speech.Countdown(cue.secondsLeft))
             }
 
             Cue.Halfway -> if (settings.halfway) {
-                if (settings.sound) beep(Beep.Halfway) else say("Halfway")
+                if (settings.sound) beep(Beep.Halfway) else say(Speech.Halfway)
             }
 
             is Cue.PhaseStarted -> when (cue.phase) {
                 Phase.Prep -> {
                     beep(Beep.Start)
-                    say("Get ready")
+                    say(Speech.GetReady)
                 }
 
                 Phase.Work -> {
                     beep(Beep.Work)
                     buzz(Haptic.Work)
-                    say(if (cue.lastRound) "Last round. Work" else "Work")
+                    say(Speech.Work(cue.lastRound))
                 }
 
                 Phase.Rest -> {
                     beep(Beep.Rest)
                     buzz(Haptic.Rest)
-                    say("Rest")
+                    say(Speech.Rest)
                 }
 
                 Phase.Done -> Unit
@@ -44,7 +45,7 @@ fun playCue(cue: Cue, settings: CueSettings, player: CuePlayer) {
             Cue.Finished -> {
                 beep(Beep.Finished)
                 buzz(Haptic.Finished)
-                say("Done. Nice work")
+                say(Speech.Finished)
             }
         }
     }
@@ -56,8 +57,8 @@ private class SwitchedPlayer(private val settings: CueSettings, private val play
         if (settings.sound) player.beep(beep)
     }
 
-    fun say(text: String) {
-        if (settings.voice) player.speak(text)
+    fun say(speech: Speech) {
+        if (settings.voice) player.speak(speech)
     }
 
     fun buzz(haptic: Haptic) {

@@ -33,6 +33,41 @@ import androidx.compose.ui.text.withStyle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.common_cancel
+import dev.justinsmith.interval.resources.duration_minutes
+import dev.justinsmith.interval.resources.duration_seconds
+import dev.justinsmith.interval.resources.history_clear_confirm
+import dev.justinsmith.interval.resources.history_clear_menu
+import dev.justinsmith.interval.resources.history_clear_text
+import dev.justinsmith.interval.resources.history_clear_title
+import dev.justinsmith.interval.resources.history_empty
+import dev.justinsmith.interval.resources.history_ended_early
+import dev.justinsmith.interval.resources.history_last_7_days
+import dev.justinsmith.interval.resources.history_more_options_cd
+import dev.justinsmith.interval.resources.history_time
+import dev.justinsmith.interval.resources.history_title
+import dev.justinsmith.interval.resources.history_today
+import dev.justinsmith.interval.resources.history_week_cd
+import dev.justinsmith.interval.resources.history_week_day_cd
+import dev.justinsmith.interval.resources.history_week_empty_cd
+import dev.justinsmith.interval.resources.history_workouts_unit
+import dev.justinsmith.interval.resources.history_yesterday
+import dev.justinsmith.interval.resources.weekday_1
+import dev.justinsmith.interval.resources.weekday_2
+import dev.justinsmith.interval.resources.weekday_3
+import dev.justinsmith.interval.resources.weekday_4
+import dev.justinsmith.interval.resources.weekday_5
+import dev.justinsmith.interval.resources.weekday_6
+import dev.justinsmith.interval.resources.weekday_7
+import dev.justinsmith.interval.resources.weekday_initial_1
+import dev.justinsmith.interval.resources.weekday_initial_2
+import dev.justinsmith.interval.resources.weekday_initial_3
+import dev.justinsmith.interval.resources.weekday_initial_4
+import dev.justinsmith.interval.resources.weekday_initial_5
+import dev.justinsmith.interval.resources.weekday_initial_6
+import dev.justinsmith.interval.resources.weekday_initial_7
+import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.GroupLabel
@@ -48,6 +83,9 @@ import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TitleBar
+import dev.justinsmith.interval.ui.configDescription
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
 /** Resolves the tab's ViewModel and binds it to [HistoryScreen]. */
@@ -75,15 +113,20 @@ fun HistoryScreen(state: HistoryUiState, onClear: () -> Unit, modifier: Modifier
             contentPadding = PaddingValues(bottom = Spacing.space24),
         ) {
             item(span = StaggeredGridItemSpan.FullLine) {
-                TitleBar("History") {
+                TitleBar(stringResource(Res.string.history_title)) {
                     IntervalMenu(
                         expanded = menu,
                         onExpandedChange = { menu = it },
-                        items = { IntervalMenuItem("Clear history", onClick = { confirming = true }) },
+                        items = {
+                            IntervalMenuItem(stringResource(Res.string.history_clear_menu), onClick = {
+                                confirming =
+                                    true
+                            })
+                        },
                     ) {
                         IconAction(
                             IntervalIcons.More,
-                            "More options",
+                            stringResource(Res.string.history_more_options_cd),
                             onClick = { menu = true },
                             enabled = !state.isEmpty,
                         )
@@ -94,7 +137,7 @@ fun HistoryScreen(state: HistoryUiState, onClear: () -> Unit, modifier: Modifier
                 item(span = StaggeredGridItemSpan.FullLine) {
                     ListCard(Modifier.padding(horizontal = Spacing.space16)) {
                         Text(
-                            "Finished workouts show up here.",
+                            stringResource(Res.string.history_empty),
                             style = IntervalTheme.type.body,
                             color = IntervalTheme.palette.textDim,
                             modifier = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space14),
@@ -108,9 +151,9 @@ fun HistoryScreen(state: HistoryUiState, onClear: () -> Unit, modifier: Modifier
             }
             state.sections.forEach { section ->
                 // A day is one cell, its label with its card, so a column never splits a day.
-                item(key = section.day) {
+                item(key = section.dayNumber) {
                     Column(Modifier.padding(horizontal = Spacing.space16)) {
-                        GroupLabel(section.day)
+                        GroupLabel(dayHeading(section.day))
                         ListCard {
                             section.items.forEachIndexed { index, item ->
                                 if (index > 0) RowDivider(Modifier.padding(start = Spacing.space18))
@@ -124,10 +167,10 @@ fun HistoryScreen(state: HistoryUiState, onClear: () -> Unit, modifier: Modifier
     }
     if (confirming) {
         ConfirmDialog(
-            title = "Clear history?",
-            text = "Every finished workout is removed. This can't be undone.",
-            confirm = "Clear",
-            dismiss = "Cancel",
+            title = stringResource(Res.string.history_clear_title),
+            text = stringResource(Res.string.history_clear_text),
+            confirm = stringResource(Res.string.history_clear_confirm),
+            dismiss = stringResource(Res.string.common_cancel),
             onConfirm = {
                 onClear()
                 confirming = false
@@ -149,14 +192,19 @@ private fun WeekSummary(state: HistoryUiState, modifier: Modifier = Modifier) {
             .padding(start = Spacing.space20, end = Spacing.space20, top = Spacing.space16, bottom = Spacing.space14),
         verticalArrangement = Arrangement.spacedBy(Spacing.space14),
     ) {
+        val unit = pluralStringResource(Res.plurals.history_workouts_unit, state.weekCount)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             Column(Modifier.weight(1f)) {
-                Text("Last 7 days", style = IntervalTheme.type.caption, color = palette.textDim)
+                Text(
+                    stringResource(Res.string.history_last_7_days),
+                    style = IntervalTheme.type.caption,
+                    color = palette.textDim,
+                )
                 Text(
                     buildAnnotatedString {
                         append(state.weekCount.toString())
                         withStyle(IntervalTheme.type.weekStatUnit.copy(color = palette.textDim).toSpanStyle()) {
-                            append(if (state.weekCount == 1) " workout" else " workouts")
+                            append(" $unit")
                         }
                     },
                     style = IntervalTheme.type.weekStat,
@@ -164,7 +212,11 @@ private fun WeekSummary(state: HistoryUiState, modifier: Modifier = Modifier) {
                 )
             }
             Column(Modifier.weight(1f)) {
-                Text("Time", style = IntervalTheme.type.caption, color = palette.textDim)
+                Text(
+                    stringResource(Res.string.history_time),
+                    style = IntervalTheme.type.caption,
+                    color = palette.textDim,
+                )
                 Text(state.weekTotal, style = IntervalTheme.type.weekStat, color = palette.accent)
             }
         }
@@ -177,8 +229,9 @@ private fun WeekSummary(state: HistoryUiState, modifier: Modifier = Modifier) {
 private fun WeekChart(state: HistoryUiState, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val max = state.weekMaxSeconds
+    val description = weekDescription(state.week)
     Row(
-        modifier.fillMaxWidth().semantics { contentDescription = state.weekDescription },
+        modifier.fillMaxWidth().semantics { contentDescription = description },
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
         verticalAlignment = Alignment.Bottom,
     ) {
@@ -200,7 +253,7 @@ private fun WeekChart(state: HistoryUiState, modifier: Modifier = Modifier) {
                     )
                 }
                 Text(
-                    day.label,
+                    stringResource(WeekdayInitials[day.weekday - 1]),
                     style = IntervalTheme.type.caption,
                     color = if (day.today) palette.accent else palette.textDim,
                 )
@@ -222,37 +275,112 @@ private fun HistoryRow(item: HistoryItem, modifier: Modifier = Modifier) {
     ) {
         Box(Modifier.size(Sizes.stripe, Sizes.historyMarkHeight).clip(Corners.full).background(PhaseColors.work))
         Column(Modifier.weight(1f)) {
-            Text(item.title, style = IntervalTheme.type.cardTitle, color = palette.text, maxLines = 1)
-            Text(item.detail, style = IntervalTheme.type.hint, color = palette.textDim)
+            val shape = configDescription(item.config)
+            val detail = listOfNotNull(
+                shape.takeIf { item.presetName != null },
+                stringResource(Res.string.history_ended_early).takeIf { item.endedEarly },
+                item.time,
+            )
+            Text(item.presetName ?: shape, style = IntervalTheme.type.cardTitle, color = palette.text, maxLines = 1)
+            Text(detail.joinToString(" · "), style = IntervalTheme.type.hint, color = palette.textDim)
         }
         Text(item.total, style = IntervalTheme.type.historyTotal, color = palette.text)
     }
 }
 
+/** A section's heading: "Today", "Yesterday", or the date. */
+@Composable
+private fun dayHeading(day: HistoryDay): String = when (day) {
+    HistoryDay.Today -> stringResource(Res.string.history_today)
+    HistoryDay.Yesterday -> stringResource(Res.string.history_yesterday)
+    is HistoryDay.On -> day.date
+}
+
+/**
+ * The week chart for screen readers: the days with any time, by name, each with its time in seconds
+ * under a minute and minutes from one. "Time per day this week: Tuesday 45 seconds, Today 4 minutes".
+ */
+@Composable
+internal fun weekDescription(week: List<DayTally>): String {
+    val days = week.filter { it.seconds > 0 }
+    if (days.isEmpty()) return stringResource(Res.string.history_week_empty_cd)
+    val parts = days.map { day ->
+        val name = if (day.today) Res.string.history_today else WeekdayNames[day.weekday - 1]
+        val time = when (val duration = spokenDuration(day.seconds)) {
+            is SpokenDuration.Seconds -> pluralStringResource(
+                Res.plurals.duration_seconds,
+                duration.seconds,
+                duration.seconds,
+            )
+
+            is SpokenDuration.Minutes -> pluralStringResource(
+                Res.plurals.duration_minutes,
+                duration.minutes,
+                duration.minutes,
+            )
+        }
+        stringResource(Res.string.history_week_day_cd, stringResource(name), time)
+    }
+    return stringResource(Res.string.history_week_cd, parts.joinToString(", "))
+}
+
+/** Monday first, as [DayTally.weekday] counts. */
+private val WeekdayNames = listOf(
+    Res.string.weekday_1,
+    Res.string.weekday_2,
+    Res.string.weekday_3,
+    Res.string.weekday_4,
+    Res.string.weekday_5,
+    Res.string.weekday_6,
+    Res.string.weekday_7,
+)
+
+private val WeekdayInitials = listOf(
+    Res.string.weekday_initial_1,
+    Res.string.weekday_initial_2,
+    Res.string.weekday_initial_3,
+    Res.string.weekday_initial_4,
+    Res.string.weekday_initial_5,
+    Res.string.weekday_initial_6,
+    Res.string.weekday_initial_7,
+)
+
 /** Thursday to Wednesday: a hangboard session, the two from yesterday, and today's Tabata. */
 private val PreviewWeek = listOf(
-    DayTally("T", "Thursday", seconds = 320, today = false),
-    DayTally("F", "Friday", seconds = 0, today = false),
-    DayTally("S", "Saturday", seconds = 0, today = false),
-    DayTally("S", "Sunday", seconds = 0, today = false),
-    DayTally("M", "Monday", seconds = 0, today = false),
-    DayTally("T", "Tuesday", seconds = 860, today = false),
-    DayTally("W", "Today", seconds = 240, today = true),
+    DayTally(weekday = 4, seconds = 320, today = false),
+    DayTally(weekday = 5, seconds = 0, today = false),
+    DayTally(weekday = 6, seconds = 0, today = false),
+    DayTally(weekday = 7, seconds = 0, today = false),
+    DayTally(weekday = 1, seconds = 0, today = false),
+    DayTally(weekday = 2, seconds = 860, today = false),
+    DayTally(weekday = 3, seconds = 240, today = true),
 )
 
 @PreviewFormFactors
 @Composable
 private fun HistoryScreenPreview() {
+    val (tabata, hiit) = builtInPresets
     IntervalTheme {
         HistoryScreen(
             state = HistoryUiState(
                 sections = listOf(
-                    HistorySection("Today", listOf(HistoryItem("Tabata", "20s on · 10s off · ×8 · 7:42 AM", "4:00"))),
                     HistorySection(
-                        "Yesterday",
+                        HistoryDay.Today,
+                        dayNumber = 2,
+                        listOf(HistoryItem(tabata.name, tabata.config, endedEarly = false, "7:42 AM", "4:00")),
+                    ),
+                    HistorySection(
+                        HistoryDay.Yesterday,
+                        dayNumber = 1,
                         listOf(
-                            HistoryItem("25s on · 10s off · ×8", "6:15 PM", "4:40"),
-                            HistoryItem("HIIT 30/30", "30s on · 30s off · ×10 · 7:05 AM", "9:40"),
+                            HistoryItem(
+                                null,
+                                tabata.config.copy(workSeconds = 25),
+                                endedEarly = false,
+                                "6:15 PM",
+                                "4:40",
+                            ),
+                            HistoryItem(hiit.name, hiit.config, endedEarly = true, "7:05 AM", "6:20"),
                         ),
                     ),
                 ),

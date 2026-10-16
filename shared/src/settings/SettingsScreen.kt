@@ -33,7 +33,28 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.data.AppSettings
 import dev.justinsmith.interval.data.CueSettings
 import dev.justinsmith.interval.data.ThemeMode
+import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.common_back
+import dev.justinsmith.interval.resources.settings_appearance
+import dev.justinsmith.interval.resources.settings_close_cd
+import dev.justinsmith.interval.resources.settings_cues
+import dev.justinsmith.interval.resources.settings_halfway
+import dev.justinsmith.interval.resources.settings_halfway_hint
+import dev.justinsmith.interval.resources.settings_keep_screen_on
+import dev.justinsmith.interval.resources.settings_keep_screen_on_hint
+import dev.justinsmith.interval.resources.settings_sound
+import dev.justinsmith.interval.resources.settings_sound_hint
+import dev.justinsmith.interval.resources.settings_title
+import dev.justinsmith.interval.resources.settings_vibrate
+import dev.justinsmith.interval.resources.settings_vibrate_hint
+import dev.justinsmith.interval.resources.settings_voice
+import dev.justinsmith.interval.resources.settings_voice_hint
+import dev.justinsmith.interval.resources.settings_workout
+import dev.justinsmith.interval.resources.theme_dark
+import dev.justinsmith.interval.resources.theme_light
+import dev.justinsmith.interval.resources.theme_system
 import dev.justinsmith.interval.timer.ConfigField
+import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.FieldRow
 import dev.justinsmith.interval.ui.GroupLabel
@@ -49,6 +70,8 @@ import dev.justinsmith.interval.ui.TitleBar
 import dev.justinsmith.interval.ui.ToggleRow
 import dev.justinsmith.interval.ui.ValueSheet
 import dev.justinsmith.interval.ui.tint
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
 /** Resolves the screen's ViewModel and binds it to [SettingsScreen]. */
@@ -96,53 +119,57 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState()),
         ) {
             TitleBar(
-                "Settings",
-                navigation = { if (!inPane) IconAction(IntervalIcons.Back, "Back", onBack) },
-                actions = { if (inPane) IconAction(IntervalIcons.Close, "Close settings", onBack) },
+                stringResource(Res.string.settings_title),
+                navigation = {
+                    if (!inPane) IconAction(IntervalIcons.Back, stringResource(Res.string.common_back), onBack)
+                },
+                actions = {
+                    if (inPane) IconAction(IntervalIcons.Close, stringResource(Res.string.settings_close_cd), onBack)
+                },
             )
             Column(Modifier.padding(start = Spacing.space16, end = Spacing.space16, bottom = Spacing.space24)) {
-                GroupLabel("Cues")
+                GroupLabel(stringResource(Res.string.settings_cues))
                 ListCard {
                     ToggleRow(
-                        "Sound cues",
-                        "Beeps at each phase change",
+                        stringResource(Res.string.settings_sound),
+                        stringResource(Res.string.settings_sound_hint),
                         state.cues.sound,
                         onToggle = { onToggle(CueToggle.Sound) },
                     )
                     RowDivider()
                     ToggleRow(
-                        "Voice",
-                        "Spoken countdown and phase names",
+                        stringResource(Res.string.settings_voice),
+                        stringResource(Res.string.settings_voice_hint),
                         state.cues.voice,
                         onToggle = { onToggle(CueToggle.Voice) },
                     )
                     RowDivider()
                     ToggleRow(
-                        "Halfway alert",
-                        "A cue in the middle of intervals over 30s",
+                        stringResource(Res.string.settings_halfway),
+                        stringResource(Res.string.settings_halfway_hint, WorkoutEngine.HALFWAY_MIN_SECONDS),
                         state.cues.halfway,
                         onToggle = { onToggle(CueToggle.Halfway) },
                     )
                     RowDivider()
                     ToggleRow(
-                        "Vibrate",
-                        "Buzz at each phase change",
+                        stringResource(Res.string.settings_vibrate),
+                        stringResource(Res.string.settings_vibrate_hint),
                         state.cues.vibrate,
                         onToggle = { onToggle(CueToggle.Vibrate) },
                     )
                 }
-                GroupLabel("Workout")
+                GroupLabel(stringResource(Res.string.settings_workout))
                 ListCard {
                     FieldRow(ConfigField.Prep, state.prepSeconds, onClick = { editingPrep = true }, compact = true)
                     RowDivider()
                     ToggleRow(
-                        "Keep screen on",
-                        "While a workout is running",
+                        stringResource(Res.string.settings_keep_screen_on),
+                        stringResource(Res.string.settings_keep_screen_on_hint),
                         state.app.keepScreenOn,
                         onToggle = onToggleKeepScreenOn,
                     )
                 }
-                GroupLabel("Appearance")
+                GroupLabel(stringResource(Res.string.settings_appearance))
                 ThemePicker(state.app.theme, onSetTheme)
             }
         }
@@ -192,11 +219,19 @@ private fun ThemePicker(selected: ThemeMode, onSelect: (ThemeMode) -> Unit, modi
                         modifier = Modifier.size(Sizes.icon),
                     )
                 }
-                Text(mode.name, style = IntervalTheme.type.buttonLabel, color = palette.text)
+                Text(stringResource(mode.labelRes), style = IntervalTheme.type.buttonLabel, color = palette.text)
             }
         }
     }
 }
+
+/** How the theme picker names each mode; [ThemeMode.name] is what is stored. */
+private val ThemeMode.labelRes: StringResource
+    get() = when (this) {
+        ThemeMode.System -> Res.string.theme_system
+        ThemeMode.Light -> Res.string.theme_light
+        ThemeMode.Dark -> Res.string.theme_dark
+    }
 
 @PreviewFormFactors
 @Composable

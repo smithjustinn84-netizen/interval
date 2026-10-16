@@ -12,6 +12,7 @@ import java.io.File
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 @Composable
 actual fun rememberPlatformModule(): Module = remember {
@@ -55,18 +56,11 @@ private class DesktopStorage : PlatformStorage {
 }
 
 private class JavaTimeFormatter : TimestampFormatter {
-    private val dayFormat = DateTimeFormatter.ofPattern("EEEE, MMM d")
-    private val timeFormat = DateTimeFormatter.ofPattern("h:mm a")
+    // Day and month names follow the default locale; the time takes the locale's own short form.
+    private val dateFormat = DateTimeFormatter.ofPattern("EEEE, MMM d")
+    private val timeFormat = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
 
-    override fun day(epochMillis: Long, nowMillis: Long): String {
-        val date = zoned(epochMillis).toLocalDate()
-        val today = zoned(nowMillis).toLocalDate()
-        return when (date) {
-            today -> "Today"
-            today.minusDays(1) -> "Yesterday"
-            else -> dayFormat.format(date)
-        }
-    }
+    override fun date(epochMillis: Long): String = dateFormat.format(zoned(epochMillis))
 
     override fun time(epochMillis: Long): String = timeFormat.format(zoned(epochMillis))
 
@@ -83,7 +77,7 @@ private class DesktopCuePlayer : CuePlayer {
         runCatching { Toolkit.getDefaultToolkit().beep() }
     }
 
-    override fun speak(text: String) = Unit
+    override fun speak(speech: Speech) = Unit
 
     override fun vibrate(haptic: Haptic) = Unit
 

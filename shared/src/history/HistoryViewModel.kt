@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.data.HistoryEntry
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.platform.TimestampFormatter
+import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.PresetEntry
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
@@ -13,22 +14,34 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
+/** The heading over one day's workouts. */
+sealed interface HistoryDay {
+    data object Today : HistoryDay
+
+    data object Yesterday : HistoryDay
+
+    /** Any earlier day, as the platform formats its date: "Sunday, Oct 11". */
+    data class On(val date: String) : HistoryDay
+}
+
 data class HistoryItem(
-    /** The preset's name, or the shape itself for a workout no preset has. */
-    val title: String,
-    /** The shape (when the title is a name), whether it ended early, and the time of day. */
-    val detail: String,
+    /** The matching preset's name, or null for a workout no preset has; the row then leads with its shape. */
+    val presetName: String?,
+    val config: IntervalConfig,
+    val endedEarly: Boolean,
+    /** The time of day it finished: "7:42 PM". */
+    val time: String,
     val total: String,
 )
 
-/** One day's workouts, under its heading ("Today", "Yesterday", "Sunday, Oct 11"). */
-data class HistorySection(val day: String, val items: List<HistoryItem>)
+/** One day's workouts. [dayNumber] identifies the day, as [TimestampFormatter.dayNumber] counts them. */
+data class HistorySection(val day: HistoryDay, val dayNumber: Long, val items: List<HistoryItem>)
 
 /**
- * One bar of the week chart: the day's initial, its name for screen readers ("Tuesday", "Today"),
- * how long was worked out, and whether it is today.
+ * One bar of the week chart: the day of the week (1 for Monday to 7), how long was worked out, and
+ * whether it is today.
  */
-data class DayTally(val label: String, val name: String, val seconds: Int, val today: Boolean)
+data class DayTally(val weekday: Int, val seconds: Int, val today: Boolean)
 
 data class HistoryUiState(
     val sections: List<HistorySection>,
@@ -38,9 +51,6 @@ data class HistoryUiState(
     /** Those seven days, oldest first, for the week chart. */
     val week: List<DayTally>,
 ) {
-    /** The week chart for screen readers: "Time per day this week: Tuesday 45 seconds, Today 4 minutes". */
-    val weekDescription: String get() = describeWeek(week)
-
     val isEmpty: Boolean get() = sections.isEmpty()
 
     /** The longest day's total, for scaling the week chart's bars. */
@@ -65,33 +75,34 @@ class HistoryViewModel(
 
     private fun buildState(history: List<HistoryEntry>, presets: List<PresetEntry>): HistoryUiState {
         val nowMillis = now()
+        val today = timestamps.dayNumber(nowMillis)
         // History is newest first, so grouping keeps both the days and the rows within them in order.
         val sections = history
-            .groupBy { timestamps.day(it.finishedAtEpochMillis, nowMillis) }
-            .map { (day, entries) ->
+            .groupBy { timestamps.dayNumber(it.finishedAtEpochMillis) }
+            .map { (dayNumber, entries) ->
                 HistorySection(
-                    day,
-                    entries.map { entry ->
-                        val name = presets.matching(entry.config)?.name
-                        val ended = if (entry.endedEarly) "ended early" else null
-                        val time = timestamps.time(entry.finishedAtEpochMillis)
+                    day = when (dayNumber) {
+                        today -> HistoryDay.Today
+                        today - 1 -> HistoryDay.Yesterday
+                        else -> HistoryDay.On(timestamps.date(entries.first().finishedAtEpochMillis))
+                    },
+                    dayNumber = dayNumber,
+                    items = entries.map { entry ->
                         HistoryItem(
-                            title = name ?: entry.config.description,
-                            detail = listOfNotNull(entry.config.description.takeIf { name != null }, ended, time)
-                                .joinToString(" · "),
+                            presetName = presets.matching(entry.config)?.name,
+                            config = entry.config,
+                            endedEarly = entry.endedEarly,
+                            time = timestamps.time(entry.finishedAtEpochMillis),
                             total = formatClock(entry.elapsedSeconds),
                         )
                     },
                 )
             }
-        val today = timestamps.dayNumber(nowMillis)
         val todayWeekday = timestamps.weekday(nowMillis)
         val byDay = history.groupBy { timestamps.dayNumber(it.finishedAtEpochMillis) }
         val week = (DAYS_PER_WEEK - 1 downTo 0).map { daysAgo ->
-            val weekday = (todayWeekday - 1 - daysAgo).mod(DAYS_PER_WEEK)
             DayTally(
-                label = WEEKDAY_INITIALS[weekday].toString(),
-                name = if (daysAgo == 0) "Today" else WEEKDAY_NAMES[weekday],
+                weekday = (todayWeekday - 1 - daysAgo).mod(DAYS_PER_WEEK) + 1,
                 seconds = byDay[today - daysAgo]?.sumOf { it.elapsedSeconds } ?: 0,
                 today = daysAgo == 0,
             )
@@ -107,23 +118,21 @@ class HistoryViewModel(
 
     private companion object {
         const val DAYS_PER_WEEK = 7
-        const val WEEKDAY_INITIALS = "MTWTFSS"
-        val WEEKDAY_NAMES = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
     }
 }
 
 private const val SECONDS_PER_MINUTE = 60
 
-/** The days with any time, by name, each with its time spoken as seconds under a minute and minutes from one. */
-internal fun describeWeek(week: List<DayTally>): String {
-    val days = week.filter { it.seconds > 0 }
-    if (days.isEmpty()) return "No workouts in the last 7 days"
-    return "Time per day this week: " + days.joinToString(", ") { "${it.name} ${spokenDuration(it.seconds)}" }
+/** A day's time as the week chart reads it out: in seconds under a minute, in whole minutes from one. */
+sealed interface SpokenDuration {
+    data class Seconds(val seconds: Int) : SpokenDuration
+
+    data class Minutes(val minutes: Int) : SpokenDuration
 }
 
-private fun spokenDuration(seconds: Int): String = if (seconds < SECONDS_PER_MINUTE) {
-    "$seconds second${if (seconds == 1) "" else "s"}"
+/** [seconds] as [SpokenDuration]; minutes are rounded to the nearest. */
+internal fun spokenDuration(seconds: Int): SpokenDuration = if (seconds < SECONDS_PER_MINUTE) {
+    SpokenDuration.Seconds(seconds)
 } else {
-    val minutes = (seconds + SECONDS_PER_MINUTE / 2) / SECONDS_PER_MINUTE
-    "$minutes minute${if (minutes == 1) "" else "s"}"
+    SpokenDuration.Minutes((seconds + SECONDS_PER_MINUTE / 2) / SECONDS_PER_MINUTE)
 }

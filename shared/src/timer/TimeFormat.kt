@@ -13,8 +13,15 @@ fun formatClock(seconds: Int): String {
 fun ceilSeconds(millis: Long): Int =
     if (millis <= 0) 0 else ((millis + MILLIS_PER_SECOND - 1) / MILLIS_PER_SECOND).toInt()
 
-/** "45s", or "2m" for whole minutes. */
-fun shortDuration(seconds: Int): String {
+/** A duration as a compact label shows it: in seconds ("45s"), or in minutes when whole ("2m"). */
+sealed interface ShortDuration {
+    data class Seconds(val seconds: Int) : ShortDuration
+
+    data class Minutes(val minutes: Int) : ShortDuration
+}
+
+/** [seconds] in whole minutes when it is a whole number of them, else in seconds. */
+fun shortDuration(seconds: Int): ShortDuration {
     val wholeMinutes = seconds >= SECONDS_PER_MINUTE && seconds % SECONDS_PER_MINUTE == 0
-    return if (wholeMinutes) "${seconds / SECONDS_PER_MINUTE}m" else "${seconds}s"
+    return if (wholeMinutes) ShortDuration.Minutes(seconds / SECONDS_PER_MINUTE) else ShortDuration.Seconds(seconds)
 }

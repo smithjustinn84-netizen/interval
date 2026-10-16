@@ -43,13 +43,17 @@ class HistoryViewModelTest {
         clock = 30 * DAY
 
         val sections = viewModel.state.value.sections
-        assertEquals(listOf("day 1", "day 10"), sections.map { it.day })
+        assertEquals(listOf(HistoryDay.Yesterday, HistoryDay.On("day 20")), sections.map { it.day })
+        assertEquals(listOf(29L, 20L), sections.map { it.dayNumber })
         val (ended, customRow) = sections[0].items
-        assertEquals("Tabata", ended.title)
-        assertEquals("20s on · 10s off · ×8 · ended early · at ${29 * DAY}", ended.detail)
-        assertEquals("1:30", ended.total)
-        assertEquals("25s on · 5s off · ×4", customRow.title)
-        assertEquals("at ${29 * DAY}", customRow.detail)
+        assertEquals(HistoryItem("Tabata", tabata, endedEarly = true, time = "at ${29 * DAY}", total = "1:30"), ended)
+        assertEquals(HistoryItem(null, custom, endedEarly = false, time = "at ${29 * DAY}", total = "1:55"), customRow)
+    }
+
+    @Test
+    fun `today's workouts are headed Today`() {
+        repository.recordWorkout(tabata, tabata.totalSeconds)
+        assertEquals(listOf(HistoryDay.Today), viewModel.state.value.sections.map { it.day })
     }
 
     @Test
@@ -76,39 +80,28 @@ class HistoryViewModelTest {
 
         val week = viewModel.state.value.week
         // Day 30 is a Wednesday (30 % 7 == 2), so the chart runs Thursday to Wednesday.
-        assertEquals("TFSSMTW", week.joinToString("") { it.label })
+        assertEquals(listOf(4, 5, 6, 7, 1, 2, 3), week.map { it.weekday })
         assertEquals(listOf(240, 0, 0, 0, 0, 0, 90), week.map { it.seconds })
         assertEquals(listOf(false, false, false, false, false, false, true), week.map { it.today })
         assertEquals(240, viewModel.state.value.weekMaxSeconds)
-        assertEquals(
-            listOf("Thursday", "Friday", "Saturday", "Sunday", "Monday", "Tuesday", "Today"),
-            week.map { it.name },
-        )
+    }
+
+    @Test
+    fun `a day's time reads in seconds under a minute and whole minutes from one`() {
+        assertEquals(SpokenDuration.Seconds(1), spokenDuration(1))
+        assertEquals(SpokenDuration.Seconds(45), spokenDuration(45))
+        assertEquals(SpokenDuration.Minutes(1), spokenDuration(60))
         // 90 seconds rounds to 2 minutes.
-        assertEquals(
-            "Time per day this week: Thursday 4 minutes, Today 2 minutes",
-            viewModel.state.value.weekDescription,
-        )
+        assertEquals(SpokenDuration.Minutes(2), spokenDuration(90))
+        assertEquals(SpokenDuration.Minutes(4), spokenDuration(240))
     }
 
     @Test
-    fun `the week chart reads each day's time in seconds or minutes`() {
-        clock = 29 * DAY + DAY / 2
-        repository.recordWorkout(tabata, elapsedSeconds = 45)
-        clock = 30 * DAY + DAY / 2
-        repository.recordWorkout(tabata, elapsedSeconds = 1)
-        assertEquals(
-            "Time per day this week: Tuesday 45 seconds, Today 1 second",
-            viewModel.state.value.weekDescription,
-        )
-    }
-
-    @Test
-    fun `a week with no workouts says so`() {
+    fun `a week with no workouts has no time on any day`() {
         clock = 20 * DAY
         repository.recordWorkout(IntervalConfig(), elapsedSeconds = 60)
         clock = 30 * DAY
-        assertEquals("No workouts in the last 7 days", viewModel.state.value.weekDescription)
+        assertTrue(viewModel.state.value.week.none { it.seconds > 0 })
     }
 
     @Test

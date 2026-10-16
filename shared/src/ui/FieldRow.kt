@@ -20,8 +20,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.config_rounds_short
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.format
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * One value of the workout: its phase stripe, name and hint, and the value in a pill of its colour with
@@ -37,19 +40,20 @@ fun FieldRow(
 ) {
     val palette = IntervalTheme.palette
     val text = field.format(value)
+    val editLabel = stringResource(field.editRes)
     Row(
         modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Min)
             .heightIn(min = if (compact) Sizes.listRow else Sizes.intervalRow)
-            .clickable(role = Role.Button, onClickLabel = "Edit ${field.label.lowercase()}", onClick = onClick),
+            .clickable(role = Role.Button, onClickLabel = editLabel, onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(if (compact) Spacing.space10 else Spacing.space14),
     ) {
         Box(Modifier.width(Sizes.stripe).fillMaxHeight().background(field.stripe()))
         Column(Modifier.weight(1f).padding(vertical = if (compact) Spacing.space6 else Spacing.space10)) {
-            Text(field.label, style = IntervalTheme.type.cardTitle, color = palette.text)
-            Text(field.hint, style = IntervalTheme.type.hint, color = palette.textDim)
+            Text(stringResource(field.labelRes), style = IntervalTheme.type.cardTitle, color = palette.text)
+            Text(stringResource(field.hintRes), style = IntervalTheme.type.hint, color = palette.textDim)
         }
         if (compact) {
             ValuePill(
@@ -61,7 +65,7 @@ fun FieldRow(
             )
         } else {
             ValuePill(
-                if (field == ConfigField.Rounds) "×$text" else text,
+                if (field == ConfigField.Rounds) stringResource(Res.string.config_rounds_short, value) else text,
                 color = field.valueColor(),
                 tint = field.tint(),
             )

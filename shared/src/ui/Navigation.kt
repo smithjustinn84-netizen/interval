@@ -16,13 +16,19 @@ import dev.justinsmith.interval.nav.HistoryTab
 import dev.justinsmith.interval.nav.PresetsTab
 import dev.justinsmith.interval.nav.Tab
 import dev.justinsmith.interval.nav.TimerTab
+import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.nav_history
+import dev.justinsmith.interval.resources.nav_presets
+import dev.justinsmith.interval.resources.nav_timer
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 
-private data class TabSpec(val tab: Tab, val label: String, val icon: ImageVector)
+private data class TabSpec(val tab: Tab, val label: StringResource, val icon: ImageVector)
 
 private val Tabs = listOf(
-    TabSpec(TimerTab, "Timer", IntervalIcons.Timer),
-    TabSpec(PresetsTab, "Presets", IntervalIcons.Presets),
-    TabSpec(HistoryTab, "History", IntervalIcons.History),
+    TabSpec(TimerTab, Res.string.nav_timer, IntervalIcons.Timer),
+    TabSpec(PresetsTab, Res.string.nav_presets, IntervalIcons.Presets),
+    TabSpec(HistoryTab, Res.string.nav_history, IntervalIcons.History),
 )
 
 /**
@@ -59,7 +65,7 @@ fun NavigationItems(current: Tab, type: NavigationSuiteType, onSelect: (Tab) -> 
             selected = spec.tab == current,
             onClick = { onSelect(spec.tab) },
             icon = { Icon(spec.icon, contentDescription = null, modifier = Modifier.size(Sizes.icon)) },
-            label = { Text(spec.label, style = IntervalTheme.type.navLabel) },
+            label = { Text(stringResource(spec.label), style = IntervalTheme.type.navLabel) },
             navigationSuiteType = type,
             colors = colors,
         )

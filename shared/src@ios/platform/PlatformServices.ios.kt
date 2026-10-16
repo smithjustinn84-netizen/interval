@@ -10,6 +10,8 @@ import androidx.room.RoomDatabase
 import dev.justinsmith.interval.data.AppDatabase
 import kotlinx.cinterop.ExperimentalForeignApi
 import org.koin.core.module.Module
+import org.koin.core.module.dsl.onClose
+import org.koin.core.module.dsl.withOptions
 import org.koin.dsl.module
 import platform.AVFAudio.AVSpeechBoundary
 import platform.AVFAudio.AVSpeechSynthesizer
@@ -37,7 +39,9 @@ import kotlin.time.DurationUnit
 actual fun rememberPlatformModule(): Module = remember {
     module {
         single<PlatformStorage> { IosStorage() }
-        single<CuePlayer> { IosCuePlayer() }
+        single<CuePlayer> { IosCuePlayer() }.withOptions {
+            onClose { it?.release() }
+        }
         single<TimestampFormatter> { FoundationTimestampFormatter() }
     }
 }
@@ -79,38 +83,30 @@ private class IosStorage : PlatformStorage {
 
 private class FoundationTimestampFormatter : TimestampFormatter {
     private val calendar = NSCalendar.currentCalendar
-    private val dayFormat = NSDateFormatter().apply { dateFormat = "EEEE, MMM d" }
-    private val timeFormat = NSDateFormatter().apply { dateFormat = "h:mm a" }
 
-    override fun day(epochMillis: Long, nowMillis: Long): String {
-        val date = date(epochMillis)
-        val today = calendar.startOfDayForDate(date(nowMillis))
-        val yesterday = today.dateByAddingTimeInterval(-SECONDS_PER_DAY)
-        return when {
-            calendar.isDate(date, inSameDayAsDate = today) -> "Today"
-            calendar.isDate(date, inSameDayAsDate = yesterday) -> "Yesterday"
-            else -> dayFormat.stringFromDate(date)
-        }
-    }
+    // Templates rather than fixed formats, so each locale orders the parts and picks 12 or 24 hours its way.
+    private val dateFormat = NSDateFormatter().apply { setLocalizedDateFormatFromTemplate("EEEEMMMd") }
+    private val timeFormat = NSDateFormatter().apply { setLocalizedDateFormatFromTemplate("jmm") }
 
-    override fun time(epochMillis: Long): String = timeFormat.stringFromDate(date(epochMillis))
+    override fun date(epochMillis: Long): String = dateFormat.stringFromDate(nsDate(epochMillis))
+
+    override fun time(epochMillis: Long): String = timeFormat.stringFromDate(nsDate(epochMillis))
 
     override fun dayNumber(epochMillis: Long): Long =
-        calendar.ordinalityOfUnit(NSCalendarUnitDay, inUnit = NSCalendarUnitEra, forDate = date(epochMillis)).toLong()
+        calendar.ordinalityOfUnit(NSCalendarUnitDay, inUnit = NSCalendarUnitEra, forDate = nsDate(epochMillis)).toLong()
 
     // Foundation counts Sunday as 1; the app counts Monday as 1.
     override fun weekday(epochMillis: Long): Int =
         (
-            (calendar.component(NSCalendarUnitWeekday, fromDate = date(epochMillis)).toInt() + DAYS_PER_WEEK - 2) %
+            (calendar.component(NSCalendarUnitWeekday, fromDate = nsDate(epochMillis)).toInt() + DAYS_PER_WEEK - 2) %
                 DAYS_PER_WEEK
             ) +
             1
 
-    private fun date(epochMillis: Long): NSDate =
+    private fun nsDate(epochMillis: Long): NSDate =
         NSDate.dateWithTimeIntervalSince1970(epochMillis.milliseconds.toDouble(DurationUnit.SECONDS))
 
     private companion object {
-        const val SECONDS_PER_DAY = 86_400.0
         const val DAYS_PER_WEEK = 7
     }
 }
@@ -134,9 +130,13 @@ private class IosCuePlayer : CuePlayer {
         AudioServicesPlaySystemSound(sound)
     }
 
-    override fun speak(text: String) {
+    private val speech = SpeechQueue { text ->
         synthesizer.stopSpeakingAtBoundary(AVSpeechBoundary.AVSpeechBoundaryImmediate)
         synthesizer.speakUtterance(AVSpeechUtterance(string = text))
+    }
+
+    override fun speak(speech: Speech) {
+        this.speech.speak(speech)
     }
 
     override fun vibrate(haptic: Haptic) {
@@ -144,6 +144,7 @@ private class IosCuePlayer : CuePlayer {
     }
 
     override fun release() {
+        speech.close()
         synthesizer.stopSpeakingAtBoundary(AVSpeechBoundary.AVSpeechBoundaryImmediate)
     }
 

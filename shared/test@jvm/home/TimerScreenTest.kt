@@ -3,9 +3,14 @@
 package dev.justinsmith.interval.home
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -32,8 +37,7 @@ private fun state(config: IntervalConfig = custom): TimerUiState {
         config = config,
         total = formatClock(config.totalSeconds),
         presetName = preset?.name,
-        prepLine = "${formatClock(config.prepSeconds)} to get ready",
-        presets = builtInPresets.map { PresetChip(it, it.config.description, selected = it == preset) },
+        presets = builtInPresets.map { PresetChip(it, selected = it == preset) },
     )
 }
 
@@ -94,6 +98,28 @@ class TimerScreenTest {
         onNodeWithText("Save").performClick()
         assertEquals(listOf("Sprints"), saved)
         onNode(hasSetTextAction()).assertDoesNotExist()
+    }
+
+    @Test
+    fun `a preset saved without a name is numbered`() = runUiTest {
+        setThemedContent { Screen(state().copy(nextCustomNumber = 3)) }
+        onNodeWithContentDescription("Save as preset").performClick()
+        onNodeWithText("40s on · 20s off · ×6 · 5:50 total").assertExists()
+        onNodeWithText("Save").performClick()
+        assertEquals(listOf("Custom 3"), saved)
+    }
+
+    @Test
+    fun `the hero gives the shape and the get-ready countdown, if there is one`() = runUiTest {
+        var state by mutableStateOf(state())
+        setThemedContent { Screen(state) }
+        onNodeWithText("0:10 to get ready").assertExists()
+        // The hero, and Tabata's card in the presets row.
+        onNodeWithText("40s on · 20s off · ×6").assertExists()
+        onAllNodesWithText("20s on · 10s off · ×8").assertCountEquals(1)
+        state = state(custom.copy(prepSeconds = 0))
+        onNodeWithText("0:00 to get ready").assertDoesNotExist()
+        onNodeWithText("0:10 to get ready").assertDoesNotExist()
     }
 
     @Test

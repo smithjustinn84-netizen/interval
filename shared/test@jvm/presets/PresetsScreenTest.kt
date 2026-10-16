@@ -23,13 +23,14 @@ import kotlin.test.assertEquals
 private val morning = Preset("Morning", IntervalConfig(workSeconds = 25, restSeconds = 10, rounds = 8))
 
 private fun row(preset: Preset, selected: Boolean = false) =
-    PresetRowItem(preset, preset.config.description, formatClock(preset.config.totalSeconds), selected)
+    PresetRowItem(preset, formatClock(preset.config.totalSeconds), selected)
 
 private fun state(custom: List<Preset> = listOf(morning), canSaveCurrent: Boolean = true) = PresetsUiState(
     builtIn = builtInPresets.map { row(it) },
     custom = custom.map { row(it) },
     canSaveCurrent = canSaveCurrent,
-    currentSummary = "40s on · 20s off · ×6 · 5:50 total",
+    current = IntervalConfig(prepSeconds = 10, workSeconds = 40, restSeconds = 20, rounds = 6),
+    nextCustomNumber = 2,
 )
 
 class PresetsScreenTest {
@@ -68,9 +69,24 @@ class PresetsScreenTest {
     fun `the current settings can be saved as a preset`() = runUiTest {
         setThemedContent { Screen() }
         onNodeWithContentDescription("Save current settings as a preset").performClick()
+        onNodeWithText("40s on · 20s off · ×6 · 5:50 total").assertExists()
         onNode(hasSetTextAction()).performTextInput("Evening")
         onNodeWithText("Save").performClick()
         assertEquals(listOf("Evening"), saved)
+    }
+
+    @Test
+    fun `a preset saved without a name is numbered`() = runUiTest {
+        setThemedContent { Screen() }
+        onNodeWithContentDescription("Save current settings as a preset").performClick()
+        onNodeWithText("Save").performClick()
+        assertEquals(listOf("Custom 2"), saved)
+    }
+
+    @Test
+    fun `cards show each preset's shape`() = runUiTest {
+        setThemedContent { Screen() }
+        onNodeWithText("25s on · 10s off · ×8").assertExists()
     }
 
     @Test

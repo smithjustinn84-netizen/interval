@@ -43,6 +43,16 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.preset_default_name
+import dev.justinsmith.interval.resources.presets_built_in
+import dev.justinsmith.interval.resources.presets_delete
+import dev.justinsmith.interval.resources.presets_delete_named_cd
+import dev.justinsmith.interval.resources.presets_empty
+import dev.justinsmith.interval.resources.presets_save_current_cd
+import dev.justinsmith.interval.resources.presets_selected_cd
+import dev.justinsmith.interval.resources.presets_title
+import dev.justinsmith.interval.resources.presets_yours
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.formatClock
@@ -59,7 +69,10 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.Timeline
 import dev.justinsmith.interval.ui.TitleBar
+import dev.justinsmith.interval.ui.configDescription
+import dev.justinsmith.interval.ui.configSummary
 import dev.justinsmith.interval.ui.selectableCard
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
 /** Resolves the tab's ViewModel and binds it to [PresetsScreen]. A picked preset shows on the Timer tab. */
@@ -103,10 +116,10 @@ fun PresetsScreen(
             contentPadding = PaddingValues(bottom = Spacing.space24),
         ) {
             item(span = StaggeredGridItemSpan.FullLine) {
-                TitleBar("Presets") {
+                TitleBar(stringResource(Res.string.presets_title)) {
                     IconAction(
                         IntervalIcons.Add,
-                        "Save current settings as a preset",
+                        stringResource(Res.string.presets_save_current_cd),
                         onClick = { saving = true },
                         enabled = state.canSaveCurrent,
                         background = palette.accentTint,
@@ -116,7 +129,7 @@ fun PresetsScreen(
             }
             item {
                 Column(Modifier.padding(horizontal = Spacing.space16)) {
-                    GroupLabel("Built-in")
+                    GroupLabel(stringResource(Res.string.presets_built_in))
                     CardGrid {
                         state.builtIn.forEach { item ->
                             PresetCard(item, onClick = { onApply(item.preset) }, modifier = Modifier.gridItem())
@@ -126,11 +139,11 @@ fun PresetsScreen(
             }
             item {
                 Column(Modifier.padding(horizontal = Spacing.space16)) {
-                    GroupLabel("Yours")
+                    GroupLabel(stringResource(Res.string.presets_yours))
                     if (state.custom.isEmpty()) {
                         ListCard {
                             Text(
-                                "Presets you save show up here.",
+                                stringResource(Res.string.presets_empty),
                                 style = IntervalTheme.type.body,
                                 color = palette.textDim,
                                 modifier = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space14),
@@ -156,7 +169,8 @@ fun PresetsScreen(
     }
     if (saving) {
         SavePresetDialog(
-            summary = state.currentSummary,
+            summary = configSummary(state.current),
+            defaultName = stringResource(Res.string.preset_default_name, state.nextCustomNumber),
             onSave = {
                 onSaveCurrent(it)
                 saving = false
@@ -188,12 +202,13 @@ private fun DeletablePresetCard(
 ) {
     val palette = IntervalTheme.palette
     var menu by remember { mutableStateOf(false) }
+    val deleteLabel = stringResource(Res.string.presets_delete_named_cd, item.preset.name)
     // Long-press opens the menu; the card itself is the menu's anchor.
     IntervalMenu(
         expanded = menu,
         onExpandedChange = { menu = it },
         modifier = modifier,
-        items = { IntervalMenuItem("Delete", onClick = onDelete) },
+        items = { IntervalMenuItem(stringResource(Res.string.presets_delete), onClick = onDelete) },
     ) {
         Box {
             PresetCard(
@@ -203,7 +218,7 @@ private fun DeletablePresetCard(
                 deletable = true,
                 modifier = Modifier.semantics {
                     customActions = listOf(
-                        CustomAccessibilityAction("Delete preset ${item.preset.name}") {
+                        CustomAccessibilityAction(deleteLabel) {
                             onDelete()
                             true
                         },
@@ -217,7 +232,7 @@ private fun DeletablePresetCard(
                     .size(Sizes.delete)
                     .clip(CircleShape)
                     .clickable(role = Role.Button, onClick = onDelete)
-                    .semantics { contentDescription = "Delete preset ${item.preset.name}" },
+                    .semantics { contentDescription = deleteLabel },
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -260,7 +275,7 @@ private fun PresetCard(
             if (item.selected) {
                 Icon(
                     IntervalIcons.Check,
-                    contentDescription = "Selected",
+                    contentDescription = stringResource(Res.string.presets_selected_cd),
                     tint = palette.accent,
                     modifier = Modifier.size(Sizes.icon),
                 )
@@ -271,7 +286,12 @@ private fun PresetCard(
             style = IntervalTheme.type.presetCardTotal,
             color = if (item.selected) palette.accent else palette.text,
         )
-        Text(item.description, style = IntervalTheme.type.hint, color = palette.textDim, maxLines = 1)
+        Text(
+            configDescription(item.preset.config),
+            style = IntervalTheme.type.hint,
+            color = palette.textDim,
+            maxLines = 1,
+        )
         Timeline(item.preset.config, height = Sizes.timelineMini, gap = Spacing.space1, showPrep = false)
     }
 }
@@ -280,14 +300,14 @@ private fun PresetCard(
 @Composable
 private fun PresetsScreenPreview() {
     fun row(preset: Preset, selected: Boolean = false) =
-        PresetRowItem(preset, preset.config.description, formatClock(preset.config.totalSeconds), selected)
+        PresetRowItem(preset, formatClock(preset.config.totalSeconds), selected)
     IntervalTheme {
         PresetsScreen(
             state = PresetsUiState(
                 builtIn = builtInPresets.mapIndexed { i, preset -> row(preset, selected = i == 0) },
                 custom = listOf(row(Preset("Morning 25/10", builtInPresets.first().config.copy(workSeconds = 25)))),
                 canSaveCurrent = false,
-                currentSummary = "",
+                current = builtInPresets.first().config,
             ),
             onApply = {},
             onSaveCurrent = {},

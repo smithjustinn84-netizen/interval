@@ -40,6 +40,17 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.common_custom
+import dev.justinsmith.interval.resources.common_settings
+import dev.justinsmith.interval.resources.preset_default_name
+import dev.justinsmith.interval.resources.timer_intervals
+import dev.justinsmith.interval.resources.timer_prep_line
+import dev.justinsmith.interval.resources.timer_presets
+import dev.justinsmith.interval.resources.timer_save_as_preset_cd
+import dev.justinsmith.interval.resources.timer_see_all
+import dev.justinsmith.interval.resources.timer_title
+import dev.justinsmith.interval.resources.timer_total
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
@@ -61,7 +72,10 @@ import dev.justinsmith.interval.ui.StartButton
 import dev.justinsmith.interval.ui.Timeline
 import dev.justinsmith.interval.ui.TitleBar
 import dev.justinsmith.interval.ui.ValueSheet
+import dev.justinsmith.interval.ui.configDescription
+import dev.justinsmith.interval.ui.configSummary
 import dev.justinsmith.interval.ui.selectableCard
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
 /** The values the Timer tab edits. Get ready is a setting, edited from Settings. */
@@ -115,17 +129,11 @@ fun TimerScreen(
     var saving by rememberSaveable { mutableStateOf(false) }
     val onSave = { saving = true }
     BoxWithConstraints(modifier.fillMaxSize().background(IntervalTheme.palette.background)) {
-        val titleBar = @Composable {
-            TitleBar("Timer") {
-                if (state.canSavePreset) IconAction(IntervalIcons.Add, "Save as preset", onSave)
-                IconAction(IntervalIcons.Settings, "Settings", onOpenSettings)
-            }
-        }
         if (maxWidth > maxHeight) {
             // Sideways: the summary and Start on the left, the choices scrolling on the right.
             Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center) {
                 Column(Modifier.width(Sizes.setupColumnLandscape).fillMaxHeight()) {
-                    titleBar()
+                    TimerTitleBar(state.canSavePreset, onSave, onOpenSettings)
                     Hero(state, Modifier.padding(horizontal = Spacing.space16))
                     Spacer(Modifier.weight(1f))
                     StartButton(onStart, Modifier.fillMaxWidth().padding(Spacing.space16))
@@ -146,7 +154,7 @@ fun TimerScreen(
         } else {
             // A tablet or unfolded foldable held upright widens the column, and the Intervals with it.
             Column(Modifier.align(Alignment.TopCenter).widthIn(max = Sizes.contentWide).fillMaxSize()) {
-                titleBar()
+                TimerTitleBar(state.canSavePreset, onSave, onOpenSettings)
                 Column(
                     Modifier.weight(1f).verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(Spacing.space14),
@@ -181,13 +189,23 @@ fun TimerScreen(
     }
     if (saving) {
         SavePresetDialog(
-            summary = state.summary,
+            summary = configSummary(state.config),
+            defaultName = stringResource(Res.string.preset_default_name, state.nextCustomNumber),
             onSave = {
                 onSavePreset(it)
                 saving = false
             },
             onDismiss = { saving = false },
         )
+    }
+}
+
+/** The title, with + to save a shape no preset has yet, and the settings gear. */
+@Composable
+private fun TimerTitleBar(canSavePreset: Boolean, onSave: () -> Unit, onOpenSettings: () -> Unit) {
+    TitleBar(stringResource(Res.string.timer_title)) {
+        if (canSavePreset) IconAction(IntervalIcons.Add, stringResource(Res.string.timer_save_as_preset_cd), onSave)
+        IconAction(IntervalIcons.Settings, stringResource(Res.string.common_settings), onOpenSettings)
     }
 }
 
@@ -208,7 +226,11 @@ private fun Hero(state: TimerUiState, modifier: Modifier = Modifier) {
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.space12)) {
             Column(Modifier.weight(1f)) {
-                Text("Total", style = IntervalTheme.type.caption, color = palette.textDim)
+                Text(
+                    stringResource(Res.string.timer_total),
+                    style = IntervalTheme.type.caption,
+                    color = palette.textDim,
+                )
                 Text(state.total, style = IntervalTheme.type.heroTotal, color = palette.text)
             }
             Box(
@@ -220,7 +242,11 @@ private fun Hero(state: TimerUiState, modifier: Modifier = Modifier) {
                     .padding(horizontal = Spacing.space12),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(state.presetName ?: "Custom", style = IntervalTheme.type.buttonLabel, color = palette.accent)
+                Text(
+                    state.presetName ?: stringResource(Res.string.common_custom),
+                    style = IntervalTheme.type.buttonLabel,
+                    color = palette.accent,
+                )
             }
         }
         Timeline(state.config)
@@ -230,14 +256,14 @@ private fun Hero(state: TimerUiState, modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
         ) {
             Text(
-                state.config.description,
+                configDescription(state.config),
                 style = IntervalTheme.type.cardTitle,
                 color = palette.text,
                 modifier = Modifier.weight(1f),
             )
-            if (state.prepLine != null) {
+            if (state.config.prepSeconds > 0) {
                 Text(
-                    state.prepLine,
+                    stringResource(Res.string.timer_prep_line, formatClock(state.config.prepSeconds)),
                     style = IntervalTheme.type.hint,
                     color = palette.textDim,
                     textAlign = TextAlign.End,
@@ -261,13 +287,17 @@ private fun PresetRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "Presets",
+                stringResource(Res.string.timer_presets),
                 style = IntervalTheme.type.sectionTitle,
                 color = palette.text,
                 modifier = Modifier.weight(1f).semantics { heading() },
             )
             TextButton(onClick = onSeeAll) {
-                Text("See all", style = IntervalTheme.type.buttonLabel, color = palette.accent)
+                Text(
+                    stringResource(Res.string.timer_see_all),
+                    style = IntervalTheme.type.buttonLabel,
+                    color = palette.accent,
+                )
             }
         }
         LazyRow(
@@ -307,7 +337,12 @@ private fun PresetCard(chip: PresetChip, onClick: () -> Unit, modifier: Modifier
                 color = if (chip.selected) palette.accent else palette.text,
             )
         }
-        Text(chip.description, style = IntervalTheme.type.hint, color = palette.textDim, maxLines = 1)
+        Text(
+            configDescription(chip.preset.config),
+            style = IntervalTheme.type.hint,
+            color = palette.textDim,
+            maxLines = 1,
+        )
         Timeline(chip.preset.config, height = Sizes.timelineMini, gap = Spacing.space1, showPrep = false)
     }
 }
@@ -316,7 +351,7 @@ private fun PresetCard(chip: PresetChip, onClick: () -> Unit, modifier: Modifier
 private fun Intervals(config: IntervalConfig, onEdit: (ConfigField) -> Unit, modifier: Modifier = Modifier) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         Text(
-            "Intervals",
+            stringResource(Res.string.timer_intervals),
             style = IntervalTheme.type.sectionTitle,
             color = IntervalTheme.palette.text,
             modifier = Modifier.semantics { heading() },
@@ -362,10 +397,7 @@ private fun TimerPreview() {
                 config = config,
                 total = formatClock(config.totalSeconds),
                 presetName = "Tabata",
-                prepLine = "0:10 to get ready",
-                presets = builtInPresets.mapIndexed { i, preset ->
-                    PresetChip(preset, preset.config.description, selected = i == 0)
-                },
+                presets = builtInPresets.mapIndexed { i, preset -> PresetChip(preset, selected = i == 0) },
             ),
             onStep = { _, _ -> },
             onSet = { _, _ -> },

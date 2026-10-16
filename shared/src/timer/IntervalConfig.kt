@@ -10,9 +10,6 @@ data class IntervalConfig(
     /** Wall-clock length of the whole session: prep, every work interval, and the rests between them. */
     val totalSeconds: Int get() = prepSeconds + rounds * workSeconds + (rounds - 1) * restSeconds
 
-    /** "20s on · 10s off · ×8". */
-    val description: String get() = "${shortDuration(workSeconds)} on · ${shortDuration(restSeconds)} off · ×$rounds"
-
     companion object {
         val PREP_RANGE = 0..600
         val WORK_RANGE = 5..3600

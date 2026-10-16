@@ -22,16 +22,66 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
+import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.workout_add_time
+import dev.justinsmith.interval.resources.workout_add_time_cd
+import dev.justinsmith.interval.resources.workout_back
+import dev.justinsmith.interval.resources.workout_back_cd
+import dev.justinsmith.interval.resources.workout_end
+import dev.justinsmith.interval.resources.workout_end_cd
+import dev.justinsmith.interval.resources.workout_pause
+import dev.justinsmith.interval.resources.workout_resume
+import dev.justinsmith.interval.resources.workout_skip
+import dev.justinsmith.interval.resources.workout_skip_cd
+import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
+import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import org.jetbrains.compose.resources.stringResource
 
 /** End pauses the workout and asks before throwing it away (see [WorkoutScreen]). */
 @Composable
 internal fun EndPill(onEnd: () -> Unit, modifier: Modifier = Modifier) {
-    PillButton(text = "End", onClick = onEnd, description = "End workout", modifier = modifier)
+    PillButton(
+        text = stringResource(Res.string.workout_end),
+        onClick = onEnd,
+        description = stringResource(Res.string.workout_end_cd),
+        modifier = modifier,
+    )
+}
+
+@Composable
+internal fun SkipPill(onSkip: () -> Unit, modifier: Modifier = Modifier) {
+    PillButton(
+        text = stringResource(Res.string.workout_skip),
+        onClick = onSkip,
+        description = stringResource(Res.string.workout_skip_cd),
+        modifier = modifier,
+    )
+}
+
+/** Back restarts the interval, or goes to the one before near its start (see [WorkoutEngine.back]). */
+@Composable
+internal fun BackButton(onBack: () -> Unit, modifier: Modifier = Modifier) {
+    BigButton(
+        stringResource(Res.string.workout_back),
+        onBack,
+        modifier,
+        description = stringResource(Res.string.workout_back_cd),
+    )
+}
+
+@Composable
+internal fun AddTimeButton(onAddTime: () -> Unit, modifier: Modifier = Modifier) {
+    BigButton(
+        stringResource(Res.string.workout_add_time, WorkoutEngine.ADD_TIME_MILLIS / MILLIS_PER_SECOND),
+        onAddTime,
+        modifier,
+        description = stringResource(Res.string.workout_add_time_cd),
+    )
 }
 
 /** How far through the current interval, as a bar. */
@@ -65,19 +115,9 @@ internal fun BottomControls(
 ) {
     val height = Sizes.control
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.space10)) {
-        BigButton(
-            "Back",
-            onBack,
-            Modifier.width(Sizes.controlSide).height(height),
-            description = "Back to previous interval",
-        )
+        BackButton(onBack, Modifier.width(Sizes.controlSide).height(height))
         PrimaryButton(state, onTogglePause, Modifier.weight(1f).height(height))
-        BigButton(
-            "+10s",
-            onAddTime,
-            Modifier.width(Sizes.controlSide).height(height),
-            description = "Add ten seconds",
-        )
+        AddTimeButton(onAddTime, Modifier.width(Sizes.controlSide).height(height))
     }
 }
 
@@ -85,7 +125,7 @@ internal fun BottomControls(
 @Composable
 internal fun PrimaryButton(state: WorkoutUiState, onTogglePause: () -> Unit, modifier: Modifier = Modifier) {
     BigButton(
-        if (state.running) "Pause" else "Resume",
+        stringResource(if (state.running) Res.string.workout_pause else Res.string.workout_resume),
         onTogglePause,
         modifier,
         background = PhaseColors.onPhase,

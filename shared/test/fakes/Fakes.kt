@@ -13,6 +13,7 @@ import dev.justinsmith.interval.di.appModules
 import dev.justinsmith.interval.platform.Beep
 import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.Haptic
+import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import kotlinx.coroutines.CoroutineScope
@@ -110,15 +111,15 @@ fun fakeStorageModule(storage: FakeStorage = FakeStorage()): Module = module {
 /** A [CuePlayer] that plays nothing and remembers every cue it was asked for. */
 class RecordingCuePlayer : CuePlayer {
     val beeps = mutableListOf<Beep>()
-    val spoken = mutableListOf<String>()
+    val spoken = mutableListOf<Speech>()
     val haptics = mutableListOf<Haptic>()
 
     override fun beep(beep: Beep) {
         beeps += beep
     }
 
-    override fun speak(text: String) {
-        spoken += text
+    override fun speak(speech: Speech) {
+        spoken += speech
     }
 
     override fun vibrate(haptic: Haptic) {
@@ -132,7 +133,7 @@ const val DAY_MILLIS = 24L * 60 * 60 * 1000
 
 /** Days are numbered from the epoch in UTC, so tests don't depend on a time zone. Day 0 is a Monday. */
 object FixedTimestampFormatter : TimestampFormatter {
-    override fun day(epochMillis: Long, nowMillis: Long): String = "day ${(nowMillis - epochMillis) / DAY_MILLIS}"
+    override fun date(epochMillis: Long): String = "day ${dayNumber(epochMillis)}"
 
     override fun time(epochMillis: Long): String = "at $epochMillis"
 

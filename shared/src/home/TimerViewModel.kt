@@ -17,22 +17,19 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
-data class PresetChip(val preset: Preset, val description: String, val selected: Boolean)
+data class PresetChip(val preset: Preset, val selected: Boolean)
 
 data class TimerUiState(
     val config: IntervalConfig,
     val total: String,
     /** The matching preset's name, or null for a shape no preset has. */
     val presetName: String?,
-    /** "Starts with 0:10 to get ready", or null when there is no countdown. */
-    val prepLine: String?,
     val presets: List<PresetChip>,
+    /** The number a preset saved without a name gets: "Custom 3". */
+    val nextCustomNumber: Int = 1,
 ) {
     /** A shape no preset has yet can be saved as one. */
     val canSavePreset: Boolean get() = presetName == null
-
-    /** "25s on · 10s off · ×8 · 4:40 total", for the save dialog. */
-    val summary: String get() = "${config.description} · $total total"
 }
 
 class TimerViewModel(private val repository: IntervalRepository) : ViewModel() {
@@ -59,16 +56,11 @@ class TimerViewModel(private val repository: IntervalRepository) : ViewModel() {
         repository.saveCurrentAsPreset(name)
     }
 
-    private fun buildState(config: IntervalConfig, entries: List<PresetEntry>): TimerUiState {
-        val prep = config.prepSeconds
-        return TimerUiState(
-            config = config,
-            total = formatClock(config.totalSeconds),
-            presetName = entries.matching(config)?.name,
-            prepLine = if (prep > 0) "${formatClock(prep)} to get ready" else null,
-            presets = entries.map { (preset, _) ->
-                PresetChip(preset, preset.config.description, selected = preset.config.sameShape(config))
-            },
-        )
-    }
+    private fun buildState(config: IntervalConfig, entries: List<PresetEntry>): TimerUiState = TimerUiState(
+        config = config,
+        total = formatClock(config.totalSeconds),
+        presetName = entries.matching(config)?.name,
+        presets = entries.map { (preset, _) -> PresetChip(preset, selected = preset.config.sameShape(config)) },
+        nextCustomNumber = entries.count { it.custom } + 1,
+    )
 }

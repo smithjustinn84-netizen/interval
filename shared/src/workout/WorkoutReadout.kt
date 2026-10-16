@@ -24,18 +24,32 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
+import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.next_last_round
+import dev.justinsmith.interval.resources.next_rest
+import dev.justinsmith.interval.resources.next_round
+import dev.justinsmith.interval.resources.next_work
+import dev.justinsmith.interval.resources.phase_done
+import dev.justinsmith.interval.resources.phase_get_ready
+import dev.justinsmith.interval.resources.phase_rest
+import dev.justinsmith.interval.resources.phase_work
+import dev.justinsmith.interval.resources.workout_paused
+import dev.justinsmith.interval.resources.workout_status
+import dev.justinsmith.interval.resources.workout_tap_pause
+import dev.justinsmith.interval.resources.workout_tap_resume
+import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.MAX_ROUND_MARKS
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import org.jetbrains.compose.resources.stringResource
 
 /** The round dots over the status line ("Round 3 of 8 · 4:03 left"). */
 @Composable
@@ -47,9 +61,9 @@ internal fun RoundStatus(state: WorkoutUiState, modifier: Modifier = Modifier) {
     ) {
         // Dots stop being readable past a dozen rounds; the text below says the same thing.
         if (state.rounds <= MAX_ROUND_MARKS) RoundDots(state)
-        if (state.meta.isNotEmpty()) {
+        if (!state.isDone) {
             Text(
-                state.meta,
+                stringResource(Res.string.workout_status, state.round, state.rounds, state.sessionLeft),
                 style = IntervalTheme.type.cardTitle,
                 color = PhaseColors.onPhase85,
                 textAlign = TextAlign.Center,
@@ -91,10 +105,10 @@ internal fun RoundDots(state: WorkoutUiState, modifier: Modifier = Modifier) {
 @Composable
 internal fun PortraitReadout(state: WorkoutUiState, clockSize: TextUnit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        PhaseLabel(state, IntervalTheme.type.phaseLabel)
+        PhaseLabel(state)
         Clock(state, clockSize)
         Text(
-            state.next,
+            nextUpText(state.next),
             style = IntervalTheme.type.nextUp,
             color = PhaseColors.onPhase85,
             textAlign = TextAlign.Center,
@@ -115,7 +129,7 @@ internal fun LandscapeReadout(state: WorkoutUiState, clockMax: TextUnit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        PhaseLabel(state, IntervalTheme.type.phaseLabel)
+        PhaseLabel(state)
         // Weighted children are measured last, so this box gets exactly the height left over.
         BoxWithConstraints(Modifier.weight(1f, fill = false), contentAlignment = Alignment.Center) {
             val density = LocalDensity.current
@@ -125,7 +139,7 @@ internal fun LandscapeReadout(state: WorkoutUiState, clockMax: TextUnit) {
             Clock(state, size, lineHeight = size * LANDSCAPE_CLOCK_LINE_HEIGHT)
         }
         Text(
-            state.next,
+            nextUpText(state.next),
             style = IntervalTheme.type.nextUp,
             color = PhaseColors.onPhase85,
             textAlign = TextAlign.Center,
@@ -136,8 +150,28 @@ internal fun LandscapeReadout(state: WorkoutUiState, clockMax: TextUnit) {
 }
 
 @Composable
-private fun PhaseLabel(state: WorkoutUiState, style: TextStyle) {
-    Text(state.label, style = style, color = PhaseColors.onPhase90)
+private fun PhaseLabel(state: WorkoutUiState) {
+    val label = when {
+        state.paused -> Res.string.workout_paused
+
+        else -> when (state.phase) {
+            Phase.Prep -> Res.string.phase_get_ready
+            Phase.Work -> Res.string.phase_work
+            Phase.Rest -> Res.string.phase_rest
+            Phase.Done -> Res.string.phase_done
+        }
+    }
+    Text(stringResource(label), style = IntervalTheme.type.phaseLabel, color = PhaseColors.onPhase90)
+}
+
+/** "Next: rest 0:15", "Last round — finish strong"; nothing once the workout is done. */
+@Composable
+private fun nextUpText(next: NextUp?): String = when (next) {
+    is NextUp.Work -> stringResource(Res.string.next_work, next.clock)
+    is NextUp.Rest -> stringResource(Res.string.next_rest, next.clock)
+    is NextUp.Round -> stringResource(Res.string.next_round, next.round, next.of)
+    NextUp.LastRound -> stringResource(Res.string.next_last_round)
+    null -> ""
 }
 
 @Composable
@@ -164,7 +198,7 @@ private fun Clock(state: WorkoutUiState, size: TextUnit, lineHeight: TextUnit = 
 @Composable
 private fun TapHint(state: WorkoutUiState, modifier: Modifier = Modifier) {
     Text(
-        if (state.paused) "Tap anywhere to resume" else "Tap anywhere to pause",
+        stringResource(if (state.paused) Res.string.workout_tap_resume else Res.string.workout_tap_pause),
         style = IntervalTheme.type.meta,
         color = if (state.paused) PhaseColors.onPhase else PhaseColors.onPhase65,
         fontWeight = if (state.paused) FontWeight.SemiBold else FontWeight.Normal,

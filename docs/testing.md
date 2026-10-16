@@ -38,11 +38,11 @@ The UI tests render offscreen with Skiko and need no display, including on the L
     `repository()` runs writes unconfined over fakes that never suspend, so a write has landed by the
     time the call returns. Two repositories over one `FakeStorage` are the app before and after a
     restart.
-  - `RecordingCuePlayer`: records beeps, speech and haptics.
-  - `FixedTimestampFormatter`: time-zone free.
+  - `RecordingCuePlayer`: records beeps, `Speech` lines and haptics.
+  - `FixedTimestampFormatter`: time-zone free; `date()` is `"day N"`.
   - `fakePlatformModule(...)` binds the player and formatter for Koin; `fakeStorageModule(...)` binds a
     `FakeStorage` in place of the real `storageModule`.
-  - `testKoin(...)`: the app's real container over those two.
+  - `testKoin(...)`: the app's real container over those two, with the `WallClock` fixed at `now`.
 
   Never load the real platform or storage module in a test: on the JVM they write to the user's
   app-data directory and play sound.
@@ -74,6 +74,9 @@ The UI tests render offscreen with Skiko and need no display, including on the L
   calls. Use `AppContent` only for navigation.
 - Match on semantics first: text, `contentDescription`, `hasClickAction()`, `isDialog()`. Add a
   `testTag` only when an element would otherwise take more than three matchers. None is needed so far.
+- Assert the English text literally ("Next: rest 0:15"), not through `getString`: an expectation read
+  from the same key can't catch a screen showing the wrong one. This is where the words are tested;
+  common ViewModel tests assert typed state and never load a resource (Android local tests can't).
 - Use `androidx.compose.ui.test.v2.*`, because the v1 `runComposeUiTest` is deprecated and
   `allWarningsAsErrors` rejects it. Opt in per file with `@file:OptIn(ExperimentalTestApi::class)`,
   never module-wide.

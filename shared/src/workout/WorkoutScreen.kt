@@ -43,6 +43,13 @@ import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import dev.justinsmith.interval.platform.KeepScreenOn
+import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.workout_end_confirm
+import dev.justinsmith.interval.resources.workout_end_nothing
+import dev.justinsmith.interval.resources.workout_end_progress
+import dev.justinsmith.interval.resources.workout_end_title
+import dev.justinsmith.interval.resources.workout_pause
+import dev.justinsmith.interval.resources.workout_resume
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.ui.ConfirmDialog
@@ -52,6 +59,8 @@ import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
 /** Resolves the screen's ViewModel, scoped to its back-stack entry, and binds it to [WorkoutScreen]. */
@@ -150,14 +159,19 @@ fun WorkoutScreen(
     }
     if (confirmingEnd && !state.isDone) {
         ConfirmDialog(
-            title = "End workout?",
+            title = stringResource(Res.string.workout_end_title),
             text = if (state.hasProgress) {
-                "${state.completedRounds} of ${state.rounds} rounds done. What you finished is saved to history."
+                pluralStringResource(
+                    Res.plurals.workout_end_progress,
+                    state.rounds,
+                    state.completedRounds,
+                    state.rounds,
+                )
             } else {
-                "No round is finished yet, so nothing is saved."
+                stringResource(Res.string.workout_end_nothing)
             },
-            confirm = "End workout",
-            dismiss = "Resume",
+            confirm = stringResource(Res.string.workout_end_confirm),
+            dismiss = stringResource(Res.string.workout_resume),
             onConfirm = {
                 confirmingEnd = false
                 if (state.hasProgress) onEndEarly() else onExit()
@@ -252,12 +266,7 @@ private fun LandscapeWorkout(
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             EndPill(onEnd, Modifier.fillMaxWidth())
-            BigButton(
-                "Back",
-                onBack,
-                Modifier.fillMaxWidth().height(Sizes.control),
-                description = "Back to previous interval",
-            )
+            BackButton(onBack, Modifier.fillMaxWidth().height(Sizes.control))
         }
         Column(
             Modifier
@@ -275,19 +284,9 @@ private fun LandscapeWorkout(
             Modifier.width(Sizes.rail).fillMaxHeight(),
             verticalArrangement = Arrangement.spacedBy(Spacing.space10),
         ) {
-            PillButton(
-                text = "Skip",
-                onClick = onSkip,
-                description = "Skip to next interval",
-                modifier = Modifier.fillMaxWidth(),
-            )
+            SkipPill(onSkip, Modifier.fillMaxWidth())
             Spacer(Modifier.weight(1f))
-            BigButton(
-                "+10s",
-                onAddTime,
-                Modifier.fillMaxWidth().height(Sizes.control),
-                description = "Add ten seconds",
-            )
+            AddTimeButton(onAddTime, Modifier.fillMaxWidth().height(Sizes.control))
             PrimaryButton(state, onTogglePause, Modifier.fillMaxWidth().height(Sizes.control))
         }
     }
@@ -299,7 +298,7 @@ private fun Modifier.tapToPause(state: WorkoutUiState, onTogglePause: () -> Unit
     interactionSource = remember { MutableInteractionSource() },
     indication = null,
     enabled = !state.isDone,
-    onClickLabel = if (state.running) "Pause" else "Resume",
+    onClickLabel = stringResource(if (state.running) Res.string.workout_pause else Res.string.workout_resume),
     onClick = onTogglePause,
 )
 
@@ -312,7 +311,7 @@ private fun TopBar(state: WorkoutUiState, onEnd: () -> Unit, onSkip: () -> Unit)
     ) {
         EndPill(onEnd)
         RoundStatus(state, Modifier.weight(1f).padding(horizontal = Spacing.space8))
-        PillButton(text = "Skip", onClick = onSkip, description = "Skip to next interval")
+        SkipPill(onSkip)
     }
 }
 

@@ -11,11 +11,27 @@ enum class Beep { Countdown, Halfway, Start, Work, Rest, Finished }
 /** Vibration patterns, distinct enough to tell apart without looking. */
 enum class Haptic { Work, Rest, Finished }
 
+/** A line spoken during a workout. Players put it into words from the app's strings ([text]). */
+sealed interface Speech {
+    /** The last seconds of an interval: "3", "2", "1". */
+    data class Countdown(val secondsLeft: Int) : Speech
+
+    data object GetReady : Speech
+
+    data class Work(val lastRound: Boolean) : Speech
+
+    data object Rest : Speech
+
+    data object Halfway : Speech
+
+    data object Finished : Speech
+}
+
 /** Plays workout feedback. Implementations swallow platform failures: a missing cue must never crash a workout. */
 interface CuePlayer {
     fun beep(beep: Beep)
 
-    fun speak(text: String)
+    fun speak(speech: Speech)
 
     fun vibrate(haptic: Haptic)
 
@@ -25,8 +41,8 @@ interface CuePlayer {
 
 /** Formats past moments for the workout history, in the device's time zone. */
 interface TimestampFormatter {
-    /** The history section a moment falls in, relative to [nowMillis]: "Today", "Yesterday", "Sunday, Oct 11". */
-    fun day(epochMillis: Long, nowMillis: Long): String
+    /** The moment's date, as a history section heads it: "Sunday, Oct 11". */
+    fun date(epochMillis: Long): String
 
     /** The time of day: "7:42 PM". */
     fun time(epochMillis: Long): String
