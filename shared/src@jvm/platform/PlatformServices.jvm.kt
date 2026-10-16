@@ -31,6 +31,10 @@ actual fun KeepScreenOn() = Unit
 @Composable
 actual fun SystemBarIcons(lightIcons: Boolean) = Unit
 
+/** Desktop has no system-wide reduce-motion setting that Compose can read. */
+@Composable
+actual fun prefersReducedMotion(): Boolean = false
+
 actual val materialBackPreview: Boolean = false
 
 actual fun epochMillisNow(): Long = System.currentTimeMillis()

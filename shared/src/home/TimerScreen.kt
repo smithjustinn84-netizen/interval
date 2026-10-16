@@ -29,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.semantics.Role
@@ -72,6 +73,7 @@ import dev.justinsmith.interval.ui.labelRes
 import dev.justinsmith.interval.ui.lessRes
 import dev.justinsmith.interval.ui.moreRes
 import dev.justinsmith.interval.ui.stripe
+import dev.justinsmith.interval.ui.tickDialBehind
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
@@ -102,7 +104,8 @@ fun TimerRoute(
 }
 
 /**
- * Home: the session total, then Work, Rest and Rounds as three tall rows, each with its own − and +
+ * Home: the session total over the Dial's stepping ticks, then Work, Rest and Rounds as three tall
+ * rows, each with its own − and +
  * (hold to run), and Start within thumb reach beside the way to the presets. Tapping a value opens its
  * edit sheet for the quick picks.
  */
@@ -127,7 +130,7 @@ fun TimerScreen(
         if (maxWidth > maxHeight) {
             // Sideways: the total and Start on the left, the three rows on the right.
             Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center) {
-                Column(Modifier.width(Sizes.setupColumnLandscape).fillMaxHeight()) {
+                Column(Modifier.width(Sizes.setupColumnLandscape).fillMaxHeight().clipToBounds().tickDialBehind()) {
                     TimerTitleBar(state.canSavePreset, onSave, onOpenSettings)
                     Total(state, Modifier.padding(horizontal = Spacing.space20))
                     Spacer(Modifier.weight(1f))
@@ -144,7 +147,14 @@ fun TimerScreen(
                 }
             }
         } else {
-            Column(Modifier.align(Alignment.TopCenter).widthIn(max = Sizes.content).fillMaxSize()) {
+            Column(
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .widthIn(max = Sizes.content)
+                    .fillMaxSize()
+                    .clipToBounds()
+                    .tickDialBehind(),
+            ) {
                 TimerTitleBar(state.canSavePreset, onSave, onOpenSettings)
                 Total(state, Modifier.padding(horizontal = Spacing.space20))
                 Column(Modifier.weight(1f).padding(horizontal = Spacing.space16, vertical = Spacing.space12)) {

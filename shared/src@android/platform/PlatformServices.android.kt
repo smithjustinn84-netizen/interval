@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.provider.Settings
 import android.speech.tts.TextToSpeech
 import android.text.format.DateFormat
 import androidx.compose.runtime.Composable
@@ -71,6 +72,15 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
     is ContextWrapper -> baseContext.findActivity()
     else -> null
+}
+
+/** "Remove animations" in Android's accessibility settings sets the animator duration scale to 0. */
+@Composable
+actual fun prefersReducedMotion(): Boolean {
+    val resolver = LocalContext.current.contentResolver
+    return remember(resolver) {
+        Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+    }
 }
 
 actual val materialBackPreview: Boolean = true

@@ -141,6 +141,27 @@ object Sizes {
     val ring = 22.dp
     val ringMax = 420.dp
 
+    /**
+     * The ticks just outside the workout ring: how far past the ring's outer edge they reach, how long
+     * they are (every fifth one longer), and their stroke.
+     */
+    val ringTickReach = 17.dp
+    val ringTick = 8.dp
+    val ringTickLong = 12.dp
+    val ringTickStroke = 3.dp
+
+    /**
+     * The Dial behind the Timer tab's total: its centre, in from the column's end and down from its
+     * top, so it sits half off the edge; the ticks' radii (every fifth one starts further in); strokes.
+     */
+    val dialCentreInset = 60.dp
+    val dialCentreTop = 106.dp
+    val dialOuter = 216.dp
+    val dialInner = 196.dp
+    val dialInnerLong = 180.dp
+    val dialStroke = 2.dp
+    val dialHandStroke = 3.dp
+
     /** The band of phase colour along the workout screen's top edge (its start edge in landscape). */
     val phaseBand = 10.dp
     val border = 1.5.dp
@@ -197,6 +218,9 @@ object Motion {
     /** The clock's pop when a new interval starts, from [CLOCK_POP_SCALE] back to 1. */
     const val CLOCK_POP_MILLIS = 300
     const val CLOCK_POP_SCALE = 1.06f
+
+    /** The Dial's lit tick steps on once this often: a second, like a watch's seconds hand. */
+    const val DIAL_STEP_MILLIS = 1000L
 
     /** A held stepper starts repeating after this long… */
     const val STEPPER_HOLD_MILLIS = 420L

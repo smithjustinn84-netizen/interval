@@ -65,8 +65,15 @@ data class IntervalPalette(
      */
     fun tint(color: Color): Color = lerp(surface, color, TINT_STRENGTH)
 
+    /**
+     * The Dial's resting ticks behind the Timer total: between the page and a [line], quieter than
+     * either border, so the artwork never competes with the text drawn over it.
+     */
+    val dialTick: Color get() = lerp(background, line, DIAL_TICK_STRENGTH)
+
     private companion object {
         const val TINT_STRENGTH = 0.1f
+        const val DIAL_TICK_STRENGTH = 0.6f
         const val TIMELINE_REST_STRENGTH = 0.24f
     }
 }

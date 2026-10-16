@@ -44,12 +44,15 @@ import dev.justinsmith.interval.resources.workout_tap_pause
 import dev.justinsmith.interval.resources.workout_tap_resume
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.ui.Corners
+import dev.justinsmith.interval.ui.DIAL_TICKS
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.MAX_ROUND_MARKS
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.drawTicks
+import dev.justinsmith.interval.ui.litTicks
 import org.jetbrains.compose.resources.stringResource
 
 /** "Round 3 of 8 · 4:03 left". */
@@ -94,10 +97,25 @@ internal fun RoundDots(state: WorkoutUiState, accent: Color, modifier: Modifier 
     }
 }
 
-/** How far through the current interval, as a ring in the phase colour over a dark track. */
+/**
+ * How far through the current interval, as a ring in the phase colour over a dark track. With [ticks],
+ * a Dial of [DIAL_TICKS] ticks circles just outside it, filling in with the phase colour a second's
+ * worth at a time; it reaches [Sizes.ringTickReach] past the ring's bounds.
+ */
 @Composable
-internal fun ProgressRing(progress: Float, accent: Color, modifier: Modifier = Modifier) {
+internal fun ProgressRing(progress: Float, accent: Color, modifier: Modifier = Modifier, ticks: Boolean = false) {
     Canvas(modifier.clearAndSetSemantics {}) {
+        if (ticks) {
+            val outer = size.minDimension / 2 + Sizes.ringTickReach.toPx()
+            val lit = litTicks(progress)
+            drawTicks(
+                center = center,
+                inner = outer - Sizes.ringTick.toPx(),
+                innerLong = outer - Sizes.ringTickLong.toPx(),
+                outer = outer,
+                stroke = Sizes.ringTickStroke.toPx(),
+            ) { index -> if (index < lit) accent else PhaseColors.upcoming }
+        }
         val stroke = Sizes.ring.toPx()
         val diameter = size.minDimension - stroke
         val topLeft = Offset((size.width - diameter) / 2, (size.height - diameter) / 2)
@@ -121,7 +139,7 @@ internal fun ProgressRing(progress: Float, accent: Color, modifier: Modifier = M
 @Composable
 internal fun RingReadout(state: WorkoutUiState, accent: Color, diameter: Dp, modifier: Modifier = Modifier) {
     Box(modifier.size(diameter), contentAlignment = Alignment.Center) {
-        ProgressRing(state.progress, accent, Modifier.fillMaxSize())
+        ProgressRing(state.progress, accent, Modifier.fillMaxSize(), ticks = true)
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             PhaseLabel(state, accent)
             Clock(state, ringClockSize(diameter, state.clock.length))
@@ -144,7 +162,7 @@ internal fun LandscapeReadout(state: WorkoutUiState, accent: Color, diameter: Dp
         horizontalArrangement = Arrangement.spacedBy(Spacing.space32, Alignment.CenterHorizontally),
     ) {
         Box(Modifier.size(diameter), contentAlignment = Alignment.Center) {
-            ProgressRing(state.progress, accent, Modifier.fillMaxSize())
+            ProgressRing(state.progress, accent, Modifier.fillMaxSize(), ticks = true)
             Clock(state, ringClockSize(diameter, state.clock.length))
         }
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {

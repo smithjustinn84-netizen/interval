@@ -30,6 +30,7 @@ import platform.Foundation.NSUserDomainMask
 import platform.Foundation.dateByAddingTimeInterval
 import platform.Foundation.dateWithTimeIntervalSince1970
 import platform.Foundation.timeIntervalSince1970
+import platform.UIKit.UIAccessibilityIsReduceMotionEnabled
 import platform.UIKit.UIApplication
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -57,6 +58,9 @@ actual fun KeepScreenOn() {
 /** The status bar follows the system appearance. */
 @Composable
 actual fun SystemBarIcons(lightIcons: Boolean) = Unit
+
+@Composable
+actual fun prefersReducedMotion(): Boolean = remember { UIAccessibilityIsReduceMotionEnabled() }
 
 actual val materialBackPreview: Boolean = false
 

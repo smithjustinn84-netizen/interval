@@ -95,6 +95,13 @@ expect fun SystemBarIcons(lightIcons: Boolean)
  */
 expect val materialBackPreview: Boolean
 
+/**
+ * Whether the user asked the system for less motion: Android's "Remove animations" (animator scale
+ * 0) or iOS's Reduce Motion. Decorative animation stands still then.
+ */
+@Composable
+expect fun prefersReducedMotion(): Boolean
+
 /** Milliseconds since the Unix epoch. */
 expect fun epochMillisNow(): Long
 

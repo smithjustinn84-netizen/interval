@@ -256,10 +256,12 @@ private fun PortraitWorkout(
                 .tapToPause(state, onTogglePause),
             contentAlignment = Alignment.Center,
         ) {
-            val diameter = minOf(maxWidth, maxHeight - Sizes.pillHeight, Sizes.ringMax)
+            // The ring's ticks reach past it, above and below, so the hint sits clear of them.
+            val reach = Sizes.ringTickReach
+            val diameter = minOf(maxWidth, maxHeight - Sizes.pillHeight - reach * 2, Sizes.ringMax)
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 RingReadout(state, accent, diameter)
-                TapHint(state, Modifier.padding(top = Spacing.space12))
+                TapHint(state, Modifier.padding(top = reach + Spacing.space12))
             }
         }
         if (state.rounds <= MAX_ROUND_MARKS) {
@@ -313,7 +315,8 @@ private fun LandscapeWorkout(
                 .tapToPause(state, onTogglePause),
             contentAlignment = Alignment.Center,
         ) {
-            LandscapeReadout(state, accent, minOf(maxHeight, maxWidth / 2, Sizes.ringMax), Modifier.fillMaxWidth())
+            val diameter = minOf(maxHeight - Sizes.ringTickReach * 2, maxWidth / 2, Sizes.ringMax)
+            LandscapeReadout(state, accent, diameter, Modifier.fillMaxWidth())
         }
         Column(
             Modifier.width(Sizes.rail).fillMaxHeight(),
