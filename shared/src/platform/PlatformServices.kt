@@ -63,6 +63,15 @@ interface PlatformStorage {
     val preferencesPath: String
 }
 
+/** What the installed build says about itself, for the About screen. */
+interface AppInfo {
+    /**
+     * The version the store shows, such as "0.1.0", read from the package or bundle; null when the
+     * build carries none, as a desktop run from source does.
+     */
+    val version: String?
+}
+
 /** The database's file name, inside the platform's app-data directory. */
 internal const val DATABASE_NAME = "interval.db"
 
@@ -70,8 +79,8 @@ internal const val DATABASE_NAME = "interval.db"
 internal const val PREFERENCES_NAME = "interval.preferences_pb"
 
 /**
- * Koin definitions for platform services: [PlatformStorage], a [CuePlayer] and a
- * [TimestampFormatter]. Built in composition because Android needs a `Context`.
+ * Koin definitions for platform services: [PlatformStorage], a [CuePlayer], a [TimestampFormatter]
+ * and [AppInfo]. Built in composition because Android needs a `Context`.
  */
 @Composable
 expect fun rememberPlatformModule(): Module

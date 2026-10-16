@@ -40,8 +40,16 @@ class SettingsScreenTest {
             onSetPrep = { calls += "set $it" },
             onToggleKeepScreenOn = { calls += "keep screen on" },
             onSetTheme = { calls += it },
+            onShowAbout = { calls += "about" },
             inPane = inPane,
         )
+    }
+
+    @Test
+    fun `the about row opens about`() = runUiTest {
+        setThemedContent { Screen() }
+        onNodeWithText("About Interval").performClick()
+        assertEquals(listOf<Any>("about"), calls)
     }
 
     @Test

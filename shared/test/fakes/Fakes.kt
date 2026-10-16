@@ -10,6 +10,7 @@ import dev.justinsmith.interval.data.PresetDao
 import dev.justinsmith.interval.data.PresetEntity
 import dev.justinsmith.interval.di.StorageScope
 import dev.justinsmith.interval.di.appModules
+import dev.justinsmith.interval.platform.AppInfo
 import dev.justinsmith.interval.platform.Beep
 import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.Haptic
@@ -152,6 +153,12 @@ fun fakePlatformModule(
 ): Module = module {
     single { player }
     single { formatter }
+    single<AppInfo> { FakeAppInfo }
+}
+
+/** A build that calls itself [version]. */
+object FakeAppInfo : AppInfo {
+    override val version: String = "1.2.3"
 }
 
 /** The app's real container over fake platform services and storage, for `AppContent`. Time stands at [now]. */

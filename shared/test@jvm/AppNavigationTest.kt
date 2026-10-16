@@ -90,6 +90,22 @@ class AppNavigationTest {
     }
 
     @Test
+    fun `settings leads to about, about to the licenses, and back again`() = appTest {
+        onNodeWithContentDescription("Settings").performClick()
+        onNodeWithText("About Interval").performClick()
+        onNodeWithText("Version 1.2.3").assertExists()
+        onNodeWithText("Cues").assertDoesNotExist()
+
+        onNodeWithText("Open-source licenses").performClick()
+        onNodeWithText("Barlow").assertExists()
+
+        onNodeWithContentDescription("Back").performClick()
+        onNodeWithText("Version 1.2.3").assertExists()
+        onNodeWithContentDescription("Back").performClick()
+        onNodeWithText("Cues").assertExists()
+    }
+
+    @Test
     fun `on a tablet settings opens beside the timer`() = appTest(Window.Tablet) {
         onNodeWithContentDescription("Settings").performClick()
         onNodeWithText("Cues").assertExists()

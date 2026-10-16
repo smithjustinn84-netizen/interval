@@ -47,6 +47,9 @@ import dev.justinsmith.interval.data.CueSettings
 import dev.justinsmith.interval.data.ThemeMode
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.common_back
+import dev.justinsmith.interval.resources.settings_about
+import dev.justinsmith.interval.resources.settings_about_app
+import dev.justinsmith.interval.resources.settings_about_app_hint
 import dev.justinsmith.interval.resources.settings_appearance
 import dev.justinsmith.interval.resources.settings_close_cd
 import dev.justinsmith.interval.resources.settings_cues
@@ -73,6 +76,7 @@ import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PreviewFormFactors
@@ -91,7 +95,12 @@ import org.koin.compose.currentKoinScope
 
 /** Resolves the screen's ViewModel and binds it to [SettingsScreen]. */
 @Composable
-fun SettingsRoute(onBack: () -> Unit, modifier: Modifier = Modifier, inPane: Boolean = false) {
+fun SettingsRoute(
+    onBack: () -> Unit,
+    onShowAbout: () -> Unit,
+    modifier: Modifier = Modifier,
+    inPane: Boolean = false,
+) {
     val scope = currentKoinScope()
     val viewModel = viewModel { SettingsViewModel(scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -103,14 +112,15 @@ fun SettingsRoute(onBack: () -> Unit, modifier: Modifier = Modifier, inPane: Boo
         onSetPrep = viewModel::setPrep,
         onToggleKeepScreenOn = viewModel::toggleKeepScreenOn,
         onSetTheme = viewModel::setTheme,
+        onShowAbout = onShowAbout,
         modifier = modifier,
         inPane = inPane,
     )
 }
 
 /**
- * The set-once preferences, out of the way of the workout itself. [inPane] when it sits beside the
- * Timer tab on a wide window: there it closes rather than going back.
+ * The set-once preferences, out of the way of the workout itself, and the way to About. [inPane]
+ * when it sits beside the Timer tab on a wide window: there it closes rather than going back.
  */
 @Composable
 fun SettingsScreen(
@@ -121,6 +131,7 @@ fun SettingsScreen(
     onSetPrep: (Int) -> Unit,
     onToggleKeepScreenOn: () -> Unit,
     onSetTheme: (ThemeMode) -> Unit,
+    onShowAbout: () -> Unit,
     modifier: Modifier = Modifier,
     inPane: Boolean = false,
 ) {
@@ -144,35 +155,7 @@ fun SettingsScreen(
             )
             Column(Modifier.padding(start = Spacing.space16, end = Spacing.space16, bottom = Spacing.space24)) {
                 GroupLabel(stringResource(Res.string.settings_cues))
-                ListCard {
-                    ToggleRow(
-                        stringResource(Res.string.settings_sound),
-                        stringResource(Res.string.settings_sound_hint),
-                        state.cues.sound,
-                        onToggle = { onToggle(CueToggle.Sound) },
-                    )
-                    RowDivider()
-                    ToggleRow(
-                        stringResource(Res.string.settings_voice),
-                        stringResource(Res.string.settings_voice_hint),
-                        state.cues.voice,
-                        onToggle = { onToggle(CueToggle.Voice) },
-                    )
-                    RowDivider()
-                    ToggleRow(
-                        stringResource(Res.string.settings_halfway),
-                        stringResource(Res.string.settings_halfway_hint, WorkoutEngine.HALFWAY_MIN_SECONDS),
-                        state.cues.halfway,
-                        onToggle = { onToggle(CueToggle.Halfway) },
-                    )
-                    RowDivider()
-                    ToggleRow(
-                        stringResource(Res.string.settings_vibrate),
-                        stringResource(Res.string.settings_vibrate_hint),
-                        state.cues.vibrate,
-                        onToggle = { onToggle(CueToggle.Vibrate) },
-                    )
-                }
+                CuesCard(state.cues, onToggle)
                 GroupLabel(stringResource(Res.string.settings_workout))
                 ListCard {
                     FieldRow(ConfigField.Prep, state.prepSeconds, onClick = { editingPrep = true }, compact = true)
@@ -186,6 +169,14 @@ fun SettingsScreen(
                 }
                 GroupLabel(stringResource(Res.string.settings_appearance))
                 ThemePicker(state.app.theme, onSetTheme)
+                GroupLabel(stringResource(Res.string.settings_about))
+                ListCard {
+                    LinkRow(
+                        stringResource(Res.string.settings_about_app),
+                        stringResource(Res.string.settings_about_app_hint),
+                        onClick = onShowAbout,
+                    )
+                }
             }
         }
     }
@@ -197,6 +188,40 @@ fun SettingsScreen(
             onStep = onStepPrep,
             onPick = onSetPrep,
             onDismiss = { editingPrep = false },
+        )
+    }
+}
+
+/** The four cue switches: which of the beeps, voice, halfway alert and vibration play. */
+@Composable
+private fun CuesCard(cues: CueSettings, onToggle: (CueToggle) -> Unit, modifier: Modifier = Modifier) {
+    ListCard(modifier) {
+        ToggleRow(
+            stringResource(Res.string.settings_sound),
+            stringResource(Res.string.settings_sound_hint),
+            cues.sound,
+            onToggle = { onToggle(CueToggle.Sound) },
+        )
+        RowDivider()
+        ToggleRow(
+            stringResource(Res.string.settings_voice),
+            stringResource(Res.string.settings_voice_hint),
+            cues.voice,
+            onToggle = { onToggle(CueToggle.Voice) },
+        )
+        RowDivider()
+        ToggleRow(
+            stringResource(Res.string.settings_halfway),
+            stringResource(Res.string.settings_halfway_hint, WorkoutEngine.HALFWAY_MIN_SECONDS),
+            cues.halfway,
+            onToggle = { onToggle(CueToggle.Halfway) },
+        )
+        RowDivider()
+        ToggleRow(
+            stringResource(Res.string.settings_vibrate),
+            stringResource(Res.string.settings_vibrate_hint),
+            cues.vibrate,
+            onToggle = { onToggle(CueToggle.Vibrate) },
         )
     }
 }
@@ -284,6 +309,7 @@ private fun SettingsScreenPreview() {
             onSetPrep = {},
             onToggleKeepScreenOn = {},
             onSetTheme = {},
+            onShowAbout = {},
         )
     }
 }

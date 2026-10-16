@@ -109,7 +109,9 @@ toolchain (`$compose.*`).
 ## Testing
 
 Strategy, commands and limits: [docs/testing.md](docs/testing.md).
-- Logic and ViewModel tests go in `shared/test/` and run on JVM, Android and iOS.
+- Logic and ViewModel tests go in `shared/test/` and run on JVM, Android and iOS. Kotlin/Native rejects
+  a backticked test name with a comma in it ("name contains illegal characters"), and only the full
+  `./kotlin build` compiles the iOS tests, so keep commas out of common test names.
 - **Compose UI tests go in `shared/test@jvm/` only.** Common tests also run as Android local tests,
   where `runComposeUiTest` fails (no Robolectric).
 - Use `androidx.compose.ui.test.v2.*` and the harness in `test@jvm/ui/UiTestHarness.kt`:

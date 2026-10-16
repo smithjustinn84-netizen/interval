@@ -20,7 +20,13 @@ actual fun rememberPlatformModule(): Module = remember {
         single<PlatformStorage> { DesktopStorage() }
         single<CuePlayer> { DesktopCuePlayer() }
         single<TimestampFormatter> { JavaTimeFormatter() }
+        single<AppInfo> { DesktopAppInfo() }
     }
+}
+
+/** jpackage stamps the version into a packaged app; a run from source carries none. */
+private class DesktopAppInfo : AppInfo {
+    override val version: String? = System.getProperty("jpackage.app-version")
 }
 
 /** Desktop displays follow the OS power settings; nothing to hold here. */

@@ -181,6 +181,9 @@ object Sizes {
     /** The empty-state icon drawn inside it, a size up from [icon]. */
     val emptyIcon = 28.dp
 
+    /** The app's mark on the About screen: the launcher icon's coin, at a size that reads as a logo. */
+    val aboutMark = 112.dp
+
     /** The circle drawn inside that hit area: its fill and its ripple. */
     val iconButtonVisual = 40.dp
 

@@ -3,6 +3,7 @@ package dev.justinsmith.interval.platform
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Build
@@ -43,6 +44,7 @@ actual fun rememberPlatformModule(): Module {
                 onClose { it?.release() }
             }
             single<TimestampFormatter> { JavaTimeFormatter() }
+            single<AppInfo> { AndroidAppInfo(context) }
         }
     }
 }
@@ -95,6 +97,20 @@ private class AndroidStorage(private val context: Context) : PlatformStorage {
 
     override val preferencesPath: String =
         context.filesDir.resolve("datastore/$PREFERENCES_NAME").absolutePath
+}
+
+/** The `versionName` of the installed package: `versionName` in `androidApp/module.yaml`. */
+private class AndroidAppInfo(context: Context) : AppInfo {
+    override val version: String? = runCatching {
+        val manager = context.packageManager
+        val name = context.packageName
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            manager.getPackageInfo(name, PackageManager.PackageInfoFlags.of(0))
+        } else {
+            @Suppress("DEPRECATION")
+            manager.getPackageInfo(name, 0)
+        }.versionName
+    }.getOrNull()
 }
 
 private class JavaTimeFormatter : TimestampFormatter {

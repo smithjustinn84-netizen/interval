@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -37,12 +38,16 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.navigation3.ui.defaultPredictivePopTransitionSpec
 import androidx.savedstate.serialization.SavedStateConfiguration
+import dev.justinsmith.interval.about.AboutRoute
+import dev.justinsmith.interval.about.LicensesRoute
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.data.ThemeMode
 import dev.justinsmith.interval.di.rememberAppKoin
 import dev.justinsmith.interval.history.HistoryRoute
 import dev.justinsmith.interval.home.TimerRoute
+import dev.justinsmith.interval.nav.About
 import dev.justinsmith.interval.nav.HistoryTab
+import dev.justinsmith.interval.nav.Licenses
 import dev.justinsmith.interval.nav.PresetsTab
 import dev.justinsmith.interval.nav.Settings
 import dev.justinsmith.interval.nav.Tab
@@ -84,6 +89,8 @@ internal val navConfiguration = SavedStateConfiguration {
             subclass(HistoryTab::class)
             subclass(Settings::class)
             subclass(Workout::class)
+            subclass(About::class)
+            subclass(Licenses::class)
         }
     }
 }
@@ -192,31 +199,48 @@ private fun AppShell(backStack: NavBackStack<NavKey>) {
                             Modifier
                         },
                     ),
-                entryProvider = entryProvider {
-                    entry<TimerTab>(metadata = SupportingPaneSceneStrategy.mainPane()) {
-                        TimerRoute(
-                            // A double tap on Start must not stack two workouts.
-                            onStart = { if (backStack.lastOrNull() != Workout) backStack.add(Workout) },
-                            // Beside Timer, the gear closes Settings again.
-                            onOpenSettings = {
-                                when {
-                                    backStack.lastOrNull() != Settings -> backStack.add(Settings)
-                                    twoPane -> backStack.removeLastOrNull()
-                                }
-                            },
-                            onSeeAllPresets = { selectTab(PresetsTab) },
-                        )
-                    }
-                    entry<PresetsTab> { PresetsRoute(onShowTimer = { selectTab(TimerTab) }) }
-                    entry<HistoryTab> { HistoryRoute() }
-                    entry<Settings>(metadata = SupportingPaneSceneStrategy.supportingPane()) {
-                        SettingsRoute(onBack = { backStack.removeLastOrNull() }, inPane = twoPane)
-                    }
-                    entry<Workout> { WorkoutRoute(onExit = { backStack.removeLastOrNull() }) }
-                },
+                entryProvider = appEntries(backStack, twoPane, selectTab),
             )
         }
     }
+}
+
+/** The screen for each [NavKey], and what each screen's actions do to the [backStack]. */
+private fun appEntries(
+    backStack: NavBackStack<NavKey>,
+    twoPane: Boolean,
+    selectTab: (Tab) -> Unit,
+): (NavKey) -> NavEntry<NavKey> = entryProvider {
+    entry<TimerTab>(metadata = SupportingPaneSceneStrategy.mainPane()) {
+        TimerRoute(
+            onStart = { backStack.push(Workout) },
+            // Beside Timer, the gear closes Settings again.
+            onOpenSettings = {
+                when {
+                    backStack.lastOrNull() != Settings -> backStack.add(Settings)
+                    twoPane -> backStack.removeLastOrNull()
+                }
+            },
+            onSeeAllPresets = { selectTab(PresetsTab) },
+        )
+    }
+    entry<PresetsTab> { PresetsRoute(onShowTimer = { selectTab(TimerTab) }) }
+    entry<HistoryTab> { HistoryRoute() }
+    entry<Settings>(metadata = SupportingPaneSceneStrategy.supportingPane()) {
+        SettingsRoute(
+            onBack = { backStack.removeLastOrNull() },
+            onShowAbout = { backStack.push(About) },
+            inPane = twoPane,
+        )
+    }
+    entry<Workout> { WorkoutRoute(onExit = { backStack.removeLastOrNull() }) }
+    entry<About> {
+        AboutRoute(
+            onBack = { backStack.removeLastOrNull() },
+            onShowLicenses = { backStack.push(Licenses) },
+        )
+    }
+    entry<Licenses> { LicensesRoute(onBack = { backStack.removeLastOrNull() }) }
 }
 
 /** The line along the top of the bottom bar, drawn over the bottom edge of the content above it. */
@@ -225,6 +249,11 @@ private fun Modifier.hairlineAtBottom(color: Color): Modifier = drawWithContent 
     val stroke = Sizes.hairline.toPx()
     val y = size.height - stroke / 2
     drawLine(color, Offset(0f, y), Offset(size.width, y), stroke)
+}
+
+/** Pushes [key] unless it is on top already: a double tap on Start must not stack two workouts. */
+private fun NavBackStack<NavKey>.push(key: NavKey) {
+    if (lastOrNull() != key) add(key)
 }
 
 /** Shows [tab]: Timer is the root, so it pops back to it; any other tab replaces what is above Timer. */

@@ -20,6 +20,7 @@ import platform.AVFAudio.AVSpeechSynthesizer
 import platform.AVFAudio.AVSpeechUtterance
 import platform.AudioToolbox.AudioServicesPlaySystemSound
 import platform.Foundation.NSApplicationSupportDirectory
+import platform.Foundation.NSBundle
 import platform.Foundation.NSCalendar
 import platform.Foundation.NSCalendarUnitDay
 import platform.Foundation.NSCalendarUnitEra
@@ -54,7 +55,14 @@ actual fun rememberPlatformModule(): Module = remember {
             onClose { it?.release() }
         }
         single<TimestampFormatter> { FoundationTimestampFormatter() }
+        single<AppInfo> { IosAppInfo() }
     }
+}
+
+/** The bundle's short version string: `MARKETING_VERSION` in the Xcode project. */
+private class IosAppInfo : AppInfo {
+    override val version: String? =
+        NSBundle.mainBundle.objectForInfoDictionaryKey("CFBundleShortVersionString") as? String
 }
 
 @Composable

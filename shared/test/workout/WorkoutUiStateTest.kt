@@ -20,7 +20,7 @@ class WorkoutUiStateTest {
         }
 
     @Test
-    fun `seconds left round up, as the clock shows them`() {
+    fun `seconds left round up as the clock shows them`() {
         val state = after(elapsedMillis = 16_100).toUiState(running = true)
         assertEquals(Phase.Work, state.phase)
         assertEquals("0:04", state.clock)
@@ -28,7 +28,7 @@ class WorkoutUiStateTest {
     }
 
     @Test
-    fun `the last three seconds count down, only while running`() {
+    fun `the last three seconds count down only while running`() {
         assertFalse(after(16_100).toUiState(running = true).countingDown, "4 seconds left")
         assertTrue(after(17_100).toUiState(running = true).countingDown, "3 seconds left")
         assertTrue(after(19_900).toUiState(running = true).countingDown, "1 second left")

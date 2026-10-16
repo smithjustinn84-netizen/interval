@@ -220,6 +220,35 @@ fun RowDivider(modifier: Modifier = Modifier) {
 }
 
 /**
+ * A row that leads to another screen: a [title] with an optional [subtitle], and a chevron saying so.
+ * The row itself is the button; the chevron is drawn, not read.
+ */
+@Composable
+fun LinkRow(title: String, subtitle: String?, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    Row(
+        modifier
+            .fillMaxWidth()
+            .heightIn(min = Sizes.listRow)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(start = Spacing.space16, end = Spacing.space12, top = Spacing.space8, bottom = Spacing.space8),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, style = IntervalTheme.type.label, color = palette.text)
+            if (subtitle != null) Text(subtitle, style = IntervalTheme.type.meta, color = palette.textDim)
+        }
+        Icon(
+            IntervalIcons.Chevron,
+            contentDescription = null,
+            tint = palette.textDim,
+            modifier = Modifier.size(Sizes.icon),
+        )
+    }
+}
+
+/**
  * What a list shows before it has anything: an [icon] in a ring of the accent's tint, a [title] and
  * a line of [text] saying what will appear, centred in whatever card holds it.
  */

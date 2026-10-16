@@ -28,3 +28,11 @@ data object Settings : NavKey
 /** The running timer, full screen, and its summary when it ends. */
 @Serializable
 data object Workout : NavKey
+
+/** The app's mark, version and maker, and the way to its licences. Pushed from Settings. */
+@Serializable
+data object About : NavKey
+
+/** The licences of the fonts and libraries the app ships with. Pushed from About. */
+@Serializable
+data object Licenses : NavKey
