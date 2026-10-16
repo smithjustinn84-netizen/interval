@@ -21,6 +21,7 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
@@ -51,6 +52,7 @@ import dev.justinsmith.interval.platform.SystemBarIcons
 import dev.justinsmith.interval.platform.materialBackPreview
 import dev.justinsmith.interval.presets.PresetsRoute
 import dev.justinsmith.interval.settings.SettingsRoute
+import dev.justinsmith.interval.splash.WithIntro
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.NavigationItems
 import dev.justinsmith.interval.ui.Sizes
@@ -84,11 +86,14 @@ internal val navConfiguration = SavedStateConfiguration {
     }
 }
 
-/** The root composable every platform entry point hosts. */
+/** The root composable every platform entry point hosts: the app, with the intro over it at launch. */
 @Composable
 @DevelopmentEntryPoint
 fun App() {
-    AppContent(rememberAppKoin())
+    val koin = rememberAppKoin()
+    val repository = remember(koin) { koin.koin.get<IntervalRepository>() }
+    val ready by repository.ready.collectAsStateWithLifecycle()
+    WithIntro(ready) { AppContent(koin) }
 }
 
 /** [App] with its container passed in, so tests can run the whole app over fake platform services. */

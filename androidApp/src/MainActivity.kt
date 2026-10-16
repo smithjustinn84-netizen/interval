@@ -10,8 +10,10 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Before super.onCreate: swaps the starting theme for `postSplashScreenTheme`.
-        installSplashScreen()
+        // Before super.onCreate: swaps the starting theme for `postSplashScreenTheme`. The intro's first
+        // frame is this splash, drawn again in Compose, so drop the system one at once rather than
+        // fading it over the intro.
+        installSplashScreen().setOnExitAnimationListener { it.remove() }
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContent {
