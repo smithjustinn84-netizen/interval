@@ -14,6 +14,7 @@ import dev.justinsmith.interval.platform.Beep
 import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.TimestampFormatter
+import dev.justinsmith.interval.platform.WallClock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -152,8 +153,11 @@ fun fakePlatformModule(
     single { formatter }
 }
 
-/** The app's real container over fake platform services and storage, for `AppContent`. */
+/** The app's real container over fake platform services and storage, for `AppContent`. Time stands at [now]. */
 fun testKoin(
     platformModule: Module = fakePlatformModule(),
     storage: FakeStorage = FakeStorage(),
-): KoinApplication = koinApplication { modules(appModules(platformModule, fakeStorageModule(storage))) }
+    now: Long = 0L,
+): KoinApplication = koinApplication {
+    modules(appModules(platformModule, fakeStorageModule(storage)) + module { single { WallClock { now } } })
+}

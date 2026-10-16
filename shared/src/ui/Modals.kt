@@ -32,6 +32,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
@@ -113,19 +115,54 @@ fun RowScope.DialogButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
+    ModalButton(
+        text = text,
+        onClick = onClick,
+        primary = primary,
+        style = IntervalTheme.type.control,
+        padding = Spacing.space12,
+        modifier = modifier.weight(1f),
+        enabled = enabled,
+    )
+}
+
+/** A full-width accent button for a sheet's confirming action. */
+@Composable
+fun AccentButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+    ModalButton(
+        text = text,
+        onClick = onClick,
+        primary = true,
+        style = IntervalTheme.type.primaryControl,
+        padding = Spacing.space24,
+        modifier = modifier,
+        enabled = enabled,
+    )
+}
+
+/** The button recipe dialogs and sheets share: accent when [primary], a quiet fill otherwise, faded while disabled. */
+@Composable
+private fun ModalButton(
+    text: String,
+    onClick: () -> Unit,
+    primary: Boolean,
+    style: TextStyle,
+    padding: Dp,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
     val palette = IntervalTheme.palette
     val fill = if (primary) palette.accent else palette.surfaceVariant
     Box(
         modifier
-            .weight(1f)
             .heightIn(min = Sizes.save)
             .clip(Corners.radius14)
             .background(if (enabled) fill else fill.copy(alpha = Opacity.DISABLED))
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = Spacing.space12),
+            .padding(horizontal = padding),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = IntervalTheme.type.control, color = if (primary) palette.onAccent else palette.text)
+        Text(text, style = style, color = if (primary) palette.onAccent else palette.text)
     }
 }
 

@@ -1,7 +1,6 @@
 package dev.justinsmith.interval.workout
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,12 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,28 +29,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigationevent.NavigationEventInfo
@@ -66,14 +46,10 @@ import dev.justinsmith.interval.platform.KeepScreenOn
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.ui.ConfirmDialog
-import dev.justinsmith.interval.ui.Corners
-import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
-import dev.justinsmith.interval.ui.MAX_ROUND_MARKS
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.PreviewFormFactors
-import dev.justinsmith.interval.ui.SavePresetDialog
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import org.koin.compose.currentKoinScope
@@ -159,10 +135,7 @@ fun WorkoutScreen(
         if (state.isDone) {
             SummaryLayout(state, landscape = maxWidth > maxHeight, onRestart, onSavePreset, onExit)
         } else if (maxWidth > maxHeight) {
-            // A phone held sideways keeps the canvas's cap; tablets and desktop windows have the room
-            // for the clock style's full size.
-            val clockMax = if (maxHeight < Sizes.landscapeMaxHeight) LANDSCAPE_CLOCK_MAX else LANDSCAPE_CLOCK_MAX_LARGE
-            LandscapeWorkout(state, clockMax, onTogglePause, onSkip, onBack, onAddTime, requestEnd)
+            LandscapeWorkout(state, landscapeClockMax(maxHeight), onTogglePause, onSkip, onBack, onAddTime, requestEnd)
         } else {
             PortraitWorkout(
                 state = state,
@@ -342,420 +315,6 @@ private fun TopBar(state: WorkoutUiState, onEnd: () -> Unit, onSkip: () -> Unit)
         PillButton(text = "Skip", onClick = onSkip, description = "Skip to next interval")
     }
 }
-
-/** End pauses the workout and asks before throwing it away (see [WorkoutScreen]). */
-@Composable
-private fun EndPill(onEnd: () -> Unit, modifier: Modifier = Modifier) {
-    PillButton(text = "End", onClick = onEnd, description = "End workout", modifier = modifier)
-}
-
-/** The round dots over the status line ("Round 3 of 8 · 4:03 left"). */
-@Composable
-private fun RoundStatus(state: WorkoutUiState, modifier: Modifier = Modifier) {
-    Column(
-        modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(Spacing.space6),
-    ) {
-        // Dots stop being readable past a dozen rounds; the text below says the same thing.
-        if (state.rounds <= MAX_ROUND_MARKS) RoundDots(state)
-        if (state.meta.isNotEmpty()) {
-            Text(
-                state.meta,
-                style = IntervalTheme.type.cardTitle,
-                color = PhaseColors.onPhase85,
-                textAlign = TextAlign.Center,
-            )
-        }
-    }
-}
-
-@Composable
-private fun RoundDots(state: WorkoutUiState) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
-        modifier = Modifier.clearAndSetSemantics {},
-    ) {
-        repeat(state.rounds) { index ->
-            val round = index + 1
-            val halo = PhaseColors.dotHalo
-            val dot = Modifier.size(Sizes.dot)
-            when {
-                round == state.activeRound -> Box(
-                    dot
-                        .drawBehind { drawCircle(halo, radius = size.minDimension / 2 + Sizes.dotHalo.toPx()) }
-                        .background(PhaseColors.onPhase, CircleShape),
-                )
-
-                round <= state.completedRounds -> Box(dot.background(PhaseColors.onPhase, CircleShape))
-
-                else -> Box(dot.background(halo, CircleShape))
-            }
-        }
-    }
-}
-
-@Composable
-private fun PortraitReadout(state: WorkoutUiState, clockSize: TextUnit) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        PhaseLabel(state, IntervalTheme.type.phaseLabel)
-        Clock(state, clockSize)
-        Text(
-            state.next,
-            style = IntervalTheme.type.nextUp,
-            color = PhaseColors.onPhase85,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = Spacing.space12),
-        )
-        TapHint(state, Modifier.padding(top = Spacing.space26))
-    }
-}
-
-/**
- * The landscape readout: label, clock, next up and hint, stacked and centred. The clock takes the
- * height the other lines leave, up to [clockMax], and never more than fits across.
- */
-@Composable
-private fun LandscapeReadout(state: WorkoutUiState, clockMax: TextUnit) {
-    Column(
-        Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        PhaseLabel(state, IntervalTheme.type.phaseLabel)
-        // Weighted children are measured last, so this box gets exactly the height left over.
-        BoxWithConstraints(Modifier.weight(1f, fill = false), contentAlignment = Alignment.Center) {
-            val density = LocalDensity.current
-            val byHeight = with(density) { (maxHeight / LANDSCAPE_CLOCK_LINE_HEIGHT).toSp() }
-            val byWidth = with(density) { (maxWidth / (state.clock.length * CLOCK_EMS_PER_CHAR)).toSp() }
-            val size = minOf(clockMax.value, byHeight.value, byWidth.value).sp
-            Clock(state, size, lineHeight = size * LANDSCAPE_CLOCK_LINE_HEIGHT)
-        }
-        Text(
-            state.next,
-            style = IntervalTheme.type.nextUp,
-            color = PhaseColors.onPhase85,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = Spacing.space8),
-        )
-        TapHint(state, Modifier.padding(top = Spacing.space6))
-    }
-}
-
-@Composable
-private fun PhaseLabel(state: WorkoutUiState, style: TextStyle) {
-    Text(state.label, style = style, color = PhaseColors.onPhase90)
-}
-
-@Composable
-private fun Clock(state: WorkoutUiState, size: TextUnit, lineHeight: TextUnit = size) {
-    // A short pop each time a new interval starts, so the change registers even in peripheral vision.
-    val scale = remember { Animatable(1f) }
-    LaunchedEffect(state.phase, state.completedRounds) {
-        scale.snapTo(Motion.CLOCK_POP_SCALE)
-        scale.animateTo(1f, tween(Motion.CLOCK_POP_MILLIS))
-    }
-    Text(
-        state.clock,
-        style = IntervalTheme.type.clock.copy(fontSize = size, lineHeight = lineHeight),
-        color = PhaseColors.onPhase,
-        maxLines = 1,
-        softWrap = false,
-        modifier = Modifier.graphicsLayer {
-            scaleX = scale.value
-            scaleY = scale.value
-        },
-    )
-}
-
-@Composable
-private fun TapHint(state: WorkoutUiState, modifier: Modifier = Modifier) {
-    Text(
-        if (state.paused) "Tap anywhere to resume" else "Tap anywhere to pause",
-        style = IntervalTheme.type.meta,
-        color = if (state.paused) PhaseColors.onPhase else PhaseColors.onPhase65,
-        fontWeight = if (state.paused) FontWeight.SemiBold else FontWeight.Normal,
-        modifier = modifier,
-    )
-}
-
-/**
- * What the workout came to: Done (or Ended), its shape, time and rounds, that it was saved, and what
- * next. Save as preset shows only for a shape no preset has.
- */
-@Composable
-private fun SummaryLayout(
-    state: WorkoutUiState,
-    landscape: Boolean,
-    onRepeat: () -> Unit,
-    onSavePreset: (String) -> Unit,
-    onDone: () -> Unit,
-) {
-    var saving by rememberSaveable { mutableStateOf(false) }
-    val padding = Modifier
-        .fillMaxSize()
-        .safeDrawingPadding()
-        .padding(horizontal = Spacing.space20, vertical = Spacing.space16)
-    if (landscape) {
-        Row(
-            padding,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.space28),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            SummaryReadout(state, Modifier.weight(1f))
-            SummaryActions(state, onRepeat, { saving = true }, onDone, Modifier.width(Sizes.setupColumnLandscape))
-        }
-    } else {
-        Column(padding) {
-            SummaryReadout(state, Modifier.weight(1f).fillMaxWidth())
-            SummaryActions(state, onRepeat, { saving = true }, onDone, Modifier.fillMaxWidth())
-        }
-    }
-    if (saving) {
-        SavePresetDialog(
-            summary = state.shape,
-            onSave = {
-                onSavePreset(it)
-                saving = false
-            },
-            onDismiss = { saving = false },
-        )
-    }
-}
-
-@Composable
-private fun SummaryActions(
-    state: WorkoutUiState,
-    onRepeat: () -> Unit,
-    onSave: () -> Unit,
-    onDone: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space10)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space10)) {
-            BigButton("Repeat", onRepeat, Modifier.weight(1f).height(Sizes.save))
-            if (state.canSavePreset) {
-                BigButton("Save as preset", onSave, Modifier.weight(1f).height(Sizes.save))
-            }
-        }
-        BigButton(
-            "Done",
-            onDone,
-            Modifier.fillMaxWidth().height(Sizes.control),
-            background = PhaseColors.onPhase,
-            content = PhaseColors.ink,
-            style = IntervalTheme.type.primaryControl,
-        )
-    }
-}
-
-@Composable
-private fun SummaryReadout(state: WorkoutUiState, modifier: Modifier = Modifier) {
-    Column(
-        modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        if (state.rounds <= MAX_ROUND_MARKS) SummaryDots(state, Modifier.padding(bottom = Spacing.space12))
-        Text(if (state.ended) "Ended" else "Done", style = IntervalTheme.type.done, color = PhaseColors.onPhase)
-        Text(
-            state.summary,
-            style = IntervalTheme.type.summary,
-            color = PhaseColors.onPhase90,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = Spacing.space8),
-        )
-        Text(state.shape, style = IntervalTheme.type.meta, color = PhaseColors.onPhase85, textAlign = TextAlign.Center)
-        Row(
-            Modifier.padding(top = Spacing.space28).widthIn(max = Sizes.content),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.space10),
-        ) {
-            Stat(state.elapsed, "Time", Modifier.weight(1f))
-            Stat("${state.completedRounds}/${state.rounds}", "Rounds", Modifier.weight(1f))
-        }
-        Row(
-            Modifier.padding(top = Spacing.space20),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.space6),
-        ) {
-            Icon(
-                IntervalIcons.Check,
-                contentDescription = null,
-                tint = PhaseColors.onPhase85,
-                modifier = Modifier.size(Sizes.icon),
-            )
-            Text("Saved to history", style = IntervalTheme.type.meta, color = PhaseColors.onPhase85)
-        }
-    }
-}
-
-@Composable
-private fun Stat(value: String, label: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier
-            .clip(Corners.radius16)
-            .background(PhaseColors.glass)
-            .padding(top = Spacing.space16, bottom = Spacing.space12),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(value, style = IntervalTheme.type.stat, color = PhaseColors.onPhase)
-        Text(
-            label,
-            style = IntervalTheme.type.metaStrong,
-            color = PhaseColors.onPhase,
-            modifier = Modifier.padding(top = Spacing.space4),
-        )
-    }
-}
-
-/** Every finished round as a filled dot, the rest as halos: the workout's dots, now at the end. */
-@Composable
-private fun SummaryDots(state: WorkoutUiState, modifier: Modifier = Modifier) {
-    Row(modifier.clearAndSetSemantics {}, horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-        repeat(state.rounds) { index ->
-            val done = index < state.completedRounds
-            Box(
-                Modifier.size(
-                    Sizes.dot,
-                ).background(if (done) PhaseColors.onPhase else PhaseColors.dotHalo, CircleShape),
-            )
-        }
-    }
-}
-
-/** How far through the current interval, as a bar. */
-@Composable
-private fun ProgressBar(progress: Float, modifier: Modifier = Modifier) {
-    Box(
-        modifier
-            .fillMaxWidth()
-            .height(Sizes.progress)
-            .clip(Corners.full)
-            .background(PhaseColors.progressTrack),
-    ) {
-        if (progress > 0f) {
-            Box(
-                Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(progress)
-                    .clip(Corners.full)
-                    .background(PhaseColors.onPhase),
-            )
-        }
-    }
-}
-
-@Composable
-private fun BottomControls(
-    state: WorkoutUiState,
-    onTogglePause: () -> Unit,
-    onBack: () -> Unit,
-    onAddTime: () -> Unit,
-) {
-    val height = Sizes.control
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.space10)) {
-        BigButton(
-            "Back",
-            onBack,
-            Modifier.width(Sizes.controlSide).height(height),
-            description = "Back to previous interval",
-        )
-        PrimaryButton(state, onTogglePause, Modifier.weight(1f).height(height))
-        BigButton(
-            "+10s",
-            onAddTime,
-            Modifier.width(Sizes.controlSide).height(height),
-            description = "Add ten seconds",
-        )
-    }
-}
-
-/** The white Pause / Resume button. */
-@Composable
-private fun PrimaryButton(state: WorkoutUiState, onTogglePause: () -> Unit, modifier: Modifier = Modifier) {
-    BigButton(
-        if (state.running) "Pause" else "Resume",
-        onTogglePause,
-        modifier,
-        background = PhaseColors.onPhase,
-        content = PhaseColors.ink,
-        style = IntervalTheme.type.primaryControl,
-    )
-}
-
-@Composable
-private fun BigButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    background: Color = PhaseColors.glass,
-    content: Color = PhaseColors.onPhase,
-    style: TextStyle = IntervalTheme.type.control,
-    description: String? = null,
-) {
-    Box(
-        modifier
-            .clip(Corners.radius16)
-            .background(background)
-            .clickable(role = Role.Button, onClick = onClick)
-            .then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text, style = style, color = content)
-    }
-}
-
-@Composable
-private fun PillButton(
-    text: String,
-    onClick: () -> Unit,
-    description: String,
-    modifier: Modifier = Modifier,
-    background: Color = PhaseColors.glass,
-    content: Color = PhaseColors.onPhase,
-) {
-    Box(
-        modifier
-            .sizeIn(minWidth = Sizes.pillWidth, minHeight = Sizes.pillHeight)
-            .clip(Corners.radius12)
-            .background(background)
-            .clickable(role = Role.Button, onClick = onClick)
-            .semantics { contentDescription = description }
-            .padding(horizontal = Spacing.space18),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text,
-            style = IntervalTheme.type.cardTitle,
-            color = content,
-            modifier = Modifier.clearAndSetSemantics {},
-        )
-    }
-}
-
-/**
- * The portrait clock fills the width its digits allow, between a floor and the clock style's size:
- * "0:14" on a phone comes out around 190sp, as the design canvas draws it, and "10:00" smaller.
- */
-private fun portraitClockSize(width: Dp, chars: Int): TextUnit =
-    (width.value / (chars * PORTRAIT_CLOCK_EMS_PER_CHAR)).coerceIn(PORTRAIT_CLOCK_MIN, PORTRAIT_CLOCK_MAX).sp
-
-/** Width per clock character in portrait, where the tight tracking lets the digits sit closer. */
-private const val PORTRAIT_CLOCK_EMS_PER_CHAR = 0.46f
-private const val PORTRAIT_CLOCK_MIN = 96f
-private const val PORTRAIT_CLOCK_MAX = 240f
-
-/** The landscape clock's size cap on a phone held sideways, as drawn on the design canvas. */
-private val LANDSCAPE_CLOCK_MAX = 200.sp
-
-/** The cap on wider-than-tall tablets and desktop windows: the clock style's portrait maximum. */
-private val LANDSCAPE_CLOCK_MAX_LARGE = 240.sp
-
-/** Landscape sets the clock tighter than its size (170 on 200), so it fits between label and next up. */
-private const val LANDSCAPE_CLOCK_LINE_HEIGHT = 0.85f
-
-/** A generous width per clock character in Barlow Condensed ExtraBold, so "10:00" never wraps. */
-private const val CLOCK_EMS_PER_CHAR = 0.52f
 
 @Composable
 private fun WorkoutPreview(state: WorkoutUiState) {

@@ -106,6 +106,15 @@ class IntervalRepositoryTest {
     }
 
     @Test
+    fun `presets list the built-ins then the saved ones marked custom`() {
+        val repository = repository()
+        repository.saveCurrentAsPreset("Mine")
+        val presets = repository.presets.value
+        assertEquals(builtInPresets + repository.customPresets.value, presets.map { it.preset })
+        assertEquals(listOf("Mine"), presets.filter { it.custom }.map { it.preset.name })
+    }
+
+    @Test
     fun `deleting a built-in preset does nothing`() {
         val repository = repository()
         repository.saveCurrentAsPreset("Mine")
@@ -132,9 +141,9 @@ class IntervalRepositoryTest {
         repository().recordWorkout(IntervalConfig(), elapsedSeconds = 42)
         repository().recordWorkout(IntervalConfig(), elapsedSeconds = 7, endedEarly = true)
         val (early, full) = repository().history.value
-        assertEquals(42, full.durationSeconds)
+        assertEquals(42, full.elapsedSeconds)
         assertFalse(full.endedEarly)
-        assertEquals(7, early.durationSeconds)
+        assertEquals(7, early.elapsedSeconds)
         assertTrue(early.endedEarly)
     }
 

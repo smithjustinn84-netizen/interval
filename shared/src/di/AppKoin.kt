@@ -10,6 +10,7 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import dev.justinsmith.interval.data.AppDatabase
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.platform.PlatformStorage
+import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.epochMillisNow
 import dev.justinsmith.interval.platform.rememberPlatformModule
 import kotlinx.coroutines.CoroutineScope
@@ -68,13 +69,14 @@ private fun preferencesAt(path: String): DataStore<Preferences> = preferenceStor
 
 /** One Koin module per domain; add new ones to [appModules]. */
 val timerModule: Module = module {
+    single { WallClock(::epochMillisNow) }
     single {
         IntervalRepository(
             settings = get(),
             historyDao = get(),
             presetDao = get(),
             scope = get(StorageScope),
-            now = ::epochMillisNow,
+            now = get<WallClock>()::nowMillis,
         )
     }
 }

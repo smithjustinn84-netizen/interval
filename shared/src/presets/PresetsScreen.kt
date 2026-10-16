@@ -3,7 +3,6 @@
 package dev.justinsmith.interval.presets
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -40,7 +39,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
-import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -48,7 +46,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.formatClock
-import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
@@ -62,6 +59,7 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.Timeline
 import dev.justinsmith.interval.ui.TitleBar
+import dev.justinsmith.interval.ui.selectableCard
 import org.koin.compose.currentKoinScope
 
 /** Resolves the tab's ViewModel and binds it to [PresetsScreen]. A picked preset shows on the Timer tab. */
@@ -243,15 +241,11 @@ private fun PresetCard(
     deletable: Boolean = false,
 ) {
     val palette = IntervalTheme.palette
-    val shape = Corners.radius14
     Column(
         modifier
             .fillMaxWidth()
-            .clip(shape)
-            .background(if (item.selected) palette.accentTint else palette.surface)
-            .border(Sizes.border, if (item.selected) palette.accent else palette.line, shape)
+            .selectableCard(item.selected)
             .combinedClickable(role = Role.Button, onLongClick = onLongClick, onClick = onClick)
-            .semantics { selected = item.selected }
             .padding(start = Spacing.space14, end = Spacing.space14, top = Spacing.space14, bottom = Spacing.space12),
         verticalArrangement = Arrangement.spacedBy(Spacing.space8),
     ) {

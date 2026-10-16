@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
@@ -30,7 +29,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.paneTitle
@@ -48,44 +46,6 @@ import dev.justinsmith.interval.timer.format
 import kotlinx.coroutines.flow.dropWhile
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-
-/** How each [ConfigField] is named and described wherever it is edited. */
-val ConfigField.label: String
-    get() = when (this) {
-        ConfigField.Prep -> "Get ready"
-        ConfigField.Work -> "Work"
-        ConfigField.Rest -> "Rest"
-        ConfigField.Rounds -> "Rounds"
-    }
-
-val ConfigField.hint: String
-    get() = when (this) {
-        ConfigField.Prep -> "Countdown before the first round"
-        ConfigField.Work -> "Effort interval"
-        ConfigField.Rest -> "Recovery between rounds"
-        ConfigField.Rounds -> "Work intervals in the set"
-    }
-
-/** The phase stripe that ties a field to its workout colour; Rounds takes the accent. */
-@Composable
-@ReadOnlyComposable
-fun ConfigField.stripe(): Color = when (this) {
-    ConfigField.Prep -> PhaseColors.prep
-    ConfigField.Work -> PhaseColors.work
-    ConfigField.Rest -> PhaseColors.rest
-    ConfigField.Rounds -> IntervalTheme.palette.accent
-}
-
-/** The pale wash of the field's colour behind its value. */
-@Composable
-@ReadOnlyComposable
-fun ConfigField.tint(): Color = IntervalTheme.palette.tint(stripe())
-
-/** The field's value on its [tint]: its own colour, except Get ready, whose amber is darkened to read. */
-@Composable
-@ReadOnlyComposable
-fun ConfigField.valueColor(): Color =
-    if (this == ConfigField.Prep) IntervalTheme.palette.onPrepTint else stripe()
 
 private val ConfigField.less: String
     get() = if (this == ConfigField.Rounds) "Fewer rounds" else "Less ${label.lowercase()} time"
@@ -223,14 +183,13 @@ private fun SheetStepper(field: ConfigField, value: Int, onStep: (Int) -> Unit, 
                 modifier = Modifier.size(Sizes.sheetStepper),
             )
         }
+        val hint = if (field == ConfigField.Rounds) {
+            "Hold − or + to change faster."
+        } else {
+            "Steps of ${field.step}s. Hold to change faster."
+        }
         Text(
-            if (field ==
-                ConfigField.Rounds
-            ) {
-                "Hold − or + to change faster."
-            } else {
-                "Steps of ${field.step}s. Hold to change faster."
-            },
+            hint,
             style = IntervalTheme.type.hint,
             color = palette.textDim,
             modifier = Modifier.padding(top = Spacing.space8),
@@ -245,9 +204,13 @@ private fun QuickPicks(field: ConfigField, value: Int, onPick: (Int) -> Unit, mo
         field.quickPicks.chunked(QUICK_PICKS_PER_ROW).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
                 row.forEach { pick ->
-                    QuickPick(field, field.format(pick), selected = pick == value, {
-                        onPick(pick)
-                    }, Modifier.weight(1f))
+                    QuickPick(
+                        field,
+                        field.format(pick),
+                        selected = pick == value,
+                        onClick = { onPick(pick) },
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
         }

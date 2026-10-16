@@ -30,14 +30,10 @@ private val Tabs = listOf(
  * narrower than [Sizes.railMinWidth], a rail otherwise. Material's default would also give a phone
  * held sideways a bar, since its height is compact; the rail keeps the little height there is.
  */
-fun navigationSuiteType(width: Dp, height: Dp): NavigationSuiteType =
-    if (width >= Sizes.railMinWidth ||
-        width > height
-    ) {
-        NavigationSuiteType.NavigationRail
-    } else {
-        NavigationSuiteType.NavigationBar
-    }
+fun navigationSuiteType(width: Dp, height: Dp): NavigationSuiteType {
+    val rail = width >= Sizes.railMinWidth || width > height
+    return if (rail) NavigationSuiteType.NavigationRail else NavigationSuiteType.NavigationBar
+}
 
 /** The bar's and the rail's containers in the app's colours. */
 @Composable

@@ -5,10 +5,9 @@ import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.data.HistoryEntry
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.platform.TimestampFormatter
-import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.timer.PresetEntry
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
-import dev.justinsmith.interval.timer.presetEntries
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -53,19 +52,18 @@ class HistoryViewModel(
     private val timestamps: TimestampFormatter,
     private val now: () -> Long,
 ) : ViewModel() {
-    val state: StateFlow<HistoryUiState> = combine(repository.history, repository.customPresets, ::buildState)
+    val state: StateFlow<HistoryUiState> = combine(repository.history, repository.presets, ::buildState)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.Eagerly,
-            initialValue = buildState(repository.history.value, repository.customPresets.value),
+            initialValue = buildState(repository.history.value, repository.presets.value),
         )
 
     fun clear() {
         repository.clearHistory()
     }
 
-    private fun buildState(history: List<HistoryEntry>, custom: List<Preset>): HistoryUiState {
-        val presets = presetEntries(custom)
+    private fun buildState(history: List<HistoryEntry>, presets: List<PresetEntry>): HistoryUiState {
         val nowMillis = now()
         // History is newest first, so grouping keeps both the days and the rows within them in order.
         val sections = history
@@ -81,7 +79,7 @@ class HistoryViewModel(
                             title = name ?: entry.config.description,
                             detail = listOfNotNull(entry.config.description.takeIf { name != null }, ended, time)
                                 .joinToString(" · "),
-                            total = formatClock(entry.durationSeconds),
+                            total = formatClock(entry.elapsedSeconds),
                         )
                     },
                 )
@@ -94,7 +92,7 @@ class HistoryViewModel(
             DayTally(
                 label = WEEKDAY_INITIALS[weekday].toString(),
                 name = if (daysAgo == 0) "Today" else WEEKDAY_NAMES[weekday],
-                seconds = byDay[today - daysAgo]?.sumOf { it.durationSeconds } ?: 0,
+                seconds = byDay[today - daysAgo]?.sumOf { it.elapsedSeconds } ?: 0,
                 today = daysAgo == 0,
             )
         }
@@ -102,7 +100,7 @@ class HistoryViewModel(
         return HistoryUiState(
             sections = sections,
             weekCount = thisWeek.size,
-            weekTotal = formatClock(thisWeek.sumOf { it.durationSeconds }),
+            weekTotal = formatClock(thisWeek.sumOf { it.elapsedSeconds }),
             week = week,
         )
     }

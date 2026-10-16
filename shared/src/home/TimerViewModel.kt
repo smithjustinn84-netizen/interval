@@ -6,9 +6,9 @@ import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.timer.PresetEntry
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
-import dev.justinsmith.interval.timer.presetEntries
 import dev.justinsmith.interval.timer.sameShape
 import dev.justinsmith.interval.timer.stepped
 import dev.justinsmith.interval.timer.withValue
@@ -36,11 +36,11 @@ data class TimerUiState(
 }
 
 class TimerViewModel(private val repository: IntervalRepository) : ViewModel() {
-    val state: StateFlow<TimerUiState> = combine(repository.config, repository.customPresets, ::buildState)
+    val state: StateFlow<TimerUiState> = combine(repository.config, repository.presets, ::buildState)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.Eagerly,
-            initialValue = buildState(repository.config.value, repository.customPresets.value),
+            initialValue = buildState(repository.config.value, repository.presets.value),
         )
 
     fun step(field: ConfigField, direction: Int) {
@@ -59,8 +59,7 @@ class TimerViewModel(private val repository: IntervalRepository) : ViewModel() {
         repository.saveCurrentAsPreset(name)
     }
 
-    private fun buildState(config: IntervalConfig, custom: List<Preset>): TimerUiState {
-        val entries = presetEntries(custom)
+    private fun buildState(config: IntervalConfig, entries: List<PresetEntry>): TimerUiState {
         val prep = config.prepSeconds
         return TimerUiState(
             config = config,

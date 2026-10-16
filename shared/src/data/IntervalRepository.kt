@@ -7,6 +7,8 @@ import androidx.datastore.preferences.core.emptyPreferences
 import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.timer.PresetEntry
+import dev.justinsmith.interval.timer.presetEntries
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -43,9 +45,7 @@ data class HistoryEntry(
     val config: IntervalConfig,
     val elapsedSeconds: Int,
     val endedEarly: Boolean,
-) {
-    val durationSeconds: Int get() = elapsedSeconds
-}
+)
 
 /**
  * The app's saved state: the current setup, cue toggles, app settings, custom presets and workout history.
@@ -84,6 +84,11 @@ class IntervalRepository(
     /** In the order they were saved. */
     val customPresets: StateFlow<List<Preset>> = _customPresets.asStateFlow()
 
+    private val _presets = MutableStateFlow(presetEntries(emptyList()))
+
+    /** Every preset the lists show: the built-ins, then [customPresets]. Updated with it, never behind. */
+    val presets: StateFlow<List<PresetEntry>> = _presets.asStateFlow()
+
     private val _history = MutableStateFlow(emptyList<HistoryEntry>())
 
     // Queued in call order and run one at a time, so a save can't overtake an earlier one (a clear
@@ -102,7 +107,9 @@ class IntervalRepository(
             val historyLoaded = CompletableDeferred<Unit>()
             launch {
                 presetDao.observeAll().orEmptyOnError("presets").collect { rows ->
-                    _customPresets.value = rows.map { it.toDomain() }
+                    val custom = rows.map { it.toDomain() }
+                    _customPresets.value = custom
+                    _presets.value = presetEntries(custom)
                     presetsLoaded.complete(Unit)
                 }
             }
@@ -150,7 +157,7 @@ class IntervalRepository(
 
     /** Saves the current configuration under [name]; a blank name becomes "Custom N". */
     fun saveCurrentAsPreset(name: String) {
-        val label = name.trim().ifEmpty { "Custom ${_customPresets.value.size + 1}" }.take(MAX_PRESET_NAME)
+        val label = name.trim().ifEmpty { "Custom ${_customPresets.value.size + 1}" }.take(Preset.MAX_NAME_LENGTH)
         val preset = Preset(label, _config.value)
         persist { presetDao.insert(preset.toEntity()) }
     }
@@ -190,9 +197,5 @@ class IntervalRepository(
         } catch (e: Exception) {
             log.e(e) { "Couldn't save" }
         }
-    }
-
-    companion object {
-        const val MAX_PRESET_NAME = 24
     }
 }

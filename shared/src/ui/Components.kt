@@ -2,6 +2,7 @@ package dev.justinsmith.interval.ui
 
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -39,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.FirstBaseline
@@ -48,6 +50,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
@@ -323,6 +326,19 @@ fun Timeline(
             Box(Modifier.weight(seconds.toFloat()).fillMaxHeight().background(color))
         }
     }
+}
+
+/**
+ * The ground of a card that can be the current choice, such as a preset: the surface with a line
+ * border, or the accent's tint and the accent itself once [selected]. Also tells screen readers.
+ */
+@Composable
+fun Modifier.selectableCard(selected: Boolean, shape: Shape = Corners.radius14): Modifier {
+    val palette = IntervalTheme.palette
+    return clip(shape)
+        .background(if (selected) palette.accentTint else palette.surface)
+        .border(Sizes.border, if (selected) palette.accent else palette.line, shape)
+        .semantics { this.selected = selected }
 }
 
 /** A value in a pill of its own colour, on a pale wash of it: "0:20" in work red, "×8" in accent. */

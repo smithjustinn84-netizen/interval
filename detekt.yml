@@ -29,8 +29,10 @@ complexity:
     # Stateless screens take their state plus one callback per event; defaulted params are optional.
     ignoreDefaultParameters: true
   TooManyFunctions:
-    # A screen file is one public Route/Screen pair split into many small private composables.
-    ignorePrivate: true
+    # Private functions count too: a screen file that keeps growing private composables is how a god
+    # file starts. A Route/Screen pair plus a dozen small private pieces fits; more wants splitting.
+    allowedFunctionsPerFile: 15
+    allowedFunctionsPerClass: 15
 
 style:
   MagicNumber:

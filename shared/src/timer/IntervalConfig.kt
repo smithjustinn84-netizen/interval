@@ -1,8 +1,5 @@
 package dev.justinsmith.interval.timer
 
-internal const val MILLIS_PER_SECOND = 1000L
-private const val SECONDS_PER_MINUTE = 60
-
 /** One workout's shape. Every duration is in whole seconds. */
 data class IntervalConfig(
     val prepSeconds: Int = 10,
@@ -70,43 +67,3 @@ fun IntervalConfig.sameShape(other: IntervalConfig): Boolean =
 /** Moves [field] one step in [direction] (+1 or -1), clamped to the field's range. */
 fun IntervalConfig.stepped(field: ConfigField, direction: Int): IntervalConfig =
     withValue(field, valueOf(field) + direction * field.step)
-
-/**
- * A named configuration. Built-ins ship with the app; custom ones are saved by the user and carry the
- * [id] they are stored under.
- */
-data class Preset(val name: String, val config: IntervalConfig, val id: Long? = null)
-
-/** A preset as the lists show it: whether it is one of the user's own, and so deletable. */
-data class PresetEntry(val preset: Preset, val custom: Boolean)
-
-/** Built-ins first, then the user's own in the order they were saved. */
-fun presetEntries(custom: List<Preset>): List<PresetEntry> =
-    builtInPresets.map { PresetEntry(it, custom = false) } + custom.map { PresetEntry(it, custom = true) }
-
-/** The first preset with [config]'s shape, if any. */
-fun List<PresetEntry>.matching(config: IntervalConfig): Preset? =
-    firstOrNull { it.preset.config.sameShape(config) }?.preset
-
-val builtInPresets: List<Preset> = listOf(
-    Preset("Tabata", IntervalConfig(prepSeconds = 10, workSeconds = 20, restSeconds = 10, rounds = 8)),
-    Preset("HIIT 30/30", IntervalConfig(prepSeconds = 10, workSeconds = 30, restSeconds = 30, rounds = 10)),
-    Preset("Hangboard", IntervalConfig(prepSeconds = 10, workSeconds = 10, restSeconds = 50, rounds = 6)),
-    Preset("Long efforts", IntervalConfig(prepSeconds = 5, workSeconds = 45, restSeconds = 15, rounds = 12)),
-)
-
-/** "0:30", "12:05". Negative input reads as zero. */
-fun formatClock(seconds: Int): String {
-    val s = seconds.coerceAtLeast(0)
-    return "${s / SECONDS_PER_MINUTE}:${(s % SECONDS_PER_MINUTE).toString().padStart(2, '0')}"
-}
-
-/** Whole seconds left in [millis], rounded up, so a display never shows 0:00 while time remains. */
-fun ceilSeconds(millis: Long): Int =
-    if (millis <= 0) 0 else ((millis + MILLIS_PER_SECOND - 1) / MILLIS_PER_SECOND).toInt()
-
-/** "45s", or "2m" for whole minutes. */
-fun shortDuration(seconds: Int): String {
-    val wholeMinutes = seconds >= SECONDS_PER_MINUTE && seconds % SECONDS_PER_MINUTE == 0
-    return if (wholeMinutes) "${seconds / SECONDS_PER_MINUTE}m" else "${seconds}s"
-}

@@ -3,7 +3,6 @@
 package dev.justinsmith.interval.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalGridApi
 import androidx.compose.foundation.layout.Grid
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,16 +17,13 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -41,7 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -50,10 +44,10 @@ import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
-import dev.justinsmith.interval.timer.format
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.valueOf
 import dev.justinsmith.interval.ui.Corners
+import dev.justinsmith.interval.ui.FieldRow
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -66,13 +60,8 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StartButton
 import dev.justinsmith.interval.ui.Timeline
 import dev.justinsmith.interval.ui.TitleBar
-import dev.justinsmith.interval.ui.ValuePill
 import dev.justinsmith.interval.ui.ValueSheet
-import dev.justinsmith.interval.ui.hint
-import dev.justinsmith.interval.ui.label
-import dev.justinsmith.interval.ui.stripe
-import dev.justinsmith.interval.ui.tint
-import dev.justinsmith.interval.ui.valueColor
+import dev.justinsmith.interval.ui.selectableCard
 import org.koin.compose.currentKoinScope
 
 /** The values the Timer tab edits. Get ready is a setting, edited from Settings. */
@@ -296,15 +285,11 @@ private fun PresetRow(
 @Composable
 private fun PresetCard(chip: PresetChip, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
-    val shape = Corners.radius14
     Column(
         modifier
             .width(Sizes.presetChip)
-            .clip(shape)
-            .background(if (chip.selected) palette.accentTint else palette.surface)
-            .border(Sizes.border, if (chip.selected) palette.accent else palette.line, shape)
+            .selectableCard(chip.selected)
             .clickable(role = Role.Button, onClick = onClick)
-            .semantics { selected = chip.selected }
             .padding(horizontal = Spacing.space14, vertical = Spacing.space12),
         verticalArrangement = Arrangement.spacedBy(Spacing.space6),
     ) {
@@ -345,9 +330,9 @@ private fun Intervals(config: IntervalConfig, onEdit: (ConfigField) -> Unit, mod
                     gap(Spacing.space8)
                 }) {
                     TimerFields.forEach { field ->
-                        IntervalRow(
+                        FieldRow(
                             field,
-                            field.format(config.valueOf(field)),
+                            config.valueOf(field),
                             onClick = { onEdit(field) },
                             modifier = Modifier
                                 .gridItem(columnSpan = if (field == ConfigField.Rounds) 2 else 1)
@@ -360,46 +345,11 @@ private fun Intervals(config: IntervalConfig, onEdit: (ConfigField) -> Unit, mod
                 ListCard {
                     TimerFields.forEachIndexed { index, field ->
                         if (index > 0) RowDivider()
-                        IntervalRow(field, field.format(config.valueOf(field)), onClick = { onEdit(field) })
+                        FieldRow(field, config.valueOf(field), onClick = { onEdit(field) })
                     }
                 }
             }
         }
-    }
-}
-
-/**
- * One value: its phase stripe, name and hint, and the value in a pill of its colour with a chevron;
- * tapping opens the sheet.
- */
-@Composable
-private fun IntervalRow(field: ConfigField, value: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val palette = IntervalTheme.palette
-    Row(
-        modifier
-            .fillMaxWidth()
-            .height(IntrinsicSize.Min)
-            .heightIn(min = Sizes.intervalRow)
-            .clickable(role = Role.Button, onClickLabel = "Edit ${field.label.lowercase()}", onClick = onClick),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.space14),
-    ) {
-        Box(Modifier.width(Sizes.stripe).fillMaxHeight().background(field.stripe()))
-        Column(Modifier.weight(1f).padding(vertical = Spacing.space10)) {
-            Text(field.label, style = IntervalTheme.type.cardTitle, color = palette.text)
-            Text(field.hint, style = IntervalTheme.type.hint, color = palette.textDim)
-        }
-        ValuePill(
-            if (field == ConfigField.Rounds) "×$value" else value,
-            color = field.valueColor(),
-            tint = field.tint(),
-        )
-        Icon(
-            IntervalIcons.Chevron,
-            contentDescription = null,
-            tint = palette.textDim,
-            modifier = Modifier.padding(end = Spacing.space12).size(Sizes.icon),
-        )
     }
 }
 

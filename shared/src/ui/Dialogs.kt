@@ -2,7 +2,6 @@ package dev.justinsmith.interval.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
@@ -27,28 +26,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import com.composeunstyled.TextInput
 import com.composeunstyled.UnstyledTextField
-import dev.justinsmith.interval.data.IntervalRepository
-
-/** A full-width accent button for a sheet or dialog's confirming action. */
-@Composable
-fun AccentButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
-    val palette = IntervalTheme.palette
-    Box(
-        modifier
-            .heightIn(min = Sizes.save)
-            .clip(Corners.radius14)
-            .background(if (enabled) palette.accent else palette.accent.copy(alpha = Opacity.DISABLED))
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = Spacing.space24),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text, style = IntervalTheme.type.primaryControl, color = palette.onAccent)
-    }
-}
+import dev.justinsmith.interval.timer.Preset
 
 /** Asks before an action that can't be undone: title, one line of text, a dismiss and a confirm action. */
 @Composable
@@ -95,7 +76,7 @@ fun SavePresetDialog(summary: String, onSave: (String) -> Unit, onDismiss: () ->
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
             Text("Name", style = IntervalTheme.type.groupLabel, color = palette.textDim, modifier = Modifier.weight(1f))
             Text(
-                "${name.text.length} / ${IntervalRepository.MAX_PRESET_NAME}",
+                "${name.text.length} / ${Preset.MAX_NAME_LENGTH}",
                 style = IntervalTheme.type.hint,
                 color = palette.textDim,
             )
@@ -118,7 +99,7 @@ private fun NameField(state: TextFieldState, onDone: () -> Unit) {
         cursorBrush = SolidColor(palette.accent),
         selectionColors = TextSelectionColors(handleColor = palette.accent, backgroundColor = palette.accentTint),
         lineLimits = TextFieldLineLimits.SingleLine,
-        inputTransformation = InputTransformation.maxLength(IntervalRepository.MAX_PRESET_NAME),
+        inputTransformation = InputTransformation.maxLength(Preset.MAX_NAME_LENGTH),
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
         onKeyboardAction = { onDone() },
         interactionSource = interaction,

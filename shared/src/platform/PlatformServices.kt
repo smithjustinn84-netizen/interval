@@ -81,3 +81,8 @@ expect val materialBackPreview: Boolean
 
 /** Milliseconds since the Unix epoch. */
 expect fun epochMillisNow(): Long
+
+/** The wall clock, injected so that tests can fix the time. */
+fun interface WallClock {
+    fun nowMillis(): Long
+}

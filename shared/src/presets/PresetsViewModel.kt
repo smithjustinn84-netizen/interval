@@ -5,9 +5,9 @@ import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.timer.PresetEntry
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
-import dev.justinsmith.interval.timer.presetEntries
 import dev.justinsmith.interval.timer.sameShape
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -31,11 +31,11 @@ data class PresetsUiState(
 )
 
 class PresetsViewModel(private val repository: IntervalRepository) : ViewModel() {
-    val state: StateFlow<PresetsUiState> = combine(repository.config, repository.customPresets, ::buildState)
+    val state: StateFlow<PresetsUiState> = combine(repository.config, repository.presets, ::buildState)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.Eagerly,
-            initialValue = buildState(repository.config.value, repository.customPresets.value),
+            initialValue = buildState(repository.config.value, repository.presets.value),
         )
 
     fun apply(preset: Preset) {
@@ -50,8 +50,7 @@ class PresetsViewModel(private val repository: IntervalRepository) : ViewModel()
         repository.deletePreset(preset)
     }
 
-    private fun buildState(config: IntervalConfig, custom: List<Preset>): PresetsUiState {
-        val entries = presetEntries(custom)
+    private fun buildState(config: IntervalConfig, entries: List<PresetEntry>): PresetsUiState {
         val rows = entries.map { entry ->
             entry.custom to PresetRowItem(
                 preset = entry.preset,

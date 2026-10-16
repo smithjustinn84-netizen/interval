@@ -2,21 +2,14 @@ package dev.justinsmith.interval.workout
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.interval.data.CueSettings
 import dev.justinsmith.interval.data.IntervalRepository
-import dev.justinsmith.interval.platform.Beep
 import dev.justinsmith.interval.platform.CuePlayer
-import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.timer.Cue
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
-import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.Step
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.timer.WorkoutState
-import dev.justinsmith.interval.timer.ceilSeconds
-import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
-import dev.justinsmith.interval.timer.presetEntries
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,105 +19,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.TimeSource
-
-data class WorkoutUiState(
-    val phase: Phase,
-    val running: Boolean,
-    val rounds: Int,
-    /** Rounds whose work interval is behind us. */
-    val completedRounds: Int,
-    /** The round being worked, or null between work intervals. */
-    val activeRound: Int?,
-    val clock: String,
-    val progress: Float,
-    val label: String,
-    val next: String,
-    val meta: String,
-    val summary: String,
-    /** True once the workout was ended before its last round; it then shows its summary like a finished one. */
-    val ended: Boolean = false,
-    /** The summary's heading line: the preset's name, or "Custom", and the workout's shape. */
-    val shape: String = "",
-    /** Time spent, for the summary. */
-    val elapsed: String = "",
-    /** Offer "Save as preset" on the summary: no preset has this shape yet. */
-    val canSavePreset: Boolean = false,
-) {
-    val isDone: Boolean get() = phase == Phase.Done || ended
-    val paused: Boolean get() = !running && !isDone
-
-    /** Ending now keeps a summary and a history entry only once a round is finished. */
-    val hasProgress: Boolean get() = completedRounds > 0
-}
-
-/**
- * The screen's view of an engine state. [ended] marks a workout stopped early; [presetName] is the
- * preset matching its shape, if any; [elapsedSeconds] is the time the timer has run.
- */
-fun WorkoutState.toUiState(
-    running: Boolean,
-    ended: Boolean = false,
-    presetName: String? = null,
-    elapsedSeconds: Int = 0,
-): WorkoutUiState {
-    val finished = isDone || ended
-    val paused = !running && !finished
-    val rounds = config.rounds
-    val completed = when (phase) {
-        Phase.Prep -> 0
-        Phase.Work -> round - 1
-        Phase.Rest -> round
-        Phase.Done -> rounds
-    }
-    return WorkoutUiState(
-        phase = phase,
-        running = running,
-        rounds = rounds,
-        completedRounds = completed,
-        activeRound = round.takeIf { phase == Phase.Work },
-        clock = formatClock(ceilSeconds(remainingMillis)),
-        progress = if (isDone) 0f else progress,
-        label = if (paused) {
-            "Paused"
-        } else {
-            when (phase) {
-                Phase.Prep -> "Get ready"
-                Phase.Work -> "Work"
-                Phase.Rest -> "Rest"
-                Phase.Done -> "Done"
-            }
-        },
-        next = when (phase) {
-            Phase.Prep -> "Next: work ${formatClock(config.workSeconds)}"
-
-            Phase.Work -> when {
-                isLastRound -> "Last round — finish strong"
-                config.restSeconds == 0 -> "Next: round ${round + 1} of $rounds"
-                else -> "Next: rest ${formatClock(config.restSeconds)}"
-            }
-
-            Phase.Rest -> "Next: round ${round + 1} of $rounds"
-
-            Phase.Done -> ""
-        },
-        meta = if (finished) {
-            ""
-        } else {
-            "Round $round of $rounds · ${formatClock(
-                ceilSeconds(sessionRemainingMillis),
-            )} left"
-        },
-        summary = if (ended) {
-            "$completed of $rounds rounds · ${formatClock(elapsedSeconds)}"
-        } else {
-            "$rounds round${if (rounds == 1) "" else "s"} · ${formatClock(config.totalSeconds)} total"
-        },
-        ended = ended,
-        shape = "${presetName ?: "Custom"} · ${config.description}",
-        elapsed = formatClock(elapsedSeconds),
-        canSavePreset = presetName == null,
-    )
-}
 
 /**
  * Runs one workout from the saved configuration: a coroutine ticker feeds elapsed time into
@@ -165,8 +59,7 @@ class WorkoutViewModel(
 
     fun pause() {
         running = false
-        ticker?.cancel()
-        ticker = null
+        stopTicker()
         publish()
     }
 
@@ -208,8 +101,7 @@ class WorkoutViewModel(
      */
     fun endEarly() {
         if (engine.isDone || ended) return
-        ticker?.cancel()
-        ticker = null
+        stopTicker()
         running = false
         ended = true
         repository.recordWorkout(config, elapsedSeconds = activeSeconds, endedEarly = true)
@@ -222,8 +114,7 @@ class WorkoutViewModel(
     }
 
     fun restart() {
-        ticker?.cancel()
-        ticker = null
+        stopTicker()
         ended = false
         activeMillis = 0
         val start = WorkoutEngine.start(config)
@@ -237,11 +128,15 @@ class WorkoutViewModel(
         play(step.cues)
         if (engine.isDone) {
             running = false
-            ticker?.cancel()
-            ticker = null
+            stopTicker()
             repository.recordWorkout(config, elapsedSeconds = activeSeconds)
         }
         publish()
+    }
+
+    private fun stopTicker() {
+        ticker?.cancel()
+        ticker = null
     }
 
     private fun publish() {
@@ -249,7 +144,7 @@ class WorkoutViewModel(
     }
 
     private fun uiState(running: Boolean): WorkoutUiState {
-        val name = presetEntries(repository.customPresets.value).matching(config)?.name
+        val name = repository.presets.value.matching(config)?.name
         return engine.toUiState(running, ended, name, activeSeconds)
     }
 
@@ -260,63 +155,5 @@ class WorkoutViewModel(
 
     companion object {
         const val TICK_MILLIS = 100L
-    }
-}
-
-/** Turns an engine [Cue] into the sounds, speech and vibration the user has switched on. */
-fun playCue(cue: Cue, settings: CueSettings, player: CuePlayer) {
-    with(SwitchedPlayer(settings, player)) {
-        when (cue) {
-            is Cue.Countdown -> {
-                beep(Beep.Countdown)
-                say(cue.secondsLeft.toString())
-            }
-
-            Cue.Halfway -> if (settings.halfway) {
-                if (settings.sound) beep(Beep.Halfway) else say("Halfway")
-            }
-
-            is Cue.PhaseStarted -> when (cue.phase) {
-                Phase.Prep -> {
-                    beep(Beep.Start)
-                    say("Get ready")
-                }
-
-                Phase.Work -> {
-                    beep(Beep.Work)
-                    buzz(Haptic.Work)
-                    say(if (cue.lastRound) "Last round. Work" else "Work")
-                }
-
-                Phase.Rest -> {
-                    beep(Beep.Rest)
-                    buzz(Haptic.Rest)
-                    say("Rest")
-                }
-
-                Phase.Done -> Unit
-            }
-
-            Cue.Finished -> {
-                beep(Beep.Finished)
-                buzz(Haptic.Finished)
-                say("Done. Nice work")
-            }
-        }
-    }
-}
-
-/** A [CuePlayer] behind the user's switches: each output does nothing while it is turned off. */
-private class SwitchedPlayer(private val settings: CueSettings, private val player: CuePlayer) {
-    fun beep(beep: Beep) {
-        if (settings.sound) player.beep(beep)
-    }
-
-    fun say(text: String) {
-        if (settings.voice) player.speak(text)
-    }
-
-    fun buzz(haptic: Haptic) {
-        if (settings.vibrate) player.vibrate(haptic)
     }
 }

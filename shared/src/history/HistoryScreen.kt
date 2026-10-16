@@ -32,7 +32,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.justinsmith.interval.platform.epochMillisNow
+import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.GroupLabel
@@ -54,7 +54,7 @@ import org.koin.compose.currentKoinScope
 @Composable
 fun HistoryRoute(modifier: Modifier = Modifier) {
     val scope = currentKoinScope()
-    val viewModel = viewModel { HistoryViewModel(scope.get(), scope.get(), ::epochMillisNow) }
+    val viewModel = viewModel { HistoryViewModel(scope.get(), scope.get(), scope.get<WallClock>()::nowMillis) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     HistoryScreen(state = state, onClear = viewModel::clear, modifier = modifier)
 }
@@ -81,9 +81,12 @@ fun HistoryScreen(state: HistoryUiState, onClear: () -> Unit, modifier: Modifier
                         onExpandedChange = { menu = it },
                         items = { IntervalMenuItem("Clear history", onClick = { confirming = true }) },
                     ) {
-                        IconAction(IntervalIcons.More, "More options", onClick = {
-                            menu = true
-                        }, enabled = !state.isEmpty)
+                        IconAction(
+                            IntervalIcons.More,
+                            "More options",
+                            onClick = { menu = true },
+                            enabled = !state.isEmpty,
+                        )
                     }
                 }
             }
@@ -186,13 +189,8 @@ private fun WeekChart(state: HistoryUiState, modifier: Modifier = Modifier) {
                 verticalArrangement = Arrangement.spacedBy(Spacing.space6),
             ) {
                 Box(Modifier.fillMaxWidth().height(Sizes.weekBar), contentAlignment = Alignment.BottomCenter) {
-                    val height = if (day.seconds > 0 &&
-                        max > 0
-                    ) {
-                        Sizes.weekBar * (day.seconds.toFloat() / max)
-                    } else {
-                        Sizes.weekBarEmpty
-                    }
+                    val share = if (max > 0) day.seconds.toFloat() / max else 0f
+                    val height = if (day.seconds > 0) Sizes.weekBar * share else Sizes.weekBarEmpty
                     Box(
                         Modifier
                             .fillMaxWidth()

@@ -135,7 +135,6 @@ data class IntervalType(
     /** The workout countdown; callers size it to the window with `copy(fontSize, lineHeight)`. */
     val clock: TextStyle,
     val done: TextStyle,
-    val phaseLabelLandscape: TextStyle,
     val phaseLabel: TextStyle,
     val screenTitle: TextStyle,
     val stepperValue: TextStyle,
@@ -191,7 +190,6 @@ private fun intervalType(body: TextStyle, label: TextStyle, condensed: FontFamil
     return IntervalType(
         clock = numerals(240.sp).copy(lineHeight = 240.sp),
         done = numerals(128.sp).copy(lineHeight = 120.sp),
-        phaseLabelLandscape = numerals(40.sp),
         phaseLabel = numerals(40.sp),
         screenTitle = numerals(36.sp),
         stepperValue = numerals(27.sp),

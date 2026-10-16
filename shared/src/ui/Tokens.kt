@@ -23,13 +23,9 @@ object Spacing {
     val space18 = 18.dp
     val space20 = 20.dp
 
-    /** Room a custom preset card keeps clear for its delete button. */
     val space24 = 24.dp
     val space26 = 26.dp
     val space28 = 28.dp
-
-    /** Bottom inset of the setup list, so the floating Start button never covers the last row. */
-    val space112 = 112.dp
 }
 
 /** Corner radii: the design system's `radius-*` tokens. Radii grow with the element. */
@@ -110,7 +106,6 @@ object Sizes {
     /** The play glyph inside Start workout. */
     val playIcon = 26.dp
     val control = 76.dp
-    val controlLandscape = 54.dp
     val controlSide = 84.dp
     val stepper = 54.dp
     val pillWidth = 72.dp
@@ -155,7 +150,6 @@ object Sizes {
 
     /** The hit area of a custom preset card's × delete button. */
     val delete = 44.dp
-    val valueMin = 64.dp
     val stripe = 6.dp
     val dot = 14.dp
 
@@ -172,13 +166,6 @@ object Sizes {
 
     /** The circle drawn inside that hit area: its fill and its ripple. */
     val iconButtonVisual = 40.dp
-
-    /** Height of the bottom navigation bar, and width of the rail that replaces it sideways. */
-    val navBar = 80.dp
-
-    /** The pill behind the selected tab's icon. */
-    val navIndicatorWidth = 64.dp
-    val navIndicatorHeight = 32.dp
 
     /** A preset chip in the Timer tab's horizontal row. */
     val presetChip = 150.dp
