@@ -6,58 +6,36 @@ import androidx.compose.ui.unit.dp
 // Fixed design tokens: the same in light and dark. Names mirror the Interval design system
 // (`space-16` → Spacing.space16, `radius-18` → Radius.radius18, `size-stepper` → Sizes.stepper).
 
-/** Gaps and padding: the design system's `space-*` tokens. */
+/** Gaps and padding: the design system's `space-*` tokens, on a 4dp grid. */
 object Spacing {
-    /** The gap between segments of a small timeline. */
-    val space1 = 1.dp
-
-    /** The gap between segments of the hero timeline. */
-    val space2 = 2.dp
     val space4 = 4.dp
-    val space6 = 6.dp
     val space8 = 8.dp
-    val space10 = 10.dp
     val space12 = 12.dp
-    val space14 = 14.dp
     val space16 = 16.dp
-    val space18 = 18.dp
     val space20 = 20.dp
-
     val space24 = 24.dp
-    val space26 = 26.dp
-    val space28 = 28.dp
+    val space32 = 32.dp
+    val space48 = 48.dp
 }
 
-/** Corner radii: the design system's `radius-*` tokens. Radii grow with the element. */
+/** Corner radii: the design system's `radius-*` tokens. Small for controls, large for cards. */
 object Radius {
-    /** A small value pill, and an option inside the theme picker. */
-    val radius10 = 10.dp
-
-    /** Stepper buttons, workout pills, value pills. */
+    /** Steppers, pills, value pills, workout pills, the options inside the theme picker. */
     val radius12 = 12.dp
 
-    /** Preset cards, the save controls, the theme picker. */
-    val radius14 = 14.dp
-
-    /** Workout bottom controls. */
-    val radius16 = 16.dp
-
-    /** Field cards, the history card, Start workout. */
+    /** Cards, preset cards, the theme picker, workout controls, Start workout. */
     val radius18 = 18.dp
 
-    /** The edit sheet's top corners. */
+    /** A sheet's top corners and a dialog. */
     val radius24 = 24.dp
 }
 
 /** The [Radius] tokens as shapes, plus `radius-full`. */
 object Corners {
-    val radius10 = RoundedCornerShape(Radius.radius10)
     val radius12 = RoundedCornerShape(Radius.radius12)
-    val radius14 = RoundedCornerShape(Radius.radius14)
-    val radius16 = RoundedCornerShape(Radius.radius16)
     val radius18 = RoundedCornerShape(Radius.radius18)
 
-    /** Progress bar track and fill, timelines, dots. */
+    /** Progress ring caps, timelines, dots. */
     val full = RoundedCornerShape(50)
 
     /** A bottom sheet: rounded on top only. */
@@ -117,11 +95,13 @@ object Sizes {
     /** The smaller value pill on a Settings row. */
     val valuePillSmall = 40.dp
 
-    /** The hero card's workout timeline. */
+    /** The hero card's workout timeline, and the gap between its segments. */
     val timeline = 12.dp
+    val timelineGap = 2.dp
 
-    /** The timeline on a preset chip or card. */
+    /** The timeline on a preset chip or card, and the gap between its segments. */
     val timelineMini = 6.dp
+    val timelineMiniGap = 1.dp
 
     /** The tallest bar of the History tab's week chart. */
     val weekBar = 56.dp
@@ -151,11 +131,20 @@ object Sizes {
     /** The hit area of a custom preset card's × delete button. */
     val delete = 44.dp
     val stripe = 6.dp
-    val dot = 14.dp
 
-    /** Width of the ring around the current round dot. */
-    val dotHalo = 4.dp
-    val progress = 12.dp
+    /** A round's mark on the workout screen: a short bar, narrowing when many share a row. */
+    val roundMarkWidth = 24.dp
+    val roundMarkHeight = 6.dp
+
+    /** The ring around Done on the summary. */
+    val summaryRing = 260.dp
+
+    /** The workout's progress ring: its stroke, and its widest on a big window. */
+    val ring = 22.dp
+    val ringMax = 420.dp
+
+    /** The band of phase colour along the workout screen's top edge (its start edge in landscape). */
+    val phaseBand = 10.dp
     val border = 1.5.dp
 
     /** Line icons: tabs and top-bar actions. */

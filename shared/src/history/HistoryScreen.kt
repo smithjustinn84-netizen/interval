@@ -77,7 +77,6 @@ import dev.justinsmith.interval.ui.IntervalMenu
 import dev.justinsmith.interval.ui.IntervalMenuItem
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
-import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Sizes
@@ -140,7 +139,7 @@ fun HistoryScreen(state: HistoryUiState, onClear: () -> Unit, modifier: Modifier
                             stringResource(Res.string.history_empty),
                             style = IntervalTheme.type.body,
                             color = IntervalTheme.palette.textDim,
-                            modifier = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space14),
+                            modifier = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space16),
                         )
                     }
                 }
@@ -156,7 +155,7 @@ fun HistoryScreen(state: HistoryUiState, onClear: () -> Unit, modifier: Modifier
                         GroupLabel(dayHeading(section.day))
                         ListCard {
                             section.items.forEachIndexed { index, item ->
-                                if (index > 0) RowDivider(Modifier.padding(start = Spacing.space18))
+                                if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
                                 HistoryRow(item)
                             }
                         }
@@ -189,8 +188,8 @@ private fun WeekSummary(state: HistoryUiState, modifier: Modifier = Modifier) {
             .fillMaxWidth()
             .clip(Corners.radius18)
             .background(palette.surface)
-            .padding(start = Spacing.space20, end = Spacing.space20, top = Spacing.space16, bottom = Spacing.space14),
-        verticalArrangement = Arrangement.spacedBy(Spacing.space14),
+            .padding(start = Spacing.space20, end = Spacing.space20, top = Spacing.space16, bottom = Spacing.space16),
+        verticalArrangement = Arrangement.spacedBy(Spacing.space16),
     ) {
         val unit = pluralStringResource(Res.plurals.history_workouts_unit, state.weekCount)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
@@ -203,11 +202,11 @@ private fun WeekSummary(state: HistoryUiState, modifier: Modifier = Modifier) {
                 Text(
                     buildAnnotatedString {
                         append(state.weekCount.toString())
-                        withStyle(IntervalTheme.type.weekStatUnit.copy(color = palette.textDim).toSpanStyle()) {
+                        withStyle(IntervalTheme.type.section.copy(color = palette.textDim).toSpanStyle()) {
                             append(" $unit")
                         }
                     },
-                    style = IntervalTheme.type.weekStat,
+                    style = IntervalTheme.type.stat,
                     color = palette.text,
                 )
             }
@@ -217,7 +216,7 @@ private fun WeekSummary(state: HistoryUiState, modifier: Modifier = Modifier) {
                     style = IntervalTheme.type.caption,
                     color = palette.textDim,
                 )
-                Text(state.weekTotal, style = IntervalTheme.type.weekStat, color = palette.accent)
+                Text(state.weekTotal, style = IntervalTheme.type.stat, color = palette.accent)
             }
         }
         WeekChart(state)
@@ -239,7 +238,7 @@ private fun WeekChart(state: HistoryUiState, modifier: Modifier = Modifier) {
             Column(
                 Modifier.weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(Spacing.space6),
+                verticalArrangement = Arrangement.spacedBy(Spacing.space8),
             ) {
                 Box(Modifier.fillMaxWidth().height(Sizes.weekBar), contentAlignment = Alignment.BottomCenter) {
                     val share = if (max > 0) day.seconds.toFloat() / max else 0f
@@ -248,7 +247,7 @@ private fun WeekChart(state: HistoryUiState, modifier: Modifier = Modifier) {
                         Modifier
                             .fillMaxWidth()
                             .height(height.coerceAtLeast(Sizes.weekBarEmpty))
-                            .clip(Corners.radius10)
+                            .clip(Corners.radius12)
                             .background(if (day.seconds > 0) palette.accent else palette.surfaceVariant),
                     )
                 }
@@ -269,11 +268,16 @@ private fun HistoryRow(item: HistoryItem, modifier: Modifier = Modifier) {
         modifier
             .fillMaxWidth()
             .heightIn(min = Sizes.listRow)
-            .padding(horizontal = Spacing.space16, vertical = Spacing.space10),
+            .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
-        Box(Modifier.size(Sizes.stripe, Sizes.historyMarkHeight).clip(Corners.full).background(PhaseColors.work))
+        Box(
+            Modifier.size(
+                Sizes.stripe,
+                Sizes.historyMarkHeight,
+            ).clip(Corners.full).background(IntervalTheme.palette.workMark),
+        )
         Column(Modifier.weight(1f)) {
             val shape = configDescription(item.config)
             val detail = listOfNotNull(
@@ -281,10 +285,10 @@ private fun HistoryRow(item: HistoryItem, modifier: Modifier = Modifier) {
                 stringResource(Res.string.history_ended_early).takeIf { item.endedEarly },
                 item.time,
             )
-            Text(item.presetName ?: shape, style = IntervalTheme.type.cardTitle, color = palette.text, maxLines = 1)
-            Text(detail.joinToString(" · "), style = IntervalTheme.type.hint, color = palette.textDim)
+            Text(item.presetName ?: shape, style = IntervalTheme.type.label, color = palette.text, maxLines = 1)
+            Text(detail.joinToString(" · "), style = IntervalTheme.type.meta, color = palette.textDim)
         }
-        Text(item.total, style = IntervalTheme.type.historyTotal, color = palette.text)
+        Text(item.total, style = IntervalTheme.type.value, color = palette.text)
     }
 }
 

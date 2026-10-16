@@ -7,17 +7,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasSetTextAction
-import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
-import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.sameShape
@@ -45,7 +44,6 @@ class TimerScreenTest {
     private val calls = mutableListOf<String>()
     private val steps = mutableListOf<Pair<ConfigField, Int>>()
     private val sets = mutableListOf<Pair<ConfigField, Int>>()
-    private val applied = mutableListOf<Preset>()
     private val saved = mutableListOf<String>()
 
     @Composable
@@ -54,7 +52,6 @@ class TimerScreenTest {
             state = state,
             onStep = { field, direction -> steps += field to direction },
             onSet = { field, value -> sets += field to value },
-            onApplyPreset = { applied += it },
             onSavePreset = { saved += it },
             onStart = { calls += "start" },
             onOpenSettings = { calls += "settings" },
@@ -67,23 +64,26 @@ class TimerScreenTest {
         setThemedContent { Screen() }
         onNodeWithText("Start workout").performClick()
         onNodeWithContentDescription("Settings").performClick()
-        onNodeWithText("See all").performClick()
+        onNodeWithContentDescription("All presets").performClick()
         assertEquals(listOf("start", "settings", "see all"), calls)
     }
 
     @Test
-    fun `tapping a preset applies it`() = runUiTest {
+    fun `each row steps its own value`() = runUiTest {
         setThemedContent { Screen() }
-        onNodeWithText("Tabata").performClick()
-        assertEquals(listOf(builtInPresets.first()), applied)
+        onNodeWithContentDescription("More work time").performClick()
+        onNodeWithContentDescription("Less rest time").performClick()
+        onNodeWithContentDescription("More rounds").performClick()
+        assertEquals(listOf(ConfigField.Work to 1, ConfigField.Rest to -1, ConfigField.Rounds to 1), steps)
     }
 
     @Test
     fun `a value opens its sheet, which steps and picks`() = runUiTest {
         setThemedContent { Screen() }
-        onNodeWithText("Effort interval").performClick()
-        onNodeWithContentDescription("More work time").performClick()
-        onNodeWithContentDescription("Less work time").performClick()
+        onNodeWithText("0:40").performClick()
+        // The sheet's steppers share their descriptions with the row's, and draw after them.
+        onAllNodesWithContentDescription("More work time").onLast().performClick()
+        onAllNodesWithContentDescription("Less work time").onLast().performClick()
         onNodeWithText("3:00").performClick()
         assertEquals(listOf(ConfigField.Work to 1, ConfigField.Work to -1), steps)
         assertEquals(listOf(ConfigField.Work to 180), sets)
@@ -92,7 +92,7 @@ class TimerScreenTest {
     @Test
     fun `a custom shape can be saved as a preset`() = runUiTest {
         setThemedContent { Screen() }
-        onNodeWithText("Custom").assertExists()
+        onNodeWithText("Custom · Total").assertExists()
         onNodeWithContentDescription("Save as preset").performClick()
         onNode(hasSetTextAction()).performTextInput("Sprints")
         onNodeWithText("Save").performClick()
@@ -110,13 +110,11 @@ class TimerScreenTest {
     }
 
     @Test
-    fun `the hero gives the shape and the get-ready countdown, if there is one`() = runUiTest {
+    fun `the total gives the get-ready countdown, if there is one`() = runUiTest {
         var state by mutableStateOf(state())
         setThemedContent { Screen(state) }
+        onNodeWithText("5:50").assertExists()
         onNodeWithText("0:10 to get ready").assertExists()
-        // The hero, and Tabata's card in the presets row.
-        onNodeWithText("40s on · 20s off · ×6").assertExists()
-        onAllNodesWithText("20s on · 10s off · ×8").assertCountEquals(1)
         state = state(custom.copy(prepSeconds = 0))
         onNodeWithText("0:00 to get ready").assertDoesNotExist()
         onNodeWithText("0:10 to get ready").assertDoesNotExist()
@@ -139,9 +137,9 @@ class TimerScreenTest {
     }
 
     @Test
-    fun `sideways, Start and the presets are both on screen`() = runUiTest(Window.PhoneSideways) {
+    fun `sideways, Start and the steppers are both on screen`() = runUiTest(Window.PhoneSideways) {
         setThemedContent { Screen() }
         onNodeWithText("Start workout").assertExists()
-        onNodeWithText("Tabata").assertExists()
+        onNodeWithContentDescription("More rounds").assertExists()
     }
 }

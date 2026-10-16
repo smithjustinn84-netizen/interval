@@ -37,8 +37,16 @@ data class IntervalPalette(
     val accent: Color,
     val onAccent: Color,
     /**
+     * The phases as Setup draws them: field stripes, values on their tints, History marks. Light
+     * mode deepens work and rest so they read on white; dark mode uses the workout's own
+     * [PhaseColors], which are tuned for a near-black ground.
+     */
+    val prepMark: Color,
+    val workMark: Color,
+    val restMark: Color,
+    /**
      * The Get ready value on its tint. Amber is too light to read on a pale tint, so light mode
-     * darkens it; dark mode uses [PhaseColors.prep] itself.
+     * darkens it; dark mode uses [prepMark] itself.
      */
     val onPrepTint: Color,
 ) {
@@ -63,35 +71,37 @@ data class IntervalPalette(
     }
 }
 
-/** Full-screen workout colors. The same in light and dark: the whole screen is the signal. */
+/**
+ * Workout colors, the same in light and dark ("Gym dark"). The screen stays near-black; the phase
+ * colour is the ring, the edge band, the phase word and the primary control, so it still reads from
+ * across a room without flooding the screen.
+ */
 object PhaseColors {
-    val prep = Color(0xFFE59A12)
-    val work = Color(0xFFE8402F)
-    val rest = Color(0xFF159A72)
-    val done = Color(0xFF2456E6)
-    val paused = Color(0xFF2A3038)
+    val prep = Color(0xFFF2A81D)
+    val work = Color(0xFFFF5A43)
+    val rest = Color(0xFF2FD3A0)
+    val done = Color(0xFF5B8CFF)
 
-    /** Clock, Done, progress fill, finished round dots, and the fill of the primary control. */
-    val onPhase = Color.White
+    /** The ring and band while paused. Too dark for [ink], so a paused primary control fills with [onGround]. */
+    val paused = Color(0xFF5E6978)
 
-    /** Phase label and the Done summary. */
-    val onPhase90 = Color.White.copy(alpha = 0.9f)
+    /** The workout screen's background. */
+    val ground = Color(0xFF0B0D10)
 
-    /** Status and next-up lines. */
-    val onPhase85 = Color.White.copy(alpha = 0.85f)
+    /** Fill of the secondary controls (End, Skip, Back, +10s, Repeat), stat tiles, and the ring's track. */
+    val control = Color(0xFF161A20)
 
-    /** The resting tap hint. */
-    val onPhase65 = Color.White.copy(alpha = 0.65f)
+    /** Upcoming round dots. */
+    val upcoming = Color(0xFF232B35)
 
-    /** Upcoming round dots and the ring around the current one. */
-    val dotHalo = Color.White.copy(alpha = 0.35f)
-    val progressTrack = Color.White.copy(alpha = 0.25f)
+    /** Clock, status, finished round dots, and the labels on [control]. */
+    val onGround = Color(0xFFF1F4F8)
 
-    /** Fill of the secondary controls: End, Skip, Back, +10s, Restart. */
-    val glass = Color.White.copy(alpha = 0.18f)
+    /** Next up, the resting tap hint, and the phase word while paused. */
+    val onGroundDim = Color(0xFF97A3B3)
 
-    /** Label on an [onPhase] fill; only ever on white, so it doesn't follow the theme. */
-    val ink = Color(0xFF141A22)
+    /** Label on a phase-coloured or [onGround] fill; it doesn't follow the theme. */
+    val ink = Color(0xFF0B0D10)
 
     fun of(phase: Phase): Color = when (phase) {
         Phase.Prep -> prep
@@ -110,117 +120,73 @@ internal val lightPalette = IntervalPalette(
     line = Color(0xFFD5DCE6),
     accent = Color(0xFF2456E6),
     onAccent = Color.White,
+    prepMark = PhaseColors.prep,
+    workMark = Color(0xFFD13A26),
+    restMark = Color(0xFF0A5E49),
     onPrepTint = Color(0xFFA86A05),
 )
 
+/** Gym dark: the workout's near-black ground carried onto Setup, with its bright phase colours. */
 internal val darkPalette = IntervalPalette(
-    background = Color(0xFF0F1318),
-    surface = Color(0xFF1A2028),
-    surfaceVariant = Color(0xFF232B35),
-    text = Color(0xFFF1F4F8),
-    textDim = Color(0xFF97A3B3),
+    background = PhaseColors.ground,
+    surface = PhaseColors.control,
+    surfaceVariant = PhaseColors.upcoming,
+    text = PhaseColors.onGround,
+    textDim = PhaseColors.onGroundDim,
     line = Color(0xFF2C3541),
-    accent = Color(0xFF356AFF),
-    onAccent = Color.White,
+    accent = Color(0xFF5B8CFF),
+    onAccent = PhaseColors.ink,
+    prepMark = PhaseColors.prep,
+    workMark = PhaseColors.work,
+    restMark = PhaseColors.rest,
     onPrepTint = PhaseColors.prep,
 )
 
 /**
  * The app's text styles, named after the design system's type tokens. Barlow Condensed for numbers
- * and headings, Barlow for sentences. Every style is built from the theme's `bodyLarge` (or
- * `labelLarge` for button labels), so it keeps the line height and tracking unstyled text gets.
+ * and headings, Barlow for sentences. Eleven roles; every style is built from the theme's `bodyLarge`,
+ * so it keeps the line height and tracking unstyled text gets.
  */
 @Immutable
 data class IntervalType(
     /** The workout countdown; callers size it to the window with `copy(fontSize, lineHeight)`. */
     val clock: TextStyle,
-    val done: TextStyle,
-    val phaseLabel: TextStyle,
-    val screenTitle: TextStyle,
-    val stepperValue: TextStyle,
-    val startLabel: TextStyle,
-    val primaryControl: TextStyle,
-    val sectionTitle: TextStyle,
-    val control: TextStyle,
-    val nextUp: TextStyle,
-    /** "8 rounds · 4:40 total" under Done. */
-    val summary: TextStyle,
-    val cardTitle: TextStyle,
-    val body: TextStyle,
-    val total: TextStyle,
-    val meta: TextStyle,
-    /** [meta] with weight: the workout status line, stat labels. */
-    val metaStrong: TextStyle,
-    val buttonLabel: TextStyle,
-    val presetDescription: TextStyle,
-    val hint: TextStyle,
-    /** A small label over a value: "Total", "This week". */
-    val caption: TextStyle,
-    /** The − and + on a stepper. */
-    val stepperGlyph: TextStyle,
-    /** The × on a custom preset. */
-    val deleteGlyph: TextStyle,
-    /** The Timer tab's big session total. */
-    val heroTotal: TextStyle,
-    /** The value being edited in the edit sheet. */
-    val sheetValue: TextStyle,
-    /** A value in its phase-tinted pill on the Timer tab. */
-    val valuePill: TextStyle,
-    /** A preset's total on a Timer tab chip. */
-    val presetTotal: TextStyle,
-    /** A preset's total on a Presets tab card. */
-    val presetCardTotal: TextStyle,
-    /** A summary stat: time, rounds. */
+    /** The biggest value on a screen: the Timer tab's total, the edit sheet's value, Done. */
+    val display: TextStyle,
+    /** Screen titles: "Timer", "Presets". */
+    val title: TextStyle,
+    /** A big number with a label: the phase word, summary and week stats, value pills, preset totals. */
     val stat: TextStyle,
-    /** The History tab's week tally. */
-    val weekStat: TextStyle,
-    /** The unit after a week tally: "workouts". */
-    val weekStatUnit: TextStyle,
-    /** A finished workout's length in its History row. */
-    val historyTotal: TextStyle,
-    /** Tab labels in the navigation bar. */
-    val navLabel: TextStyle,
-    /** "Built-in", "Today", "Cues": the label over a group of list rows. */
-    val groupLabel: TextStyle,
+    /** A value in a row or on a big button: stepper values, History totals, Start workout, Pause. */
+    val value: TextStyle,
+    /** Workout control labels and small values: Skip, Back, +10s, a chip's total, the − + × glyphs. */
+    val control: TextStyle,
+    /** Section titles and lines under a big value: "Presets", "workouts", next up, the Done summary. */
+    val section: TextStyle,
+    /** Names, list-row titles, button labels and group labels: Barlow SemiBold at body size. */
+    val label: TextStyle,
+    val body: TextStyle,
+    /** Hints, dates and descriptions. */
+    val meta: TextStyle,
+    /** A small label over a value: "Total", "This week", tab labels. */
+    val caption: TextStyle,
 )
 
-private fun intervalType(body: TextStyle, label: TextStyle, condensed: FontFamily): IntervalType {
+private fun intervalType(body: TextStyle, condensed: FontFamily): IntervalType {
     fun numerals(size: TextUnit) = body.copy(fontFamily = condensed, fontWeight = FontWeight.ExtraBold, fontSize = size)
     fun heading(size: TextUnit) = body.copy(fontFamily = condensed, fontWeight = FontWeight.SemiBold, fontSize = size)
     return IntervalType(
         clock = numerals(240.sp).copy(lineHeight = 240.sp),
-        done = numerals(128.sp).copy(lineHeight = 120.sp),
-        phaseLabel = numerals(40.sp),
-        screenTitle = numerals(36.sp),
-        stepperValue = numerals(27.sp),
-        startLabel = numerals(28.sp),
-        primaryControl = numerals(26.sp),
-        sectionTitle = numerals(22.sp),
-        control = numerals(22.sp),
-        nextUp = body.copy(fontSize = 20.sp, fontWeight = FontWeight.SemiBold),
-        summary = heading(26.sp).copy(lineHeight = 32.sp),
-        cardTitle = body.copy(fontWeight = FontWeight.SemiBold),
-        body = body,
-        total = body.copy(fontSize = 15.sp),
-        meta = body.copy(fontSize = 14.sp),
-        metaStrong = body.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
-        buttonLabel = label.copy(fontWeight = FontWeight.SemiBold),
-        presetDescription = body.copy(fontSize = 13.5.sp),
-        hint = body.copy(fontSize = 13.sp),
-        caption = body.copy(fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold),
-        stepperGlyph = body.copy(fontSize = 24.sp),
-        deleteGlyph = body.copy(fontSize = 18.sp),
-        heroTotal = numerals(96.sp).copy(lineHeight = 96.sp, letterSpacing = (-1).sp),
-        sheetValue = numerals(104.sp).copy(lineHeight = 104.sp, letterSpacing = (-2).sp),
-        valuePill = numerals(36.sp),
-        presetTotal = numerals(20.sp).copy(lineHeight = 20.sp),
-        presetCardTotal = numerals(36.sp).copy(lineHeight = 36.sp),
+        display = numerals(96.sp).copy(lineHeight = 96.sp, letterSpacing = (-1).sp),
+        title = numerals(36.sp).copy(lineHeight = 40.sp),
         stat = numerals(40.sp).copy(lineHeight = 40.sp),
-        weekStat = numerals(44.sp).copy(lineHeight = 44.sp),
-        weekStatUnit = heading(22.sp),
-        historyTotal = numerals(26.sp),
-        navLabel = body.copy(fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold),
-        groupLabel = body.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
+        value = numerals(26.sp).copy(lineHeight = 28.sp),
+        control = numerals(22.sp),
+        section = heading(20.sp),
+        label = body.copy(fontWeight = FontWeight.SemiBold),
+        body = body,
+        meta = body.copy(fontSize = 14.sp),
+        caption = body.copy(fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold),
     )
 }
 
@@ -269,7 +235,7 @@ fun IntervalTheme(
             titleMedium = t.titleMedium.copy(fontFamily = barlow),
         )
     }
-    val type = intervalType(typography.bodyLarge, typography.labelLarge, condensed)
+    val type = intervalType(typography.bodyLarge, condensed)
     CompositionLocalProvider(LocalIntervalPalette provides palette, LocalIntervalType provides type) {
         // MaterialTheme provides bodyLarge as the default text style, so unstyled Text is Barlow too.
         MaterialTheme(colorScheme = colors, typography = typography, content = content)

@@ -48,12 +48,12 @@ fun FieldRow(
             .heightIn(min = if (compact) Sizes.listRow else Sizes.intervalRow)
             .clickable(role = Role.Button, onClickLabel = editLabel, onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(if (compact) Spacing.space10 else Spacing.space14),
+        horizontalArrangement = Arrangement.spacedBy(if (compact) Spacing.space12 else Spacing.space16),
     ) {
         Box(Modifier.width(Sizes.stripe).fillMaxHeight().background(field.stripe()))
-        Column(Modifier.weight(1f).padding(vertical = if (compact) Spacing.space6 else Spacing.space10)) {
-            Text(stringResource(field.labelRes), style = IntervalTheme.type.cardTitle, color = palette.text)
-            Text(stringResource(field.hintRes), style = IntervalTheme.type.hint, color = palette.textDim)
+        Column(Modifier.weight(1f).padding(vertical = if (compact) Spacing.space8 else Spacing.space12)) {
+            Text(stringResource(field.labelRes), style = IntervalTheme.type.label, color = palette.text)
+            Text(stringResource(field.hintRes), style = IntervalTheme.type.meta, color = palette.textDim)
         }
         if (compact) {
             ValuePill(
@@ -61,7 +61,7 @@ fun FieldRow(
                 color = field.valueColor(),
                 tint = field.tint(),
                 height = Sizes.valuePillSmall,
-                style = IntervalTheme.type.stepperValue,
+                style = IntervalTheme.type.value,
             )
         } else {
             ValuePill(

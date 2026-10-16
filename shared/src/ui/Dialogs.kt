@@ -79,20 +79,20 @@ fun SavePresetDialog(summary: String, defaultName: String, onSave: (String) -> U
     ) {
         Text(
             summary,
-            style = IntervalTheme.type.presetDescription,
+            style = IntervalTheme.type.meta,
             color = palette.textDim,
-            modifier = Modifier.padding(bottom = Spacing.space6),
+            modifier = Modifier.padding(bottom = Spacing.space8),
         )
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
             Text(
                 stringResource(Res.string.preset_name_label),
-                style = IntervalTheme.type.groupLabel,
+                style = IntervalTheme.type.label,
                 color = palette.textDim,
                 modifier = Modifier.weight(1f),
             )
             Text(
                 stringResource(Res.string.preset_name_count, name.text.length, Preset.MAX_NAME_LENGTH),
-                style = IntervalTheme.type.hint,
+                style = IntervalTheme.type.meta,
                 color = palette.textDim,
             )
         }
@@ -109,7 +109,7 @@ private fun NameField(state: TextFieldState, placeholder: String, onDone: () -> 
     UnstyledTextField(
         state = state,
         accessibilityLabel = stringResource(Res.string.preset_name_label),
-        textStyle = IntervalTheme.type.cardTitle,
+        textStyle = IntervalTheme.type.label,
         textColor = palette.text,
         cursorBrush = SolidColor(palette.accent),
         selectionColors = TextSelectionColors(handleColor = palette.accent, backgroundColor = palette.accentTint),
@@ -124,13 +124,13 @@ private fun NameField(state: TextFieldState, placeholder: String, onDone: () -> 
             .clip(Corners.radius12)
             .background(palette.surfaceVariant)
             .border(Sizes.border, if (focused) palette.accent else Color.Transparent, Corners.radius12)
-            .padding(horizontal = Spacing.space14),
+            .padding(horizontal = Spacing.space16),
     ) {
         // The field's text sits on its vertical centre, however tall the field.
         Box(Modifier.fillMaxWidth().heightIn(min = Sizes.field), contentAlignment = Alignment.CenterStart) {
             TextInput(
                 Modifier.fillMaxWidth(),
-                placeholder = { Text(placeholder, style = IntervalTheme.type.cardTitle, color = palette.textDim) },
+                placeholder = { Text(placeholder, style = IntervalTheme.type.label, color = palette.textDim) },
             )
         }
     }

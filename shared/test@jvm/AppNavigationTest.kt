@@ -33,7 +33,7 @@ private fun appTest(window: Window = Window.Phone, block: suspend DesktopCompose
         }
     }
 
-/** A navigation bar or rail item; "Presets" alone would also match the Timer tab's section heading. */
+/** A navigation bar or rail item; "Presets" alone would also match the Presets screen title. */
 private fun DesktopComposeUiTest.tab(label: String): SemanticsNodeInteraction =
     onNode(hasText(label) and hasClickAction())
 
@@ -58,8 +58,8 @@ class AppNavigationTest {
     }
 
     @Test
-    fun `a preset picked from See all becomes the next workout`() = appTest { koin ->
-        onNodeWithText("See all").performClick()
+    fun `a preset picked from All presets becomes the next workout`() = appTest { koin ->
+        onNodeWithContentDescription("All presets").performClick()
         onNodeWithText("Hangboard").performClick()
         onNodeWithText("Start workout").assertExists()
         tab("Timer").assertIsSelected()

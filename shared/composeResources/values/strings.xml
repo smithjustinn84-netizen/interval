@@ -66,10 +66,8 @@
     <string name="timer_total">Total</string>
     <!-- "0:10 to get ready" -->
     <string name="timer_prep_line">%1$s to get ready</string>
-    <string name="timer_presets">Presets</string>
-    <string name="timer_see_all">See all</string>
-    <string name="timer_intervals">Intervals</string>
     <string name="timer_start_workout">Start workout</string>
+    <string name="timer_all_presets_cd">All presets</string>
 
     <!-- Saving a preset -->
     <string name="preset_save_title">Save as preset</string>

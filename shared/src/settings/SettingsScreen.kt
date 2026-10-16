@@ -193,7 +193,7 @@ private fun ThemePicker(selected: ThemeMode, onSelect: (ThemeMode) -> Unit, modi
     Row(
         modifier
             .fillMaxWidth()
-            .clip(Corners.radius14)
+            .clip(Corners.radius18)
             .background(palette.surfaceVariant)
             .padding(Spacing.space4)
             .selectableGroup(),
@@ -205,10 +205,10 @@ private fun ThemePicker(selected: ThemeMode, onSelect: (ThemeMode) -> Unit, modi
                 Modifier
                     .weight(1f)
                     .heightIn(min = Sizes.toggleRow - Spacing.space12)
-                    .clip(Corners.radius10)
+                    .clip(Corners.radius12)
                     .background(if (isSelected) palette.surface else Color.Transparent)
                     .selectable(selected = isSelected, role = Role.RadioButton, onClick = { onSelect(mode) }),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.space6, Alignment.CenterHorizontally),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.space8, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (isSelected) {
@@ -219,7 +219,7 @@ private fun ThemePicker(selected: ThemeMode, onSelect: (ThemeMode) -> Unit, modi
                         modifier = Modifier.size(Sizes.icon),
                     )
                 }
-                Text(stringResource(mode.labelRes), style = IntervalTheme.type.buttonLabel, color = palette.text)
+                Text(stringResource(mode.labelRes), style = IntervalTheme.type.label, color = palette.text)
             }
         }
     }

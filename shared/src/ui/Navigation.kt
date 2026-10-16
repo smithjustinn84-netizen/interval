@@ -65,7 +65,7 @@ fun NavigationItems(current: Tab, type: NavigationSuiteType, onSelect: (Tab) -> 
             selected = spec.tab == current,
             onClick = { onSelect(spec.tab) },
             icon = { Icon(spec.icon, contentDescription = null, modifier = Modifier.size(Sizes.icon)) },
-            label = { Text(stringResource(spec.label), style = IntervalTheme.type.navLabel) },
+            label = { Text(stringResource(spec.label), style = IntervalTheme.type.caption) },
             navigationSuiteType = type,
             colors = colors,
         )

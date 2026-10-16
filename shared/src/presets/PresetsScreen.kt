@@ -146,7 +146,7 @@ fun PresetsScreen(
                                 stringResource(Res.string.presets_empty),
                                 style = IntervalTheme.type.body,
                                 color = palette.textDim,
-                                modifier = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space14),
+                                modifier = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space16),
                             )
                         }
                     }
@@ -237,7 +237,7 @@ private fun DeletablePresetCard(
             ) {
                 Text(
                     "×",
-                    style = IntervalTheme.type.deleteGlyph,
+                    style = IntervalTheme.type.control,
                     color = palette.textDim,
                     modifier = Modifier.clearAndSetSemantics {},
                 )
@@ -261,13 +261,13 @@ private fun PresetCard(
             .fillMaxWidth()
             .selectableCard(item.selected)
             .combinedClickable(role = Role.Button, onLongClick = onLongClick, onClick = onClick)
-            .padding(start = Spacing.space14, end = Spacing.space14, top = Spacing.space14, bottom = Spacing.space12),
+            .padding(start = Spacing.space16, end = Spacing.space16, top = Spacing.space16, bottom = Spacing.space12),
         verticalArrangement = Arrangement.spacedBy(Spacing.space8),
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 item.preset.name,
-                style = IntervalTheme.type.cardTitle,
+                style = IntervalTheme.type.label,
                 color = palette.text,
                 maxLines = 1,
                 modifier = Modifier.weight(1f).padding(end = if (deletable) Sizes.delete - Spacing.space8 else 0.dp),
@@ -283,16 +283,16 @@ private fun PresetCard(
         }
         Text(
             item.total,
-            style = IntervalTheme.type.presetCardTotal,
+            style = IntervalTheme.type.stat,
             color = if (item.selected) palette.accent else palette.text,
         )
         Text(
             configDescription(item.preset.config),
-            style = IntervalTheme.type.hint,
+            style = IntervalTheme.type.meta,
             color = palette.textDim,
             maxLines = 1,
         )
-        Timeline(item.preset.config, height = Sizes.timelineMini, gap = Spacing.space1, showPrep = false)
+        Timeline(item.preset.config, height = Sizes.timelineMini, gap = Sizes.timelineMiniGap, showPrep = false)
     }
 }
 

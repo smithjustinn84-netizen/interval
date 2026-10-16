@@ -76,9 +76,9 @@ val ConfigField.moreRes: StringResource
 @Composable
 @ReadOnlyComposable
 fun ConfigField.stripe(): Color = when (this) {
-    ConfigField.Prep -> PhaseColors.prep
-    ConfigField.Work -> PhaseColors.work
-    ConfigField.Rest -> PhaseColors.rest
+    ConfigField.Prep -> IntervalTheme.palette.prepMark
+    ConfigField.Work -> IntervalTheme.palette.workMark
+    ConfigField.Rest -> IntervalTheme.palette.restMark
     ConfigField.Rounds -> IntervalTheme.palette.accent
 }
 

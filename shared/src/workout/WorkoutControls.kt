@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -84,53 +83,40 @@ internal fun AddTimeButton(onAddTime: () -> Unit, modifier: Modifier = Modifier)
     )
 }
 
-/** How far through the current interval, as a bar. */
-@Composable
-internal fun ProgressBar(progress: Float, modifier: Modifier = Modifier) {
-    Box(
-        modifier
-            .fillMaxWidth()
-            .height(Sizes.progress)
-            .clip(Corners.full)
-            .background(PhaseColors.progressTrack),
-    ) {
-        if (progress > 0f) {
-            Box(
-                Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(progress)
-                    .clip(Corners.full)
-                    .background(PhaseColors.onPhase),
-            )
-        }
-    }
-}
-
 @Composable
 internal fun BottomControls(
     state: WorkoutUiState,
+    primaryFill: Color,
     onTogglePause: () -> Unit,
     onBack: () -> Unit,
     onAddTime: () -> Unit,
 ) {
     val height = Sizes.control
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.space10)) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         BackButton(onBack, Modifier.width(Sizes.controlSide).height(height))
-        PrimaryButton(state, onTogglePause, Modifier.weight(1f).height(height))
+        PrimaryButton(state, primaryFill, onTogglePause, Modifier.weight(1f).height(height))
         AddTimeButton(onAddTime, Modifier.width(Sizes.controlSide).height(height))
     }
 }
 
-/** The white Pause / Resume button. */
+/**
+ * Pause / Resume, filled with the phase colour ([primaryFill]) under an ink label. Paused, the fill
+ * is [PhaseColors.onGround] instead: ink doesn't read on the paused grey.
+ */
 @Composable
-internal fun PrimaryButton(state: WorkoutUiState, onTogglePause: () -> Unit, modifier: Modifier = Modifier) {
+internal fun PrimaryButton(
+    state: WorkoutUiState,
+    primaryFill: Color,
+    onTogglePause: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     BigButton(
         stringResource(if (state.running) Res.string.workout_pause else Res.string.workout_resume),
         onTogglePause,
         modifier,
-        background = PhaseColors.onPhase,
+        background = primaryFill,
         content = PhaseColors.ink,
-        style = IntervalTheme.type.primaryControl,
+        style = IntervalTheme.type.value,
     )
 }
 
@@ -139,14 +125,14 @@ internal fun BigButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    background: Color = PhaseColors.glass,
-    content: Color = PhaseColors.onPhase,
+    background: Color = PhaseColors.control,
+    content: Color = PhaseColors.onGround,
     style: TextStyle = IntervalTheme.type.control,
     description: String? = null,
 ) {
     Box(
         modifier
-            .clip(Corners.radius16)
+            .clip(Corners.radius18)
             .background(background)
             .clickable(role = Role.Button, onClick = onClick)
             .then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier),
@@ -162,23 +148,21 @@ internal fun PillButton(
     onClick: () -> Unit,
     description: String,
     modifier: Modifier = Modifier,
-    background: Color = PhaseColors.glass,
-    content: Color = PhaseColors.onPhase,
 ) {
     Box(
         modifier
             .sizeIn(minWidth = Sizes.pillWidth, minHeight = Sizes.pillHeight)
             .clip(Corners.radius12)
-            .background(background)
+            .background(PhaseColors.control)
             .clickable(role = Role.Button, onClick = onClick)
             .semantics { contentDescription = description }
-            .padding(horizontal = Spacing.space18),
+            .padding(horizontal = Spacing.space16),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text,
-            style = IntervalTheme.type.cardTitle,
-            color = content,
+            style = IntervalTheme.type.control,
+            color = PhaseColors.onGround,
             modifier = Modifier.clearAndSetSemantics {},
         )
     }

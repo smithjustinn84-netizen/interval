@@ -2,6 +2,7 @@ package dev.justinsmith.interval.workout
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -71,15 +72,15 @@ internal fun SummaryLayout(
     if (landscape) {
         Row(
             padding,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.space28),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space32),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            SummaryReadout(state, Modifier.weight(1f))
+            SummaryReadout(state, ring = false, Modifier.weight(1f))
             SummaryActions(state, onRepeat, { saving = true }, onDone, Modifier.width(Sizes.setupColumnLandscape))
         }
     } else {
         Column(padding) {
-            SummaryReadout(state, Modifier.weight(1f).fillMaxWidth())
+            SummaryReadout(state, ring = true, Modifier.weight(1f).fillMaxWidth())
             SummaryActions(state, onRepeat, { saving = true }, onDone, Modifier.fillMaxWidth())
         }
     }
@@ -104,8 +105,8 @@ private fun SummaryActions(
     onDone: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space10)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space10)) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space12)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space12)) {
             BigButton(stringResource(Res.string.workout_repeat), onRepeat, Modifier.weight(1f).height(Sizes.save))
             if (state.canSavePreset) {
                 BigButton(
@@ -119,26 +120,39 @@ private fun SummaryActions(
             stringResource(Res.string.common_done),
             onDone,
             Modifier.fillMaxWidth().height(Sizes.control),
-            background = PhaseColors.onPhase,
+            background = PhaseColors.done,
             content = PhaseColors.ink,
-            style = IntervalTheme.type.primaryControl,
+            style = IntervalTheme.type.value,
         )
     }
 }
 
 @Composable
-private fun SummaryReadout(state: WorkoutUiState, modifier: Modifier = Modifier) {
+private fun SummaryReadout(state: WorkoutUiState, ring: Boolean, modifier: Modifier = Modifier) {
     Column(
         modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        if (state.rounds <= MAX_ROUND_MARKS) RoundDots(state, Modifier.padding(bottom = Spacing.space12))
-        Text(
-            stringResource(if (state.ended) Res.string.workout_ended else Res.string.workout_done),
-            style = IntervalTheme.type.done,
-            color = PhaseColors.onPhase,
-        )
+        val title = @Composable {
+            Text(
+                stringResource(if (state.ended) Res.string.workout_ended else Res.string.workout_done),
+                style = IntervalTheme.type.display,
+                color = PhaseColors.done,
+            )
+        }
+        if (ring) {
+            // The ring closes on a finished workout; one ended early stops at the rounds it got through.
+            Box(Modifier.size(Sizes.summaryRing), contentAlignment = Alignment.Center) {
+                ProgressRing(state.completedRounds.toFloat() / state.rounds, PhaseColors.done, Modifier.fillMaxSize())
+                title()
+            }
+        } else {
+            if (state.rounds <= MAX_ROUND_MARKS) {
+                RoundDots(state, PhaseColors.done, Modifier.padding(bottom = Spacing.space12))
+            }
+            title()
+        }
         Text(
             if (state.ended) {
                 pluralStringResource(
@@ -151,20 +165,20 @@ private fun SummaryReadout(state: WorkoutUiState, modifier: Modifier = Modifier)
             } else {
                 pluralStringResource(Res.plurals.workout_summary_finished, state.rounds, state.rounds, state.total)
             },
-            style = IntervalTheme.type.summary,
-            color = PhaseColors.onPhase90,
+            style = IntervalTheme.type.section,
+            color = PhaseColors.onGround,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = Spacing.space8),
         )
         Text(
             shapeText(state),
             style = IntervalTheme.type.meta,
-            color = PhaseColors.onPhase85,
+            color = PhaseColors.onGroundDim,
             textAlign = TextAlign.Center,
         )
         Row(
-            Modifier.padding(top = Spacing.space28).widthIn(max = Sizes.content),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.space10),
+            Modifier.padding(top = Spacing.space32).widthIn(max = Sizes.content),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
         ) {
             Stat(state.elapsed, stringResource(Res.string.workout_stat_time), Modifier.weight(1f))
             Stat(
@@ -176,18 +190,18 @@ private fun SummaryReadout(state: WorkoutUiState, modifier: Modifier = Modifier)
         Row(
             Modifier.padding(top = Spacing.space20),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.space6),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
         ) {
             Icon(
                 IntervalIcons.Check,
                 contentDescription = null,
-                tint = PhaseColors.onPhase85,
+                tint = PhaseColors.onGroundDim,
                 modifier = Modifier.size(Sizes.icon),
             )
             Text(
                 stringResource(Res.string.workout_saved),
                 style = IntervalTheme.type.meta,
-                color = PhaseColors.onPhase85,
+                color = PhaseColors.onGroundDim,
             )
         }
     }
@@ -197,16 +211,16 @@ private fun SummaryReadout(state: WorkoutUiState, modifier: Modifier = Modifier)
 private fun Stat(value: String, label: String, modifier: Modifier = Modifier) {
     Column(
         modifier
-            .clip(Corners.radius16)
-            .background(PhaseColors.glass)
+            .clip(Corners.radius18)
+            .background(PhaseColors.control)
             .padding(top = Spacing.space16, bottom = Spacing.space12),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(value, style = IntervalTheme.type.stat, color = PhaseColors.onPhase)
+        Text(value, style = IntervalTheme.type.stat, color = PhaseColors.onGround)
         Text(
             label,
-            style = IntervalTheme.type.metaStrong,
-            color = PhaseColors.onPhase,
+            style = IntervalTheme.type.caption,
+            color = PhaseColors.onGroundDim,
             modifier = Modifier.padding(top = Spacing.space4),
         )
     }

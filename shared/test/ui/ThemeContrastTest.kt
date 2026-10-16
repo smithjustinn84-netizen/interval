@@ -12,8 +12,7 @@ import kotlin.test.assertTrue
 
 /**
  * Pins the contrast the Interval design system promises (WCAG 2: 4.5:1 for text, 3:1 for marks).
- * Pairs the system documents as falling short, such as white on phase-prep or on glass, are left out on
- * purpose.
+ * Every text pair on both screens passes; there are no documented exceptions left.
  */
 class ThemeContrastTest {
     private val palettes = mapOf("light" to lightPalette, "dark" to darkPalette)
@@ -61,24 +60,33 @@ class ThemeContrastTest {
 
     @Test
     fun `workout text reads where the system says it does`() {
-        assertContrast(4.5, PhaseColors.onPhase, PhaseColors.done, "onPhase on done")
-        assertContrast(4.5, PhaseColors.onPhase, PhaseColors.paused, "onPhase on paused")
-        assertContrast(4.5, PhaseColors.ink, PhaseColors.onPhase, "ink on onPhase")
+        listOf(PhaseColors.ground, PhaseColors.control).forEach { ground ->
+            assertContrast(4.5, PhaseColors.onGround, ground, "onGround on $ground")
+            assertContrast(4.5, PhaseColors.onGroundDim, ground, "onGroundDim on $ground")
+        }
+        // The phase word and the ring sit on the ground; ink labels the primary control filled with them.
+        listOf(PhaseColors.prep, PhaseColors.work, PhaseColors.rest, PhaseColors.done).forEach { phase ->
+            assertContrast(4.5, phase, PhaseColors.ground, "$phase on ground")
+            assertContrast(4.5, PhaseColors.ink, phase, "ink on $phase")
+        }
+        // Paused, the primary control fills with onGround, since ink fails on the paused grey.
+        assertContrast(4.5, PhaseColors.ink, PhaseColors.onGround, "ink on onGround")
+        assertContrast(3.0, PhaseColors.paused, PhaseColors.ground, "paused ring on ground")
     }
 
     @Test
     fun `values read on their phase tints`() {
         palettes.forEach { (theme, p) ->
-            assertContrast(3.0, PhaseColors.work, p.tint(PhaseColors.work), "$theme work on its tint")
-            assertContrast(3.0, PhaseColors.rest, p.tint(PhaseColors.rest), "$theme rest on its tint")
-            assertContrast(3.0, p.onPrepTint, p.tint(PhaseColors.prep), "$theme onPrepTint on the prep tint")
-            assertContrast(4.5, p.text, p.tint(PhaseColors.work), "$theme text on the work tint")
+            assertContrast(3.0, p.workMark, p.tint(p.workMark), "$theme work on its tint")
+            assertContrast(3.0, p.restMark, p.tint(p.restMark), "$theme rest on its tint")
+            assertContrast(3.0, p.onPrepTint, p.tint(p.prepMark), "$theme onPrepTint on the prep tint")
+            assertContrast(4.5, p.text, p.tint(p.workMark), "$theme text on the work tint")
         }
     }
 
     @Test
     fun `accent tint matches the design system`() {
         assertEquals(Color(0xFFE8EFFF).toArgb(), lightPalette.accentTint.toArgb())
-        assertEquals(Color(0xFF1D283B).toArgb(), darkPalette.accentTint.toArgb())
+        assertEquals(Color(0xFF1C2433).toArgb(), darkPalette.accentTint.toArgb())
     }
 }

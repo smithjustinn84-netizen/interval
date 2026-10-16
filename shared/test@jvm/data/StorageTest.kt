@@ -54,7 +54,7 @@ class StorageTest {
         withApp { repository ->
             repository.updateConfig { config }
             repository.updateCueSettings { it.copy(halfway = false) }
-            repository.updateAppSettings { AppSettings(theme = ThemeMode.Dark, keepScreenOn = false) }
+            repository.updateAppSettings { AppSettings(theme = ThemeMode.Light, keepScreenOn = false) }
             repository.saveCurrentAsPreset("Long")
             repository.recordWorkout(config, elapsedSeconds = 300, endedEarly = true)
             settled(repository) { it.customPresets.value.size == 1 && it.history.value.size == 1 }
@@ -65,7 +65,7 @@ class StorageTest {
             assertTrue(repository.ready.value)
             assertEquals(config, repository.config.value)
             assertEquals(CueSettings(halfway = false), repository.cueSettings.value)
-            assertEquals(AppSettings(theme = ThemeMode.Dark, keepScreenOn = false), repository.appSettings.value)
+            assertEquals(AppSettings(theme = ThemeMode.Light, keepScreenOn = false), repository.appSettings.value)
             assertEquals(Preset("Long", config, id = 1), repository.customPresets.value.single())
             assertEquals(
                 HistoryEntry(NOW, config, elapsedSeconds = 300, endedEarly = true),
@@ -88,7 +88,7 @@ class StorageTest {
     @Test
     fun `a theme this build doesn't know reads as the default`() {
         withApp { _ -> settings.edit { it[stringPreferencesKey("theme")] = "Sepia" } }
-        withApp { repository -> assertEquals(ThemeMode.System, repository.appSettings.value.theme) }
+        withApp { repository -> assertEquals(AppSettings().theme, repository.appSettings.value.theme) }
     }
 
     @Test

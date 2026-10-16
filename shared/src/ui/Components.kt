@@ -74,7 +74,7 @@ const val MAX_ROUND_MARKS = 12
  * A screen's top bar on one line: an optional navigation action (Back) first, the large title, and
  * the actions at the end, with no top padding of its own.
  *
- * The title is placed by its baseline, so its capitals start [Spacing.space6] under the status bar
+ * The title is placed by its baseline, so its capitals start [Spacing.space8] under the status bar
  * instead of under the band of ascent the font keeps above them. The icon glyphs are drawn level
  * with the capitals, near the top of their 48dp touch targets, so the row's spare height falls
  * below the title rather than above it.
@@ -86,9 +86,9 @@ fun TitleBar(
     navigation: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
 ) {
-    val style = IntervalTheme.type.screenTitle
+    val style = IntervalTheme.type.title
     val capHeight = with(LocalDensity.current) { (style.fontSize * TITLE_CAP_HEIGHT_EM).toDp() }
-    val capTop = Spacing.space6
+    val capTop = Spacing.space8
     // From the touch target's centre to the capitals' centre: negative, so the glyphs move up.
     val glyphShift = capTop + capHeight / 2 - Sizes.iconButton / 2
     CompositionLocalProvider(LocalTitleBarGlyphShift provides glyphShift) {
@@ -188,7 +188,7 @@ fun IconAction(
 fun GroupLabel(text: String, modifier: Modifier = Modifier) {
     Text(
         text,
-        style = IntervalTheme.type.groupLabel,
+        style = IntervalTheme.type.label,
         color = IntervalTheme.palette.textDim,
         modifier = modifier
             .padding(start = Spacing.space4, top = Spacing.space12, bottom = Spacing.space8)
@@ -228,13 +228,13 @@ fun ToggleRow(
             .fillMaxWidth()
             .heightIn(min = Sizes.listRow)
             .toggleable(value = checked, role = Role.Switch, onValueChange = { onToggle() })
-            .padding(horizontal = Spacing.space16, vertical = Spacing.space6),
+            .padding(horizontal = Spacing.space16, vertical = Spacing.space8),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
         Column(Modifier.weight(1f)) {
-            Text(title, style = IntervalTheme.type.cardTitle, color = palette.text)
-            if (subtitle != null) Text(subtitle, style = IntervalTheme.type.hint, color = palette.textDim)
+            Text(title, style = IntervalTheme.type.label, color = palette.text)
+            if (subtitle != null) Text(subtitle, style = IntervalTheme.type.meta, color = palette.textDim)
         }
         // The row owns the toggle and its semantics; the switch only draws the state. One white thumb
         // in both states, the track's accent or text-dim saying which, as the design system draws it.
@@ -273,7 +273,7 @@ fun StartButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
             .clip(shape)
             .background(palette.accent)
             .clickable(role = Role.Button, onClick = onClick),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.space10, Alignment.CenterHorizontally),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space12, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
@@ -284,7 +284,7 @@ fun StartButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
         )
         Text(
             stringResource(Res.string.timer_start_workout),
-            style = IntervalTheme.type.startLabel,
+            style = IntervalTheme.type.value,
             color = palette.onAccent,
         )
     }
@@ -302,7 +302,7 @@ fun Timeline(
     config: IntervalConfig,
     modifier: Modifier = Modifier,
     height: Dp = Sizes.timeline,
-    gap: Dp = Spacing.space2,
+    gap: Dp = Sizes.timelineGap,
     showPrep: Boolean = true,
 ) {
     val palette = IntervalTheme.palette
@@ -340,7 +340,7 @@ fun Timeline(
  * border, or the accent's tint and the accent itself once [selected]. Also tells screen readers.
  */
 @Composable
-fun Modifier.selectableCard(selected: Boolean, shape: Shape = Corners.radius14): Modifier {
+fun Modifier.selectableCard(selected: Boolean, shape: Shape = Corners.radius18): Modifier {
     val palette = IntervalTheme.palette
     return clip(shape)
         .background(if (selected) palette.accentTint else palette.surface)
@@ -356,14 +356,14 @@ fun ValuePill(
     tint: Color,
     modifier: Modifier = Modifier,
     height: Dp = Sizes.valuePill,
-    style: TextStyle = IntervalTheme.type.valuePill,
+    style: TextStyle = IntervalTheme.type.stat,
 ) {
     Box(
         modifier
             .height(height)
-            .clip(if (height < Sizes.valuePill) Corners.radius10 else Corners.radius12)
+            .clip(if (height < Sizes.valuePill) Corners.radius12 else Corners.radius12)
             .background(tint)
-            .padding(horizontal = Spacing.space14),
+            .padding(horizontal = Spacing.space16),
         contentAlignment = Alignment.Center,
     ) {
         Text(text, style = style, color = color)
@@ -421,7 +421,7 @@ fun RepeatButton(
     ) {
         Text(
             symbol,
-            style = IntervalTheme.type.stepperGlyph,
+            style = IntervalTheme.type.control,
             color = if (enabled) palette.text else palette.textDim.copy(alpha = Opacity.DISABLED_GLYPH),
             modifier = Modifier.clearAndSetSemantics {},
         )

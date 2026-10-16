@@ -35,7 +35,7 @@ enum class ThemeMode { System, Light, Dark }
 
 /** App-wide preferences that are not part of a workout's shape. */
 data class AppSettings(
-    val theme: ThemeMode = ThemeMode.System,
+    val theme: ThemeMode = ThemeMode.Dark,
     val keepScreenOn: Boolean = true,
 )
 

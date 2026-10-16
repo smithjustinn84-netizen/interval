@@ -129,11 +129,11 @@ fun ValueSheet(
                             Row(Modifier.fillMaxWidth().padding(horizontal = Spacing.space4)) {
                                 Text(
                                     stringResource(Res.string.value_sheet_new_total),
-                                    style = IntervalTheme.type.total,
+                                    style = IntervalTheme.type.body,
                                     color = palette.textDim,
                                     modifier = Modifier.weight(1f),
                                 )
-                                Text(total, style = IntervalTheme.type.sectionTitle, color = palette.text)
+                                Text(total, style = IntervalTheme.type.section, color = palette.text)
                             }
                         }
                         AccentButton(
@@ -158,8 +158,8 @@ private fun SheetHeader(field: ConfigField, modifier: Modifier = Modifier) {
     ) {
         Box(Modifier.width(Sizes.stripe).height(Sizes.iconButton).clip(Corners.full).background(field.stripe()))
         Column {
-            Text(stringResource(field.labelRes), style = IntervalTheme.type.startLabel, color = palette.text)
-            Text(stringResource(field.hintRes), style = IntervalTheme.type.hint, color = palette.textDim)
+            Text(stringResource(field.labelRes), style = IntervalTheme.type.value, color = palette.text)
+            Text(stringResource(field.hintRes), style = IntervalTheme.type.meta, color = palette.textDim)
         }
     }
 }
@@ -178,7 +178,7 @@ private fun SheetStepper(field: ConfigField, value: Int, onStep: (Int) -> Unit, 
             )
             Text(
                 field.format(value),
-                style = IntervalTheme.type.sheetValue,
+                style = IntervalTheme.type.display,
                 color = field.valueColor(),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.weight(1f),
@@ -198,7 +198,7 @@ private fun SheetStepper(field: ConfigField, value: Int, onStep: (Int) -> Unit, 
         }
         Text(
             hint,
-            style = IntervalTheme.type.hint,
+            style = IntervalTheme.type.meta,
             color = palette.textDim,
             modifier = Modifier.padding(top = Spacing.space8),
         )
@@ -210,7 +210,7 @@ private fun QuickPicks(field: ConfigField, value: Int, onPick: (Int) -> Unit, mo
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         Text(
             stringResource(Res.string.value_sheet_quick_picks),
-            style = IntervalTheme.type.groupLabel,
+            style = IntervalTheme.type.label,
             color = IntervalTheme.palette.textDim,
         )
         field.quickPicks.chunked(QUICK_PICKS_PER_ROW).forEach { row ->

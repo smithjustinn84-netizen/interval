@@ -91,12 +91,12 @@ fun IntervalDialog(
                         end = Spacing.space20,
                         bottom = Spacing.space20,
                     ),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.space10),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.space12),
                 ) {
-                    Text(title, style = IntervalTheme.type.startLabel, color = palette.text)
+                    Text(title, style = IntervalTheme.type.value, color = palette.text)
                     body()
                     Row(
-                        Modifier.fillMaxWidth().padding(top = Spacing.space14),
+                        Modifier.fillMaxWidth().padding(top = Spacing.space16),
                         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
                         content = actions,
                     )
@@ -133,7 +133,7 @@ fun AccentButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifie
         text = text,
         onClick = onClick,
         primary = true,
-        style = IntervalTheme.type.primaryControl,
+        style = IntervalTheme.type.value,
         padding = Spacing.space24,
         modifier = modifier,
         enabled = enabled,
@@ -156,7 +156,7 @@ private fun ModalButton(
     Box(
         modifier
             .heightIn(min = Sizes.save)
-            .clip(Corners.radius14)
+            .clip(Corners.radius18)
             .background(if (enabled) fill else fill.copy(alpha = Opacity.DISABLED))
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = padding),
@@ -189,10 +189,10 @@ fun IntervalMenu(
             DropdownMenuPanel(
                 Modifier
                     .widthIn(min = Sizes.menu)
-                    .clip(Corners.radius14)
+                    .clip(Corners.radius18)
                     .background(palette.surface)
-                    .border(Sizes.border, palette.line, Corners.radius14)
-                    .padding(Spacing.space6),
+                    .border(Sizes.border, palette.line, Corners.radius18)
+                    .padding(Spacing.space8),
             ) {
                 ModalBackHandler { onExpandedChange(false) }
                 items()
@@ -216,14 +216,14 @@ fun IntervalMenuItem(text: String, onClick: () -> Unit, modifier: Modifier = Mod
         modifier = modifier
             .semantics(mergeDescendants = true) { role = Role.Button }
             .fillMaxWidth()
-            .clip(Corners.radius10)
+            .clip(Corners.radius12)
             .background(if (focused || hovered) palette.surfaceVariant else Color.Transparent),
     ) {
         Box(
             Modifier.heightIn(min = Sizes.pillHeight).padding(horizontal = Spacing.space12),
             contentAlignment = Alignment.CenterStart,
         ) {
-            Text(text, style = IntervalTheme.type.cardTitle, color = palette.text)
+            Text(text, style = IntervalTheme.type.label, color = palette.text)
         }
     }
 }

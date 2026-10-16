@@ -8,6 +8,7 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,14 +30,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.unit.TextUnit
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigationevent.NavigationEventInfo
@@ -53,7 +55,9 @@ import dev.justinsmith.interval.resources.workout_resume
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.ui.ConfirmDialog
+import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.MAX_ROUND_MARKS
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.PreviewFormFactors
@@ -85,8 +89,9 @@ fun WorkoutRoute(onExit: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 /**
- * The full-screen timer, with no tab bar. The whole background is the phase color so it reads from
- * across a room; tapping anywhere in the middle pauses or resumes. Wider-than-tall windows move the
+ * The full-screen timer, with no tab bar, on a near-black ground. The phase colour is the progress
+ * ring, the band along the top edge, the phase word and the primary control, so it reads from across
+ * a room; tapping anywhere in the middle pauses or resumes. Wider-than-tall windows move the
  * controls into side rails at thumb reach, which leaves the middle for a much bigger clock.
  *
  * End, or the system back gesture, pauses and asks first. A workout that ends, early or not, turns
@@ -118,19 +123,15 @@ fun WorkoutScreen(
         isBackEnabled = !state.isDone,
         onBackCompleted = requestEnd,
     )
-    val target = when {
-        state.isDone -> PhaseColors.done
-        state.paused -> PhaseColors.paused
-        else -> PhaseColors.of(state.phase)
-    }
-    val background by animateColorAsState(target, tween(Motion.PHASE_CROSSFADE_MILLIS), label = "phase")
+    val accent = phaseColor(state, primary = false)
+    val primaryFill = phaseColor(state, primary = true)
     val focus = remember { FocusRequester() }
     // Key events only reach Compose through a focused node; take focus back after the dialog closes.
     LaunchedEffect(confirmingEnd) { if (!confirmingEnd) focus.requestFocus() }
     BoxWithConstraints(
         modifier
             .fillMaxSize()
-            .background(background)
+            .background(PhaseColors.ground)
             .focusRequester(focus)
             .focusable()
             .workoutKeys(
@@ -141,14 +142,17 @@ fun WorkoutScreen(
                 onEnd = requestEnd,
             ),
     ) {
+        val landscape = maxWidth > maxHeight
+        PhaseBand(accent, landscape)
         if (state.isDone) {
-            SummaryLayout(state, landscape = maxWidth > maxHeight, onRestart, onSavePreset, onExit)
-        } else if (maxWidth > maxHeight) {
-            LandscapeWorkout(state, landscapeClockMax(maxHeight), onTogglePause, onSkip, onBack, onAddTime, requestEnd)
+            SummaryLayout(state, landscape, onRestart, onSavePreset, onExit)
+        } else if (landscape) {
+            LandscapeWorkout(state, accent, primaryFill, onTogglePause, onSkip, onBack, onAddTime, requestEnd)
         } else {
             PortraitWorkout(
                 state = state,
-                clockSize = portraitClockSize(maxWidth - Spacing.space20 * 2, state.clock.length),
+                accent = accent,
+                primaryFill = primaryFill,
                 onTogglePause = onTogglePause,
                 onSkip = onSkip,
                 onBack = onBack,
@@ -185,6 +189,25 @@ fun WorkoutScreen(
 }
 
 /**
+ * The phase colour, crossfading as the phase changes: grey while paused, blue once done. For the
+ * [primary] control's fill, paused is [PhaseColors.onGround] instead, since ink fails on the grey.
+ */
+@Composable
+private fun phaseColor(state: WorkoutUiState, primary: Boolean): Color {
+    val target = when {
+        state.isDone -> PhaseColors.done
+        state.paused -> if (primary) PhaseColors.onGround else PhaseColors.paused
+        else -> PhaseColors.of(state.phase)
+    }
+    val color by animateColorAsState(
+        target,
+        tween(Motion.PHASE_CROSSFADE_MILLIS),
+        label = if (primary) "primary" else "phase",
+    )
+    return color
+}
+
+/**
  * Space or Enter pauses and resumes, the arrow keys go back and skip, and Escape ends. Handled after
  * the focused control, so a button reached with Tab still answers to Enter and Space itself.
  */
@@ -210,7 +233,8 @@ private fun Modifier.workoutKeys(
 @Composable
 private fun PortraitWorkout(
     state: WorkoutUiState,
-    clockSize: TextUnit,
+    accent: Color,
+    primaryFill: Color,
     onTogglePause: () -> Unit,
     onSkip: () -> Unit,
     onBack: () -> Unit,
@@ -221,21 +245,33 @@ private fun PortraitWorkout(
         Modifier
             .fillMaxSize()
             .safeDrawingPadding()
-            .padding(horizontal = Spacing.space20, vertical = Spacing.space16),
+            .padding(top = Sizes.phaseBand + Spacing.space8, start = Spacing.space16, end = Spacing.space16)
+            .padding(vertical = Spacing.space16),
     ) {
         TopBar(state = state, onEnd = onEnd, onSkip = onSkip)
-        Box(
+        BoxWithConstraints(
             Modifier
                 .weight(1f)
                 .fillMaxWidth()
                 .tapToPause(state, onTogglePause),
             contentAlignment = Alignment.Center,
         ) {
-            PortraitReadout(state, clockSize)
+            val diameter = minOf(maxWidth, maxHeight - Sizes.pillHeight, Sizes.ringMax)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                RingReadout(state, accent, diameter)
+                TapHint(state, Modifier.padding(top = Spacing.space12))
+            }
         }
-        ProgressBar(state.progress, Modifier.padding(top = Spacing.space8, bottom = Spacing.space18))
+        if (state.rounds <= MAX_ROUND_MARKS) {
+            RoundDots(
+                state,
+                accent,
+                Modifier.align(Alignment.CenterHorizontally).padding(top = Spacing.space8, bottom = Spacing.space20),
+            )
+        }
         BottomControls(
             state = state,
+            primaryFill = primaryFill,
             onTogglePause = onTogglePause,
             onBack = onBack,
             onAddTime = onAddTime,
@@ -243,11 +279,12 @@ private fun PortraitWorkout(
     }
 }
 
-/** Sideways: End and Back on the left rail, Skip, +10s and Pause on the right, the readout between. */
+/** Sideways: End and Back on the left rail, Skip, +10s and Pause on the right, the ring between. */
 @Composable
 private fun LandscapeWorkout(
     state: WorkoutUiState,
-    clockMax: TextUnit,
+    accent: Color,
+    primaryFill: Color,
     onTogglePause: () -> Unit,
     onSkip: () -> Unit,
     onBack: () -> Unit,
@@ -258,7 +295,8 @@ private fun LandscapeWorkout(
         Modifier
             .fillMaxSize()
             .safeDrawingPadding()
-            .padding(horizontal = Spacing.space20, vertical = Spacing.space16),
+            .padding(start = Sizes.phaseBand + Spacing.space8, end = Spacing.space20)
+            .padding(vertical = Spacing.space16),
         horizontalArrangement = Arrangement.spacedBy(Spacing.space16),
     ) {
         Column(
@@ -268,28 +306,37 @@ private fun LandscapeWorkout(
             EndPill(onEnd, Modifier.fillMaxWidth())
             BackButton(onBack, Modifier.fillMaxWidth().height(Sizes.control))
         }
-        Column(
+        BoxWithConstraints(
             Modifier
                 .weight(1f)
                 .fillMaxHeight()
                 .tapToPause(state, onTogglePause),
+            contentAlignment = Alignment.Center,
         ) {
-            RoundStatus(state, Modifier.fillMaxWidth().padding(top = Spacing.space4))
-            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                LandscapeReadout(state, clockMax)
-            }
-            ProgressBar(state.progress)
+            LandscapeReadout(state, accent, minOf(maxHeight, maxWidth / 2, Sizes.ringMax), Modifier.fillMaxWidth())
         }
         Column(
             Modifier.width(Sizes.rail).fillMaxHeight(),
-            verticalArrangement = Arrangement.spacedBy(Spacing.space10),
+            verticalArrangement = Arrangement.spacedBy(Spacing.space8),
         ) {
             SkipPill(onSkip, Modifier.fillMaxWidth())
             Spacer(Modifier.weight(1f))
             AddTimeButton(onAddTime, Modifier.fillMaxWidth().height(Sizes.control))
-            PrimaryButton(state, onTogglePause, Modifier.fillMaxWidth().height(Sizes.control))
+            PrimaryButton(state, primaryFill, onTogglePause, Modifier.fillMaxWidth().height(Sizes.control))
         }
     }
+}
+
+/** The band of phase colour along the top edge, or the start edge sideways, just inside the system bars. */
+@Composable
+private fun BoxScope.PhaseBand(accent: Color, landscape: Boolean) {
+    val inset = Modifier.safeDrawingPadding()
+    val band = if (landscape) {
+        Modifier.align(Alignment.CenterStart).then(inset).fillMaxHeight().width(Sizes.phaseBand)
+    } else {
+        Modifier.align(Alignment.TopCenter).then(inset).fillMaxWidth().height(Sizes.phaseBand)
+    }
+    Box(band.clip(Corners.full).background(accent))
 }
 
 /** The readout area pauses or resumes on tap, with no ripple: the background change is the feedback. */
