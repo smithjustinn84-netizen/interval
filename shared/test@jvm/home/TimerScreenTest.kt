@@ -6,8 +6,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onLast
@@ -15,6 +18,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
@@ -75,6 +79,22 @@ class TimerScreenTest {
         onNodeWithContentDescription("Less rest time").performClick()
         onNodeWithContentDescription("More rounds").performClick()
         assertEquals(listOf(ConfigField.Work to 1, ConfigField.Rest to -1, ConfigField.Rounds to 1), steps)
+    }
+
+    @Test
+    fun `anywhere on a row opens its sheet`() = runUiTest {
+        setThemedContent { Screen() }
+        // The card's start edge, over the stripe, outside the name and value.
+        onNodeWithText("0:40").performTouchInput { click(centerLeft + Offset(2f, 0f)) }
+        onAllNodesWithContentDescription("More work time").assertCountEquals(2)
+    }
+
+    @Test
+    fun `a stepper at its limit does not open the sheet`() = runUiTest {
+        setThemedContent { Screen(state(custom.copy(workSeconds = ConfigField.Work.range.first))) }
+        onNodeWithContentDescription("Less work time").performClick()
+        onAllNodesWithContentDescription("Less work time").assertCountEquals(1)
+        assertEquals(emptyList(), steps)
     }
 
     @Test

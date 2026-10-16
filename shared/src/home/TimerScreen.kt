@@ -304,13 +304,23 @@ private fun StepperRow(
     } else {
         field.format(value)
     }
+    // The whole card opens the sheet, so its ripple and press fill the card; − and + take their own taps.
+    val interaction = remember { MutableInteractionSource() }
     Row(
         modifier
             .fillMaxWidth()
             .heightIn(min = Sizes.intervalRow)
+            .pressScale(interaction)
             .clip(Corners.radius18)
             .background(palette.surface)
             .drawBehind { drawRect(stripe, size = Size(Sizes.stripe.toPx(), size.height)) }
+            .clickable(
+                interaction,
+                LocalIndication.current,
+                role = Role.Button,
+                onClickLabel = stringResource(field.editRes),
+                onClick = onEdit,
+            )
             .padding(start = Sizes.stripe + Spacing.space16, end = Spacing.space12),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
@@ -319,7 +329,6 @@ private fun StepperRow(
             Modifier
                 .weight(1f)
                 .fillMaxHeight()
-                .clickable(role = Role.Button, onClickLabel = stringResource(field.editRes), onClick = onEdit)
                 .padding(vertical = Spacing.space8),
             verticalArrangement = Arrangement.Center,
         ) {
