@@ -81,9 +81,9 @@ expect fun rememberPlatformModule(): Module
 expect fun KeepScreenOn()
 
 /**
- * Sets the system bars' icons to suit what is drawn under them: [lightIcons] for dark or saturated
- * content (the dark theme, the workout's phase colours). Android only; iOS and desktop follow the
- * system appearance.
+ * Sets the system bars' icons to suit what is drawn under them: [lightIcons] for dark content (the
+ * dark theme, the workout, the intro), whatever the system appearance. Android and iOS; desktop's
+ * title bar follows the system.
  */
 @Composable
 expect fun SystemBarIcons(lightIcons: Boolean)

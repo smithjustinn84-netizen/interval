@@ -48,7 +48,7 @@ xcrun simctl launch booted dev.justinsmith.interval
 |---------------|------------------|---------------------------------------------------------|
 | `shared`      | `kmp/lib`        | All UI and logic: Compose, Nav3, ViewModels, Koin       |
 | `androidApp`  | `android/app`    | `MainActivity` (splash + edge-to-edge) hosting `App()`  |
-| `iosApp`      | `ios/app`        | SwiftUI shell + `ViewController()` hosting `App()`      |
+| `iosApp`      | `ios/app`        | UIKit scene shell + `ViewController()` hosting `App()`  |
 | `desktopApp`  | `jvm/app`        | `main.kt` window hosting `App()`                        |
 | `lint-plugin` | `jvm/amper-plugin` | ktlint `lint` check and `format` command              |
 | `detekt-plugin` | `jvm/amper-plugin` | `detekt` check: detekt 2 + Compose rules, light mode  |

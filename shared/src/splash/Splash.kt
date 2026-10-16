@@ -31,6 +31,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.justinsmith.interval.platform.SystemBarIcons
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.app_name
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -42,13 +43,18 @@ import kotlin.math.hypot
 
 /**
  * [content] with the intro over it, played once per launch. Saveable, so turning the phone doesn't
- * play it again.
+ * play it again. [content] is told whether the intro still covers it, so its system bar icons can
+ * suit the intro, which is dark whatever the theme below.
  */
 @Composable
-internal fun WithIntro(ready: Boolean, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+internal fun WithIntro(
+    ready: Boolean,
+    modifier: Modifier = Modifier,
+    content: @Composable (introPlaying: Boolean) -> Unit,
+) {
     var played by rememberSaveable { mutableStateOf(false) }
     Box(modifier.fillMaxSize()) {
-        content()
+        content(!played)
         if (!played) Splash(ready = ready, onFinish = { played = true })
     }
 }
@@ -86,6 +92,8 @@ internal fun Splash(ready: Boolean, onFinish: () -> Unit, modifier: Modifier = M
         burst.animateTo(1f, tween(BURST_MILLIS, easing = FastOutSlowInEasing))
         finish()
     }
+    // Before the app below is ready, nothing else sets the bars; once it is, it defers to the intro.
+    SystemBarIcons(lightIcons = true)
     // Its own theme: the app's is inside AppContent, under this, and follows the saved setting.
     IntervalTheme(darkTheme = true) {
         Box(

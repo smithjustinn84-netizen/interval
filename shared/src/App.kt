@@ -93,12 +93,15 @@ fun App() {
     val koin = rememberAppKoin()
     val repository = remember(koin) { koin.koin.get<IntervalRepository>() }
     val ready by repository.ready.collectAsStateWithLifecycle()
-    WithIntro(ready) { AppContent(koin) }
+    WithIntro(ready) { introPlaying -> AppContent(koin, introPlaying) }
 }
 
-/** [App] with its container passed in, so tests can run the whole app over fake platform services. */
+/**
+ * [App] with its container passed in, so tests can run the whole app over fake platform services.
+ * While [introPlaying], the system bar icons suit the intro over it rather than the app.
+ */
 @Composable
-internal fun AppContent(koin: KoinApplication) {
+internal fun AppContent(koin: KoinApplication, introPlaying: Boolean = false) {
     KoinIsolatedContext(context = koin) {
         val repository = currentKoinScope().get<IntervalRepository>()
         val ready by repository.ready.collectAsStateWithLifecycle()
@@ -113,8 +116,8 @@ internal fun AppContent(koin: KoinApplication) {
         }
         IntervalTheme(darkTheme = dark) {
             val backStack = rememberNavBackStack(navConfiguration, TimerTab)
-            // The workout paints phase colours under the bars in either theme.
-            SystemBarIcons(lightIcons = dark || backStack.lastOrNull() == Workout)
+            // The workout is dark in either theme, and so is the intro while it covers the app.
+            SystemBarIcons(lightIcons = dark || backStack.lastOrNull() == Workout || introPlaying)
             AppShell(backStack)
         }
     }
