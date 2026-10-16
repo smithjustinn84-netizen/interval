@@ -89,6 +89,8 @@ Compose:
     active: true
   ModifierMissing:
     active: true
+    # These open their own window over the app, so they put nothing in the caller's layout.
+    contentEmittersDenylist: ['UnstyledDialog', 'UnstyledModalBottomSheet', 'IntervalDialog', 'ConfirmDialog', 'SavePresetDialog']
   ModifierNaming:
     active: true
   ModifierNotUsedAtRoot:

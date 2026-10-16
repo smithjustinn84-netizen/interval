@@ -8,6 +8,11 @@ dependencies:
   - $compose.material3: exported
   - $libs.compose.material3.navigation.suite
   - $libs.compose.material3.adaptive.navigation3
+  - $libs.composeunstyled.dialog
+  - $libs.composeunstyled.dropdown.menu
+  - $libs.composeunstyled.modal.bottom.sheet
+  - $libs.composeunstyled.text.field
+  - $libs.composeunstyled.toggle.switch
   - $compose.ui
   - $compose.components.resources
   - $compose.preview

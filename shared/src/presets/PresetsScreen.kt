@@ -23,8 +23,6 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,6 +52,8 @@ import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
+import dev.justinsmith.interval.ui.IntervalMenu
+import dev.justinsmith.interval.ui.IntervalMenuItem
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.PreviewFormFactors
@@ -190,46 +190,45 @@ private fun DeletablePresetCard(
 ) {
     val palette = IntervalTheme.palette
     var menu by remember { mutableStateOf(false) }
-    Box(modifier) {
-        PresetCard(
-            item,
-            onClick = onClick,
-            onLongClick = { menu = true },
-            deletable = true,
-            modifier = Modifier.semantics {
-                customActions = listOf(
-                    CustomAccessibilityAction("Delete preset ${item.preset.name}") {
-                        onDelete()
-                        true
-                    },
-                )
-            },
-        )
-        Box(
-            Modifier
-                .align(Alignment.TopEnd)
-                .padding(Spacing.space4)
-                .size(Sizes.delete)
-                .clip(CircleShape)
-                .clickable(role = Role.Button, onClick = onDelete)
-                .semantics { contentDescription = "Delete preset ${item.preset.name}" },
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                "×",
-                style = IntervalTheme.type.deleteGlyph,
-                color = palette.textDim,
-                modifier = Modifier.clearAndSetSemantics {},
-            )
-        }
-        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-            DropdownMenuItem(
-                text = { Text("Delete", style = IntervalTheme.type.body) },
-                onClick = {
-                    menu = false
-                    onDelete()
+    // Long-press opens the menu; the card itself is the menu's anchor.
+    IntervalMenu(
+        expanded = menu,
+        onExpandedChange = { menu = it },
+        modifier = modifier,
+        items = { IntervalMenuItem("Delete", onClick = onDelete) },
+    ) {
+        Box {
+            PresetCard(
+                item,
+                onClick = onClick,
+                onLongClick = { menu = true },
+                deletable = true,
+                modifier = Modifier.semantics {
+                    customActions = listOf(
+                        CustomAccessibilityAction("Delete preset ${item.preset.name}") {
+                            onDelete()
+                            true
+                        },
+                    )
                 },
             )
+            Box(
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(Spacing.space4)
+                    .size(Sizes.delete)
+                    .clip(CircleShape)
+                    .clickable(role = Role.Button, onClick = onDelete)
+                    .semantics { contentDescription = "Delete preset ${item.preset.name}" },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    "×",
+                    style = IntervalTheme.type.deleteGlyph,
+                    color = palette.textDim,
+                    modifier = Modifier.clearAndSetSemantics {},
+                )
+            }
         }
     }
 }

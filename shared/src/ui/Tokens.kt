@@ -140,7 +140,18 @@ object Sizes {
     /** The badge naming the matching preset on the hero card. */
     val badgeHeight = 32.dp
     val toggleRow = 56.dp
+
+    /** A [ToggleRow]'s switch: the track, and the white thumb inset inside it. */
+    val switchWidth = 46.dp
+    val switchHeight = 28.dp
+    val switchThumb = 22.dp
     val save = 56.dp
+
+    /** The narrowest overflow menu. */
+    val menu = 200.dp
+
+    /** A text field, such as a preset's name. */
+    val field = 52.dp
 
     /** The hit area of a custom preset card's × delete button. */
     val delete = 44.dp
@@ -181,6 +192,9 @@ object Sizes {
     /** The edit sheet's − / + buttons, a size up from [stepper]. */
     val sheetStepper = 68.dp
 
+    /** The widest the edit sheet grows; wider windows centre it. */
+    val sheet = 640.dp
+
     /** The edit sheet's drag handle. */
     val handleWidth = 36.dp
     val handleHeight = 5.dp
@@ -196,6 +210,9 @@ object Opacity {
 
     /** The accent-coloured shadow under Start workout. */
     const val START_SHADOW = 0.35f
+
+    /** The `ink` dim behind a dialog or sheet. */
+    const val SCRIM = 0.55f
 }
 
 /** Timings from the design system's Motion section. */

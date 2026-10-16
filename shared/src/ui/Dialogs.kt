@@ -1,32 +1,36 @@
 package dev.justinsmith.interval.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.foundation.text.input.InputTransformation
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.maxLength
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextAlign
+import com.composeunstyled.TextInput
+import com.composeunstyled.UnstyledTextField
 import dev.justinsmith.interval.data.IntervalRepository
 
 /** A full-width accent button for a sheet or dialog's confirming action. */
@@ -46,7 +50,7 @@ fun AccentButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifie
     }
 }
 
-/** A Material alert dialog in the app's colours: title, one line of text, a dismiss and a confirm action. */
+/** Asks before an action that can't be undone: title, one line of text, a dismiss and a confirm action. */
 @Composable
 fun ConfirmDialog(
     title: String,
@@ -56,73 +60,82 @@ fun ConfirmDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val palette = IntervalTheme.palette
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = Corners.radius18,
-        containerColor = palette.surface,
-        title = { Text(title, style = IntervalTheme.type.startLabel, color = palette.text) },
-        text = { Text(text, style = IntervalTheme.type.body, color = palette.textDim) },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(dismiss, style = IntervalTheme.type.buttonLabel, color = palette.accent)
-            }
+    IntervalDialog(
+        title = title,
+        onDismiss = onDismiss,
+        actions = {
+            DialogButton(dismiss, onClick = onDismiss, primary = false)
+            DialogButton(confirm, onClick = onConfirm, primary = true)
         },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text(confirm, style = IntervalTheme.type.buttonLabel, color = palette.accent)
-            }
-        },
-    )
+    ) {
+        Text(text, style = IntervalTheme.type.body, color = IntervalTheme.palette.textDim)
+    }
 }
 
 /** Names and saves the current workout as a preset. [summary] is its shape: "25s on · 10s off · ×8 · 4:40 total". */
 @Composable
 fun SavePresetDialog(summary: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
     val palette = IntervalTheme.palette
-    var name by rememberSaveable { mutableStateOf("") }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = Corners.radius18,
-        containerColor = palette.surface,
-        title = {
-            Column {
-                Text("Save as preset", style = IntervalTheme.type.startLabel, color = palette.text)
-                Text(summary, style = IntervalTheme.type.presetDescription, color = palette.textDim)
-            }
+    val name = rememberTextFieldState()
+    val save = { onSave(name.text.toString()) }
+    IntervalDialog(
+        title = "Save as preset",
+        onDismiss = onDismiss,
+        actions = {
+            DialogButton("Cancel", onClick = onDismiss, primary = false)
+            DialogButton("Save", onClick = save, primary = true)
         },
-        text = {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it.take(IntervalRepository.MAX_PRESET_NAME) },
-                label = { Text("Name") },
-                placeholder = { Text("Custom") },
-                supportingText = {
-                    Text(
-                        "${name.length} / ${IntervalRepository.MAX_PRESET_NAME}",
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.End,
-                    )
-                },
-                singleLine = true,
-                shape = Corners.radius14,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { onSave(name) }),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = palette.surface,
-                    unfocusedContainerColor = palette.surface,
-                    focusedBorderColor = palette.accent,
-                    unfocusedBorderColor = palette.textDim,
-                    focusedLabelColor = palette.accent,
-                ),
-                modifier = Modifier.widthIn(min = Sizes.content / 2),
+    ) {
+        Text(
+            summary,
+            style = IntervalTheme.type.presetDescription,
+            color = palette.textDim,
+            modifier = Modifier.padding(bottom = Spacing.space6),
+        )
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+            Text("Name", style = IntervalTheme.type.groupLabel, color = palette.textDim, modifier = Modifier.weight(1f))
+            Text(
+                "${name.text.length} / ${IntervalRepository.MAX_PRESET_NAME}",
+                style = IntervalTheme.type.hint,
+                color = palette.textDim,
             )
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel", style = IntervalTheme.type.buttonLabel, color = palette.textDim)
-            }
-        },
-        confirmButton = { AccentButton("Save", onClick = { onSave(name) }) },
-    )
+        }
+        NameField(name, onDone = save)
+    }
+}
+
+/** A filled single-line field; the accent ring appears only while it has focus. */
+@Composable
+private fun NameField(state: TextFieldState, onDone: () -> Unit) {
+    val palette = IntervalTheme.palette
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    UnstyledTextField(
+        state = state,
+        accessibilityLabel = "Name",
+        textStyle = IntervalTheme.type.cardTitle,
+        textColor = palette.text,
+        cursorBrush = SolidColor(palette.accent),
+        selectionColors = TextSelectionColors(handleColor = palette.accent, backgroundColor = palette.accentTint),
+        lineLimits = TextFieldLineLimits.SingleLine,
+        inputTransformation = InputTransformation.maxLength(IntervalRepository.MAX_PRESET_NAME),
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        onKeyboardAction = { onDone() },
+        interactionSource = interaction,
+        modifier = Modifier
+            .fillMaxWidth()
+            .widthIn(min = Sizes.content / 2)
+            .clip(Corners.radius12)
+            .background(palette.surfaceVariant)
+            .border(Sizes.border, if (focused) palette.accent else Color.Transparent, Corners.radius12)
+            .padding(horizontal = Spacing.space14),
+    ) {
+        // The field's text sits on its vertical centre, however tall the field.
+        Box(Modifier.fillMaxWidth().heightIn(min = Sizes.field), contentAlignment = Alignment.CenterStart) {
+            TextInput(
+                Modifier.fillMaxWidth(),
+                placeholder = { Text("Custom", style = IntervalTheme.type.cardTitle, color = palette.textDim) },
+            )
+        }
+    }
 }

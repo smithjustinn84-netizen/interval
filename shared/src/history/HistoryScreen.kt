@@ -16,8 +16,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -40,6 +38,8 @@ import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
+import dev.justinsmith.interval.ui.IntervalMenu
+import dev.justinsmith.interval.ui.IntervalMenuItem
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.PhaseColors
@@ -76,19 +76,14 @@ fun HistoryScreen(state: HistoryUiState, onClear: () -> Unit, modifier: Modifier
         ) {
             item(span = StaggeredGridItemSpan.FullLine) {
                 TitleBar("History") {
-                    Box {
+                    IntervalMenu(
+                        expanded = menu,
+                        onExpandedChange = { menu = it },
+                        items = { IntervalMenuItem("Clear history", onClick = { confirming = true }) },
+                    ) {
                         IconAction(IntervalIcons.More, "More options", onClick = {
                             menu = true
                         }, enabled = !state.isEmpty)
-                        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                            DropdownMenuItem(
-                                text = { Text("Clear history", style = IntervalTheme.type.body) },
-                                onClick = {
-                                    menu = false
-                                    confirming = true
-                                },
-                            )
-                        }
                     }
                 }
             }
