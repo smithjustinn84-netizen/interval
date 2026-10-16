@@ -5,7 +5,9 @@ package dev.justinsmith.interval.platform
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
-import dev.justinsmith.interval.data.KeyValueStore
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import dev.justinsmith.interval.data.AppDatabase
 import kotlinx.cinterop.ExperimentalForeignApi
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -13,13 +15,16 @@ import platform.AVFAudio.AVSpeechBoundary
 import platform.AVFAudio.AVSpeechSynthesizer
 import platform.AVFAudio.AVSpeechUtterance
 import platform.AudioToolbox.AudioServicesPlaySystemSound
+import platform.Foundation.NSApplicationSupportDirectory
 import platform.Foundation.NSCalendar
 import platform.Foundation.NSCalendarUnitDay
 import platform.Foundation.NSCalendarUnitEra
 import platform.Foundation.NSCalendarUnitWeekday
 import platform.Foundation.NSDate
 import platform.Foundation.NSDateFormatter
-import platform.Foundation.NSUserDefaults
+import platform.Foundation.NSFileManager
+import platform.Foundation.NSURL
+import platform.Foundation.NSUserDomainMask
 import platform.Foundation.dateByAddingTimeInterval
 import platform.Foundation.dateWithTimeIntervalSince1970
 import platform.Foundation.timeIntervalSince1970
@@ -31,7 +36,7 @@ import kotlin.time.DurationUnit
 @Composable
 actual fun rememberPlatformModule(): Module = remember {
     module {
-        single<KeyValueStore> { UserDefaultsStore() }
+        single<PlatformStorage> { IosStorage() }
         single<CuePlayer> { IosCuePlayer() }
         single<TimestampFormatter> { FoundationTimestampFormatter() }
     }
@@ -53,18 +58,23 @@ actual val materialBackPreview: Boolean = false
 
 actual fun epochMillisNow(): Long = NSDate().timeIntervalSince1970.seconds.inWholeMilliseconds
 
-private class UserDefaultsStore : KeyValueStore {
-    private val defaults = NSUserDefaults.standardUserDefaults
-
-    override fun getString(key: String): String? = defaults.stringForKey(PREFIX + key)
-
-    override fun putString(key: String, value: String) {
-        defaults.setObject(value, forKey = PREFIX + key)
+/** Application Support rather than Documents, which the user can see when file sharing is on. */
+private class IosStorage : PlatformStorage {
+    private val directory: String = run {
+        val url: NSURL? = NSFileManager.defaultManager.URLForDirectory(
+            directory = NSApplicationSupportDirectory,
+            inDomain = NSUserDomainMask,
+            appropriateForURL = null,
+            create = true,
+            error = null,
+        )
+        requireNotNull(url?.path) { "No Application Support directory" }
     }
 
-    private companion object {
-        const val PREFIX = "interval."
-    }
+    override fun databaseBuilder(): RoomDatabase.Builder<AppDatabase> =
+        Room.databaseBuilder<AppDatabase>(name = "$directory/$DATABASE_NAME")
+
+    override val preferencesPath: String = "$directory/$PREFERENCES_NAME"
 }
 
 private class FoundationTimestampFormatter : TimestampFormatter {

@@ -40,31 +40,29 @@ class SettingsViewModel(private val repository: IntervalRepository) : ViewModel(
         )
 
     fun toggle(toggle: CueToggle) {
-        val cues = repository.cueSettings.value
-        repository.setCueSettings(
+        repository.updateCueSettings { cues ->
             when (toggle) {
                 CueToggle.Sound -> cues.copy(sound = !cues.sound)
                 CueToggle.Voice -> cues.copy(voice = !cues.voice)
                 CueToggle.Halfway -> cues.copy(halfway = !cues.halfway)
                 CueToggle.Vibrate -> cues.copy(vibrate = !cues.vibrate)
-            },
-        )
+            }
+        }
     }
 
     fun stepPrep(direction: Int) {
-        repository.setConfig(repository.config.value.stepped(ConfigField.Prep, direction))
+        repository.updateConfig { it.stepped(ConfigField.Prep, direction) }
     }
 
     fun setPrep(seconds: Int) {
-        repository.setConfig(repository.config.value.withValue(ConfigField.Prep, seconds))
+        repository.updateConfig { it.withValue(ConfigField.Prep, seconds) }
     }
 
     fun toggleKeepScreenOn() {
-        val app = repository.appSettings.value
-        repository.setAppSettings(app.copy(keepScreenOn = !app.keepScreenOn))
+        repository.updateAppSettings { it.copy(keepScreenOn = !it.keepScreenOn) }
     }
 
     fun setTheme(theme: ThemeMode) {
-        repository.setAppSettings(repository.appSettings.value.copy(theme = theme))
+        repository.updateAppSettings { it.copy(theme = theme) }
     }
 }

@@ -1,6 +1,8 @@
 package dev.justinsmith.interval.platform
 
 import androidx.compose.runtime.Composable
+import androidx.room.RoomDatabase
+import dev.justinsmith.interval.data.AppDatabase
 import org.koin.core.module.Module
 
 /** The sounds the app plays. Each platform maps them to tones it has. */
@@ -36,9 +38,24 @@ interface TimestampFormatter {
     fun weekday(epochMillis: Long): Int
 }
 
+/** Where the app keeps its files. Each platform puts them in its usual private app-data location. */
+interface PlatformStorage {
+    /** A builder for the database file; the driver and coroutine context are set in common code. */
+    fun databaseBuilder(): RoomDatabase.Builder<AppDatabase>
+
+    /** Absolute path of the settings file (DataStore Preferences). */
+    val preferencesPath: String
+}
+
+/** The database's file name, inside the platform's app-data directory. */
+internal const val DATABASE_NAME = "interval.db"
+
+/** The settings file's name. DataStore requires the `.preferences_pb` extension. */
+internal const val PREFERENCES_NAME = "interval.preferences_pb"
+
 /**
- * Koin definitions for platform services: a [dev.justinsmith.interval.data.KeyValueStore], a
- * [CuePlayer] and a [TimestampFormatter]. Built in composition because Android needs a `Context`.
+ * Koin definitions for platform services: [PlatformStorage], a [CuePlayer] and a
+ * [TimestampFormatter]. Built in composition because Android needs a `Context`.
  */
 @Composable
 expect fun rememberPlatformModule(): Module

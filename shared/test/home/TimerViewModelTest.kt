@@ -2,8 +2,7 @@
 
 package dev.justinsmith.interval.home
 
-import dev.justinsmith.interval.data.IntervalRepository
-import dev.justinsmith.interval.fakes.FakeKeyValueStore
+import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.builtInPresets
 import kotlinx.coroutines.Dispatchers
@@ -20,7 +19,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class TimerViewModelTest {
-    private val repository = IntervalRepository(FakeKeyValueStore(), now = { 0L })
+    private val repository = FakeStorage().repository(now = { 0L })
     private val viewModel by lazy { TimerViewModel(repository) }
 
     @BeforeTest

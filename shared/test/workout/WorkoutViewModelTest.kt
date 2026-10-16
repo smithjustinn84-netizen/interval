@@ -3,8 +3,7 @@
 package dev.justinsmith.interval.workout
 
 import dev.justinsmith.interval.data.CueSettings
-import dev.justinsmith.interval.data.IntervalRepository
-import dev.justinsmith.interval.fakes.FakeKeyValueStore
+import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.RecordingCuePlayer
 import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -26,13 +25,13 @@ import kotlin.test.assertTrue
 
 class WorkoutViewModelTest {
     private val dispatcher = StandardTestDispatcher()
-    private val repository = IntervalRepository(FakeKeyValueStore(), now = { 7L })
+    private val repository = FakeStorage().repository(now = { 7L })
     private val player = RecordingCuePlayer()
 
     @BeforeTest
     fun setUp() {
         Dispatchers.setMain(dispatcher)
-        repository.setConfig(IntervalConfig(prepSeconds = 0, workSeconds = 5, restSeconds = 5, rounds = 2))
+        repository.updateConfig { IntervalConfig(prepSeconds = 0, workSeconds = 5, restSeconds = 5, rounds = 2) }
     }
 
     @AfterTest
@@ -118,7 +117,7 @@ class WorkoutViewModelTest {
 
     @Test
     fun `cues respect the user's toggles`() = runTest(dispatcher) {
-        repository.setCueSettings(CueSettings(sound = false, voice = false, vibrate = false))
+        repository.updateCueSettings { CueSettings(sound = false, voice = false, vibrate = false) }
         val viewModel = WorkoutViewModel(repository, player, testScheduler.timeSource)
         viewModel.skip()
         viewModel.skip()

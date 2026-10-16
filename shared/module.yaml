@@ -21,6 +21,9 @@ dependencies:
   - $libs.koin.core
   - $libs.koin.compose
   - $libs.kermit
+  - $libs.androidx.room.runtime
+  - $libs.androidx.sqlite.bundled
+  - $libs.androidx.datastore.preferences.core
 
 test-dependencies:
   - $libs.kotlinx.coroutines.test
@@ -47,7 +50,16 @@ settings:
       exposedAccessors: true
   kotlin:
     allWarningsAsErrors: true
+    # Room's KMP database constructor is an `expect object` whose `actual` KSP generates, and
+    # expect/actual classes still warn as Beta. The flag only silences that warning, so it is safe in
+    # the native cache build of dependencies too (see the note on `optIns` below).
+    freeCompilerArgs: [-Xexpect-actual-classes]
     serialization: json
+    ksp:
+      processors:
+        - $libs.androidx.room.compiler
+      processorOptions:
+        room.schemaLocation: ./schemas
     # No module-wide `optIns`: opt in per file (`@file:OptIn`). Since toolchain 0.13 the module's
     # flags reach the native compiler-cache build of every dependency, where a marker the library
     # cannot see is an "unresolved" warning, which allWarningsAsErrors turns into a failed iOS link.

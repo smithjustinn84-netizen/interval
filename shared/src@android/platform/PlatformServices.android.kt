@@ -17,8 +17,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import androidx.room.Room
+import androidx.room.RoomDatabase
 import co.touchlab.kermit.Logger
-import dev.justinsmith.interval.data.KeyValueStore
+import dev.justinsmith.interval.data.AppDatabase
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.onClose
 import org.koin.core.module.dsl.withOptions
@@ -32,7 +34,7 @@ actual fun rememberPlatformModule(): Module {
     val context = LocalContext.current.applicationContext
     return remember(context) {
         module {
-            single<KeyValueStore> { SharedPreferencesStore(context) }
+            single<PlatformStorage> { AndroidStorage(context) }
             // Eager, so the speech engine has finished starting before the first workout cue.
             single<CuePlayer>(createdAtStart = true) { AndroidCuePlayer(context) }.withOptions {
                 onClose { it?.release() }
@@ -73,14 +75,12 @@ actual val materialBackPreview: Boolean = true
 
 actual fun epochMillisNow(): Long = System.currentTimeMillis()
 
-private class SharedPreferencesStore(context: Context) : KeyValueStore {
-    private val prefs = context.getSharedPreferences("interval", Context.MODE_PRIVATE)
+private class AndroidStorage(private val context: Context) : PlatformStorage {
+    override fun databaseBuilder(): RoomDatabase.Builder<AppDatabase> =
+        Room.databaseBuilder<AppDatabase>(context, context.getDatabasePath(DATABASE_NAME).absolutePath)
 
-    override fun getString(key: String): String? = prefs.getString(key, null)
-
-    override fun putString(key: String, value: String) {
-        prefs.edit().putString(key, value).apply()
-    }
+    override val preferencesPath: String =
+        context.filesDir.resolve("datastore/$PREFERENCES_NAME").absolutePath
 }
 
 private class JavaTimeFormatter : TimestampFormatter {

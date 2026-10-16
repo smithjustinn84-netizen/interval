@@ -1,25 +1,26 @@
 package dev.justinsmith.interval.data
 
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
+import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.json.Json
-
-/** Minimal persistent string storage. Each platform backs it with its native preferences store. */
-interface KeyValueStore {
-    fun getString(key: String): String?
-
-    fun putString(key: String, value: String)
-}
+import kotlinx.coroutines.launch
 
 /** Which feedback plays during a workout. */
-@Serializable
 data class CueSettings(
     val sound: Boolean = true,
     val voice: Boolean = true,
@@ -31,121 +32,167 @@ data class CueSettings(
 enum class ThemeMode { System, Light, Dark }
 
 /** App-wide preferences that are not part of a workout's shape. */
-@Serializable
 data class AppSettings(
     val theme: ThemeMode = ThemeMode.System,
     val keepScreenOn: Boolean = true,
 )
 
-/** A finished workout, run to the end or [endedEarly]. */
-@Serializable
+/** A finished workout that ran for [elapsedSeconds], pauses excluded, to the end or [endedEarly]. */
 data class HistoryEntry(
     val finishedAtEpochMillis: Long,
     val config: IntervalConfig,
-    /**
-     * Seconds the timer ran, pauses excluded. Null only on entries saved before it was recorded for
-     * workouts that ran to the end; those count their planned length.
-     */
-    val elapsedSeconds: Int? = null,
-    /** Entries from before this field stored a time only when ended early, hence the default. */
-    val endedEarly: Boolean = elapsedSeconds != null,
+    val elapsedSeconds: Int,
+    val endedEarly: Boolean,
 ) {
-    val durationSeconds: Int get() = elapsedSeconds ?: config.totalSeconds
+    val durationSeconds: Int get() = elapsedSeconds
 }
 
 /**
  * The app's saved state: the current setup, cue toggles, app settings, custom presets and workout history.
- * Values are held in memory as [StateFlow]s and written through to [store] on every change.
+ *
+ * Settings live in [settings] (DataStore) and collections in Room ([historyDao], [presetDao]). Everything is
+ * read once into memory, after which [ready] turns true and every [StateFlow] holds what was stored. Settings
+ * then change in memory first, synchronously, so a value set a moment ago is what the next screen reads.
+ * Collections follow the database. Writes run in the background on [scope], one at a time in the order they
+ * were made.
  */
 class IntervalRepository(
-    private val store: KeyValueStore,
+    private val settings: DataStore<Preferences>,
+    private val historyDao: HistoryDao,
+    private val presetDao: PresetDao,
+    private val scope: CoroutineScope,
     private val now: () -> Long,
 ) {
-    private val json = Json { ignoreUnknownKeys = true }
+    private val log = Logger.withTag("IntervalRepository")
 
-    private val _config = MutableStateFlow(load(KEY_CONFIG, IntervalConfig.serializer()) ?: IntervalConfig())
+    private val _ready = MutableStateFlow(false)
+
+    /** True once every value below has been read from disk. Until then they hold defaults. */
+    val ready: StateFlow<Boolean> = _ready.asStateFlow()
+
+    private val _config = MutableStateFlow(IntervalConfig())
     val config: StateFlow<IntervalConfig> = _config.asStateFlow()
 
-    private val _cueSettings = MutableStateFlow(load(KEY_CUES, CueSettings.serializer()) ?: CueSettings())
+    private val _cueSettings = MutableStateFlow(CueSettings())
     val cueSettings: StateFlow<CueSettings> = _cueSettings.asStateFlow()
 
-    private val _appSettings = MutableStateFlow(load(KEY_APP, AppSettings.serializer()) ?: AppSettings())
+    private val _appSettings = MutableStateFlow(AppSettings())
     val appSettings: StateFlow<AppSettings> = _appSettings.asStateFlow()
 
-    private val _customPresets = MutableStateFlow(load(KEY_PRESETS, presetList) ?: emptyList())
+    private val _customPresets = MutableStateFlow(emptyList<Preset>())
+
+    /** In the order they were saved. */
     val customPresets: StateFlow<List<Preset>> = _customPresets.asStateFlow()
 
-    private val _history = MutableStateFlow(load(KEY_HISTORY, historyList) ?: emptyList())
+    private val _history = MutableStateFlow(emptyList<HistoryEntry>())
 
-    /** Newest first, at most [MAX_HISTORY] entries. */
+    // Queued in call order and run one at a time, so a save can't overtake an earlier one (a clear
+    // landing before the insert it followed, presets stored out of order).
+    private val writes = Channel<suspend () -> Unit>(Channel.UNLIMITED)
+
+    /** Newest first. */
     val history: StateFlow<List<HistoryEntry>> = _history.asStateFlow()
 
-    fun setConfig(config: IntervalConfig) {
-        _config.value = config
-        save(KEY_CONFIG, IntervalConfig.serializer(), config)
+    init {
+        scope.launch {
+            for (write in writes) runLogged(write)
+        }
+        scope.launch {
+            val presetsLoaded = CompletableDeferred<Unit>()
+            val historyLoaded = CompletableDeferred<Unit>()
+            launch {
+                presetDao.observeAll().orEmptyOnError("presets").collect { rows ->
+                    _customPresets.value = rows.map { it.toDomain() }
+                    presetsLoaded.complete(Unit)
+                }
+            }
+            launch {
+                historyDao.observeAll().orEmptyOnError("history").collect { rows ->
+                    _history.value = rows.map { it.toDomain() }
+                    historyLoaded.complete(Unit)
+                }
+            }
+            // An unreadable settings file falls back to the defaults rather than keeping the app from starting.
+            val stored = settings.data
+                .catch { e ->
+                    log.e(e) { "Couldn't read settings" }
+                    emit(emptyPreferences())
+                }
+                .first()
+            _config.value = stored.toConfig()
+            _cueSettings.value = stored.toCueSettings()
+            _appSettings.value = stored.toAppSettings()
+            presetsLoaded.await()
+            historyLoaded.await()
+            _ready.value = true
+        }
     }
 
-    fun setCueSettings(settings: CueSettings) {
-        _cueSettings.value = settings
-        save(KEY_CUES, CueSettings.serializer(), settings)
+    fun updateConfig(transform: (IntervalConfig) -> IntervalConfig) {
+        _config.update(transform)
+        persist { settings.edit { it.write(_config.value) } }
     }
 
-    fun setAppSettings(settings: AppSettings) {
-        _appSettings.value = settings
-        save(KEY_APP, AppSettings.serializer(), settings)
+    fun updateCueSettings(transform: (CueSettings) -> CueSettings) {
+        _cueSettings.update(transform)
+        persist { settings.edit { it.write(_cueSettings.value) } }
+    }
+
+    fun updateAppSettings(transform: (AppSettings) -> AppSettings) {
+        _appSettings.update(transform)
+        persist { settings.edit { it.write(_appSettings.value) } }
     }
 
     /** Takes [preset]'s work, rest and rounds; the get-ready countdown stays the user's own setting. */
     fun applyPreset(preset: Preset) {
-        setConfig(preset.config.copy(prepSeconds = _config.value.prepSeconds))
+        updateConfig { preset.config.copy(prepSeconds = it.prepSeconds) }
     }
 
     /** Saves the current configuration under [name]; a blank name becomes "Custom N". */
     fun saveCurrentAsPreset(name: String) {
-        _customPresets.update { presets ->
-            val label = name.trim().ifEmpty { "Custom ${presets.size + 1}" }.take(MAX_PRESET_NAME)
-            presets + Preset(label, _config.value)
-        }
-        save(KEY_PRESETS, presetList, _customPresets.value)
+        val label = name.trim().ifEmpty { "Custom ${_customPresets.value.size + 1}" }.take(MAX_PRESET_NAME)
+        val preset = Preset(label, _config.value)
+        persist { presetDao.insert(preset.toEntity()) }
     }
 
+    /** Removes one of the user's own presets. Built-ins have no id and are left alone. */
     fun deletePreset(preset: Preset) {
-        _customPresets.update { presets -> presets - preset }
-        save(KEY_PRESETS, presetList, _customPresets.value)
+        val id = preset.id ?: return
+        persist { presetDao.delete(id) }
     }
 
     /** Records a workout that ran for [elapsedSeconds]; [endedEarly] when it stopped before the last round. */
-    fun recordWorkout(config: IntervalConfig, elapsedSeconds: Int? = null, endedEarly: Boolean = false) {
+    fun recordWorkout(config: IntervalConfig, elapsedSeconds: Int, endedEarly: Boolean = false) {
         val entry = HistoryEntry(now(), config, elapsedSeconds, endedEarly)
-        _history.update { entries -> (listOf(entry) + entries).take(MAX_HISTORY) }
-        save(KEY_HISTORY, historyList, _history.value)
+        persist { historyDao.insert(entry.toEntity()) }
     }
 
     fun clearHistory() {
-        _history.value = emptyList()
-        save(KEY_HISTORY, historyList, emptyList())
+        persist { historyDao.clear() }
     }
 
-    // A value that fails to decode (an older format, a corrupt write) falls back to the default
-    // rather than crashing the app on launch.
-    private fun <T> load(key: String, serializer: KSerializer<T>): T? =
-        store.getString(key)?.let { raw -> runCatching { json.decodeFromString(serializer, raw) }.getOrNull() }
+    private fun <T> Flow<List<T>>.orEmptyOnError(what: String): Flow<List<T>> = catch { e ->
+        log.e(e) { "Couldn't read $what" }
+        emit(emptyList())
+    }
 
-    private fun <T> save(key: String, serializer: KSerializer<T>, value: T) {
-        store.putString(key, json.encodeToString(serializer, value))
+    private fun persist(write: suspend () -> Unit) {
+        writes.trySend(write)
+    }
+
+    // A failed write is logged, never thrown: losing one save must not crash a workout.
+    @Suppress("detekt.TooGenericExceptionCaught")
+    private suspend fun runLogged(write: suspend () -> Unit) {
+        try {
+            write()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            log.e(e) { "Couldn't save" }
+        }
     }
 
     companion object {
-        const val MAX_HISTORY = 20
         const val MAX_PRESET_NAME = 24
-
-        private const val KEY_CONFIG = "config"
-        private const val KEY_CUES = "cues"
-        private const val KEY_APP = "app"
-        private const val KEY_PRESETS = "presets"
-        private const val KEY_HISTORY = "history"
-
-        private val presetList = ListSerializer(Preset.serializer())
-        private val historyList = ListSerializer(HistoryEntry.serializer())
     }
 }

@@ -1,0 +1,156 @@
+package dev.justinsmith.interval.data
+
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.room.Room
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import dev.justinsmith.interval.timer.ConfigField
+import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.timer.stepped
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import okio.Path.Companion.toPath
+import java.io.File
+import java.nio.file.Files
+import kotlin.test.AfterTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+
+/**
+ * The repository over real files: a DataStore and a Room database in a temp directory, with writes on
+ * Dispatchers.IO as in the app. The common tests' fakes finish every write before a call returns; these
+ * check the app still behaves when writes are genuinely asynchronous.
+ */
+class StorageTest {
+    private val directory: File = Files.createTempDirectory("interval-storage").toFile()
+
+    @AfterTest
+    fun cleanUp() {
+        directory.deleteRecursively()
+    }
+
+    @Test
+    fun `a change is readable straight away, before it reaches disk`() = withApp { repository ->
+        repository.updateConfig { it.copy(workSeconds = 50) }
+        assertEquals(50, repository.config.value.workSeconds)
+    }
+
+    @Test
+    fun `everything survives a restart`() {
+        val config = IntervalConfig(prepSeconds = 5, workSeconds = 45, restSeconds = 15, rounds = 12)
+        withApp { repository ->
+            repository.updateConfig { config }
+            repository.updateCueSettings { it.copy(halfway = false) }
+            repository.updateAppSettings { AppSettings(theme = ThemeMode.Dark, keepScreenOn = false) }
+            repository.saveCurrentAsPreset("Long")
+            repository.recordWorkout(config, elapsedSeconds = 300, endedEarly = true)
+            settled(repository) { it.customPresets.value.size == 1 && it.history.value.size == 1 }
+            settledOnDisk { it.toConfig() == config && !it.toCueSettings().halfway && !it.toAppSettings().keepScreenOn }
+        }
+        withApp { repository ->
+            // Ready means every value is the stored one, not a default.
+            assertTrue(repository.ready.value)
+            assertEquals(config, repository.config.value)
+            assertEquals(CueSettings(halfway = false), repository.cueSettings.value)
+            assertEquals(AppSettings(theme = ThemeMode.Dark, keepScreenOn = false), repository.appSettings.value)
+            assertEquals(Preset("Long", config, id = 1), repository.customPresets.value.single())
+            assertEquals(
+                HistoryEntry(NOW, config, elapsedSeconds = 300, endedEarly = true),
+                repository.history.value.single(),
+            )
+        }
+    }
+
+    @Test
+    fun `after many quick changes the last one is what's saved`() {
+        withApp { repository ->
+            repeat(40) { repository.updateConfig { it.stepped(ConfigField.Rounds, +1) } }
+            val expected = IntervalConfig().rounds + 40
+            assertEquals(expected, repository.config.value.rounds)
+            settledOnDisk { it.toConfig().rounds == expected }
+        }
+        withApp { repository -> assertEquals(IntervalConfig().rounds + 40, repository.config.value.rounds) }
+    }
+
+    @Test
+    fun `a theme this build doesn't know reads as the default`() {
+        withApp { _ -> settings.edit { it[stringPreferencesKey("theme")] = "Sepia" } }
+        withApp { repository -> assertEquals(ThemeMode.System, repository.appSettings.value.theme) }
+    }
+
+    @Test
+    fun `history is newest first and presets keep their save order`() = withApp { repository ->
+        repository.saveCurrentAsPreset("B")
+        repository.saveCurrentAsPreset("A")
+        clock = 1
+        repository.recordWorkout(IntervalConfig(), elapsedSeconds = 1)
+        clock = 3
+        repository.recordWorkout(IntervalConfig(), elapsedSeconds = 3)
+        clock = 2
+        repository.recordWorkout(IntervalConfig(), elapsedSeconds = 2)
+        settled(repository) { it.customPresets.value.size == 2 && it.history.value.size == 3 }
+
+        assertEquals(listOf("B", "A"), repository.customPresets.value.map { it.name })
+        assertEquals(listOf(3, 2, 1), repository.history.value.map { it.elapsedSeconds })
+
+        repository.deletePreset(repository.customPresets.value.first())
+        repository.clearHistory()
+        settled(repository) { it.customPresets.value.size == 1 && it.history.value.isEmpty() }
+        assertEquals(listOf("A"), repository.customPresets.value.map { it.name })
+    }
+
+    private var clock = NOW
+    private lateinit var settings: DataStore<Preferences>
+
+    /**
+     * Opens the app's storage, waits for [IntervalRepository.ready], runs [block], then shuts down the way
+     * the Koin container does: cancel the scope (releasing DataStore's file) and close the database.
+     */
+    private fun withApp(block: suspend (IntervalRepository) -> Unit) = runBlocking {
+        val job = SupervisorJob()
+        val scope = CoroutineScope(job + Dispatchers.IO)
+        settings = PreferenceDataStoreFactory.createWithPath(scope = scope) {
+            directory.resolve("interval.preferences_pb").absolutePath.toPath()
+        }
+        val database = Room.databaseBuilder<AppDatabase>(name = directory.resolve("interval.db").absolutePath)
+            .setDriver(BundledSQLiteDriver())
+            .setQueryCoroutineContext(Dispatchers.IO)
+            .build()
+        try {
+            val repository = IntervalRepository(settings, database.historyDao(), database.presetDao(), scope) { clock }
+            repository.ready.first { it }
+            block(repository)
+        } finally {
+            job.cancelAndJoin()
+            database.close()
+        }
+    }
+
+    /** Collections follow the database a moment after a write; waits for them to catch up. */
+    private suspend fun settled(repository: IntervalRepository, done: (IntervalRepository) -> Boolean) {
+        withTimeout(5.seconds) {
+            while (!done(repository)) delay(10.milliseconds)
+        }
+    }
+
+    private suspend fun settledOnDisk(done: (Preferences) -> Boolean) {
+        settings.data.first(done)
+    }
+
+    private companion object {
+        const val NOW = 1_000L
+    }
+}

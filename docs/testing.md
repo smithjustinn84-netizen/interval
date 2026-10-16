@@ -34,14 +34,24 @@ The UI tests render offscreen with Skiko and need no display, including on the L
 ## Test infrastructure
 
 - **Fakes** live in `shared/test/fakes/Fakes.kt`, so every platform's tests can use them:
-  - `FakeKeyValueStore`: an in-memory store.
+  - `FakeStorage`: an `InMemoryDataStore` plus `FakeHistoryDao` and `FakePresetDao`. Its
+    `repository()` runs writes unconfined over fakes that never suspend, so a write has landed by the
+    time the call returns. Two repositories over one `FakeStorage` are the app before and after a
+    restart.
   - `RecordingCuePlayer`: records beeps, speech and haptics.
   - `FixedTimestampFormatter`: time-zone free.
-  - `fakePlatformModule(...)`: binds those three for Koin.
-  - `testKoin(...)`: the app's real container over that module.
+  - `fakePlatformModule(...)` binds the player and formatter for Koin; `fakeStorageModule(...)` binds a
+    `FakeStorage` in place of the real `storageModule`.
+  - `testKoin(...)`: the app's real container over those two.
 
-  Never load the real platform module in a test: on the JVM it writes to the user's preferences and
-  plays sound.
+  Never load the real platform or storage module in a test: on the JVM they write to the user's
+  app-data directory and play sound.
+- **Real storage** is tested in `shared/test@jvm/data/StorageTest.kt`: the repository over a DataStore
+  and a Room database in a temp directory, with writes on `Dispatchers.IO`, including a restart.
+  `AppKoinStorageTest` wires the real `storageModule` and rebuilds the container straight after closing
+  it, as Android does when the Activity reopens in the same process. Both are
+  JVM-only because Room's Android in-memory builder needs a `Context`, and common tests also run as
+  Android local tests without Robolectric.
 - **`AppContent(koin)`** (`shared/src/App.kt`) is `App()` with its container passed in. Navigation
   tests compose it with `testKoin()`: real ViewModels, repository and navigation over fake platform
   services. `App()` stays parameterless for the entry points.
@@ -101,5 +111,5 @@ tutorial. Cancel it and type again. It's the emulator's keyboard, not the app.
 | Robolectric | No support: no merged manifest or resources for local tests (KTC-4241). |
 | Screenshot tests (Compose Preview Screenshot Testing, Paparazzi, Roborazzi, Dropshots) | Need AGP or Gradle plugins. Desktop options exist but were skipped for now. Goldens rendered on macOS won't match Linux CI. |
 | Coverage (JaCoCo, Kover) | No support yet (KTC-416). A JVM agent through `settings@jvm: jvm: test: freeJvmArgs` would work, but was skipped. |
-| Database tests | N/A: storage is a key-value store behind `KeyValueStore`. |
+| Database tests | Room and DataStore over temp files in `test@jvm/data/` (JVM only: Android's Room builder needs a `Context`). |
 | Hilt, Mockk | N/A: DI is Koin, and hand-written fakes cover every injected interface. |

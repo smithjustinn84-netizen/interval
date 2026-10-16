@@ -2,19 +2,21 @@ package dev.justinsmith.interval.platform
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import dev.justinsmith.interval.data.KeyValueStore
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import dev.justinsmith.interval.data.AppDatabase
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import java.awt.Toolkit
+import java.io.File
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.prefs.Preferences
 
 @Composable
 actual fun rememberPlatformModule(): Module = remember {
     module {
-        single<KeyValueStore> { PreferencesStore() }
+        single<PlatformStorage> { DesktopStorage() }
         single<CuePlayer> { DesktopCuePlayer() }
         single<TimestampFormatter> { JavaTimeFormatter() }
     }
@@ -32,13 +34,23 @@ actual val materialBackPreview: Boolean = false
 
 actual fun epochMillisNow(): Long = System.currentTimeMillis()
 
-private class PreferencesStore : KeyValueStore {
-    private val prefs = Preferences.userRoot().node("dev/justinsmith/interval")
+/** The OS's per-user app-data directory, created on first use. */
+private class DesktopStorage : PlatformStorage {
+    private val directory: File = appDataDirectory().resolve("interval").apply { mkdirs() }
 
-    override fun getString(key: String): String? = prefs.get(key, null)
+    override fun databaseBuilder(): RoomDatabase.Builder<AppDatabase> =
+        Room.databaseBuilder<AppDatabase>(name = directory.resolve(DATABASE_NAME).absolutePath)
 
-    override fun putString(key: String, value: String) {
-        prefs.put(key, value)
+    override val preferencesPath: String = directory.resolve(PREFERENCES_NAME).absolutePath
+
+    private fun appDataDirectory(): File {
+        val home = File(System.getProperty("user.home"))
+        val os = System.getProperty("os.name").lowercase()
+        return when {
+            "mac" in os -> home.resolve("Library/Application Support")
+            "win" in os -> System.getenv("APPDATA")?.let(::File) ?: home.resolve("AppData/Roaming")
+            else -> System.getenv("XDG_DATA_HOME")?.let(::File) ?: home.resolve(".local/share")
+        }
     }
 }
 

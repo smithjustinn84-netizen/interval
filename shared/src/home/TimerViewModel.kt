@@ -44,11 +44,11 @@ class TimerViewModel(private val repository: IntervalRepository) : ViewModel() {
         )
 
     fun step(field: ConfigField, direction: Int) {
-        repository.setConfig(repository.config.value.stepped(field, direction))
+        repository.updateConfig { it.stepped(field, direction) }
     }
 
     fun set(field: ConfigField, value: Int) {
-        repository.setConfig(repository.config.value.withValue(field, value))
+        repository.updateConfig { it.withValue(field, value) }
     }
 
     fun applyPreset(preset: Preset) {

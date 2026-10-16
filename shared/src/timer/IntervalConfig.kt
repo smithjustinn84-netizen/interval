@@ -1,12 +1,9 @@
 package dev.justinsmith.interval.timer
 
-import kotlinx.serialization.Serializable
-
 internal const val MILLIS_PER_SECOND = 1000L
 private const val SECONDS_PER_MINUTE = 60
 
 /** One workout's shape. Every duration is in whole seconds. */
-@Serializable
 data class IntervalConfig(
     val prepSeconds: Int = 10,
     val workSeconds: Int = 30,
@@ -74,9 +71,11 @@ fun IntervalConfig.sameShape(other: IntervalConfig): Boolean =
 fun IntervalConfig.stepped(field: ConfigField, direction: Int): IntervalConfig =
     withValue(field, valueOf(field) + direction * field.step)
 
-/** A named configuration. Built-ins ship with the app; custom ones are saved by the user. */
-@Serializable
-data class Preset(val name: String, val config: IntervalConfig)
+/**
+ * A named configuration. Built-ins ship with the app; custom ones are saved by the user and carry the
+ * [id] they are stored under.
+ */
+data class Preset(val name: String, val config: IntervalConfig, val id: Long? = null)
 
 /** A preset as the lists show it: whether it is one of the user's own, and so deletable. */
 data class PresetEntry(val preset: Preset, val custom: Boolean)
