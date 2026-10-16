@@ -1,5 +1,7 @@
 package dev.justinsmith.interval.history
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +20,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,6 +45,7 @@ import dev.justinsmith.interval.resources.history_clear_menu
 import dev.justinsmith.interval.resources.history_clear_text
 import dev.justinsmith.interval.resources.history_clear_title
 import dev.justinsmith.interval.resources.history_empty
+import dev.justinsmith.interval.resources.history_empty_title
 import dev.justinsmith.interval.resources.history_ended_early
 import dev.justinsmith.interval.resources.history_last_7_days
 import dev.justinsmith.interval.resources.history_more_options_cd
@@ -70,6 +74,8 @@ import dev.justinsmith.interval.resources.weekday_initial_7
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
+import dev.justinsmith.interval.ui.EmptyState
+import dev.justinsmith.interval.ui.EnterEasing
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
@@ -77,6 +83,7 @@ import dev.justinsmith.interval.ui.IntervalMenu
 import dev.justinsmith.interval.ui.IntervalMenuItem
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SetupLanes
@@ -113,7 +120,7 @@ fun HistoryScreen(state: HistoryUiState, onClear: () -> Unit, modifier: Modifier
             modifier = Modifier.widthIn(max = Sizes.listMax).fillMaxSize(),
             contentPadding = PaddingValues(bottom = Spacing.space24),
         ) {
-            item(span = StaggeredGridItemSpan.FullLine) {
+            item(key = "title", span = StaggeredGridItemSpan.FullLine) {
                 TitleBar(stringResource(Res.string.history_title)) {
                     IntervalMenu(
                         expanded = menu,
@@ -135,25 +142,24 @@ fun HistoryScreen(state: HistoryUiState, onClear: () -> Unit, modifier: Modifier
                 }
             }
             if (state.isEmpty) {
-                item(span = StaggeredGridItemSpan.FullLine) {
-                    ListCard(Modifier.padding(horizontal = Spacing.space16)) {
-                        Text(
+                item(key = "empty", span = StaggeredGridItemSpan.FullLine) {
+                    ListCard(Modifier.animateItem().padding(horizontal = Spacing.space16)) {
+                        EmptyState(
+                            IntervalIcons.History,
+                            stringResource(Res.string.history_empty_title),
                             stringResource(Res.string.history_empty),
-                            style = IntervalTheme.type.body,
-                            color = IntervalTheme.palette.textDim,
-                            modifier = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space16),
                         )
                     }
                 }
             } else {
-                item(span = StaggeredGridItemSpan.FullLine) {
-                    WeekSummary(state, Modifier.padding(horizontal = Spacing.space16))
+                item(key = "week", span = StaggeredGridItemSpan.FullLine) {
+                    WeekSummary(state, Modifier.animateItem().padding(horizontal = Spacing.space16))
                 }
             }
             state.sections.forEach { section ->
                 // A day is one cell, its label with its card, so a column never splits a day.
                 item(key = section.dayNumber) {
-                    Column(Modifier.padding(horizontal = Spacing.space16)) {
+                    Column(Modifier.animateItem().padding(horizontal = Spacing.space16)) {
                         GroupLabel(dayHeading(section.day))
                         ListCard {
                             section.items.forEachIndexed { index, item ->
@@ -225,7 +231,10 @@ private fun WeekSummary(state: HistoryUiState, modifier: Modifier = Modifier) {
     }
 }
 
-/** One bar per day, oldest first, scaled to the longest day; today's initial takes the accent. */
+/**
+ * One bar per day, oldest first, scaled to the longest day; today's initial takes the accent. The
+ * bars grow up from the baseline as the tab opens, one after another, and again as the week changes.
+ */
 @Composable
 private fun WeekChart(state: HistoryUiState, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
@@ -236,7 +245,7 @@ private fun WeekChart(state: HistoryUiState, modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
         verticalAlignment = Alignment.Bottom,
     ) {
-        state.week.forEach { day ->
+        state.week.forEachIndexed { index, day ->
             Column(
                 Modifier.weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -244,7 +253,11 @@ private fun WeekChart(state: HistoryUiState, modifier: Modifier = Modifier) {
             ) {
                 Box(Modifier.fillMaxWidth().height(Sizes.weekBar), contentAlignment = Alignment.BottomCenter) {
                     val share = if (max > 0) day.seconds.toFloat() / max else 0f
-                    val height = if (day.seconds > 0) Sizes.weekBar * share else Sizes.weekBarEmpty
+                    val grown = remember { Animatable(0f) }
+                    LaunchedEffect(share) {
+                        grown.animateTo(share, tween(Motion.ENTER_MILLIS, index * Motion.STAGGER_MILLIS, EnterEasing))
+                    }
+                    val height = if (day.seconds > 0) Sizes.weekBar * grown.value else Sizes.weekBarEmpty
                     Box(
                         Modifier
                             .fillMaxWidth()

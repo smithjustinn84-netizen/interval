@@ -1,5 +1,7 @@
 package dev.justinsmith.interval.ui
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -42,10 +44,12 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -53,6 +57,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.composeunstyled.Thumb
@@ -214,6 +219,33 @@ fun RowDivider(modifier: Modifier = Modifier) {
     HorizontalDivider(modifier.padding(start = Spacing.space16), color = IntervalTheme.palette.line)
 }
 
+/**
+ * What a list shows before it has anything: an [icon] in a ring of the accent's tint, a [title] and
+ * a line of [text] saying what will appear, centred in whatever card holds it.
+ */
+@Composable
+fun EmptyState(icon: ImageVector, title: String, text: String, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    Column(
+        modifier.fillMaxWidth().padding(horizontal = Spacing.space24, vertical = Spacing.space32),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Spacing.space4),
+    ) {
+        Box(
+            Modifier
+                .padding(bottom = Spacing.space12)
+                .size(Sizes.emptyIconRing)
+                .clip(CircleShape)
+                .background(palette.accentTint),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = palette.accent, modifier = Modifier.size(Sizes.emptyIcon))
+        }
+        Text(title, style = IntervalTheme.type.section, color = palette.text, textAlign = TextAlign.Center)
+        Text(text, style = IntervalTheme.type.body, color = palette.textDim, textAlign = TextAlign.Center)
+    }
+}
+
 @Composable
 fun ToggleRow(
     title: String,
@@ -223,11 +255,21 @@ fun ToggleRow(
     modifier: Modifier = Modifier,
 ) {
     val palette = IntervalTheme.palette
+    val haptics = LocalHapticFeedback.current
+    // The track's colour follows the thumb across, rather than jumping ahead of it.
+    val track by animateColorAsState(
+        if (checked) palette.accent else palette.textDim,
+        tween(Motion.STATE_MILLIS, easing = StandardEasing),
+        label = "track",
+    )
     Row(
         modifier
             .fillMaxWidth()
             .heightIn(min = Sizes.listRow)
-            .toggleable(value = checked, role = Role.Switch, onValueChange = { onToggle() })
+            .toggleable(value = checked, role = Role.Switch) { on ->
+                haptics.performHapticFeedback(if (on) HapticFeedbackType.ToggleOn else HapticFeedbackType.ToggleOff)
+                onToggle()
+            }
             .padding(horizontal = Spacing.space16, vertical = Spacing.space8),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
@@ -243,7 +285,7 @@ fun ToggleRow(
                 Modifier
                     .size(Sizes.switchWidth, Sizes.switchHeight)
                     .clip(Corners.full)
-                    .background(if (checked) palette.accent else palette.textDim)
+                    .background(track)
                     .padding((Sizes.switchHeight - Sizes.switchThumb) / 2),
             ) {
                 Thumb(
@@ -266,13 +308,17 @@ fun StartButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val shape = Corners.radius18
     val glow = palette.accent.copy(alpha = Opacity.START_SHADOW)
+    val interaction = remember { MutableInteractionSource() }
     Row(
         modifier
             .height(Sizes.start)
+            .pressScale(interaction)
             .shadow(elevation = Sizes.startElevation, shape = shape, ambientColor = glow, spotColor = glow)
             .clip(shape)
             .background(palette.accent)
-            .clickable(role = Role.Button, onClick = onClick),
+            .clickable(interactionSource = interaction, indication = LocalIndication.current, role = Role.Button) {
+                onClick()
+            },
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -337,14 +383,18 @@ fun Timeline(
 
 /**
  * The ground of a card that can be the current choice, such as a preset: the surface with a line
- * border, or the accent's tint and the accent itself once [selected]. Also tells screen readers.
+ * border, or the accent's tint and the accent itself once [selected], crossfading between the two.
+ * Also tells screen readers.
  */
 @Composable
 fun Modifier.selectableCard(selected: Boolean, shape: Shape = Corners.radius18): Modifier {
     val palette = IntervalTheme.palette
+    val spec = tween<Color>(Motion.STATE_MILLIS, easing = StandardEasing)
+    val fill by animateColorAsState(if (selected) palette.accentTint else palette.surface, spec, label = "fill")
+    val line by animateColorAsState(if (selected) palette.accent else palette.line, spec, label = "line")
     return clip(shape)
-        .background(if (selected) palette.accentTint else palette.surface)
-        .border(Sizes.border, if (selected) palette.accent else palette.line, shape)
+        .background(fill)
+        .border(Sizes.border, line, shape)
         .semantics { this.selected = selected }
 }
 
@@ -361,7 +411,7 @@ fun ValuePill(
     Box(
         modifier
             .height(height)
-            .clip(if (height < Sizes.valuePill) Corners.radius12 else Corners.radius12)
+            .clip(Corners.radius12)
             .background(tint)
             .padding(horizontal = Spacing.space16),
         contentAlignment = Alignment.Center,
@@ -370,7 +420,10 @@ fun ValuePill(
     }
 }
 
-/** A stepper button that repeats while held: one step on tap, then a fast run after a short hold. */
+/**
+ * A stepper button that repeats while held: one step on tap, then a fast run after a short hold.
+ * Every step ticks under the thumb, so a held run can be counted without looking.
+ */
 @Composable
 fun RepeatButton(
     symbol: String,
@@ -382,7 +435,11 @@ fun RepeatButton(
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val step by rememberUpdatedState(onStep)
+    val haptics = LocalHapticFeedback.current
+    val step by rememberUpdatedState {
+        haptics.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+        onStep()
+    }
     // Set once the hold starts repeating, so the click that ends the hold doesn't add one more step.
     // Cleared on every new press or cancelled press: a hold that ends without a click (dragged off,
     // or the field hit its limit) must not swallow the next tap.
@@ -405,6 +462,7 @@ fun RepeatButton(
     Box(
         modifier
             .size(Sizes.stepper)
+            .pressScale(interaction)
             .clip(Corners.radius12)
             .background(palette.surfaceVariant)
             .clickable(

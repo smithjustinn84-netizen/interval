@@ -1,5 +1,12 @@
 package dev.justinsmith.interval.ui
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ShortNavigationBarItemDefaults
@@ -12,10 +19,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
+import androidx.navigation3.scene.Scene
+import androidx.navigation3.ui.defaultPopTransitionSpec
+import androidx.navigation3.ui.defaultTransitionSpec
 import dev.justinsmith.interval.nav.HistoryTab
 import dev.justinsmith.interval.nav.PresetsTab
 import dev.justinsmith.interval.nav.Tab
 import dev.justinsmith.interval.nav.TimerTab
+import dev.justinsmith.interval.platform.platformPageTransitions
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.nav_history
 import dev.justinsmith.interval.resources.nav_presets
@@ -40,6 +51,75 @@ fun navigationSuiteType(width: Dp, height: Dp): NavigationSuiteType {
     val rail = width >= Sizes.railMinWidth || width > height
     return if (rail) NavigationSuiteType.NavigationRail else NavigationSuiteType.NavigationBar
 }
+
+/**
+ * NavDisplay's `transitionSpec`: a page pushed over the tabs (Settings, the workout) slides in from
+ * the end as the tabs drift away beneath it; from one tab to another the old fades out, then the new
+ * fades in a touch larger. Settings opening beside the Timer crossfades, the Timer staying where it is.
+ * On a platform with page transitions of its own (iOS), those run instead.
+ */
+fun <T : Any> pageTransition(): AnimatedContentTransitionScope<Scene<T>>.() -> ContentTransform =
+    if (platformPageTransitions) defaultTransitionSpec() else appPageTransition()
+
+/** NavDisplay's `popTransitionSpec`: the reverse of [pageTransition], the leaving page staying on top. */
+fun <T : Any> pagePopTransition(): AnimatedContentTransitionScope<Scene<T>>.() -> ContentTransform =
+    if (platformPageTransitions) defaultPopTransitionSpec() else appPagePopTransition()
+
+private fun <T : Any> appPageTransition(): AnimatedContentTransitionScope<Scene<T>>.() -> ContentTransform = {
+    when {
+        twoPane -> crossfade()
+
+        tabChange -> fadeThrough()
+
+        else -> ContentTransform(
+            targetContentEnter = fadeIn(pageSpec()) +
+                slideIntoContainer(SlideDirection.Start, pageSpec()) { (it * Motion.PAGE_SLIDE_SHARE).toInt() },
+            initialContentExit = fadeOut(exitSpec()) +
+                slideOutOfContainer(SlideDirection.Start, pageSpec()) { (it * Motion.PAGE_SLIDE_SHARE / 2).toInt() },
+        )
+    }
+}
+
+private fun <T : Any> appPagePopTransition(): AnimatedContentTransitionScope<Scene<T>>.() -> ContentTransform = {
+    when {
+        twoPane -> crossfade()
+
+        tabChange -> fadeThrough()
+
+        else -> ContentTransform(
+            targetContentEnter = fadeIn(pageSpec()) +
+                slideIntoContainer(SlideDirection.End, pageSpec()) { (it * Motion.PAGE_SLIDE_SHARE / 2).toInt() },
+            initialContentExit = fadeOut(tween(Motion.PAGE_MILLIS, easing = ExitEasing)) +
+                slideOutOfContainer(SlideDirection.End, pageSpec()) { (it * Motion.PAGE_SLIDE_SHARE).toInt() },
+        )
+    }
+}
+
+/** Both scenes are single tabs: the bar's own switch, not a push. */
+private val <T : Any> AnimatedContentTransitionScope<Scene<T>>.tabChange: Boolean
+    get() = targetState.entries.lastOrNull()?.contentKey is Tab && initialState.entries.lastOrNull()?.contentKey is Tab
+
+/** Either scene shows two pages side by side (Settings beside the Timer on a wide window). */
+private val <T : Any> AnimatedContentTransitionScope<Scene<T>>.twoPane: Boolean
+    get() = targetState.entries.size > 1 || initialState.entries.size > 1
+
+private fun fadeThrough(): ContentTransform = ContentTransform(
+    targetContentEnter = fadeIn(tween(Motion.PAGE_MILLIS - FADE_THROUGH_GAP_MILLIS, FADE_THROUGH_GAP_MILLIS)) +
+        scaleIn(
+            tween(Motion.PAGE_MILLIS - FADE_THROUGH_GAP_MILLIS, FADE_THROUGH_GAP_MILLIS, EnterEasing),
+            initialScale = Motion.FADE_THROUGH_SCALE,
+        ),
+    initialContentExit = fadeOut(tween(FADE_THROUGH_GAP_MILLIS)),
+)
+
+private fun crossfade(): ContentTransform =
+    ContentTransform(fadeIn(tween(Motion.EXIT_MILLIS)), fadeOut(tween(Motion.EXIT_MILLIS)))
+
+private fun <T> pageSpec() = tween<T>(Motion.PAGE_MILLIS, easing = EnterEasing)
+private fun exitSpec() = tween<Float>(Motion.PAGE_MILLIS, easing = StandardEasing)
+
+/** The old tab is gone this long before the new one starts to show. */
+private const val FADE_THROUGH_GAP_MILLIS = 90
 
 /** The bar's and the rail's containers in the app's colours. */
 @Composable

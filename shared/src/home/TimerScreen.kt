@@ -1,7 +1,19 @@
 package dev.justinsmith.interval.home
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -22,8 +34,11 @@ import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -59,8 +74,10 @@ import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RepeatButton
+import dev.justinsmith.interval.ui.RollingText
 import dev.justinsmith.interval.ui.SavePresetDialog
 import dev.justinsmith.interval.ui.SetupLanes
 import dev.justinsmith.interval.ui.Sizes
@@ -73,6 +90,7 @@ import dev.justinsmith.interval.ui.editRes
 import dev.justinsmith.interval.ui.labelRes
 import dev.justinsmith.interval.ui.lessRes
 import dev.justinsmith.interval.ui.moreRes
+import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.interval.ui.stripe
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
@@ -187,19 +205,42 @@ fun TimerScreen(
     }
 }
 
-/** The title, with + to save a shape no preset has yet, and the settings gear. */
+/**
+ * The title, with + to save a shape no preset has yet, and the settings gear. The + grows in as the
+ * shape leaves the presets behind and shrinks away as it lands on one, the gear sliding over to make
+ * room, so the bar never jumps.
+ */
 @Composable
 private fun TimerTitleBar(canSavePreset: Boolean, onSave: () -> Unit, onOpenSettings: () -> Unit) {
     TitleBar(stringResource(Res.string.timer_title)) {
-        if (canSavePreset) IconAction(IntervalIcons.Add, stringResource(Res.string.timer_save_as_preset_cd), onSave)
+        AnimatedVisibility(
+            canSavePreset,
+            enter = fadeIn(tween(Motion.STATE_MILLIS)) + scaleIn(tween(Motion.STATE_MILLIS)) +
+                expandHorizontally(tween(Motion.STATE_MILLIS)),
+            exit = fadeOut(tween(Motion.STATE_MILLIS)) + scaleOut(tween(Motion.STATE_MILLIS)) +
+                shrinkHorizontally(tween(Motion.STATE_MILLIS)),
+        ) {
+            IconAction(IntervalIcons.Add, stringResource(Res.string.timer_save_as_preset_cd), onSave)
+        }
         IconAction(IntervalIcons.Settings, stringResource(Res.string.common_settings), onOpenSettings)
     }
 }
 
-/** "Tabata · Total" over the session's length, and the get-ready countdown when there is one. */
+/**
+ * "Tabata · Total" over the session's length, and the get-ready countdown when there is one. The
+ * length rolls as the steppers change it, up when it grows and down when it shrinks.
+ */
 @Composable
 private fun Total(state: TimerUiState, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
+    val seconds = state.config.totalSeconds
+    var lastSeconds by remember { mutableIntStateOf(seconds) }
+    val rising = seconds >= lastSeconds
+    SideEffect { lastSeconds = seconds }
+    // The line keeps its last countdown while it shrinks away, rather than reading "0:00" as it goes.
+    val prep = state.config.prepSeconds
+    var lastPrep by remember { mutableIntStateOf(prep) }
+    SideEffect { if (prep > 0) lastPrep = prep }
     Column(modifier.fillMaxWidth()) {
         Text(
             stringResource(
@@ -210,10 +251,14 @@ private fun Total(state: TimerUiState, modifier: Modifier = Modifier) {
             style = IntervalTheme.type.caption,
             color = palette.textDim,
         )
-        Text(state.total, style = IntervalTheme.type.display, color = palette.text)
-        if (state.config.prepSeconds > 0) {
+        RollingText(state.total, rising, style = IntervalTheme.type.display, color = palette.text)
+        AnimatedVisibility(
+            prep > 0,
+            enter = fadeIn(tween(Motion.STATE_MILLIS)) + expandVertically(tween(Motion.STATE_MILLIS)),
+            exit = fadeOut(tween(Motion.STATE_MILLIS)) + shrinkVertically(tween(Motion.STATE_MILLIS)),
+        ) {
             Text(
-                stringResource(Res.string.timer_prep_line, formatClock(state.config.prepSeconds)),
+                stringResource(Res.string.timer_prep_line, formatClock(if (prep > 0) prep else lastPrep)),
                 style = IntervalTheme.type.meta,
                 color = palette.textDim,
             )
@@ -307,14 +352,16 @@ private fun StepperRow(
 private fun StartRow(onStart: () -> Unit, onSeeAllPresets: () -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val description = stringResource(Res.string.timer_all_presets_cd)
+    val interaction = remember { MutableInteractionSource() }
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         StartButton(onStart, Modifier.weight(1f))
         Box(
             Modifier
                 .size(Sizes.start)
+                .pressScale(interaction)
                 .clip(Corners.radius18)
                 .background(palette.surface)
-                .clickable(role = Role.Button, onClick = onSeeAllPresets)
+                .clickable(interaction, LocalIndication.current, role = Role.Button, onClick = onSeeAllPresets)
                 .semantics { contentDescription = description },
             contentAlignment = Alignment.Center,
         ) {

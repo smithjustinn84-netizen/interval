@@ -175,6 +175,12 @@ object Sizes {
     /** The round hit area of an icon-only top-bar action. */
     val iconButton = 48.dp
 
+    /** The tinted ring round an [EmptyState]'s icon. */
+    val emptyIconRing = 56.dp
+
+    /** The empty-state icon drawn inside it, a size up from [icon]. */
+    val emptyIcon = 28.dp
+
     /** The circle drawn inside that hit area: its fill and its ripple. */
     val iconButtonVisual = 40.dp
 
@@ -213,14 +219,63 @@ object Opacity {
     const val SCRIM = 0.55f
 }
 
-/** Timings from the design system's Motion section. */
+/**
+ * Timings from the design system's Motion section. Three durations cover nearly everything: a
+ * control answering its state ([STATE_MILLIS]), content changing in place ([CONTENT_MILLIS]) and
+ * something arriving ([ENTER_MILLIS]); leaving is quicker than arriving. The easings and springs
+ * live in `Motion.kt` beside the helpers that use them.
+ */
 object Motion {
+    /** A control's colour following its state: selected, checked, enabled, the active round mark. */
+    const val STATE_MILLIS = 180
+
+    /** Content replaced in place: a value, the phase word. */
+    const val CONTENT_MILLIS = 240
+
+    /** Something arriving: a card, a dialog, a summary. */
+    const val ENTER_MILLIS = 360
+
+    /** Something leaving, which needs less ceremony. */
+    const val EXIT_MILLIS = 200
+
+    /** Pushing or popping a page. */
+    const val PAGE_MILLIS = 320
+
+    /** A pushed page slides in from this share of the width, and the page beneath drifts out by half of it. */
+    const val PAGE_SLIDE_SHARE = 0.12f
+
+    /** Switching tabs: the old tab fades out quickly, then the new one fades in, grown from [FADE_THROUGH_SCALE]. */
+    const val FADE_THROUGH_SCALE = 0.96f
+
+    /** A pressed control shrinks to this, springing back on release. */
+    const val PRESS_SCALE = 0.96f
+
+    /** The gap between items in a staggered entrance, such as the summary's lines or the week chart's bars. */
+    const val STAGGER_MILLIS = 50
+
     /** Background crossfade between phases, and into and out of pause. */
     const val PHASE_CROSSFADE_MILLIS = 350
 
     /** The clock's pop when a new interval starts, from [CLOCK_POP_SCALE] back to 1. */
     const val CLOCK_POP_MILLIS = 300
     const val CLOCK_POP_SCALE = 1.06f
+
+    /** The smaller pop on each of an interval's last seconds, in step with the countdown beeps. */
+    const val COUNTDOWN_POP_SCALE = 1.03f
+
+    /**
+     * The ring glides to each tick over this long, so it turns rather than steps; the ViewModel ticks
+     * every 100ms. A change past [RING_SNAP_SHARE] of the ring is a new interval, which snaps.
+     */
+    const val RING_GLIDE_MILLIS = 160
+    const val RING_SNAP_SHARE = 0.3f
+
+    /** The summary's ring draws itself closed over this long. */
+    const val SUMMARY_RING_MILLIS = 900
+
+    /** The resume hint breathes while paused: a cycle this long, down to this alpha. */
+    const val BREATH_MILLIS = 1600
+    const val BREATH_MIN_ALPHA = 0.5f
 
     /** A Setup comet covers this much lane a second. */
     const val COMET_SPEED_DP_PER_SECOND = 150

@@ -106,6 +106,7 @@ class PresetsScreenTest {
     @Test
     fun `with no presets of their own the user is told where they go`() = runUiTest {
         setThemedContent { Screen(state(custom = emptyList())) }
+        onNodeWithText("Nothing saved yet").assertExists()
         onNodeWithText("Presets you save show up here.").assertExists()
     }
 

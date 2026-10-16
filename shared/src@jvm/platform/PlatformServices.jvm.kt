@@ -37,6 +37,8 @@ actual fun prefersReducedMotion(): Boolean = false
 
 actual val materialBackPreview: Boolean = false
 
+actual val platformPageTransitions: Boolean = false
+
 actual fun epochMillisNow(): Long = System.currentTimeMillis()
 
 /** The OS's per-user app-data directory, created on first use. */

@@ -84,6 +84,8 @@
     <string name="presets_save_current">Save as preset</string>
     <string name="presets_built_in">Built-in</string>
     <string name="presets_yours">Yours</string>
+    <!-- The empty "Yours" group: a title over presets_empty -->
+    <string name="presets_empty_title">Nothing saved yet</string>
     <string name="presets_empty">Presets you save show up here.</string>
     <string name="presets_delete">Delete</string>
     <string name="presets_delete_named_cd">Delete preset %1$s</string>
@@ -94,6 +96,8 @@
     <string name="history_title">History</string>
     <string name="history_more_options_cd">More options</string>
     <string name="history_clear_menu">Clear history</string>
+    <!-- The empty History tab: a title over history_empty -->
+    <string name="history_empty_title">No workouts yet</string>
     <string name="history_empty">Finished workouts show up here.</string>
     <string name="history_clear_title">Clear history?</string>
     <string name="history_clear_text">Every finished workout is removed. This can't be undone.</string>

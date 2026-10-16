@@ -85,6 +85,8 @@ actual fun prefersReducedMotion(): Boolean {
 
 actual val materialBackPreview: Boolean = true
 
+actual val platformPageTransitions: Boolean = false
+
 actual fun epochMillisNow(): Long = System.currentTimeMillis()
 
 private class AndroidStorage(private val context: Context) : PlatformStorage {

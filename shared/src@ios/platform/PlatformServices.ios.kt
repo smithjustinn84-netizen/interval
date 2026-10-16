@@ -102,6 +102,8 @@ actual fun prefersReducedMotion(): Boolean = remember { UIAccessibilityIsReduceM
 
 actual val materialBackPreview: Boolean = false
 
+actual val platformPageTransitions: Boolean = true
+
 actual fun epochMillisNow(): Long = NSDate().timeIntervalSince1970.seconds.inWholeMilliseconds
 
 /** Application Support rather than Documents, which the user can see when file sharing is on. */

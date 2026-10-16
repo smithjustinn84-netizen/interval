@@ -60,6 +60,8 @@ import dev.justinsmith.interval.ui.backPreviewCorners
 import dev.justinsmith.interval.ui.backPreviewTransition
 import dev.justinsmith.interval.ui.navigationSuiteColors
 import dev.justinsmith.interval.ui.navigationSuiteType
+import dev.justinsmith.interval.ui.pagePopTransition
+import dev.justinsmith.interval.ui.pageTransition
 import dev.justinsmith.interval.workout.WorkoutRoute
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.plus
@@ -173,6 +175,8 @@ private fun AppShell(backStack: NavBackStack<NavKey>) {
                     if (materialBackPreview) backPreviewCorners() else null,
                 ),
                 sceneStrategies = listOf(supportingPane),
+                transitionSpec = pageTransition(),
+                popTransitionSpec = pagePopTransition(),
                 predictivePopTransitionSpec = if (materialBackPreview) {
                     backPreviewTransition()
                 } else {

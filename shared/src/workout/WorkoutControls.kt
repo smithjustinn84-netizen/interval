@@ -1,7 +1,9 @@
 package dev.justinsmith.interval.workout
 
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,6 +42,7 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.pressScale
 import org.jetbrains.compose.resources.stringResource
 
 /** End pauses the workout and asks before throwing it away (see [WorkoutScreen]). */
@@ -130,11 +134,13 @@ internal fun BigButton(
     style: TextStyle = IntervalTheme.type.control,
     description: String? = null,
 ) {
+    val interaction = remember { MutableInteractionSource() }
     Box(
         modifier
+            .pressScale(interaction)
             .clip(Corners.radius18)
             .background(background)
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(interaction, LocalIndication.current, role = Role.Button, onClick = onClick)
             .then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier),
         contentAlignment = Alignment.Center,
     ) {
@@ -149,12 +155,14 @@ internal fun PillButton(
     description: String,
     modifier: Modifier = Modifier,
 ) {
+    val interaction = remember { MutableInteractionSource() }
     Box(
         modifier
             .sizeIn(minWidth = Sizes.pillWidth, minHeight = Sizes.pillHeight)
+            .pressScale(interaction)
             .clip(Corners.radius12)
             .background(PhaseColors.control)
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(interaction, LocalIndication.current, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = description }
             .padding(horizontal = Spacing.space16),
         contentAlignment = Alignment.Center,

@@ -1,5 +1,8 @@
 package dev.justinsmith.interval.ui
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -71,7 +74,13 @@ fun IntervalDialog(
     body: @Composable ColumnScope.() -> Unit,
 ) {
     val palette = IntervalTheme.palette
-    UnstyledDialog(visible = true, onDismissRequest = onDismiss, overlay = { Scrim(scrimColor = scrimColor()) }) {
+    // The scrim fades up and the panel grows in over it. Leaving is instant: a dialog is gone the
+    // moment its action runs, and so is the state that showed it.
+    UnstyledDialog(
+        visible = true,
+        onDismissRequest = onDismiss,
+        overlay = { Scrim(scrimColor = scrimColor(), enter = fadeIn(tween(Motion.ENTER_MILLIS)), exit = fadeOut()) },
+    ) {
         Box(Modifier.fillMaxSize().safeDrawingPadding().padding(Spacing.space24), contentAlignment = Alignment.Center) {
             DialogPanel(
                 Modifier
@@ -79,6 +88,8 @@ fun IntervalDialog(
                     .clip(Corners.radius18)
                     .background(palette.surface),
                 paneTitle = title,
+                enter = enterGrowing(),
+                exit = exitShrinking(),
             ) {
                 ModalBackHandler(onDismiss)
                 // The panel moves focus to its first focus target when it opens. Be that target, so a
@@ -153,12 +164,20 @@ private fun ModalButton(
 ) {
     val palette = IntervalTheme.palette
     val fill = if (primary) palette.accent else palette.surfaceVariant
+    val interaction = remember { MutableInteractionSource() }
     Box(
         modifier
             .heightIn(min = Sizes.save)
+            .pressScale(interaction)
             .clip(Corners.radius18)
             .background(if (enabled) fill else fill.copy(alpha = Opacity.DISABLED))
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .clickable(
+                interactionSource = interaction,
+                indication = LocalIndication.current,
+                enabled = enabled,
+                role = Role.Button,
+                onClick = onClick,
+            )
             .padding(horizontal = padding),
         contentAlignment = Alignment.Center,
     ) {

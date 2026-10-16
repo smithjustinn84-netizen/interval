@@ -1,8 +1,11 @@
 package dev.justinsmith.interval.presets
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,6 +47,7 @@ import dev.justinsmith.interval.resources.presets_current_unsaved
 import dev.justinsmith.interval.resources.presets_delete
 import dev.justinsmith.interval.resources.presets_delete_named_cd
 import dev.justinsmith.interval.resources.presets_empty
+import dev.justinsmith.interval.resources.presets_empty_title
 import dev.justinsmith.interval.resources.presets_more_named_cd
 import dev.justinsmith.interval.resources.presets_save_current
 import dev.justinsmith.interval.resources.presets_selected_cd
@@ -54,6 +58,7 @@ import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.Corners
+import dev.justinsmith.interval.ui.EmptyState
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
@@ -70,6 +75,7 @@ import dev.justinsmith.interval.ui.Timeline
 import dev.justinsmith.interval.ui.TitleBar
 import dev.justinsmith.interval.ui.configDescription
 import dev.justinsmith.interval.ui.configSummary
+import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.interval.ui.selectableCard
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
@@ -116,21 +122,25 @@ fun PresetsScreen(
             modifier = Modifier.widthIn(max = Sizes.listMax).fillMaxSize(),
             contentPadding = PaddingValues(bottom = Spacing.space24),
         ) {
-            item(span = StaggeredGridItemSpan.FullLine) {
+            item(key = "title", span = StaggeredGridItemSpan.FullLine) {
                 TitleBar(stringResource(Res.string.presets_title))
             }
+            // Keyed, so the card fades and the groups slide as the current shape stops or starts matching a preset.
             if (state.canSaveCurrent) {
-                item(span = StaggeredGridItemSpan.FullLine) {
+                item(key = "current", span = StaggeredGridItemSpan.FullLine) {
                     CurrentCard(
                         config = state.current,
                         share = state.currentShare,
                         onSave = { saving = true },
-                        modifier = Modifier.padding(horizontal = Spacing.space16).padding(bottom = Spacing.space4),
+                        modifier = Modifier
+                            .animateItem()
+                            .padding(horizontal = Spacing.space16)
+                            .padding(bottom = Spacing.space4),
                     )
                 }
             }
-            item {
-                Column(Modifier.padding(horizontal = Spacing.space16)) {
+            item(key = "builtIn") {
+                Column(Modifier.animateItem().padding(horizontal = Spacing.space16)) {
                     GroupLabel(stringResource(Res.string.presets_built_in))
                     CardColumn {
                         state.builtIn.forEach { item ->
@@ -139,16 +149,16 @@ fun PresetsScreen(
                     }
                 }
             }
-            item {
-                Column(Modifier.padding(horizontal = Spacing.space16)) {
+            item(key = "custom") {
+                // The group closes up smoothly over a deleted card.
+                Column(Modifier.animateItem().padding(horizontal = Spacing.space16).animateContentSize()) {
                     GroupLabel(stringResource(Res.string.presets_yours))
                     if (state.custom.isEmpty()) {
                         ListCard {
-                            Text(
+                            EmptyState(
+                                IntervalIcons.Presets,
+                                stringResource(Res.string.presets_empty_title),
                                 stringResource(Res.string.presets_empty),
-                                style = IntervalTheme.type.body,
-                                color = palette.textDim,
-                                modifier = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space16),
                             )
                         }
                     }
@@ -225,12 +235,14 @@ private fun CurrentCard(config: IntervalConfig, share: Float, onSave: () -> Unit
 @Composable
 private fun SaveButton(onClick: () -> Unit) {
     val palette = IntervalTheme.palette
+    val interaction = remember { MutableInteractionSource() }
     Row(
         Modifier
             .heightIn(min = Sizes.pillHeight)
+            .pressScale(interaction)
             .clip(Corners.radius12)
             .background(palette.accent)
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(interaction, LocalIndication.current, role = Role.Button, onClick = onClick)
             .padding(start = Spacing.space12, end = Spacing.space16),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),

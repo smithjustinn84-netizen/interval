@@ -112,6 +112,7 @@ class HistoryScreenTest {
     @Test
     fun `an empty history says so and has nothing to clear`() = runUiTest {
         setThemedContent { Screen(empty) }
+        onNodeWithText("No workouts yet").assertExists()
         onNodeWithText("Finished workouts show up here.").assertExists()
         onNodeWithContentDescription("More options").assertIsNotEnabled()
     }

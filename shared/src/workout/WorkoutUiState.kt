@@ -2,6 +2,7 @@ package dev.justinsmith.interval.workout
 
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
+import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.timer.WorkoutState
 import dev.justinsmith.interval.timer.ceilSeconds
 import dev.justinsmith.interval.timer.formatClock
@@ -32,6 +33,8 @@ data class WorkoutUiState(
     /** The round being worked, or null between work intervals. */
     val activeRound: Int?,
     val clock: String,
+    /** Whole seconds left in the interval, as the clock shows them; the last few get a countdown. */
+    val secondsLeft: Int,
     val progress: Float,
     /** What follows this interval, or null once the workout is done. */
     val next: NextUp?,
@@ -56,6 +59,9 @@ data class WorkoutUiState(
 
     /** Ending now keeps a summary and a history entry only once a round is finished. */
     val hasProgress: Boolean get() = completedRounds > 0
+
+    /** The interval's last seconds are ticking down, with their beeps: the screen counts along. */
+    val countingDown: Boolean get() = running && secondsLeft in 1..WorkoutEngine.COUNTDOWN_SECONDS
 }
 
 /**
@@ -70,6 +76,7 @@ fun WorkoutState.toUiState(
     nextCustomNumber: Int = 1,
 ): WorkoutUiState {
     val rounds = config.rounds
+    val secondsLeft = ceilSeconds(remainingMillis)
     return WorkoutUiState(
         phase = phase,
         running = running,
@@ -82,7 +89,8 @@ fun WorkoutState.toUiState(
             Phase.Done -> rounds
         },
         activeRound = round.takeIf { phase == Phase.Work },
-        clock = formatClock(ceilSeconds(remainingMillis)),
+        clock = formatClock(secondsLeft),
+        secondsLeft = secondsLeft,
         progress = if (isDone) 0f else progress,
         next = when (phase) {
             Phase.Prep -> NextUp.Work(formatClock(config.workSeconds))

@@ -96,6 +96,12 @@ expect fun SystemBarIcons(lightIcons: Boolean)
 expect val materialBackPreview: Boolean
 
 /**
+ * Whether pages keep the platform's own push and pop transitions (iOS's native slide). Elsewhere
+ * the app's run: Android's default is a slow fade and desktop's is none at all.
+ */
+expect val platformPageTransitions: Boolean
+
+/**
  * Whether the user asked the system for less motion: Android's "Remove animations" (animator scale
  * 0) or iOS's Reduce Motion. Decorative animation stands still then.
  */
