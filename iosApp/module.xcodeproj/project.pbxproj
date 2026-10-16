@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXFileReference section */
+		A49CFD63DEA202D2D91DB9D3 /* interval.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = interval.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B5CA0C6D31B66EF4CF7614F8 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.info; name = Info.plist; path = src/Info.plist; sourceTree = "<group>"; };
-		A49CFD63DEA202D2D91DB9D3 /* interval.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "interval.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -26,6 +26,10 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				6066B733DC5AD5C2ECF12116 /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
 			);
 			path = src;
 			sourceTree = SOURCE_ROOT;
@@ -154,9 +158,9 @@
 				KOTLIN_CLI_WRAPPER_PATH = "$(SRCROOT)/../kotlin";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "dev.justinsmith.interval";
+				PRODUCT_BUNDLE_IDENTIFIER = dev.justinsmith.interval;
 				PRODUCT_MODULE_NAME = app;
-				PRODUCT_NAME = "interval";
+				PRODUCT_NAME = interval;
 				SDKROOT = iphoneos;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -184,9 +188,9 @@
 				KOTLIN_CLI_WRAPPER_PATH = "$(SRCROOT)/../kotlin";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "dev.justinsmith.interval";
+				PRODUCT_BUNDLE_IDENTIFIER = dev.justinsmith.interval;
 				PRODUCT_MODULE_NAME = app;
-				PRODUCT_NAME = "interval";
+				PRODUCT_NAME = interval;
 				SDKROOT = iphoneos;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;

@@ -35,6 +35,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -285,7 +286,8 @@ private fun StepperRow(
             Text(stringResource(field.labelRes), style = IntervalTheme.type.label, color = stripe)
             BasicText(
                 text,
-                style = IntervalTheme.type.display.copy(color = palette.text),
+                // A line height in em, so it shrinks with the auto-sized font; display's 96.sp would not.
+                style = IntervalTheme.type.display.copy(color = palette.text, lineHeight = 1.em),
                 maxLines = 1,
                 autoSize = TextAutoSize.StepBased(minFontSize = VALUE_MIN_SIZE.sp, maxFontSize = VALUE_MAX_SIZE.sp),
             )
