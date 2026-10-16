@@ -36,7 +36,6 @@ import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.common_custom
 import dev.justinsmith.interval.resources.common_done
 import dev.justinsmith.interval.resources.common_joined
-import dev.justinsmith.interval.resources.preset_default_name
 import dev.justinsmith.interval.resources.workout_done
 import dev.justinsmith.interval.resources.workout_ended
 import dev.justinsmith.interval.resources.workout_repeat
@@ -47,6 +46,7 @@ import dev.justinsmith.interval.resources.workout_stat_rounds_value
 import dev.justinsmith.interval.resources.workout_stat_time
 import dev.justinsmith.interval.resources.workout_summary_ended
 import dev.justinsmith.interval.resources.workout_summary_finished
+import dev.justinsmith.interval.timer.defaultPresetName
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EnterEasing
 import dev.justinsmith.interval.ui.IntervalIcons
@@ -114,7 +114,7 @@ internal fun SummaryLayout(
     if (saving) {
         SavePresetDialog(
             summary = shapeText(state),
-            defaultName = stringResource(Res.string.preset_default_name, state.nextCustomNumber),
+            defaultName = state.config.defaultPresetName(),
             onSave = {
                 onSavePreset(it)
                 saving = false

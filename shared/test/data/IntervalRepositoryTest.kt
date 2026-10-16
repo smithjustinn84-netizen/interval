@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.Preferences
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.stepped
 import kotlinx.coroutines.CoroutineScope
@@ -88,11 +89,68 @@ class IntervalRepositoryTest {
     }
 
     @Test
-    fun `a blank preset name is numbered`() {
+    fun `a blank preset name is the shape's own and never repeats`() {
         val repository = repository()
+        repository.updateConfig { IntervalConfig(workSeconds = 40, restSeconds = 20, rounds = 6) }
         repository.saveCurrentAsPreset("  ")
         repository.saveCurrentAsPreset("")
-        assertEquals(listOf("Custom 1", "Custom 2"), repository.customPresets.value.map { it.name })
+        assertEquals(listOf("40/20 ×6", "40/20 ×6 2"), repository.customPresets.value.map { it.name })
+    }
+
+    @Test
+    fun `a name another preset has is numbered`() {
+        val repository = repository()
+        repository.saveCurrentAsPreset("Tabata")
+        repository.saveCurrentAsPreset("Mine")
+        repository.saveCurrentAsPreset("  Mine ")
+        assertEquals(listOf("Tabata 2", "Mine", "Mine 2"), repository.customPresets.value.map { it.name })
+    }
+
+    @Test
+    fun `a saved preset keeps the shape it was given`() {
+        val repository = repository()
+        val shape = IntervalConfig(prepSeconds = 10, workSeconds = 40, restSeconds = 20, rounds = 6)
+        repository.savePreset(Preset("Legs", shape))
+        val saved = repository.customPresets.value.single()
+        assertEquals(shape, saved.config)
+        assertEquals(shape, repository().customPresets.value.single().config)
+        assertEquals(saved, repository.presets.value.single { it.custom }.preset)
+    }
+
+    @Test
+    fun `updating a preset rewrites its name and shape in place`() {
+        val repository = repository()
+        repository.saveCurrentAsPreset("First")
+        repository.saveCurrentAsPreset("Second")
+        val first = repository.customPresets.value.first()
+        repository.updatePreset(first.copy(name = "Renamed", config = first.config.copy(rounds = 3)))
+        val (updated, second) = repository.customPresets.value
+        assertEquals(first.id, updated.id)
+        assertEquals("Renamed", updated.name)
+        assertEquals(3, updated.config.rounds)
+        assertEquals("Second", second.name)
+        assertEquals(listOf("Renamed", "Second"), repository().customPresets.value.map { it.name })
+    }
+
+    @Test
+    fun `updating keeps a preset's own name but not another's`() {
+        val repository = repository()
+        repository.saveCurrentAsPreset("Mine")
+        repository.saveCurrentAsPreset("Other")
+        val (mine, other) = repository.customPresets.value
+        repository.updatePreset(mine.copy(config = mine.config.copy(rounds = 2)))
+        repository.updatePreset(other.copy(name = "Mine"))
+        assertEquals(listOf("Mine", "Mine 2"), repository.customPresets.value.map { it.name })
+    }
+
+    @Test
+    fun `updating a built-in or an unknown id changes nothing`() {
+        val repository = repository()
+        repository.saveCurrentAsPreset("Mine")
+        repository.updatePreset(builtInPresets.first().copy(name = "Renamed"))
+        repository.updatePreset(Preset("Ghost", IntervalConfig(), id = 99))
+        assertEquals(listOf("Mine"), repository.customPresets.value.map { it.name })
+        assertEquals(builtInPresets, repository.presets.value.filterNot { it.custom }.map { it.preset })
     }
 
     @Test

@@ -11,6 +11,7 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
+import androidx.room.Update
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import kotlinx.coroutines.flow.Flow
@@ -51,6 +52,10 @@ interface PresetDao {
 
     @Insert
     suspend fun insert(preset: PresetEntity): Long
+
+    /** Rewrites the row with [preset]'s id. */
+    @Update
+    suspend fun update(preset: PresetEntity)
 
     @Query("DELETE FROM preset WHERE id = :id")
     suspend fun delete(id: Long)
@@ -101,6 +106,7 @@ internal fun PresetEntity.toDomain() =
     Preset(name, IntervalConfig(prepSeconds, workSeconds, restSeconds, rounds), id = id)
 
 internal fun Preset.toEntity() = PresetEntity(
+    id = id ?: 0,
     name = name,
     prepSeconds = config.prepSeconds,
     workSeconds = config.workSeconds,

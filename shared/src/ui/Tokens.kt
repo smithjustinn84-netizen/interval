@@ -187,9 +187,6 @@ object Sizes {
     /** The circle drawn inside that hit area: its fill and its ripple. */
     val iconButtonVisual = 40.dp
 
-    /** A preset chip in the Timer tab's horizontal row. */
-    val presetChip = 150.dp
-
     /** Minimum height of a list row (presets, history, settings). */
     val listRow = 64.dp
 
@@ -209,7 +206,7 @@ object Sizes {
 
 /** The design system's `opacity-*` tokens. */
 object Opacity {
-    /** The dashed save button when the current settings already match a preset. */
+    /** A disabled control: a modal button's fill, an icon action's glyph; also a sheet's drag handle. */
     const val DISABLED = 0.45f
 
     /** A − or + glyph at the end of its range. */

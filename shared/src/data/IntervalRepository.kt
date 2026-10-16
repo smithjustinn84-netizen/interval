@@ -8,7 +8,9 @@ import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.PresetEntry
+import dev.justinsmith.interval.timer.defaultPresetName
 import dev.justinsmith.interval.timer.presetEntries
+import dev.justinsmith.interval.timer.uniquePresetName
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -156,19 +158,36 @@ class IntervalRepository(
     }
 
     /**
-     * Saves the current configuration under [name]. The save dialog fills in a blank name in the user's
-     * language ("Custom N"); the English fallback here only guards callers that don't.
+     * Saves [preset] as a new one of the user's own, under its [storedName]: a blank name becomes its
+     * shape's ("40/20 ×6"), and one another preset has gets a number ("Tabata 2").
      */
+    fun savePreset(preset: Preset) {
+        val named = Preset(storedName(preset, exceptId = null), preset.config)
+        persist { presetDao.insert(named.toEntity()) }
+    }
+
+    /** Saves the current configuration under [name], as [savePreset] does. */
     fun saveCurrentAsPreset(name: String) {
-        val label = name.trim().ifEmpty { "Custom ${_customPresets.value.size + 1}" }.take(Preset.MAX_NAME_LENGTH)
-        val preset = Preset(label, _config.value)
-        persist { presetDao.insert(preset.toEntity()) }
+        savePreset(Preset(name, _config.value))
+    }
+
+    /** Rewrites one of the user's own presets, found by its id: its name (kept unique among the others) and shape. */
+    fun updatePreset(preset: Preset) {
+        val id = preset.id ?: return
+        val named = preset.copy(name = storedName(preset, exceptId = id))
+        persist { presetDao.update(named.toEntity()) }
     }
 
     /** Removes one of the user's own presets. Built-ins have no id and are left alone. */
     fun deletePreset(preset: Preset) {
         val id = preset.id ?: return
         persist { presetDao.delete(id) }
+    }
+
+    private fun storedName(preset: Preset, exceptId: Long?): String {
+        val wanted = preset.name.trim().ifEmpty { preset.config.defaultPresetName() }.take(Preset.MAX_NAME_LENGTH)
+        val taken = _presets.value.map { it.preset }.filterNot { exceptId != null && it.id == exceptId }.map { it.name }
+        return uniquePresetName(wanted, taken)
     }
 
     /** Records a workout that ran for [elapsedSeconds]; [endedEarly] when it stopped before the last round. */

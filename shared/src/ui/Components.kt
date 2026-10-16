@@ -140,9 +140,10 @@ private fun Modifier.capTopAt(capTop: Dp, capHeight: Dp): Modifier = layout { me
 }
 
 /**
- * An icon-only top-bar action, with its [description] for screen readers. A [background] fills its
- * circle, for the one action a screen wants noticed (the + on Presets). The whole 48dp box takes
- * the touch; the circle and its ripple follow the glyph, which a [TitleBar] raises to its title.
+ * An icon-only top-bar action, with its [description] for screen readers: the gear on Timer, + on
+ * Presets, ⋯ on History. A [background] can fill its circle for an action a screen wants noticed;
+ * none does today. The whole 48dp box takes the touch; the circle and its ripple follow the glyph,
+ * which a [TitleBar] raises to its title.
  */
 @Composable
 fun IconAction(

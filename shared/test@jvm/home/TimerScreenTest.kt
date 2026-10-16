@@ -9,46 +9,37 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
-import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.click
-import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.sameShape
-import dev.justinsmith.interval.ui.StateRestoration
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-/** A shape no built-in preset has, so the screen offers to save it. */
+/** A shape no built-in preset has, which the screen calls Custom. */
 private val custom = IntervalConfig(prepSeconds = 10, workSeconds = 40, restSeconds = 20, rounds = 6)
 
-private fun state(config: IntervalConfig = custom): TimerUiState {
-    val preset = builtInPresets.firstOrNull { it.config.sameShape(config) }
-    return TimerUiState(
-        config = config,
-        total = formatClock(config.totalSeconds),
-        presetName = preset?.name,
-        presets = builtInPresets.map { PresetChip(it, selected = it == preset) },
-    )
-}
+private fun state(config: IntervalConfig = custom) = TimerUiState(
+    config = config,
+    total = formatClock(config.totalSeconds),
+    presetName = builtInPresets.firstOrNull { it.config.sameShape(config) }?.name,
+)
 
 class TimerScreenTest {
     private val calls = mutableListOf<String>()
     private val steps = mutableListOf<Pair<ConfigField, Int>>()
     private val sets = mutableListOf<Pair<ConfigField, Int>>()
-    private val saved = mutableListOf<String>()
 
     @Composable
     private fun Screen(state: TimerUiState = state()) {
@@ -56,7 +47,6 @@ class TimerScreenTest {
             state = state,
             onStep = { field, direction -> steps += field to direction },
             onSet = { field, value -> sets += field to value },
-            onSavePreset = { saved += it },
             onStart = { calls += "start" },
             onOpenSettings = { calls += "settings" },
             onSeeAllPresets = { calls += "see all" },
@@ -110,23 +100,12 @@ class TimerScreenTest {
     }
 
     @Test
-    fun `a custom shape can be saved as a preset`() = runUiTest {
+    fun `a custom shape is called so and offers no save of its own`() = runUiTest {
         setThemedContent { Screen() }
         onNodeWithText("Custom · Total").assertExists()
-        onNodeWithContentDescription("Save as preset").performClick()
-        onNode(hasSetTextAction()).performTextInput("Sprints")
-        onNodeWithText("Save").performClick()
-        assertEquals(listOf("Sprints"), saved)
-        onNode(hasSetTextAction()).assertDoesNotExist()
-    }
-
-    @Test
-    fun `a preset saved without a name is numbered`() = runUiTest {
-        setThemedContent { Screen(state().copy(nextCustomNumber = 3)) }
-        onNodeWithContentDescription("Save as preset").performClick()
-        onNodeWithText("40s on · 20s off · ×6 · 5:50 total").assertExists()
-        onNodeWithText("Save").performClick()
-        assertEquals(listOf("Custom 3"), saved)
+        // Saving moved to the Presets tab: the title bar keeps only the gear.
+        onNodeWithContentDescription("Save as preset").assertDoesNotExist()
+        onNodeWithContentDescription("Settings").assertExists()
     }
 
     @Test
@@ -141,19 +120,9 @@ class TimerScreenTest {
     }
 
     @Test
-    fun `a shape a preset already has offers no save`() = runUiTest {
+    fun `a shape a preset has is named after it`() = runUiTest {
         setThemedContent { Screen(state(builtInPresets.first().config)) }
-        onNodeWithContentDescription("Save as preset").assertDoesNotExist()
-    }
-
-    @Test
-    fun `the save dialog keeps its name across a restore`() = runUiTest {
-        val restoration = StateRestoration(this)
-        restoration.setContent { Screen() }
-        onNodeWithContentDescription("Save as preset").performClick()
-        onNode(hasSetTextAction()).performTextInput("Sprints")
-        restoration.emulateSaveAndRestore()
-        onNode(hasSetTextAction()).assertTextContains("Sprints")
+        onNodeWithText("Tabata · Total").assertExists()
     }
 
     @Test

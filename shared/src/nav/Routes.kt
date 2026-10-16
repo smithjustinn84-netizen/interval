@@ -9,11 +9,11 @@ import kotlinx.serialization.Serializable
 /** A destination in the navigation bar. The back stack holds at most one, right above [TimerTab]. */
 sealed interface Tab : NavKey
 
-/** Home: the current workout's shape, presets to pick from, and Start. */
+/** Home: the current workout's shape as three steppers, Start, and the way to the presets. */
 @Serializable
 data object TimerTab : Tab
 
-/** Built-in and saved presets: apply, save, delete. */
+/** Built-in and saved presets: start one, put it on the Timer, and save, edit or delete the user's own. */
 @Serializable
 data object PresetsTab : Tab
 

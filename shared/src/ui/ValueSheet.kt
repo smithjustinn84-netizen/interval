@@ -14,56 +14,34 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
-import com.composeunstyled.DragIndication
-import com.composeunstyled.Scrim
-import com.composeunstyled.Sheet
-import com.composeunstyled.SheetDetent
-import com.composeunstyled.UnstyledModalBottomSheet
-import com.composeunstyled.rememberModalBottomSheetState
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.common_done
-import dev.justinsmith.interval.resources.value_sheet_drag_handle_cd
 import dev.justinsmith.interval.resources.value_sheet_hint_hold
 import dev.justinsmith.interval.resources.value_sheet_hint_steps
 import dev.justinsmith.interval.resources.value_sheet_new_total
 import dev.justinsmith.interval.resources.value_sheet_quick_picks
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.format
-import kotlinx.coroutines.flow.dropWhile
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -80,82 +58,27 @@ fun ValueSheet(
     onDismiss: () -> Unit,
 ) {
     val palette = IntervalTheme.palette
-    val label = stringResource(field.labelRes)
-    val dragHandle = stringResource(Res.string.value_sheet_drag_handle_cd)
-    // No half-open stop: the sheet is short enough to show whole.
-    val sheetState = rememberModalBottomSheetState(initialDetent = SheetDetent.Hidden)
-    val scope = rememberCoroutineScope()
-    val hide: () -> Unit = { scope.launch { sheetState.animateTo(SheetDetent.Hidden) } }
-    val currentOnDismiss by rememberUpdatedState(onDismiss)
-    LaunchedEffect(sheetState) {
-        launch { sheetState.animateTo(SheetDetent.FullyExpanded) }
-        // Every way out (Done, a swipe, back, Esc, a tap on the scrim) ends at Hidden; the caller hears
-        // of it only then, so the sheet slides away instead of vanishing.
-        snapshotFlow { sheetState.currentDetent }
-            .dropWhile { it == SheetDetent.Hidden }
-            .first { it == SheetDetent.Hidden }
-        currentOnDismiss()
-    }
-    UnstyledModalBottomSheet(state = sheetState, overlay = { Scrim(scrimColor = scrimColor()) }) {
-        Sheet(Modifier.fillMaxWidth()) {
-            ModalBackHandler(hide)
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
-                Column(
-                    Modifier
-                        // Screen readers announce the sheet by its field as it opens.
-                        .semantics { paneTitle = label }
-                        .widthIn(max = Sizes.sheet)
-                        .fillMaxWidth()
-                        .clip(Corners.sheet)
-                        .background(palette.surface)
-                        .navigationBarsPadding()
-                        .padding(start = Spacing.space16, end = Spacing.space16, bottom = Spacing.space24),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    DragIndication(
-                        Modifier
-                            .size(Sizes.iconButton, Spacing.space24)
-                            .semantics { contentDescription = dragHandle }
-                            .drawBehind {
-                                val handle = Size(Sizes.handleWidth.toPx(), Sizes.handleHeight.toPx())
-                                drawRoundRect(
-                                    color = palette.textDim.copy(alpha = Opacity.DISABLED),
-                                    topLeft = Offset(
-                                        (size.width - handle.width) / 2,
-                                        (size.height - handle.height) / 2,
-                                    ),
-                                    size = handle,
-                                    cornerRadius = CornerRadius(handle.height / 2),
-                                )
-                            },
-                    )
-                    Column(
-                        Modifier.fillMaxWidth().padding(top = Spacing.space8),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.space20),
-                    ) {
-                        SheetHeader(field)
-                        SheetStepper(field, value, onStep)
-                        QuickPicks(field, value, onPick)
-                        if (total != null) {
-                            Row(Modifier.fillMaxWidth().padding(horizontal = Spacing.space4)) {
-                                Text(
-                                    stringResource(Res.string.value_sheet_new_total),
-                                    style = IntervalTheme.type.body,
-                                    color = palette.textDim,
-                                    modifier = Modifier.weight(1f),
-                                )
-                                Text(total, style = IntervalTheme.type.section, color = palette.text)
-                            }
-                        }
-                        AccentButton(
-                            stringResource(Res.string.common_done),
-                            onClick = hide,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
-                }
+    // Screen readers announce the sheet by its field as it opens.
+    IntervalSheet(title = stringResource(field.labelRes), onDismiss = onDismiss) { hide ->
+        SheetHeader(field)
+        SheetStepper(field, value, onStep)
+        QuickPicks(field, value, onPick)
+        if (total != null) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = Spacing.space4)) {
+                Text(
+                    stringResource(Res.string.value_sheet_new_total),
+                    style = IntervalTheme.type.body,
+                    color = palette.textDim,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(total, style = IntervalTheme.type.section, color = palette.text)
             }
         }
+        AccentButton(
+            stringResource(Res.string.common_done),
+            onClick = hide,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 

@@ -5,11 +5,9 @@ import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
-import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.PresetEntry
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
-import dev.justinsmith.interval.timer.sameShape
 import dev.justinsmith.interval.timer.stepped
 import dev.justinsmith.interval.timer.withValue
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,20 +15,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
-data class PresetChip(val preset: Preset, val selected: Boolean)
-
 data class TimerUiState(
     val config: IntervalConfig,
     val total: String,
     /** The matching preset's name, or null for a shape no preset has. */
     val presetName: String?,
-    val presets: List<PresetChip>,
-    /** The number a preset saved without a name gets: "Custom 3". */
-    val nextCustomNumber: Int = 1,
-) {
-    /** A shape no preset has yet can be saved as one. */
-    val canSavePreset: Boolean get() = presetName == null
-}
+)
 
 class TimerViewModel(private val repository: IntervalRepository) : ViewModel() {
     val state: StateFlow<TimerUiState> = combine(repository.config, repository.presets, ::buildState)
@@ -48,19 +38,9 @@ class TimerViewModel(private val repository: IntervalRepository) : ViewModel() {
         repository.updateConfig { it.withValue(field, value) }
     }
 
-    fun applyPreset(preset: Preset) {
-        repository.applyPreset(preset)
-    }
-
-    fun savePreset(name: String) {
-        repository.saveCurrentAsPreset(name)
-    }
-
     private fun buildState(config: IntervalConfig, entries: List<PresetEntry>): TimerUiState = TimerUiState(
         config = config,
         total = formatClock(config.totalSeconds),
         presetName = entries.matching(config)?.name,
-        presets = entries.map { (preset, _) -> PresetChip(preset, selected = preset.config.sameShape(config)) },
-        nextCustomNumber = entries.count { it.custom } + 1,
     )
 }

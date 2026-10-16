@@ -50,8 +50,6 @@ data class WorkoutUiState(
     val elapsed: String = "",
     /** Offer "Save as preset" on the summary: no preset has this shape yet. */
     val canSavePreset: Boolean = false,
-    /** The number a preset saved without a name gets: "Custom 3". */
-    val nextCustomNumber: Int = 1,
 ) {
     val rounds: Int get() = config.rounds
     val isDone: Boolean get() = phase == Phase.Done || ended
@@ -73,7 +71,6 @@ fun WorkoutState.toUiState(
     ended: Boolean = false,
     presetName: String? = null,
     elapsedSeconds: Int = 0,
-    nextCustomNumber: Int = 1,
 ): WorkoutUiState {
     val rounds = config.rounds
     val secondsLeft = ceilSeconds(remainingMillis)
@@ -111,6 +108,5 @@ fun WorkoutState.toUiState(
         presetName = presetName,
         elapsed = formatClock(elapsedSeconds),
         canSavePreset = presetName == null,
-        nextCustomNumber = nextCustomNumber,
     )
 }

@@ -150,7 +150,6 @@ class WorkoutViewModel(
             ended = ended,
             presetName = presets.matching(config)?.name,
             elapsedSeconds = activeSeconds,
-            nextCustomNumber = presets.count { it.custom } + 1,
         )
     }
 

@@ -172,10 +172,8 @@ class WorkoutViewModelTest {
         assertEquals(0, repository.history.value.single().elapsedSeconds)
         assertTrue(viewModel.state.value.canSavePreset)
         assertNull(viewModel.state.value.presetName)
-        assertEquals(1, viewModel.state.value.nextCustomNumber)
         viewModel.saveAsPreset("Short")
         assertFalse(viewModel.state.value.canSavePreset)
         assertEquals("Short", viewModel.state.value.presetName)
-        assertEquals(2, viewModel.state.value.nextCustomNumber)
     }
 }

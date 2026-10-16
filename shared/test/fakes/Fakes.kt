@@ -77,6 +77,10 @@ class FakePresetDao : PresetDao {
         return id
     }
 
+    override suspend fun update(preset: PresetEntity) {
+        rows.update { all -> all.map { if (it.id == preset.id) preset else it } }
+    }
+
     override suspend fun delete(id: Long) {
         rows.update { all -> all.filterNot { it.id == id } }
     }

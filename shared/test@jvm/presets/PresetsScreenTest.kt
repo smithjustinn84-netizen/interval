@@ -3,12 +3,19 @@
 package dev.justinsmith.interval.presets
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDialog
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
@@ -19,68 +26,114 @@ import dev.justinsmith.interval.ui.setThemedContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-private val morning = Preset("Morning", IntervalConfig(workSeconds = 25, restSeconds = 10, rounds = 8))
+internal val morning = Preset("Morning", IntervalConfig(workSeconds = 25, restSeconds = 10, rounds = 8), id = 7)
+internal val current = IntervalConfig(prepSeconds = 10, workSeconds = 40, restSeconds = 20, rounds = 6)
 
-private fun row(preset: Preset, selected: Boolean = false) =
+internal fun row(preset: Preset, selected: Boolean = false) =
     PresetRowItem(preset, formatClock(preset.config.totalSeconds), selected)
 
-private fun state(custom: List<Preset> = listOf(morning), canSaveCurrent: Boolean = true) = PresetsUiState(
-    builtIn = builtInPresets.map { row(it) },
-    custom = custom.map { row(it) },
+internal fun state(
+    custom: List<Preset> = listOf(morning),
+    canSaveCurrent: Boolean = true,
+    selected: Preset? = null,
+) = PresetsUiState(
+    custom = custom.map { row(it, selected = it == selected) },
+    builtIn = builtInPresets.map { row(it, selected = it == selected) },
     canSaveCurrent = canSaveCurrent,
-    current = IntervalConfig(prepSeconds = 10, workSeconds = 40, restSeconds = 20, rounds = 6),
-    nextCustomNumber = 2,
+    current = current,
 )
 
+// The list stays in the tree under a sheet, and a sheet under the delete dialog, each drawn before
+// what covers it; a sheet is a dialog to semantics, as the dialog is.
+
+/** The editor's Save, not the unsaved card's Save pill under it. */
+internal fun DesktopComposeUiTest.saveInEditor() = onAllNodesWithText("Save").onLast().performClick()
+
+/** A node in an open sheet or dialog, not one of the list's under it. */
+internal fun DesktopComposeUiTest.inSheet(text: String) = onNode(hasText(text) and hasAnyAncestor(isDialog()))
+
 class PresetsScreenTest {
-    private val applied = mutableListOf<Preset>()
-    private val saved = mutableListOf<String>()
+    private val started = mutableListOf<Preset>()
+    private val putOnTimer = mutableListOf<Preset>()
+    private val saved = mutableListOf<Preset>()
     private val deleted = mutableListOf<Preset>()
 
     @Composable
     private fun Screen(state: PresetsUiState = state()) {
         PresetsScreen(
             state = state,
-            onApply = { applied += it },
-            onSaveCurrent = { saved += it },
+            onStart = { started += it },
+            onPutOnTimer = { putOnTimer += it },
+            onSave = { saved += it },
             onDelete = { deleted += it },
         )
     }
 
     @Test
-    fun `tapping a preset applies it`() = runUiTest {
+    fun `a card opens its sheet, which starts the preset or puts it on the Timer`() = runUiTest {
         setThemedContent { Screen() }
         onNodeWithText("Hangboard").performClick()
+        inSheet("Built-in").assertExists()
+        inSheet("10s on · 50s off · ×6").assertExists()
+        onNodeWithText("0:10 to get ready").assertExists()
+        onNodeWithText("Start workout").performClick()
+        assertEquals(listOf(builtInPresets[2]), started)
+        onNodeWithText("Start workout").assertDoesNotExist()
+
         onNodeWithText("Morning").performClick()
-        assertEquals(listOf(builtInPresets[2], morning), applied)
+        onNodeWithText("Put on Timer").performClick()
+        assertEquals(listOf(morning), putOnTimer)
+        onNodeWithText("Put on Timer").assertDoesNotExist()
     }
 
     @Test
-    fun `the user's own presets are deleted from their menu`() = runUiTest {
+    fun `tapping a card changes nothing by itself`() = runUiTest {
         setThemedContent { Screen() }
-        onNodeWithContentDescription("More for Morning").performClick()
+        onNodeWithText("Tabata").performClick()
+        assertEquals(emptyList(), started + putOnTimer)
+    }
+
+    @Test
+    fun `the user's own presets offer Edit and Delete`() = runUiTest {
+        setThemedContent { Screen() }
+        onNodeWithText("Morning").performClick()
+        inSheet("Yours").assertExists()
+        onNodeWithText("Edit").assertExists()
+        onNodeWithText("Delete").assertExists()
+        onNodeWithText("Save a copy").assertDoesNotExist()
+    }
+
+    @Test
+    fun `built-ins offer a copy instead`() = runUiTest {
+        setThemedContent { Screen() }
+        onNodeWithText("Tabata").performClick()
+        onNodeWithText("Save a copy").assertExists()
+        onNodeWithText("Edit").assertDoesNotExist()
+        onNodeWithText("Delete").assertDoesNotExist()
+    }
+
+    @Test
+    fun `deleting asks first and cancelling keeps the preset`() = runUiTest {
+        setThemedContent { Screen() }
+        onNodeWithText("Morning").performClick()
         onNodeWithText("Delete").performClick()
+        onNodeWithText("Delete Morning?").assertExists()
+        onNodeWithText("History keeps the workouts you did with it. The Timer keeps its settings.").assertExists()
+        onNodeWithText("Cancel").performClick()
+        assertEquals(emptyList(), deleted)
+        onNodeWithText("Delete Morning?").assertDoesNotExist()
+
+        onNodeWithText("Delete").performClick()
+        onAllNodesWithText("Delete").onLast().performClick()
         assertEquals(listOf(morning), deleted)
-        // Built-ins are not deletable.
-        onNodeWithContentDescription("More for Tabata").assertDoesNotExist()
+        onNodeWithText("Delete Morning?").assertDoesNotExist()
     }
 
     @Test
-    fun `the current settings can be saved as a preset`() = runUiTest {
-        setThemedContent { Screen() }
-        onNodeWithText("Save as preset").performClick()
-        onNodeWithText("40s on · 20s off · ×6 · 5:50 total").assertExists()
-        onNode(hasSetTextAction()).performTextInput("Evening")
-        onNodeWithText("Save").performClick()
-        assertEquals(listOf("Evening"), saved)
-    }
-
-    @Test
-    fun `a preset saved without a name is numbered`() = runUiTest {
-        setThemedContent { Screen() }
-        onNodeWithText("Save as preset").performClick()
-        onNodeWithText("Save").performClick()
-        assertEquals(listOf("Custom 2"), saved)
+    fun `the card on the Timer says so`() = runUiTest {
+        setThemedContent { Screen(state(selected = morning, canSaveCurrent = false)) }
+        onNodeWithText("On the Timer").assertExists()
+        onNodeWithText("On the Timer · not saved").assertDoesNotExist()
     }
 
     @Test
@@ -90,24 +143,10 @@ class PresetsScreenTest {
     }
 
     @Test
-    fun `unsaved settings are shown to save`() = runUiTest {
-        setThemedContent { Screen() }
-        onNodeWithText("On the Timer · not saved").assertExists()
-        onNodeWithText("40s on · 20s off · ×6").assertExists()
-    }
-
-    @Test
-    fun `settings that match a preset offer nothing to save`() = runUiTest {
-        setThemedContent { Screen(state(canSaveCurrent = false)) }
-        onNodeWithText("On the Timer · not saved").assertDoesNotExist()
-        onNodeWithText("Save as preset").assertDoesNotExist()
-    }
-
-    @Test
     fun `with no presets of their own the user is told where they go`() = runUiTest {
         setThemedContent { Screen(state(custom = emptyList())) }
         onNodeWithText("Nothing saved yet").assertExists()
-        onNodeWithText("Presets you save show up here.").assertExists()
+        onNodeWithText("Save one from the Timer or the end of a workout.").assertExists()
     }
 
     @Test

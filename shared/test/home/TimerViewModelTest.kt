@@ -14,9 +14,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 class TimerViewModelTest {
     private val repository = FakeStorage().repository(now = { 0L })
@@ -45,32 +43,20 @@ class TimerViewModelTest {
     }
 
     @Test
-    fun `applying a preset names and selects it but keeps the get-ready countdown`() {
+    fun `a preset put on the Timer names the shape but keeps the get-ready countdown`() {
         viewModel.set(ConfigField.Prep, 25)
-        val tabata = builtInPresets.first()
-        viewModel.applyPreset(tabata)
+        repository.applyPreset(builtInPresets.first())
         val state = viewModel.state.value
         assertEquals("Tabata", state.presetName)
-        assertEquals(tabata, state.presets.single { it.selected }.preset)
         assertEquals(25, state.config.prepSeconds)
-        assertFalse(state.canSavePreset)
     }
 
     @Test
-    fun `a custom shape can be saved once`() {
-        viewModel.applyPreset(builtInPresets.first())
+    fun `a shape no preset has is nameless until one is saved`() {
+        repository.applyPreset(builtInPresets.first())
         viewModel.step(ConfigField.Work, 1)
         assertNull(viewModel.state.value.presetName)
-        assertTrue(viewModel.state.value.canSavePreset)
-        viewModel.savePreset("Mine")
+        repository.saveCurrentAsPreset("Mine")
         assertEquals("Mine", viewModel.state.value.presetName)
-        assertFalse(viewModel.state.value.canSavePreset)
-    }
-
-    @Test
-    fun `a preset saved without a name gets the next number`() {
-        assertEquals(1, viewModel.state.value.nextCustomNumber)
-        viewModel.savePreset("Mine")
-        assertEquals(2, viewModel.state.value.nextCustomNumber)
     }
 }

@@ -1,21 +1,42 @@
 <journey name="Presets">
   <description>
-    Save the current settings as a preset, apply a built-in one, then delete the saved one. Run on
-    a fresh install (adb shell pm clear dev.justinsmith.interval), whose default workout matches no
-    preset.
+    Save the current settings as a preset from the Presets tab, put a built-in one on the Timer from
+    its sheet, start one from its sheet, then edit and delete the saved one. Run on a fresh install
+    (adb shell pm clear dev.justinsmith.interval), whose default workout matches no preset.
   </description>
   <actions>
     <action>Tap the "Presets" tab</action>
-    <action>Verify that "Built-in" and "Yours" groups are shown, and "Yours" says "Presets you save show up here."</action>
-    <action>Tap the "Save current settings as a preset" button</action>
-    <action>Verify that a dialog titled "Save as preset" is shown</action>
-    <action>Type "Journey" into the "Name" field</action>
+    <action>Verify that "Yours" is shown above "Built-in", and "Yours" says "Save one from the Timer or the end of a workout."</action>
+    <action>Verify that a card captioned "On the Timer · not saved" is shown at the top with a "Save" button</action>
     <action>Tap "Save"</action>
-    <action>Verify that a "Journey" preset is shown under "Yours"</action>
-    <action>Tap the "Tabata" preset</action>
-    <action>Verify that the Timer tab is shown and its summary card is labelled "Tabata"</action>
+    <action>Verify that a sheet titled "New preset" is shown, with a "Name" field whose placeholder is "30/15 ×8"</action>
+    <action>Type "Journey" into the "Name" field</action>
+    <action>Tap "Save" in the sheet</action>
+    <action>Verify that a "Journey" card is shown under "Yours", captioned "On the Timer", and the "On the Timer · not saved" card is gone</action>
+    <action>Tap the "Tabata" card</action>
+    <action>Verify that a sheet is shown with "Built-in", "Tabata", "Start workout", "Put on Timer" and "Save a copy"</action>
+    <action>Tap "Put on Timer"</action>
+    <action>Verify that the Timer tab is shown and its total is labelled "Tabata · Total"</action>
     <action>Tap the "Presets" tab</action>
-    <action>Tap the "Delete preset Journey" button</action>
-    <action>Verify that "Journey" is no longer shown and "Yours" says "Presets you save show up here."</action>
+    <action>Verify that the "Tabata" card is captioned "On the Timer"</action>
+    <action>Tap the "Journey" card</action>
+    <action>Tap "Start workout"</action>
+    <action>Verify that the workout screen is shown with "Get ready"</action>
+    <action>Tap "End" and confirm with "End workout"</action>
+    <action>Verify that the Presets tab is shown again</action>
+    <action>Tap the "Journey" card</action>
+    <action>Tap "Edit"</action>
+    <action>Verify that a sheet titled "Edit preset" is shown with the name "Journey" and a "7 / 24" count</action>
+    <action>Tap the "Rounds" row, tap "12" in the sheet, then tap "Done"</action>
+    <action>Verify that the "Rounds" row shows "×12"</action>
+    <action>Tap "Save" in the sheet</action>
+    <action>Verify that the "Journey" card says "30s on · 15s off · ×12"</action>
+    <action>Tap the "Journey" card</action>
+    <action>Tap "Delete"</action>
+    <action>Verify that a dialog titled "Delete Journey?" is shown saying "History keeps the workouts you did with it. The Timer keeps its settings."</action>
+    <action>Tap "Cancel"</action>
+    <action>Verify that the "Journey" sheet is still shown</action>
+    <action>Tap "Delete", then "Delete" in the dialog</action>
+    <action>Verify that "Journey" is no longer shown and "Yours" says "Save one from the Timer or the end of a workout."</action>
   </actions>
 </journey>

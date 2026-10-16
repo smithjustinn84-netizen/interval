@@ -4,6 +4,7 @@ package dev.justinsmith.interval.presets
 
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -28,13 +29,16 @@ class PresetsViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
-    fun `built-ins and the user's own are listed apart`() {
-        repository.updateConfig { IntervalConfig(prepSeconds = 0, workSeconds = 25, restSeconds = 10, rounds = 8) }
-        viewModel.saveCurrent("Morning")
+    fun `the user's own come first and apart from the built-ins`() {
+        val morning = IntervalConfig(prepSeconds = 0, workSeconds = 25, restSeconds = 10, rounds = 8)
+        repository.updateConfig { morning }
+        viewModel.save(Preset("Morning", morning))
         val state = viewModel.state.value
         assertEquals(builtInPresets, state.builtIn.map { it.preset })
         assertEquals(listOf("Morning"), state.custom.map { it.preset.name })
+        assertEquals(listOf("Morning") + builtInPresets.map { it.name }, state.rows.map { it.preset.name })
         assertTrue(state.custom.single().selected)
+        assertTrue(state.custom.single().preset.custom)
         assertFalse(state.canSaveCurrent)
     }
 
@@ -50,10 +54,27 @@ class PresetsViewModelTest {
         viewModel.apply(builtInPresets[1])
         assertEquals(builtInPresets[1], viewModel.state.value.builtIn.single { it.selected }.preset)
         repository.updateConfig { IntervalConfig(workSeconds = 33) }
-        viewModel.saveCurrent("Odd")
+        viewModel.save(Preset("Odd", repository.config.value))
         viewModel.delete(viewModel.state.value.custom.single().preset)
         assertTrue(viewModel.state.value.custom.isEmpty())
         assertTrue(viewModel.state.value.canSaveCurrent)
+    }
+
+    @Test
+    fun `saving a preset with an id rewrites that one`() {
+        viewModel.save(Preset("Mine", IntervalConfig(workSeconds = 33)))
+        val saved = viewModel.state.value.custom.single().preset
+        viewModel.save(saved.copy(name = "Renamed", config = saved.config.copy(rounds = 3)))
+        val updated = viewModel.state.value.custom.single().preset
+        assertEquals(saved.id, updated.id)
+        assertEquals("Renamed", updated.name)
+        assertEquals(3, updated.config.rounds)
+    }
+
+    @Test
+    fun `a blank name is the shape's own`() {
+        viewModel.save(Preset("", IntervalConfig(workSeconds = 40, restSeconds = 20, rounds = 6)))
+        assertEquals("40/20 ×6", viewModel.state.value.custom.single().preset.name)
     }
 
     @Test

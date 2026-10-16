@@ -8,6 +8,8 @@ import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -58,13 +60,40 @@ class AppNavigationTest {
     }
 
     @Test
-    fun `a preset picked from All presets becomes the next workout`() = appTest { koin ->
+    fun `a preset put on the Timer from All presets becomes the next workout`() = appTest { koin ->
         onNodeWithContentDescription("All presets").performClick()
         onNodeWithText("Hangboard").performClick()
+        onNodeWithText("Put on Timer").performClick()
         onNodeWithText("Start workout").assertExists()
         tab("Timer").assertIsSelected()
         val config = koin.koin.get<IntervalRepository>().config.value
         assertTrue(config.sameShape(builtInPresets.single { it.name == "Hangboard" }.config))
+    }
+
+    @Test
+    fun `a preset started from its sheet opens the workout and ends back on Presets`() = appTest { koin ->
+        tab("Presets").performClick()
+        onNodeWithText("Tabata").performClick()
+        onNodeWithText("Start workout").performClick()
+        onNodeWithContentDescription("End workout").assertExists()
+        assertTrue(koin.koin.get<IntervalRepository>().config.value.sameShape(builtInPresets.first().config))
+
+        onNodeWithContentDescription("End workout").performClick()
+        onNodeWithText("End workout").performClick()
+        onNodeWithText("Built-in").assertExists()
+        tab("Presets").assertIsSelected()
+        onNodeWithText("Put on Timer").assertDoesNotExist()
+    }
+
+    @Test
+    fun `a preset saved on the Presets tab is named on the Timer`() = appTest {
+        tab("Presets").performClick()
+        onNodeWithContentDescription("New preset").performClick()
+        // The unsaved card's own Save pill stays in the tree under the editor, drawn first.
+        onAllNodesWithText("Save").onLast().performClick()
+        onNodeWithText("30/15 ×8").assertExists()
+        tab("Timer").performClick()
+        onNodeWithText("30/15 ×8 · Total").assertExists()
     }
 
     @Test

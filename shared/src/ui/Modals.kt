@@ -151,6 +151,41 @@ fun AccentButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifie
     )
 }
 
+/** A full-width button on a quiet fill for a sheet's second action, under the accent one. */
+@Composable
+fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    ModalButton(
+        text = text,
+        onClick = onClick,
+        primary = false,
+        style = IntervalTheme.type.label,
+        padding = Spacing.space24,
+        modifier = modifier,
+    )
+}
+
+/** A borderless action in the dim ink, for the quiet choices of a sheet: Cancel, Edit, Delete. */
+@Composable
+fun QuietTextButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val interaction = remember { MutableInteractionSource() }
+    Box(
+        modifier
+            .heightIn(min = Sizes.pillHeight)
+            .pressScale(interaction)
+            .clip(Corners.radius12)
+            .clickable(
+                interactionSource = interaction,
+                indication = LocalIndication.current,
+                role = Role.Button,
+                onClick = onClick,
+            )
+            .padding(horizontal = Spacing.space16),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text, style = IntervalTheme.type.label, color = IntervalTheme.palette.textDim)
+    }
+}
+
 /** The button recipe dialogs and sheets share: accent when [primary], a quiet fill otherwise, faded while disabled. */
 @Composable
 private fun ModalButton(

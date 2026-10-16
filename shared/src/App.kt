@@ -224,7 +224,9 @@ private fun appEntries(
             onSeeAllPresets = { selectTab(PresetsTab) },
         )
     }
-    entry<PresetsTab> { PresetsRoute(onShowTimer = { selectTab(TimerTab) }) }
+    entry<PresetsTab> {
+        PresetsRoute(onShowTimer = { selectTab(TimerTab) }, onStartWorkout = { backStack.push(Workout) })
+    }
     entry<HistoryTab> { HistoryRoute() }
     entry<Settings>(metadata = SupportingPaneSceneStrategy.supportingPane()) {
         SettingsRoute(

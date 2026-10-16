@@ -62,35 +62,49 @@
 
     <!-- Timer tab -->
     <string name="timer_title">Timer</string>
-    <string name="timer_save_as_preset_cd">Save as preset</string>
     <string name="timer_total">Total</string>
     <!-- "0:10 to get ready" -->
     <string name="timer_prep_line">%1$s to get ready</string>
     <string name="timer_start_workout">Start workout</string>
     <string name="timer_all_presets_cd">All presets</string>
 
-    <!-- Saving a preset -->
+    <!-- Saving a preset from the end of a workout -->
     <string name="preset_save_title">Save as preset</string>
     <string name="preset_name_label">Name</string>
     <!-- Characters typed of the most allowed: "6 / 24" -->
     <string name="preset_name_count">%1$d / %2$d</string>
-    <!-- The name a preset saved without one gets: "Custom 3" -->
-    <string name="preset_default_name">Custom %1$d</string>
 
     <!-- Presets tab -->
     <string name="presets_title">Presets</string>
+    <!-- The + in the title bar -->
+    <string name="presets_new_cd">New preset</string>
     <!-- Over the current settings when they match no preset -->
     <string name="presets_current_unsaved">On the Timer · not saved</string>
-    <string name="presets_save_current">Save as preset</string>
     <string name="presets_built_in">Built-in</string>
     <string name="presets_yours">Yours</string>
     <!-- The empty "Yours" group: a title over presets_empty -->
     <string name="presets_empty_title">Nothing saved yet</string>
-    <string name="presets_empty">Presets you save show up here.</string>
+    <string name="presets_empty">Save one from the Timer or the end of a workout.</string>
+    <!-- Over the card whose shape is the one on the Timer -->
+    <string name="presets_on_timer">On the Timer</string>
+
+    <!-- The sheet a preset opens -->
+    <string name="presets_put_on_timer">Put on Timer</string>
+    <string name="presets_edit">Edit</string>
     <string name="presets_delete">Delete</string>
-    <string name="presets_delete_named_cd">Delete preset %1$s</string>
-    <string name="presets_more_named_cd">More for %1$s</string>
-    <string name="presets_selected_cd">Selected</string>
+    <string name="presets_save_copy">Save a copy</string>
+    <!-- The name a copy of a built-in starts with: "Tabata copy" -->
+    <string name="preset_copy_name">%1$s copy</string>
+    <!-- "Delete Leg day 40/20?" -->
+    <string name="presets_delete_title">Delete %1$s?</string>
+    <string name="presets_delete_text">History keeps the workouts you did with it. The Timer keeps its settings.</string>
+
+    <!-- The preset editor -->
+    <string name="preset_editor_edit_title">Edit preset</string>
+    <string name="preset_editor_new_title">New preset</string>
+    <string name="preset_editor_copy_title">Save a copy</string>
+    <string name="preset_editor_total">Total</string>
+    <string name="preset_editor_prep_hint">Get ready time comes from Settings.</string>
 
     <!-- History tab -->
     <string name="history_title">History</string>

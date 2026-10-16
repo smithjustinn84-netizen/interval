@@ -2,13 +2,9 @@ package dev.justinsmith.interval.home
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -58,15 +54,12 @@ import dev.justinsmith.interval.resources.common_custom
 import dev.justinsmith.interval.resources.common_joined
 import dev.justinsmith.interval.resources.common_settings
 import dev.justinsmith.interval.resources.config_rounds_short
-import dev.justinsmith.interval.resources.preset_default_name
 import dev.justinsmith.interval.resources.timer_all_presets_cd
 import dev.justinsmith.interval.resources.timer_prep_line
-import dev.justinsmith.interval.resources.timer_save_as_preset_cd
 import dev.justinsmith.interval.resources.timer_title
 import dev.justinsmith.interval.resources.timer_total
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
-import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.format
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.valueOf
@@ -78,14 +71,12 @@ import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RepeatButton
 import dev.justinsmith.interval.ui.RollingText
-import dev.justinsmith.interval.ui.SavePresetDialog
 import dev.justinsmith.interval.ui.SetupLanes
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StartButton
 import dev.justinsmith.interval.ui.TitleBar
 import dev.justinsmith.interval.ui.ValueSheet
-import dev.justinsmith.interval.ui.configSummary
 import dev.justinsmith.interval.ui.editRes
 import dev.justinsmith.interval.ui.labelRes
 import dev.justinsmith.interval.ui.lessRes
@@ -113,7 +104,6 @@ fun TimerRoute(
         state = state,
         onStep = viewModel::step,
         onSet = viewModel::set,
-        onSavePreset = viewModel::savePreset,
         onStart = onStart,
         onOpenSettings = onOpenSettings,
         onSeeAllPresets = onSeeAllPresets,
@@ -131,7 +121,6 @@ fun TimerScreen(
     state: TimerUiState,
     onStep: (ConfigField, Int) -> Unit,
     onSet: (ConfigField, Int) -> Unit,
-    onSavePreset: (String) -> Unit,
     onStart: () -> Unit,
     onOpenSettings: () -> Unit,
     onSeeAllPresets: () -> Unit,
@@ -141,15 +130,13 @@ fun TimerScreen(
     var editingName by rememberSaveable { mutableStateOf<String?>(null) }
     val editing = editingName?.let(ConfigField::valueOf)
     val onEdit = { field: ConfigField -> editingName = field.name }
-    var saving by rememberSaveable { mutableStateOf(false) }
-    val onSave = { saving = true }
     BoxWithConstraints(modifier.fillMaxSize().background(IntervalTheme.palette.background)) {
         if (maxWidth > maxHeight) {
             // Sideways: the total and Start on the left, the three rows on the right, the lanes under both.
             SetupLanes(Modifier.matchParentSize())
             Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center) {
                 Column(Modifier.width(Sizes.setupColumnLandscape).fillMaxHeight()) {
-                    TimerTitleBar(state.canSavePreset, onSave, onOpenSettings)
+                    TimerTitleBar(onOpenSettings)
                     Total(state, Modifier.padding(horizontal = Spacing.space20))
                     Spacer(Modifier.weight(1f))
                     StartRow(onStart, onSeeAllPresets, Modifier.padding(Spacing.space16))
@@ -168,7 +155,7 @@ fun TimerScreen(
             Box(Modifier.align(Alignment.TopCenter).widthIn(max = Sizes.content).fillMaxSize()) {
                 SetupLanes(Modifier.matchParentSize())
                 Column(Modifier.fillMaxSize()) {
-                    TimerTitleBar(state.canSavePreset, onSave, onOpenSettings)
+                    TimerTitleBar(onOpenSettings)
                     Total(state, Modifier.padding(horizontal = Spacing.space20))
                     Column(Modifier.weight(1f).padding(horizontal = Spacing.space16, vertical = Spacing.space12)) {
                         StepperRows(state.config, onStep, onEdit)
@@ -192,36 +179,12 @@ fun TimerScreen(
             onDismiss = { editingName = null },
         )
     }
-    if (saving) {
-        SavePresetDialog(
-            summary = configSummary(state.config),
-            defaultName = stringResource(Res.string.preset_default_name, state.nextCustomNumber),
-            onSave = {
-                onSavePreset(it)
-                saving = false
-            },
-            onDismiss = { saving = false },
-        )
-    }
 }
 
-/**
- * The title, with + to save a shape no preset has yet, and the settings gear. The + grows in as the
- * shape leaves the presets behind and shrinks away as it lands on one, the gear sliding over to make
- * room, so the bar never jumps.
- */
+/** The title and the settings gear. Saving the shape as a preset lives on the Presets tab. */
 @Composable
-private fun TimerTitleBar(canSavePreset: Boolean, onSave: () -> Unit, onOpenSettings: () -> Unit) {
+private fun TimerTitleBar(onOpenSettings: () -> Unit) {
     TitleBar(stringResource(Res.string.timer_title)) {
-        AnimatedVisibility(
-            canSavePreset,
-            enter = fadeIn(tween(Motion.STATE_MILLIS)) + scaleIn(tween(Motion.STATE_MILLIS)) +
-                expandHorizontally(tween(Motion.STATE_MILLIS)),
-            exit = fadeOut(tween(Motion.STATE_MILLIS)) + scaleOut(tween(Motion.STATE_MILLIS)) +
-                shrinkHorizontally(tween(Motion.STATE_MILLIS)),
-        ) {
-            IconAction(IntervalIcons.Add, stringResource(Res.string.timer_save_as_preset_cd), onSave)
-        }
         IconAction(IntervalIcons.Settings, stringResource(Res.string.common_settings), onOpenSettings)
     }
 }
@@ -397,11 +360,9 @@ private fun TimerPreview() {
                 config = config,
                 total = formatClock(config.totalSeconds),
                 presetName = "Tabata",
-                presets = builtInPresets.mapIndexed { i, preset -> PresetChip(preset, selected = i == 0) },
             ),
             onStep = { _, _ -> },
             onSet = { _, _ -> },
-            onSavePreset = {},
             onStart = {},
             onOpenSettings = {},
             onSeeAllPresets = {},

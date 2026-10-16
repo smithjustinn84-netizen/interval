@@ -16,24 +16,28 @@ import kotlinx.coroutines.flow.stateIn
 
 data class PresetRowItem(
     val preset: Preset,
+    /** The whole workout's length with the user's own get-ready countdown: "4:00". */
     val total: String,
+    /** This preset's shape is the one on the Timer. */
     val selected: Boolean,
     /** This preset's length as a share of the longest on the screen, so its timeline can be drawn to scale. */
     val share: Float = 1f,
 )
 
 data class PresetsUiState(
-    val builtIn: List<PresetRowItem>,
+    /** The user's own presets, in the order they were saved. */
     val custom: List<PresetRowItem>,
+    val builtIn: List<PresetRowItem>,
     /** False when the current settings already match a preset, so saving would duplicate it. */
     val canSaveCurrent: Boolean,
-    /** The current settings: shown to save when they match no preset, and in the save dialog. */
+    /** The settings on the Timer: shown to save when they match no preset, and the shape a new preset starts from. */
     val current: IntervalConfig,
     /** The current settings' length as a share of the longest on the screen, as [PresetRowItem.share]. */
     val currentShare: Float = 1f,
-    /** The number a preset saved without a name gets: "Custom 3". */
-    val nextCustomNumber: Int = 1,
-)
+) {
+    /** Every row the screen shows, the user's own first. */
+    val rows: List<PresetRowItem> get() = custom + builtIn
+}
 
 class PresetsViewModel(private val repository: IntervalRepository) : ViewModel() {
     val state: StateFlow<PresetsUiState> = combine(repository.config, repository.presets, ::buildState)
@@ -43,12 +47,14 @@ class PresetsViewModel(private val repository: IntervalRepository) : ViewModel()
             initialValue = buildState(repository.config.value, repository.presets.value),
         )
 
+    /** Puts [preset]'s shape on the Timer. */
     fun apply(preset: Preset) {
         repository.applyPreset(preset)
     }
 
-    fun saveCurrent(name: String) {
-        repository.saveCurrentAsPreset(name)
+    /** Saves [preset]: a new one of the user's own, or the changes to the one its id names. */
+    fun save(preset: Preset) {
+        if (preset.custom) repository.updatePreset(preset) else repository.savePreset(preset)
     }
 
     fun delete(preset: Preset) {
@@ -72,12 +78,11 @@ class PresetsViewModel(private val repository: IntervalRepository) : ViewModel()
             )
         }
         return PresetsUiState(
-            builtIn = rows.filterNot { it.first }.map { it.second },
             custom = rows.filter { it.first }.map { it.second },
+            builtIn = rows.filterNot { it.first }.map { it.second },
             canSaveCurrent = canSaveCurrent,
             current = config,
             currentShare = config.totalSeconds.toFloat() / longest,
-            nextCustomNumber = entries.count { it.custom } + 1,
         )
     }
 }

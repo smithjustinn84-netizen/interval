@@ -62,7 +62,7 @@ fun ConfirmDialog(
 
 /**
  * Names and saves the current workout as a preset. [summary] is its shape: "25s on · 10s off · ×8 ·
- * 4:40 total". Left blank, the name is [defaultName] ("Custom 3"), which the empty field shows.
+ * 4:40 total". Left blank, the name is [defaultName] ("25/10 ×8"), which the empty field shows.
  */
 @Composable
 fun SavePresetDialog(summary: String, defaultName: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
@@ -100,9 +100,12 @@ fun SavePresetDialog(summary: String, defaultName: String, onSave: (String) -> U
     }
 }
 
-/** A filled single-line field; the accent ring appears only while it has focus. */
+/**
+ * A filled single-line field for a preset's name, [Preset.MAX_NAME_LENGTH] at most, with its
+ * [placeholder] while empty; the accent ring appears only while it has focus.
+ */
 @Composable
-private fun NameField(state: TextFieldState, placeholder: String, onDone: () -> Unit) {
+fun NameField(state: TextFieldState, placeholder: String, onDone: () -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
@@ -118,7 +121,7 @@ private fun NameField(state: TextFieldState, placeholder: String, onDone: () -> 
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
         onKeyboardAction = { onDone() },
         interactionSource = interaction,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .widthIn(min = Sizes.content / 2)
             .clip(Corners.radius12)
