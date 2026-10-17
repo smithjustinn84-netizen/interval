@@ -50,6 +50,10 @@ interface PresetDao {
     @Query("SELECT * FROM preset ORDER BY id")
     fun observeAll(): Flow<List<PresetEntity>>
 
+    /** What is stored now, in save order: for a write that must see every write before it. */
+    @Query("SELECT * FROM preset ORDER BY id")
+    suspend fun all(): List<PresetEntity>
+
     @Insert
     suspend fun insert(preset: PresetEntity): Long
 

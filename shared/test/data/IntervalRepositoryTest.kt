@@ -5,6 +5,7 @@ package dev.justinsmith.interval.data
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import dev.justinsmith.interval.fakes.FakeStorage
+import dev.justinsmith.interval.fakes.deferredStorageScope
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
@@ -211,6 +212,16 @@ class IntervalRepositoryTest {
         repository.updateConfig { IntervalConfig(prepSeconds = 30) }
         repository.applyPreset(builtInPresets.first())
         assertEquals(builtInPresets.first().config.copy(prepSeconds = 30), repository.config.value)
+    }
+
+    @Test
+    fun `two saves made before either lands still get distinct names`() = runTest {
+        val repository = storage.repository(now = { clock }, scope = deferredStorageScope())
+        testScheduler.runCurrent()
+        repository.savePreset(Preset("Twin", IntervalConfig()))
+        repository.savePreset(Preset("Twin", IntervalConfig()))
+        testScheduler.advanceUntilIdle()
+        assertEquals(listOf("Twin", "Twin 2"), repository.customPresets.value.map { it.name })
     }
 }
 

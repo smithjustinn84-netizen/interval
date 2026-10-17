@@ -5,6 +5,7 @@ package dev.justinsmith.interval.workout
 import dev.justinsmith.interval.data.CueSettings
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.RecordingCuePlayer
+import dev.justinsmith.interval.fakes.deferredStorageScope
 import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -14,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -174,7 +176,49 @@ class WorkoutViewModelTest {
         assertTrue(viewModel.state.value.canSavePreset)
         assertNull(viewModel.state.value.presetName)
         viewModel.saveAsPreset(Preset("Short", viewModel.state.value.config))
+        runCurrent()
         assertFalse(viewModel.state.value.canSavePreset)
         assertEquals("Short", viewModel.state.value.presetName)
+    }
+
+    @Test
+    fun `a preset saved from the summary shows there once its write lands`() = runTest(dispatcher) {
+        val repository = FakeStorage().repository(scope = deferredStorageScope())
+        runCurrent()
+        repository.updateConfig { IntervalConfig(prepSeconds = 0, workSeconds = 5, restSeconds = 5, rounds = 2) }
+        val viewModel = WorkoutViewModel(repository, player, testScheduler.timeSource)
+        repeat(3) { viewModel.skip() }
+        assertTrue(viewModel.state.value.canSavePreset)
+
+        viewModel.saveAsPreset(Preset("Short", viewModel.state.value.config))
+        advanceUntilIdle()
+
+        assertEquals("Short", viewModel.state.value.presetName)
+        assertFalse(viewModel.state.value.canSavePreset)
+    }
+
+    @Test
+    fun `a preset saved from the summary goes on the Timer too`() = runTest(dispatcher) {
+        val viewModel = WorkoutViewModel(repository, player, testScheduler.timeSource)
+        repeat(3) { viewModel.skip() }
+        val reshaped = viewModel.state.value.config.copy(workSeconds = 50)
+        viewModel.saveAsPreset(Preset("Longer", reshaped))
+        assertEquals(50, repository.config.value.workSeconds)
+    }
+
+    @Test
+    fun `the controls do nothing once the workout has ended early`() = runTest(dispatcher) {
+        val viewModel = WorkoutViewModel(repository, player, testScheduler.timeSource)
+        advanceTimeBy(6_000 + WorkoutViewModel.TICK_MILLIS)
+        runCurrent()
+        viewModel.endEarly()
+        val ended = viewModel.state.value
+
+        repeat(5) { viewModel.skip() }
+        viewModel.back()
+        viewModel.addTime()
+
+        assertEquals(ended, viewModel.state.value)
+        assertEquals(1, repository.history.value.size)
     }
 }

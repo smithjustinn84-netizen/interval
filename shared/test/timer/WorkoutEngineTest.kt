@@ -109,6 +109,15 @@ class WorkoutEngineTest {
     }
 
     @Test
+    fun `halfway plays once even when added time lifts the clock back above it`() {
+        val start = WorkoutEngine.start(config.copy(prepSeconds = 0, workSeconds = 40)).state
+        val past = run(start, 25_000)
+        val added = WorkoutEngine.addTime(past.state)
+        val after = run(added, 10_000)
+        assertEquals(listOf<Cue>(Cue.Halfway), (past.cues + after.cues).filterIsInstance<Cue.Halfway>())
+    }
+
+    @Test
     fun `adding time keeps progress within bounds`() {
         val work = WorkoutEngine.advance(WorkoutEngine.start(config).state).state
         val added = WorkoutEngine.addTime(work)

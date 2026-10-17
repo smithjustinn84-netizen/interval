@@ -39,14 +39,25 @@ class WorkoutViewModel(
     private var activeMillis = 0L
     private val activeSeconds: Int get() = ((activeMillis + MILLIS_PER_SECOND / 2) / MILLIS_PER_SECOND).toInt()
     private var ticker: Job? = null
+
+    // Followed rather than read on each publish: a preset saved from the summary lands later, and the
+    // summary must then name it. Matched once per change, not on every tick.
+    private var presets = repository.presets.value.map { it.preset }
+    private var presetName = repository.presets.value.matching(config)?.name
     private val _state: MutableStateFlow<WorkoutUiState>
 
     init {
-        val start = WorkoutEngine.start(config)
-        engine = start.state
+        engine = WorkoutEngine.start(config).state
         _state = MutableStateFlow(uiState(running = true))
-        play(start.cues)
-        resume()
+        // After _state: viewModelScope runs this at once, and its first value publishes.
+        viewModelScope.launch {
+            repository.presets.collect { entries ->
+                presets = entries.map { it.preset }
+                presetName = entries.matching(config)?.name
+                publish()
+            }
+        }
+        begin()
     }
 
     val state: StateFlow<WorkoutUiState> = _state.asStateFlow()
@@ -65,7 +76,7 @@ class WorkoutViewModel(
     }
 
     fun resume() {
-        if (engine.isDone || ended || ticker?.isActive == true) return
+        if (over || ticker?.isActive == true) return
         running = true
         publish()
         ticker = viewModelScope.launch {
@@ -83,25 +94,31 @@ class WorkoutViewModel(
 
     /** Jumps to the next interval now. */
     fun skip() {
-        if (!engine.isDone) applyStep(WorkoutEngine.advance(engine))
+        if (over) return
+        applyStep(WorkoutEngine.advance(engine))
     }
 
     fun back() {
+        if (over) return
         engine = WorkoutEngine.back(engine)
         publish()
     }
 
     fun addTime() {
+        if (over) return
         engine = WorkoutEngine.addTime(engine)
         publish()
     }
+
+    /** Finished or ended early: the summary shows, and the controls do nothing. */
+    private val over: Boolean get() = engine.isDone || ended
 
     /**
      * Stops before the last round: records what was done and shows the summary. Without a finished
      * round there is nothing worth keeping, so the screen just leaves instead of calling this.
      */
     fun endEarly() {
-        if (engine.isDone || ended) return
+        if (over) return
         stopTicker()
         running = false
         ended = true
@@ -109,16 +126,23 @@ class WorkoutViewModel(
         publish()
     }
 
-    /** Saves [preset], named and maybe reshaped in the summary's editor, as a new one of the user's own. */
+    /**
+     * Saves [preset], named and maybe reshaped in the summary's editor, as a new one of the user's own,
+     * and puts it on the Timer, as saving from the Timer or Presets does. The summary names it once the
+     * save lands.
+     */
     fun saveAsPreset(preset: Preset) {
-        repository.savePreset(preset)
-        publish()
+        repository.saveAndApplyPreset(preset)
     }
 
     fun restart() {
         stopTicker()
         ended = false
         activeMillis = 0
+        begin()
+    }
+
+    private fun begin() {
         val start = WorkoutEngine.start(config)
         engine = start.state
         play(start.cues)
@@ -145,15 +169,12 @@ class WorkoutViewModel(
         _state.value = uiState(running)
     }
 
-    private fun uiState(running: Boolean): WorkoutUiState {
-        val presets = repository.presets.value
-        return engine.toUiState(
-            running = running,
-            ended = ended,
-            presetName = presets.matching(config)?.name,
-            elapsedSeconds = activeSeconds,
-        ).copy(presets = presets.map { it.preset })
-    }
+    private fun uiState(running: Boolean): WorkoutUiState = engine.toUiState(
+        running = running,
+        ended = ended,
+        presetName = presetName,
+        elapsedSeconds = activeSeconds,
+    ).copy(presets = presets)
 
     private fun play(cues: List<Cue>) {
         val settings = repository.cueSettings.value

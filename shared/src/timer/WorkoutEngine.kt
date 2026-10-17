@@ -11,6 +11,8 @@ data class WorkoutState(
     val remainingMillis: Long,
     /** The current interval's full length; grows when time is added so progress stays within 0..1. */
     val phaseMillis: Long,
+    /** The current interval's [Cue.Halfway] has played: added time can't bring it back. */
+    val halfwayCued: Boolean = false,
 ) {
     val isDone: Boolean get() = phase == Phase.Done
     val isLastRound: Boolean get() = round >= config.rounds
@@ -70,11 +72,8 @@ object WorkoutEngine {
      */
     const val MAX_TICK_MILLIS = 1_000L
 
-    fun start(config: IntervalConfig): Step {
-        val phase = if (config.prepSeconds > 0) Phase.Prep else Phase.Work
-        val state = enter(config, phase, round = 1)
-        return Step(state, listOf(Cue.PhaseStarted(phase, lastRound = phase == Phase.Work && config.rounds == 1)))
-    }
+    fun start(config: IntervalConfig): Step =
+        started(config, if (config.prepSeconds > 0) Phase.Prep else Phase.Work, round = 1)
 
     fun tick(state: WorkoutState, elapsedMillis: Long): Step {
         if (state.isDone || elapsedMillis <= 0) return Step(state)
@@ -83,13 +82,18 @@ object WorkoutEngine {
         val left = state.remainingMillis - elapsed
         val after = ceilSeconds(left)
         val cues = mutableListOf<Cue>()
+        var halfwayCued = state.halfwayCued
         if (after < before) {
+            // The countdown plays again after added time, as it should: those are the seconds left.
             if (after in 1..COUNTDOWN_SECONDS) cues += Cue.Countdown(after)
             val length = (state.phaseMillis / MILLIS_PER_SECOND).toInt()
-            val half = length / 2
-            if (state.phase != Phase.Prep && length > HALFWAY_MIN_SECONDS && after == half) cues += Cue.Halfway
+            val hasHalfway = state.phase != Phase.Prep && length > HALFWAY_MIN_SECONDS
+            if (hasHalfway && !halfwayCued && after == length / 2) {
+                cues += Cue.Halfway
+                halfwayCued = true
+            }
         }
-        if (left > 0) return Step(state.copy(remainingMillis = left), cues)
+        if (left > 0) return Step(state.copy(remainingMillis = left, halfwayCued = halfwayCued), cues)
         val next = advance(state)
         return Step(next.state, cues + next.cues)
     }

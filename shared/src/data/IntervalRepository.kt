@@ -8,9 +8,9 @@ import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.PresetEntry
-import dev.justinsmith.interval.timer.defaultPresetName
+import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.presetEntries
-import dev.justinsmith.interval.timer.uniquePresetName
+import dev.justinsmith.interval.timer.storedName
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -162,8 +162,13 @@ class IntervalRepository(
      * shape's ("40/20 ×6"), and one another preset has gets a number ("Tabata 2").
      */
     fun savePreset(preset: Preset) {
-        val named = Preset(storedName(preset, exceptId = null), preset.config)
-        persist { presetDao.insert(named.toEntity()) }
+        persist { presetDao.insert(preset.copy(id = null).named().toEntity()) }
+    }
+
+    /** Saves [preset] as a new one of the user's own and puts its shape on the Timer. */
+    fun saveAndApplyPreset(preset: Preset) {
+        applyPreset(preset)
+        savePreset(preset)
     }
 
     /** Saves the current configuration under [name], as [savePreset] does. */
@@ -173,9 +178,8 @@ class IntervalRepository(
 
     /** Rewrites one of the user's own presets, found by its id: its name (kept unique among the others) and shape. */
     fun updatePreset(preset: Preset) {
-        val id = preset.id ?: return
-        val named = preset.copy(name = storedName(preset, exceptId = id))
-        persist { presetDao.update(named.toEntity()) }
+        if (preset.id == null) return
+        persist { presetDao.update(preset.named().toEntity()) }
     }
 
     /** Removes one of the user's own presets. Built-ins have no id and are left alone. */
@@ -184,11 +188,10 @@ class IntervalRepository(
         persist { presetDao.delete(id) }
     }
 
-    private fun storedName(preset: Preset, exceptId: Long?): String {
-        val wanted = preset.name.trim().ifEmpty { preset.config.defaultPresetName() }.take(Preset.MAX_NAME_LENGTH)
-        val taken = _presets.value.map { it.preset }.filterNot { exceptId != null && it.id == exceptId }.map { it.name }
-        return uniquePresetName(wanted, taken)
-    }
+    // Named inside the write against what is stored, not against [presets]: that follows the database, so
+    // two saves in a row would both miss the other and take the same name.
+    private suspend fun Preset.named(): Preset =
+        copy(name = storedName(builtInPresets + presetDao.all().map { it.toDomain() }))
 
     /** Records a workout that ran for [elapsedSeconds]; [endedEarly] when it stopped before the last round. */
     fun recordWorkout(config: IntervalConfig, elapsedSeconds: Int, endedEarly: Boolean = false) {

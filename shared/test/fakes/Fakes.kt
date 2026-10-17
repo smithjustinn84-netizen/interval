@@ -27,6 +27,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import org.koin.core.KoinApplication
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.onClose
@@ -71,6 +73,8 @@ class FakePresetDao : PresetDao {
 
     override fun observeAll(): Flow<List<PresetEntity>> = rows
 
+    override suspend fun all(): List<PresetEntity> = rows.value
+
     override suspend fun insert(preset: PresetEntity): Long {
         val id = nextId++
         rows.update { it + preset.copy(id = id) }
@@ -96,12 +100,23 @@ class FakeStorage {
     val presets = FakePresetDao()
 
     /**
-     * A repository over this storage. Its writes run unconfined and the fakes never suspend, so every
-     * write and read has landed by the time a call returns.
+     * A repository over this storage. By default its writes run unconfined and the fakes never suspend, so
+     * every write and read has landed by the time a call returns. Pass [deferredStorageScope] instead to have
+     * writes and reads wait for the test's scheduler, as they wait for `Dispatchers.IO` in the app: that is
+     * how a test catches code that reads a value back before its write has landed.
      */
-    fun repository(now: () -> Long = { 0L }): IntervalRepository =
-        IntervalRepository(settings, history, presets, CoroutineScope(Dispatchers.Unconfined), now)
+    fun repository(
+        now: () -> Long = { 0L },
+        scope: CoroutineScope = CoroutineScope(Dispatchers.Unconfined),
+    ): IntervalRepository = IntervalRepository(settings, history, presets, scope, now)
 }
+
+/**
+ * A storage scope on the test's scheduler, so writes and reads land only when the test advances it. Not
+ * `backgroundScope`: `advanceUntilIdle` leaves background work waiting.
+ */
+fun TestScope.deferredStorageScope(): CoroutineScope =
+    CoroutineScope(SupervisorJob() + StandardTestDispatcher(testScheduler))
 
 /** Stands in for the real `storageModule`, which opens files on disk. */
 fun fakeStorageModule(storage: FakeStorage = FakeStorage()): Module = module {

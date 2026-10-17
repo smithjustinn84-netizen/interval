@@ -43,6 +43,17 @@ private fun nameLabel(seconds: Int): String = when (val duration = shortDuration
 }
 
 /**
+ * The name this preset is stored under beside [presets]: its own trimmed, a blank one becoming its shape's
+ * ("40/20 ×6"), and one another preset has numbered ("Tabata 2"). The preset its [Preset.id] names is not
+ * "another": keeping its own name is no clash. One rule for the editor's hint and the stored name.
+ */
+fun Preset.storedName(presets: List<Preset>): String {
+    val wanted = name.trim().ifEmpty { config.defaultPresetName() }.take(Preset.MAX_NAME_LENGTH)
+    val taken = presets.filterNot { id != null && it.id == id }.map { it.name }
+    return uniquePresetName(wanted, taken)
+}
+
+/**
  * [name] as it can be stored beside [taken]: itself when no other preset has it, else with " 2", " 3"…
  * appended, the name cut to keep the whole within [Preset.MAX_NAME_LENGTH].
  */

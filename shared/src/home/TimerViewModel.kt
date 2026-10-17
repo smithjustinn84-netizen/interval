@@ -46,8 +46,7 @@ class TimerViewModel(private val repository: IntervalRepository) : ViewModel() {
 
     /** Saves [preset] as a new one of the user's own, keeping its shape (changed in the editor or not) on the Timer. */
     fun savePreset(preset: Preset) {
-        repository.applyPreset(preset)
-        repository.savePreset(preset)
+        repository.saveAndApplyPreset(preset)
     }
 
     private fun buildState(config: IntervalConfig, entries: List<PresetEntry>): TimerUiState = TimerUiState(

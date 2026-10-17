@@ -68,8 +68,7 @@ class PresetsViewModel(private val repository: IntervalRepository) : ViewModel()
 
     /** Saves [preset] as a new one of the user's own and puts its shape on the Timer, which it came from. */
     fun saveCurrent(preset: Preset) {
-        repository.applyPreset(preset)
-        repository.savePreset(preset)
+        repository.saveAndApplyPreset(preset)
     }
 
     fun delete(preset: Preset) {
