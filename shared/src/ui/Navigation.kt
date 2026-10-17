@@ -7,6 +7,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ShortNavigationBarItemDefaults
@@ -53,17 +54,31 @@ fun navigationSuiteType(width: Dp, height: Dp): NavigationSuiteType {
 }
 
 /**
- * NavDisplay's `transitionSpec`: a page pushed over the tabs (Settings, the workout) slides in from
- * the end as the tabs drift away beneath it; from one tab to another the old fades out, then the new
- * fades in a touch larger. Settings opening beside the Timer crossfades, the Timer staying where it is.
- * On a platform with page transitions of its own (iOS), those run instead.
+ * NavDisplay's `transitionSpec`. How a page moves says what kind of page it is:
+ * - a page one level deeper (Settings, About, Licenses) slides in from the end as the page beneath
+ *   drifts away under it;
+ * - the workout, a mode of its own rather than a page, rises over the app as the app sinks back;
+ * - from one tab to another the old fades out, then the new fades in a touch larger;
+ * - Settings opening beside the Timer crossfades, the Timer staying where it is.
+ * On a platform with page transitions of its own (iOS), those run instead, except for the workout:
+ * rising is how iOS presents a full-screen mode too.
  */
-fun <T : Any> pageTransition(): AnimatedContentTransitionScope<Scene<T>>.() -> ContentTransform =
-    if (platformPageTransitions) defaultTransitionSpec() else appPageTransition()
+fun <T : Any> pageTransition(): AnimatedContentTransitionScope<Scene<T>>.() -> ContentTransform = {
+    when {
+        workoutChange -> workoutRise()
+        platformPageTransitions -> defaultTransitionSpec<T>()(this)
+        else -> appPageTransition<T>()(this)
+    }
+}
 
 /** NavDisplay's `popTransitionSpec`: the reverse of [pageTransition], the leaving page staying on top. */
-fun <T : Any> pagePopTransition(): AnimatedContentTransitionScope<Scene<T>>.() -> ContentTransform =
-    if (platformPageTransitions) defaultPopTransitionSpec() else appPagePopTransition()
+fun <T : Any> pagePopTransition(): AnimatedContentTransitionScope<Scene<T>>.() -> ContentTransform = {
+    when {
+        workoutChange -> workoutDrop()
+        platformPageTransitions -> defaultPopTransitionSpec<T>()(this)
+        else -> appPagePopTransition<T>()(this)
+    }
+}
 
 private fun <T : Any> appPageTransition(): AnimatedContentTransitionScope<Scene<T>>.() -> ContentTransform = {
     when {
@@ -95,9 +110,51 @@ private fun <T : Any> appPagePopTransition(): AnimatedContentTransitionScope<Sce
     }
 }
 
+/**
+ * What kind of page an entry is, which decides how it moves. Pages one level deeper need no kind:
+ * they are the default. An entry's key is private to it, so the kind travels in its metadata.
+ */
+enum class PageKind {
+    /** A destination of the navigation bar or rail. */
+    Tab,
+
+    /** A mode of its own over the app (the workout), rather than a page one level deeper. */
+    Mode,
+}
+
+/** The metadata marking an entry as [kind], for `entry<X>(metadata = …)`. */
+fun pageKind(kind: PageKind): Map<String, Any> = mapOf(PAGE_KIND to kind)
+
+private const val PAGE_KIND = "dev.justinsmith.interval.pageKind"
+
+private val Scene<*>.topKind: Any?
+    get() = entries.lastOrNull()?.metadata?.get(PAGE_KIND)
+
+/** A mode is on top of either scene: the workout is starting or ending. */
+private val <T : Any> AnimatedContentTransitionScope<Scene<T>>.workoutChange: Boolean
+    get() = targetState.topKind == PageKind.Mode || initialState.topKind == PageKind.Mode
+
+/** The workout rises into place, growing from a touch smaller, as the page beneath sinks back. */
+private fun <T : Any> AnimatedContentTransitionScope<Scene<T>>.workoutRise(): ContentTransform = ContentTransform(
+    targetContentEnter = fadeIn(pageSpec()) +
+        slideIntoContainer(SlideDirection.Up, pageSpec()) { (it * Motion.WORKOUT_RISE_SHARE).toInt() } +
+        scaleIn(pageSpec(), initialScale = Motion.FADE_THROUGH_SCALE),
+    initialContentExit = fadeOut(exitSpec()) + scaleOut(pageSpec(), targetScale = Motion.FADE_THROUGH_SCALE),
+)
+
+/** The reverse of [workoutRise]: the workout drops away on top as the page beneath comes forward again. */
+private fun <T : Any> AnimatedContentTransitionScope<Scene<T>>.workoutDrop(): ContentTransform = ContentTransform(
+    targetContentEnter = fadeIn(pageSpec()) + scaleIn(pageSpec(), initialScale = Motion.FADE_THROUGH_SCALE),
+    initialContentExit = fadeOut(tween(Motion.PAGE_MILLIS, easing = ExitEasing)) +
+        slideOutOfContainer(SlideDirection.Down, tween(Motion.PAGE_MILLIS, easing = ExitEasing)) {
+            (it * Motion.WORKOUT_RISE_SHARE).toInt()
+        },
+    targetContentZIndex = -1f,
+)
+
 /** Both scenes are single tabs: the bar's own switch, not a push. */
 private val <T : Any> AnimatedContentTransitionScope<Scene<T>>.tabChange: Boolean
-    get() = targetState.entries.lastOrNull()?.contentKey is Tab && initialState.entries.lastOrNull()?.contentKey is Tab
+    get() = targetState.topKind == PageKind.Tab && initialState.topKind == PageKind.Tab
 
 /** Either scene shows two pages side by side (Settings beside the Timer on a wide window). */
 private val <T : Any> AnimatedContentTransitionScope<Scene<T>>.twoPane: Boolean

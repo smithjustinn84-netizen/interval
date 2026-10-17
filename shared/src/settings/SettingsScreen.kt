@@ -4,13 +4,16 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -53,8 +56,10 @@ import dev.justinsmith.interval.resources.settings_about_app_hint
 import dev.justinsmith.interval.resources.settings_appearance
 import dev.justinsmith.interval.resources.settings_close_cd
 import dev.justinsmith.interval.resources.settings_cues
+import dev.justinsmith.interval.resources.settings_cues_all_off
 import dev.justinsmith.interval.resources.settings_halfway
 import dev.justinsmith.interval.resources.settings_halfway_hint
+import dev.justinsmith.interval.resources.settings_halfway_needs_cue
 import dev.justinsmith.interval.resources.settings_keep_screen_on
 import dev.justinsmith.interval.resources.settings_keep_screen_on_hint
 import dev.justinsmith.interval.resources.settings_sound
@@ -102,7 +107,7 @@ fun SettingsRoute(
     inPane: Boolean = false,
 ) {
     val scope = currentKoinScope()
-    val viewModel = viewModel { SettingsViewModel(scope.get()) }
+    val viewModel = viewModel { SettingsViewModel(scope.get(), scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     SettingsScreen(
         state = state,
@@ -192,38 +197,67 @@ fun SettingsScreen(
     }
 }
 
-/** The four cue switches: which of the beeps, voice, halfway alert and vibration play. */
+/**
+ * The four cue switches: which of the beeps, voice, halfway alert and vibration play. A switch turned
+ * on plays its cue once. The halfway alert is a beep or spoken, so it dims while sound and voice are
+ * both off, keeping its own setting for when one comes back; with every cue off, a line says so.
+ */
 @Composable
 private fun CuesCard(cues: CueSettings, onToggle: (CueToggle) -> Unit, modifier: Modifier = Modifier) {
-    ListCard(modifier) {
-        ToggleRow(
-            stringResource(Res.string.settings_sound),
-            stringResource(Res.string.settings_sound_hint),
-            cues.sound,
-            onToggle = { onToggle(CueToggle.Sound) },
-        )
-        RowDivider()
-        ToggleRow(
-            stringResource(Res.string.settings_voice),
-            stringResource(Res.string.settings_voice_hint),
-            cues.voice,
-            onToggle = { onToggle(CueToggle.Voice) },
-        )
-        RowDivider()
-        ToggleRow(
-            stringResource(Res.string.settings_halfway),
-            stringResource(Res.string.settings_halfway_hint, WorkoutEngine.HALFWAY_MIN_SECONDS),
-            cues.halfway,
-            onToggle = { onToggle(CueToggle.Halfway) },
-        )
-        RowDivider()
-        ToggleRow(
-            stringResource(Res.string.settings_vibrate),
-            stringResource(Res.string.settings_vibrate_hint),
-            cues.vibrate,
-            onToggle = { onToggle(CueToggle.Vibrate) },
-        )
+    val halfwayAudible = cues.sound || cues.voice
+    Column(modifier) {
+        ListCard { CueRows(cues, halfwayAudible, onToggle) }
+        AnimatedVisibility(
+            !halfwayAudible && !cues.vibrate,
+            enter = fadeIn(tween(Motion.STATE_MILLIS)) + expandVertically(tween(Motion.STATE_MILLIS)),
+            exit = fadeOut(tween(Motion.STATE_MILLIS)) + shrinkVertically(tween(Motion.STATE_MILLIS)),
+        ) {
+            Text(
+                stringResource(Res.string.settings_cues_all_off),
+                style = IntervalTheme.type.meta,
+                color = IntervalTheme.palette.textDim,
+                modifier = Modifier.padding(start = Spacing.space4, top = Spacing.space8),
+            )
+        }
     }
+}
+
+/** The rows of [CuesCard]'s card, in its column. */
+@Suppress("detekt.MultipleEmitters", "detekt.ModifierMissing") // The card's rows, laid out by the ListCard.
+@Composable
+private fun ColumnScope.CueRows(cues: CueSettings, halfwayAudible: Boolean, onToggle: (CueToggle) -> Unit) {
+    ToggleRow(
+        stringResource(Res.string.settings_sound),
+        stringResource(Res.string.settings_sound_hint),
+        cues.sound,
+        onToggle = { onToggle(CueToggle.Sound) },
+    )
+    RowDivider()
+    ToggleRow(
+        stringResource(Res.string.settings_voice),
+        stringResource(Res.string.settings_voice_hint),
+        cues.voice,
+        onToggle = { onToggle(CueToggle.Voice) },
+    )
+    RowDivider()
+    ToggleRow(
+        stringResource(Res.string.settings_halfway),
+        if (halfwayAudible) {
+            stringResource(Res.string.settings_halfway_hint, WorkoutEngine.HALFWAY_MIN_SECONDS)
+        } else {
+            stringResource(Res.string.settings_halfway_needs_cue)
+        },
+        cues.halfway && halfwayAudible,
+        onToggle = { onToggle(CueToggle.Halfway) },
+        enabled = halfwayAudible,
+    )
+    RowDivider()
+    ToggleRow(
+        stringResource(Res.string.settings_vibrate),
+        stringResource(Res.string.settings_vibrate_hint),
+        cues.vibrate,
+        onToggle = { onToggle(CueToggle.Vibrate) },
+    )
 }
 
 /**

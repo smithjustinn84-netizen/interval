@@ -17,9 +17,11 @@ import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.fakes.testKoin
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.sameShape
+import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
 import org.koin.core.KoinApplication
+import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -35,6 +37,9 @@ private fun appTest(window: Window = Window.Phone, block: suspend DesktopCompose
         }
     }
 
+/** How far, in dp, a moving node may be from its resting place and still count as not moving that way. */
+private const val SETTLED_SLACK = 12f
+
 /** A navigation bar or rail item; "Presets" alone would also match the Presets screen title. */
 private fun DesktopComposeUiTest.tab(label: String): SemanticsNodeInteraction =
     onNode(hasText(label) and hasClickAction())
@@ -44,6 +49,29 @@ class AppNavigationTest {
     fun `the app opens on the timer`() = appTest {
         onNodeWithText("Start workout").assertExists()
         tab("Timer").assertIsSelected()
+    }
+
+    @Test
+    fun `the workout rises into place rather than sliding in from the side`() = appTest {
+        mainClock.autoAdvance = false
+        onNodeWithText("Start workout").performClick()
+        mainClock.advanceTimeBy(Motion.PAGE_MILLIS / 5L)
+        val moving = onNodeWithContentDescription("End workout").fetchSemanticsNode().boundsInRoot
+        mainClock.advanceTimeBy(Motion.PAGE_MILLIS * 2L)
+        val settled = onNodeWithContentDescription("End workout").fetchSemanticsNode().boundsInRoot
+        assertTrue(moving.top > settled.top + SETTLED_SLACK, "still below its place: $moving vs $settled")
+        assertTrue(abs(moving.left - settled.left) < SETTLED_SLACK, "not sliding sideways: $moving vs $settled")
+    }
+
+    @Test
+    fun `switching tabs fades through rather than sliding`() = appTest {
+        mainClock.autoAdvance = false
+        tab("Presets").performClick()
+        mainClock.advanceTimeBy(Motion.PAGE_MILLIS / 2L)
+        val moving = onNodeWithText("Built-in").fetchSemanticsNode().boundsInRoot
+        mainClock.advanceTimeBy(Motion.PAGE_MILLIS * 2L)
+        val settled = onNodeWithText("Built-in").fetchSemanticsNode().boundsInRoot
+        assertTrue(abs(moving.left - settled.left) < SETTLED_SLACK, "not sliding sideways: $moving vs $settled")
     }
 
     @Test

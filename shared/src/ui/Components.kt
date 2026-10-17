@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -279,6 +280,10 @@ fun EmptyState(icon: ImageVector, title: String, text: String, modifier: Modifie
     }
 }
 
+/**
+ * A row that switches a setting: a [title], an optional [subtitle] and a switch drawing [checked].
+ * When not [enabled] (a setting that cannot apply right now) the whole row dims and takes no touch.
+ */
 @Composable
 fun ToggleRow(
     title: String,
@@ -286,6 +291,7 @@ fun ToggleRow(
     checked: Boolean,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     val palette = IntervalTheme.palette
     val haptics = LocalHapticFeedback.current
@@ -304,6 +310,7 @@ fun ToggleRow(
                 value = checked,
                 interactionSource = interaction,
                 indication = LocalIndication.current,
+                enabled = enabled,
                 role = Role.Switch,
             ) { on ->
                 haptics.performHapticFeedback(if (on) HapticFeedbackType.ToggleOn else HapticFeedbackType.ToggleOff)
@@ -311,6 +318,7 @@ fun ToggleRow(
             }
             // After the ripple, so the content shrinks while the ripple keeps the card's full width.
             .pressScale(interaction)
+            .alpha(if (enabled) 1f else Opacity.DISABLED)
             .padding(horizontal = Spacing.space16, vertical = Spacing.space8),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),

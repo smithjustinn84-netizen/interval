@@ -7,9 +7,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -66,6 +70,28 @@ class SettingsScreenTest {
             listOf<Any>(CueToggle.Sound, CueToggle.Voice, CueToggle.Halfway, CueToggle.Vibrate, "keep screen on"),
             calls,
         )
+    }
+
+    @Test
+    fun `halfway dims while sound and voice are both off`() = runUiTest {
+        var cues by mutableStateOf(CueSettings(sound = false, voice = false))
+        setThemedContent { Screen(defaults.copy(cues = cues)) }
+        onNodeWithText("Halfway alert").assertIsNotEnabled().assertIsOff()
+        onNodeWithText("Turn on sound or voice to hear it").assertExists()
+        onNodeWithText("Halfway alert").performClick()
+        assertEquals(emptyList(), calls)
+        cues = cues.copy(voice = true)
+        onNodeWithText("Halfway alert").assertIsEnabled().assertIsOn()
+    }
+
+    @Test
+    fun `a line warns when every cue is off`() = runUiTest {
+        val warning = "Workouts will run without any cues"
+        var cues by mutableStateOf(CueSettings(sound = false, voice = false, vibrate = false))
+        setThemedContent { Screen(defaults.copy(cues = cues)) }
+        onNodeWithText(warning).assertExists()
+        cues = cues.copy(vibrate = true)
+        onAllNodesWithText(warning).assertCountEquals(0)
     }
 
     @Test

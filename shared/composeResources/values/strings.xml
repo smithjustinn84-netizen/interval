@@ -176,8 +176,10 @@
     <string name="settings_voice_hint">Spoken countdown and phase names</string>
     <string name="settings_halfway">Halfway alert</string>
     <string name="settings_halfway_hint">A cue in the middle of intervals over %1$ds</string>
+    <string name="settings_halfway_needs_cue">Turn on sound or voice to hear it</string>
     <string name="settings_vibrate">Vibrate</string>
     <string name="settings_vibrate_hint">Buzz at each phase change</string>
+    <string name="settings_cues_all_off">Workouts will run without any cues</string>
     <string name="settings_workout">Workout</string>
     <string name="settings_keep_screen_on">Keep screen on</string>
     <string name="settings_keep_screen_on_hint">While a workout is running</string>

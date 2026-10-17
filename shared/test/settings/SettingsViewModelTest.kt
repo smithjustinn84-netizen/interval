@@ -4,6 +4,10 @@ package dev.justinsmith.interval.settings
 
 import dev.justinsmith.interval.data.ThemeMode
 import dev.justinsmith.interval.fakes.FakeStorage
+import dev.justinsmith.interval.fakes.RecordingCuePlayer
+import dev.justinsmith.interval.platform.Beep
+import dev.justinsmith.interval.platform.Haptic
+import dev.justinsmith.interval.platform.Speech
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -19,7 +23,8 @@ import kotlin.test.assertTrue
 class SettingsViewModelTest {
     private val storage = FakeStorage()
     private val repository = storage.repository()
-    private val viewModel by lazy { SettingsViewModel(repository) }
+    private val player = RecordingCuePlayer()
+    private val viewModel by lazy { SettingsViewModel(repository, player) }
 
     @BeforeTest
     fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -33,6 +38,33 @@ class SettingsViewModelTest {
         val cues = viewModel.state.value.cues
         assertFalse(cues.halfway)
         assertTrue(cues.sound && cues.voice && cues.vibrate)
+    }
+
+    @Test
+    fun `switching a cue on plays it once`() {
+        viewModel.toggle(CueToggle.Sound)
+        viewModel.toggle(CueToggle.Sound)
+        viewModel.toggle(CueToggle.Vibrate)
+        viewModel.toggle(CueToggle.Vibrate)
+        assertEquals(listOf(Beep.Work), player.beeps)
+        assertEquals(listOf(Haptic.Work), player.haptics)
+        assertTrue(player.spoken.isEmpty())
+    }
+
+    @Test
+    fun `switching voice on says a phase name`() {
+        viewModel.toggle(CueToggle.Voice)
+        viewModel.toggle(CueToggle.Voice)
+        assertEquals(listOf<Speech>(Speech.Work(lastRound = false)), player.spoken)
+    }
+
+    @Test
+    fun `the halfway sample is spoken when sound is off`() {
+        viewModel.toggle(CueToggle.Sound)
+        viewModel.toggle(CueToggle.Halfway)
+        viewModel.toggle(CueToggle.Halfway)
+        assertTrue(player.beeps.isEmpty())
+        assertEquals(listOf<Speech>(Speech.Halfway), player.spoken)
     }
 
     @Test

@@ -253,6 +253,9 @@ object Motion {
     /** A pushed page slides in from this share of the width, and the page beneath drifts out by half of it. */
     const val PAGE_SLIDE_SHARE = 0.12f
 
+    /** The workout rises into place from this share of the window's height below it, and drops back as far. */
+    const val WORKOUT_RISE_SHARE = 0.24f
+
     /** Switching tabs: the old tab fades out quickly, then the new one fades in, grown from [FADE_THROUGH_SCALE]. */
     const val FADE_THROUGH_SCALE = 0.96f
 

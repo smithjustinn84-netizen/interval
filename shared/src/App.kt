@@ -60,11 +60,13 @@ import dev.justinsmith.interval.settings.SettingsRoute
 import dev.justinsmith.interval.splash.WithIntro
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.NavigationItems
+import dev.justinsmith.interval.ui.PageKind
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.backPreviewCorners
 import dev.justinsmith.interval.ui.backPreviewTransition
 import dev.justinsmith.interval.ui.navigationSuiteColors
 import dev.justinsmith.interval.ui.navigationSuiteType
+import dev.justinsmith.interval.ui.pageKind
 import dev.justinsmith.interval.ui.pagePopTransition
 import dev.justinsmith.interval.ui.pageTransition
 import dev.justinsmith.interval.workout.WorkoutRoute
@@ -211,7 +213,7 @@ private fun appEntries(
     twoPane: Boolean,
     selectTab: (Tab) -> Unit,
 ): (NavKey) -> NavEntry<NavKey> = entryProvider {
-    entry<TimerTab>(metadata = SupportingPaneSceneStrategy.mainPane()) {
+    entry<TimerTab>(metadata = SupportingPaneSceneStrategy.mainPane() + pageKind(PageKind.Tab)) {
         TimerRoute(
             onStart = { backStack.push(Workout) },
             // Beside Timer, the gear closes Settings again.
@@ -224,10 +226,10 @@ private fun appEntries(
             onSeeAllPresets = { selectTab(PresetsTab) },
         )
     }
-    entry<PresetsTab> {
+    entry<PresetsTab>(metadata = pageKind(PageKind.Tab)) {
         PresetsRoute(onShowTimer = { selectTab(TimerTab) }, onStartWorkout = { backStack.push(Workout) })
     }
-    entry<HistoryTab> { HistoryRoute() }
+    entry<HistoryTab>(metadata = pageKind(PageKind.Tab)) { HistoryRoute() }
     entry<Settings>(metadata = SupportingPaneSceneStrategy.supportingPane()) {
         SettingsRoute(
             onBack = { backStack.removeLastOrNull() },
@@ -235,7 +237,7 @@ private fun appEntries(
             inPane = twoPane,
         )
     }
-    entry<Workout> { WorkoutRoute(onExit = { backStack.removeLastOrNull() }) }
+    entry<Workout>(metadata = pageKind(PageKind.Mode)) { WorkoutRoute(onExit = { backStack.removeLastOrNull() }) }
     entry<About> {
         AboutRoute(
             onBack = { backStack.removeLastOrNull() },

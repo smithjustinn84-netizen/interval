@@ -6,9 +6,15 @@ import dev.justinsmith.interval.data.AppSettings
 import dev.justinsmith.interval.data.CueSettings
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.data.ThemeMode
+import dev.justinsmith.interval.platform.Beep
+import dev.justinsmith.interval.platform.CuePlayer
+import dev.justinsmith.interval.platform.Haptic
+import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.timer.ConfigField
+import dev.justinsmith.interval.timer.Cue
 import dev.justinsmith.interval.timer.stepped
 import dev.justinsmith.interval.timer.withValue
+import dev.justinsmith.interval.workout.playCue
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -23,7 +29,11 @@ data class SettingsUiState(
 /** Toggles a single [CueSettings] flag. */
 enum class CueToggle { Sound, Voice, Halfway, Vibrate }
 
-class SettingsViewModel(private val repository: IntervalRepository) : ViewModel() {
+/** The set-once preferences. A cue switched on plays a sample through [player], so its volume can be checked. */
+class SettingsViewModel(
+    private val repository: IntervalRepository,
+    private val player: CuePlayer,
+) : ViewModel() {
     val state: StateFlow<SettingsUiState> = combine(
         repository.cueSettings,
         repository.config,
@@ -47,6 +57,17 @@ class SettingsViewModel(private val repository: IntervalRepository) : ViewModel(
                 CueToggle.Halfway -> cues.copy(halfway = !cues.halfway)
                 CueToggle.Vibrate -> cues.copy(vibrate = !cues.vibrate)
             }
+        }
+        preview(toggle, repository.cueSettings.value)
+    }
+
+    /** Plays the cue [toggle] has just switched on, as a workout would; switching one off is silent. */
+    private fun preview(toggle: CueToggle, cues: CueSettings) {
+        when (toggle) {
+            CueToggle.Sound -> if (cues.sound) player.beep(Beep.Work)
+            CueToggle.Voice -> if (cues.voice) player.speak(Speech.Work(lastRound = false))
+            CueToggle.Halfway -> playCue(Cue.Halfway, cues, player)
+            CueToggle.Vibrate -> if (cues.vibrate) player.vibrate(Haptic.Work)
         }
     }
 
