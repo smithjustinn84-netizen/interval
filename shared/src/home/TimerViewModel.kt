@@ -6,7 +6,6 @@ import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
-import dev.justinsmith.interval.timer.PresetEntry
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.stepped
@@ -49,10 +48,10 @@ class TimerViewModel(private val repository: IntervalRepository) : ViewModel() {
         repository.saveAndApplyPreset(preset)
     }
 
-    private fun buildState(config: IntervalConfig, entries: List<PresetEntry>): TimerUiState = TimerUiState(
+    private fun buildState(config: IntervalConfig, presets: List<Preset>): TimerUiState = TimerUiState(
         config = config,
         total = formatClock(config.totalSeconds),
-        presetName = entries.matching(config)?.name,
-        presets = entries.map { it.preset },
+        presetName = presets.matching(config)?.name,
+        presets = presets,
     )
 }

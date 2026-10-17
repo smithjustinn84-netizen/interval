@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import dev.justinsmith.interval.fakes.saveCurrentAsPreset
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset

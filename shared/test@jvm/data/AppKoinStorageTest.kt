@@ -4,6 +4,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import dev.justinsmith.interval.di.appModules
 import dev.justinsmith.interval.fakes.fakePlatformModule
+import dev.justinsmith.interval.fakes.saveCurrentAsPreset
 import dev.justinsmith.interval.platform.PlatformStorage
 import dev.justinsmith.interval.timer.IntervalConfig
 import kotlinx.coroutines.delay

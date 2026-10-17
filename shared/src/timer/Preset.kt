@@ -14,21 +14,14 @@ data class Preset(val name: String, val config: IntervalConfig, val id: Long? = 
     }
 }
 
-/** A preset as the lists show it: whether it is one of the user's own, and so deletable. */
-data class PresetEntry(val preset: Preset, val custom: Boolean)
-
-/** Built-ins first, then the user's own in the order they were saved. */
-fun presetEntries(custom: List<Preset>): List<PresetEntry> =
-    builtInPresets.map { PresetEntry(it, custom = false) } + custom.map { PresetEntry(it, custom = true) }
-
 /**
  * The preset [config] counts as, if any: the first of the user's own with its shape, else the first
  * built-in. One rule, so the Timer, the summary, History and the Presets list all name the same one,
  * and only one card on the list says it is on the Timer.
  */
-fun List<PresetEntry>.matching(config: IntervalConfig): Preset? {
-    val same = filter { it.preset.config.sameShape(config) }
-    return (same.firstOrNull { it.custom } ?: same.firstOrNull())?.preset
+fun List<Preset>.matching(config: IntervalConfig): Preset? {
+    val same = filter { it.config.sameShape(config) }
+    return same.firstOrNull { it.custom } ?: same.firstOrNull()
 }
 
 /**

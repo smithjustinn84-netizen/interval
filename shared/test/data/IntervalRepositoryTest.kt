@@ -6,6 +6,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.deferredStorageScope
+import dev.justinsmith.interval.fakes.saveCurrentAsPreset
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
@@ -115,7 +116,7 @@ class IntervalRepositoryTest {
         val saved = repository.customPresets.value.single()
         assertEquals(shape, saved.config)
         assertEquals(shape, repository().customPresets.value.single().config)
-        assertEquals(saved, repository.presets.value.single { it.custom }.preset)
+        assertEquals(saved, repository.presets.value.single { it.custom })
     }
 
     @Test
@@ -151,7 +152,7 @@ class IntervalRepositoryTest {
         repository.updatePreset(builtInPresets.first().copy(name = "Renamed"))
         repository.updatePreset(Preset("Ghost", IntervalConfig(), id = 99))
         assertEquals(listOf("Mine"), repository.customPresets.value.map { it.name })
-        assertEquals(builtInPresets, repository.presets.value.filterNot { it.custom }.map { it.preset })
+        assertEquals(builtInPresets, repository.presets.value.filterNot { it.custom })
     }
 
     @Test
@@ -169,8 +170,8 @@ class IntervalRepositoryTest {
         val repository = repository()
         repository.saveCurrentAsPreset("Mine")
         val presets = repository.presets.value
-        assertEquals(builtInPresets + repository.customPresets.value, presets.map { it.preset })
-        assertEquals(listOf("Mine"), presets.filter { it.custom }.map { it.preset.name })
+        assertEquals(builtInPresets + repository.customPresets.value, presets)
+        assertEquals(listOf("Mine"), presets.filter { it.custom }.map { it.name })
     }
 
     @Test

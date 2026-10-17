@@ -42,8 +42,8 @@ class WorkoutViewModel(
 
     // Followed rather than read on each publish: a preset saved from the summary lands later, and the
     // summary must then name it. Matched once per change, not on every tick.
-    private var presets = repository.presets.value.map { it.preset }
-    private var presetName = repository.presets.value.matching(config)?.name
+    private var presets = repository.presets.value
+    private var presetName = presets.matching(config)?.name
     private val _state: MutableStateFlow<WorkoutUiState>
 
     init {
@@ -51,9 +51,9 @@ class WorkoutViewModel(
         _state = MutableStateFlow(uiState(running = true))
         // After _state: viewModelScope runs this at once, and its first value publishes.
         viewModelScope.launch {
-            repository.presets.collect { entries ->
-                presets = entries.map { it.preset }
-                presetName = entries.matching(config)?.name
+            repository.presets.collect { all ->
+                presets = all
+                presetName = all.matching(config)?.name
                 publish()
             }
         }

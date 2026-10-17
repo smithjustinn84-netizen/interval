@@ -7,9 +7,8 @@ import androidx.datastore.preferences.core.emptyPreferences
 import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
-import dev.justinsmith.interval.timer.PresetEntry
 import dev.justinsmith.interval.timer.builtInPresets
-import dev.justinsmith.interval.timer.presetEntries
+import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.storedName
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -86,10 +85,10 @@ class IntervalRepository(
     /** In the order they were saved. */
     val customPresets: StateFlow<List<Preset>> = _customPresets.asStateFlow()
 
-    private val _presets = MutableStateFlow(presetEntries(emptyList()))
+    private val _presets = MutableStateFlow(builtInPresets)
 
     /** Every preset the lists show: the built-ins, then [customPresets]. Updated with it, never behind. */
-    val presets: StateFlow<List<PresetEntry>> = _presets.asStateFlow()
+    val presets: StateFlow<List<Preset>> = _presets.asStateFlow()
 
     private val _history = MutableStateFlow(emptyList<HistoryEntry>())
 
@@ -111,7 +110,7 @@ class IntervalRepository(
                 presetDao.observeAll().orEmptyOnError("presets").collect { rows ->
                     val custom = rows.map { it.toDomain() }
                     _customPresets.value = custom
-                    _presets.value = presetEntries(custom)
+                    _presets.value = builtInPresets + custom
                     presetsLoaded.complete(Unit)
                 }
             }
@@ -171,15 +170,17 @@ class IntervalRepository(
         savePreset(preset)
     }
 
-    /** Saves the current configuration under [name], as [savePreset] does. */
-    fun saveCurrentAsPreset(name: String) {
-        savePreset(Preset(name, _config.value))
-    }
-
-    /** Rewrites one of the user's own presets, found by its id: its name (kept unique among the others) and shape. */
+    /**
+     * Rewrites one of the user's own presets, found by its id: its name (kept unique among the others) and
+     * shape. When it is the preset on the Timer the new shape goes there too, so the two stay in step
+     * rather than leaving the old shape on the Timer, unsaved.
+     */
     fun updatePreset(preset: Preset) {
         if (preset.id == null) return
+        // Asked now: once the write lands, the list already holds the new shape.
+        val onTimer = _presets.value.matching(_config.value)?.id == preset.id
         persist { presetDao.update(preset.named().toEntity()) }
+        if (onTimer) applyPreset(preset)
     }
 
     /** Removes one of the user's own presets. Built-ins have no id and are left alone. */

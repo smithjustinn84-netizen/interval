@@ -45,4 +45,19 @@ class PresetNameTest {
         assertEquals(false, builtInPresets.first().custom)
         assertEquals(true, builtInPresets.first().copy(id = 4).custom)
     }
+
+    @Test
+    fun `a stored name is trimmed and falls back to the shape and is numbered beside another`() {
+        val shape = IntervalConfig(workSeconds = 40, restSeconds = 20, rounds = 6)
+        val mine = Preset("Mine", shape, id = 1)
+        assertEquals("Mine", Preset("  Mine ", shape).storedName(emptyList()))
+        assertEquals("40/20 ×6", Preset(" ", shape).storedName(emptyList()))
+        assertEquals("Mine 2", Preset("Mine", shape).storedName(listOf(mine)))
+    }
+
+    @Test
+    fun `a preset keeps its own name when stored again`() {
+        val mine = Preset("Mine", IntervalConfig(), id = 1)
+        assertEquals("Mine", mine.storedName(listOf(mine)))
+    }
 }

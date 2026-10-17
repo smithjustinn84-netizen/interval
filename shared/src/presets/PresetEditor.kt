@@ -40,7 +40,7 @@ import dev.justinsmith.interval.timer.defaultPresetName
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.sameShape
 import dev.justinsmith.interval.timer.stepped
-import dev.justinsmith.interval.timer.uniquePresetName
+import dev.justinsmith.interval.timer.storedName
 import dev.justinsmith.interval.timer.valueOf
 import dev.justinsmith.interval.timer.withValue
 import dev.justinsmith.interval.ui.AccentButton
@@ -107,15 +107,16 @@ internal fun PresetEditor(
     )
     // The one being edited is not "another" preset: keeping its own name or shape is no clash.
     val others = presets.filterNot { draft.id != null && it.id == draft.id }
-    val wanted = name.text.toString().trim().ifEmpty { placeholder }.take(Preset.MAX_NAME_LENGTH)
-    val storedName = uniquePresetName(wanted, others.map { it.name })
+    // What the user means, before another preset's name makes it numbered: shown when the two differ.
+    val wanted = name.text.toString().trim().ifEmpty { placeholder }
+    val storedName = Preset(wanted, draft.config, draft.id).storedName(presets)
     val sameShape = others.firstOrNull { it.config.sameShape(draft.config) }
     // Saved by name: an enum is not saveable on every platform.
     var editingName by rememberSaveable { mutableStateOf<String?>(null) }
     val editing = editingName?.let(ConfigField::valueOf)
     IntervalSheet(title = title, onDismiss = onDismiss) { hide ->
         val save = {
-            onSave(Preset(name.text.toString().trim().ifEmpty { placeholder }, draft.config, draft.id))
+            onSave(Preset(wanted, draft.config, draft.id))
             hide()
         }
         EditorHeader(title, onCancel = hide)

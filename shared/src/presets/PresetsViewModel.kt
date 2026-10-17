@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
-import dev.justinsmith.interval.timer.PresetEntry
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
 import kotlinx.coroutines.flow.SharingStarted
@@ -57,13 +56,7 @@ class PresetsViewModel(private val repository: IntervalRepository) : ViewModel()
      * old shape there, unsaved.
      */
     fun save(preset: Preset) {
-        if (!preset.custom) {
-            repository.savePreset(preset)
-            return
-        }
-        val wasOnTimer = repository.presets.value.matching(repository.config.value)?.id == preset.id
-        repository.updatePreset(preset)
-        if (wasOnTimer) repository.applyPreset(preset)
+        if (preset.custom) repository.updatePreset(preset) else repository.savePreset(preset)
     }
 
     /** Saves [preset] as a new one of the user's own and puts its shape on the Timer, which it came from. */
@@ -75,26 +68,26 @@ class PresetsViewModel(private val repository: IntervalRepository) : ViewModel()
         repository.deletePreset(preset)
     }
 
-    private fun buildState(config: IntervalConfig, entries: List<PresetEntry>): PresetsUiState {
+    private fun buildState(config: IntervalConfig, presets: List<Preset>): PresetsUiState {
         // Every total counts the user's own get-ready countdown, as a workout would.
         fun totalOf(preset: Preset) = preset.config.copy(prepSeconds = config.prepSeconds).totalSeconds
-        val onTimer = entries.matching(config)
+        val onTimer = presets.matching(config)
         val canSaveCurrent = onTimer == null
-        val longest = (entries.map { totalOf(it.preset) } + if (canSaveCurrent) config.totalSeconds else 0)
+        val longest = (presets.map { totalOf(it) } + if (canSaveCurrent) config.totalSeconds else 0)
             .max()
             .coerceAtLeast(1)
-        val rows = entries.map { entry ->
-            val total = totalOf(entry.preset)
-            entry.custom to PresetRowItem(
-                preset = entry.preset,
+        val rows = presets.map { preset ->
+            val total = totalOf(preset)
+            PresetRowItem(
+                preset = preset,
                 total = formatClock(total),
-                selected = entry.preset == onTimer,
+                selected = preset == onTimer,
                 share = total.toFloat() / longest,
             )
         }
         return PresetsUiState(
-            custom = rows.filter { it.first }.map { it.second },
-            builtIn = rows.filterNot { it.first }.map { it.second },
+            custom = rows.filter { it.preset.custom },
+            builtIn = rows.filterNot { it.preset.custom },
             canSaveCurrent = canSaveCurrent,
             current = config,
             currentShare = config.totalSeconds.toFloat() / longest,

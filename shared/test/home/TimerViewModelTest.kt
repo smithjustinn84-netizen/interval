@@ -3,6 +3,7 @@
 package dev.justinsmith.interval.home
 
 import dev.justinsmith.interval.fakes.FakeStorage
+import dev.justinsmith.interval.fakes.saveCurrentAsPreset
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.builtInPresets
 import kotlinx.coroutines.Dispatchers

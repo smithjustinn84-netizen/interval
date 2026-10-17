@@ -17,6 +17,7 @@ import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.interval.timer.Preset
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -117,6 +118,11 @@ class FakeStorage {
  */
 fun TestScope.deferredStorageScope(): CoroutineScope =
     CoroutineScope(SupervisorJob() + StandardTestDispatcher(testScheduler))
+
+/** Saves the Timer's current settings under [name], as the save buttons do. */
+fun IntervalRepository.saveCurrentAsPreset(name: String) {
+    savePreset(Preset(name, config.value))
+}
 
 /** Stands in for the real `storageModule`, which opens files on disk. */
 fun fakeStorageModule(storage: FakeStorage = FakeStorage()): Module = module {

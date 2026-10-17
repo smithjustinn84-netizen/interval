@@ -6,7 +6,7 @@ import dev.justinsmith.interval.data.HistoryEntry
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.timer.IntervalConfig
-import dev.justinsmith.interval.timer.PresetEntry
+import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
 import kotlinx.coroutines.flow.SharingStarted
@@ -73,7 +73,7 @@ class HistoryViewModel(
         repository.clearHistory()
     }
 
-    private fun buildState(history: List<HistoryEntry>, presets: List<PresetEntry>): HistoryUiState {
+    private fun buildState(history: List<HistoryEntry>, presets: List<Preset>): HistoryUiState {
         val nowMillis = now()
         val today = timestamps.dayNumber(nowMillis)
         // History is newest first, so grouping keeps both the days and the rows within them in order.
