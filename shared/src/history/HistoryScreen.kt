@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.withStyle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -101,6 +102,8 @@ import org.koin.compose.currentKoinScope
 fun HistoryRoute(modifier: Modifier = Modifier) {
     val scope = currentKoinScope()
     val viewModel = viewModel { HistoryViewModel(scope.get(), scope.get(), scope.get()) }
+    val locale = Locale.current.toLanguageTag()
+    LaunchedEffect(locale) { viewModel.setLocale(locale) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     HistoryScreen(state = state, onClear = viewModel::clear, modifier = modifier)
 }

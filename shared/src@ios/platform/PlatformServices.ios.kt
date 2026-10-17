@@ -16,9 +16,12 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.onClose
 import org.koin.core.module.dsl.withOptions
 import org.koin.dsl.module
+import platform.AVFAudio.AVAudioSession
+import platform.AVFAudio.AVAudioSessionCategoryAmbient
 import platform.AVFAudio.AVSpeechBoundary
 import platform.AVFAudio.AVSpeechSynthesizer
 import platform.AVFAudio.AVSpeechUtterance
+import platform.AVFAudio.setActive
 import platform.AudioToolbox.AudioServicesPlaySystemSound
 import platform.Foundation.NSApplicationSupportDirectory
 import platform.Foundation.NSBundle
@@ -29,13 +32,23 @@ import platform.Foundation.NSCalendarUnitWeekday
 import platform.Foundation.NSDate
 import platform.Foundation.NSDateFormatter
 import platform.Foundation.NSFileManager
+import platform.Foundation.NSLocale
+import platform.Foundation.NSTimeZone
 import platform.Foundation.NSURL
 import platform.Foundation.NSUserDomainMask
+import platform.Foundation.autoupdatingCurrentLocale
+import platform.Foundation.currentLocale
 import platform.Foundation.dateByAddingTimeInterval
 import platform.Foundation.dateWithTimeIntervalSince1970
+import platform.Foundation.localTimeZone
+import platform.Foundation.localeIdentifier
 import platform.Foundation.timeIntervalSince1970
 import platform.UIKit.UIAccessibilityIsReduceMotionEnabled
 import platform.UIKit.UIApplication
+import platform.UIKit.UIImpactFeedbackGenerator
+import platform.UIKit.UIImpactFeedbackStyle
+import platform.UIKit.UINotificationFeedbackGenerator
+import platform.UIKit.UINotificationFeedbackType
 import platform.UIKit.UIStatusBarStyle
 import platform.UIKit.UIStatusBarStyleDarkContent
 import platform.UIKit.UIStatusBarStyleLightContent
@@ -135,15 +148,13 @@ private class IosStorage : PlatformStorage {
 }
 
 private class FoundationTimestampFormatter : TimestampFormatter {
-    private val calendar = NSCalendar.currentCalendar
+    // Follows the user's region and time zone as they change, rather than a snapshot taken at launch.
+    private val calendar = NSCalendar.autoupdatingCurrentCalendar
+    private var formats: Formats? = null
 
-    // Templates rather than fixed formats, so each locale orders the parts and picks 12 or 24 hours its way.
-    private val dateFormat = NSDateFormatter().apply { setLocalizedDateFormatFromTemplate("EEEEMMMd") }
-    private val timeFormat = NSDateFormatter().apply { setLocalizedDateFormatFromTemplate("jmm") }
+    override fun date(epochMillis: Long): String = formats().date.stringFromDate(nsDate(epochMillis))
 
-    override fun date(epochMillis: Long): String = dateFormat.stringFromDate(nsDate(epochMillis))
-
-    override fun time(epochMillis: Long): String = timeFormat.stringFromDate(nsDate(epochMillis))
+    override fun time(epochMillis: Long): String = formats().time.stringFromDate(nsDate(epochMillis))
 
     override fun dayNumber(epochMillis: Long): Long =
         calendar.ordinalityOfUnit(NSCalendarUnitDay, inUnit = NSCalendarUnitEra, forDate = nsDate(epochMillis)).toLong()
@@ -158,14 +169,41 @@ private class FoundationTimestampFormatter : TimestampFormatter {
 
     private fun nsDate(epochMillis: Long): NSDate =
         NSDate.dateWithTimeIntervalSince1970(epochMillis.milliseconds.toDouble(DurationUnit.SECONDS))
+
+    // A template is turned into a format once, for one locale: a region change (12 to 24 hours, say)
+    // needs new formatters, not just a new locale on the old ones.
+    private fun formats(): Formats {
+        val locale = NSLocale.currentLocale.localeIdentifier
+        return formats?.takeIf { it.locale == locale } ?: Formats(locale).also { formats = it }
+    }
+
+    // Templates rather than fixed formats, so each locale orders the parts and picks 12 or 24 hours its way.
+    private class Formats(val locale: String) {
+        val date = formatter("EEEEMMMd")
+        val time = formatter("jmm")
+
+        private fun formatter(template: String) = NSDateFormatter().apply {
+            setLocale(NSLocale.autoupdatingCurrentLocale)
+            setTimeZone(NSTimeZone.localTimeZone)
+            setLocalizedDateFormatFromTemplate(template)
+        }
+    }
 }
 
 /**
- * System sounds for beeps (they follow the ringer switch), AVSpeechSynthesizer for voice, and the
- * system vibration sound for haptics.
+ * System sounds for beeps, AVSpeechSynthesizer for voice, and the feedback generators for haptics. The
+ * audio session is Ambient: cues mix over the user's music rather than stopping it, and voice follows
+ * the ringer switch as the system-sound beeps do.
  */
 private class IosCuePlayer : CuePlayer {
     private val synthesizer = AVSpeechSynthesizer()
+
+    init {
+        AVAudioSession.sharedInstance().run {
+            setCategory(AVAudioSessionCategoryAmbient, error = null)
+            setActive(true, error = null)
+        }
+    }
 
     override fun beep(beep: Beep) {
         val sound: UInt = when (beep) {
@@ -188,17 +226,21 @@ private class IosCuePlayer : CuePlayer {
         this.speech.speak(speech)
     }
 
+    // As on Android, each can be told apart without looking: one firm tap to work, a light one to rest,
+    // and the success pattern at the end.
     override fun vibrate(haptic: Haptic) {
-        AudioServicesPlaySystemSound(SYSTEM_SOUND_VIBRATE)
+        when (haptic) {
+            Haptic.Work -> UIImpactFeedbackGenerator(UIImpactFeedbackStyle.UIImpactFeedbackStyleHeavy).impactOccurred()
+
+            Haptic.Rest -> UIImpactFeedbackGenerator(UIImpactFeedbackStyle.UIImpactFeedbackStyleLight).impactOccurred()
+
+            Haptic.Finished -> UINotificationFeedbackGenerator()
+                .notificationOccurred(UINotificationFeedbackType.UINotificationFeedbackTypeSuccess)
+        }
     }
 
     override fun release() {
         speech.close()
         synthesizer.stopSpeakingAtBoundary(AVSpeechBoundary.AVSpeechBoundaryImmediate)
-    }
-
-    private companion object {
-        /** `kSystemSoundID_Vibrate`. */
-        const val SYSTEM_SOUND_VIBRATE: UInt = 4095u
     }
 }

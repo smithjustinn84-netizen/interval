@@ -12,6 +12,7 @@ import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -79,8 +80,12 @@ class HistoryViewModel(
         }
     }.distinctUntilChanged()
 
+    private val locale = MutableStateFlow<String?>(null)
+
     val state: StateFlow<HistoryUiState> =
-        combine(repository.history, repository.presets, days) { history, presets, _ -> buildState(history, presets) }
+        combine(repository.history, repository.presets, days, locale) { history, presets, _, _ ->
+            buildState(history, presets)
+        }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.Eagerly,
@@ -89,6 +94,14 @@ class HistoryViewModel(
 
     fun clear() {
         repository.clearHistory()
+    }
+
+    /**
+     * The app's locale, as a language tag. The dates and times are formatted in this ViewModel, which
+     * outlives a language change, so they are formatted again when it changes.
+     */
+    fun setLocale(languageTag: String) {
+        locale.value = languageTag
     }
 
     private fun buildState(history: List<HistoryEntry>, presets: List<Preset>): HistoryUiState {

@@ -7,6 +7,8 @@ import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
@@ -114,13 +116,12 @@ private class AndroidAppInfo(context: Context) : AppInfo {
 }
 
 private class JavaTimeFormatter : TimestampFormatter {
-    // Skeletons rather than fixed patterns, so each locale orders the parts and picks 12 or 24 hours its way.
-    private val dateFormat = localized("EEEEMMMd")
-    private val timeFormat = localized("jmm")
+    // Built again when the locale changes: the container outlives the Activity a language change recreates.
+    private var formats: Formats? = null
 
-    override fun date(epochMillis: Long): String = dateFormat.format(zoned(epochMillis))
+    override fun date(epochMillis: Long): String = formats().date.format(zoned(epochMillis))
 
-    override fun time(epochMillis: Long): String = timeFormat.format(zoned(epochMillis))
+    override fun time(epochMillis: Long): String = formats().time.format(zoned(epochMillis))
 
     override fun dayNumber(epochMillis: Long): Long = zoned(epochMillis).toLocalDate().toEpochDay()
 
@@ -128,9 +129,18 @@ private class JavaTimeFormatter : TimestampFormatter {
 
     private fun zoned(epochMillis: Long) = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault())
 
-    private fun localized(skeleton: String): DateTimeFormatter {
+    private fun formats(): Formats {
         val locale = Locale.getDefault()
-        return DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, skeleton), locale)
+        return formats?.takeIf { it.locale == locale } ?: Formats(locale).also { formats = it }
+    }
+
+    // Skeletons rather than fixed patterns, so each locale orders the parts and picks 12 or 24 hours its way.
+    private class Formats(val locale: Locale) {
+        val date: DateTimeFormatter = localized("EEEEMMMd")
+        val time: DateTimeFormatter = localized("jmm")
+
+        private fun localized(skeleton: String): DateTimeFormatter =
+            DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, skeleton), locale)
     }
 }
 
@@ -142,18 +152,20 @@ private class AndroidCuePlayer(context: Context) : CuePlayer {
         .onFailure { log.w(it) { "No tone generator; beeps disabled" } }
         .getOrNull()
 
-    // Set from the TextToSpeech init callback, which may run on another thread. A line asked for
-    // before the engine is ready is held and spoken once it is, so the first cue isn't lost.
-    @Volatile
+    // A line asked for before the engine is ready is held and spoken once it is, so the first cue isn't
+    // lost. Both fields are touched only on the main thread: SpeechQueue hands lines over there, and the
+    // init callback, which may run on another thread, is posted there. Checking and holding a line on
+    // two threads at once could drop it between the check and the hold.
+    private val main = Handler(Looper.getMainLooper())
     private var speechReady = false
-
-    @Volatile
     private var pendingSpeech: String? = null
 
     private val speech: TextToSpeech = TextToSpeech(context) { status ->
-        speechReady = status == TextToSpeech.SUCCESS
-        pendingSpeech?.let { if (speechReady) say(it) }
-        pendingSpeech = null
+        main.post {
+            speechReady = status == TextToSpeech.SUCCESS
+            pendingSpeech?.let { if (speechReady) say(it) }
+            pendingSpeech = null
+        }
     }
 
     private val lines = SpeechQueue { text -> if (speechReady) say(text) else pendingSpeech = text }

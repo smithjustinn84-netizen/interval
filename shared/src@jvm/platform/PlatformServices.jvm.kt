@@ -68,8 +68,9 @@ private class DesktopStorage : PlatformStorage {
 }
 
 private class JavaTimeFormatter : TimestampFormatter {
-    // Day and month names follow the default locale; the time takes the locale's own short form.
-    private val dateFormat = DateTimeFormatter.ofPattern("EEEE, MMM d")
+    // Templates rather than a fixed pattern, so each locale orders the parts its way. Desktop locales
+    // don't change while the app runs, so these are built once.
+    private val dateFormat = DateTimeFormatter.ofLocalizedPattern("MMMEEEEd")
     private val timeFormat = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
 
     override fun date(epochMillis: Long): String = dateFormat.format(zoned(epochMillis))
