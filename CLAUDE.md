@@ -25,33 +25,9 @@ Compose Multiplatform app for **Android, iOS and desktop (JVM)**, built with the
 `-m` takes the **leaf module name** (`shared`, `androidApp`, `iosApp`, `desktopApp`, `lint-plugin`,
 `detekt-plugin`).
 
-### Android (android CLI)
-```sh
-./kotlin build -m androidApp
-android emulator start amper-37
-android run --apks=build/tasks/_androidApp_buildAndroidDebug/gradle-project-debug.apk
-android layout -p                   # UI tree as JSON, faster than a screenshot
-android screen capture -o shot.png
-android docs search "<topic>"       # Official Android docs
-```
-
-### iOS
-```sh
-./kotlin build -m iosApp -p iosSimulatorArm64
-xcrun simctl install booted build/tasks/_iosApp_buildIosAppIosSimulatorArm64Debug/bin/Debug-iphonesimulator/interval.app
-xcrun simctl launch booted dev.justinsmith.interval
-```
+Running on the Android emulator or iOS simulator: the `run-on-device` skill.
 
 ## Layout
-
-| Module        | Product          | Role                                                    |
-|---------------|------------------|---------------------------------------------------------|
-| `shared`      | `kmp/lib`        | All UI and logic: Compose, Nav3, ViewModels, Koin       |
-| `androidApp`  | `android/app`    | `MainActivity` (splash + edge-to-edge) hosting `App()`  |
-| `iosApp`      | `ios/app`        | UIKit scene shell + `ViewController()` hosting `App()`  |
-| `desktopApp`  | `jvm/app`        | `main.kt` window hosting `App()`                        |
-| `lint-plugin` | `jvm/amper-plugin` | ktlint `lint` check and `format` command              |
-| `detekt-plugin` | `jvm/amper-plugin` | `detekt` check: detekt 2 + Compose rules, light mode  |
 
 Amper source layout, not Gradle's:
 - `<module>/src/` common code; `src@android/`, `src@ios/` (both iOS targets), `src@jvm/` platform code
@@ -102,7 +78,6 @@ toolchain (`$compose.*`).
   `uv run --with pillow tools/generate_icons.py`; edit the script, not its outputs. The animated intro
   (`shared/src/splash/`) draws the same mark in code (`IntervalMark.kt`, keep its numbers in step) and
   opens on exactly Android's splash and iOS's launch screen, so the hand-off is seamless.
-- **Logging**: Kermit (`co.touchlab.kermit.Logger`).
 - **Platform code**: `expect`/`actual` in `src/` + `src@<platform>/`. Prefer an interface injected via Koin
   over `expect class`.
 
