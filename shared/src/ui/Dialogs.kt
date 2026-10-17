@@ -61,46 +61,6 @@ fun ConfirmDialog(
 }
 
 /**
- * Names and saves the current workout as a preset. [summary] is its shape: "25s on · 10s off · ×8 ·
- * 4:40 total". Left blank, the name is [defaultName] ("25/10 ×8"), which the empty field shows.
- */
-@Composable
-fun SavePresetDialog(summary: String, defaultName: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
-    val palette = IntervalTheme.palette
-    val name = rememberTextFieldState()
-    val save = { onSave(name.text.toString().trim().ifEmpty { defaultName }) }
-    IntervalDialog(
-        title = stringResource(Res.string.preset_save_title),
-        onDismiss = onDismiss,
-        actions = {
-            DialogButton(stringResource(Res.string.common_cancel), onClick = onDismiss, primary = false)
-            DialogButton(stringResource(Res.string.common_save), onClick = save, primary = true)
-        },
-    ) {
-        Text(
-            summary,
-            style = IntervalTheme.type.meta,
-            color = palette.textDim,
-            modifier = Modifier.padding(bottom = Spacing.space8),
-        )
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-            Text(
-                stringResource(Res.string.preset_name_label),
-                style = IntervalTheme.type.label,
-                color = palette.textDim,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                stringResource(Res.string.preset_name_count, name.text.length, Preset.MAX_NAME_LENGTH),
-                style = IntervalTheme.type.meta,
-                color = palette.textDim,
-            )
-        }
-        NameField(name, placeholder = defaultName, onDone = save)
-    }
-}
-
-/**
  * A filled single-line field for a preset's name, [Preset.MAX_NAME_LENGTH] at most, with its
  * [placeholder] while empty; the accent ring appears only while it has focus.
  */

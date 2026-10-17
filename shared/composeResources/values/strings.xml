@@ -67,6 +67,8 @@
     <string name="timer_prep_line">%1$s to get ready</string>
     <string name="timer_start_workout">Start workout</string>
     <string name="timer_all_presets_cd">All presets</string>
+    <!-- The + on the Timer's title bar, shown while the settings match no preset -->
+    <string name="timer_save_as_preset_cd">Save as preset</string>
 
     <!-- Saving a preset from the end of a workout -->
     <string name="preset_save_title">Save as preset</string>
@@ -90,6 +92,8 @@
 
     <!-- The sheet a preset opens -->
     <string name="presets_put_on_timer">Put on Timer</string>
+    <!-- In a preset's sheet while the Timer holds settings no preset has -->
+    <string name="presets_replaces_unsaved">Replaces the unsaved settings on the Timer.</string>
     <string name="presets_edit">Edit</string>
     <string name="presets_delete">Delete</string>
     <string name="presets_save_copy">Save a copy</string>
@@ -105,6 +109,10 @@
     <string name="preset_editor_copy_title">Save a copy</string>
     <string name="preset_editor_total">Total</string>
     <string name="preset_editor_prep_hint">Get ready time comes from Settings.</string>
+    <!-- Under the name when another preset has it: the name it will be saved under -->
+    <string name="preset_editor_saves_as">Saves as %1$s</string>
+    <!-- Under the total when another preset already has this work, rest and rounds -->
+    <string name="preset_editor_same_shape">Same shape as %1$s</string>
 
     <!-- History tab -->
     <string name="history_title">History</string>

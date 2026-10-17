@@ -23,15 +23,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
+import dev.justinsmith.interval.presets.EditorMode
+import dev.justinsmith.interval.presets.PresetDraft
+import dev.justinsmith.interval.presets.PresetEditor
+import dev.justinsmith.interval.presets.rememberPresetDraft
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.common_custom
 import dev.justinsmith.interval.resources.common_done
@@ -46,7 +48,7 @@ import dev.justinsmith.interval.resources.workout_stat_rounds_value
 import dev.justinsmith.interval.resources.workout_stat_time
 import dev.justinsmith.interval.resources.workout_summary_ended
 import dev.justinsmith.interval.resources.workout_summary_finished
-import dev.justinsmith.interval.timer.defaultPresetName
+import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EnterEasing
 import dev.justinsmith.interval.ui.IntervalIcons
@@ -54,7 +56,6 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.MAX_ROUND_MARKS
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PhaseColors
-import dev.justinsmith.interval.ui.SavePresetDialog
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.configDescription
@@ -73,10 +74,11 @@ internal fun SummaryLayout(
     state: WorkoutUiState,
     landscape: Boolean,
     onRepeat: () -> Unit,
-    onSavePreset: (String) -> Unit,
+    onSavePreset: (Preset) -> Unit,
     onDone: () -> Unit,
 ) {
-    var saving by rememberSaveable { mutableStateOf(false) }
+    var draft by rememberPresetDraft()
+    val onSave = { draft = PresetDraft(EditorMode.SaveCurrent, name = "", config = state.config) }
     val entrance = rememberEntrance()
     val padding = Modifier
         .fillMaxSize()
@@ -93,7 +95,7 @@ internal fun SummaryLayout(
                 state,
                 entrance,
                 onRepeat,
-                onSave = { saving = true },
+                onSave = onSave,
                 onDone = onDone,
                 modifier = Modifier.width(Sizes.setupColumnLandscape),
             )
@@ -105,21 +107,20 @@ internal fun SummaryLayout(
                 state,
                 entrance,
                 onRepeat,
-                onSave = { saving = true },
+                onSave = onSave,
                 onDone = onDone,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
     }
-    if (saving) {
-        SavePresetDialog(
-            summary = shapeText(state),
-            defaultName = state.config.defaultPresetName(),
-            onSave = {
-                onSavePreset(it)
-                saving = false
-            },
-            onDismiss = { saving = false },
+    draft?.let { current ->
+        PresetEditor(
+            draft = current,
+            prepSeconds = state.config.prepSeconds,
+            presets = state.presets,
+            onChangeShape = { transform -> draft = draft?.let { it.copy(config = transform(it.config)) } },
+            onSave = onSavePreset,
+            onDismiss = { draft = null },
         )
     }
 }

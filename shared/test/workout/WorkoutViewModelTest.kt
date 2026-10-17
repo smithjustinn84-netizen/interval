@@ -9,6 +9,7 @@ import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
+import dev.justinsmith.interval.timer.Preset
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -172,7 +173,7 @@ class WorkoutViewModelTest {
         assertEquals(0, repository.history.value.single().elapsedSeconds)
         assertTrue(viewModel.state.value.canSavePreset)
         assertNull(viewModel.state.value.presetName)
-        viewModel.saveAsPreset("Short")
+        viewModel.saveAsPreset(Preset("Short", viewModel.state.value.config))
         assertFalse(viewModel.state.value.canSavePreset)
         assertEquals("Short", viewModel.state.value.presetName)
     }

@@ -6,6 +6,7 @@ import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.timer.Cue
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
+import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.Step
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.timer.WorkoutState
@@ -108,8 +109,9 @@ class WorkoutViewModel(
         publish()
     }
 
-    fun saveAsPreset(name: String) {
-        repository.saveCurrentAsPreset(name)
+    /** Saves [preset], named and maybe reshaped in the summary's editor, as a new one of the user's own. */
+    fun saveAsPreset(preset: Preset) {
+        repository.savePreset(preset)
         publish()
     }
 
@@ -150,7 +152,7 @@ class WorkoutViewModel(
             ended = ended,
             presetName = presets.matching(config)?.name,
             elapsedSeconds = activeSeconds,
-        )
+        ).copy(presets = presets.map { it.preset })
     }
 
     private fun play(cues: List<Cue>) {

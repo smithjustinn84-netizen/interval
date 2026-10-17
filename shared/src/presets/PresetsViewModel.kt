@@ -8,7 +8,6 @@ import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.PresetEntry
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
-import dev.justinsmith.interval.timer.sameShape
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -18,7 +17,7 @@ data class PresetRowItem(
     val preset: Preset,
     /** The whole workout's length with the user's own get-ready countdown: "4:00". */
     val total: String,
-    /** This preset's shape is the one on the Timer. */
+    /** This is the preset the Timer's settings count as ([matching]): at most one row is. */
     val selected: Boolean,
     /** This preset's length as a share of the longest on the screen, so its timeline can be drawn to scale. */
     val share: Float = 1f,
@@ -52,9 +51,25 @@ class PresetsViewModel(private val repository: IntervalRepository) : ViewModel()
         repository.applyPreset(preset)
     }
 
-    /** Saves [preset]: a new one of the user's own, or the changes to the one its id names. */
+    /**
+     * Saves [preset]: a new one of the user's own, or the changes to the one its id names. Changes to
+     * the preset on the Timer go onto the Timer too, so the two stay in step rather than leaving the
+     * old shape there, unsaved.
+     */
     fun save(preset: Preset) {
-        if (preset.custom) repository.updatePreset(preset) else repository.savePreset(preset)
+        if (!preset.custom) {
+            repository.savePreset(preset)
+            return
+        }
+        val wasOnTimer = repository.presets.value.matching(repository.config.value)?.id == preset.id
+        repository.updatePreset(preset)
+        if (wasOnTimer) repository.applyPreset(preset)
+    }
+
+    /** Saves [preset] as a new one of the user's own and puts its shape on the Timer, which it came from. */
+    fun saveCurrent(preset: Preset) {
+        repository.applyPreset(preset)
+        repository.savePreset(preset)
     }
 
     fun delete(preset: Preset) {
@@ -64,7 +79,8 @@ class PresetsViewModel(private val repository: IntervalRepository) : ViewModel()
     private fun buildState(config: IntervalConfig, entries: List<PresetEntry>): PresetsUiState {
         // Every total counts the user's own get-ready countdown, as a workout would.
         fun totalOf(preset: Preset) = preset.config.copy(prepSeconds = config.prepSeconds).totalSeconds
-        val canSaveCurrent = entries.matching(config) == null
+        val onTimer = entries.matching(config)
+        val canSaveCurrent = onTimer == null
         val longest = (entries.map { totalOf(it.preset) } + if (canSaveCurrent) config.totalSeconds else 0)
             .max()
             .coerceAtLeast(1)
@@ -73,7 +89,7 @@ class PresetsViewModel(private val repository: IntervalRepository) : ViewModel()
             entry.custom to PresetRowItem(
                 preset = entry.preset,
                 total = formatClock(total),
-                selected = entry.preset.config.sameShape(config),
+                selected = entry.preset == onTimer,
                 share = total.toFloat() / longest,
             )
         }

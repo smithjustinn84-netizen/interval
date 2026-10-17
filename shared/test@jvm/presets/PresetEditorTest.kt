@@ -24,6 +24,7 @@ import kotlin.test.assertEquals
 /** The editor over [PresetsScreen], opened from a card's sheet, the + or the unsaved card's Save. */
 class PresetEditorTest {
     private val saved = mutableListOf<Preset>()
+    private val savedCurrent = mutableListOf<Preset>()
 
     @Composable
     private fun Screen(state: PresetsUiState = state()) {
@@ -32,6 +33,7 @@ class PresetEditorTest {
             onStart = {},
             onPutOnTimer = {},
             onSave = { saved += it },
+            onSaveCurrent = { savedCurrent += it },
             onDelete = {},
         )
     }
@@ -91,10 +93,12 @@ class PresetEditorTest {
         onNodeWithText("On the Timer · not saved").assertExists()
         onNodeWithText("40s on · 20s off · ×6").assertExists()
         onNodeWithText("Save").performClick()
-        onNodeWithText("New preset").assertExists()
+        onNodeWithText("Save as preset").assertExists()
         onNode(hasSetTextAction()).performTextInput("Evening")
         saveInEditor()
-        assertEquals(listOf(Preset("Evening", current)), saved)
+        // Saved as the Timer's own settings, so it stays on the Timer; + leaves the Timer alone.
+        assertEquals(listOf(Preset("Evening", current)), savedCurrent)
+        assertEquals(emptyList(), saved)
     }
 
     @Test
@@ -105,6 +109,27 @@ class PresetEditorTest {
         onNode(hasSetTextAction()).assertTextContains("Tabata copy")
         saveInEditor()
         assertEquals(listOf(Preset("Tabata copy", builtInPresets.first().config)), saved)
+    }
+
+    @Test
+    fun `a name another preset has says what it will be saved as`() = runUiTest {
+        setThemedContent { Screen() }
+        onNodeWithContentDescription("New preset").performClick()
+        onNodeWithText("Saves as Tabata 2").assertDoesNotExist()
+        onNode(hasSetTextAction()).performTextInput("Tabata")
+        onNodeWithText("Saves as Tabata 2").assertExists()
+    }
+
+    @Test
+    fun `a shape another preset has is pointed out but not its own`() = runUiTest {
+        setThemedContent { Screen() }
+        onNodeWithText("Tabata").performClick()
+        onNodeWithText("Save a copy").performClick()
+        onNodeWithText("Same shape as Tabata").assertExists()
+        onNodeWithText("Cancel").performClick()
+        onNodeWithText("Morning").performClick()
+        onNodeWithText("Edit").performClick()
+        onNodeWithText("Same shape as Morning").assertDoesNotExist()
     }
 
     @Test

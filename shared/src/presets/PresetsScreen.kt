@@ -23,8 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.saveable.mapSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -91,6 +89,7 @@ fun PresetsRoute(onShowTimer: () -> Unit, onStartWorkout: () -> Unit, modifier: 
             onShowTimer()
         },
         onSave = viewModel::save,
+        onSaveCurrent = viewModel::saveCurrent,
         onDelete = viewModel::delete,
         modifier = modifier,
     )
@@ -100,8 +99,10 @@ fun PresetsRoute(onShowTimer: () -> Unit, onStartWorkout: () -> Unit, modifier: 
  * Every preset in two groups of full-width cards, the user's own first, each with its total and a
  * timeline drawn to scale so lengths compare at a glance. Tapping one opens its [PresetSheet]: start
  * it, put it on the Timer, and for the user's own, edit or delete it (after asking). Settings that
- * match no preset sit on top with Save, which opens the [PresetEditor] on them, as + in the title
- * bar does.
+ * match no preset sit on top with Save, which opens the [PresetEditor] on them and keeps whatever it
+ * saves on the Timer ([onSaveCurrent]); + in the title bar starts a new preset from them instead,
+ * leaving the Timer alone ([onSave]). While those settings are unsaved, a preset's sheet says that
+ * starting or loading it replaces them.
  */
 @Composable
 fun PresetsScreen(
@@ -109,16 +110,18 @@ fun PresetsScreen(
     onStart: (Preset) -> Unit,
     onPutOnTimer: (Preset) -> Unit,
     onSave: (Preset) -> Unit,
+    onSaveCurrent: (Preset) -> Unit,
     onDelete: (Preset) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var open by rememberSaveable(stateSaver = PresetSaver) { mutableStateOf<Preset?>(null) }
-    var draft by rememberSaveable(stateSaver = PresetDraftSaver) { mutableStateOf<PresetDraft?>(null) }
+    var draft by rememberPresetDraft()
     var deleting by rememberSaveable(stateSaver = PresetSaver) { mutableStateOf<Preset?>(null) }
     PresetsList(
         state = state,
         onOpen = { open = it },
         onNew = { draft = PresetDraft(EditorMode.New, name = "", config = state.current) },
+        onSaveCurrent = { draft = PresetDraft(EditorMode.SaveCurrent, name = "", config = state.current) },
         modifier = modifier,
     )
     // The sheet follows its preset through the state, so one edited or deleted elsewhere closes it.
@@ -127,6 +130,7 @@ fun PresetsScreen(
         PresetSheet(
             row = openRow,
             prepSeconds = state.current.prepSeconds,
+            replacesUnsaved = state.canSaveCurrent,
             onStart = {
                 open = null
                 onStart(openRow.preset)
@@ -147,8 +151,9 @@ fun PresetsScreen(
         PresetEditor(
             draft = current,
             prepSeconds = state.current.prepSeconds,
+            presets = state.rows.map { it.preset },
             onChangeShape = { transform -> draft = draft?.let { it.copy(config = transform(it.config)) } },
-            onSave = onSave,
+            onSave = if (current.mode == EditorMode.SaveCurrent) onSaveCurrent else onSave,
             onDismiss = { draft = null },
         )
     }
@@ -168,12 +173,16 @@ fun PresetsScreen(
     }
 }
 
-/** The title bar with + ([onNew]), the unsaved settings when there are any, then the two groups of cards. */
+/**
+ * The title bar with + ([onNew]), the unsaved settings with their Save ([onSaveCurrent]) when there
+ * are any, then the two groups of cards.
+ */
 @Composable
 private fun PresetsList(
     state: PresetsUiState,
     onOpen: (Preset) -> Unit,
     onNew: () -> Unit,
+    onSaveCurrent: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val palette = IntervalTheme.palette
@@ -196,7 +205,7 @@ private fun PresetsList(
                     CurrentCard(
                         config = state.current,
                         share = state.currentShare,
-                        onSave = onNew,
+                        onSave = onSaveCurrent,
                         modifier = Modifier
                             .animateItem()
                             .padding(horizontal = Spacing.space16)
@@ -353,48 +362,8 @@ private fun PresetCard(item: PresetRowItem, onClick: () -> Unit, modifier: Modif
     }
 }
 
-// Which preset's sheet is open, which is being asked about, and what the editor holds survive a
-// configuration change and process death, like a dialog's open state. Each is saved by its values.
-
-private val PresetSaver: Saver<Preset?, Any> = mapSaver(
-    save = { preset ->
-        if (preset ==
-            null
-        ) {
-            emptyMap()
-        } else {
-            mapOf(NAME to preset.name, ID to preset.id) + preset.config.saved()
-        }
-    },
-    restore = { Preset(it[NAME] as String, it.restoredConfig(), it[ID] as Long?) },
-)
-
-private val PresetDraftSaver: Saver<PresetDraft?, Any> = mapSaver(
-    save = { draft ->
-        if (draft == null) {
-            emptyMap()
-        } else {
-            mapOf(MODE to draft.mode.name, NAME to draft.name, ID to draft.id) + draft.config.saved()
-        }
-    },
-    restore = {
-        PresetDraft(EditorMode.valueOf(it[MODE] as String), it[NAME] as String, it.restoredConfig(), it[ID] as Long?)
-    },
-)
-
-private fun IntervalConfig.saved(): Map<String, Any?> =
-    mapOf(PREP to prepSeconds, WORK to workSeconds, REST to restSeconds, ROUNDS to rounds)
-
-private fun Map<String, Any?>.restoredConfig(): IntervalConfig =
-    IntervalConfig(this[PREP] as Int, this[WORK] as Int, this[REST] as Int, this[ROUNDS] as Int)
-
-private const val MODE = "mode"
-private const val NAME = "name"
-private const val ID = "id"
-private const val PREP = "prep"
-private const val WORK = "work"
-private const val REST = "rest"
-private const val ROUNDS = "rounds"
+// Which preset's sheet is open and which is being asked about survive a configuration change and
+// process death, like a dialog's open state; so does the editor's draft (rememberPresetDraft).
 
 @PreviewFormFactors
 @Composable
@@ -417,6 +386,7 @@ private fun PresetsScreenPreview() {
             onStart = {},
             onPutOnTimer = {},
             onSave = {},
+            onSaveCurrent = {},
             onDelete = {},
         )
     }

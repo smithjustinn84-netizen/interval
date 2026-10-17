@@ -2,6 +2,7 @@ package dev.justinsmith.interval.workout
 
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
+import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.timer.WorkoutState
 import dev.justinsmith.interval.timer.ceilSeconds
@@ -50,6 +51,8 @@ data class WorkoutUiState(
     val elapsed: String = "",
     /** Offer "Save as preset" on the summary: no preset has this shape yet. */
     val canSavePreset: Boolean = false,
+    /** Every preset, so the summary's editor can say when a name or shape is taken. */
+    val presets: List<Preset> = emptyList(),
 ) {
     val rounds: Int get() = config.rounds
     val isDone: Boolean get() = phase == Phase.Done || ended

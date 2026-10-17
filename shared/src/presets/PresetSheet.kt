@@ -13,6 +13,7 @@ import dev.justinsmith.interval.resources.presets_built_in
 import dev.justinsmith.interval.resources.presets_delete
 import dev.justinsmith.interval.resources.presets_edit
 import dev.justinsmith.interval.resources.presets_put_on_timer
+import dev.justinsmith.interval.resources.presets_replaces_unsaved
 import dev.justinsmith.interval.resources.presets_save_copy
 import dev.justinsmith.interval.resources.presets_yours
 import dev.justinsmith.interval.resources.timer_prep_line
@@ -31,13 +32,16 @@ import org.jetbrains.compose.resources.stringResource
 /**
  * What one preset leads to, in a sheet over the list: its group and name, its total with the user's
  * get-ready countdown over a full-width timeline and its shape, then Start workout and Put on Timer.
- * One of the user's own ends with Edit and Delete; a built-in with Save a copy, which opens the
- * editor on a copy named after it.
+ * Put on Timer is left out for the preset already there. When [replacesUnsaved], the Timer holds
+ * settings no preset has, and a line over the buttons says either one replaces them. One of the
+ * user's own ends with Edit and Delete; a built-in with Save a copy, which opens the editor on a copy
+ * named after it.
  */
 @Composable
 internal fun PresetSheet(
     row: PresetRowItem,
     prepSeconds: Int,
+    replacesUnsaved: Boolean,
     onStart: () -> Unit,
     onPutOnTimer: () -> Unit,
     onEdit: (PresetDraft) -> Unit,
@@ -77,8 +81,17 @@ internal fun PresetSheet(
             Text(configDescription(preset.config), style = IntervalTheme.type.body, color = palette.textDim)
         }
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+            if (replacesUnsaved) {
+                Text(
+                    stringResource(Res.string.presets_replaces_unsaved),
+                    style = IntervalTheme.type.meta,
+                    color = palette.textDim,
+                )
+            }
             StartButton(onStart, Modifier.fillMaxWidth())
-            SecondaryButton(stringResource(Res.string.presets_put_on_timer), onPutOnTimer, Modifier.fillMaxWidth())
+            if (!row.selected) {
+                SecondaryButton(stringResource(Res.string.presets_put_on_timer), onPutOnTimer, Modifier.fillMaxWidth())
+            }
         }
         if (preset.custom) {
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {

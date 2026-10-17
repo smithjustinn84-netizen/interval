@@ -65,6 +65,7 @@ class PresetsScreenTest {
             onStart = { started += it },
             onPutOnTimer = { putOnTimer += it },
             onSave = { saved += it },
+            onSaveCurrent = { saved += it },
             onDelete = { deleted += it },
         )
     }
@@ -83,6 +84,24 @@ class PresetsScreenTest {
         onNodeWithText("Morning").performClick()
         onNodeWithText("Put on Timer").performClick()
         assertEquals(listOf(morning), putOnTimer)
+        onNodeWithText("Put on Timer").assertDoesNotExist()
+    }
+
+    @Test
+    fun `a sheet warns that unsaved settings on the Timer will be replaced`() = runUiTest {
+        var state by mutableStateOf(state())
+        setThemedContent { Screen(state) }
+        onNodeWithText("Tabata").performClick()
+        onNodeWithText("Replaces the unsaved settings on the Timer.").assertExists()
+        state = state(canSaveCurrent = false, selected = morning)
+        onNodeWithText("Replaces the unsaved settings on the Timer.").assertDoesNotExist()
+    }
+
+    @Test
+    fun `the preset already on the Timer only offers to start`() = runUiTest {
+        setThemedContent { Screen(state(canSaveCurrent = false, selected = morning)) }
+        onNodeWithText("Morning").performClick()
+        onNodeWithText("Start workout").assertExists()
         onNodeWithText("Put on Timer").assertDoesNotExist()
     }
 

@@ -10,14 +10,17 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.sameShape
@@ -40,6 +43,7 @@ class TimerScreenTest {
     private val calls = mutableListOf<String>()
     private val steps = mutableListOf<Pair<ConfigField, Int>>()
     private val sets = mutableListOf<Pair<ConfigField, Int>>()
+    private val saved = mutableListOf<Preset>()
 
     @Composable
     private fun Screen(state: TimerUiState = state()) {
@@ -47,6 +51,7 @@ class TimerScreenTest {
             state = state,
             onStep = { field, direction -> steps += field to direction },
             onSet = { field, value -> sets += field to value },
+            onSavePreset = { saved += it },
             onStart = { calls += "start" },
             onOpenSettings = { calls += "settings" },
             onSeeAllPresets = { calls += "see all" },
@@ -100,12 +105,15 @@ class TimerScreenTest {
     }
 
     @Test
-    fun `a custom shape is called so and offers no save of its own`() = runUiTest {
+    fun `a custom shape is called so and saves through the preset editor`() = runUiTest {
         setThemedContent { Screen() }
         onNodeWithText("Custom · Total").assertExists()
-        // Saving moved to the Presets tab: the title bar keeps only the gear.
-        onNodeWithContentDescription("Save as preset").assertDoesNotExist()
-        onNodeWithContentDescription("Settings").assertExists()
+        onNodeWithContentDescription("Save as preset").performClick()
+        onNodeWithText("Save as preset").assertExists()
+        onNode(hasSetTextAction()).performTextInput("Mine")
+        onNodeWithText("Save").performClick()
+        assertEquals(listOf(Preset("Mine", custom)), saved)
+        onNodeWithText("Save as preset").assertDoesNotExist()
     }
 
     @Test
@@ -123,6 +131,7 @@ class TimerScreenTest {
     fun `a shape a preset has is named after it`() = runUiTest {
         setThemedContent { Screen(state(builtInPresets.first().config)) }
         onNodeWithText("Tabata · Total").assertExists()
+        onNodeWithContentDescription("Save as preset").assertDoesNotExist()
     }
 
     @Test

@@ -53,6 +53,7 @@ import dev.justinsmith.interval.resources.workout_end_title
 import dev.justinsmith.interval.resources.workout_pause
 import dev.justinsmith.interval.resources.workout_resume
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
@@ -113,7 +114,7 @@ fun WorkoutScreen(
     onAddTime: () -> Unit,
     onRestart: () -> Unit,
     onEndEarly: () -> Unit,
-    onSavePreset: (String) -> Unit,
+    onSavePreset: (Preset) -> Unit,
     onExit: () -> Unit,
     modifier: Modifier = Modifier,
 ) {

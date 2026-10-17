@@ -21,9 +21,15 @@ data class PresetEntry(val preset: Preset, val custom: Boolean)
 fun presetEntries(custom: List<Preset>): List<PresetEntry> =
     builtInPresets.map { PresetEntry(it, custom = false) } + custom.map { PresetEntry(it, custom = true) }
 
-/** The first preset with [config]'s shape, if any. */
-fun List<PresetEntry>.matching(config: IntervalConfig): Preset? =
-    firstOrNull { it.preset.config.sameShape(config) }?.preset
+/**
+ * The preset [config] counts as, if any: the first of the user's own with its shape, else the first
+ * built-in. One rule, so the Timer, the summary, History and the Presets list all name the same one,
+ * and only one card on the list says it is on the Timer.
+ */
+fun List<PresetEntry>.matching(config: IntervalConfig): Preset? {
+    val same = filter { it.preset.config.sameShape(config) }
+    return (same.firstOrNull { it.custom } ?: same.firstOrNull())?.preset
+}
 
 /**
  * The name a preset gets when the user gives it none: its shape, "40/20 ×6", with a whole number of

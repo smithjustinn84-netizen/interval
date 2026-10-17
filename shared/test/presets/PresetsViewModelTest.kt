@@ -96,4 +96,42 @@ class PresetsViewModelTest {
         assertEquals(1f, state.currentShare)
         assertTrue(state.builtIn.all { it.share < 1f })
     }
+
+    @Test
+    fun `a preset of the user's own with a built-in's shape is the one on the Timer`() {
+        viewModel.apply(builtInPresets.first())
+        viewModel.save(Preset("My Tabata", builtInPresets.first().config))
+        val state = viewModel.state.value
+        assertEquals(listOf("My Tabata"), state.rows.filter { it.selected }.map { it.preset.name })
+    }
+
+    @Test
+    fun `editing the preset on the Timer puts its new shape there`() {
+        val morning = IntervalConfig(prepSeconds = 5, workSeconds = 25, restSeconds = 10, rounds = 8)
+        repository.updateConfig { morning }
+        viewModel.save(Preset("Morning", morning))
+        val saved = viewModel.state.value.custom.single().preset
+        viewModel.save(saved.copy(config = saved.config.copy(rounds = 10)))
+        assertEquals(10, repository.config.value.rounds)
+        assertEquals(5, repository.config.value.prepSeconds)
+        assertFalse(viewModel.state.value.canSaveCurrent)
+        assertTrue(viewModel.state.value.custom.single().selected)
+    }
+
+    @Test
+    fun `editing a preset that is not on the Timer leaves the Timer alone`() {
+        viewModel.apply(builtInPresets.first())
+        viewModel.save(Preset("Odd", IntervalConfig(workSeconds = 33)))
+        val saved = viewModel.state.value.custom.single().preset
+        viewModel.save(saved.copy(config = saved.config.copy(rounds = 3)))
+        assertEquals(builtInPresets.first().config.rounds, repository.config.value.rounds)
+    }
+
+    @Test
+    fun `saving the Timer's settings with a new shape keeps that shape on the Timer`() {
+        repository.updateConfig { IntervalConfig(workSeconds = 33) }
+        viewModel.saveCurrent(Preset("Sprints", IntervalConfig(workSeconds = 33, rounds = 4)))
+        assertEquals(4, repository.config.value.rounds)
+        assertEquals("Sprints", viewModel.state.value.custom.single { it.selected }.preset.name)
+    }
 }

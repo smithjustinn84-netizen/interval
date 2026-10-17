@@ -9,8 +9,10 @@
     <action>Verify that "Yours" is shown above "Built-in", and "Yours" says "Save one from the Timer or the end of a workout."</action>
     <action>Verify that a card captioned "On the Timer · not saved" is shown at the top with a "Save" button</action>
     <action>Tap "Save"</action>
-    <action>Verify that a sheet titled "New preset" is shown, with a "Name" field whose placeholder is "30/15 ×8"</action>
-    <action>Type "Journey" into the "Name" field</action>
+    <action>Verify that a sheet titled "Save as preset" is shown, with a "Name" field whose placeholder is "30/15 ×8"</action>
+    <action>Type "Tabata" into the "Name" field</action>
+    <action>Verify that "Saves as Tabata 2" is shown under the field</action>
+    <action>Clear the "Name" field and type "Journey"</action>
     <action>Tap "Save" in the sheet</action>
     <action>Verify that a "Journey" card is shown under "Yours", captioned "On the Timer", and the "On the Timer · not saved" card is gone</action>
     <action>Tap the "Tabata" card</action>
@@ -19,6 +21,9 @@
     <action>Verify that the Timer tab is shown and its total is labelled "Tabata · Total"</action>
     <action>Tap the "Presets" tab</action>
     <action>Verify that the "Tabata" card is captioned "On the Timer"</action>
+    <action>Tap the "Tabata" card</action>
+    <action>Verify that the sheet shows "Start workout" but no "Put on Timer", since Tabata is already on the Timer</action>
+    <action>Swipe the sheet down</action>
     <action>Tap the "Journey" card</action>
     <action>Tap "Start workout"</action>
     <action>Verify that the workout screen is shown with "Get ready"</action>
@@ -30,7 +35,8 @@
     <action>Tap the "Rounds" row, tap "12" in the sheet, then tap "Done"</action>
     <action>Verify that the "Rounds" row shows "×12"</action>
     <action>Tap "Save" in the sheet</action>
-    <action>Verify that the "Journey" card says "30s on · 15s off · ×12"</action>
+    <action>Verify that the "Journey" card says "30s on · 15s off · ×12" and is still captioned "On the Timer"</action>
+    <action>Verify that no "On the Timer · not saved" card is shown</action>
     <action>Tap the "Journey" card</action>
     <action>Tap "Delete"</action>
     <action>Verify that a dialog titled "Delete Journey?" is shown saying "History keeps the workouts you did with it. The Timer keeps its settings."</action>
@@ -38,5 +44,9 @@
     <action>Verify that the "Journey" sheet is still shown</action>
     <action>Tap "Delete", then "Delete" in the dialog</action>
     <action>Verify that "Journey" is no longer shown and "Yours" says "Save one from the Timer or the end of a workout."</action>
+    <action>Tap the "Timer" tab</action>
+    <action>Verify that the total is labelled "Custom · Total" and the title bar shows a "Save as preset" button</action>
+    <action>Tap "Save as preset"</action>
+    <action>Verify that a sheet titled "Save as preset" is shown, then tap "Cancel"</action>
   </actions>
 </journey>

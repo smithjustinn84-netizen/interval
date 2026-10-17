@@ -54,7 +54,7 @@ class WorkoutScreenTest {
             onAddTime = { calls += "add time" },
             onRestart = { calls += "restart" },
             onEndEarly = { calls += "end early" },
-            onSavePreset = { calls += "save $it" },
+            onSavePreset = { calls += "save ${it.name}" },
             onExit = { calls += "exit" },
         )
     }
