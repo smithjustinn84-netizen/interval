@@ -16,6 +16,7 @@ import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import dev.justinsmith.interval.timer.ConfigField
@@ -132,6 +133,14 @@ class TimerScreenTest {
         setThemedContent { Screen(state(builtInPresets.first().config)) }
         onNodeWithText("Tabata · Total").assertExists()
         onNodeWithContentDescription("Save as preset").assertDoesNotExist()
+    }
+
+    @Test
+    fun `sideways, the edit sheet is taller than the window and scrolls to Done`() = runUiTest(Window.PhoneSideways) {
+        setThemedContent { Screen() }
+        onNodeWithText("0:40").performClick()
+        onNodeWithText("Done").performScrollTo().performClick()
+        onNodeWithText("Quick picks").assertDoesNotExist()
     }
 
     @Test

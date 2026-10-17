@@ -8,12 +8,15 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -27,6 +30,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
@@ -48,6 +52,10 @@ import org.jetbrains.compose.resources.stringResource
  * [content] under it, spaced as a form. The content gets [hide] for its own way out (Done, Cancel,
  * Save). Every way out, a swipe, back, Esc and a tap on the scrim included, ends with the sheet
  * slid away, and only then does the caller hear [onDismiss]. Screen readers announce it by [title].
+ *
+ * The sheet stops under the status bar and above the keyboard; content taller than that room (a
+ * phone on its side, or the keyboard up over the preset editor) scrolls, so its last button is
+ * always reachable.
  */
 @Composable
 fun IntervalSheet(
@@ -57,7 +65,7 @@ fun IntervalSheet(
 ) {
     val palette = IntervalTheme.palette
     val dragHandle = stringResource(Res.string.value_sheet_drag_handle_cd)
-    // No half-open stop: every sheet is short enough to show whole.
+    // No half-open stop: a sheet opens whole, and scrolls inside when it has less room than it needs.
     val sheetState = rememberModalBottomSheetState(initialDetent = SheetDetent.Hidden)
     val scope = rememberCoroutineScope()
     val hide: () -> Unit = { scope.launch { sheetState.animateTo(SheetDetent.Hidden) } }
@@ -72,7 +80,7 @@ fun IntervalSheet(
     UnstyledModalBottomSheet(state = sheetState, overlay = { Scrim(scrimColor = scrimColor()) }) {
         Sheet(Modifier.fillMaxWidth()) {
             ModalBackHandler(hide)
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+            Box(Modifier.fillMaxWidth().withinBarsAndKeyboard(), contentAlignment = Alignment.TopCenter) {
                 Column(
                     Modifier
                         .semantics { paneTitle = title }
@@ -80,7 +88,8 @@ fun IntervalSheet(
                         .fillMaxWidth()
                         .clip(Corners.sheet)
                         .background(palette.surface)
-                        // The navigation bar, and the keyboard when a field in the sheet opens one.
+                        // The navigation bar. The keyboard's inset never reaches here: the modal
+                        // sheet lifts itself over the keyboard and keeps that inset from its content.
                         .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
                         .padding(start = Spacing.space16, end = Spacing.space16, bottom = Spacing.space24),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -103,7 +112,7 @@ fun IntervalSheet(
                             },
                     )
                     Column(
-                        Modifier.fillMaxWidth().padding(top = Spacing.space8),
+                        Modifier.fillMaxWidth().padding(top = Spacing.space8).verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(Spacing.space20),
                     ) {
                         content(hide)
@@ -111,5 +120,27 @@ fun IntervalSheet(
                 }
             }
         }
+    }
+}
+
+/**
+ * Caps the height at the room between the window's top inset and the keyboard. The modal sheet
+ * lifts itself by the keyboard's height but never shrinks for it, and pins its top at the window's
+ * edge once it runs out of room: without this cap a tall sheet loses its bottom behind the keyboard,
+ * and runs under the status bar.
+ */
+@Composable
+private fun Modifier.withinBarsAndKeyboard(): Modifier {
+    val bars = WindowInsets.safeDrawing
+    val keyboard = WindowInsets.ime
+    return layout { measurable, constraints ->
+        val room = if (constraints.hasBoundedHeight) {
+            (constraints.maxHeight - bars.getTop(this) - keyboard.getBottom(this))
+                .coerceIn(constraints.minHeight, constraints.maxHeight)
+        } else {
+            constraints.maxHeight
+        }
+        val placeable = measurable.measure(constraints.copy(maxHeight = room))
+        layout(placeable.width, placeable.height) { placeable.place(0, 0) }
     }
 }

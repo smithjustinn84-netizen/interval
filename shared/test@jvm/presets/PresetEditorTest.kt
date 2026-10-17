@@ -8,14 +8,17 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.ui.StateRestoration
+import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
 import kotlin.test.Test
@@ -139,6 +142,15 @@ class PresetEditorTest {
         onNodeWithText("Cancel").performClick()
         onNodeWithText("New preset").assertDoesNotExist()
         assertEquals(emptyList(), saved)
+    }
+
+    @Test
+    fun `sideways, the editor is taller than the window and scrolls to Save`() = runUiTest(Window.PhoneSideways) {
+        setThemedContent { Screen() }
+        onNodeWithContentDescription("New preset").performClick()
+        onAllNodesWithText("Save").onLast().performScrollTo().performClick()
+        assertEquals(listOf(Preset("40/20 ×6", current)), saved)
+        onNodeWithText("New preset").assertDoesNotExist()
     }
 
     @Test
