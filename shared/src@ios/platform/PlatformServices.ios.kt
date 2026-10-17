@@ -10,6 +10,7 @@ import androidx.compose.ui.uikit.LocalUIViewController
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import dev.justinsmith.interval.data.AppDatabase
+import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import kotlinx.cinterop.ExperimentalForeignApi
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.onClose
@@ -157,10 +158,6 @@ private class FoundationTimestampFormatter : TimestampFormatter {
 
     private fun nsDate(epochMillis: Long): NSDate =
         NSDate.dateWithTimeIntervalSince1970(epochMillis.milliseconds.toDouble(DurationUnit.SECONDS))
-
-    private companion object {
-        const val DAYS_PER_WEEK = 7
-    }
 }
 
 /**

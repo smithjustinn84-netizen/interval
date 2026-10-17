@@ -5,13 +5,18 @@ import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.data.HistoryEntry
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.platform.TimestampFormatter
+import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 
 /** The heading over one day's workouts. */
@@ -57,54 +62,57 @@ data class HistoryUiState(
     val weekMaxSeconds: Int get() = week.maxOfOrNull { it.seconds } ?: 0
 }
 
+/**
+ * The workout history by day, and the last seven days' tally. Today is worked out from [clock], and
+ * checked every [dayCheckMillis] so that the headings and the week move on at midnight with the screen open.
+ */
 class HistoryViewModel(
     private val repository: IntervalRepository,
     private val timestamps: TimestampFormatter,
-    private val now: () -> Long,
+    private val clock: WallClock,
+    dayCheckMillis: Long = DAY_CHECK_MILLIS,
 ) : ViewModel() {
-    val state: StateFlow<HistoryUiState> = combine(repository.history, repository.presets, ::buildState)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.Eagerly,
-            initialValue = buildState(repository.history.value, repository.presets.value),
-        )
+    private val days = flow {
+        while (true) {
+            emit(timestamps.dayNumber(clock.nowMillis()))
+            delay(dayCheckMillis)
+        }
+    }.distinctUntilChanged()
+
+    val state: StateFlow<HistoryUiState> =
+        combine(repository.history, repository.presets, days) { history, presets, _ -> buildState(history, presets) }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Eagerly,
+                initialValue = buildState(repository.history.value, repository.presets.value),
+            )
 
     fun clear() {
         repository.clearHistory()
     }
 
     private fun buildState(history: List<HistoryEntry>, presets: List<Preset>): HistoryUiState {
-        val nowMillis = now()
+        val nowMillis = clock.nowMillis()
         val today = timestamps.dayNumber(nowMillis)
         // History is newest first, so grouping keeps both the days and the rows within them in order.
-        val sections = history
-            .groupBy { timestamps.dayNumber(it.finishedAtEpochMillis) }
-            .map { (dayNumber, entries) ->
-                HistorySection(
-                    day = when (dayNumber) {
-                        today -> HistoryDay.Today
-                        today - 1 -> HistoryDay.Yesterday
-                        else -> HistoryDay.On(timestamps.date(entries.first().finishedAtEpochMillis))
-                    },
-                    dayNumber = dayNumber,
-                    items = entries.map { entry ->
-                        HistoryItem(
-                            presetName = presets.matching(entry.config)?.name,
-                            config = entry.config,
-                            endedEarly = entry.endedEarly,
-                            time = timestamps.time(entry.finishedAtEpochMillis),
-                            total = formatClock(entry.elapsedSeconds),
-                        )
-                    },
-                )
-            }
-        val todayWeekday = timestamps.weekday(nowMillis)
         val byDay = history.groupBy { timestamps.dayNumber(it.finishedAtEpochMillis) }
-        val week = (DAYS_PER_WEEK - 1 downTo 0).map { daysAgo ->
-            DayTally(
-                weekday = (todayWeekday - 1 - daysAgo).mod(DAYS_PER_WEEK) + 1,
-                seconds = byDay[today - daysAgo]?.sumOf { it.elapsedSeconds } ?: 0,
-                today = daysAgo == 0,
+        val sections = byDay.map { (dayNumber, entries) ->
+            HistorySection(
+                day = when (dayNumber) {
+                    today -> HistoryDay.Today
+                    today - 1 -> HistoryDay.Yesterday
+                    else -> HistoryDay.On(timestamps.date(entries.first().finishedAtEpochMillis))
+                },
+                dayNumber = dayNumber,
+                items = entries.map { entry ->
+                    HistoryItem(
+                        presetName = presets.matching(entry.config)?.name,
+                        config = entry.config,
+                        endedEarly = entry.endedEarly,
+                        time = timestamps.time(entry.finishedAtEpochMillis),
+                        total = formatClock(entry.elapsedSeconds),
+                    )
+                },
             )
         }
         val thisWeek = byDay.filterKeys { it in (today - DAYS_PER_WEEK + 1)..today }.values.flatten()
@@ -112,27 +120,28 @@ class HistoryViewModel(
             sections = sections,
             weekCount = thisWeek.size,
             weekTotal = formatClock(thisWeek.sumOf { it.elapsedSeconds }),
-            week = week,
+            week = weekTally(
+                secondsByDay = byDay.mapValues { (_, entries) -> entries.sumOf { it.elapsedSeconds } },
+                today = today,
+                todayWeekday = timestamps.weekday(nowMillis),
+            ),
         )
     }
 
     private companion object {
-        const val DAYS_PER_WEEK = 7
+        const val DAY_CHECK_MILLIS = 60_000L
     }
 }
 
-private const val SECONDS_PER_MINUTE = 60
-
-/** A day's time as the week chart reads it out: in seconds under a minute, in whole minutes from one. */
-sealed interface SpokenDuration {
-    data class Seconds(val seconds: Int) : SpokenDuration
-
-    data class Minutes(val minutes: Int) : SpokenDuration
-}
-
-/** [seconds] as [SpokenDuration]; minutes are rounded to the nearest. */
-internal fun spokenDuration(seconds: Int): SpokenDuration = if (seconds < SECONDS_PER_MINUTE) {
-    SpokenDuration.Seconds(seconds)
-} else {
-    SpokenDuration.Minutes((seconds + SECONDS_PER_MINUTE / 2) / SECONDS_PER_MINUTE)
-}
+/**
+ * The week chart's seven bars, oldest first and ending [today], from the seconds worked out on each day
+ * number. [todayWeekday] is today's day of the week, 1 for Monday to 7.
+ */
+internal fun weekTally(secondsByDay: Map<Long, Int>, today: Long, todayWeekday: Int): List<DayTally> =
+    (DAYS_PER_WEEK - 1 downTo 0).map { daysAgo ->
+        DayTally(
+            weekday = (todayWeekday - 1 - daysAgo).mod(DAYS_PER_WEEK) + 1,
+            seconds = secondsByDay[today - daysAgo] ?: 0,
+            today = daysAgo == 0,
+        )
+    }

@@ -78,7 +78,7 @@ fun WorkoutRoute(onExit: () -> Unit, modifier: Modifier = Modifier) {
     val scope = currentKoinScope()
     val viewModel = viewModel { WorkoutViewModel(scope.get(), scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
-    if (state.running && viewModel.keepScreenOn) KeepScreenOn()
+    if (state.running && state.keepScreenOn) KeepScreenOn()
     WorkoutScreen(
         state = state,
         onTogglePause = viewModel::togglePause,

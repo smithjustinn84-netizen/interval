@@ -2,15 +2,21 @@
 
 package dev.justinsmith.interval.history
 
+import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.fakes.DAY_MILLIS
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.SpokenDuration
 import dev.justinsmith.interval.timer.builtInPresets
+import dev.justinsmith.interval.timer.spokenDuration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -24,7 +30,7 @@ private val tabata = builtInPresets.first().config
 class HistoryViewModelTest {
     private var clock = 30 * DAY
     private val repository = FakeStorage().repository(now = { clock })
-    private val viewModel by lazy { HistoryViewModel(repository, FixedTimestampFormatter, now = { clock }) }
+    private val viewModel by lazy { HistoryViewModel(repository, FixedTimestampFormatter, clock = { clock }) }
 
     @BeforeTest
     fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -109,5 +115,34 @@ class HistoryViewModelTest {
         repository.recordWorkout(IntervalConfig(), elapsedSeconds = 60)
         viewModel.clear()
         assertTrue(viewModel.state.value.isEmpty)
+    }
+
+    @Test
+    fun `the headings and the week move on at midnight with the screen open`() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        clock = 30 * DAY + DAY - 1_000
+        repository.recordWorkout(tabata, tabata.totalSeconds)
+        val viewModel = HistoryViewModel(repository, FixedTimestampFormatter, clock = { clock })
+        assertEquals(listOf(HistoryDay.Today), viewModel.state.value.sections.map { it.day })
+
+        clock = 31 * DAY
+        advanceTimeBy(60_001)
+
+        assertEquals(listOf(HistoryDay.Yesterday), viewModel.state.value.sections.map { it.day })
+        assertEquals(
+            listOf(false, false, false, false, false, true, false),
+            viewModel.state.value.week.map {
+                it.seconds >
+                    0
+            },
+        )
+        viewModel.viewModelScope.cancel()
+    }
+
+    @Test
+    fun `a week tally fills days without workouts with zero`() {
+        val week = weekTally(secondsByDay = mapOf(10L to 60, 4L to 30, 3L to 99), today = 10, todayWeekday = 1)
+        assertEquals(listOf(2, 3, 4, 5, 6, 7, 1), week.map { it.weekday })
+        assertEquals(listOf(30, 0, 0, 0, 0, 0, 60), week.map { it.seconds })
     }
 }

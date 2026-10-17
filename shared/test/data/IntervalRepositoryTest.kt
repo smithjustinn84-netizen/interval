@@ -17,6 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -57,7 +58,7 @@ class IntervalRepositoryTest {
         val stored = storage.settings.data.first()
         val slow = SlowDataStore()
         val scope = CoroutineScope(backgroundScope.coroutineContext + UnconfinedTestDispatcher(testScheduler))
-        val repository = IntervalRepository(slow, storage.history, storage.presets, scope, now = { clock })
+        val repository = IntervalRepository(slow, storage.history, storage.presets, scope, clock = { clock })
         assertFalse(repository.ready.value)
         assertEquals(IntervalConfig(), repository.config.value)
 
@@ -77,9 +78,30 @@ class IntervalRepositoryTest {
             override fun observeAll(): Flow<List<HistoryEntity>> = flow { error("disk on fire") }
         }
         val scope = CoroutineScope(Dispatchers.Unconfined)
-        val repository = IntervalRepository(storage.settings, broken, storage.presets, scope, now = { clock })
+        val repository = IntervalRepository(storage.settings, broken, storage.presets, scope, clock = { clock })
         assertTrue(repository.ready.value)
         assertEquals(emptyList(), repository.history.value)
+    }
+
+    @Test
+    fun `a list whose read fails once follows the database again`() = runTest {
+        storage.repository().recordWorkout(IntervalConfig(), elapsedSeconds = 5)
+        var reads = 0
+        val flaky = object : HistoryDao by storage.history {
+            // Room's flow queries again each time it is collected; this one fails the first time.
+            override fun observeAll(): Flow<List<HistoryEntity>> = flow {
+                if (reads++ == 0) error("disk hiccup")
+                emitAll(storage.history.observeAll())
+            }
+        }
+        val scope = deferredStorageScope()
+        val repository = IntervalRepository(storage.settings, flaky, storage.presets, scope, clock = { clock })
+        testScheduler.runCurrent()
+        assertTrue(repository.ready.value)
+        assertEquals(emptyList(), repository.history.value)
+
+        testScheduler.advanceUntilIdle()
+        assertEquals(1, repository.history.value.size)
     }
 
     @Test

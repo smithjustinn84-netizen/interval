@@ -68,7 +68,7 @@ private fun preferencesAt(path: String): DataStore<Preferences> = preferenceStor
 }
 
 /** One Koin module per domain; add new ones to [appModules]. */
-val timerModule: Module = module {
+val dataModule: Module = module {
     single { WallClock(::epochMillisNow) }
     single {
         IntervalRepository(
@@ -76,7 +76,7 @@ val timerModule: Module = module {
             historyDao = get(),
             presetDao = get(),
             scope = get(StorageScope),
-            now = get<WallClock>()::nowMillis,
+            clock = get(),
         )
     }
 }
@@ -86,7 +86,7 @@ val timerModule: Module = module {
  * database and DataStore built from them (tests swap in fakes).
  */
 fun appModules(platformModule: Module, storage: Module = storageModule): List<Module> =
-    listOf(platformModule, storage, timerModule)
+    listOf(platformModule, storage, dataModule)
 
 /**
  * Keeps the Koin container alive across Android configuration changes and closes it when the app

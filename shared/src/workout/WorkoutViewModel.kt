@@ -31,6 +31,9 @@ class WorkoutViewModel(
     private val timeSource: TimeSource.WithComparableMarks = TimeSource.Monotonic,
 ) : ViewModel() {
     private val config = repository.config.value
+
+    /** Read once at start, like the configuration: a setting changed mid-workout applies next time. */
+    private val keepScreenOn = repository.appSettings.value.keepScreenOn
     private var engine: WorkoutState
     private var running = false
     private var ended = false
@@ -61,9 +64,6 @@ class WorkoutViewModel(
     }
 
     val state: StateFlow<WorkoutUiState> = _state.asStateFlow()
-
-    /** Read once at start, like the configuration: a setting changed mid-workout applies next time. */
-    val keepScreenOn: Boolean = repository.appSettings.value.keepScreenOn
 
     fun togglePause() {
         if (running) pause() else resume()
@@ -174,7 +174,9 @@ class WorkoutViewModel(
         ended = ended,
         presetName = presetName,
         elapsedSeconds = activeSeconds,
-    ).copy(presets = presets)
+        presets = presets,
+        keepScreenOn = keepScreenOn,
+    )
 
     private fun play(cues: List<Cue>) {
         val settings = repository.cueSettings.value

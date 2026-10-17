@@ -12,6 +12,7 @@ import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.Cue
+import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.stepped
 import dev.justinsmith.interval.timer.withValue
 import dev.justinsmith.interval.workout.playCue
@@ -34,20 +35,17 @@ class SettingsViewModel(
     private val repository: IntervalRepository,
     private val player: CuePlayer,
 ) : ViewModel() {
-    val state: StateFlow<SettingsUiState> = combine(
-        repository.cueSettings,
-        repository.config,
-        repository.appSettings,
-    ) { cues, config, app -> SettingsUiState(cues, config.prepSeconds, app) }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.Eagerly,
-            initialValue = SettingsUiState(
-                repository.cueSettings.value,
-                repository.config.value.prepSeconds,
-                repository.appSettings.value,
-            ),
-        )
+    val state: StateFlow<SettingsUiState> =
+        combine(repository.cueSettings, repository.config, repository.appSettings, ::buildState)
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Eagerly,
+                initialValue = buildState(
+                    repository.cueSettings.value,
+                    repository.config.value,
+                    repository.appSettings.value,
+                ),
+            )
 
     fun toggle(toggle: CueToggle) {
         repository.updateCueSettings { cues ->
@@ -86,4 +84,7 @@ class SettingsViewModel(
     fun setTheme(theme: ThemeMode) {
         repository.updateAppSettings { it.copy(theme = theme) }
     }
+
+    private fun buildState(cues: CueSettings, config: IntervalConfig, app: AppSettings) =
+        SettingsUiState(cues, config.prepSeconds, app)
 }

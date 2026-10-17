@@ -107,7 +107,7 @@ class FakeStorage {
      * how a test catches code that reads a value back before its write has landed.
      */
     fun repository(
-        now: () -> Long = { 0L },
+        now: WallClock = WallClock { 0L },
         scope: CoroutineScope = CoroutineScope(Dispatchers.Unconfined),
     ): IntervalRepository = IntervalRepository(settings, history, presets, scope, now)
 }

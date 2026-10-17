@@ -35,7 +35,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.common_cancel
 import dev.justinsmith.interval.resources.duration_minutes
@@ -71,7 +70,9 @@ import dev.justinsmith.interval.resources.weekday_initial_4
 import dev.justinsmith.interval.resources.weekday_initial_5
 import dev.justinsmith.interval.resources.weekday_initial_6
 import dev.justinsmith.interval.resources.weekday_initial_7
+import dev.justinsmith.interval.timer.SpokenDuration
 import dev.justinsmith.interval.timer.builtInPresets
+import dev.justinsmith.interval.timer.spokenDuration
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EmptyState
@@ -99,7 +100,7 @@ import org.koin.compose.currentKoinScope
 @Composable
 fun HistoryRoute(modifier: Modifier = Modifier) {
     val scope = currentKoinScope()
-    val viewModel = viewModel { HistoryViewModel(scope.get(), scope.get(), scope.get<WallClock>()::nowMillis) }
+    val viewModel = viewModel { HistoryViewModel(scope.get(), scope.get(), scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     HistoryScreen(state = state, onClear = viewModel::clear, modifier = modifier)
 }

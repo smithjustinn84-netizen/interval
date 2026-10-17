@@ -151,7 +151,7 @@ class WorkoutScreenTest {
 
     @Test
     fun `a finished workout shows its summary`() = runUiTest {
-        setThemedContent { Screen(done.toUiState(running = false).copy(canSavePreset = true)) }
+        setThemedContent { Screen(done.toUiState(running = false)) }
         onNodeWithText("Saved to history").assertExists()
         onNodeWithText("8 rounds · 5:55 total").assertExists()
         onNodeWithText("Custom · 30s on · 15s off · ×8").assertExists()

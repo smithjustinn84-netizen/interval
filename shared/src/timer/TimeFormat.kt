@@ -2,6 +2,7 @@ package dev.justinsmith.interval.timer
 
 internal const val MILLIS_PER_SECOND = 1000L
 private const val SECONDS_PER_MINUTE = 60
+internal const val DAYS_PER_WEEK = 7
 
 /** "0:30", "12:05". Negative input reads as zero. */
 fun formatClock(seconds: Int): String {
@@ -24,4 +25,18 @@ sealed interface ShortDuration {
 fun shortDuration(seconds: Int): ShortDuration {
     val wholeMinutes = seconds >= SECONDS_PER_MINUTE && seconds % SECONDS_PER_MINUTE == 0
     return if (wholeMinutes) ShortDuration.Minutes(seconds / SECONDS_PER_MINUTE) else ShortDuration.Seconds(seconds)
+}
+
+/** A day's time as the week chart reads it out: in seconds under a minute, in whole minutes from one. */
+sealed interface SpokenDuration {
+    data class Seconds(val seconds: Int) : SpokenDuration
+
+    data class Minutes(val minutes: Int) : SpokenDuration
+}
+
+/** [seconds] as [SpokenDuration]; minutes are rounded to the nearest. */
+fun spokenDuration(seconds: Int): SpokenDuration = if (seconds < SECONDS_PER_MINUTE) {
+    SpokenDuration.Seconds(seconds)
+} else {
+    SpokenDuration.Minutes((seconds + SECONDS_PER_MINUTE / 2) / SECONDS_PER_MINUTE)
 }

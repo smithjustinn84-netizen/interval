@@ -1,10 +1,12 @@
 package dev.justinsmith.interval.data
 
 import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import co.touchlab.kermit.Logger
+import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
@@ -14,12 +16,14 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -62,7 +66,7 @@ class IntervalRepository(
     private val historyDao: HistoryDao,
     private val presetDao: PresetDao,
     private val scope: CoroutineScope,
-    private val now: () -> Long,
+    private val clock: WallClock,
 ) {
     private val log = Logger.withTag("IntervalRepository")
 
@@ -137,18 +141,25 @@ class IntervalRepository(
     }
 
     fun updateConfig(transform: (IntervalConfig) -> IntervalConfig) {
-        _config.update(transform)
-        persist { settings.edit { it.write(_config.value) } }
+        updateSetting(_config, transform) { prefs, config -> prefs.write(config) }
     }
 
     fun updateCueSettings(transform: (CueSettings) -> CueSettings) {
-        _cueSettings.update(transform)
-        persist { settings.edit { it.write(_cueSettings.value) } }
+        updateSetting(_cueSettings, transform) { prefs, cues -> prefs.write(cues) }
     }
 
     fun updateAppSettings(transform: (AppSettings) -> AppSettings) {
-        _appSettings.update(transform)
-        persist { settings.edit { it.write(_appSettings.value) } }
+        updateSetting(_appSettings, transform) { prefs, app -> prefs.write(app) }
+    }
+
+    // In memory at once, so the next read sees it; on disk in the background, the value as it is then.
+    private fun <T> updateSetting(
+        value: MutableStateFlow<T>,
+        transform: (T) -> T,
+        write: (MutablePreferences, T) -> Unit,
+    ) {
+        value.update(transform)
+        persist { settings.edit { write(it, value.value) } }
     }
 
     /** Takes [preset]'s work, rest and rounds; the get-ready countdown stays the user's own setting. */
@@ -196,7 +207,7 @@ class IntervalRepository(
 
     /** Records a workout that ran for [elapsedSeconds]; [endedEarly] when it stopped before the last round. */
     fun recordWorkout(config: IntervalConfig, elapsedSeconds: Int, endedEarly: Boolean = false) {
-        val entry = HistoryEntry(now(), config, elapsedSeconds, endedEarly)
+        val entry = HistoryEntry(clock.nowMillis(), config, elapsedSeconds, endedEarly)
         persist { historyDao.insert(entry.toEntity()) }
     }
 
@@ -204,10 +215,16 @@ class IntervalRepository(
         persist { historyDao.clear() }
     }
 
-    private fun <T> Flow<List<T>>.orEmptyOnError(what: String): Flow<List<T>> = catch { e ->
-        log.e(e) { "Couldn't read $what" }
-        emit(emptyList())
-    }
+    // A failed read shows an empty list at once, so the app still starts, then is tried again a few times:
+    // `catch` alone ends the flow, and one bad read would stop the list following the database for good.
+    private fun <T> Flow<List<T>>.orEmptyOnError(what: String): Flow<List<T>> =
+        retryWhen { e, attempt ->
+            log.e(e) { "Couldn't read $what" }
+            if (attempt == 0L) emit(emptyList())
+            val again = e !is CancellationException && attempt < READ_RETRIES
+            if (again) delay(READ_RETRY_DELAY_MILLIS * (attempt + 1))
+            again
+        }.catch { emit(emptyList()) }
 
     private fun persist(write: suspend () -> Unit) {
         writes.trySend(write)
@@ -223,5 +240,10 @@ class IntervalRepository(
         } catch (e: Exception) {
             log.e(e) { "Couldn't save" }
         }
+    }
+
+    private companion object {
+        const val READ_RETRIES = 3L
+        const val READ_RETRY_DELAY_MILLIS = 500L
     }
 }

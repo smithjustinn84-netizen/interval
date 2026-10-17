@@ -49,11 +49,14 @@ data class WorkoutUiState(
     val presetName: String? = null,
     /** Time spent, for the summary. */
     val elapsed: String = "",
-    /** Offer "Save as preset" on the summary: no preset has this shape yet. */
-    val canSavePreset: Boolean = false,
     /** Every preset, so the summary's editor can say when a name or shape is taken. */
     val presets: List<Preset> = emptyList(),
+    /** Keep the display awake while the timer runs: the setting as it was when the workout started. */
+    val keepScreenOn: Boolean = false,
 ) {
+    /** Offer "Save as preset" on the summary: no preset has this shape yet. */
+    val canSavePreset: Boolean get() = presetName == null
+
     val rounds: Int get() = config.rounds
     val isDone: Boolean get() = phase == Phase.Done || ended
     val paused: Boolean get() = !running && !isDone
@@ -67,13 +70,15 @@ data class WorkoutUiState(
 
 /**
  * The screen's view of an engine state. [ended] marks a workout stopped early; [presetName] is the
- * preset matching its shape, if any; [elapsedSeconds] is the time the timer has run.
+ * preset matching its shape, if any, among [presets]; [elapsedSeconds] is the time the timer has run.
  */
 fun WorkoutState.toUiState(
     running: Boolean,
     ended: Boolean = false,
     presetName: String? = null,
     elapsedSeconds: Int = 0,
+    presets: List<Preset> = emptyList(),
+    keepScreenOn: Boolean = false,
 ): WorkoutUiState {
     val rounds = config.rounds
     val secondsLeft = ceilSeconds(remainingMillis)
@@ -110,6 +115,7 @@ fun WorkoutState.toUiState(
         ended = ended,
         presetName = presetName,
         elapsed = formatClock(elapsedSeconds),
-        canSavePreset = presetName == null,
+        presets = presets,
+        keepScreenOn = keepScreenOn,
     )
 }
