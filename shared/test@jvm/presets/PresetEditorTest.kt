@@ -154,6 +154,19 @@ class PresetEditorTest {
     }
 
     @Test
+    fun `on a tablet the editor and its edit sheet open beside the presets and save`() = runUiTest(Window.Tablet) {
+        setThemedContent { Screen() }
+        onNodeWithContentDescription("New preset").performClick()
+        onNodeWithText("×6").performClick()
+        onNodeWithContentDescription("More rounds").performClick()
+        onNodeWithText("Done").performClick()
+        onNodeWithText("×7").assertExists()
+        onAllNodesWithText("Save").onLast().performScrollTo().performClick()
+        assertEquals(listOf(Preset("40/20 ×7", current.copy(rounds = 7))), saved)
+        onNodeWithText("New preset").assertDoesNotExist()
+    }
+
+    @Test
     fun `the editor keeps its name and shape across a restore`() = runUiTest {
         val restoration = StateRestoration(this)
         restoration.setContent { Screen() }

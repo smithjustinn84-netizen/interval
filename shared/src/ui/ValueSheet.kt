@@ -46,7 +46,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * The edit sheet for one value: big − / + steppers (hold to repeat), one-tap common values, the
- * session total it leads to, and Done. Changes apply as they are made; Done or a swipe down closes.
+ * session total it leads to, and Done. Changes apply as they are made; Done, or any way out of the sheet, closes.
  */
 @Composable
 fun ValueSheet(

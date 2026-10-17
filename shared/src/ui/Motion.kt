@@ -17,7 +17,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.interaction.InteractionSource
@@ -97,6 +99,16 @@ fun enterGrowing(delayMillis: Int = 0): EnterTransition =
 fun exitShrinking(): ExitTransition =
     fadeOut(tween(Motion.EXIT_MILLIS)) +
         scaleOut(tween(Motion.EXIT_MILLIS, easing = ExitEasing), targetScale = Motion.FADE_THROUGH_SCALE)
+
+/** A side sheet arriving from the end edge: it slides in whole as it fades up. [rtl] puts the end on the left. */
+fun enterFromEnd(rtl: Boolean): EnterTransition =
+    fadeIn(tween(Motion.ENTER_MILLIS)) +
+        slideInHorizontally(tween(Motion.ENTER_MILLIS, easing = EnterEasing)) { if (rtl) -it else it }
+
+/** The reverse of [enterFromEnd], quicker. */
+fun exitToEnd(rtl: Boolean): ExitTransition =
+    fadeOut(tween(Motion.EXIT_MILLIS, easing = ExitEasing)) +
+        slideOutHorizontally(tween(Motion.EXIT_MILLIS, easing = ExitEasing)) { if (rtl) -it else it }
 
 /**
  * Text whose value changes in place, like a counter's drum: the old value slips away as the new

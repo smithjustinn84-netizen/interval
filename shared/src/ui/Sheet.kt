@@ -1,5 +1,8 @@
 package dev.justinsmith.interval.ui
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -7,40 +10,55 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.window.core.layout.WindowSizeClass
+import com.composeunstyled.DialogPanel
 import com.composeunstyled.DragIndication
 import com.composeunstyled.Scrim
 import com.composeunstyled.Sheet
 import com.composeunstyled.SheetDetent
+import com.composeunstyled.UnstyledDialog
 import com.composeunstyled.UnstyledModalBottomSheet
 import com.composeunstyled.rememberModalBottomSheetState
 import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.sheet_close_cd
 import dev.justinsmith.interval.resources.value_sheet_drag_handle_cd
 import kotlinx.coroutines.flow.dropWhile
 import kotlinx.coroutines.flow.first
@@ -48,17 +66,36 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * A modal bottom sheet drawn from Interval tokens: the surface, rounded on top, a drag handle and
- * [content] under it, spaced as a form. The content gets [hide] for its own way out (Done, Cancel,
- * Save). Every way out, a swipe, back, Esc and a tap on the scrim included, ends with the sheet
- * slid away, and only then does the caller hear [onDismiss]. Screen readers announce it by [title].
+ * A modal sheet drawn from Interval tokens: the surface, and [content] spaced as a form under a way
+ * out. The content gets [hide] for its own way out (Done, Cancel, Save). Every way out, back, Esc
+ * and a tap on the scrim included, ends with the sheet slid away, and only then does the caller hear
+ * [onDismiss]. Screen readers announce it by [title].
  *
- * The sheet stops under the status bar and above the keyboard; content taller than that room (a
- * phone on its side, or the keyboard up over the preset editor) scrolls, so its last button is
- * always reachable.
+ * On a phone it rises from the bottom under a drag handle, and a swipe down closes it too. A window
+ * at least Material's medium width and height (a tablet, a desktop, an unfolded foldable) gets a
+ * side sheet instead: full height at the end edge, under a close button. Either one scrolls content
+ * taller than its room (a phone on its side, or the keyboard up over the preset editor), so its last
+ * button is always reachable.
  */
 @Composable
 fun IntervalSheet(
+    title: String,
+    onDismiss: () -> Unit,
+    content: @Composable ColumnScope.(hide: () -> Unit) -> Unit,
+) {
+    // Read here, not inside the modal, which may be a window of its own. Kept for as long as the
+    // sheet is open, so resizing the window mid-edit does not swap the sheet and lose its content.
+    val windowSize = currentWindowAdaptiveInfoV2().windowSizeClass
+    val beside = remember {
+        windowSize.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND) &&
+            windowSize.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)
+    }
+    if (beside) SideSheet(title, onDismiss, content) else BottomSheet(title, onDismiss, content)
+}
+
+/** The phone's sheet: it rises whole from the bottom, stops under the status bar and above the keyboard. */
+@Composable
+private fun BottomSheet(
     title: String,
     onDismiss: () -> Unit,
     content: @Composable ColumnScope.(hide: () -> Unit) -> Unit,
@@ -113,6 +150,89 @@ fun IntervalSheet(
                     )
                     Column(
                         Modifier.fillMaxWidth().padding(top = Spacing.space8).verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.space20),
+                    ) {
+                        content(hide)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The wide window's sheet: full height at the end edge, sliding in over the scrim. It has no drag
+ * handle, so a close button heads it; the safe-drawing inset keeps its content clear of the bars
+ * and the keyboard.
+ */
+@Composable
+private fun SideSheet(
+    title: String,
+    onDismiss: () -> Unit,
+    content: @Composable ColumnScope.(hide: () -> Unit) -> Unit,
+) {
+    val palette = IntervalTheme.palette
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    // Opened after the first frame, so the slide in plays.
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { visible = true }
+    val hide: () -> Unit = { visible = false }
+    val currentOnDismiss by rememberUpdatedState(onDismiss)
+    UnstyledDialog(
+        visible = visible,
+        onDismissRequest = hide,
+        overlay = {
+            Scrim(
+                scrimColor = scrimColor(),
+                enter = fadeIn(tween(Motion.ENTER_MILLIS)),
+                exit = fadeOut(tween(Motion.EXIT_MILLIS)),
+            )
+        },
+    ) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.CenterEnd) {
+            DialogPanel(
+                Modifier
+                    .fillMaxHeight()
+                    .width(Sizes.sideSheet)
+                    .clip(Corners.sideSheet)
+                    .background(palette.surface),
+                paneTitle = title,
+                enter = enterFromEnd(rtl),
+                exit = exitToEnd(rtl),
+            ) {
+                ModalBackHandler(hide)
+                // The panel leaves only once its slide out has played: that is when the caller hears.
+                // A caller that drops the sheet while it is open has closed it already.
+                DisposableEffect(Unit) { onDispose { if (!visible) currentOnDismiss() } }
+                // The panel moves focus to its first focus target when it opens. Be that target, so a
+                // text field waits for a tap: on iOS a field focused this early gets no keyboard, and
+                // what is typed into it surfaces later, doubled.
+                Column(
+                    Modifier
+                        .focusTarget()
+                        .fillMaxSize()
+                        .windowInsetsPadding(
+                            WindowInsets.safeDrawing.only(WindowInsetsSides.Vertical + WindowInsetsSides.End),
+                        )
+                        .padding(
+                            start = Spacing.space16,
+                            top = Spacing.space8,
+                            end = Spacing.space16,
+                            bottom = Spacing.space24,
+                        ),
+                ) {
+                    IconAction(
+                        IntervalIcons.Close,
+                        stringResource(Res.string.sheet_close_cd),
+                        onClick = hide,
+                        modifier = Modifier.align(Alignment.End),
+                    )
+                    Column(
+                        Modifier
+                            .weight(1f, fill = false)
+                            .fillMaxWidth()
+                            .padding(top = Spacing.space8)
+                            .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(Spacing.space20),
                     ) {
                         content(hide)

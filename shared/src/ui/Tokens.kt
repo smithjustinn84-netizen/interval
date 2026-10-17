@@ -40,6 +40,9 @@ object Corners {
 
     /** A bottom sheet: rounded on top only. */
     val sheet = RoundedCornerShape(topStart = Radius.radius24, topEnd = Radius.radius24)
+
+    /** A side sheet: rounded on the edge facing the app, which flips with the layout direction. */
+    val sideSheet = RoundedCornerShape(topStart = Radius.radius24, bottomStart = Radius.radius24)
 }
 
 /** Fixed dimensions: the design system's `size-*` tokens, mostly touch targets. */
@@ -196,8 +199,14 @@ object Sizes {
     /** The edit sheet's − / + buttons, a size up from [stepper]. */
     val sheetStepper = 68.dp
 
-    /** The widest the edit sheet grows; wider windows centre it. */
+    /**
+     * The widest the bottom sheet grows. Only short windows (a phone on its side) are wider and
+     * centre it: tablets and desktops get the side sheet instead.
+     */
     val sheet = 640.dp
+
+    /** A side sheet's width: about a phone's, the width the sheets' content is laid out for. */
+    val sideSheet = 420.dp
 
     /** The edit sheet's drag handle. */
     val handleWidth = 36.dp
