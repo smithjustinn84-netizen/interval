@@ -4,6 +4,7 @@ package dev.justinsmith.interval.history
 
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.data.BodySettings
+import dev.justinsmith.interval.data.PlanSchedule
 import dev.justinsmith.interval.fakes.DAY_MILLIS
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
@@ -11,6 +12,7 @@ import dev.justinsmith.interval.fakes.MainDispatcherTest
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
+import dev.justinsmith.interval.timer.epochDayOf
 import dev.justinsmith.interval.timer.estimateCalories
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -26,28 +28,38 @@ import kotlin.test.assertTrue
 
 private const val DAY = DAY_MILLIS
 private val tabata = builtInPresets.first().config
+private val hiit = builtInPresets[1]
+
+// Thursday 15 October 2026, and the Monday of its week.
+private val TODAY = epochDayOf(2026, 10, 15)
+private val MONDAY = TODAY - 3
 
 class HistoryViewModelTest : MainDispatcherTest() {
-    private var clock = 30 * DAY
+    private var clock = TODAY * DAY + DAY / 2
     private val repository = FakeStorage().repository(now = { clock })
     private val viewModel by lazy { HistoryViewModel(repository, FixedTimestampFormatter, clock = { clock }) }
+
+    private fun at(day: Long) {
+        clock = day * DAY + DAY / 2
+    }
 
     @Test
     fun `workouts are grouped by day newest first and name their preset`() {
         val custom = IntervalConfig(prepSeconds = 0, workSeconds = 25, restSeconds = 5, rounds = 4)
-        clock = 20 * DAY
+        at(TODAY - 10)
         repository.recordWorkout(tabata, tabata.totalSeconds)
-        clock = 29 * DAY
+        at(TODAY - 1)
         repository.recordWorkout(custom, custom.totalSeconds)
         repository.recordWorkout(tabata, elapsedSeconds = 90, endedEarly = true)
-        clock = 30 * DAY
+        at(TODAY)
 
         val sections = viewModel.state.value.sections
-        assertEquals(listOf(HistoryDay.Yesterday, HistoryDay.On("day 20")), sections.map { it.day })
-        assertEquals(listOf(29L, 20L), sections.map { it.dayNumber })
+        assertEquals(listOf(HistoryDay.Yesterday, HistoryDay.On("day ${TODAY - 10}")), sections.map { it.day })
+        assertEquals(listOf(TODAY - 1, TODAY - 10), sections.map { it.dayNumber })
+        val time = "at ${(TODAY - 1) * DAY + DAY / 2}"
         val (ended, customRow) = sections[0].items
-        assertEquals(HistoryItem("Tabata", tabata, endedEarly = true, time = "at ${29 * DAY}", total = "1:30"), ended)
-        assertEquals(HistoryItem(null, custom, endedEarly = false, time = "at ${29 * DAY}", total = "1:55"), customRow)
+        assertEquals(HistoryItem("Tabata", tabata, endedEarly = true, time = time, total = "1:30", id = 3), ended)
+        assertEquals(HistoryItem(null, custom, endedEarly = false, time = time, total = "1:55", id = 2), customRow)
     }
 
     @Test
@@ -57,65 +69,114 @@ class HistoryViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun `the week tally counts only the last seven days`() {
-        clock = 20 * DAY
+    fun `the week runs Monday to Sunday and counts only its own days`() {
+        at(MONDAY - 1)
         repository.recordWorkout(tabata, tabata.totalSeconds)
-        clock = 29 * DAY
+        at(MONDAY)
         repository.recordWorkout(tabata, tabata.totalSeconds)
         repository.recordWorkout(tabata, elapsedSeconds = 60)
-        clock = 30 * DAY
+        at(TODAY)
 
         val state = viewModel.state.value
         assertEquals(2, state.weekCount)
-        assertEquals("5:00", state.weekTotal)
-    }
-
-    @Test
-    fun `the week chart has a bar per day ending today`() {
-        clock = 24 * DAY + DAY / 2
-        repository.recordWorkout(tabata, tabata.totalSeconds)
-        clock = 30 * DAY + DAY / 2
-        repository.recordWorkout(tabata, elapsedSeconds = 60)
-        repository.recordWorkout(tabata, elapsedSeconds = 30)
-
-        val week = viewModel.state.value.week
-        // Day 30 is a Saturday (day 0, 1 January 1970, was a Thursday), so the chart runs Sunday to Saturday.
-        assertEquals(listOf(7, 1, 2, 3, 4, 5, 6), week.map { it.weekday })
-        assertEquals(listOf(240, 0, 0, 0, 0, 0, 90), week.map { it.seconds })
-        assertEquals(listOf(false, false, false, false, false, false, true), week.map { it.today })
-        assertEquals(240, viewModel.state.value.weekMaxSeconds)
-    }
-
-    @Test
-    fun `a week with no workouts has no time on any day`() {
-        clock = 20 * DAY
-        repository.recordWorkout(IntervalConfig(), elapsedSeconds = 60)
-        clock = 30 * DAY
-        assertTrue(viewModel.state.value.week.none { it.seconds > 0 })
+        assertEquals("5:00", state.summary.time)
+        assertEquals((1..7).toList(), state.week.map { it.weekday })
+        assertEquals(listOf(true, false, false, false, false, false, false), state.week.map { it.seconds > 0 })
+        assertEquals(listOf(false, false, false, true, false, false, false), state.week.map { it.today })
+        assertEquals(DayState.Done, state.week.first().state)
     }
 
     @Test
     fun `calories show only once a weight is set`() {
         repository.recordWorkout(tabata, tabata.totalSeconds, workSeconds = 160)
-        assertNull(viewModel.state.value.weekCalories)
+        assertNull(viewModel.state.value.summary.calories)
         assertNull(viewModel.state.value.sections.single().items.single().calories)
 
         repository.updateAppSettings { it.copy(body = BodySettings(weightKg = 70.0, effort = Effort.Hard)) }
         val expected = estimateCalories(160, tabata.totalSeconds - 160, 70.0, Effort.Hard)
         assertEquals(expected, viewModel.state.value.sections.single().items.single().calories)
-        assertEquals(expected, viewModel.state.value.weekCalories)
+        assertEquals(expected, viewModel.state.value.summary.calories)
     }
 
     @Test
-    fun `the week's calories count only the last seven days`() {
-        repository.updateAppSettings { it.copy(body = BodySettings(weightKg = 70.0)) }
-        clock = 20 * DAY
+    fun `a weekly plan is up next and its workout reads as planned once done`() {
+        at(MONDAY)
+        repository.planWeekly(hiit, setOf(4, 5))
+        at(TODAY)
+        val before = viewModel.state.value
+        assertEquals(listOf(TODAY, TODAY + 1), before.upNext.map { it.epochDay })
+        assertEquals(listOf(HistoryDay.Today, HistoryDay.Tomorrow), before.upNext.map { it.day })
+        assertEquals(DayState.Planned, before.week[3].state)
+        assertTrue(before.hasPlans)
+        assertTrue(!before.isEmpty)
+
+        repository.recordWorkout(hiit.config, hiit.config.totalSeconds)
+        val after = viewModel.state.value
+        assertEquals(listOf(TODAY + 1), after.upNext.map { it.epochDay })
+        assertTrue(after.sections.single().items.single().planned)
+        assertEquals(1, after.summary.plannedDone)
+    }
+
+    @Test
+    fun `the goal and streak show once a goal is set`() {
+        at(MONDAY - 7)
         repository.recordWorkout(tabata, tabata.totalSeconds)
-        clock = 30 * DAY
+        at(TODAY)
         repository.recordWorkout(tabata, tabata.totalSeconds)
-        val (today, older) = viewModel.state.value.sections.map { it.items.single().calories!! }
-        assertEquals(today, older)
-        assertEquals(today, viewModel.state.value.weekCalories)
+        assertNull(viewModel.state.value.goal)
+        assertNull(viewModel.state.value.streak)
+
+        repository.updateAppSettings { it.copy(weeklyGoal = 1) }
+        assertEquals(1, viewModel.state.value.goal)
+        assertEquals(Streak(current = 2, best = 2), viewModel.state.value.streak)
+    }
+
+    @Test
+    fun `the month moves back and forth and its range sums its days`() {
+        at(epochDayOf(2026, 9, 30))
+        repository.recordWorkout(tabata, elapsedSeconds = 60)
+        at(TODAY)
+        repository.recordWorkout(tabata, elapsedSeconds = 120)
+        viewModel.setRange(TrainingRange.Month)
+        val october = viewModel.state.value
+        assertEquals("10/2026", october.month.title)
+        assertTrue(october.month.current)
+        assertEquals(1, october.summary.count)
+        assertEquals(35, october.month.cells.size)
+
+        viewModel.shiftMonth(-1)
+        val september = viewModel.state.value
+        assertEquals("9/2026", september.month.title)
+        assertEquals(false, september.month.current)
+        assertEquals("1:00", september.summary.time)
+
+        viewModel.setRange(TrainingRange.AllTime)
+        assertEquals(2, viewModel.state.value.summary.count)
+        assertEquals("day ${epochDayOf(2026, 9, 30)}", viewModel.state.value.summary.since)
+    }
+
+    @Test
+    fun `a day opens with its plans and a one-off can be removed`() {
+        repository.planOnce(hiit, TODAY + 2)
+        viewModel.openDay(TODAY + 2)
+        val sheet = requireNotNull(viewModel.state.value.daySheet)
+        assertEquals(HistoryDay.On("day ${TODAY + 2}"), sheet.day)
+        val plan = sheet.plans.single()
+        assertEquals(PlanState.Open, plan.state)
+        assertEquals(false, plan.weekly)
+
+        viewModel.removePlanned(plan.planId)
+        assertEquals(emptyList(), viewModel.state.value.daySheet?.plans)
+        assertEquals(emptyList(), repository.planned.value.filter { it.schedule == PlanSchedule.Once(TODAY + 2) })
+        viewModel.openDay(null)
+        assertNull(viewModel.state.value.daySheet)
+    }
+
+    @Test
+    fun `starting a plan puts its shape on the Timer`() {
+        viewModel.putOnTimer(hiit.name, hiit.config)
+        assertEquals(hiit.config.workSeconds, repository.config.value.workSeconds)
+        assertEquals(hiit.config.rounds, repository.config.value.rounds)
     }
 
     @Test
@@ -128,29 +189,20 @@ class HistoryViewModelTest : MainDispatcherTest() {
     @Test
     fun `the headings and the week move on at midnight with the screen open`() = runTest {
         Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
-        clock = 30 * DAY + DAY - 1_000
+        // Sunday night, then Monday: a new week.
+        val sunday = MONDAY + 6
+        clock = sunday * DAY + DAY - 1_000
         repository.recordWorkout(tabata, tabata.totalSeconds)
         val viewModel = HistoryViewModel(repository, FixedTimestampFormatter, clock = { clock })
         assertEquals(listOf(HistoryDay.Today), viewModel.state.value.sections.map { it.day })
+        assertEquals(1, viewModel.state.value.weekCount)
 
-        clock = 31 * DAY
+        clock = (sunday + 1) * DAY
         advanceTimeBy(60_001)
 
         assertEquals(listOf(HistoryDay.Yesterday), viewModel.state.value.sections.map { it.day })
-        assertEquals(
-            listOf(false, false, false, false, false, true, false),
-            viewModel.state.value.week.map {
-                it.seconds >
-                    0
-            },
-        )
+        assertEquals(0, viewModel.state.value.weekCount)
+        assertEquals(sunday + 1, viewModel.state.value.week.first().epochDay)
         viewModel.viewModelScope.cancel()
-    }
-
-    @Test
-    fun `a week tally fills days without workouts with zero`() {
-        val week = weekTally(secondsByDay = mapOf(10L to 60, 4L to 30, 3L to 99), today = 10, todayWeekday = 1)
-        assertEquals(listOf(2, 3, 4, 5, 6, 7, 1), week.map { it.weekday })
-        assertEquals(listOf(30, 0, 0, 0, 0, 0, 60), week.map { it.seconds })
     }
 }

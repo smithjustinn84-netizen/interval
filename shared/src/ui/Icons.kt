@@ -38,6 +38,22 @@ object IntervalIcons {
     val Chevron: ImageVector = lineIcon("Chevron", "M9 6l6 6-6 6")
     val Check: ImageVector = lineIcon("Check", "M5 12l5 5L20 7")
 
+    /** The way back a month on History's calendar: [Chevron] turned round. */
+    val ChevronBack: ImageVector = lineIcon("ChevronBack", "M15 6l-6 6 6 6")
+
+    /** History's way to the plan: a calendar page with a plus. */
+    val Plan: ImageVector = lineIcon(
+        "Plan",
+        "M6 5h12a3 3 0 0 1 3 3v10a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-10a3 3 0 0 1 3 -3z",
+        "M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5",
+    )
+
+    /** The weekly streak's flame, beside its count. */
+    val Streak: ImageVector = lineIcon(
+        "Streak",
+        "M12 3c1 4 5 5 5 10a5 5 0 0 1 -10 0c0 -2 1 -3 2 -4c0 2 1 3 2 3c0 -3 -1 -5 1 -9z",
+    )
+
     /** The filled triangle inside Start workout. */
     val Play: ImageVector = ImageVector.Builder("Play", 24.dp, 24.dp, VIEWPORT, VIEWPORT).apply {
         addPath(

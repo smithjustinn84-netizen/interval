@@ -102,6 +102,30 @@ object Sizes {
     /** A day with no workout in the week chart. */
     val weekBarEmpty = 6.dp
 
+    /** A planned or missed day in the week chart: an outlined or filled block this tall. */
+    val weekBarMark = 32.dp
+
+    /** The ring of this week's workouts against the weekly goal, and its stroke. */
+    val goalRing = 76.dp
+    val goalRingStroke = 8.dp
+
+    /** A swatch in the week chart's key. */
+    val legendSwatch = 10.dp
+
+    /** A day on History's month calendar: the cell that takes the tap, and the round mark of its state. */
+    val calendarCell = 44.dp
+    val calendarDay = 34.dp
+
+    /** The short bar under today on the calendar. */
+    val todayMarkWidth = 14.dp
+    val todayMarkHeight = 3.dp
+
+    /** The tallest bar of All time's weekly chart. */
+    val weeksChart = 96.dp
+
+    /** The small glyph inside a chip, such as the streak's flame. */
+    val chipIcon = 16.dp
+
     /** The pill of phase colour at the start of a History row. */
     val historyMarkHeight = 40.dp
 

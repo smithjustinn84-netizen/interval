@@ -82,7 +82,7 @@ class AppNavigationTest {
         tab("Presets").assertIsSelected()
 
         tab("History").performClick()
-        onNodeWithText("Finished workouts show up here.").assertExists()
+        onNodeWithText("Train to a plan").assertExists()
 
         tab("Timer").performClick()
         onNodeWithText("Start workout").assertExists()

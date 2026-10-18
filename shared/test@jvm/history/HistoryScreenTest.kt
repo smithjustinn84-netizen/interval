@@ -2,7 +2,6 @@
 
 package dev.justinsmith.interval.history
 
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -18,130 +17,189 @@ import dev.justinsmith.interval.ui.setThemedContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-private val tabata = builtInPresets.first().config
+private val tabata = builtInPresets[0]
+private val hiit = builtInPresets[1]
 
-/** Monday to Sunday, Sunday being today, with [seconds] on each day. */
-private fun week(vararg seconds: Int) = seconds.mapIndexed { i, s ->
-    DayTally(
+/** Monday to Sunday, Thursday being today, each day in [states]. */
+private fun week(vararg states: DayState) = states.mapIndexed { i, state ->
+    DayCell(
+        20_738L + i,
         weekday = i + 1,
-        seconds = s,
-        today =
-        i == 6,
+        dayOfMonth = 12 + i,
+        state,
+        seconds = if (state ==
+            DayState.Done
+        ) {
+            240
+        } else {
+            0
+        },
+        today = i == 3,
     )
 }
 
-private val week = week(0, 0, 0, 0, 0, 0, 355)
+private val restWeek = week(*Array(7) { DayState.Rest })
 
 private val oneWorkout = HistoryUiState(
     sections = listOf(
         HistorySection(
             HistoryDay.Today,
-            dayNumber = 9,
-            listOf(HistoryItem("Tabata", tabata, false, "7:42 PM", "4:00")),
+            dayNumber = 20_741,
+            listOf(HistoryItem("Tabata", tabata.config, false, "7:42 PM", "4:00", id = 7)),
         ),
     ),
+    summary = RangeSummary(1, "4:00", 240, null, 0, 0),
     weekCount = 1,
-    weekTotal = "5:55",
-    week = week,
+    week = restWeek,
 )
 
-private val empty = HistoryUiState(sections = emptyList(), weekCount = 0, weekTotal = "0:00", week = week)
+private val empty = HistoryUiState(sections = emptyList(), week = restWeek)
 
 class HistoryScreenTest {
-    private var cleared = 0
+    private val events = mutableListOf<String>()
 
-    @Composable
-    private fun Screen(state: HistoryUiState) {
-        HistoryScreen(state = state, onClear = { cleared++ })
-    }
+    private val actions = HistoryActions(
+        onClear = { events += "clear" },
+        onRange = { events += "range $it" },
+        onOpenDay = { events += "day $it" },
+        onStart = { name, _ -> events += "start $name" },
+        onRemovePlanned = { events += "remove $it" },
+        onOpenWorkout = { events += "open $it" },
+        onPlan = { events += "plan" },
+        onShowTimer = { events += "timer" },
+    )
 
     @Test
-    fun `finished workouts show under their day`() = runUiTest {
-        setThemedContent { Screen(oneWorkout) }
+    fun `finished workouts show under their day and open`() = runUiTest {
+        setThemedContent { HistoryScreen(oneWorkout, actions) }
         onNodeWithText("Today").assertExists()
-        onNodeWithText("Tabata").assertExists()
-        onNodeWithText("Last 7 days").assertExists()
-        onNodeWithContentDescription("Time per day this week: Today 6 minutes").assertExists()
+        onNodeWithText("Week").assertExists()
+        onNodeWithText("Tabata").performClick()
+        assertEquals(listOf("open 7"), events)
     }
 
     @Test
-    fun `a row names its preset or leads with its shape, and says when it ended early`() = runUiTest {
+    fun `a row names its preset or leads with its shape and says when it ended early or was planned`() = runUiTest {
         val custom = IntervalConfig(workSeconds = 25, restSeconds = 5, rounds = 4)
         val state = oneWorkout.copy(
             sections = listOf(
                 HistorySection(
                     HistoryDay.Yesterday,
-                    dayNumber = 8,
+                    dayNumber = 20_740,
                     listOf(
-                        HistoryItem("Tabata", tabata, endedEarly = true, "7:42 PM", "1:30"),
+                        HistoryItem("Tabata", tabata.config, endedEarly = true, "7:42 PM", "1:30", planned = true),
                         HistoryItem(null, custom, endedEarly = false, "6:15 PM", "1:40"),
                     ),
                 ),
-                HistorySection(HistoryDay.On("Sunday, Oct 11"), dayNumber = 1, emptyList()),
+                HistorySection(HistoryDay.On("Sunday, Oct 11"), dayNumber = 20_737, emptyList()),
             ),
         )
-        setThemedContent { Screen(state) }
+        setThemedContent { HistoryScreen(state, actions) }
         onNodeWithText("Yesterday").assertExists()
         onNodeWithText("Sunday, Oct 11").assertExists()
-        onNodeWithText("20s on · 10s off · ×8 · ended early · 7:42 PM").assertExists()
+        onNodeWithText("Planned · 20s on · 10s off · ×8 · ended early · 7:42 PM").assertExists()
         onNodeWithText("25s on · 5s off · ×4").assertExists()
         onNodeWithText("6:15 PM").assertExists()
     }
 
     @Test
-    fun `the week chart reads each day's time in seconds or minutes`() = runUiTest {
-        var state by mutableStateOf(oneWorkout.copy(week = week(0, 0, 0, 240, 0, 0, 90)))
-        setThemedContent { Screen(state) }
-        // 90 seconds rounds to 2 minutes.
-        onNodeWithContentDescription("Time per day this week: Thursday 4 minutes, Today 2 minutes").assertExists()
-        state = oneWorkout.copy(week = week(0, 45, 0, 0, 0, 0, 1))
-        onNodeWithContentDescription("Time per day this week: Tuesday 45 seconds, Today 1 second").assertExists()
-        state = oneWorkout.copy(week = week(0, 0, 0, 0, 0, 0, 0))
-        onNodeWithContentDescription("No workouts in the last 7 days").assertExists()
+    fun `the week strip reads each day's state and opens a day`() = runUiTest {
+        val state = oneWorkout.copy(
+            week = week(
+                DayState.Done,
+                DayState.Missed,
+                DayState.Rest,
+                DayState.Planned,
+                DayState.Rest,
+                DayState.Rest,
+                DayState.Planned,
+            ),
+        )
+        setThemedContent { HistoryScreen(state, actions) }
+        onNodeWithContentDescription(
+            "This week: Monday, done; Tuesday, missed; Wednesday, no workout; Today, planned; " +
+                "Friday, no workout; Saturday, no workout; Sunday, planned",
+        ).assertExists()
+        onNodeWithText("M").performClick()
+        assertEquals(listOf("day 20738"), events)
     }
 
     @Test
-    fun `the week's count names its unit`() = runUiTest {
-        var state by mutableStateOf(oneWorkout)
-        setThemedContent { Screen(state) }
+    fun `with a goal the ring and streak show and without one it can be set`() = runUiTest {
+        var state by mutableStateOf(oneWorkout.copy(weekCount = 3, goal = 4, streak = Streak(5, 7)))
+        setThemedContent { HistoryScreen(state, actions) }
+        onNodeWithContentDescription("3 of 4 workouts this week").assertExists()
+        onNodeWithText("1 more to hit 4").assertExists()
+        onNodeWithText("5-week streak").assertExists()
+
+        state = state.copy(weekCount = 4)
+        onNodeWithText("Goal met this week").assertExists()
+
+        state = oneWorkout
         onNodeWithText("1 workout").assertExists()
-        state = oneWorkout.copy(weekCount = 3)
-        onNodeWithText("3 workouts").assertExists()
+        onNodeWithText("Set a weekly goal").performClick()
+        assertEquals(listOf("plan"), events)
     }
 
     @Test
-    fun `an empty history says so and has nothing to clear`() = runUiTest {
-        setThemedContent { Screen(empty) }
-        onNodeWithText("No workouts yet").assertExists()
-        onNodeWithText("Finished workouts show up here.").assertExists()
+    fun `up next starts the next plan and lists the ones after`() = runUiTest {
+        val state = oneWorkout.copy(
+            upNext = listOf(
+                UpNextItem(1, 20_741, HistoryDay.Today, tabata.name, tabata.config),
+                UpNextItem(2, 20_742, HistoryDay.Tomorrow, hiit.name, hiit.config),
+            ),
+            hasPlans = true,
+        )
+        setThemedContent { HistoryScreen(state, actions) }
+        onNodeWithText("Up next · Today").assertExists()
+        onNodeWithText("Then Tomorrow · HIIT 30/30").assertExists()
+        onNodeWithText("Start").performClick()
+        onNodeWithText("Edit plan").performClick()
+        assertEquals(listOf("start Tabata", "plan"), events)
+    }
+
+    @Test
+    fun `picking a range asks for it`() = runUiTest {
+        setThemedContent { HistoryScreen(oneWorkout, actions) }
+        onNodeWithText("Month").performClick()
+        assertEquals(listOf("range Month"), events)
+    }
+
+    @Test
+    fun `the first run offers a plan or a workout and has nothing to clear`() = runUiTest {
+        setThemedContent { HistoryScreen(empty, actions) }
+        onNodeWithText("Train to a plan").assertExists()
         onNodeWithContentDescription("More options").assertIsNotEnabled()
+        onNodeWithText("Plan your week").performClick()
+        onNodeWithText("Start a workout").performClick()
+        assertEquals(listOf("plan", "timer"), events)
     }
 
     @Test
     fun `clearing asks first`() = runUiTest {
-        setThemedContent { Screen(oneWorkout) }
+        setThemedContent { HistoryScreen(oneWorkout, actions) }
         onNodeWithContentDescription("More options").performClick()
         onNodeWithText("Clear history").performClick()
         onNodeWithText("Clear history?").assertExists()
         onNodeWithText("Every finished workout is removed. This can't be undone.").assertExists()
         onNodeWithText("Cancel").performClick()
-        assertEquals(0, cleared)
+        assertEquals(emptyList(), events)
 
         onNodeWithContentDescription("More options").performClick()
         onNodeWithText("Clear history").performClick()
         onNodeWithText("Clear").performClick()
-        assertEquals(1, cleared)
+        assertEquals(listOf("clear"), events)
         onNodeWithText("Clear history?").assertDoesNotExist()
     }
 
     @Test
     fun `with a weight set rows and the week show calories`() = runUiTest {
-        val item = HistoryItem("Tabata", tabata, false, "7:42 PM", "4:00", calories = 48)
+        val item = HistoryItem("Tabata", tabata.config, false, "7:42 PM", "4:00", calories = 48)
         val state = oneWorkout.copy(
-            sections = listOf(HistorySection(HistoryDay.Today, dayNumber = 9, listOf(item))),
-            weekCalories = 48,
+            sections = listOf(HistorySection(HistoryDay.Today, dayNumber = 20_741, listOf(item))),
+            summary = oneWorkout.summary.copy(calories = 48),
         )
-        setThemedContent { Screen(state) }
+        setThemedContent { HistoryScreen(state, actions) }
         onNodeWithText("Calories").assertExists()
         onNodeWithText("48").assertExists()
         onNodeWithText("48 kcal", substring = true).assertExists()
@@ -149,8 +207,30 @@ class HistoryScreenTest {
 
     @Test
     fun `without a weight there are no calories`() = runUiTest {
-        setThemedContent { Screen(oneWorkout) }
+        setThemedContent { HistoryScreen(oneWorkout, actions) }
         onNodeWithText("Calories").assertDoesNotExist()
         onNodeWithText("kcal", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `a day sheet lists its plans and removes a one-off`() = runUiTest {
+        val sheet = DaySheet(
+            epochDay = 20_742,
+            day = HistoryDay.Tomorrow,
+            weekday = 5,
+            plans = listOf(
+                SheetPlan(1, hiit.name, hiit.config, weekly = true, state = PlanState.Open),
+                SheetPlan(2, "Hangboard", builtInPresets[2].config, weekly = false, state = PlanState.Open),
+            ),
+            workouts = emptyList(),
+            past = false,
+        )
+        setThemedContent { HistoryScreen(oneWorkout.copy(daySheet = sheet), actions) }
+        onNodeWithText("2 planned").assertExists()
+        onNodeWithText("Every Friday", substring = true).assertExists()
+        onNodeWithText("A routine workout changes in Plan, for every week.").assertExists()
+        onNodeWithContentDescription("Remove HIIT 30/30").assertDoesNotExist()
+        onNodeWithContentDescription("Remove Hangboard").performClick()
+        assertEquals(listOf("remove 2"), events)
     }
 }

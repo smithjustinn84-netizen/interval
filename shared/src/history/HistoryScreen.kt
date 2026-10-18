@@ -1,59 +1,58 @@
 package dev.justinsmith.interval.history
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.intl.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.common_cancel
 import dev.justinsmith.interval.resources.common_joined
-import dev.justinsmith.interval.resources.duration_minutes
-import dev.justinsmith.interval.resources.duration_seconds
-import dev.justinsmith.interval.resources.history_calories
 import dev.justinsmith.interval.resources.history_calories_value
 import dev.justinsmith.interval.resources.history_clear_confirm
 import dev.justinsmith.interval.resources.history_clear_menu
 import dev.justinsmith.interval.resources.history_clear_text
 import dev.justinsmith.interval.resources.history_clear_title
+import dev.justinsmith.interval.resources.history_edit_plan
 import dev.justinsmith.interval.resources.history_empty
+import dev.justinsmith.interval.resources.history_empty_plan
+import dev.justinsmith.interval.resources.history_empty_start
 import dev.justinsmith.interval.resources.history_empty_title
 import dev.justinsmith.interval.resources.history_ended_early
-import dev.justinsmith.interval.resources.history_last_7_days
 import dev.justinsmith.interval.resources.history_more_options_cd
-import dev.justinsmith.interval.resources.history_time
+import dev.justinsmith.interval.resources.history_most_done
+import dev.justinsmith.interval.resources.history_plan_cd
+import dev.justinsmith.interval.resources.history_planned
+import dev.justinsmith.interval.resources.history_start
+import dev.justinsmith.interval.resources.history_then
+import dev.justinsmith.interval.resources.history_times
 import dev.justinsmith.interval.resources.history_title
 import dev.justinsmith.interval.resources.history_today
-import dev.justinsmith.interval.resources.history_week_cd
-import dev.justinsmith.interval.resources.history_week_count
-import dev.justinsmith.interval.resources.history_week_day_cd
-import dev.justinsmith.interval.resources.history_week_days_cd
-import dev.justinsmith.interval.resources.history_week_empty_cd
+import dev.justinsmith.interval.resources.history_tomorrow
+import dev.justinsmith.interval.resources.history_up_next
 import dev.justinsmith.interval.resources.history_yesterday
 import dev.justinsmith.interval.resources.weekday_1
 import dev.justinsmith.interval.resources.weekday_2
@@ -69,13 +68,20 @@ import dev.justinsmith.interval.resources.weekday_initial_4
 import dev.justinsmith.interval.resources.weekday_initial_5
 import dev.justinsmith.interval.resources.weekday_initial_6
 import dev.justinsmith.interval.resources.weekday_initial_7
-import dev.justinsmith.interval.timer.SpokenDuration
+import dev.justinsmith.interval.resources.weekday_short_1
+import dev.justinsmith.interval.resources.weekday_short_2
+import dev.justinsmith.interval.resources.weekday_short_3
+import dev.justinsmith.interval.resources.weekday_short_4
+import dev.justinsmith.interval.resources.weekday_short_5
+import dev.justinsmith.interval.resources.weekday_short_6
+import dev.justinsmith.interval.resources.weekday_short_7
+import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
-import dev.justinsmith.interval.timer.spokenDuration
+import dev.justinsmith.interval.timer.formatClock
+import dev.justinsmith.interval.timer.weekdayOf
+import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
-import dev.justinsmith.interval.ui.EmptyState
-import dev.justinsmith.interval.ui.EnterEasing
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
@@ -83,42 +89,95 @@ import dev.justinsmith.interval.ui.IntervalMenu
 import dev.justinsmith.interval.ui.IntervalMenuItem
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
-import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
+import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StripeMark
 import dev.justinsmith.interval.ui.TabGrid
+import dev.justinsmith.interval.ui.pressScale
+import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.interval.ui.workoutDescription
-import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
-/** Resolves the tab's ViewModel and binds it to [HistoryScreen]. */
+/**
+ * Resolves the tab's ViewModel and binds it to [HistoryScreen]. Starting a workout puts it on the Timer,
+ * then [onStartWorkout]; [onOpenWorkout] opens one finished workout, [onPlan] the plan, [onShowTimer] the
+ * Timer tab.
+ */
 @Composable
-fun HistoryRoute(modifier: Modifier = Modifier) {
+fun HistoryRoute(
+    onOpenWorkout: (Long) -> Unit,
+    onPlan: () -> Unit,
+    onStartWorkout: () -> Unit,
+    onShowTimer: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val scope = currentKoinScope()
     val viewModel = viewModel { HistoryViewModel(scope.get(), scope.get(), scope.get()) }
     val locale = Locale.current.toLanguageTag()
     LaunchedEffect(locale) { viewModel.setLocale(locale) }
     val state by viewModel.state.collectAsStateWithLifecycle()
-    HistoryScreen(state = state, onClear = viewModel::clear, modifier = modifier)
+    val actions = remember(viewModel) {
+        HistoryActions(
+            onClear = viewModel::clear,
+            onRange = viewModel::setRange,
+            onShiftMonth = viewModel::shiftMonth,
+            onOpenDay = viewModel::openDay,
+            onStart = { name, config ->
+                viewModel.putOnTimer(name, config)
+                viewModel.openDay(null)
+                onStartWorkout()
+            },
+            onRemovePlanned = viewModel::removePlanned,
+            onOpenWorkout = {
+                viewModel.openDay(null)
+                onOpenWorkout(it)
+            },
+            onPlan = {
+                viewModel.openDay(null)
+                onPlan()
+            },
+            onShowTimer = onShowTimer,
+        )
+    }
+    HistoryScreen(state = state, actions = actions, modifier = modifier)
 }
 
+/** What the History tab's controls do. Each defaults to nothing, so a preview or test sets only its own. */
+@Immutable
+class HistoryActions(
+    val onClear: () -> Unit = {},
+    val onRange: (TrainingRange) -> Unit = {},
+    val onShiftMonth: (Int) -> Unit = {},
+    /** Opens the day sheet on an epoch day, or closes it with null. */
+    val onOpenDay: (Long?) -> Unit = {},
+    /** Starts a workout of this name and shape now. */
+    val onStart: (String, IntervalConfig) -> Unit = { _, _ -> },
+    val onRemovePlanned: (Long) -> Unit = {},
+    val onOpenWorkout: (Long) -> Unit = {},
+    val onPlan: () -> Unit = {},
+    val onShowTimer: () -> Unit = {},
+)
+
 /**
- * Finished workouts by day, the last week's tally and a bar per day on top. Clearing lives in the
- * overflow menu, behind a confirmation.
+ * The training log. A range picker leads to this week (goal, streak and a block per day), a month's
+ * calendar, or all time; under it, what is planned next and every finished workout by day. A day opens
+ * a sheet of its plans and workouts. Clearing lives in the overflow menu, behind a confirmation.
  */
 @Composable
-fun HistoryScreen(state: HistoryUiState, onClear: () -> Unit, modifier: Modifier = Modifier) {
+fun HistoryScreen(state: HistoryUiState, actions: HistoryActions, modifier: Modifier = Modifier) {
     var menu by remember { mutableStateOf(false) }
     var confirming by rememberSaveable { mutableStateOf(false) }
+    val gutter = Modifier.padding(horizontal = Spacing.space16)
     // One column on a phone; wider windows lay the days out side by side.
     TabGrid(
         stringResource(Res.string.history_title),
         modifier,
         actions = {
+            IconAction(IntervalIcons.Plan, stringResource(Res.string.history_plan_cd), actions.onPlan)
             IntervalMenu(
                 expanded = menu,
                 onExpandedChange = { menu = it },
@@ -130,41 +189,34 @@ fun HistoryScreen(state: HistoryUiState, onClear: () -> Unit, modifier: Modifier
                     IntervalIcons.More,
                     stringResource(Res.string.history_more_options_cd),
                     onClick = { menu = true },
-                    enabled = !state.isEmpty,
+                    enabled = state.sections.isNotEmpty(),
                 )
             }
         },
     ) {
         if (state.isEmpty) {
             item(key = "empty", span = StaggeredGridItemSpan.FullLine) {
-                ListCard(Modifier.animateItem().padding(horizontal = Spacing.space16)) {
-                    EmptyState(
-                        IntervalIcons.History,
-                        stringResource(Res.string.history_empty_title),
-                        stringResource(Res.string.history_empty),
-                    )
-                }
+                FirstRun(actions, Modifier.animateItem().then(gutter))
             }
         } else {
-            item(key = "week", span = StaggeredGridItemSpan.FullLine) {
-                WeekSummary(state, Modifier.animateItem().padding(horizontal = Spacing.space16))
-            }
+            summaryItems(state, actions, gutter)
         }
         state.sections.forEach { section ->
             // A day is one cell, its label with its card, so a column never splits a day.
             item(key = section.dayNumber) {
-                Column(Modifier.animateItem().padding(horizontal = Spacing.space16)) {
+                Column(Modifier.animateItem().then(gutter)) {
                     GroupLabel(dayHeading(section.day))
                     ListCard {
                         section.items.forEachIndexed { index, item ->
                             if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
-                            HistoryRow(item)
+                            HistoryRow(item, actions.onOpenWorkout)
                         }
                     }
                 }
             }
         }
     }
+    state.daySheet?.let { DaySheetContent(it, actions) }
     if (confirming) {
         ConfirmDialog(
             title = stringResource(Res.string.history_clear_title),
@@ -172,7 +224,7 @@ fun HistoryScreen(state: HistoryUiState, onClear: () -> Unit, modifier: Modifier
             confirm = stringResource(Res.string.history_clear_confirm),
             dismiss = stringResource(Res.string.common_cancel),
             onConfirm = {
-                onClear()
+                actions.onClear()
                 confirming = false
             },
             onDismiss = { confirming = false },
@@ -180,112 +232,187 @@ fun HistoryScreen(state: HistoryUiState, onClear: () -> Unit, modifier: Modifier
     }
 }
 
-/** The week's count and time, over a bar for each of its seven days. */
-@Composable
-private fun WeekSummary(state: HistoryUiState, modifier: Modifier = Modifier) {
-    val palette = IntervalTheme.palette
-    Column(
-        modifier
-            .fillMaxWidth()
-            .clip(Corners.radius18)
-            .background(palette.surface)
-            .padding(start = Spacing.space20, end = Spacing.space20, top = Spacing.space16, bottom = Spacing.space16),
-        verticalArrangement = Arrangement.spacedBy(Spacing.space16),
-    ) {
-        val count = pluralStringResource(Res.plurals.history_week_count, state.weekCount, state.weekCount)
-        val unitStyle = IntervalTheme.type.section.copy(color = palette.textDim).toSpanStyle()
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-            Column(Modifier.weight(1f)) {
-                Text(
-                    stringResource(Res.string.history_last_7_days),
-                    style = IntervalTheme.type.caption,
-                    color = palette.textDim,
-                )
-                Text(
-                    buildAnnotatedString {
-                        // The number keeps the stat style; the words around it, wherever the language puts
-                        // them, are drawn smaller.
-                        append(count)
-                        val number = state.weekCount.toString()
-                        val at = count.indexOf(number)
-                        if (at < 0) {
-                            addStyle(unitStyle, 0, count.length)
-                        } else {
-                            addStyle(unitStyle, 0, at)
-                            addStyle(unitStyle, at + number.length, count.length)
-                        }
-                    },
-                    style = IntervalTheme.type.stat,
-                    color = palette.text,
-                )
-            }
-            Column(Modifier.weight(1f)) {
-                Text(
-                    stringResource(Res.string.history_time),
-                    style = IntervalTheme.type.caption,
-                    color = palette.textDim,
-                )
-                Text(state.weekTotal, style = IntervalTheme.type.stat, color = palette.accent)
-            }
-            state.weekCalories?.let { calories ->
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        stringResource(Res.string.history_calories),
-                        style = IntervalTheme.type.caption,
-                        color = palette.textDim,
-                    )
-                    Text(calories.toString(), style = IntervalTheme.type.stat, color = palette.text)
-                }
-            }
+/** The range picker, its summary card, and Up next or the most done shapes under it. */
+private fun LazyStaggeredGridScope.summaryItems(state: HistoryUiState, actions: HistoryActions, gutter: Modifier) {
+    item(key = "range", span = StaggeredGridItemSpan.FullLine) {
+        RangePicker(
+            state.range,
+            actions.onRange,
+            Modifier.animateItem().then(gutter).padding(bottom = Spacing.space16),
+        )
+    }
+    item(key = "summary", span = StaggeredGridItemSpan.FullLine) {
+        val card = Modifier.animateItem().then(gutter)
+        when (state.range) {
+            TrainingRange.Week -> WeekSummary(state, { actions.onOpenDay(it) }, actions.onPlan, card)
+            TrainingRange.Month -> MonthSummary(state, actions.onShiftMonth, { actions.onOpenDay(it) }, card)
+            TrainingRange.AllTime -> AllTimeSummary(state, card)
         }
-        WeekChart(state)
+    }
+    if (state.upNext.isNotEmpty() && state.range != TrainingRange.AllTime) {
+        item(key = "upNext", span = StaggeredGridItemSpan.FullLine) {
+            UpNextCard(
+                state.upNext,
+                actions,
+                Modifier.animateItem().then(gutter).padding(top = Spacing.space16),
+            )
+        }
+    }
+    if (state.range == TrainingRange.AllTime && state.mostDone.isNotEmpty()) {
+        item(key = "mostDone", span = StaggeredGridItemSpan.FullLine) {
+            MostDone(state.mostDone, Modifier.animateItem().then(gutter))
+        }
     }
 }
 
-/**
- * One bar per day, oldest first, scaled to the longest day; today's initial takes the accent. The
- * bars grow up from the baseline as the tab opens, one after another, and again as the week changes.
- */
+/** Before anything is done or planned: what History keeps, and the two ways to begin. */
 @Composable
-private fun WeekChart(state: HistoryUiState, modifier: Modifier = Modifier) {
+private fun FirstRun(actions: HistoryActions, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
-    val max = state.weekMaxSeconds
-    val description = weekDescription(state.week)
+    SummaryCard(modifier) {
+        Text(stringResource(Res.string.history_empty_title), style = IntervalTheme.type.title, color = palette.text)
+        Text(stringResource(Res.string.history_empty), style = IntervalTheme.type.body, color = palette.textDim)
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+            AccentButton(stringResource(Res.string.history_empty_plan), actions.onPlan, Modifier.fillMaxWidth())
+            SecondaryButton(
+                stringResource(Res.string.history_empty_start),
+                actions.onShowTimer,
+                Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+/** The next plan with a way to start it, the two after it in a line, and the way to the plan. */
+@Composable
+private fun UpNextCard(upNext: List<UpNextItem>, actions: HistoryActions, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    val next = upNext.first()
+    ListCard(modifier) {
+        Column(
+            Modifier.padding(
+                start = Spacing.space20,
+                end = Spacing.space16,
+                top = Spacing.space12,
+                bottom = Spacing.space12,
+            ),
+            verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                GroupLabelText(stringResource(Res.string.history_up_next, dayHeading(next.day)), Modifier.weight(1f))
+                val interaction = remember { MutableInteractionSource() }
+                Text(
+                    stringResource(Res.string.history_edit_plan),
+                    style = IntervalTheme.type.label,
+                    color = palette.accent,
+                    modifier = Modifier
+                        .heightIn(min = Sizes.segment)
+                        .clickable(interaction, LocalIndication.current, role = Role.Button, onClick = actions.onPlan)
+                        .pressScale(interaction)
+                        .padding(vertical = Spacing.space12),
+                )
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+            ) {
+                StripeMark(palette.workMark, height = Sizes.historyMarkHeight)
+                Column(Modifier.weight(1f)) {
+                    Text(next.name, style = IntervalTheme.type.label, color = palette.text)
+                    Text(
+                        stringResource(
+                            Res.string.common_joined,
+                            workoutDescription(next.config),
+                            formatClock(next.config.totalSeconds),
+                        ),
+                        style = IntervalTheme.type.meta,
+                        color = palette.textDim,
+                    )
+                }
+                StartPill(primary = true, onClick = { actions.onStart(next.name, next.config) })
+            }
+            val later = upNext.drop(1).take(2)
+            if (later.isNotEmpty()) {
+                val parts = later.map {
+                    stringResource(Res.string.common_joined, shortDay(it.day, it.epochDay), it.name)
+                }
+                Text(
+                    stringResource(
+                        Res.string.history_then,
+                        parts.reduce { all, part ->
+                            stringResource(Res.string.common_joined, all, part)
+                        },
+                    ),
+                    style = IntervalTheme.type.meta,
+                    color = palette.textDim,
+                )
+            }
+        }
+    }
+}
+
+/** A group heading's look, inside a card. */
+@Composable
+private fun GroupLabelText(text: String, modifier: Modifier = Modifier) {
+    Text(text, style = IntervalTheme.type.caption, color = IntervalTheme.palette.textDim, modifier = modifier)
+}
+
+/** Start, as a small pill: accent when [primary], on a quiet fill otherwise. */
+@Composable
+internal fun StartPill(primary: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    val interaction = remember { MutableInteractionSource() }
     Row(
-        modifier.fillMaxWidth().semantics { contentDescription = description },
+        modifier
+            .heightIn(min = Sizes.segment)
+            .surfaceButton(interaction, Corners.full, if (primary) palette.accent else palette.surfaceVariant, onClick)
+            .padding(horizontal = Spacing.space16),
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
-        verticalAlignment = Alignment.Bottom,
     ) {
-        state.week.forEachIndexed { index, day ->
-            // Keyed by weekday, so a bar keeps its own animation as the week moves on a day.
-            key(day.weekday) {
-                Column(
-                    Modifier.weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+        val ink = if (primary) palette.onAccent else palette.text
+        if (primary) Icon(IntervalIcons.Play, null, tint = ink, modifier = Modifier.size(Sizes.chipIcon))
+        Text(stringResource(Res.string.history_start), style = IntervalTheme.type.label, color = ink)
+    }
+}
+
+/** All time's most done shapes, by preset name where one matches, with how often. */
+@Composable
+private fun MostDone(rows: List<ShapeRow>, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    Column(modifier.padding(top = Spacing.space8)) {
+        GroupLabel(stringResource(Res.string.history_most_done))
+        ListCard {
+            rows.forEachIndexed { index, row ->
+                if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = Sizes.listRow)
+                        .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
                 ) {
-                    Box(Modifier.fillMaxWidth().height(Sizes.weekBar), contentAlignment = Alignment.BottomCenter) {
-                        val share = if (max > 0) day.seconds.toFloat() / max else 0f
-                        val grown = remember { Animatable(0f) }
-                        LaunchedEffect(share) {
-                            grown.animateTo(
-                                share,
-                                tween(Motion.ENTER_MILLIS, index * Motion.STAGGER_MILLIS, EnterEasing),
-                            )
-                        }
-                        val height = if (day.seconds > 0) Sizes.weekBar * grown.value else Sizes.weekBarEmpty
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .height(height.coerceAtLeast(Sizes.weekBarEmpty))
-                                .clip(Corners.radius12)
-                                .background(if (day.seconds > 0) palette.accent else palette.surfaceVariant),
+                    StripeMark(palette.workMark, height = Sizes.historyMarkHeight)
+                    Column(Modifier.weight(1f)) {
+                        val shape = workoutDescription(row.config)
+                        Text(row.name ?: shape, style = IntervalTheme.type.label, color = palette.text)
+                        Text(
+                            if (row.name !=
+                                null
+                            ) {
+                                stringResource(Res.string.common_joined, shape, longTotal(row.totalSeconds))
+                            } else {
+                                longTotal(row.totalSeconds)
+                            },
+                            style = IntervalTheme.type.meta,
+                            color = palette.textDim,
                         )
                     }
                     Text(
-                        stringResource(WeekdayInitials[day.weekday - 1]),
-                        style = IntervalTheme.type.caption,
-                        color = if (day.today) palette.accent else palette.textDim,
+                        stringResource(Res.string.history_times, row.count),
+                        style = IntervalTheme.type.value,
+                        color = palette.text,
                     )
                 }
             }
@@ -293,21 +420,34 @@ private fun WeekChart(state: HistoryUiState, modifier: Modifier = Modifier) {
     }
 }
 
+/** One finished workout. It opens when it has been stored, with a chevron saying so. */
 @Composable
-private fun HistoryRow(item: HistoryItem, modifier: Modifier = Modifier) {
+internal fun HistoryRow(item: HistoryItem, onOpen: (Long) -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
+    val interaction = remember { MutableInteractionSource() }
+    val id = item.id
     Row(
         modifier
             .fillMaxWidth()
             .heightIn(min = Sizes.listRow)
-            .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+            .then(
+                if (id == null) {
+                    Modifier
+                } else {
+                    Modifier
+                        .clickable(interaction, LocalIndication.current, role = Role.Button) { onOpen(id) }
+                        .pressScale(interaction)
+                },
+            )
+            .padding(start = Spacing.space16, end = Spacing.space12, top = Spacing.space12, bottom = Spacing.space12),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
-        StripeMark(IntervalTheme.palette.workMark, height = Sizes.historyMarkHeight)
+        StripeMark(palette.workMark, height = Sizes.historyMarkHeight)
         Column(Modifier.weight(1f)) {
             val shape = workoutDescription(item.config)
             val detail = listOfNotNull(
+                stringResource(Res.string.history_planned).takeIf { item.planned },
                 shape.takeIf { item.presetName != null },
                 stringResource(Res.string.history_ended_early).takeIf { item.endedEarly },
                 item.calories?.let { stringResource(Res.string.history_calories_value, it) },
@@ -321,48 +461,30 @@ private fun HistoryRow(item: HistoryItem, modifier: Modifier = Modifier) {
             )
         }
         Text(item.total, style = IntervalTheme.type.value, color = palette.text)
+        if (id != null) {
+            Icon(IntervalIcons.Chevron, null, tint = palette.textDim, modifier = Modifier.size(Sizes.icon))
+        }
     }
 }
 
-/** A section's heading: "Today", "Yesterday", or the date. */
+/** A day's heading: "Today", "Yesterday", "Tomorrow", or the date. */
 @Composable
-private fun dayHeading(day: HistoryDay): String = when (day) {
+internal fun dayHeading(day: HistoryDay): String = when (day) {
     HistoryDay.Today -> stringResource(Res.string.history_today)
     HistoryDay.Yesterday -> stringResource(Res.string.history_yesterday)
+    HistoryDay.Tomorrow -> stringResource(Res.string.history_tomorrow)
     is HistoryDay.On -> day.date
 }
 
-/**
- * The week chart for screen readers: the days with any time, by name, each with its time in seconds
- * under a minute and minutes from one. "Time per day this week: Tuesday 45 seconds, Today 4 minutes".
- */
+/** A day in a line of them: "Today", "Tomorrow", else its weekday, "Fri". */
 @Composable
-internal fun weekDescription(week: List<DayTally>): String {
-    val days = week.filter { it.seconds > 0 }
-    if (days.isEmpty()) return stringResource(Res.string.history_week_empty_cd)
-    val parts = days.map { day ->
-        val name = if (day.today) Res.string.history_today else WeekdayNames[day.weekday - 1]
-        val time = when (val duration = spokenDuration(day.seconds)) {
-            is SpokenDuration.Seconds -> pluralStringResource(
-                Res.plurals.duration_seconds,
-                duration.seconds,
-                duration.seconds,
-            )
-
-            is SpokenDuration.Minutes -> pluralStringResource(
-                Res.plurals.duration_minutes,
-                duration.minutes,
-                duration.minutes,
-            )
-        }
-        stringResource(Res.string.history_week_day_cd, stringResource(name), time)
-    }
-    val joined = parts.reduce { all, part -> stringResource(Res.string.history_week_days_cd, all, part) }
-    return stringResource(Res.string.history_week_cd, joined)
+private fun shortDay(day: HistoryDay, epochDay: Long): String = when (day) {
+    HistoryDay.Today, HistoryDay.Tomorrow, HistoryDay.Yesterday -> dayHeading(day)
+    is HistoryDay.On -> stringResource(WeekdayShort[weekdayOf(epochDay) - 1])
 }
 
-/** Monday first, as [DayTally.weekday] counts. */
-private val WeekdayNames = listOf(
+/** Monday first, as [DayCell.weekday] counts. */
+internal val WeekdayNames = listOf(
     Res.string.weekday_1,
     Res.string.weekday_2,
     Res.string.weekday_3,
@@ -372,7 +494,7 @@ private val WeekdayNames = listOf(
     Res.string.weekday_7,
 )
 
-private val WeekdayInitials = listOf(
+internal val WeekdayInitials = listOf(
     Res.string.weekday_initial_1,
     Res.string.weekday_initial_2,
     Res.string.weekday_initial_3,
@@ -382,16 +504,28 @@ private val WeekdayInitials = listOf(
     Res.string.weekday_initial_7,
 )
 
-/** Thursday to Wednesday: a hangboard session, the two from yesterday, and today's Tabata. */
-private val PreviewWeek = listOf(
-    DayTally(weekday = 4, seconds = 320, today = false),
-    DayTally(weekday = 5, seconds = 0, today = false),
-    DayTally(weekday = 6, seconds = 0, today = false),
-    DayTally(weekday = 7, seconds = 0, today = false),
-    DayTally(weekday = 1, seconds = 0, today = false),
-    DayTally(weekday = 2, seconds = 860, today = false),
-    DayTally(weekday = 3, seconds = 240, today = true),
+private val WeekdayShort = listOf(
+    Res.string.weekday_short_1,
+    Res.string.weekday_short_2,
+    Res.string.weekday_short_3,
+    Res.string.weekday_short_4,
+    Res.string.weekday_short_5,
+    Res.string.weekday_short_6,
+    Res.string.weekday_short_7,
 )
+
+/** Monday to Sunday, today a Thursday: two days done, one missed, and three still planned. */
+private val PreviewWeek = listOf(
+    DayState.Done to 240,
+    DayState.Missed to 0,
+    DayState.Done to 755,
+    DayState.Planned to 0,
+    DayState.Planned to 0,
+    DayState.Rest to 0,
+    DayState.Planned to 0,
+).mapIndexed { index, (state, seconds) ->
+    DayCell(20_738L + index, index + 1, 12 + index, state, seconds, today = index == 3)
+}
 
 @PreviewFormFactors
 @Composable
@@ -402,30 +536,48 @@ private fun HistoryScreenPreview() {
             state = HistoryUiState(
                 sections = listOf(
                     HistorySection(
-                        HistoryDay.Today,
-                        dayNumber = 2,
-                        listOf(HistoryItem(tabata.name, tabata.config, endedEarly = false, "7:42 AM", "4:00")),
-                    ),
-                    HistorySection(
-                        HistoryDay.Yesterday,
-                        dayNumber = 1,
+                        HistoryDay.On("Wednesday, Oct 14"),
+                        dayNumber = 20_740,
                         listOf(
                             HistoryItem(
+                                hiit.name,
+                                hiit.config,
+                                endedEarly = false,
+                                "7:05 AM",
+                                "9:40",
+                                id = 2,
+                                planned = true,
+                            ),
+                            HistoryItem(
                                 null,
-                                tabata.config.copy(workSeconds = 25),
+                                tabata.config.copy(workSeconds = 30),
                                 endedEarly = false,
                                 "6:15 PM",
-                                "4:40",
+                                "2:55",
+                                id = 3,
                             ),
-                            HistoryItem(hiit.name, hiit.config, endedEarly = true, "7:05 AM", "6:20"),
                         ),
                     ),
                 ),
+                summary = RangeSummary(
+                    count = 3,
+                    time = "16:35",
+                    totalSeconds = 995,
+                    calories = 149,
+                    plannedDone = 2,
+                    plannedDue = 3,
+                ),
                 weekCount = 3,
-                weekTotal = "18:20",
+                goal = 4,
+                streak = Streak(current = 5, best = 7),
                 week = PreviewWeek,
+                upNext = listOf(
+                    UpNextItem(planId = 1, epochDay = 20_741, HistoryDay.Today, tabata.name, tabata.config),
+                    UpNextItem(planId = 2, epochDay = 20_742, HistoryDay.Tomorrow, hiit.name, hiit.config),
+                ),
+                hasPlans = true,
             ),
-            onClear = {},
+            actions = HistoryActions(),
         )
     }
 }

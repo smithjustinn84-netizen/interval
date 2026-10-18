@@ -229,7 +229,15 @@ private fun appEntries(
     entry<PresetsTab>(metadata = pageKind(PageKind.Tab)) {
         PresetsRoute(onShowTimer = { selectTab(TimerTab) }, onStartWorkout = { backStack.push(Workout) })
     }
-    entry<HistoryTab>(metadata = pageKind(PageKind.Tab)) { HistoryRoute() }
+    entry<HistoryTab>(metadata = pageKind(PageKind.Tab)) {
+        HistoryRoute(
+            // The workout and plan pages come next; until then their ways in do nothing.
+            onOpenWorkout = {},
+            onPlan = {},
+            onStartWorkout = { backStack.push(Workout) },
+            onShowTimer = { selectTab(TimerTab) },
+        )
+    }
     entry<Settings>(metadata = SupportingPaneSceneStrategy.supportingPane()) {
         SettingsRoute(
             onBack = { backStack.removeLastOrNull() },
