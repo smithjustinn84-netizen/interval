@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.Preferences
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.deferredStorageScope
 import dev.justinsmith.interval.fakes.saveCurrentAsPreset
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -259,6 +260,27 @@ class IntervalRepositoryTest {
         assertEquals(estimateCalories(120, 60, 80.0, Effort.Hard), entry.calories(body))
         // Recorded before work time was kept: the plan's work time stands in.
         assertEquals(entry.calories(body), entry.copy(workActiveSeconds = null).calories(body))
+    }
+
+    @Test
+    fun `applying a preset keeps the Timer's activity unless the preset names one`() {
+        val repository = repository()
+        repository.updateConfig { it.copy(activity = Activity.Bike) }
+        repository.applyPreset(builtInPresets.first { it.name == "Tabata" })
+        assertEquals(Activity.Bike, repository.config.value.activity)
+        repository.applyPreset(builtInPresets.first { it.name == "Hangboard" })
+        assertEquals(Activity.Climbing, repository.config.value.activity)
+    }
+
+    @Test
+    fun `presets and history keep their activity`() {
+        val config = IntervalConfig(activity = Activity.JumpRope)
+        repository().updateConfig { config }
+        repository().saveCurrentAsPreset("Rope")
+        repository().recordWorkout(config, elapsedSeconds = 60)
+        assertEquals(Activity.JumpRope, repository().customPresets.value.single().config.activity)
+        assertEquals(Activity.JumpRope, repository().history.value.single().config.activity)
+        assertEquals(Activity.JumpRope, repository().config.value.activity)
     }
 
     @Test

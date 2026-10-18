@@ -61,12 +61,25 @@ fun uniquePresetName(name: String, taken: Collection<String>): String {
 }
 
 /**
+ * [preset]'s work, rest and rounds as they go onto the Timer over [current]: the get-ready countdown stays
+ * the user's own setting, and so does the activity unless the preset names one ([Activity.General] is no
+ * particular activity).
+ */
+fun IntervalConfig.withPreset(preset: Preset): IntervalConfig {
+    val activity = preset.config.activity.takeUnless { it == Activity.General } ?: activity
+    return preset.config.copy(prepSeconds = prepSeconds, activity = activity)
+}
+
+/**
  * The presets the app ships with. Their names are stored names, like a user's own or
  * [defaultPresetName]'s, not labels, so they are data here rather than strings.xml text.
  */
 val builtInPresets: List<Preset> = listOf(
     Preset("Tabata", IntervalConfig(prepSeconds = 10, workSeconds = 20, restSeconds = 10, rounds = 8)),
     Preset("HIIT 30/30", IntervalConfig(prepSeconds = 10, workSeconds = 30, restSeconds = 30, rounds = 10)),
-    Preset("Hangboard", IntervalConfig(prepSeconds = 10, workSeconds = 10, restSeconds = 50, rounds = 6)),
+    Preset(
+        "Hangboard",
+        IntervalConfig(prepSeconds = 10, workSeconds = 10, restSeconds = 50, rounds = 6, activity = Activity.Climbing),
+    ),
     Preset("Long efforts", IntervalConfig(prepSeconds = 5, workSeconds = 45, restSeconds = 15, rounds = 12)),
 )

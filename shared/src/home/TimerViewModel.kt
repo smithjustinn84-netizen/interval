@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.data.AppSettings
 import dev.justinsmith.interval.data.IntervalRepository
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
@@ -42,6 +43,11 @@ class TimerViewModel(private val repository: IntervalRepository) : ViewModel() {
                     repository.appSettings.value,
                 ),
             )
+
+    /** What the work intervals are spent doing, for the calorie estimate. */
+    fun setActivity(activity: Activity) {
+        repository.updateConfig { it.copy(activity = activity) }
+    }
 
     fun step(field: ConfigField, direction: Int) {
         repository.updateConfig { it.stepped(field, direction) }

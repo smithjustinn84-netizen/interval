@@ -2,15 +2,67 @@ package dev.justinsmith.interval.timer
 
 import kotlin.math.roundToInt
 
+/** How hard the work intervals are. Each [Activity] gives its own MET for each level. */
+enum class Effort { Easy, Steady, Hard, Max }
+
 /**
- * How hard the work intervals are, as a MET: a multiple of the energy spent sitting still. Rest and get
- * ready count as [RECOVERY_MET] whatever the effort.
+ * What the work intervals are spent doing, with its MET (a multiple of the energy spent sitting still) at
+ * each [Effort]. Rest and get ready count as [RECOVERY_MET] whatever the activity.
+ *
+ * Values are from the 2024 Adult Compendium of Physical Activities (pacompendium.com), by code; a value
+ * marked "between" sits between two entries where the Compendium has none of its own.
  */
-enum class Effort(val met: Double) {
-    Easy(met = 4.0),
-    Steady(met = 6.0),
-    Hard(met = 8.0),
-    Max(met = 10.0),
+enum class Activity(
+    private val easy: Double,
+    private val steady: Double,
+    private val hard: Double,
+    private val max: Double,
+) {
+    /** High intensity intervals of no particular kind: 02035, 02210, between, 02214. */
+    General(easy = 5.0, steady = 7.0, hard = 9.0, max = 11.0),
+
+    /** Stationary or air bike, by watts: 01216, 01224, 01232, 01240. */
+    Bike(easy = 5.0, steady = 6.8, hard = 10.3, max = 12.5),
+
+    /** Rowing ergometer, by watts: 02071, 02072, 02073, 02074. */
+    Rower(easy = 5.0, steady = 7.5, hard = 11.0, max = 14.0),
+
+    /** Ski ergometer: 02080, 02082, between, 02084. */
+    SkiErg(easy = 6.8, steady = 10.5, hard = 14.0, max = 18.0),
+
+    /** Running, by speed (6, 7.5, 10 and 12 mph): 12050, 12080, 12120, 12132. */
+    Running(easy = 9.3, steady = 11.8, hard = 14.8, max = 18.5),
+
+    /** Rope skipping: 02069, 02068, between, and the fast pace (120-160 skips a minute) of the sports section. */
+    JumpRope(easy = 9.0, steady = 11.0, hard = 11.8, max = 12.3),
+
+    /** Burpees, squats, push-ups: 02022, 02057, 02020, 02214. */
+    Bodyweight(easy = 3.8, steady = 6.5, hard = 7.5, max = 11.0),
+
+    /** Kettlebell circuits and swings: 02035, 02040, between, 02058. */
+    Kettlebell(easy = 5.0, steady = 7.5, hard = 8.5, max = 9.8),
+
+    /** Barbell and Olympic lifting: 02054, 02052, 02050, and vigorous circuits with little rest, 02040. */
+    Barbell(easy = 3.5, steady = 5.0, hard = 6.0, max = 7.5),
+
+    /**
+     * Climbing and hangboard: below an easy traverse (an estimate: hangs are short and mostly still), then
+     * the Compendium's rock climbing entries for a low-to-moderate traverse, a hard ascent, and general.
+     */
+    Climbing(easy = 4.0, steady = 5.8, hard = 7.5, max = 8.0),
+    ;
+
+    fun met(effort: Effort): Double = when (effort) {
+        Effort.Easy -> easy
+        Effort.Steady -> steady
+        Effort.Hard -> hard
+        Effort.Max -> max
+    }
+
+    companion object {
+        /** The activity stored under [name]; none, or one this build doesn't know, reads as [General]. */
+        fun named(name: String?): Activity = entries.firstOrNull { it.name == name } ?: General
+    }
 }
 
 /** Breathing hard between sets: well above sitting still, well below working. */
@@ -38,10 +90,16 @@ fun WeightUnit.toKg(value: Int): Double = when (this) {
 
 /**
  * The calories a workout burned, by the ACSM equation (kcal a minute = MET × 3.5 × kg / 200): [workSeconds]
- * at [effort], and [otherSeconds] (get ready and rest) at [RECOVERY_MET]. An estimate, rounded.
+ * of [activity] at [effort], and [otherSeconds] (get ready and rest) at [RECOVERY_MET]. An estimate, rounded.
  */
-fun estimateCalories(workSeconds: Int, otherSeconds: Int, weightKg: Double, effort: Effort): Int {
-    val metSeconds = workSeconds * effort.met + otherSeconds.coerceAtLeast(0) * RECOVERY_MET
+fun estimateCalories(
+    workSeconds: Int,
+    otherSeconds: Int,
+    weightKg: Double,
+    effort: Effort,
+    activity: Activity = Activity.General,
+): Int {
+    val metSeconds = workSeconds * activity.met(effort) + otherSeconds.coerceAtLeast(0) * RECOVERY_MET
     return (metSeconds / SECONDS_PER_MINUTE * OXYGEN_ML_PER_MET * weightKg / KCAL_DIVISOR).roundToInt()
 }
 

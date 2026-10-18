@@ -31,6 +31,7 @@ import dev.justinsmith.interval.resources.common_cancel
 import dev.justinsmith.interval.resources.common_joined
 import dev.justinsmith.interval.resources.common_save
 import dev.justinsmith.interval.resources.presets_built_in
+import dev.justinsmith.interval.resources.presets_calories_estimate_as
 import dev.justinsmith.interval.resources.presets_current_unsaved
 import dev.justinsmith.interval.resources.presets_delete
 import dev.justinsmith.interval.resources.presets_delete_text
@@ -41,6 +42,7 @@ import dev.justinsmith.interval.resources.presets_new_cd
 import dev.justinsmith.interval.resources.presets_on_timer
 import dev.justinsmith.interval.resources.presets_title
 import dev.justinsmith.interval.resources.presets_yours
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
@@ -58,10 +60,11 @@ import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
-import dev.justinsmith.interval.ui.configDescription
+import dev.justinsmith.interval.ui.labelRes
 import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.interval.ui.selectableCard
 import dev.justinsmith.interval.ui.surfaceButton
+import dev.justinsmith.interval.ui.workoutDescription
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
@@ -273,7 +276,6 @@ private fun CurrentCard(
                     shapeWithCalories(config, calories),
                     style = IntervalTheme.type.meta,
                     color = palette.textDim,
-                    maxLines = 1,
                 )
             }
             SaveButton(onSave)
@@ -284,14 +286,15 @@ private fun CurrentCard(
 
 /** "20s on · 10s off · ×8", then "≈ 32 kcal" once a body weight gives an estimate. */
 @Composable
-private fun shapeWithCalories(config: IntervalConfig, calories: Int?): String {
-    val shape = configDescription(config)
+private fun shapeWithCalories(config: IntervalConfig, calories: Int?, estimatedAs: Activity? = null): String {
+    val shape = workoutDescription(config)
     if (calories == null) return shape
-    return stringResource(
-        Res.string.common_joined,
-        shape,
-        stringResource(Res.string.common_calories_estimate, calories),
-    )
+    val estimate = if (estimatedAs == null) {
+        stringResource(Res.string.common_calories_estimate, calories)
+    } else {
+        stringResource(Res.string.presets_calories_estimate_as, calories, stringResource(estimatedAs.labelRes))
+    }
+    return stringResource(Res.string.common_joined, shape, estimate)
 }
 
 /** The accent pill that takes the current settings to the editor. */
@@ -354,10 +357,9 @@ private fun PresetCard(item: PresetRowItem, onClick: () -> Unit, modifier: Modif
             )
         }
         Text(
-            shapeWithCalories(item.preset.config, item.calories),
+            shapeWithCalories(item.preset.config, item.calories, item.estimatedAs),
             style = IntervalTheme.type.meta,
             color = palette.textDim,
-            maxLines = 1,
         )
         MiniTimeline(item.preset.config, Modifier.padding(top = Spacing.space4).fillMaxWidth(item.share))
     }

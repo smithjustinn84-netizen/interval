@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.onAllNodesWithContentDescription
@@ -19,6 +20,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
@@ -45,6 +47,7 @@ class TimerScreenTest {
     private val steps = mutableListOf<Pair<ConfigField, Int>>()
     private val sets = mutableListOf<Pair<ConfigField, Int>>()
     private val saved = mutableListOf<Preset>()
+    private val activities = mutableListOf<Activity>()
 
     @Composable
     private fun Screen(state: TimerUiState = state()) {
@@ -56,6 +59,7 @@ class TimerScreenTest {
             onStart = { calls += "start" },
             onOpenSettings = { calls += "settings" },
             onSeeAllPresets = { calls += "see all" },
+            onSetActivity = { activities += it },
         )
     }
 
@@ -144,9 +148,22 @@ class TimerScreenTest {
     }
 
     @Test
-    fun `sideways, Start and the steppers are both on screen`() = runUiTest(Window.PhoneSideways) {
-        setThemedContent { Screen() }
-        onNodeWithText("Start workout").assertExists()
-        onNodeWithContentDescription("More rounds").assertExists()
+    fun `sideways, Start the steppers and the activity are all on screen`() = runUiTest(Window.PhoneSideways) {
+        setThemedContent { Screen(state(custom.copy(activity = Activity.Bodyweight)).copy(calories = 139)) }
+        onNodeWithText("Start workout").assertIsDisplayed()
+        onNodeWithContentDescription("More rounds").assertIsDisplayed()
+        onNodeWithContentDescription("Activity: Bodyweight. Change").assertIsDisplayed()
+        onNodeWithText("≈ 139 kcal").assertIsDisplayed()
+    }
+
+    @Test
+    fun `the activity pill opens the picker and reports the pick`() = runUiTest {
+        setThemedContent { Screen(state().copy(calories = 42)) }
+        onNodeWithText("≈ 42 kcal").assertExists()
+        onNodeWithContentDescription("Activity: General. Change").performClick()
+        onNodeWithText("Burpees, squats, push-ups, jumping jacks").assertExists()
+        onNodeWithText("Jump rope").performScrollTo().performClick()
+        assertEquals(listOf(Activity.JumpRope), activities)
+        onNodeWithText("Burpees, squats, push-ups, jumping jacks").assertDoesNotExist()
     }
 }

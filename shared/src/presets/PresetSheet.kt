@@ -26,7 +26,7 @@ import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StartButton
 import dev.justinsmith.interval.ui.Timeline
-import dev.justinsmith.interval.ui.configDescription
+import dev.justinsmith.interval.ui.workoutDescription
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -78,7 +78,7 @@ internal fun PresetSheet(
                 }
             }
             Timeline(preset.config, Modifier.fillMaxWidth(), showPrep = false)
-            Text(configDescription(preset.config), style = IntervalTheme.type.body, color = palette.textDim)
+            Text(workoutDescription(preset.config), style = IntervalTheme.type.body, color = palette.textDim)
         }
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             if (replacesUnsaved) {

@@ -5,6 +5,7 @@ package dev.justinsmith.interval.presets
 import dev.justinsmith.interval.data.BodySettings
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.MainDispatcherTest
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
@@ -135,5 +136,28 @@ class PresetsViewModelTest : MainDispatcherTest() {
         val tabata = viewModel.state.value.builtIn.first()
         assertEquals(body.plannedCalories(tabata.preset.config.copy(prepSeconds = 30)), tabata.calories)
         assertEquals(body.plannedCalories(repository.config.value), viewModel.state.value.currentCalories)
+    }
+
+    @Test
+    fun `a preset is estimated as it would run from the Timer`() {
+        repository.updateAppSettings { it.copy(body = BodySettings(weightKg = 70.0)) }
+        repository.updateConfig { it.copy(activity = Activity.Bike) }
+        val rows = viewModel.state.value.builtIn.associateBy { it.preset.name }
+        val tabata = rows.getValue("Tabata")
+        val hangboard = rows.getValue("Hangboard")
+        val body = repository.appSettings.value.body
+        val prep = repository.config.value.prepSeconds
+        // Tabata names no activity, so it would run as the Timer's; Hangboard names its own.
+        assertEquals(
+            body.plannedCalories(tabata.preset.config.copy(prepSeconds = prep, activity = Activity.Bike)),
+            tabata.calories,
+        )
+        assertEquals(body.plannedCalories(hangboard.preset.config.copy(prepSeconds = prep)), hangboard.calories)
+        // Only the borrowed activity is named beside the estimate; Hangboard's own is in its shape line.
+        assertEquals(Activity.Bike, tabata.estimatedAs)
+        assertEquals(null, hangboard.estimatedAs)
+
+        repository.updateConfig { it.copy(activity = Activity.General) }
+        assertEquals(null, viewModel.state.value.builtIn.first { it.preset.name == "Tabata" }.estimatedAs)
     }
 }

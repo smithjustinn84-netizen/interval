@@ -7,7 +7,9 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import androidx.sqlite.execSQL
 import dev.justinsmith.interval.fakes.saveCurrentAsPreset
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
@@ -51,7 +53,7 @@ class StorageTest {
 
     @Test
     fun `everything survives a restart`() {
-        val config = IntervalConfig(prepSeconds = 5, workSeconds = 45, restSeconds = 15, rounds = 12)
+        val config = IntervalConfig(5, 45, 15, rounds = 12, activity = Activity.Kettlebell)
         withApp { repository ->
             repository.updateConfig { config }
             repository.updateCueSettings { it.copy(halfway = false) }
@@ -90,6 +92,31 @@ class StorageTest {
     fun `a theme this build doesn't know reads as the default`() {
         withApp { _ -> settings.edit { it[stringPreferencesKey("theme")] = "Sepia" } }
         withApp { repository -> assertEquals(AppSettings().theme, repository.appSettings.value.theme) }
+    }
+
+    @Test
+    fun `a version 1 database opens with its history and presets kept`() {
+        BundledSQLiteDriver().open(directory.resolve("interval.db").absolutePath).use { connection ->
+            V1_SCHEMA.forEach(connection::execSQL)
+            connection.execSQL(
+                "INSERT INTO history (finished_at, prep_seconds, work_seconds, rest_seconds, rounds, " +
+                    "elapsed_seconds, ended_early) VALUES ($NOW, 10, 20, 10, 8, 250, 0)",
+            )
+            connection.execSQL(
+                "INSERT INTO preset (name, prep_seconds, work_seconds, rest_seconds, rounds) " +
+                    "VALUES ('Mine', 10, 40, 20, 6)",
+            )
+            connection.execSQL("PRAGMA user_version = 1")
+        }
+        withApp { repository ->
+            val entry = repository.history.value.single()
+            assertEquals(IntervalConfig(10, 20, 10, rounds = 8), entry.config)
+            assertEquals(null, entry.workActiveSeconds)
+            assertEquals(
+                Preset("Mine", IntervalConfig(10, 40, 20, rounds = 6), id = 1),
+                repository.customPresets.value.single(),
+            )
+        }
     }
 
     @Test
@@ -155,3 +182,17 @@ class StorageTest {
         const val NOW = 1_000L
     }
 }
+
+/** Version 1 as it shipped (`shared/schemas/.../1.json`), for opening an old database. */
+private val V1_SCHEMA = listOf(
+    "CREATE TABLE IF NOT EXISTS `history` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+        "`finished_at` INTEGER NOT NULL, `prep_seconds` INTEGER NOT NULL, `work_seconds` INTEGER NOT NULL, " +
+        "`rest_seconds` INTEGER NOT NULL, `rounds` INTEGER NOT NULL, `elapsed_seconds` INTEGER NOT NULL, " +
+        "`ended_early` INTEGER NOT NULL)",
+    "CREATE INDEX IF NOT EXISTS `index_history_finished_at` ON `history` (`finished_at`)",
+    "CREATE TABLE IF NOT EXISTS `preset` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, " +
+        "`prep_seconds` INTEGER NOT NULL, `work_seconds` INTEGER NOT NULL, `rest_seconds` INTEGER NOT NULL, " +
+        "`rounds` INTEGER NOT NULL)",
+    "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+    "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4677e5a0ef7fb56c481c142c0985192c')",
+)

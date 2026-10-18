@@ -15,6 +15,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.ui.StateRestoration
@@ -179,5 +180,17 @@ class PresetEditorTest {
         onNodeWithText("New preset").assertExists()
         onNode(hasSetTextAction()).assertTextContains("Sprints")
         onNodeWithText("×7").assertExists()
+    }
+
+    @Test
+    fun `the editor sets a preset's activity`() = runUiTest {
+        setThemedContent { Screen() }
+        onNodeWithText("Morning").performClick()
+        onNodeWithText("Edit").performClick()
+        onNodeWithText("Activity").performScrollTo().performClick()
+        onNodeWithText("Kettlebell").performScrollTo().performClick()
+        onNodeWithText("Kettlebell").assertExists()
+        saveInEditor()
+        assertEquals(Activity.Kettlebell, saved.single().config.activity)
     }
 }

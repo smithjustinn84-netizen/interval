@@ -39,6 +39,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.activity_choose_cd
 import dev.justinsmith.interval.resources.common_calories_estimate
 import dev.justinsmith.interval.resources.common_joined
 import dev.justinsmith.interval.resources.common_prep_line
@@ -47,6 +48,7 @@ import dev.justinsmith.interval.resources.timer_all_presets_cd
 import dev.justinsmith.interval.resources.timer_save_as_preset_cd
 import dev.justinsmith.interval.resources.timer_title
 import dev.justinsmith.interval.resources.timer_total
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.formatClock
@@ -67,6 +69,7 @@ import dev.justinsmith.interval.ui.editRes
 import dev.justinsmith.interval.ui.labelRes
 import dev.justinsmith.interval.ui.phaseStripe
 import dev.justinsmith.interval.ui.presetNameOrCustom
+import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.interval.ui.rememberRising
 import dev.justinsmith.interval.ui.stripe
 import dev.justinsmith.interval.ui.surfaceButton
@@ -99,7 +102,7 @@ internal fun TimerTitleBar(canSavePreset: Boolean, onSave: () -> Unit, onOpenSet
  * change them, up when they grow and down when they shrink.
  */
 @Composable
-internal fun Total(state: TimerUiState, modifier: Modifier = Modifier) {
+internal fun Total(state: TimerUiState, onEditActivity: () -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val seconds = state.config.totalSeconds
     val rising = rememberRising(seconds)
@@ -129,14 +132,51 @@ internal fun Total(state: TimerUiState, modifier: Modifier = Modifier) {
                 color = palette.textDim,
             )
         }
-        state.calories?.let { calories ->
-            RollingText(
-                stringResource(Res.string.common_calories_estimate, calories),
-                rising,
-                style = IntervalTheme.type.meta,
-                color = palette.textDim,
-            )
+        Row(
+            Modifier.padding(top = Spacing.space4),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+        ) {
+            ActivityPill(state.config.activity, onEditActivity)
+            state.calories?.let { calories ->
+                RollingText(
+                    stringResource(Res.string.common_calories_estimate, calories),
+                    rising,
+                    style = IntervalTheme.type.meta,
+                    color = palette.textDim,
+                )
+            }
         }
+    }
+}
+
+/**
+ * What the work intervals are spent doing, as a small pill with a chevron that opens the picker. Shown
+ * with or without a body weight, so the activity can be set before calories are turned on.
+ */
+@Composable
+private fun ActivityPill(activity: Activity, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    val interaction = remember { MutableInteractionSource() }
+    val label = stringResource(activity.labelRes)
+    val description = stringResource(Res.string.activity_choose_cd, label)
+    Row(
+        modifier
+            .heightIn(min = Sizes.pillHeight)
+            .pressScale(interaction)
+            .surfaceButton(interaction, Corners.full, palette.surfaceVariant, onClick)
+            .semantics(mergeDescendants = true) { contentDescription = description }
+            .padding(start = Spacing.space16, end = Spacing.space12),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space4),
+    ) {
+        Text(label, style = IntervalTheme.type.label, color = palette.text)
+        Icon(
+            IntervalIcons.Chevron,
+            contentDescription = null,
+            tint = palette.textDim,
+            modifier = Modifier.size(Sizes.icon),
+        )
     }
 }
 

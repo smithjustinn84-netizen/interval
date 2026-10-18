@@ -90,7 +90,7 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StripeMark
 import dev.justinsmith.interval.ui.TabGrid
-import dev.justinsmith.interval.ui.configDescription
+import dev.justinsmith.interval.ui.workoutDescription
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
@@ -306,14 +306,14 @@ private fun HistoryRow(item: HistoryItem, modifier: Modifier = Modifier) {
     ) {
         StripeMark(IntervalTheme.palette.workMark, height = Sizes.historyMarkHeight)
         Column(Modifier.weight(1f)) {
-            val shape = configDescription(item.config)
+            val shape = workoutDescription(item.config)
             val detail = listOfNotNull(
                 shape.takeIf { item.presetName != null },
                 stringResource(Res.string.history_ended_early).takeIf { item.endedEarly },
                 item.calories?.let { stringResource(Res.string.history_calories_value, it) },
                 item.time,
             )
-            Text(item.presetName ?: shape, style = IntervalTheme.type.label, color = palette.text, maxLines = 1)
+            Text(item.presetName ?: shape, style = IntervalTheme.type.label, color = palette.text)
             Text(
                 detail.reduce { joined, part -> stringResource(Res.string.common_joined, joined, part) },
                 style = IntervalTheme.type.meta,

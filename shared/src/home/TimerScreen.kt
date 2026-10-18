@@ -24,11 +24,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.presets.PresetDraft
 import dev.justinsmith.interval.presets.PresetEditorHost
 import dev.justinsmith.interval.presets.rememberPresetDraft
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.valueOf
+import dev.justinsmith.interval.ui.ActivitySheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.SetupLanes
@@ -57,6 +59,7 @@ fun TimerRoute(
         onStart = onStart,
         onOpenSettings = onOpenSettings,
         onSeeAllPresets = onSeeAllPresets,
+        onSetActivity = viewModel::setActivity,
         modifier = modifier,
     )
 }
@@ -76,7 +79,10 @@ fun TimerScreen(
     onOpenSettings: () -> Unit,
     onSeeAllPresets: () -> Unit,
     modifier: Modifier = Modifier,
+    onSetActivity: (Activity) -> Unit = {},
 ) {
+    var choosingActivity by rememberSaveable { mutableStateOf(false) }
+    val onEditActivity = { choosingActivity = true }
     // Saved by name: an enum is not saveable on every platform.
     var editingName by rememberSaveable { mutableStateOf<String?>(null) }
     val editing = editingName?.let(ConfigField::valueOf)
@@ -90,7 +96,7 @@ fun TimerScreen(
             Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center) {
                 Column(Modifier.width(Sizes.setupColumnLandscape).fillMaxHeight()) {
                     TimerTitleBar(state.canSavePreset, onSave, onOpenSettings)
-                    Total(state, Modifier.padding(horizontal = Spacing.space20))
+                    Total(state, onEditActivity, Modifier.padding(horizontal = Spacing.space20))
                     Spacer(Modifier.weight(1f))
                     StartRow(onStart, onSeeAllPresets, Modifier.padding(Spacing.space16))
                 }
@@ -109,7 +115,7 @@ fun TimerScreen(
                 SetupLanes(Modifier.matchParentSize())
                 Column(Modifier.fillMaxSize()) {
                     TimerTitleBar(state.canSavePreset, onSave, onOpenSettings)
-                    Total(state, Modifier.padding(horizontal = Spacing.space20))
+                    Total(state, onEditActivity, Modifier.padding(horizontal = Spacing.space20))
                     Column(Modifier.weight(1f).padding(horizontal = Spacing.space16, vertical = Spacing.space12)) {
                         StepperRows(state.config, onStep, onEdit)
                     }
@@ -130,6 +136,13 @@ fun TimerScreen(
             onStep = { onStep(field, it) },
             onPick = { onSet(field, it) },
             onDismiss = { editingName = null },
+        )
+    }
+    if (choosingActivity) {
+        ActivitySheet(
+            selected = state.config.activity,
+            onSelect = onSetActivity,
+            onDismiss = { choosingActivity = false },
         )
     }
     PresetEditorHost(

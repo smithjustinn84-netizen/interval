@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.activity_title
 import dev.justinsmith.interval.resources.common_cancel
 import dev.justinsmith.interval.resources.common_save
 import dev.justinsmith.interval.resources.preset_editor_copy_title
@@ -33,6 +34,7 @@ import dev.justinsmith.interval.resources.preset_editor_total
 import dev.justinsmith.interval.resources.preset_name_count
 import dev.justinsmith.interval.resources.preset_name_label
 import dev.justinsmith.interval.resources.preset_save_title
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
@@ -44,14 +46,17 @@ import dev.justinsmith.interval.timer.storedName
 import dev.justinsmith.interval.timer.valueOf
 import dev.justinsmith.interval.timer.withValue
 import dev.justinsmith.interval.ui.AccentButton
+import dev.justinsmith.interval.ui.ActivitySheet
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.FieldRow
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ValueSheet
+import dev.justinsmith.interval.ui.labelRes
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -115,6 +120,7 @@ internal fun PresetEditor(
     // Saved by name: an enum is not saveable on every platform.
     var editingName by rememberSaveable { mutableStateOf<String?>(null) }
     val editing = editingName?.let(ConfigField::valueOf)
+    var choosingActivity by rememberSaveable { mutableStateOf(false) }
     IntervalSheet(title = title, onDismiss = onDismiss) { hide ->
         val save = {
             onSave(Preset(wanted, draft.config, draft.id))
@@ -143,6 +149,12 @@ internal fun PresetEditor(
                 if (index > 0) RowDivider()
                 FieldRow(field, draft.config.valueOf(field), onClick = { editingName = field.name })
             }
+            RowDivider()
+            LinkRow(
+                stringResource(Res.string.activity_title),
+                stringResource(draft.config.activity.labelRes),
+                onClick = { choosingActivity = true },
+            )
         }
         EditorTotal(total)
         sameShape?.let { EditorHint(stringResource(Res.string.preset_editor_same_shape, it.name)) }
@@ -156,6 +168,13 @@ internal fun PresetEditor(
             onStep = { direction -> onChangeShape { it.stepped(field, direction) } },
             onPick = { value -> onChangeShape { it.withValue(field, value) } },
             onDismiss = { editingName = null },
+        )
+    }
+    if (choosingActivity) {
+        ActivitySheet(
+            selected = draft.config.activity,
+            onSelect = { activity -> onChangeShape { it.copy(activity = activity) } },
+            onDismiss = { choosingActivity = false },
         )
     }
 }
@@ -265,10 +284,16 @@ private val PresetDraftSaver: Saver<PresetDraft?, Any> = mapSaver(
 )
 
 private fun IntervalConfig.saved(): Map<String, Any?> =
-    mapOf(PREP to prepSeconds, WORK to workSeconds, REST to restSeconds, ROUNDS to rounds)
+    mapOf(PREP to prepSeconds, WORK to workSeconds, REST to restSeconds, ROUNDS to rounds, ACTIVITY to activity.name)
 
 private fun Map<String, Any?>.restoredConfig(): IntervalConfig =
-    IntervalConfig(this[PREP] as Int, this[WORK] as Int, this[REST] as Int, this[ROUNDS] as Int)
+    IntervalConfig(
+        prepSeconds = this[PREP] as Int,
+        workSeconds = this[WORK] as Int,
+        restSeconds = this[REST] as Int,
+        rounds = this[ROUNDS] as Int,
+        activity = Activity.named(this[ACTIVITY] as String?),
+    )
 
 private const val MODE = "mode"
 private const val NAME = "name"
@@ -277,3 +302,4 @@ private const val PREP = "prep"
 private const val WORK = "work"
 private const val REST = "rest"
 private const val ROUNDS = "rounds"
+private const val ACTIVITY = "activity"

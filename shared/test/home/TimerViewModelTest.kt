@@ -6,6 +6,7 @@ import dev.justinsmith.interval.data.BodySettings
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.MainDispatcherTest
 import dev.justinsmith.interval.fakes.saveCurrentAsPreset
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -78,5 +79,15 @@ class TimerViewModelTest : MainDispatcherTest() {
 
         viewModel.step(ConfigField.Rounds, 1)
         assertTrue(viewModel.state.value.calories!! > expected)
+    }
+
+    @Test
+    fun `the estimate follows the activity`() {
+        repository.updateAppSettings { it.copy(body = BodySettings(weightKg = 70.0, effort = Effort.Hard)) }
+        viewModel.setActivity(Activity.Barbell)
+        val barbell = viewModel.state.value.calories!!
+        viewModel.setActivity(Activity.Running)
+        assertEquals(Activity.Running, viewModel.state.value.config.activity)
+        assertTrue(viewModel.state.value.calories!! > barbell)
     }
 }

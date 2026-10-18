@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
@@ -16,6 +17,7 @@ import dev.justinsmith.interval.timer.estimateCalories
 import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.plannedWorkSeconds
 import dev.justinsmith.interval.timer.storedName
+import dev.justinsmith.interval.timer.withPreset
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -51,14 +53,17 @@ data class BodySettings(
     val unit: WeightUnit = WeightUnit.Kg,
     val effort: Effort = Effort.Hard,
 ) {
-    /** The calories of [workSeconds] at [effort] and [otherSeconds] recovering, or null without a weight. */
-    fun calories(workSeconds: Int, otherSeconds: Int): Int? =
-        weightKg?.let { estimateCalories(workSeconds, otherSeconds, it, effort) }
+    /**
+     * The calories of [workSeconds] of [activity] at [effort] and [otherSeconds] recovering, or null
+     * without a weight.
+     */
+    fun calories(workSeconds: Int, otherSeconds: Int, activity: Activity): Int? =
+        weightKg?.let { estimateCalories(workSeconds, otherSeconds, it, effort, activity) }
 
     /** What [config] will burn if it runs as planned, get ready included; null without a weight. */
     fun plannedCalories(config: IntervalConfig): Int? {
         val work = config.rounds * config.workSeconds
-        return calories(work, config.totalSeconds - work)
+        return calories(work, config.totalSeconds - work, config.activity)
     }
 }
 
@@ -88,7 +93,7 @@ data class HistoryEntry(
                 endedEarly,
             )
             ).coerceAtMost(elapsedSeconds)
-        return body.calories(work, elapsedSeconds - work)
+        return body.calories(work, elapsedSeconds - work, config.activity)
     }
 }
 
@@ -202,9 +207,9 @@ class IntervalRepository(
         persist { settings.edit { write(it, value.value) } }
     }
 
-    /** Takes [preset]'s work, rest and rounds; the get-ready countdown stays the user's own setting. */
+    /** Puts [preset] on the Timer, keeping the user's get-ready countdown and, mostly, activity: see [withPreset]. */
     fun applyPreset(preset: Preset) {
-        updateConfig { preset.config.copy(prepSeconds = it.prepSeconds) }
+        updateConfig { it.withPreset(preset) }
     }
 
     /**

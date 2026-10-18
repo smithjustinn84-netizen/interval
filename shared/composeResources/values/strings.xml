@@ -68,6 +68,31 @@
     <string name="common_prep_line">%1$s to get ready</string>
     <!-- A workout's estimated burn before it runs: "≈ 48 kcal" -->
     <string name="common_calories_estimate">≈ %1$d kcal</string>
+    <!-- A preset with no activity of its own, estimated with the Timer's: "≈ 43 kcal as Jump rope" -->
+    <string name="presets_calories_estimate_as">≈ %1$d kcal as %2$s</string>
+    <string name="activity_title">Activity</string>
+    <string name="activity_sheet_note">What you do in the work intervals. Calories depend on it.</string>
+    <string name="activity_choose_cd">Activity: %1$s. Change</string>
+    <string name="activity_general">General</string>
+    <string name="activity_general_hint">Mixed or other high-intensity work</string>
+    <string name="activity_bike">Bike</string>
+    <string name="activity_bike_hint">Stationary, spin or air bike</string>
+    <string name="activity_rower">Rower</string>
+    <string name="activity_rower_hint">Rowing machine</string>
+    <string name="activity_ski_erg">Ski erg</string>
+    <string name="activity_ski_erg_hint">Ski machine, double poling</string>
+    <string name="activity_running">Running</string>
+    <string name="activity_running_hint">Sprints and running intervals</string>
+    <string name="activity_jump_rope">Jump rope</string>
+    <string name="activity_jump_rope_hint">Skipping, singles to fast</string>
+    <string name="activity_bodyweight">Bodyweight</string>
+    <string name="activity_bodyweight_hint">Burpees, squats, push-ups, jumping jacks</string>
+    <string name="activity_kettlebell">Kettlebell</string>
+    <string name="activity_kettlebell_hint">Swings, snatches, kettlebell circuits</string>
+    <string name="activity_barbell">Barbell</string>
+    <string name="activity_barbell_hint">Olympic lifts, squats, deadlifts</string>
+    <string name="activity_climbing">Climbing</string>
+    <string name="activity_climbing_hint">Hangboard, bouldering, climbing</string>
     <string name="common_start_workout">Start workout</string>
     <string name="timer_all_presets_cd">All presets</string>
     <!-- The + on the Timer's title bar, shown while the settings match no preset -->
@@ -196,7 +221,7 @@
     <string name="settings_weight">Body weight</string>
     <string name="settings_weight_unset">Set it to see calorie estimates</string>
     <string name="settings_weight_value">%1$d %2$s</string>
-    <string name="settings_effort_hint">How hard you push in work intervals. Calories are an estimate from weight, effort and time.</string>
+    <string name="settings_effort_hint">How hard you push in work intervals. Calories are an estimate from this, your weight and the activity on the Timer.</string>
     <string name="effort_easy">Easy</string>
     <string name="effort_steady">Steady</string>
     <string name="effort_hard">Hard</string>

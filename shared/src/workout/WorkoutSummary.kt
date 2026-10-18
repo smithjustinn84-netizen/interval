@@ -57,10 +57,10 @@ import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
-import dev.justinsmith.interval.ui.configDescription
 import dev.justinsmith.interval.ui.enterRising
 import dev.justinsmith.interval.ui.presetNameOrCustom
 import dev.justinsmith.interval.ui.rememberEntrance
+import dev.justinsmith.interval.ui.workoutDescription
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -306,5 +306,5 @@ private fun Stat(value: String, label: String, modifier: Modifier = Modifier) {
 private fun shapeText(state: WorkoutUiState): String = stringResource(
     Res.string.common_joined,
     presetNameOrCustom(state.presetName),
-    configDescription(state.config),
+    workoutDescription(state.config),
 )

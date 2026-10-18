@@ -4,10 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.data.AppSettings
 import dev.justinsmith.interval.data.IntervalRepository
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
+import dev.justinsmith.interval.timer.withPreset
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -23,6 +25,11 @@ data class PresetRowItem(
     val share: Float = 1f,
     /** The estimated calories it will burn, with the user's get-ready countdown; null without a body weight. */
     val calories: Int? = null,
+    /**
+     * The Timer's activity, when the estimate is worked out with it because the preset names none of its
+     * own; null when the preset has one, or the Timer's is General too.
+     */
+    val estimatedAs: Activity? = null,
 )
 
 data class PresetsUiState(
@@ -79,9 +86,10 @@ class PresetsViewModel(private val repository: IntervalRepository) : ViewModel()
     }
 
     private fun buildState(config: IntervalConfig, presets: List<Preset>, app: AppSettings): PresetsUiState {
-        // Every total counts the user's own get-ready countdown, as a workout would.
-        fun withPrep(preset: Preset) = preset.config.copy(prepSeconds = config.prepSeconds)
-        fun totalOf(preset: Preset) = withPrep(preset).totalSeconds
+        // Every total and estimate is the preset as it would run from the Timer: with the user's own
+        // get-ready countdown, and the Timer's activity unless the preset names one.
+        fun asRun(preset: Preset) = config.withPreset(preset)
+        fun totalOf(preset: Preset) = asRun(preset).totalSeconds
         val onTimer = presets.matching(config)
         val canSaveCurrent = onTimer == null
         val longest = (presets.map { totalOf(it) } + if (canSaveCurrent) config.totalSeconds else 0)
@@ -94,7 +102,10 @@ class PresetsViewModel(private val repository: IntervalRepository) : ViewModel()
                 total = formatClock(total),
                 selected = preset == onTimer,
                 share = total.toFloat() / longest,
-                calories = app.body.plannedCalories(withPrep(preset)),
+                calories = app.body.plannedCalories(asRun(preset)),
+                estimatedAs = config.activity.takeIf {
+                    preset.config.activity == Activity.General && it != Activity.General
+                },
             )
         }
         return PresetsUiState(

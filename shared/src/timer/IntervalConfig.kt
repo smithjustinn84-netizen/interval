@@ -6,6 +6,8 @@ data class IntervalConfig(
     val workSeconds: Int = 30,
     val restSeconds: Int = 15,
     val rounds: Int = 8,
+    /** What the work intervals are spent doing, for the calorie estimate. Not part of the [sameShape]. */
+    val activity: Activity = Activity.General,
 ) {
     /** Wall-clock length of the whole session: prep, every work interval, and the rests between them. */
     val totalSeconds: Int get() = prepSeconds + rounds * workSeconds + (rounds - 1) * restSeconds

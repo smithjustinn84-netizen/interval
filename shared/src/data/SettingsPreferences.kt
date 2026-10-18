@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.WeightUnit
@@ -16,6 +17,7 @@ private val PREP = intPreferencesKey("prep")
 private val WORK = intPreferencesKey("work")
 private val REST = intPreferencesKey("rest")
 private val ROUNDS = intPreferencesKey("rounds")
+private val ACTIVITY = stringPreferencesKey("activity")
 
 private val CUE_SOUND = booleanPreferencesKey("cue_sound")
 private val CUE_VOICE = booleanPreferencesKey("cue_voice")
@@ -36,6 +38,7 @@ internal fun Preferences.toConfig(): IntervalConfig {
         workSeconds = this[WORK] ?: defaults.workSeconds,
         restSeconds = this[REST] ?: defaults.restSeconds,
         rounds = this[ROUNDS] ?: defaults.rounds,
+        activity = Activity.named(this[ACTIVITY]),
     )
 }
 
@@ -44,6 +47,7 @@ internal fun MutablePreferences.write(config: IntervalConfig) {
     this[WORK] = config.workSeconds
     this[REST] = config.restSeconds
     this[ROUNDS] = config.rounds
+    this[ACTIVITY] = config.activity.name
 }
 
 internal fun Preferences.toCueSettings(): CueSettings {

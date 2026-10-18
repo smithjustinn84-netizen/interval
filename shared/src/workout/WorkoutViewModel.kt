@@ -185,7 +185,7 @@ class WorkoutViewModel(
         elapsedSeconds = activeSeconds,
         presets = presets,
         keepScreenOn = keepScreenOn,
-        calories = body.calories(workSeconds, activeSeconds - workSeconds),
+        calories = body.calories(workSeconds, activeSeconds - workSeconds, config.activity),
     )
 
     private fun play(cues: List<Cue>) {

@@ -13,13 +13,14 @@ import androidx.room.Query
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
 import androidx.room.Update
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import kotlinx.coroutines.flow.Flow
 
 /**
  * Workout history and the user's own presets. Settings live in DataStore, not here. Version 2 added
- * [HistoryEntity.workActiveSeconds].
+ * [HistoryEntity.workActiveSeconds] and the activity of each workout and preset.
  */
 @Database(
     entities = [HistoryEntity::class, PresetEntity::class],
@@ -87,6 +88,8 @@ data class HistoryEntity(
     @ColumnInfo(name = "ended_early") val endedEarly: Boolean,
     /** Of [elapsedSeconds], the time spent in work intervals. Null in rows from version 1. */
     @ColumnInfo(name = "work_active_seconds") val workActiveSeconds: Int? = null,
+    /** An [Activity] by name. Null in rows from version 1, which read as [Activity.General]. */
+    val activity: String? = null,
 )
 
 @Entity(tableName = "preset")
@@ -97,11 +100,13 @@ data class PresetEntity(
     @ColumnInfo(name = "work_seconds") val workSeconds: Int,
     @ColumnInfo(name = "rest_seconds") val restSeconds: Int,
     val rounds: Int,
+    /** As [HistoryEntity.activity]. */
+    val activity: String? = null,
 )
 
 internal fun HistoryEntity.toDomain() = HistoryEntry(
     finishedAtEpochMillis = finishedAtEpochMillis,
-    config = IntervalConfig(prepSeconds, workSeconds, restSeconds, rounds),
+    config = IntervalConfig(prepSeconds, workSeconds, restSeconds, rounds, Activity.named(activity)),
     elapsedSeconds = elapsedSeconds,
     endedEarly = endedEarly,
     workActiveSeconds = workActiveSeconds,
@@ -116,10 +121,11 @@ internal fun HistoryEntry.toEntity() = HistoryEntity(
     elapsedSeconds = elapsedSeconds,
     endedEarly = endedEarly,
     workActiveSeconds = workActiveSeconds,
+    activity = config.activity.name,
 )
 
 internal fun PresetEntity.toDomain() =
-    Preset(name, IntervalConfig(prepSeconds, workSeconds, restSeconds, rounds), id = id)
+    Preset(name, IntervalConfig(prepSeconds, workSeconds, restSeconds, rounds, Activity.named(activity)), id = id)
 
 internal fun Preset.toEntity() = PresetEntity(
     id = id ?: 0,
@@ -128,4 +134,5 @@ internal fun Preset.toEntity() = PresetEntity(
     workSeconds = config.workSeconds,
     restSeconds = config.restSeconds,
     rounds = config.rounds,
+    activity = config.activity.name,
 )

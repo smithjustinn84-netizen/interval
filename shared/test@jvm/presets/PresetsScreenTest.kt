@@ -15,6 +15,8 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
@@ -74,7 +76,7 @@ class PresetsScreenTest {
         setThemedContent { Screen() }
         onNodeWithText("Hangboard").performClick()
         inSheet("Built-in").assertExists()
-        inSheet("10s on · 50s off · ×6").assertExists()
+        inSheet("10s on · 50s off · ×6 · Climbing").assertExists()
         onNodeWithText("0:10 to get ready").assertExists()
         onNodeWithText("Start workout").performClick()
         assertEquals(listOf(builtInPresets[2]), started)
@@ -158,6 +160,24 @@ class PresetsScreenTest {
     fun `cards show each preset's shape`() = runUiTest {
         setThemedContent { Screen() }
         onNodeWithText("25s on · 10s off · ×8").assertExists()
+    }
+
+    @Test
+    fun `an estimate made with the Timer's activity says which`() = runUiTest {
+        val state = state(custom = emptyList()).let { s ->
+            s.copy(
+                builtIn = s.builtIn.map { item ->
+                    when (item.preset.name) {
+                        "Tabata" -> item.copy(calories = 43, estimatedAs = Activity.JumpRope)
+                        "Hangboard" -> item.copy(calories = 22)
+                        else -> item
+                    }
+                },
+            )
+        }
+        setThemedContent { Screen(state) }
+        onNodeWithText("20s on · 10s off · ×8 · ≈ 43 kcal as Jump rope").assertExists()
+        onNodeWithText("10s on · 50s off · ×6 · Climbing · ≈ 22 kcal").performScrollTo().assertExists()
     }
 
     @Test

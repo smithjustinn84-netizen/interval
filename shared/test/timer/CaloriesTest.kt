@@ -5,9 +5,11 @@ import kotlin.test.assertEquals
 
 class CaloriesTest {
     @Test
-    fun `work burns at the effort's MET by the ACSM equation`() {
-        // 8 MET × 3.5 × 70 kg / 200 = 9.8 kcal a minute.
-        assertEquals(98, estimateCalories(workSeconds = 600, otherSeconds = 0, weightKg = 70.0, Effort.Hard))
+    fun `work burns at the activity's MET for the effort by the ACSM equation`() {
+        // Hard on a rower is 11 MET: 11 × 3.5 × 70 kg / 200 = 13.475 kcal a minute.
+        assertEquals(135, estimateCalories(600, 0, weightKg = 70.0, Effort.Hard, Activity.Rower))
+        // Hard barbell work is 6 MET: 7.35 kcal a minute.
+        assertEquals(74, estimateCalories(600, 0, weightKg = 70.0, Effort.Hard, Activity.Barbell))
     }
 
     @Test
@@ -19,15 +21,23 @@ class CaloriesTest {
 
     @Test
     fun `work and recovery add up and round to the nearest calorie`() {
-        // 11.2 kcal a minute for 4 minutes and 3.5 for 2: 51.8.
-        assertEquals(52, estimateCalories(workSeconds = 240, otherSeconds = 120, weightKg = 80.0, Effort.Hard))
+        // Hard general work is 9 MET: 12.6 kcal a minute for 4 minutes, and 3.5 for 2: 57.4.
+        assertEquals(57, estimateCalories(workSeconds = 240, otherSeconds = 120, weightKg = 80.0, Effort.Hard))
     }
 
     @Test
-    fun `harder effort burns more`() {
-        val burned = Effort.entries.map { estimateCalories(600, 0, 70.0, it) }
-        assertEquals(burned.sorted(), burned)
-        assertEquals(burned.distinct(), burned)
+    fun `every activity burns more the harder the effort`() {
+        Activity.entries.forEach { activity ->
+            val mets = Effort.entries.map { activity.met(it) }
+            assertEquals(mets.sorted().distinct(), mets, "$activity")
+        }
+    }
+
+    @Test
+    fun `an unknown or missing activity name reads as General`() {
+        assertEquals(Activity.Bike, Activity.named("Bike"))
+        assertEquals(Activity.General, Activity.named("Trampoline"))
+        assertEquals(Activity.General, Activity.named(null))
     }
 
     @Test
