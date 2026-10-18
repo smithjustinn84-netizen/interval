@@ -7,9 +7,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.ui.runUiTest
@@ -64,6 +67,7 @@ class HistoryScreenTest {
         onOpenDay = { events += "day $it" },
         onStart = { name, _ -> events += "start $name" },
         onRemovePlanned = { events += "remove $it" },
+        onPlanOnce = { preset, day -> events += "once ${preset.name} $day" },
         onOpenWorkout = { events += "open $it" },
         onPlan = { events += "plan" },
         onShowTimer = { events += "timer" },
@@ -116,11 +120,12 @@ class HistoryScreenTest {
             ),
         )
         setThemedContent { HistoryScreen(state, actions) }
-        onNodeWithContentDescription(
-            "This week: Monday, done; Tuesday, missed; Wednesday, no workout; Today, planned; " +
-                "Friday, no workout; Saturday, no workout; Sunday, planned",
-        ).assertExists()
-        onNodeWithText("M").performClick()
+        onNodeWithContentDescription("Monday, done").assertExists()
+        onNodeWithContentDescription("Tuesday, missed").assertExists()
+        onNodeWithContentDescription("Wednesday, no workout").assertExists()
+        onNodeWithContentDescription("Today, planned").assertExists()
+        onNodeWithContentDescription("Sunday, planned").assertExists()
+        onNodeWithContentDescription("Monday, done").performClick()
         assertEquals(listOf("day 20738"), events)
     }
 
@@ -232,5 +237,26 @@ class HistoryScreenTest {
         onNodeWithContentDescription("Remove HIIT 30/30").assertDoesNotExist()
         onNodeWithContentDescription("Remove Hangboard").performClick()
         assertEquals(listOf("remove 2"), events)
+    }
+
+    @Test
+    fun `a day to come plans a workout on that day`() = runUiTest {
+        val sheet =
+            DaySheet(20_743, HistoryDay.On("Saturday, Oct 17"), weekday = 6, emptyList(), emptyList(), past = false)
+        var state by mutableStateOf(oneWorkout.copy(daySheet = sheet, choices = builtInPresets.map { PlanChoice(it) }))
+        val closing = actions
+        setThemedContent {
+            HistoryScreen(
+                state,
+                HistoryActions(
+                    onOpenDay = { if (it == null) state = state.copy(daySheet = null) },
+                    onPlanOnce = closing.onPlanOnce,
+                ),
+            )
+        }
+        onNodeWithText("Add workout").performClick()
+        onNodeWithText("HIIT 30/30").performClick()
+        onNode(hasText("Add to plan") and hasClickAction()).performClick()
+        assertEquals(listOf("once HIIT 30/30 20743"), events)
     }
 }

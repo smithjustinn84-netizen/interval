@@ -27,11 +27,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.history_day_cd
-import dev.justinsmith.interval.resources.history_days_cd
 import dev.justinsmith.interval.resources.history_state_done
 import dev.justinsmith.interval.resources.history_state_done_cd
 import dev.justinsmith.interval.resources.history_state_missed
@@ -40,7 +38,6 @@ import dev.justinsmith.interval.resources.history_state_planned
 import dev.justinsmith.interval.resources.history_state_planned_cd
 import dev.justinsmith.interval.resources.history_state_rest_cd
 import dev.justinsmith.interval.resources.history_today
-import dev.justinsmith.interval.resources.history_week_cd
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EnterEasing
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -53,25 +50,28 @@ import org.jetbrains.compose.resources.stringResource
 /**
  * Monday to Sunday: a bar for each day worked, as tall as its time against the longest; an outlined block
  * for a day still planned, a filled one for a missed day, and a short bar for a rest day. The bars grow
- * up from the baseline as the tab opens, one after another. A tap opens the day.
+ * up from the baseline as the tab opens, one after another. Each day is a button that opens it.
  */
 @Composable
 internal fun WeekStrip(week: List<DayCell>, onDay: (Long) -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val max = week.maxOfOrNull { it.seconds } ?: 0
-    val description = weekDescription(week)
     Row(
-        modifier.fillMaxWidth().semantics { contentDescription = description },
+        modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
         verticalAlignment = Alignment.Bottom,
     ) {
         week.forEachIndexed { index, day ->
             key(day.epochDay) {
                 val interaction = remember { MutableInteractionSource() }
+                // Each day is its own button, read by name and state: "Monday, done", "Today, planned".
+                val name = stringResource(if (day.today) Res.string.history_today else WeekdayNames[day.weekday - 1])
+                val description = dayDescription(name, day)
                 Column(
                     Modifier
                         .weight(1f)
-                        .surfaceButton(interaction, Corners.radius12, Color.Transparent, { onDay(day.epochDay) }),
+                        .surfaceButton(interaction, Corners.radius12, Color.Transparent, { onDay(day.epochDay) })
+                        .clearAndSetSemantics { contentDescription = description },
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(Spacing.space8),
                 ) {
@@ -239,14 +239,4 @@ internal fun dayDescription(name: String, cell: DayCell): String {
         },
     )
     return stringResource(Res.string.history_day_cd, name, state)
-}
-
-/** The week strip for screen readers: "This week: Monday, done; Tuesday, missed; Today, planned". */
-@Composable
-internal fun weekDescription(week: List<DayCell>): String {
-    val days = week.map { day ->
-        dayDescription(stringResource(if (day.today) Res.string.history_today else WeekdayNames[day.weekday - 1]), day)
-    }
-    val joined = days.reduceOrNull { all, day -> stringResource(Res.string.history_days_cd, all, day) }.orEmpty()
-    return stringResource(Res.string.history_week_cd, joined)
 }

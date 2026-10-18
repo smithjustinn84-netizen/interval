@@ -1,9 +1,17 @@
 <journey name="Workout history">
   <description>
-    End a workout after its first round, find it in History, then clear History. Run on a fresh
-    install (adb shell pm clear dev.justinsmith.interval).
+    Plan a workout from the first run, end a workout after its first round, find it in History and
+    open it, then clear History. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
+    <action>Tap the "History" tab</action>
+    <action>Verify that the screen shows "Train to a plan"</action>
+    <action>Tap "Plan your week"</action>
+    <action>Verify that the screen shows "Weekly goal" and a "Routine" row for each weekday</action>
+    <action>Tap "Raise the goal"</action>
+    <action>Verify that the weekly goal shows 3</action>
+    <action>Tap "Back"</action>
+    <action>Tap the "Timer" tab</action>
     <action>Tap "Start workout"</action>
     <action>Tap "Skip"</action>
     <action>Verify that the screen shows "Work"</action>
@@ -15,11 +23,16 @@
     <action>Verify that the summary shows "Ended" and "Saved to history"</action>
     <action>Tap "Done"</action>
     <action>Tap the "History" tab</action>
-    <action>Verify that a "Today" section lists one workout and "Last 7 days" shows 1 workout</action>
+    <action>Verify that "Week" is picked, "This week" reads "2 more to hit 3" with a 1/3 ring, and a "Today" section lists one workout</action>
+    <action>Tap the workout under "Today"</action>
+    <action>Verify that its page shows "ended early", "Repeat now" and "Plan again"</action>
+    <action>Tap "Back"</action>
+    <action>Tap "Month"</action>
+    <action>Verify that a calendar of this month shows today marked done</action>
     <action>Tap "More options"</action>
     <action>Tap "Clear history"</action>
     <action>Verify that a dialog titled "Clear history?" is shown</action>
     <action>Tap "Clear"</action>
-    <action>Verify that the screen shows "Finished workouts show up here."</action>
+    <action>Verify that the screen is back to "Train to a plan": with no workouts and nothing planned, History starts over</action>
   </actions>
 </journey>

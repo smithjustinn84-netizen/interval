@@ -8,6 +8,8 @@ import dev.justinsmith.interval.data.HistoryEntry
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.data.PlanSchedule
 import dev.justinsmith.interval.data.PlannedWorkout
+import dev.justinsmith.interval.plan.PlanChoice
+import dev.justinsmith.interval.plan.planChoices
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -135,6 +137,8 @@ data class HistoryUiState(
     val upNext: List<UpNextItem> = emptyList(),
     val hasPlans: Boolean = false,
     val daySheet: DaySheet? = null,
+    /** What the day sheet's Add workout can plan: the Timer's workout, then every preset. */
+    val choices: List<PlanChoice> = emptyList(),
 ) {
     /** Nothing done and nothing planned: the first run. */
     val isEmpty: Boolean get() = sections.isEmpty() && !hasPlans
@@ -177,9 +181,9 @@ class HistoryViewModel(
             repository.planned,
             repository.presets,
             repository.appSettings,
-            combine(days, view, ::Pair),
-        ) { history, planned, presets, app, (_, view) ->
-            buildState(history, planned, presets, app, view)
+            combine(days, view, repository.config) { _, view, config -> view to config },
+        ) { history, planned, presets, app, (view, config) ->
+            buildState(history, planned, presets, app, view, config)
         }
             .stateIn(
                 scope = viewModelScope,
@@ -190,6 +194,7 @@ class HistoryViewModel(
                     repository.presets.value,
                     repository.appSettings.value,
                     view.value,
+                    repository.config.value,
                 ),
             )
 
@@ -210,6 +215,14 @@ class HistoryViewModel(
     /** Puts [name]'s [config] on the Timer, for the workout about to start. */
     fun putOnTimer(name: String, config: IntervalConfig) {
         repository.applyPreset(Preset(name, config))
+    }
+
+    fun planWeekly(preset: Preset, weekdays: Set<Int>) {
+        repository.planWeekly(preset, weekdays)
+    }
+
+    fun planOnce(preset: Preset, epochDay: Long) {
+        repository.planOnce(preset, epochDay)
     }
 
     fun removePlanned(planId: Long) {
@@ -234,6 +247,7 @@ class HistoryViewModel(
         presets: List<Preset>,
         app: AppSettings,
         view: HistoryView,
+        config: IntervalConfig,
     ): HistoryUiState {
         val today = timestamps.dayNumber(clock.nowMillis())
         val log = TrainingLog(history, planned, today, timestamps::dayNumber)
@@ -278,6 +292,7 @@ class HistoryViewModel(
                 UpNextItem(it.plan.id, it.epochDay, heading(it.epochDay, today), it.plan.name, it.plan.config)
             },
             hasPlans = planned.isNotEmpty(),
+            choices = planChoices(presets, config),
             daySheet = view.openDay?.let { day ->
                 val training = log.day(day)
                 DaySheet(

@@ -38,10 +38,11 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * One day, opened from the week strip or the calendar: its plans, each startable and a one-off removable,
- * and the workouts done on it. A weekly plan is changed in Plan, for every week, as the sheet says.
+ * and the workouts done on it. A day still to come can have a workout added on it ([onAddWorkout]). A
+ * weekly plan is changed in Plan, for every week, as the sheet says.
  */
 @Composable
-internal fun DaySheetContent(sheet: DaySheet, actions: HistoryActions) {
+internal fun DaySheetContent(sheet: DaySheet, actions: HistoryActions, onAddWorkout: () -> Unit) {
     val palette = IntervalTheme.palette
     val title = dayHeading(sheet.day)
     IntervalSheet(title = title, onDismiss = { actions.onOpenDay(null) }) { hide ->
@@ -88,12 +89,23 @@ internal fun DaySheetContent(sheet: DaySheet, actions: HistoryActions) {
             }
             if (!sheet.past) {
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-                    val toPlan = {
-                        hide()
-                        actions.onPlan()
-                    }
-                    DialogButton(stringResource(Res.string.history_open_plan), toPlan, primary = false)
-                    DialogButton(stringResource(Res.string.history_add_workout), toPlan, primary = true)
+                    DialogButton(
+                        stringResource(Res.string.history_open_plan),
+                        {
+                            hide()
+                            actions.onPlan()
+                        },
+                        primary = false,
+                    )
+                    // Plans on this day: the add sheet opens over History as this one closes.
+                    DialogButton(
+                        stringResource(Res.string.history_add_workout),
+                        {
+                            hide()
+                            onAddWorkout()
+                        },
+                        primary = true,
+                    )
                 }
             }
         }

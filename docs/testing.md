@@ -104,7 +104,7 @@ adb shell pm clear dev.justinsmith.interval      # Most journeys expect a fresh 
 | Journey | Covers |
 |---|---|
 | `start-workout.xml` | Edit work time via the sheet, start, pause/resume, skip, end with nothing saved |
-| `history.xml` | End after a round, find it in History, clear History |
+| `history.xml` | Set a weekly goal from the first run, end after a round, find it in History and open it, see it on the month, clear History |
 | `presets.xml` | Save the current settings from the Presets tab, put a built-in on the Timer and start one from its sheet, edit and delete the saved one |
 | `settings.xml` | Toggle a cue, switch to Dark and back, settings persist |
 | `system-back.xml` | System back from a tab returns to Timer; during a workout it pauses and asks |

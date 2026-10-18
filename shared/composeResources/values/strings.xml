@@ -201,9 +201,6 @@
     <string name="history_state_rest_cd">no workout</string>
     <!-- One day for screen readers: "Monday, done" -->
     <string name="history_day_cd">%1$s, %2$s</string>
-    <!-- The week strip for screen readers: "This week: Monday, done; Tuesday, missed" -->
-    <string name="history_week_cd">This week: %1$s</string>
-    <string name="history_days_cd">%1$s; %2$s</string>
     <!-- Up next: "Up next · Today" -->
     <string name="history_up_next">Up next · %1$s</string>
     <string name="history_edit_plan">Edit plan</string>

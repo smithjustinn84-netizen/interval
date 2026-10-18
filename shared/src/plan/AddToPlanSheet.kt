@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -205,7 +206,7 @@ private fun WeekdayPicker(weekdays: Int, onChange: (Int) -> Unit) {
     }
 }
 
-/** [days] a week to a row, the [picked] one accent. */
+/** [days] a week to a row, the [picked] one accent; a short last row keeps the columns. */
 @Composable
 private fun DayPicker(days: List<DayChoice>, picked: Long, onPick: (Long) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
@@ -226,6 +227,8 @@ private fun DayPicker(days: List<DayChoice>, picked: Long, onPick: (Long) -> Uni
                         modifier = Modifier.weight(1f),
                     )
                 }
+                // A short week keeps its days in their columns rather than stretching them.
+                repeat(WeekdayInitials.size - week.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }

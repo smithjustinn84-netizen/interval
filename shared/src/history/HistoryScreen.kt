@@ -28,6 +28,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.intl.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.justinsmith.interval.plan.AddToPlanSheet
+import dev.justinsmith.interval.plan.DayChoice
+import dev.justinsmith.interval.plan.PlanRepeat
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.common_cancel
 import dev.justinsmith.interval.resources.common_joined
@@ -76,7 +79,9 @@ import dev.justinsmith.interval.resources.weekday_short_5
 import dev.justinsmith.interval.resources.weekday_short_6
 import dev.justinsmith.interval.resources.weekday_short_7
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
+import dev.justinsmith.interval.timer.dateOfEpochDay
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.interval.ui.AccentButton
@@ -132,6 +137,8 @@ fun HistoryRoute(
                 onStartWorkout()
             },
             onRemovePlanned = viewModel::removePlanned,
+            onPlanWeekly = viewModel::planWeekly,
+            onPlanOnce = viewModel::planOnce,
             onOpenWorkout = {
                 viewModel.openDay(null)
                 onOpenWorkout(it)
@@ -157,6 +164,8 @@ class HistoryActions(
     /** Starts a workout of this name and shape now. */
     val onStart: (String, IntervalConfig) -> Unit = { _, _ -> },
     val onRemovePlanned: (Long) -> Unit = {},
+    val onPlanWeekly: (Preset, Set<Int>) -> Unit = { _, _ -> },
+    val onPlanOnce: (Preset, Long) -> Unit = { _, _ -> },
     val onOpenWorkout: (Long) -> Unit = {},
     val onPlan: () -> Unit = {},
     val onShowTimer: () -> Unit = {},
@@ -171,6 +180,8 @@ class HistoryActions(
 fun HistoryScreen(state: HistoryUiState, actions: HistoryActions, modifier: Modifier = Modifier) {
     var menu by remember { mutableStateOf(false) }
     var confirming by rememberSaveable { mutableStateOf(false) }
+    // The day the day sheet's Add workout is planning on, while its add sheet is open.
+    var addingOn by rememberSaveable { mutableStateOf<Long?>(null) }
     val gutter = Modifier.padding(horizontal = Spacing.space16)
     // One column on a phone; wider windows lay the days out side by side.
     TabGrid(
@@ -216,7 +227,19 @@ fun HistoryScreen(state: HistoryUiState, actions: HistoryActions, modifier: Modi
             }
         }
     }
-    state.daySheet?.let { DaySheetContent(it, actions) }
+    state.daySheet?.let { sheet -> DaySheetContent(sheet, actions, onAddWorkout = { addingOn = sheet.epochDay }) }
+    addingOn?.let { day ->
+        AddToPlanSheet(
+            choices = state.choices,
+            days = listOf(DayChoice(day, weekdayOf(day), dateOfEpochDay(day).day)),
+            onPlanWeekly = actions.onPlanWeekly,
+            onPlanOnce = actions.onPlanOnce,
+            onDismiss = { addingOn = null },
+            repeat = PlanRepeat.Once,
+            weekday = weekdayOf(day),
+            epochDay = day,
+        )
+    }
     if (confirming) {
         ConfirmDialog(
             title = stringResource(Res.string.history_clear_title),
