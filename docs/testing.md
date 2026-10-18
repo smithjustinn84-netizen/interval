@@ -37,7 +37,12 @@ The UI tests render offscreen with Skiko and need no display, including on the L
   - `FakeStorage`: an `InMemoryDataStore` plus `FakeHistoryDao` and `FakePresetDao`. Its
     `repository()` runs writes unconfined over fakes that never suspend, so a write has landed by the
     time the call returns. Two repositories over one `FakeStorage` are the app before and after a
-    restart.
+    restart. That hides code that reads repository state back right after writing it, which in the
+    app lands later, on `Dispatchers.IO`: test such code with `repository(scope = deferredStorageScope())`,
+    whose writes wait for the test's scheduler (`runCurrent()`/`advanceUntilIdle()`). Not
+    `backgroundScope`: `advanceUntilIdle` leaves background work waiting.
+  - `MainDispatcherTest`: the base class for a ViewModel's test, which stands in a test dispatcher
+    for `Dispatchers.Main` (unconfined unless the test passes another).
   - `RecordingCuePlayer`: records beeps, `Speech` lines and haptics.
   - `FixedTimestampFormatter`: time-zone free; `date()` is `"day N"`.
   - `fakePlatformModule(...)` binds the player and formatter for Koin; `fakeStorageModule(...)` binds a

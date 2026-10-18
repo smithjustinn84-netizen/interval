@@ -47,6 +47,9 @@ toolchain (`$compose.*`).
   3. `entry<X> { XRoute() }` in the `entryProvider` (App.kt)
 - **Screens** are split into `XRoute()` (resolves the ViewModel via `currentKoinScope()` + `viewModel { }`,
   collects state) and a stateless `XScreen(state, callbacks)` that previews and tests can drive directly.
+- **Page layouts**: a pushed page that scrolls is a `ScrollPage` (Back is `BackAction`), a tab of cards a
+  `TabGrid`. Any screen that saves or edits a preset opens it through `PresetEditorHost`
+  (`PresetDraft.saveCurrent(config)` for the settings on the Timer).
 - **ViewModels** expose `StateFlow<UiState>` from a private `MutableStateFlow`. They are entry-scoped by
   `rememberViewModelStoreNavEntryDecorator`.
 - **DI is Koin DSL** (no annotations/KSP) in an isolated container: `shared/src/di/AppKoin.kt`. Add a module
@@ -69,9 +72,9 @@ toolchain (`$compose.*`).
   `Motion`) in `Tokens.kt`; never write a raw dp, duration or scale in a screen. The one exception is the
   intro's sizes in `splash/Splash.kt`, which follow the platform launch screens.
 - **Motion**: durations are `Motion.*` tokens, easings and springs live in `shared/src/ui/Motion.kt` with the
-  shared moves: `pressScale` on anything tappable, `rememberEntrance` + `enterRising` for content that
-  arrives, `RollingText` for a value that changes in place, `animateColorAsState` for a control
-  following its state. Page transitions are `pageTransition`/`pagePopTransition` (`Navigation.kt`);
+  shared moves: `pressScale` on anything tappable (`surfaceButton` adds the clip, fill and tap),
+  `rememberEntrance` + `enterRising` for content that arrives, `RollingText` for a value that changes
+  in place, `animateColorAsState` for a control following its state. Page transitions are `pageTransition`/`pagePopTransition` (`Navigation.kt`);
   iOS keeps its native slide (`platformPageTransitions`). Looping, decorative motion (lanes, comets,
   the paused hint's breathing) checks `prefersReducedMotion()`; one-shot animations need not, Android
   scales them with the system setting. Haptics go through `LocalHapticFeedback` (steppers tick,
@@ -115,6 +118,8 @@ Strategy, commands and limits: [docs/testing.md](docs/testing.md).
   key fails the check. Rules run without type resolution (`--analysis-mode light`). Suppress with
   `@Suppress("detekt.RuleName")`. HTML/SARIF reports land in `build/tasks/_<module>_detekt@detekt-plugin/`.
 - **The lint plugin needs `slf4j-nop`**: ktlint's rules bind kotlin-logging to slf4j at class-init time.
+- `./kotlin clean` deletes the tracked `iosApp/module.xcodeproj/xcshareddata/xcschemes/app.xcscheme`; the next
+  iOS build fails once, regenerates it unchanged, then passes.
 - iOS `ViewController()` is PascalCase on purpose (Swift calls it by that name) and is suppressed for ktlint.
 
 ## Version control: jj, colocated with git
