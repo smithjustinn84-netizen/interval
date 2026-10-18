@@ -6,6 +6,7 @@ import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.timer.Cue
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
+import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.Step
 import dev.justinsmith.interval.timer.WorkoutEngine
@@ -34,13 +35,18 @@ class WorkoutViewModel(
 
     /** Read once at start, like the configuration: a setting changed mid-workout applies next time. */
     private val keepScreenOn = repository.appSettings.value.keepScreenOn
+    private val body = repository.appSettings.value.body
     private var engine: WorkoutState
     private var running = false
     private var ended = false
 
     /** Time the timer has run, pauses excluded: skips shorten it, added time lengthens it. */
     private var activeMillis = 0L
-    private val activeSeconds: Int get() = ((activeMillis + MILLIS_PER_SECOND / 2) / MILLIS_PER_SECOND).toInt()
+    private val activeSeconds: Int get() = activeMillis.roundedSeconds()
+
+    /** Of [activeMillis], the time spent in work intervals, for the calorie estimate. */
+    private var workMillis = 0L
+    private val workSeconds: Int get() = workMillis.roundedSeconds()
     private var ticker: Job? = null
 
     // Followed rather than read on each publish: a preset saved from the summary lands later, and the
@@ -86,7 +92,9 @@ class WorkoutViewModel(
                 val elapsed = (timeSource.markNow() - last).inWholeMilliseconds
                 last += elapsed.milliseconds
                 // Capped as the engine caps a tick, so a suspended app adds no more than the clock showed.
-                activeMillis += elapsed.coerceAtMost(WorkoutEngine.MAX_TICK_MILLIS)
+                val counted = elapsed.coerceAtMost(WorkoutEngine.MAX_TICK_MILLIS)
+                activeMillis += counted
+                if (engine.phase == Phase.Work) workMillis += counted
                 applyStep(WorkoutEngine.tick(engine, elapsed))
             }
         }
@@ -122,7 +130,7 @@ class WorkoutViewModel(
         stopTicker()
         running = false
         ended = true
-        repository.recordWorkout(config, elapsedSeconds = activeSeconds, endedEarly = true)
+        repository.recordWorkout(config, activeSeconds, endedEarly = true, workSeconds = workSeconds)
         publish()
     }
 
@@ -139,6 +147,7 @@ class WorkoutViewModel(
         stopTicker()
         ended = false
         activeMillis = 0
+        workMillis = 0
         begin()
     }
 
@@ -155,7 +164,7 @@ class WorkoutViewModel(
         if (engine.isDone) {
             running = false
             stopTicker()
-            repository.recordWorkout(config, elapsedSeconds = activeSeconds)
+            repository.recordWorkout(config, activeSeconds, workSeconds = workSeconds)
         }
         publish()
     }
@@ -176,6 +185,7 @@ class WorkoutViewModel(
         elapsedSeconds = activeSeconds,
         presets = presets,
         keepScreenOn = keepScreenOn,
+        calories = body.calories(workSeconds, activeSeconds - workSeconds),
     )
 
     private fun play(cues: List<Cue>) {
@@ -187,3 +197,5 @@ class WorkoutViewModel(
         const val TICK_MILLIS = 100L
     }
 }
+
+private fun Long.roundedSeconds(): Int = ((this + MILLIS_PER_SECOND / 2) / MILLIS_PER_SECOND).toInt()

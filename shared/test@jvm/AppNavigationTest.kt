@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.fakes.testKoin
 import dev.justinsmith.interval.timer.builtInPresets
@@ -149,7 +150,7 @@ class AppNavigationTest {
     @Test
     fun `settings leads to about, about to the licenses, and back again`() = appTest {
         onNodeWithContentDescription("Settings").performClick()
-        onNodeWithText("About Interval").performClick()
+        onNodeWithText("About Interval").performScrollTo().performClick()
         onNodeWithText("Version 1.2.3").assertExists()
         onNodeWithText("Cues").assertDoesNotExist()
 

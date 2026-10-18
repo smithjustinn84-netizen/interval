@@ -17,9 +17,13 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import dev.justinsmith.interval.data.AppSettings
+import dev.justinsmith.interval.data.BodySettings
 import dev.justinsmith.interval.data.CueSettings
 import dev.justinsmith.interval.data.ThemeMode
+import dev.justinsmith.interval.timer.Effort
+import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
 import kotlin.test.Test
@@ -46,13 +50,17 @@ class SettingsScreenTest {
             onSetTheme = { calls += it },
             onShowAbout = { calls += "about" },
             inPane = inPane,
+            onSetWeight = { calls += "weight $it" },
+            onSetWeightUnit = { calls += it },
+            onClearWeight = { calls += "clear weight" },
+            onSetEffort = { calls += it },
         )
     }
 
     @Test
     fun `the about row opens about`() = runUiTest {
         setThemedContent { Screen() }
-        onNodeWithText("About Interval").performClick()
+        onNodeWithText("About Interval").performScrollTo().performClick()
         assertEquals(listOf<Any>("about"), calls)
     }
 
@@ -122,5 +130,59 @@ class SettingsScreenTest {
         onNodeWithContentDescription("Back").assertDoesNotExist()
         onNodeWithContentDescription("Close settings").performClick()
         assertEquals(listOf<Any>("back", "back"), calls)
+    }
+
+    @Test
+    fun `without a weight the row asks for one and Done sets the default`() = runUiTest {
+        setThemedContent { Screen() }
+        onNodeWithText("Set it to see calorie estimates").performScrollTo().performClick()
+        onNodeWithText("Turn off calorie estimates").assertDoesNotExist()
+        onNodeWithText("Done").performClick()
+        assertEquals(listOf<Any>("weight ${WeightUnit.Kg.default}"), calls)
+    }
+
+    @Test
+    fun `the weight sheet steps switches unit and clears`() = runUiTest {
+        val state = defaults.copy(app = defaults.app.copy(body = BodySettings(weightKg = 80.0)))
+        setThemedContent { Screen(state) }
+        onNodeWithText("80 kg").performScrollTo().performClick()
+        onNodeWithContentDescription("More weight").performClick()
+        onNodeWithText("lb").performClick()
+        onNodeWithText("Turn off calorie estimates").performClick()
+        assertEquals(listOf<Any>("weight 81", WeightUnit.Lb, "clear weight"), calls)
+    }
+
+    @Test
+    fun `the effort picker shows and changes the effort`() = runUiTest {
+        setThemedContent { Screen() }
+        onNodeWithText("Hard").performScrollTo().assertIsSelected()
+        onNodeWithText("Easy").performClick()
+        assertEquals(listOf<Any>(Effort.Easy), calls)
+    }
+
+    @Test
+    fun `setting a first weight does not move the sheet's buttons`() = runUiTest {
+        var state by mutableStateOf(defaults)
+        setThemedContent {
+            SettingsScreen(
+                state = state,
+                onBack = {},
+                onToggle = {},
+                onStepPrep = {},
+                onSetPrep = {},
+                onToggleKeepScreenOn = {},
+                onSetTheme = {},
+                onShowAbout = {},
+                onSetWeight = { kg ->
+                    calls += "weight $kg"
+                    state = state.copy(app = state.app.copy(body = BodySettings(weightKg = kg.toDouble())))
+                },
+            )
+        }
+        onNodeWithText("Set it to see calorie estimates").performScrollTo().performClick()
+        onNodeWithContentDescription("More weight").performClick()
+        onNodeWithText("Turn off calorie estimates").assertDoesNotExist()
+        onNodeWithText("Done").performClick()
+        assertEquals(listOf<Any>("weight 71"), calls)
     }
 }

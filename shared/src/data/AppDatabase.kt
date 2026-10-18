@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.data
 
+import androidx.room.AutoMigration
 import androidx.room.ColumnInfo
 import androidx.room.ConstructedBy
 import androidx.room.Dao
@@ -16,8 +17,15 @@ import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import kotlinx.coroutines.flow.Flow
 
-/** Workout history and the user's own presets. Settings live in DataStore, not here. */
-@Database(entities = [HistoryEntity::class, PresetEntity::class], version = 1)
+/**
+ * Workout history and the user's own presets. Settings live in DataStore, not here. Version 2 added
+ * [HistoryEntity.workActiveSeconds].
+ */
+@Database(
+    entities = [HistoryEntity::class, PresetEntity::class],
+    version = 2,
+    autoMigrations = [AutoMigration(from = 1, to = 2)],
+)
 @ConstructedBy(AppDatabaseConstructor::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun historyDao(): HistoryDao
@@ -77,6 +85,8 @@ data class HistoryEntity(
     val rounds: Int,
     @ColumnInfo(name = "elapsed_seconds") val elapsedSeconds: Int,
     @ColumnInfo(name = "ended_early") val endedEarly: Boolean,
+    /** Of [elapsedSeconds], the time spent in work intervals. Null in rows from version 1. */
+    @ColumnInfo(name = "work_active_seconds") val workActiveSeconds: Int? = null,
 )
 
 @Entity(tableName = "preset")
@@ -94,6 +104,7 @@ internal fun HistoryEntity.toDomain() = HistoryEntry(
     config = IntervalConfig(prepSeconds, workSeconds, restSeconds, rounds),
     elapsedSeconds = elapsedSeconds,
     endedEarly = endedEarly,
+    workActiveSeconds = workActiveSeconds,
 )
 
 internal fun HistoryEntry.toEntity() = HistoryEntity(
@@ -104,6 +115,7 @@ internal fun HistoryEntry.toEntity() = HistoryEntity(
     rounds = config.rounds,
     elapsedSeconds = elapsedSeconds,
     endedEarly = endedEarly,
+    workActiveSeconds = workActiveSeconds,
 )
 
 internal fun PresetEntity.toDomain() =

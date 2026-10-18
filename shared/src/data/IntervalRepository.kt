@@ -7,10 +7,14 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.interval.timer.builtInPresets
+import dev.justinsmith.interval.timer.estimateCalories
 import dev.justinsmith.interval.timer.matching
+import dev.justinsmith.interval.timer.plannedWorkSeconds
 import dev.justinsmith.interval.timer.storedName
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -38,19 +42,55 @@ data class CueSettings(
 /** How the app picks light or dark. */
 enum class ThemeMode { System, Light, Dark }
 
+/**
+ * What the calorie estimates are worked out from. Without a [weightKg] there are none: the app shows no
+ * calories until one is set.
+ */
+data class BodySettings(
+    val weightKg: Double? = null,
+    val unit: WeightUnit = WeightUnit.Kg,
+    val effort: Effort = Effort.Hard,
+) {
+    /** The calories of [workSeconds] at [effort] and [otherSeconds] recovering, or null without a weight. */
+    fun calories(workSeconds: Int, otherSeconds: Int): Int? =
+        weightKg?.let { estimateCalories(workSeconds, otherSeconds, it, effort) }
+
+    /** What [config] will burn if it runs as planned, get ready included; null without a weight. */
+    fun plannedCalories(config: IntervalConfig): Int? {
+        val work = config.rounds * config.workSeconds
+        return calories(work, config.totalSeconds - work)
+    }
+}
+
 /** App-wide preferences that are not part of a workout's shape. */
 data class AppSettings(
     val theme: ThemeMode = ThemeMode.Dark,
     val keepScreenOn: Boolean = true,
+    val body: BodySettings = BodySettings(),
 )
 
-/** A finished workout that ran for [elapsedSeconds], pauses excluded, to the end or [endedEarly]. */
+/**
+ * A finished workout that ran for [elapsedSeconds], pauses excluded, to the end or [endedEarly]. Of that,
+ * [workActiveSeconds] were work; null for one recorded before work time was kept.
+ */
 data class HistoryEntry(
     val finishedAtEpochMillis: Long,
     val config: IntervalConfig,
     val elapsedSeconds: Int,
     val endedEarly: Boolean,
-)
+    val workActiveSeconds: Int? = null,
+) {
+    /** The calories it burned by [body], or null without a weight. Older entries' work time is estimated. */
+    fun calories(body: BodySettings): Int? {
+        val work = (
+            workActiveSeconds ?: config.plannedWorkSeconds(
+                elapsedSeconds,
+                endedEarly,
+            )
+            ).coerceAtMost(elapsedSeconds)
+        return body.calories(work, elapsedSeconds - work)
+    }
+}
 
 /**
  * The app's saved state: the current setup, cue toggles, app settings, custom presets and workout history.
@@ -205,9 +245,17 @@ class IntervalRepository(
     private suspend fun Preset.named(): Preset =
         copy(name = storedName(builtInPresets + presetDao.all().map { it.toDomain() }))
 
-    /** Records a workout that ran for [elapsedSeconds]; [endedEarly] when it stopped before the last round. */
-    fun recordWorkout(config: IntervalConfig, elapsedSeconds: Int, endedEarly: Boolean = false) {
-        val entry = HistoryEntry(clock.nowMillis(), config, elapsedSeconds, endedEarly)
+    /**
+     * Records a workout that ran for [elapsedSeconds], [workSeconds] of them working; [endedEarly] when it
+     * stopped before the last round.
+     */
+    fun recordWorkout(
+        config: IntervalConfig,
+        elapsedSeconds: Int,
+        endedEarly: Boolean = false,
+        workSeconds: Int? = null,
+    ) {
+        val entry = HistoryEntry(clock.nowMillis(), config, elapsedSeconds, endedEarly, workSeconds)
         persist { historyDao.insert(entry.toEntity()) }
     }
 

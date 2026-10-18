@@ -3,9 +3,12 @@ package dev.justinsmith.interval.data
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.WeightUnit
 
 // How the settings map onto DataStore preference keys. A missing key reads as the data class's default.
 
@@ -21,6 +24,10 @@ private val CUE_VIBRATE = booleanPreferencesKey("cue_vibrate")
 
 private val THEME = stringPreferencesKey("theme")
 private val KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")
+
+private val BODY_WEIGHT_KG = doublePreferencesKey("body_weight_kg")
+private val BODY_UNIT = stringPreferencesKey("body_unit")
+private val BODY_EFFORT = stringPreferencesKey("body_effort")
 
 internal fun Preferences.toConfig(): IntervalConfig {
     val defaults = IntervalConfig()
@@ -62,10 +69,29 @@ internal fun Preferences.toAppSettings(): AppSettings {
         // A theme this build doesn't know (renamed, or written by a newer one) falls back to the default.
         theme = ThemeMode.entries.firstOrNull { it.name == this[THEME] } ?: defaults.theme,
         keepScreenOn = this[KEEP_SCREEN_ON] ?: defaults.keepScreenOn,
+        body = toBodySettings(),
     )
 }
 
 internal fun MutablePreferences.write(app: AppSettings) {
     this[THEME] = app.theme.name
     this[KEEP_SCREEN_ON] = app.keepScreenOn
+    write(app.body)
+}
+
+private fun Preferences.toBodySettings(): BodySettings {
+    val defaults = BodySettings()
+    return BodySettings(
+        weightKg = this[BODY_WEIGHT_KG] ?: defaults.weightKg,
+        // As for the theme: a name this build doesn't know falls back to the default.
+        unit = WeightUnit.entries.firstOrNull { it.name == this[BODY_UNIT] } ?: defaults.unit,
+        effort = Effort.entries.firstOrNull { it.name == this[BODY_EFFORT] } ?: defaults.effort,
+    )
+}
+
+private fun MutablePreferences.write(body: BodySettings) {
+    val weight = body.weightKg
+    if (weight == null) remove(BODY_WEIGHT_KG) else this[BODY_WEIGHT_KG] = weight
+    this[BODY_UNIT] = body.unit.name
+    this[BODY_EFFORT] = body.effort.name
 }

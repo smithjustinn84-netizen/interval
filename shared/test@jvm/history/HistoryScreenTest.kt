@@ -133,4 +133,24 @@ class HistoryScreenTest {
         assertEquals(1, cleared)
         onNodeWithText("Clear history?").assertDoesNotExist()
     }
+
+    @Test
+    fun `with a weight set rows and the week show calories`() = runUiTest {
+        val item = HistoryItem("Tabata", tabata, false, "7:42 PM", "4:00", calories = 48)
+        val state = oneWorkout.copy(
+            sections = listOf(HistorySection(HistoryDay.Today, dayNumber = 9, listOf(item))),
+            weekCalories = 48,
+        )
+        setThemedContent { Screen(state) }
+        onNodeWithText("Calories").assertExists()
+        onNodeWithText("48").assertExists()
+        onNodeWithText("48 kcal", substring = true).assertExists()
+    }
+
+    @Test
+    fun `without a weight there are no calories`() = runUiTest {
+        setThemedContent { Screen(oneWorkout) }
+        onNodeWithText("Calories").assertDoesNotExist()
+        onNodeWithText("kcal", substring = true).assertDoesNotExist()
+    }
 }

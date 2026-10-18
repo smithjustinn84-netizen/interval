@@ -3,6 +3,7 @@ package dev.justinsmith.interval.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.data.AppSettings
+import dev.justinsmith.interval.data.BodySettings
 import dev.justinsmith.interval.data.CueSettings
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.data.ThemeMode
@@ -12,8 +13,12 @@ import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.Cue
+import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.WeightUnit
+import dev.justinsmith.interval.timer.fromKg
 import dev.justinsmith.interval.timer.stepped
+import dev.justinsmith.interval.timer.toKg
 import dev.justinsmith.interval.timer.withValue
 import dev.justinsmith.interval.workout.playCue
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,7 +30,12 @@ data class SettingsUiState(
     val cues: CueSettings,
     val prepSeconds: Int,
     val app: AppSettings,
-)
+) {
+    val body: BodySettings get() = app.body
+
+    /** The body weight in whole units of [BodySettings.unit], or null when none is set. */
+    val weight: Int? get() = body.weightKg?.let { body.unit.fromKg(it) }
+}
 
 /** Toggles a single [CueSettings] flag. */
 enum class CueToggle { Sound, Voice, Halfway, Vibrate }
@@ -83,6 +93,28 @@ class SettingsViewModel(
 
     fun setTheme(theme: ThemeMode) {
         repository.updateAppSettings { it.copy(theme = theme) }
+    }
+
+    /** Sets the body weight to [value] whole units of the current unit, clamped to its range. */
+    fun setWeight(value: Int) {
+        updateBody { it.copy(weightKg = it.unit.toKg(value.coerceIn(it.unit.range))) }
+    }
+
+    /** Forgets the body weight, which turns the calorie estimates off. */
+    fun clearWeight() {
+        updateBody { it.copy(weightKg = null) }
+    }
+
+    fun setWeightUnit(unit: WeightUnit) {
+        updateBody { it.copy(unit = unit) }
+    }
+
+    fun setEffort(effort: Effort) {
+        updateBody { it.copy(effort = effort) }
+    }
+
+    private fun updateBody(transform: (BodySettings) -> BodySettings) {
+        repository.updateAppSettings { it.copy(body = transform(it.body)) }
     }
 
     private fun buildState(cues: CueSettings, config: IntervalConfig, app: AppSettings) =

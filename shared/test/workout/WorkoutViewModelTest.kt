@@ -3,6 +3,7 @@
 package dev.justinsmith.interval.workout
 
 import androidx.lifecycle.viewModelScope
+import dev.justinsmith.interval.data.BodySettings
 import dev.justinsmith.interval.data.CueSettings
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.fakes.FakeStorage
@@ -11,9 +12,11 @@ import dev.justinsmith.interval.fakes.RecordingCuePlayer
 import dev.justinsmith.interval.fakes.deferredStorageScope
 import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.Speech
+import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.timer.estimateCalories
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -171,6 +174,38 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
 
         viewModel.resume()
         assertFalse(viewModel.state.value.running)
+    }
+
+    @Test
+    fun `work time counts only work intervals and gives the summary its calories`() = runTest(dispatcher) {
+        repository.updateAppSettings { it.copy(body = BodySettings(weightKg = 80.0, effort = Effort.Hard)) }
+        val viewModel = workoutViewModel(repository)
+        advanceTimeBy(15_000 + WorkoutViewModel.TICK_MILLIS)
+        runCurrent()
+
+        val entry = repository.history.value.single()
+        assertEquals(10, entry.workActiveSeconds)
+        assertEquals(estimateCalories(10, 5, 80.0, Effort.Hard), viewModel.state.value.calories)
+    }
+
+    @Test
+    fun `a skipped work interval adds no work time`() = runTest(dispatcher) {
+        val viewModel = workoutViewModel(repository)
+        viewModel.skip()
+        advanceTimeBy(10_000 + WorkoutViewModel.TICK_MILLIS)
+        runCurrent()
+
+        val entry = repository.history.value.single()
+        assertEquals(10, entry.elapsedSeconds)
+        assertEquals(5, entry.workActiveSeconds)
+    }
+
+    @Test
+    fun `the summary has no calories without a weight`() = runTest(dispatcher) {
+        val viewModel = workoutViewModel(repository)
+        advanceTimeBy(15_000 + WorkoutViewModel.TICK_MILLIS)
+        runCurrent()
+        assertNull(viewModel.state.value.calories)
     }
 
     @Test

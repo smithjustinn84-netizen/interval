@@ -2,18 +2,22 @@
 
 package dev.justinsmith.interval.home
 
+import dev.justinsmith.interval.data.BodySettings
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.MainDispatcherTest
 import dev.justinsmith.interval.fakes.saveCurrentAsPreset
 import dev.justinsmith.interval.timer.ConfigField
+import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
+import dev.justinsmith.interval.timer.estimateCalories
 import dev.justinsmith.interval.timer.formatClock
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class TimerViewModelTest : MainDispatcherTest() {
     private val repository = FakeStorage().repository(now = { 0L })
@@ -61,5 +65,18 @@ class TimerViewModelTest : MainDispatcherTest() {
         assertEquals(reshaped.copy(prepSeconds = 15), repository.config.value)
         assertEquals(listOf("Mine"), repository.customPresets.value.map { it.name })
         assertEquals("Mine", viewModel.state.value.presetName)
+    }
+
+    @Test
+    fun `the timer estimates calories only once a weight is set`() {
+        assertNull(viewModel.state.value.calories)
+        repository.updateAppSettings { it.copy(body = BodySettings(weightKg = 70.0, effort = Effort.Hard)) }
+        val config = IntervalConfig()
+        val work = config.rounds * config.workSeconds
+        val expected = estimateCalories(work, config.totalSeconds - work, 70.0, Effort.Hard)
+        assertEquals(expected, viewModel.state.value.calories)
+
+        viewModel.step(ConfigField.Rounds, 1)
+        assertTrue(viewModel.state.value.calories!! > expected)
     }
 }

@@ -26,7 +26,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.common_calories_estimate
 import dev.justinsmith.interval.resources.common_cancel
+import dev.justinsmith.interval.resources.common_joined
 import dev.justinsmith.interval.resources.common_save
 import dev.justinsmith.interval.resources.presets_built_in
 import dev.justinsmith.interval.resources.presets_current_unsaved
@@ -196,6 +198,7 @@ private fun PresetsList(
                 CurrentCard(
                     config = state.current,
                     share = state.currentShare,
+                    calories = state.currentCalories,
                     onSave = onSaveCurrent,
                     modifier = Modifier
                         .animateItem()
@@ -240,7 +243,13 @@ private fun CardColumn(content: @Composable () -> Unit) {
 
 /** The settings on the Timer tab when they match no preset: their total, shape and a button to save them. */
 @Composable
-private fun CurrentCard(config: IntervalConfig, share: Float, onSave: () -> Unit, modifier: Modifier = Modifier) {
+private fun CurrentCard(
+    config: IntervalConfig,
+    share: Float,
+    calories: Int?,
+    onSave: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val palette = IntervalTheme.palette
     Column(
         modifier
@@ -260,12 +269,29 @@ private fun CurrentCard(config: IntervalConfig, share: Float, onSave: () -> Unit
         ) {
             Column(Modifier.weight(1f)) {
                 Text(formatClock(config.totalSeconds), style = IntervalTheme.type.stat, color = palette.text)
-                Text(configDescription(config), style = IntervalTheme.type.meta, color = palette.textDim, maxLines = 1)
+                Text(
+                    shapeWithCalories(config, calories),
+                    style = IntervalTheme.type.meta,
+                    color = palette.textDim,
+                    maxLines = 1,
+                )
             }
             SaveButton(onSave)
         }
         MiniTimeline(config, Modifier.fillMaxWidth(share))
     }
+}
+
+/** "20s on · 10s off · ×8", then "≈ 32 kcal" once a body weight gives an estimate. */
+@Composable
+private fun shapeWithCalories(config: IntervalConfig, calories: Int?): String {
+    val shape = configDescription(config)
+    if (calories == null) return shape
+    return stringResource(
+        Res.string.common_joined,
+        shape,
+        stringResource(Res.string.common_calories_estimate, calories),
+    )
 }
 
 /** The accent pill that takes the current settings to the editor. */
@@ -328,7 +354,7 @@ private fun PresetCard(item: PresetRowItem, onClick: () -> Unit, modifier: Modif
             )
         }
         Text(
-            configDescription(item.preset.config),
+            shapeWithCalories(item.preset.config, item.calories),
             style = IntervalTheme.type.meta,
             color = palette.textDim,
             maxLines = 1,

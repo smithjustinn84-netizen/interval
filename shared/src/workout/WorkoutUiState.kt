@@ -53,6 +53,8 @@ data class WorkoutUiState(
     val presets: List<Preset> = emptyList(),
     /** Keep the display awake while the timer runs: the setting as it was when the workout started. */
     val keepScreenOn: Boolean = false,
+    /** The estimated calories burned so far, for the summary; null when no body weight is set. */
+    val calories: Int? = null,
 ) {
     /** Offer "Save as preset" on the summary: no preset has this shape yet. */
     val canSavePreset: Boolean get() = presetName == null
@@ -79,6 +81,7 @@ fun WorkoutState.toUiState(
     elapsedSeconds: Int = 0,
     presets: List<Preset> = emptyList(),
     keepScreenOn: Boolean = false,
+    calories: Int? = null,
 ): WorkoutUiState {
     val rounds = config.rounds
     val secondsLeft = ceilSeconds(remainingMillis)
@@ -117,5 +120,6 @@ fun WorkoutState.toUiState(
         elapsed = formatClock(elapsedSeconds),
         presets = presets,
         keepScreenOn = keepScreenOn,
+        calories = calories,
     )
 }

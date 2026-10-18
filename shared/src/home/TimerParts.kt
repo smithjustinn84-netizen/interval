@@ -39,6 +39,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.common_calories_estimate
 import dev.justinsmith.interval.resources.common_joined
 import dev.justinsmith.interval.resources.common_prep_line
 import dev.justinsmith.interval.resources.common_settings
@@ -93,8 +94,9 @@ internal fun TimerTitleBar(canSavePreset: Boolean, onSave: () -> Unit, onOpenSet
 }
 
 /**
- * "Tabata · Total" over the session's length, and the get-ready countdown when there is one. The
- * length rolls as the steppers change it, up when it grows and down when it shrinks.
+ * "Tabata · Total" over the session's length, the get-ready countdown when there is one, and the
+ * calories it should burn once a body weight is set. The length and the calories roll as the steppers
+ * change them, up when they grow and down when they shrink.
  */
 @Composable
 internal fun Total(state: TimerUiState, modifier: Modifier = Modifier) {
@@ -123,6 +125,14 @@ internal fun Total(state: TimerUiState, modifier: Modifier = Modifier) {
         ) {
             Text(
                 stringResource(Res.string.common_prep_line, formatClock(if (prep > 0) prep else lastPrep)),
+                style = IntervalTheme.type.meta,
+                color = palette.textDim,
+            )
+        }
+        state.calories?.let { calories ->
+            RollingText(
+                stringResource(Res.string.common_calories_estimate, calories),
+                rising,
                 style = IntervalTheme.type.meta,
                 color = palette.textDim,
             )

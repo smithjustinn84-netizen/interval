@@ -164,6 +164,16 @@ class WorkoutScreenTest {
     }
 
     @Test
+    fun `the summary shows calories only when there is an estimate`() = runUiTest {
+        var state by mutableStateOf(done.toUiState(running = false))
+        setThemedContent { Screen(state) }
+        onNodeWithText("kcal").assertDoesNotExist()
+        state = done.toUiState(running = false, calories = 64)
+        onNodeWithText("kcal").assertExists()
+        onNodeWithText("64").assertExists()
+    }
+
+    @Test
     fun `a workout ended early says how far it got`() = runUiTest {
         setThemedContent { Screen(firstRest.toUiState(running = false, ended = true, elapsedSeconds = 50)) }
         onNodeWithText("Ended").assertExists()

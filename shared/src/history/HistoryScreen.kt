@@ -35,6 +35,8 @@ import dev.justinsmith.interval.resources.common_cancel
 import dev.justinsmith.interval.resources.common_joined
 import dev.justinsmith.interval.resources.duration_minutes
 import dev.justinsmith.interval.resources.duration_seconds
+import dev.justinsmith.interval.resources.history_calories
+import dev.justinsmith.interval.resources.history_calories_value
 import dev.justinsmith.interval.resources.history_clear_confirm
 import dev.justinsmith.interval.resources.history_clear_menu
 import dev.justinsmith.interval.resources.history_clear_text
@@ -225,6 +227,16 @@ private fun WeekSummary(state: HistoryUiState, modifier: Modifier = Modifier) {
                 )
                 Text(state.weekTotal, style = IntervalTheme.type.stat, color = palette.accent)
             }
+            state.weekCalories?.let { calories ->
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        stringResource(Res.string.history_calories),
+                        style = IntervalTheme.type.caption,
+                        color = palette.textDim,
+                    )
+                    Text(calories.toString(), style = IntervalTheme.type.stat, color = palette.text)
+                }
+            }
         }
         WeekChart(state)
     }
@@ -298,6 +310,7 @@ private fun HistoryRow(item: HistoryItem, modifier: Modifier = Modifier) {
             val detail = listOfNotNull(
                 shape.takeIf { item.presetName != null },
                 stringResource(Res.string.history_ended_early).takeIf { item.endedEarly },
+                item.calories?.let { stringResource(Res.string.history_calories_value, it) },
                 item.time,
             )
             Text(item.presetName ?: shape, style = IntervalTheme.type.label, color = palette.text, maxLines = 1)

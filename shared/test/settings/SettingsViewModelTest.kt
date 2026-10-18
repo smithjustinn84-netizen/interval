@@ -9,10 +9,14 @@ import dev.justinsmith.interval.fakes.RecordingCuePlayer
 import dev.justinsmith.interval.platform.Beep
 import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.Speech
+import dev.justinsmith.interval.timer.Effort
+import dev.justinsmith.interval.timer.WeightUnit
+import dev.justinsmith.interval.timer.fromKg
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SettingsViewModelTest : MainDispatcherTest() {
@@ -71,5 +75,41 @@ class SettingsViewModelTest : MainDispatcherTest() {
         val reloaded = storage.repository().appSettings.value
         assertEquals(ThemeMode.Dark, reloaded.theme)
         assertFalse(reloaded.keepScreenOn)
+    }
+
+    @Test
+    fun `there is no weight until one is set`() {
+        assertNull(viewModel.state.value.weight)
+        viewModel.setWeight(82)
+        assertEquals(82, viewModel.state.value.weight)
+        viewModel.clearWeight()
+        assertNull(viewModel.state.value.weight)
+    }
+
+    @Test
+    fun `a weight in pounds is kept in kilograms and shown in pounds`() {
+        viewModel.setWeightUnit(WeightUnit.Lb)
+        viewModel.setWeight(180)
+        assertEquals(180, viewModel.state.value.weight)
+        assertEquals(81.6, repository.appSettings.value.body.weightKg!!, absoluteTolerance = 0.1)
+        viewModel.setWeightUnit(WeightUnit.Kg)
+        assertEquals(82, viewModel.state.value.weight)
+    }
+
+    @Test
+    fun `a weight is clamped to its unit's range`() {
+        viewModel.setWeight(5)
+        assertEquals(WeightUnit.Kg.range.first, viewModel.state.value.weight)
+    }
+
+    @Test
+    fun `weight unit and effort survive a restart`() {
+        viewModel.setWeightUnit(WeightUnit.Lb)
+        viewModel.setWeight(150)
+        viewModel.setEffort(Effort.Easy)
+        val reloaded = storage.repository().appSettings.value.body
+        assertEquals(WeightUnit.Lb, reloaded.unit)
+        assertEquals(Effort.Easy, reloaded.effort)
+        assertEquals(150, WeightUnit.Lb.fromKg(reloaded.weightKg!!))
     }
 }

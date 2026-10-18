@@ -41,6 +41,7 @@ import dev.justinsmith.interval.resources.workout_ended
 import dev.justinsmith.interval.resources.workout_repeat
 import dev.justinsmith.interval.resources.workout_save_preset
 import dev.justinsmith.interval.resources.workout_saved
+import dev.justinsmith.interval.resources.workout_stat_calories
 import dev.justinsmith.interval.resources.workout_stat_rounds
 import dev.justinsmith.interval.resources.workout_stat_rounds_value
 import dev.justinsmith.interval.resources.workout_stat_time
@@ -181,6 +182,9 @@ private fun SummaryReadout(
                     stringResource(Res.string.workout_stat_rounds),
                     Modifier.weight(1f),
                 )
+                state.calories?.let { calories ->
+                    Stat(calories.toString(), stringResource(Res.string.workout_stat_calories), Modifier.weight(1f))
+                }
             }
         }
         AnimatedVisibility(entrance, enter = enterRising(Motion.STAGGER_MILLIS * SAVED_STEP)) {

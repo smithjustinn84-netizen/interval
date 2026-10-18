@@ -2,6 +2,7 @@ package dev.justinsmith.interval.history
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.justinsmith.interval.data.BodySettings
 import dev.justinsmith.interval.data.HistoryEntry
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.platform.TimestampFormatter
@@ -38,6 +39,8 @@ data class HistoryItem(
     /** The time of day it finished: "7:42 PM". */
     val time: String,
     val total: String,
+    /** The estimated calories burned, or null when no body weight is set. */
+    val calories: Int? = null,
 )
 
 /** One day's workouts. [dayNumber] identifies the day, as [TimestampFormatter.dayNumber] counts them. */
@@ -56,6 +59,8 @@ data class HistoryUiState(
     val weekTotal: String,
     /** Those seven days, oldest first, for the week chart. */
     val week: List<DayTally>,
+    /** The estimated calories over those seven days, or null when no body weight is set. */
+    val weekCalories: Int? = null,
 ) {
     val isEmpty: Boolean get() = sections.isEmpty()
 
@@ -83,13 +88,23 @@ class HistoryViewModel(
     private val locale = MutableStateFlow<String?>(null)
 
     val state: StateFlow<HistoryUiState> =
-        combine(repository.history, repository.presets, days, locale) { history, presets, _, _ ->
-            buildState(history, presets)
+        combine(repository.history, repository.presets, repository.appSettings, days, locale) {
+                history,
+                presets,
+                app,
+                _,
+                _,
+            ->
+            buildState(history, presets, app.body)
         }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.Eagerly,
-                initialValue = buildState(repository.history.value, repository.presets.value),
+                initialValue = buildState(
+                    repository.history.value,
+                    repository.presets.value,
+                    repository.appSettings.value.body,
+                ),
             )
 
     fun clear() {
@@ -104,7 +119,7 @@ class HistoryViewModel(
         locale.value = languageTag
     }
 
-    private fun buildState(history: List<HistoryEntry>, presets: List<Preset>): HistoryUiState {
+    private fun buildState(history: List<HistoryEntry>, presets: List<Preset>, body: BodySettings): HistoryUiState {
         val nowMillis = clock.nowMillis()
         val today = timestamps.dayNumber(nowMillis)
         // History is newest first, so grouping keeps both the days and the rows within them in order.
@@ -124,6 +139,7 @@ class HistoryViewModel(
                         endedEarly = entry.endedEarly,
                         time = timestamps.time(entry.finishedAtEpochMillis),
                         total = formatClock(entry.elapsedSeconds),
+                        calories = entry.calories(body),
                     )
                 },
             )
@@ -133,6 +149,7 @@ class HistoryViewModel(
             sections = sections,
             weekCount = thisWeek.size,
             weekTotal = formatClock(thisWeek.sumOf { it.elapsedSeconds }),
+            weekCalories = if (body.weightKg == null) null else thisWeek.sumOf { it.calories(body) ?: 0 },
             week = weekTally(
                 secondsByDay = byDay.mapValues { (_, entries) -> entries.sumOf { it.elapsedSeconds } },
                 today = today,

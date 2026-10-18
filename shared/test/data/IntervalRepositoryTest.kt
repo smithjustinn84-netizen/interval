@@ -8,9 +8,12 @@ import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.deferredStorageScope
 import dev.justinsmith.interval.fakes.saveCurrentAsPreset
 import dev.justinsmith.interval.timer.ConfigField
+import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.interval.timer.builtInPresets
+import dev.justinsmith.interval.timer.estimateCalories
 import dev.justinsmith.interval.timer.stepped
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -227,6 +230,35 @@ class IntervalRepositoryTest {
         assertFalse(full.endedEarly)
         assertEquals(7, early.elapsedSeconds)
         assertTrue(early.endedEarly)
+    }
+
+    @Test
+    fun `a workout keeps its work time and older ones have none`() {
+        repository().recordWorkout(IntervalConfig(), elapsedSeconds = 300, workSeconds = 240)
+        repository().recordWorkout(IntervalConfig(), elapsedSeconds = 300)
+        val (older, newer) = repository().history.value
+        assertEquals(240, newer.workActiveSeconds)
+        assertEquals(null, older.workActiveSeconds)
+    }
+
+    @Test
+    fun `body settings survive a restart`() {
+        val body = BodySettings(weightKg = 72.5, unit = WeightUnit.Lb, effort = Effort.Max)
+        repository().updateAppSettings { it.copy(body = body) }
+        assertEquals(body, repository().appSettings.value.body)
+        repository().updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
+        assertEquals(null, repository().appSettings.value.body.weightKg)
+    }
+
+    @Test
+    fun `a history entry has calories only with a weight`() {
+        val config = IntervalConfig(prepSeconds = 0, workSeconds = 60, restSeconds = 60, rounds = 2)
+        val entry = HistoryEntry(0, config, elapsedSeconds = 180, endedEarly = false, workActiveSeconds = 120)
+        assertEquals(null, entry.calories(BodySettings()))
+        val body = BodySettings(weightKg = 80.0, effort = Effort.Hard)
+        assertEquals(estimateCalories(120, 60, 80.0, Effort.Hard), entry.calories(body))
+        // Recorded before work time was kept: the plan's work time stands in.
+        assertEquals(entry.calories(body), entry.copy(workActiveSeconds = null).calories(body))
     }
 
     @Test

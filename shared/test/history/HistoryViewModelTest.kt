@@ -3,12 +3,15 @@
 package dev.justinsmith.interval.history
 
 import androidx.lifecycle.viewModelScope
+import dev.justinsmith.interval.data.BodySettings
 import dev.justinsmith.interval.fakes.DAY_MILLIS
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.MainDispatcherTest
+import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
+import dev.justinsmith.interval.timer.estimateCalories
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -18,6 +21,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 private const val DAY = DAY_MILLIS
@@ -88,6 +92,30 @@ class HistoryViewModelTest : MainDispatcherTest() {
         repository.recordWorkout(IntervalConfig(), elapsedSeconds = 60)
         clock = 30 * DAY
         assertTrue(viewModel.state.value.week.none { it.seconds > 0 })
+    }
+
+    @Test
+    fun `calories show only once a weight is set`() {
+        repository.recordWorkout(tabata, tabata.totalSeconds, workSeconds = 160)
+        assertNull(viewModel.state.value.weekCalories)
+        assertNull(viewModel.state.value.sections.single().items.single().calories)
+
+        repository.updateAppSettings { it.copy(body = BodySettings(weightKg = 70.0, effort = Effort.Hard)) }
+        val expected = estimateCalories(160, tabata.totalSeconds - 160, 70.0, Effort.Hard)
+        assertEquals(expected, viewModel.state.value.sections.single().items.single().calories)
+        assertEquals(expected, viewModel.state.value.weekCalories)
+    }
+
+    @Test
+    fun `the week's calories count only the last seven days`() {
+        repository.updateAppSettings { it.copy(body = BodySettings(weightKg = 70.0)) }
+        clock = 20 * DAY
+        repository.recordWorkout(tabata, tabata.totalSeconds)
+        clock = 30 * DAY
+        repository.recordWorkout(tabata, tabata.totalSeconds)
+        val (today, older) = viewModel.state.value.sections.map { it.items.single().calories!! }
+        assertEquals(today, older)
+        assertEquals(today, viewModel.state.value.weekCalories)
     }
 
     @Test

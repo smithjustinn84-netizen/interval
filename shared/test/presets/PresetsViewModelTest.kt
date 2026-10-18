@@ -2,8 +2,10 @@
 
 package dev.justinsmith.interval.presets
 
+import dev.justinsmith.interval.data.BodySettings
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.MainDispatcherTest
+import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
@@ -122,5 +124,16 @@ class PresetsViewModelTest : MainDispatcherTest() {
         viewModel.saveCurrent(Preset("Sprints", IntervalConfig(workSeconds = 33, rounds = 4)))
         assertEquals(4, repository.config.value.rounds)
         assertEquals("Sprints", viewModel.state.value.custom.single { it.selected }.preset.name)
+    }
+
+    @Test
+    fun `each preset estimates its calories with the user's get-ready countdown`() {
+        assertTrue(viewModel.state.value.rows.all { it.calories == null })
+        repository.updateConfig { it.copy(prepSeconds = 30) }
+        val body = BodySettings(weightKg = 80.0, effort = Effort.Max)
+        repository.updateAppSettings { it.copy(body = body) }
+        val tabata = viewModel.state.value.builtIn.first()
+        assertEquals(body.plannedCalories(tabata.preset.config.copy(prepSeconds = 30)), tabata.calories)
+        assertEquals(body.plannedCalories(repository.config.value), viewModel.state.value.currentCalories)
     }
 }
