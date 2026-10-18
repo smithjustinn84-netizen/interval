@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.common_prep_line
 import dev.justinsmith.interval.resources.preset_copy_name
 import dev.justinsmith.interval.resources.presets_built_in
 import dev.justinsmith.interval.resources.presets_delete
@@ -16,7 +17,6 @@ import dev.justinsmith.interval.resources.presets_put_on_timer
 import dev.justinsmith.interval.resources.presets_replaces_unsaved
 import dev.justinsmith.interval.resources.presets_save_copy
 import dev.justinsmith.interval.resources.presets_yours
-import dev.justinsmith.interval.resources.timer_prep_line
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.IntervalSheet
@@ -70,7 +70,7 @@ internal fun PresetSheet(
                 )
                 if (prepSeconds > 0) {
                     Text(
-                        stringResource(Res.string.timer_prep_line, formatClock(prepSeconds)),
+                        stringResource(Res.string.common_prep_line, formatClock(prepSeconds)),
                         style = IntervalTheme.type.meta,
                         color = palette.textDim,
                         modifier = Modifier.alignByBaseline(),

@@ -157,7 +157,7 @@ internal fun RingReadout(state: WorkoutUiState, accent: Color, diameter: Dp, mod
         ProgressRing(state.progress, accent, Modifier.fillMaxSize())
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             PhaseLabel(state, accent)
-            Clock(state, accent, ringClockSize(diameter, state.clock.length))
+            Clock(state, accent, ringClockSize(diameter, state.clock.length, IntervalTheme.type.clock.fontSize))
             Text(
                 nextUpText(state.next),
                 style = IntervalTheme.type.label,
@@ -184,7 +184,7 @@ internal fun LandscapeReadout(
     ) {
         Box(ringModifier.size(diameter), contentAlignment = Alignment.Center) {
             ProgressRing(state.progress, accent, Modifier.fillMaxSize())
-            Clock(state, accent, ringClockSize(diameter, state.clock.length))
+            Clock(state, accent, ringClockSize(diameter, state.clock.length, IntervalTheme.type.clock.fontSize))
         }
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             PhaseLabel(state, accent)
@@ -309,18 +309,17 @@ private fun Modifier.breathing(): Modifier {
 }
 
 /**
- * The clock fills the share of the ring its digits allow, up to the clock style's size: "0:14" in a
- * phone's ring comes out around 160sp, as the design canvas draws it, and "10:00" smaller.
+ * The clock fills the share of the ring its digits allow, up to [max], the clock style's size: "0:14"
+ * in a phone's ring comes out around 160sp, as the design canvas draws it, and "10:00" smaller.
  */
-internal fun ringClockSize(diameter: Dp, chars: Int): TextUnit =
-    (diameter.value * RING_CLOCK_SHARE / (chars * CLOCK_EMS_PER_CHAR)).coerceAtMost(CLOCK_MAX).sp
+internal fun ringClockSize(diameter: Dp, chars: Int, max: TextUnit): TextUnit =
+    (diameter.value * RING_CLOCK_SHARE / (chars * CLOCK_EMS_PER_CHAR)).coerceAtMost(max.value).sp
 
 /** How much of the ring's width the clock may take, leaving the stroke and some air. */
 private const val RING_CLOCK_SHARE = 0.82f
 
 /** Width per clock character in Barlow Condensed ExtraBold. */
 private const val CLOCK_EMS_PER_CHAR = 0.46f
-private const val CLOCK_MAX = 240f
 private const val FULL_TURN = 360f
 private const val QUARTER_TURN = 90f
 

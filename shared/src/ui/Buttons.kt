@@ -41,7 +41,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import dev.justinsmith.interval.resources.Res
-import dev.justinsmith.interval.resources.timer_start_workout
+import dev.justinsmith.interval.resources.common_start_workout
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 
@@ -75,7 +75,7 @@ fun StartButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
             modifier = Modifier.size(Sizes.playIcon),
         )
         Text(
-            stringResource(Res.string.timer_start_workout),
+            stringResource(Res.string.common_start_workout),
             style = IntervalTheme.type.value,
             color = palette.onAccent,
         )

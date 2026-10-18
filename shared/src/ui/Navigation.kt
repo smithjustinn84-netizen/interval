@@ -162,12 +162,13 @@ private val <T : Any> AnimatedContentTransitionScope<Scene<T>>.twoPane: Boolean
     get() = targetState.entries.size > 1 || initialState.entries.size > 1
 
 private fun fadeThrough(): ContentTransform = ContentTransform(
-    targetContentEnter = fadeIn(tween(Motion.PAGE_MILLIS - FADE_THROUGH_GAP_MILLIS, FADE_THROUGH_GAP_MILLIS)) +
+    targetContentEnter =
+    fadeIn(tween(Motion.PAGE_MILLIS - Motion.FADE_THROUGH_GAP_MILLIS, Motion.FADE_THROUGH_GAP_MILLIS)) +
         scaleIn(
-            tween(Motion.PAGE_MILLIS - FADE_THROUGH_GAP_MILLIS, FADE_THROUGH_GAP_MILLIS, EnterEasing),
+            tween(Motion.PAGE_MILLIS - Motion.FADE_THROUGH_GAP_MILLIS, Motion.FADE_THROUGH_GAP_MILLIS, EnterEasing),
             initialScale = Motion.FADE_THROUGH_SCALE,
         ),
-    initialContentExit = fadeOut(tween(FADE_THROUGH_GAP_MILLIS)),
+    initialContentExit = fadeOut(tween(Motion.FADE_THROUGH_GAP_MILLIS)),
 )
 
 private fun crossfade(): ContentTransform =
@@ -175,9 +176,6 @@ private fun crossfade(): ContentTransform =
 
 private fun <T> pageSpec() = tween<T>(Motion.PAGE_MILLIS, easing = EnterEasing)
 private fun exitSpec() = tween<Float>(Motion.PAGE_MILLIS, easing = StandardEasing)
-
-/** The old tab is gone this long before the new one starts to show. */
-private const val FADE_THROUGH_GAP_MILLIS = 90
 
 /** The bar's and the rail's containers in the app's colours. */
 @Composable

@@ -60,6 +60,10 @@ fun uniquePresetName(name: String, taken: Collection<String>): String {
         .first { it !in taken }
 }
 
+/**
+ * The presets the app ships with. Their names are stored names, like a user's own or
+ * [defaultPresetName]'s, not labels, so they are data here rather than strings.xml text.
+ */
 val builtInPresets: List<Preset> = listOf(
     Preset("Tabata", IntervalConfig(prepSeconds = 10, workSeconds = 20, restSeconds = 10, rounds = 8)),
     Preset("HIIT 30/30", IntervalConfig(prepSeconds = 10, workSeconds = 30, restSeconds = 30, rounds = 10)),

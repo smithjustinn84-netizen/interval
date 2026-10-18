@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -82,7 +84,7 @@ private fun SheetHeader(field: ConfigField, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
-        StripeMark(field.stripe(), height = Sizes.iconButton)
+        StripeMark(field.stripe(), height = Sizes.sheetHeaderStripe)
         Column {
             Text(stringResource(field.labelRes), style = IntervalTheme.type.value, color = palette.text)
             Text(stringResource(field.hintRes), style = IntervalTheme.type.meta, color = palette.textDim)
@@ -124,7 +126,7 @@ private fun SheetStepper(field: ConfigField, value: Int, onStep: (Int) -> Unit, 
 
 @Composable
 private fun QuickPicks(field: ConfigField, value: Int, onPick: (Int) -> Unit, modifier: Modifier = Modifier) {
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+    Column(modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         Text(
             stringResource(Res.string.value_sheet_quick_picks),
             style = IntervalTheme.type.label,
@@ -167,7 +169,8 @@ private fun QuickPick(
     Box(
         modifier
             .heightIn(min = Sizes.pillHeight)
-            .surfaceButton(interaction, shape, fill, onClick = {
+            // One choice of several, as the theme picker's are: read out as a radio button, selected or not.
+            .surfaceButton(interaction, shape, fill, role = Role.RadioButton, onClick = {
                 haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
                 onClick()
             })

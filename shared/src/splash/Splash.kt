@@ -151,6 +151,9 @@ internal fun Splash(ready: Boolean, onFinish: () -> Unit, modifier: Modifier = M
 
 private suspend fun settle() = repeat(SETTLE_FRAMES) { withFrameNanos {} }
 
+// Raw sizes on purpose, the one place outside Tokens.kt: the intro opens on exactly what Android's splash
+// and iOS's launch screen draw, so these follow those platforms' numbers rather than the app's scale.
+
 /** The 108-unit icon canvas on screen: Android's splash draws an icon without a background this size. */
 private val MarkSize = 288.dp
 

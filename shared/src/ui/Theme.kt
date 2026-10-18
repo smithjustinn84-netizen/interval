@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
@@ -227,32 +228,38 @@ fun IntervalTheme(
         Font(Res.font.barlow_condensed_semibold, FontWeight.SemiBold),
         Font(Res.font.barlow_condensed_extrabold, FontWeight.ExtraBold),
     )
-    val base = if (darkTheme) {
-        darkColorScheme(primary = palette.accent, onPrimary = palette.onAccent)
-    } else {
-        lightColorScheme(primary = palette.accent, onPrimary = palette.onAccent)
-    }
-    val colors = base.copy(
-        background = palette.background,
-        onBackground = palette.text,
-        surface = palette.surface,
-        onSurface = palette.text,
-        surfaceVariant = palette.surfaceVariant,
-        onSurfaceVariant = palette.textDim,
-        outline = palette.line,
-    )
-    val typography = Typography().let { t ->
-        t.copy(
-            bodyLarge = t.bodyLarge.copy(fontFamily = barlow),
-            bodyMedium = t.bodyMedium.copy(fontFamily = barlow),
-            bodySmall = t.bodySmall.copy(fontFamily = barlow),
-            labelLarge = t.labelLarge.copy(fontFamily = barlow),
-            labelMedium = t.labelMedium.copy(fontFamily = barlow),
-            labelSmall = t.labelSmall.copy(fontFamily = barlow),
-            titleMedium = t.titleMedium.copy(fontFamily = barlow),
+    // Built once per theme and font set, not on every recomposition. The families compare equal from
+    // one composition to the next (Font is cached), so they can key what is built from them.
+    val colors = remember(darkTheme) {
+        val base = if (darkTheme) {
+            darkColorScheme(primary = palette.accent, onPrimary = palette.onAccent)
+        } else {
+            lightColorScheme(primary = palette.accent, onPrimary = palette.onAccent)
+        }
+        base.copy(
+            background = palette.background,
+            onBackground = palette.text,
+            surface = palette.surface,
+            onSurface = palette.text,
+            surfaceVariant = palette.surfaceVariant,
+            onSurfaceVariant = palette.textDim,
+            outline = palette.line,
         )
     }
-    val type = intervalType(typography.bodyLarge, condensed)
+    val typography = remember(barlow) {
+        Typography().let { t ->
+            t.copy(
+                bodyLarge = t.bodyLarge.copy(fontFamily = barlow),
+                bodyMedium = t.bodyMedium.copy(fontFamily = barlow),
+                bodySmall = t.bodySmall.copy(fontFamily = barlow),
+                labelLarge = t.labelLarge.copy(fontFamily = barlow),
+                labelMedium = t.labelMedium.copy(fontFamily = barlow),
+                labelSmall = t.labelSmall.copy(fontFamily = barlow),
+                titleMedium = t.titleMedium.copy(fontFamily = barlow),
+            )
+        }
+    }
+    val type = remember(typography, condensed) { intervalType(typography.bodyLarge, condensed) }
     CompositionLocalProvider(LocalIntervalPalette provides palette, LocalIntervalType provides type) {
         // MaterialTheme provides bodyLarge as the default text style, so unstyled Text is Barlow too.
         MaterialTheme(colorScheme = colors, typography = typography, content = content)

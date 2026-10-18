@@ -64,7 +64,7 @@ import com.composeunstyled.UnstyledModalBottomSheet
 import com.composeunstyled.rememberModalBottomSheetState
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.sheet_close_cd
-import dev.justinsmith.interval.resources.value_sheet_drag_handle_cd
+import dev.justinsmith.interval.resources.sheet_drag_handle_cd
 import kotlinx.coroutines.flow.dropWhile
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -106,7 +106,7 @@ private fun BottomSheet(
     content: @Composable ColumnScope.(hide: () -> Unit) -> Unit,
 ) {
     val palette = IntervalTheme.palette
-    val dragHandle = stringResource(Res.string.value_sheet_drag_handle_cd)
+    val dragHandle = stringResource(Res.string.sheet_drag_handle_cd)
     // No half-open stop: a sheet opens whole, and scrolls inside when it has less room than it needs.
     val sheetState = rememberModalBottomSheetState(initialDetent = SheetDetent.Hidden)
     val scope = rememberCoroutineScope()
@@ -138,12 +138,12 @@ private fun BottomSheet(
                 ) {
                     DragIndication(
                         Modifier
-                            .size(Sizes.iconButton, Spacing.space24)
+                            .size(Sizes.dragHandleWidth, Sizes.dragHandleHeight)
                             .semantics { contentDescription = dragHandle }
                             .drawBehind {
                                 val handle = Size(Sizes.handleWidth.toPx(), Sizes.handleHeight.toPx())
                                 drawRoundRect(
-                                    color = palette.textDim.copy(alpha = Opacity.DISABLED),
+                                    color = palette.textDim.copy(alpha = Opacity.HANDLE),
                                     topLeft = Offset(
                                         (size.width - handle.width) / 2,
                                         (size.height - handle.height) / 2,

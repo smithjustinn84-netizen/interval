@@ -95,7 +95,7 @@ fun enterRising(delayMillis: Int = 0): EnterTransition {
 /** Something arriving in place, such as a dialog: it fades in as it grows from a touch smaller. */
 fun enterGrowing(): EnterTransition =
     fadeIn(tween(Motion.ENTER_MILLIS)) +
-        scaleIn(tween(Motion.ENTER_MILLIS, easing = EnterEasing), initialScale = Motion.FADE_THROUGH_SCALE)
+        scaleIn(tween(Motion.ENTER_MILLIS, easing = EnterEasing), initialScale = Motion.DIALOG_SCALE)
 
 /** A side sheet arriving from the end edge: it slides in whole as it fades up. [rtl] puts the end on the left. */
 fun enterFromEnd(rtl: Boolean): EnterTransition =

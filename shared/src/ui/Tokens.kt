@@ -25,7 +25,7 @@ object Radius {
     /** Cards, preset cards, the theme picker, workout controls, Start workout. */
     val radius18 = 18.dp
 
-    /** A sheet's top corners and a dialog. */
+    /** A sheet's rounded corners, and the app's corners while a back swipe previews the page under it. */
     val radius24 = 24.dp
 }
 
@@ -105,7 +105,21 @@ object Sizes {
     /** The pill of phase colour at the start of a History row. */
     val historyMarkHeight = 40.dp
 
-    val toggleRow = 56.dp
+    /** One choice of a segmented picker, such as the theme's. */
+    val segment = 44.dp
+
+    /** The stripe beside a value sheet's title, as tall as the title and its hint. */
+    val sheetHeaderStripe = 48.dp
+
+    /** A sheet's drag handle: the area that takes the drag, round the small bar drawn in it. */
+    val dragHandleWidth = 48.dp
+    val dragHandleHeight = 24.dp
+
+    /** The narrowest a text field in a dialog or sheet gets. */
+    val fieldMin = 230.dp
+
+    /** Room the workout leaves under its ring for the "Tap anywhere to pause" line. */
+    val tapHint = 48.dp
 
     /** A [ToggleRow]'s switch: the track, and the white thumb inset inside it. */
     val switchWidth = 46.dp
@@ -203,8 +217,11 @@ object Sizes {
 
 /** The design system's `opacity-*` tokens. */
 object Opacity {
-    /** A disabled control: a modal button's fill, an icon action's glyph; also a sheet's drag handle. */
+    /** A disabled control: an icon action's glyph, a toggle row. */
     const val DISABLED = 0.45f
+
+    /** A sheet's drag handle, present but quiet. */
+    const val HANDLE = 0.45f
 
     /** A − or + glyph at the end of its range. */
     const val DISABLED_GLYPH = 0.5f
@@ -246,6 +263,12 @@ object Motion {
 
     /** Switching tabs: the old tab fades out quickly, then the new one fades in, grown from [FADE_THROUGH_SCALE]. */
     const val FADE_THROUGH_SCALE = 0.96f
+
+    /** How long the old tab fades before the new one starts to come in. */
+    const val FADE_THROUGH_GAP_MILLIS = 90
+
+    /** A dialog grows in from this scale. */
+    const val DIALOG_SCALE = 0.96f
 
     /** A pressed control shrinks to this, springing back on release. */
     const val PRESS_SCALE = 0.96f

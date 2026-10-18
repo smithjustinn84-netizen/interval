@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -27,11 +28,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.intl.Locale
-import androidx.compose.ui.text.withStyle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.common_cancel
+import dev.justinsmith.interval.resources.common_joined
 import dev.justinsmith.interval.resources.duration_minutes
 import dev.justinsmith.interval.resources.duration_seconds
 import dev.justinsmith.interval.resources.history_clear_confirm
@@ -47,9 +48,10 @@ import dev.justinsmith.interval.resources.history_time
 import dev.justinsmith.interval.resources.history_title
 import dev.justinsmith.interval.resources.history_today
 import dev.justinsmith.interval.resources.history_week_cd
+import dev.justinsmith.interval.resources.history_week_count
 import dev.justinsmith.interval.resources.history_week_day_cd
+import dev.justinsmith.interval.resources.history_week_days_cd
 import dev.justinsmith.interval.resources.history_week_empty_cd
-import dev.justinsmith.interval.resources.history_workouts_unit
 import dev.justinsmith.interval.resources.history_yesterday
 import dev.justinsmith.interval.resources.weekday_1
 import dev.justinsmith.interval.resources.weekday_2
@@ -188,7 +190,8 @@ private fun WeekSummary(state: HistoryUiState, modifier: Modifier = Modifier) {
             .padding(start = Spacing.space20, end = Spacing.space20, top = Spacing.space16, bottom = Spacing.space16),
         verticalArrangement = Arrangement.spacedBy(Spacing.space16),
     ) {
-        val unit = pluralStringResource(Res.plurals.history_workouts_unit, state.weekCount)
+        val count = pluralStringResource(Res.plurals.history_week_count, state.weekCount, state.weekCount)
+        val unitStyle = IntervalTheme.type.section.copy(color = palette.textDim).toSpanStyle()
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             Column(Modifier.weight(1f)) {
                 Text(
@@ -198,9 +201,16 @@ private fun WeekSummary(state: HistoryUiState, modifier: Modifier = Modifier) {
                 )
                 Text(
                     buildAnnotatedString {
-                        append(state.weekCount.toString())
-                        withStyle(IntervalTheme.type.section.copy(color = palette.textDim).toSpanStyle()) {
-                            append(" $unit")
+                        // The number keeps the stat style; the words around it, wherever the language puts
+                        // them, are drawn smaller.
+                        append(count)
+                        val number = state.weekCount.toString()
+                        val at = count.indexOf(number)
+                        if (at < 0) {
+                            addStyle(unitStyle, 0, count.length)
+                        } else {
+                            addStyle(unitStyle, 0, at)
+                            addStyle(unitStyle, at + number.length, count.length)
                         }
                     },
                     style = IntervalTheme.type.stat,
@@ -235,31 +245,37 @@ private fun WeekChart(state: HistoryUiState, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.Bottom,
     ) {
         state.week.forEachIndexed { index, day ->
-            Column(
-                Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(Spacing.space8),
-            ) {
-                Box(Modifier.fillMaxWidth().height(Sizes.weekBar), contentAlignment = Alignment.BottomCenter) {
-                    val share = if (max > 0) day.seconds.toFloat() / max else 0f
-                    val grown = remember { Animatable(0f) }
-                    LaunchedEffect(share) {
-                        grown.animateTo(share, tween(Motion.ENTER_MILLIS, index * Motion.STAGGER_MILLIS, EnterEasing))
+            // Keyed by weekday, so a bar keeps its own animation as the week moves on a day.
+            key(day.weekday) {
+                Column(
+                    Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+                ) {
+                    Box(Modifier.fillMaxWidth().height(Sizes.weekBar), contentAlignment = Alignment.BottomCenter) {
+                        val share = if (max > 0) day.seconds.toFloat() / max else 0f
+                        val grown = remember { Animatable(0f) }
+                        LaunchedEffect(share) {
+                            grown.animateTo(
+                                share,
+                                tween(Motion.ENTER_MILLIS, index * Motion.STAGGER_MILLIS, EnterEasing),
+                            )
+                        }
+                        val height = if (day.seconds > 0) Sizes.weekBar * grown.value else Sizes.weekBarEmpty
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(height.coerceAtLeast(Sizes.weekBarEmpty))
+                                .clip(Corners.radius12)
+                                .background(if (day.seconds > 0) palette.accent else palette.surfaceVariant),
+                        )
                     }
-                    val height = if (day.seconds > 0) Sizes.weekBar * grown.value else Sizes.weekBarEmpty
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(height.coerceAtLeast(Sizes.weekBarEmpty))
-                            .clip(Corners.radius12)
-                            .background(if (day.seconds > 0) palette.accent else palette.surfaceVariant),
+                    Text(
+                        stringResource(WeekdayInitials[day.weekday - 1]),
+                        style = IntervalTheme.type.caption,
+                        color = if (day.today) palette.accent else palette.textDim,
                     )
                 }
-                Text(
-                    stringResource(WeekdayInitials[day.weekday - 1]),
-                    style = IntervalTheme.type.caption,
-                    color = if (day.today) palette.accent else palette.textDim,
-                )
             }
         }
     }
@@ -285,7 +301,11 @@ private fun HistoryRow(item: HistoryItem, modifier: Modifier = Modifier) {
                 item.time,
             )
             Text(item.presetName ?: shape, style = IntervalTheme.type.label, color = palette.text, maxLines = 1)
-            Text(detail.joinToString(" · "), style = IntervalTheme.type.meta, color = palette.textDim)
+            Text(
+                detail.reduce { joined, part -> stringResource(Res.string.common_joined, joined, part) },
+                style = IntervalTheme.type.meta,
+                color = palette.textDim,
+            )
         }
         Text(item.total, style = IntervalTheme.type.value, color = palette.text)
     }
@@ -324,7 +344,8 @@ internal fun weekDescription(week: List<DayTally>): String {
         }
         stringResource(Res.string.history_week_day_cd, stringResource(name), time)
     }
-    return stringResource(Res.string.history_week_cd, parts.joinToString(", "))
+    val joined = parts.reduce { all, part -> stringResource(Res.string.history_week_days_cd, all, part) }
+    return stringResource(Res.string.history_week_cd, joined)
 }
 
 /** Monday first, as [DayTally.weekday] counts. */

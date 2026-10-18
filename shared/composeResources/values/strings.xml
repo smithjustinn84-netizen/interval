@@ -53,7 +53,7 @@
     <string name="field_rounds_more">More rounds</string>
 
     <!-- The edit sheet -->
-    <string name="value_sheet_drag_handle_cd">Drag handle</string>
+    <string name="sheet_drag_handle_cd">Drag handle</string>
     <!-- A tablet's side sheet has no drag handle; this button is its way out -->
     <string name="sheet_close_cd">Close</string>
     <string name="value_sheet_new_total">New total</string>
@@ -65,8 +65,8 @@
     <string name="timer_title">Timer</string>
     <string name="timer_total">Total</string>
     <!-- "0:10 to get ready" -->
-    <string name="timer_prep_line">%1$s to get ready</string>
-    <string name="timer_start_workout">Start workout</string>
+    <string name="common_prep_line">%1$s to get ready</string>
+    <string name="common_start_workout">Start workout</string>
     <string name="timer_all_presets_cd">All presets</string>
     <!-- The + on the Timer's title bar, shown while the settings match no preset -->
     <string name="timer_save_as_preset_cd">Save as preset</string>
@@ -134,11 +134,13 @@
     <string name="history_week_cd">Time per day this week: %1$s</string>
     <!-- One day in history_week_cd: "Tuesday 45 seconds" -->
     <string name="history_week_day_cd">%1$s %2$s</string>
+    <!-- Two days of history_week_cd one after the other: "Tuesday 45 seconds, Today 4 minutes" -->
+    <string name="history_week_days_cd">%1$s, %2$s</string>
     <string name="history_week_empty_cd">No workouts in the last 7 days</string>
-    <!-- The unit after the week's count, which is drawn larger beside it: "3 workouts" -->
-    <plurals name="history_workouts_unit">
-        <item quantity="one">workout</item>
-        <item quantity="other">workouts</item>
+    <!-- The week's count; the number is drawn larger than the words around it: "3 workouts" -->
+    <plurals name="history_week_count">
+        <item quantity="one">%1$d workout</item>
+        <item quantity="other">%1$d workouts</item>
     </plurals>
     <plurals name="duration_seconds">
         <item quantity="one">%1$d second</item>

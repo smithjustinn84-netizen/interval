@@ -265,7 +265,7 @@ private fun PortraitWorkout(
                 .tapToPause(state, actions.onTogglePause),
             contentAlignment = Alignment.Center,
         ) {
-            val diameter = minOf(maxWidth, maxHeight - Sizes.pillHeight, Sizes.ringMax)
+            val diameter = minOf(maxWidth, maxHeight - Sizes.tapHint, Sizes.ringMax)
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 RingReadout(state, accent, diameter, Modifier.laneRing(anchor))
                 TapHint(state, Modifier.padding(top = Spacing.space12))

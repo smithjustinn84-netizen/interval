@@ -40,9 +40,9 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.common_joined
+import dev.justinsmith.interval.resources.common_prep_line
 import dev.justinsmith.interval.resources.common_settings
 import dev.justinsmith.interval.resources.timer_all_presets_cd
-import dev.justinsmith.interval.resources.timer_prep_line
 import dev.justinsmith.interval.resources.timer_save_as_preset_cd
 import dev.justinsmith.interval.resources.timer_title
 import dev.justinsmith.interval.resources.timer_total
@@ -122,7 +122,7 @@ internal fun Total(state: TimerUiState, modifier: Modifier = Modifier) {
             exit = fadeOut(tween(Motion.STATE_MILLIS)) + shrinkVertically(tween(Motion.STATE_MILLIS)),
         ) {
             Text(
-                stringResource(Res.string.timer_prep_line, formatClock(if (prep > 0) prep else lastPrep)),
+                stringResource(Res.string.common_prep_line, formatClock(if (prep > 0) prep else lastPrep)),
                 style = IntervalTheme.type.meta,
                 color = palette.textDim,
             )

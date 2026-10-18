@@ -62,10 +62,12 @@ toolchain (`$compose.*`).
 - **Text**: every user-facing string lives in `shared/composeResources/values/strings.xml`. ViewModels and
   domain code expose typed data (enums, sealed types like `NextUp`/`HistoryDay`, numbers, clock strings
   like `"0:30"`); screens put it into words with `stringResource`/`pluralStringResource`. Spoken cues are
-  the one non-composable path: `CuePlayer.speak(Speech)`, worded by `SpeechQueue` with `getString`. Never
-  load a resource from `shared/test/`: common tests also run as Android local tests.
+  the one non-composable path: `CuePlayer.speak(Speech)`, worded by `SpeechQueue` with `getString`. Preset
+  names are stored data, not labels: the built-ins' names live in `builtInPresets`. Never load a resource
+  from `shared/test/`: common tests also run as Android local tests.
 - **Theme**: `IntervalTheme` in `shared/src/ui/Theme.kt`. Fixed tokens (`Spacing`, `Radius`, `Sizes`, `Opacity`,
-  `Motion`) in `Tokens.kt`; never write a raw dp, duration or scale in a screen.
+  `Motion`) in `Tokens.kt`; never write a raw dp, duration or scale in a screen. The one exception is the
+  intro's sizes in `splash/Splash.kt`, which follow the platform launch screens.
 - **Motion**: durations are `Motion.*` tokens, easings and springs live in `shared/src/ui/Motion.kt` with the
   shared moves: `pressScale` on anything tappable, `rememberEntrance` + `enterRising` for content that
   arrives, `RollingText` for a value that changes in place, `animateColorAsState` for a control

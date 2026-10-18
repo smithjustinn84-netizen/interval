@@ -59,7 +59,7 @@ fun NameField(state: TextFieldState, placeholder: String, onDone: () -> Unit, mo
         interactionSource = interaction,
         modifier = modifier
             .fillMaxWidth()
-            .widthIn(min = Sizes.content / 2)
+            .widthIn(min = Sizes.fieldMin)
             .clip(Corners.radius12)
             .background(palette.surfaceVariant)
             .border(Sizes.border, if (focused) palette.accent else Color.Transparent, Corners.radius12)

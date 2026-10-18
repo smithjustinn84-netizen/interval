@@ -277,7 +277,7 @@ private fun ThemePicker(selected: ThemeMode, onSelect: (ThemeMode) -> Unit, modi
             Row(
                 Modifier
                     .weight(1f)
-                    .heightIn(min = Sizes.toggleRow - Spacing.space12)
+                    .heightIn(min = Sizes.segment)
                     .clip(Corners.radius12)
                     .selectable(selected = isSelected, role = Role.RadioButton) {
                         haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
