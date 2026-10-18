@@ -58,8 +58,10 @@ class FakeHistoryDao : HistoryDao {
             all.sortedWith(compareByDescending<HistoryEntity> { it.finishedAtEpochMillis }.thenByDescending { it.id })
         }
 
+    // As Room's autoGenerate does: an id of 0 takes the next one, any other is kept.
     override suspend fun insert(entry: HistoryEntity) {
-        rows.update { it + entry.copy(id = nextId++) }
+        val id = if (entry.id == 0L) nextId++ else entry.id.also { nextId = maxOf(nextId, it + 1) }
+        rows.update { it + entry.copy(id = id) }
     }
 
     override suspend fun clear() {
@@ -77,8 +79,8 @@ class FakePresetDao : PresetDao {
     override suspend fun all(): List<PresetEntity> = rows.value
 
     override suspend fun insert(preset: PresetEntity): Long {
-        val id = nextId++
-        rows.update { it + preset.copy(id = id) }
+        val id = if (preset.id == 0L) nextId++ else preset.id.also { nextId = maxOf(nextId, it + 1) }
+        rows.update { all -> (all + preset.copy(id = id)).sortedBy { it.id } }
         return id
     }
 
@@ -108,7 +110,7 @@ class FakeStorage {
      */
     fun repository(
         now: WallClock = WallClock { 0L },
-        scope: CoroutineScope = CoroutineScope(Dispatchers.Unconfined),
+        scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
     ): IntervalRepository = IntervalRepository(settings, history, presets, scope, now)
 }
 

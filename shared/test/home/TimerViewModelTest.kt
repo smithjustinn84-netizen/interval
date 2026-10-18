@@ -3,36 +3,28 @@
 package dev.justinsmith.interval.home
 
 import dev.justinsmith.interval.fakes.FakeStorage
+import dev.justinsmith.interval.fakes.MainDispatcherTest
 import dev.justinsmith.interval.fakes.saveCurrentAsPreset
 import dev.justinsmith.interval.timer.ConfigField
+import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
-import kotlinx.coroutines.Dispatchers
+import dev.justinsmith.interval.timer.formatClock
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.setMain
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
-class TimerViewModelTest {
+class TimerViewModelTest : MainDispatcherTest() {
     private val repository = FakeStorage().repository(now = { 0L })
     private val viewModel by lazy { TimerViewModel(repository) }
-
-    @BeforeTest
-    fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
-
-    @AfterTest
-    fun tearDown() = Dispatchers.resetMain()
 
     @Test
     fun `stepping a field updates the config and the total`() {
         viewModel.step(ConfigField.Rounds, 1)
         val state = viewModel.state.value
         assertEquals(9, state.config.rounds)
-        assertEquals("6:40", state.total)
+        assertEquals(formatClock(IntervalConfig().copy(rounds = 9).totalSeconds), state.total)
     }
 
     @Test
@@ -58,6 +50,16 @@ class TimerViewModelTest {
         viewModel.step(ConfigField.Work, 1)
         assertNull(viewModel.state.value.presetName)
         repository.saveCurrentAsPreset("Mine")
+        assertEquals("Mine", viewModel.state.value.presetName)
+    }
+
+    @Test
+    fun `saving a preset keeps its shape on the Timer`() {
+        repository.updateConfig { it.copy(prepSeconds = 15) }
+        val reshaped = IntervalConfig(prepSeconds = 0, workSeconds = 50, restSeconds = 10, rounds = 4)
+        viewModel.savePreset(Preset("Mine", reshaped))
+        assertEquals(reshaped.copy(prepSeconds = 15), repository.config.value)
+        assertEquals(listOf("Mine"), repository.customPresets.value.map { it.name })
         assertEquals("Mine", viewModel.state.value.presetName)
     }
 }

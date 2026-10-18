@@ -26,9 +26,7 @@ kermit = "2.2.0"
 koin = "4.2.2"
 kotlinx-coroutines = "1.11.0"
 ktlint = "1.8.0"
-logback = "1.6.5"
 slf4j = "2.0.20"
-turbine = "1.2.1"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity-compose" }
@@ -59,6 +57,4 @@ kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 ktlint-rule-engine = { module = "com.pinterest.ktlint:ktlint-rule-engine", version.ref = "ktlint" }
 ktlint-ruleset-standard = { module = "com.pinterest.ktlint:ktlint-ruleset-standard", version.ref = "ktlint" }
-logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4j" }
-turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }

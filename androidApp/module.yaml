@@ -4,8 +4,6 @@ dependencies:
   - //shared
   - $libs.androidx.activity.compose
   - $libs.androidx.core.splashscreen
-  - $compose.preview
-  - $compose.uiTooling
 
 settings:
   compose: enabled

@@ -1,7 +1,9 @@
 * text=auto
 
 *.sh text eol=lf
-*.bat text eol=crlf
+# Stored as they are, CRLF and all: batch files need CRLF, and jj records the bytes it sees, so a
+# rule that converts them shows the wrapper as changed forever.
+*.bat -text
 
 *.png binary
 

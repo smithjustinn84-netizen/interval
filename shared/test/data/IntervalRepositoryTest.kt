@@ -246,6 +246,32 @@ class IntervalRepositoryTest {
         testScheduler.advanceUntilIdle()
         assertEquals(listOf("Twin", "Twin 2"), repository.customPresets.value.map { it.name })
     }
+
+    @Test
+    fun `a write that fails is dropped and the next one still lands`() {
+        var inserts = 0
+        val flaky = object : HistoryDao by storage.history {
+            override suspend fun insert(entry: HistoryEntity) {
+                if (inserts++ == 0) error("disk full")
+                storage.history.insert(entry)
+            }
+        }
+        val repository =
+            IntervalRepository(
+                storage.settings,
+                flaky,
+                storage.presets,
+                CoroutineScope(
+                    Dispatchers.Unconfined,
+                ),
+                clock = {
+                    clock
+                },
+            )
+        repository.recordWorkout(IntervalConfig(), elapsedSeconds = 1)
+        repository.recordWorkout(IntervalConfig(), elapsedSeconds = 2)
+        assertEquals(listOf(2), repository.history.value.map { it.elapsedSeconds })
+    }
 }
 
 /** Settings whose first read hasn't come back yet: [data] emits only when the test says so. */

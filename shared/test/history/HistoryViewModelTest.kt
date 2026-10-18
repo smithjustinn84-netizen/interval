@@ -6,20 +6,16 @@ import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.fakes.DAY_MILLIS
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
+import dev.justinsmith.interval.fakes.MainDispatcherTest
 import dev.justinsmith.interval.timer.IntervalConfig
-import dev.justinsmith.interval.timer.SpokenDuration
 import dev.justinsmith.interval.timer.builtInPresets
-import dev.justinsmith.interval.timer.spokenDuration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -27,16 +23,10 @@ import kotlin.test.assertTrue
 private const val DAY = DAY_MILLIS
 private val tabata = builtInPresets.first().config
 
-class HistoryViewModelTest {
+class HistoryViewModelTest : MainDispatcherTest() {
     private var clock = 30 * DAY
     private val repository = FakeStorage().repository(now = { clock })
     private val viewModel by lazy { HistoryViewModel(repository, FixedTimestampFormatter, clock = { clock }) }
-
-    @BeforeTest
-    fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
-
-    @AfterTest
-    fun tearDown() = Dispatchers.resetMain()
 
     @Test
     fun `workouts are grouped by day newest first and name their preset`() {
@@ -90,16 +80,6 @@ class HistoryViewModelTest {
         assertEquals(listOf(240, 0, 0, 0, 0, 0, 90), week.map { it.seconds })
         assertEquals(listOf(false, false, false, false, false, false, true), week.map { it.today })
         assertEquals(240, viewModel.state.value.weekMaxSeconds)
-    }
-
-    @Test
-    fun `a day's time reads in seconds under a minute and whole minutes from one`() {
-        assertEquals(SpokenDuration.Seconds(1), spokenDuration(1))
-        assertEquals(SpokenDuration.Seconds(45), spokenDuration(45))
-        assertEquals(SpokenDuration.Minutes(1), spokenDuration(60))
-        // 90 seconds rounds to 2 minutes.
-        assertEquals(SpokenDuration.Minutes(2), spokenDuration(90))
-        assertEquals(SpokenDuration.Minutes(4), spokenDuration(240))
     }
 
     @Test

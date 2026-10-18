@@ -4,33 +4,22 @@ package dev.justinsmith.interval.settings
 
 import dev.justinsmith.interval.data.ThemeMode
 import dev.justinsmith.interval.fakes.FakeStorage
+import dev.justinsmith.interval.fakes.MainDispatcherTest
 import dev.justinsmith.interval.fakes.RecordingCuePlayer
 import dev.justinsmith.interval.platform.Beep
 import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.Speech
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.setMain
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class SettingsViewModelTest {
+class SettingsViewModelTest : MainDispatcherTest() {
     private val storage = FakeStorage()
     private val repository = storage.repository()
     private val player = RecordingCuePlayer()
     private val viewModel by lazy { SettingsViewModel(repository, player) }
-
-    @BeforeTest
-    fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
-
-    @AfterTest
-    fun tearDown() = Dispatchers.resetMain()
 
     @Test
     fun `toggles flip a single cue setting`() {

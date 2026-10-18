@@ -32,7 +32,6 @@ dependencies:
 
 test-dependencies:
   - $libs.kotlinx.coroutines.test
-  - $libs.turbine
 
 # Compose UI tests run on the desktop JVM only: common `test/` also runs as Android local tests,
 # which have no Robolectric here, so `runComposeUiTest` lives in `test@jvm/`.
@@ -43,6 +42,8 @@ test-dependencies@jvm:
   # Dispatchers.Main for viewModelScope, as in desktopApp: the tests compose the real routes.
   - $libs.kotlinx.coroutines.swing
 
+# Renders the shared @Preview functions in the IDE. Amper has no debug-only dependency scope, so it ships
+# in release builds too; R8 strips what the app never calls.
 dependencies@android:
   - $compose.uiTooling
 

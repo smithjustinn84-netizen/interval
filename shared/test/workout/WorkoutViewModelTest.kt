@@ -2,8 +2,11 @@
 
 package dev.justinsmith.interval.workout
 
+import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.data.CueSettings
+import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.fakes.FakeStorage
+import dev.justinsmith.interval.fakes.MainDispatcherTest
 import dev.justinsmith.interval.fakes.RecordingCuePlayer
 import dev.justinsmith.interval.fakes.deferredStorageScope
 import dev.justinsmith.interval.platform.Haptic
@@ -11,15 +14,14 @@ import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.Preset
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -28,23 +30,27 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class WorkoutViewModelTest {
-    private val dispatcher = StandardTestDispatcher()
+class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
     private val repository = FakeStorage().repository(now = { 7L })
     private val player = RecordingCuePlayer()
+    private val viewModels = mutableListOf<WorkoutViewModel>()
 
     @BeforeTest
     fun setUp() {
-        Dispatchers.setMain(dispatcher)
         repository.updateConfig { IntervalConfig(prepSeconds = 0, workSeconds = 5, restSeconds = 5, rounds = 2) }
     }
 
+    // Stops every ticker, so none outlives its test on the shared scheduler.
     @AfterTest
-    fun tearDown() = Dispatchers.resetMain()
+    fun clearViewModels() = viewModels.forEach { it.viewModelScope.cancel() }
+
+    /** A workout over [repository], timed by the test's clock, stopped once the test ends. */
+    private fun TestScope.workoutViewModel(repository: IntervalRepository = this@WorkoutViewModelTest.repository) =
+        WorkoutViewModel(repository, player, testScheduler.timeSource).also { viewModels += it }
 
     @Test
     fun `a workout runs to done cues each phase and is recorded`() = runTest(dispatcher) {
-        val viewModel = WorkoutViewModel(repository, player, testScheduler.timeSource)
+        val viewModel = workoutViewModel(repository)
         assertEquals(Phase.Work, viewModel.state.value.phase)
 
         advanceTimeBy(15_000 + WorkoutViewModel.TICK_MILLIS)
@@ -71,7 +77,7 @@ class WorkoutViewModelTest {
 
     @Test
     fun `time spent counts only the time the timer ran`() = runTest(dispatcher) {
-        val viewModel = WorkoutViewModel(repository, player, testScheduler.timeSource)
+        val viewModel = workoutViewModel(repository)
         advanceTimeBy(2_000 + WorkoutViewModel.TICK_MILLIS)
         runCurrent()
         viewModel.pause()
@@ -90,7 +96,7 @@ class WorkoutViewModelTest {
 
     @Test
     fun `back returns to the interval before and add time extends this one without cues`() = runTest(dispatcher) {
-        val viewModel = WorkoutViewModel(repository, player, testScheduler.timeSource)
+        val viewModel = workoutViewModel(repository)
         viewModel.pause()
         viewModel.skip()
         assertEquals(Phase.Rest, viewModel.state.value.phase)
@@ -107,7 +113,7 @@ class WorkoutViewModelTest {
 
     @Test
     fun `pausing freezes the clock`() = runTest(dispatcher) {
-        val viewModel = WorkoutViewModel(repository, player, testScheduler.timeSource)
+        val viewModel = workoutViewModel(repository)
         advanceTimeBy(2_000 + WorkoutViewModel.TICK_MILLIS)
         runCurrent()
         viewModel.pause()
@@ -125,7 +131,7 @@ class WorkoutViewModelTest {
     @Test
     fun `cues respect the user's toggles`() = runTest(dispatcher) {
         repository.updateCueSettings { CueSettings(sound = false, voice = false, vibrate = false) }
-        val viewModel = WorkoutViewModel(repository, player, testScheduler.timeSource)
+        val viewModel = workoutViewModel(repository)
         viewModel.skip()
         viewModel.skip()
         viewModel.skip()
@@ -135,7 +141,7 @@ class WorkoutViewModelTest {
 
     @Test
     fun `restart begins again from the first interval`() = runTest(dispatcher) {
-        val viewModel = WorkoutViewModel(repository, player, testScheduler.timeSource)
+        val viewModel = workoutViewModel(repository)
         viewModel.skip()
         viewModel.skip()
         viewModel.restart()
@@ -149,7 +155,7 @@ class WorkoutViewModelTest {
 
     @Test
     fun `ending early records the time spent and shows the summary`() = runTest(dispatcher) {
-        val viewModel = WorkoutViewModel(repository, player, testScheduler.timeSource)
+        val viewModel = workoutViewModel(repository)
         advanceTimeBy(6_000 + WorkoutViewModel.TICK_MILLIS)
         runCurrent()
         assertTrue(viewModel.state.value.hasProgress)
@@ -169,7 +175,7 @@ class WorkoutViewModelTest {
 
     @Test
     fun `a summary offers saving only a shape no preset has`() = runTest(dispatcher) {
-        val viewModel = WorkoutViewModel(repository, player, testScheduler.timeSource)
+        val viewModel = workoutViewModel(repository)
         repeat(3) { viewModel.skip() }
         assertEquals("0:00", viewModel.state.value.elapsed)
         assertEquals(0, repository.history.value.single().elapsedSeconds)
@@ -186,7 +192,7 @@ class WorkoutViewModelTest {
         val repository = FakeStorage().repository(scope = deferredStorageScope())
         runCurrent()
         repository.updateConfig { IntervalConfig(prepSeconds = 0, workSeconds = 5, restSeconds = 5, rounds = 2) }
-        val viewModel = WorkoutViewModel(repository, player, testScheduler.timeSource)
+        val viewModel = workoutViewModel(repository)
         repeat(3) { viewModel.skip() }
         assertTrue(viewModel.state.value.canSavePreset)
 
@@ -199,7 +205,7 @@ class WorkoutViewModelTest {
 
     @Test
     fun `a preset saved from the summary goes on the Timer too`() = runTest(dispatcher) {
-        val viewModel = WorkoutViewModel(repository, player, testScheduler.timeSource)
+        val viewModel = workoutViewModel(repository)
         repeat(3) { viewModel.skip() }
         val reshaped = viewModel.state.value.config.copy(workSeconds = 50)
         viewModel.saveAsPreset(Preset("Longer", reshaped))
@@ -208,7 +214,7 @@ class WorkoutViewModelTest {
 
     @Test
     fun `the controls do nothing once the workout has ended early`() = runTest(dispatcher) {
-        val viewModel = WorkoutViewModel(repository, player, testScheduler.timeSource)
+        val viewModel = workoutViewModel(repository)
         advanceTimeBy(6_000 + WorkoutViewModel.TICK_MILLIS)
         runCurrent()
         viewModel.endEarly()

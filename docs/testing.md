@@ -73,7 +73,8 @@ The UI tests render offscreen with Skiko and need no display, including on the L
 - Drive the stateless `XScreen(state, callbacks)` with a fixed state and callbacks that record
   calls. Use `AppContent` only for navigation.
 - Match on semantics first: text, `contentDescription`, `hasClickAction()`, `isDialog()`. Add a
-  `testTag` only when an element would otherwise take more than three matchers. None is needed so far.
+  `testTag` only when an element would otherwise take more than three matchers. App code needs none so
+  far; a test may still tag the boxes it draws itself.
 - Assert the English text literally ("Next: rest 0:15"), not through `getString`: an expectation read
   from the same key can't catch a screen showing the wrong one. This is where the words are tested;
   common ViewModel tests assert typed state and never load a resource (Android local tests can't).

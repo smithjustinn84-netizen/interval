@@ -3,30 +3,19 @@
 package dev.justinsmith.interval.presets
 
 import dev.justinsmith.interval.fakes.FakeStorage
+import dev.justinsmith.interval.fakes.MainDispatcherTest
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.setMain
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class PresetsViewModelTest {
+class PresetsViewModelTest : MainDispatcherTest() {
     private val repository = FakeStorage().repository(now = { 0L })
     private val viewModel by lazy { PresetsViewModel(repository) }
-
-    @BeforeTest
-    fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
-
-    @AfterTest
-    fun tearDown() = Dispatchers.resetMain()
 
     @Test
     fun `the user's own come first and apart from the built-ins`() {

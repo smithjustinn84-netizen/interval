@@ -134,21 +134,55 @@ class WorkoutEngineTest {
     }
 
     @Test
-    fun `stepping clamps to each field's range`() {
-        assertEquals(0, IntervalConfig(prepSeconds = 0).stepped(ConfigField.Prep, -1).prepSeconds)
-        assertEquals(5, IntervalConfig(workSeconds = 5).stepped(ConfigField.Work, -1).workSeconds)
-        assertEquals(99, IntervalConfig(rounds = 99).stepped(ConfigField.Rounds, 1).rounds)
-        assertEquals(20, IntervalConfig(restSeconds = 15).stepped(ConfigField.Rest, 1).restSeconds)
+    fun `back near the start of round one's work goes to the get-ready countdown`() {
+        val work = WorkoutEngine.advance(WorkoutEngine.start(config).state).state
+        val back = WorkoutEngine.back(work)
+        assertEquals(Phase.Prep, back.phase)
+        assertEquals(10_000L, back.remainingMillis)
     }
 
     @Test
-    fun `formats clocks and short durations`() {
-        assertEquals("0:05", formatClock(5))
-        assertEquals("5:55", formatClock(355))
-        assertEquals(ShortDuration.Minutes(1), shortDuration(60))
-        assertEquals(ShortDuration.Seconds(45), shortDuration(45))
-        assertEquals(ShortDuration.Seconds(90), shortDuration(90))
-        assertEquals(1, ceilSeconds(1))
-        assertEquals(0, ceilSeconds(0))
+    fun `back without rest goes to the previous round's work`() {
+        val noRest = config.copy(restSeconds = 0)
+        val secondWork = WorkoutEngine.advance(WorkoutEngine.advance(WorkoutEngine.start(noRest).state).state).state
+        assertEquals(2, secondWork.round)
+        val back = WorkoutEngine.back(secondWork)
+        assertEquals(Phase.Work, back.phase)
+        assertEquals(1, back.round)
+    }
+
+    @Test
+    fun `the session's time left counts what follows the current interval`() {
+        val work = WorkoutEngine.advance(WorkoutEngine.start(config).state).state
+        // 30s of work, then two more rounds of 15s rest and 30s work.
+        assertEquals(120_000L, work.sessionRemainingMillis)
+        assertEquals(110_000L, run(work, 10_000).state.sessionRemainingMillis)
+        val rest = WorkoutEngine.advance(work).state
+        // 15s of rest, two more works and the rest between them.
+        assertEquals(90_000L, rest.sessionRemainingMillis)
+    }
+
+    @Test
+    fun `a long rest gets its halfway cue too`() {
+        val longRest = config.copy(prepSeconds = 0, workSeconds = 10, restSeconds = 40)
+        val rest = WorkoutEngine.advance(WorkoutEngine.start(longRest).state).state
+        assertEquals(Phase.Rest, rest.phase)
+        assertEquals(listOf<Cue>(Cue.Halfway), run(rest, 20_000).cues)
+    }
+
+    @Test
+    fun `a tick of no time or less changes nothing`() {
+        val prep = WorkoutEngine.start(config).state
+        assertEquals(Step(prep), WorkoutEngine.tick(prep, 0))
+        assertEquals(Step(prep), WorkoutEngine.tick(prep, -500))
+    }
+
+    @Test
+    fun `nothing moves once the workout is done`() {
+        val done = WorkoutEngine.advance(WorkoutEngine.start(config.copy(prepSeconds = 0, rounds = 1)).state).state
+        assertEquals(Phase.Done, done.phase)
+        assertEquals(done, WorkoutEngine.addTime(done))
+        assertEquals(done, WorkoutEngine.back(done))
+        assertEquals(Step(done), WorkoutEngine.tick(done, 1_000))
     }
 }
