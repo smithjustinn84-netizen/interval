@@ -79,8 +79,8 @@ class HistoryViewModelTest : MainDispatcherTest() {
         repository.recordWorkout(tabata, elapsedSeconds = 30)
 
         val week = viewModel.state.value.week
-        // Day 30 is a Wednesday (30 % 7 == 2), so the chart runs Thursday to Wednesday.
-        assertEquals(listOf(4, 5, 6, 7, 1, 2, 3), week.map { it.weekday })
+        // Day 30 is a Saturday (day 0, 1 January 1970, was a Thursday), so the chart runs Sunday to Saturday.
+        assertEquals(listOf(7, 1, 2, 3, 4, 5, 6), week.map { it.weekday })
         assertEquals(listOf(240, 0, 0, 0, 0, 0, 90), week.map { it.seconds })
         assertEquals(listOf(false, false, false, false, false, false, true), week.map { it.today })
         assertEquals(240, viewModel.state.value.weekMaxSeconds)

@@ -71,7 +71,7 @@ class StorageTest {
             assertEquals(AppSettings(theme = ThemeMode.Light, keepScreenOn = false), repository.appSettings.value)
             assertEquals(Preset("Long", config, id = 1), repository.customPresets.value.single())
             assertEquals(
-                HistoryEntry(NOW, config, elapsedSeconds = 300, endedEarly = true),
+                HistoryEntry(NOW, config, elapsedSeconds = 300, endedEarly = true, id = 1),
                 repository.history.value.single(),
             )
         }
@@ -120,6 +120,47 @@ class StorageTest {
     }
 
     @Test
+    fun `a version 2 database opens with its history kept and no plans`() {
+        BundledSQLiteDriver().open(directory.resolve("interval.db").absolutePath).use { connection ->
+            V2_SCHEMA.forEach(connection::execSQL)
+            connection.execSQL(
+                "INSERT INTO history (finished_at, prep_seconds, work_seconds, rest_seconds, rounds, " +
+                    "elapsed_seconds, ended_early, work_active_seconds, activity) " +
+                    "VALUES ($NOW, 10, 20, 10, 8, 250, 0, 160, 'Rower')",
+            )
+            connection.execSQL("PRAGMA user_version = 2")
+        }
+        withApp { repository ->
+            val entry = repository.history.value.single()
+            assertEquals(IntervalConfig(10, 20, 10, rounds = 8, activity = Activity.Rower), entry.config)
+            assertEquals(160, entry.workActiveSeconds)
+            assertEquals(emptyList(), repository.planned.value)
+        }
+    }
+
+    @Test
+    fun `plans and a deleted workout survive a restart`() {
+        val tabata = Preset("Tabata", IntervalConfig(10, 20, 10, rounds = 8))
+        withApp { repository ->
+            repository.planWeekly(tabata, setOf(1, 3))
+            repository.planOnce(tabata, epochDay = 20_744)
+            repository.recordWorkout(tabata.config, elapsedSeconds = 240)
+            repository.recordWorkout(tabata.config, elapsedSeconds = 120)
+            settled(repository) { it.planned.value.size == 3 && it.history.value.size == 2 }
+            repository.deleteWorkout(requireNotNull(repository.history.value.last().id))
+            repository.removePlanned(repository.planned.value.first().id)
+            settled(repository) { it.planned.value.size == 2 && it.history.value.size == 1 }
+        }
+        withApp { repository ->
+            assertEquals(
+                listOf(PlanSchedule.Weekly(3), PlanSchedule.Once(20_744)),
+                repository.planned.value.map { it.schedule },
+            )
+            assertEquals(120, repository.history.value.single().elapsedSeconds)
+        }
+    }
+
+    @Test
     fun `history is newest first and presets keep their save order`() = withApp { repository ->
         repository.saveCurrentAsPreset("B")
         repository.saveCurrentAsPreset("A")
@@ -158,7 +199,13 @@ class StorageTest {
             .setQueryCoroutineContext(Dispatchers.IO)
             .build()
         try {
-            val repository = IntervalRepository(settings, database.historyDao(), database.presetDao(), scope) { clock }
+            val repository = IntervalRepository(
+                settings,
+                database.historyDao(),
+                database.presetDao(),
+                database.plannedDao(),
+                scope,
+            ) { clock }
             repository.ready.first { it }
             block(repository)
         } finally {
@@ -195,4 +242,18 @@ private val V1_SCHEMA = listOf(
         "`rounds` INTEGER NOT NULL)",
     "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
     "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4677e5a0ef7fb56c481c142c0985192c')",
+)
+
+/** Version 2 as it shipped (`shared/schemas/.../2.json`). */
+private val V2_SCHEMA = listOf(
+    "CREATE TABLE IF NOT EXISTS `history` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+        "`finished_at` INTEGER NOT NULL, `prep_seconds` INTEGER NOT NULL, `work_seconds` INTEGER NOT NULL, " +
+        "`rest_seconds` INTEGER NOT NULL, `rounds` INTEGER NOT NULL, `elapsed_seconds` INTEGER NOT NULL, " +
+        "`ended_early` INTEGER NOT NULL, `work_active_seconds` INTEGER, `activity` TEXT)",
+    "CREATE INDEX IF NOT EXISTS `index_history_finished_at` ON `history` (`finished_at`)",
+    "CREATE TABLE IF NOT EXISTS `preset` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, " +
+        "`prep_seconds` INTEGER NOT NULL, `work_seconds` INTEGER NOT NULL, `rest_seconds` INTEGER NOT NULL, " +
+        "`rounds` INTEGER NOT NULL, `activity` TEXT)",
+    "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+    "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'ae976cb070b104a8eac8cee51f224e70')",
 )

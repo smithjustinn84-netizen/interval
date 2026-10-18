@@ -47,11 +47,17 @@ interface TimestampFormatter {
     /** The time of day: "7:42 PM". */
     fun time(epochMillis: Long): String
 
-    /** The moment's calendar day, counted from any fixed day: equal for two moments on the same local day. */
+    /**
+     * The moment's local calendar day as an epoch day (days since 1 January 1970), the count every plan,
+     * history day and calendar cell uses. Its day of the week is `weekdayOf(dayNumber)`.
+     */
     fun dayNumber(epochMillis: Long): Long
 
-    /** The moment's day of the week, 1 for Monday through 7 for Sunday. */
-    fun weekday(epochMillis: Long): Int
+    /** An epoch day's date, as [date] words it: "Sunday, Oct 11". */
+    fun dateOfDay(epochDay: Long): String
+
+    /** The month and year an epoch day falls in: "October 2026". */
+    fun monthTitle(epochDay: Long): String
 }
 
 /** Where the app keeps its files. Each platform puts them in its usual private app-data location. */

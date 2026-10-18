@@ -10,7 +10,8 @@ import androidx.compose.ui.uikit.LocalUIViewController
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import dev.justinsmith.interval.data.AppDatabase
-import dev.justinsmith.interval.timer.DAYS_PER_WEEK
+import dev.justinsmith.interval.timer.dateOfEpochDay
+import dev.justinsmith.interval.timer.epochDayOf
 import kotlinx.cinterop.ExperimentalForeignApi
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.onClose
@@ -26,10 +27,12 @@ import platform.AudioToolbox.AudioServicesPlaySystemSound
 import platform.Foundation.NSApplicationSupportDirectory
 import platform.Foundation.NSBundle
 import platform.Foundation.NSCalendar
+import platform.Foundation.NSCalendarIdentifierGregorian
 import platform.Foundation.NSCalendarUnitDay
-import platform.Foundation.NSCalendarUnitEra
-import platform.Foundation.NSCalendarUnitWeekday
+import platform.Foundation.NSCalendarUnitMonth
+import platform.Foundation.NSCalendarUnitYear
 import platform.Foundation.NSDate
+import platform.Foundation.NSDateComponents
 import platform.Foundation.NSDateFormatter
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSLocale
@@ -146,25 +149,44 @@ private class IosStorage : PlatformStorage {
     override val preferencesPath: String = "$directory/$PREFERENCES_NAME"
 }
 
+private const val NOON_HOUR = 12L
+
 private class FoundationTimestampFormatter : TimestampFormatter {
-    // Follows the user's region and time zone as they change, rather than a snapshot taken at launch.
-    private val calendar = NSCalendar.autoupdatingCurrentCalendar
     private var formats: Formats? = null
 
     override fun date(epochMillis: Long): String = formats().date.stringFromDate(nsDate(epochMillis))
 
     override fun time(epochMillis: Long): String = formats().time.stringFromDate(nsDate(epochMillis))
 
-    override fun dayNumber(epochMillis: Long): Long =
-        calendar.ordinalityOfUnit(NSCalendarUnitDay, inUnit = NSCalendarUnitEra, forDate = nsDate(epochMillis)).toLong()
+    // Gregorian, whichever calendar the user reads dates in, so the day count is the epoch day the rest of
+    // the app (and the other platforms) use. Its time zone follows the device's as it changes.
+    private val gregorian = requireNotNull(NSCalendar.calendarWithIdentifier(NSCalendarIdentifierGregorian)).apply {
+        timeZone = NSTimeZone.localTimeZone
+    }
 
-    // Foundation counts Sunday as 1; the app counts Monday as 1.
-    override fun weekday(epochMillis: Long): Int =
-        (
-            (calendar.component(NSCalendarUnitWeekday, fromDate = nsDate(epochMillis)).toInt() + DAYS_PER_WEEK - 2) %
-                DAYS_PER_WEEK
-            ) +
-            1
+    override fun dayNumber(epochMillis: Long): Long {
+        val parts = gregorian.components(
+            NSCalendarUnitYear or NSCalendarUnitMonth or NSCalendarUnitDay,
+            fromDate = nsDate(epochMillis),
+        )
+        return epochDayOf(parts.year.toInt(), parts.month.toInt(), parts.day.toInt())
+    }
+
+    override fun dateOfDay(epochDay: Long): String = formats().date.stringFromDate(noonOn(epochDay))
+
+    override fun monthTitle(epochDay: Long): String = formats().month.stringFromDate(noonOn(epochDay))
+
+    // Noon rather than midnight, which a daylight-saving change can skip.
+    private fun noonOn(epochDay: Long): NSDate {
+        val date = dateOfEpochDay(epochDay)
+        val parts = NSDateComponents().apply {
+            year = date.year.toLong()
+            month = date.month.toLong()
+            day = date.day.toLong()
+            hour = NOON_HOUR
+        }
+        return requireNotNull(gregorian.dateFromComponents(parts))
+    }
 
     private fun nsDate(epochMillis: Long): NSDate =
         NSDate.dateWithTimeIntervalSince1970(epochMillis.milliseconds.toDouble(DurationUnit.SECONDS))
@@ -180,6 +202,7 @@ private class FoundationTimestampFormatter : TimestampFormatter {
     private class Formats(val locale: String) {
         val date = formatter("EEEEMMMd")
         val time = formatter("jmm")
+        val month = formatter("yMMMM")
 
         private fun formatter(template: String) = NSDateFormatter().apply {
             setLocale(NSLocale.autoupdatingCurrentLocale)

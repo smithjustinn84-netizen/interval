@@ -10,6 +10,7 @@ import org.koin.dsl.module
 import java.awt.Toolkit
 import java.io.File
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -72,6 +73,7 @@ private class JavaTimeFormatter : TimestampFormatter {
     // don't change while the app runs, so these are built once.
     private val dateFormat = DateTimeFormatter.ofLocalizedPattern("MMMEEEEd")
     private val timeFormat = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
+    private val monthFormat = DateTimeFormatter.ofLocalizedPattern("yMMMM")
 
     override fun date(epochMillis: Long): String = dateFormat.format(zoned(epochMillis))
 
@@ -79,7 +81,9 @@ private class JavaTimeFormatter : TimestampFormatter {
 
     override fun dayNumber(epochMillis: Long): Long = zoned(epochMillis).toLocalDate().toEpochDay()
 
-    override fun weekday(epochMillis: Long): Int = zoned(epochMillis).dayOfWeek.value
+    override fun dateOfDay(epochDay: Long): String = dateFormat.format(LocalDate.ofEpochDay(epochDay))
+
+    override fun monthTitle(epochDay: Long): String = monthFormat.format(LocalDate.ofEpochDay(epochDay))
 
     private fun zoned(epochMillis: Long) = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault())
 }

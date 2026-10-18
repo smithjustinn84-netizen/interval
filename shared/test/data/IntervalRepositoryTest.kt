@@ -62,7 +62,8 @@ class IntervalRepositoryTest {
         val stored = storage.settings.data.first()
         val slow = SlowDataStore()
         val scope = CoroutineScope(backgroundScope.coroutineContext + UnconfinedTestDispatcher(testScheduler))
-        val repository = IntervalRepository(slow, storage.history, storage.presets, scope, clock = { clock })
+        val repository =
+            IntervalRepository(slow, storage.history, storage.presets, storage.planned, scope, clock = { clock })
         assertFalse(repository.ready.value)
         assertEquals(IntervalConfig(), repository.config.value)
 
@@ -82,7 +83,8 @@ class IntervalRepositoryTest {
             override fun observeAll(): Flow<List<HistoryEntity>> = flow { error("disk on fire") }
         }
         val scope = CoroutineScope(Dispatchers.Unconfined)
-        val repository = IntervalRepository(storage.settings, broken, storage.presets, scope, clock = { clock })
+        val repository =
+            IntervalRepository(storage.settings, broken, storage.presets, storage.planned, scope, clock = { clock })
         assertTrue(repository.ready.value)
         assertEquals(emptyList(), repository.history.value)
     }
@@ -99,7 +101,8 @@ class IntervalRepositoryTest {
             }
         }
         val scope = deferredStorageScope()
-        val repository = IntervalRepository(storage.settings, flaky, storage.presets, scope, clock = { clock })
+        val repository =
+            IntervalRepository(storage.settings, flaky, storage.presets, storage.planned, scope, clock = { clock })
         testScheduler.runCurrent()
         assertTrue(repository.ready.value)
         assertEquals(emptyList(), repository.history.value)
@@ -315,6 +318,7 @@ class IntervalRepositoryTest {
                 storage.settings,
                 flaky,
                 storage.presets,
+                storage.planned,
                 CoroutineScope(
                     Dispatchers.Unconfined,
                 ),
@@ -325,6 +329,60 @@ class IntervalRepositoryTest {
         repository.recordWorkout(IntervalConfig(), elapsedSeconds = 1)
         repository.recordWorkout(IntervalConfig(), elapsedSeconds = 2)
         assertEquals(listOf(2), repository.history.value.map { it.elapsedSeconds })
+    }
+
+    @Test
+    fun `one workout can be deleted by its id`() {
+        val repository = repository()
+        repository.recordWorkout(IntervalConfig(), elapsedSeconds = 1)
+        clock += 1
+        repository.recordWorkout(IntervalConfig(), elapsedSeconds = 2)
+        val (newer, older) = repository.history.value
+        repository.deleteWorkout(requireNotNull(older.id))
+        assertEquals(listOf(newer), repository().history.value)
+    }
+
+    @Test
+    fun `a weekly plan is one plan per weekday and survives a restart`() {
+        val tabata = builtInPresets.first()
+        repository().planWeekly(tabata, setOf(4, 1, 9))
+        val planned = repository().planned.value
+        assertEquals(listOf(PlanSchedule.Weekly(1), PlanSchedule.Weekly(4)), planned.map { it.schedule })
+        assertTrue(planned.all { it.name == tabata.name && it.config == tabata.config && it.presetId == null })
+    }
+
+    @Test
+    fun `a one-off plan keeps its day and the user's preset it came from`() {
+        val repository = repository()
+        repository.saveCurrentAsPreset("Mine")
+        val mine = repository.customPresets.value.single()
+        repository.planOnce(mine, epochDay = 20_744)
+        val planned = repository().planned.value.single()
+        assertEquals(PlanSchedule.Once(20_744), planned.schedule)
+        assertEquals(mine.id, planned.presetId)
+        assertTrue(planned.fallsOn(20_744, weekday = 7))
+        assertFalse(planned.fallsOn(20_745, weekday = 1))
+    }
+
+    @Test
+    fun `a plan stays as made when its preset is deleted and can be removed`() {
+        val repository = repository()
+        repository.saveCurrentAsPreset("Mine")
+        val mine = repository.customPresets.value.single()
+        repository.planWeekly(mine, setOf(2))
+        repository.deletePreset(mine)
+        val planned = repository.planned.value.single()
+        assertEquals("Mine", planned.name)
+        repository.removePlanned(planned.id)
+        assertEquals(emptyList(), repository().planned.value)
+    }
+
+    @Test
+    fun `the weekly goal survives a restart and clears`() {
+        repository().updateAppSettings { it.copy(weeklyGoal = 4) }
+        assertEquals(4, repository().appSettings.value.weeklyGoal)
+        repository().updateAppSettings { it.copy(weeklyGoal = null) }
+        assertEquals(null, repository().appSettings.value.weeklyGoal)
     }
 }
 

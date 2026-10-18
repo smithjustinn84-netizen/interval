@@ -12,6 +12,7 @@ import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
+import dev.justinsmith.interval.timer.weekdayOf
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -153,7 +154,7 @@ class HistoryViewModel(
             week = weekTally(
                 secondsByDay = byDay.mapValues { (_, entries) -> entries.sumOf { it.elapsedSeconds } },
                 today = today,
-                todayWeekday = timestamps.weekday(nowMillis),
+                todayWeekday = weekdayOf(today),
             ),
         )
     }

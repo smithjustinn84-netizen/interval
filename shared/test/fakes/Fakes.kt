@@ -6,6 +6,8 @@ import androidx.datastore.preferences.core.emptyPreferences
 import dev.justinsmith.interval.data.HistoryDao
 import dev.justinsmith.interval.data.HistoryEntity
 import dev.justinsmith.interval.data.IntervalRepository
+import dev.justinsmith.interval.data.PlannedDao
+import dev.justinsmith.interval.data.PlannedEntity
 import dev.justinsmith.interval.data.PresetDao
 import dev.justinsmith.interval.data.PresetEntity
 import dev.justinsmith.interval.di.StorageScope
@@ -18,6 +20,7 @@ import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.timer.dateOfEpochDay
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -64,8 +67,31 @@ class FakeHistoryDao : HistoryDao {
         rows.update { it + entry.copy(id = id) }
     }
 
+    override suspend fun delete(id: Long) {
+        rows.update { all -> all.filterNot { it.id == id } }
+    }
+
     override suspend fun clear() {
         rows.value = emptyList()
+    }
+}
+
+/** A [PlannedDao] over a list, in the order planned like the real query. */
+class FakePlannedDao : PlannedDao {
+    private val rows = MutableStateFlow(emptyList<PlannedEntity>())
+    private var nextId = 1L
+
+    override fun observeAll(): Flow<List<PlannedEntity>> = rows
+
+    override suspend fun insert(planned: List<PlannedEntity>) {
+        val stored = planned.map { row ->
+            row.copy(id = if (row.id == 0L) nextId++ else row.id.also { nextId = maxOf(nextId, it + 1) })
+        }
+        rows.update { all -> (all + stored).sortedBy { it.id } }
+    }
+
+    override suspend fun delete(id: Long) {
+        rows.update { all -> all.filterNot { it.id == id } }
     }
 }
 
@@ -101,6 +127,7 @@ class FakeStorage {
     val settings = InMemoryDataStore()
     val history = FakeHistoryDao()
     val presets = FakePresetDao()
+    val planned = FakePlannedDao()
 
     /**
      * A repository over this storage. By default its writes run unconfined and the fakes never suspend, so
@@ -111,7 +138,7 @@ class FakeStorage {
     fun repository(
         now: WallClock = WallClock { 0L },
         scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
-    ): IntervalRepository = IntervalRepository(settings, history, presets, scope, now)
+    ): IntervalRepository = IntervalRepository(settings, history, presets, planned, scope, now)
 }
 
 /**
@@ -134,6 +161,7 @@ fun fakeStorageModule(storage: FakeStorage = FakeStorage()): Module = module {
     single<DataStore<Preferences>> { storage.settings }
     single<HistoryDao> { storage.history }
     single<PresetDao> { storage.presets }
+    single<PlannedDao> { storage.planned }
 }
 
 /** A [CuePlayer] that plays nothing and remembers every cue it was asked for. */
@@ -159,15 +187,20 @@ class RecordingCuePlayer : CuePlayer {
 
 const val DAY_MILLIS = 24L * 60 * 60 * 1000
 
-/** Days are numbered from the epoch in UTC, so tests don't depend on a time zone. Day 0 is a Monday. */
+/**
+ * Days are epoch days in UTC, as the platforms count them, so tests don't depend on a time zone. Day 0,
+ * 1 January 1970, is a Thursday.
+ */
 object FixedTimestampFormatter : TimestampFormatter {
-    override fun date(epochMillis: Long): String = "day ${dayNumber(epochMillis)}"
+    override fun date(epochMillis: Long): String = dateOfDay(dayNumber(epochMillis))
 
     override fun time(epochMillis: Long): String = "at $epochMillis"
 
-    override fun dayNumber(epochMillis: Long): Long = epochMillis / DAY_MILLIS
+    override fun dayNumber(epochMillis: Long): Long = epochMillis.floorDiv(DAY_MILLIS)
 
-    override fun weekday(epochMillis: Long): Int = (dayNumber(epochMillis) % 7).toInt() + 1
+    override fun dateOfDay(epochDay: Long): String = "day $epochDay"
+
+    override fun monthTitle(epochDay: Long): String = dateOfEpochDay(epochDay).let { "${it.month}/${it.year}" }
 }
 
 /**

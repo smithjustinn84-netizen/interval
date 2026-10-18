@@ -31,6 +31,7 @@ import org.koin.core.module.dsl.onClose
 import org.koin.core.module.dsl.withOptions
 import org.koin.dsl.module
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -125,7 +126,9 @@ private class JavaTimeFormatter : TimestampFormatter {
 
     override fun dayNumber(epochMillis: Long): Long = zoned(epochMillis).toLocalDate().toEpochDay()
 
-    override fun weekday(epochMillis: Long): Int = zoned(epochMillis).dayOfWeek.value
+    override fun dateOfDay(epochDay: Long): String = formats().date.format(LocalDate.ofEpochDay(epochDay))
+
+    override fun monthTitle(epochDay: Long): String = formats().month.format(LocalDate.ofEpochDay(epochDay))
 
     private fun zoned(epochMillis: Long) = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault())
 
@@ -138,6 +141,7 @@ private class JavaTimeFormatter : TimestampFormatter {
     private class Formats(val locale: Locale) {
         val date: DateTimeFormatter = localized("EEEEMMMd")
         val time: DateTimeFormatter = localized("jmm")
+        val month: DateTimeFormatter = localized("yMMMM")
 
         private fun localized(skeleton: String): DateTimeFormatter =
             DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, skeleton), locale)

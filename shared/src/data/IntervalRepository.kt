@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.Activity
+import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
@@ -72,11 +73,18 @@ data class AppSettings(
     val theme: ThemeMode = ThemeMode.Dark,
     val keepScreenOn: Boolean = true,
     val body: BodySettings = BodySettings(),
-)
+    /** Workouts a week the user aims for, within [WEEKLY_GOAL_RANGE]; null until they set one. */
+    val weeklyGoal: Int? = null,
+) {
+    companion object {
+        val WEEKLY_GOAL_RANGE = 1..14
+    }
+}
 
 /**
  * A finished workout that ran for [elapsedSeconds], pauses excluded, to the end or [endedEarly]. Of that,
- * [workActiveSeconds] were work; null for one recorded before work time was kept.
+ * [workActiveSeconds] were work; null for one recorded before work time was kept. [id] is the one it is
+ * stored under, null until it has been.
  */
 data class HistoryEntry(
     val finishedAtEpochMillis: Long,
@@ -84,6 +92,7 @@ data class HistoryEntry(
     val elapsedSeconds: Int,
     val endedEarly: Boolean,
     val workActiveSeconds: Int? = null,
+    val id: Long? = null,
 ) {
     /** The calories it burned by [body], or null without a weight. Older entries' work time is estimated. */
     fun calories(body: BodySettings): Int? {
@@ -98,18 +107,22 @@ data class HistoryEntry(
 }
 
 /**
- * The app's saved state: the current setup, cue toggles, app settings, custom presets and workout history.
+ * The app's saved state: the current setup, cue toggles, app settings, custom presets, workout history and
+ * planned workouts.
  *
- * Settings live in [settings] (DataStore) and collections in Room ([historyDao], [presetDao]). Everything is
- * read once into memory, after which [ready] turns true and every [StateFlow] holds what was stored. Settings
- * then change in memory first, synchronously, so a value set a moment ago is what the next screen reads.
- * Collections follow the database. Writes run in the background on [scope], one at a time in the order they
- * were made.
+ * Settings live in [settings] (DataStore) and collections in Room ([historyDao], [presetDao], [plannedDao]).
+ * Everything is read once into memory, after which [ready] turns true and every [StateFlow] holds what was
+ * stored. Settings then change in memory first, synchronously, so a value set a moment ago is what the next
+ * screen reads. Collections follow the database. Writes run in the background on [scope], one at a time in
+ * the order they were made.
  */
+// The one way into storage, so every collection's reads and writes are here, side by side.
+@Suppress("detekt.TooManyFunctions")
 class IntervalRepository(
     private val settings: DataStore<Preferences>,
     private val historyDao: HistoryDao,
     private val presetDao: PresetDao,
+    private val plannedDao: PlannedDao,
     private val scope: CoroutineScope,
     private val clock: WallClock,
 ) {
@@ -148,6 +161,11 @@ class IntervalRepository(
     /** Newest first. */
     val history: StateFlow<List<HistoryEntry>> = _history.asStateFlow()
 
+    private val _planned = MutableStateFlow(emptyList<PlannedWorkout>())
+
+    /** In the order they were planned. */
+    val planned: StateFlow<List<PlannedWorkout>> = _planned.asStateFlow()
+
     init {
         scope.launch {
             for (write in writes) runLogged(write)
@@ -155,6 +173,7 @@ class IntervalRepository(
         scope.launch {
             val presetsLoaded = CompletableDeferred<Unit>()
             val historyLoaded = CompletableDeferred<Unit>()
+            val plannedLoaded = CompletableDeferred<Unit>()
             launch {
                 presetDao.observeAll().orEmptyOnError("presets").collect { rows ->
                     val custom = rows.map { it.toDomain() }
@@ -169,6 +188,12 @@ class IntervalRepository(
                     historyLoaded.complete(Unit)
                 }
             }
+            launch {
+                plannedDao.observeAll().orEmptyOnError("plans").collect { rows ->
+                    _planned.value = rows.mapNotNull { it.toDomain() }
+                    plannedLoaded.complete(Unit)
+                }
+            }
             // An unreadable settings file falls back to the defaults rather than keeping the app from starting.
             val stored = settings.data
                 .catch { e ->
@@ -181,6 +206,7 @@ class IntervalRepository(
             _appSettings.value = stored.toAppSettings()
             presetsLoaded.await()
             historyLoaded.await()
+            plannedLoaded.await()
             _ready.value = true
         }
     }
@@ -264,9 +290,33 @@ class IntervalRepository(
         persist { historyDao.insert(entry.toEntity()) }
     }
 
+    /** Removes one workout from the history, by the id it is stored under. */
+    fun deleteWorkout(id: Long) {
+        persist { historyDao.delete(id) }
+    }
+
     fun clearHistory() {
         persist { historyDao.clear() }
     }
+
+    /** Plans [preset] for every week on each of [weekdays] (1 for Monday through 7): one plan per day. */
+    fun planWeekly(preset: Preset, weekdays: Set<Int>) {
+        val days = weekdays.filter { it in 1..DAYS_PER_WEEK }.sorted()
+        if (days.isEmpty()) return
+        persist { plannedDao.insert(days.map { preset.planned(PlanSchedule.Weekly(it)).toEntity() }) }
+    }
+
+    /** Plans [preset] once, on [epochDay]. */
+    fun planOnce(preset: Preset, epochDay: Long) {
+        persist { plannedDao.insert(listOf(preset.planned(PlanSchedule.Once(epochDay)).toEntity())) }
+    }
+
+    fun removePlanned(id: Long) {
+        persist { plannedDao.delete(id) }
+    }
+
+    private fun Preset.planned(schedule: PlanSchedule) =
+        PlannedWorkout(id = 0, name = name, config = config, schedule = schedule, presetId = id)
 
     // A failed read shows an empty list at once, so the app still starts, then is tried again a few times:
     // `catch` alone ends the flow, and one bad read would stop the list following the database for good.

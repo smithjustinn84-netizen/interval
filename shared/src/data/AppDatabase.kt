@@ -19,19 +19,22 @@ import dev.justinsmith.interval.timer.Preset
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Workout history and the user's own presets. Settings live in DataStore, not here. Version 2 added
- * [HistoryEntity.workActiveSeconds] and the activity of each workout and preset.
+ * Workout history, the user's own presets and their planned workouts. Settings live in DataStore, not
+ * here. Version 2 added [HistoryEntity.workActiveSeconds] and the activity of each workout and preset;
+ * version 3 added [PlannedEntity].
  */
 @Database(
-    entities = [HistoryEntity::class, PresetEntity::class],
-    version = 2,
-    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    entities = [HistoryEntity::class, PresetEntity::class, PlannedEntity::class],
+    version = 3,
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
 @ConstructedBy(AppDatabaseConstructor::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun historyDao(): HistoryDao
 
     abstract fun presetDao(): PresetDao
+
+    abstract fun plannedDao(): PlannedDao
 }
 
 /** Room generates the `actual` for each platform. */
@@ -48,6 +51,9 @@ interface HistoryDao {
 
     @Insert
     suspend fun insert(entry: HistoryEntity)
+
+    @Query("DELETE FROM history WHERE id = :id")
+    suspend fun delete(id: Long)
 
     @Query("DELETE FROM history")
     suspend fun clear()
@@ -71,6 +77,19 @@ interface PresetDao {
     suspend fun update(preset: PresetEntity)
 
     @Query("DELETE FROM preset WHERE id = :id")
+    suspend fun delete(id: Long)
+}
+
+@Dao
+interface PlannedDao {
+    /** In the order they were planned. */
+    @Query("SELECT * FROM planned ORDER BY id")
+    fun observeAll(): Flow<List<PlannedEntity>>
+
+    @Insert
+    suspend fun insert(planned: List<PlannedEntity>)
+
+    @Query("DELETE FROM planned WHERE id = :id")
     suspend fun delete(id: Long)
 }
 
@@ -104,15 +123,33 @@ data class PresetEntity(
     val activity: String? = null,
 )
 
+/** A [PlannedWorkout]: exactly one of [weekday] (every week) and [epochDay] (once) is set. */
+@Entity(tableName = "planned")
+data class PlannedEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val weekday: Int?,
+    @ColumnInfo(name = "epoch_day") val epochDay: Long?,
+    val name: String,
+    @ColumnInfo(name = "prep_seconds") val prepSeconds: Int,
+    @ColumnInfo(name = "work_seconds") val workSeconds: Int,
+    @ColumnInfo(name = "rest_seconds") val restSeconds: Int,
+    val rounds: Int,
+    /** As [HistoryEntity.activity]. */
+    val activity: String?,
+    @ColumnInfo(name = "preset_id") val presetId: Long?,
+)
+
 internal fun HistoryEntity.toDomain() = HistoryEntry(
     finishedAtEpochMillis = finishedAtEpochMillis,
     config = IntervalConfig(prepSeconds, workSeconds, restSeconds, rounds, Activity.named(activity)),
     elapsedSeconds = elapsedSeconds,
     endedEarly = endedEarly,
     workActiveSeconds = workActiveSeconds,
+    id = id,
 )
 
 internal fun HistoryEntry.toEntity() = HistoryEntity(
+    id = id ?: 0,
     finishedAtEpochMillis = finishedAtEpochMillis,
     prepSeconds = config.prepSeconds,
     workSeconds = config.workSeconds,
@@ -135,4 +172,28 @@ internal fun Preset.toEntity() = PresetEntity(
     restSeconds = config.restSeconds,
     rounds = config.rounds,
     activity = config.activity.name,
+)
+
+/** A row with neither a weekday nor a day is unreadable: null, and left out. */
+internal fun PlannedEntity.toDomain(): PlannedWorkout? {
+    val schedule = when {
+        weekday != null -> PlanSchedule.Weekly(weekday)
+        epochDay != null -> PlanSchedule.Once(epochDay)
+        else -> return null
+    }
+    val config = IntervalConfig(prepSeconds, workSeconds, restSeconds, rounds, Activity.named(activity))
+    return PlannedWorkout(id, name, config, schedule, presetId)
+}
+
+internal fun PlannedWorkout.toEntity() = PlannedEntity(
+    id = id,
+    weekday = (schedule as? PlanSchedule.Weekly)?.weekday,
+    epochDay = (schedule as? PlanSchedule.Once)?.epochDay,
+    name = name,
+    prepSeconds = config.prepSeconds,
+    workSeconds = config.workSeconds,
+    restSeconds = config.restSeconds,
+    rounds = config.rounds,
+    activity = config.activity.name,
+    presetId = presetId,
 )
