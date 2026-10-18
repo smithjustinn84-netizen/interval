@@ -29,6 +29,9 @@ ktlint_standard_filename = disabled
 ktlint_standard_function-signature = disabled
 ktlint_standard_class-signature = disabled
 
+# Off by default since ktlint 1.8 (it must be switched on here), which let unused imports pile up unseen.
+ktlint_standard_no-unused-imports = enabled
+
 [*.{yaml,yml}]
 indent_style = space
 indent_size = 2

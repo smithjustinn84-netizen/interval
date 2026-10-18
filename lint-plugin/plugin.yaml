@@ -2,10 +2,12 @@ tasks:
   lint:
     action: !dev.justinsmith.interval.lint.lint
       moduleRoot: ${module.rootDir}
+      editorConfig: ${project.rootDir}/.editorconfig
       warningsOnly: ${pluginSettings.warningsOnly}
   format:
     action: !dev.justinsmith.interval.lint.format
       moduleRoot: ${module.rootDir}
+      editorConfig: ${project.rootDir}/.editorconfig
 
 checks:
   - name: lint

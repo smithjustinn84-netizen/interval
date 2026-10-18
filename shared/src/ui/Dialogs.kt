@@ -5,7 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -15,7 +14,6 @@ import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.maxLength
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,11 +28,7 @@ import androidx.compose.ui.text.input.ImeAction
 import com.composeunstyled.TextInput
 import com.composeunstyled.UnstyledTextField
 import dev.justinsmith.interval.resources.Res
-import dev.justinsmith.interval.resources.common_cancel
-import dev.justinsmith.interval.resources.common_save
-import dev.justinsmith.interval.resources.preset_name_count
 import dev.justinsmith.interval.resources.preset_name_label
-import dev.justinsmith.interval.resources.preset_save_title
 import dev.justinsmith.interval.timer.Preset
 import org.jetbrains.compose.resources.stringResource
 

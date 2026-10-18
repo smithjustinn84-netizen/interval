@@ -32,7 +32,7 @@ import kotlin.math.min
 import kotlin.math.sin
 
 /** How many lanes a track has. */
-const val LANE_COUNT = 11
+private const val LANE_COUNT = 11
 
 /** The lanes the Setup comets run (innermost is 0), and where along the stretch each starts. */
 private val SetupCometLanes = listOf(1, 4, 7)
@@ -65,7 +65,7 @@ private const val MILLIS_PER_SECOND = 1000f
  * over a degree of arc. One stretch only: a circle that crosses the box twice gets both as one, and
  * a stretch over the seam at nine o'clock is not found, so keep the centre left of the box.
  */
-fun visibleArc(
+internal fun visibleArc(
     center: Offset,
     radius: Float,
     width: Float,
@@ -91,7 +91,7 @@ fun visibleArc(
  * [arc]'s start and ends with the tail, [tail] radians long, just past its end: the whole comet is
  * off-screen at both ends, so the run can loop unseen.
  */
-fun cometHead(arc: ClosedFloatingPointRange<Float>, tail: Float, progress: Float): Float =
+internal fun cometHead(arc: ClosedFloatingPointRange<Float>, tail: Float, progress: Float): Float =
     arc.start + (arc.endInclusive - arc.start + tail) * progress
 
 /**

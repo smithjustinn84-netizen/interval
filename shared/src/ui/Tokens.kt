@@ -15,7 +15,6 @@ object Spacing {
     val space20 = 20.dp
     val space24 = 24.dp
     val space32 = 32.dp
-    val space48 = 48.dp
 }
 
 /** Corner radii: the design system's `radius-*` tokens. Small for controls, large for cards. */
@@ -53,9 +52,6 @@ object Sizes {
     /** Maximum width of the Timer tab's right-hand column of choices, when the window has room. */
     val contentWide = 760.dp
 
-    /** Narrowest Intervals section that lays its rows out in two columns. */
-    val intervalGridMin = 640.dp
-
     /** Narrowest column of the Presets and History grids; wider windows fit more columns. */
     val listColumn = 360.dp
 
@@ -67,12 +63,6 @@ object Sizes {
 
     /** The line between the content and the bottom navigation bar. */
     val hairline = 1.dp
-
-    /**
-     * Wider-than-tall windows get the landscape layouts; those shorter than this are phones held
-     * sideways, which keep the workout clock at its smaller landscape cap.
-     */
-    val landscapeMaxHeight = 480.dp
 
     /** Width of the setup column holding the header, presets and Start in landscape. */
     val setupColumnLandscape = 380.dp
@@ -115,8 +105,6 @@ object Sizes {
     /** The pill of phase colour at the start of a History row. */
     val historyMarkHeight = 40.dp
 
-    /** The badge naming the matching preset on the hero card. */
-    val badgeHeight = 32.dp
     val toggleRow = 56.dp
 
     /** A [ToggleRow]'s switch: the track, and the white thumb inset inside it. */

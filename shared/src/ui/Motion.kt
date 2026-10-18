@@ -16,7 +16,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
@@ -46,7 +45,7 @@ val ExitEasing: Easing = CubicBezierEasing(0.3f, 0f, 0.8f, 0.15f)
 val StandardEasing: Easing = FastOutSlowInEasing
 
 /** The spring under a pressed control: stiff, with just enough give to feel physical. */
-fun pressSpring(): SpringSpec<Float> = spring(dampingRatio = PRESS_DAMPING, stiffness = PRESS_STIFFNESS)
+private fun pressSpring(): SpringSpec<Float> = spring(dampingRatio = PRESS_DAMPING, stiffness = PRESS_STIFFNESS)
 
 /** A selection indicator sliding to its new option: quick, settling without a bounce. */
 fun <T> settleSpring(): SpringSpec<T> = spring(dampingRatio = SETTLE_DAMPING, stiffness = Spring.StiffnessMedium)
@@ -91,14 +90,9 @@ fun enterRising(delayMillis: Int = 0): EnterTransition {
 }
 
 /** Something arriving in place, such as a dialog: it fades in as it grows from a touch smaller. */
-fun enterGrowing(delayMillis: Int = 0): EnterTransition =
-    fadeIn(tween(Motion.ENTER_MILLIS, delayMillis)) +
-        scaleIn(tween(Motion.ENTER_MILLIS, delayMillis, EnterEasing), initialScale = Motion.FADE_THROUGH_SCALE)
-
-/** The reverse of [enterGrowing], quicker. */
-fun exitShrinking(): ExitTransition =
-    fadeOut(tween(Motion.EXIT_MILLIS)) +
-        scaleOut(tween(Motion.EXIT_MILLIS, easing = ExitEasing), targetScale = Motion.FADE_THROUGH_SCALE)
+fun enterGrowing(): EnterTransition =
+    fadeIn(tween(Motion.ENTER_MILLIS)) +
+        scaleIn(tween(Motion.ENTER_MILLIS, easing = EnterEasing), initialScale = Motion.FADE_THROUGH_SCALE)
 
 /** A side sheet arriving from the end edge: it slides in whole as it fades up. [rtl] puts the end on the left. */
 fun enterFromEnd(rtl: Boolean): EnterTransition =

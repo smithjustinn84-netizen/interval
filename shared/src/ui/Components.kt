@@ -142,9 +142,8 @@ private fun Modifier.capTopAt(capTop: Dp, capHeight: Dp): Modifier = layout { me
 
 /**
  * An icon-only top-bar action, with its [description] for screen readers: the gear on Timer, + on
- * Presets, ⋯ on History. A [background] can fill its circle for an action a screen wants noticed;
- * none does today. The whole 48dp box takes the touch; the circle and its ripple follow the glyph,
- * which a [TitleBar] raises to its title.
+ * Presets, ⋯ on History. The whole 48dp box takes the touch; the circle and its ripple follow the
+ * glyph, which a [TitleBar] raises to its title.
  */
 @Composable
 fun IconAction(
@@ -153,8 +152,6 @@ fun IconAction(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    background: Color = Color.Transparent,
-    tint: Color = IntervalTheme.palette.text,
 ) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
@@ -176,14 +173,13 @@ fun IconAction(
                 .offset(y = LocalTitleBarGlyphShift.current)
                 .size(Sizes.iconButtonVisual)
                 .clip(CircleShape)
-                .background(if (enabled) background else Color.Transparent)
                 .indication(interaction, LocalIndication.current),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 icon,
                 contentDescription = null,
-                tint = if (enabled) tint else palette.textDim.copy(alpha = Opacity.DISABLED),
+                tint = if (enabled) palette.text else palette.textDim.copy(alpha = Opacity.DISABLED),
                 modifier = Modifier.size(Sizes.icon),
             )
         }

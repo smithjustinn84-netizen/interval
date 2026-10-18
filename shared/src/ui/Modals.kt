@@ -1,8 +1,8 @@
 package dev.justinsmith.interval.ui
 
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -74,12 +74,14 @@ fun IntervalDialog(
     body: @Composable ColumnScope.() -> Unit,
 ) {
     val palette = IntervalTheme.palette
-    // The scrim fades up and the panel grows in over it. Leaving is instant: a dialog is gone the
-    // moment its action runs, and so is the state that showed it.
+    // The scrim fades up and the panel grows in over it. Leaving is instant, with no exit to animate:
+    // a dialog leaves composition the moment its action runs, along with the state that showed it.
     UnstyledDialog(
         visible = true,
         onDismissRequest = onDismiss,
-        overlay = { Scrim(scrimColor = scrimColor(), enter = fadeIn(tween(Motion.ENTER_MILLIS)), exit = fadeOut()) },
+        overlay = {
+            Scrim(scrimColor = scrimColor(), enter = fadeIn(tween(Motion.ENTER_MILLIS)), exit = ExitTransition.None)
+        },
     ) {
         Box(Modifier.fillMaxSize().safeDrawingPadding().padding(Spacing.space24), contentAlignment = Alignment.Center) {
             DialogPanel(
@@ -89,7 +91,7 @@ fun IntervalDialog(
                     .background(palette.surface),
                 paneTitle = title,
                 enter = enterGrowing(),
-                exit = exitShrinking(),
+                exit = ExitTransition.None,
             ) {
                 ModalBackHandler(onDismiss)
                 // The panel moves focus to its first focus target when it opens. Be that target, so a
@@ -124,7 +126,6 @@ fun RowScope.DialogButton(
     onClick: () -> Unit,
     primary: Boolean,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true,
 ) {
     ModalButton(
         text = text,
@@ -133,13 +134,12 @@ fun RowScope.DialogButton(
         style = IntervalTheme.type.control,
         padding = Spacing.space12,
         modifier = modifier.weight(1f),
-        enabled = enabled,
     )
 }
 
 /** A full-width accent button for a sheet's confirming action. */
 @Composable
-fun AccentButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun AccentButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     ModalButton(
         text = text,
         onClick = onClick,
@@ -147,7 +147,6 @@ fun AccentButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifie
         style = IntervalTheme.type.value,
         padding = Spacing.space24,
         modifier = modifier,
-        enabled = enabled,
     )
 }
 
@@ -186,7 +185,7 @@ fun QuietTextButton(text: String, onClick: () -> Unit, modifier: Modifier = Modi
     }
 }
 
-/** The button recipe dialogs and sheets share: accent when [primary], a quiet fill otherwise, faded while disabled. */
+/** The button recipe dialogs and sheets share: accent when [primary], a quiet fill otherwise. */
 @Composable
 private fun ModalButton(
     text: String,
@@ -195,7 +194,6 @@ private fun ModalButton(
     style: TextStyle,
     padding: Dp,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true,
 ) {
     val palette = IntervalTheme.palette
     val fill = if (primary) palette.accent else palette.surfaceVariant
@@ -205,11 +203,10 @@ private fun ModalButton(
             .heightIn(min = Sizes.save)
             .pressScale(interaction)
             .clip(Corners.radius18)
-            .background(if (enabled) fill else fill.copy(alpha = Opacity.DISABLED))
+            .background(fill)
             .clickable(
                 interactionSource = interaction,
                 indication = LocalIndication.current,
-                enabled = enabled,
                 role = Role.Button,
                 onClick = onClick,
             )

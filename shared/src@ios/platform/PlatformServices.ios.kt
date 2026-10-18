@@ -38,7 +38,6 @@ import platform.Foundation.NSURL
 import platform.Foundation.NSUserDomainMask
 import platform.Foundation.autoupdatingCurrentLocale
 import platform.Foundation.currentLocale
-import platform.Foundation.dateByAddingTimeInterval
 import platform.Foundation.dateWithTimeIntervalSince1970
 import platform.Foundation.localTimeZone
 import platform.Foundation.localeIdentifier

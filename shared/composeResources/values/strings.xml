@@ -26,7 +26,6 @@
     <!-- "20s on · 10s off · ×8": work, rest (each a short duration), rounds. -->
     <string name="config_description">%1$s on · %2$s off · ×%3$d</string>
     <!-- "20s on · 10s off · ×8 · 4:40 total" -->
-    <string name="config_summary">%1$s · %2$s total</string>
     <string name="config_rounds_short">×%1$d</string>
     <string name="duration_short_seconds">%1$ds</string>
     <string name="duration_short_minutes">%1$dm</string>

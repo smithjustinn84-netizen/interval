@@ -26,7 +26,7 @@ abstract class AppDatabase : RoomDatabase() {
 }
 
 /** Room generates the `actual` for each platform. */
-@Suppress("KotlinNoActualForExpect", "EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+@Suppress("KotlinNoActualForExpect")
 expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
     override fun initialize(): AppDatabase
 }

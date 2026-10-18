@@ -20,9 +20,13 @@ import kotlin.io.path.writeText
  * Reports ktlint violations across the module. Backs the `lint` check, so `./kotlin check` fails
  * when anything is reported (unless the module sets `warningsOnly: true`).
  */
+@Suppress("detekt.UnusedParameter") // editorConfig: an input only, see below.
 @TaskAction
 fun lint(
     @Input moduleRoot: Path,
+    // Read by ktlint itself, not here: declared so that changing a rule runs the check again rather
+    // than leaving it up to date.
+    @Input editorConfig: Path,
     warningsOnly: Boolean,
 ) {
     val engine = ruleEngine()
@@ -48,8 +52,9 @@ fun lint(
  * Execution avoidance is off because the task mutates the very files it reads: an up-to-date check
  * keyed on those files would skip the run that is supposed to change them.
  */
+@Suppress("detekt.UnusedParameter") // editorConfig: an input only, as for lint.
 @TaskAction(executionAvoidance = ExecutionAvoidance.Disabled)
-fun format(@Input moduleRoot: Path) {
+fun format(@Input moduleRoot: Path, @Input editorConfig: Path) {
     val engine = ruleEngine()
     var changed = 0
     val remaining = mutableListOf<String>()

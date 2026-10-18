@@ -3,12 +3,10 @@ package dev.justinsmith.interval.ui
 import androidx.compose.runtime.Composable
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.config_description
-import dev.justinsmith.interval.resources.config_summary
 import dev.justinsmith.interval.resources.duration_short_minutes
 import dev.justinsmith.interval.resources.duration_short_seconds
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.ShortDuration
-import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.shortDuration
 import org.jetbrains.compose.resources.stringResource
 
@@ -20,11 +18,6 @@ fun configDescription(config: IntervalConfig): String = stringResource(
     shortDurationText(config.restSeconds),
     config.rounds,
 )
-
-/** The shape and how long it all takes: "20s on · 10s off · ×8 · 4:40 total". */
-@Composable
-fun configSummary(config: IntervalConfig): String =
-    stringResource(Res.string.config_summary, configDescription(config), formatClock(config.totalSeconds))
 
 /** "45s", or "2m" for whole minutes. */
 @Composable
