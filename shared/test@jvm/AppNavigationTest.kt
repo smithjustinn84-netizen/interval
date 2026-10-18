@@ -172,4 +172,30 @@ class AppNavigationTest {
         onNodeWithContentDescription("Close settings").performClick()
         onNodeWithText("Cues").assertDoesNotExist()
     }
+
+    @Test
+    fun `a finished workout opens from History and deleting it goes back`() = appTest { koin ->
+        val tabata = builtInPresets.first()
+        koin.koin.get<IntervalRepository>().recordWorkout(tabata.config, elapsedSeconds = 240)
+        tab("History").performClick()
+        onNodeWithText("Tabata").performClick()
+        onNodeWithText("Repeat now").assertExists()
+        onNodeWithContentDescription("Back").performClick()
+        onNodeWithText("Week").assertExists()
+
+        onNodeWithText("Tabata").performClick()
+        onNodeWithContentDescription("More options").performClick()
+        onNodeWithText("Delete workout").performClick()
+        onNodeWithText("Delete").performClick()
+        onNodeWithText("Train to a plan").assertExists()
+    }
+
+    @Test
+    fun `the plan opens from History and goes back`() = appTest {
+        tab("History").performClick()
+        onNodeWithContentDescription("Plan").performClick()
+        onNodeWithText("Weekly goal").assertExists()
+        onNodeWithContentDescription("Back").performClick()
+        onNodeWithText("Train to a plan").assertExists()
+    }
 }

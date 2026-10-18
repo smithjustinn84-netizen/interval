@@ -504,7 +504,8 @@ internal val WeekdayInitials = listOf(
     Res.string.weekday_initial_7,
 )
 
-private val WeekdayShort = listOf(
+/** "Mon" to "Sun". */
+internal val WeekdayShort = listOf(
     Res.string.weekday_short_1,
     Res.string.weekday_short_2,
     Res.string.weekday_short_3,

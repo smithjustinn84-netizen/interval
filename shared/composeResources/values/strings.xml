@@ -248,6 +248,45 @@
         <item quantity="one">%1$d workout</item>
         <item quantity="other">%1$d workouts</item>
     </plurals>
+    <!-- Plan: the weekly goal, the routine and one-offs -->
+    <string name="plan_title">Plan</string>
+    <string name="plan_goal">Weekly goal</string>
+    <string name="plan_goal_text">Workouts a week</string>
+    <string name="plan_goal_off">Off</string>
+    <string name="plan_goal_less_cd">Lower the goal</string>
+    <string name="plan_goal_more_cd">Raise the goal</string>
+    <string name="plan_routine">Routine</string>
+    <string name="plan_every_week">Every week</string>
+    <string name="plan_rest">Rest</string>
+    <!-- The + on a weekday's row: "Add a workout every Monday" -->
+    <string name="plan_add_weekday_cd">Add a workout every %1$s</string>
+    <!-- A routine chip, which removes itself: "Remove Tabata from Monday" -->
+    <string name="plan_remove_on_cd">Remove %1$s from %2$s</string>
+    <string name="plan_one_offs">One-offs</string>
+    <string name="plan_add_on_date">Add on a date</string>
+    <string name="plan_one_offs_empty">Nothing on a date yet.</string>
+    <!-- A one-off's remove button: "Remove Hangboard, Friday, Oct 16" -->
+    <string name="plan_remove_cd">Remove %1$s, %2$s</string>
+    <!-- The add sheet -->
+    <string name="plan_add_title">Add to plan</string>
+    <string name="plan_workout">Workout</string>
+    <string name="plan_on_timer">On the Timer</string>
+    <string name="plan_when">When</string>
+    <string name="plan_once">Once</string>
+    <string name="plan_add_confirm">Add to plan</string>
+
+    <!-- One finished workout's page -->
+    <string name="detail_total">Total</string>
+    <string name="detail_work">Work</string>
+    <string name="detail_planned_done">Planned · done</string>
+    <string name="detail_repeat">Repeat now</string>
+    <string name="detail_plan_again">Plan again</string>
+    <string name="detail_delete_menu">Delete workout</string>
+    <string name="detail_delete_title">Delete workout?</string>
+    <!-- "HIIT 30/30 from Wednesday, Oct 14 comes off History…" -->
+    <string name="detail_delete_text">%1$s from %2$s comes off History and its week's count. A plan it did shows as missed.</string>
+    <string name="detail_delete_confirm">Delete</string>
+
     <plurals name="duration_seconds">
         <item quantity="one">%1$d second</item>
         <item quantity="other">%1$d seconds</item>

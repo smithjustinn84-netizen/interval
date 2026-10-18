@@ -1,0 +1,85 @@
+package dev.justinsmith.interval.plan
+
+import dev.justinsmith.interval.fakes.DAY_MILLIS
+import dev.justinsmith.interval.fakes.FakeStorage
+import dev.justinsmith.interval.fakes.FixedTimestampFormatter
+import dev.justinsmith.interval.fakes.MainDispatcherTest
+import dev.justinsmith.interval.history.HistoryDay
+import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.builtInPresets
+import dev.justinsmith.interval.timer.epochDayOf
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+// Thursday 15 October 2026.
+private val TODAY = epochDayOf(2026, 10, 15)
+
+class PlanViewModelTest : MainDispatcherTest() {
+    private val clock = TODAY * DAY_MILLIS + DAY_MILLIS / 2
+    private val repository = FakeStorage().repository(now = { clock })
+    private val viewModel by lazy { PlanViewModel(repository, FixedTimestampFormatter, clock = { clock }) }
+    private val tabata = builtInPresets[0]
+    private val hiit = builtInPresets[1]
+
+    @Test
+    fun `the goal starts at three and turns off below one`() {
+        assertNull(viewModel.state.value.goal)
+        viewModel.stepGoal(-1)
+        assertNull(viewModel.state.value.goal)
+        viewModel.stepGoal(1)
+        assertEquals(3, viewModel.state.value.goal)
+        repeat(3) { viewModel.stepGoal(-1) }
+        assertNull(repository.appSettings.value.weeklyGoal)
+    }
+
+    @Test
+    fun `the goal stops at fourteen`() {
+        repeat(20) { viewModel.stepGoal(1) }
+        assertEquals(14, viewModel.state.value.goal)
+    }
+
+    @Test
+    fun `the routine lists each weekday's plans`() {
+        viewModel.planWeekly(tabata, setOf(1, 3))
+        viewModel.planWeekly(hiit, setOf(3))
+        val routine = viewModel.state.value.routine
+        assertEquals((1..7).toList(), routine.map { it.weekday })
+        assertEquals(listOf("Tabata"), routine[0].plans.map { it.name })
+        assertEquals(listOf("Tabata", "HIIT 30/30"), routine[2].plans.map { it.name })
+        assertTrue(routine[1].plans.isEmpty())
+    }
+
+    @Test
+    fun `one-offs still to come are listed by day and can be removed`() {
+        viewModel.planOnce(hiit, TODAY + 3)
+        viewModel.planOnce(tabata, TODAY)
+        viewModel.planOnce(tabata, TODAY - 1)
+        val oneOffs = viewModel.state.value.oneOffs
+        assertEquals(listOf(TODAY, TODAY + 3), oneOffs.map { it.epochDay })
+        assertEquals(listOf(HistoryDay.Today, HistoryDay.On("day ${TODAY + 3}")), oneOffs.map { it.day })
+
+        viewModel.removePlanned(oneOffs.first().entry.planId)
+        assertEquals(listOf(TODAY + 3), viewModel.state.value.oneOffs.map { it.epochDay })
+    }
+
+    @Test
+    fun `the add sheet offers the Timer's workout first and two weeks of days`() {
+        repository.updateConfig { IntervalConfig(prepSeconds = 5, workSeconds = 40, restSeconds = 20, rounds = 6) }
+        val state = viewModel.state.value
+        val first = state.choices.first()
+        assertTrue(first.onTimer)
+        assertEquals("40/20 ×6", first.preset.name)
+        assertEquals(builtInPresets.map { it.name }, state.choices.drop(1).map { it.preset.name })
+        assertEquals(14, state.days.size)
+        assertEquals(TODAY, state.days.first().epochDay)
+        assertEquals(4, state.todayWeekday)
+    }
+
+    @Test
+    fun `a preset on the Timer is offered under its own name`() {
+        repository.applyPreset(tabata)
+        assertEquals("Tabata", viewModel.state.value.choices.first().preset.name)
+    }
+}

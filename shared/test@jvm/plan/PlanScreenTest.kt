@@ -1,0 +1,110 @@
+@file:OptIn(ExperimentalTestApi::class)
+
+package dev.justinsmith.interval.plan
+
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.isToggleable
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import dev.justinsmith.interval.history.HistoryDay
+import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.timer.builtInPresets
+import dev.justinsmith.interval.timer.weekdayOf
+import dev.justinsmith.interval.ui.runUiTest
+import dev.justinsmith.interval.ui.setThemedContent
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
+private val tabata = builtInPresets[0]
+private val hiit = builtInPresets[1]
+
+// Thursday 15 October 2026.
+private const val TODAY = 20_741L
+
+private val state = PlanUiState(
+    goal = 4,
+    streak = 5,
+    routine = (1..7).map { weekday ->
+        RoutineDay(weekday, if (weekday == 1) listOf(PlanEntry(1, tabata.name, tabata.config)) else emptyList())
+    },
+    oneOffs = listOf(OneOff(PlanEntry(2, hiit.name, hiit.config), TODAY + 1, HistoryDay.Tomorrow)),
+    choices = listOf(PlanChoice(Preset("40/20 ×6", tabata.config.copy(workSeconds = 40)), onTimer = true)) +
+        builtInPresets.map { PlanChoice(it) },
+    days = (TODAY until TODAY + 14).map { DayChoice(it, weekdayOf(it), (15 + it - TODAY).toInt()) },
+    todayWeekday = 4,
+)
+
+/** The sheet's confirming button: the sheet's title says "Add to plan" too, so take the clickable one. */
+private fun SemanticsNodeInteractionsProvider.clickAdd() {
+    onNode(hasText("Add to plan") and hasClickAction()).performClick()
+}
+
+class PlanScreenTest {
+    private val events = mutableListOf<String>()
+
+    @Composable
+    private fun Screen(state: PlanUiState) {
+        PlanScreen(
+            state = state,
+            onBack = { events += "back" },
+            onStepGoal = { events += "goal $it" },
+            onPlanWeekly = { preset, days -> events += "weekly ${preset.name} ${days.sorted()}" },
+            onPlanOnce = { preset, day -> events += "once ${preset.name} $day" },
+            onRemove = { events += "remove $it" },
+        )
+    }
+
+    @Test
+    fun `the goal steps either way and shows the streak`() = runUiTest {
+        setThemedContent { Screen(state) }
+        onNodeWithText("Workouts a week · 5-week streak").assertExists()
+        onNodeWithContentDescription("Raise the goal").performClick()
+        onNodeWithContentDescription("Lower the goal").performClick()
+        assertEquals(listOf("goal 1", "goal -1"), events)
+    }
+
+    @Test
+    fun `with no goal it reads off and cannot go lower`() = runUiTest {
+        setThemedContent { Screen(state.copy(goal = null, streak = 0)) }
+        onNodeWithText("Off").assertExists()
+        onNodeWithContentDescription("Lower the goal").assertIsNotEnabled()
+    }
+
+    @Test
+    fun `routine and one-off workouts come off with their own buttons`() = runUiTest {
+        setThemedContent { Screen(state) }
+        onNodeWithContentDescription("Remove Tabata from Monday").performClick()
+        onNodeWithContentDescription("Remove HIIT 30/30, Tomorrow").performClick()
+        assertEquals(listOf("remove 1", "remove 2"), events)
+    }
+
+    @Test
+    fun `a weekday's plus plans a preset on that weekday and any others picked`() = runUiTest {
+        setThemedContent { Screen(state) }
+        onNodeWithContentDescription("Add a workout every Wednesday").performClick()
+        // The routine's chip says Tabata too: take the sheet's choice.
+        onNode(hasText("Tabata") and isSelectable()).performClick()
+        // The routine's Friday row is read "Friday" too: take the sheet's toggle.
+        onNode(hasContentDescription("Friday") and isToggleable()).performClick()
+        clickAdd()
+        assertEquals(listOf("weekly Tabata [3, 5]"), events)
+    }
+
+    @Test
+    fun `adding on a date plans one day`() = runUiTest {
+        setThemedContent { Screen(state) }
+        onNodeWithText("Add on a date").performClick()
+        onNodeWithText("On the Timer").performClick()
+        onNodeWithContentDescription("Saturday · 17").performClick()
+        clickAdd()
+        assertEquals(listOf("once 40/20 ×6 ${TODAY + 2}"), events)
+    }
+}

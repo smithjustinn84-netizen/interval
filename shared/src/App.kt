@@ -44,15 +44,19 @@ import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.data.ThemeMode
 import dev.justinsmith.interval.di.rememberAppKoin
 import dev.justinsmith.interval.history.HistoryRoute
+import dev.justinsmith.interval.history.WorkoutDetailRoute
 import dev.justinsmith.interval.home.TimerRoute
 import dev.justinsmith.interval.nav.About
 import dev.justinsmith.interval.nav.HistoryTab
 import dev.justinsmith.interval.nav.Licenses
+import dev.justinsmith.interval.nav.Plan
 import dev.justinsmith.interval.nav.PresetsTab
 import dev.justinsmith.interval.nav.Settings
 import dev.justinsmith.interval.nav.Tab
 import dev.justinsmith.interval.nav.TimerTab
 import dev.justinsmith.interval.nav.Workout
+import dev.justinsmith.interval.nav.WorkoutDetail
+import dev.justinsmith.interval.plan.PlanRoute
 import dev.justinsmith.interval.platform.SystemBarIcons
 import dev.justinsmith.interval.platform.materialBackPreview
 import dev.justinsmith.interval.presets.PresetsRoute
@@ -93,6 +97,8 @@ internal val navConfiguration = SavedStateConfiguration {
             subclass(Workout::class)
             subclass(About::class)
             subclass(Licenses::class)
+            subclass(WorkoutDetail::class)
+            subclass(Plan::class)
         }
     }
 }
@@ -231,9 +237,8 @@ private fun appEntries(
     }
     entry<HistoryTab>(metadata = pageKind(PageKind.Tab)) {
         HistoryRoute(
-            // The workout and plan pages come next; until then their ways in do nothing.
-            onOpenWorkout = {},
-            onPlan = {},
+            onOpenWorkout = { backStack.push(WorkoutDetail(it)) },
+            onPlan = { backStack.push(Plan) },
             onStartWorkout = { backStack.push(Workout) },
             onShowTimer = { selectTab(TimerTab) },
         )
@@ -245,6 +250,14 @@ private fun appEntries(
             inPane = twoPane,
         )
     }
+    entry<WorkoutDetail> { key ->
+        WorkoutDetailRoute(
+            id = key.id,
+            onBack = { backStack.removeLastOrNull() },
+            onStartWorkout = { backStack.push(Workout) },
+        )
+    }
+    entry<Plan> { PlanRoute(onBack = { backStack.removeLastOrNull() }) }
     entry<Workout>(metadata = pageKind(PageKind.Mode)) { WorkoutRoute(onExit = { backStack.removeLastOrNull() }) }
     entry<About> {
         AboutRoute(

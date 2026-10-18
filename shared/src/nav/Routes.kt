@@ -17,7 +17,7 @@ data object TimerTab : Tab
 @Serializable
 data object PresetsTab : Tab
 
-/** Finished workouts, by day. */
+/** The training log: what was done, what is planned, and the weekly goal. */
 @Serializable
 data object HistoryTab : Tab
 
@@ -36,3 +36,11 @@ data object About : NavKey
 /** The licences of the fonts and libraries the app ships with. Pushed from About. */
 @Serializable
 data object Licenses : NavKey
+
+/** One finished workout, by the id it is stored under: repeat it, plan it again, or delete it. Pushed from History. */
+@Serializable
+data class WorkoutDetail(val id: Long) : NavKey
+
+/** The weekly goal, the routine by weekday and one-offs on dates. Pushed from History. */
+@Serializable
+data object Plan : NavKey
