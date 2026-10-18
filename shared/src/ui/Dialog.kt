@@ -21,7 +21,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.focusTarget
 import com.composeunstyled.DialogPanel
 import com.composeunstyled.Scrim
 import com.composeunstyled.UnstyledDialog
@@ -58,11 +57,8 @@ fun IntervalDialog(
                 exit = ExitTransition.None,
             ) {
                 ModalBackHandler(onDismiss)
-                // The panel moves focus to its first focus target when it opens. Be that target, so a
-                // text field waits for a tap: on iOS a field focused this early gets no keyboard, and
-                // what is typed into it surfaces later, doubled.
                 Column(
-                    Modifier.focusTarget().padding(
+                    Modifier.holdInitialFocus().padding(
                         start = Spacing.space20,
                         top = Spacing.space24,
                         end = Spacing.space20,

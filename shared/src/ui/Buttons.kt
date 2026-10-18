@@ -29,6 +29,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
@@ -122,18 +124,10 @@ fun RepeatButton(
     Box(
         modifier
             .size(Sizes.stepper)
-            .pressScale(interaction)
-            .clip(Corners.radius12)
-            .background(palette.surfaceVariant)
-            .clickable(
-                interactionSource = interaction,
-                indication = LocalIndication.current,
-                enabled = enabled,
-                role = Role.Button,
-            ) {
+            .surfaceButton(interaction, Corners.radius12, palette.surfaceVariant, enabled = enabled, onClick = {
                 if (!repeated) step()
                 repeated = false
-            }
+            })
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
@@ -197,14 +191,7 @@ fun QuietTextButton(text: String, onClick: () -> Unit, modifier: Modifier = Modi
     Box(
         modifier
             .heightIn(min = Sizes.pillHeight)
-            .pressScale(interaction)
-            .clip(Corners.radius12)
-            .clickable(
-                interactionSource = interaction,
-                indication = LocalIndication.current,
-                role = Role.Button,
-                onClick = onClick,
-            )
+            .surfaceButton(interaction, Corners.radius12, Color.Transparent, onClick)
             .padding(horizontal = Spacing.space16),
         contentAlignment = Alignment.Center,
     ) {
@@ -228,18 +215,36 @@ private fun ModalButton(
     Box(
         modifier
             .heightIn(min = Sizes.save)
-            .pressScale(interaction)
-            .clip(Corners.radius18)
-            .background(fill)
-            .clickable(
-                interactionSource = interaction,
-                indication = LocalIndication.current,
-                role = Role.Button,
-                onClick = onClick,
-            )
+            .surfaceButton(interaction, Corners.radius18, fill, onClick)
             .padding(horizontal = padding),
         contentAlignment = Alignment.Center,
     ) {
         Text(text, style = style, color = if (primary) palette.onAccent else palette.text)
     }
 }
+
+/**
+ * What every tappable surface shares: it shrinks while pressed ([pressScale]), is clipped to [shape] on
+ * [fill], and takes the tap with the app's indication, as [role]. Size, border and contents are the
+ * caller's.
+ */
+@Composable
+fun Modifier.surfaceButton(
+    interaction: MutableInteractionSource,
+    shape: Shape,
+    fill: Color,
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+    role: Role = Role.Button,
+    onClickLabel: String? = null,
+): Modifier = pressScale(interaction)
+    .clip(shape)
+    .background(fill)
+    .clickable(
+        interactionSource = interaction,
+        indication = LocalIndication.current,
+        enabled = enabled,
+        onClickLabel = onClickLabel,
+        role = role,
+        onClick = onClick,
+    )

@@ -1,9 +1,11 @@
 package dev.justinsmith.interval.ui
 
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,11 +18,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
-import dev.justinsmith.interval.resources.Res
-import dev.justinsmith.interval.resources.config_rounds_short
+import androidx.compose.ui.unit.Dp
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.format
 import org.jetbrains.compose.resources.stringResource
@@ -47,8 +50,7 @@ fun FieldRow(
         modifier
             .fillMaxWidth()
             .heightIn(min = if (compact) Sizes.listRow else Sizes.intervalRow)
-            // Drawn, not laid out, so the stripe stays on the card's edge while the content shrinks.
-            .drawBehind { drawRect(stripe, size = Size(Sizes.stripe.toPx(), size.height)) }
+            .phaseStripe(stripe)
             .clickable(
                 interaction,
                 LocalIndication.current,
@@ -76,7 +78,7 @@ fun FieldRow(
             )
         } else {
             ValuePill(
-                if (field == ConfigField.Rounds) stringResource(Res.string.config_rounds_short, value) else text,
+                field.displayText(value),
                 color = field.valueColor(),
                 tint = field.tint(),
             )
@@ -88,4 +90,17 @@ fun FieldRow(
             modifier = Modifier.padding(end = Spacing.space12).size(Sizes.icon),
         )
     }
+}
+
+/**
+ * A field card's phase colour down its start edge. Drawn rather than laid out, so it stays on the card's
+ * edge while the content shrinks under a press; the content is padded clear of it by [Sizes.stripe].
+ */
+fun Modifier.phaseStripe(color: Color): Modifier =
+    drawBehind { drawRect(color, size = Size(Sizes.stripe.toPx(), size.height)) }
+
+/** A phase's mark beside a heading or a row: a rounded stripe of [color], [height] tall. */
+@Composable
+fun StripeMark(color: Color, height: Dp, modifier: Modifier = Modifier) {
+    Box(modifier.size(Sizes.stripe, height).clip(Corners.full).background(color))
 }

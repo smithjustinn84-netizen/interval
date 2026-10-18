@@ -70,10 +70,12 @@ internal data class PresetDraft(
     val name: String,
     val config: IntervalConfig,
     val id: Long? = null,
-)
-
-/** The values the editor sets. Get ready is a setting, edited from Settings. */
-private val EditorFields = listOf(ConfigField.Work, ConfigField.Rest, ConfigField.Rounds)
+) {
+    companion object {
+        /** A new, unnamed preset in [config]'s shape, to save the settings on the Timer. */
+        fun saveCurrent(config: IntervalConfig) = PresetDraft(EditorMode.SaveCurrent, name = "", config = config)
+    }
+}
 
 /**
  * Names and shapes a preset in a sheet: the name with its count, Work, Rest and Rounds as rows that
@@ -137,7 +139,7 @@ internal fun PresetEditor(
             if (storedName != wanted) EditorHint(stringResource(Res.string.preset_editor_saves_as, storedName))
         }
         Column(Modifier.fillMaxWidth().clip(Corners.radius18).background(palette.surfaceVariant)) {
-            EditorFields.forEachIndexed { index, field ->
+            ConfigField.shape.forEachIndexed { index, field ->
                 if (index > 0) RowDivider()
                 FieldRow(field, draft.config.valueOf(field), onClick = { editingName = field.name })
             }
@@ -216,6 +218,30 @@ private fun EditorTotal(total: String, modifier: Modifier = Modifier) {
 @Composable
 internal fun rememberPresetDraft(): MutableState<PresetDraft?> =
     rememberSaveable(stateSaver = PresetDraftSaver) { mutableStateOf(null) }
+
+/**
+ * The [PresetEditor] for whichever [draft] a screen has opened, if any. It reshapes the draft through
+ * [onDraftChange] as the user edits and clears it once the editor closes, so a screen opens the editor
+ * by setting its draft and does nothing else.
+ */
+@Composable
+internal fun PresetEditorHost(
+    draft: PresetDraft?,
+    onDraftChange: (PresetDraft?) -> Unit,
+    prepSeconds: Int,
+    presets: List<Preset>,
+    onSave: (PresetDraft, Preset) -> Unit,
+) {
+    if (draft == null) return
+    PresetEditor(
+        draft = draft,
+        prepSeconds = prepSeconds,
+        presets = presets,
+        onChangeShape = { transform -> onDraftChange(draft.copy(config = transform(draft.config))) },
+        onSave = { onSave(draft, it) },
+        onDismiss = { onDraftChange(null) },
+    )
+}
 
 /** A preset saved by its values, as a dialog's open state is. */
 internal val PresetSaver: Saver<Preset?, Any> = mapSaver(

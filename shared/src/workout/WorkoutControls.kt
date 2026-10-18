@@ -1,8 +1,6 @@
 package dev.justinsmith.interval.workout
 
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,9 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -42,7 +38,7 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
-import dev.justinsmith.interval.ui.pressScale
+import dev.justinsmith.interval.ui.surfaceButton
 import org.jetbrains.compose.resources.stringResource
 
 /** End pauses the workout and asks before throwing it away (see [WorkoutScreen]). */
@@ -91,15 +87,13 @@ internal fun AddTimeButton(onAddTime: () -> Unit, modifier: Modifier = Modifier)
 internal fun BottomControls(
     state: WorkoutUiState,
     primaryFill: Color,
-    onTogglePause: () -> Unit,
-    onBack: () -> Unit,
-    onAddTime: () -> Unit,
+    actions: WorkoutActions,
 ) {
     val height = Sizes.control
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-        BackButton(onBack, Modifier.width(Sizes.controlSide).height(height))
-        PrimaryButton(state, primaryFill, onTogglePause, Modifier.weight(1f).height(height))
-        AddTimeButton(onAddTime, Modifier.width(Sizes.controlSide).height(height))
+        BackButton(actions.onBack, Modifier.width(Sizes.controlSide).height(height))
+        PrimaryButton(state, primaryFill, actions.onTogglePause, Modifier.weight(1f).height(height))
+        AddTimeButton(actions.onAddTime, Modifier.width(Sizes.controlSide).height(height))
     }
 }
 
@@ -137,10 +131,7 @@ internal fun BigButton(
     val interaction = remember { MutableInteractionSource() }
     Box(
         modifier
-            .pressScale(interaction)
-            .clip(Corners.radius18)
-            .background(background)
-            .clickable(interaction, LocalIndication.current, role = Role.Button, onClick = onClick)
+            .surfaceButton(interaction, Corners.radius18, background, onClick)
             .then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier),
         contentAlignment = Alignment.Center,
     ) {
@@ -159,10 +150,7 @@ internal fun PillButton(
     Box(
         modifier
             .sizeIn(minWidth = Sizes.pillWidth, minHeight = Sizes.pillHeight)
-            .pressScale(interaction)
-            .clip(Corners.radius12)
-            .background(PhaseColors.control)
-            .clickable(interaction, LocalIndication.current, role = Role.Button, onClick = onClick)
+            .surfaceButton(interaction, Corners.radius12, PhaseColors.control, onClick)
             .semantics { contentDescription = description }
             .padding(horizontal = Spacing.space16),
         contentAlignment = Alignment.Center,

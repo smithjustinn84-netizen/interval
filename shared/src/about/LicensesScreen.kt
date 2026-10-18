@@ -7,21 +7,14 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,26 +28,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.Role
 import dev.justinsmith.interval.resources.Res
-import dev.justinsmith.interval.resources.common_back
 import dev.justinsmith.interval.resources.common_joined
 import dev.justinsmith.interval.resources.licenses_fonts
 import dev.justinsmith.interval.resources.licenses_hide
 import dev.justinsmith.interval.resources.licenses_libraries
 import dev.justinsmith.interval.resources.licenses_show
 import dev.justinsmith.interval.resources.licenses_title
+import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.EnterEasing
 import dev.justinsmith.interval.ui.ExitEasing
 import dev.justinsmith.interval.ui.GroupLabel
-import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
+import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
-import dev.justinsmith.interval.ui.TitleBar
 import dev.justinsmith.interval.ui.settleSpring
 import org.jetbrains.compose.resources.stringResource
 
@@ -70,25 +62,11 @@ fun LicensesRoute(onBack: () -> Unit, modifier: Modifier = Modifier) {
  */
 @Composable
 fun LicensesScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxSize().background(IntervalTheme.palette.background), contentAlignment = Alignment.TopCenter) {
-        Column(
-            Modifier
-                .widthIn(max = Sizes.content)
-                .fillMaxSize()
-                .safeDrawingPadding()
-                .verticalScroll(rememberScrollState()),
-        ) {
-            TitleBar(
-                stringResource(Res.string.licenses_title),
-                navigation = { IconAction(IntervalIcons.Back, stringResource(Res.string.common_back), onBack) },
-            )
-            Column(Modifier.padding(start = Spacing.space16, end = Spacing.space16, bottom = Spacing.space24)) {
-                GroupLabel(stringResource(Res.string.licenses_fonts))
-                CreditList(fontCredits)
-                GroupLabel(stringResource(Res.string.licenses_libraries))
-                CreditList(libraryCredits)
-            }
-        }
+    ScrollPage(stringResource(Res.string.licenses_title), modifier = modifier, navigation = { BackAction(onBack) }) {
+        GroupLabel(stringResource(Res.string.licenses_fonts))
+        CreditList(fontCredits)
+        GroupLabel(stringResource(Res.string.licenses_libraries))
+        CreditList(libraryCredits)
     }
 }
 

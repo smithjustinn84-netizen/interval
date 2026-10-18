@@ -30,6 +30,12 @@ enum class ConfigField(val step: Int, val range: IntRange, val quickPicks: List<
     Work(step = 5, range = IntervalConfig.WORK_RANGE, quickPicks = IntervalConfig.WORK_PICKS),
     Rest(step = 5, range = IntervalConfig.REST_RANGE, quickPicks = IntervalConfig.REST_PICKS),
     Rounds(step = 1, range = IntervalConfig.ROUNDS_RANGE, quickPicks = IntervalConfig.ROUNDS_PICKS),
+    ;
+
+    companion object {
+        /** The fields that make a preset's shape, as the Timer and the editor list them. Get ready is a setting. */
+        val shape: List<ConfigField> = listOf(Work, Rest, Rounds)
+    }
 }
 
 /** The current value of [field]. */

@@ -2,10 +2,7 @@ package dev.justinsmith.interval.ui
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,21 +13,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -90,7 +82,7 @@ private fun SheetHeader(field: ConfigField, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
-        Box(Modifier.width(Sizes.stripe).height(Sizes.iconButton).clip(Corners.full).background(field.stripe()))
+        StripeMark(field.stripe(), height = Sizes.iconButton)
         Column {
             Text(stringResource(field.labelRes), style = IntervalTheme.type.value, color = palette.text)
             Text(stringResource(field.hintRes), style = IntervalTheme.type.meta, color = palette.textDim)
@@ -102,18 +94,10 @@ private fun SheetHeader(field: ConfigField, modifier: Modifier = Modifier) {
 @Composable
 private fun SheetStepper(field: ConfigField, value: Int, onStep: (Int) -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
-    var lastValue by remember { mutableIntStateOf(value) }
-    val rising = value >= lastValue
-    SideEffect { lastValue = value }
+    val rising = rememberRising(value)
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            RepeatButton(
-                "−",
-                stringResource(field.lessRes),
-                enabled = value > field.range.first,
-                onStep = { onStep(-1) },
-                modifier = Modifier.size(Sizes.sheetStepper),
-            )
+            FieldStepButton(field, value, more = false, onStep = onStep, Modifier.size(Sizes.sheetStepper))
             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 RollingText(
                     field.format(value),
@@ -122,13 +106,7 @@ private fun SheetStepper(field: ConfigField, value: Int, onStep: (Int) -> Unit, 
                     color = field.valueColor(),
                 )
             }
-            RepeatButton(
-                "+",
-                stringResource(field.moreRes),
-                enabled = value < field.range.last,
-                onStep = { onStep(1) },
-                modifier = Modifier.size(Sizes.sheetStepper),
-            )
+            FieldStepButton(field, value, more = true, onStep = onStep, Modifier.size(Sizes.sheetStepper))
         }
         val hint = if (field == ConfigField.Rounds) {
             stringResource(Res.string.value_sheet_hint_hold)
@@ -189,14 +167,11 @@ private fun QuickPick(
     Box(
         modifier
             .heightIn(min = Sizes.pillHeight)
-            .pressScale(interaction)
-            .clip(shape)
-            .background(fill)
-            .border(Sizes.border, line, shape)
-            .clickable(interaction, LocalIndication.current, role = Role.Button) {
+            .surfaceButton(interaction, shape, fill, onClick = {
                 haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
                 onClick()
-            }
+            })
+            .border(Sizes.border, line, shape)
             .semantics { this.selected = selected },
         contentAlignment = Alignment.Center,
     ) {

@@ -2,8 +2,10 @@ package dev.justinsmith.interval.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.config_rounds_short
 import dev.justinsmith.interval.resources.field_prep_edit
 import dev.justinsmith.interval.resources.field_prep_hint
 import dev.justinsmith.interval.resources.field_prep_label
@@ -25,7 +27,9 @@ import dev.justinsmith.interval.resources.field_work_label
 import dev.justinsmith.interval.resources.field_work_less
 import dev.justinsmith.interval.resources.field_work_more
 import dev.justinsmith.interval.timer.ConfigField
+import dev.justinsmith.interval.timer.format
 import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 
 /** How each [ConfigField] is named wherever it is edited. */
 val ConfigField.labelRes: StringResource
@@ -92,3 +96,29 @@ fun ConfigField.tint(): Color = IntervalTheme.palette.tint(stripe())
 @ReadOnlyComposable
 fun ConfigField.valueColor(): Color =
     if (this == ConfigField.Prep) IntervalTheme.palette.onPrepTint else stripe()
+
+/** [value] as a field's card shows it: rounds as "×8", times as a clock. */
+@Composable
+fun ConfigField.displayText(value: Int): String =
+    if (this == ConfigField.Rounds) stringResource(Res.string.config_rounds_short, value) else format(value)
+
+/**
+ * The − ([more] false) or + of a field's stepper: it steps [onStep] by one and is disabled at that end
+ * of the field's range.
+ */
+@Composable
+fun FieldStepButton(
+    field: ConfigField,
+    value: Int,
+    more: Boolean,
+    onStep: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    RepeatButton(
+        if (more) "+" else "−",
+        stringResource(if (more) field.moreRes else field.lessRes),
+        enabled = if (more) value < field.range.last else value > field.range.first,
+        onStep = { onStep(if (more) 1 else -1) },
+        modifier = modifier,
+    )
+}

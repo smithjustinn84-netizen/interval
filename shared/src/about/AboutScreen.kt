@@ -2,16 +2,9 @@ package dev.justinsmith.interval.about
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -27,19 +20,17 @@ import dev.justinsmith.interval.resources.about_title
 import dev.justinsmith.interval.resources.about_version
 import dev.justinsmith.interval.resources.about_version_unknown
 import dev.justinsmith.interval.resources.app_name
-import dev.justinsmith.interval.resources.common_back
 import dev.justinsmith.interval.splash.Mark
 import dev.justinsmith.interval.splash.drawIntervalMark
-import dev.justinsmith.interval.ui.IconAction
-import dev.justinsmith.interval.ui.IntervalIcons
+import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.PreviewFormFactors
+import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
-import dev.justinsmith.interval.ui.TitleBar
 import dev.justinsmith.interval.ui.enterRising
 import dev.justinsmith.interval.ui.rememberEntrance
 import org.jetbrains.compose.resources.stringResource
@@ -59,40 +50,28 @@ fun AboutRoute(onBack: () -> Unit, onShowLicenses: () -> Unit, modifier: Modifie
 @Composable
 fun AboutScreen(version: String?, onBack: () -> Unit, onShowLicenses: () -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
-    Box(modifier.fillMaxSize().background(palette.background), contentAlignment = Alignment.TopCenter) {
-        Column(
-            Modifier
-                .widthIn(max = Sizes.content)
-                .fillMaxSize()
-                .safeDrawingPadding()
-                .verticalScroll(rememberScrollState()),
-        ) {
-            TitleBar(
-                stringResource(Res.string.about_title),
-                navigation = { IconAction(IntervalIcons.Back, stringResource(Res.string.common_back), onBack) },
+    ScrollPage(
+        stringResource(Res.string.about_title),
+        modifier = modifier,
+        navigation = { BackAction(onBack) },
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        // The hero rises in once, as the summary's does; the card below is in place already.
+        AnimatedVisibility(rememberEntrance(), enter = enterRising()) { Hero(version) }
+        ListCard(Modifier.padding(top = Spacing.space32)) {
+            LinkRow(
+                stringResource(Res.string.about_licenses),
+                stringResource(Res.string.about_licenses_hint),
+                onClick = onShowLicenses,
             )
-            Column(
-                Modifier.padding(start = Spacing.space16, end = Spacing.space16, bottom = Spacing.space24),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                // The hero rises in once, as the summary's does; the card below is in place already.
-                AnimatedVisibility(rememberEntrance(), enter = enterRising()) { Hero(version) }
-                ListCard(Modifier.padding(top = Spacing.space32)) {
-                    LinkRow(
-                        stringResource(Res.string.about_licenses),
-                        stringResource(Res.string.about_licenses_hint),
-                        onClick = onShowLicenses,
-                    )
-                }
-                Text(
-                    stringResource(Res.string.about_made_by),
-                    style = IntervalTheme.type.meta,
-                    color = palette.textDim,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = Spacing.space24),
-                )
-            }
         }
+        Text(
+            stringResource(Res.string.about_made_by),
+            style = IntervalTheme.type.meta,
+            color = palette.textDim,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = Spacing.space24),
+        )
     }
 }
 

@@ -2,21 +2,16 @@ package dev.justinsmith.interval.presets
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,7 +22,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -57,15 +51,15 @@ import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.MiniTimeline
 import dev.justinsmith.interval.ui.PreviewFormFactors
-import dev.justinsmith.interval.ui.SetupLanes
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
-import dev.justinsmith.interval.ui.Timeline
-import dev.justinsmith.interval.ui.TitleBar
+import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.interval.ui.configDescription
 import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.interval.ui.selectableCard
+import dev.justinsmith.interval.ui.surfaceButton
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
@@ -121,7 +115,7 @@ fun PresetsScreen(
         state = state,
         onOpen = { open = it },
         onNew = { draft = PresetDraft(EditorMode.New, name = "", config = state.current) },
-        onSaveCurrent = { draft = PresetDraft(EditorMode.SaveCurrent, name = "", config = state.current) },
+        onSaveCurrent = { draft = PresetDraft.saveCurrent(state.current) },
         modifier = modifier,
     )
     // The sheet follows its preset through the state, so one edited or deleted elsewhere closes it.
@@ -147,16 +141,21 @@ fun PresetsScreen(
             onDismiss = { open = null },
         )
     }
-    draft?.let { current ->
-        PresetEditor(
-            draft = current,
-            prepSeconds = state.current.prepSeconds,
-            presets = state.rows.map { it.preset },
-            onChangeShape = { transform -> draft = draft?.let { it.copy(config = transform(it.config)) } },
-            onSave = if (current.mode == EditorMode.SaveCurrent) onSaveCurrent else onSave,
-            onDismiss = { draft = null },
-        )
-    }
+    PresetEditorHost(
+        draft = draft,
+        onDraftChange = { draft = it },
+        prepSeconds = state.current.prepSeconds,
+        presets = state.rows.map { it.preset },
+        onSave = { opened, preset ->
+            if (opened.mode ==
+                EditorMode.SaveCurrent
+            ) {
+                onSaveCurrent(preset)
+            } else {
+                onSave(preset)
+            }
+        },
+    )
     deleting?.let { preset ->
         ConfirmDialog(
             title = stringResource(Res.string.presets_delete_title, preset.name),
@@ -185,58 +184,49 @@ private fun PresetsList(
     onSaveCurrent: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val palette = IntervalTheme.palette
-    Box(modifier.fillMaxSize().background(palette.background), contentAlignment = Alignment.TopCenter) {
-        SetupLanes(Modifier.widthIn(max = Sizes.listMax).fillMaxSize())
-        // One column on a phone; wider windows put the two groups side by side.
-        LazyVerticalStaggeredGrid(
-            columns = StaggeredGridCells.Adaptive(Sizes.listColumn),
-            modifier = Modifier.widthIn(max = Sizes.listMax).fillMaxSize(),
-            contentPadding = PaddingValues(bottom = Spacing.space24),
-        ) {
-            item(key = "title", span = StaggeredGridItemSpan.FullLine) {
-                TitleBar(stringResource(Res.string.presets_title)) {
-                    IconAction(IntervalIcons.Add, stringResource(Res.string.presets_new_cd), onClick = onNew)
-                }
+    // One column on a phone; wider windows put the two groups side by side.
+    TabGrid(
+        stringResource(Res.string.presets_title),
+        modifier,
+        actions = { IconAction(IntervalIcons.Add, stringResource(Res.string.presets_new_cd), onClick = onNew) },
+    ) {
+        // Keyed, so the card fades and the groups slide as the current shape stops or starts matching a preset.
+        if (state.canSaveCurrent) {
+            item(key = "current", span = StaggeredGridItemSpan.FullLine) {
+                CurrentCard(
+                    config = state.current,
+                    share = state.currentShare,
+                    onSave = onSaveCurrent,
+                    modifier = Modifier
+                        .animateItem()
+                        .padding(horizontal = Spacing.space16)
+                        .padding(bottom = Spacing.space4),
+                )
             }
-            // Keyed, so the card fades and the groups slide as the current shape stops or starts matching a preset.
-            if (state.canSaveCurrent) {
-                item(key = "current", span = StaggeredGridItemSpan.FullLine) {
-                    CurrentCard(
-                        config = state.current,
-                        share = state.currentShare,
-                        onSave = onSaveCurrent,
-                        modifier = Modifier
-                            .animateItem()
-                            .padding(horizontal = Spacing.space16)
-                            .padding(bottom = Spacing.space4),
-                    )
-                }
-            }
-            item(key = "custom") {
-                // The group closes up smoothly over a deleted card.
-                Column(Modifier.animateItem().padding(horizontal = Spacing.space16).animateContentSize()) {
-                    GroupLabel(stringResource(Res.string.presets_yours))
-                    if (state.custom.isEmpty()) {
-                        ListCard {
-                            EmptyState(
-                                IntervalIcons.Presets,
-                                stringResource(Res.string.presets_empty_title),
-                                stringResource(Res.string.presets_empty),
-                            )
-                        }
-                    }
-                    CardColumn {
-                        state.custom.forEach { item -> PresetCard(item, onClick = { onOpen(item.preset) }) }
+        }
+        item(key = "custom") {
+            // The group closes up smoothly over a deleted card.
+            Column(Modifier.animateItem().padding(horizontal = Spacing.space16).animateContentSize()) {
+                GroupLabel(stringResource(Res.string.presets_yours))
+                if (state.custom.isEmpty()) {
+                    ListCard {
+                        EmptyState(
+                            IntervalIcons.Presets,
+                            stringResource(Res.string.presets_empty_title),
+                            stringResource(Res.string.presets_empty),
+                        )
                     }
                 }
+                CardColumn {
+                    state.custom.forEach { item -> PresetCard(item, onClick = { onOpen(item.preset) }) }
+                }
             }
-            item(key = "builtIn") {
-                Column(Modifier.animateItem().padding(horizontal = Spacing.space16)) {
-                    GroupLabel(stringResource(Res.string.presets_built_in))
-                    CardColumn {
-                        state.builtIn.forEach { item -> PresetCard(item, onClick = { onOpen(item.preset) }) }
-                    }
+        }
+        item(key = "builtIn") {
+            Column(Modifier.animateItem().padding(horizontal = Spacing.space16)) {
+                GroupLabel(stringResource(Res.string.presets_built_in))
+                CardColumn {
+                    state.builtIn.forEach { item -> PresetCard(item, onClick = { onOpen(item.preset) }) }
                 }
             }
         }
@@ -274,13 +264,7 @@ private fun CurrentCard(config: IntervalConfig, share: Float, onSave: () -> Unit
             }
             SaveButton(onSave)
         }
-        Timeline(
-            config,
-            modifier = Modifier.fillMaxWidth(share),
-            height = Sizes.timelineMini,
-            gap = Sizes.timelineMiniGap,
-            showPrep = false,
-        )
+        MiniTimeline(config, Modifier.fillMaxWidth(share))
     }
 }
 
@@ -293,10 +277,7 @@ private fun SaveButton(onClick: () -> Unit) {
         Modifier
             .heightIn(min = Sizes.pillHeight)
             .widthIn(min = Sizes.pillWidth)
-            .pressScale(interaction)
-            .clip(Corners.radius12)
-            .background(palette.accent)
-            .clickable(interaction, LocalIndication.current, role = Role.Button, onClick = onClick)
+            .surfaceButton(interaction, Corners.radius12, palette.accent, onClick)
             .padding(horizontal = Spacing.space20),
         contentAlignment = Alignment.Center,
     ) {
@@ -352,13 +333,7 @@ private fun PresetCard(item: PresetRowItem, onClick: () -> Unit, modifier: Modif
             color = palette.textDim,
             maxLines = 1,
         )
-        Timeline(
-            item.preset.config,
-            modifier = Modifier.padding(top = Spacing.space4).fillMaxWidth(item.share),
-            height = Sizes.timelineMini,
-            gap = Sizes.timelineMiniGap,
-            showPrep = false,
-        )
+        MiniTimeline(item.preset.config, Modifier.padding(top = Spacing.space4).fillMaxWidth(item.share))
     }
 }
 

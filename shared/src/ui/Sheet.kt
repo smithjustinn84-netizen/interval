@@ -209,12 +209,9 @@ private fun SideSheet(
                 // The panel leaves only once its slide out has played: that is when the caller hears.
                 // A caller that drops the sheet while it is open has closed it already.
                 DisposableEffect(Unit) { onDispose { if (!visible) currentOnDismiss() } }
-                // The panel moves focus to its first focus target when it opens. Be that target, so a
-                // text field waits for a tap: on iOS a field focused this early gets no keyboard, and
-                // what is typed into it surfaces later, doubled.
                 Column(
                     Modifier
-                        .focusTarget()
+                        .holdInitialFocus()
                         .fillMaxSize()
                         .windowInsetsPadding(
                             WindowInsets.safeDrawing.only(WindowInsetsSides.Vertical + WindowInsetsSides.End),
@@ -283,3 +280,10 @@ fun scrimColor(): Color = PhaseColors.ink.copy(alpha = Opacity.SCRIM)
 fun ModalBackHandler(onBack: () -> Unit) {
     NavigationBackHandler(state = rememberNavigationEventState(NavigationEventInfo.None), onBackCompleted = onBack)
 }
+
+/**
+ * Takes the focus a dialog or sheet panel hands its first focus target as it opens, so a text field in
+ * it waits for a tap: on iOS a field focused this early gets no keyboard, and what is typed into it
+ * surfaces later, doubled.
+ */
+fun Modifier.holdInitialFocus(): Modifier = focusTarget()

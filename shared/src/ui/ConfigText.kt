@@ -2,6 +2,7 @@ package dev.justinsmith.interval.ui
 
 import androidx.compose.runtime.Composable
 import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.common_custom
 import dev.justinsmith.interval.resources.config_description
 import dev.justinsmith.interval.resources.duration_short_minutes
 import dev.justinsmith.interval.resources.duration_short_seconds
@@ -25,3 +26,7 @@ fun shortDurationText(seconds: Int): String = when (val duration = shortDuration
     is ShortDuration.Seconds -> stringResource(Res.string.duration_short_seconds, duration.seconds)
     is ShortDuration.Minutes -> stringResource(Res.string.duration_short_minutes, duration.minutes)
 }
+
+/** The matching preset's [name], or "Custom" for a shape no preset has. */
+@Composable
+fun presetNameOrCustom(name: String?): String = name ?: stringResource(Res.string.common_custom)

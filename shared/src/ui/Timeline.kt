@@ -116,3 +116,9 @@ fun ValuePill(
         Text(text, style = style, color = color)
     }
 }
+
+/** A [Timeline] at a list card's size: thin, and without the get-ready segment, which is the user's own. */
+@Composable
+fun MiniTimeline(config: IntervalConfig, modifier: Modifier = Modifier) {
+    Timeline(config, modifier = modifier, height = Sizes.timelineMini, gap = Sizes.timelineMiniGap, showPrep = false)
+}

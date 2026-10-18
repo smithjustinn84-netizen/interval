@@ -25,8 +25,11 @@ import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -136,4 +139,13 @@ fun RollingText(
     ) { value ->
         Text(value, style = style, color = color)
     }
+}
+
+/** Whether [value] has gone up, or stayed, since the last composition: the way a [RollingText] of it rolls. */
+@Composable
+fun rememberRising(value: Int): Boolean {
+    var last by remember { mutableIntStateOf(value) }
+    val rising = value >= last
+    SideEffect { last = value }
+    return rising
 }

@@ -30,12 +30,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
-import dev.justinsmith.interval.presets.EditorMode
 import dev.justinsmith.interval.presets.PresetDraft
-import dev.justinsmith.interval.presets.PresetEditor
+import dev.justinsmith.interval.presets.PresetEditorHost
 import dev.justinsmith.interval.presets.rememberPresetDraft
 import dev.justinsmith.interval.resources.Res
-import dev.justinsmith.interval.resources.common_custom
 import dev.justinsmith.interval.resources.common_done
 import dev.justinsmith.interval.resources.common_joined
 import dev.justinsmith.interval.resources.workout_done
@@ -60,6 +58,7 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.configDescription
 import dev.justinsmith.interval.ui.enterRising
+import dev.justinsmith.interval.ui.presetNameOrCustom
 import dev.justinsmith.interval.ui.rememberEntrance
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -78,7 +77,7 @@ internal fun SummaryLayout(
     onExit: () -> Unit,
 ) {
     var draft by rememberPresetDraft()
-    val onSave = { draft = PresetDraft(EditorMode.SaveCurrent, name = "", config = state.config) }
+    val onSave = { draft = PresetDraft.saveCurrent(state.config) }
     val entrance = rememberEntrance()
     val padding = Modifier
         .fillMaxSize()
@@ -113,16 +112,13 @@ internal fun SummaryLayout(
             )
         }
     }
-    draft?.let { current ->
-        PresetEditor(
-            draft = current,
-            prepSeconds = state.config.prepSeconds,
-            presets = state.presets,
-            onChangeShape = { transform -> draft = draft?.let { it.copy(config = transform(it.config)) } },
-            onSave = onSavePreset,
-            onDismiss = { draft = null },
-        )
-    }
+    PresetEditorHost(
+        draft = draft,
+        onDraftChange = { draft = it },
+        prepSeconds = state.config.prepSeconds,
+        presets = state.presets,
+        onSave = { _, preset -> onSavePreset(preset) },
+    )
 }
 
 @Composable
@@ -305,6 +301,6 @@ private fun Stat(value: String, label: String, modifier: Modifier = Modifier) {
 @Composable
 private fun shapeText(state: WorkoutUiState): String = stringResource(
     Res.string.common_joined,
-    state.presetName ?: stringResource(Res.string.common_custom),
+    presetNameOrCustom(state.presetName),
     configDescription(state.config),
 )

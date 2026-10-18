@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ShortNavigationBarItemDefaults
@@ -208,3 +209,6 @@ fun NavigationItems(current: Tab, type: NavigationSuiteType, onSelect: (Tab) -> 
         )
     }
 }
+
+/** Wider than tall: where the screens put their parts side by side. */
+val BoxWithConstraintsScope.isLandscape: Boolean get() = maxWidth > maxHeight

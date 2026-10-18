@@ -21,9 +21,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.justinsmith.interval.presets.EditorMode
 import dev.justinsmith.interval.presets.PresetDraft
-import dev.justinsmith.interval.presets.PresetEditor
+import dev.justinsmith.interval.presets.PresetEditorHost
 import dev.justinsmith.interval.presets.rememberPresetDraft
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -36,6 +35,7 @@ import dev.justinsmith.interval.ui.SetupLanes
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ValueSheet
+import dev.justinsmith.interval.ui.isLandscape
 import org.koin.compose.currentKoinScope
 
 /** Resolves the tab's ViewModel, scoped to its back-stack entry, and binds it to [TimerScreen]. */
@@ -82,9 +82,9 @@ fun TimerScreen(
     val editing = editingName?.let(ConfigField::valueOf)
     val onEdit = { field: ConfigField -> editingName = field.name }
     var draft by rememberPresetDraft()
-    val onSave = { draft = PresetDraft(EditorMode.SaveCurrent, name = "", config = state.config) }
+    val onSave = { draft = PresetDraft.saveCurrent(state.config) }
     BoxWithConstraints(modifier.fillMaxSize().background(IntervalTheme.palette.background)) {
-        if (maxWidth > maxHeight) {
+        if (isLandscape) {
             // Sideways: the total and Start on the left, the three rows on the right, the lanes under both.
             SetupLanes(Modifier.matchParentSize())
             Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center) {
@@ -132,16 +132,13 @@ fun TimerScreen(
             onDismiss = { editingName = null },
         )
     }
-    draft?.let { current ->
-        PresetEditor(
-            draft = current,
-            prepSeconds = state.config.prepSeconds,
-            presets = state.presets,
-            onChangeShape = { transform -> draft = draft?.let { it.copy(config = transform(it.config)) } },
-            onSave = onSavePreset,
-            onDismiss = { draft = null },
-        )
-    }
+    PresetEditorHost(
+        draft = draft,
+        onDraftChange = { draft = it },
+        prepSeconds = state.config.prepSeconds,
+        presets = state.presets,
+        onSave = { _, preset -> onSavePreset(preset) },
+    )
 }
 
 @Composable

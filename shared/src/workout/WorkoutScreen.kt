@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -65,11 +66,23 @@ import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.WorkoutLanes
+import dev.justinsmith.interval.ui.isLandscape
 import dev.justinsmith.interval.ui.laneRing
 import dev.justinsmith.interval.ui.rememberLaneAnchor
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
+
+/** What the running workout's controls do, passed down as one value rather than five same-typed lambdas. */
+@Immutable
+internal class WorkoutActions(
+    val onTogglePause: () -> Unit,
+    val onSkip: () -> Unit,
+    val onBack: () -> Unit,
+    val onAddTime: () -> Unit,
+    /** Asks before ending: pauses, then shows the confirmation. */
+    val onEnd: () -> Unit,
+)
 
 /** Resolves the screen's ViewModel, scoped to its back-stack entry, and binds it to [WorkoutScreen]. */
 @Composable
@@ -147,25 +160,17 @@ fun WorkoutScreen(
                 onEnd = requestEnd,
             ),
     ) {
-        val landscape = maxWidth > maxHeight
+        val landscape = isLandscape
         WorkoutLanes(anchor, accent, Modifier.matchParentSize())
         PhaseBand(accent, landscape)
+        // Built afresh each time: requestEnd reads this composition's state.
+        val actions = WorkoutActions(onTogglePause, onSkip, onBack, onAddTime, onEnd = requestEnd)
         if (state.isDone) {
             SummaryLayout(state, landscape, onRestart, onSavePreset, onExit)
         } else if (landscape) {
-            LandscapeWorkout(state, accent, primaryFill, anchor, onTogglePause, onSkip, onBack, onAddTime, requestEnd)
+            LandscapeWorkout(state, accent, primaryFill, anchor, actions)
         } else {
-            PortraitWorkout(
-                state = state,
-                accent = accent,
-                primaryFill = primaryFill,
-                anchor = anchor,
-                onTogglePause = onTogglePause,
-                onSkip = onSkip,
-                onBack = onBack,
-                onAddTime = onAddTime,
-                onEnd = requestEnd,
-            )
+            PortraitWorkout(state, accent, primaryFill, anchor, actions)
         }
     }
     if (confirmingEnd && !state.isDone) {
@@ -243,11 +248,7 @@ private fun PortraitWorkout(
     accent: Color,
     primaryFill: Color,
     anchor: LaneAnchor,
-    onTogglePause: () -> Unit,
-    onSkip: () -> Unit,
-    onBack: () -> Unit,
-    onAddTime: () -> Unit,
-    onEnd: () -> Unit,
+    actions: WorkoutActions,
 ) {
     Column(
         Modifier
@@ -256,12 +257,12 @@ private fun PortraitWorkout(
             .padding(top = Sizes.phaseBand + Spacing.space8, start = Spacing.space16, end = Spacing.space16)
             .padding(vertical = Spacing.space16),
     ) {
-        TopBar(state = state, onEnd = onEnd, onSkip = onSkip)
+        TopBar(state, actions)
         BoxWithConstraints(
             Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .tapToPause(state, onTogglePause),
+                .tapToPause(state, actions.onTogglePause),
             contentAlignment = Alignment.Center,
         ) {
             val diameter = minOf(maxWidth, maxHeight - Sizes.pillHeight, Sizes.ringMax)
@@ -280,9 +281,7 @@ private fun PortraitWorkout(
         BottomControls(
             state = state,
             primaryFill = primaryFill,
-            onTogglePause = onTogglePause,
-            onBack = onBack,
-            onAddTime = onAddTime,
+            actions = actions,
         )
     }
 }
@@ -294,11 +293,7 @@ private fun LandscapeWorkout(
     accent: Color,
     primaryFill: Color,
     anchor: LaneAnchor,
-    onTogglePause: () -> Unit,
-    onSkip: () -> Unit,
-    onBack: () -> Unit,
-    onAddTime: () -> Unit,
-    onEnd: () -> Unit,
+    actions: WorkoutActions,
 ) {
     Row(
         Modifier
@@ -312,14 +307,14 @@ private fun LandscapeWorkout(
             Modifier.width(Sizes.rail).fillMaxHeight(),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            EndPill(onEnd, Modifier.fillMaxWidth())
-            BackButton(onBack, Modifier.fillMaxWidth().height(Sizes.control))
+            EndPill(actions.onEnd, Modifier.fillMaxWidth())
+            BackButton(actions.onBack, Modifier.fillMaxWidth().height(Sizes.control))
         }
         BoxWithConstraints(
             Modifier
                 .weight(1f)
                 .fillMaxHeight()
-                .tapToPause(state, onTogglePause),
+                .tapToPause(state, actions.onTogglePause),
             contentAlignment = Alignment.Center,
         ) {
             val diameter = minOf(maxHeight, maxWidth / 2, Sizes.ringMax)
@@ -329,10 +324,10 @@ private fun LandscapeWorkout(
             Modifier.width(Sizes.rail).fillMaxHeight(),
             verticalArrangement = Arrangement.spacedBy(Spacing.space8),
         ) {
-            SkipPill(onSkip, Modifier.fillMaxWidth())
+            SkipPill(actions.onSkip, Modifier.fillMaxWidth())
             Spacer(Modifier.weight(1f))
-            AddTimeButton(onAddTime, Modifier.fillMaxWidth().height(Sizes.control))
-            PrimaryButton(state, primaryFill, onTogglePause, Modifier.fillMaxWidth().height(Sizes.control))
+            AddTimeButton(actions.onAddTime, Modifier.fillMaxWidth().height(Sizes.control))
+            PrimaryButton(state, primaryFill, actions.onTogglePause, Modifier.fillMaxWidth().height(Sizes.control))
         }
     }
 }
@@ -360,15 +355,15 @@ private fun Modifier.tapToPause(state: WorkoutUiState, onTogglePause: () -> Unit
 )
 
 @Composable
-private fun TopBar(state: WorkoutUiState, onEnd: () -> Unit, onSkip: () -> Unit) {
+private fun TopBar(state: WorkoutUiState, actions: WorkoutActions) {
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        EndPill(onEnd)
+        EndPill(actions.onEnd)
         RoundStatus(state, Modifier.weight(1f).padding(horizontal = Spacing.space8))
-        SkipPill(onSkip)
+        SkipPill(actions.onSkip)
     }
 }
 

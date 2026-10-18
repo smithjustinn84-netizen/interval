@@ -10,9 +10,6 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,19 +34,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import dev.justinsmith.interval.resources.Res
-import dev.justinsmith.interval.resources.common_custom
 import dev.justinsmith.interval.resources.common_joined
 import dev.justinsmith.interval.resources.common_settings
-import dev.justinsmith.interval.resources.config_rounds_short
 import dev.justinsmith.interval.resources.timer_all_presets_cd
 import dev.justinsmith.interval.resources.timer_prep_line
 import dev.justinsmith.interval.resources.timer_save_as_preset_cd
@@ -57,30 +48,28 @@ import dev.justinsmith.interval.resources.timer_title
 import dev.justinsmith.interval.resources.timer_total
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
-import dev.justinsmith.interval.timer.format
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.valueOf
 import dev.justinsmith.interval.ui.Corners
+import dev.justinsmith.interval.ui.FieldStepButton
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
-import dev.justinsmith.interval.ui.RepeatButton
 import dev.justinsmith.interval.ui.RollingText
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StartButton
 import dev.justinsmith.interval.ui.TitleBar
+import dev.justinsmith.interval.ui.displayText
 import dev.justinsmith.interval.ui.editRes
 import dev.justinsmith.interval.ui.labelRes
-import dev.justinsmith.interval.ui.lessRes
-import dev.justinsmith.interval.ui.moreRes
-import dev.justinsmith.interval.ui.pressScale
+import dev.justinsmith.interval.ui.phaseStripe
+import dev.justinsmith.interval.ui.presetNameOrCustom
+import dev.justinsmith.interval.ui.rememberRising
 import dev.justinsmith.interval.ui.stripe
+import dev.justinsmith.interval.ui.surfaceButton
 import org.jetbrains.compose.resources.stringResource
-
-/** The values the Timer tab edits. Get ready is a setting, edited from Settings. */
-private val TimerFields = listOf(ConfigField.Work, ConfigField.Rest, ConfigField.Rounds)
 
 /**
  * The title, with + to save a shape no preset has yet, and the settings gear. The + grows in as the
@@ -111,9 +100,7 @@ internal fun TimerTitleBar(canSavePreset: Boolean, onSave: () -> Unit, onOpenSet
 internal fun Total(state: TimerUiState, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val seconds = state.config.totalSeconds
-    var lastSeconds by remember { mutableIntStateOf(seconds) }
-    val rising = seconds >= lastSeconds
-    SideEffect { lastSeconds = seconds }
+    val rising = rememberRising(seconds)
     // The line keeps its last countdown while it shrinks away, rather than reading "0:00" as it goes.
     val prep = state.config.prepSeconds
     var lastPrep by remember { mutableIntStateOf(prep) }
@@ -122,7 +109,7 @@ internal fun Total(state: TimerUiState, modifier: Modifier = Modifier) {
         Text(
             stringResource(
                 Res.string.common_joined,
-                state.presetName ?: stringResource(Res.string.common_custom),
+                presetNameOrCustom(state.presetName),
                 stringResource(Res.string.timer_total),
             ),
             style = IntervalTheme.type.caption,
@@ -150,7 +137,7 @@ internal fun ColumnScope.StepperRows(
     onStep: (ConfigField, Int) -> Unit,
     onEdit: (ConfigField) -> Unit,
 ) {
-    TimerFields.forEachIndexed { index, field ->
+    ConfigField.shape.forEachIndexed { index, field ->
         if (index > 0) Spacer(Modifier.size(Spacing.space8))
         StepperRow(
             field,
@@ -176,28 +163,21 @@ private fun StepperRow(
 ) {
     val palette = IntervalTheme.palette
     val stripe = field.stripe()
-    val text = if (field == ConfigField.Rounds) {
-        stringResource(Res.string.config_rounds_short, value)
-    } else {
-        field.format(value)
-    }
+    val text = field.displayText(value)
     // The whole card opens the sheet, so its ripple and press fill the card; − and + take their own taps.
     val interaction = remember { MutableInteractionSource() }
     Row(
         modifier
             .fillMaxWidth()
             .heightIn(min = Sizes.intervalRow)
-            .pressScale(interaction)
-            .clip(Corners.radius18)
-            .background(palette.surface)
-            .drawBehind { drawRect(stripe, size = Size(Sizes.stripe.toPx(), size.height)) }
-            .clickable(
+            .surfaceButton(
                 interaction,
-                LocalIndication.current,
-                role = Role.Button,
-                onClickLabel = stringResource(field.editRes),
+                Corners.radius18,
+                palette.surface,
                 onClick = onEdit,
+                onClickLabel = stringResource(field.editRes),
             )
+            .phaseStripe(stripe)
             .padding(start = Sizes.stripe + Spacing.space16, end = Spacing.space12),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
@@ -218,18 +198,8 @@ private fun StepperRow(
                 autoSize = TextAutoSize.StepBased(minFontSize = VALUE_MIN_SIZE.sp, maxFontSize = VALUE_MAX_SIZE.sp),
             )
         }
-        RepeatButton(
-            "−",
-            stringResource(field.lessRes),
-            enabled = value > field.range.first,
-            onStep = { onStep(-1) },
-        )
-        RepeatButton(
-            "+",
-            stringResource(field.moreRes),
-            enabled = value < field.range.last,
-            onStep = { onStep(1) },
-        )
+        FieldStepButton(field, value, more = false, onStep = onStep)
+        FieldStepButton(field, value, more = true, onStep = onStep)
     }
 }
 
@@ -244,10 +214,7 @@ internal fun StartRow(onStart: () -> Unit, onSeeAllPresets: () -> Unit, modifier
         Box(
             Modifier
                 .size(Sizes.start)
-                .pressScale(interaction)
-                .clip(Corners.radius18)
-                .background(palette.surface)
-                .clickable(interaction, LocalIndication.current, role = Role.Button, onClick = onSeeAllPresets)
+                .surfaceButton(interaction, Corners.radius18, palette.surface, onSeeAllPresets)
                 .semantics { contentDescription = description },
             contentAlignment = Alignment.Center,
         ) {

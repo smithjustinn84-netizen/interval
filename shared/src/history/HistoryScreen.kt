@@ -6,17 +6,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -88,10 +82,10 @@ import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
-import dev.justinsmith.interval.ui.SetupLanes
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
-import dev.justinsmith.interval.ui.TitleBar
+import dev.justinsmith.interval.ui.StripeMark
+import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.interval.ui.configDescription
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -116,60 +110,51 @@ fun HistoryRoute(modifier: Modifier = Modifier) {
 fun HistoryScreen(state: HistoryUiState, onClear: () -> Unit, modifier: Modifier = Modifier) {
     var menu by remember { mutableStateOf(false) }
     var confirming by rememberSaveable { mutableStateOf(false) }
-    Box(modifier.fillMaxSize().background(IntervalTheme.palette.background), contentAlignment = Alignment.TopCenter) {
-        SetupLanes(Modifier.widthIn(max = Sizes.listMax).fillMaxSize())
-        // One column on a phone; wider windows lay the days out side by side.
-        LazyVerticalStaggeredGrid(
-            columns = StaggeredGridCells.Adaptive(Sizes.listColumn),
-            modifier = Modifier.widthIn(max = Sizes.listMax).fillMaxSize(),
-            contentPadding = PaddingValues(bottom = Spacing.space24),
-        ) {
-            item(key = "title", span = StaggeredGridItemSpan.FullLine) {
-                TitleBar(stringResource(Res.string.history_title)) {
-                    IntervalMenu(
-                        expanded = menu,
-                        onExpandedChange = { menu = it },
-                        items = {
-                            IntervalMenuItem(stringResource(Res.string.history_clear_menu), onClick = {
-                                confirming =
-                                    true
-                            })
-                        },
-                    ) {
-                        IconAction(
-                            IntervalIcons.More,
-                            stringResource(Res.string.history_more_options_cd),
-                            onClick = { menu = true },
-                            enabled = !state.isEmpty,
-                        )
-                    }
+    // One column on a phone; wider windows lay the days out side by side.
+    TabGrid(
+        stringResource(Res.string.history_title),
+        modifier,
+        actions = {
+            IntervalMenu(
+                expanded = menu,
+                onExpandedChange = { menu = it },
+                items = {
+                    IntervalMenuItem(stringResource(Res.string.history_clear_menu), onClick = { confirming = true })
+                },
+            ) {
+                IconAction(
+                    IntervalIcons.More,
+                    stringResource(Res.string.history_more_options_cd),
+                    onClick = { menu = true },
+                    enabled = !state.isEmpty,
+                )
+            }
+        },
+    ) {
+        if (state.isEmpty) {
+            item(key = "empty", span = StaggeredGridItemSpan.FullLine) {
+                ListCard(Modifier.animateItem().padding(horizontal = Spacing.space16)) {
+                    EmptyState(
+                        IntervalIcons.History,
+                        stringResource(Res.string.history_empty_title),
+                        stringResource(Res.string.history_empty),
+                    )
                 }
             }
-            if (state.isEmpty) {
-                item(key = "empty", span = StaggeredGridItemSpan.FullLine) {
-                    ListCard(Modifier.animateItem().padding(horizontal = Spacing.space16)) {
-                        EmptyState(
-                            IntervalIcons.History,
-                            stringResource(Res.string.history_empty_title),
-                            stringResource(Res.string.history_empty),
-                        )
-                    }
-                }
-            } else {
-                item(key = "week", span = StaggeredGridItemSpan.FullLine) {
-                    WeekSummary(state, Modifier.animateItem().padding(horizontal = Spacing.space16))
-                }
+        } else {
+            item(key = "week", span = StaggeredGridItemSpan.FullLine) {
+                WeekSummary(state, Modifier.animateItem().padding(horizontal = Spacing.space16))
             }
-            state.sections.forEach { section ->
-                // A day is one cell, its label with its card, so a column never splits a day.
-                item(key = section.dayNumber) {
-                    Column(Modifier.animateItem().padding(horizontal = Spacing.space16)) {
-                        GroupLabel(dayHeading(section.day))
-                        ListCard {
-                            section.items.forEachIndexed { index, item ->
-                                if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
-                                HistoryRow(item)
-                            }
+        }
+        state.sections.forEach { section ->
+            // A day is one cell, its label with its card, so a column never splits a day.
+            item(key = section.dayNumber) {
+                Column(Modifier.animateItem().padding(horizontal = Spacing.space16)) {
+                    GroupLabel(dayHeading(section.day))
+                    ListCard {
+                        section.items.forEachIndexed { index, item ->
+                            if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
+                            HistoryRow(item)
                         }
                     }
                 }
@@ -291,12 +276,7 @@ private fun HistoryRow(item: HistoryItem, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
-        Box(
-            Modifier.size(
-                Sizes.stripe,
-                Sizes.historyMarkHeight,
-            ).clip(Corners.full).background(IntervalTheme.palette.workMark),
-        )
+        StripeMark(IntervalTheme.palette.workMark, height = Sizes.historyMarkHeight)
         Column(Modifier.weight(1f)) {
             val shape = configDescription(item.config)
             val detail = listOfNotNull(

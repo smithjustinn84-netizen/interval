@@ -11,21 +11,15 @@ import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,7 +43,6 @@ import dev.justinsmith.interval.data.AppSettings
 import dev.justinsmith.interval.data.CueSettings
 import dev.justinsmith.interval.data.ThemeMode
 import dev.justinsmith.interval.resources.Res
-import dev.justinsmith.interval.resources.common_back
 import dev.justinsmith.interval.resources.settings_about
 import dev.justinsmith.interval.resources.settings_about_app
 import dev.justinsmith.interval.resources.settings_about_app_hint
@@ -75,6 +68,7 @@ import dev.justinsmith.interval.resources.theme_light
 import dev.justinsmith.interval.resources.theme_system
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.WorkoutEngine
+import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.FieldRow
 import dev.justinsmith.interval.ui.GroupLabel
@@ -87,9 +81,9 @@ import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.Radius
 import dev.justinsmith.interval.ui.RowDivider
+import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
-import dev.justinsmith.interval.ui.TitleBar
 import dev.justinsmith.interval.ui.ToggleRow
 import dev.justinsmith.interval.ui.ValueSheet
 import dev.justinsmith.interval.ui.settleSpring
@@ -141,48 +135,36 @@ fun SettingsScreen(
     inPane: Boolean = false,
 ) {
     var editingPrep by rememberSaveable { mutableStateOf(false) }
-    Box(modifier.fillMaxSize().background(IntervalTheme.palette.background), contentAlignment = Alignment.TopCenter) {
-        Column(
-            Modifier
-                .widthIn(max = Sizes.content)
-                .fillMaxSize()
-                .safeDrawingPadding()
-                .verticalScroll(rememberScrollState()),
-        ) {
-            TitleBar(
-                stringResource(Res.string.settings_title),
-                navigation = {
-                    if (!inPane) IconAction(IntervalIcons.Back, stringResource(Res.string.common_back), onBack)
-                },
-                actions = {
-                    if (inPane) IconAction(IntervalIcons.Close, stringResource(Res.string.settings_close_cd), onBack)
-                },
+    ScrollPage(
+        stringResource(Res.string.settings_title),
+        modifier = modifier,
+        navigation = { if (!inPane) BackAction(onBack) },
+        actions = {
+            if (inPane) IconAction(IntervalIcons.Close, stringResource(Res.string.settings_close_cd), onBack)
+        },
+    ) {
+        GroupLabel(stringResource(Res.string.settings_cues))
+        CuesCard(state.cues, onToggle)
+        GroupLabel(stringResource(Res.string.settings_workout))
+        ListCard {
+            FieldRow(ConfigField.Prep, state.prepSeconds, onClick = { editingPrep = true }, compact = true)
+            RowDivider()
+            ToggleRow(
+                stringResource(Res.string.settings_keep_screen_on),
+                stringResource(Res.string.settings_keep_screen_on_hint),
+                state.app.keepScreenOn,
+                onToggle = onToggleKeepScreenOn,
             )
-            Column(Modifier.padding(start = Spacing.space16, end = Spacing.space16, bottom = Spacing.space24)) {
-                GroupLabel(stringResource(Res.string.settings_cues))
-                CuesCard(state.cues, onToggle)
-                GroupLabel(stringResource(Res.string.settings_workout))
-                ListCard {
-                    FieldRow(ConfigField.Prep, state.prepSeconds, onClick = { editingPrep = true }, compact = true)
-                    RowDivider()
-                    ToggleRow(
-                        stringResource(Res.string.settings_keep_screen_on),
-                        stringResource(Res.string.settings_keep_screen_on_hint),
-                        state.app.keepScreenOn,
-                        onToggle = onToggleKeepScreenOn,
-                    )
-                }
-                GroupLabel(stringResource(Res.string.settings_appearance))
-                ThemePicker(state.app.theme, onSetTheme)
-                GroupLabel(stringResource(Res.string.settings_about))
-                ListCard {
-                    LinkRow(
-                        stringResource(Res.string.settings_about_app),
-                        stringResource(Res.string.settings_about_app_hint),
-                        onClick = onShowAbout,
-                    )
-                }
-            }
+        }
+        GroupLabel(stringResource(Res.string.settings_appearance))
+        ThemePicker(state.app.theme, onSetTheme)
+        GroupLabel(stringResource(Res.string.settings_about))
+        ListCard {
+            LinkRow(
+                stringResource(Res.string.settings_about_app),
+                stringResource(Res.string.settings_about_app_hint),
+                onClick = onShowAbout,
+            )
         }
     }
     if (editingPrep) {
