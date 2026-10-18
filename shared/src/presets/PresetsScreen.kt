@@ -81,11 +81,11 @@ fun PresetsRoute(onShowTimer: () -> Unit, onStartWorkout: () -> Unit, modifier: 
     PresetsScreen(
         state = state,
         onStart = {
-            viewModel.apply(it)
+            viewModel.putOnTimer(it)
             onStartWorkout()
         },
         onPutOnTimer = {
-            viewModel.apply(it)
+            viewModel.putOnTimer(it)
             onShowTimer()
         },
         onSave = viewModel::save,

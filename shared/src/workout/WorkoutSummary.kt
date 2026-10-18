@@ -75,7 +75,7 @@ internal fun SummaryLayout(
     landscape: Boolean,
     onRepeat: () -> Unit,
     onSavePreset: (Preset) -> Unit,
-    onDone: () -> Unit,
+    onExit: () -> Unit,
 ) {
     var draft by rememberPresetDraft()
     val onSave = { draft = PresetDraft(EditorMode.SaveCurrent, name = "", config = state.config) }
@@ -96,7 +96,7 @@ internal fun SummaryLayout(
                 entrance,
                 onRepeat,
                 onSave = onSave,
-                onDone = onDone,
+                onExit = onExit,
                 modifier = Modifier.width(Sizes.setupColumnLandscape),
             )
         }
@@ -108,7 +108,7 @@ internal fun SummaryLayout(
                 entrance,
                 onRepeat,
                 onSave = onSave,
-                onDone = onDone,
+                onExit = onExit,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -131,7 +131,7 @@ private fun SummaryActions(
     entrance: MutableTransitionState<Boolean>,
     onRepeat: () -> Unit,
     onSave: () -> Unit,
-    onDone: () -> Unit,
+    onExit: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(entrance, modifier, enter = enterRising(Motion.STAGGER_MILLIS * ACTIONS_STEP)) {
@@ -148,7 +148,7 @@ private fun SummaryActions(
             }
             BigButton(
                 stringResource(Res.string.common_done),
-                onDone,
+                onExit,
                 Modifier.fillMaxWidth().height(Sizes.control),
                 background = PhaseColors.done,
                 content = PhaseColors.ink,

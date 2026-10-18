@@ -27,6 +27,7 @@ import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,12 +43,16 @@ import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import androidx.window.core.layout.WindowSizeClass
 import com.composeunstyled.DialogPanel
 import com.composeunstyled.DragIndication
@@ -263,4 +268,18 @@ private fun Modifier.withinBarsAndKeyboard(): Modifier {
         val placeable = measurable.measure(constraints.copy(maxHeight = room))
         layout(placeable.width, placeable.height) { placeable.place(0, 0) }
     }
+}
+
+/** The dim laid over the app behind a dialog or sheet: `ink`, so it darkens without greying. */
+@Composable
+@ReadOnlyComposable
+fun scrimColor(): Color = PhaseColors.ink.copy(alpha = Opacity.SCRIM)
+
+/**
+ * Closes a dialog or sheet on the system back gesture. Unstyled dismisses on the Back and Esc keys,
+ * but Android 13+ delivers back to the modal's window as a back event, never as a key.
+ */
+@Composable
+fun ModalBackHandler(onBack: () -> Unit) {
+    NavigationBackHandler(state = rememberNavigationEventState(NavigationEventInfo.None), onBackCompleted = onBack)
 }

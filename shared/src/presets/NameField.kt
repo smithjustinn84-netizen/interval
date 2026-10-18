@@ -1,4 +1,4 @@
-package dev.justinsmith.interval.ui
+package dev.justinsmith.interval.presets
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -30,29 +30,11 @@ import com.composeunstyled.UnstyledTextField
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.preset_name_label
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.ui.Corners
+import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.Sizes
+import dev.justinsmith.interval.ui.Spacing
 import org.jetbrains.compose.resources.stringResource
-
-/** Asks before an action that can't be undone: title, one line of text, a dismiss and a confirm action. */
-@Composable
-fun ConfirmDialog(
-    title: String,
-    text: String,
-    confirm: String,
-    dismiss: String,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    IntervalDialog(
-        title = title,
-        onDismiss = onDismiss,
-        actions = {
-            DialogButton(dismiss, onClick = onDismiss, primary = false)
-            DialogButton(confirm, onClick = onConfirm, primary = true)
-        },
-    ) {
-        Text(text, style = IntervalTheme.type.body, color = IntervalTheme.palette.textDim)
-    }
-}
 
 /**
  * A filled single-line field for a preset's name, [Preset.MAX_NAME_LENGTH] at most, with its

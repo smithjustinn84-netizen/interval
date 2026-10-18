@@ -46,7 +46,7 @@ class PresetsViewModel(private val repository: IntervalRepository) : ViewModel()
         )
 
     /** Puts [preset]'s shape on the Timer. */
-    fun apply(preset: Preset) {
+    fun putOnTimer(preset: Preset) {
         repository.applyPreset(preset)
     }
 

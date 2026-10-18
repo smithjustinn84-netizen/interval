@@ -51,7 +51,7 @@ class PresetsViewModelTest {
 
     @Test
     fun `applying selects a preset and deleting removes it`() {
-        viewModel.apply(builtInPresets[1])
+        viewModel.putOnTimer(builtInPresets[1])
         assertEquals(builtInPresets[1], viewModel.state.value.builtIn.single { it.selected }.preset)
         repository.updateConfig { IntervalConfig(workSeconds = 33) }
         viewModel.save(Preset("Odd", repository.config.value))
@@ -99,7 +99,7 @@ class PresetsViewModelTest {
 
     @Test
     fun `a preset of the user's own with a built-in's shape is the one on the Timer`() {
-        viewModel.apply(builtInPresets.first())
+        viewModel.putOnTimer(builtInPresets.first())
         viewModel.save(Preset("My Tabata", builtInPresets.first().config))
         val state = viewModel.state.value
         assertEquals(listOf("My Tabata"), state.rows.filter { it.selected }.map { it.preset.name })
@@ -120,7 +120,7 @@ class PresetsViewModelTest {
 
     @Test
     fun `editing a preset that is not on the Timer leaves the Timer alone`() {
-        viewModel.apply(builtInPresets.first())
+        viewModel.putOnTimer(builtInPresets.first())
         viewModel.save(Preset("Odd", IntervalConfig(workSeconds = 33)))
         val saved = viewModel.state.value.custom.single().preset
         viewModel.save(saved.copy(config = saved.config.copy(rounds = 3)))

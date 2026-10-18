@@ -48,7 +48,6 @@ import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.FieldRow
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
-import dev.justinsmith.interval.ui.NameField
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Spacing
