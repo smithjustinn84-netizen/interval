@@ -349,6 +349,7 @@ class IntervalRepositoryTest {
         val planned = repository().planned.value
         assertEquals(listOf(PlanSchedule.Weekly(1), PlanSchedule.Weekly(4)), planned.map { it.schedule })
         assertTrue(planned.all { it.name == tabata.name && it.config == tabata.config && it.presetId == null })
+        assertTrue(planned.all { it.createdAtEpochMillis == clock })
     }
 
     @Test
@@ -360,8 +361,8 @@ class IntervalRepositoryTest {
         val planned = repository().planned.value.single()
         assertEquals(PlanSchedule.Once(20_744), planned.schedule)
         assertEquals(mine.id, planned.presetId)
-        assertTrue(planned.fallsOn(20_744, weekday = 7))
-        assertFalse(planned.fallsOn(20_745, weekday = 1))
+        assertTrue(planned.fallsOn(20_744))
+        assertFalse(planned.fallsOn(20_745))
     }
 
     @Test

@@ -315,8 +315,14 @@ class IntervalRepository(
         persist { plannedDao.delete(id) }
     }
 
-    private fun Preset.planned(schedule: PlanSchedule) =
-        PlannedWorkout(id = 0, name = name, config = config, schedule = schedule, presetId = id)
+    private fun Preset.planned(schedule: PlanSchedule) = PlannedWorkout(
+        id = 0,
+        name = name,
+        config = config,
+        schedule = schedule,
+        presetId = id,
+        createdAtEpochMillis = clock.nowMillis(),
+    )
 
     // A failed read shows an empty list at once, so the app still starts, then is tried again a few times:
     // `catch` alone ends the flow, and one bad read would stop the list following the database for good.

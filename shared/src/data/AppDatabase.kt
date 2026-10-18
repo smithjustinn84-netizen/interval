@@ -137,6 +137,7 @@ data class PlannedEntity(
     /** As [HistoryEntity.activity]. */
     val activity: String?,
     @ColumnInfo(name = "preset_id") val presetId: Long?,
+    @ColumnInfo(name = "created_at") val createdAtEpochMillis: Long,
 )
 
 internal fun HistoryEntity.toDomain() = HistoryEntry(
@@ -182,7 +183,7 @@ internal fun PlannedEntity.toDomain(): PlannedWorkout? {
         else -> return null
     }
     val config = IntervalConfig(prepSeconds, workSeconds, restSeconds, rounds, Activity.named(activity))
-    return PlannedWorkout(id, name, config, schedule, presetId)
+    return PlannedWorkout(id, name, config, schedule, presetId, createdAtEpochMillis)
 }
 
 internal fun PlannedWorkout.toEntity() = PlannedEntity(
@@ -196,4 +197,5 @@ internal fun PlannedWorkout.toEntity() = PlannedEntity(
     rounds = config.rounds,
     activity = config.activity.name,
     presetId = presetId,
+    createdAtEpochMillis = createdAtEpochMillis,
 )

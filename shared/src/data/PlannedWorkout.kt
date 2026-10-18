@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.data
 
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.weekdayOf
 
 /** When a planned workout falls: every week on one weekday, or once on one day. */
 sealed interface PlanSchedule {
@@ -14,7 +15,8 @@ sealed interface PlanSchedule {
 /**
  * A workout the user means to do. It keeps its own copy of the preset's [name] and shape, so editing or
  * deleting that preset later leaves the plan as it was made; [presetId] names the user's own preset it
- * came from, and is null for a built-in or the Timer's settings.
+ * came from, and is null for a built-in or the Timer's settings. A weekly plan counts from the day it was
+ * made, [createdAtEpochMillis]: the weeks before it hold nothing it could have missed.
  */
 data class PlannedWorkout(
     val id: Long,
@@ -22,10 +24,11 @@ data class PlannedWorkout(
     val config: IntervalConfig,
     val schedule: PlanSchedule,
     val presetId: Long? = null,
+    val createdAtEpochMillis: Long = 0,
 ) {
-    /** Whether it falls on [epochDay], which is [weekday] (1 for Monday) of its week. */
-    fun fallsOn(epochDay: Long, weekday: Int): Boolean = when (schedule) {
-        is PlanSchedule.Weekly -> schedule.weekday == weekday
+    /** Whether its schedule falls on [epochDay]. When it was made is the caller's to weigh. */
+    fun fallsOn(epochDay: Long): Boolean = when (schedule) {
+        is PlanSchedule.Weekly -> schedule.weekday == weekdayOf(epochDay)
         is PlanSchedule.Once -> schedule.epochDay == epochDay
     }
 }
