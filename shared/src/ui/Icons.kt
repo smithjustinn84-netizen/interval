@@ -38,6 +38,9 @@ object IntervalIcons {
     val Chevron: ImageVector = lineIcon("Chevron", "M9 6l6 6-6 6")
     val Check: ImageVector = lineIcon("Check", "M5 12l5 5L20 7")
 
+    /** The Timer's way to describe a workout in words: lines of text and a pencil. */
+    val Describe: ImageVector = lineIcon("Describe", "M4 6h16M4 11h9M4 16h5", "M14 20v-2.5l5.5-5.5 2.5 2.5-5.5 5.5z")
+
     /** The way back a month on History's calendar: [Chevron] turned round. */
     val ChevronBack: ImageVector = lineIcon("ChevronBack", "M15 6l-6 6 6 6")
 

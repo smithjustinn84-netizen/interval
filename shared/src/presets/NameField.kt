@@ -38,22 +38,30 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * A filled single-line field for a preset's name, [Preset.MAX_NAME_LENGTH] at most, with its
- * [placeholder] while empty; the accent ring appears only while it has focus.
+ * [placeholder] while empty; the accent ring appears only while it has focus. Another single line
+ * of text gives its own [label] and [maxLength].
  */
 @Composable
-fun NameField(state: TextFieldState, placeholder: String, onDone: () -> Unit, modifier: Modifier = Modifier) {
+fun NameField(
+    state: TextFieldState,
+    placeholder: String,
+    onDone: () -> Unit,
+    modifier: Modifier = Modifier,
+    label: String = stringResource(Res.string.preset_name_label),
+    maxLength: Int = Preset.MAX_NAME_LENGTH,
+) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     UnstyledTextField(
         state = state,
-        accessibilityLabel = stringResource(Res.string.preset_name_label),
+        accessibilityLabel = label,
         textStyle = IntervalTheme.type.label,
         textColor = palette.text,
         cursorBrush = SolidColor(palette.accent),
         selectionColors = TextSelectionColors(handleColor = palette.accent, backgroundColor = palette.accentTint),
         lineLimits = TextFieldLineLimits.SingleLine,
-        inputTransformation = InputTransformation.maxLength(Preset.MAX_NAME_LENGTH),
+        inputTransformation = InputTransformation.maxLength(maxLength),
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
         onKeyboardAction = { onDone() },
         interactionSource = interaction,

@@ -59,6 +59,15 @@ class TimerViewModelTest : MainDispatcherTest() {
     }
 
     @Test
+    fun `a described workout goes onto the Timer but keeps the get-ready countdown`() {
+        repository.updateConfig { it.copy(prepSeconds = 15) }
+        val described =
+            IntervalConfig(prepSeconds = 0, workSeconds = 45, restSeconds = 15, rounds = 12, activity = Activity.Rower)
+        viewModel.useDescribed(described)
+        assertEquals(described.copy(prepSeconds = 15), repository.config.value)
+    }
+
+    @Test
     fun `saving a preset keeps its shape on the Timer`() {
         repository.updateConfig { it.copy(prepSeconds = 15) }
         val reshaped = IntervalConfig(prepSeconds = 0, workSeconds = 50, restSeconds = 10, rounds = 4)

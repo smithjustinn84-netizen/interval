@@ -60,6 +60,7 @@ fun TimerRoute(
         onOpenSettings = onOpenSettings,
         onSeeAllPresets = onSeeAllPresets,
         onSetActivity = viewModel::setActivity,
+        onUseDescription = viewModel::useDescribed,
         modifier = modifier,
     )
 }
@@ -67,7 +68,8 @@ fun TimerRoute(
 /**
  * Home: the session total, then Work, Rest and Rounds as three tall rows, each with its own − and +
  * (hold to run), and Start within thumb reach beside the way to the presets, all over the lanes.
- * Tapping a value opens its edit sheet for the quick picks.
+ * Tapping a value opens its edit sheet for the quick picks. The title bar opens [DescribeSheet], whose
+ * workout goes to [onUseDescription] or, through the preset editor, [onSavePreset].
  */
 @Composable
 fun TimerScreen(
@@ -80,6 +82,7 @@ fun TimerScreen(
     onSeeAllPresets: () -> Unit,
     modifier: Modifier = Modifier,
     onSetActivity: (Activity) -> Unit = {},
+    onUseDescription: (IntervalConfig) -> Unit = {},
 ) {
     var choosingActivity by rememberSaveable { mutableStateOf(false) }
     val onEditActivity = { choosingActivity = true }
@@ -89,13 +92,15 @@ fun TimerScreen(
     val onEdit = { field: ConfigField -> editingName = field.name }
     var draft by rememberPresetDraft()
     val onSave = { draft = PresetDraft.saveCurrent(state.config) }
+    var describing by rememberSaveable { mutableStateOf(false) }
+    val onDescribe = { describing = true }
     BoxWithConstraints(modifier.fillMaxSize().background(IntervalTheme.palette.background)) {
         if (isLandscape) {
             // Sideways: the total and Start on the left, the three rows on the right, the lanes under both.
             SetupLanes(Modifier.matchParentSize())
             Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center) {
                 Column(Modifier.width(Sizes.setupColumnLandscape).fillMaxHeight()) {
-                    TimerTitleBar(state.canSavePreset, onSave, onOpenSettings)
+                    TimerTitleBar(state.canSavePreset, onSave, onDescribe, onOpenSettings)
                     Total(state, onEditActivity, Modifier.padding(horizontal = Spacing.space20))
                     Spacer(Modifier.weight(1f))
                     StartRow(onStart, onSeeAllPresets, Modifier.padding(Spacing.space16))
@@ -114,7 +119,7 @@ fun TimerScreen(
             Box(Modifier.align(Alignment.TopCenter).widthIn(max = Sizes.content).fillMaxSize()) {
                 SetupLanes(Modifier.matchParentSize())
                 Column(Modifier.fillMaxSize()) {
-                    TimerTitleBar(state.canSavePreset, onSave, onOpenSettings)
+                    TimerTitleBar(state.canSavePreset, onSave, onDescribe, onOpenSettings)
                     Total(state, onEditActivity, Modifier.padding(horizontal = Spacing.space20))
                     Column(Modifier.weight(1f).padding(horizontal = Spacing.space16, vertical = Spacing.space12)) {
                         StepperRows(state.config, onStep, onEdit)
@@ -144,6 +149,9 @@ fun TimerScreen(
             onSelect = onSetActivity,
             onDismiss = { choosingActivity = false },
         )
+    }
+    if (describing) {
+        DescribeSheet(state, onUseDescription, { draft = PresetDraft.saveCurrent(it) }) { describing = false }
     }
     PresetEditorHost(
         draft = draft,

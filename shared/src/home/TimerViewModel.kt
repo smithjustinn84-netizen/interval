@@ -57,6 +57,11 @@ class TimerViewModel(private val repository: IntervalRepository) : ViewModel() {
         repository.updateConfig { it.withValue(field, value) }
     }
 
+    /** Puts a workout read from words onto the Timer, keeping the get-ready countdown, as a preset does. */
+    fun useDescribed(config: IntervalConfig) {
+        repository.updateConfig { config.copy(prepSeconds = it.prepSeconds) }
+    }
+
     /** Saves [preset] as a new one of the user's own, keeping its shape (changed in the editor or not) on the Timer. */
     fun savePreset(preset: Preset) {
         repository.saveAndApplyPreset(preset)

@@ -48,6 +48,7 @@ class TimerScreenTest {
     private val sets = mutableListOf<Pair<ConfigField, Int>>()
     private val saved = mutableListOf<Preset>()
     private val activities = mutableListOf<Activity>()
+    private val described = mutableListOf<IntervalConfig>()
 
     @Composable
     private fun Screen(state: TimerUiState = state()) {
@@ -60,6 +61,7 @@ class TimerScreenTest {
             onOpenSettings = { calls += "settings" },
             onSeeAllPresets = { calls += "see all" },
             onSetActivity = { activities += it },
+            onUseDescription = { described += it },
         )
     }
 
@@ -119,6 +121,32 @@ class TimerScreenTest {
         onNodeWithText("Save").performClick()
         assertEquals(listOf(Preset("Mine", custom)), saved)
         onNodeWithText("Save as preset").assertDoesNotExist()
+    }
+
+    @Test
+    fun `a workout described in words previews as it is typed and goes onto the Timer`() = runUiTest {
+        setThemedContent { Screen() }
+        onNodeWithContentDescription("Describe a workout").performClick()
+        onNodeWithText("Use").assertDoesNotExist()
+        onNode(hasSetTextAction()).performTextInput("45/15 x12 rower")
+        onNodeWithText("Rower").assertExists()
+        onNodeWithText("Use").performClick()
+        assertEquals(
+            listOf(custom.copy(workSeconds = 45, restSeconds = 15, rounds = 12, activity = Activity.Rower)),
+            described,
+        )
+        onNodeWithText("Describe a workout").assertDoesNotExist()
+    }
+
+    @Test
+    fun `a described workout saves through the preset editor`() = runUiTest {
+        setThemedContent { Screen() }
+        onNodeWithContentDescription("Describe a workout").performClick()
+        onNode(hasSetTextAction()).performTextInput("30 on 30 off x5")
+        onNodeWithText("Save as preset").performClick()
+        onNode(hasSetTextAction()).performTextInput("Easy")
+        onNodeWithText("Save").performClick()
+        assertEquals(listOf(Preset("Easy", custom.copy(workSeconds = 30, restSeconds = 30, rounds = 5))), saved)
     }
 
     @Test
