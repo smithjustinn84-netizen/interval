@@ -78,7 +78,8 @@ class TimerViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun `the timer estimates calories only once a weight is set`() {
+    fun `the timer estimates calories only with a weight`() {
+        repository.updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
         assertNull(viewModel.state.value.calories)
         repository.updateAppSettings { it.copy(body = BodySettings(weightKg = 70.0, effort = Effort.Hard)) }
         val config = IntervalConfig()

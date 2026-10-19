@@ -78,8 +78,8 @@ class SettingsViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun `there is no weight until one is set`() {
-        assertNull(viewModel.state.value.weight)
+    fun `the weight starts at the default and can be turned off`() {
+        assertEquals(WeightUnit.Kg.default, viewModel.state.value.weight)
         viewModel.setWeight(82)
         assertEquals(82, viewModel.state.value.weight)
         viewModel.clearWeight()

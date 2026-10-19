@@ -33,7 +33,7 @@ data class SettingsUiState(
 ) {
     val body: BodySettings get() = app.body
 
-    /** The body weight in whole units of [BodySettings.unit], or null when none is set. */
+    /** The body weight in whole units of [BodySettings.unit], or null when calorie estimates are off. */
     val weight: Int? get() = body.weightKg?.let { body.unit.fromKg(it) }
 }
 
@@ -100,7 +100,7 @@ class SettingsViewModel(
         updateBody { it.copy(weightKg = it.unit.toKg(value.coerceIn(it.unit.range))) }
     }
 
-    /** Forgets the body weight, which turns the calorie estimates off. */
+    /** Turns the calorie estimates off by forgetting the body weight; setting one turns them on again. */
     fun clearWeight() {
         updateBody { it.copy(weightKg = null) }
     }

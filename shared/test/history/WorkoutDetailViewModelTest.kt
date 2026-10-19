@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.history
 
+import dev.justinsmith.interval.data.BodySettings
 import dev.justinsmith.interval.fakes.DAY_MILLIS
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
@@ -33,7 +34,9 @@ class WorkoutDetailViewModelTest : MainDispatcherTest() {
         assertEquals("9:40", workout.total)
         assertEquals("5:00", workout.work)
         assertTrue(workout.planned)
-        assertNull(workout.calories)
+        assertEquals(repository.history.value.single().calories(BodySettings()), workout.calories)
+        repository.updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
+        assertNull(viewModel().state.value.workout?.calories)
     }
 
     @Test

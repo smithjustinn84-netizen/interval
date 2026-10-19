@@ -35,6 +35,9 @@ private val defaults = SettingsUiState(
     app = AppSettings(theme = ThemeMode.Dark),
 )
 
+/** Calorie estimates turned off: no weight. */
+private val caloriesOff = defaults.copy(app = defaults.app.copy(body = BodySettings(weightKg = null)))
+
 class SettingsScreenTest {
     private val calls = mutableListOf<Any>()
 
@@ -133,9 +136,15 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun `without a weight the row asks for one and Done sets the default`() = runUiTest {
+    fun `the weight starts at the default`() = runUiTest {
         setThemedContent { Screen() }
-        onNodeWithText("Set it to see calorie estimates").performScrollTo().performClick()
+        onNodeWithText("${WeightUnit.Kg.default} kg").performScrollTo().assertExists()
+    }
+
+    @Test
+    fun `with calories off the row asks for a weight and Done sets the default`() = runUiTest {
+        setThemedContent { Screen(caloriesOff) }
+        onNodeWithText("Off. Set it to see calorie estimates").performScrollTo().performClick()
         onNodeWithText("Turn off calorie estimates").assertDoesNotExist()
         onNodeWithText("Done").performClick()
         assertEquals(listOf<Any>("weight ${WeightUnit.Kg.default}"), calls)
@@ -162,7 +171,7 @@ class SettingsScreenTest {
 
     @Test
     fun `setting a first weight does not move the sheet's buttons`() = runUiTest {
-        var state by mutableStateOf(defaults)
+        var state by mutableStateOf(caloriesOff)
         setThemedContent {
             SettingsScreen(
                 state = state,
@@ -179,7 +188,7 @@ class SettingsScreenTest {
                 },
             )
         }
-        onNodeWithText("Set it to see calorie estimates").performScrollTo().performClick()
+        onNodeWithText("Off. Set it to see calorie estimates").performScrollTo().performClick()
         onNodeWithContentDescription("More weight").performClick()
         onNodeWithText("Turn off calorie estimates").assertDoesNotExist()
         onNodeWithText("Done").performClick()

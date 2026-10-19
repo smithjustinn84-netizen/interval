@@ -350,7 +350,7 @@
     <string name="theme_dark">Dark</string>
     <string name="settings_calories">Calories</string>
     <string name="settings_weight">Body weight</string>
-    <string name="settings_weight_unset">Set it to see calorie estimates</string>
+    <string name="settings_weight_unset">Off. Set it to see calorie estimates</string>
     <string name="settings_weight_value">%1$d %2$s</string>
     <string name="settings_effort_hint">How hard you push in work intervals. Calories are an estimate from this, your weight and the activity on the Timer.</string>
     <string name="effort_easy">Easy</string>

@@ -202,6 +202,7 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
 
     @Test
     fun `the summary has no calories without a weight`() = runTest(dispatcher) {
+        repository.updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
         val viewModel = workoutViewModel(repository)
         advanceTimeBy(15_000 + WorkoutViewModel.TICK_MILLIS)
         runCurrent()

@@ -250,15 +250,26 @@ class IntervalRepositoryTest {
         val body = BodySettings(weightKg = 72.5, unit = WeightUnit.Lb, effort = Effort.Max)
         repository().updateAppSettings { it.copy(body = body) }
         assertEquals(body, repository().appSettings.value.body)
+    }
+
+    @Test
+    fun `a weight never set reads as the default`() {
+        assertEquals(WeightUnit.Kg.default.toDouble(), repository().appSettings.value.body.weightKg)
+    }
+
+    @Test
+    fun `calories turned off stay off after a restart`() {
         repository().updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
         assertEquals(null, repository().appSettings.value.body.weightKg)
+        repository().updateAppSettings { it.copy(body = it.body.copy(weightKg = 80.0)) }
+        assertEquals(80.0, repository().appSettings.value.body.weightKg)
     }
 
     @Test
     fun `a history entry has calories only with a weight`() {
         val config = IntervalConfig(prepSeconds = 0, workSeconds = 60, restSeconds = 60, rounds = 2)
         val entry = HistoryEntry(0, config, elapsedSeconds = 180, endedEarly = false, workActiveSeconds = 120)
-        assertEquals(null, entry.calories(BodySettings()))
+        assertEquals(null, entry.calories(BodySettings(weightKg = null)))
         val body = BodySettings(weightKg = 80.0, effort = Effort.Hard)
         assertEquals(estimateCalories(120, 60, 80.0, Effort.Hard), entry.calories(body))
         // Recorded before work time was kept: the plan's work time stands in.

@@ -46,11 +46,11 @@ data class CueSettings(
 enum class ThemeMode { System, Light, Dark }
 
 /**
- * What the calorie estimates are worked out from. Without a [weightKg] there are none: the app shows no
- * calories until one is set.
+ * What the calorie estimates are worked out from. [weightKg] starts at [WeightUnit.Kg]'s default, so the
+ * estimates show from the first run; null means the user turned them off.
  */
 data class BodySettings(
-    val weightKg: Double? = null,
+    val weightKg: Double? = WeightUnit.Kg.default.toDouble(),
     val unit: WeightUnit = WeightUnit.Kg,
     val effort: Effort = Effort.Hard,
 ) {

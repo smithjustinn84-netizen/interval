@@ -45,6 +45,8 @@ class HistoryViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `workouts are grouped by day newest first and name their preset`() {
+        // Calories are covered below; off here, the rows compare whole.
+        repository.updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
         val custom = IntervalConfig(prepSeconds = 0, workSeconds = 25, restSeconds = 5, rounds = 4)
         at(TODAY - 10)
         repository.recordWorkout(tabata, tabata.totalSeconds)
@@ -87,7 +89,8 @@ class HistoryViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun `calories show only once a weight is set`() {
+    fun `calories show only with a weight`() {
+        repository.updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
         repository.recordWorkout(tabata, tabata.totalSeconds, workSeconds = 160)
         assertNull(viewModel.state.value.summary.calories)
         assertNull(viewModel.state.value.sections.single().items.single().calories)

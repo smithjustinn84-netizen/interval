@@ -121,7 +121,7 @@ class TrainingTest {
             workout(epochDayOf(2026, 3, 2), seconds = 30),
         )
         val log = log(history, listOf(once(monday), once(monday + 1), once(today), once(today + 2)))
-        val none = BodySettings()
+        val none = BodySettings(weightKg = null)
 
         val week = log.stats(TrainingRange.Week, none)
         assertEquals(RangeStats(count = 2, seconds = 340, calories = null, plannedDone = 2, plannedDue = 3), week)

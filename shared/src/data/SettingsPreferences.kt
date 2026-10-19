@@ -32,6 +32,9 @@ private val BODY_WEIGHT_KG = doublePreferencesKey("body_weight_kg")
 private val BODY_UNIT = stringPreferencesKey("body_unit")
 private val BODY_EFFORT = stringPreferencesKey("body_effort")
 
+// A missing weight reads as the default, so calories turned off are stored as such.
+private val CALORIES_OFF = booleanPreferencesKey("calories_off")
+
 internal fun Preferences.toConfig(): IntervalConfig {
     val defaults = IntervalConfig()
     return IntervalConfig(
@@ -91,7 +94,7 @@ internal fun MutablePreferences.write(app: AppSettings) {
 private fun Preferences.toBodySettings(): BodySettings {
     val defaults = BodySettings()
     return BodySettings(
-        weightKg = this[BODY_WEIGHT_KG] ?: defaults.weightKg,
+        weightKg = if (this[CALORIES_OFF] == true) null else this[BODY_WEIGHT_KG] ?: defaults.weightKg,
         // As for the theme: a name this build doesn't know falls back to the default.
         unit = WeightUnit.entries.firstOrNull { it.name == this[BODY_UNIT] } ?: defaults.unit,
         effort = Effort.entries.firstOrNull { it.name == this[BODY_EFFORT] } ?: defaults.effort,
@@ -100,7 +103,13 @@ private fun Preferences.toBodySettings(): BodySettings {
 
 private fun MutablePreferences.write(body: BodySettings) {
     val weight = body.weightKg
-    if (weight == null) remove(BODY_WEIGHT_KG) else this[BODY_WEIGHT_KG] = weight
+    if (weight == null) {
+        remove(BODY_WEIGHT_KG)
+        this[CALORIES_OFF] = true
+    } else {
+        this[BODY_WEIGHT_KG] = weight
+        remove(CALORIES_OFF)
+    }
     this[BODY_UNIT] = body.unit.name
     this[BODY_EFFORT] = body.effort.name
 }

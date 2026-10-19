@@ -129,6 +129,7 @@ class PresetsViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `each preset estimates its calories with the user's get-ready countdown`() {
+        repository.updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
         assertTrue(viewModel.state.value.rows.all { it.calories == null })
         repository.updateConfig { it.copy(prepSeconds = 30) }
         val body = BodySettings(weightKg = 80.0, effort = Effort.Max)

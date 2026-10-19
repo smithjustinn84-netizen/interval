@@ -38,9 +38,10 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * The body weight's edit sheet: kg or lb, then − / + steppers (hold to repeat). Changes apply as they are
- * made. With no [weight] yet it shows the unit's default, which a step or Done sets; closing the sheet any
- * other way leaves it unset. [onClear] forgets the weight again, which turns the estimates off. It is offered
- * only when the sheet opened on a weight, so the first step never moves the buttons under the user's finger.
+ * made. With calorie estimates off ([weight] null) it shows the unit's default, which a step or Done sets;
+ * closing the sheet any other way leaves them off. [onClear] forgets the weight, which turns the estimates
+ * off. It is offered only when the sheet opened on a weight, so the first step never moves the buttons
+ * under the user's finger.
  */
 @Composable
 internal fun WeightSheet(
