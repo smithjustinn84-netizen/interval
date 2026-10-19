@@ -281,6 +281,14 @@
     <string name="plan_when">When</string>
     <string name="plan_once">Once</string>
     <string name="plan_add_confirm">Add to plan</string>
+    <!-- Typing a routine in words, from the Plan page's title bar -->
+    <string name="plan_describe_cd">Describe a routine</string>
+    <string name="plan_describe_title">Describe a routine</string>
+    <string name="plan_describe_field_label">Routine in words</string>
+    <string name="plan_describe_placeholder">Tabata Mon, Wed and Fri</string>
+    <string name="plan_describe_hint">Try “tabata mon wed fri”, “40/20 x8 on the rower tomorrow” or “hiit weekdays, 4 a week”.</string>
+    <!-- A workout the words gave no day: it is not added -->
+    <string name="plan_describe_no_day">No day, so it stays off the plan</string>
 
     <!-- One finished workout's page -->
     <string name="detail_total">Total</string>

@@ -4,13 +4,14 @@ import kotlin.math.roundToInt
 
 /**
  * A workout read from words, as it would go onto the Timer: [config] holds every value the words gave
- * and the Timer's own for the rest, [understood] which of the shape's fields the words gave, and
- * [activityFound] whether they named an activity.
+ * and the Timer's own for the rest, [understood] which of the shape's fields the words gave,
+ * [activityFound] whether they named an activity, and [preset] the preset they named, if any.
  */
 data class DescribedWorkout(
     val config: IntervalConfig,
     val understood: Set<ConfigField>,
     val activityFound: Boolean,
+    val preset: Preset? = null,
 )
 
 /**
@@ -42,7 +43,7 @@ fun describeWorkout(text: String, current: IntervalConfig, presets: List<Preset>
         understood += ConfigField.Rounds
     }
     if (activity != null) config = config.copy(activity = activity)
-    return DescribedWorkout(config, understood, activityFound = activity != null)
+    return DescribedWorkout(config, understood, activityFound = activity != null, preset = preset)
 }
 
 /** The text being read, each part taken out as a rule reads it so that no later rule reads it again. */

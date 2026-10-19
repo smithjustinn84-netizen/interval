@@ -78,6 +78,32 @@ class PlanViewModelTest : MainDispatcherTest() {
     }
 
     @Test
+    fun `a described routine plans its weekdays and one-offs and sets its goal`() {
+        val routine = describeRoutine(
+            "tabata mon wed, hiit 30/30 tomorrow, 4 a week",
+            IntervalConfig(),
+            builtInPresets,
+            TODAY,
+        )!!
+        viewModel.planDescribed(routine)
+        val state = viewModel.state.value
+        assertEquals(listOf("Tabata"), state.routine[0].plans.map { it.name })
+        assertEquals(listOf("Tabata"), state.routine[2].plans.map { it.name })
+        assertEquals(listOf(TODAY + 1), state.oneOffs.map { it.epochDay })
+        assertEquals("HIIT 30/30", state.oneOffs.single().entry.name)
+        assertEquals(4, state.goal)
+        assertEquals(TODAY, state.today)
+    }
+
+    @Test
+    fun `a described workout with no day plans nothing`() {
+        viewModel.planDescribed(describeRoutine("tabata", IntervalConfig(), builtInPresets, TODAY)!!)
+        assertTrue(viewModel.state.value.routine.all { it.plans.isEmpty() })
+        assertTrue(viewModel.state.value.oneOffs.isEmpty())
+        assertNull(viewModel.state.value.goal)
+    }
+
+    @Test
     fun `a preset on the Timer is offered under its own name`() {
         repository.applyPreset(tabata)
         assertEquals("Tabata", viewModel.state.value.choices.first().preset.name)

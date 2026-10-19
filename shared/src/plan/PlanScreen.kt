@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -38,6 +39,7 @@ import dev.justinsmith.interval.resources.common_joined
 import dev.justinsmith.interval.resources.history_streak
 import dev.justinsmith.interval.resources.plan_add_on_date
 import dev.justinsmith.interval.resources.plan_add_weekday_cd
+import dev.justinsmith.interval.resources.plan_describe_cd
 import dev.justinsmith.interval.resources.plan_every_week
 import dev.justinsmith.interval.resources.plan_goal
 import dev.justinsmith.interval.resources.plan_goal_less_cd
@@ -83,6 +85,7 @@ fun PlanRoute(onBack: () -> Unit, modifier: Modifier = Modifier) {
         onStepGoal = viewModel::stepGoal,
         onPlanWeekly = viewModel::planWeekly,
         onPlanOnce = viewModel::planOnce,
+        onPlanRoutine = viewModel::planDescribed,
         onRemove = viewModel::removePlanned,
         modifier = modifier,
     )
@@ -103,14 +106,19 @@ fun PlanScreen(
     onStepGoal: (Int) -> Unit,
     onPlanWeekly: (Preset, Set<Int>) -> Unit,
     onPlanOnce: (Preset, Long) -> Unit,
+    onPlanRoutine: (DescribedRoutine) -> Unit,
     onRemove: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var adding by rememberSaveable { mutableIntStateOf(ADD_CLOSED) }
+    var describing by rememberSaveable { mutableStateOf(false) }
     ScrollPage(
         stringResource(Res.string.plan_title),
         modifier,
         navigation = { BackAction(onBack) },
+        actions = {
+            IconAction(IntervalIcons.Describe, stringResource(Res.string.plan_describe_cd), { describing = true })
+        },
     ) {
         GoalCard(state, onStepGoal)
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
@@ -166,6 +174,7 @@ fun PlanScreen(
             weekday = if (adding == ADD_ON_DATE) state.todayWeekday else adding,
         )
     }
+    if (describing) DescribeRoutineSheet(state, onPlanRoutine, onDismiss = { describing = false })
 }
 
 /** The weekly goal between − and +, "Off" below one; the streak under it while there is one. */

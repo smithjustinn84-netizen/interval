@@ -8,12 +8,14 @@ import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
@@ -40,6 +42,7 @@ private val state = PlanUiState(
         builtInPresets.map { PlanChoice(it) },
     days = (TODAY until TODAY + 14).map { DayChoice(it, weekdayOf(it), (15 + it - TODAY).toInt()) },
     todayWeekday = 4,
+    today = TODAY,
 )
 
 /** The sheet's confirming button: the sheet's title says "Add to plan" too, so take the clickable one. */
@@ -58,6 +61,10 @@ class PlanScreenTest {
             onStepGoal = { events += "goal $it" },
             onPlanWeekly = { preset, days -> events += "weekly ${preset.name} ${days.sorted()}" },
             onPlanOnce = { preset, day -> events += "once ${preset.name} $day" },
+            onPlanRoutine = { routine ->
+                routine.plans.forEach { events += "described ${it.workout.name} ${it.weekdays.sorted()} ${it.days}" }
+                events += "goal ${routine.goal}"
+            },
             onRemove = { events += "remove $it" },
         )
     }
@@ -106,5 +113,29 @@ class PlanScreenTest {
         onNodeWithContentDescription("Saturday · 17").performClick()
         clickAdd()
         assertEquals(listOf("once 40/20 ×6 ${TODAY + 2}"), events)
+    }
+
+    @Test
+    fun `a routine typed in words previews its days and goes on the plan`() = runUiTest {
+        setThemedContent { Screen(state) }
+        onNodeWithContentDescription("Describe a routine").performClick()
+        onNode(hasSetTextAction()).performTextInput("tabata mon wed fri, hiit 30/30 next sat, 4 a week")
+        onNodeWithText("Mon · Wed · Fri", substring = true).assertExists()
+        onNodeWithText("Sat · 17", substring = true).assertExists()
+        onNodeWithText("Goal 4 a week").assertExists()
+        clickAdd()
+        assertEquals(
+            listOf("described Tabata [1, 3, 5] []", "described HIIT 30/30 [] [${TODAY + 2}]", "goal 4"),
+            events,
+        )
+    }
+
+    @Test
+    fun `a workout with no day says so and cannot be added`() = runUiTest {
+        setThemedContent { Screen(state) }
+        onNodeWithContentDescription("Describe a routine").performClick()
+        onNode(hasSetTextAction()).performTextInput("tabata")
+        onNodeWithText("No day, so it stays off the plan", substring = true).assertExists()
+        onNode(hasText("Add to plan") and hasClickAction()).assertDoesNotExist()
     }
 }

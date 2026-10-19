@@ -175,8 +175,9 @@ private fun PreviewRow(label: String, value: String, understood: Boolean, color:
     }
 }
 
+/** A dim line under a sheet's field: examples to try, or a note on what the words left out. */
 @Composable
-private fun DescribeHint(text: String) {
+internal fun DescribeHint(text: String) {
     Text(
         text,
         style = IntervalTheme.type.meta,

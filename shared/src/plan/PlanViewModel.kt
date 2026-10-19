@@ -49,11 +49,14 @@ data class PlanUiState(
     val days: List<DayChoice>,
     /** Today's weekday, the add sheet's first pick. */
     val todayWeekday: Int,
+    /** Today as an epoch day, which a described routine's "tomorrow" counts from. */
+    val today: Long,
 )
 
 /**
  * The plan: the weekly goal, the routine for each weekday, and one-offs on dates to come. Adding goes
- * through [planWeekly] or [planOnce] with one of [PlanUiState.choices].
+ * through [planWeekly] or [planOnce] with one of [PlanUiState.choices], or [planDescribed] with a routine
+ * read from words.
  */
 class PlanViewModel(
     private val repository: IntervalRepository,
@@ -103,6 +106,15 @@ class PlanViewModel(
         repository.planOnce(preset, epochDay)
     }
 
+    /** Plans each of [routine]'s workouts on its days, and sets its goal if it has one. */
+    fun planDescribed(routine: DescribedRoutine) {
+        routine.plans.forEach { plan ->
+            repository.planWeekly(plan.workout, plan.weekdays)
+            plan.days.sorted().forEach { repository.planOnce(plan.workout, it) }
+        }
+        routine.goal?.let { goal -> repository.updateAppSettings { it.copy(weeklyGoal = goal) } }
+    }
+
     fun removePlanned(planId: Long) {
         repository.removePlanned(planId)
     }
@@ -141,6 +153,7 @@ class PlanViewModel(
             choices = planChoices(presets, config),
             days = dayChoices(today),
             todayWeekday = weekdayOf(today),
+            today = today,
         )
     }
 
