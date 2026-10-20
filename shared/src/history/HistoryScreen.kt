@@ -28,10 +28,13 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.intl.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.justinsmith.core.sync.AppId
 import dev.justinsmith.interval.plan.AddToPlanSheet
 import dev.justinsmith.interval.plan.DayChoice
 import dev.justinsmith.interval.plan.PlanRepeat
 import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.app_name_bells
+import dev.justinsmith.interval.resources.app_name_interval
 import dev.justinsmith.interval.resources.common_cancel
 import dev.justinsmith.interval.resources.common_joined
 import dev.justinsmith.interval.resources.history_calories_value
@@ -466,12 +469,14 @@ internal fun HistoryRow(item: HistoryItem, onOpen: (Long) -> Unit, modifier: Mod
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
-        StripeMark(palette.workMark, height = Sizes.historyMarkHeight)
+        // The sibling app's workouts take the accent, as Bells draws its own; this app's, the work mark.
+        StripeMark(if (item.from == null) palette.workMark else palette.accent, height = Sizes.historyMarkHeight)
         Column(Modifier.weight(1f)) {
             val shape = workoutDescription(item.config)
+            val from = item.from
             val detail = listOfNotNull(
                 stringResource(Res.string.history_planned).takeIf { item.planned },
-                shape.takeIf { item.presetName != null },
+                if (from == null) shape.takeIf { item.presetName != null } else appName(from),
                 stringResource(Res.string.history_ended_early).takeIf { item.endedEarly },
                 item.calories?.let { stringResource(Res.string.history_calories_value, it) },
                 item.time,
@@ -489,6 +494,15 @@ internal fun HistoryRow(item: HistoryItem, onOpen: (Long) -> Unit, modifier: Mod
         }
     }
 }
+
+/** A sibling app's name, as History credits its workouts: "Bells". */
+@Composable
+internal fun appName(app: AppId): String = stringResource(
+    when (app) {
+        AppId.Interval -> Res.string.app_name_interval
+        AppId.Bells -> Res.string.app_name_bells
+    },
+)
 
 /** A day's heading: "Today", "Yesterday", "Tomorrow", or the date. */
 @Composable

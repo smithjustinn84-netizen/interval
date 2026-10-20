@@ -1,0 +1,25 @@
+# How sibling apps share workouts on one device: the record format each app publishes, the rule that
+# mirrors a sibling's records locally, and the platform feeds that carry them (a file served by a
+# signature-guarded ContentProvider on Android, an App Group container on iOS, nothing on desktop).
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+dependencies:
+  - $libs.kotlinx.coroutines.core
+  - $libs.kermit
+
+test-dependencies:
+  - $libs.kotlinx.coroutines.test
+
+settings:
+  kotlin:
+    allWarningsAsErrors: true
+    serialization: json
+    # No module-wide `optIns`: opt in per file (`@file:OptIn`). See shared/module.yaml.
+
+plugins:
+  lint-plugin:
+    enabled: true
+  detekt-plugin:
+    enabled: true

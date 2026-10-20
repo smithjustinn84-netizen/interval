@@ -6,6 +6,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import dev.justinsmith.core.sync.AppGroupSiblingFeed
+import dev.justinsmith.core.sync.AppId
+import dev.justinsmith.core.sync.SiblingFeed
 import dev.justinsmith.interval.data.AppDatabase
 import dev.justinsmith.interval.timer.dateOfEpochDay
 import dev.justinsmith.interval.timer.epochDayOf
@@ -57,6 +60,7 @@ actual fun rememberPlatformModule(): Module = remember {
         }
         single<TimestampFormatter> { FoundationTimestampFormatter() }
         single<AppInfo> { IosAppInfo() }
+        single<SiblingFeed> { AppGroupSiblingFeed(AppId.Interval) }
     }
 }
 

@@ -1,6 +1,7 @@
 modules:
   - androidApp
   - core
+  - core-sync
   - desktopApp
   - detekt-plugin
   - iosApp

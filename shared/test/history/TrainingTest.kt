@@ -1,10 +1,13 @@
 package dev.justinsmith.interval.history
 
+import dev.justinsmith.core.sync.AppId
 import dev.justinsmith.interval.data.BodySettings
 import dev.justinsmith.interval.data.HistoryEntry
 import dev.justinsmith.interval.data.PlanSchedule
 import dev.justinsmith.interval.data.PlannedWorkout
+import dev.justinsmith.interval.data.SiblingWorkout
 import dev.justinsmith.interval.fakes.DAY_MILLIS
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.epochDayOf
 import kotlin.test.Test
@@ -195,6 +198,40 @@ class TrainingTest {
         assertEquals(listOf(2, 1), top.map { it.count })
         assertEquals(listOf(tabata, hiit), top.map { it.config })
         assertEquals(480, top.first().seconds)
+    }
+
+    private fun bells(day: Long, seconds: Int = 900) = SiblingWorkout(
+        uid = "bells-${nextId++}",
+        source = AppId.Bells,
+        finishedAtEpochMillis = day * DAY_MILLIS + 7 * HOUR_MILLIS,
+        elapsedSeconds = seconds,
+        activeSeconds = null,
+        activity = Activity.Kettlebell,
+        title = "Swings",
+    )
+
+    @Test
+    fun `a sibling app's workout makes its day done and adds to the totals`() {
+        val log = TrainingLog(listOf(workout(monday)), emptyList(), today, listOf(bells(monday), bells(today))) {
+            it.floorDiv(DAY_MILLIS)
+        }
+        assertEquals(DayState.Done, log.day(today).state)
+        assertEquals(2, log.day(monday).count)
+        assertEquals(240 + 900, log.day(monday).seconds)
+        val week = log.stats(TrainingRange.Week, BodySettings())
+        assertEquals(3, week.count)
+        assertEquals(240 + 900 + 900, week.seconds)
+    }
+
+    @Test
+    fun `a sibling app's workout counts toward the streak but does no plan`() {
+        val plan = once(monday)
+        val log = TrainingLog(emptyList(), listOf(plan), today, listOf(bells(monday), bells(monday - 7))) {
+            it.floorDiv(DAY_MILLIS)
+        }
+        assertEquals(PlanState.Missed, log.day(monday).plans.single().state)
+        assertEquals(DayState.Done, log.day(monday).state)
+        assertEquals(Streak(current = 2, best = 2), log.streak(goal = 1))
     }
 
     private companion object {

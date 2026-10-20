@@ -18,6 +18,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import co.touchlab.kermit.Logger
+import dev.justinsmith.core.sync.AndroidSiblingFeed
+import dev.justinsmith.core.sync.AppId
+import dev.justinsmith.core.sync.SiblingFeed
 import dev.justinsmith.interval.data.AppDatabase
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.onClose
@@ -41,6 +44,7 @@ actual fun rememberPlatformModule(): Module {
             }
             single<TimestampFormatter> { JavaTimeFormatter() }
             single<AppInfo> { AndroidAppInfo(context) }
+            single<SiblingFeed> { AndroidSiblingFeed(context, AppId.Interval) }
         }
     }
 }

@@ -3,6 +3,8 @@ package dev.justinsmith.interval.fakes
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
+import dev.justinsmith.core.sync.NoSiblingFeed
+import dev.justinsmith.core.sync.SiblingFeed
 import dev.justinsmith.interval.data.HistoryDao
 import dev.justinsmith.interval.data.HistoryEntity
 import dev.justinsmith.interval.data.IntervalRepository
@@ -10,6 +12,8 @@ import dev.justinsmith.interval.data.PlannedDao
 import dev.justinsmith.interval.data.PlannedEntity
 import dev.justinsmith.interval.data.PresetDao
 import dev.justinsmith.interval.data.PresetEntity
+import dev.justinsmith.interval.data.SiblingSessionDao
+import dev.justinsmith.interval.data.SiblingSessionEntity
 import dev.justinsmith.interval.di.StorageScope
 import dev.justinsmith.interval.di.appModules
 import dev.justinsmith.interval.platform.AppInfo
@@ -81,6 +85,24 @@ class FakeHistoryDao : HistoryDao {
     }
 }
 
+/** A [SiblingSessionDao] over a map keyed by uid. */
+class FakeSiblingSessionDao : SiblingSessionDao {
+    private val rows = MutableStateFlow(emptyMap<String, SiblingSessionEntity>())
+
+    override fun observeAll(): Flow<List<SiblingSessionEntity>> =
+        rows.map { all -> all.values.sortedByDescending { it.finishedAtEpochMillis } }
+
+    override suspend fun all(): List<SiblingSessionEntity> = rows.value.values.toList()
+
+    override suspend fun upsert(session: SiblingSessionEntity) {
+        rows.update { it + (session.uid to session) }
+    }
+
+    override suspend fun delete(uid: String) {
+        rows.update { it - uid }
+    }
+}
+
 /** A [PlannedDao] over a list, in the order planned like the real query. */
 class FakePlannedDao : PlannedDao {
     private val rows = MutableStateFlow(emptyList<PlannedEntity>())
@@ -133,6 +155,7 @@ class FakeStorage {
     val history = FakeHistoryDao()
     val presets = FakePresetDao()
     val planned = FakePlannedDao()
+    val siblings = FakeSiblingSessionDao()
 
     /**
      * A repository over this storage. By default its writes run unconfined and the fakes never suspend, so
@@ -143,7 +166,7 @@ class FakeStorage {
     fun repository(
         now: WallClock = WallClock { 0L },
         scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
-    ): IntervalRepository = IntervalRepository(settings, history, presets, planned, scope, now)
+    ): IntervalRepository = IntervalRepository(settings, history, presets, planned, scope, now, siblings)
 }
 
 /**
@@ -167,6 +190,7 @@ fun fakeStorageModule(storage: FakeStorage = FakeStorage()): Module = module {
     single<HistoryDao> { storage.history }
     single<PresetDao> { storage.presets }
     single<PlannedDao> { storage.planned }
+    single<SiblingSessionDao> { storage.siblings }
 }
 
 /** A [CuePlayer] that plays nothing and remembers every cue it was asked for. */
@@ -215,10 +239,12 @@ object FixedTimestampFormatter : TimestampFormatter {
 fun fakePlatformModule(
     player: CuePlayer = RecordingCuePlayer(),
     formatter: TimestampFormatter = FixedTimestampFormatter,
+    feed: SiblingFeed = NoSiblingFeed,
 ): Module = module {
     single { player }
     single { formatter }
     single<AppInfo> { FakeAppInfo }
+    single<SiblingFeed> { feed }
 }
 
 /** A build that calls itself [version]. */

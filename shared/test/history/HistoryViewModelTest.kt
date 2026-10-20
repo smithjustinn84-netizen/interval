@@ -3,12 +3,16 @@
 package dev.justinsmith.interval.history
 
 import androidx.lifecycle.viewModelScope
+import dev.justinsmith.core.sync.AppId
+import dev.justinsmith.core.sync.FeedSnapshot
+import dev.justinsmith.core.sync.SessionRecord
 import dev.justinsmith.interval.data.BodySettings
 import dev.justinsmith.interval.data.PlanSchedule
 import dev.justinsmith.interval.fakes.DAY_MILLIS
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.MainDispatcherTest
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
@@ -62,6 +66,41 @@ class HistoryViewModelTest : MainDispatcherTest() {
         val (ended, customRow) = sections[0].items
         assertEquals(HistoryItem("Tabata", tabata, endedEarly = true, time = time, total = "1:30", id = 3), ended)
         assertEquals(HistoryItem(null, custom, endedEarly = false, time = time, total = "1:55", id = 2), customRow)
+    }
+
+    @Test
+    fun `the sibling app's workouts are listed with this app's and counted in the week`() {
+        repository.updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
+        at(TODAY)
+        repository.recordWorkout(tabata, tabata.totalSeconds)
+        val swings = SessionRecord(
+            uid = "b1",
+            source = AppId.Bells,
+            finishedAtEpochMillis = TODAY * DAY + DAY / 4,
+            elapsedSeconds = 1_570,
+            activity = Activity.Kettlebell.name,
+            title = "Swings and get-ups",
+            updatedAtEpochMillis = 1,
+        )
+        repository.importSibling(FeedSnapshot(source = AppId.Bells, sessions = listOf(swings)))
+
+        val state = viewModel.state.value
+        val (interval, bells) = state.sections.single().items
+        assertEquals("Tabata", interval.presetName)
+        assertEquals(null, interval.from)
+        assertEquals(
+            HistoryItem(
+                "Swings and get-ups",
+                IntervalConfig(activity = Activity.Kettlebell),
+                endedEarly = false,
+                time = "at ${TODAY * DAY + DAY / 4}",
+                total = "26:10",
+                from = AppId.Bells,
+            ),
+            bells,
+        )
+        assertEquals(2, state.weekCount)
+        assertEquals(2, state.summary.count)
     }
 
     @Test

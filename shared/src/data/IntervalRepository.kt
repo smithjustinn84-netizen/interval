@@ -8,6 +8,10 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import co.touchlab.kermit.Logger
+import dev.justinsmith.core.sync.AppId
+import dev.justinsmith.core.sync.FeedSnapshot
+import dev.justinsmith.core.sync.SessionRecord
+import dev.justinsmith.core.sync.mirror
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
@@ -114,7 +118,8 @@ data class HistoryEntry(
  * The app's saved state: the current setup, cue toggles, app settings, custom presets, workout history and
  * planned workouts.
  *
- * Settings live in [settings] (DataStore) and collections in Room ([historyDao], [presetDao], [plannedDao]).
+ * Settings live in [settings] (DataStore) and collections in Room ([historyDao], [presetDao], [plannedDao],
+ * and [siblingDao] for a sibling app's workouts).
  * Everything is read once into memory, after which [ready] turns true and every [StateFlow] holds what was
  * stored. Settings then change in memory first, synchronously, so a value set a moment ago is what the next
  * screen reads. Collections follow the database. Writes run in the background on [scope], one at a time in
@@ -129,6 +134,7 @@ class IntervalRepository(
     private val plannedDao: PlannedDao,
     private val scope: CoroutineScope,
     private val clock: WallClock,
+    private val siblingDao: SiblingSessionDao,
 ) {
     private val log = Logger.withTag("IntervalRepository")
 
@@ -170,6 +176,11 @@ class IntervalRepository(
     /** In the order they were planned. */
     val planned: StateFlow<List<PlannedWorkout>> = _planned.asStateFlow()
 
+    private val _siblings = MutableStateFlow(emptyList<SiblingWorkout>())
+
+    /** A sibling app's workouts, as it last shared them, newest first. */
+    val siblings: StateFlow<List<SiblingWorkout>> = _siblings.asStateFlow()
+
     init {
         scope.launch {
             for (write in writes) runLogged(write)
@@ -178,6 +189,7 @@ class IntervalRepository(
             val presetsLoaded = CompletableDeferred<Unit>()
             val historyLoaded = CompletableDeferred<Unit>()
             val plannedLoaded = CompletableDeferred<Unit>()
+            val siblingsLoaded = CompletableDeferred<Unit>()
             launch {
                 presetDao.observeAll().orEmptyOnError("presets").collect { rows ->
                     val custom = rows.map { it.toDomain() }
@@ -198,6 +210,12 @@ class IntervalRepository(
                     plannedLoaded.complete(Unit)
                 }
             }
+            launch {
+                siblingDao.observeAll().orEmptyOnError("sibling workouts").collect { rows ->
+                    _siblings.value = rows.mapNotNull { it.toDomain() }
+                    siblingsLoaded.complete(Unit)
+                }
+            }
             // An unreadable settings file falls back to the defaults rather than keeping the app from starting.
             val stored = settings.data
                 .catch { e ->
@@ -211,6 +229,7 @@ class IntervalRepository(
             presetsLoaded.await()
             historyLoaded.await()
             plannedLoaded.await()
+            siblingsLoaded.await()
             _ready.value = true
         }
     }
@@ -308,6 +327,30 @@ class IntervalRepository(
     fun clearHistory() {
         val now = clock.nowMillis()
         persist { historyDao.clear(now) }
+    }
+
+    /**
+     * Every workout this app recorded, deleted ones included as tombstones, as a sibling app is sent them.
+     * Read after every write queued before it, so a workout just recorded is in it.
+     */
+    suspend fun sharedSessions(): List<SessionRecord> {
+        val done = CompletableDeferred<List<SessionRecord>>()
+        persist {
+            runCatching { historyDao.all().map { it.toRecord(_presets.value) } }
+                .onSuccess { done.complete(it) }
+                .onFailure { done.completeExceptionally(it) }
+        }
+        return done.await()
+    }
+
+    /** Brings the stored copy of [snapshot]'s app's workouts in step with it: see [mirror]. */
+    fun importSibling(snapshot: FeedSnapshot) {
+        persist {
+            val local = siblingDao.all().associate { it.uid to it.updatedAtEpochMillis }
+            val plan = mirror(local, snapshot, expected = AppId.Interval.sibling)
+            plan.deletes.forEach { siblingDao.delete(it) }
+            plan.upserts.forEach { siblingDao.upsert(it.toSiblingEntity()) }
+        }
     }
 
     /** Plans [preset] for every week on each of [weekdays] (1 for Monday through 7): one plan per day. */

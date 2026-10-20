@@ -251,7 +251,9 @@ class StorageTest {
                 database.presetDao(),
                 database.plannedDao(),
                 scope,
-            ) { clock }
+                clock = { clock },
+                siblingDao = database.siblingSessionDao(),
+            )
             repository.ready.first { it }
             block(repository)
         } finally {

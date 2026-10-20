@@ -10,6 +10,7 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import dev.justinsmith.interval.data.AppDatabase
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.data.MIGRATION_3_4
+import dev.justinsmith.interval.data.SiblingSync
 import dev.justinsmith.interval.platform.PlatformStorage
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.epochMillisNow
@@ -52,6 +53,7 @@ val storageModule: Module = module {
     single { get<AppDatabase>().historyDao() }
     single { get<AppDatabase>().presetDao() }
     single { get<AppDatabase>().plannedDao() }
+    single { get<AppDatabase>().siblingSessionDao() }
     single<DataStore<Preferences>> { preferencesAt(get<PlatformStorage>().preferencesPath) }
 }
 
@@ -81,8 +83,17 @@ val dataModule: Module = module {
             plannedDao = get(),
             scope = get(StorageScope),
             clock = get(),
+            siblingDao = get(),
         )
     }
+}
+
+/**
+ * Sharing workouts with the sibling app, over the platform's [dev.justinsmith.core.sync.SiblingFeed]. Started
+ * with the container, so it publishes as soon as the history is read.
+ */
+val syncModule: Module = module {
+    single(createdAtStart = true) { SiblingSync(repository = get(), feed = get(), scope = get(StorageScope)) }
 }
 
 /**
@@ -90,7 +101,7 @@ val dataModule: Module = module {
  * database and DataStore built from them (tests swap in fakes).
  */
 fun appModules(platformModule: Module, storage: Module = storageModule): List<Module> =
-    listOf(platformModule, storage, dataModule)
+    listOf(platformModule, storage, dataModule, syncModule)
 
 /**
  * Keeps the Koin container alive across Android configuration changes and closes it when the app

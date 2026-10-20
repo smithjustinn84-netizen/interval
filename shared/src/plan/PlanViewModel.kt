@@ -7,6 +7,7 @@ import dev.justinsmith.interval.data.HistoryEntry
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.data.PlanSchedule
 import dev.justinsmith.interval.data.PlannedWorkout
+import dev.justinsmith.interval.data.SiblingWorkout
 import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.history.TrainingLog
 import dev.justinsmith.interval.platform.TimestampFormatter
@@ -69,9 +70,9 @@ class PlanViewModel(
             repository.presets,
             repository.config,
             repository.appSettings,
-            repository.history,
-        ) { planned, presets, config, app, history ->
-            buildState(planned, presets, config, app, history)
+            combine(repository.history, repository.siblings) { history, siblings -> history to siblings },
+        ) { planned, presets, config, app, (history, siblings) ->
+            buildState(planned, presets, config, app, history, siblings)
         }.stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
@@ -81,6 +82,7 @@ class PlanViewModel(
                 repository.config.value,
                 repository.appSettings.value,
                 repository.history.value,
+                repository.siblings.value,
             ),
         )
 
@@ -125,13 +127,16 @@ class PlanViewModel(
         config: IntervalConfig,
         app: AppSettings,
         history: List<HistoryEntry>,
+        siblings: List<SiblingWorkout>,
     ): PlanUiState {
         val today = timestamps.dayNumber(clock.nowMillis())
         val entries = planned.associateWith { PlanEntry(it.id, it.name, it.config) }
         return PlanUiState(
             goal = app.weeklyGoal,
             streak =
-            app.weeklyGoal?.let { TrainingLog(history, planned, today, timestamps::dayNumber).streak(it).current }
+            app.weeklyGoal?.let {
+                TrainingLog(history, planned, today, siblings, timestamps::dayNumber).streak(it).current
+            }
                 ?: 0,
             routine = (1..DAYS_PER_WEEK).map { weekday ->
                 RoutineDay(

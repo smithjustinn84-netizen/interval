@@ -22,7 +22,7 @@ Compose Multiplatform app for **Android, iOS and desktop (JVM)**, built with the
 ./kotlin show modules | settings | dependencies | tasks
 ```
 
-`-m` takes the **leaf module name** (`core`, `shared`, `androidApp`, `iosApp`, `desktopApp`, `lint-plugin`,
+`-m` takes the **leaf module name** (`core`, `core-sync`, `shared`, `androidApp`, `iosApp`, `desktopApp`, `lint-plugin`,
 `detekt-plugin`).
 
 Running on the Android emulator or iOS simulator: the `run-on-device` skill.
@@ -37,6 +37,13 @@ Amper source layout, not Gradle's:
   platform hooks the UI needs (`SystemServices.kt`) and calendar/clock maths. It keeps the packages it had in
   `shared` (`dev.justinsmith.interval.ui`, `.platform`, `.timer`) and has its own resources
   (`dev.justinsmith.core.resources`: the Barlow fonts and its components' few words). `shared` exports it.
+- `core-sync/` shares workouts with the sibling app (Bells) on the same device: the `FeedSnapshot` record
+  format, `mirror` (how a sibling's set is copied in), and the feeds: Android serves each app's snapshot file
+  from `FeedProvider` behind the signature permission `dev.justinsmith.permission.SYNC` (both apps must share
+  a signing key); iOS uses the App Group `group.dev.justinsmith` (needs `DEVELOPMENT_TEAM` set, the same team
+  for both); desktop has none. In `shared`, `SiblingSync` publishes on every history change and pulls on
+  resume; the sibling's workouts land in `sibling_session` via `IntervalRepository` and count in History,
+  the streak and the goal, read-only.
 
 **Never create `src/commonMain/kotlin/`.** Amper ignores it silently.
 

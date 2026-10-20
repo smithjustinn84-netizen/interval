@@ -95,12 +95,16 @@ interface HistoryDao {
     suspend fun clear(now: Long)
 }
 
-/** Workouts imported from a sibling app. Nothing reads them yet. */
+/** Workouts imported from a sibling app, mirroring what it last shared. */
 @Dao
 interface SiblingSessionDao {
     /** Newest first. */
     @Query("SELECT * FROM sibling_session ORDER BY finished_at DESC")
     fun observeAll(): Flow<List<SiblingSessionEntity>>
+
+    /** What is stored now, for comparing with what the sibling shares. */
+    @Query("SELECT * FROM sibling_session")
+    suspend fun all(): List<SiblingSessionEntity>
 
     @Upsert
     suspend fun upsert(session: SiblingSessionEntity)

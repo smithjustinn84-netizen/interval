@@ -4,11 +4,23 @@
     <!-- Haptic cues on phase changes. A normal permission: granted at install, no prompt. -->
     <uses-permission android:name="android.permission.VIBRATE"/>
 
-    <!-- Android 11+ package visibility: lets TextToSpeech find the device's speech engine. -->
+    <!--
+      Sharing workouts with Bells, the sibling app: only apps signed with the same key hold this, and
+      each app's feed provider is readable only with it. Both apps declare it as well as use it, so the
+      grant works whichever is installed first.
+    -->
+    <permission
+            android:name="dev.justinsmith.permission.SYNC"
+            android:protectionLevel="signature"/>
+    <uses-permission android:name="dev.justinsmith.permission.SYNC"/>
+
+    <!-- Android 11+ package visibility: lets TextToSpeech find the device's speech engine, and this app
+         see Bells' feed provider. -->
     <queries>
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE"/>
         </intent>
+        <provider android:authorities="dev.justinsmith.kettlebell.feed"/>
     </queries>
 
     <application
@@ -27,6 +39,13 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <!-- Serves this app's workouts, as a snapshot file, to Bells. -->
+        <provider
+                android:name="dev.justinsmith.core.sync.FeedProvider"
+                android:authorities="dev.justinsmith.interval.feed"
+                android:exported="true"
+                android:readPermission="dev.justinsmith.permission.SYNC"/>
     </application>
 
 </manifest>

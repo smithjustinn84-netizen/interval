@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavBackStack
@@ -41,6 +42,7 @@ import androidx.savedstate.serialization.SavedStateConfiguration
 import dev.justinsmith.interval.about.AboutRoute
 import dev.justinsmith.interval.about.LicensesRoute
 import dev.justinsmith.interval.data.IntervalRepository
+import dev.justinsmith.interval.data.SiblingSync
 import dev.justinsmith.interval.data.ThemeMode
 import dev.justinsmith.interval.di.rememberAppKoin
 import dev.justinsmith.interval.history.HistoryRoute
@@ -121,6 +123,12 @@ fun App() {
 internal fun AppContent(koin: KoinApplication, introPlaying: Boolean = false) {
     KoinIsolatedContext(context = koin) {
         val repository = currentKoinScope().get<IntervalRepository>()
+        val sync = currentKoinScope().get<SiblingSync>()
+        // The sibling app may have recorded workouts while this one was away: take them in on every return.
+        LifecycleResumeEffect(sync) {
+            sync.pull()
+            onPauseOrDispose {}
+        }
         val ready by repository.ready.collectAsStateWithLifecycle()
         // Saved settings take milliseconds to read. Until then the window background shows, rather than
         // screens built from defaults or a flash of the wrong theme.

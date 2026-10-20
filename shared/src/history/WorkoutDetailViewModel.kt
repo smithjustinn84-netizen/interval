@@ -108,7 +108,7 @@ class WorkoutDetailViewModel(
         val today = timestamps.dayNumber(clock.nowMillis())
         val workout = history.firstOrNull { it.id == id }?.let { entry ->
             val day = timestamps.dayNumber(entry.finishedAtEpochMillis)
-            val log = TrainingLog(history, planned, today, timestamps::dayNumber)
+            val log = TrainingLog(history, planned, today, dayOf = timestamps::dayNumber)
             val work =
                 entry.workActiveSeconds ?: entry.config.plannedWorkSeconds(entry.elapsedSeconds, entry.endedEarly)
             FinishedWorkout(
