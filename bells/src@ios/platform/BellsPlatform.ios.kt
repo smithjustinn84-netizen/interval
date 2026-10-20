@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import dev.justinsmith.bells.data.BellsDatabase
+import dev.justinsmith.bells.domain.EmomCue
 import dev.justinsmith.core.sync.AppGroupSiblingFeed
 import dev.justinsmith.core.sync.AppId
 import dev.justinsmith.core.sync.SiblingFeed
@@ -15,6 +16,7 @@ import dev.justinsmith.interval.platform.systemTimestampFormatter
 import kotlinx.cinterop.ExperimentalForeignApi
 import org.koin.core.module.Module
 import org.koin.dsl.module
+import platform.AudioToolbox.AudioServicesPlaySystemSound
 import platform.Foundation.NSApplicationSupportDirectory
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSUserDomainMask
@@ -35,5 +37,16 @@ actual fun rememberBellsPlatformModule(): Module = remember {
         }
         single<SiblingFeed> { AppGroupSiblingFeed(AppId.Bells) }
         single<TimestampFormatter> { systemTimestampFormatter() }
+        // System sounds, as Interval's cues use.
+        single<Beeper> {
+            Beeper { cue ->
+                val sound: UInt = when (cue) {
+                    EmomCue.Countdown -> 1103u
+                    EmomCue.Start -> 1005u
+                    EmomCue.Finished -> 1025u
+                }
+                AudioServicesPlaySystemSound(sound)
+            }
+        }
     }
 }

@@ -1,6 +1,7 @@
 package dev.justinsmith.bells.data
 
 import dev.justinsmith.bells.domain.Exercise
+import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.core.sync.AppId
 import dev.justinsmith.core.sync.FeedCodec
@@ -41,6 +42,13 @@ private class FakeSessionDao : SessionDao {
     override suspend fun active() = sessions.value.firstOrNull { it.finishedAtEpochMillis == null && !it.deleted }
 
     override suspend fun insert(session: SessionEntity) = sessions.update { it + session }
+
+    override fun observeProgramDays(programId: String, since: Long): Flow<Int> = sessions.map { all ->
+        all.count {
+            it.programId == programId && it.finishedAtEpochMillis != null && !it.deleted &&
+                it.startedAtEpochMillis >= since
+        }
+    }
 
     override suspend fun insert(set: SetEntity) = sets.update { it + set.copy(id = nextId++) }
 
@@ -91,6 +99,20 @@ private class FakeSiblingDao : SiblingDao {
     override suspend fun delete(uid: String) = rows.update { it - uid }
 }
 
+private class FakeFollowingDao : FollowingDao {
+    private val row = MutableStateFlow<FollowingEntity?>(null)
+
+    override fun observe(): Flow<FollowingEntity?> = row
+
+    override suspend fun upsert(following: FollowingEntity) {
+        row.value = following
+    }
+
+    override suspend fun clear() {
+        row.value = null
+    }
+}
+
 private class MemoryFeed : SiblingFeed {
     var published: String? = null
     var sibling: String? = null
@@ -106,7 +128,8 @@ class BellsRepositoryTest {
     private var now = 1_000L
     private val sessionDao = FakeSessionDao()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
-    private val repository = BellsRepository(sessionDao, FakeBellDao(), FakeSiblingDao(), scope) { now }
+    private val repository =
+        BellsRepository(sessionDao, FakeBellDao(), FakeSiblingDao(), FakeFollowingDao(), scope) { now }
     private val feed = MemoryFeed()
     private val sync = repository.siblingSync(feed, scope, io = Dispatchers.Unconfined)
 
@@ -191,5 +214,23 @@ class BellsRepositoryTest {
         feed.sibling = FeedCodec.encode(FeedSnapshot(source = AppId.Interval, sessions = listOf(tabata)))
         sync.pull()
         assertEquals(listOf(IntervalWorkout("i1", 500, 240, "Tabata")), repository.interval.value)
+    }
+
+    @Test
+    fun `following a program counts its days by the sessions of it finished`() = runTest {
+        assertNull(repository.programDay.value)
+        repository.follow(ProgramId.PressLadders)
+        assertEquals(ProgramId.PressLadders, repository.following.value)
+        assertEquals(1, repository.programDay.value?.number)
+        // A free session is not a day of it.
+        swingsAndGetUps()
+        assertEquals(1, repository.programDay.value?.number)
+        repository.startSession(ProgramId.PressLadders)
+        assertEquals(ProgramId.PressLadders, repository.active.value?.programId)
+        repository.logSet(Exercise.Press, 16.0, 1, Side.Left)
+        repository.finishSession("Press")
+        assertEquals(2, repository.programDay.value?.number)
+        repository.stopFollowing()
+        assertNull(repository.programDay.value)
     }
 }

@@ -18,3 +18,7 @@ data object BellsInventoryTab : BellsTab
 /** The session in progress, and its summary once it finishes. */
 @Serializable
 data object Session : NavKey
+
+/** The built-in programs, to follow one. */
+@Serializable
+data object Programs : NavKey

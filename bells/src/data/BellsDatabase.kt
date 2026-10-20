@@ -1,5 +1,6 @@
 package dev.justinsmith.bells.data
 
+import androidx.room.AutoMigration
 import androidx.room.ColumnInfo
 import androidx.room.ConstructedBy
 import androidx.room.Dao
@@ -14,10 +15,20 @@ import androidx.room.RoomDatabaseConstructor
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
-/** Bells' sessions and their sets, the user's bells, and Interval's workouts as it last shared them. */
+/**
+ * Bells' sessions and their sets, the user's bells, the program they follow, and Interval's workouts as it
+ * last shared them. Version 2 added [FollowingEntity] and the program day a session was.
+ */
 @Database(
-    entities = [SessionEntity::class, SetEntity::class, BellEntity::class, SiblingEntity::class],
-    version = 1,
+    entities = [
+        SessionEntity::class,
+        SetEntity::class,
+        BellEntity::class,
+        SiblingEntity::class,
+        FollowingEntity::class,
+    ],
+    version = 2,
+    autoMigrations = [AutoMigration(from = 1, to = 2)],
 )
 @ConstructedBy(BellsDatabaseConstructor::class)
 abstract class BellsDatabase : RoomDatabase() {
@@ -26,6 +37,8 @@ abstract class BellsDatabase : RoomDatabase() {
     abstract fun bellDao(): BellDao
 
     abstract fun siblingDao(): SiblingDao
+
+    abstract fun followingDao(): FollowingDao
 }
 
 /** Room generates the `actual` for each platform. */
@@ -59,6 +72,13 @@ interface SessionDao {
     @Insert
     suspend fun insert(session: SessionEntity)
 
+    /** How many sessions of [programId] finished since [since]: the days of it done. */
+    @Query(
+        "SELECT COUNT(*) FROM session WHERE program_id = :programId AND finished_at IS NOT NULL " +
+            "AND deleted = 0 AND started_at >= :since",
+    )
+    fun observeProgramDays(programId: String, since: Long): Flow<Int>
+
     @Insert
     suspend fun insert(set: SetEntity)
 
@@ -78,6 +98,18 @@ interface SessionDao {
 
     @Query("DELETE FROM lift_set WHERE session_uid = :uid")
     suspend fun discardSets(uid: String)
+}
+
+@Dao
+interface FollowingDao {
+    @Query("SELECT * FROM following WHERE id = 0")
+    fun observe(): Flow<FollowingEntity?>
+
+    @Upsert
+    suspend fun upsert(following: FollowingEntity)
+
+    @Query("DELETE FROM following")
+    suspend fun clear()
 }
 
 @Dao
@@ -117,6 +149,8 @@ data class SessionEntity(
     val title: String,
     @ColumnInfo(name = "updated_at") val updatedAtEpochMillis: Long,
     val deleted: Boolean = false,
+    /** The program it was a day of, a [dev.justinsmith.bells.domain.ProgramId] by name; null for a free session. */
+    @ColumnInfo(name = "program_id") val programId: String? = null,
 )
 
 @Entity(tableName = "lift_set", indices = [Index("session_uid")])
@@ -130,6 +164,14 @@ data class SetEntity(
     /** A [dev.justinsmith.bells.domain.Side] by name, or null for a two-sided lift. */
     val side: String?,
     @ColumnInfo(name = "logged_at") val loggedAtEpochMillis: Long,
+)
+
+/** The program the user follows, from [startedAtEpochMillis]: one row at most. */
+@Entity(tableName = "following")
+data class FollowingEntity(
+    @PrimaryKey val id: Int = 0,
+    @ColumnInfo(name = "program_id") val programId: String,
+    @ColumnInfo(name = "started_at") val startedAtEpochMillis: Long,
 )
 
 /** A bell the user owns. */

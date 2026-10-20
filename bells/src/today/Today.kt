@@ -25,13 +25,23 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.data.IntervalWorkout
+import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.LiftSession
+import dev.justinsmith.bells.domain.ProgramDay
+import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.domain.formatKg
+import dev.justinsmith.bells.domain.suggestedBell
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.common_joined
 import dev.justinsmith.bells.resources.kg_value
 import dev.justinsmith.bells.resources.nav_today
+import dev.justinsmith.bells.resources.program_change
+import dev.justinsmith.bells.resources.program_day
+import dev.justinsmith.bells.resources.program_finished
+import dev.justinsmith.bells.resources.program_follow_cta
+import dev.justinsmith.bells.resources.program_follow_hint
 import dev.justinsmith.bells.resources.sets_count
+import dev.justinsmith.bells.resources.today_free_session
 import dev.justinsmith.bells.resources.today_last
 import dev.justinsmith.bells.resources.today_legend_bells
 import dev.justinsmith.bells.resources.today_legend_interval
@@ -39,6 +49,7 @@ import dev.justinsmith.bells.resources.today_none_text
 import dev.justinsmith.bells.resources.today_none_title
 import dev.justinsmith.bells.resources.today_resume
 import dev.justinsmith.bells.resources.today_start
+import dev.justinsmith.bells.resources.today_start_day
 import dev.justinsmith.bells.resources.today_this_week
 import dev.justinsmith.bells.resources.today_week_count
 import dev.justinsmith.bells.resources.weekday_cd
@@ -51,6 +62,10 @@ import dev.justinsmith.bells.resources.weekday_initial_5
 import dev.justinsmith.bells.resources.weekday_initial_6
 import dev.justinsmith.bells.resources.weekday_initial_7
 import dev.justinsmith.bells.resources.weekday_rest
+import dev.justinsmith.bells.session.SetDraft
+import dev.justinsmith.bells.ui.blockLine
+import dev.justinsmith.bells.ui.exerciseName
+import dev.justinsmith.bells.ui.programName
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
@@ -62,7 +77,10 @@ import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EmptyState
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.RowDivider
+import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
@@ -90,6 +108,11 @@ data class TodayUiState(
     /** When [last] finished: "7:42 AM" today, else its date. */
     val lastWhen: String = "",
     val inProgress: Boolean = false,
+    /** The program followed, if any, and its next day: null once it is over. */
+    val following: ProgramId? = null,
+    val programDay: ProgramDay? = null,
+    /** The bell to suggest for each lift: the last one used for it. */
+    val bells: Map<Exercise, Double> = emptyMap(),
 ) {
     val weekCount: Int get() = week.sumOf { it.bells + it.interval }
     val intervalCount: Int get() = week.sumOf { it.interval }
@@ -102,13 +125,31 @@ class TodayViewModel(
     private val clock: WallClock,
 ) : ViewModel() {
     val state: StateFlow<TodayUiState> =
-        combine(repository.sessions, repository.interval, repository.active) { sessions, interval, active ->
-            build(sessions, interval, active)
+        combine(
+            repository.sessions,
+            repository.interval,
+            repository.active,
+            repository.following,
+            repository.programDay,
+        ) {
+                sessions,
+                interval,
+                active,
+                following,
+                day,
+            ->
+            build(sessions, interval, active).copy(following = following, programDay = day)
         }.stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
-            build(repository.sessions.value, repository.interval.value, repository.active.value),
+            build(repository.sessions.value, repository.interval.value, repository.active.value)
+                .copy(following = repository.following.value, programDay = repository.programDay.value),
         )
+
+    /** Starts the session about to open: [program]'s next day, or a free one with null. */
+    fun start(program: ProgramId?) {
+        repository.startSession(program)
+    }
 
     private fun build(
         sessions: List<LiftSession>,
@@ -136,55 +177,40 @@ class TodayViewModel(
                 if (timestamps.dayNumber(at) == today) timestamps.time(at) else timestamps.date(at)
             }.orEmpty(),
             inProgress = active != null,
+            bells = Exercise.entries.associateWith { exercise ->
+                suggestedBell(exercise, sessions.reversed().flatMap { it.sets }, SetDraft.DEFAULT_BELL_KG)
+            },
         )
     }
 }
 
 @Composable
-fun TodayRoute(onStartSession: () -> Unit) {
+fun TodayRoute(onStartSession: () -> Unit, onChooseProgram: () -> Unit) {
     val scope = currentKoinScope()
     val viewModel = viewModel { TodayViewModel(scope.get(), scope.get(), scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
-    TodayScreen(state, onStartSession)
+    TodayScreen(
+        state,
+        onStartSession = { program ->
+            if (!state.inProgress) viewModel.start(program)
+            onStartSession()
+        },
+        onChooseProgram = onChooseProgram,
+    )
 }
 
 /** The Today tab: the week across both apps, the last session, and Start (or Resume) session. */
 @Composable
-fun TodayScreen(state: TodayUiState, onStartSession: () -> Unit, modifier: Modifier = Modifier) {
+fun TodayScreen(
+    state: TodayUiState,
+    onStartSession: (ProgramId?) -> Unit,
+    onChooseProgram: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val palette = IntervalTheme.palette
     val card = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4)
     TabGrid(stringResource(Res.string.nav_today), modifier) {
-        item(key = "week", span = StaggeredGridItemSpan.FullLine) {
-            ListCard(card) {
-                Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space12)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            stringResource(Res.string.today_this_week),
-                            style = IntervalTheme.type.caption,
-                            color = palette.textDim,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Text(
-                            pluralStringResource(
-                                Res.plurals.today_week_count,
-                                state.weekCount,
-                                state.weekCount,
-                                state.intervalCount,
-                            ),
-                            style = IntervalTheme.type.meta,
-                            color = palette.textDim,
-                        )
-                    }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        state.week.forEach { day -> DayMark(day) }
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space16)) {
-                        Legend(palette.accent, stringResource(Res.string.today_legend_bells))
-                        Legend(palette.workMark, stringResource(Res.string.today_legend_interval))
-                    }
-                }
-            }
-        }
+        item(key = "week", span = StaggeredGridItemSpan.FullLine) { WeekCard(state, card) }
         item(key = "last", span = StaggeredGridItemSpan.FullLine) {
             ListCard(card) {
                 val last = state.last
@@ -216,13 +242,10 @@ fun TodayScreen(state: TodayUiState, onStartSession: () -> Unit, modifier: Modif
                 }
             }
         }
-        item(key = "start", span = StaggeredGridItemSpan.FullLine) {
-            AccentButton(
-                stringResource(if (state.inProgress) Res.string.today_resume else Res.string.today_start),
-                onClick = onStartSession,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.space16, vertical = Spacing.space12),
-            )
+        item(key = "program", span = StaggeredGridItemSpan.FullLine) {
+            ProgramCard(state, onChooseProgram, card)
         }
+        item(key = "start", span = StaggeredGridItemSpan.FullLine) { StartRow(state, onStartSession) }
     }
 }
 
@@ -278,3 +301,127 @@ private val weekdayInitials = listOf(
     Res.string.weekday_initial_6,
     Res.string.weekday_initial_7,
 )
+
+/** The program day to do, with each block's lift, shape and suggested bell; or the way to pick a program. */
+@Composable
+private fun ProgramCard(state: TodayUiState, onChooseProgram: () -> Unit, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    val following = state.following
+    val day = state.programDay
+    if (following == null) {
+        ListCard(modifier) {
+            LinkRow(
+                stringResource(Res.string.program_follow_cta),
+                stringResource(Res.string.program_follow_hint),
+                onClick = onChooseProgram,
+            )
+        }
+        return
+    }
+    ListCard(modifier) {
+        Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+            Text(
+                if (day == null) {
+                    stringResource(Res.string.program_finished)
+                } else {
+                    stringResource(Res.string.program_day, day.number, day.program.totalDays, day.week)
+                },
+                style = IntervalTheme.type.caption,
+                color = palette.textDim,
+            )
+            Text(programName(following), style = IntervalTheme.type.section, color = palette.text)
+        }
+        day?.blocks?.forEach { block ->
+            RowDivider()
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(exerciseName(block.exercise), style = IntervalTheme.type.label, color = palette.text)
+                    Text(blockLine(block), style = IntervalTheme.type.meta, color = palette.textDim)
+                }
+                Text(
+                    stringResource(
+                        Res.string.kg_value,
+                        formatKg(state.bells[block.exercise] ?: SetDraft.DEFAULT_BELL_KG),
+                    ),
+                    style = IntervalTheme.type.value,
+                    color = palette.text,
+                )
+            }
+        }
+        RowDivider()
+        LinkRow(stringResource(Res.string.program_change), null, onClick = onChooseProgram)
+    }
+}
+
+/** This week across both apps: a mark a day, and the count. */
+@Composable
+private fun WeekCard(state: TodayUiState, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    ListCard(modifier) {
+        Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space12)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(Res.string.today_this_week),
+                    style = IntervalTheme.type.caption,
+                    color = palette.textDim,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    pluralStringResource(
+                        Res.plurals.today_week_count,
+                        state.weekCount,
+                        state.weekCount,
+                        state.intervalCount,
+                    ),
+                    style = IntervalTheme.type.meta,
+                    color = palette.textDim,
+                )
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                state.week.forEach { day -> DayMark(day) }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space16)) {
+                Legend(palette.accent, stringResource(Res.string.today_legend_bells))
+                Legend(palette.workMark, stringResource(Res.string.today_legend_interval))
+            }
+        }
+    }
+}
+
+/** Resume a session in progress, or start the program's day or a free one. */
+@Composable
+private fun StartRow(state: TodayUiState, onStartSession: (ProgramId?) -> Unit) {
+    val day = state.programDay
+    Row(
+        Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+    ) {
+        when {
+            state.inProgress -> AccentButton(
+                stringResource(Res.string.today_resume),
+                onClick = { onStartSession(null) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            day != null -> {
+                SecondaryButton(stringResource(Res.string.today_free_session), {
+                    onStartSession(null)
+                }, Modifier.weight(1f))
+                AccentButton(
+                    stringResource(Res.string.today_start_day, day.number),
+                    onClick = { onStartSession(day.program.id) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            else -> AccentButton(
+                stringResource(Res.string.today_start),
+                onClick = { onStartSession(null) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}

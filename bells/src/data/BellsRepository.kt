@@ -1,10 +1,15 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package dev.justinsmith.bells.data
 
 import co.touchlab.kermit.Logger
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.LiftSession
+import dev.justinsmith.bells.domain.ProgramDay
+import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.Side
+import dev.justinsmith.bells.domain.program
 import dev.justinsmith.core.sync.AppId
 import dev.justinsmith.core.sync.FeedSnapshot
 import dev.justinsmith.core.sync.SessionDetail
@@ -15,6 +20,7 @@ import dev.justinsmith.interval.platform.WallClock
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +28,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -44,6 +53,7 @@ class BellsRepository(
     private val sessionDao: SessionDao,
     private val bellDao: BellDao,
     private val siblingDao: SiblingDao,
+    private val followingDao: FollowingDao,
     private val scope: CoroutineScope,
     private val clock: WallClock,
 ) {
@@ -72,6 +82,18 @@ class BellsRepository(
 
     /** Interval's workouts, newest first. */
     val interval: StateFlow<List<IntervalWorkout>> = _interval.asStateFlow()
+
+    private val _programDay = MutableStateFlow<ProgramDay?>(null)
+    private val _following = MutableStateFlow<ProgramId?>(null)
+
+    /** The program the user follows, if any. */
+    val following: StateFlow<ProgramId?> = _following.asStateFlow()
+
+    /**
+     * The day of [following] to do next, counted by the sessions of it finished; null when none is followed or
+     * it is over.
+     */
+    val programDay: StateFlow<ProgramDay?> = _programDay.asStateFlow()
 
     init {
         scope.launch { for (write in writes) runLogged(write) }
@@ -103,6 +125,28 @@ class BellsRepository(
                     intervalLoaded.complete(Unit)
                 }
             }
+            val followingLoaded = CompletableDeferred<Unit>()
+            launch {
+                followingDao.observe().flatMapLatest { row ->
+                    val id = row?.let { r -> ProgramId.entries.firstOrNull { it.name == r.programId } }
+                    if (row == null || id == null) {
+                        flowOf(null to null)
+                    } else {
+                        sessionDao.observeProgramDays(id.name, row.startedAtEpochMillis).map { done ->
+                            id to
+                                program(id).dayAfter(done)
+                        }
+                    }
+                }.catch { e ->
+                    log.e(e) { "Couldn't read the program" }
+                    emit(null to null)
+                }.collect { (id, day) ->
+                    _following.value = id
+                    _programDay.value = day
+                    followingLoaded.complete(Unit)
+                }
+            }
+            followingLoaded.await()
             sessionsLoaded.await()
             bellsLoaded.await()
             intervalLoaded.await()
@@ -110,17 +154,34 @@ class BellsRepository(
         }
     }
 
-    /** Starts a session, unless one is in progress already. */
+    /** Starts a session, a day of [program] or a free one, unless one is in progress already. */
     @OptIn(ExperimentalUuidApi::class)
-    fun startSession() {
+    fun startSession(program: ProgramId? = null) {
         persist {
             if (sessionDao.active() == null) {
                 val now = clock.nowMillis()
                 sessionDao.insert(
-                    SessionEntity(Uuid.random().toHexString(), now, null, title = "", updatedAtEpochMillis = now),
+                    SessionEntity(
+                        Uuid.random().toHexString(),
+                        now,
+                        null,
+                        title = "",
+                        updatedAtEpochMillis = now,
+                        programId = program?.name,
+                    ),
                 )
             }
         }
+    }
+
+    /** Follows [program] from its first day, in place of any other. */
+    fun follow(program: ProgramId) {
+        val now = clock.nowMillis()
+        persist { followingDao.upsert(FollowingEntity(programId = program.name, startedAtEpochMillis = now)) }
+    }
+
+    fun stopFollowing() {
+        persist { followingDao.clear() }
     }
 
     /** Logs a set to the session in progress. */
@@ -238,8 +299,14 @@ private fun SetEntity.toDomain(): SetLog? {
     )
 }
 
-private fun SessionEntity.toDomain(sets: List<SetLog>) =
-    LiftSession(uid, startedAtEpochMillis, finishedAtEpochMillis, title, sets)
+private fun SessionEntity.toDomain(sets: List<SetLog>) = LiftSession(
+    uid,
+    startedAtEpochMillis,
+    finishedAtEpochMillis,
+    title,
+    sets,
+    programId?.let { id -> ProgramId.entries.firstOrNull { it.name == id } },
+)
 
 private fun SessionEntity.toRecord(sets: List<SetEntity>): SessionRecord {
     val finished = finishedAtEpochMillis ?: startedAtEpochMillis

@@ -11,6 +11,7 @@ import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.systemTimestampFormatter
 import org.koin.core.module.Module
 import org.koin.dsl.module
+import java.awt.Toolkit
 import java.io.File
 
 @Composable
@@ -22,6 +23,8 @@ actual fun rememberBellsPlatformModule(): Module = remember {
         // Desktop has no sibling app to share with.
         single<SiblingFeed> { NoSiblingFeed }
         single<TimestampFormatter> { systemTimestampFormatter() }
+        // The system alert sound for every cue; desktops have nothing finer to drive.
+        single<Beeper> { Beeper { runCatching { Toolkit.getDefaultToolkit().beep() } } }
     }
 }
 

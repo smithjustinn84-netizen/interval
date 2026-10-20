@@ -38,8 +38,10 @@ import dev.justinsmith.bells.history.BellsHistoryRoute
 import dev.justinsmith.bells.nav.BellsInventoryTab
 import dev.justinsmith.bells.nav.BellsTab
 import dev.justinsmith.bells.nav.HistoryTab
+import dev.justinsmith.bells.nav.Programs
 import dev.justinsmith.bells.nav.Session
 import dev.justinsmith.bells.nav.TodayTab
+import dev.justinsmith.bells.programs.ProgramsRoute
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.nav_bells
 import dev.justinsmith.bells.resources.nav_history
@@ -75,6 +77,7 @@ internal val bellsNavConfiguration = SavedStateConfiguration {
             subclass(HistoryTab::class)
             subclass(BellsInventoryTab::class)
             subclass(Session::class)
+            subclass(Programs::class)
         }
     }
 }
@@ -164,8 +167,12 @@ private fun BellsShell(backStack: NavBackStack<NavKey>) {
 
 private fun bellsEntries(backStack: NavBackStack<NavKey>): (NavKey) -> NavEntry<NavKey> = entryProvider {
     entry<TodayTab>(metadata = pageKind(PageKind.Tab)) {
-        TodayRoute(onStartSession = { if (backStack.lastOrNull() != Session) backStack.add(Session) })
+        TodayRoute(
+            onStartSession = { if (backStack.lastOrNull() != Session) backStack.add(Session) },
+            onChooseProgram = { if (backStack.lastOrNull() != Programs) backStack.add(Programs) },
+        )
     }
+    entry<Programs> { ProgramsRoute(onBack = { backStack.removeLastOrNull() }) }
     entry<HistoryTab>(metadata = pageKind(PageKind.Tab)) { BellsHistoryRoute() }
     entry<BellsInventoryTab>(metadata = pageKind(PageKind.Tab)) { GearRoute() }
     entry<Session>(metadata = pageKind(PageKind.Mode)) { SessionRoute(onExit = { backStack.removeLastOrNull() }) }

@@ -39,7 +39,8 @@ Amper source layout, not Gradle's:
   (`dev.justinsmith.core.resources`: the Barlow fonts and its components' few words). `shared` exports it.
 - `bells/` is **Bells**, the sibling kettlebell app (package `dev.justinsmith.bells`, app id
   `dev.justinsmith.kettlebell`): log sets of reps with a bell, the week across both apps, history, owned bells
-  and personal records. Same conventions as Interval (Nav3, `XRoute`/`XScreen`, Koin, Room, strings in its
+  and personal records, built-in programs (`domain/Programs.kt`, data not words: names are strings) whose next
+  day lays out the session, and EMOMs timed by the pure `EmomClock` with beeps through `Beeper`. Same conventions as Interval (Nav3, `XRoute`/`XScreen`, Koin, Room, strings in its
   own `composeResources`); its shells are `bellsAndroid/`, `bellsIos/`, `bellsDesktop/`. Run it with
   `./kotlin run -m bellsDesktop`, or install `build/tasks/_bellsAndroid_buildAndroidDebug/gradle-project-debug.apk`.
 - `core-sync/` shares workouts with the sibling app (Bells) on the same device: the `FeedSnapshot` record

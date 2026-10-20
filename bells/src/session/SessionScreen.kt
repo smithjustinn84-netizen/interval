@@ -29,6 +29,12 @@ import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.domain.formatKg
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.common_cancel
+import dev.justinsmith.bells.resources.common_joined
+import dev.justinsmith.bells.resources.emom_fewer_minutes
+import dev.justinsmith.bells.resources.emom_minutes
+import dev.justinsmith.bells.resources.emom_more_minutes
+import dev.justinsmith.bells.resources.emom_start
+import dev.justinsmith.bells.resources.emom_title
 import dev.justinsmith.bells.resources.kg_value
 import dev.justinsmith.bells.resources.log_bell
 import dev.justinsmith.bells.resources.log_exercise
@@ -38,6 +44,11 @@ import dev.justinsmith.bells.resources.log_no_bells
 import dev.justinsmith.bells.resources.log_reps
 import dev.justinsmith.bells.resources.log_side
 import dev.justinsmith.bells.resources.log_title
+import dev.justinsmith.bells.resources.next_day_done
+import dev.justinsmith.bells.resources.next_emom
+import dev.justinsmith.bells.resources.next_log
+import dev.justinsmith.bells.resources.next_progress
+import dev.justinsmith.bells.resources.next_title
 import dev.justinsmith.bells.resources.session_discard
 import dev.justinsmith.bells.resources.session_discard_text
 import dev.justinsmith.bells.resources.session_discard_title
@@ -77,11 +88,17 @@ import org.koin.compose.currentKoinScope
 @Composable
 fun SessionRoute(onExit: () -> Unit) {
     val scope = currentKoinScope()
-    val viewModel = viewModel { SessionViewModel(scope.get(), scope.get()) }
+    val viewModel = viewModel { SessionViewModel(scope.get(), scope.get(), scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val finished = state.finished
     if (finished != null) {
         SummaryScreen(finished, onDone = onExit)
+        return
+    }
+    val emom = state.emom
+    val emomState = state.emomState
+    if (emom != null && emomState != null) {
+        EmomScreen(emom, emomState, onFinishSet = viewModel::emomSetDone, onStop = viewModel::stopEmom)
         return
     }
     val title = sessionTitle(state.session?.exercises.orEmpty())
@@ -90,6 +107,9 @@ fun SessionRoute(onExit: () -> Unit) {
         actions = SessionActions(
             onDraft = viewModel::updateDraft,
             onLog = viewModel::logSet,
+            onLogNext = viewModel::logNext,
+            onStartPlannedEmom = viewModel::startPlannedEmom,
+            onStartEmom = viewModel::startDraftEmom,
             onRemoveSet = viewModel::removeSet,
             onFinish = {
                 if (state.session?.sets.isNullOrEmpty()) {
@@ -111,6 +131,9 @@ fun SessionRoute(onExit: () -> Unit) {
 data class SessionActions(
     val onDraft: ((SetDraft) -> SetDraft) -> Unit = {},
     val onLog: () -> Unit = {},
+    val onLogNext: () -> Unit = {},
+    val onStartPlannedEmom: () -> Unit = {},
+    val onStartEmom: () -> Unit = {},
     val onRemoveSet: (Long) -> Unit = {},
     val onFinish: () -> Unit = {},
     val onDiscard: () -> Unit = {},
@@ -146,8 +169,9 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
                 state.sinceLast?.let {
                     StatTile(stringResource(Res.string.session_since_last), it, Modifier.fillMaxWidth())
                 }
+                UpNextCard(state, actions)
                 val sets = state.session?.sets.orEmpty()
-                if (sets.isEmpty()) {
+                if (sets.isEmpty() && state.upNext == null) {
                     Text(
                         stringResource(Res.string.session_empty),
                         style = IntervalTheme.type.body,
@@ -267,6 +291,99 @@ private fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismis
                 },
                 modifier = Modifier.fillMaxWidth().padding(top = Spacing.space16, bottom = Spacing.space8),
             )
+            EmomSection(draft, actions, hide)
         }
+    }
+}
+
+/** In a program day: the next planned set, with its bell, to log in one tap or to start its EMOM. */
+@Composable
+private fun UpNextCard(state: SessionUiState, actions: SessionActions) {
+    val palette = IntervalTheme.palette
+    val next = state.upNext
+    if (next == null) {
+        if (state.dayDone) {
+            Text(
+                stringResource(Res.string.next_day_done),
+                style = IntervalTheme.type.body,
+                color = palette.textDim,
+                modifier = Modifier.padding(vertical = Spacing.space8),
+            )
+        }
+        return
+    }
+    ListCard(Modifier.padding(top = Spacing.space8)) {
+        Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+            Text(
+                stringResource(
+                    Res.string.common_joined,
+                    stringResource(Res.string.next_title),
+                    stringResource(Res.string.next_progress, next.number, next.total),
+                ),
+                style = IntervalTheme.type.caption,
+                color = palette.textDim,
+            )
+            Text(exerciseName(next.set.exercise), style = IntervalTheme.type.section, color = palette.text)
+            Text(
+                setLine(next.bellKg, next.set.reps, next.set.side),
+                style = IntervalTheme.type.value,
+                color = palette.text,
+            )
+            if (next.emomMinutes != null) {
+                AccentButton(
+                    stringResource(Res.string.next_emom),
+                    actions.onStartPlannedEmom,
+                    Modifier.fillMaxWidth().padding(top = Spacing.space8),
+                )
+            } else {
+                AccentButton(
+                    stringResource(Res.string.next_log),
+                    actions.onLogNext,
+                    Modifier.fillMaxWidth().padding(top = Spacing.space8),
+                )
+            }
+        }
+    }
+}
+
+/** The sheet's EMOM: how many minutes, then start one of the set as drafted. */
+@Composable
+private fun EmomSection(draft: SetDraft, actions: SessionActions, hide: () -> Unit) {
+    val palette = IntervalTheme.palette
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+        GroupLabel(stringResource(Res.string.emom_title))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    stringResource(Res.string.emom_minutes),
+                    style = IntervalTheme.type.caption,
+                    color = palette.textDim,
+                )
+                Text(draft.minutes.toString(), style = IntervalTheme.type.stat, color = palette.text)
+            }
+            RepeatButton(
+                "−",
+                stringResource(Res.string.emom_fewer_minutes),
+                enabled = draft.minutes > 1,
+                onStep = { actions.onDraft { it.copy(minutes = it.minutes - 1) } },
+            )
+            RepeatButton(
+                "+",
+                stringResource(Res.string.emom_more_minutes),
+                enabled = draft.minutes < SetDraft.MAX_MINUTES,
+                onStep = { actions.onDraft { it.copy(minutes = it.minutes + 1) } },
+            )
+        }
+        SecondaryButton(
+            stringResource(Res.string.emom_start),
+            onClick = {
+                actions.onStartEmom()
+                hide()
+            },
+            modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.space8),
+        )
     }
 }

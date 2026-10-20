@@ -113,4 +113,50 @@
     <string name="bells_records">Personal records</string>
     <string name="bells_records_empty">Log a session to set your first records.</string>
     <string name="record_line">Heaviest %1$s kg × %2$d · most reps %3$d at %4$s kg</string>
+
+    <!-- Programs -->
+    <string name="programs_title">Programs</string>
+    <string name="program_daily_name">Daily 100 swings + 10 get-ups</string>
+    <string name="program_daily_summary">10 minutes of swings on the minute, then 5 get-ups a side · 5 days a week for 6 weeks</string>
+    <string name="program_ladders_name">Press ladders 1-2-3</string>
+    <string name="program_ladders_summary">Ladders of 1, 2 and 3 presses a side, 3 to 5 of them, with swings or snatches · 3 days a week for 8 weeks</string>
+    <string name="program_clean_press_name">Clean and press EMOM</string>
+    <string name="program_clean_press_summary">10 minutes of 3 cleans, then 10 of 3 presses, alternating sides · 3 days a week for 4 weeks</string>
+    <string name="program_goblet_row_name">Goblet squat and row</string>
+    <string name="program_goblet_row_summary">3 sets of 10 of each · 2 days a week for 4 weeks</string>
+    <string name="program_day">Day %1$d of %2$d · week %3$d</string>
+    <string name="program_finished">Finished · pick another program</string>
+    <string name="program_follow_cta">Follow a program</string>
+    <string name="program_follow_hint">Each day's sets are laid out for you, with the bell you last used.</string>
+    <string name="program_change">Change program</string>
+    <string name="program_following">Following</string>
+    <string name="program_stop">Stop following</string>
+    <string name="block_sets">%1$d × %2$d</string>
+    <string name="block_sets_sided">%1$d × %2$d a side</string>
+    <string name="block_emom">%2$d every minute for %1$d minutes</string>
+    <string name="block_ladder">%1$d ladders of %2$s a side</string>
+    <string name="today_start_day">Start day %1$d</string>
+    <string name="today_free_session">Free session</string>
+
+    <!-- Up next, in a programmed session -->
+    <string name="next_title">Up next</string>
+    <string name="next_progress">%1$d of %2$d sets</string>
+    <string name="next_log">Log it</string>
+    <string name="next_emom">Start EMOM</string>
+    <string name="next_day_done">Today's sets are done. Finish when you are.</string>
+
+    <!-- EMOM -->
+    <string name="emom_title">EMOM</string>
+    <string name="emom_minutes">Minutes</string>
+    <string name="emom_fewer_minutes">Fewer minutes</string>
+    <string name="emom_more_minutes">More minutes</string>
+    <string name="emom_start">Start EMOM</string>
+    <string name="emom_get_ready">Get ready</string>
+    <string name="emom_work">Work</string>
+    <string name="emom_rest">Rest</string>
+    <string name="emom_minute">Minute %1$d of %2$d</string>
+    <string name="emom_set_done">Set done</string>
+    <string name="emom_stop">Stop</string>
+    <string name="emom_next">Next: %1$s</string>
+    <string name="emom_free">EMOM</string>
 </resources>
