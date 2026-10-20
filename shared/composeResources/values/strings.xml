@@ -11,7 +11,6 @@
     <string name="common_cancel">Cancel</string>
     <string name="common_save">Save</string>
     <string name="common_done">Done</string>
-    <string name="common_back">Back</string>
     <string name="common_settings">Settings</string>
     <string name="common_custom">Custom</string>
     <!-- Joins two parts of a line: "Tabata · 20s on · 10s off · ×8". -->
@@ -53,9 +52,7 @@
     <string name="field_rounds_more">More rounds</string>
 
     <!-- The edit sheet -->
-    <string name="sheet_drag_handle_cd">Drag handle</string>
     <!-- A tablet's side sheet has no drag handle; this button is its way out -->
-    <string name="sheet_close_cd">Close</string>
     <string name="value_sheet_new_total">New total</string>
     <string name="value_sheet_quick_picks">Quick picks</string>
     <string name="value_sheet_hint_hold">Hold − or + to change faster.</string>

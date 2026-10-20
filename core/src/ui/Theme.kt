@@ -18,12 +18,11 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
-import dev.justinsmith.interval.resources.Res
-import dev.justinsmith.interval.resources.barlow_condensed_extrabold
-import dev.justinsmith.interval.resources.barlow_condensed_semibold
-import dev.justinsmith.interval.resources.barlow_regular
-import dev.justinsmith.interval.resources.barlow_semibold
-import dev.justinsmith.interval.timer.Phase
+import dev.justinsmith.core.resources.Res
+import dev.justinsmith.core.resources.barlow_condensed_extrabold
+import dev.justinsmith.core.resources.barlow_condensed_semibold
+import dev.justinsmith.core.resources.barlow_regular
+import dev.justinsmith.core.resources.barlow_semibold
 import org.jetbrains.compose.resources.Font
 
 /** Surfaces and text for the setup screen; light and dark variants. */
@@ -120,13 +119,6 @@ object PhaseColors {
     val laneFill = lerp(ground, control, LANE_FILL_STRENGTH)
 
     private const val LANE_FILL_STRENGTH = 0.45f
-
-    fun of(phase: Phase): Color = when (phase) {
-        Phase.Prep -> prep
-        Phase.Work -> work
-        Phase.Rest -> rest
-        Phase.Done -> done
-    }
 }
 
 internal val lightPalette = IntervalPalette(

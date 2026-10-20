@@ -22,7 +22,7 @@ Compose Multiplatform app for **Android, iOS and desktop (JVM)**, built with the
 ./kotlin show modules | settings | dependencies | tasks
 ```
 
-`-m` takes the **leaf module name** (`shared`, `androidApp`, `iosApp`, `desktopApp`, `lint-plugin`,
+`-m` takes the **leaf module name** (`core`, `shared`, `androidApp`, `iosApp`, `desktopApp`, `lint-plugin`,
 `detekt-plugin`).
 
 Running on the Android emulator or iOS simulator: the `run-on-device` skill.
@@ -33,6 +33,10 @@ Amper source layout, not Gradle's:
 - `<module>/src/` common code; `src@android/`, `src@ios/` (both iOS targets), `src@jvm/` platform code
 - `<module>/test/` common tests; `test@jvm/` etc. for platform tests
 - `androidApp/res/` Android resources; `shared/composeResources/` multiplatform resources (`Res.*`)
+- `core/` is what Interval and its sibling apps share: the theme, tokens, motion, components, lanes, the
+  platform hooks the UI needs (`SystemServices.kt`) and calendar/clock maths. It keeps the packages it had in
+  `shared` (`dev.justinsmith.interval.ui`, `.platform`, `.timer`) and has its own resources
+  (`dev.justinsmith.core.resources`: the Barlow fonts and its components' few words). `shared` exports it.
 
 **Never create `src/commonMain/kotlin/`.** Amper ignores it silently.
 
@@ -62,16 +66,17 @@ toolchain (`$compose.*`).
   nothing until `repository.ready`. The DataStore lives for the process (one per file, DataStore's rule),
   not the Koin container, which Android rebuilds whenever the Activity reopens. A schema change bumps the `@Database` version, adds a migration, and
   commits the new `shared/schemas/` JSON.
-- **Text**: every user-facing string lives in `shared/composeResources/values/strings.xml`. ViewModels and
+- **Text**: every user-facing string lives in `shared/composeResources/values/strings.xml` (a core
+  component's own words in `core/composeResources/values/strings.xml`). ViewModels and
   domain code expose typed data (enums, sealed types like `NextUp`/`HistoryDay`, numbers, clock strings
   like `"0:30"`); screens put it into words with `stringResource`/`pluralStringResource`. Spoken cues are
   the one non-composable path: `CuePlayer.speak(Speech)`, worded by `SpeechQueue` with `getString`. Preset
   names are stored data, not labels: the built-ins' names live in `builtInPresets`. Never load a resource
   from `shared/test/`: common tests also run as Android local tests.
-- **Theme**: `IntervalTheme` in `shared/src/ui/Theme.kt`. Fixed tokens (`Spacing`, `Radius`, `Sizes`, `Opacity`,
+- **Theme**: `IntervalTheme` in `core/src/ui/Theme.kt` (`PhaseColors.of(phase)` in `shared/src/ui/PhaseColorsOf.kt`). Fixed tokens (`Spacing`, `Radius`, `Sizes`, `Opacity`,
   `Motion`) in `Tokens.kt`; never write a raw dp, duration or scale in a screen. The one exception is the
   intro's sizes in `splash/Splash.kt`, which follow the platform launch screens.
-- **Motion**: durations are `Motion.*` tokens, easings and springs live in `shared/src/ui/Motion.kt` with the
+- **Motion**: durations are `Motion.*` tokens, easings and springs live in `core/src/ui/Motion.kt` with the
   shared moves: `pressScale` on anything tappable (`surfaceButton` adds the clip, fill and tap),
   `rememberEntrance` + `enterRising` for content that arrives, `RollingText` for a value that changes
   in place, `animateColorAsState` for a control following its state. Page transitions are `pageTransition`/`pagePopTransition` (`Navigation.kt`);

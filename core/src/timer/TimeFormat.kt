@@ -1,8 +1,8 @@
 package dev.justinsmith.interval.timer
 
-internal const val MILLIS_PER_SECOND = 1000L
+const val MILLIS_PER_SECOND = 1000L
 private const val SECONDS_PER_MINUTE = 60
-internal const val DAYS_PER_WEEK = 7
+const val DAYS_PER_WEEK = 7
 
 /** "0:30", "12:05". Negative input reads as zero. */
 fun formatClock(seconds: Int): String {

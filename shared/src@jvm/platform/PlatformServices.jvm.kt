@@ -30,24 +30,6 @@ private class DesktopAppInfo : AppInfo {
     override val version: String? = System.getProperty("jpackage.app-version")
 }
 
-/** Desktop displays follow the OS power settings; nothing to hold here. */
-@Composable
-actual fun KeepScreenOn() = Unit
-
-/** Desktop windows have no system bars to restyle. */
-@Composable
-actual fun SystemBarIcons(lightIcons: Boolean) = Unit
-
-/** Desktop has no system-wide reduce-motion setting that Compose can read. */
-@Composable
-actual fun prefersReducedMotion(): Boolean = false
-
-actual val materialBackPreview: Boolean = false
-
-actual val platformPageTransitions: Boolean = false
-
-actual fun epochMillisNow(): Long = System.currentTimeMillis()
-
 /** The OS's per-user app-data directory, created on first use. */
 private class DesktopStorage : PlatformStorage {
     private val directory: File = appDataDirectory().resolve("interval").apply { mkdirs() }

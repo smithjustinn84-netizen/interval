@@ -19,8 +19,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import dev.justinsmith.interval.resources.Res
-import dev.justinsmith.interval.resources.common_back
+import dev.justinsmith.core.resources.Res
+import dev.justinsmith.core.resources.common_back
 import org.jetbrains.compose.resources.stringResource
 
 /**

@@ -1,0 +1,45 @@
+# What Interval and its sibling apps share: the theme and tokens, motion, the page, sheet, dialog and
+# button components, the lanes artwork, the platform hooks the UI needs, and calendar and clock maths.
+# Nothing here knows about workouts' storage or an app's screens.
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+dependencies:
+  - $compose.runtime
+  - $compose.foundation: exported
+  - $compose.material3: exported
+  - $libs.compose.material3.navigation.suite: exported
+  - $libs.compose.material3.adaptive.navigation3
+  - $libs.composeunstyled.dialog
+  - $libs.composeunstyled.dropdown.menu
+  - $libs.composeunstyled.modal.bottom.sheet
+  - $libs.composeunstyled.text.field
+  - $libs.composeunstyled.toggle.switch
+  - $compose.ui
+  - $compose.components.resources
+  - $compose.preview
+  - $libs.androidx.navigation3.runtime
+  - $libs.androidx.navigation3.ui: exported
+
+test-dependencies:
+  - $libs.kotlinx.coroutines.test
+
+dependencies@android:
+  - $compose.uiTooling
+
+settings:
+  compose:
+    enabled: true
+    resources:
+      packageName: dev.justinsmith.core.resources
+      exposedAccessors: true
+  kotlin:
+    allWarningsAsErrors: true
+    # No module-wide `optIns`: opt in per file (`@file:OptIn`). See shared/module.yaml.
+
+plugins:
+  lint-plugin:
+    enabled: true
+  detekt-plugin:
+    enabled: true

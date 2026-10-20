@@ -62,9 +62,9 @@ import com.composeunstyled.SheetDetent
 import com.composeunstyled.UnstyledDialog
 import com.composeunstyled.UnstyledModalBottomSheet
 import com.composeunstyled.rememberModalBottomSheetState
-import dev.justinsmith.interval.resources.Res
-import dev.justinsmith.interval.resources.sheet_close_cd
-import dev.justinsmith.interval.resources.sheet_drag_handle_cd
+import dev.justinsmith.core.resources.Res
+import dev.justinsmith.core.resources.sheet_close_cd
+import dev.justinsmith.core.resources.sheet_drag_handle_cd
 import kotlinx.coroutines.flow.dropWhile
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch

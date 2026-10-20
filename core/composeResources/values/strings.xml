@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The words core's own components say. An app's strings live in its own module. -->
+<resources>
+    <string name="common_back">Back</string>
+    <string name="sheet_drag_handle_cd">Drag handle</string>
+    <string name="sheet_close_cd">Close</string>
+</resources>

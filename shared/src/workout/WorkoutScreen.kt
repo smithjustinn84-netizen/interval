@@ -68,6 +68,7 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.WorkoutLanes
 import dev.justinsmith.interval.ui.isLandscape
 import dev.justinsmith.interval.ui.laneRing
+import dev.justinsmith.interval.ui.of
 import dev.justinsmith.interval.ui.rememberLaneAnchor
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource

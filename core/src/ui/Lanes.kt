@@ -159,8 +159,8 @@ private data class SetupComet(
  */
 @Stable
 class LaneAnchor {
-    internal var ring by mutableStateOf<LayoutCoordinates?>(null)
-    internal var lanes by mutableStateOf<LayoutCoordinates?>(null)
+    var ring by mutableStateOf<LayoutCoordinates?>(null)
+    var lanes by mutableStateOf<LayoutCoordinates?>(null)
 }
 
 @Composable
