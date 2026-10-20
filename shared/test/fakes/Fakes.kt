@@ -58,21 +58,26 @@ class FakeHistoryDao : HistoryDao {
 
     override fun observeAll(): Flow<List<HistoryEntity>> =
         rows.map { all ->
-            all.sortedWith(compareByDescending<HistoryEntity> { it.finishedAtEpochMillis }.thenByDescending { it.id })
+            all.filterNot { it.deleted }
+                .sortedWith(compareByDescending<HistoryEntity> { it.finishedAtEpochMillis }.thenByDescending { it.id })
         }
 
-    // As Room's autoGenerate does: an id of 0 takes the next one, any other is kept.
+    override suspend fun all(): List<HistoryEntity> = rows.value.sortedBy { it.id }
+
+    // As Room's autoGenerate does: an id of 0 takes the next one, any other is kept. Like the unique
+    // index, a uid already stored is refused.
     override suspend fun insert(entry: HistoryEntity) {
+        check(rows.value.none { it.uid == entry.uid }) { "UNIQUE constraint failed: history.uid" }
         val id = if (entry.id == 0L) nextId++ else entry.id.also { nextId = maxOf(nextId, it + 1) }
         rows.update { it + entry.copy(id = id) }
     }
 
-    override suspend fun delete(id: Long) {
-        rows.update { all -> all.filterNot { it.id == id } }
+    override suspend fun delete(id: Long, now: Long) {
+        rows.update { all -> all.map { if (it.id == id) it.copy(deleted = true, updatedAtEpochMillis = now) else it } }
     }
 
-    override suspend fun clear() {
-        rows.value = emptyList()
+    override suspend fun clear(now: Long) {
+        rows.update { all -> all.map { if (it.deleted) it else it.copy(deleted = true, updatedAtEpochMillis = now) } }
     }
 }
 

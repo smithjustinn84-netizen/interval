@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalUuidApi::class)
+
 package dev.justinsmith.interval.data
 
 import androidx.datastore.core.DataStore
@@ -33,6 +35,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 /** Which feedback plays during a workout. */
 data class CueSettings(
@@ -286,17 +290,24 @@ class IntervalRepository(
         endedEarly: Boolean = false,
         workSeconds: Int? = null,
     ) {
-        val entry = HistoryEntry(clock.nowMillis(), config, elapsedSeconds, endedEarly, workSeconds)
-        persist { historyDao.insert(entry.toEntity()) }
+        val now = clock.nowMillis()
+        val entry = HistoryEntry(now, config, elapsedSeconds, endedEarly, workSeconds)
+        persist { historyDao.insert(entry.toEntity(uid = Uuid.random().toHexString(), updatedAtEpochMillis = now)) }
     }
 
-    /** Removes one workout from the history, by the id it is stored under. */
+    /**
+     * Removes one workout from the history, by the id it is stored under. Its row stays behind, marked
+     * deleted, so a sibling app that has it learns it is gone.
+     */
     fun deleteWorkout(id: Long) {
-        persist { historyDao.delete(id) }
+        val now = clock.nowMillis()
+        persist { historyDao.delete(id, now) }
     }
 
+    /** Removes every workout from the history, leaving each row marked deleted as [deleteWorkout] does. */
     fun clearHistory() {
-        persist { historyDao.clear() }
+        val now = clock.nowMillis()
+        persist { historyDao.clear(now) }
     }
 
     /** Plans [preset] for every week on each of [weekdays] (1 for Monday through 7): one plan per day. */

@@ -354,6 +354,54 @@ class IntervalRepositoryTest {
     }
 
     @Test
+    fun `a deleted workout stays stored as a tombstone and leaves the history`() = runTest {
+        val repository = repository()
+        repository.recordWorkout(IntervalConfig(), elapsedSeconds = 1)
+        repository.recordWorkout(IntervalConfig(), elapsedSeconds = 2)
+        val kept = storage.history.all().first { it.elapsedSeconds == 2 }
+        clock = 5_000
+        repository.deleteWorkout(storage.history.all().first { it.elapsedSeconds == 1 }.id)
+
+        val (deleted, untouched) = storage.history.all()
+        assertTrue(deleted.deleted)
+        assertEquals(5_000, deleted.updatedAtEpochMillis)
+        assertEquals(kept, untouched)
+        assertEquals(listOf(2), repository().history.value.map { it.elapsedSeconds })
+    }
+
+    @Test
+    fun `clearing the history leaves every workout as a tombstone`() = runTest {
+        val repository = repository()
+        repository.recordWorkout(IntervalConfig(), elapsedSeconds = 1)
+        repository.deleteWorkout(requireNotNull(repository.history.value.single().id))
+        repository.recordWorkout(IntervalConfig(), elapsedSeconds = 2)
+        repository.recordWorkout(IntervalConfig(), elapsedSeconds = 3)
+        clock = 9_000
+        repository.clearHistory()
+
+        val rows = storage.history.all()
+        assertEquals(3, rows.size)
+        assertTrue(rows.all { it.deleted })
+        // One already deleted keeps the time it was deleted.
+        assertEquals(listOf(1_000L, 9_000L, 9_000L), rows.map { it.updatedAtEpochMillis })
+        assertEquals(emptyList(), repository().history.value)
+    }
+
+    @Test
+    fun `each new workout gets a uid of its own and the time it was recorded`() = runTest {
+        val repository = repository()
+        repeat(20) {
+            clock += 1
+            repository.recordWorkout(IntervalConfig(), elapsedSeconds = it)
+        }
+        val rows = storage.history.all()
+        val uids = rows.map { it.uid }
+        assertEquals(20, uids.toSet().size)
+        assertTrue(uids.all { it.length == 32 && it.all { c -> c in "0123456789abcdef" } })
+        assertEquals(rows.map { it.finishedAtEpochMillis }, rows.map { it.updatedAtEpochMillis })
+    }
+
+    @Test
     fun `a weekly plan is one plan per weekday and survives a restart`() {
         val tabata = builtInPresets.first()
         repository().planWeekly(tabata, setOf(4, 1, 9))
