@@ -10,7 +10,7 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import dev.justinsmith.interval.data.AppDatabase
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.data.MIGRATION_3_4
-import dev.justinsmith.interval.data.SiblingSync
+import dev.justinsmith.interval.data.siblingSync
 import dev.justinsmith.interval.platform.PlatformStorage
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.epochMillisNow
@@ -93,7 +93,7 @@ val dataModule: Module = module {
  * with the container, so it publishes as soon as the history is read.
  */
 val syncModule: Module = module {
-    single(createdAtStart = true) { SiblingSync(repository = get(), feed = get(), scope = get(StorageScope)) }
+    single(createdAtStart = true) { get<IntervalRepository>().siblingSync(feed = get(), scope = get(StorageScope)) }
 }
 
 /**

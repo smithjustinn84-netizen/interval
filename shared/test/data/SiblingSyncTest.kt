@@ -34,7 +34,7 @@ class SiblingSyncTest {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
     private val repository = storage.repository(now = { 1_000L }, scope = scope)
     private val feed = MemoryFeed()
-    private val sync = SiblingSync(repository, feed, scope, io = Dispatchers.Unconfined)
+    private val sync = repository.siblingSync(feed, scope, io = Dispatchers.Unconfined)
 
     private fun published(): FeedSnapshot = assertNotNull(feed.published?.let(FeedCodec::decode))
 

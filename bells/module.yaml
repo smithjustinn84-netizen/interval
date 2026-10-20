@@ -1,0 +1,55 @@
+# Bells, Interval's sibling app for kettlebell training: log sets of reps with a bell, see the week and
+# personal records, and share every session with Interval on the same device (core-sync).
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+dependencies:
+  - ../core: exported
+  - ../core-sync
+  - $compose.runtime
+  - $compose.ui
+  - $compose.components.resources
+  - $compose.preview
+  - $libs.compose.material3.navigation.suite
+  - $libs.androidx.lifecycle.viewmodel: exported
+  - $libs.androidx.lifecycle.viewmodel.compose: exported
+  - $libs.androidx.lifecycle.runtime.compose
+  - $libs.androidx.lifecycle.viewmodel.navigation3
+  - $libs.androidx.navigation3.runtime
+  - $libs.androidx.navigation3.ui
+  - $libs.koin.core
+  - $libs.koin.compose
+  - $libs.kermit
+  - $libs.androidx.room.runtime
+  - $libs.androidx.sqlite.bundled
+
+test-dependencies:
+  - $libs.kotlinx.coroutines.test
+
+dependencies@android:
+  - $compose.uiTooling
+
+settings:
+  compose:
+    enabled: true
+    resources:
+      packageName: dev.justinsmith.bells.resources
+      exposedAccessors: true
+  kotlin:
+    allWarningsAsErrors: true
+    # Room's KSP-generated `actual object BellsDatabaseConstructor`; see shared/module.yaml.
+    freeCompilerArgs: [-Xexpect-actual-classes]
+    serialization: json
+    ksp:
+      processors:
+        - $libs.androidx.room.compiler
+      processorOptions:
+        room.schemaLocation: ./schemas
+    # No module-wide `optIns`: opt in per file (`@file:OptIn`). See shared/module.yaml.
+
+plugins:
+  lint-plugin:
+    enabled: true
+  detekt-plugin:
+    enabled: true

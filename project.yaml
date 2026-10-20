@@ -1,5 +1,9 @@
 modules:
   - androidApp
+  - bells
+  - bellsAndroid
+  - bellsDesktop
+  - bellsIos
   - core
   - core-sync
   - desktopApp

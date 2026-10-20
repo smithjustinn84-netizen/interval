@@ -1,0 +1,25 @@
+product: android/app
+
+dependencies:
+  - //bells
+  - $libs.androidx.activity.compose
+
+settings:
+  compose: enabled
+  android:
+    namespace: dev.justinsmith.bells
+    # Interval's sibling: AppId.Bells in core-sync names this id for its feed provider.
+    applicationId: dev.justinsmith.kettlebell
+    compileSdk: 37
+    targetSdk: 37
+    minSdk: 26
+    versionCode: 1
+    versionName: "0.1.0"
+  kotlin:
+    allWarningsAsErrors: true
+
+plugins:
+  lint-plugin:
+    enabled: true
+  detekt-plugin:
+    enabled: true

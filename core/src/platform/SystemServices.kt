@@ -23,6 +23,9 @@ interface TimestampFormatter {
     fun monthTitle(epochDay: Long): String
 }
 
+/** The platform's [TimestampFormatter], in the device's time zone and locale. */
+expect fun systemTimestampFormatter(): TimestampFormatter
+
 /** What the installed build says about itself, for the About screen. */
 interface AppInfo {
     /**

@@ -10,8 +10,6 @@ import dev.justinsmith.core.sync.AppGroupSiblingFeed
 import dev.justinsmith.core.sync.AppId
 import dev.justinsmith.core.sync.SiblingFeed
 import dev.justinsmith.interval.data.AppDatabase
-import dev.justinsmith.interval.timer.dateOfEpochDay
-import dev.justinsmith.interval.timer.epochDayOf
 import kotlinx.cinterop.ExperimentalForeignApi
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.onClose
@@ -26,30 +24,13 @@ import platform.AVFAudio.setActive
 import platform.AudioToolbox.AudioServicesPlaySystemSound
 import platform.Foundation.NSApplicationSupportDirectory
 import platform.Foundation.NSBundle
-import platform.Foundation.NSCalendar
-import platform.Foundation.NSCalendarIdentifierGregorian
-import platform.Foundation.NSCalendarUnitDay
-import platform.Foundation.NSCalendarUnitMonth
-import platform.Foundation.NSCalendarUnitYear
-import platform.Foundation.NSDate
-import platform.Foundation.NSDateComponents
-import platform.Foundation.NSDateFormatter
 import platform.Foundation.NSFileManager
-import platform.Foundation.NSLocale
-import platform.Foundation.NSTimeZone
 import platform.Foundation.NSURL
 import platform.Foundation.NSUserDomainMask
-import platform.Foundation.autoupdatingCurrentLocale
-import platform.Foundation.currentLocale
-import platform.Foundation.dateWithTimeIntervalSince1970
-import platform.Foundation.localTimeZone
-import platform.Foundation.localeIdentifier
 import platform.UIKit.UIImpactFeedbackGenerator
 import platform.UIKit.UIImpactFeedbackStyle
 import platform.UIKit.UINotificationFeedbackGenerator
 import platform.UIKit.UINotificationFeedbackType
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.DurationUnit
 
 @Composable
 actual fun rememberPlatformModule(): Module = remember {
@@ -58,7 +39,7 @@ actual fun rememberPlatformModule(): Module = remember {
         single<CuePlayer> { IosCuePlayer() }.withOptions {
             onClose { it?.release() }
         }
-        single<TimestampFormatter> { FoundationTimestampFormatter() }
+        single<TimestampFormatter> { systemTimestampFormatter() }
         single<AppInfo> { IosAppInfo() }
         single<SiblingFeed> { AppGroupSiblingFeed(AppId.Interval) }
     }
@@ -87,69 +68,6 @@ private class IosStorage : PlatformStorage {
         Room.databaseBuilder<AppDatabase>(name = "$directory/$DATABASE_NAME")
 
     override val preferencesPath: String = "$directory/$PREFERENCES_NAME"
-}
-
-private const val NOON_HOUR = 12L
-
-private class FoundationTimestampFormatter : TimestampFormatter {
-    private var formats: Formats? = null
-
-    override fun date(epochMillis: Long): String = formats().date.stringFromDate(nsDate(epochMillis))
-
-    override fun time(epochMillis: Long): String = formats().time.stringFromDate(nsDate(epochMillis))
-
-    // Gregorian, whichever calendar the user reads dates in, so the day count is the epoch day the rest of
-    // the app (and the other platforms) use. Its time zone follows the device's as it changes.
-    private val gregorian = requireNotNull(NSCalendar.calendarWithIdentifier(NSCalendarIdentifierGregorian)).apply {
-        timeZone = NSTimeZone.localTimeZone
-    }
-
-    override fun dayNumber(epochMillis: Long): Long {
-        val parts = gregorian.components(
-            NSCalendarUnitYear or NSCalendarUnitMonth or NSCalendarUnitDay,
-            fromDate = nsDate(epochMillis),
-        )
-        return epochDayOf(parts.year.toInt(), parts.month.toInt(), parts.day.toInt())
-    }
-
-    override fun dateOfDay(epochDay: Long): String = formats().date.stringFromDate(noonOn(epochDay))
-
-    override fun monthTitle(epochDay: Long): String = formats().month.stringFromDate(noonOn(epochDay))
-
-    // Noon rather than midnight, which a daylight-saving change can skip.
-    private fun noonOn(epochDay: Long): NSDate {
-        val date = dateOfEpochDay(epochDay)
-        val parts = NSDateComponents().apply {
-            year = date.year.toLong()
-            month = date.month.toLong()
-            day = date.day.toLong()
-            hour = NOON_HOUR
-        }
-        return requireNotNull(gregorian.dateFromComponents(parts))
-    }
-
-    private fun nsDate(epochMillis: Long): NSDate =
-        NSDate.dateWithTimeIntervalSince1970(epochMillis.milliseconds.toDouble(DurationUnit.SECONDS))
-
-    // A template is turned into a format once, for one locale: a region change (12 to 24 hours, say)
-    // needs new formatters, not just a new locale on the old ones.
-    private fun formats(): Formats {
-        val locale = NSLocale.currentLocale.localeIdentifier
-        return formats?.takeIf { it.locale == locale } ?: Formats(locale).also { formats = it }
-    }
-
-    // Templates rather than fixed formats, so each locale orders the parts and picks 12 or 24 hours its way.
-    private class Formats(val locale: String) {
-        val date = formatter("EEEEMMMd")
-        val time = formatter("jmm")
-        val month = formatter("yMMMM")
-
-        private fun formatter(template: String) = NSDateFormatter().apply {
-            setLocale(NSLocale.autoupdatingCurrentLocale)
-            setTimeZone(NSTimeZone.localTimeZone)
-            setLocalizedDateFormatFromTemplate(template)
-        }
-    }
 }
 
 /**

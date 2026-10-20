@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Every user-facing string in Bells. ViewModels expose typed data; screens put it into words here.
+  Keys: <area>_<element>; `_cd` marks a content description.
+-->
+<resources>
+    <string name="app_name">Bells</string>
+
+    <!-- Tabs -->
+    <string name="nav_today">Today</string>
+    <string name="nav_history">History</string>
+    <string name="nav_bells">Bells</string>
+
+    <!-- Weights and counts -->
+    <string name="kg_value">%1$s kg</string>
+    <string name="set_line">%1$s kg × %2$d</string>
+    <string name="set_line_side">%1$s kg × %2$d · %3$s</string>
+    <plurals name="sets_count">
+        <item quantity="one">%1$d set</item>
+        <item quantity="other">%1$d sets</item>
+    </plurals>
+    <string name="common_joined">%1$s · %2$s</string>
+
+    <!-- Exercises -->
+    <string name="exercise_two_hand_swing">Two-hand swing</string>
+    <string name="exercise_one_hand_swing">One-hand swing</string>
+    <string name="exercise_clean">Clean</string>
+    <string name="exercise_press">Press</string>
+    <string name="exercise_snatch">Snatch</string>
+    <string name="exercise_get_up">Get-up</string>
+    <string name="exercise_goblet_squat">Goblet squat</string>
+    <string name="exercise_row">Row</string>
+    <string name="exercise_jerk">Jerk</string>
+    <string name="exercise_long_cycle">Long cycle</string>
+    <string name="exercise_halo">Halo</string>
+    <string name="side_left">Left</string>
+    <string name="side_right">Right</string>
+
+    <!-- A finished session's name, from what was done. -->
+    <string name="session_title_two">%1$s and %2$s</string>
+    <string name="session_title_more">%1$s and %2$d more</string>
+
+    <!-- Today -->
+    <string name="today_this_week">This week</string>
+    <plurals name="today_week_count">
+        <item quantity="one">%1$d workout · %2$d from Interval</item>
+        <item quantity="other">%1$d workouts · %2$d from Interval</item>
+    </plurals>
+    <string name="today_legend_bells">Bells</string>
+    <string name="today_legend_interval">Interval</string>
+    <string name="today_last">Last session</string>
+    <string name="today_none_title">No sessions yet</string>
+    <string name="today_none_text">Start one, log each set as you go, and it lands in your history and Interval's.</string>
+    <string name="today_start">Start session</string>
+    <string name="today_resume">Resume session</string>
+    <!-- Monday to Sunday, as the week strip heads its days. -->
+    <string name="weekday_initial_1">M</string>
+    <string name="weekday_initial_2">T</string>
+    <string name="weekday_initial_3">W</string>
+    <string name="weekday_initial_4">T</string>
+    <string name="weekday_initial_5">F</string>
+    <string name="weekday_initial_6">S</string>
+    <string name="weekday_initial_7">S</string>
+    <string name="weekday_cd">%1$s: %2$s</string>
+    <string name="weekday_counts">%1$d in Bells, %2$d in Interval</string>
+    <string name="weekday_rest">rest</string>
+
+    <!-- Session -->
+    <string name="session_title">Session</string>
+    <string name="session_time">Time</string>
+    <string name="session_moved">Moved</string>
+    <string name="session_since_last">Since last set</string>
+    <string name="session_empty">Log your first set: pick the lift, the bell and the reps.</string>
+    <string name="session_log">Log set</string>
+    <string name="session_finish">Finish</string>
+    <string name="session_discard">Discard</string>
+    <string name="session_remove_set_cd">Remove %1$s</string>
+    <string name="session_discard_title">Discard session?</string>
+    <string name="session_discard_text">Its sets are not saved.</string>
+    <string name="common_cancel">Cancel</string>
+
+    <!-- Log a set -->
+    <string name="log_title">Log a set</string>
+    <string name="log_exercise">Lift</string>
+    <string name="log_bell">Bell</string>
+    <string name="log_reps">Reps</string>
+    <string name="log_side">Side</string>
+    <string name="log_fewer_reps">Fewer reps</string>
+    <string name="log_more_reps">More reps</string>
+    <string name="log_no_bells">Add the bells you own on the Bells tab; until then every size shows.</string>
+
+    <!-- Summary -->
+    <string name="summary_done">Done</string>
+    <string name="summary_reps">Reps</string>
+    <string name="summary_records">New records</string>
+    <string name="summary_shared">Counts toward your week in Bells and Interval</string>
+
+    <!-- History -->
+    <string name="history_title">History</string>
+    <string name="history_from_interval">Interval</string>
+    <string name="history_empty_title">Nothing logged yet</string>
+    <string name="history_empty_text">Sessions from Bells and workouts from Interval appear here.</string>
+    <string name="history_delete_title">Delete session?</string>
+    <string name="history_delete_text">It goes from Bells and from Interval.</string>
+    <string name="history_delete">Delete</string>
+    <string name="day_today">Today</string>
+    <string name="day_yesterday">Yesterday</string>
+
+    <!-- Bells and records -->
+    <string name="bells_title">Bells</string>
+    <string name="bells_owned">Your bells</string>
+    <string name="bells_owned_hint">Tap the sizes you own; the log offers just those.</string>
+    <string name="bells_records">Personal records</string>
+    <string name="bells_records_empty">Log a session to set your first records.</string>
+    <string name="record_line">Heaviest %1$s kg × %2$d · most reps %3$d at %4$s kg</string>
+</resources>

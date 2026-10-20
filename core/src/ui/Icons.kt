@@ -33,6 +33,17 @@ object IntervalIcons {
             "a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z",
     )
     val Add: ImageVector = lineIcon("Add", "M12 5v14M5 12h14")
+
+    /** A calendar page: today's training. */
+    val Today: ImageVector =
+        lineIcon(
+            "Today",
+            "M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z",
+            "M4 10h16M8 2v4M16 2v4",
+        )
+
+    /** A kettlebell: its handle and its bell. */
+    val Bell: ImageVector = lineIcon("Bell", "M9 9V7a3 3 0 0 1 6 0v2", "M18 15a6 6 0 1 1 -12 0a6 6 0 1 1 12 0")
     val Back: ImageVector = lineIcon("Back", "M19 12H5M12 19l-7-7 7-7")
     val Close: ImageVector = lineIcon("Close", "M6 6l12 12M18 6L6 18")
     val Chevron: ImageVector = lineIcon("Chevron", "M9 6l6 6-6 6")

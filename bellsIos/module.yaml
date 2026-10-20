@@ -1,0 +1,16 @@
+product: ios/app
+
+dependencies:
+  - //bells
+  - $compose.ui
+
+settings:
+  compose: enabled
+  kotlin:
+    allWarningsAsErrors: true
+
+plugins:
+  lint-plugin:
+    enabled: true
+  detekt-plugin:
+    enabled: true
