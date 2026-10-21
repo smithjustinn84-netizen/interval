@@ -212,6 +212,7 @@
     <string name="history_up_next">Up next · %1$s</string>
     <string name="history_edit_plan">Edit plan</string>
     <string name="history_start">Start</string>
+    <string name="history_resume">Resume</string>
     <!-- The plans after the first: "Then Fri · HIIT 30/30" -->
     <string name="history_then">Then %1$s</string>
     <!-- The month calendar -->

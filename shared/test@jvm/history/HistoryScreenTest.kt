@@ -12,6 +12,8 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import dev.justinsmith.bells.domain.ProgramId
+import dev.justinsmith.bells.domain.program
 import dev.justinsmith.interval.fakes.hangboardPreset
 import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.fakes.tabataPreset
@@ -74,6 +76,7 @@ class HistoryScreenTest {
         onOpenWorkout = { events += "open $it" },
         onPlan = { events += "plan" },
         onShowTimer = { events += "timer" },
+        onStartLift = { events += "lift ${it?.stored}" },
     )
 
     @Test
@@ -153,8 +156,8 @@ class HistoryScreenTest {
     fun `up next starts the next plan and lists the ones after`() = runUiTest {
         val state = oneWorkout.copy(
             upNext = listOf(
-                UpNextItem(1, 20_741, HistoryDay.Today, tabata.name, tabata.config),
-                UpNextItem(2, 20_742, HistoryDay.Tomorrow, hiit.name, hiit.config),
+                UpNextItem.Planned(1, 20_741, HistoryDay.Today, tabata.name, tabata.config),
+                UpNextItem.Planned(2, 20_742, HistoryDay.Tomorrow, hiit.name, hiit.config),
             ),
             hasPlans = true,
         )
@@ -164,6 +167,29 @@ class HistoryScreenTest {
         onNodeWithText("Start").performClick()
         onNodeWithText("Edit plan").performClick()
         assertEquals(listOf("start Tabata", "plan"), events)
+    }
+
+    @Test
+    fun `up next starts the lift program's day or resumes the session in progress`() = runUiTest {
+        val day = checkNotNull(program(ProgramId.PressLadders).dayAfter(done = 0))
+        var state by mutableStateOf(
+            oneWorkout.copy(
+                upNext = listOf(
+                    UpNextItem.Lift(20_741, HistoryDay.Today, day),
+                    UpNextItem.Planned(1, 20_742, HistoryDay.Tomorrow, tabata.name, tabata.config),
+                ),
+                hasPlans = true,
+            ),
+        )
+        setThemedContent { HistoryScreen(state, actions) }
+        onNodeWithText("Press ladders 1-2-3").assertExists()
+        onNode(hasText("Day 1 of", substring = true)).assertExists()
+        onNodeWithText("Then Tomorrow · Tabata").assertExists()
+        onNodeWithText("Start").performClick()
+
+        state = state.copy(upNext = listOf(UpNextItem.Lift(20_741, HistoryDay.Today, day, resume = true)))
+        onNodeWithText("Resume").performClick()
+        assertEquals(listOf("lift ${day.program.key.stored}", "lift null"), events)
     }
 
     @Test

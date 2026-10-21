@@ -12,6 +12,7 @@ import dev.justinsmith.bells.data.SessionEntity
 import dev.justinsmith.bells.data.SetEntity
 import dev.justinsmith.bells.di.BellsStorageScope
 import dev.justinsmith.bells.domain.EmomCue
+import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.platform.Beeper
 import dev.justinsmith.interval.platform.WallClock
 import kotlinx.coroutines.CoroutineScope
@@ -135,10 +136,27 @@ class FakeLiftStorage {
         now,
     )
 
-    /** Stores a finished session of [sets] (bell and reps of two-hand swings), as if logged in Lift. */
-    fun finished(uid: String, title: String, startedAt: Long, finishedAt: Long, vararg sets: Pair<Double, Int>) {
+    /**
+     * Stores a finished session of [sets] (bell and reps of two-hand swings), as if logged in Lift: a day of
+     * [program], or a free one.
+     */
+    fun finished(
+        uid: String,
+        title: String,
+        startedAt: Long,
+        finishedAt: Long,
+        vararg sets: Pair<Double, Int>,
+        program: ProgramKey? = null,
+    ) {
         sessions.sessions.update {
-            it + SessionEntity(uid, startedAt, finishedAt, title, updatedAtEpochMillis = finishedAt)
+            it + SessionEntity(
+                uid,
+                startedAt,
+                finishedAt,
+                title,
+                updatedAtEpochMillis = finishedAt,
+                programId = program?.stored,
+            )
         }
         sessions.sets.update { all ->
             all + sets.mapIndexed { i, (kg, reps) ->

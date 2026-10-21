@@ -3,6 +3,9 @@ package dev.justinsmith.interval.history
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.bells.data.BellsRepository
+import dev.justinsmith.bells.domain.LiftSession
+import dev.justinsmith.bells.domain.ProgramDay
+import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.interval.data.AppSettings
 import dev.justinsmith.interval.data.BodySettings
 import dev.justinsmith.interval.data.HistoryEntry
@@ -83,14 +86,31 @@ data class DayCell(
     val date: String = "",
 )
 
-/** A plan still to do: on [day], [name] in [config]'s shape. */
-data class UpNextItem(
-    val planId: Long,
-    val epochDay: Long,
-    val day: HistoryDay,
-    val name: String,
-    val config: IntervalConfig,
-)
+/** Something still to do on [day]: an interval plan, or the next day of the lift program followed. */
+sealed interface UpNextItem {
+    val epochDay: Long
+    val day: HistoryDay
+
+    /** A plan: [name] in [config]'s shape. */
+    data class Planned(
+        val planId: Long,
+        override val epochDay: Long,
+        override val day: HistoryDay,
+        val name: String,
+        val config: IntervalConfig,
+    ) : UpNextItem
+
+    /**
+     * The program's next day: today, or tomorrow once a day of it is done today. [resume] when a session is
+     * in progress already, which Lift picks up before starting another.
+     */
+    data class Lift(
+        override val epochDay: Long,
+        override val day: HistoryDay,
+        val programDay: ProgramDay,
+        val resume: Boolean = false,
+    ) : UpNextItem
+}
 
 /** The summary's figures for its range. [time] is a clock, "16:35"; [totalSeconds] is for longer ones. */
 data class RangeSummary(
@@ -156,6 +176,35 @@ data class HistoryUiState(
     val weeksMax: Int get() = maxOf(weeks.maxOfOrNull { it.count } ?: 0, goal ?: 0, 1)
 }
 
+/** A day's heading: Today, Yesterday or Tomorrow beside [today], else its date. */
+private fun TimestampFormatter.heading(day: Long, today: Long): HistoryDay = when (day) {
+    today -> HistoryDay.Today
+    today - 1 -> HistoryDay.Yesterday
+    today + 1 -> HistoryDay.Tomorrow
+    else -> HistoryDay.On(dateOfDay(day))
+}
+
+/**
+ * The plans still to do from [today], with the next day of the program followed on Lift among them, by day: it
+ * falls today, unless a day of it was finished today already, and leads the plans of its day.
+ */
+private fun TimestampFormatter.upNext(log: TrainingLog, lifting: Lifting, today: Long): List<UpNextItem> {
+    val lift = lifting.programDay?.let { day ->
+        val doneToday = lifting.sessions.any { session ->
+            session.program == day.program.key && session.finishedAtEpochMillis?.let(::dayNumber) == today
+        }
+        val epochDay = if (doneToday) today + 1 else today
+        UpNextItem.Lift(epochDay, heading(epochDay, today), day, resume = lifting.inProgress)
+    }
+    val plans = log.upNext().map {
+        UpNextItem.Planned(it.plan.id, it.epochDay, heading(it.epochDay, today), it.plan.name, it.plan.config)
+    }
+    return (listOfNotNull(lift) + plans).sortedBy { it.epochDay }
+}
+
+/** Lift's side: its finished sessions, the followed program's next day, and whether one is in progress. */
+private data class Lifting(val sessions: List<LiftSession>, val programDay: ProgramDay?, val inProgress: Boolean)
+
 /** What the screen is looking at, apart from the data: the range, the month and the open day. */
 private data class HistoryView(
     val range: TrainingRange = TrainingRange.Week,
@@ -185,22 +234,26 @@ class HistoryViewModel(
 
     private val view = MutableStateFlow(HistoryView())
 
+    private val lifting = combine(bells.sessions, bells.programDay, bells.active) { sessions, day, active ->
+        Lifting(sessions, day, active != null)
+    }
+
     val state: StateFlow<HistoryUiState> =
         combine(
-            combine(repository.history, bells.sessions) { history, sessions -> history to sessions.asLiftWorkouts() },
+            combine(repository.history, lifting) { history, lifting -> history to lifting },
             repository.planned,
             repository.presets,
             repository.appSettings,
             combine(days, view, repository.config) { _, view, config -> view to config },
-        ) { (history, lifts), planned, presets, app, (view, config) ->
-            buildState(history, lifts, planned, presets, app, view, config)
+        ) { (history, lifting), planned, presets, app, (view, config) ->
+            buildState(history, lifting, planned, presets, app, view, config)
         }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.Eagerly,
                 initialValue = buildState(
                     repository.history.value,
-                    bells.sessions.value.asLiftWorkouts(),
+                    Lifting(bells.sessions.value, bells.programDay.value, bells.active.value != null),
                     repository.planned.value,
                     repository.presets.value,
                     repository.appSettings.value,
@@ -236,6 +289,11 @@ class HistoryViewModel(
         repository.planOnce(preset, epochDay)
     }
 
+    /** Starts the next day of [program], for the Lifting page about to open. */
+    fun startLift(program: ProgramKey) {
+        bells.startSession(program)
+    }
+
     fun removePlanned(planId: Long) {
         repository.removePlanned(planId)
     }
@@ -254,7 +312,7 @@ class HistoryViewModel(
 
     private fun buildState(
         history: List<HistoryEntry>,
-        lifts: List<LiftWorkout>,
+        lifting: Lifting,
         planned: List<PlannedWorkout>,
         presets: List<Preset>,
         app: AppSettings,
@@ -262,6 +320,7 @@ class HistoryViewModel(
         config: IntervalConfig,
     ): HistoryUiState {
         val today = timestamps.dayNumber(clock.nowMillis())
+        val lifts = lifting.sessions.asLiftWorkouts()
         val log = TrainingLog(history, planned, today, lifts, timestamps::dayNumber)
         val body = app.body
         val week = log.week()
@@ -278,7 +337,7 @@ class HistoryViewModel(
                         else -> liftItem(entry as LiftWorkout, body)
                     }
                 }
-                HistorySection(heading(dayNumber, today), dayNumber, items)
+                HistorySection(timestamps.heading(dayNumber, today), dayNumber, items)
             }
 
         val monthOf = monthStartAfter(today, view.monthOffset)
@@ -309,16 +368,14 @@ class HistoryViewModel(
             mostDone = log.mostDone(MOST_DONE_SHOWN).map { tally ->
                 ShapeRow(presets.matching(tally.config)?.name, tally.config, tally.count, tally.seconds)
             },
-            upNext = log.upNext().map {
-                UpNextItem(it.plan.id, it.epochDay, heading(it.epochDay, today), it.plan.name, it.plan.config)
-            },
-            hasPlans = planned.isNotEmpty(),
+            upNext = timestamps.upNext(log, lifting, today),
+            hasPlans = planned.isNotEmpty() || lifting.programDay != null,
             choices = planChoices(presets, config),
             daySheet = view.openDay?.let { day ->
                 val training = log.day(day)
                 DaySheet(
                     epochDay = day,
-                    day = heading(day, today),
+                    day = timestamps.heading(day, today),
                     weekday = training.weekday,
                     plans = training.plans.map { plan ->
                         SheetPlan(
@@ -373,13 +430,6 @@ class HistoryViewModel(
         inMonth = inMonth,
         date = timestamps.dateOfDay(day.epochDay),
     )
-
-    private fun heading(day: Long, today: Long): HistoryDay = when (day) {
-        today -> HistoryDay.Today
-        today - 1 -> HistoryDay.Yesterday
-        today + 1 -> HistoryDay.Tomorrow
-        else -> HistoryDay.On(timestamps.dateOfDay(day))
-    }
 
     private companion object {
         const val DAY_CHECK_MILLIS = 60_000L

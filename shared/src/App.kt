@@ -289,6 +289,7 @@ private fun appEntries(
             onPlan = { backStack.push(Plan) },
             onStartWorkout = { backStack.push(Workout) },
             onShowTimer = { selectTab(TimerTab) },
+            onStartSession = { backStack.push(Lifting) },
         )
     }
     entry<Settings>(metadata = SupportingPaneSceneStrategy.supportingPane()) {

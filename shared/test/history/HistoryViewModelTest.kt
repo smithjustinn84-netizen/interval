@@ -3,6 +3,8 @@
 package dev.justinsmith.interval.history
 
 import androidx.lifecycle.viewModelScope
+import dev.justinsmith.bells.domain.ProgramId
+import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.interval.data.BodySettings
 import dev.justinsmith.interval.data.PlanSchedule
 import dev.justinsmith.interval.fakes.DAY_MILLIS
@@ -28,6 +30,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -150,6 +154,68 @@ class HistoryViewModelTest : MainDispatcherTest() {
         assertEquals(listOf(TODAY + 1), after.upNext.map { it.epochDay })
         assertTrue(after.sections.single().items.single().planned)
         assertEquals(1, after.summary.plannedDone)
+    }
+
+    @Test
+    fun `the program followed on Lift is up next today with its next day`() {
+        bells.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
+
+        val state = viewModel.state.value
+        val next = assertIs<UpNextItem.Lift>(state.upNext.single())
+        assertEquals(TODAY, next.epochDay)
+        assertEquals(HistoryDay.Today, next.day)
+        assertEquals(1, next.programDay.number)
+        assertFalse(next.resume)
+        assertTrue(state.hasPlans)
+        assertFalse(state.isEmpty)
+    }
+
+    @Test
+    fun `once a day of the program is done today the next one is up tomorrow`() {
+        val ladders = ProgramKey.BuiltIn(ProgramId.PressLadders)
+        // Followed first thing, so the session after it counts as its first day.
+        clock = TODAY * DAY_MILLIS
+        bells.follow(ladders)
+        val finished = noonOf(TODAY)
+        clock = finished
+        lift.finished("b1", "Press ladders", finished - 1_000_000, finished, 16.0 to 6, program = ladders)
+
+        val next = assertIs<UpNextItem.Lift>(viewModel.state.value.upNext.single())
+        assertEquals(TODAY + 1, next.epochDay)
+        assertEquals(HistoryDay.Tomorrow, next.day)
+        assertEquals(2, next.programDay.number)
+    }
+
+    @Test
+    fun `the program day comes before an interval plan on the same day`() {
+        repository.planOnce(hiit, TODAY)
+        bells.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
+
+        val upNext = viewModel.state.value.upNext
+        assertIs<UpNextItem.Lift>(upNext[0])
+        assertEquals(hiit.name, assertIs<UpNextItem.Planned>(upNext[1]).name)
+    }
+
+    @Test
+    fun `without a program nothing from Lift is up next`() {
+        assertTrue(viewModel.state.value.upNext.none { it is UpNextItem.Lift })
+        assertFalse(viewModel.state.value.hasPlans)
+    }
+
+    @Test
+    fun `a session in progress makes the program day a resume`() {
+        bells.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
+        bells.startSession()
+
+        assertTrue(assertIs<UpNextItem.Lift>(viewModel.state.value.upNext.single()).resume)
+    }
+
+    @Test
+    fun `starting the program day starts a session of it`() {
+        val ladders = ProgramKey.BuiltIn(ProgramId.PressLadders)
+        viewModel.startLift(ladders)
+
+        assertEquals(ladders, bells.active.value?.program)
     }
 
     @Test

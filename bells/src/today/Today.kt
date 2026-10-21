@@ -38,7 +38,6 @@ import dev.justinsmith.bells.resources.common_joined
 import dev.justinsmith.bells.resources.kg_pair
 import dev.justinsmith.bells.resources.kg_value
 import dev.justinsmith.bells.resources.program_change
-import dev.justinsmith.bells.resources.program_day
 import dev.justinsmith.bells.resources.program_finished
 import dev.justinsmith.bells.resources.program_follow_cta
 import dev.justinsmith.bells.resources.program_follow_hint
@@ -71,6 +70,7 @@ import dev.justinsmith.bells.resources.weekday_rest
 import dev.justinsmith.bells.session.SetDraft
 import dev.justinsmith.bells.ui.blockLine
 import dev.justinsmith.bells.ui.liftName
+import dev.justinsmith.bells.ui.programDayLine
 import dev.justinsmith.bells.ui.programName
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
@@ -346,7 +346,7 @@ private fun ProgramCard(state: TodayUiState, onChooseProgram: () -> Unit, modifi
                 if (day == null) {
                     stringResource(Res.string.program_finished)
                 } else {
-                    stringResource(Res.string.program_day, day.number, day.program.totalDays, day.week)
+                    programDayLine(day)
                 },
                 style = IntervalTheme.type.caption,
                 color = palette.textDim,

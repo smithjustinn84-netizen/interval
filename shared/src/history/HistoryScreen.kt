@@ -29,6 +29,12 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.intl.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.justinsmith.bells.domain.ProgramId
+import dev.justinsmith.bells.domain.ProgramKey
+import dev.justinsmith.bells.domain.program
+import dev.justinsmith.bells.ui.programDayLifts
+import dev.justinsmith.bells.ui.programDayLine
+import dev.justinsmith.bells.ui.programName
 import dev.justinsmith.interval.plan.AddToPlanSheet
 import dev.justinsmith.interval.plan.DayChoice
 import dev.justinsmith.interval.plan.PlanRepeat
@@ -51,6 +57,7 @@ import dev.justinsmith.interval.resources.history_more_options_cd
 import dev.justinsmith.interval.resources.history_most_done
 import dev.justinsmith.interval.resources.history_plan_cd
 import dev.justinsmith.interval.resources.history_planned
+import dev.justinsmith.interval.resources.history_resume
 import dev.justinsmith.interval.resources.history_start
 import dev.justinsmith.interval.resources.history_then
 import dev.justinsmith.interval.resources.history_times
@@ -94,7 +101,7 @@ import org.koin.compose.currentKoinScope
 /**
  * Resolves the tab's ViewModel and binds it to [HistoryScreen]. Starting a workout puts it on the Timer,
  * then [onStartWorkout]; [onOpenWorkout] opens one finished workout, [onOpenLift] one kettlebell session,
- * [onPlan] the plan, [onShowTimer] the Timer tab.
+ * [onPlan] the plan, [onShowTimer] the Timer tab. Starting the lift program's day opens [onStartSession].
  */
 @Composable
 fun HistoryRoute(
@@ -103,6 +110,7 @@ fun HistoryRoute(
     onPlan: () -> Unit,
     onStartWorkout: () -> Unit,
     onShowTimer: () -> Unit,
+    onStartSession: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = currentKoinScope()
@@ -116,6 +124,7 @@ fun HistoryRoute(
     val openLift by rememberUpdatedState(onOpenLift)
     val plan by rememberUpdatedState(onPlan)
     val showTimer by rememberUpdatedState(onShowTimer)
+    val startSession by rememberUpdatedState(onStartSession)
     val actions = remember(viewModel) {
         HistoryActions(
             onClear = viewModel::clear,
@@ -143,6 +152,11 @@ fun HistoryRoute(
                 viewModel.openDay(null)
                 openLift(it)
             },
+            onStartLift = { program ->
+                program?.let(viewModel::startLift)
+                viewModel.openDay(null)
+                startSession()
+            },
         )
     }
     HistoryScreen(state = state, actions = actions, modifier = modifier)
@@ -166,6 +180,8 @@ class HistoryActions(
     val onShowTimer: () -> Unit = {},
     /** Opens a kettlebell session's page, by its uid. */
     val onOpenLift: (String) -> Unit = {},
+    /** Opens Lifting: on a new day of this program, or with null on the session in progress. */
+    val onStartLift: (ProgramKey?) -> Unit = {},
 )
 
 /**
@@ -336,25 +352,43 @@ private fun UpNextCard(upNext: List<UpNextItem>, actions: HistoryActions, modifi
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
             ) {
-                StripeMark(palette.workMark, height = Sizes.historyMarkHeight)
-                Column(Modifier.weight(1f)) {
-                    Text(next.name, style = IntervalTheme.type.label, color = palette.text)
-                    Text(
-                        stringResource(
-                            Res.string.common_joined,
-                            workoutDescription(next.config),
-                            formatClock(next.config.totalSeconds),
-                        ),
-                        style = IntervalTheme.type.meta,
-                        color = palette.textDim,
-                    )
+                when (next) {
+                    is UpNextItem.Planned -> {
+                        StripeMark(palette.workMark, height = Sizes.historyMarkHeight)
+                        UpNextText(
+                            next.name,
+                            stringResource(
+                                Res.string.common_joined,
+                                workoutDescription(next.config),
+                                formatClock(next.config.totalSeconds),
+                            ),
+                            Modifier.weight(1f),
+                        )
+                        StartPill(primary = true, onClick = { actions.onStart(next.name, next.config) })
+                    }
+
+                    is UpNextItem.Lift -> {
+                        // The accent, as Lift and History's rows mark kettlebell sessions.
+                        StripeMark(palette.accent, height = Sizes.historyMarkHeight)
+                        UpNextText(
+                            programName(next.programDay.program),
+                            joined(listOf(programDayLine(next.programDay), programDayLifts(next.programDay))),
+                            Modifier.weight(1f),
+                        )
+                        StartPill(
+                            primary = true,
+                            onClick = { actions.onStartLift(next.programDay.program.key.takeUnless { next.resume }) },
+                            label = stringResource(
+                                if (next.resume) Res.string.history_resume else Res.string.history_start,
+                            ),
+                        )
+                    }
                 }
-                StartPill(primary = true, onClick = { actions.onStart(next.name, next.config) })
             }
             val later = upNext.drop(1).take(2)
             if (later.isNotEmpty()) {
                 val parts = later.map {
-                    stringResource(Res.string.common_joined, shortDay(it.day, it.epochDay), it.name)
+                    stringResource(Res.string.common_joined, shortDay(it.day, it.epochDay), upNextName(it))
                 }
                 Text(
                     stringResource(
@@ -369,15 +403,36 @@ private fun UpNextCard(upNext: List<UpNextItem>, actions: HistoryActions, modifi
     }
 }
 
+/** Up next's headline: its name over a line of what it is. */
+@Composable
+private fun UpNextText(name: String, detail: String, modifier: Modifier = Modifier) {
+    Column(modifier) {
+        Text(name, style = IntervalTheme.type.label, color = IntervalTheme.palette.text)
+        Text(detail, style = IntervalTheme.type.meta, color = IntervalTheme.palette.textDim)
+    }
+}
+
+/** What a later item in Up next is called: the plan's name, or the program's. */
+@Composable
+private fun upNextName(item: UpNextItem): String = when (item) {
+    is UpNextItem.Planned -> item.name
+    is UpNextItem.Lift -> programName(item.programDay.program)
+}
+
 /** A group heading's look, inside a card. */
 @Composable
 private fun GroupLabelText(text: String, modifier: Modifier = Modifier) {
     Text(text, style = IntervalTheme.type.caption, color = IntervalTheme.palette.textDim, modifier = modifier)
 }
 
-/** Start, as a small pill: accent when [primary], on a quiet fill otherwise. */
+/** Start, or another [label], as a small pill: accent when [primary], on a quiet fill otherwise. */
 @Composable
-internal fun StartPill(primary: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+internal fun StartPill(
+    primary: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    label: String = stringResource(Res.string.history_start),
+) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
     Row(
@@ -390,7 +445,7 @@ internal fun StartPill(primary: Boolean, onClick: () -> Unit, modifier: Modifier
     ) {
         val ink = if (primary) palette.onAccent else palette.text
         if (primary) Icon(IntervalIcons.Play, null, tint = ink, modifier = Modifier.size(Sizes.chipIcon))
-        Text(stringResource(Res.string.history_start), style = IntervalTheme.type.label, color = ink)
+        Text(label, style = IntervalTheme.type.label, color = ink)
     }
 }
 
@@ -522,6 +577,9 @@ private fun shortDay(day: HistoryDay, epochDay: Long): String = when (day) {
     is HistoryDay.On -> weekdayText(weekdayOf(epochDay), WeekdayForm.Short)
 }
 
+/** How far into its program the preview's lift day is. */
+private const val PREVIEW_DAYS_DONE = 3
+
 /** Monday to Sunday, today a Thursday: two days done, one missed, and three still planned. */
 private val PreviewWeek = listOf(
     DayState.Done to 240,
@@ -579,9 +637,12 @@ private fun HistoryScreenPreview() {
                 goal = 4,
                 streak = Streak(current = 5, best = 7),
                 week = PreviewWeek,
-                upNext = listOf(
-                    UpNextItem(planId = 1, epochDay = 20_741, HistoryDay.Today, tabata.name, tabata.config),
-                    UpNextItem(planId = 2, epochDay = 20_742, HistoryDay.Tomorrow, hiit.name, hiit.config),
+                upNext = listOfNotNull(
+                    program(ProgramId.EasyStrength).dayAfter(PREVIEW_DAYS_DONE)?.let {
+                        UpNextItem.Lift(epochDay = 20_741, HistoryDay.Today, it)
+                    },
+                    UpNextItem.Planned(planId = 1, epochDay = 20_741, HistoryDay.Today, tabata.name, tabata.config),
+                    UpNextItem.Planned(planId = 2, epochDay = 20_742, HistoryDay.Tomorrow, hiit.name, hiit.config),
                 ),
                 hasPlans = true,
             ),

@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import dev.justinsmith.bells.domain.Block
 import dev.justinsmith.bells.domain.BlockKind
 import dev.justinsmith.bells.domain.Program
+import dev.justinsmith.bells.domain.ProgramDay
 import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.resources.Res
@@ -21,6 +22,7 @@ import dev.justinsmith.bells.resources.program_countdown_name
 import dev.justinsmith.bells.resources.program_countdown_summary
 import dev.justinsmith.bells.resources.program_daily_name
 import dev.justinsmith.bells.resources.program_daily_summary
+import dev.justinsmith.bells.resources.program_day
 import dev.justinsmith.bells.resources.program_days_count
 import dev.justinsmith.bells.resources.program_easy_strength_name
 import dev.justinsmith.bells.resources.program_easy_strength_summary
@@ -40,6 +42,19 @@ fun programName(program: Program): String = when (val key = program.key) {
     is ProgramKey.BuiltIn -> programName(key.id)
     is ProgramKey.Custom -> program.name.orEmpty()
 }
+
+/** Where a program day falls in its program: "Day 4 of 40 · week 2". */
+@Composable
+fun programDayLine(day: ProgramDay): String =
+    stringResource(Res.string.program_day, day.number, day.program.totalDays, day.week)
+
+/** The lifts a program day does, in its order: "Two-hand swing · Press · Two bells". */
+@Composable
+fun programDayLifts(day: ProgramDay): String = day.blocks
+    .map { liftName(it.exercise, it.double) }
+    .distinct()
+    .reduceOrNull { line, lift -> stringResource(Res.string.common_joined, line, lift) }
+    .orEmpty()
 
 /** A built-in program's name. */
 @Composable
