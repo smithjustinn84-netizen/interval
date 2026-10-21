@@ -98,7 +98,6 @@ fun WorkoutDetailScreen(
     modifier: Modifier = Modifier,
 ) {
     val workout = state.workout ?: return
-    val palette = IntervalTheme.palette
     var menu by remember { mutableStateOf(false) }
     var confirming by rememberSaveable { mutableStateOf(false) }
     var planning by rememberSaveable { mutableStateOf(false) }

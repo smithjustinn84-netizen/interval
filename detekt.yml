@@ -93,7 +93,7 @@ Compose:
   ModifierMissing:
     active: true
     # These open their own window over the app, so they put nothing in the caller's layout.
-    contentEmittersDenylist: ['UnstyledDialog', 'UnstyledModalBottomSheet', 'IntervalDialog', 'ConfirmDialog', 'SavePresetDialog', 'IntervalSheet', 'ValueSheet', 'PresetSheet', 'PresetEditor']
+    contentEmittersDenylist: ['UnstyledDialog', 'UnstyledModalBottomSheet', 'IntervalDialog', 'ConfirmDialog', 'IntervalSheet', 'ValueSheet', 'PresetSheet', 'PresetEditor']
   ModifierNaming:
     active: true
   ModifierNotUsedAtRoot:

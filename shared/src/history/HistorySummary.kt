@@ -402,7 +402,7 @@ private const val DASH = 12f
 
 /** A pill-shaped quiet action, such as "Set a weekly goal". */
 @Composable
-internal fun ChipButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun ChipButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val interaction = remember { MutableInteractionSource() }
     Box(
         modifier

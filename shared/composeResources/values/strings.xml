@@ -304,15 +304,6 @@
     <string name="detail_delete_text">%1$s from %2$s comes off History and its week's count. A plan it did shows as missed.</string>
     <string name="detail_delete_confirm">Delete</string>
 
-    <plurals name="duration_seconds">
-        <item quantity="one">%1$d second</item>
-        <item quantity="other">%1$d seconds</item>
-    </plurals>
-    <plurals name="duration_minutes">
-        <item quantity="one">%1$d minute</item>
-        <item quantity="other">%1$d minutes</item>
-    </plurals>
-
     <string name="weekday_1">Monday</string>
     <string name="weekday_2">Tuesday</string>
     <string name="weekday_3">Wednesday</string>

@@ -312,7 +312,7 @@ private fun Modifier.breathing(): Modifier {
  * The clock fills the share of the ring its digits allow, up to [max], the clock style's size: "0:14"
  * in a phone's ring comes out around 160sp, as the design canvas draws it, and "10:00" smaller.
  */
-internal fun ringClockSize(diameter: Dp, chars: Int, max: TextUnit): TextUnit =
+private fun ringClockSize(diameter: Dp, chars: Int, max: TextUnit): TextUnit =
     (diameter.value * RING_CLOCK_SHARE / (chars * CLOCK_EMS_PER_CHAR)).coerceAtMost(max.value).sp
 
 /** How much of the ring's width the clock may take, leaving the stroke and some air. */

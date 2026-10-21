@@ -229,7 +229,7 @@ private const val OUTSIDE_ALPHA = 0.4f
 
 /** A day and its state for screen readers: "Monday, done". */
 @Composable
-internal fun dayDescription(name: String, cell: DayCell): String {
+private fun dayDescription(name: String, cell: DayCell): String {
     val state = stringResource(
         when (cell.state) {
             DayState.Done -> Res.string.history_state_done_cd

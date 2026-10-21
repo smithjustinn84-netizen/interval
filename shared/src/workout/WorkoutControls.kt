@@ -140,7 +140,7 @@ internal fun BigButton(
 }
 
 @Composable
-internal fun PillButton(
+private fun PillButton(
     text: String,
     onClick: () -> Unit,
     description: String,
