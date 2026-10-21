@@ -1,0 +1,67 @@
+@file:OptIn(ExperimentalTestApi::class)
+
+package dev.justinsmith.bells.today
+
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import dev.justinsmith.bells.data.FollowingEntity
+import dev.justinsmith.bells.domain.ProgramId
+import dev.justinsmith.bells.domain.program
+import dev.justinsmith.bells.fakes.FakeBellsStorage
+import dev.justinsmith.bells.ui.bellsAppTest
+import dev.justinsmith.bells.ui.runUiTest
+import dev.justinsmith.bells.ui.setBellsContent
+import dev.justinsmith.bells.ui.waitForText
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
+class TodayScreenTest {
+    @Test
+    fun `without a program Today offers one and a free session`() = runUiTest {
+        val started = mutableListOf<ProgramId?>()
+        var choosing = false
+        setBellsContent {
+            TodayScreen(TodayUiState(), onStartSession = { started += it }, onChooseProgram = {
+                choosing =
+                    true
+            })
+        }
+        onNodeWithText("No sessions yet").assertExists()
+        onNodeWithText("Free session").assertDoesNotExist()
+        onNodeWithText("Follow a program").performClick()
+        assertEquals(true, choosing)
+        onNodeWithText("Start session").performClick()
+        assertEquals(listOf<ProgramId?>(null), started)
+    }
+
+    @Test
+    fun `with a program Today lays out its next day`() = runUiTest {
+        val started = mutableListOf<ProgramId?>()
+        val state = TodayUiState(
+            following = ProgramId.GobletSquatRow,
+            programDay = program(ProgramId.GobletSquatRow).dayAfter(0),
+        )
+        setBellsContent { TodayScreen(state, onStartSession = { started += it }, onChooseProgram = {}) }
+        onNodeWithText("Goblet squat and row").assertExists()
+        onNodeWithText("Day 1 of 8 · week 1").assertExists()
+        onNodeWithText("Goblet squat").assertExists()
+        onNodeWithText("Start session").assertDoesNotExist()
+        onNodeWithText("Start day 1").performClick()
+        onNodeWithText("Free session").performClick()
+        assertEquals(listOf(ProgramId.GobletSquatRow, null), started)
+    }
+
+    @Test
+    fun `a program's day opens a session with its plan up next`() = bellsAppTest(
+        FakeBellsStorage().apply {
+            following.row.value = FollowingEntity(programId = ProgramId.GobletSquatRow.name, startedAtEpochMillis = 0)
+        },
+    ) { app ->
+        onNodeWithText("Start day 1").performClick()
+        waitForText("Up next · 1 of 9 sets")
+        onNodeWithText("Log it").performClick()
+        waitForText("Up next · 2 of 9 sets")
+        assertEquals(ProgramId.GobletSquatRow.name, app.storage.sessions.sessions.value.single().programId)
+    }
+}

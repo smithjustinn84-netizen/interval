@@ -27,6 +27,14 @@ dependencies:
 test-dependencies:
   - $libs.kotlinx.coroutines.test
 
+# Compose UI tests run on the desktop JVM only, as in shared: common `test/` also runs as Android local tests.
+test-dependencies@jvm:
+  - $compose.uiTest
+  # Skiko's native renderer; without it `runComposeUiTest` fails with LibraryLoadException.
+  - $compose.desktop.currentOs
+  # Dispatchers.Main for viewModelScope: the tests compose the real routes.
+  - $libs.kotlinx.coroutines.swing
+
 dependencies@android:
   - $compose.uiTooling
 
