@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -41,11 +42,15 @@ import dev.justinsmith.bells.resources.history_delete_title
 import dev.justinsmith.bells.resources.history_empty_text
 import dev.justinsmith.bells.resources.history_empty_title
 import dev.justinsmith.bells.resources.history_from_interval
+import dev.justinsmith.bells.resources.history_open_interval
 import dev.justinsmith.bells.resources.history_title
 import dev.justinsmith.bells.resources.kg_value
 import dev.justinsmith.bells.resources.sets_count
+import dev.justinsmith.core.sync.AppId
+import dev.justinsmith.core.sync.SiblingFeed
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.interval.platform.rememberOpenUrl
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
@@ -146,11 +151,26 @@ fun BellsHistoryRoute() {
     val scope = currentKoinScope()
     val viewModel = viewModel { BellsHistoryViewModel(scope.get(), scope.get(), scope.get()) }
     val days by viewModel.days.collectAsStateWithLifecycle()
-    BellsHistoryScreen(days, onDelete = viewModel::delete)
+    val openUrl = rememberOpenUrl()
+    val opensInterval = remember(scope) { scope.get<SiblingFeed>().canOpenSibling }
+    BellsHistoryScreen(
+        days,
+        onDelete = viewModel::delete,
+        onOpenInterval = if (opensInterval) ({ openUrl(AppId.Interval.openUrl) }) else null,
+    )
 }
 
+/**
+ * Bells' sessions and Interval's workouts by day. [onOpenInterval] opens Interval from one of its; null
+ * where it can't.
+ */
 @Composable
-fun BellsHistoryScreen(days: List<HistoryDay>, onDelete: (String) -> Unit, modifier: Modifier = Modifier) {
+fun BellsHistoryScreen(
+    days: List<HistoryDay>,
+    onDelete: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    onOpenInterval: (() -> Unit)? = null,
+) {
     var deleting by rememberSaveable { mutableStateOf<String?>(null) }
     val card = Modifier.padding(horizontal = Spacing.space16)
     TabGrid(stringResource(Res.string.history_title), modifier) {
@@ -177,7 +197,13 @@ fun BellsHistoryScreen(days: List<HistoryDay>, onDelete: (String) -> Unit, modif
                 ListCard {
                     day.rows.forEachIndexed { i, row ->
                         if (i > 0) RowDivider()
-                        HistoryRowItem(row, onDelete = { if (row is HistoryRow.Bells) deleting = row.uid })
+                        HistoryRowItem(
+                            row,
+                            onClick = when (row) {
+                                is HistoryRow.Bells -> ({ deleting = row.uid })
+                                is HistoryRow.Interval -> onOpenInterval
+                            },
+                        )
                     }
                 }
             }
@@ -198,9 +224,9 @@ fun BellsHistoryScreen(days: List<HistoryDay>, onDelete: (String) -> Unit, modif
     }
 }
 
-/** A Bells session opens its delete dialog; an Interval workout, Interval's to change, does nothing. */
+/** A Bells session opens its delete dialog; an Interval workout, Interval's to change, opens Interval. */
 @Composable
-private fun HistoryRowItem(row: HistoryRow, onDelete: () -> Unit) {
+private fun HistoryRowItem(row: HistoryRow, onClick: (() -> Unit)?) {
     val palette = IntervalTheme.palette
     val (title, detail) = when (row) {
         is HistoryRow.Bells -> row.title to listOf(
@@ -215,7 +241,19 @@ private fun HistoryRowItem(row: HistoryRow, onDelete: () -> Unit) {
         Modifier
             .fillMaxWidth()
             .heightIn(min = Sizes.listRow)
-            .then(if (row is HistoryRow.Bells) Modifier.clickable(role = Role.Button, onClick = onDelete) else Modifier)
+            .then(
+                if (onClick == null) {
+                    Modifier
+                } else {
+                    Modifier.clickable(
+                        onClickLabel = stringResource(Res.string.history_open_interval).takeIf {
+                            row is HistoryRow.Interval
+                        },
+                        role = Role.Button,
+                        onClick = onClick,
+                    )
+                },
+            )
             .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),

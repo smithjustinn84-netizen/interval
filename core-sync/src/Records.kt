@@ -10,18 +10,24 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 
-/** The apps that share workouts. [packageId] is the Android application id and the iOS bundle id. */
+/**
+ * The apps that share workouts. [packageId] is the Android application id and the iOS bundle id; [scheme]
+ * the URL scheme that opens the app, declared by its Android manifest and its Info.plist.
+ */
 @Serializable
-enum class AppId(val packageId: String) {
+enum class AppId(val packageId: String, val scheme: String) {
     @SerialName("interval")
-    Interval("dev.justinsmith.interval"),
+    Interval("dev.justinsmith.interval", "interval"),
 
     @SerialName("bells")
-    Bells("dev.justinsmith.kettlebell"),
+    Bells("dev.justinsmith.kettlebell", "bells"),
     ;
 
     /** The other app of the pair. */
     val sibling: AppId get() = if (this == Interval) Bells else Interval
+
+    /** The URL that opens it, as a row of its workouts in the sibling does: "bells://". */
+    val openUrl: String get() = "$scheme://"
 }
 
 /**

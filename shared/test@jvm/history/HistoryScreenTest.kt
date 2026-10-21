@@ -12,6 +12,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import dev.justinsmith.core.sync.AppId
 import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
@@ -258,5 +259,23 @@ class HistoryScreenTest {
         onNodeWithText("HIIT 30/30").performClick()
         onNode(hasText("Add to plan") and hasClickAction()).performClick()
         assertEquals(listOf("once HIIT 30/30 20743"), events)
+    }
+
+    @Test
+    fun `a Bells workout opens Bells where it can and is only a row where it can't`() = runUiTest {
+        val swings = HistoryItem("Swings", IntervalConfig(), false, "7:42 AM", "26:10", from = AppId.Bells)
+        val state = oneWorkout.copy(sections = listOf(HistorySection(HistoryDay.Today, 20_741, listOf(swings))))
+        val opened = mutableListOf<AppId>()
+        var canOpen by mutableStateOf(false)
+        setThemedContent {
+            HistoryScreen(
+                state,
+                HistoryActions(onOpenSibling = if (canOpen) ({ opened += it }) else null),
+            )
+        }
+        onNode(hasText("Swings") and hasClickAction()).assertDoesNotExist()
+        canOpen = true
+        onNode(hasClickAction() and hasText("Swings")).performClick()
+        assertEquals(listOf(AppId.Bells), opened)
     }
 }

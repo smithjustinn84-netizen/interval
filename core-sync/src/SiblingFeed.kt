@@ -11,6 +11,9 @@ interface SiblingFeed {
 
     /** The sibling's published snapshot, as text, or null when there is none to read. */
     fun readSibling(): String?
+
+    /** Whether the sibling can be opened from here, from a row of its workouts: not where there is none. */
+    val canOpenSibling: Boolean get() = true
 }
 
 /** No sibling to share with: desktop, tests. */
@@ -18,4 +21,6 @@ object NoSiblingFeed : SiblingFeed {
     override fun publish(text: String) = Unit
 
     override fun readSibling(): String? = null
+
+    override val canOpenSibling: Boolean = false
 }

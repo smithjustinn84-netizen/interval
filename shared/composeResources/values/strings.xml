@@ -177,6 +177,8 @@
     <!-- The apps that share workouts, crediting a workout another one recorded. -->
     <string name="app_name_interval">Interval</string>
     <string name="app_name_bells">Bells</string>
+    <!-- What tapping another app's workout does, for screen readers: "Open in Bells" -->
+    <string name="history_open_in">Open in %1$s</string>
     <string name="history_today">Today</string>
     <string name="history_yesterday">Yesterday</string>
     <string name="history_tomorrow">Tomorrow</string>

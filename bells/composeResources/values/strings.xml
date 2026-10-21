@@ -104,6 +104,8 @@
     <!-- History -->
     <string name="history_title">History</string>
     <string name="history_from_interval">Interval</string>
+    <!-- What tapping an Interval workout does, for screen readers. -->
+    <string name="history_open_interval">Open in Interval</string>
     <string name="history_empty_title">Nothing logged yet</string>
     <string name="history_empty_text">Sessions from Bells and workouts from Interval appear here.</string>
     <string name="history_delete_title">Delete session?</string>

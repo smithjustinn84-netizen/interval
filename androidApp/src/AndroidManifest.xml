@@ -15,10 +15,15 @@
     <uses-permission android:name="dev.justinsmith.permission.SYNC"/>
 
     <!-- Android 11+ package visibility: lets TextToSpeech find the device's speech engine, and this app
-         see Bells' feed provider. -->
+         see Bells' feed provider and open Bells (bells://). -->
     <queries>
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+
+            <data android:scheme="bells"/>
         </intent>
         <provider android:authorities="dev.justinsmith.kettlebell.feed"/>
     </queries>
@@ -30,13 +35,24 @@
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
             android:theme="@style/Theme.Interval.Starting">
+        <!-- singleTask: opened from Bells, the app comes forward in its own task, not inside Bells's. -->
         <activity
                 android:exported="true"
+                android:launchMode="singleTask"
                 android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- interval://, so a row of Interval's workouts in Bells opens this app. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+
+                <data android:scheme="interval"/>
             </intent-filter>
         </activity>
 

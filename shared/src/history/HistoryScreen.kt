@@ -29,9 +29,11 @@ import androidx.compose.ui.text.intl.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.core.sync.AppId
+import dev.justinsmith.core.sync.SiblingFeed
 import dev.justinsmith.interval.plan.AddToPlanSheet
 import dev.justinsmith.interval.plan.DayChoice
 import dev.justinsmith.interval.plan.PlanRepeat
+import dev.justinsmith.interval.platform.rememberOpenUrl
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.app_name_bells
 import dev.justinsmith.interval.resources.app_name_interval
@@ -50,6 +52,7 @@ import dev.justinsmith.interval.resources.history_empty_title
 import dev.justinsmith.interval.resources.history_ended_early
 import dev.justinsmith.interval.resources.history_more_options_cd
 import dev.justinsmith.interval.resources.history_most_done
+import dev.justinsmith.interval.resources.history_open_in
 import dev.justinsmith.interval.resources.history_plan_cd
 import dev.justinsmith.interval.resources.history_planned
 import dev.justinsmith.interval.resources.history_start
@@ -125,10 +128,12 @@ fun HistoryRoute(
 ) {
     val scope = currentKoinScope()
     val viewModel = viewModel { HistoryViewModel(scope.get(), scope.get(), scope.get()) }
+    val openUrl = rememberOpenUrl()
+    val opensSibling = remember(scope) { scope.get<SiblingFeed>().canOpenSibling }
     val locale = Locale.current.toLanguageTag()
     LaunchedEffect(locale) { viewModel.setLocale(locale) }
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val actions = remember(viewModel) {
+    val actions = remember(viewModel, openUrl, opensSibling) {
         HistoryActions(
             onClear = viewModel::clear,
             onRange = viewModel::setRange,
@@ -151,6 +156,7 @@ fun HistoryRoute(
                 onPlan()
             },
             onShowTimer = onShowTimer,
+            onOpenSibling = if (opensSibling) ({ app -> openUrl(app.openUrl) }) else null,
         )
     }
     HistoryScreen(state = state, actions = actions, modifier = modifier)
@@ -172,6 +178,8 @@ class HistoryActions(
     val onOpenWorkout: (Long) -> Unit = {},
     val onPlan: () -> Unit = {},
     val onShowTimer: () -> Unit = {},
+    /** Opens the app a sibling's workout came from; null where it can't be (desktop). */
+    val onOpenSibling: ((AppId) -> Unit)? = null,
 )
 
 /**
@@ -223,7 +231,7 @@ fun HistoryScreen(state: HistoryUiState, actions: HistoryActions, modifier: Modi
                     ListCard {
                         section.items.forEachIndexed { index, item ->
                             if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
-                            HistoryRow(item, actions.onOpenWorkout)
+                            HistoryRow(item, actions.onOpenWorkout, actions.onOpenSibling)
                         }
                     }
                 }
@@ -446,22 +454,43 @@ private fun MostDone(rows: List<ShapeRow>, modifier: Modifier = Modifier) {
     }
 }
 
-/** One finished workout. It opens when it has been stored, with a chevron saying so. */
+/**
+ * One finished workout. One stored here opens, with a chevron saying so; a sibling's opens its app, when
+ * [onOpenSibling] can.
+ */
 @Composable
-internal fun HistoryRow(item: HistoryItem, onOpen: (Long) -> Unit, modifier: Modifier = Modifier) {
+internal fun HistoryRow(
+    item: HistoryItem,
+    onOpen: (Long) -> Unit,
+    onOpenSibling: ((AppId) -> Unit)? = null,
+    modifier: Modifier = Modifier,
+) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
     val id = item.id
+    val from = item.from
+    val click: (() -> Unit)? = when {
+        id != null -> ({ onOpen(id) })
+        from != null && onOpenSibling != null -> ({ onOpenSibling(from) })
+        else -> null
+    }
+    val clickLabel = from?.takeIf { id == null }?.let { stringResource(Res.string.history_open_in, appName(it)) }
     Row(
         modifier
             .fillMaxWidth()
             .heightIn(min = Sizes.listRow)
             .then(
-                if (id == null) {
+                if (click == null) {
                     Modifier
                 } else {
                     Modifier
-                        .clickable(interaction, LocalIndication.current, role = Role.Button) { onOpen(id) }
+                        .clickable(
+                            interaction,
+                            LocalIndication.current,
+                            onClickLabel = clickLabel,
+                            role = Role.Button,
+                            onClick = click,
+                        )
                         .pressScale(interaction)
                 },
             )
@@ -473,7 +502,6 @@ internal fun HistoryRow(item: HistoryItem, onOpen: (Long) -> Unit, modifier: Mod
         StripeMark(if (item.from == null) palette.workMark else palette.accent, height = Sizes.historyMarkHeight)
         Column(Modifier.weight(1f)) {
             val shape = workoutDescription(item.config)
-            val from = item.from
             val detail = listOfNotNull(
                 stringResource(Res.string.history_planned).takeIf { item.planned },
                 if (from == null) shape.takeIf { item.presetName != null } else appName(from),
@@ -489,7 +517,7 @@ internal fun HistoryRow(item: HistoryItem, onOpen: (Long) -> Unit, modifier: Mod
             )
         }
         Text(item.total, style = IntervalTheme.type.value, color = palette.text)
-        if (id != null) {
+        if (click != null) {
             Icon(IntervalIcons.Chevron, null, tint = palette.textDim, modifier = Modifier.size(Sizes.icon))
         }
     }
