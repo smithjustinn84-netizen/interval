@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Effort
@@ -27,6 +28,9 @@ private val CUE_VIBRATE = booleanPreferencesKey("cue_vibrate")
 private val THEME = stringPreferencesKey("theme")
 private val KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")
 private val WEEKLY_GOAL = intPreferencesKey("weekly_goal")
+
+// When the body weight or the goal last changed, here or in the sibling app; see AppSettings.shared.
+private val SHARED_UPDATED_AT = longPreferencesKey("shared_updated_at")
 
 private val BODY_WEIGHT_KG = doublePreferencesKey("body_weight_kg")
 private val BODY_UNIT = stringPreferencesKey("body_unit")
@@ -80,6 +84,7 @@ internal fun Preferences.toAppSettings(): AppSettings {
         body = toBodySettings(),
         // A goal out of range (written by a build with other limits) is clamped rather than dropped.
         weeklyGoal = this[WEEKLY_GOAL]?.coerceIn(AppSettings.WEEKLY_GOAL_RANGE),
+        sharedUpdatedAtEpochMillis = this[SHARED_UPDATED_AT] ?: defaults.sharedUpdatedAtEpochMillis,
     )
 }
 
@@ -88,6 +93,7 @@ internal fun MutablePreferences.write(app: AppSettings) {
     this[KEEP_SCREEN_ON] = app.keepScreenOn
     val goal = app.weeklyGoal
     if (goal == null) remove(WEEKLY_GOAL) else this[WEEKLY_GOAL] = goal
+    this[SHARED_UPDATED_AT] = app.sharedUpdatedAtEpochMillis
     write(app.body)
 }
 

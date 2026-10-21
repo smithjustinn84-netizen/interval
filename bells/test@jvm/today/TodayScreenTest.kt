@@ -2,10 +2,14 @@
 
 package dev.justinsmith.bells.today
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import dev.justinsmith.bells.data.FollowingEntity
+import dev.justinsmith.bells.data.SettingsEntity
 import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.domain.program
 import dev.justinsmith.bells.fakes.FakeBellsStorage
@@ -50,6 +54,32 @@ class TodayScreenTest {
         onNodeWithText("Start day 1").performClick()
         onNodeWithText("Free session").performClick()
         assertEquals(listOf(ProgramId.GobletSquatRow, null), started)
+    }
+
+    @Test
+    fun `the goal Interval shares shows what is left of it this week`() = runUiTest {
+        val week = (0L until 7L).map {
+            WeekDay(it, it.toInt() + 1, bells = 0, interval = 0, today = it == 0L, date = "day $it")
+        }
+        var state by mutableStateOf(TodayUiState(week = week))
+        setBellsContent { TodayScreen(state, onStartSession = {}, onChooseProgram = {}) }
+        onNodeWithText("Goal met this week").assertDoesNotExist()
+        state = state.copy(
+            week = week.mapIndexed { i, day -> if (i == 0) day.copy(bells = 1, interval = 1) else day },
+            weeklyGoal = 3,
+        )
+        onNodeWithText("1 more to hit 3").assertExists()
+        state = state.copy(weeklyGoal = 2)
+        onNodeWithText("Goal met this week").assertExists()
+    }
+
+    @Test
+    fun `a goal set in Interval reaches Today`() = bellsAppTest(
+        FakeBellsStorage().apply {
+            settings.row.value = SettingsEntity(bodyWeightKg = 80.0, weeklyGoal = 4, updatedAtEpochMillis = 1)
+        },
+    ) {
+        waitForText("4 more to hit 4")
     }
 
     @Test

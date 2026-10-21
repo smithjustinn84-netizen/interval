@@ -6,6 +6,7 @@ import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.fakes.FakeBellDao
 import dev.justinsmith.bells.fakes.FakeFollowingDao
 import dev.justinsmith.bells.fakes.FakeSessionDao
+import dev.justinsmith.bells.fakes.FakeSettingsDao
 import dev.justinsmith.bells.fakes.FakeSiblingDao
 import dev.justinsmith.bells.fakes.MemoryFeed
 import dev.justinsmith.core.sync.AppId
@@ -14,6 +15,7 @@ import dev.justinsmith.core.sync.FeedSnapshot
 import dev.justinsmith.core.sync.SessionDetail
 import dev.justinsmith.core.sync.SessionRecord
 import dev.justinsmith.core.sync.SetRecord
+import dev.justinsmith.core.sync.SharedSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -28,8 +30,9 @@ class BellsRepositoryTest {
     private var now = 1_000L
     private val sessionDao = FakeSessionDao()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+    private val settingsDao = FakeSettingsDao()
     private val repository =
-        BellsRepository(sessionDao, FakeBellDao(), FakeSiblingDao(), FakeFollowingDao(), scope) { now }
+        BellsRepository(sessionDao, FakeBellDao(), FakeSiblingDao(), FakeFollowingDao(), settingsDao, scope) { now }
     private val feed = MemoryFeed()
     private val sync = repository.siblingSync(feed, scope, io = Dispatchers.Unconfined)
 
@@ -132,5 +135,23 @@ class BellsRepositoryTest {
         assertEquals(2, repository.programDay.value?.number)
         repository.stopFollowing()
         assertNull(repository.programDay.value)
+    }
+
+    private fun intervalSettings(settings: SharedSettings) =
+        FeedCodec.encode(FeedSnapshot(source = AppId.Interval, sessions = emptyList(), settings = settings))
+
+    @Test
+    fun `Interval's later settings are taken stored and passed on`() = runTest {
+        assertNull(published().settings)
+        val goal = SharedSettings(bodyWeightKg = 80.0, weeklyGoal = 4, updatedAtEpochMillis = 2_000)
+        feed.sibling = intervalSettings(goal)
+        sync.pull()
+        assertEquals(goal, repository.sharedSettings.value)
+        assertEquals(SettingsEntity(0, 80.0, 4, 2_000), settingsDao.row.value)
+        assertEquals(goal, published().settings)
+        // An older change, or the same one again, leaves them be.
+        feed.sibling = intervalSettings(goal.copy(weeklyGoal = 2, updatedAtEpochMillis = 1_500))
+        sync.pull()
+        assertEquals(4, repository.sharedSettings.value?.weeklyGoal)
     }
 }

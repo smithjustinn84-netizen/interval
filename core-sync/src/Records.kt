@@ -83,7 +83,33 @@ sealed interface SessionDetail {
 @Serializable
 data class SetRecord(val exercise: String, val bellKg: Double, val reps: Int, val side: String? = null)
 
-/** Everything one app shares: its own workouts, tombstones included. */
+/**
+ * The settings both apps share, as one whole: the user's body weight ([bodyWeightKg], null with calories
+ * off) and the workouts a week they aim for ([weeklyGoal], null for none). Whichever app changed them last,
+ * by [updatedAtEpochMillis], wins: see [newerSettings].
+ */
+@Serializable
+data class SharedSettings(
+    val bodyWeightKg: Double? = null,
+    val weeklyGoal: Int? = null,
+    val updatedAtEpochMillis: Long,
+) {
+    /** As read from a sibling: a goal out of [WEEKLY_GOAL_RANGE] is clamped, a weight that isn't one dropped. */
+    fun sanitized(): SharedSettings = copy(
+        bodyWeightKg = bodyWeightKg?.takeIf { it.isFinite() && it > 0 },
+        weeklyGoal = weeklyGoal?.coerceIn(WEEKLY_GOAL_RANGE),
+    )
+
+    companion object {
+        /** The weekly goals either app offers. */
+        val WEEKLY_GOAL_RANGE = 1..14
+    }
+}
+
+/**
+ * Everything one app shares: its own workouts, tombstones included, and the [settings] it holds, or null
+ * while the user has never changed them.
+ */
 @Serializable
 data class FeedSnapshot(
     // Always written, default or not, so a reader can tell which schema it has.
@@ -91,6 +117,8 @@ data class FeedSnapshot(
     val schemaVersion: Int = FeedCodec.SCHEMA_VERSION,
     val source: AppId,
     val sessions: List<SessionRecord>,
+    // Added in schema 1 without raising it: an older reader skips it.
+    val settings: SharedSettings? = null,
 )
 
 /** Turns a [FeedSnapshot] into the text an app publishes, and back. */

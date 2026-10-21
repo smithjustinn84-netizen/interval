@@ -44,11 +44,12 @@ val bellsStorageModule: Module = module {
     single { get<BellsDatabase>().bellDao() }
     single { get<BellsDatabase>().siblingDao() }
     single { get<BellsDatabase>().followingDao() }
+    single { get<BellsDatabase>().settingsDao() }
 }
 
 val bellsDataModule: Module = module {
     single { WallClock(::epochMillisNow) }
-    single { BellsRepository(get(), get(), get(), get(), scope = get(BellsStorageScope), clock = get()) }
+    single { BellsRepository(get(), get(), get(), get(), get(), scope = get(BellsStorageScope), clock = get()) }
     // Started with the container, so it publishes as soon as the sessions are read.
     single(createdAtStart = true) { get<BellsRepository>().siblingSync(feed = get(), scope = get(BellsStorageScope)) }
 }

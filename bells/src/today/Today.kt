@@ -42,6 +42,8 @@ import dev.justinsmith.bells.resources.program_follow_cta
 import dev.justinsmith.bells.resources.program_follow_hint
 import dev.justinsmith.bells.resources.sets_count
 import dev.justinsmith.bells.resources.today_free_session
+import dev.justinsmith.bells.resources.today_goal_left
+import dev.justinsmith.bells.resources.today_goal_met
 import dev.justinsmith.bells.resources.today_last
 import dev.justinsmith.bells.resources.today_legend_bells
 import dev.justinsmith.bells.resources.today_legend_interval
@@ -113,6 +115,8 @@ data class TodayUiState(
     val programDay: ProgramDay? = null,
     /** The bell to suggest for each lift: the last one used for it. */
     val bells: Map<Exercise, Double> = emptyMap(),
+    /** Workouts a week the user aims for, in either app, as Interval shares it; null for none. */
+    val weeklyGoal: Int? = null,
 ) {
     val weekCount: Int get() = week.sumOf { it.bells + it.interval }
     val intervalCount: Int get() = week.sumOf { it.interval }
@@ -139,11 +143,17 @@ class TodayViewModel(
                 day,
             ->
             build(sessions, interval, active).copy(following = following, programDay = day)
+        }.combine(repository.sharedSettings) { state, shared ->
+            state.copy(weeklyGoal = shared?.weeklyGoal)
         }.stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
             build(repository.sessions.value, repository.interval.value, repository.active.value)
-                .copy(following = repository.following.value, programDay = repository.programDay.value),
+                .copy(
+                    following = repository.following.value,
+                    programDay = repository.programDay.value,
+                    weeklyGoal = repository.sharedSettings.value?.weeklyGoal,
+                ),
         )
 
     /** Starts the session about to open: [program]'s next day, or a free one with null. */
@@ -378,6 +388,18 @@ private fun WeekCard(state: TodayUiState, modifier: Modifier = Modifier) {
                     ),
                     style = IntervalTheme.type.meta,
                     color = palette.textDim,
+                )
+            }
+            state.weeklyGoal?.let { goal ->
+                val left = goal - state.weekCount
+                Text(
+                    if (left <= 0) {
+                        stringResource(Res.string.today_goal_met)
+                    } else {
+                        pluralStringResource(Res.plurals.today_goal_left, left, left, goal)
+                    },
+                    style = IntervalTheme.type.title,
+                    color = palette.text,
                 )
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

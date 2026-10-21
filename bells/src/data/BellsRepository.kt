@@ -15,7 +15,9 @@ import dev.justinsmith.core.sync.FeedSnapshot
 import dev.justinsmith.core.sync.SessionDetail
 import dev.justinsmith.core.sync.SessionRecord
 import dev.justinsmith.core.sync.SetRecord
+import dev.justinsmith.core.sync.SharedSettings
 import dev.justinsmith.core.sync.mirror
+import dev.justinsmith.core.sync.newerSettings
 import dev.justinsmith.interval.platform.WallClock
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -44,7 +46,8 @@ data class IntervalWorkout(
 )
 
 /**
- * Bells' saved state: its sessions and their sets, the bells the user owns, and Interval's workouts. The
+ * Bells' saved state: its sessions and their sets, the bells the user owns, Interval's workouts and the
+ * settings the two share. The
  * one way into storage. Everything is read into memory before [ready] turns true; writes run one at a time
  * on [scope], in the order they were made.
  */
@@ -54,6 +57,7 @@ class BellsRepository(
     private val bellDao: BellDao,
     private val siblingDao: SiblingDao,
     private val followingDao: FollowingDao,
+    private val settingsDao: SettingsDao,
     private val scope: CoroutineScope,
     private val clock: WallClock,
 ) {
@@ -94,6 +98,11 @@ class BellsRepository(
      * it is over.
      */
     val programDay: StateFlow<ProgramDay?> = _programDay.asStateFlow()
+
+    private val _sharedSettings = MutableStateFlow<SharedSettings?>(null)
+
+    /** The settings shared with Interval (its weekly goal, the body weight), null until either app has any. */
+    val sharedSettings: StateFlow<SharedSettings?> = _sharedSettings.asStateFlow()
 
     init {
         scope.launch { for (write in writes) runLogged(write) }
@@ -146,7 +155,19 @@ class BellsRepository(
                     followingLoaded.complete(Unit)
                 }
             }
+            val settingsLoaded = CompletableDeferred<Unit>()
+            launch {
+                settingsDao.observe().catch { e ->
+                    log.e(e) { "Couldn't read the shared settings" }
+                    emit(null)
+                }.collect { row ->
+                    _sharedSettings.value =
+                        row?.let { SharedSettings(it.bodyWeightKg, it.weeklyGoal, it.updatedAtEpochMillis) }
+                    settingsLoaded.complete(Unit)
+                }
+            }
             followingLoaded.await()
+            settingsLoaded.await()
             sessionsLoaded.await()
             bellsLoaded.await()
             intervalLoaded.await()
@@ -241,8 +262,23 @@ class BellsRepository(
         return done.await()
     }
 
-    /** Brings the stored copy of Interval's workouts in step with [snapshot]. */
+    /**
+     * Brings the stored copy of Interval's workouts in step with [snapshot], and takes its shared settings
+     * when they changed after the ones here (see [newerSettings]).
+     */
     fun importSibling(snapshot: FeedSnapshot) {
+        newerSettings(_sharedSettings.value, snapshot, expected = AppId.Bells.sibling)?.let { theirs ->
+            _sharedSettings.value = theirs
+            persist {
+                settingsDao.upsert(
+                    SettingsEntity(
+                        bodyWeightKg = theirs.bodyWeightKg,
+                        weeklyGoal = theirs.weeklyGoal,
+                        updatedAtEpochMillis = theirs.updatedAtEpochMillis,
+                    ),
+                )
+            }
+        }
         persist {
             val local = siblingDao.all().associate { it.uid to it.updatedAtEpochMillis }
             val plan = mirror(local, snapshot, expected = AppId.Bells.sibling)

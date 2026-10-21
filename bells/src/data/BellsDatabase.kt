@@ -17,7 +17,8 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * Bells' sessions and their sets, the user's bells, the program they follow, and Interval's workouts as it
- * last shared them. Version 2 added [FollowingEntity] and the program day a session was.
+ * last shared them. Version 2 added [FollowingEntity] and the program day a session was; version 3 the
+ * settings shared with Interval ([SettingsEntity]).
  */
 @Database(
     entities = [
@@ -26,9 +27,10 @@ import kotlinx.coroutines.flow.Flow
         BellEntity::class,
         SiblingEntity::class,
         FollowingEntity::class,
+        SettingsEntity::class,
     ],
-    version = 2,
-    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    version = 3,
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
 @ConstructedBy(BellsDatabaseConstructor::class)
 abstract class BellsDatabase : RoomDatabase() {
@@ -39,6 +41,8 @@ abstract class BellsDatabase : RoomDatabase() {
     abstract fun siblingDao(): SiblingDao
 
     abstract fun followingDao(): FollowingDao
+
+    abstract fun settingsDao(): SettingsDao
 }
 
 /** Room generates the `actual` for each platform. */
@@ -113,6 +117,15 @@ interface FollowingDao {
 }
 
 @Dao
+interface SettingsDao {
+    @Query("SELECT * FROM shared_settings WHERE id = 0")
+    fun observe(): Flow<SettingsEntity?>
+
+    @Upsert
+    suspend fun upsert(settings: SettingsEntity)
+}
+
+@Dao
 interface BellDao {
     @Query("SELECT * FROM bell ORDER BY kg")
     fun observeAll(): Flow<List<BellEntity>>
@@ -172,6 +185,15 @@ data class FollowingEntity(
     @PrimaryKey val id: Int = 0,
     @ColumnInfo(name = "program_id") val programId: String,
     @ColumnInfo(name = "started_at") val startedAtEpochMillis: Long,
+)
+
+/** The settings shared with Interval, as last changed in either app: one row at most. */
+@Entity(tableName = "shared_settings")
+data class SettingsEntity(
+    @PrimaryKey val id: Int = 0,
+    @ColumnInfo(name = "body_weight_kg") val bodyWeightKg: Double?,
+    @ColumnInfo(name = "weekly_goal") val weeklyGoal: Int?,
+    @ColumnInfo(name = "updated_at") val updatedAtEpochMillis: Long,
 )
 
 /** A bell the user owns. */

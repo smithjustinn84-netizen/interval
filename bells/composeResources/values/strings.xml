@@ -46,6 +46,12 @@
         <item quantity="one">%1$d workout · %2$d from Interval</item>
         <item quantity="other">%1$d workouts · %2$d from Interval</item>
     </plurals>
+    <!-- The weekly goal, set in Interval and shared: "1 more to hit 4" -->
+    <plurals name="today_goal_left">
+        <item quantity="one">%1$d more to hit %2$d</item>
+        <item quantity="other">%1$d more to hit %2$d</item>
+    </plurals>
+    <string name="today_goal_met">Goal met this week</string>
     <string name="today_legend_bells">Bells</string>
     <string name="today_legend_interval">Interval</string>
     <string name="today_last">Last session</string>

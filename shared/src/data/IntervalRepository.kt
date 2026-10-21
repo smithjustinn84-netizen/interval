@@ -11,7 +11,9 @@ import co.touchlab.kermit.Logger
 import dev.justinsmith.core.sync.AppId
 import dev.justinsmith.core.sync.FeedSnapshot
 import dev.justinsmith.core.sync.SessionRecord
+import dev.justinsmith.core.sync.SharedSettings
 import dev.justinsmith.core.sync.mirror
+import dev.justinsmith.core.sync.newerSettings
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
@@ -83,9 +85,25 @@ data class AppSettings(
     val body: BodySettings = BodySettings(),
     /** Workouts a week the user aims for, within [WEEKLY_GOAL_RANGE]; null until they set one. */
     val weeklyGoal: Int? = null,
+    /**
+     * When the settings shared with the sibling app (the body weight and [weeklyGoal]) last changed, here or
+     * there; 0 while they never have.
+     */
+    val sharedUpdatedAtEpochMillis: Long = 0,
 ) {
+    /** What the sibling app is sent: null while the user has never changed them, so defaults never win. */
+    val shared: SharedSettings?
+        get() = sharedUpdatedAtEpochMillis.takeIf { it > 0 }?.let { SharedSettings(body.weightKg, weeklyGoal, it) }
+
+    /** These settings with [theirs]: its values, and its change time, so they don't count as a change here. */
+    fun withShared(theirs: SharedSettings): AppSettings = copy(
+        body = body.copy(weightKg = theirs.bodyWeightKg),
+        weeklyGoal = theirs.weeklyGoal,
+        sharedUpdatedAtEpochMillis = theirs.updatedAtEpochMillis,
+    )
+
     companion object {
-        val WEEKLY_GOAL_RANGE = 1..14
+        val WEEKLY_GOAL_RANGE = SharedSettings.WEEKLY_GOAL_RANGE
     }
 }
 
@@ -242,8 +260,17 @@ class IntervalRepository(
         updateSetting(_cueSettings, transform) { prefs, cues -> prefs.write(cues) }
     }
 
+    /** Changes the app settings; a change to the body weight or the goal is stamped, to be shared with the sibling. */
     fun updateAppSettings(transform: (AppSettings) -> AppSettings) {
-        updateSetting(_appSettings, transform) { prefs, app -> prefs.write(app) }
+        val stamped = { old: AppSettings ->
+            val new = transform(old)
+            if (new.body.weightKg != old.body.weightKg || new.weeklyGoal != old.weeklyGoal) {
+                new.copy(sharedUpdatedAtEpochMillis = clock.nowMillis())
+            } else {
+                new
+            }
+        }
+        updateSetting(_appSettings, stamped) { prefs, app -> prefs.write(app) }
     }
 
     // In memory at once, so the next read sees it; on disk in the background, the value as it is then.
@@ -343,8 +370,15 @@ class IntervalRepository(
         return done.await()
     }
 
-    /** Brings the stored copy of [snapshot]'s app's workouts in step with it: see [mirror]. */
+    /**
+     * Brings the stored copy of [snapshot]'s app's workouts in step with it (see [mirror]), and takes its
+     * shared settings when they changed after these did (see [newerSettings]).
+     */
     fun importSibling(snapshot: FeedSnapshot) {
+        newerSettings(_appSettings.value.shared, snapshot, expected = AppId.Interval.sibling)?.let { theirs ->
+            // Not through updateAppSettings, which would stamp it as a change made here.
+            updateSetting(_appSettings, { it.withShared(theirs) }) { prefs, app -> prefs.write(app) }
+        }
         persist {
             val local = siblingDao.all().associate { it.uid to it.updatedAtEpochMillis }
             val plan = mirror(local, snapshot, expected = AppId.Interval.sibling)

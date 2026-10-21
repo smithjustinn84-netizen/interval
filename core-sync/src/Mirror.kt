@@ -24,3 +24,14 @@ fun mirror(local: Map<String, Long>, snapshot: FeedSnapshot, expected: AppId): M
     val deletes = local.keys.filter { it !in live }
     return MirrorPlan(upserts.sortedBy { it.finishedAtEpochMillis }, deletes.sorted())
 }
+
+/**
+ * The settings to take from [snapshot] over [local], last writer wins: the sibling's, sanitized, when they
+ * were changed strictly later; otherwise null, keep what is here. An equal time is the same change coming
+ * back, so it is never taken. Only [expected]'s snapshot counts, as for [mirror].
+ */
+fun newerSettings(local: SharedSettings?, snapshot: FeedSnapshot, expected: AppId): SharedSettings? {
+    if (snapshot.source != expected) return null
+    val theirs = snapshot.settings ?: return null
+    return theirs.sanitized().takeIf { theirs.updatedAtEpochMillis > (local?.updatedAtEpochMillis ?: Long.MIN_VALUE) }
+}

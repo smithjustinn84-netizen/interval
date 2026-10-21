@@ -7,6 +7,8 @@ import dev.justinsmith.bells.data.FollowingEntity
 import dev.justinsmith.bells.data.SessionDao
 import dev.justinsmith.bells.data.SessionEntity
 import dev.justinsmith.bells.data.SetEntity
+import dev.justinsmith.bells.data.SettingsDao
+import dev.justinsmith.bells.data.SettingsEntity
 import dev.justinsmith.bells.data.SiblingDao
 import dev.justinsmith.bells.data.SiblingEntity
 import dev.justinsmith.bells.di.BellsStorageScope
@@ -120,6 +122,16 @@ class FakeFollowingDao : FollowingDao {
     }
 }
 
+class FakeSettingsDao : SettingsDao {
+    val row = MutableStateFlow<SettingsEntity?>(null)
+
+    override fun observe(): Flow<SettingsEntity?> = row
+
+    override suspend fun upsert(settings: SettingsEntity) {
+        row.value = settings
+    }
+}
+
 class MemoryFeed : SiblingFeed {
     var published: String? = null
     var sibling: String? = null
@@ -161,6 +173,7 @@ class FakeBellsStorage {
     val bells = FakeBellDao()
     val sibling = FakeSiblingDao()
     val following = FakeFollowingDao()
+    val settings = FakeSettingsDao()
 }
 
 /** Stands in for `rememberBellsPlatformModule()`. Tests never load the real one: it writes a database file. */
@@ -182,6 +195,7 @@ fun fakeBellsStorageModule(storage: FakeBellsStorage): Module = module {
     single<BellDao> { storage.bells }
     single<SiblingDao> { storage.sibling }
     single<FollowingDao> { storage.following }
+    single<SettingsDao> { storage.settings }
 }
 
 /** Bells' whole container over fakes, its clock reading [now]. */

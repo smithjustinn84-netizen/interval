@@ -15,7 +15,8 @@ import kotlinx.coroutines.withContext
  * Shares app [self]'s workouts with its sibling on the same device and takes in the sibling's. Once [ready],
  * it publishes the whole set ([sharedSessions], tombstones included) and again whenever [changes] emits;
  * it reads the sibling's when told to ([pull]), on each return to the front, as a phone shows one app at
- * a time. [importSnapshot] stores what it read: the app's repository, the one thing that touches storage.
+ * a time. [sharedSettings] goes along with the workouts, so [changes] should emit when they change too.
+ * [importSnapshot] stores what it read: the app's repository, the one thing that touches storage.
  */
 class SiblingSync(
     private val self: AppId,
@@ -26,6 +27,7 @@ class SiblingSync(
     changes: Flow<*>,
     private val sharedSessions: suspend () -> List<SessionRecord>,
     private val importSnapshot: (FeedSnapshot) -> Unit,
+    private val sharedSettings: () -> SharedSettings? = { null },
 ) {
     private val log = Logger.withTag("SiblingSync")
 
@@ -54,7 +56,7 @@ class SiblingSync(
     @Suppress("detekt.TooGenericExceptionCaught")
     private suspend fun publish() {
         try {
-            val snapshot = FeedSnapshot(source = self, sessions = sharedSessions())
+            val snapshot = FeedSnapshot(source = self, sessions = sharedSessions(), settings = sharedSettings())
             withContext(io) { feed.publish(FeedCodec.encode(snapshot)) }
         } catch (e: CancellationException) {
             throw e
