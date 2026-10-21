@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import dev.justinsmith.bells.data.FollowingEntity
 import dev.justinsmith.bells.domain.ProgramId
+import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.domain.program
 import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.bells.fakes.FakeIntervalActivity
@@ -23,7 +24,7 @@ import kotlin.test.assertEquals
 class TodayScreenTest {
     @Test
     fun `without a program Today offers one and a free session`() = runUiTest {
-        val started = mutableListOf<ProgramId?>()
+        val started = mutableListOf<ProgramKey?>()
         var choosing = false
         setBellsContent {
             TodayScreen(TodayUiState(), onStartSession = { started += it }, onChooseProgram = {
@@ -36,14 +37,14 @@ class TodayScreenTest {
         onNodeWithText("Follow a program").performClick()
         assertEquals(true, choosing)
         onNodeWithText("Start session").performClick()
-        assertEquals(listOf<ProgramId?>(null), started)
+        assertEquals(listOf<ProgramKey?>(null), started)
     }
 
     @Test
     fun `with a program Today lays out its next day`() = runUiTest {
-        val started = mutableListOf<ProgramId?>()
+        val started = mutableListOf<ProgramKey?>()
         val state = TodayUiState(
-            following = ProgramId.GobletSquatRow,
+            following = program(ProgramId.GobletSquatRow),
             programDay = program(ProgramId.GobletSquatRow).dayAfter(0),
         )
         setBellsContent { TodayScreen(state, onStartSession = { started += it }, onChooseProgram = {}) }
@@ -53,7 +54,7 @@ class TodayScreenTest {
         onNodeWithText("Start session").assertDoesNotExist()
         onNodeWithText("Start day 1").performClick()
         onNodeWithText("Free session").performClick()
-        assertEquals(listOf(ProgramId.GobletSquatRow, null), started)
+        assertEquals(listOf<ProgramKey?>(ProgramKey.BuiltIn(ProgramId.GobletSquatRow), null), started)
     }
 
     @Test

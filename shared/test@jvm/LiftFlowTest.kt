@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.fakes.FakeLiftStorage
 import dev.justinsmith.interval.fakes.testKoin
@@ -57,7 +58,7 @@ class LiftFlowTest {
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
         // The sheet's own Log set, over the screen's.
-        onAllNodesWithText("Log set").onLast().performClick()
+        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("16 kg × 10")
         app.clock.set(90_000)
         onNodeWithText("Finish").performClick()

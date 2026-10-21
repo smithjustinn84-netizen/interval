@@ -34,6 +34,8 @@ class NavKeyRoundTripTest {
             Presets,
             Lifting,
             Programs,
+            ProgramEditor(),
+            ProgramEditor("p1"),
             OwnedBells,
             LiftDetail("b1"),
         )

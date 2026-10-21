@@ -20,6 +20,7 @@ import dev.justinsmith.bells.fakes.RecordingBeeper
 import dev.justinsmith.bells.fakes.bellsTestKoin
 import dev.justinsmith.bells.fakes.fakeBellsPlatformModule
 import dev.justinsmith.bells.gear.GearRoute
+import dev.justinsmith.bells.programs.ProgramEditorRoute
 import dev.justinsmith.bells.programs.ProgramsRoute
 import dev.justinsmith.bells.session.SessionRoute
 import dev.justinsmith.bells.today.TodayRoute
@@ -55,7 +56,17 @@ fun DesktopComposeUiTest.waitForText(text: String) =
 class BellsAppFixture(val storage: FakeBellsStorage, val clock: AtomicLong, val beeper: RecordingBeeper)
 
 /** Where [BellsHost] can be: the app's own keys live in `shared`, which Bells can't see. */
-private enum class Page { Today, Session, Programs, Bells }
+private sealed interface Page {
+    data object Today : Page
+
+    data object Session : Page
+
+    data object Programs : Page
+
+    data object Bells : Page
+
+    data class Editor(val uid: String?) : Page
+}
 
 /** Bells' pages as the app wires them, on a back stack of their own, so tests drive them end to end. */
 @Composable
@@ -82,7 +93,13 @@ private fun BellsHost(koin: KoinApplication) {
 
                             Page.Session -> SessionRoute(onExit = pop)
 
-                            Page.Programs -> ProgramsRoute(onBack = pop)
+                            Page.Programs -> ProgramsRoute(
+                                onNew = { backStack.add(Page.Editor(null)) },
+                                onEdit = { backStack.add(Page.Editor(it)) },
+                                onBack = pop,
+                            )
+
+                            is Page.Editor -> ProgramEditorRoute(page.uid, onBack = pop)
 
                             Page.Bells -> GearRoute(onBack = pop)
                         }

@@ -41,8 +41,21 @@ data class Block(
 /** One set a program asks for. */
 data class PlannedSet(val exercise: Exercise, val reps: Int, val side: Side?)
 
-/** A built-in program: [days] repeat in turn, [daysPerWeek] of them a week, for [weeks] weeks. */
-data class Program(val id: ProgramId, val days: List<List<Block>>, val daysPerWeek: Int, val weeks: Int) {
+/**
+ * A program: [days] repeat in turn, [daysPerWeek] of them a week, for [weeks] weeks. A built-in is named from
+ * the app's strings; one the user made carries its [name].
+ */
+data class Program(
+    val key: ProgramKey,
+    val days: List<List<Block>>,
+    val daysPerWeek: Int,
+    val weeks: Int,
+    val name: String? = null,
+) {
+    init {
+        require(days.isNotEmpty() && days.none { it.isEmpty() }) { "A program needs days, each with a block" }
+    }
+
     val totalDays: Int get() = daysPerWeek * weeks
 
     /** Where someone stands after [done] sessions of it: the day to do next, or null once it is over. */
@@ -58,11 +71,59 @@ data class ProgramDay(val program: Program, val number: Int, val week: Int, val 
     fun plannedSets(): List<PlannedSet> = blocks.flatMap { it.plannedSets() }
 }
 
-/** The built-in programs, by a stable id that is stored. Screens name them from the app's strings. */
-enum class ProgramId { DailySwingsGetUps, PressLadders, CleanPressEmom, GobletSquatRow }
+/** A program's id as it is stored, with its sessions and as the one followed. */
+sealed interface ProgramKey {
+    val stored: String
+
+    /** A built-in, stored by its [ProgramId]'s name. */
+    data class BuiltIn(val id: ProgramId) : ProgramKey {
+        override val stored: String get() = id.name
+    }
+
+    /** One the user made, by its [uid]. */
+    data class Custom(val uid: String) : ProgramKey {
+        override val stored: String get() = CUSTOM_PREFIX + uid
+    }
+
+    companion object {
+        /** The key [stored] names; null for a built-in this build doesn't know. */
+        fun parse(stored: String): ProgramKey? = if (stored.startsWith(CUSTOM_PREFIX)) {
+            stored.removePrefix(CUSTOM_PREFIX).takeIf { it.isNotEmpty() }?.let(::Custom)
+        } else {
+            ProgramId.entries.firstOrNull { it.name == stored }?.let(::BuiltIn)
+        }
+    }
+}
+
+private const val CUSTOM_PREFIX = "custom:"
+
+/**
+ * The built-in programs, by a stable id that is stored. Screens name them from the app's strings. [danJohn]
+ * ones follow Dan John's kettlebell programming.
+ */
+enum class ProgramId(val danJohn: Boolean = false) {
+    DailySwingsGetUps,
+    PressLadders,
+    CleanPressEmom,
+    GobletSquatRow,
+    EasyStrength(danJohn = true),
+    ArmorBuildingFormula(danJohn = true),
+    TenThousandSwings(danJohn = true),
+    SwingSquatCountdown(danJohn = true),
+}
+
+private fun builtIn(id: ProgramId, days: List<List<Block>>, daysPerWeek: Int, weeks: Int) =
+    Program(ProgramKey.BuiltIn(id), days, daysPerWeek, weeks)
+
+/** 500 swings in five ladders of 10, 15, 25 and 50: a day of 10,000 Swings. */
+private val fiveHundredSwings =
+    Block(Exercise.TwoHandSwing, rounds = 5, kind = BlockKind.Ladder, rungs = listOf(10, 15, 25, 50))
+
+/** Twenty minutes of the Armor Building Complex, one every minute. */
+private val armorBuildingComplex = Block(Exercise.ArmorBuildingComplex, rounds = 20, reps = 1, kind = BlockKind.Emom)
 
 val builtInPrograms: List<Program> = listOf(
-    Program(
+    builtIn(
         ProgramId.DailySwingsGetUps,
         days = listOf(
             listOf(
@@ -73,7 +134,7 @@ val builtInPrograms: List<Program> = listOf(
         daysPerWeek = 5,
         weeks = 6,
     ),
-    Program(
+    builtIn(
         ProgramId.PressLadders,
         days = listOf(
             listOf(
@@ -92,7 +153,7 @@ val builtInPrograms: List<Program> = listOf(
         daysPerWeek = 3,
         weeks = 8,
     ),
-    Program(
+    builtIn(
         ProgramId.CleanPressEmom,
         days = listOf(
             listOf(
@@ -103,7 +164,7 @@ val builtInPrograms: List<Program> = listOf(
         daysPerWeek = 3,
         weeks = 4,
     ),
-    Program(
+    builtIn(
         ProgramId.GobletSquatRow,
         days = listOf(
             listOf(Block(Exercise.GobletSquat, rounds = 3, reps = 10), Block(Exercise.Row, rounds = 3, reps = 10)),
@@ -111,9 +172,66 @@ val builtInPrograms: List<Program> = listOf(
         daysPerWeek = 2,
         weeks = 4,
     ),
+    // The 40-day workout: the same few lifts, light and easy, five days a week.
+    builtIn(
+        ProgramId.EasyStrength,
+        days = listOf(
+            listOf(
+                Block(Exercise.Press, rounds = 2, reps = 5),
+                Block(Exercise.Row, rounds = 2, reps = 5),
+                Block(Exercise.GobletSquat, rounds = 2, reps = 5),
+                Block(Exercise.TwoHandSwing, rounds = 3, reps = 15),
+                Block(Exercise.GetUp, rounds = 1, reps = 1),
+            ),
+        ),
+        daysPerWeek = 5,
+        weeks = 8,
+    ),
+    // The complex on two days of three; press ladders of 2-3-5 and swings between them.
+    builtIn(
+        ProgramId.ArmorBuildingFormula,
+        days = listOf(
+            listOf(armorBuildingComplex),
+            listOf(
+                Block(Exercise.Press, rounds = 5, kind = BlockKind.Ladder, rungs = listOf(2, 3, 5)),
+                Block(Exercise.TwoHandSwing, rounds = 10, reps = 10),
+            ),
+            listOf(armorBuildingComplex),
+        ),
+        daysPerWeek = 3,
+        weeks = 6,
+    ),
+    // 500 swings a session for 20 sessions, with a strength move in small ladders.
+    builtIn(
+        ProgramId.TenThousandSwings,
+        days = listOf(
+            listOf(
+                fiveHundredSwings,
+                Block(Exercise.Press, rounds = 5, kind = BlockKind.Ladder, rungs = listOf(1, 2, 3)),
+            ),
+            listOf(
+                fiveHundredSwings,
+                Block(Exercise.GobletSquat, rounds = 5, kind = BlockKind.Ladder, rungs = listOf(1, 2, 3)),
+            ),
+        ),
+        daysPerWeek = 5,
+        weeks = 4,
+    ),
+    // After the Humane Burpee: goblet squats counting down from 10, with 15 swings for each step.
+    builtIn(
+        ProgramId.SwingSquatCountdown,
+        days = listOf(
+            listOf(
+                Block(Exercise.GobletSquat, rounds = 1, kind = BlockKind.Ladder, rungs = (10 downTo 1).toList()),
+                Block(Exercise.TwoHandSwing, rounds = 10, reps = 15),
+            ),
+        ),
+        daysPerWeek = 3,
+        weeks = 4,
+    ),
 )
 
-fun program(id: ProgramId): Program = builtInPrograms.first { it.id == id }
+fun program(id: ProgramId): Program = builtInPrograms.first { it.key == ProgramKey.BuiltIn(id) }
 
 /**
  * Of [planned], the first set not yet done by [logged]: the n-th planned set of a lift (and side) is done by

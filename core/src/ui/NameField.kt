@@ -1,4 +1,4 @@
-package dev.justinsmith.interval.presets
+package dev.justinsmith.interval.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,28 +27,19 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.ImeAction
 import com.composeunstyled.TextInput
 import com.composeunstyled.UnstyledTextField
-import dev.justinsmith.interval.resources.Res
-import dev.justinsmith.interval.resources.preset_name_label
-import dev.justinsmith.interval.timer.Preset
-import dev.justinsmith.interval.ui.Corners
-import dev.justinsmith.interval.ui.IntervalTheme
-import dev.justinsmith.interval.ui.Sizes
-import dev.justinsmith.interval.ui.Spacing
-import org.jetbrains.compose.resources.stringResource
 
 /**
- * A filled single-line field for a preset's name, [Preset.MAX_NAME_LENGTH] at most, with its
- * [placeholder] while empty; the accent ring appears only while it has focus. Another single line
- * of text gives its own [label] and [maxLength].
+ * A filled single-line field for a name or a line of text, [maxLength] characters at most, read out by
+ * its [label] and showing its [placeholder] while empty; the accent ring appears only while it has focus.
  */
 @Composable
 fun NameField(
     state: TextFieldState,
     placeholder: String,
     onDone: () -> Unit,
+    label: String,
+    maxLength: Int,
     modifier: Modifier = Modifier,
-    label: String = stringResource(Res.string.preset_name_label),
-    maxLength: Int = Preset.MAX_NAME_LENGTH,
 ) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }

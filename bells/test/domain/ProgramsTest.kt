@@ -69,5 +69,45 @@ class ProgramsTest {
         assertEquals(12.0, suggestedBell(Exercise.Snatch, history, fallback = 12.0))
     }
 
+    @Test
+    fun `ten thousand swings is 500 swings a session for 20 sessions`() {
+        val swings = program(ProgramId.TenThousandSwings)
+        assertEquals(20, swings.totalDays)
+        swings.days.forEach { day -> assertEquals(500, day[0].totalReps) }
+        assertEquals(Exercise.GobletSquat, swings.dayAfter(1)?.blocks?.get(1)?.exercise)
+    }
+
+    @Test
+    fun `the armor building formula presses on the second day of three`() {
+        val abf = program(ProgramId.ArmorBuildingFormula)
+        assertEquals(Exercise.ArmorBuildingComplex, abf.dayAfter(0)?.blocks?.single()?.exercise)
+        assertEquals(Exercise.Press, abf.dayAfter(1)?.blocks?.first()?.exercise)
+        assertEquals(20, abf.dayAfter(2)?.plannedSets()?.size)
+        assertEquals(18, abf.totalDays)
+    }
+
+    @Test
+    fun `easy strength is 40 days and the countdown 55 squats`() {
+        assertEquals(40, program(ProgramId.EasyStrength).totalDays)
+        val countdown = assertNotNullDay(program(ProgramId.SwingSquatCountdown).dayAfter(0))
+        assertEquals(55, countdown.blocks[0].totalReps)
+        assertEquals(150, countdown.blocks[1].totalReps)
+    }
+
+    @Test
+    fun `a program key is stored and read back`() {
+        val keys = listOf(ProgramKey.BuiltIn(ProgramId.EasyStrength), ProgramKey.Custom("0123abcd"))
+        keys.forEach { assertEquals(it, ProgramKey.parse(it.stored)) }
+        assertEquals("EasyStrength", keys[0].stored)
+        assertNull(ProgramKey.parse("NotAProgram"))
+        assertNull(ProgramKey.parse("custom:"))
+    }
+
+    @Test
+    fun `every built-in has days and each day a block`() {
+        assertEquals(ProgramId.entries.size, builtInPrograms.size)
+        assertEquals(ProgramId.entries.map { ProgramKey.BuiltIn(it) }, builtInPrograms.map { it.key })
+    }
+
     private fun assertNotNullDay(day: ProgramDay?): ProgramDay = kotlin.test.assertNotNull(day)
 }

@@ -13,6 +13,10 @@ enum class Exercise(val perSide: Boolean) {
     Jerk(perSide = true),
     LongCycle(perSide = true),
     Halo(perSide = false),
+    FrontSquat(perSide = false),
+
+    /** Dan John's Armor Building Complex with two bells: 2 cleans, a press and 3 front squats, as one rep. */
+    ArmorBuildingComplex(perSide = false),
     ;
 
     companion object {
@@ -48,7 +52,7 @@ data class LiftSession(
     val title: String,
     val sets: List<SetLog>,
     /** The program it is a day of, or null for a free session. */
-    val programId: ProgramId? = null,
+    val program: ProgramKey? = null,
 ) {
     val tonnageKg: Double get() = sets.sumOf { it.tonnageKg }
 

@@ -17,7 +17,6 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.history.dayHeading
 import dev.justinsmith.interval.home.DescribeHint
-import dev.justinsmith.interval.presets.NameField
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.common_joined
 import dev.justinsmith.interval.resources.history_goal_line
@@ -33,6 +32,7 @@ import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.NameField
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing

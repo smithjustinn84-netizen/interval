@@ -22,7 +22,9 @@ import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.resources.Res
+import dev.justinsmith.bells.resources.exercise_armor_building_complex
 import dev.justinsmith.bells.resources.exercise_clean
+import dev.justinsmith.bells.resources.exercise_front_squat
 import dev.justinsmith.bells.resources.exercise_get_up
 import dev.justinsmith.bells.resources.exercise_goblet_squat
 import dev.justinsmith.bells.resources.exercise_halo
@@ -57,6 +59,8 @@ private fun Exercise.label(): StringResource = when (this) {
     Exercise.Jerk -> Res.string.exercise_jerk
     Exercise.LongCycle -> Res.string.exercise_long_cycle
     Exercise.Halo -> Res.string.exercise_halo
+    Exercise.FrontSquat -> Res.string.exercise_front_squat
+    Exercise.ArmorBuildingComplex -> Res.string.exercise_armor_building_complex
 }
 
 /** An exercise's name: "Two-hand swing". */

@@ -20,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import dev.justinsmith.interval.presets.NameField
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.activity_title
 import dev.justinsmith.interval.resources.describe_field_label
@@ -43,6 +42,7 @@ import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.Motion
+import dev.justinsmith.interval.ui.NameField
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes

@@ -41,6 +41,7 @@ import androidx.savedstate.serialization.SavedStateConfiguration
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.gear.GearRoute
 import dev.justinsmith.bells.history.LiftDetailRoute
+import dev.justinsmith.bells.programs.ProgramEditorRoute
 import dev.justinsmith.bells.programs.ProgramsRoute
 import dev.justinsmith.bells.session.SessionRoute
 import dev.justinsmith.bells.today.TodayRoute
@@ -61,6 +62,7 @@ import dev.justinsmith.interval.nav.Lifting
 import dev.justinsmith.interval.nav.OwnedBells
 import dev.justinsmith.interval.nav.Plan
 import dev.justinsmith.interval.nav.Presets
+import dev.justinsmith.interval.nav.ProgramEditor
 import dev.justinsmith.interval.nav.Programs
 import dev.justinsmith.interval.nav.Settings
 import dev.justinsmith.interval.nav.Tab
@@ -115,6 +117,7 @@ internal val navConfiguration = SavedStateConfiguration {
             subclass(Presets::class)
             subclass(Lifting::class)
             subclass(Programs::class)
+            subclass(ProgramEditor::class)
             subclass(OwnedBells::class)
             subclass(LiftDetail::class)
         }
@@ -269,7 +272,14 @@ private fun appEntries(
     entry<Lifting>(metadata = pageKind(PageKind.Mode)) {
         IntervalTheme(darkTheme = true) { SessionRoute(onExit = { backStack.removeLastOrNull() }) }
     }
-    entry<Programs> { ProgramsRoute(onBack = { backStack.removeLastOrNull() }) }
+    entry<Programs> {
+        ProgramsRoute(
+            onNew = { backStack.push(ProgramEditor()) },
+            onEdit = { backStack.push(ProgramEditor(it)) },
+            onBack = { backStack.removeLastOrNull() },
+        )
+    }
+    entry<ProgramEditor> { key -> ProgramEditorRoute(uid = key.uid, onBack = { backStack.removeLastOrNull() }) }
     entry<OwnedBells> { GearRoute(onBack = { backStack.removeLastOrNull() }) }
     entry<LiftDetail> { key -> LiftDetailRoute(uid = key.uid, onBack = { backStack.removeLastOrNull() }) }
     entry<HistoryTab>(metadata = pageKind(PageKind.Tab)) {

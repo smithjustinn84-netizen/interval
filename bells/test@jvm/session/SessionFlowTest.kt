@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.bells.ui.waitForText
 import kotlin.test.Test
@@ -25,7 +26,7 @@ class SessionFlowTest {
         onNodeWithText("Log set").performClick()
         onNode(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, "Log a set")).assertExists()
         // The sheet's own Log set, over the screen's.
-        onAllNodesWithText("Log set").onLast().performClick()
+        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("16 kg × 10")
         onNodeWithText("Two-hand swing").assertExists()
         onNodeWithText("160 kg").assertExists()
@@ -38,7 +39,7 @@ class SessionFlowTest {
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
-        onAllNodesWithText("Log set").onLast().performClick()
+        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("16 kg × 10")
         app.clock.set(90_000)
         onNodeWithText("Finish").performClick()

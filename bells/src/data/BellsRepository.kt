@@ -5,11 +5,13 @@ package dev.justinsmith.bells.data
 import co.touchlab.kermit.Logger
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.LiftSession
+import dev.justinsmith.bells.domain.Program
 import dev.justinsmith.bells.domain.ProgramDay
-import dev.justinsmith.bells.domain.ProgramId
+import dev.justinsmith.bells.domain.ProgramDraft
+import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.Side
-import dev.justinsmith.bells.domain.program
+import dev.justinsmith.bells.domain.builtInPrograms
 import dev.justinsmith.interval.platform.WallClock
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -30,15 +32,16 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 /**
- * Bells' saved state: its sessions and their sets, the bells the user owns and the program followed. The
- * one way into storage. Everything is read into memory before [ready] turns true; writes run one at a time
- * on [scope], in the order they were made.
+ * Bells' saved state: its sessions and their sets, the bells the user owns, the programs they made and the
+ * one followed. The one way into storage. Everything is read into memory before [ready] turns true; writes
+ * run one at a time on [scope], in the order they were made.
  */
 @Suppress("detekt.TooManyFunctions") // The one way into storage, every write side by side.
 class BellsRepository(
     private val sessionDao: SessionDao,
     private val bellDao: BellDao,
     private val followingDao: FollowingDao,
+    private val customProgramDao: CustomProgramDao,
     private val scope: CoroutineScope,
     private val clock: WallClock,
 ) {
@@ -63,11 +66,16 @@ class BellsRepository(
     /** The bells the user owns, lightest first. */
     val bells: StateFlow<List<Double>> = _bells.asStateFlow()
 
-    private val _programDay = MutableStateFlow<ProgramDay?>(null)
-    private val _following = MutableStateFlow<ProgramId?>(null)
+    private val _customPrograms = MutableStateFlow(emptyList<Program>())
 
-    /** The program the user follows, if any. */
-    val following: StateFlow<ProgramId?> = _following.asStateFlow()
+    /** The programs the user made, by name. */
+    val customPrograms: StateFlow<List<Program>> = _customPrograms.asStateFlow()
+
+    private val _programDay = MutableStateFlow<ProgramDay?>(null)
+    private val _following = MutableStateFlow<Program?>(null)
+
+    /** The program the user follows, if any, as it stands: a change to one they made shows at once. */
+    val following: StateFlow<Program?> = _following.asStateFlow()
 
     /**
      * The day of [following] to do next, counted by the sessions of it finished; null when none is followed or
@@ -97,28 +105,40 @@ class BellsRepository(
                     bellsLoaded.complete(Unit)
                 }
             }
+            val customLoaded = CompletableDeferred<Unit>()
+            val custom = customProgramDao.observeAll().orEmpty("programs").map { rows ->
+                rows.mapNotNull { it.toProgram() }
+            }
+            launch {
+                custom.collect {
+                    _customPrograms.value = it
+                    customLoaded.complete(Unit)
+                }
+            }
             val followingLoaded = CompletableDeferred<Unit>()
             launch {
-                followingDao.observe().flatMapLatest { row ->
-                    val id = row?.let { r -> ProgramId.entries.firstOrNull { it.name == r.programId } }
-                    if (row == null || id == null) {
+                combine(followingDao.observe(), custom) { row, made ->
+                    row?.let { r -> resolve(r.programId, made)?.let { it to r.startedAtEpochMillis } }
+                }.flatMapLatest { followed ->
+                    if (followed == null) {
                         flowOf(null to null)
                     } else {
-                        sessionDao.observeProgramDays(id.name, row.startedAtEpochMillis).map { done ->
-                            id to
-                                program(id).dayAfter(done)
+                        val (program, since) = followed
+                        sessionDao.observeProgramDays(program.key.stored, since).map { done ->
+                            program to program.dayAfter(done)
                         }
                     }
                 }.catch { e ->
                     log.e(e) { "Couldn't read the program" }
                     emit(null to null)
-                }.collect { (id, day) ->
-                    _following.value = id
+                }.collect { (program, day) ->
+                    _following.value = program
                     _programDay.value = day
                     followingLoaded.complete(Unit)
                 }
             }
             followingLoaded.await()
+            customLoaded.await()
             sessionsLoaded.await()
             bellsLoaded.await()
             _ready.value = true
@@ -127,7 +147,7 @@ class BellsRepository(
 
     /** Starts a session, a day of [program] or a free one, unless one is in progress already. */
     @OptIn(ExperimentalUuidApi::class)
-    fun startSession(program: ProgramId? = null) {
+    fun startSession(program: ProgramKey? = null) {
         persist {
             if (sessionDao.active() == null) {
                 val now = clock.nowMillis()
@@ -138,7 +158,7 @@ class BellsRepository(
                         null,
                         title = "",
                         updatedAtEpochMillis = now,
-                        programId = program?.name,
+                        programId = program?.stored,
                     ),
                 )
             }
@@ -146,9 +166,37 @@ class BellsRepository(
     }
 
     /** Follows [program] from its first day, in place of any other. */
-    fun follow(program: ProgramId) {
+    fun follow(program: ProgramKey) {
         val now = clock.nowMillis()
-        persist { followingDao.upsert(FollowingEntity(programId = program.name, startedAtEpochMillis = now)) }
+        persist { followingDao.upsert(FollowingEntity(programId = program.stored, startedAtEpochMillis = now)) }
+    }
+
+    /**
+     * Saves [draft] as the program [uid], or as a new one with null; returns its uid. A program followed
+     * keeps its place: the days done still count, against the program as it now is.
+     */
+    @OptIn(ExperimentalUuidApi::class)
+    fun saveProgram(uid: String?, draft: ProgramDraft): String {
+        val id = uid ?: Uuid.random().toHexString()
+        val now = clock.nowMillis()
+        val row = CustomProgramEntity(
+            id,
+            draft.name.trim(),
+            draft.daysPerWeek,
+            draft.weeks,
+            encodeDays(draft.days),
+            updatedAtEpochMillis = now,
+        )
+        persist { customProgramDao.upsert(row) }
+        return id
+    }
+
+    /** Deletes the program [uid] made, and stops following it if it is the one followed. */
+    fun deleteProgram(uid: String) {
+        persist {
+            followingDao.clearIfFollowing(ProgramKey.Custom(uid).stored)
+            customProgramDao.delete(uid)
+        }
     }
 
     fun stopFollowing() {
@@ -242,5 +290,10 @@ private fun SessionEntity.toDomain(sets: List<SetLog>) = LiftSession(
     finishedAtEpochMillis,
     title,
     sets,
-    programId?.let { id -> ProgramId.entries.firstOrNull { it.name == id } },
+    programId?.let(ProgramKey::parse),
 )
+
+/** The program [stored] names: a built-in, or one of [made]; null for one gone or unknown. */
+private fun resolve(stored: String, made: List<Program>): Program? = ProgramKey.parse(stored)?.let { key ->
+    (builtInPrograms + made).firstOrNull { it.key == key }
+}

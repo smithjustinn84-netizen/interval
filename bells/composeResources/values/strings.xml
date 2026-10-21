@@ -30,6 +30,9 @@
     <string name="exercise_jerk">Jerk</string>
     <string name="exercise_long_cycle">Long cycle</string>
     <string name="exercise_halo">Halo</string>
+    <string name="exercise_front_squat">Front squat</string>
+    <!-- Dan John's complex with two bells: 2 cleans, a press and 3 front squats make one. -->
+    <string name="exercise_armor_building_complex">Armor Building Complex</string>
     <string name="side_left">Left</string>
     <string name="side_right">Right</string>
 
@@ -122,6 +125,29 @@
     <string name="program_clean_press_summary">10 minutes of 3 cleans, then 10 of 3 presses, alternating sides · 3 days a week for 4 weeks</string>
     <string name="program_goblet_row_name">Goblet squat and row</string>
     <string name="program_goblet_row_summary">3 sets of 10 of each · 2 days a week for 4 weeks</string>
+    <string name="program_easy_strength_name">Easy Strength</string>
+    <string name="program_easy_strength_summary">Press, row and goblet squat 2 × 5, swings and a get-up a side, light and easy · 5 days a week for 8 weeks</string>
+    <string name="program_abf_name">Armor Building Formula</string>
+    <string name="program_abf_summary">20 minutes of the Armor Building Complex on the minute, two days in three; press ladders of 2-3-5 and swings between · 3 days a week for 6 weeks</string>
+    <string name="program_ten_thousand_name">10,000 swings</string>
+    <string name="program_ten_thousand_summary">500 swings a day in ladders of 10-15-25-50, with press or goblet squat ladders of 1-2-3 · 5 days a week for 4 weeks</string>
+    <string name="program_countdown_name">Swing and squat countdown</string>
+    <string name="program_countdown_summary">Goblet squats from 10 down to 1 and 10 sets of 15 swings, after the Humane Burpee · 3 days a week for 4 weeks</string>
+    <string name="programs_classics">Classics</string>
+    <string name="programs_dan_john">Dan John–inspired</string>
+    <string name="programs_yours">Your programs</string>
+    <string name="programs_new">New program</string>
+    <string name="programs_new_hint">Lay out your own days of sets, EMOMs and ladders.</string>
+    <string name="programs_edit_cd">Edit %1$s</string>
+    <!-- A program the user made, in a line: "2 days · 3 a week for 6 weeks" -->
+    <plurals name="program_days_count">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <plurals name="program_schedule">
+        <item quantity="one">%2$d a week for %1$d week</item>
+        <item quantity="other">%2$d a week for %1$d weeks</item>
+    </plurals>
     <string name="program_day">Day %1$d of %2$d · week %3$d</string>
     <string name="program_finished">Finished · pick another program</string>
     <string name="program_follow_cta">Follow a program</string>
@@ -131,10 +157,56 @@
     <string name="program_stop">Stop following</string>
     <string name="block_sets">%1$d × %2$d</string>
     <string name="block_sets_sided">%1$d × %2$d a side</string>
-    <string name="block_emom">%2$d every minute for %1$d minutes</string>
-    <string name="block_ladder">%1$d ladders of %2$s a side</string>
+    <plurals name="block_emom">
+        <item quantity="one">%2$d every minute for %1$d minute</item>
+        <item quantity="other">%2$d every minute for %1$d minutes</item>
+    </plurals>
+    <plurals name="block_ladder">
+        <item quantity="one">%1$d ladder of %2$s</item>
+        <item quantity="other">%1$d ladders of %2$s</item>
+    </plurals>
+    <plurals name="block_ladder_sided">
+        <item quantity="one">%1$d ladder of %2$s a side</item>
+        <item quantity="other">%1$d ladders of %2$s a side</item>
+    </plurals>
     <string name="today_start_day">Start day %1$d</string>
     <string name="today_free_session">Free session</string>
+
+    <!-- Making or changing a program -->
+    <string name="editor_new_title">New program</string>
+    <string name="editor_edit_title">Edit program</string>
+    <string name="editor_name_label">Program name</string>
+    <string name="editor_name_placeholder">My program</string>
+    <string name="editor_schedule">Schedule</string>
+    <string name="editor_days_per_week">Days a week</string>
+    <string name="editor_weeks">Weeks</string>
+    <string name="editor_fewer_cd">Fewer: %1$s</string>
+    <string name="editor_more_cd">More: %1$s</string>
+    <string name="editor_day">Day %1$d</string>
+    <string name="editor_days_hint">Days follow in turn, then start over; each needs a block.</string>
+    <string name="editor_add_day">Add day</string>
+    <string name="editor_remove_day">Remove day</string>
+    <string name="editor_add_block">Add block</string>
+    <string name="editor_save">Save program</string>
+    <string name="editor_delete">Delete program</string>
+    <string name="editor_delete_title">Delete program?</string>
+    <string name="editor_delete_text">It leaves your programs. Sessions done stay in your history.</string>
+    <string name="editor_delete_confirm">Delete</string>
+    <string name="block_title">Block</string>
+    <string name="block_kind">How it runs</string>
+    <string name="block_kind_sets">Sets</string>
+    <string name="block_kind_emom">EMOM</string>
+    <string name="block_kind_ladder">Ladder</string>
+    <string name="block_rounds_sets">Sets</string>
+    <string name="block_rounds_emom">Minutes</string>
+    <string name="block_rounds_ladder">Ladders</string>
+    <string name="block_reps">Reps</string>
+    <string name="block_rungs">Rungs</string>
+    <string name="block_rung">Rung %1$d</string>
+    <string name="block_add_rung">Add rung</string>
+    <string name="block_remove_rung">Remove last rung</string>
+    <string name="block_done">Done</string>
+    <string name="block_remove">Remove block</string>
 
     <!-- Up next, in a programmed session -->
     <string name="next_title">Up next</string>

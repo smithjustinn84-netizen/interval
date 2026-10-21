@@ -52,6 +52,7 @@ import dev.justinsmith.interval.ui.FieldRow
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
+import dev.justinsmith.interval.ui.NameField
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Spacing
@@ -141,7 +142,7 @@ internal fun PresetEditor(
                     color = palette.textDim,
                 )
             }
-            NameField(name, placeholder = placeholder, onDone = save)
+            NameField(name, placeholder, save, stringResource(Res.string.preset_name_label), Preset.MAX_NAME_LENGTH)
             if (storedName != wanted) EditorHint(stringResource(Res.string.preset_editor_saves_as, storedName))
         }
         Column(Modifier.fillMaxWidth().clip(Corners.radius18).background(palette.surfaceVariant)) {

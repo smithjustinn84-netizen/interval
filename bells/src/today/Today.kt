@@ -28,8 +28,9 @@ import dev.justinsmith.bells.data.IntervalActivity
 import dev.justinsmith.bells.data.IntervalWorkout
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.LiftSession
+import dev.justinsmith.bells.domain.Program
 import dev.justinsmith.bells.domain.ProgramDay
-import dev.justinsmith.bells.domain.ProgramId
+import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.domain.formatKg
 import dev.justinsmith.bells.domain.suggestedBell
 import dev.justinsmith.bells.resources.Res
@@ -114,7 +115,7 @@ data class TodayUiState(
     val lastWhen: String = "",
     val inProgress: Boolean = false,
     /** The program followed, if any, and its next day: null once it is over. */
-    val following: ProgramId? = null,
+    val following: Program? = null,
     val programDay: ProgramDay? = null,
     /** The bell to suggest for each lift: the last one used for it. */
     val bells: Map<Exercise, Double> = emptyMap(),
@@ -161,7 +162,7 @@ class TodayViewModel(
         )
 
     /** Starts the session about to open: [program]'s next day, or a free one with null. */
-    fun start(program: ProgramId?) {
+    fun start(program: ProgramKey?) {
         repository.startSession(program)
     }
 
@@ -218,7 +219,7 @@ fun TodayRoute(onStartSession: () -> Unit, onChooseProgram: () -> Unit, onOpenBe
 @Composable
 fun TodayScreen(
     state: TodayUiState,
-    onStartSession: (ProgramId?) -> Unit,
+    onStartSession: (ProgramKey?) -> Unit,
     onChooseProgram: () -> Unit,
     modifier: Modifier = Modifier,
     onOpenBells: () -> Unit = {},
@@ -423,7 +424,7 @@ private fun WeekCard(state: TodayUiState, modifier: Modifier = Modifier) {
 
 /** Resume a session in progress, or start the program's day or a free one. */
 @Composable
-private fun StartRow(state: TodayUiState, onStartSession: (ProgramId?) -> Unit) {
+private fun StartRow(state: TodayUiState, onStartSession: (ProgramKey?) -> Unit) {
     val day = state.programDay
     Row(
         Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space12),
@@ -442,7 +443,7 @@ private fun StartRow(state: TodayUiState, onStartSession: (ProgramId?) -> Unit) 
                 }, Modifier.weight(1f))
                 AccentButton(
                     stringResource(Res.string.today_start_day, day.number),
-                    onClick = { onStartSession(day.program.id) },
+                    onClick = { onStartSession(day.program.key) },
                     modifier = Modifier.weight(1f),
                 )
             }

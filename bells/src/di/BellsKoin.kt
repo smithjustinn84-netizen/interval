@@ -36,10 +36,11 @@ val bellsStorageModule: Module = module {
     single { get<BellsDatabase>().sessionDao() }
     single { get<BellsDatabase>().bellDao() }
     single { get<BellsDatabase>().followingDao() }
+    single { get<BellsDatabase>().customProgramDao() }
 }
 
 val bellsDataModule: Module = module {
-    single { BellsRepository(get(), get(), get(), scope = get(BellsStorageScope), clock = get()) }
+    single { BellsRepository(get(), get(), get(), get(), scope = get(BellsStorageScope), clock = get()) }
 }
 
 /**

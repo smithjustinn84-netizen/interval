@@ -21,7 +21,8 @@ import kotlinx.coroutines.flow.Flow
 /**
  * Bells' sessions and their sets, the user's bells and the program they follow. Version 2 added
  * [FollowingEntity] and the program day a session was; version 3 settings shared with Interval, then a
- * sibling app; version 4 dropped them, and the copy of Interval's workouts, once Bells became part of it.
+ * sibling app; version 4 dropped them, and the copy of Interval's workouts, once Bells became part of it;
+ * version 5 added the programs the user makes, [CustomProgramEntity].
  */
 @Database(
     entities = [
@@ -29,10 +30,15 @@ import kotlinx.coroutines.flow.Flow
         SetEntity::class,
         BellEntity::class,
         FollowingEntity::class,
+        CustomProgramEntity::class,
     ],
-    version = 4,
+    version = 5,
     // 3 to 4 is MIGRATION_3_4, added in bellsStorageModule.
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
+    autoMigrations = [
+        AutoMigration(from = 1, to = 2),
+        AutoMigration(from = 2, to = 3),
+        AutoMigration(from = 4, to = 5),
+    ],
 )
 @ConstructedBy(BellsDatabaseConstructor::class)
 abstract class BellsDatabase : RoomDatabase() {
@@ -41,6 +47,8 @@ abstract class BellsDatabase : RoomDatabase() {
     abstract fun bellDao(): BellDao
 
     abstract fun followingDao(): FollowingDao
+
+    abstract fun customProgramDao(): CustomProgramDao
 }
 
 /** Room generates the `actual` for each platform. */
@@ -116,6 +124,22 @@ interface FollowingDao {
 
     @Query("DELETE FROM following")
     suspend fun clear()
+
+    /** Stops following [programId] (as stored), if it is the one followed. */
+    @Query("DELETE FROM following WHERE program_id = :programId")
+    suspend fun clearIfFollowing(programId: String)
+}
+
+@Dao
+interface CustomProgramDao {
+    @Query("SELECT * FROM custom_program ORDER BY name COLLATE NOCASE, uid")
+    fun observeAll(): Flow<List<CustomProgramEntity>>
+
+    @Upsert
+    suspend fun upsert(program: CustomProgramEntity)
+
+    @Query("DELETE FROM custom_program WHERE uid = :uid")
+    suspend fun delete(uid: String)
 }
 
 @Dao
@@ -140,7 +164,7 @@ data class SessionEntity(
     val title: String,
     @ColumnInfo(name = "updated_at") val updatedAtEpochMillis: Long,
     val deleted: Boolean = false,
-    /** The program it was a day of, a [dev.justinsmith.bells.domain.ProgramId] by name; null for a free session. */
+    /** The program it was a day of, a [dev.justinsmith.bells.domain.ProgramKey] as stored; null for a free session. */
     @ColumnInfo(name = "program_id") val programId: String? = null,
 )
 
@@ -157,7 +181,10 @@ data class SetEntity(
     @ColumnInfo(name = "logged_at") val loggedAtEpochMillis: Long,
 )
 
-/** The program the user follows, from [startedAtEpochMillis]: one row at most. */
+/**
+ * The program the user follows, a [dev.justinsmith.bells.domain.ProgramKey] as stored, from
+ * [startedAtEpochMillis]: one row at most.
+ */
 @Entity(tableName = "following")
 data class FollowingEntity(
     @PrimaryKey val id: Int = 0,
@@ -168,3 +195,15 @@ data class FollowingEntity(
 /** A bell the user owns. */
 @Entity(tableName = "bell")
 data class BellEntity(@PrimaryKey val kg: Double)
+
+/** A program the user made. [days] is its days' blocks as JSON, in [encodeDays]'s shape. */
+@Entity(tableName = "custom_program")
+data class CustomProgramEntity(
+    /** 32 hex digits, never reused. */
+    @PrimaryKey val uid: String,
+    val name: String,
+    @ColumnInfo(name = "days_per_week") val daysPerWeek: Int,
+    val weeks: Int,
+    val days: String,
+    @ColumnInfo(name = "updated_at") val updatedAtEpochMillis: Long,
+)

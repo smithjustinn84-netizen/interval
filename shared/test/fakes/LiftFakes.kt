@@ -3,6 +3,8 @@ package dev.justinsmith.interval.fakes
 import dev.justinsmith.bells.data.BellDao
 import dev.justinsmith.bells.data.BellEntity
 import dev.justinsmith.bells.data.BellsRepository
+import dev.justinsmith.bells.data.CustomProgramDao
+import dev.justinsmith.bells.data.CustomProgramEntity
 import dev.justinsmith.bells.data.FollowingDao
 import dev.justinsmith.bells.data.FollowingEntity
 import dev.justinsmith.bells.data.SessionDao
@@ -98,6 +100,22 @@ class FakeFollowingDao : FollowingDao {
     override suspend fun clear() {
         row.value = null
     }
+
+    override suspend fun clearIfFollowing(programId: String) {
+        if (row.value?.programId == programId) row.value = null
+    }
+}
+
+class FakeCustomProgramDao : CustomProgramDao {
+    val rows = MutableStateFlow(emptyList<CustomProgramEntity>())
+
+    override fun observeAll(): Flow<List<CustomProgramEntity>> =
+        rows.map { all -> all.sortedWith(compareBy({ it.name.lowercase() }, { it.uid })) }
+
+    override suspend fun upsert(program: CustomProgramEntity) =
+        rows.update { all -> all.filterNot { it.uid == program.uid } + program }
+
+    override suspend fun delete(uid: String) = rows.update { all -> all.filterNot { it.uid == uid } }
 }
 
 /** Lift's storage in memory: no database, and writes run at once on the caller's thread. */
@@ -105,12 +123,14 @@ class FakeLiftStorage {
     val sessions = FakeSessionDao()
     val bells = FakeBellDao()
     val following = FakeFollowingDao()
+    val programs = FakeCustomProgramDao()
 
     /** A repository over this storage, its writes landed by the time a call returns. */
     fun repository(now: WallClock = WallClock { 0L }): BellsRepository = BellsRepository(
         sessions,
         bells,
         following,
+        programs,
         CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
         now,
     )
@@ -150,4 +170,5 @@ fun fakeLiftStorageModule(storage: FakeLiftStorage = FakeLiftStorage()): Module 
     single<SessionDao> { storage.sessions }
     single<BellDao> { storage.bells }
     single<FollowingDao> { storage.following }
+    single<CustomProgramDao> { storage.programs }
 }

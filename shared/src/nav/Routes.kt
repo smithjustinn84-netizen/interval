@@ -59,9 +59,13 @@ data object Presets : NavKey
 @Serializable
 data object Lifting : NavKey
 
-/** The built-in programs, to follow one. Pushed from Lift. */
+/** The built-in programs and the user's own, to follow one. Pushed from Lift. */
 @Serializable
 data object Programs : NavKey
+
+/** A program the user makes, or changes by its [uid]. Pushed from Programs. */
+@Serializable
+data class ProgramEditor(val uid: String? = null) : NavKey
 
 /** The bells the user owns and the records set with them. Pushed from Lift. */
 @Serializable

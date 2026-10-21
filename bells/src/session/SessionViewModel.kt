@@ -120,7 +120,7 @@ class SessionViewModel(
                 now,
             ->
             val emomState = run?.let { EmomClock(it.minutes).at(now - it.startedAtMillis, it.done) }
-            val plan = active?.takeIf { it.programId != null && it.programId == day?.program?.id }?.let { day }
+            val plan = active?.takeIf { it.program != null && it.program == day?.program?.key }?.let { day }
             SessionUiState(
                 session = active,
                 elapsed = formatClock(active?.elapsedSeconds(now) ?: 0),
