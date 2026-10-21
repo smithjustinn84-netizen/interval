@@ -3,12 +3,10 @@
 package dev.justinsmith.interval.history
 
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.core.sync.AppId
-import dev.justinsmith.core.sync.FeedSnapshot
-import dev.justinsmith.core.sync.SessionRecord
 import dev.justinsmith.interval.data.BodySettings
 import dev.justinsmith.interval.data.PlanSchedule
 import dev.justinsmith.interval.fakes.DAY_MILLIS
+import dev.justinsmith.interval.fakes.FakeLiftStorage
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.MainDispatcherTest
@@ -42,7 +40,9 @@ private val MONDAY = TODAY - 3
 class HistoryViewModelTest : MainDispatcherTest() {
     private var clock = noonOf(TODAY)
     private val repository = FakeStorage().repository(now = { clock })
-    private val viewModel by lazy { HistoryViewModel(repository, FixedTimestampFormatter, clock = { clock }) }
+    private val lift = FakeLiftStorage()
+    private val bells = lift.repository(now = { clock })
+    private val viewModel by lazy { HistoryViewModel(repository, bells, FixedTimestampFormatter, clock = { clock }) }
 
     private fun at(day: Long) {
         clock = noonOf(day)
@@ -70,25 +70,17 @@ class HistoryViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun `the sibling app's workouts are listed with this app's and counted in the week`() {
+    fun `kettlebell sessions are listed with the interval workouts and counted in the week`() {
         repository.updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
         at(TODAY)
         repository.recordWorkout(tabata, tabata.totalSeconds)
-        val swings = SessionRecord(
-            uid = "b1",
-            source = AppId.Bells,
-            finishedAtEpochMillis = TODAY * DAY_MILLIS + DAY_MILLIS / 4,
-            elapsedSeconds = 1_570,
-            activity = Activity.Kettlebell.name,
-            title = "Swings and get-ups",
-            updatedAtEpochMillis = 1,
-        )
-        repository.importSibling(FeedSnapshot(source = AppId.Bells, sessions = listOf(swings)))
+        val finished = TODAY * DAY_MILLIS + DAY_MILLIS / 4
+        lift.finished("b1", "Swings and get-ups", finished - 1_570_000, finished, 24.0 to 10)
 
         val state = viewModel.state.value
-        val (interval, bells) = state.sections.single().items
+        val (interval, swings) = state.sections.single().items
         assertEquals("Tabata", interval.presetName)
-        assertEquals(null, interval.from)
+        assertEquals(null, interval.liftUid)
         assertEquals(
             HistoryItem(
                 "Swings and get-ups",
@@ -96,9 +88,9 @@ class HistoryViewModelTest : MainDispatcherTest() {
                 endedEarly = false,
                 time = "at ${TODAY * DAY_MILLIS + DAY_MILLIS / 4}",
                 total = "26:10",
-                from = AppId.Bells,
+                liftUid = "b1",
             ),
-            bells,
+            swings,
         )
         assertEquals(2, state.weekCount)
         assertEquals(2, state.summary.count)
@@ -236,7 +228,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
         val sunday = MONDAY + 6
         clock = sunday * DAY_MILLIS + DAY_MILLIS - 1_000
         repository.recordWorkout(tabata, tabata.totalSeconds)
-        val viewModel = HistoryViewModel(repository, FixedTimestampFormatter, clock = { clock })
+        val viewModel = HistoryViewModel(repository, bells, FixedTimestampFormatter, clock = { clock })
         assertEquals(listOf(HistoryDay.Today), viewModel.state.value.sections.map { it.day })
         assertEquals(1, viewModel.state.value.weekCount)
 

@@ -5,8 +5,7 @@ import org.koin.core.module.Module
 
 /**
  * Koin definitions for what Bells needs from the platform: a builder for its database file
- * (`RoomDatabase.Builder<BellsDatabase>`), the [dev.justinsmith.core.sync.SiblingFeed] to Interval, and a
- * [dev.justinsmith.interval.platform.TimestampFormatter]. Built in composition because Android needs a
+ * (`RoomDatabase.Builder<BellsDatabase>`) and a [Beeper]. Built in composition because Android needs a
  * `Context`.
  */
 @Composable

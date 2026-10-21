@@ -21,7 +21,22 @@ class NavKeyRoundTripTest {
 
     @Test
     fun `every route survives saving and restoring`() {
-        val routes = listOf<NavKey>(TimerTab, PresetsTab, HistoryTab, Settings, Workout, About, Licenses)
+        val routes = listOf<NavKey>(
+            TimerTab,
+            LiftTab,
+            HistoryTab,
+            Settings,
+            Workout,
+            About,
+            Licenses,
+            WorkoutDetail(7),
+            Plan,
+            Presets,
+            Lifting,
+            Programs,
+            OwnedBells,
+            LiftDetail("b1"),
+        )
         for (route in routes) {
             assertEquals(route, json.decodeFromString(serializer, json.encodeToString(serializer, route)))
         }

@@ -10,14 +10,6 @@ import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.domain.program
-import dev.justinsmith.core.sync.AppId
-import dev.justinsmith.core.sync.FeedSnapshot
-import dev.justinsmith.core.sync.SessionDetail
-import dev.justinsmith.core.sync.SessionRecord
-import dev.justinsmith.core.sync.SetRecord
-import dev.justinsmith.core.sync.SharedSettings
-import dev.justinsmith.core.sync.mirror
-import dev.justinsmith.core.sync.newerSettings
 import dev.justinsmith.interval.platform.WallClock
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -37,17 +29,8 @@ import kotlinx.coroutines.launch
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-/** One of Interval's workouts, as Bells shows it: read-only, counted in the week. */
-data class IntervalWorkout(
-    val uid: String,
-    val finishedAtEpochMillis: Long,
-    val elapsedSeconds: Int,
-    val title: String,
-)
-
 /**
- * Bells' saved state: its sessions and their sets, the bells the user owns, Interval's workouts and the
- * settings the two share. The
+ * Bells' saved state: its sessions and their sets, the bells the user owns and the program followed. The
  * one way into storage. Everything is read into memory before [ready] turns true; writes run one at a time
  * on [scope], in the order they were made.
  */
@@ -55,9 +38,7 @@ data class IntervalWorkout(
 class BellsRepository(
     private val sessionDao: SessionDao,
     private val bellDao: BellDao,
-    private val siblingDao: SiblingDao,
     private val followingDao: FollowingDao,
-    private val settingsDao: SettingsDao,
     private val scope: CoroutineScope,
     private val clock: WallClock,
 ) {
@@ -82,11 +63,6 @@ class BellsRepository(
     /** The bells the user owns, lightest first. */
     val bells: StateFlow<List<Double>> = _bells.asStateFlow()
 
-    private val _interval = MutableStateFlow(emptyList<IntervalWorkout>())
-
-    /** Interval's workouts, newest first. */
-    val interval: StateFlow<List<IntervalWorkout>> = _interval.asStateFlow()
-
     private val _programDay = MutableStateFlow<ProgramDay?>(null)
     private val _following = MutableStateFlow<ProgramId?>(null)
 
@@ -99,17 +75,11 @@ class BellsRepository(
      */
     val programDay: StateFlow<ProgramDay?> = _programDay.asStateFlow()
 
-    private val _sharedSettings = MutableStateFlow<SharedSettings?>(null)
-
-    /** The settings shared with Interval (its weekly goal, the body weight), null until either app has any. */
-    val sharedSettings: StateFlow<SharedSettings?> = _sharedSettings.asStateFlow()
-
     init {
         scope.launch { for (write in writes) runLogged(write) }
         scope.launch {
             val sessionsLoaded = CompletableDeferred<Unit>()
             val bellsLoaded = CompletableDeferred<Unit>()
-            val intervalLoaded = CompletableDeferred<Unit>()
             launch {
                 combine(sessionDao.observeSessions(), sessionDao.observeSets()) { sessions, sets ->
                     val bySession = sets.mapNotNull { it.toDomain()?.let { set -> it.sessionUid to set } }
@@ -125,13 +95,6 @@ class BellsRepository(
                 bellDao.observeAll().orEmpty("bells").collect { rows ->
                     _bells.value = rows.map { it.kg }
                     bellsLoaded.complete(Unit)
-                }
-            }
-            launch {
-                siblingDao.observeAll().orEmpty("Interval's workouts").collect { rows ->
-                    _interval.value =
-                        rows.map { IntervalWorkout(it.uid, it.finishedAtEpochMillis, it.elapsedSeconds, it.title) }
-                    intervalLoaded.complete(Unit)
                 }
             }
             val followingLoaded = CompletableDeferred<Unit>()
@@ -155,22 +118,9 @@ class BellsRepository(
                     followingLoaded.complete(Unit)
                 }
             }
-            val settingsLoaded = CompletableDeferred<Unit>()
-            launch {
-                settingsDao.observe().catch { e ->
-                    log.e(e) { "Couldn't read the shared settings" }
-                    emit(null)
-                }.collect { row ->
-                    _sharedSettings.value =
-                        row?.let { SharedSettings(it.bodyWeightKg, it.weeklyGoal, it.updatedAtEpochMillis) }
-                    settingsLoaded.complete(Unit)
-                }
-            }
             followingLoaded.await()
-            settingsLoaded.await()
             sessionsLoaded.await()
             bellsLoaded.await()
-            intervalLoaded.await()
             _ready.value = true
         }
     }
@@ -230,7 +180,7 @@ class BellsRepository(
         }
     }
 
-    /** Drops the session in progress and its sets. It was never shared, so nothing else needs telling. */
+    /** Drops the session in progress and its sets. */
     fun discardSession() {
         persist {
             val active = sessionDao.active() ?: return@persist
@@ -239,7 +189,7 @@ class BellsRepository(
         }
     }
 
-    /** Deletes a finished session, leaving a tombstone so Interval drops its copy too. */
+    /** Deletes a finished session, leaving its row behind as a tombstone. */
     fun deleteSession(uid: String) {
         val now = clock.nowMillis()
         persist { sessionDao.markDeleted(uid, now) }
@@ -247,55 +197,6 @@ class BellsRepository(
 
     fun setOwned(kg: Double, owned: Boolean) {
         persist { if (owned) bellDao.upsert(BellEntity(kg)) else bellDao.delete(kg) }
-    }
-
-    /** Every finished session, deleted ones as tombstones, as Interval is sent them. */
-    suspend fun sharedSessions(): List<SessionRecord> {
-        val done = CompletableDeferred<List<SessionRecord>>()
-        persist {
-            runCatching {
-                val sets = sessionDao.allSets().groupBy { it.sessionUid }
-                sessionDao.allSessions().filter { it.finishedAtEpochMillis != null }
-                    .map { it.toRecord(sets[it.uid].orEmpty()) }
-            }.onSuccess { done.complete(it) }.onFailure { done.completeExceptionally(it) }
-        }
-        return done.await()
-    }
-
-    /**
-     * Brings the stored copy of Interval's workouts in step with [snapshot], and takes its shared settings
-     * when they changed after the ones here (see [newerSettings]).
-     */
-    fun importSibling(snapshot: FeedSnapshot) {
-        newerSettings(_sharedSettings.value, snapshot, expected = AppId.Bells.sibling)?.let { theirs ->
-            _sharedSettings.value = theirs
-            persist {
-                settingsDao.upsert(
-                    SettingsEntity(
-                        bodyWeightKg = theirs.bodyWeightKg,
-                        weeklyGoal = theirs.weeklyGoal,
-                        updatedAtEpochMillis = theirs.updatedAtEpochMillis,
-                    ),
-                )
-            }
-        }
-        persist {
-            val local = siblingDao.all().associate { it.uid to it.updatedAtEpochMillis }
-            val plan = mirror(local, snapshot, expected = AppId.Bells.sibling)
-            plan.deletes.forEach { siblingDao.delete(it) }
-            plan.upserts.forEach {
-                siblingDao.upsert(
-                    SiblingEntity(
-                        it.uid,
-                        it.source.name,
-                        it.finishedAtEpochMillis,
-                        it.elapsedSeconds,
-                        it.title,
-                        it.updatedAtEpochMillis,
-                    ),
-                )
-            }
-        }
     }
 
     private fun <T> Flow<List<T>>.orEmpty(what: String): Flow<List<T>> = catch { e ->
@@ -343,25 +244,3 @@ private fun SessionEntity.toDomain(sets: List<SetLog>) = LiftSession(
     sets,
     programId?.let { id -> ProgramId.entries.firstOrNull { it.name == id } },
 )
-
-private fun SessionEntity.toRecord(sets: List<SetEntity>): SessionRecord {
-    val finished = finishedAtEpochMillis ?: startedAtEpochMillis
-    return SessionRecord(
-        uid = uid,
-        source = AppId.Bells,
-        finishedAtEpochMillis = finished,
-        elapsedSeconds = ((finished - startedAtEpochMillis) / MILLIS_PER_SECOND).toInt(),
-        activity = KETTLEBELL_ACTIVITY,
-        title = title,
-        detail = SessionDetail.Kettlebell(
-            sets = sets.map { SetRecord(it.exercise, it.bellKg, it.reps, it.side) },
-            tonnageKg = sets.sumOf { it.bellKg * it.reps },
-        ).toJson(),
-        updatedAtEpochMillis = updatedAtEpochMillis,
-        deleted = deleted,
-    )
-}
-
-/** Interval's activity for a session, so it estimates calories at a kettlebell's effort. */
-private const val KETTLEBELL_ACTIVITY = "Kettlebell"
-private const val MILLIS_PER_SECOND = 1000L

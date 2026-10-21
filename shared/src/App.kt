@@ -27,7 +27,6 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavBackStack
@@ -39,7 +38,12 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.navigation3.ui.defaultPredictivePopTransitionSpec
 import androidx.savedstate.serialization.SavedStateConfiguration
-import dev.justinsmith.core.sync.SiblingSync
+import dev.justinsmith.bells.data.BellsRepository
+import dev.justinsmith.bells.gear.GearRoute
+import dev.justinsmith.bells.history.LiftDetailRoute
+import dev.justinsmith.bells.programs.ProgramsRoute
+import dev.justinsmith.bells.session.SessionRoute
+import dev.justinsmith.bells.today.TodayRoute
 import dev.justinsmith.interval.about.AboutRoute
 import dev.justinsmith.interval.about.LicensesRoute
 import dev.justinsmith.interval.data.IntervalRepository
@@ -51,8 +55,13 @@ import dev.justinsmith.interval.home.TimerRoute
 import dev.justinsmith.interval.nav.About
 import dev.justinsmith.interval.nav.HistoryTab
 import dev.justinsmith.interval.nav.Licenses
+import dev.justinsmith.interval.nav.LiftDetail
+import dev.justinsmith.interval.nav.LiftTab
+import dev.justinsmith.interval.nav.Lifting
+import dev.justinsmith.interval.nav.OwnedBells
 import dev.justinsmith.interval.nav.Plan
-import dev.justinsmith.interval.nav.PresetsTab
+import dev.justinsmith.interval.nav.Presets
+import dev.justinsmith.interval.nav.Programs
 import dev.justinsmith.interval.nav.Settings
 import dev.justinsmith.interval.nav.Tab
 import dev.justinsmith.interval.nav.TimerTab
@@ -76,6 +85,8 @@ import dev.justinsmith.interval.ui.pageKind
 import dev.justinsmith.interval.ui.pagePopTransition
 import dev.justinsmith.interval.ui.pageTransition
 import dev.justinsmith.interval.workout.WorkoutRoute
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.plus
 import kotlinx.serialization.modules.polymorphic
@@ -93,7 +104,7 @@ internal val navConfiguration = SavedStateConfiguration {
     serializersModule = serializersModule + SerializersModule {
         polymorphic(NavKey::class) {
             subclass(TimerTab::class)
-            subclass(PresetsTab::class)
+            subclass(LiftTab::class)
             subclass(HistoryTab::class)
             subclass(Settings::class)
             subclass(Workout::class)
@@ -101,6 +112,11 @@ internal val navConfiguration = SavedStateConfiguration {
             subclass(Licenses::class)
             subclass(WorkoutDetail::class)
             subclass(Plan::class)
+            subclass(Presets::class)
+            subclass(Lifting::class)
+            subclass(Programs::class)
+            subclass(OwnedBells::class)
+            subclass(LiftDetail::class)
         }
     }
 }
@@ -110,8 +126,7 @@ internal val navConfiguration = SavedStateConfiguration {
 @DevelopmentEntryPoint
 fun App() {
     val koin = rememberAppKoin()
-    val repository = remember(koin) { koin.koin.get<IntervalRepository>() }
-    val ready by repository.ready.collectAsStateWithLifecycle()
+    val ready by remember(koin) { storageReady(koin.koin.get(), koin.koin.get()) }.collectAsStateWithLifecycle(false)
     WithIntro(ready) { introPlaying -> AppContent(koin, introPlaying) }
 }
 
@@ -122,14 +137,9 @@ fun App() {
 @Composable
 internal fun AppContent(koin: KoinApplication, introPlaying: Boolean = false) {
     KoinIsolatedContext(context = koin) {
-        val repository = currentKoinScope().get<IntervalRepository>()
-        val sync = currentKoinScope().get<SiblingSync>()
-        // The sibling app may have recorded workouts while this one was away: take them in on every return.
-        LifecycleResumeEffect(sync) {
-            sync.pull()
-            onPauseOrDispose {}
-        }
-        val ready by repository.ready.collectAsStateWithLifecycle()
+        val scope = currentKoinScope()
+        val repository = scope.get<IntervalRepository>()
+        val ready by remember(scope) { storageReady(repository, scope.get()) }.collectAsStateWithLifecycle(false)
         // Saved settings take milliseconds to read. Until then the window background shows, rather than
         // screens built from defaults or a flash of the wrong theme.
         if (!ready) return@KoinIsolatedContext
@@ -141,8 +151,9 @@ internal fun AppContent(koin: KoinApplication, introPlaying: Boolean = false) {
         }
         IntervalTheme(darkTheme = dark) {
             val backStack = rememberNavBackStack(navConfiguration, TimerTab)
-            // The workout is dark in either theme, and so is the intro while it covers the app.
-            SystemBarIcons(lightIcons = dark || backStack.lastOrNull() == Workout || introPlaying)
+            // The workout and a session are dark in either theme, and so is the intro while it covers the app.
+            val top = backStack.lastOrNull()
+            SystemBarIcons(lightIcons = dark || top == Workout || top == Lifting || introPlaying)
             AppShell(backStack)
         }
     }
@@ -150,8 +161,8 @@ internal fun AppContent(koin: KoinApplication, introPlaying: Boolean = false) {
 
 /**
  * One back stack: the Timer tab at the root, at most one other tab above it, then whatever was
- * pushed (Settings, Workout). Back from Presets or History returns to Timer, as both platforms
- * expect. The navigation bar or rail shows only while a tab is on top, or while Settings sits beside
+ * pushed (Settings, Presets, Workout, a session). Back from Lift or History returns to Timer, as both
+ * platforms expect. The navigation bar or rail shows only while a tab is on top, or while Settings sits beside
  * Timer: windows of Material's expanded width and up open Settings as a supporting pane.
  */
 @Composable
@@ -237,15 +248,34 @@ private fun appEntries(
                     twoPane -> backStack.removeLastOrNull()
                 }
             },
-            onSeeAllPresets = { selectTab(PresetsTab) },
+            onSeeAllPresets = { backStack.push(Presets) },
         )
     }
-    entry<PresetsTab>(metadata = pageKind(PageKind.Tab)) {
-        PresetsRoute(onShowTimer = { selectTab(TimerTab) }, onStartWorkout = { backStack.push(Workout) })
+    entry<Presets> {
+        PresetsRoute(
+            onBack = { backStack.removeLastOrNull() },
+            onShowTimer = { selectTab(TimerTab) },
+            onStartWorkout = { backStack.push(Workout) },
+        )
     }
+    entry<LiftTab>(metadata = pageKind(PageKind.Tab)) {
+        TodayRoute(
+            onStartSession = { backStack.push(Lifting) },
+            onChooseProgram = { backStack.push(Programs) },
+            onOpenBells = { backStack.push(OwnedBells) },
+        )
+    }
+    // Gym dark in either theme, as the workout is: read at arm's length, mid-set.
+    entry<Lifting>(metadata = pageKind(PageKind.Mode)) {
+        IntervalTheme(darkTheme = true) { SessionRoute(onExit = { backStack.removeLastOrNull() }) }
+    }
+    entry<Programs> { ProgramsRoute(onBack = { backStack.removeLastOrNull() }) }
+    entry<OwnedBells> { GearRoute(onBack = { backStack.removeLastOrNull() }) }
+    entry<LiftDetail> { key -> LiftDetailRoute(uid = key.uid, onBack = { backStack.removeLastOrNull() }) }
     entry<HistoryTab>(metadata = pageKind(PageKind.Tab)) {
         HistoryRoute(
             onOpenWorkout = { backStack.push(WorkoutDetail(it)) },
+            onOpenLift = { backStack.push(LiftDetail(it)) },
             onPlan = { backStack.push(Plan) },
             onStartWorkout = { backStack.push(Workout) },
             onShowTimer = { selectTab(TimerTab) },
@@ -275,6 +305,13 @@ private fun appEntries(
     }
     entry<Licenses> { LicensesRoute(onBack = { backStack.removeLastOrNull() }) }
 }
+
+/**
+ * True once both stores are read: the interval side's and Lift's. Until then the app draws nothing, so
+ * no screen starts from defaults.
+ */
+private fun storageReady(interval: IntervalRepository, lift: BellsRepository): Flow<Boolean> =
+    combine(interval.ready, lift.ready) { intervalReady, liftReady -> intervalReady && liftReady }
 
 /** The line along the top of the bottom bar, drawn over the bottom edge of the content above it. */
 private fun Modifier.hairlineAtBottom(color: Color): Modifier = drawWithContent {

@@ -6,16 +6,6 @@ import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.fakes.FakeBellDao
 import dev.justinsmith.bells.fakes.FakeFollowingDao
 import dev.justinsmith.bells.fakes.FakeSessionDao
-import dev.justinsmith.bells.fakes.FakeSettingsDao
-import dev.justinsmith.bells.fakes.FakeSiblingDao
-import dev.justinsmith.bells.fakes.MemoryFeed
-import dev.justinsmith.core.sync.AppId
-import dev.justinsmith.core.sync.FeedCodec
-import dev.justinsmith.core.sync.FeedSnapshot
-import dev.justinsmith.core.sync.SessionDetail
-import dev.justinsmith.core.sync.SessionRecord
-import dev.justinsmith.core.sync.SetRecord
-import dev.justinsmith.core.sync.SharedSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -30,13 +20,7 @@ class BellsRepositoryTest {
     private var now = 1_000L
     private val sessionDao = FakeSessionDao()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
-    private val settingsDao = FakeSettingsDao()
-    private val repository =
-        BellsRepository(sessionDao, FakeBellDao(), FakeSiblingDao(), FakeFollowingDao(), settingsDao, scope) { now }
-    private val feed = MemoryFeed()
-    private val sync = repository.siblingSync(feed, scope, io = Dispatchers.Unconfined)
-
-    private fun published() = assertNotNull(feed.published?.let(FeedCodec::decode))
+    private val repository = BellsRepository(sessionDao, FakeBellDao(), FakeFollowingDao(), scope) { now }
 
     private fun swingsAndGetUps() {
         repository.startSession()
@@ -73,50 +57,15 @@ class BellsRepositoryTest {
     }
 
     @Test
-    fun `a finished session is published to Interval with its sets`() = runTest {
+    fun `a deleted session leaves History and stays as a tombstone`() = runTest {
         swingsAndGetUps()
-        val record = published().sessions.single()
-        assertEquals(AppId.Bells, record.source)
-        assertEquals("Swings and get-ups", record.title)
-        assertEquals(120, record.elapsedSeconds)
-        assertEquals("Kettlebell", record.activity)
-        assertEquals(
-            SessionDetail.Kettlebell(
-                listOf(SetRecord("TwoHandSwing", 24.0, 10), SetRecord("GetUp", 20.0, 5, "Right")),
-                340.0,
-            ),
-            record.typedDetail(),
-        )
-    }
-
-    @Test
-    fun `the session in progress is not published`() = runTest {
-        repository.startSession()
-        repository.logSet(Exercise.Press, 16.0, 5, Side.Left)
-        assertTrue(published().sessions.isEmpty())
-    }
-
-    @Test
-    fun `a deleted session is published as a tombstone`() = runTest {
-        swingsAndGetUps()
-        repository.deleteSession(repository.sessions.value.single().uid)
+        val uid = repository.sessions.value.single().uid
+        now += 1_000
+        repository.deleteSession(uid)
         assertTrue(repository.sessions.value.isEmpty())
-        assertTrue(published().sessions.single().deleted)
-    }
-
-    @Test
-    fun `Interval's workouts are taken in on a pull`() = runTest {
-        val tabata = SessionRecord(
-            uid = "i1",
-            source = AppId.Interval,
-            finishedAtEpochMillis = 500,
-            elapsedSeconds = 240,
-            title = "Tabata",
-            updatedAtEpochMillis = 1,
-        )
-        feed.sibling = FeedCodec.encode(FeedSnapshot(source = AppId.Interval, sessions = listOf(tabata)))
-        sync.pull()
-        assertEquals(listOf(IntervalWorkout("i1", 500, 240, "Tabata")), repository.interval.value)
+        val row = sessionDao.sessions.value.single()
+        assertTrue(row.deleted)
+        assertEquals(now, row.updatedAtEpochMillis)
     }
 
     @Test
@@ -135,23 +84,5 @@ class BellsRepositoryTest {
         assertEquals(2, repository.programDay.value?.number)
         repository.stopFollowing()
         assertNull(repository.programDay.value)
-    }
-
-    private fun intervalSettings(settings: SharedSettings) =
-        FeedCodec.encode(FeedSnapshot(source = AppId.Interval, sessions = emptyList(), settings = settings))
-
-    @Test
-    fun `Interval's later settings are taken stored and passed on`() = runTest {
-        assertNull(published().settings)
-        val goal = SharedSettings(bodyWeightKg = 80.0, weeklyGoal = 4, updatedAtEpochMillis = 2_000)
-        feed.sibling = intervalSettings(goal)
-        sync.pull()
-        assertEquals(goal, repository.sharedSettings.value)
-        assertEquals(SettingsEntity(0, 80.0, 4, 2_000), settingsDao.row.value)
-        assertEquals(goal, published().settings)
-        // An older change, or the same one again, leaves them be.
-        feed.sibling = intervalSettings(goal.copy(weeklyGoal = 2, updatedAtEpochMillis = 1_500))
-        sync.pull()
-        assertEquals(4, repository.sharedSettings.value?.weeklyGoal)
     }
 }

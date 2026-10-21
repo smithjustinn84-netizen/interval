@@ -13,9 +13,9 @@ sealed interface Tab : NavKey
 @Serializable
 data object TimerTab : Tab
 
-/** Built-in and saved presets: start one, put it on the Timer, and save, edit or delete the user's own. */
+/** Kettlebell training: this week, the last session, the program followed, and Start session. */
 @Serializable
-data object PresetsTab : Tab
+data object LiftTab : Tab
 
 /** The training log: what was done, what is planned, and the weekly goal. */
 @Serializable
@@ -44,3 +44,29 @@ data class WorkoutDetail(val id: Long) : NavKey
 /** The weekly goal, the routine by weekday and one-offs on dates. Pushed from History. */
 @Serializable
 data object Plan : NavKey
+
+/**
+ * Built-in and saved presets: start one, put it on the Timer, and save, edit or delete the user's own.
+ * Pushed from Timer.
+ */
+@Serializable
+data object Presets : NavKey
+
+/**
+ * The kettlebell session in progress, full screen, an EMOM's timer included, and its summary. Pushed from
+ * Lift.
+ */
+@Serializable
+data object Lifting : NavKey
+
+/** The built-in programs, to follow one. Pushed from Lift. */
+@Serializable
+data object Programs : NavKey
+
+/** The bells the user owns and the records set with them. Pushed from Lift. */
+@Serializable
+data object OwnedBells : NavKey
+
+/** One finished kettlebell session, by its uid: its sets and records, and Delete. Pushed from History. */
+@Serializable
+data class LiftDetail(val uid: String) : NavKey

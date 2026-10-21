@@ -1,15 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Every user-facing string in Bells. ViewModels expose typed data; screens put it into words here.
+  Every user-facing string of Lift, the app's kettlebell side (Bells). ViewModels expose typed data;
+  screens put it into words here.
   Keys: <area>_<element>; `_cd` marks a content description.
 -->
 <resources>
-    <string name="app_name">Bells</string>
-
-    <!-- Tabs -->
-    <string name="nav_today">Today</string>
-    <string name="nav_history">History</string>
-    <string name="nav_bells">Bells</string>
+    <!-- The Lift tab's title -->
+    <string name="today_title">Lift</string>
 
     <!-- Weights and counts -->
     <string name="kg_value">%1$s kg</string>
@@ -43,21 +40,21 @@
     <!-- Today -->
     <string name="today_this_week">This week</string>
     <plurals name="today_week_count">
-        <item quantity="one">%1$d workout · %2$d from Interval</item>
-        <item quantity="other">%1$d workouts · %2$d from Interval</item>
+        <item quantity="one">%1$d workout · %2$d on the Timer</item>
+        <item quantity="other">%1$d workouts · %2$d on the Timer</item>
     </plurals>
-    <!-- The weekly goal, set in Interval and shared: "1 more to hit 4" -->
+    <!-- The weekly goal, set on Plan, lifts and intervals alike: "1 more to hit 4" -->
     <plurals name="today_goal_left">
         <item quantity="one">%1$d more to hit %2$d</item>
         <item quantity="other">%1$d more to hit %2$d</item>
     </plurals>
     <string name="today_goal_met">Goal met this week</string>
-    <string name="today_legend_bells">Bells</string>
-    <string name="today_legend_interval">Interval</string>
+    <string name="today_legend_bells">Lifts</string>
+    <string name="today_legend_interval">Timer</string>
     <string name="today_bells_cd">Your bells and records</string>
     <string name="today_last">Last session</string>
     <string name="today_none_title">No sessions yet</string>
-    <string name="today_none_text">Start one, log each set as you go, and it lands in your history and Interval's.</string>
+    <string name="today_none_text">Start one, log each set as you go, and it lands in your history.</string>
     <string name="today_start">Start session</string>
     <string name="today_resume">Resume session</string>
     <!-- Monday to Sunday, as the week strip heads its days. -->
@@ -69,7 +66,7 @@
     <string name="weekday_initial_6">S</string>
     <string name="weekday_initial_7">S</string>
     <string name="weekday_cd">%1$s: %2$s</string>
-    <string name="weekday_counts">%1$d in Bells, %2$d in Interval</string>
+    <string name="weekday_counts">%1$d lifting, %2$d on the Timer</string>
     <string name="weekday_rest">rest</string>
 
     <!-- Session -->
@@ -94,26 +91,18 @@
     <string name="log_side">Side</string>
     <string name="log_fewer_reps">Fewer reps</string>
     <string name="log_more_reps">More reps</string>
-    <string name="log_no_bells">Add the bells you own on the Bells tab; until then every size shows.</string>
+    <string name="log_no_bells">Add the bells you own under Your bells on Lift; until then every size shows.</string>
 
     <!-- Summary -->
     <string name="summary_done">Done</string>
     <string name="summary_reps">Reps</string>
     <string name="summary_records">New records</string>
-    <string name="summary_shared">Counts toward your week in Bells and Interval</string>
+    <string name="summary_shared">Counts toward your week and your goal</string>
 
-    <!-- History -->
-    <string name="history_title">History</string>
-    <string name="history_from_interval">Interval</string>
-    <!-- What tapping an Interval workout does, for screen readers. -->
-    <string name="history_open_interval">Open in Interval</string>
-    <string name="history_empty_title">Nothing logged yet</string>
-    <string name="history_empty_text">Sessions from Bells and workouts from Interval appear here.</string>
+    <!-- A session's page, opened from History -->
     <string name="history_delete_title">Delete session?</string>
-    <string name="history_delete_text">It goes from Bells and from Interval.</string>
+    <string name="history_delete_text">It leaves your history, your week and your records.</string>
     <string name="history_delete">Delete</string>
-    <string name="day_today">Today</string>
-    <string name="day_yesterday">Yesterday</string>
 
     <!-- Bells and records -->
     <string name="bells_title">Bells</string>

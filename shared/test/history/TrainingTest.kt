@@ -1,13 +1,11 @@
 package dev.justinsmith.interval.history
 
-import dev.justinsmith.core.sync.AppId
 import dev.justinsmith.interval.data.BodySettings
 import dev.justinsmith.interval.data.HistoryEntry
+import dev.justinsmith.interval.data.LiftWorkout
 import dev.justinsmith.interval.data.PlanSchedule
 import dev.justinsmith.interval.data.PlannedWorkout
-import dev.justinsmith.interval.data.SiblingWorkout
 import dev.justinsmith.interval.fakes.DAY_MILLIS
-import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.epochDayOf
 import kotlin.test.Test
@@ -200,18 +198,15 @@ class TrainingTest {
         assertEquals(480, top.first().seconds)
     }
 
-    private fun bells(day: Long, seconds: Int = 900) = SiblingWorkout(
+    private fun bells(day: Long, seconds: Int = 900) = LiftWorkout(
         uid = "bells-${nextId++}",
-        source = AppId.Bells,
         finishedAtEpochMillis = day * DAY_MILLIS + 7 * HOUR_MILLIS,
         elapsedSeconds = seconds,
-        activeSeconds = null,
-        activity = Activity.Kettlebell,
         title = "Swings",
     )
 
     @Test
-    fun `a sibling app's workout makes its day done and adds to the totals`() {
+    fun `a kettlebell session makes its day done and adds to the totals`() {
         val log = TrainingLog(listOf(workout(monday)), emptyList(), today, listOf(bells(monday), bells(today))) {
             it.floorDiv(DAY_MILLIS)
         }
@@ -224,7 +219,7 @@ class TrainingTest {
     }
 
     @Test
-    fun `a sibling app's workout counts toward the streak but does no plan`() {
+    fun `a kettlebell session counts toward the streak but does no plan`() {
         val plan = once(monday)
         val log = TrainingLog(emptyList(), listOf(plan), today, listOf(bells(monday), bells(monday - 7))) {
             it.floorDiv(DAY_MILLIS)

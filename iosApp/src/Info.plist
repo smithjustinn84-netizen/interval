@@ -22,23 +22,6 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
-	<!-- interval://, so a row of this app's workouts in Bells opens it. -->
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleURLName</key>
-			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>interval</string>
-			</array>
-		</dict>
-	</array>
-	<!-- Bells's scheme, so this app may ask whether it is installed before opening it. -->
-	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string>bells</string>
-	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

@@ -8,11 +8,6 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import dev.justinsmith.bells.data.BellsDatabase
 import dev.justinsmith.bells.domain.EmomCue
-import dev.justinsmith.core.sync.AppGroupSiblingFeed
-import dev.justinsmith.core.sync.AppId
-import dev.justinsmith.core.sync.SiblingFeed
-import dev.justinsmith.interval.platform.TimestampFormatter
-import dev.justinsmith.interval.platform.systemTimestampFormatter
 import kotlinx.cinterop.ExperimentalForeignApi
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -35,8 +30,6 @@ actual fun rememberBellsPlatformModule(): Module = remember {
             )?.path
             Room.databaseBuilder<BellsDatabase>(name = "${requireNotNull(directory)}/$BELLS_DATABASE")
         }
-        single<SiblingFeed> { AppGroupSiblingFeed(AppId.Bells) }
-        single<TimestampFormatter> { systemTimestampFormatter() }
         // System sounds, as Interval's cues use.
         single<Beeper> {
             Beeper { cue ->

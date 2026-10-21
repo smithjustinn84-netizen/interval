@@ -15,6 +15,7 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import dev.justinsmith.bells.fakes.FakeBellsStorage
+import dev.justinsmith.bells.fakes.FakeIntervalActivity
 import dev.justinsmith.bells.fakes.RecordingBeeper
 import dev.justinsmith.bells.fakes.bellsTestKoin
 import dev.justinsmith.bells.fakes.fakeBellsPlatformModule
@@ -35,7 +36,7 @@ private const val PHONE_HEIGHT = 891
 fun runUiTest(block: suspend DesktopComposeUiTest.() -> Unit) =
     runDesktopComposeUiTest(width = PHONE_WIDTH, height = PHONE_HEIGHT, block = block)
 
-/** Sets [content] inside the theme, Gym dark as Bells always is. */
+/** Sets [content] inside the theme, Gym dark, as a session always is. */
 fun DesktopComposeUiTest.setBellsContent(content: @Composable () -> Unit) {
     setContent { IntervalTheme(darkTheme = true, content = content) }
 }
@@ -78,8 +79,11 @@ private fun BellsHost(koin: KoinApplication) {
                                 onChooseProgram = { backStack.add(Page.Programs) },
                                 onOpenBells = { backStack.add(Page.Bells) },
                             )
+
                             Page.Session -> SessionRoute(onExit = pop)
+
                             Page.Programs -> ProgramsRoute(onBack = pop)
+
                             Page.Bells -> GearRoute(onBack = pop)
                         }
                     }
@@ -92,11 +96,12 @@ private fun BellsHost(koin: KoinApplication) {
 /** Bells' pages, real ViewModels and repository, over fake storage and platform services. */
 fun bellsAppTest(
     storage: FakeBellsStorage = FakeBellsStorage(),
+    intervals: FakeIntervalActivity = FakeIntervalActivity(),
     block: suspend DesktopComposeUiTest.(BellsAppFixture) -> Unit,
 ) = runUiTest {
     val clock = AtomicLong(0L)
     val beeper = RecordingBeeper()
-    val koin = bellsTestKoin(storage, fakeBellsPlatformModule(beeper = beeper), now = clock::get)
+    val koin = bellsTestKoin(storage, fakeBellsPlatformModule(beeper = beeper), now = clock::get, intervals = intervals)
     try {
         setContent { BellsHost(koin) }
         block(BellsAppFixture(storage, clock, beeper))

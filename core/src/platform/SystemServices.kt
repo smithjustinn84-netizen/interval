@@ -1,8 +1,6 @@
 package dev.justinsmith.interval.platform
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalUriHandler
 
 /** Formats past moments for the workout history, in the device's time zone. */
 interface TimestampFormatter {
@@ -68,16 +66,6 @@ expect val platformPageTransitions: Boolean
  */
 @Composable
 expect fun prefersReducedMotion(): Boolean
-
-/**
- * Opens a URL through the platform: another app by its scheme ("bells://"). One nothing can open (an app
- * that isn't installed) is ignored, as Android throws for it.
- */
-@Composable
-fun rememberOpenUrl(): (String) -> Unit {
-    val uriHandler = LocalUriHandler.current
-    return remember(uriHandler) { { url -> runCatching { uriHandler.openUri(url) } } }
-}
 
 /** Milliseconds since the Unix epoch. */
 expect fun epochMillisNow(): Long

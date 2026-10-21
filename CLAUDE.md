@@ -22,7 +22,7 @@ Compose Multiplatform app for **Android, iOS and desktop (JVM)**, built with the
 ./kotlin show modules | settings | dependencies | tasks
 ```
 
-`-m` takes the **leaf module name** (`core`, `core-sync`, `shared`, `bells`, `bellsAndroid`, `bellsIos`, `bellsDesktop`, `androidApp`, `iosApp`, `desktopApp`, `lint-plugin`,
+`-m` takes the **leaf module name** (`core`, `shared`, `bells`, `androidApp`, `iosApp`, `desktopApp`, `lint-plugin`,
 `detekt-plugin`).
 
 Running on the Android emulator or iOS simulator: the `run-on-device` skill.
@@ -33,23 +33,21 @@ Amper source layout, not Gradle's:
 - `<module>/src/` common code; `src@android/`, `src@ios/` (both iOS targets), `src@jvm/` platform code
 - `<module>/test/` common tests; `test@jvm/` etc. for platform tests
 - `androidApp/res/` Android resources; `shared/composeResources/` multiplatform resources (`Res.*`)
-- `core/` is what Interval and its sibling apps share: the theme, tokens, motion, components, lanes, the
+- `core/` is what `shared` and `bells` both build on: the theme, tokens, motion, components, lanes, the
   platform hooks the UI needs (`SystemServices.kt`) and calendar/clock maths. It keeps the packages it had in
   `shared` (`dev.justinsmith.interval.ui`, `.platform`, `.timer`) and has its own resources
   (`dev.justinsmith.core.resources`: the Barlow fonts and its components' few words). `shared` exports it.
-- `bells/` is **Bells**, the sibling kettlebell app (package `dev.justinsmith.bells`, app id
-  `dev.justinsmith.kettlebell`): log sets of reps with a bell, the week across both apps, history, owned bells
-  and personal records, built-in programs (`domain/Programs.kt`, data not words: names are strings) whose next
-  day lays out the session, and EMOMs timed by the pure `EmomClock` with beeps through `Beeper`. Same conventions as Interval (Nav3, `XRoute`/`XScreen`, Koin, Room, strings in its
-  own `composeResources`); its shells are `bellsAndroid/`, `bellsIos/`, `bellsDesktop/`. Run it with
-  `./kotlin run -m bellsDesktop`, or install `build/tasks/_bellsAndroid_buildAndroidDebug/gradle-project-debug.apk`.
-- `core-sync/` shares workouts with the sibling app (Bells) on the same device: the `FeedSnapshot` record
-  format, `mirror` (how a sibling's set is copied in), and the feeds: Android serves each app's snapshot file
-  from `FeedProvider` behind the signature permission `dev.justinsmith.permission.SYNC` (both apps must share
-  a signing key); iOS uses the App Group `group.dev.justinsmith` (needs `DEVELOPMENT_TEAM` set, the same team
-  for both); desktop has none. In `shared`, `SiblingSync` publishes on every history change and pulls on
-  resume; the sibling's workouts land in `sibling_session` via `IntervalRepository` and count in History,
-  the streak and the goal, read-only.
+- `bells/` is the kettlebell side behind the **Lift** tab (package `dev.justinsmith.bells`), a library
+  `shared` depends on: log sets of reps with a bell, owned bells and personal records, built-in programs
+  (`domain/Programs.kt`, data not words: names are strings) whose next day lays out the session, EMOMs timed
+  by the pure `EmomClock` with beeps through `Beeper`, and a finished session's page (`history/LiftDetail.kt`).
+  Same conventions as `shared` (`XRoute`/`XScreen`, Koin, Room, strings in its own `composeResources`), but
+  no navigation of its own: its routes are wired in `shared/src/App.kt` (`LiftTab`, `Lifting`, `Programs`,
+  `OwnedBells`, `LiftDetail`). It owns its database, `bells.db` (`BellsDatabase`, schemas in
+  `bells/schemas/`), and can't see `shared`: it reads the interval workouts and the weekly goal through
+  `IntervalActivity`, which `shared` binds. `shared` reads its sessions from `BellsRepository`, so History,
+  the week, the streak and the goal count both kinds of workout. Its Koin modules (`bellsModules`) join the
+  app's container in `appModules`; `App` waits for both repositories to be ready.
 
 **Never create `src/commonMain/kotlin/`.** Amper ignores it silently.
 

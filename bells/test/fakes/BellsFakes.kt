@@ -4,18 +4,15 @@ import dev.justinsmith.bells.data.BellDao
 import dev.justinsmith.bells.data.BellEntity
 import dev.justinsmith.bells.data.FollowingDao
 import dev.justinsmith.bells.data.FollowingEntity
+import dev.justinsmith.bells.data.IntervalActivity
+import dev.justinsmith.bells.data.IntervalWorkout
 import dev.justinsmith.bells.data.SessionDao
 import dev.justinsmith.bells.data.SessionEntity
 import dev.justinsmith.bells.data.SetEntity
-import dev.justinsmith.bells.data.SettingsDao
-import dev.justinsmith.bells.data.SettingsEntity
-import dev.justinsmith.bells.data.SiblingDao
-import dev.justinsmith.bells.data.SiblingEntity
 import dev.justinsmith.bells.di.BellsStorageScope
 import dev.justinsmith.bells.di.bellsModules
 import dev.justinsmith.bells.domain.EmomCue
 import dev.justinsmith.bells.platform.Beeper
-import dev.justinsmith.core.sync.SiblingFeed
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import kotlinx.coroutines.CoroutineScope
@@ -43,8 +40,6 @@ class FakeSessionDao : SessionDao {
         sessions.map { all -> all.filterNot { it.deleted }.sortedByDescending { it.startedAtEpochMillis } }
 
     override fun observeSets(): Flow<List<SetEntity>> = sets
-
-    override suspend fun allSessions() = sessions.value
 
     override suspend fun allSets() = sets.value
 
@@ -94,20 +89,6 @@ class FakeBellDao : BellDao {
     override suspend fun delete(kg: Double) = rows.update { all -> all.filterNot { it.kg == kg } }
 }
 
-class FakeSiblingDao : SiblingDao {
-    val rows = MutableStateFlow(emptyMap<String, SiblingEntity>())
-
-    override fun observeAll(): Flow<List<SiblingEntity>> = rows.map { all ->
-        all.values.sortedByDescending { it.finishedAtEpochMillis }
-    }
-
-    override suspend fun all() = rows.value.values.toList()
-
-    override suspend fun upsert(session: SiblingEntity) = rows.update { it + (session.uid to session) }
-
-    override suspend fun delete(uid: String) = rows.update { it - uid }
-}
-
 class FakeFollowingDao : FollowingDao {
     val row = MutableStateFlow<FollowingEntity?>(null)
 
@@ -122,25 +103,10 @@ class FakeFollowingDao : FollowingDao {
     }
 }
 
-class FakeSettingsDao : SettingsDao {
-    val row = MutableStateFlow<SettingsEntity?>(null)
-
-    override fun observe(): Flow<SettingsEntity?> = row
-
-    override suspend fun upsert(settings: SettingsEntity) {
-        row.value = settings
-    }
-}
-
-class MemoryFeed : SiblingFeed {
-    var published: String? = null
-    var sibling: String? = null
-
-    override fun publish(text: String) {
-        published = text
-    }
-
-    override fun readSibling(): String? = sibling
+/** The rest of the app as Bells sees it: interval workouts and a weekly goal a test sets. */
+class FakeIntervalActivity : IntervalActivity {
+    override val workouts = MutableStateFlow(emptyList<IntervalWorkout>())
+    override val weeklyGoal = MutableStateFlow<Int?>(null)
 }
 
 /** The beeps an EMOM played, in order. */
@@ -171,20 +137,12 @@ private const val DAY_MILLIS = 86_400_000L
 class FakeBellsStorage {
     val sessions = FakeSessionDao()
     val bells = FakeBellDao()
-    val sibling = FakeSiblingDao()
     val following = FakeFollowingDao()
-    val settings = FakeSettingsDao()
 }
 
 /** Stands in for `rememberBellsPlatformModule()`. Tests never load the real one: it writes a database file. */
-fun fakeBellsPlatformModule(
-    feed: SiblingFeed = MemoryFeed(),
-    beeper: Beeper = RecordingBeeper(),
-    timestamps: TimestampFormatter = FixedTimestampFormatter,
-): Module = module {
-    single<SiblingFeed> { feed }
+fun fakeBellsPlatformModule(beeper: Beeper = RecordingBeeper()): Module = module {
     single<Beeper> { beeper }
-    single<TimestampFormatter> { timestamps }
 }
 
 fun fakeBellsStorageModule(storage: FakeBellsStorage): Module = module {
@@ -193,16 +151,23 @@ fun fakeBellsStorageModule(storage: FakeBellsStorage): Module = module {
     }
     single<SessionDao> { storage.sessions }
     single<BellDao> { storage.bells }
-    single<SiblingDao> { storage.sibling }
     single<FollowingDao> { storage.following }
-    single<SettingsDao> { storage.settings }
 }
 
-/** Bells' whole container over fakes, its clock reading [now]. */
+/**
+ * Bells' part of the container over fakes, with what the app would supply: a clock reading [now], the
+ * [FixedTimestampFormatter] and [intervals].
+ */
 fun bellsTestKoin(
     storage: FakeBellsStorage = FakeBellsStorage(),
     platformModule: Module = fakeBellsPlatformModule(),
     now: () -> Long = { 0L },
+    intervals: IntervalActivity = FakeIntervalActivity(),
 ): KoinApplication = koinApplication {
-    modules(bellsModules(platformModule, fakeBellsStorageModule(storage)) + module { single { WallClock(now) } })
+    val app = module {
+        single { WallClock(now) }
+        single<TimestampFormatter> { FixedTimestampFormatter }
+        single<IntervalActivity> { intervals }
+    }
+    modules(bellsModules(platformModule, fakeBellsStorageModule(storage)) + app)
 }

@@ -47,6 +47,7 @@ import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.formatClock
+import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EmptyState
@@ -73,7 +74,12 @@ import org.koin.compose.currentKoinScope
  * Start workout then opens the workout, Put on Timer shows the Timer tab.
  */
 @Composable
-fun PresetsRoute(onShowTimer: () -> Unit, onStartWorkout: () -> Unit, modifier: Modifier = Modifier) {
+fun PresetsRoute(
+    onBack: () -> Unit,
+    onShowTimer: () -> Unit,
+    onStartWorkout: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val scope = currentKoinScope()
     val viewModel = viewModel { PresetsViewModel(scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -91,6 +97,7 @@ fun PresetsRoute(onShowTimer: () -> Unit, onStartWorkout: () -> Unit, modifier: 
         onSaveCurrent = viewModel::saveCurrent,
         onDelete = viewModel::delete,
         modifier = modifier,
+        onBack = onBack,
     )
 }
 
@@ -112,6 +119,7 @@ fun PresetsScreen(
     onSaveCurrent: (Preset) -> Unit,
     onDelete: (Preset) -> Unit,
     modifier: Modifier = Modifier,
+    onBack: (() -> Unit)? = null,
 ) {
     var open by rememberSaveable(stateSaver = PresetSaver) { mutableStateOf<Preset?>(null) }
     var draft by rememberPresetDraft()
@@ -122,6 +130,7 @@ fun PresetsScreen(
         onNew = { draft = PresetDraft(EditorMode.New, name = "", config = state.current) },
         onSaveCurrent = { draft = PresetDraft.saveCurrent(state.current) },
         modifier = modifier,
+        onBack = onBack,
     )
     // The sheet follows its preset through the state, so one edited or deleted elsewhere closes it.
     val openRow = open?.let { preset -> state.rows.firstOrNull { it.preset == preset } }
@@ -182,11 +191,13 @@ private fun PresetsList(
     onNew: () -> Unit,
     onSaveCurrent: () -> Unit,
     modifier: Modifier = Modifier,
+    onBack: (() -> Unit)? = null,
 ) {
     // One column on a phone; wider windows put the two groups side by side.
     TabGrid(
         stringResource(Res.string.presets_title),
         modifier,
+        navigation = onBack?.let { back -> { BackAction(back) } },
         actions = { IconAction(IntervalIcons.Add, stringResource(Res.string.presets_new_cd), onClick = onNew) },
     ) {
         // Keyed, so the card fades and the groups slide as the current shape stops or starts matching a preset.

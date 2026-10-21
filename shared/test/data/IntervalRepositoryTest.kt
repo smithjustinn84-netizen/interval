@@ -65,7 +65,7 @@ class IntervalRepositoryTest {
         val repository =
             IntervalRepository(slow, storage.history, storage.presets, storage.planned, scope, clock = {
                 clock
-            }, siblingDao = storage.siblings)
+            })
         assertFalse(repository.ready.value)
         assertEquals(IntervalConfig(), repository.config.value)
 
@@ -88,7 +88,7 @@ class IntervalRepositoryTest {
         val repository =
             IntervalRepository(storage.settings, broken, storage.presets, storage.planned, scope, clock = {
                 clock
-            }, siblingDao = storage.siblings)
+            })
         assertTrue(repository.ready.value)
         assertEquals(emptyList(), repository.history.value)
     }
@@ -108,7 +108,7 @@ class IntervalRepositoryTest {
         val repository =
             IntervalRepository(storage.settings, flaky, storage.presets, storage.planned, scope, clock = {
                 clock
-            }, siblingDao = storage.siblings)
+            })
         testScheduler.runCurrent()
         assertTrue(repository.ready.value)
         assertEquals(emptyList(), repository.history.value)
@@ -342,7 +342,6 @@ class IntervalRepositoryTest {
                 clock = {
                     clock
                 },
-                siblingDao = storage.siblings,
             )
         repository.recordWorkout(IntervalConfig(), elapsedSeconds = 1)
         repository.recordWorkout(IntervalConfig(), elapsedSeconds = 2)

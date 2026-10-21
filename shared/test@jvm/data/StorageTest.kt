@@ -30,6 +30,7 @@ import java.nio.file.Files
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -165,6 +166,30 @@ class StorageTest {
     }
 
     @Test
+    fun `a version 4 database drops the sibling's workouts and keeps its own`() {
+        BundledSQLiteDriver().open(directory.resolve(DATABASE_NAME).absolutePath).use { connection ->
+            V4_SCHEMA.forEach(connection::execSQL)
+            connection.execSQL(
+                "INSERT INTO history (finished_at, prep_seconds, work_seconds, rest_seconds, rounds, " +
+                    "elapsed_seconds, ended_early, work_active_seconds, activity, uid, updated_at, deleted) " +
+                    "VALUES ($NOW, 10, 20, 10, 8, 240, 0, 160, 'Rower', 'a1', $NOW, 0)",
+            )
+            connection.execSQL(
+                "INSERT INTO sibling_session VALUES ('b1', 'Bells', $NOW, 900, NULL, 'Kettlebell', 'Swings', '{}', 1)",
+            )
+            connection.execSQL("PRAGMA user_version = 4")
+        }
+        withApp { repository ->
+            assertEquals(listOf(240), repository.history.value.map { it.elapsedSeconds })
+        }
+        BundledSQLiteDriver().open(directory.resolve(DATABASE_NAME).absolutePath).use { connection ->
+            connection.prepare("SELECT name FROM sqlite_master WHERE name = 'sibling_session'").use {
+                assertFalse(it.step())
+            }
+        }
+    }
+
+    @Test
     fun `deleted workouts stay on disk as tombstones`() {
         withApp { repository ->
             repeat(3) { repository.recordWorkout(IntervalConfig(), elapsedSeconds = it + 1) }
@@ -251,7 +276,6 @@ class StorageTest {
                 database.plannedDao(),
                 scope,
                 clock = { clock },
-                siblingDao = database.siblingSessionDao(),
             )
             repository.ready.first { it }
             block(repository)
@@ -303,6 +327,32 @@ private val V2_SCHEMA = listOf(
         "`rounds` INTEGER NOT NULL, `activity` TEXT)",
     "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
     "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'ae976cb070b104a8eac8cee51f224e70')",
+)
+
+/** Version 4 as it shipped (`shared/schemas/.../4.json`), with the sibling app's table. */
+private val V4_SCHEMA = listOf(
+    "CREATE TABLE IF NOT EXISTS `history` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+        "`finished_at` INTEGER NOT NULL, `prep_seconds` INTEGER NOT NULL, `work_seconds` INTEGER NOT NULL, " +
+        "`rest_seconds` INTEGER NOT NULL, `rounds` INTEGER NOT NULL, `elapsed_seconds` INTEGER NOT NULL, " +
+        "`ended_early` INTEGER NOT NULL, `work_active_seconds` INTEGER, `activity` TEXT, " +
+        "`uid` TEXT NOT NULL DEFAULT '', `updated_at` INTEGER NOT NULL DEFAULT 0, " +
+        "`deleted` INTEGER NOT NULL DEFAULT 0)",
+    "CREATE INDEX IF NOT EXISTS `index_history_finished_at` ON `history` (`finished_at`)",
+    "CREATE UNIQUE INDEX IF NOT EXISTS `index_history_uid` ON `history` (`uid`)",
+    "CREATE TABLE IF NOT EXISTS `preset` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, " +
+        "`prep_seconds` INTEGER NOT NULL, `work_seconds` INTEGER NOT NULL, `rest_seconds` INTEGER NOT NULL, " +
+        "`rounds` INTEGER NOT NULL, `activity` TEXT)",
+    "CREATE TABLE IF NOT EXISTS `planned` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `weekday` INTEGER, " +
+        "`epoch_day` INTEGER, `name` TEXT NOT NULL, `prep_seconds` INTEGER NOT NULL, " +
+        "`work_seconds` INTEGER NOT NULL, `rest_seconds` INTEGER NOT NULL, `rounds` INTEGER NOT NULL, " +
+        "`activity` TEXT, `preset_id` INTEGER, " +
+        "`created_at` INTEGER NOT NULL)",
+    "CREATE TABLE IF NOT EXISTS `sibling_session` (`uid` TEXT NOT NULL, `source` TEXT NOT NULL, " +
+        "`finished_at` INTEGER NOT NULL, `elapsed_seconds` INTEGER NOT NULL, `active_seconds` INTEGER, " +
+        "`activity` TEXT, `title` TEXT NOT NULL, `detail_json` TEXT NOT NULL, `updated_at` INTEGER NOT NULL, " +
+        "PRIMARY KEY(`uid`))",
+    "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+    "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0095628ceeb945b942ead22982ab6429')",
 )
 
 /** Version 3 as it shipped (`shared/schemas/.../3.json`). */

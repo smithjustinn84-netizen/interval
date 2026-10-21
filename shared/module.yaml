@@ -5,8 +5,8 @@ product:
 dependencies:
   # The theme, components and platform hooks every app shares; exported so the app shells see them too.
   - ../core: exported
-  # Sharing workouts with a sibling app on the same device.
-  - ../core-sync
+  # Kettlebell training, behind the Lift tab: its screens, sessions and database.
+  - ../bells
   - $compose.runtime
   - $compose.foundation: exported
   - $compose.material3: exported

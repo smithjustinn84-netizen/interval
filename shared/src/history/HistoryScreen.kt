@@ -29,15 +29,11 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.intl.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.justinsmith.core.sync.AppId
-import dev.justinsmith.core.sync.SiblingFeed
 import dev.justinsmith.interval.plan.AddToPlanSheet
 import dev.justinsmith.interval.plan.DayChoice
 import dev.justinsmith.interval.plan.PlanRepeat
-import dev.justinsmith.interval.platform.rememberOpenUrl
 import dev.justinsmith.interval.resources.Res
-import dev.justinsmith.interval.resources.app_name_bells
-import dev.justinsmith.interval.resources.app_name_interval
+import dev.justinsmith.interval.resources.activity_kettlebell
 import dev.justinsmith.interval.resources.common_cancel
 import dev.justinsmith.interval.resources.common_joined
 import dev.justinsmith.interval.resources.history_calories_value
@@ -53,7 +49,6 @@ import dev.justinsmith.interval.resources.history_empty_title
 import dev.justinsmith.interval.resources.history_ended_early
 import dev.justinsmith.interval.resources.history_more_options_cd
 import dev.justinsmith.interval.resources.history_most_done
-import dev.justinsmith.interval.resources.history_open_in
 import dev.justinsmith.interval.resources.history_plan_cd
 import dev.justinsmith.interval.resources.history_planned
 import dev.justinsmith.interval.resources.history_start
@@ -98,30 +93,30 @@ import org.koin.compose.currentKoinScope
 
 /**
  * Resolves the tab's ViewModel and binds it to [HistoryScreen]. Starting a workout puts it on the Timer,
- * then [onStartWorkout]; [onOpenWorkout] opens one finished workout, [onPlan] the plan, [onShowTimer] the
- * Timer tab.
+ * then [onStartWorkout]; [onOpenWorkout] opens one finished workout, [onOpenLift] one kettlebell session,
+ * [onPlan] the plan, [onShowTimer] the Timer tab.
  */
 @Composable
 fun HistoryRoute(
     onOpenWorkout: (Long) -> Unit,
+    onOpenLift: (String) -> Unit,
     onPlan: () -> Unit,
     onStartWorkout: () -> Unit,
     onShowTimer: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = currentKoinScope()
-    val viewModel = viewModel { HistoryViewModel(scope.get(), scope.get(), scope.get()) }
-    val openUrl = rememberOpenUrl()
-    val opensSibling = remember(scope) { scope.get<SiblingFeed>().canOpenSibling }
+    val viewModel = viewModel { HistoryViewModel(scope.get(), scope.get(), scope.get(), scope.get()) }
     val locale = Locale.current.toLanguageTag()
     LaunchedEffect(locale) { viewModel.setLocale(locale) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     // The actions are remembered once, so they read the latest navigation callbacks rather than the first.
     val startWorkout by rememberUpdatedState(onStartWorkout)
     val openWorkout by rememberUpdatedState(onOpenWorkout)
+    val openLift by rememberUpdatedState(onOpenLift)
     val plan by rememberUpdatedState(onPlan)
     val showTimer by rememberUpdatedState(onShowTimer)
-    val actions = remember(viewModel, openUrl, opensSibling) {
+    val actions = remember(viewModel) {
         HistoryActions(
             onClear = viewModel::clear,
             onRange = viewModel::setRange,
@@ -144,7 +139,10 @@ fun HistoryRoute(
                 plan()
             },
             onShowTimer = { showTimer() },
-            onOpenSibling = if (opensSibling) ({ app -> openUrl(app.openUrl) }) else null,
+            onOpenLift = {
+                viewModel.openDay(null)
+                openLift(it)
+            },
         )
     }
     HistoryScreen(state = state, actions = actions, modifier = modifier)
@@ -166,8 +164,8 @@ class HistoryActions(
     val onOpenWorkout: (Long) -> Unit = {},
     val onPlan: () -> Unit = {},
     val onShowTimer: () -> Unit = {},
-    /** Opens the app a sibling's workout came from; null where it can't be (desktop). */
-    val onOpenSibling: ((AppId) -> Unit)? = null,
+    /** Opens a kettlebell session's page, by its uid. */
+    val onOpenLift: (String) -> Unit = {},
 )
 
 /**
@@ -219,7 +217,7 @@ fun HistoryScreen(state: HistoryUiState, actions: HistoryActions, modifier: Modi
                     ListCard {
                         section.items.forEachIndexed { index, item ->
                             if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
-                            HistoryRow(item, actions.onOpenWorkout, actions.onOpenSibling)
+                            HistoryRow(item, actions.onOpenWorkout, actions.onOpenLift)
                         }
                     }
                 }
@@ -436,26 +434,25 @@ private fun MostDone(rows: List<ShapeRow>, modifier: Modifier = Modifier) {
 }
 
 /**
- * One finished workout. One stored here opens, with a chevron saying so; a sibling's opens its app, when
- * [onOpenSibling] can.
+ * One finished workout, opening its page with a chevron saying so: an interval workout once stored, a
+ * kettlebell session by [onOpenLift].
  */
 @Composable
 internal fun HistoryRow(
     item: HistoryItem,
     onOpen: (Long) -> Unit,
-    onOpenSibling: ((AppId) -> Unit)? = null,
+    onOpenLift: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
     val id = item.id
-    val from = item.from
+    val lift = item.liftUid
     val click: (() -> Unit)? = when {
         id != null -> ({ onOpen(id) })
-        from != null && onOpenSibling != null -> ({ onOpenSibling(from) })
+        lift != null -> ({ onOpenLift(lift) })
         else -> null
     }
-    val clickLabel = from?.takeIf { id == null }?.let { stringResource(Res.string.history_open_in, appName(it)) }
     Row(
         modifier
             .fillMaxWidth()
@@ -468,7 +465,6 @@ internal fun HistoryRow(
                         .clickable(
                             interaction,
                             LocalIndication.current,
-                            onClickLabel = clickLabel,
                             role = Role.Button,
                             onClick = click,
                         )
@@ -479,13 +475,19 @@ internal fun HistoryRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
-        // The sibling app's workouts take the accent, as Bells draws its own; this app's, the work mark.
-        StripeMark(if (item.from == null) palette.workMark else palette.accent, height = Sizes.historyMarkHeight)
+        // Kettlebell sessions take the accent, as Lift draws them; interval workouts, the work mark.
+        StripeMark(if (lift == null) palette.workMark else palette.accent, height = Sizes.historyMarkHeight)
         Column(Modifier.weight(1f)) {
             val shape = workoutDescription(item.config)
             val detail = listOfNotNull(
                 stringResource(Res.string.history_planned).takeIf { item.planned },
-                if (from == null) shape.takeIf { item.presetName != null } else appName(from),
+                if (lift ==
+                    null
+                ) {
+                    shape.takeIf { item.presetName != null }
+                } else {
+                    stringResource(Res.string.activity_kettlebell)
+                },
                 stringResource(Res.string.history_ended_early).takeIf { item.endedEarly },
                 item.calories?.let { stringResource(Res.string.history_calories_value, it) },
                 item.time,
@@ -503,15 +505,6 @@ internal fun HistoryRow(
         }
     }
 }
-
-/** A sibling app's name, as History credits its workouts: "Bells". */
-@Composable
-internal fun appName(app: AppId): String = stringResource(
-    when (app) {
-        AppId.Interval -> Res.string.app_name_interval
-        AppId.Bells -> Res.string.app_name_bells
-    },
-)
 
 /** A day's heading: "Today", "Yesterday", "Tomorrow", or the date. */
 @Composable

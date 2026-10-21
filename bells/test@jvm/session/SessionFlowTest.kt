@@ -42,7 +42,7 @@ class SessionFlowTest {
         waitForText("16 kg × 10")
         app.clock.set(90_000)
         onNodeWithText("Finish").performClick()
-        waitForText("Counts toward your week in Bells and Interval")
+        waitForText("Counts toward your week and your goal")
         // The title, and the lift's first records.
         onAllNodesWithText("Two-hand swing").assertCountEquals(2)
         onNodeWithText("New records").assertExists()

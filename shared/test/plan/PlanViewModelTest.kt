@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.plan
 
+import dev.justinsmith.interval.fakes.FakeLiftStorage
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.MainDispatcherTest
@@ -20,7 +21,8 @@ import kotlin.test.assertTrue
 class PlanViewModelTest : MainDispatcherTest() {
     private val clock = noonOf(TODAY)
     private val repository = FakeStorage().repository(now = { clock })
-    private val viewModel by lazy { PlanViewModel(repository, FixedTimestampFormatter, clock = { clock }) }
+    private val bells = FakeLiftStorage().repository(now = { clock })
+    private val viewModel by lazy { PlanViewModel(repository, bells, FixedTimestampFormatter, clock = { clock }) }
     private val tabata = tabataPreset
     private val hiit = hiitPreset
 

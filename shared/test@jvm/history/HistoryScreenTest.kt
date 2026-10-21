@@ -12,7 +12,6 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import dev.justinsmith.core.sync.AppId
 import dev.justinsmith.interval.fakes.hangboardPreset
 import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.fakes.tabataPreset
@@ -265,20 +264,13 @@ class HistoryScreenTest {
     }
 
     @Test
-    fun `a Bells workout opens Bells where it can and is only a row where it can't`() = runUiTest {
-        val swings = HistoryItem("Swings", IntervalConfig(), false, "7:42 AM", "26:10", from = AppId.Bells)
+    fun `a kettlebell session opens its own page`() = runUiTest {
+        val swings = HistoryItem("Swings", IntervalConfig(), false, "7:42 AM", "26:10", liftUid = "b1")
         val state = oneWorkout.copy(sections = listOf(HistorySection(HistoryDay.Today, 20_741, listOf(swings))))
-        val opened = mutableListOf<AppId>()
-        var canOpen by mutableStateOf(false)
-        setThemedContent {
-            HistoryScreen(
-                state,
-                HistoryActions(onOpenSibling = if (canOpen) ({ opened += it }) else null),
-            )
-        }
-        onNode(hasText("Swings") and hasClickAction()).assertDoesNotExist()
-        canOpen = true
+        val opened = mutableListOf<String>()
+        setThemedContent { HistoryScreen(state, HistoryActions(onOpenLift = { opened += it })) }
+        onNodeWithText("Kettlebell · 7:42 AM").assertExists()
         onNode(hasClickAction() and hasText("Swings")).performClick()
-        assertEquals(listOf(AppId.Bells), opened)
+        assertEquals(listOf("b1"), opened)
     }
 }

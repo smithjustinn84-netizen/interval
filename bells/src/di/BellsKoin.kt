@@ -4,9 +4,7 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import dev.justinsmith.bells.data.BellsDatabase
 import dev.justinsmith.bells.data.BellsRepository
-import dev.justinsmith.bells.data.siblingSync
-import dev.justinsmith.interval.platform.WallClock
-import dev.justinsmith.interval.platform.epochMillisNow
+import dev.justinsmith.bells.data.MIGRATION_3_4
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -28,6 +26,7 @@ val bellsStorageModule: Module = module {
     }
     single<BellsDatabase> {
         get<RoomDatabase.Builder<BellsDatabase>>()
+            .addMigrations(MIGRATION_3_4)
             .setDriver(BundledSQLiteDriver())
             .setQueryCoroutineContext(Dispatchers.IO)
             .build()
@@ -36,18 +35,18 @@ val bellsStorageModule: Module = module {
     }
     single { get<BellsDatabase>().sessionDao() }
     single { get<BellsDatabase>().bellDao() }
-    single { get<BellsDatabase>().siblingDao() }
     single { get<BellsDatabase>().followingDao() }
-    single { get<BellsDatabase>().settingsDao() }
 }
 
 val bellsDataModule: Module = module {
-    single { WallClock(::epochMillisNow) }
-    single { BellsRepository(get(), get(), get(), get(), get(), scope = get(BellsStorageScope), clock = get()) }
-    // Started with the container, so it publishes as soon as the sessions are read.
-    single(createdAtStart = true) { get<BellsRepository>().siblingSync(feed = get(), scope = get(BellsStorageScope)) }
+    single { BellsRepository(get(), get(), get(), scope = get(BellsStorageScope), clock = get()) }
 }
 
-/** [platformModule] supplies the database builder, the feed and the formatter; [storage] what is built from them. */
+/**
+ * Bells' part of the app's container. [platformModule] supplies the database builder and the
+ * [dev.justinsmith.bells.platform.Beeper]; [storage] what is built from them. The app's own modules supply
+ * the [dev.justinsmith.interval.platform.WallClock], the
+ * [dev.justinsmith.interval.platform.TimestampFormatter] and the [dev.justinsmith.bells.data.IntervalActivity].
+ */
 fun bellsModules(platformModule: Module, storage: Module = bellsStorageModule): List<Module> =
     listOf(platformModule, storage, bellsDataModule)

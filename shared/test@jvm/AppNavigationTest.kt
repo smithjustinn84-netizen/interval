@@ -41,7 +41,7 @@ private fun appTest(window: Window = Window.Phone, block: suspend DesktopCompose
 /** How far, in dp, a moving node may be from its resting place and still count as not moving that way. */
 private const val SETTLED_SLACK = 12f
 
-/** A navigation bar or rail item; "Presets" alone would also match the Presets screen title. */
+/** A navigation bar or rail item; "History" alone would also match the History screen title. */
 private fun DesktopComposeUiTest.tab(label: String): SemanticsNodeInteraction =
     onNode(hasText(label) and hasClickAction())
 
@@ -67,19 +67,19 @@ class AppNavigationTest {
     @Test
     fun `switching tabs fades through rather than sliding`() = appTest {
         mainClock.autoAdvance = false
-        tab("Presets").performClick()
+        tab("Lift").performClick()
         mainClock.advanceTimeBy(Motion.PAGE_MILLIS / 2L)
-        val moving = onNodeWithText("Built-in").fetchSemanticsNode().boundsInRoot
+        val moving = onNodeWithText("Start session").fetchSemanticsNode().boundsInRoot
         mainClock.advanceTimeBy(Motion.PAGE_MILLIS * 2L)
-        val settled = onNodeWithText("Built-in").fetchSemanticsNode().boundsInRoot
+        val settled = onNodeWithText("Start session").fetchSemanticsNode().boundsInRoot
         assertTrue(abs(moving.left - settled.left) < SETTLED_SLACK, "not sliding sideways: $moving vs $settled")
     }
 
     @Test
     fun `the tabs switch screens`() = appTest {
-        tab("Presets").performClick()
-        onNodeWithText("Built-in").assertExists()
-        tab("Presets").assertIsSelected()
+        tab("Lift").performClick()
+        onNodeWithText("Start session").assertExists()
+        tab("Lift").assertIsSelected()
 
         tab("History").performClick()
         onNodeWithText("Train to a plan").assertExists()
@@ -101,7 +101,7 @@ class AppNavigationTest {
 
     @Test
     fun `a preset started from its sheet opens the workout and ends back on Presets`() = appTest { koin ->
-        tab("Presets").performClick()
+        onNodeWithContentDescription("All presets").performClick()
         onNodeWithText("Tabata").performClick()
         onNodeWithText("Start workout").performClick()
         onNodeWithContentDescription("End workout").assertExists()
@@ -110,18 +110,21 @@ class AppNavigationTest {
         onNodeWithContentDescription("End workout").performClick()
         onNodeWithText("End workout").performClick()
         onNodeWithText("Built-in").assertExists()
-        tab("Presets").assertIsSelected()
         onNodeWithText("Put on Timer").assertDoesNotExist()
+        // Presets is a page over the Timer, so Back returns there.
+        tab("Timer").assertDoesNotExist()
+        onNodeWithContentDescription("Back").performClick()
+        onNodeWithText("Start workout").assertExists()
     }
 
     @Test
-    fun `a preset saved on the Presets tab is named on the Timer`() = appTest {
-        tab("Presets").performClick()
+    fun `a preset saved on the Presets page is named on the Timer`() = appTest {
+        onNodeWithContentDescription("All presets").performClick()
         onNodeWithContentDescription("New preset").performClick()
         // The unsaved card's own Save pill stays in the tree under the editor, drawn first.
         onAllNodesWithText("Save").onLast().performClick()
         onNodeWithText("30/15 ×8").assertExists()
-        tab("Timer").performClick()
+        onNodeWithContentDescription("Back").performClick()
         onNodeWithText("30/15 ×8 · Total").assertExists()
     }
 

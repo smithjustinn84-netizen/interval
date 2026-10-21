@@ -9,10 +9,10 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import dev.justinsmith.bells.data.FollowingEntity
-import dev.justinsmith.bells.data.SettingsEntity
 import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.domain.program
 import dev.justinsmith.bells.fakes.FakeBellsStorage
+import dev.justinsmith.bells.fakes.FakeIntervalActivity
 import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.bells.ui.runUiTest
 import dev.justinsmith.bells.ui.setBellsContent
@@ -57,7 +57,7 @@ class TodayScreenTest {
     }
 
     @Test
-    fun `the goal Interval shares shows what is left of it this week`() = runUiTest {
+    fun `the weekly goal shows what is left of it this week`() = runUiTest {
         val week = (0L until 7L).map {
             WeekDay(it, it.toInt() + 1, bells = 0, interval = 0, today = it == 0L, date = "day $it")
         }
@@ -74,10 +74,8 @@ class TodayScreenTest {
     }
 
     @Test
-    fun `a goal set in Interval reaches Today`() = bellsAppTest(
-        FakeBellsStorage().apply {
-            settings.row.value = SettingsEntity(bodyWeightKg = 80.0, weeklyGoal = 4, updatedAtEpochMillis = 1)
-        },
+    fun `the goal set on Plan reaches Today`() = bellsAppTest(
+        intervals = FakeIntervalActivity().apply { weeklyGoal.value = 4 },
     ) {
         waitForText("4 more to hit 4")
     }

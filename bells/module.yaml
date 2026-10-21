@@ -1,12 +1,11 @@
-# Bells, Interval's sibling app for kettlebell training: log sets of reps with a bell, see the week and
-# personal records, and share every session with Interval on the same device (core-sync).
+# Bells, Interval's kettlebell training behind its Lift tab: log sets of reps with a bell, follow a program,
+# time EMOMs, and keep the bells owned and the records set. It owns its database; `shared` wires its screens.
 product:
   type: kmp/lib
   platforms: [android, iosArm64, iosSimulatorArm64, jvm]
 
 dependencies:
   - ../core: exported
-  - ../core-sync
   - $compose.runtime
   - $compose.ui
   - $compose.components.resources

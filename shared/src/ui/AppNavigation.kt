@@ -10,12 +10,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import dev.justinsmith.interval.nav.HistoryTab
-import dev.justinsmith.interval.nav.PresetsTab
+import dev.justinsmith.interval.nav.LiftTab
 import dev.justinsmith.interval.nav.Tab
 import dev.justinsmith.interval.nav.TimerTab
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.nav_history
-import dev.justinsmith.interval.resources.nav_presets
+import dev.justinsmith.interval.resources.nav_lift
 import dev.justinsmith.interval.resources.nav_timer
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -24,7 +24,7 @@ private data class TabSpec(val tab: Tab, val label: StringResource, val icon: Im
 
 private val Tabs = listOf(
     TabSpec(TimerTab, Res.string.nav_timer, IntervalIcons.Timer),
-    TabSpec(PresetsTab, Res.string.nav_presets, IntervalIcons.Presets),
+    TabSpec(LiftTab, Res.string.nav_lift, IntervalIcons.Bell),
     TabSpec(HistoryTab, Res.string.nav_history, IntervalIcons.History),
 )
 

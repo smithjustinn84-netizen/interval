@@ -24,6 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.bells.data.BellsRepository
+import dev.justinsmith.bells.data.IntervalActivity
 import dev.justinsmith.bells.data.IntervalWorkout
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.LiftSession
@@ -34,7 +35,6 @@ import dev.justinsmith.bells.domain.suggestedBell
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.common_joined
 import dev.justinsmith.bells.resources.kg_value
-import dev.justinsmith.bells.resources.nav_today
 import dev.justinsmith.bells.resources.program_change
 import dev.justinsmith.bells.resources.program_day
 import dev.justinsmith.bells.resources.program_finished
@@ -54,6 +54,7 @@ import dev.justinsmith.bells.resources.today_resume
 import dev.justinsmith.bells.resources.today_start
 import dev.justinsmith.bells.resources.today_start_day
 import dev.justinsmith.bells.resources.today_this_week
+import dev.justinsmith.bells.resources.today_title
 import dev.justinsmith.bells.resources.today_week_count
 import dev.justinsmith.bells.resources.weekday_cd
 import dev.justinsmith.bells.resources.weekday_counts
@@ -117,23 +118,24 @@ data class TodayUiState(
     val programDay: ProgramDay? = null,
     /** The bell to suggest for each lift: the last one used for it. */
     val bells: Map<Exercise, Double> = emptyMap(),
-    /** Workouts a week the user aims for, in either app, as Interval shares it; null for none. */
+    /** Workouts a week the user aims for, lifts and intervals alike, as set on Plan; null for none. */
     val weeklyGoal: Int? = null,
 ) {
     val weekCount: Int get() = week.sumOf { it.bells + it.interval }
     val intervalCount: Int get() = week.sumOf { it.interval }
 }
 
-/** This week across both apps, the last session, and whether one is in progress. */
+/** This week's lifts and intervals, the last session, and whether one is in progress. */
 class TodayViewModel(
     private val repository: BellsRepository,
+    private val intervals: IntervalActivity,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
 ) : ViewModel() {
     val state: StateFlow<TodayUiState> =
         combine(
             repository.sessions,
-            repository.interval,
+            intervals.workouts,
             repository.active,
             repository.following,
             repository.programDay,
@@ -145,16 +147,16 @@ class TodayViewModel(
                 day,
             ->
             build(sessions, interval, active).copy(following = following, programDay = day)
-        }.combine(repository.sharedSettings) { state, shared ->
-            state.copy(weeklyGoal = shared?.weeklyGoal)
+        }.combine(intervals.weeklyGoal) { state, goal ->
+            state.copy(weeklyGoal = goal)
         }.stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
-            build(repository.sessions.value, repository.interval.value, repository.active.value)
+            build(repository.sessions.value, intervals.workouts.value, repository.active.value)
                 .copy(
                     following = repository.following.value,
                     programDay = repository.programDay.value,
-                    weeklyGoal = repository.sharedSettings.value?.weeklyGoal,
+                    weeklyGoal = intervals.weeklyGoal.value,
                 ),
         )
 
@@ -199,7 +201,7 @@ class TodayViewModel(
 @Composable
 fun TodayRoute(onStartSession: () -> Unit, onChooseProgram: () -> Unit, onOpenBells: () -> Unit) {
     val scope = currentKoinScope()
-    val viewModel = viewModel { TodayViewModel(scope.get(), scope.get(), scope.get()) }
+    val viewModel = viewModel { TodayViewModel(scope.get(), scope.get(), scope.get(), scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     TodayScreen(
         state,
@@ -212,7 +214,7 @@ fun TodayRoute(onStartSession: () -> Unit, onChooseProgram: () -> Unit, onOpenBe
     )
 }
 
-/** The Today tab: the week across both apps, the last session, and Start (or Resume) session. */
+/** The Lift tab: the week, lifts and intervals alike, the last session, and Start (or Resume) session. */
 @Composable
 fun TodayScreen(
     state: TodayUiState,
@@ -223,7 +225,7 @@ fun TodayScreen(
 ) {
     val palette = IntervalTheme.palette
     val card = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4)
-    TabGrid(stringResource(Res.string.nav_today), modifier, actions = {
+    TabGrid(stringResource(Res.string.today_title), modifier, actions = {
         IconAction(IntervalIcons.Bell, stringResource(Res.string.today_bells_cd), onOpenBells)
     }) {
         item(key = "week", span = StaggeredGridItemSpan.FullLine) { WeekCard(state, card) }
@@ -265,7 +267,7 @@ fun TodayScreen(
     }
 }
 
-/** A day of the week strip: filled in the accent for a Bells session, in the work mark for Interval only. */
+/** A day of the week strip: filled in the accent for a kettlebell session, in the work mark for intervals only. */
 @Composable
 private fun DayMark(day: WeekDay) {
     val palette = IntervalTheme.palette
@@ -372,7 +374,7 @@ private fun ProgramCard(state: TodayUiState, onChooseProgram: () -> Unit, modifi
     }
 }
 
-/** This week across both apps: a mark a day, and the count. */
+/** This week, lifts and intervals alike: a mark a day, and the count. */
 @Composable
 private fun WeekCard(state: TodayUiState, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette

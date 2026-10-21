@@ -62,14 +62,16 @@ fun BackAction(onBack: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 /**
- * A tab's page of cards, Presets or History: the lanes behind, then a grid of one column on a phone and
- * more as the window widens, its [TitleBar] across the top. [content] adds the grid's items under it.
+ * A page of cards, a tab's (History, Lift) or one pushed from it (Presets, the bells): the lanes behind,
+ * then a grid of one column on a phone and more as the window widens, its [TitleBar] across the top.
+ * [content] adds the grid's items under it. A pushed page passes [navigation], its Back, and keeps inside
+ * the safe area itself, as a [ScrollPage] does; a tab's sits inside the navigation bar's.
  */
 @Composable
 fun TabGrid(
     title: String,
     modifier: Modifier = Modifier,
-    navigation: @Composable () -> Unit = {},
+    navigation: (@Composable () -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
     content: LazyStaggeredGridScope.() -> Unit,
 ) {
@@ -77,10 +79,15 @@ fun TabGrid(
         SetupLanes(Modifier.widthIn(max = Sizes.listMax).fillMaxSize())
         LazyVerticalStaggeredGrid(
             columns = StaggeredGridCells.Adaptive(Sizes.listColumn),
-            modifier = Modifier.widthIn(max = Sizes.listMax).fillMaxSize(),
+            modifier = Modifier
+                .widthIn(max = Sizes.listMax)
+                .fillMaxSize()
+                .then(if (navigation != null) Modifier.safeDrawingPadding() else Modifier),
             contentPadding = PaddingValues(bottom = Spacing.space24),
         ) {
-            item(key = "title", span = StaggeredGridItemSpan.FullLine) { TitleBar(title, navigation = navigation, actions = actions) }
+            item(key = "title", span = StaggeredGridItemSpan.FullLine) {
+                TitleBar(title, navigation = navigation ?: {}, actions = actions)
+            }
             content()
         }
     }

@@ -77,7 +77,7 @@ import org.koin.compose.currentKoinScope
 @Composable
 fun PlanRoute(onBack: () -> Unit, modifier: Modifier = Modifier) {
     val scope = currentKoinScope()
-    val viewModel = viewModel { PlanViewModel(scope.get(), scope.get(), scope.get()) }
+    val viewModel = viewModel { PlanViewModel(scope.get(), scope.get(), scope.get(), scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     PlanScreen(
         state = state,

@@ -4,8 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import dev.justinsmith.core.sync.NoSiblingFeed
-import dev.justinsmith.core.sync.SiblingFeed
 import dev.justinsmith.interval.data.AppDatabase
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -19,8 +17,6 @@ actual fun rememberPlatformModule(): Module = remember {
         single<CuePlayer> { DesktopCuePlayer() }
         single<TimestampFormatter> { systemTimestampFormatter() }
         single<AppInfo> { DesktopAppInfo() }
-        // Desktop has no sibling app to share with.
-        single<SiblingFeed> { NoSiblingFeed }
     }
 }
 

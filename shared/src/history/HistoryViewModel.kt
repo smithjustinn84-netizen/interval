@@ -2,18 +2,20 @@ package dev.justinsmith.interval.history
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.core.sync.AppId
+import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.interval.data.AppSettings
 import dev.justinsmith.interval.data.BodySettings
 import dev.justinsmith.interval.data.HistoryEntry
 import dev.justinsmith.interval.data.IntervalRepository
+import dev.justinsmith.interval.data.LiftWorkout
 import dev.justinsmith.interval.data.PlanSchedule
 import dev.justinsmith.interval.data.PlannedWorkout
-import dev.justinsmith.interval.data.SiblingWorkout
+import dev.justinsmith.interval.data.asLiftWorkouts
 import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.plan.planChoices
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.dateOfEpochDay
@@ -58,10 +60,10 @@ data class HistoryItem(
     /** Whether it did one of the day's plans. */
     val planned: Boolean = false,
     /**
-     * The sibling app that recorded it, or null for one of this app's. A sibling's workout is named by
-     * [presetName], its own title; of [config] only the activity means anything; and it doesn't open here.
+     * The kettlebell session it is, by uid, or null for an interval workout. A session is named by
+     * [presetName], its own title, of [config] only the activity means anything, and it opens its own page.
      */
-    val from: AppId? = null,
+    val liftUid: String? = null,
 )
 
 /** One day's workouts. [dayNumber] is its epoch day. */
@@ -169,6 +171,7 @@ private data class HistoryView(
  */
 class HistoryViewModel(
     private val repository: IntervalRepository,
+    private val bells: BellsRepository,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
     dayCheckMillis: Long = DAY_CHECK_MILLIS,
@@ -184,20 +187,20 @@ class HistoryViewModel(
 
     val state: StateFlow<HistoryUiState> =
         combine(
-            combine(repository.history, repository.siblings) { history, siblings -> history to siblings },
+            combine(repository.history, bells.sessions) { history, sessions -> history to sessions.asLiftWorkouts() },
             repository.planned,
             repository.presets,
             repository.appSettings,
             combine(days, view, repository.config) { _, view, config -> view to config },
-        ) { (history, siblings), planned, presets, app, (view, config) ->
-            buildState(history, siblings, planned, presets, app, view, config)
+        ) { (history, lifts), planned, presets, app, (view, config) ->
+            buildState(history, lifts, planned, presets, app, view, config)
         }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.Eagerly,
                 initialValue = buildState(
                     repository.history.value,
-                    repository.siblings.value,
+                    bells.sessions.value.asLiftWorkouts(),
                     repository.planned.value,
                     repository.presets.value,
                     repository.appSettings.value,
@@ -251,7 +254,7 @@ class HistoryViewModel(
 
     private fun buildState(
         history: List<HistoryEntry>,
-        siblings: List<SiblingWorkout>,
+        lifts: List<LiftWorkout>,
         planned: List<PlannedWorkout>,
         presets: List<Preset>,
         app: AppSettings,
@@ -259,12 +262,12 @@ class HistoryViewModel(
         config: IntervalConfig,
     ): HistoryUiState {
         val today = timestamps.dayNumber(clock.nowMillis())
-        val log = TrainingLog(history, planned, today, siblings, timestamps::dayNumber)
+        val log = TrainingLog(history, planned, today, lifts, timestamps::dayNumber)
         val body = app.body
         val week = log.week()
 
-        // Both apps' workouts, newest first, so grouping keeps both the days and the rows within them in order.
-        val rows = history.map { it.finishedAtEpochMillis to it } + siblings.map { it.finishedAtEpochMillis to it }
+        // Both kinds of workout, newest first, so grouping keeps both the days and the rows within them in order.
+        val rows = history.map { it.finishedAtEpochMillis to it } + lifts.map { it.finishedAtEpochMillis to it }
         val sections = rows.sortedByDescending { it.first }
             .groupBy { timestamps.dayNumber(it.first) }
             .map { (dayNumber, entries) ->
@@ -272,7 +275,7 @@ class HistoryViewModel(
                 val items = entries.map { (_, entry) ->
                     when (entry) {
                         is HistoryEntry -> item(entry, presets, body, entry.id in done)
-                        else -> siblingItem(entry as SiblingWorkout, body)
+                        else -> liftItem(entry as LiftWorkout, body)
                     }
                 }
                 HistorySection(heading(dayNumber, today), dayNumber, items)
@@ -330,7 +333,7 @@ class HistoryViewModel(
                         training.workouts.map { entry ->
                             entry.finishedAtEpochMillis to
                                 item(entry, presets, body, training.plans.any { it.workoutId == entry.id })
-                        } + training.siblingWorkouts.map { it.finishedAtEpochMillis to siblingItem(it, body) }
+                        } + training.liftWorkouts.map { it.finishedAtEpochMillis to liftItem(it, body) }
                         ).sortedByDescending { it.first }.map { it.second },
                     past = day < today,
                 )
@@ -350,14 +353,14 @@ class HistoryViewModel(
             planned = planned,
         )
 
-    private fun siblingItem(workout: SiblingWorkout, body: BodySettings) = HistoryItem(
+    private fun liftItem(workout: LiftWorkout, body: BodySettings) = HistoryItem(
         presetName = workout.title,
-        config = IntervalConfig(activity = workout.activity),
+        config = IntervalConfig(activity = Activity.Kettlebell),
         endedEarly = false,
         time = timestamps.time(workout.finishedAtEpochMillis),
         total = formatClock(workout.elapsedSeconds),
         calories = workout.calories(body),
-        from = workout.source,
+        liftUid = workout.uid,
     )
 
     private fun cell(day: TrainingDay, inMonth: Boolean) = DayCell(

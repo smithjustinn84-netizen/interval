@@ -6,10 +6,14 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.justinsmith.bells.data.IntervalActivity
+import dev.justinsmith.bells.di.bellsModules
+import dev.justinsmith.bells.di.bellsStorageModule
+import dev.justinsmith.bells.platform.rememberBellsPlatformModule
 import dev.justinsmith.interval.data.AppDatabase
 import dev.justinsmith.interval.data.IntervalRepository
+import dev.justinsmith.interval.data.RepositoryIntervalActivity
 import dev.justinsmith.interval.data.buildAppDatabase
-import dev.justinsmith.interval.data.siblingSync
 import dev.justinsmith.interval.platform.PlatformStorage
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.epochMillisNow
@@ -48,7 +52,6 @@ val storageModule: Module = module {
     single { get<AppDatabase>().historyDao() }
     single { get<AppDatabase>().presetDao() }
     single { get<AppDatabase>().plannedDao() }
-    single { get<AppDatabase>().siblingSessionDao() }
     single<DataStore<Preferences>> { preferencesAt(get<PlatformStorage>().preferencesPath) }
 }
 
@@ -78,25 +81,23 @@ val dataModule: Module = module {
             plannedDao = get(),
             scope = get(StorageScope),
             clock = get(),
-            siblingDao = get(),
         )
     }
-}
-
-/**
- * Sharing workouts with the sibling app, over the platform's [dev.justinsmith.core.sync.SiblingFeed]. Started
- * with the container, so it publishes as soon as the history is read.
- */
-val syncModule: Module = module {
-    single(createdAtStart = true) { get<IntervalRepository>().siblingSync(feed = get(), scope = get(StorageScope)) }
+    // What Lift reads of the interval side: the workouts for its week, and the goal set on Plan.
+    single<IntervalActivity> { RepositoryIntervalActivity(get(), get(StorageScope)) }
 }
 
 /**
  * [platformModule] supplies storage locations, the cue player and timestamp formatter; [storage] the
- * database and DataStore built from them (tests swap in fakes).
+ * database and DataStore built from them (tests swap in fakes). [bellsPlatform] and [bellsStorage] do the
+ * same for Lift, whose own database sits beside this one.
  */
-fun appModules(platformModule: Module, storage: Module = storageModule): List<Module> =
-    listOf(platformModule, storage, dataModule, syncModule)
+fun appModules(
+    platformModule: Module,
+    storage: Module = storageModule,
+    bellsPlatform: Module,
+    bellsStorage: Module = bellsStorageModule,
+): List<Module> = listOf(platformModule, storage, dataModule) + bellsModules(bellsPlatform, bellsStorage)
 
 /**
  * Keeps the Koin container alive across Android configuration changes and closes it when the app
@@ -115,5 +116,8 @@ private class KoinHolder(val app: KoinApplication) : ViewModel() {
 @Composable
 fun rememberAppKoin(): KoinApplication {
     val platformModule = rememberPlatformModule()
-    return viewModel { KoinHolder(koinApplication { modules(appModules(platformModule)) }) }.app
+    val bellsPlatform = rememberBellsPlatformModule()
+    return viewModel {
+        KoinHolder(koinApplication { modules(appModules(platformModule, bellsPlatform = bellsPlatform)) })
+    }.app
 }

@@ -2,9 +2,9 @@ package dev.justinsmith.interval.history
 
 import dev.justinsmith.interval.data.BodySettings
 import dev.justinsmith.interval.data.HistoryEntry
+import dev.justinsmith.interval.data.LiftWorkout
 import dev.justinsmith.interval.data.PlanSchedule
 import dev.justinsmith.interval.data.PlannedWorkout
-import dev.justinsmith.interval.data.SiblingWorkout
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.monthDaysOf
@@ -43,23 +43,24 @@ enum class DayState {
 }
 
 /**
- * One day of training: its plans as they stand and its workouts, oldest first, this app's and then the
- * sibling app's ([siblingWorkouts]). Both count toward the day; only this app's can do a plan.
+ * One day of training: its plans as they stand and its workouts, oldest first, the interval workouts and
+ * then the kettlebell sessions ([liftWorkouts]). Both count toward the day; only an interval workout can
+ * do a plan.
  */
 data class TrainingDay(
     val epochDay: Long,
     val isToday: Boolean,
     val plans: List<DayPlan>,
     val workouts: List<HistoryEntry>,
-    val siblingWorkouts: List<SiblingWorkout> = emptyList(),
+    val liftWorkouts: List<LiftWorkout> = emptyList(),
 ) {
     /** 1 for Monday through 7 for Sunday. */
     val weekday: Int get() = weekdayOf(epochDay)
 
-    /** Every workout that day, from either app. */
-    val count: Int get() = workouts.size + siblingWorkouts.size
+    /** Every workout that day, of either kind. */
+    val count: Int get() = workouts.size + liftWorkouts.size
 
-    val seconds: Int get() = workouts.sumOf { it.elapsedSeconds } + siblingWorkouts.sumOf { it.elapsedSeconds }
+    val seconds: Int get() = workouts.sumOf { it.elapsedSeconds } + liftWorkouts.sumOf { it.elapsedSeconds }
 
     val state: DayState
         get() = when {
@@ -112,27 +113,27 @@ data class MonthCell(val day: TrainingDay, val inMonth: Boolean)
  * A plan is done by a workout of the same shape that day. Each workout does at most one plan, the earliest
  * workout going to the earliest plan, and a workout that matches none is logged all the same.
  *
- * [siblings], the sibling app's workouts, count as workouts everywhere (the days, the totals, the weekly
+ * [lifts], the kettlebell sessions, count as workouts everywhere (the days, the totals, the weekly
  * counts and the streak) but have no shape, so they do no plan and are not among the shapes done most.
  */
 class TrainingLog(
     history: List<HistoryEntry>,
     private val planned: List<PlannedWorkout>,
     private val today: Long,
-    siblings: List<SiblingWorkout> = emptyList(),
+    lifts: List<LiftWorkout> = emptyList(),
     private val dayOf: (Long) -> Long,
 ) {
     private val byDay: Map<Long, List<HistoryEntry>> = history
         .sortedWith(compareBy<HistoryEntry> { it.finishedAtEpochMillis }.thenBy { it.id ?: 0 })
         .groupBy { dayOf(it.finishedAtEpochMillis) }
 
-    private val siblingsByDay: Map<Long, List<SiblingWorkout>> = siblings
+    private val liftsByDay: Map<Long, List<LiftWorkout>> = lifts
         .sortedBy { it.finishedAtEpochMillis }
         .groupBy { dayOf(it.finishedAtEpochMillis) }
 
     private val madeOn: Map<Long, Long> = planned.associate { it.id to dayOf(it.createdAtEpochMillis) }
 
-    private val firstWorkoutDay: Long? = (byDay.keys + siblingsByDay.keys).minOrNull()
+    private val firstWorkoutDay: Long? = (byDay.keys + liftsByDay.keys).minOrNull()
 
     /** The plans that fall on [epochDay], in the order they were planned. */
     fun plansOn(epochDay: Long): List<PlannedWorkout> = planned.filter { plan ->
@@ -146,7 +147,7 @@ class TrainingLog(
             epochDay == today,
             matchPlans(epochDay, workouts),
             workouts,
-            siblingsByDay[epochDay].orEmpty(),
+            liftsByDay[epochDay].orEmpty(),
         )
     }
 
@@ -172,14 +173,14 @@ class TrainingLog(
             TrainingRange.AllTime -> allTimeStart()..today
         }
         val workouts = byDay.filterKeys { it in span }.values.flatten()
-        val siblings = siblingsByDay.filterKeys { it in span }.values.flatten()
+        val lifts = liftsByDay.filterKeys { it in span }.values.flatten()
         val dueDays = span.first..minOf(span.last, today)
         val due = dueDays.flatMap { day(it).plans }.filter { it.state != PlanState.Open }
         return RangeStats(
-            count = workouts.size + siblings.size,
-            seconds = workouts.sumOf { it.elapsedSeconds } + siblings.sumOf { it.elapsedSeconds },
+            count = workouts.size + lifts.size,
+            seconds = workouts.sumOf { it.elapsedSeconds } + lifts.sumOf { it.elapsedSeconds },
             calories = body.weightKg?.let {
-                workouts.sumOf { it.calories(body) ?: 0 } + siblings.sumOf { it.calories(body) ?: 0 }
+                workouts.sumOf { it.calories(body) ?: 0 } + lifts.sumOf { it.calories(body) ?: 0 }
             },
             plannedDone = due.count { it.state == PlanState.Done },
             plannedDue = due.size,
@@ -239,7 +240,7 @@ class TrainingLog(
     private fun days(from: Long, count: Int): List<TrainingDay> = (0 until count).map { day(from + it) }
 
     private fun countInWeek(weekStart: Long): Int =
-        (weekStart until weekStart + DAYS_PER_WEEK).sumOf { (byDay[it]?.size ?: 0) + (siblingsByDay[it]?.size ?: 0) }
+        (weekStart until weekStart + DAYS_PER_WEEK).sumOf { (byDay[it]?.size ?: 0) + (liftsByDay[it]?.size ?: 0) }
 
     // The first day anything happened: a workout, or a plan made or falling due.
     private fun allTimeStart(): Long {

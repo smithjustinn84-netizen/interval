@@ -13,7 +13,6 @@ import androidx.room.Query
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
 import androidx.room.Update
-import androidx.room.Upsert
 import androidx.room.migration.Migration
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
@@ -29,12 +28,13 @@ import kotlinx.coroutines.flow.Flow
  * Workout history, the user's own presets and their planned workouts. Settings live in DataStore, not
  * here. Version 2 added [HistoryEntity.workActiveSeconds] and the activity of each workout and preset;
  * version 3 added [PlannedEntity]; version 4 gave each workout a [HistoryEntity.uid], a change time and
- * a deleted flag, and added [SiblingSessionEntity], ready to share workouts with a sibling app.
+ * a deleted flag, and a table of workouts shared by a sibling app, which version 5 dropped when that app
+ * became part of this one.
  */
 @Database(
-    entities = [HistoryEntity::class, PresetEntity::class, PlannedEntity::class, SiblingSessionEntity::class],
-    version = 4,
-    // 3 to 4 is MIGRATION_3_4, added by buildAppDatabase.
+    entities = [HistoryEntity::class, PresetEntity::class, PlannedEntity::class],
+    version = 5,
+    // 3 to 4 and 4 to 5 are MIGRATION_3_4 and MIGRATION_4_5, added by buildAppDatabase.
     autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -44,8 +44,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun presetDao(): PresetDao
 
     abstract fun plannedDao(): PlannedDao
-
-    abstract fun siblingSessionDao(): SiblingSessionDao
 }
 
 /** Room generates the `actual` for each platform. */
@@ -76,12 +74,19 @@ internal val MIGRATION_3_4 = object : Migration(3, 4) {
     }
 }
 
+/** Version 4 to 5: the sibling app's copied workouts go, now that its sessions live in this app. */
+internal val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("DROP TABLE IF EXISTS `sibling_session`")
+    }
+}
+
 /**
  * Opens the database the way the app does: with every hand-written migration, the bundled SQLite and its
  * queries on IO. Tests open theirs through it too, so a new migration reaches both.
  */
 internal fun RoomDatabase.Builder<AppDatabase>.buildAppDatabase(): AppDatabase =
-    addMigrations(MIGRATION_3_4)
+    addMigrations(MIGRATION_3_4, MIGRATION_4_5)
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)
         .build()
@@ -92,38 +97,20 @@ interface HistoryDao {
     @Query("SELECT * FROM history WHERE deleted = 0 ORDER BY finished_at DESC, id DESC")
     fun observeAll(): Flow<List<HistoryEntity>>
 
-    /** Every row, deleted ones included, in the order stored: what a sibling app is sent. */
+    /** Every row, deleted ones included, in the order stored. */
     @Query("SELECT * FROM history ORDER BY id")
     suspend fun all(): List<HistoryEntity>
 
     @Insert
     suspend fun insert(entry: HistoryEntity)
 
-    /** Marks one workout deleted at [now], keeping the row so a sibling app hears of it. */
+    /** Marks one workout deleted at [now], keeping the row as a tombstone. */
     @Query("UPDATE history SET deleted = 1, updated_at = :now WHERE id = :id")
     suspend fun delete(id: Long, now: Long)
 
     /** Marks every workout not yet deleted as deleted at [now]. */
     @Query("UPDATE history SET deleted = 1, updated_at = :now WHERE deleted = 0")
     suspend fun clear(now: Long)
-}
-
-/** Workouts imported from a sibling app, mirroring what it last shared. */
-@Dao
-interface SiblingSessionDao {
-    /** Newest first. */
-    @Query("SELECT * FROM sibling_session ORDER BY finished_at DESC")
-    fun observeAll(): Flow<List<SiblingSessionEntity>>
-
-    /** What is stored now, for comparing with what the sibling shares. */
-    @Query("SELECT * FROM sibling_session")
-    suspend fun all(): List<SiblingSessionEntity>
-
-    @Upsert
-    suspend fun upsert(session: SiblingSessionEntity)
-
-    @Query("DELETE FROM sibling_session WHERE uid = :uid")
-    suspend fun delete(uid: String)
 }
 
 @Dao
@@ -180,25 +167,8 @@ data class HistoryEntity(
     @ColumnInfo(defaultValue = "''") val uid: String,
     /** When it was recorded or last changed, deletion included. 0 in rows from before version 4. */
     @ColumnInfo(name = "updated_at", defaultValue = "0") val updatedAtEpochMillis: Long,
-    /** A deleted workout stays as a tombstone, so the deletion reaches a sibling app. */
+    /** A deleted workout stays as a tombstone, its row kept with when it went. */
     @ColumnInfo(defaultValue = "0") val deleted: Boolean = false,
-)
-
-/**
- * A workout recorded by a sibling app, as it last shared it. [detailJson] is that app's own detail, kept
- * whole; [activity] is an [Activity] by name when there is one.
- */
-@Entity(tableName = "sibling_session")
-data class SiblingSessionEntity(
-    @PrimaryKey val uid: String,
-    val source: String,
-    @ColumnInfo(name = "finished_at") val finishedAtEpochMillis: Long,
-    @ColumnInfo(name = "elapsed_seconds") val elapsedSeconds: Int,
-    @ColumnInfo(name = "active_seconds") val activeSeconds: Int?,
-    val activity: String?,
-    val title: String,
-    @ColumnInfo(name = "detail_json") val detailJson: String,
-    @ColumnInfo(name = "updated_at") val updatedAtEpochMillis: Long,
 )
 
 @Entity(tableName = "preset")

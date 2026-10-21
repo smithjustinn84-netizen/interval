@@ -2,7 +2,6 @@ modules:
   - androidApp
   - bells
   - core
-  - core-sync
   - desktopApp
   - detekt-plugin
   - iosApp

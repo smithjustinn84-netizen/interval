@@ -2,12 +2,14 @@ package dev.justinsmith.interval.plan
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.interval.data.AppSettings
 import dev.justinsmith.interval.data.HistoryEntry
 import dev.justinsmith.interval.data.IntervalRepository
+import dev.justinsmith.interval.data.LiftWorkout
 import dev.justinsmith.interval.data.PlanSchedule
 import dev.justinsmith.interval.data.PlannedWorkout
-import dev.justinsmith.interval.data.SiblingWorkout
+import dev.justinsmith.interval.data.asLiftWorkouts
 import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.history.TrainingLog
 import dev.justinsmith.interval.platform.TimestampFormatter
@@ -61,6 +63,7 @@ data class PlanUiState(
  */
 class PlanViewModel(
     private val repository: IntervalRepository,
+    private val bells: BellsRepository,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
 ) : ViewModel() {
@@ -70,9 +73,9 @@ class PlanViewModel(
             repository.presets,
             repository.config,
             repository.appSettings,
-            combine(repository.history, repository.siblings) { history, siblings -> history to siblings },
-        ) { planned, presets, config, app, (history, siblings) ->
-            buildState(planned, presets, config, app, history, siblings)
+            combine(repository.history, bells.sessions) { history, sessions -> history to sessions.asLiftWorkouts() },
+        ) { planned, presets, config, app, (history, lifts) ->
+            buildState(planned, presets, config, app, history, lifts)
         }.stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
@@ -82,7 +85,7 @@ class PlanViewModel(
                 repository.config.value,
                 repository.appSettings.value,
                 repository.history.value,
-                repository.siblings.value,
+                bells.sessions.value.asLiftWorkouts(),
             ),
         )
 
@@ -127,7 +130,7 @@ class PlanViewModel(
         config: IntervalConfig,
         app: AppSettings,
         history: List<HistoryEntry>,
-        siblings: List<SiblingWorkout>,
+        lifts: List<LiftWorkout>,
     ): PlanUiState {
         val today = timestamps.dayNumber(clock.nowMillis())
         val entries = planned.associateWith { PlanEntry(it.id, it.name, it.config) }
@@ -135,7 +138,7 @@ class PlanViewModel(
             goal = app.weeklyGoal,
             streak =
             app.weeklyGoal?.let {
-                TrainingLog(history, planned, today, siblings, timestamps::dayNumber).streak(it).current
+                TrainingLog(history, planned, today, lifts, timestamps::dayNumber).streak(it).current
             }
                 ?: 0,
             routine = (1..DAYS_PER_WEEK).map { weekday ->

@@ -6,9 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import dev.justinsmith.core.sync.AppGroupSiblingFeed
-import dev.justinsmith.core.sync.AppId
-import dev.justinsmith.core.sync.SiblingFeed
 import dev.justinsmith.interval.data.AppDatabase
 import kotlinx.cinterop.ExperimentalForeignApi
 import org.koin.core.module.Module
@@ -41,7 +38,6 @@ actual fun rememberPlatformModule(): Module = remember {
         }
         single<TimestampFormatter> { systemTimestampFormatter() }
         single<AppInfo> { IosAppInfo() }
-        single<SiblingFeed> { AppGroupSiblingFeed(AppId.Interval) }
     }
 }
 

@@ -9,11 +9,6 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import dev.justinsmith.bells.data.BellsDatabase
 import dev.justinsmith.bells.domain.EmomCue
-import dev.justinsmith.core.sync.AndroidSiblingFeed
-import dev.justinsmith.core.sync.AppId
-import dev.justinsmith.core.sync.SiblingFeed
-import dev.justinsmith.interval.platform.TimestampFormatter
-import dev.justinsmith.interval.platform.systemTimestampFormatter
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -24,8 +19,6 @@ actual fun rememberBellsPlatformModule(): Module = LocalContext.current.applicat
             single<RoomDatabase.Builder<BellsDatabase>> {
                 Room.databaseBuilder<BellsDatabase>(context, context.getDatabasePath(BELLS_DATABASE).absolutePath)
             }
-            single<SiblingFeed> { AndroidSiblingFeed(context, AppId.Bells) }
-            single<TimestampFormatter> { systemTimestampFormatter() }
             single<Beeper> { ToneBeeper() }
         }
     }
