@@ -91,7 +91,7 @@ private fun programSummary(id: ProgramId): String = stringResource(
  */
 @Composable
 fun blockLine(block: Block): String = when (block.kind) {
-    BlockKind.Sets -> if (block.exercise.perSide) {
+    BlockKind.Sets -> if (block.exercise.sided(block.double)) {
         stringResource(Res.string.block_sets_sided, block.rounds, block.reps)
     } else {
         stringResource(Res.string.block_sets, block.rounds, block.reps)
@@ -100,7 +100,7 @@ fun blockLine(block: Block): String = when (block.kind) {
     BlockKind.Emom -> pluralStringResource(Res.plurals.block_emom, block.rounds, block.rounds, block.reps)
 
     BlockKind.Ladder -> pluralStringResource(
-        if (block.exercise.perSide) Res.plurals.block_ladder_sided else Res.plurals.block_ladder,
+        if (block.exercise.sided(block.double)) Res.plurals.block_ladder_sided else Res.plurals.block_ladder,
         block.rounds,
         block.rounds,
         block.rungs.joinToString("-"),

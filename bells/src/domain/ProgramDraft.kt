@@ -61,3 +61,6 @@ fun Block.asKind(kind: BlockKind): Block = copy(
     rungs = if (kind == BlockKind.Ladder && rungs.isEmpty()) ProgramDraft.NEW_RUNGS else rungs,
     reps = if (kind != BlockKind.Ladder && reps < 1) ProgramDraft.NEW_REPS else reps,
 )
+
+/** This block of [exercise]: still with two bells if it was and [exercise] can be, and with them if it must. */
+fun Block.withExercise(exercise: Exercise): Block = copy(exercise = exercise, double = exercise.doubled(double))

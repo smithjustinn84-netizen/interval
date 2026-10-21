@@ -40,6 +40,14 @@ class ProgramDraftTest {
     }
 
     @Test
+    fun `a block keeps two bells only for a lift that can take them`() {
+        val doubleClean = Block(Exercise.Clean, rounds = 5, reps = 5, double = true)
+        assertEquals(false, doubleClean.withExercise(Exercise.GetUp).double)
+        assertEquals(true, doubleClean.withExercise(Exercise.Press).double)
+        assertEquals(true, swings.withExercise(Exercise.ArmorBuildingComplex).double)
+    }
+
+    @Test
     fun `a program made reads back as its draft`() {
         val program =
             Program(ProgramKey.Custom("a1"), listOf(listOf(swings)), daysPerWeek = 2, weeks = 6, name = "Mine")

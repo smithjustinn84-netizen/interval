@@ -73,6 +73,32 @@ class BellsRepositoryTest {
     }
 
     @Test
+    fun `a set with two bells keeps no side and one that can't be doubled is single`() = runTest {
+        repository.startSession()
+        repository.logSet(Exercise.Press, 16.0, 5, Side.Left, double = true)
+        repository.logSet(Exercise.GetUp, 16.0, 1, Side.Left, double = true)
+        val (press, getUp) = assertNotNull(repository.active.value).sets
+        assertTrue(press.double)
+        assertNull(press.side)
+        assertEquals(false, getUp.double)
+        assertEquals(Side.Left, getUp.side)
+    }
+
+    @Test
+    fun `a stored Armor Building Complex set reads as two bells`() = runTest {
+        repository.startSession()
+        repository.logSet(Exercise.ArmorBuildingComplex, 24.0, 1, null)
+        assertTrue(assertNotNull(repository.active.value).sets.single().double)
+    }
+
+    @Test
+    fun `a program made with two bells keeps them`() = runTest {
+        val draft = pressAndSwings.changeBlock(0, 0) { it.copy(double = true) }
+        repository.saveProgram(null, draft)
+        assertEquals(true, repository.customPrograms.value.single().days[0][0].double)
+    }
+
+    @Test
     fun `a session finished with no sets is dropped`() = runTest {
         repository.startSession()
         repository.finishSession("")

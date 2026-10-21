@@ -28,7 +28,7 @@ import dev.justinsmith.bells.resources.history_delete_text
 import dev.justinsmith.bells.resources.history_delete_title
 import dev.justinsmith.bells.session.SessionStats
 import dev.justinsmith.bells.session.setLine
-import dev.justinsmith.bells.ui.exerciseName
+import dev.justinsmith.bells.ui.liftName
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.ConfirmDialog
@@ -117,13 +117,13 @@ fun LiftDetailScreen(
             modifier = Modifier.padding(bottom = Spacing.space16),
         )
         SessionStats(session, state.records)
-        session.sets.groupBy { it.exercise }.forEach { (exercise, sets) ->
-            GroupLabel(exerciseName(exercise), Modifier.padding(top = Spacing.space16))
+        session.sets.groupBy { it.exercise to it.double }.forEach { (lift, sets) ->
+            GroupLabel(liftName(lift.first, lift.second), Modifier.padding(top = Spacing.space16))
             ListCard {
                 sets.forEachIndexed { i, set ->
                     if (i > 0) RowDivider()
                     Text(
-                        setLine(set.bellKg, set.reps, set.side),
+                        setLine(set.bellKg, set.reps, set.side, set.double),
                         style = IntervalTheme.type.body,
                         color = palette.text,
                         modifier = Modifier.padding(Spacing.space16),

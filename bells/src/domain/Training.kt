@@ -1,23 +1,38 @@
 package dev.justinsmith.bells.domain
 
-/** The lifts Bells logs. [perSide] ones are logged one side at a time. */
-enum class Exercise(val perSide: Boolean) {
-    TwoHandSwing(perSide = false),
+/**
+ * The lifts Bells logs. [perSide] ones are logged one side at a time, unless done with two bells; [doubles]
+ * says whether they can be.
+ */
+enum class Exercise(val perSide: Boolean, val doubles: Doubles = Doubles.Optional) {
+    TwoHandSwing(perSide = false, doubles = Doubles.Never),
+
+    /** With two bells, the double swing. */
     OneHandSwing(perSide = true),
     Clean(perSide = true),
     Press(perSide = true),
     Snatch(perSide = true),
-    GetUp(perSide = true),
-    GobletSquat(perSide = false),
+    GetUp(perSide = true, doubles = Doubles.Never),
+    GobletSquat(perSide = false, doubles = Doubles.Never),
     Row(perSide = true),
     Jerk(perSide = true),
     LongCycle(perSide = true),
-    Halo(perSide = false),
+    Halo(perSide = false, doubles = Doubles.Never),
     FrontSquat(perSide = false),
 
     /** Dan John's Armor Building Complex with two bells: 2 cleans, a press and 3 front squats, as one rep. */
-    ArmorBuildingComplex(perSide = false),
+    ArmorBuildingComplex(perSide = false, doubles = Doubles.Always),
     ;
+
+    /** Whether a set of it is done with two bells, when [requested] is what was asked for. */
+    fun doubled(requested: Boolean): Boolean = when (doubles) {
+        Doubles.Never -> false
+        Doubles.Optional -> requested
+        Doubles.Always -> true
+    }
+
+    /** Whether a set of it, with two bells or not ([double]), is done one side at a time. */
+    fun sided(double: Boolean): Boolean = perSide && !double
 
     companion object {
         /** By [name], as stored; an unknown name (from a newer build) reads as null. */
@@ -25,10 +40,16 @@ enum class Exercise(val perSide: Boolean) {
     }
 }
 
+/** Whether a lift can be done with a bell in each hand: never, by choice, or only so. */
+enum class Doubles { Never, Optional, Always }
+
 /** The side a one-sided set was done on. */
 enum class Side { Left, Right }
 
-/** One logged set: [reps] of [exercise] with a [bellKg] bell, on [side] for a one-sided lift. */
+/**
+ * One logged set: [reps] of [exercise] with a [bellKg] bell, or a pair of them when [double], on [side] for
+ * a one-sided lift.
+ */
 data class SetLog(
     val id: Long,
     val exercise: Exercise,
@@ -36,9 +57,10 @@ data class SetLog(
     val reps: Int,
     val side: Side?,
     val loggedAtEpochMillis: Long,
+    val double: Boolean = false,
 ) {
-    /** The weight moved: the bell times the reps. */
-    val tonnageKg: Double get() = bellKg * reps
+    /** The weight moved: the bell, or both, times the reps. */
+    val tonnageKg: Double get() = bellKg * reps * (if (double) 2 else 1)
 }
 
 /**
@@ -71,8 +93,8 @@ data class LiftSession(
 }
 
 /**
- * The best an [exercise] has been done: the heaviest bell, with the most reps in one set at it, and the
- * most reps in one set with any bell, with that bell.
+ * The best an [exercise] has been done, with one bell or two ([double]): the heaviest bell, with the most
+ * reps in one set at it, and the most reps in one set with any bell, with that bell.
  */
 data class PersonalRecord(
     val exercise: Exercise,
@@ -80,11 +102,13 @@ data class PersonalRecord(
     val repsAtHeaviest: Int,
     val mostReps: Int,
     val mostRepsKg: Double,
+    val double: Boolean = false,
 )
 
-/** Each exercise's [PersonalRecord] over [sets], in the catalogue's order. */
-fun personalRecords(sets: List<SetLog>): List<PersonalRecord> = sets.groupBy { it.exercise }
-    .map { (exercise, done) ->
+/** Each exercise's [PersonalRecord] over [sets], one bell and two kept apart, in the catalogue's order. */
+fun personalRecords(sets: List<SetLog>): List<PersonalRecord> = sets.groupBy { it.exercise to it.double }
+    .map { (lift, done) ->
+        val (exercise, double) = lift
         val heaviest = done.maxOf { it.bellKg }
         val most = done.maxWith(compareBy<SetLog> { it.reps }.thenBy { it.bellKg })
         PersonalRecord(
@@ -93,18 +117,21 @@ fun personalRecords(sets: List<SetLog>): List<PersonalRecord> = sets.groupBy { i
             repsAtHeaviest = done.filter { it.bellKg == heaviest }.maxOf { it.reps },
             mostReps = most.reps,
             mostRepsKg = most.bellKg,
+            double = double,
         )
     }
-    .sortedBy { it.exercise.ordinal }
+    .sortedWith(compareBy<PersonalRecord> { it.exercise.ordinal }.thenBy { it.double })
 
 /**
- * The records [session] set: those of its exercises whose record over [before] plus the session beats the
- * record over [before] alone, by a heavier bell or more reps at the heaviest or in one set.
+ * The records [session] set: those of its lifts (one bell or two) whose record over [before] plus the
+ * session beats the record over [before] alone, by a heavier bell or more reps at the heaviest or in one set.
  */
 fun newRecords(before: List<SetLog>, session: LiftSession): List<PersonalRecord> {
-    val old = personalRecords(before).associateBy { it.exercise }
+    val old = personalRecords(before).associateBy { it.exercise to it.double }
+    val done = session.sets.map { it.exercise to it.double }.toSet()
     return personalRecords(before + session.sets).filter { record ->
-        record.exercise in session.exercises && old[record.exercise].let { was ->
+        val lift = record.exercise to record.double
+        lift in done && old[lift].let { was ->
             was == null ||
                 record.heaviestKg > was.heaviestKg ||
                 (record.heaviestKg == was.heaviestKg && record.repsAtHeaviest > was.repsAtHeaviest) ||

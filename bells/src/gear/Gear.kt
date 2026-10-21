@@ -28,7 +28,7 @@ import dev.justinsmith.bells.resources.bells_title
 import dev.justinsmith.bells.resources.kg_value
 import dev.justinsmith.bells.resources.record_line
 import dev.justinsmith.bells.ui.Choice
-import dev.justinsmith.bells.ui.exerciseName
+import dev.justinsmith.bells.ui.liftName
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -108,7 +108,11 @@ fun GearScreen(state: GearUiState, onToggle: (Double) -> Unit, onBack: () -> Uni
                     state.records.forEachIndexed { i, record ->
                         if (i > 0) RowDivider()
                         Column(Modifier.padding(Spacing.space16)) {
-                            Text(exerciseName(record.exercise), style = IntervalTheme.type.label, color = palette.text)
+                            Text(
+                                liftName(record.exercise, record.double),
+                                style = IntervalTheme.type.label,
+                                color = palette.text,
+                            )
                             Text(
                                 stringResource(
                                     Res.string.record_line,

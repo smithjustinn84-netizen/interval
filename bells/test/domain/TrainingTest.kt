@@ -6,7 +6,8 @@ import kotlin.test.assertEquals
 class TrainingTest {
     private var nextId = 1L
 
-    private fun set(exercise: Exercise, kg: Double, reps: Int) = SetLog(nextId++, exercise, kg, reps, null, nextId)
+    private fun set(exercise: Exercise, kg: Double, reps: Int, double: Boolean = false) =
+        SetLog(nextId++, exercise, kg, reps, null, nextId, double)
 
     private fun session(vararg sets: SetLog) = LiftSession("s", 0, 60_000, "", sets.toList())
 
@@ -44,6 +45,35 @@ class TrainingTest {
         assertEquals(340.0, done.tonnageKg)
         assertEquals(15, done.reps)
         assertEquals(60, done.elapsedSeconds(nowMillis = 0))
+    }
+
+    @Test
+    fun `a set with two bells moves twice the weight`() {
+        assertEquals(320.0, session(set(Exercise.Press, 16.0, 10, double = true)).tonnageKg)
+    }
+
+    @Test
+    fun `records with two bells are kept apart from those with one`() {
+        val records = personalRecords(listOf(set(Exercise.Press, 24.0, 5), set(Exercise.Press, 20.0, 3, double = true)))
+        assertEquals(
+            listOf(
+                PersonalRecord(Exercise.Press, 24.0, 5, 5, 24.0),
+                PersonalRecord(Exercise.Press, 20.0, 3, 3, 20.0, true),
+            ),
+            records,
+        )
+        // A first double press is a record of its own, though the single press is heavier.
+        val doubles = session(set(Exercise.Press, 16.0, 5, double = true))
+        assertEquals(listOf(true), newRecords(listOf(set(Exercise.Press, 24.0, 5)), doubles).map { it.double })
+    }
+
+    @Test
+    fun `a lift is doubled only if it can be`() {
+        assertEquals(true, Exercise.Clean.doubled(requested = true))
+        assertEquals(false, Exercise.GetUp.doubled(requested = true))
+        assertEquals(true, Exercise.ArmorBuildingComplex.doubled(requested = false))
+        assertEquals(false, Exercise.Press.sided(double = true))
+        assertEquals(true, Exercise.Press.sided(double = false))
     }
 
     @Test

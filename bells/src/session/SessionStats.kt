@@ -19,7 +19,7 @@ import dev.justinsmith.bells.resources.session_time
 import dev.justinsmith.bells.resources.summary_records
 import dev.justinsmith.bells.resources.summary_reps
 import dev.justinsmith.bells.ui.StatTile
-import dev.justinsmith.bells.ui.exerciseName
+import dev.justinsmith.bells.ui.liftName
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -55,7 +55,11 @@ fun SessionStats(session: LiftSession, records: List<PersonalRecord>, modifier: 
                 records.forEachIndexed { i, record ->
                     if (i > 0) RowDivider()
                     Column(Modifier.padding(Spacing.space16)) {
-                        Text(exerciseName(record.exercise), style = IntervalTheme.type.label, color = palette.text)
+                        Text(
+                            liftName(record.exercise, record.double),
+                            style = IntervalTheme.type.label,
+                            color = palette.text,
+                        )
                         Text(
                             stringResource(
                                 Res.string.record_line,

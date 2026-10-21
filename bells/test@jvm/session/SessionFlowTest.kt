@@ -35,6 +35,26 @@ class SessionFlowTest {
     }
 
     @Test
+    fun `a set with two bells has no side and moves twice the weight`() = bellsAppTest { app ->
+        onNodeWithText("Start session").performClick()
+        waitForText("Log set")
+        onNodeWithText("Log set").performClick()
+        // A two-hand swing can't be doubled; a clean can, and then has no side.
+        onNodeWithText("Two bells").assertDoesNotExist()
+        onNodeWithText("Clean").performClick()
+        onNodeWithText("Left").assertExists()
+        onNodeWithText("Two bells").performScrollTo().performClick()
+        onNodeWithText("Left").assertDoesNotExist()
+        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
+        waitForText("2 × 16 kg × 10")
+        onNodeWithText("Clean · Two bells").assertExists()
+        onNodeWithText("320 kg").assertExists()
+        val set = app.storage.sessions.sets.value.single()
+        assertTrue(set.doubled)
+        assertEquals(null, set.side)
+    }
+
+    @Test
     fun `finishing a session shows its summary then Today`() = bellsAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")

@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.Flow
  * Bells' sessions and their sets, the user's bells and the program they follow. Version 2 added
  * [FollowingEntity] and the program day a session was; version 3 settings shared with Interval, then a
  * sibling app; version 4 dropped them, and the copy of Interval's workouts, once Bells became part of it;
- * version 5 added the programs the user makes, [CustomProgramEntity].
+ * version 5 added the programs the user makes, [CustomProgramEntity]; version 6 sets done with two bells.
  */
 @Database(
     entities = [
@@ -32,12 +32,13 @@ import kotlinx.coroutines.flow.Flow
         FollowingEntity::class,
         CustomProgramEntity::class,
     ],
-    version = 5,
+    version = 6,
     // 3 to 4 is MIGRATION_3_4, added in bellsStorageModule.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
         AutoMigration(from = 4, to = 5),
+        AutoMigration(from = 5, to = 6),
     ],
 )
 @ConstructedBy(BellsDatabaseConstructor::class)
@@ -179,6 +180,8 @@ data class SetEntity(
     /** A [dev.justinsmith.bells.domain.Side] by name, or null for a two-sided lift. */
     val side: String?,
     @ColumnInfo(name = "logged_at") val loggedAtEpochMillis: Long,
+    /** Done with a bell in each hand, both of [bellKg]. */
+    @ColumnInfo(defaultValue = "0") val doubled: Boolean = false,
 )
 
 /**

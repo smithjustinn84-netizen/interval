@@ -35,6 +35,7 @@ import dev.justinsmith.bells.domain.formatKg
 import dev.justinsmith.bells.domain.suggestedBell
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.common_joined
+import dev.justinsmith.bells.resources.kg_pair
 import dev.justinsmith.bells.resources.kg_value
 import dev.justinsmith.bells.resources.program_change
 import dev.justinsmith.bells.resources.program_day
@@ -69,7 +70,7 @@ import dev.justinsmith.bells.resources.weekday_initial_7
 import dev.justinsmith.bells.resources.weekday_rest
 import dev.justinsmith.bells.session.SetDraft
 import dev.justinsmith.bells.ui.blockLine
-import dev.justinsmith.bells.ui.exerciseName
+import dev.justinsmith.bells.ui.liftName
 import dev.justinsmith.bells.ui.programName
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
@@ -117,8 +118,8 @@ data class TodayUiState(
     /** The program followed, if any, and its next day: null once it is over. */
     val following: Program? = null,
     val programDay: ProgramDay? = null,
-    /** The bell to suggest for each lift: the last one used for it. */
-    val bells: Map<Exercise, Double> = emptyMap(),
+    /** The bell to suggest for each lift, with one bell and with two: the last one used for it so. */
+    val bells: Map<Pair<Exercise, Boolean>, Double> = emptyMap(),
     /** Workouts a week the user aims for, lifts and intervals alike, as set on Plan; null for none. */
     val weeklyGoal: Int? = null,
 ) {
@@ -192,8 +193,10 @@ class TodayViewModel(
                 if (timestamps.dayNumber(at) == today) timestamps.time(at) else timestamps.date(at)
             }.orEmpty(),
             inProgress = active != null,
-            bells = Exercise.entries.associateWith { exercise ->
-                suggestedBell(exercise, sessions.reversed().flatMap { it.sets }, SetDraft.DEFAULT_BELL_KG)
+            bells = sessions.reversed().flatMap { it.sets }.let { history ->
+                Exercise.entries.flatMap { listOf(it to false, it to true) }.associateWith { (exercise, double) ->
+                    suggestedBell(exercise, double, history, SetDraft.DEFAULT_BELL_KG)
+                }
             },
         )
     }
@@ -357,13 +360,13 @@ private fun ProgramCard(state: TodayUiState, onChooseProgram: () -> Unit, modifi
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text(exerciseName(block.exercise), style = IntervalTheme.type.label, color = palette.text)
+                    Text(liftName(block.exercise, block.double), style = IntervalTheme.type.label, color = palette.text)
                     Text(blockLine(block), style = IntervalTheme.type.meta, color = palette.textDim)
                 }
                 Text(
                     stringResource(
-                        Res.string.kg_value,
-                        formatKg(state.bells[block.exercise] ?: SetDraft.DEFAULT_BELL_KG),
+                        if (block.double) Res.string.kg_pair else Res.string.kg_value,
+                        formatKg(state.bells[block.exercise to block.double] ?: SetDraft.DEFAULT_BELL_KG),
                     ),
                     style = IntervalTheme.type.value,
                     color = palette.text,

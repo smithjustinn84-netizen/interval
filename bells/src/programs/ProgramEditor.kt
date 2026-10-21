@@ -26,10 +26,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.domain.Block
 import dev.justinsmith.bells.domain.BlockKind
+import dev.justinsmith.bells.domain.Doubles
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.ProgramDraft
 import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.domain.asKind
+import dev.justinsmith.bells.domain.withExercise
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.block_add_rung
 import dev.justinsmith.bells.resources.block_done
@@ -66,11 +68,13 @@ import dev.justinsmith.bells.resources.editor_remove_day
 import dev.justinsmith.bells.resources.editor_save
 import dev.justinsmith.bells.resources.editor_schedule
 import dev.justinsmith.bells.resources.editor_weeks
+import dev.justinsmith.bells.resources.lift_double
 import dev.justinsmith.bells.resources.log_exercise
 import dev.justinsmith.bells.session.SetDraft
 import dev.justinsmith.bells.ui.ChoiceRow
 import dev.justinsmith.bells.ui.blockLine
 import dev.justinsmith.bells.ui.exerciseName
+import dev.justinsmith.bells.ui.liftName
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.ConfirmDialog
@@ -89,6 +93,7 @@ import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.ToggleRow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -304,7 +309,7 @@ private fun DayCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text(exerciseName(block.exercise), style = IntervalTheme.type.label, color = palette.text)
+                    Text(liftName(block.exercise, block.double), style = IntervalTheme.type.label, color = palette.text)
                     Text(blockLine(block), style = IntervalTheme.type.meta, color = palette.textDim)
                 }
                 Icon(IntervalIcons.Chevron, null, tint = palette.textDim, modifier = Modifier.size(Sizes.icon))
@@ -315,7 +320,7 @@ private fun DayCard(
     }
 }
 
-/** One block: its lift, how it runs, its rounds, and its reps or a ladder's rungs. */
+/** One block: its lift (with two bells or one), how it runs, its rounds, and its reps or a ladder's rungs. */
 @Composable
 private fun BlockSheet(
     block: Block,
@@ -336,7 +341,17 @@ private fun BlockSheet(
             GroupLabel(stringResource(Res.string.log_exercise))
             ChoiceRow(Exercise.entries, block.exercise, {
                 exerciseName(it)
-            }, { e -> onChange { it.copy(exercise = e) } })
+            }, { e -> onChange { it.withExercise(e) } })
+            if (block.exercise.doubles == Doubles.Optional) {
+                ListCard {
+                    ToggleRow(
+                        stringResource(Res.string.lift_double),
+                        null,
+                        checked = block.double,
+                        onToggle = { onChange { it.copy(double = !it.double) } },
+                    )
+                }
+            }
             GroupLabel(stringResource(Res.string.block_kind))
             SegmentedPicker(BlockKind.entries, block.kind, { kindName(it) }, { k -> onChange { it.asKind(k) } })
             StepperRow(

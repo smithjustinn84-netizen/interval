@@ -43,7 +43,7 @@ import dev.justinsmith.bells.resources.emom_set_done
 import dev.justinsmith.bells.resources.emom_stop
 import dev.justinsmith.bells.resources.emom_work
 import dev.justinsmith.bells.resources.summary_done
-import dev.justinsmith.bells.ui.exerciseName
+import dev.justinsmith.bells.ui.liftName
 import dev.justinsmith.interval.platform.KeepScreenOn
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.Corners
@@ -180,14 +180,14 @@ private fun EmomReadout(run: EmomRun, state: EmomState, color: Color) {
             color = PhaseColors.onGround,
         )
         val side = run.sideOf(state.minute)
-        val task = setLine(run.bellKg, run.reps, side)
+        val task = setLine(run.bellKg, run.reps, side, run.double)
         Text(
             if (state.phase ==
                 EmomPhase.Rest
             ) {
                 stringResource(Res.string.emom_next, task)
             } else {
-                "${exerciseName(run.exercise)} · $task"
+                "${liftName(run.exercise, run.double)} · $task"
             },
             style = IntervalTheme.type.label,
             color = PhaseColors.onGroundDim,

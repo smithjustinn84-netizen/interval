@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.justinsmith.bells.domain.Doubles
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.Side
@@ -36,6 +37,7 @@ import dev.justinsmith.bells.resources.emom_more_minutes
 import dev.justinsmith.bells.resources.emom_start
 import dev.justinsmith.bells.resources.emom_title
 import dev.justinsmith.bells.resources.kg_value
+import dev.justinsmith.bells.resources.lift_double
 import dev.justinsmith.bells.resources.log_bell
 import dev.justinsmith.bells.resources.log_exercise
 import dev.justinsmith.bells.resources.log_fewer_reps
@@ -61,10 +63,12 @@ import dev.justinsmith.bells.resources.session_since_last
 import dev.justinsmith.bells.resources.session_time
 import dev.justinsmith.bells.resources.session_title
 import dev.justinsmith.bells.resources.set_line
+import dev.justinsmith.bells.resources.set_line_double
 import dev.justinsmith.bells.resources.set_line_side
 import dev.justinsmith.bells.ui.ChoiceRow
 import dev.justinsmith.bells.ui.StatTile
 import dev.justinsmith.bells.ui.exerciseName
+import dev.justinsmith.bells.ui.liftName
 import dev.justinsmith.bells.ui.sessionTitle
 import dev.justinsmith.bells.ui.sideName
 import dev.justinsmith.interval.platform.KeepScreenOn
@@ -82,6 +86,7 @@ import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TitleBar
+import dev.justinsmith.interval.ui.ToggleRow
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
@@ -179,8 +184,8 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
                         modifier = Modifier.padding(vertical = Spacing.space16),
                     )
                 }
-                sets.groupBy { it.exercise }.forEach { (exercise, done) ->
-                    GroupLabel(exerciseName(exercise))
+                sets.groupBy { it.exercise to it.double }.forEach { (lift, done) ->
+                    GroupLabel(liftName(lift.first, lift.second))
                     ListCard {
                         done.forEachIndexed { i, set ->
                             if (i > 0) RowDivider()
@@ -216,7 +221,7 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
 
 @Composable
 private fun SetRow(set: SetLog, onRemove: () -> Unit) {
-    val line = setLine(set.bellKg, set.reps, set.side)
+    val line = setLine(set.bellKg, set.reps, set.side, set.double)
     Row(
         Modifier.fillMaxWidth().height(Sizes.listRow).padding(start = Spacing.space16, end = Spacing.space4),
         verticalAlignment = Alignment.CenterVertically,
@@ -226,15 +231,15 @@ private fun SetRow(set: SetLog, onRemove: () -> Unit) {
     }
 }
 
-/** A set in words: "24 kg × 10", or "20 kg × 5 · Left". */
+/** A set in words: "24 kg × 10", "20 kg × 5 · Left", or with two bells "2 × 16 kg × 5". */
 @Composable
-fun setLine(bellKg: Double, reps: Int, side: Side?): String = if (side == null) {
-    stringResource(Res.string.set_line, formatKg(bellKg), reps)
-} else {
-    stringResource(Res.string.set_line_side, formatKg(bellKg), reps, sideName(side))
+fun setLine(bellKg: Double, reps: Int, side: Side?, double: Boolean = false): String = when {
+    double -> stringResource(Res.string.set_line_double, formatKg(bellKg), reps)
+    side == null -> stringResource(Res.string.set_line, formatKg(bellKg), reps)
+    else -> stringResource(Res.string.set_line_side, formatKg(bellKg), reps, sideName(side))
 }
 
-/** Pick the lift, the bell, the reps and, for a one-sided lift, the side; then log it. */
+/** Pick the lift, the bell (or two), the reps and, for a one-sided lift, the side; then log it. */
 @Composable
 private fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismiss: () -> Unit) {
     val draft = state.draft
@@ -252,6 +257,16 @@ private fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismis
             ChoiceRow(state.bells, draft.bellKg, { formatKg(it) }, { kg -> actions.onDraft { it.copy(bellKg = kg) } })
             if (!state.ownsBells) {
                 Text(stringResource(Res.string.log_no_bells), style = IntervalTheme.type.meta, color = palette.textDim)
+            }
+            if (draft.exercise.doubles == Doubles.Optional) {
+                ListCard {
+                    ToggleRow(
+                        stringResource(Res.string.lift_double),
+                        null,
+                        checked = draft.double,
+                        onToggle = { actions.onDraft { it.copy(double = !it.double) } },
+                    )
+                }
             }
             GroupLabel(stringResource(Res.string.log_reps))
             Row(
@@ -277,7 +292,7 @@ private fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismis
                     onStep = { actions.onDraft { it.copy(reps = it.reps + 1) } },
                 )
             }
-            if (draft.exercise.perSide) {
+            if (draft.exercise.sided(draft.doubled)) {
                 GroupLabel(stringResource(Res.string.log_side))
                 ChoiceRow(Side.entries, draft.side, {
                     sideName(it)
@@ -323,9 +338,9 @@ private fun UpNextCard(state: SessionUiState, actions: SessionActions) {
                 style = IntervalTheme.type.caption,
                 color = palette.textDim,
             )
-            Text(exerciseName(next.set.exercise), style = IntervalTheme.type.section, color = palette.text)
+            Text(liftName(next.set.exercise, next.set.double), style = IntervalTheme.type.section, color = palette.text)
             Text(
-                setLine(next.bellKg, next.set.reps, next.set.side),
+                setLine(next.bellKg, next.set.reps, next.set.side, next.set.double),
                 style = IntervalTheme.type.value,
                 color = palette.text,
             )

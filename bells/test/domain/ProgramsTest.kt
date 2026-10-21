@@ -3,6 +3,7 @@ package dev.justinsmith.bells.domain
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class ProgramsTest {
     private fun logged(exercise: Exercise, side: Side? = null) = SetLog(0, exercise, 24.0, 10, side, 0)
@@ -65,8 +66,37 @@ class ProgramsTest {
     fun `the suggested bell is the last used for the lift`() {
         val history =
             listOf(SetLog(0, Exercise.Press, 16.0, 5, Side.Left, 0), SetLog(0, Exercise.Press, 20.0, 3, Side.Left, 1))
-        assertEquals(20.0, suggestedBell(Exercise.Press, history, fallback = 12.0))
-        assertEquals(12.0, suggestedBell(Exercise.Snatch, history, fallback = 12.0))
+        assertEquals(20.0, suggestedBell(Exercise.Press, false, history, fallback = 12.0))
+        assertEquals(12.0, suggestedBell(Exercise.Snatch, false, history, fallback = 12.0))
+    }
+
+    @Test
+    fun `the suggested bell for two bells is the last pair used else the last single`() {
+        val single = SetLog(0, Exercise.Press, 20.0, 3, Side.Left, 0)
+        val pair = SetLog(0, Exercise.Press, 16.0, 5, null, 1, double = true)
+        assertEquals(20.0, suggestedBell(Exercise.Press, true, listOf(single), fallback = 12.0))
+        assertEquals(16.0, suggestedBell(Exercise.Press, true, listOf(pair, single), fallback = 12.0))
+        assertEquals(20.0, suggestedBell(Exercise.Press, false, listOf(single, pair), fallback = 12.0))
+    }
+
+    @Test
+    fun `a block with two bells plans sets with no side and its EMOM does not alternate`() {
+        val sets = Block(Exercise.Clean, rounds = 3, reps = 5, double = true).plannedSets()
+        assertEquals(List(3) { PlannedSet(Exercise.Clean, 5, null, double = true) }, sets)
+        val emom = Block(Exercise.Press, rounds = 4, reps = 3, kind = BlockKind.Emom, double = true).plannedSets()
+        assertEquals(List(4) { null }, emom.map { it.side })
+    }
+
+    @Test
+    fun `a planned double set of a one-sided lift is not done by a single one`() {
+        val planned = Block(Exercise.Clean, rounds = 1, reps = 5, double = true).plannedSets()
+        assertEquals(0, nextPlanned(planned, listOf(logged(Exercise.Clean, Side.Left))))
+        assertNull(nextPlanned(planned, listOf(SetLog(0, Exercise.Clean, 16.0, 5, null, 0, double = true))))
+    }
+
+    @Test
+    fun `the Armor Building Complex is planned with two bells`() {
+        assertTrue(program(ProgramId.ArmorBuildingFormula).days[0].single().double)
     }
 
     @Test

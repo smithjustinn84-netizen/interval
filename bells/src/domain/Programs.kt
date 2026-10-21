@@ -5,7 +5,8 @@ enum class BlockKind { Sets, Emom, Ladder }
 
 /**
  * One part of a program day. [Sets]: [rounds] sets of [reps]. [Emom]: [rounds] minutes, [reps] at the top
- * of each. [Ladder]: [rounds] ladders, each climbing [rungs]. A one-sided lift does each set on both sides.
+ * of each. [Ladder]: [rounds] ladders, each climbing [rungs]. A one-sided lift does each set on both sides,
+ * unless it is done with two bells ([double]).
  */
 data class Block(
     val exercise: Exercise,
@@ -13,13 +14,14 @@ data class Block(
     val reps: Int = 0,
     val kind: BlockKind = BlockKind.Sets,
     val rungs: List<Int> = emptyList(),
+    val double: Boolean = false,
 ) {
     /** The sets it comes to, in order: one-sided lifts left then right, except an EMOM, which alternates by minute. */
     fun plannedSets(): List<PlannedSet> = when (kind) {
         BlockKind.Sets -> (1..rounds).flatMap { sides(reps) }
 
         BlockKind.Emom -> (0 until rounds).map { minute ->
-            PlannedSet(exercise, reps, if (exercise.perSide) Side.entries[minute % 2] else null)
+            PlannedSet(exercise, reps, if (exercise.sided(double)) Side.entries[minute % 2] else null, double)
         }
 
         BlockKind.Ladder -> (1..rounds).flatMap { rungs.flatMap { rung -> sides(rung) } }
@@ -29,17 +31,17 @@ data class Block(
     val totalReps: Int get() = plannedSets().sumOf { it.reps }
 
     private fun sides(reps: Int) =
-        if (exercise.perSide) {
+        if (exercise.sided(double)) {
             Side.entries.map {
-                PlannedSet(exercise, reps, it)
+                PlannedSet(exercise, reps, it, double)
             }
         } else {
-            listOf(PlannedSet(exercise, reps, null))
+            listOf(PlannedSet(exercise, reps, null, double))
         }
 }
 
-/** One set a program asks for. */
-data class PlannedSet(val exercise: Exercise, val reps: Int, val side: Side?)
+/** One set a program asks for, with two bells when [double]. */
+data class PlannedSet(val exercise: Exercise, val reps: Int, val side: Side?, val double: Boolean = false)
 
 /**
  * A program: [days] repeat in turn, [daysPerWeek] of them a week, for [weeks] weeks. A built-in is named from
@@ -120,7 +122,8 @@ private val fiveHundredSwings =
     Block(Exercise.TwoHandSwing, rounds = 5, kind = BlockKind.Ladder, rungs = listOf(10, 15, 25, 50))
 
 /** Twenty minutes of the Armor Building Complex, one every minute. */
-private val armorBuildingComplex = Block(Exercise.ArmorBuildingComplex, rounds = 20, reps = 1, kind = BlockKind.Emom)
+private val armorBuildingComplex =
+    Block(Exercise.ArmorBuildingComplex, rounds = 20, reps = 1, kind = BlockKind.Emom, double = true)
 
 val builtInPrograms: List<Program> = listOf(
     builtIn(
@@ -235,7 +238,9 @@ fun program(id: ProgramId): Program = builtInPrograms.first { it.key == ProgramK
 
 /**
  * Of [planned], the first set not yet done by [logged]: the n-th planned set of a lift (and side) is done by
- * the n-th logged one, whatever its bell or reps, so going off plan never blocks what comes next.
+ * the n-th logged one, whatever its bell or reps, so going off plan never blocks what comes next. A set
+ * with two bells has no side, so for a one-sided lift a planned double set is done only by a double one; for
+ * a lift with no sides, one bell or two does it.
  */
 fun nextPlanned(planned: List<PlannedSet>, logged: List<SetLog>): Int? {
     val used = mutableMapOf<Pair<Exercise, Side?>, Int>()
@@ -252,6 +257,11 @@ fun nextPlanned(planned: List<PlannedSet>, logged: List<SetLog>): Int? {
     return null
 }
 
-/** The bell to suggest for [exercise]: the last one used for it, else [fallback]. */
-fun suggestedBell(exercise: Exercise, history: List<SetLog>, fallback: Double): Double =
-    history.lastOrNull { it.exercise == exercise }?.bellKg ?: fallback
+/**
+ * The bell to suggest for [exercise], with two bells or one ([double]): the last one used for it so, else
+ * the last used for it at all, else [fallback].
+ */
+fun suggestedBell(exercise: Exercise, double: Boolean, history: List<SetLog>, fallback: Double): Double =
+    history.lastOrNull { it.exercise == exercise && it.double == double }?.bellKg
+        ?: history.lastOrNull { it.exercise == exercise }?.bellKg
+        ?: fallback

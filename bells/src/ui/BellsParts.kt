@@ -19,9 +19,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import dev.justinsmith.bells.domain.Doubles
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.resources.Res
+import dev.justinsmith.bells.resources.common_joined
 import dev.justinsmith.bells.resources.exercise_armor_building_complex
 import dev.justinsmith.bells.resources.exercise_clean
 import dev.justinsmith.bells.resources.exercise_front_squat
@@ -35,6 +37,7 @@ import dev.justinsmith.bells.resources.exercise_press
 import dev.justinsmith.bells.resources.exercise_row
 import dev.justinsmith.bells.resources.exercise_snatch
 import dev.justinsmith.bells.resources.exercise_two_hand_swing
+import dev.justinsmith.bells.resources.lift_double
 import dev.justinsmith.bells.resources.session_title_more
 import dev.justinsmith.bells.resources.session_title_two
 import dev.justinsmith.bells.resources.side_left
@@ -66,6 +69,17 @@ private fun Exercise.label(): StringResource = when (this) {
 /** An exercise's name: "Two-hand swing". */
 @Composable
 fun exerciseName(exercise: Exercise): String = stringResource(exercise.label())
+
+/**
+ * A lift's name, saying when it is done with two bells: "Press · Two bells". A lift only done with two, like
+ * the Armor Building Complex, says so in its name already.
+ */
+@Composable
+fun liftName(exercise: Exercise, double: Boolean): String = if (double && exercise.doubles == Doubles.Optional) {
+    stringResource(Res.string.common_joined, exerciseName(exercise), stringResource(Res.string.lift_double))
+} else {
+    exerciseName(exercise)
+}
 
 @Composable
 fun sideName(side: Side): String = stringResource(

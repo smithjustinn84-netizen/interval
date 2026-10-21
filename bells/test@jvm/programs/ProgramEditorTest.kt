@@ -53,6 +53,25 @@ class ProgramEditorTest {
     }
 
     @Test
+    fun `a block of a lift that can be doubled offers two bells`() = bellsAppTest { app ->
+        onNodeWithText("Follow a program").performClick()
+        waitForText("New program")
+        onNodeWithText("New program").performScrollTo().performClick()
+        waitForText("Day 1")
+        onNodeWithText("Add block").performScrollTo().performClick()
+        onNodeWithText("Two bells").assertDoesNotExist()
+        onNodeWithText("Press").performClick()
+        onNodeWithText("Two bells").performScrollTo().performClick()
+        onNodeWithText("Done").performScrollTo().performClick()
+        waitForText("Press · Two bells")
+        onNodeWithText("5 × 10").assertExists()
+        onNode(hasSetTextAction()).performTextInput("Doubles")
+        onNodeWithText("Save program").performScrollTo().performClick()
+        waitForText("Doubles")
+        assertTrue(app.storage.programs.rows.value.single().days.contains("\"double\":true"))
+    }
+
+    @Test
     fun `a program made can be changed and deleted`() = bellsAppTest { app ->
         onNodeWithText("Follow a program").performClick()
         waitForText("New program")

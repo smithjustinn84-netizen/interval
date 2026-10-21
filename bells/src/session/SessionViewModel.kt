@@ -38,7 +38,12 @@ data class SetDraft(
     val side: Side = Side.Left,
     /** For an EMOM started from the sheet. */
     val minutes: Int = DEFAULT_MINUTES,
+    /** Two bells asked for: kept while a lift that can't be doubled is picked, for the next that can. */
+    val double: Boolean = false,
 ) {
+    /** Whether the set is done with two bells. */
+    val doubled: Boolean get() = exercise.doubled(double)
+
     companion object {
         const val DEFAULT_BELL_KG = 16.0
         const val DEFAULT_REPS = 10
@@ -54,7 +59,10 @@ data class Finished(val session: LiftSession, val records: List<PersonalRecord>)
 /** The plan's next set: which of [total] it is, with the bell to use, and whether it opens an EMOM of [emomMinutes]. */
 data class UpNext(val set: PlannedSet, val bellKg: Double, val number: Int, val total: Int, val emomMinutes: Int?)
 
-/** An EMOM under way: its lift, bell and reps, when it started, and the minutes whose set is done. */
+/**
+ * An EMOM under way: its lift, bell (or two, when [double]) and reps, when it started, and the minutes whose
+ * set is done.
+ */
 data class EmomRun(
     val exercise: Exercise,
     val bellKg: Double,
@@ -63,10 +71,14 @@ data class EmomRun(
     val firstSide: Side,
     val startedAtMillis: Long,
     val done: Set<Int> = emptySet(),
+    val double: Boolean = false,
 ) {
-    /** The side of minute [minute] (from 1): a one-sided lift alternates. */
-    fun sideOf(minute: Int): Side? =
-        if (exercise.perSide) Side.entries[(firstSide.ordinal + minute - 1) % Side.entries.size] else null
+    /** The side of minute [minute] (from 1): a one-sided lift with one bell alternates. */
+    fun sideOf(minute: Int): Side? = if (exercise.sided(double)) {
+        Side.entries[(firstSide.ordinal + minute - 1) % Side.entries.size]
+    } else {
+        null
+    }
 }
 
 data class SessionUiState(
@@ -166,28 +178,40 @@ class SessionViewModel(
 
     fun logSet() {
         val set = draft.value
-        repository.logSet(set.exercise, set.bellKg, set.reps, set.side)
+        repository.logSet(set.exercise, set.bellKg, set.reps, set.side, set.doubled)
         // A one-sided lift usually goes on with the other side.
-        if (set.exercise.perSide) draft.update { it.copy(side = if (it.side == Side.Left) Side.Right else Side.Left) }
+        if (set.exercise.sided(set.doubled)) {
+            draft.update {
+                it.copy(
+                    side = if (it.side ==
+                        Side.Left
+                    ) {
+                        Side.Right
+                    } else {
+                        Side.Left
+                    },
+                )
+            }
+        }
     }
 
     /** Logs the plan's next set as planned, with its suggested bell. */
     fun logNext() {
         val next = state.value.upNext ?: return
-        repository.logSet(next.set.exercise, next.bellKg, next.set.reps, next.set.side)
+        repository.logSet(next.set.exercise, next.bellKg, next.set.reps, next.set.side, next.set.double)
     }
 
     /** Starts the plan's next block as an EMOM, if it is one. */
     fun startPlannedEmom() {
         val next = state.value.upNext ?: return
         val minutes = next.emomMinutes ?: return
-        startEmom(next.set.exercise, next.bellKg, next.set.reps, minutes, next.set.side ?: Side.Left)
+        startEmom(next.set.exercise, next.bellKg, next.set.reps, minutes, next.set.side ?: Side.Left, next.set.double)
     }
 
     /** Starts an EMOM of the sheet's lift, bell and reps for its minutes. */
     fun startDraftEmom() {
         val d = draft.value
-        startEmom(d.exercise, d.bellKg, d.reps, d.minutes, d.side)
+        startEmom(d.exercise, d.bellKg, d.reps, d.minutes, d.side, d.doubled)
     }
 
     /** Logs this minute's set: the EMOM rests out the minute. */
@@ -195,7 +219,7 @@ class SessionViewModel(
         val run = emom.value ?: return
         val now = state.value.emomState ?: return
         if (now.phase != EmomPhase.Work) return
-        repository.logSet(run.exercise, run.bellKg, run.reps, run.sideOf(now.minute))
+        repository.logSet(run.exercise, run.bellKg, run.reps, run.sideOf(now.minute), run.double)
         emom.value = run.copy(done = run.done + now.minute)
     }
 
@@ -226,10 +250,17 @@ class SessionViewModel(
         repository.discardSession()
     }
 
-    private fun startEmom(exercise: Exercise, bellKg: Double, reps: Int, minutes: Int, firstSide: Side) {
+    private fun startEmom(
+        exercise: Exercise,
+        bellKg: Double,
+        reps: Int,
+        minutes: Int,
+        firstSide: Side,
+        double: Boolean,
+    ) {
         val now = clock.nowMillis()
         lastCueMillis = 0L
-        emom.value = EmomRun(exercise, bellKg, reps, minutes, firstSide, now)
+        emom.value = EmomRun(exercise, bellKg, reps, minutes, firstSide, now, double = double)
     }
 
     private fun playCues(now: Long) {
@@ -255,7 +286,7 @@ class SessionViewModel(
         val emomMinutes = if (block.kind == BlockKind.Emom && index == start) block.rounds else null
         return UpNext(
             set,
-            suggestedBell(set.exercise, history, draft.value.bellKg),
+            suggestedBell(set.exercise, set.double, history, draft.value.bellKg),
             index + 1,
             planned.size,
             emomMinutes,

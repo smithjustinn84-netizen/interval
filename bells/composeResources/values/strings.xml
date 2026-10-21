@@ -12,6 +12,9 @@
     <string name="kg_value">%1$s kg</string>
     <string name="set_line">%1$s kg × %2$d</string>
     <string name="set_line_side">%1$s kg × %2$d · %3$s</string>
+    <string name="set_line_double">2 × %1$s kg × %2$d</string>
+    <string name="kg_pair">2 × %1$s kg</string>
+    <string name="lift_double">Two bells</string>
     <plurals name="sets_count">
         <item quantity="one">%1$d set</item>
         <item quantity="other">%1$d sets</item>

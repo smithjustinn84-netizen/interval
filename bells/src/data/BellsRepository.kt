@@ -203,12 +203,15 @@ class BellsRepository(
         persist { followingDao.clear() }
     }
 
-    /** Logs a set to the session in progress. */
-    fun logSet(exercise: Exercise, bellKg: Double, reps: Int, side: Side?) {
+    /** Logs a set to the session in progress, with two bells when [double] and [exercise] can be. */
+    fun logSet(exercise: Exercise, bellKg: Double, reps: Int, side: Side?, double: Boolean = false) {
         persist {
             val active = sessionDao.active() ?: return@persist
-            val sided = side.takeIf { exercise.perSide }
-            sessionDao.insert(SetEntity(0, active.uid, exercise.name, bellKg, reps, sided?.name, clock.nowMillis()))
+            val doubled = exercise.doubled(double)
+            val sided = side.takeIf { exercise.sided(doubled) }
+            sessionDao.insert(
+                SetEntity(0, active.uid, exercise.name, bellKg, reps, sided?.name, clock.nowMillis(), doubled),
+            )
         }
     }
 
@@ -269,7 +272,10 @@ class BellsRepository(
     }
 }
 
-/** A set of an exercise this build doesn't know is left out. */
+/**
+ * A set of an exercise this build doesn't know is left out. One of a lift only done with two bells is read
+ * as such, though logged before sets had the column.
+ */
 private fun SetEntity.toDomain(): SetLog? {
     val lift = Exercise.named(exercise) ?: return null
     return SetLog(
@@ -281,6 +287,7 @@ private fun SetEntity.toDomain(): SetLog? {
             Side.entries.firstOrNull { it.name == s }
         },
         loggedAtEpochMillis,
+        lift.doubled(doubled),
     )
 }
 
