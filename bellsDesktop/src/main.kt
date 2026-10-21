@@ -7,7 +7,9 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import dev.justinsmith.bells.resources.Res
+import dev.justinsmith.bells.resources.app_icon
 import dev.justinsmith.bells.resources.app_name
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import java.awt.Dimension
 
@@ -19,6 +21,7 @@ fun main() = application {
         onCloseRequest = ::exitApplication,
         state = rememberWindowState(size = InitialSize),
         title = stringResource(Res.string.app_name),
+        icon = painterResource(Res.drawable.app_icon),
     ) {
         LaunchedEffect(Unit) { window.minimumSize = MinimumSize }
         BellsApp()

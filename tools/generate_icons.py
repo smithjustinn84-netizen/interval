@@ -6,6 +6,10 @@ The mark is the workout's phase ring: three round-capped arcs in the phase colou
 Rest), with a clock hand pointing up through the gap at the top. Its geometry lives here and in
 `shared/src/splash/IntervalMark.kt`, which draws the same mark for the animated intro; keep the two
 in step. Everything is laid out on Android's 108-unit adaptive-icon canvas.
+
+Bells, the sibling kettlebell app, has a mark of its own in the same hand: the phase ring, smaller and
+lower, is the bell's body, and a round-capped handle stands over the gap at its top where Interval's
+clock hand is.
 """
 
 import math
@@ -37,6 +41,55 @@ GROUND_GLOW = "1A2029"  # The lighter centre of the icon's background
 TINTED_ARCS = ["C8C8C8", "FFFFFF", "9A9A9A"]
 
 SUPERSAMPLE = 4
+
+
+# Bells' asset catalog is written whole; Interval's Contents.json files are kept by hand.
+CATALOG_CONTENTS = """{
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}
+"""
+APP_ICON_CONTENTS = """{
+  "images": [
+    {
+      "filename": "app-icon-1024.png",
+      "idiom": "universal",
+      "platform": "ios",
+      "size": "1024x1024"
+    },
+    {
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        }
+      ],
+      "idiom": "universal",
+      "platform": "ios",
+      "size": "1024x1024",
+      "filename": "app-icon-1024-dark.png"
+    },
+    {
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "tinted"
+        }
+      ],
+      "idiom": "universal",
+      "platform": "ios",
+      "size": "1024x1024",
+      "filename": "app-icon-1024-tinted.png"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}
+"""
 
 
 def point(angle, radius):
@@ -109,8 +162,8 @@ def background_vector():
     return vector(body, extra_ns='\n        xmlns:aapt="http://schemas.android.com/aapt"')
 
 
-def desktop_vector():
-    """A rounded square, inset as macOS and Windows draw app icons, holding the mark."""
+def desktop_vector(mark):
+    """A rounded square, inset as macOS and Windows draw app icons, holding [mark] (vector paths)."""
     inset, corner = 6, 22
     side = CANVAS - 2 * inset
     straight = side - 2 * corner
@@ -121,7 +174,59 @@ def desktop_vector():
         f"a{corner},{corner} 0 0,1 {corner},-{corner} Z"
     )
     body = f'    <path android:fillColor="#{GROUND}" android:pathData="{tile}"/>\n'
-    return vector(body + mark_paths([c for _, _, c in ARCS], INK))
+    return vector(body + mark)
+
+
+# Bells ------------------------------------------------------------------------------------------
+
+# The bell's body: the phase ring, centred lower to leave room for the handle above it.
+BELL_CENTER = (CENTER, 62)
+BELL_RADIUS = 21
+BELL_STROKE = RING_STROKE
+BELL_ARCS = [  # (start, end, colour): the gap at the top is where the handle stands
+    (58, 122, "F2A81D"),  # Get ready
+    (148, 212, "FF5A43"),  # Work
+    (238, 302, "2FD3A0"),  # Rest
+]
+# The handle: short and wide, two legs rising from just clear of the body into a flat top with round corners.
+HANDLE_HALF_WIDTH = 15
+HANDLE_FOOT = 41  # Where the legs stop, clear of the body
+HANDLE_TOP = 24
+HANDLE_CORNER = 7
+HANDLE_STROKE = 6
+
+
+def bell_point(angle, radius=BELL_RADIUS):
+    a = math.radians(angle)
+    cx, cy = BELL_CENTER
+    return cx + radius * math.sin(a), cy - radius * math.cos(a)
+
+
+def bell_arc_path(start, end):
+    x0, y0 = bell_point(start)
+    x1, y1 = bell_point(end)
+    large = 1 if end - start > 180 else 0
+    return f"M{fmt(x0)},{fmt(y0)} A{BELL_RADIUS},{BELL_RADIUS} 0 {large},1 {fmt(x1)},{fmt(y1)}"
+
+
+_HANDLE_LEFT, _HANDLE_RIGHT = CENTER - HANDLE_HALF_WIDTH, CENTER + HANDLE_HALF_WIDTH
+_HANDLE_SHOULDER = HANDLE_TOP + HANDLE_CORNER
+HANDLE_PATH = (
+    f"M{fmt(_HANDLE_LEFT)},{HANDLE_FOOT} V{_HANDLE_SHOULDER} "
+    f"A{HANDLE_CORNER},{HANDLE_CORNER} 0 0,1 {fmt(_HANDLE_LEFT + HANDLE_CORNER)},{HANDLE_TOP} "
+    f"H{fmt(_HANDLE_RIGHT - HANDLE_CORNER)} "
+    f"A{HANDLE_CORNER},{HANDLE_CORNER} 0 0,1 {fmt(_HANDLE_RIGHT)},{_HANDLE_SHOULDER} V{HANDLE_FOOT}"
+)
+
+
+def bells_mark_paths(arc_colors, ink):
+    """Bells' mark as Android vector paths: the body's three arcs and the handle."""
+    out = [stroke(bell_arc_path(start, end), color, BELL_STROKE) for (start, end, _), color in zip(BELL_ARCS, arc_colors)]
+    out.append(
+        f'    <path android:pathData="{HANDLE_PATH}" android:strokeColor="#{ink}"\n'
+        f'          android:strokeWidth="{HANDLE_STROKE}" android:strokeLineCap="round" android:strokeLineJoin="round"/>'
+    )
+    return "\n".join(out)
 
 
 # Raster ----------------------------------------------------------------------------------------
@@ -160,6 +265,42 @@ def draw_mark(img, scale, arc_colors, ink):
     dot(CENTER, CENTER, PIN_RADIUS, (0, 0, 0, 0))  # Draw replaces pixels, so this punches a hole
 
 
+def draw_bells_mark(img, scale, arc_colors, ink):
+    """Draws Bells' mark onto [img] (supersampled), centred, with [scale] pixels per canvas unit."""
+    d = ImageDraw.Draw(img)
+    cx, cy = img.width / 2, img.height / 2
+
+    def px(x, y):
+        return cx + (x - CENTER) * scale, cy + (y - CENTER) * scale
+
+    def dot(x, y, r, color):
+        x, y = px(x, y)
+        d.ellipse([x - r * scale, y - r * scale, x + r * scale, y + r * scale], fill=color)
+
+    def ring_arc(center, radius, width, start, end, color):
+        x, y = center
+        box = [*px(x - radius - width / 2, y - radius - width / 2), *px(x + radius + width / 2, y + radius + width / 2)]
+        d.arc(box, start - 90, end - 90, fill=color, width=round(width * scale))
+
+    for (start, end, _), color in zip(BELL_ARCS, arc_colors):
+        c = rgba(color)
+        ring_arc(BELL_CENTER, BELL_RADIUS, BELL_STROKE, start, end, c)
+        for a in (start, end):  # Round caps
+            dot(*bell_point(a), BELL_STROKE / 2, c)
+    c = rgba(ink)
+    half = HANDLE_STROKE / 2
+    ring_arc((_HANDLE_LEFT + HANDLE_CORNER, _HANDLE_SHOULDER), HANDLE_CORNER, HANDLE_STROKE, -90, 0, c)
+    ring_arc((_HANDLE_RIGHT - HANDLE_CORNER, _HANDLE_SHOULDER), HANDLE_CORNER, HANDLE_STROKE, 0, 90, c)
+    x0, y0 = px(_HANDLE_LEFT + HANDLE_CORNER, HANDLE_TOP)
+    x1, _ = px(_HANDLE_RIGHT - HANDLE_CORNER, HANDLE_TOP)
+    d.rectangle([x0, y0 - half * scale, x1, y0 + half * scale], fill=c)
+    for x in (_HANDLE_LEFT, _HANDLE_RIGHT):
+        x0, y0 = px(x, _HANDLE_SHOULDER)
+        _, y1 = px(x, HANDLE_FOOT)
+        d.rectangle([x0 - half * scale, y0, x0 + half * scale, y1], fill=c)
+        dot(x, HANDLE_FOOT, half, c)
+
+
 def ground_image(size):
     """The ground with the same radial glow as the Android background, across the whole square."""
     img = Image.new("RGBA", (size, size))
@@ -173,12 +314,12 @@ def ground_image(size):
     return img
 
 
-def render(size, mark_scale, arc_colors=None, ink=INK, background=True):
-    """A [size]px square with the mark [mark_scale] times its size on the 108 canvas."""
+def render(size, mark_scale, arc_colors=None, ink=INK, background=True, draw=draw_mark):
+    """A [size]px square with the mark ([draw]) [mark_scale] times its size on the 108 canvas."""
     arc_colors = arc_colors or [c for _, _, c in ARCS]
     big = size * SUPERSAMPLE
     layer = Image.new("RGBA", (big, big), (0, 0, 0, 0))
-    draw_mark(layer, big / CANVAS * mark_scale, arc_colors, ink)
+    draw(layer, big / CANVAS * mark_scale, arc_colors, ink)
     layer = layer.resize((size, size), Image.LANCZOS)
     if not background:
         return layer
@@ -206,17 +347,12 @@ def main():
     write(res / "drawable/ic_launcher_monochrome.xml", vector(mark_paths([INK] * 3, INK)))
     write(res / "drawable/ic_launcher_background.xml", background_vector())
 
-    write(ROOT / "shared/composeResources/drawable/app_icon.xml", desktop_vector())
+    write(ROOT / "shared/composeResources/drawable/app_icon.xml", desktop_vector(mark_paths(colors, INK)))
 
     # iOS draws icons full bleed and rounds the corners itself, so the mark can sit larger than on
     # Android, whose launchers crop the 108 canvas to its middle 72.
     ios_scale = 1.3
-    icons = ROOT / "iosApp/src/Assets.xcassets/AppIcon.appiconset"
-    # The App Store rejects an icon with an alpha channel.
-    save(icons / "app-icon-1024.png", render(1024, ios_scale).convert("RGB"))
-    save(icons / "app-icon-1024-dark.png", render(1024, ios_scale, background=False))
-    save(icons / "app-icon-1024-tinted.png",
-         render(1024, ios_scale, arc_colors=TINTED_ARCS, ink="FFFFFF", background=False))
+    ios_icons(ROOT / "iosApp/src/Assets.xcassets", ios_scale, draw_mark)
 
     # The launch screen's mark, matching the first frame of the intro: the 108 canvas at 288 pt,
     # as Android's splash screen draws its icon.
@@ -224,6 +360,27 @@ def main():
     for factor in (1, 2, 3):
         suffix = "" if factor == 1 else f"@{factor}x"
         save(launch / f"launch-mark{suffix}.png", render(288 * factor, 1.0, background=False))
+
+    # Bells: the same layers, from its own mark.
+    res = ROOT / "bellsAndroid/res"
+    write(res / "drawable/ic_launcher_foreground.xml", vector(bells_mark_paths(colors, INK)))
+    write(res / "drawable/ic_launcher_monochrome.xml", vector(bells_mark_paths([INK] * 3, INK)))
+    write(res / "drawable/ic_launcher_background.xml", background_vector())
+    write(ROOT / "bells/composeResources/drawable/app_icon.xml", desktop_vector(bells_mark_paths(colors, INK)))
+    catalog = ROOT / "bellsIos/src/Assets.xcassets"
+    write(catalog / "Contents.json", CATALOG_CONTENTS)
+    write(catalog / "AppIcon.appiconset/Contents.json", APP_ICON_CONTENTS)
+    ios_icons(catalog, ios_scale, draw_bells_mark)
+
+
+def ios_icons(catalog, scale, draw):
+    """The light, dark and tinted 1024 px app icons into [catalog]'s AppIcon set."""
+    icons = catalog / "AppIcon.appiconset"
+    # The App Store rejects an icon with an alpha channel.
+    save(icons / "app-icon-1024.png", render(1024, scale, draw=draw).convert("RGB"))
+    save(icons / "app-icon-1024-dark.png", render(1024, scale, background=False, draw=draw))
+    save(icons / "app-icon-1024-tinted.png",
+         render(1024, scale, arc_colors=TINTED_ARCS, ink="FFFFFF", background=False, draw=draw))
 
 
 if __name__ == "__main__":

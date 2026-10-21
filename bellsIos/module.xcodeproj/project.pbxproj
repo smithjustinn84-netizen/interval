@@ -27,6 +27,10 @@
 			exceptions = (
 				6DB3FF7E83E62FD7D897135E /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
 			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
 			path = src;
 			sourceTree = SOURCE_ROOT;
 		};
@@ -141,11 +145,10 @@
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				CODE_SIGN_ENTITLEMENTS = src/iosApp.entitlements;
 				INFOPLIST_FILE = src/Info.plist;
 				KOTLIN_CLI_WRAPPER_PATH = ../kotlin;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = dev.justinsmith.kettlebell;
+				PRODUCT_BUNDLE_IDENTIFIER = bellsIos;
 				PRODUCT_MODULE_NAME = app;
 				PRODUCT_NAME = bellsIos;
 				SDKROOT = iphoneos;
@@ -167,12 +170,11 @@
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				CODE_SIGN_ENTITLEMENTS = src/iosApp.entitlements;
 				INFOPLIST_FILE = src/Info.plist;
 				KOTLIN_CLI_WRAPPER_PATH = ../kotlin;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				ONLY_ACTIVE_ARCH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = dev.justinsmith.kettlebell;
+				PRODUCT_BUNDLE_IDENTIFIER = bellsIos;
 				PRODUCT_MODULE_NAME = app;
 				PRODUCT_NAME = bellsIos;
 				SDKROOT = iphoneos;
