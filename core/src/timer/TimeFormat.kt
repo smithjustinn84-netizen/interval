@@ -1,7 +1,8 @@
 package dev.justinsmith.interval.timer
 
 const val MILLIS_PER_SECOND = 1000L
-private const val SECONDS_PER_MINUTE = 60
+const val SECONDS_PER_MINUTE = 60
+const val SECONDS_PER_HOUR = 3600
 const val DAYS_PER_WEEK = 7
 
 /** "0:30", "12:05". Negative input reads as zero. */

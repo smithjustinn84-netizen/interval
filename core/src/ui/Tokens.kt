@@ -2,6 +2,7 @@ package dev.justinsmith.interval.ui
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 // Fixed design tokens: the same in light and dark. Names mirror the Interval design system
 // (`space-16` → Spacing.space16, `radius-18` → Radius.radius18, `size-stepper` → Sizes.stepper).
@@ -69,6 +70,8 @@ object Sizes {
 
     /** Width of each side rail of workout controls in landscape. */
     val rail = 120.dp
+
+    /** Start workout's height, and the Timer tab's square start button. */
     val start = 72.dp
 
     /** Elevation of Start workout, the only raised element (`shadow-start`). */
@@ -76,11 +79,20 @@ object Sizes {
 
     /** The play glyph inside Start workout. */
     val playIcon = 26.dp
+
+    /** A workout control (Pause, End, Skip), and the wider Back and +10s beside them. */
     val control = 76.dp
     val controlSide = 84.dp
+
+    /** A − / + stepper button. */
     val stepper = 54.dp
+
+    /** A pill-shaped button: its narrowest, and its height (a touch target's). */
     val pillWidth = 72.dp
     val pillHeight = 48.dp
+
+    /** The largest a Timer tab stepper value grows to when the row has room; it never shrinks below a stat. */
+    val stepperValueMax = 72.sp
 
     /** A value in its phase-tinted pill on the Timer tab. */
     val valuePill = 48.dp
@@ -135,9 +147,13 @@ object Sizes {
     /** The stripe beside a value sheet's title, as tall as the title and its hint. */
     val sheetHeaderStripe = 48.dp
 
-    /** A sheet's drag handle: the area that takes the drag, round the small bar drawn in it. */
+    /** A bottom sheet's drag handle: the area that takes the drag, round the small bar drawn in it. */
     val dragHandleWidth = 48.dp
     val dragHandleHeight = 24.dp
+
+    /** The bar drawn in a bottom sheet's drag handle. */
+    val handleWidth = 36.dp
+    val handleHeight = 5.dp
 
     /** The narrowest a text field in a dialog or sheet gets. */
     val fieldMin = 230.dp
@@ -145,10 +161,12 @@ object Sizes {
     /** Room the workout leaves under its ring for the "Tap anywhere to pause" line. */
     val tapHint = 48.dp
 
-    /** A [ToggleRow]'s switch: the track, and the white thumb inset inside it. */
+    /** A [ToggleRow]'s switch: the track, and the thumb inset inside it. */
     val switchWidth = 46.dp
     val switchHeight = 28.dp
     val switchThumb = 22.dp
+
+    /** A big full-width button: Save, Repeat, Done. */
     val save = 56.dp
 
     /** The narrowest overflow menu. */
@@ -157,6 +175,7 @@ object Sizes {
     /** A text field, such as a preset's name. */
     val field = 52.dp
 
+    /** A phase's colour stripe at the start of a field row, and a history mark's width. */
     val stripe = 6.dp
 
     /** A round's mark on the workout screen: a short bar, narrowing when many share a row. */
@@ -196,6 +215,8 @@ object Sizes {
 
     /** The band of phase colour along the workout screen's top edge (its start edge in landscape). */
     val phaseBand = 10.dp
+
+    /** An outline: a calendar day, a selected choice, a text field. */
     val border = 1.5.dp
 
     /** Line icons: tabs and top-bar actions. */
@@ -203,6 +224,9 @@ object Sizes {
 
     /** The round hit area of an icon-only top-bar action. */
     val iconButton = 48.dp
+
+    /** The circle drawn inside that hit area: its fill and its ripple. */
+    val iconButtonVisual = 40.dp
 
     /** The tinted ring round an [EmptyState]'s icon. */
     val emptyIconRing = 56.dp
@@ -212,9 +236,6 @@ object Sizes {
 
     /** The app's mark on the About screen: the launcher icon's coin, at a size that reads as a logo. */
     val aboutMark = 112.dp
-
-    /** The circle drawn inside that hit area: its fill and its ripple. */
-    val iconButtonVisual = 40.dp
 
     /** Minimum height of a list row (presets, history, settings). */
     val listRow = 64.dp
@@ -233,10 +254,6 @@ object Sizes {
 
     /** A side sheet's width: about a phone's, the width the sheets' content is laid out for. */
     val sideSheet = 420.dp
-
-    /** The edit sheet's drag handle. */
-    val handleWidth = 36.dp
-    val handleHeight = 5.dp
 }
 
 /** The design system's `opacity-*` tokens. */
@@ -255,6 +272,9 @@ object Opacity {
 
     /** The `ink` dim behind a dialog or sheet. */
     const val SCRIM = 0.55f
+
+    /** A calendar day outside the month on show. */
+    const val OUTSIDE_MONTH = 0.4f
 }
 
 /**
@@ -284,6 +304,9 @@ object Motion {
 
     /** The workout rises into place from this share of the window's height below it, and drops back as far. */
     const val WORKOUT_RISE_SHARE = 0.24f
+
+    /** A new phase word rises from this share of its height below its place. */
+    const val PHASE_WORD_RISE_SHARE = 0.5f
 
     /** Switching tabs: the old tab fades out quickly, then the new one fades in, grown from [FADE_THROUGH_SCALE]. */
     const val FADE_THROUGH_SCALE = 0.96f

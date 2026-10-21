@@ -100,7 +100,7 @@ fun estimateCalories(
     activity: Activity = Activity.General,
 ): Int {
     val metSeconds = workSeconds * activity.met(effort) + otherSeconds.coerceAtLeast(0) * RECOVERY_MET
-    return (metSeconds / SECONDS_PER_MINUTE * OXYGEN_ML_PER_MET * weightKg / KCAL_DIVISOR).roundToInt()
+    return (metSeconds / SECONDS_PER_MINUTE.toDouble() * OXYGEN_ML_PER_MET * weightKg / KCAL_DIVISOR).roundToInt()
 }
 
 /**
@@ -117,6 +117,5 @@ fun IntervalConfig.plannedWorkSeconds(elapsedSeconds: Int, endedEarly: Boolean):
     return work.coerceAtMost(all)
 }
 
-private const val SECONDS_PER_MINUTE = 60.0
 private const val OXYGEN_ML_PER_MET = 3.5
 private const val KCAL_DIVISOR = 200.0

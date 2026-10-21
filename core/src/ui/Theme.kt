@@ -77,7 +77,6 @@ data class IntervalPalette(
     private companion object {
         const val TINT_STRENGTH = 0.1f
         const val LANE_LINE_STRENGTH = 0.6f
-        const val LANE_FILL_STRENGTH = 0.45f
         const val TIMELINE_REST_STRENGTH = 0.24f
     }
 }
@@ -117,8 +116,6 @@ object PhaseColors {
     /** The lanes round the ring: their lines, and every other lane's fill, a whisper of [control] over the ground. */
     val laneLine = control
     val laneFill = lerp(ground, control, LANE_FILL_STRENGTH)
-
-    private const val LANE_FILL_STRENGTH = 0.45f
 }
 
 internal val lightPalette = IntervalPalette(
@@ -268,3 +265,6 @@ object IntervalTheme {
         @Composable @ReadOnlyComposable
         get() = LocalIntervalType.current
 }
+
+/** How far the lanes' fill leans from the page towards a card, in every palette. */
+private const val LANE_FILL_STRENGTH = 0.45f

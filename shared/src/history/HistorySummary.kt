@@ -62,7 +62,10 @@ import dev.justinsmith.interval.resources.history_week_count
 import dev.justinsmith.interval.resources.history_weeks
 import dev.justinsmith.interval.resources.history_weeks_cd
 import dev.justinsmith.interval.resources.history_workouts
+import dev.justinsmith.interval.timer.SECONDS_PER_HOUR
+import dev.justinsmith.interval.timer.SECONDS_PER_MINUTE
 import dev.justinsmith.interval.timer.formatClock
+import dev.justinsmith.interval.ui.Angles
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EnterEasing
 import dev.justinsmith.interval.ui.IconAction
@@ -75,9 +78,6 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.surfaceButton
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
-
-private const val SECONDS_PER_HOUR = 3600
-private const val SECONDS_PER_MINUTE = 60
 
 /** Week, Month or All time. */
 @Composable
@@ -210,12 +210,20 @@ private fun GoalRing(count: Int, goal: Int, modifier: Modifier = Modifier) {
             val stroke = Sizes.goalRingStroke.toPx()
             val inset = stroke / 2
             val arcSize = Size(size.width - stroke, size.height - stroke)
-            drawArc(palette.surfaceVariant, 0f, FULL_TURN, false, Offset(inset, inset), arcSize, style = Stroke(stroke))
+            drawArc(
+                palette.surfaceVariant,
+                0f,
+                Angles.FULL_TURN,
+                false,
+                Offset(inset, inset),
+                arcSize,
+                style = Stroke(stroke),
+            )
             if (share.value > 0f) {
                 drawArc(
                     palette.accent,
-                    START_ANGLE,
-                    FULL_TURN * share.value,
+                    Angles.TWELVE_O_CLOCK,
+                    Angles.FULL_TURN * share.value,
                     false,
                     Offset(inset, inset),
                     arcSize,
@@ -230,9 +238,6 @@ private fun GoalRing(count: Int, goal: Int, modifier: Modifier = Modifier) {
         )
     }
 }
-
-private const val FULL_TURN = 360f
-private const val START_ANGLE = -90f
 
 /** A small figure under its caption. */
 @Composable

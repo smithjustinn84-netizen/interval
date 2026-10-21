@@ -6,7 +6,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.addPathNodes
-import androidx.compose.ui.unit.dp
 
 /**
  * The few line icons the app needs: navigation tabs and top-bar actions, where both platforms expect
@@ -69,13 +68,13 @@ object IntervalIcons {
     )
 
     /** The filled triangle inside Start workout. */
-    val Play: ImageVector = ImageVector.Builder("Play", 24.dp, 24.dp, VIEWPORT, VIEWPORT).apply {
+    val Play: ImageVector = ImageVector.Builder("Play", Sizes.icon, Sizes.icon, VIEWPORT, VIEWPORT).apply {
         addPath(
             addPathNodes("M7 4.5v15a1 1 0 0 0 1.52.85l12-7.5a1 1 0 0 0 0-1.7l-12-7.5A1 1 0 0 0 7 4.5z"),
             fill = SolidColor(Color.Black),
         )
     }.build()
-    val More: ImageVector = ImageVector.Builder("More", 24.dp, 24.dp, VIEWPORT, VIEWPORT).apply {
+    val More: ImageVector = ImageVector.Builder("More", Sizes.icon, Sizes.icon, VIEWPORT, VIEWPORT).apply {
         listOf(5f, 12f, 19f).forEach { y ->
             addPath(addPathNodes("M14 ${y}a2 2 0 1 1 -4 0a2 2 0 1 1 4 0"), fill = SolidColor(Color.Black))
         }
@@ -85,7 +84,7 @@ object IntervalIcons {
 private const val VIEWPORT = 24f
 
 private fun lineIcon(name: String, vararg paths: String): ImageVector =
-    ImageVector.Builder(name, 24.dp, 24.dp, VIEWPORT, VIEWPORT).apply {
+    ImageVector.Builder(name, Sizes.icon, Sizes.icon, VIEWPORT, VIEWPORT).apply {
         paths.forEach { path ->
             addPath(
                 pathData = addPathNodes(path),

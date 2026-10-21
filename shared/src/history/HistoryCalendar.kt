@@ -42,6 +42,7 @@ import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EnterEasing
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
+import dev.justinsmith.interval.ui.Opacity
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.surfaceButton
@@ -207,7 +208,7 @@ private fun CalendarDay(cell: DayCell, onClick: () -> Unit, modifier: Modifier =
     ) {
         val mark = Modifier.size(Sizes.calendarDay).clip(Corners.full)
         val (shape, ink) = when {
-            !cell.inMonth -> mark to palette.textDim.copy(alpha = OUTSIDE_ALPHA)
+            !cell.inMonth -> mark to palette.textDim.copy(alpha = Opacity.OUTSIDE_MONTH)
             cell.state == DayState.Done -> mark.background(palette.accent) to palette.onAccent
             cell.state == DayState.Planned -> mark.border(Sizes.border, palette.accent, Corners.full) to palette.text
             cell.state == DayState.Missed -> mark.background(palette.surfaceVariant) to palette.textDim
@@ -224,8 +225,6 @@ private fun CalendarDay(cell: DayCell, onClick: () -> Unit, modifier: Modifier =
         )
     }
 }
-
-private const val OUTSIDE_ALPHA = 0.4f
 
 /** A day and its state for screen readers: "Monday, done". */
 @Composable

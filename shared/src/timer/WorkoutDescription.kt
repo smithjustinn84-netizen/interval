@@ -164,8 +164,6 @@ private fun activityIn(text: String): Activity? =
         .minByOrNull { it.first }
         ?.second
 
-private const val SECONDS_PER_MINUTE = 60
-
 /** The most minutes a bare "m" can mean; more is metres. */
 private const val MAX_BARE_M_MINUTES = 60
 

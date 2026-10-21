@@ -26,6 +26,7 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.unit.dp
 import dev.justinsmith.interval.platform.prefersReducedMotion
+import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.min
@@ -52,11 +53,8 @@ private val TailStops = listOf(0f to 0f, 0.45f to 0.12f, 0.75f to 0.38f, 1f to 1
 
 /** A comet is drawn with its head here, then the frame is turned into place: far enough round for any tail. */
 private const val COMET_REST_DEGREES = 180f
-private const val TWELVE_OCLOCK_DEGREES = -90f
-private const val FULL_TURN_DEGREES = 360f
-private const val HALF_TURN_DEGREES = 180
-private const val DEGREE = (PI / 180).toFloat()
-private const val MILLIS_PER_SECOND = 1000f
+private const val HALF_TURN_DEGREES = Angles.HALF_TURN.toInt()
+private const val DEGREE = (PI / Angles.HALF_TURN).toFloat()
 
 /**
  * The stretch of a circle round [center] with [radius] that crosses a [width] × [height] box grown by
@@ -115,7 +113,7 @@ fun SetupLanes(modifier: Modifier = Modifier) {
                 val step = Sizes.laneStep.toPx()
                 val tail = Sizes.cometTail.toPx()
                 val margin = Sizes.cometMargin.toPx()
-                val speed = Motion.COMET_SPEED_DP_PER_SECOND.dp.toPx() / MILLIS_PER_SECOND
+                val speed = Motion.COMET_SPEED_DP_PER_SECOND.dp.toPx() / MILLIS_PER_SECOND.toFloat()
                 val comets = SetupCometLanes.mapIndexedNotNull { index, lane ->
                     val radius = first + lane * step
                     val arc = visibleArc(center, radius, size.width, size.height, margin)
@@ -195,8 +193,8 @@ fun WorkoutLanes(anchor: LaneAnchor, accent: Color, modifier: Modifier = Modifie
                     val first = min(ring.size.width, ring.size.height) / 2f + gap
                     drawLanes(center, first, step, PhaseColors.laneLine, PhaseColors.laneFill, laneStroke)
                     val now = clock.longValue
-                    val leadHead = TWELVE_OCLOCK_DEGREES + now / Motion.LEAD_COMET_TURN_MILLIS * FULL_TURN_DEGREES
-                    val chaseHead = CHASE_COMET_START_DEGREES + now / Motion.CHASE_COMET_TURN_MILLIS * FULL_TURN_DEGREES
+                    val leadHead = Angles.TWELVE_O_CLOCK + now / Motion.LEAD_COMET_TURN_MILLIS * Angles.FULL_TURN
+                    val chaseHead = CHASE_COMET_START_DEGREES + now / Motion.CHASE_COMET_TURN_MILLIS * Angles.FULL_TURN
                     lead.draw(this, center, first + lead.lane * step, leadHead, accent.copy(alpha = LEAD_COMET_ALPHA))
                     val dim = PhaseColors.onGroundDim.copy(alpha = CHASE_COMET_ALPHA)
                     chase.draw(this, center, first + chase.lane * step, chaseHead, dim)
@@ -256,7 +254,7 @@ private fun DrawScope.drawComet(
 ) {
     val tailStart = COMET_REST_DEGREES - tailDegrees
     val stops = TailStops.map { (share, alpha) ->
-        (tailStart + tailDegrees * share) / FULL_TURN_DEGREES to color.copy(alpha = color.alpha * alpha)
+        (tailStart + tailDegrees * share) / Angles.FULL_TURN to color.copy(alpha = color.alpha * alpha)
     }
     val brush = Brush.sweepGradient(*(stops + (1f to color)).toTypedArray(), center = center)
     rotate(headDegrees - COMET_REST_DEGREES, center) {

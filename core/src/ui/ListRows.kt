@@ -149,8 +149,8 @@ fun ToggleRow(
             Text(title, style = IntervalTheme.type.label, color = palette.text)
             if (subtitle != null) Text(subtitle, style = IntervalTheme.type.meta, color = palette.textDim)
         }
-        // The row owns the toggle and its semantics; the switch only draws the state. One white thumb
-        // in both states, the track's accent or text-dim saying which, as the design system draws it.
+        // The row owns the toggle and its semantics; the switch only draws the state. One thumb, in
+        // onAccent, in both states, the track's accent or text-dim saying which, as the design system draws it.
         UnstyledSwitch(checked = checked, onCheckedChange = null) {
             Track(
                 Modifier

@@ -37,7 +37,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.em
-import androidx.compose.ui.unit.sp
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.activity_choose_cd
 import dev.justinsmith.interval.resources.common_calories_estimate
@@ -251,7 +250,10 @@ private fun StepperRow(
                 // A line height in em, so it shrinks with the auto-sized font; display's 96.sp would not.
                 style = IntervalTheme.type.display.copy(color = palette.text, lineHeight = 1.em),
                 maxLines = 1,
-                autoSize = TextAutoSize.StepBased(minFontSize = VALUE_MIN_SIZE.sp, maxFontSize = VALUE_MAX_SIZE.sp),
+                autoSize = TextAutoSize.StepBased(
+                    minFontSize = IntervalTheme.type.stat.fontSize,
+                    maxFontSize = Sizes.stepperValueMax,
+                ),
             )
         }
         FieldStepButton(field, value, more = false, onStep = onStep)
@@ -283,7 +285,3 @@ internal fun StartRow(onStart: () -> Unit, onSeeAllPresets: () -> Unit, modifier
         }
     }
 }
-
-/** The stepper value's size range: as big as the row allows, never smaller than a stat. */
-private const val VALUE_MIN_SIZE = 40
-private const val VALUE_MAX_SIZE = 72

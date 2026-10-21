@@ -58,6 +58,7 @@ import dev.justinsmith.interval.resources.workout_status
 import dev.justinsmith.interval.resources.workout_tap_pause
 import dev.justinsmith.interval.resources.workout_tap_resume
 import dev.justinsmith.interval.timer.Phase
+import dev.justinsmith.interval.ui.Angles
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EnterEasing
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -134,13 +135,13 @@ internal fun ProgressRing(progress: Float, accent: Color, modifier: Modifier = M
         val diameter = size.minDimension - stroke
         val topLeft = Offset((size.width - diameter) / 2, (size.height - diameter) / 2)
         val arc = Size(diameter, diameter)
-        drawArc(PhaseColors.control, 0f, FULL_TURN, useCenter = false, topLeft, arc, style = Stroke(stroke))
+        drawArc(PhaseColors.control, 0f, Angles.FULL_TURN, useCenter = false, topLeft, arc, style = Stroke(stroke))
         val sweep = shown.value.coerceIn(0f, 1f)
         if (sweep > 0f) {
             drawArc(
                 accent,
-                startAngle = -QUARTER_TURN,
-                sweepAngle = FULL_TURN * sweep,
+                startAngle = Angles.TWELVE_O_CLOCK,
+                sweepAngle = Angles.FULL_TURN * sweep,
                 useCenter = false,
                 topLeft = topLeft,
                 size = arc,
@@ -214,11 +215,11 @@ private fun PhaseLabel(state: WorkoutUiState, accent: Color) {
         transitionSpec = {
             val enter = fadeIn(tween(Motion.CONTENT_MILLIS)) +
                 slideInVertically(tween(Motion.CONTENT_MILLIS, easing = EnterEasing)) {
-                    (it * LABEL_RISE_SHARE).toInt()
+                    (it * Motion.PHASE_WORD_RISE_SHARE).toInt()
                 }
             val exit = fadeOut(tween(Motion.EXIT_MILLIS)) +
                 slideOutVertically(tween(Motion.EXIT_MILLIS, easing = StandardEasing)) {
-                    -(it * LABEL_RISE_SHARE).toInt()
+                    -(it * Motion.PHASE_WORD_RISE_SHARE).toInt()
                 }
             enter.togetherWith(exit).using(SizeTransform(clip = false))
         },
@@ -320,8 +321,3 @@ private const val RING_CLOCK_SHARE = 0.82f
 
 /** Width per clock character in Barlow Condensed ExtraBold. */
 private const val CLOCK_EMS_PER_CHAR = 0.46f
-private const val FULL_TURN = 360f
-private const val QUARTER_TURN = 90f
-
-/** A new phase word rises from this share of its height below its place. */
-private const val LABEL_RISE_SHARE = 0.5f

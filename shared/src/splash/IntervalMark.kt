@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import dev.justinsmith.interval.ui.Angles
 import dev.justinsmith.interval.ui.PhaseColors
 import kotlin.math.abs
 
@@ -46,13 +47,13 @@ internal data class MarkArc(val start: Float, val end: Float, val color: Color) 
  */
 internal fun DrawScope.drawIntervalMark(center: Offset, unit: Float, handTurns: Float = 0f, alpha: Float = 1f) {
     if (alpha <= 0f) return
-    val handAngle = handTurns * FULL_TURN
+    val handAngle = handTurns * Angles.FULL_TURN
     for (arc in Mark.arcs) {
         val swell = swell(handAngle, arc.middle)
         val radius = (Mark.RING_RADIUS + SWELL_OUTWARD * swell) * unit
         drawArc(
             arc.color,
-            startAngle = arc.start - QUARTER_TURN,
+            startAngle = arc.start - Angles.QUARTER_TURN,
             sweepAngle = arc.end - arc.start,
             useCenter = false,
             topLeft = Offset(center.x - radius, center.y - radius),
@@ -83,13 +84,9 @@ internal fun DrawScope.drawIntervalMark(center: Offset, unit: Float, handTurns: 
 
 /** 0 to 1 as the hand nears an arc's [middle]: a smooth bump [SWELL_REACH] degrees to each side. */
 private fun swell(handAngle: Float, middle: Float): Float {
-    val apart = abs((handAngle - middle).mod(FULL_TURN) - HALF_TURN).let { HALF_TURN - it }
+    val apart = abs((handAngle - middle).mod(Angles.FULL_TURN) - Angles.HALF_TURN).let { Angles.HALF_TURN - it }
     return FastOutSlowInEasing.transform((1 - apart / SWELL_REACH).coerceAtLeast(0f))
 }
-
-private const val FULL_TURN = 360f
-private const val HALF_TURN = 180f
-private const val QUARTER_TURN = 90f
 
 /**
  * How far either side of an arc's middle the passing hand swells it, in degrees. Short of 12
