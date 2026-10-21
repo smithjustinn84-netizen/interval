@@ -38,6 +38,7 @@ import dev.justinsmith.interval.resources.history_state_planned
 import dev.justinsmith.interval.resources.history_state_planned_cd
 import dev.justinsmith.interval.resources.history_state_rest_cd
 import dev.justinsmith.interval.resources.history_today
+import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EnterEasing
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -45,7 +46,9 @@ import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.Opacity
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.WeekdayForm
 import dev.justinsmith.interval.ui.surfaceButton
+import dev.justinsmith.interval.ui.weekdayText
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -66,7 +69,7 @@ internal fun WeekStrip(week: List<DayCell>, onDay: (Long) -> Unit, modifier: Mod
             key(day.epochDay) {
                 val interaction = remember { MutableInteractionSource() }
                 // Each day is its own button, read by name and state: "Monday, done", "Today, planned".
-                val name = stringResource(if (day.today) Res.string.history_today else WeekdayNames[day.weekday - 1])
+                val name = if (day.today) stringResource(Res.string.history_today) else weekdayText(day.weekday)
                 val description = dayDescription(name, day)
                 Column(
                     Modifier
@@ -80,7 +83,7 @@ internal fun WeekStrip(week: List<DayCell>, onDay: (Long) -> Unit, modifier: Mod
                         DayBar(day, if (max > 0) day.seconds.toFloat() / max else 0f, index)
                     }
                     Text(
-                        stringResource(WeekdayInitials[day.weekday - 1]),
+                        weekdayText(day.weekday, WeekdayForm.Initial),
                         style = IntervalTheme.type.caption,
                         color = if (day.today) palette.accent else palette.textDim,
                     )
@@ -175,9 +178,9 @@ internal fun MonthCalendar(cells: List<DayCell>, onDay: (Long) -> Unit, modifier
     val palette = IntervalTheme.palette
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
         Row(Modifier.clearAndSetSemantics {}) {
-            WeekdayInitials.forEach { initial ->
+            for (weekday in 1..DAYS_PER_WEEK) {
                 Text(
-                    stringResource(initial),
+                    weekdayText(weekday, WeekdayForm.Initial),
                     style = IntervalTheme.type.caption,
                     color = palette.textDim,
                     textAlign = TextAlign.Center,
@@ -185,7 +188,7 @@ internal fun MonthCalendar(cells: List<DayCell>, onDay: (Long) -> Unit, modifier
                 )
             }
         }
-        cells.chunked(WeekdayInitials.size).forEach { week ->
+        cells.chunked(DAYS_PER_WEEK).forEach { week ->
             Row {
                 week.forEach { cell -> CalendarDay(cell, { onDay(cell.epochDay) }, Modifier.weight(1f)) }
             }

@@ -59,7 +59,6 @@ import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LaneAnchor
-import dev.justinsmith.interval.ui.MAX_ROUND_MARKS
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.PreviewFormFactors
@@ -272,13 +271,11 @@ private fun PortraitWorkout(
                 TapHint(state, Modifier.padding(top = Spacing.space12))
             }
         }
-        if (state.rounds <= MAX_ROUND_MARKS) {
-            RoundDots(
-                state,
-                accent,
-                Modifier.align(Alignment.CenterHorizontally).padding(top = Spacing.space8, bottom = Spacing.space20),
-            )
-        }
+        RoundDots(
+            state,
+            accent,
+            Modifier.align(Alignment.CenterHorizontally).padding(top = Spacing.space8, bottom = Spacing.space20),
+        )
         BottomControls(
             state = state,
             primaryFill = primaryFill,

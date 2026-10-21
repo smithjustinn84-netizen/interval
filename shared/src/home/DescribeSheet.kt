@@ -100,9 +100,11 @@ internal fun DescribeSheet(
             DescribeHint(stringResource(Res.string.describe_hint))
         } else {
             DescribedPreview(described)
-            AccentButton(stringResource(Res.string.describe_use), onClick = {
-                use()
-            }, modifier = Modifier.fillMaxWidth())
+            AccentButton(
+                stringResource(Res.string.describe_use),
+                onClick = { use() },
+                modifier = Modifier.fillMaxWidth(),
+            )
             SecondaryButton(
                 stringResource(Res.string.describe_save_preset),
                 onClick = {

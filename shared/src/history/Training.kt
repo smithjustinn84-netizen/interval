@@ -7,9 +7,7 @@ import dev.justinsmith.interval.data.PlannedWorkout
 import dev.justinsmith.interval.data.SiblingWorkout
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.timer.IntervalConfig
-import dev.justinsmith.interval.timer.dateOfEpochDay
-import dev.justinsmith.interval.timer.daysInMonth
-import dev.justinsmith.interval.timer.monthStartOf
+import dev.justinsmith.interval.timer.monthDaysOf
 import dev.justinsmith.interval.timer.sameShape
 import dev.justinsmith.interval.timer.weekStartOf
 import dev.justinsmith.interval.timer.weekdayOf
@@ -160,24 +158,17 @@ class TrainingLog(
      * day to the one holding its last.
      */
     fun month(epochDay: Long): List<MonthCell> {
-        val first = monthStartOf(epochDay)
-        val date = dateOfEpochDay(first)
-        val last = first + daysInMonth(date.year, date.month) - 1
-        val start = weekStartOf(first)
-        val end = weekStartOf(last) + DAYS_PER_WEEK - 1
-        return days(start, (end - start + 1).toInt()).map { MonthCell(it, it.epochDay in first..last) }
+        val month = monthDaysOf(epochDay)
+        val start = weekStartOf(month.first)
+        val end = weekStartOf(month.last) + DAYS_PER_WEEK - 1
+        return days(start, (end - start + 1).toInt()).map { MonthCell(it, it.epochDay in month) }
     }
 
     /** The totals for [range]: this week, the month [monthOf] is in, or everything. */
     fun stats(range: TrainingRange, body: BodySettings, monthOf: Long = today): RangeStats {
         val span = when (range) {
             TrainingRange.Week -> weekStartOf(today).let { it..it + DAYS_PER_WEEK - 1 }
-
-            TrainingRange.Month -> monthStartOf(monthOf).let { first ->
-                val date = dateOfEpochDay(first)
-                first..first + daysInMonth(date.year, date.month) - 1
-            }
-
+            TrainingRange.Month -> monthDaysOf(monthOf)
             TrainingRange.AllTime -> allTimeStart()..today
         }
         val workouts = byDay.filterKeys { it in span }.values.flatten()

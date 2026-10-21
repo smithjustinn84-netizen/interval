@@ -153,12 +153,7 @@ private fun BottomSheet(
                                 )
                             },
                     )
-                    Column(
-                        Modifier.fillMaxWidth().padding(top = Spacing.space8).verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.space20),
-                    ) {
-                        content(hide)
-                    }
+                    SheetBody(hide, content = content)
                 }
             }
         }
@@ -229,19 +224,25 @@ private fun SideSheet(
                         onClick = hide,
                         modifier = Modifier.align(Alignment.End),
                     )
-                    Column(
-                        Modifier
-                            .weight(1f, fill = false)
-                            .fillMaxWidth()
-                            .padding(top = Spacing.space8)
-                            .verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.space20),
-                    ) {
-                        content(hide)
-                    }
+                    SheetBody(hide, Modifier.weight(1f, fill = false), content)
                 }
             }
         }
+    }
+}
+
+/** A sheet's content under its handle or close button: it scrolls, its blocks spaced alike in every sheet. */
+@Composable
+private fun SheetBody(
+    hide: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.(hide: () -> Unit) -> Unit,
+) {
+    Column(
+        modifier.fillMaxWidth().padding(top = Spacing.space8).verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(Spacing.space20),
+    ) {
+        content(hide)
     }
 }
 

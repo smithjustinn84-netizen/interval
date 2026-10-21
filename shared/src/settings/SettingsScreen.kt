@@ -1,11 +1,6 @@
 package dev.justinsmith.interval.settings
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -67,7 +62,6 @@ import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
-import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.ScrollPage
@@ -75,6 +69,8 @@ import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ToggleRow
 import dev.justinsmith.interval.ui.ValueSheet
+import dev.justinsmith.interval.ui.enterExpanding
+import dev.justinsmith.interval.ui.exitShrinking
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
@@ -199,8 +195,8 @@ private fun CuesCard(cues: CueSettings, onToggle: (CueToggle) -> Unit, modifier:
         ListCard { CueRows(cues, halfwayAudible, onToggle) }
         AnimatedVisibility(
             !halfwayAudible && !cues.vibrate,
-            enter = fadeIn(tween(Motion.STATE_MILLIS)) + expandVertically(tween(Motion.STATE_MILLIS)),
-            exit = fadeOut(tween(Motion.STATE_MILLIS)) + shrinkVertically(tween(Motion.STATE_MILLIS)),
+            enter = enterExpanding(),
+            exit = exitShrinking(),
         ) {
             Text(
                 stringResource(Res.string.settings_cues_all_off),

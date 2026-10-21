@@ -30,6 +30,11 @@ fun workoutDescription(config: IntervalConfig): String {
     return stringResource(Res.string.common_joined, shape, stringResource(config.activity.labelRes))
 }
 
+/** [parts] in one line, each joined to the next as [Res.string.common_joined] joins two: "Planned · 7:05 AM". */
+@Composable
+fun joined(parts: List<String>): String =
+    parts.reduce { all, part -> stringResource(Res.string.common_joined, all, part) }
+
 /** "45s", or "2m" for whole minutes. */
 @Composable
 fun shortDurationText(seconds: Int): String = when (val duration = shortDuration(seconds)) {

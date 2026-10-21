@@ -114,10 +114,11 @@ fun WorkoutDetailScreen(
                     IntervalMenuItem(stringResource(Res.string.detail_delete_menu), onClick = { confirming = true })
                 },
             ) {
-                IconAction(IntervalIcons.More, stringResource(Res.string.history_more_options_cd), onClick = {
-                    menu =
-                        true
-                })
+                IconAction(
+                    IntervalIcons.More,
+                    stringResource(Res.string.history_more_options_cd),
+                    onClick = { menu = true },
+                )
             }
         },
     ) {

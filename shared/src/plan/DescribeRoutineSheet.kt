@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import dev.justinsmith.interval.history.HistoryDay
-import dev.justinsmith.interval.history.WeekdayShort
 import dev.justinsmith.interval.history.dayHeading
 import dev.justinsmith.interval.home.DescribeHint
 import dev.justinsmith.interval.presets.NameField
@@ -38,6 +37,9 @@ import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StripeMark
+import dev.justinsmith.interval.ui.WeekdayForm
+import dev.justinsmith.interval.ui.joined
+import dev.justinsmith.interval.ui.weekdayText
 import dev.justinsmith.interval.ui.workoutDescription
 import org.jetbrains.compose.resources.stringResource
 
@@ -156,7 +158,7 @@ private fun DescribedRoutinePreview(routine: DescribedRoutine, today: Long) {
 /** "Mon · Wed · Fri", then the one-offs: "Tomorrow", "Sat · 24". */
 @Composable
 private fun daysText(plan: DescribedPlan, today: Long): String {
-    val weekly = plan.weekdays.sorted().map { stringResource(WeekdayShort[it - 1]) }
+    val weekly = plan.weekdays.sorted().map { weekdayText(it, WeekdayForm.Short) }
     val once = plan.days.sorted().map { day ->
         val heading = when (day) {
             today -> HistoryDay.Today
@@ -166,14 +168,14 @@ private fun daysText(plan: DescribedPlan, today: Long): String {
             else -> HistoryDay.On(
                 stringResource(
                     Res.string.common_joined,
-                    stringResource(WeekdayShort[weekdayOf(day) - 1]),
+                    weekdayText(weekdayOf(day), WeekdayForm.Short),
                     dateOfEpochDay(day).day.toString(),
                 ),
             )
         }
         dayHeading(heading)
     }
-    return (weekly + once).reduce { joined, next -> stringResource(Res.string.common_joined, joined, next) }
+    return joined(weekly + once)
 }
 
 /** Room for a week's workouts said in one go. */

@@ -31,8 +31,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.data.AppSettings
-import dev.justinsmith.interval.history.WeekdayNames
-import dev.justinsmith.interval.history.WeekdayShort
 import dev.justinsmith.interval.history.dayHeading
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.common_joined
@@ -67,7 +65,9 @@ import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StripeMark
+import dev.justinsmith.interval.ui.WeekdayForm
 import dev.justinsmith.interval.ui.surfaceButton
+import dev.justinsmith.interval.ui.weekdayText
 import dev.justinsmith.interval.ui.workoutDescription
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -235,7 +235,7 @@ private fun GoalCard(state: PlanUiState, onStepGoal: (Int) -> Unit) {
 @Composable
 private fun RoutineRow(day: RoutineDay, onAdd: () -> Unit, onRemove: (Long) -> Unit) {
     val palette = IntervalTheme.palette
-    val dayName = stringResource(WeekdayNames[day.weekday - 1])
+    val dayName = weekdayText(day.weekday)
     Row(
         Modifier
             .fillMaxWidth()
@@ -245,7 +245,7 @@ private fun RoutineRow(day: RoutineDay, onAdd: () -> Unit, onRemove: (Long) -> U
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
     ) {
         Text(
-            stringResource(WeekdayShort[day.weekday - 1]),
+            weekdayText(day.weekday, WeekdayForm.Short),
             style = IntervalTheme.type.label,
             color = palette.textDim,
             modifier = Modifier.width(Sizes.pillHeight).semantics { contentDescription = dayName },

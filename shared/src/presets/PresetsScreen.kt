@@ -152,13 +152,7 @@ fun PresetsScreen(
         prepSeconds = state.current.prepSeconds,
         presets = state.rows.map { it.preset },
         onSave = { opened, preset ->
-            if (opened.mode ==
-                EditorMode.SaveCurrent
-            ) {
-                onSaveCurrent(preset)
-            } else {
-                onSave(preset)
-            }
+            if (opened.mode == EditorMode.SaveCurrent) onSaveCurrent(preset) else onSave(preset)
         },
     )
     deleting?.let { preset ->

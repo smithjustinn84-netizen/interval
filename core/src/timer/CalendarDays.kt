@@ -68,6 +68,9 @@ fun monthStartAfter(epochDay: Long, months: Int): Long {
     return epochDayOf(index.floorDiv(MONTHS_PER_YEAR), index.mod(MONTHS_PER_YEAR) + 1, 1)
 }
 
+/** Every day of the month [epochDay] is in, the first to the last. */
+fun monthDaysOf(epochDay: Long): LongRange = monthStartOf(epochDay) until monthStartAfter(epochDay, 1)
+
 /** How many days [month] of [year] has. */
 fun daysInMonth(year: Int, month: Int): Int {
     val next = if (month == MONTHS_PER_YEAR) epochDayOf(year + 1, 1, 1) else epochDayOf(year, month + 1, 1)

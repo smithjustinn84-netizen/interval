@@ -88,10 +88,12 @@ internal fun RoundStatus(state: WorkoutUiState, modifier: Modifier = Modifier) {
 /**
  * A short bar per round: finished ones filled, the round being worked in the phase colour ([accent]),
  * the rest dim, each crossfading as its turn comes. Bars narrow to share a tight row. On the summary
- * no round is being worked any more, so it shows only what was finished.
+ * no round is being worked any more, so it shows only what was finished. Past [MAX_ROUND_MARKS] rounds
+ * they would be too thin to read, so it draws nothing.
  */
 @Composable
 internal fun RoundDots(state: WorkoutUiState, accent: Color, modifier: Modifier = Modifier) {
+    if (state.rounds > MAX_ROUND_MARKS) return
     val active = state.activeRound.takeUnless { state.isDone }
     Row(
         modifier.clearAndSetSemantics {},
@@ -191,7 +193,7 @@ internal fun LandscapeReadout(
             PhaseLabel(state, accent)
             Text(nextUpText(state.next), style = IntervalTheme.type.label, color = PhaseColors.onGroundDim)
             RoundStatus(state)
-            if (state.rounds <= MAX_ROUND_MARKS) RoundDots(state, accent, Modifier.padding(top = Spacing.space4))
+            RoundDots(state, accent, Modifier.padding(top = Spacing.space4))
             TapHint(state)
         }
     }

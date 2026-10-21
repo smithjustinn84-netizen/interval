@@ -11,7 +11,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import dev.justinsmith.interval.resources.Res
-import dev.justinsmith.interval.resources.common_joined
 import dev.justinsmith.interval.resources.history_add_workout
 import dev.justinsmith.interval.resources.history_day_nothing
 import dev.justinsmith.interval.resources.history_day_planned
@@ -32,6 +31,8 @@ import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StripeMark
+import dev.justinsmith.interval.ui.joined
+import dev.justinsmith.interval.ui.weekdayText
 import dev.justinsmith.interval.ui.workoutDescription
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -127,7 +128,7 @@ private fun PlanRow(plan: SheetPlan, sheet: DaySheet, actions: HistoryActions) {
         Column(Modifier.weight(1f)) {
             Text(plan.name, style = IntervalTheme.type.label, color = palette.text)
             val repeat = if (plan.weekly) {
-                stringResource(Res.string.history_every, stringResource(WeekdayNames[sheet.weekday - 1]))
+                stringResource(Res.string.history_every, weekdayText(sheet.weekday))
             } else {
                 stringResource(Res.string.history_once)
             }
@@ -138,7 +139,7 @@ private fun PlanRow(plan: SheetPlan, sheet: DaySheet, actions: HistoryActions) {
             }
             val detail = listOfNotNull(state, repeat, workoutDescription(plan.config))
             Text(
-                detail.reduce { all, part -> stringResource(Res.string.common_joined, all, part) },
+                joined(detail),
                 style = IntervalTheme.type.meta,
                 color = palette.textDim,
             )

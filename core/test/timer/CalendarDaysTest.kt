@@ -45,4 +45,11 @@ class CalendarDaysTest {
         assertEquals(epochDayOf(2025, 12, 1), monthStartAfter(mid, -10))
         assertEquals(epochDayOf(2026, 10, 1), monthStartAfter(mid, 0))
     }
+
+    @Test
+    fun `a month's days run from its first to its last`() {
+        assertEquals(epochDayOf(2026, 10, 1)..epochDayOf(2026, 10, 31), monthDaysOf(epochDayOf(2026, 10, 18)))
+        assertEquals(epochDayOf(2024, 2, 1)..epochDayOf(2024, 2, 29), monthDaysOf(epochDayOf(2024, 2, 29)))
+        assertEquals(epochDayOf(2026, 12, 1)..epochDayOf(2026, 12, 31), monthDaysOf(epochDayOf(2026, 12, 1)))
+    }
 }

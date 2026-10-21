@@ -36,8 +36,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
-import dev.justinsmith.interval.history.WeekdayInitials
-import dev.justinsmith.interval.history.WeekdayNames
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.common_joined
 import dev.justinsmith.interval.resources.plan_add_confirm
@@ -47,6 +45,7 @@ import dev.justinsmith.interval.resources.plan_on_timer
 import dev.justinsmith.interval.resources.plan_once
 import dev.justinsmith.interval.resources.plan_when
 import dev.justinsmith.interval.resources.plan_workout
+import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.Corners
@@ -59,7 +58,9 @@ import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.WeekdayForm
 import dev.justinsmith.interval.ui.pressScale
+import dev.justinsmith.interval.ui.weekdayText
 import dev.justinsmith.interval.ui.workoutDescription
 import org.jetbrains.compose.resources.stringResource
 
@@ -107,15 +108,10 @@ fun AddToPlanSheet(
                 options = PlanRepeat.entries,
                 selected = mode,
                 label = {
-                    stringResource(
-                        if (it ==
-                            PlanRepeat.Weekly
-                        ) {
-                            Res.string.plan_every_week
-                        } else {
-                            Res.string.plan_once
-                        },
-                    )
+                    when (it) {
+                        PlanRepeat.Weekly -> stringResource(Res.string.plan_every_week)
+                        PlanRepeat.Once -> stringResource(Res.string.plan_once)
+                    }
                 },
                 onSelect = { mode = it },
             )
@@ -130,11 +126,7 @@ fun AddToPlanSheet(
                     when (mode) {
                         PlanRepeat.Weekly -> onPlanWeekly(
                             preset,
-                            (1..WeekdayInitials.size).filter {
-                                weekdays and
-                                    (1 shl (it - 1)) !=
-                                    0
-                            }.toSet(),
+                            (1..DAYS_PER_WEEK).filter { weekdays and (1 shl (it - 1)) != 0 }.toSet(),
                         )
 
                         PlanRepeat.Once -> onPlanOnce(preset, day)
@@ -192,11 +184,11 @@ private fun ChoiceRow(choice: PlanChoice, selected: Boolean, onPick: () -> Unit)
 @Composable
 private fun WeekdayPicker(weekdays: Int, onChange: (Int) -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space4)) {
-        for (weekday in 1..WeekdayInitials.size) {
+        for (weekday in 1..DAYS_PER_WEEK) {
             val bit = 1 shl (weekday - 1)
             DayToggle(
-                label = stringResource(WeekdayInitials[weekday - 1]),
-                description = stringResource(WeekdayNames[weekday - 1]),
+                label = weekdayText(weekday, WeekdayForm.Initial),
+                description = weekdayText(weekday),
                 on = weekdays and bit != 0,
                 onToggle = { onChange((weekdays xor bit).takeIf { it != 0 } ?: weekdays) },
                 role = Role.Checkbox,
@@ -210,15 +202,15 @@ private fun WeekdayPicker(weekdays: Int, onChange: (Int) -> Unit) {
 @Composable
 private fun DayPicker(days: List<DayChoice>, picked: Long, onPick: (Long) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
-        days.chunked(WeekdayInitials.size).forEach { week ->
+        days.chunked(DAYS_PER_WEEK).forEach { week ->
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space4)) {
                 week.forEach { choice ->
-                    val initial = stringResource(WeekdayInitials[choice.weekday - 1])
+                    val initial = weekdayText(choice.weekday, WeekdayForm.Initial)
                     DayToggle(
                         label = "$initial\n${choice.dayOfMonth}",
                         description = stringResource(
                             Res.string.common_joined,
-                            stringResource(WeekdayNames[choice.weekday - 1]),
+                            weekdayText(choice.weekday),
                             choice.dayOfMonth.toString(),
                         ),
                         on = choice.epochDay == picked,
@@ -228,7 +220,7 @@ private fun DayPicker(days: List<DayChoice>, picked: Long, onPick: (Long) -> Uni
                     )
                 }
                 // A short week keeps its days in their columns rather than stretching them.
-                repeat(WeekdayInitials.size - week.size) { Spacer(Modifier.weight(1f)) }
+                repeat(DAYS_PER_WEEK - week.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }

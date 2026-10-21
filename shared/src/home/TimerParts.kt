@@ -3,13 +3,11 @@ package dev.justinsmith.interval.home
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -66,6 +64,8 @@ import dev.justinsmith.interval.ui.StartButton
 import dev.justinsmith.interval.ui.TitleBar
 import dev.justinsmith.interval.ui.displayText
 import dev.justinsmith.interval.ui.editRes
+import dev.justinsmith.interval.ui.enterExpanding
+import dev.justinsmith.interval.ui.exitShrinking
 import dev.justinsmith.interval.ui.labelRes
 import dev.justinsmith.interval.ui.phaseStripe
 import dev.justinsmith.interval.ui.presetNameOrCustom
@@ -129,8 +129,8 @@ internal fun Total(state: TimerUiState, onEditActivity: () -> Unit, modifier: Mo
         RollingText(state.total, rising, style = IntervalTheme.type.display, color = palette.text)
         AnimatedVisibility(
             prep > 0,
-            enter = fadeIn(tween(Motion.STATE_MILLIS)) + expandVertically(tween(Motion.STATE_MILLIS)),
-            exit = fadeOut(tween(Motion.STATE_MILLIS)) + shrinkVertically(tween(Motion.STATE_MILLIS)),
+            enter = enterExpanding(),
+            exit = exitShrinking(),
         ) {
             Text(
                 stringResource(Res.string.common_prep_line, formatClock(if (prep > 0) prep else lastPrep)),

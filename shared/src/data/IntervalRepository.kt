@@ -120,16 +120,16 @@ data class HistoryEntry(
     val workActiveSeconds: Int? = null,
     val id: Long? = null,
 ) {
-    /** The calories it burned by [body], or null without a weight. Older entries' work time is estimated. */
-    fun calories(body: BodySettings): Int? {
-        val work = (
-            workActiveSeconds ?: config.plannedWorkSeconds(
-                elapsedSeconds,
-                endedEarly,
-            )
-            ).coerceAtMost(elapsedSeconds)
-        return body.calories(work, elapsedSeconds - work, config.activity)
-    }
+    /** How much of [elapsedSeconds] was work. An older entry's is estimated from its plan. */
+    val workDoneSeconds: Int
+        get() {
+            val work = workActiveSeconds ?: config.plannedWorkSeconds(elapsedSeconds, endedEarly)
+            return work.coerceAtMost(elapsedSeconds)
+        }
+
+    /** The calories it burned by [body], or null without a weight. */
+    fun calories(body: BodySettings): Int? =
+        body.calories(workDoneSeconds, elapsedSeconds - workDoneSeconds, config.activity)
 }
 
 /**

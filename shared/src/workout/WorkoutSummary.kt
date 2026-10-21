@@ -52,7 +52,6 @@ import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EnterEasing
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
-import dev.justinsmith.interval.ui.MAX_ROUND_MARKS
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.Sizes
@@ -237,9 +236,7 @@ private fun ColumnScope.SummaryTitle(state: WorkoutUiState, entrance: MutableTra
     } else {
         AnimatedVisibility(entrance, enter = enterRising()) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                if (state.rounds <= MAX_ROUND_MARKS) {
-                    RoundDots(state, PhaseColors.done, Modifier.padding(bottom = Spacing.space12))
-                }
+                RoundDots(state, PhaseColors.done, Modifier.padding(bottom = Spacing.space12))
                 title()
             }
         }

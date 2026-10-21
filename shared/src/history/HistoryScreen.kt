@@ -20,6 +20,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -63,27 +64,6 @@ import dev.justinsmith.interval.resources.history_today
 import dev.justinsmith.interval.resources.history_tomorrow
 import dev.justinsmith.interval.resources.history_up_next
 import dev.justinsmith.interval.resources.history_yesterday
-import dev.justinsmith.interval.resources.weekday_1
-import dev.justinsmith.interval.resources.weekday_2
-import dev.justinsmith.interval.resources.weekday_3
-import dev.justinsmith.interval.resources.weekday_4
-import dev.justinsmith.interval.resources.weekday_5
-import dev.justinsmith.interval.resources.weekday_6
-import dev.justinsmith.interval.resources.weekday_7
-import dev.justinsmith.interval.resources.weekday_initial_1
-import dev.justinsmith.interval.resources.weekday_initial_2
-import dev.justinsmith.interval.resources.weekday_initial_3
-import dev.justinsmith.interval.resources.weekday_initial_4
-import dev.justinsmith.interval.resources.weekday_initial_5
-import dev.justinsmith.interval.resources.weekday_initial_6
-import dev.justinsmith.interval.resources.weekday_initial_7
-import dev.justinsmith.interval.resources.weekday_short_1
-import dev.justinsmith.interval.resources.weekday_short_2
-import dev.justinsmith.interval.resources.weekday_short_3
-import dev.justinsmith.interval.resources.weekday_short_4
-import dev.justinsmith.interval.resources.weekday_short_5
-import dev.justinsmith.interval.resources.weekday_short_6
-import dev.justinsmith.interval.resources.weekday_short_7
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
@@ -107,8 +87,11 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StripeMark
 import dev.justinsmith.interval.ui.TabGrid
+import dev.justinsmith.interval.ui.WeekdayForm
+import dev.justinsmith.interval.ui.joined
 import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.interval.ui.surfaceButton
+import dev.justinsmith.interval.ui.weekdayText
 import dev.justinsmith.interval.ui.workoutDescription
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
@@ -133,6 +116,11 @@ fun HistoryRoute(
     val locale = Locale.current.toLanguageTag()
     LaunchedEffect(locale) { viewModel.setLocale(locale) }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // The actions are remembered once, so they read the latest navigation callbacks rather than the first.
+    val startWorkout by rememberUpdatedState(onStartWorkout)
+    val openWorkout by rememberUpdatedState(onOpenWorkout)
+    val plan by rememberUpdatedState(onPlan)
+    val showTimer by rememberUpdatedState(onShowTimer)
     val actions = remember(viewModel, openUrl, opensSibling) {
         HistoryActions(
             onClear = viewModel::clear,
@@ -142,20 +130,20 @@ fun HistoryRoute(
             onStart = { name, config ->
                 viewModel.putOnTimer(name, config)
                 viewModel.openDay(null)
-                onStartWorkout()
+                startWorkout()
             },
             onRemovePlanned = viewModel::removePlanned,
             onPlanWeekly = viewModel::planWeekly,
             onPlanOnce = viewModel::planOnce,
             onOpenWorkout = {
                 viewModel.openDay(null)
-                onOpenWorkout(it)
+                openWorkout(it)
             },
             onPlan = {
                 viewModel.openDay(null)
-                onPlan()
+                plan()
             },
-            onShowTimer = onShowTimer,
+            onShowTimer = { showTimer() },
             onOpenSibling = if (opensSibling) ({ app -> openUrl(app.openUrl) }) else null,
         )
     }
@@ -373,9 +361,7 @@ private fun UpNextCard(upNext: List<UpNextItem>, actions: HistoryActions, modifi
                 Text(
                     stringResource(
                         Res.string.history_then,
-                        parts.reduce { all, part ->
-                            stringResource(Res.string.common_joined, all, part)
-                        },
+                        joined(parts),
                     ),
                     style = IntervalTheme.type.meta,
                     color = palette.textDim,
@@ -431,14 +417,9 @@ private fun MostDone(rows: List<ShapeRow>, modifier: Modifier = Modifier) {
                     Column(Modifier.weight(1f)) {
                         val shape = workoutDescription(row.config)
                         Text(row.name ?: shape, style = IntervalTheme.type.label, color = palette.text)
+                        val total = longTotal(row.totalSeconds)
                         Text(
-                            if (row.name !=
-                                null
-                            ) {
-                                stringResource(Res.string.common_joined, shape, longTotal(row.totalSeconds))
-                            } else {
-                                longTotal(row.totalSeconds)
-                            },
+                            if (row.name != null) stringResource(Res.string.common_joined, shape, total) else total,
                             style = IntervalTheme.type.meta,
                             color = palette.textDim,
                         )
@@ -511,7 +492,7 @@ internal fun HistoryRow(
             )
             Text(item.presetName ?: shape, style = IntervalTheme.type.label, color = palette.text)
             Text(
-                detail.reduce { joined, part -> stringResource(Res.string.common_joined, joined, part) },
+                joined(detail),
                 style = IntervalTheme.type.meta,
                 color = palette.textDim,
             )
@@ -545,40 +526,8 @@ internal fun dayHeading(day: HistoryDay): String = when (day) {
 @Composable
 private fun shortDay(day: HistoryDay, epochDay: Long): String = when (day) {
     HistoryDay.Today, HistoryDay.Tomorrow, HistoryDay.Yesterday -> dayHeading(day)
-    is HistoryDay.On -> stringResource(WeekdayShort[weekdayOf(epochDay) - 1])
+    is HistoryDay.On -> weekdayText(weekdayOf(epochDay), WeekdayForm.Short)
 }
-
-/** Monday first, as [DayCell.weekday] counts. */
-internal val WeekdayNames = listOf(
-    Res.string.weekday_1,
-    Res.string.weekday_2,
-    Res.string.weekday_3,
-    Res.string.weekday_4,
-    Res.string.weekday_5,
-    Res.string.weekday_6,
-    Res.string.weekday_7,
-)
-
-internal val WeekdayInitials = listOf(
-    Res.string.weekday_initial_1,
-    Res.string.weekday_initial_2,
-    Res.string.weekday_initial_3,
-    Res.string.weekday_initial_4,
-    Res.string.weekday_initial_5,
-    Res.string.weekday_initial_6,
-    Res.string.weekday_initial_7,
-)
-
-/** "Mon" to "Sun". */
-internal val WeekdayShort = listOf(
-    Res.string.weekday_short_1,
-    Res.string.weekday_short_2,
-    Res.string.weekday_short_3,
-    Res.string.weekday_short_4,
-    Res.string.weekday_short_5,
-    Res.string.weekday_short_6,
-    Res.string.weekday_short_7,
-)
 
 /** Monday to Sunday, today a Thursday: two days done, one missed, and three still planned. */
 private val PreviewWeek = listOf(

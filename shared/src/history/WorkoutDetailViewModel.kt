@@ -16,7 +16,6 @@ import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.defaultPresetName
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
-import dev.justinsmith.interval.timer.plannedWorkSeconds
 import dev.justinsmith.interval.timer.weekdayOf
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -109,8 +108,6 @@ class WorkoutDetailViewModel(
         val workout = history.firstOrNull { it.id == id }?.let { entry ->
             val day = timestamps.dayNumber(entry.finishedAtEpochMillis)
             val log = TrainingLog(history, planned, today, dayOf = timestamps::dayNumber)
-            val work =
-                entry.workActiveSeconds ?: entry.config.plannedWorkSeconds(entry.elapsedSeconds, entry.endedEarly)
             FinishedWorkout(
                 id = id,
                 presetName = presets.matching(entry.config)?.name,
@@ -122,7 +119,7 @@ class WorkoutDetailViewModel(
                 },
                 time = timestamps.time(entry.finishedAtEpochMillis),
                 total = formatClock(entry.elapsedSeconds),
-                work = formatClock(work.coerceAtMost(entry.elapsedSeconds)),
+                work = formatClock(entry.workDoneSeconds),
                 calories = entry.calories(app.body),
                 endedEarly = entry.endedEarly,
                 planned = log.day(day).plans.any { it.workoutId == id },

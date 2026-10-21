@@ -13,9 +13,11 @@ import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
@@ -96,6 +98,14 @@ fun enterRising(delayMillis: Int = 0): EnterTransition {
 fun enterGrowing(): EnterTransition =
     fadeIn(tween(Motion.ENTER_MILLIS)) +
         scaleIn(tween(Motion.ENTER_MILLIS, easing = EnterEasing), initialScale = Motion.DIALOG_SCALE)
+
+/** A line that appears with a control's state: it fades in as it opens the room it takes. */
+fun enterExpanding(): EnterTransition =
+    fadeIn(tween(Motion.STATE_MILLIS)) + expandVertically(tween(Motion.STATE_MILLIS))
+
+/** The reverse of [enterExpanding]. */
+fun exitShrinking(): ExitTransition =
+    fadeOut(tween(Motion.STATE_MILLIS)) + shrinkVertically(tween(Motion.STATE_MILLIS))
 
 /** A side sheet arriving from the end edge: it slides in whole as it fades up. [rtl] puts the end on the left. */
 fun enterFromEnd(rtl: Boolean): EnterTransition =
