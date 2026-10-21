@@ -47,6 +47,7 @@ class ProgramEditorTest {
         assertEquals("Hill day", app.storage.programs.rows.value.single().name)
 
         onNodeWithText("Hill day").performClick()
+        onNodeWithText("Follow this program").performScrollTo().performClick()
         waitForText("Day 1 of 12 · week 1")
         onNodeWithText("5 ladders of 1-2-3-4").assertExists()
         assertTrue(app.storage.following.row.value?.programId.orEmpty().startsWith("custom:"))

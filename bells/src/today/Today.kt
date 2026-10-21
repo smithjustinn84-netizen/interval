@@ -1,7 +1,10 @@
 package dev.justinsmith.bells.today
 
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,14 +12,18 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.lifecycle.ViewModel
@@ -47,6 +54,7 @@ import dev.justinsmith.bells.resources.today_free_session
 import dev.justinsmith.bells.resources.today_goal_left
 import dev.justinsmith.bells.resources.today_goal_met
 import dev.justinsmith.bells.resources.today_last
+import dev.justinsmith.bells.resources.today_last_open_cd
 import dev.justinsmith.bells.resources.today_legend_bells
 import dev.justinsmith.bells.resources.today_legend_interval
 import dev.justinsmith.bells.resources.today_none_text
@@ -91,6 +99,7 @@ import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
+import dev.justinsmith.interval.ui.pressScale
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -203,7 +212,12 @@ class TodayViewModel(
 }
 
 @Composable
-fun TodayRoute(onStartSession: () -> Unit, onChooseProgram: () -> Unit, onOpenBells: () -> Unit) {
+fun TodayRoute(
+    onStartSession: () -> Unit,
+    onChooseProgram: () -> Unit,
+    onOpenBells: () -> Unit,
+    onOpenSession: (uid: String) -> Unit = {},
+) {
     val scope = currentKoinScope()
     val viewModel = viewModel { TodayViewModel(scope.get(), scope.get(), scope.get(), scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -215,10 +229,14 @@ fun TodayRoute(onStartSession: () -> Unit, onChooseProgram: () -> Unit, onOpenBe
         },
         onChooseProgram = onChooseProgram,
         onOpenBells = onOpenBells,
+        onOpenSession = onOpenSession,
     )
 }
 
-/** The Lift tab: the week, lifts and intervals alike, the last session, and Start (or Resume) session. */
+/**
+ * The Lift tab: the week, lifts and intervals alike, the last session (a tap opens it), and the program's
+ * day. Start (or Resume) session stays pinned under them, however long the day, as Start workout does.
+ */
 @Composable
 fun TodayScreen(
     state: TodayUiState,
@@ -226,48 +244,84 @@ fun TodayScreen(
     onChooseProgram: () -> Unit,
     modifier: Modifier = Modifier,
     onOpenBells: () -> Unit = {},
+    onOpenSession: (uid: String) -> Unit = {},
 ) {
     val palette = IntervalTheme.palette
     val card = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4)
-    TabGrid(stringResource(Res.string.today_title), modifier, actions = {
-        IconAction(IntervalIcons.Bell, stringResource(Res.string.today_bells_cd), onOpenBells)
-    }) {
+    TabGrid(
+        stringResource(Res.string.today_title),
+        modifier,
+        actions = { IconAction(IntervalIcons.Bell, stringResource(Res.string.today_bells_cd), onOpenBells) },
+        bottomBar = { StartRow(state, onStartSession, Modifier.widthIn(max = Sizes.content)) },
+    ) {
         item(key = "week", span = StaggeredGridItemSpan.FullLine) { WeekCard(state, card) }
-        item(key = "last", span = StaggeredGridItemSpan.FullLine) {
-            ListCard(card) {
-                val last = state.last
-                if (last == null) {
-                    EmptyState(
-                        IntervalIcons.Bell,
-                        stringResource(Res.string.today_none_title),
-                        stringResource(Res.string.today_none_text),
-                    )
-                } else {
-                    Column(
-                        Modifier.padding(Spacing.space16),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.space4),
-                    ) {
-                        Text(
-                            stringResource(Res.string.today_last),
-                            style = IntervalTheme.type.caption,
-                            color = palette.textDim,
-                        )
-                        Text(last.title, style = IntervalTheme.type.stat, color = palette.text)
-                        val detail = listOf(
-                            pluralStringResource(Res.plurals.sets_count, last.sets.size, last.sets.size),
-                            stringResource(Res.string.kg_value, formatKg(last.tonnageKg)),
-                            formatClock(last.elapsedSeconds(0)),
-                            state.lastWhen,
-                        ).reduce { joined, part -> stringResource(Res.string.common_joined, joined, part) }
-                        Text(detail, style = IntervalTheme.type.meta, color = palette.textDim)
-                    }
-                }
-            }
-        }
+        item(key = "last", span = StaggeredGridItemSpan.FullLine) { LastCard(state, onOpenSession, card) }
         item(key = "program", span = StaggeredGridItemSpan.FullLine) {
             ProgramCard(state, onChooseProgram, card)
         }
-        item(key = "start", span = StaggeredGridItemSpan.FullLine) { StartRow(state, onStartSession) }
+    }
+}
+
+/** The last session, opened by a tap; or, before the first, what a session is. */
+@Composable
+private fun LastCard(state: TodayUiState, onOpenSession: (uid: String) -> Unit, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    ListCard(modifier) {
+        val last = state.last
+        if (last == null) {
+            EmptyState(
+                IntervalIcons.Bell,
+                stringResource(Res.string.today_none_title),
+                stringResource(Res.string.today_none_text),
+            )
+        } else {
+            val interaction = remember { MutableInteractionSource() }
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clickable(
+                        interaction,
+                        LocalIndication.current,
+                        onClickLabel = stringResource(Res.string.today_last_open_cd),
+                        role = Role.Button,
+                    ) { onOpenSession(last.uid) }
+                    // After the ripple, as a link row does: the content shrinks, the ripple keeps the card's width.
+                    .pressScale(interaction)
+                    .padding(
+                        start = Spacing.space16,
+                        top = Spacing.space16,
+                        bottom = Spacing.space16,
+                        end = Spacing.space12,
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+            ) {
+                Column(
+                    Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.space4),
+                ) {
+                    Text(
+                        stringResource(Res.string.today_last),
+                        style = IntervalTheme.type.caption,
+                        color = palette.textDim,
+                    )
+                    Text(last.title, style = IntervalTheme.type.stat, color = palette.text)
+                    val detail = listOf(
+                        pluralStringResource(Res.plurals.sets_count, last.sets.size, last.sets.size),
+                        stringResource(Res.string.kg_value, formatKg(last.tonnageKg)),
+                        formatClock(last.elapsedSeconds(0)),
+                        state.lastWhen,
+                    ).reduce { joined, part -> stringResource(Res.string.common_joined, joined, part) }
+                    Text(detail, style = IntervalTheme.type.meta, color = palette.textDim)
+                }
+                Icon(
+                    IntervalIcons.Chevron,
+                    contentDescription = null,
+                    tint = palette.textDim,
+                    modifier = Modifier.size(Sizes.icon),
+                )
+            }
+        }
     }
 }
 
@@ -427,10 +481,15 @@ private fun WeekCard(state: TodayUiState, modifier: Modifier = Modifier) {
 
 /** Resume a session in progress, or start the program's day or a free one. */
 @Composable
-private fun StartRow(state: TodayUiState, onStartSession: (ProgramKey?) -> Unit) {
+private fun StartRow(state: TodayUiState, onStartSession: (ProgramKey?) -> Unit, modifier: Modifier = Modifier) {
     val day = state.programDay
     Row(
-        Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+        modifier.padding(
+            start = Spacing.space16,
+            end = Spacing.space16,
+            top = Spacing.space8,
+            bottom = Spacing.space16,
+        ),
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
     ) {
         when {

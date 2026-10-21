@@ -69,6 +69,8 @@ class EmomScreenTest {
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
+        onNodeWithText("An EMOM").performClick()
+        waitForText("Start EMOM")
         onNodeWithText("Start EMOM").performScrollTo().performClick()
         waitForText("Get ready")
         onNodeWithText("Set done").assertIsNotEnabled()

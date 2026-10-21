@@ -266,6 +266,7 @@ private fun appEntries(
             onStartSession = { backStack.push(Lifting) },
             onChooseProgram = { backStack.push(Programs) },
             onOpenBells = { backStack.push(OwnedBells) },
+            onOpenSession = { backStack.push(LiftDetail(it)) },
         )
     }
     // Gym dark in either theme, as the workout is: read at arm's length, mid-set.

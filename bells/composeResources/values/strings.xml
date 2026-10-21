@@ -87,10 +87,23 @@
     <string name="session_remove_set_cd">Remove %1$s</string>
     <string name="session_discard_title">Discard session?</string>
     <string name="session_discard_text">Its sets are not saved.</string>
+    <!-- Offered for a few seconds after a set is removed: "Removed 24 kg × 10" -->
+    <string name="session_set_removed">Removed %1$s</string>
+    <string name="session_undo">Undo</string>
+    <!-- Back, or the back gesture, with sets logged or an EMOM running -->
+    <string name="session_leave_title">Leave the session?</string>
+    <string name="session_leave_text">Its sets are kept: Resume session on Lift picks it up.</string>
+    <string name="session_leave_emom_text">The EMOM stops. Its sets so far are kept: Resume session on Lift picks it up.</string>
+    <string name="session_leave">Leave</string>
+    <string name="session_stay">Stay</string>
     <string name="common_cancel">Cancel</string>
 
     <!-- Log a set -->
-    <string name="log_title">Log a set</string>
+    <string name="log_title">Add to the session</string>
+    <string name="log_kind_set">A set</string>
+    <string name="log_kind_emom">An EMOM</string>
+    <string name="log_reps_each_minute">Reps each minute</string>
+    <string name="log_first_side">First side</string>
     <string name="log_exercise">Lift</string>
     <string name="log_bell">Bell</string>
     <string name="log_reps">Reps</string>
@@ -158,6 +171,16 @@
     <string name="program_change">Change program</string>
     <string name="program_following">Following</string>
     <string name="program_stop">Stop following</string>
+    <!-- A program's sheet, opened from Programs before following it -->
+    <string name="program_preview_day">Day %1$d</string>
+    <string name="program_follow">Follow this program</string>
+    <!-- Under Follow this program: "Replaces Easy Strength · day 5 of 40" -->
+    <string name="program_replaces">Replaces %1$s · day %2$d of %3$d</string>
+    <string name="program_switch_title">Switch to %1$s?</string>
+    <string name="program_switch_text">Day %1$d of %2$s is next. %3$s starts at day 1; past sessions stay in History.</string>
+    <string name="program_switch">Switch</string>
+    <string name="program_keep">Keep current</string>
+    <string name="today_last_open_cd">Open the last session</string>
     <string name="block_sets">%1$d × %2$d</string>
     <string name="block_sets_sided">%1$d × %2$d a side</string>
     <plurals name="block_emom">

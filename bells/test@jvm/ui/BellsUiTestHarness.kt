@@ -3,6 +3,7 @@
 package dev.justinsmith.bells.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
@@ -14,6 +15,11 @@ import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDe
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import androidx.navigationevent.DirectNavigationEventInput
+import androidx.navigationevent.NavigationEvent
+import androidx.navigationevent.NavigationEventDispatcher
+import androidx.navigationevent.NavigationEventDispatcherOwner
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.bells.fakes.FakeIntervalActivity
 import dev.justinsmith.bells.fakes.RecordingBeeper
@@ -52,8 +58,21 @@ private const val STATE_TIMEOUT_MILLIS = 5_000L
 fun DesktopComposeUiTest.waitForText(text: String) =
     waitUntil(timeoutMillis = STATE_TIMEOUT_MILLIS) { onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
 
-/** What a whole-app test drives: the fake storage under the app, its clock, and the beeps it played. */
-class BellsAppFixture(val storage: FakeBellsStorage, val clock: AtomicLong, val beeper: RecordingBeeper)
+/**
+ * What a whole-app test drives: the fake storage under the app, its clock, the beeps it played, and [back],
+ * the system back gesture.
+ */
+class BellsAppFixture(
+    val storage: FakeBellsStorage,
+    val clock: AtomicLong,
+    val beeper: RecordingBeeper,
+    private val backInput: DirectNavigationEventInput,
+) {
+    fun back() {
+        backInput.backStarted(NavigationEvent())
+        backInput.backCompleted()
+    }
+}
 
 /** Where [BellsHost] can be: the app's own keys live in `shared`, which Bells can't see. */
 private sealed interface Page {
@@ -70,42 +89,44 @@ private sealed interface Page {
 
 /** Bells' pages as the app wires them, on a back stack of their own, so tests drive them end to end. */
 @Composable
-private fun BellsHost(koin: KoinApplication) {
+private fun BellsHost(koin: KoinApplication, back: NavigationEventDispatcherOwner) {
     KoinIsolatedContext(context = koin) {
         val backStack: SnapshotStateList<Page> = remember { listOf(Page.Today).toMutableStateList() }
         val pop: () -> Unit = { backStack.removeLastOrNull() }
         IntervalTheme(darkTheme = true) {
-            NavDisplay(
-                backStack = backStack,
-                onBack = { if (backStack.size > 1) pop() },
-                entryDecorators = listOf(
-                    rememberSaveableStateHolderNavEntryDecorator(),
-                    rememberViewModelStoreNavEntryDecorator(),
-                ),
-                entryProvider = { page ->
-                    NavEntry(page) {
-                        when (page) {
-                            Page.Today -> TodayRoute(
-                                onStartSession = { backStack.add(Page.Session) },
-                                onChooseProgram = { backStack.add(Page.Programs) },
-                                onOpenBells = { backStack.add(Page.Bells) },
-                            )
+            CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides back) {
+                NavDisplay(
+                    backStack = backStack,
+                    onBack = { if (backStack.size > 1) pop() },
+                    entryDecorators = listOf(
+                        rememberSaveableStateHolderNavEntryDecorator(),
+                        rememberViewModelStoreNavEntryDecorator(),
+                    ),
+                    entryProvider = { page ->
+                        NavEntry(page) {
+                            when (page) {
+                                Page.Today -> TodayRoute(
+                                    onStartSession = { backStack.add(Page.Session) },
+                                    onChooseProgram = { backStack.add(Page.Programs) },
+                                    onOpenBells = { backStack.add(Page.Bells) },
+                                )
 
-                            Page.Session -> SessionRoute(onExit = pop)
+                                Page.Session -> SessionRoute(onExit = pop)
 
-                            Page.Programs -> ProgramsRoute(
-                                onNew = { backStack.add(Page.Editor(null)) },
-                                onEdit = { backStack.add(Page.Editor(it)) },
-                                onBack = pop,
-                            )
+                                Page.Programs -> ProgramsRoute(
+                                    onNew = { backStack.add(Page.Editor(null)) },
+                                    onEdit = { backStack.add(Page.Editor(it)) },
+                                    onBack = pop,
+                                )
 
-                            is Page.Editor -> ProgramEditorRoute(page.uid, onBack = pop)
+                                is Page.Editor -> ProgramEditorRoute(page.uid, onBack = pop)
 
-                            Page.Bells -> GearRoute(onBack = pop)
+                                Page.Bells -> GearRoute(onBack = pop)
+                            }
                         }
-                    }
-                },
-            )
+                    },
+                )
+            }
         }
     }
 }
@@ -119,9 +140,14 @@ fun bellsAppTest(
     val clock = AtomicLong(0L)
     val beeper = RecordingBeeper()
     val koin = bellsTestKoin(storage, fakeBellsPlatformModule(beeper = beeper), now = clock::get, intervals = intervals)
+    val owner = object : NavigationEventDispatcherOwner {
+        override val navigationEventDispatcher = NavigationEventDispatcher()
+    }
+    val input = DirectNavigationEventInput()
+    owner.navigationEventDispatcher.addInput(input)
     try {
-        setContent { BellsHost(koin) }
-        block(BellsAppFixture(storage, clock, beeper))
+        setContent { BellsHost(koin, owner) }
+        block(BellsAppFixture(storage, clock, beeper, input))
     } finally {
         koin.close()
     }

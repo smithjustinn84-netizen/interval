@@ -106,4 +106,16 @@ class LiftFlowTest {
         onNodeWithContentDescription("Back").performClick()
         onNodeWithText("Start session").assertExists()
     }
+
+    @Test
+    fun `the last session on Lift opens its page`() = liftTest(
+        FakeLiftStorage().apply { finished("b1", "Swings", startedAt = 0, finishedAt = 600_000, 24.0 to 10) },
+    ) {
+        tab("Lift").performClick()
+        waitForText("Swings")
+        onNode(hasText("Swings") and hasClickAction()).performClick()
+        waitForText("24 kg × 10")
+        onNodeWithText("Delete").assertExists()
+        tab("Lift").assertDoesNotExist()
+    }
 }

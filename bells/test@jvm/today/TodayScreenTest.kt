@@ -6,11 +6,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import dev.justinsmith.bells.data.FollowingEntity
+import dev.justinsmith.bells.domain.Block
+import dev.justinsmith.bells.domain.Exercise
+import dev.justinsmith.bells.domain.LiftSession
+import dev.justinsmith.bells.domain.Program
 import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.domain.ProgramKey
+import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.program
 import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.bells.fakes.FakeIntervalActivity
@@ -92,5 +99,41 @@ class TodayScreenTest {
         onNodeWithText("Log it").performClick()
         waitForText("Up next · 2 of 9 sets")
         assertEquals(ProgramId.GobletSquatRow.name, app.storage.sessions.sessions.value.single().programId)
+    }
+
+    @Test
+    fun `the last session opens on a tap`() = runUiTest {
+        val opened = mutableListOf<String>()
+        val last = LiftSession("s1", 0, 600_000, "Swings", listOf(SetLog(1, Exercise.TwoHandSwing, 24.0, 10, null, 0)))
+        setBellsContent {
+            TodayScreen(
+                TodayUiState(last = last),
+                onStartSession = {},
+                onChooseProgram = {},
+                onOpenSession = { opened += it },
+            )
+        }
+        onNodeWithText("Swings").performClick()
+        assertEquals(listOf("s1"), opened)
+    }
+
+    @Test
+    fun `Start stays on screen under a long program day`() = runUiTest {
+        val long = Program(
+            ProgramKey.Custom("long"),
+            days = listOf(List(12) { Block(Exercise.entries[it % Exercise.entries.size], rounds = 5, reps = 5) }),
+            daysPerWeek = 3,
+            weeks = 4,
+            name = "Long day",
+        )
+        setBellsContent {
+            TodayScreen(
+                TodayUiState(following = long, programDay = long.dayAfter(0)),
+                onStartSession = {},
+                onChooseProgram = {},
+            )
+        }
+        onNodeWithText("Start day 1").assertIsDisplayed()
+        onNodeWithText("Change program").assertIsNotDisplayed()
     }
 }

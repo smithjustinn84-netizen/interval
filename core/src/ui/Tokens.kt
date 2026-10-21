@@ -323,6 +323,9 @@ object Motion {
     /** A pressed control shrinks to this, springing back on release. */
     const val PRESS_SCALE = 0.96f
 
+    /** How long Undo stays offered after something is removed. */
+    const val UNDO_MILLIS = 5_000L
+
     /** The gap between items in a staggered entrance, such as the summary's lines or the week chart's bars. */
     const val STAGGER_MILLIS = 50
 

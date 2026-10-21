@@ -219,6 +219,25 @@ class BellsRepository(
         persist { sessionDao.deleteSet(id) }
     }
 
+    /** Puts back [set], just removed, into the session in progress, in its place among the others. */
+    fun restoreSet(set: SetLog) {
+        persist {
+            val active = sessionDao.active() ?: return@persist
+            sessionDao.insert(
+                SetEntity(
+                    set.id,
+                    active.uid,
+                    set.exercise.name,
+                    set.bellKg,
+                    set.reps,
+                    set.side?.name,
+                    set.loggedAtEpochMillis,
+                    set.double,
+                ),
+            )
+        }
+    }
+
     /** Finishes the session in progress under [title]; one with no sets is dropped instead. */
     fun finishSession(title: String) {
         persist {

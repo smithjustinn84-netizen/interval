@@ -12,6 +12,7 @@ import dev.justinsmith.bells.domain.LiftSession
 import dev.justinsmith.bells.domain.PersonalRecord
 import dev.justinsmith.bells.domain.PlannedSet
 import dev.justinsmith.bells.domain.ProgramDay
+import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.domain.newRecords
 import dev.justinsmith.bells.domain.nextPlanned
@@ -231,6 +232,11 @@ class SessionViewModel(
         repository.removeSet(id)
     }
 
+    /** Puts back a set just removed. */
+    fun restoreSet(set: SetLog) {
+        repository.restoreSet(set)
+    }
+
     /** Finishes the session as [title], keeping it here for the summary with the records it set. */
     fun finish(title: String) {
         val session = repository.active.value ?: return
@@ -272,7 +278,7 @@ class SessionViewModel(
         if (clockOfRun.at(elapsed, run.done).phase == EmomPhase.Done) emom.value = null
     }
 
-    private fun upNext(day: ProgramDay, logged: List<dev.justinsmith.bells.domain.SetLog>): UpNext? {
+    private fun upNext(day: ProgramDay, logged: List<SetLog>): UpNext? {
         val planned = day.plannedSets()
         val index = nextPlanned(planned, logged) ?: return null
         val set = planned[index]

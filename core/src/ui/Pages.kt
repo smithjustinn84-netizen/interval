@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
@@ -65,7 +66,8 @@ fun BackAction(onBack: () -> Unit, modifier: Modifier = Modifier) {
  * A page of cards, a tab's (History, Lift) or one pushed from it (Presets, the bells): the lanes behind,
  * then a grid of one column on a phone and more as the window widens, its [TitleBar] across the top.
  * [content] adds the grid's items under it. A pushed page passes [navigation], its Back, and keeps inside
- * the safe area itself, as a [ScrollPage] does; a tab's sits inside the navigation bar's.
+ * the safe area itself, as a [ScrollPage] does; a tab's sits inside the navigation bar's. [bottomBar] stays
+ * pinned under the grid, over the same lanes, for an action that must never scroll away (Lift's Start).
  */
 @Composable
 fun TabGrid(
@@ -73,22 +75,29 @@ fun TabGrid(
     modifier: Modifier = Modifier,
     navigation: (@Composable () -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
+    bottomBar: (@Composable () -> Unit)? = null,
     content: LazyStaggeredGridScope.() -> Unit,
 ) {
     Box(modifier.fillMaxSize().background(IntervalTheme.palette.background), contentAlignment = Alignment.TopCenter) {
         SetupLanes(Modifier.widthIn(max = Sizes.listMax).fillMaxSize())
-        LazyVerticalStaggeredGrid(
-            columns = StaggeredGridCells.Adaptive(Sizes.listColumn),
-            modifier = Modifier
+        Column(
+            Modifier
                 .widthIn(max = Sizes.listMax)
                 .fillMaxSize()
                 .then(if (navigation != null) Modifier.safeDrawingPadding() else Modifier),
-            contentPadding = PaddingValues(bottom = Spacing.space24),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            item(key = "title", span = StaggeredGridItemSpan.FullLine) {
-                TitleBar(title, navigation = navigation ?: {}, actions = actions)
+            LazyVerticalStaggeredGrid(
+                columns = StaggeredGridCells.Adaptive(Sizes.listColumn),
+                modifier = Modifier.fillMaxWidth().weight(1f),
+                contentPadding = PaddingValues(bottom = if (bottomBar == null) Spacing.space24 else Spacing.space8),
+            ) {
+                item(key = "title", span = StaggeredGridItemSpan.FullLine) {
+                    TitleBar(title, navigation = navigation ?: {}, actions = actions)
+                }
+                content()
             }
-            content()
+            bottomBar?.invoke()
         }
     }
 }
