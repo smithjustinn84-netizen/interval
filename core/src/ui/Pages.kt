@@ -69,6 +69,7 @@ fun BackAction(onBack: () -> Unit, modifier: Modifier = Modifier) {
 fun TabGrid(
     title: String,
     modifier: Modifier = Modifier,
+    navigation: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
     content: LazyStaggeredGridScope.() -> Unit,
 ) {
@@ -79,7 +80,7 @@ fun TabGrid(
             modifier = Modifier.widthIn(max = Sizes.listMax).fillMaxSize(),
             contentPadding = PaddingValues(bottom = Spacing.space24),
         ) {
-            item(key = "title", span = StaggeredGridItemSpan.FullLine) { TitleBar(title, actions = actions) }
+            item(key = "title", span = StaggeredGridItemSpan.FullLine) { TitleBar(title, navigation = navigation, actions = actions) }
             content()
         }
     }

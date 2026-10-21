@@ -29,6 +29,7 @@ import dev.justinsmith.bells.resources.kg_value
 import dev.justinsmith.bells.resources.record_line
 import dev.justinsmith.bells.ui.Choice
 import dev.justinsmith.bells.ui.exerciseName
+import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
@@ -57,20 +58,20 @@ class GearViewModel(private val repository: BellsRepository) : ViewModel() {
 }
 
 @Composable
-fun GearRoute() {
+fun GearRoute(onBack: () -> Unit) {
     val scope = currentKoinScope()
     val viewModel = viewModel { GearViewModel(scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
-    GearScreen(state, onToggle = viewModel::toggle)
+    GearScreen(state, onToggle = viewModel::toggle, onBack = onBack)
 }
 
-/** The Bells tab: every standard size, the owned ones selected, then the records. */
+/** The bells the user owns, opened from Lift: every standard size, the owned ones selected, then the records. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun GearScreen(state: GearUiState, onToggle: (Double) -> Unit, modifier: Modifier = Modifier) {
+fun GearScreen(state: GearUiState, onToggle: (Double) -> Unit, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val card = Modifier.padding(horizontal = Spacing.space16)
-    TabGrid(stringResource(Res.string.bells_title), modifier) {
+    TabGrid(stringResource(Res.string.bells_title), modifier, navigation = { BackAction(onBack) }) {
         item(key = "owned", span = StaggeredGridItemSpan.FullLine) {
             Column(card) {
                 GroupLabel(stringResource(Res.string.bells_owned))

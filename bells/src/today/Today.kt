@@ -41,6 +41,7 @@ import dev.justinsmith.bells.resources.program_finished
 import dev.justinsmith.bells.resources.program_follow_cta
 import dev.justinsmith.bells.resources.program_follow_hint
 import dev.justinsmith.bells.resources.sets_count
+import dev.justinsmith.bells.resources.today_bells_cd
 import dev.justinsmith.bells.resources.today_free_session
 import dev.justinsmith.bells.resources.today_goal_left
 import dev.justinsmith.bells.resources.today_goal_met
@@ -77,6 +78,7 @@ import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EmptyState
+import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
@@ -195,7 +197,7 @@ class TodayViewModel(
 }
 
 @Composable
-fun TodayRoute(onStartSession: () -> Unit, onChooseProgram: () -> Unit) {
+fun TodayRoute(onStartSession: () -> Unit, onChooseProgram: () -> Unit, onOpenBells: () -> Unit) {
     val scope = currentKoinScope()
     val viewModel = viewModel { TodayViewModel(scope.get(), scope.get(), scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -206,6 +208,7 @@ fun TodayRoute(onStartSession: () -> Unit, onChooseProgram: () -> Unit) {
             onStartSession()
         },
         onChooseProgram = onChooseProgram,
+        onOpenBells = onOpenBells,
     )
 }
 
@@ -216,10 +219,13 @@ fun TodayScreen(
     onStartSession: (ProgramId?) -> Unit,
     onChooseProgram: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenBells: () -> Unit = {},
 ) {
     val palette = IntervalTheme.palette
     val card = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4)
-    TabGrid(stringResource(Res.string.nav_today), modifier) {
+    TabGrid(stringResource(Res.string.nav_today), modifier, actions = {
+        IconAction(IntervalIcons.Bell, stringResource(Res.string.today_bells_cd), onOpenBells)
+    }) {
         item(key = "week", span = StaggeredGridItemSpan.FullLine) { WeekCard(state, card) }
         item(key = "last", span = StaggeredGridItemSpan.FullLine) {
             ListCard(card) {

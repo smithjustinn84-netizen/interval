@@ -1,8 +1,0 @@
-<resources>
-    <!-- Gym dark's ground behind the app, so nothing flashes white before the first frame. -->
-    <style name="Theme.Bells" parent="@android:style/Theme.Material.NoActionBar">
-        <item name="android:windowBackground">@color/ground</item>
-    </style>
-
-    <color name="ground">#FF0B0D10</color>
-</resources>

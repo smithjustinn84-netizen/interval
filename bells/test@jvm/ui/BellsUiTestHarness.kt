@@ -3,16 +3,28 @@
 package dev.justinsmith.bells.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.v2.runDesktopComposeUiTest
-import dev.justinsmith.bells.BellsContent
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
 import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.bells.fakes.RecordingBeeper
 import dev.justinsmith.bells.fakes.bellsTestKoin
 import dev.justinsmith.bells.fakes.fakeBellsPlatformModule
+import dev.justinsmith.bells.gear.GearRoute
+import dev.justinsmith.bells.programs.ProgramsRoute
+import dev.justinsmith.bells.session.SessionRoute
+import dev.justinsmith.bells.today.TodayRoute
 import dev.justinsmith.interval.ui.IntervalTheme
+import org.koin.compose.KoinIsolatedContext
+import org.koin.core.KoinApplication
 import java.util.concurrent.atomic.AtomicLong
 
 /** A phone's window, as Interval's harness sizes it, at density 1 so pixels are dp. */
@@ -41,7 +53,43 @@ fun DesktopComposeUiTest.waitForText(text: String) =
 /** What a whole-app test drives: the fake storage under the app, its clock, and the beeps it played. */
 class BellsAppFixture(val storage: FakeBellsStorage, val clock: AtomicLong, val beeper: RecordingBeeper)
 
-/** The whole app, real ViewModels and repository, over fake storage and platform services. */
+/** Where [BellsHost] can be: the app's own keys live in `shared`, which Bells can't see. */
+private enum class Page { Today, Session, Programs, Bells }
+
+/** Bells' pages as the app wires them, on a back stack of their own, so tests drive them end to end. */
+@Composable
+private fun BellsHost(koin: KoinApplication) {
+    KoinIsolatedContext(context = koin) {
+        val backStack: SnapshotStateList<Page> = remember { listOf(Page.Today).toMutableStateList() }
+        val pop: () -> Unit = { backStack.removeLastOrNull() }
+        IntervalTheme(darkTheme = true) {
+            NavDisplay(
+                backStack = backStack,
+                onBack = { if (backStack.size > 1) pop() },
+                entryDecorators = listOf(
+                    rememberSaveableStateHolderNavEntryDecorator(),
+                    rememberViewModelStoreNavEntryDecorator(),
+                ),
+                entryProvider = { page ->
+                    NavEntry(page) {
+                        when (page) {
+                            Page.Today -> TodayRoute(
+                                onStartSession = { backStack.add(Page.Session) },
+                                onChooseProgram = { backStack.add(Page.Programs) },
+                                onOpenBells = { backStack.add(Page.Bells) },
+                            )
+                            Page.Session -> SessionRoute(onExit = pop)
+                            Page.Programs -> ProgramsRoute(onBack = pop)
+                            Page.Bells -> GearRoute(onBack = pop)
+                        }
+                    }
+                },
+            )
+        }
+    }
+}
+
+/** Bells' pages, real ViewModels and repository, over fake storage and platform services. */
 fun bellsAppTest(
     storage: FakeBellsStorage = FakeBellsStorage(),
     block: suspend DesktopComposeUiTest.(BellsAppFixture) -> Unit,
@@ -50,7 +98,7 @@ fun bellsAppTest(
     val beeper = RecordingBeeper()
     val koin = bellsTestKoin(storage, fakeBellsPlatformModule(beeper = beeper), now = clock::get)
     try {
-        setContent { BellsContent(koin) }
+        setContent { BellsHost(koin) }
         block(BellsAppFixture(storage, clock, beeper))
     } finally {
         koin.close()

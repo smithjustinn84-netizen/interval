@@ -54,6 +54,7 @@
     <string name="today_goal_met">Goal met this week</string>
     <string name="today_legend_bells">Bells</string>
     <string name="today_legend_interval">Interval</string>
+    <string name="today_bells_cd">Your bells and records</string>
     <string name="today_last">Last session</string>
     <string name="today_none_title">No sessions yet</string>
     <string name="today_none_text">Start one, log each set as you go, and it lands in your history and Interval's.</string>
