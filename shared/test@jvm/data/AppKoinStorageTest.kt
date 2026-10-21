@@ -5,6 +5,8 @@ import androidx.room.RoomDatabase
 import dev.justinsmith.interval.di.appModules
 import dev.justinsmith.interval.fakes.fakePlatformModule
 import dev.justinsmith.interval.fakes.saveCurrentAsPreset
+import dev.justinsmith.interval.platform.DATABASE_NAME
+import dev.justinsmith.interval.platform.PREFERENCES_NAME
 import dev.justinsmith.interval.platform.PlatformStorage
 import dev.justinsmith.interval.timer.IntervalConfig
 import kotlinx.coroutines.delay
@@ -31,9 +33,9 @@ class AppKoinStorageTest {
 
     private val storage = object : PlatformStorage {
         override fun databaseBuilder(): RoomDatabase.Builder<AppDatabase> =
-            Room.databaseBuilder<AppDatabase>(name = directory.resolve("interval.db").absolutePath)
+            Room.databaseBuilder<AppDatabase>(name = directory.resolve(DATABASE_NAME).absolutePath)
 
-        override val preferencesPath: String = directory.resolve("interval.preferences_pb").absolutePath
+        override val preferencesPath: String = directory.resolve(PREFERENCES_NAME).absolutePath
     }
 
     @AfterTest

@@ -16,6 +16,9 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import dev.justinsmith.interval.fakes.TODAY
+import dev.justinsmith.interval.fakes.hiitPreset
+import dev.justinsmith.interval.fakes.tabataPreset
 import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
@@ -25,11 +28,10 @@ import dev.justinsmith.interval.ui.setThemedContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-private val tabata = builtInPresets[0]
-private val hiit = builtInPresets[1]
+private val tabata = tabataPreset
+private val hiit = hiitPreset
 
 // Thursday 15 October 2026.
-private const val TODAY = 20_741L
 
 private val state = PlanUiState(
     goal = 4,

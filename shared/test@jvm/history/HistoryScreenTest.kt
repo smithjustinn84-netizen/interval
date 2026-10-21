@@ -13,6 +13,9 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import dev.justinsmith.core.sync.AppId
+import dev.justinsmith.interval.fakes.hangboardPreset
+import dev.justinsmith.interval.fakes.hiitPreset
+import dev.justinsmith.interval.fakes.tabataPreset
 import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
@@ -21,8 +24,8 @@ import dev.justinsmith.interval.ui.setThemedContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-private val tabata = builtInPresets[0]
-private val hiit = builtInPresets[1]
+private val tabata = tabataPreset
+private val hiit = hiitPreset
 
 /** Monday to Sunday, Thursday being today, each day in [states]. */
 private fun week(vararg states: DayState) = states.mapIndexed { i, state ->
@@ -226,7 +229,7 @@ class HistoryScreenTest {
             weekday = 5,
             plans = listOf(
                 SheetPlan(1, hiit.name, hiit.config, weekly = true, state = PlanState.Open),
-                SheetPlan(2, "Hangboard", builtInPresets[2].config, weekly = false, state = PlanState.Open),
+                SheetPlan(2, "Hangboard", hangboardPreset.config, weekly = false, state = PlanState.Open),
             ),
             workouts = emptyList(),
             past = false,

@@ -1,27 +1,28 @@
 package dev.justinsmith.interval.plan
 
-import dev.justinsmith.interval.fakes.DAY_MILLIS
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.MainDispatcherTest
+import dev.justinsmith.interval.fakes.TODAY
+import dev.justinsmith.interval.fakes.hiitPreset
+import dev.justinsmith.interval.fakes.noonOf
+import dev.justinsmith.interval.fakes.tabataPreset
 import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
-import dev.justinsmith.interval.timer.epochDayOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 // Thursday 15 October 2026.
-private val TODAY = epochDayOf(2026, 10, 15)
 
 class PlanViewModelTest : MainDispatcherTest() {
-    private val clock = TODAY * DAY_MILLIS + DAY_MILLIS / 2
+    private val clock = noonOf(TODAY)
     private val repository = FakeStorage().repository(now = { clock })
     private val viewModel by lazy { PlanViewModel(repository, FixedTimestampFormatter, clock = { clock }) }
-    private val tabata = builtInPresets[0]
-    private val hiit = builtInPresets[1]
+    private val tabata = tabataPreset
+    private val hiit = hiitPreset
 
     @Test
     fun `the goal starts at three and turns off below one`() {

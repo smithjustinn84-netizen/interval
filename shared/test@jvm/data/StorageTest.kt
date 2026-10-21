@@ -9,6 +9,8 @@ import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.execSQL
 import dev.justinsmith.interval.fakes.saveCurrentAsPreset
+import dev.justinsmith.interval.platform.DATABASE_NAME
+import dev.justinsmith.interval.platform.PREFERENCES_NAME
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -96,7 +98,7 @@ class StorageTest {
 
     @Test
     fun `a version 1 database opens with its history and presets kept`() {
-        BundledSQLiteDriver().open(directory.resolve("interval.db").absolutePath).use { connection ->
+        BundledSQLiteDriver().open(directory.resolve(DATABASE_NAME).absolutePath).use { connection ->
             V1_SCHEMA.forEach(connection::execSQL)
             connection.execSQL(
                 "INSERT INTO history (finished_at, prep_seconds, work_seconds, rest_seconds, rounds, " +
@@ -121,7 +123,7 @@ class StorageTest {
 
     @Test
     fun `a version 2 database opens with its history kept and no plans`() {
-        BundledSQLiteDriver().open(directory.resolve("interval.db").absolutePath).use { connection ->
+        BundledSQLiteDriver().open(directory.resolve(DATABASE_NAME).absolutePath).use { connection ->
             V2_SCHEMA.forEach(connection::execSQL)
             connection.execSQL(
                 "INSERT INTO history (finished_at, prep_seconds, work_seconds, rest_seconds, rounds, " +
@@ -140,7 +142,7 @@ class StorageTest {
 
     @Test
     fun `a version 3 database keeps its workouts and gives each a uid of its own`() {
-        BundledSQLiteDriver().open(directory.resolve("interval.db").absolutePath).use { connection ->
+        BundledSQLiteDriver().open(directory.resolve(DATABASE_NAME).absolutePath).use { connection ->
             V3_SCHEMA.forEach(connection::execSQL)
             listOf(250, 300, 350).forEach { elapsed ->
                 connection.execSQL(
@@ -237,13 +239,10 @@ class StorageTest {
         val job = SupervisorJob()
         val scope = CoroutineScope(job + Dispatchers.IO)
         settings = PreferenceDataStoreFactory.createWithPath(scope = scope) {
-            directory.resolve("interval.preferences_pb").absolutePath.toPath()
+            directory.resolve(PREFERENCES_NAME).absolutePath.toPath()
         }
-        database = Room.databaseBuilder<AppDatabase>(name = directory.resolve("interval.db").absolutePath)
-            .addMigrations(MIGRATION_3_4)
-            .setDriver(BundledSQLiteDriver())
-            .setQueryCoroutineContext(Dispatchers.IO)
-            .build()
+        database = Room.databaseBuilder<AppDatabase>(name = directory.resolve(DATABASE_NAME).absolutePath)
+            .buildAppDatabase()
         try {
             val repository = IntervalRepository(
                 settings,

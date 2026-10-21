@@ -1,24 +1,22 @@
 package dev.justinsmith.interval.history
 
 import dev.justinsmith.interval.data.BodySettings
-import dev.justinsmith.interval.fakes.DAY_MILLIS
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.MainDispatcherTest
+import dev.justinsmith.interval.fakes.TODAY
+import dev.justinsmith.interval.fakes.hiitPreset
+import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.timer.IntervalConfig
-import dev.justinsmith.interval.timer.builtInPresets
-import dev.justinsmith.interval.timer.epochDayOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-private val TODAY = epochDayOf(2026, 10, 15)
-
 class WorkoutDetailViewModelTest : MainDispatcherTest() {
-    private val clock = TODAY * DAY_MILLIS + DAY_MILLIS / 2
+    private val clock = noonOf(TODAY)
     private val repository = FakeStorage().repository(now = { clock })
-    private val hiit = builtInPresets[1]
+    private val hiit = hiitPreset
 
     private fun viewModel(id: Long = 1) = WorkoutDetailViewModel(id, repository, FixedTimestampFormatter, clock = {
         clock

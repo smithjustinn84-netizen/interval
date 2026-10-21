@@ -5,6 +5,7 @@ package dev.justinsmith.interval.presets
 import dev.justinsmith.interval.data.BodySettings
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.MainDispatcherTest
+import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -43,8 +44,8 @@ class PresetsViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `applying selects a preset and deleting removes it`() {
-        viewModel.putOnTimer(builtInPresets[1])
-        assertEquals(builtInPresets[1], viewModel.state.value.builtIn.single { it.selected }.preset)
+        viewModel.putOnTimer(hiitPreset)
+        assertEquals(hiitPreset, viewModel.state.value.builtIn.single { it.selected }.preset)
         repository.updateConfig { IntervalConfig(workSeconds = 33) }
         viewModel.save(Preset("Odd", repository.config.value))
         viewModel.delete(viewModel.state.value.custom.single().preset)

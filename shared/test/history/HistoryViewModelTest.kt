@@ -12,10 +12,13 @@ import dev.justinsmith.interval.fakes.DAY_MILLIS
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.MainDispatcherTest
+import dev.justinsmith.interval.fakes.TODAY
+import dev.justinsmith.interval.fakes.hiitPreset
+import dev.justinsmith.interval.fakes.noonOf
+import dev.justinsmith.interval.fakes.tabataPreset
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
-import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.epochDayOf
 import dev.justinsmith.interval.timer.estimateCalories
 import kotlinx.coroutines.Dispatchers
@@ -30,21 +33,19 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-private const val DAY = DAY_MILLIS
-private val tabata = builtInPresets.first().config
-private val hiit = builtInPresets[1]
+private val tabata = tabataPreset.config
+private val hiit = hiitPreset
 
 // Thursday 15 October 2026, and the Monday of its week.
-private val TODAY = epochDayOf(2026, 10, 15)
 private val MONDAY = TODAY - 3
 
 class HistoryViewModelTest : MainDispatcherTest() {
-    private var clock = TODAY * DAY + DAY / 2
+    private var clock = noonOf(TODAY)
     private val repository = FakeStorage().repository(now = { clock })
     private val viewModel by lazy { HistoryViewModel(repository, FixedTimestampFormatter, clock = { clock }) }
 
     private fun at(day: Long) {
-        clock = day * DAY + DAY / 2
+        clock = noonOf(day)
     }
 
     @Test
@@ -62,7 +63,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
         val sections = viewModel.state.value.sections
         assertEquals(listOf(HistoryDay.Yesterday, HistoryDay.On("day ${TODAY - 10}")), sections.map { it.day })
         assertEquals(listOf(TODAY - 1, TODAY - 10), sections.map { it.dayNumber })
-        val time = "at ${(TODAY - 1) * DAY + DAY / 2}"
+        val time = "at ${noonOf(TODAY - 1)}"
         val (ended, customRow) = sections[0].items
         assertEquals(HistoryItem("Tabata", tabata, endedEarly = true, time = time, total = "1:30", id = 3), ended)
         assertEquals(HistoryItem(null, custom, endedEarly = false, time = time, total = "1:55", id = 2), customRow)
@@ -76,7 +77,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
         val swings = SessionRecord(
             uid = "b1",
             source = AppId.Bells,
-            finishedAtEpochMillis = TODAY * DAY + DAY / 4,
+            finishedAtEpochMillis = TODAY * DAY_MILLIS + DAY_MILLIS / 4,
             elapsedSeconds = 1_570,
             activity = Activity.Kettlebell.name,
             title = "Swings and get-ups",
@@ -93,7 +94,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
                 "Swings and get-ups",
                 IntervalConfig(activity = Activity.Kettlebell),
                 endedEarly = false,
-                time = "at ${TODAY * DAY + DAY / 4}",
+                time = "at ${TODAY * DAY_MILLIS + DAY_MILLIS / 4}",
                 total = "26:10",
                 from = AppId.Bells,
             ),
@@ -233,13 +234,13 @@ class HistoryViewModelTest : MainDispatcherTest() {
         Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
         // Sunday night, then Monday: a new week.
         val sunday = MONDAY + 6
-        clock = sunday * DAY + DAY - 1_000
+        clock = sunday * DAY_MILLIS + DAY_MILLIS - 1_000
         repository.recordWorkout(tabata, tabata.totalSeconds)
         val viewModel = HistoryViewModel(repository, FixedTimestampFormatter, clock = { clock })
         assertEquals(listOf(HistoryDay.Today), viewModel.state.value.sections.map { it.day })
         assertEquals(1, viewModel.state.value.weekCount)
 
-        clock = (sunday + 1) * DAY
+        clock = (sunday + 1) * DAY_MILLIS
         advanceTimeBy(60_001)
 
         assertEquals(listOf(HistoryDay.Yesterday), viewModel.state.value.sections.map { it.day })

@@ -1,17 +1,16 @@
 package dev.justinsmith.interval.plan
 
+import dev.justinsmith.interval.fakes.TODAY
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
-import dev.justinsmith.interval.timer.epochDayOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 
 // Thursday 15 October 2026.
-private val TODAY = epochDayOf(2026, 10, 15)
 
 class RoutineDescriptionTest {
     private val current = IntervalConfig(prepSeconds = 25, workSeconds = 30, restSeconds = 15, rounds = 8)

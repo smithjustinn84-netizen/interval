@@ -16,10 +16,13 @@ import androidx.room.Update
 import androidx.room.Upsert
 import androidx.room.migration.Migration
 import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.execSQL
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -31,7 +34,7 @@ import kotlinx.coroutines.flow.Flow
 @Database(
     entities = [HistoryEntity::class, PresetEntity::class, PlannedEntity::class, SiblingSessionEntity::class],
     version = 4,
-    // 3 to 4 is MIGRATION_3_4, added to the builder.
+    // 3 to 4 is MIGRATION_3_4, added by buildAppDatabase.
     autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -72,6 +75,16 @@ internal val MIGRATION_3_4 = object : Migration(3, 4) {
         connection.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_history_uid` ON `history` (`uid`)")
     }
 }
+
+/**
+ * Opens the database the way the app does: with every hand-written migration, the bundled SQLite and its
+ * queries on IO. Tests open theirs through it too, so a new migration reaches both.
+ */
+internal fun RoomDatabase.Builder<AppDatabase>.buildAppDatabase(): AppDatabase =
+    addMigrations(MIGRATION_3_4)
+        .setDriver(BundledSQLiteDriver())
+        .setQueryCoroutineContext(Dispatchers.IO)
+        .build()
 
 @Dao
 interface HistoryDao {

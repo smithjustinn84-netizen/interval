@@ -24,7 +24,9 @@ import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.dateOfEpochDay
+import dev.justinsmith.interval.timer.epochDayOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -58,7 +60,7 @@ class InMemoryDataStore(initial: Preferences = emptyPreferences()) : DataStore<P
 /** A [HistoryDao] over a list, newest first like the real query. */
 class FakeHistoryDao : HistoryDao {
     private val rows = MutableStateFlow(emptyList<HistoryEntity>())
-    private var nextId = 1L
+    private val ids = AutoIds()
 
     override fun observeAll(): Flow<List<HistoryEntity>> =
         rows.map { all ->
@@ -72,7 +74,7 @@ class FakeHistoryDao : HistoryDao {
     // index, a uid already stored is refused.
     override suspend fun insert(entry: HistoryEntity) {
         check(rows.value.none { it.uid == entry.uid }) { "UNIQUE constraint failed: history.uid" }
-        val id = if (entry.id == 0L) nextId++ else entry.id.also { nextId = maxOf(nextId, it + 1) }
+        val id = ids.assign(entry.id)
         rows.update { it + entry.copy(id = id) }
     }
 
@@ -106,13 +108,13 @@ class FakeSiblingSessionDao : SiblingSessionDao {
 /** A [PlannedDao] over a list, in the order planned like the real query. */
 class FakePlannedDao : PlannedDao {
     private val rows = MutableStateFlow(emptyList<PlannedEntity>())
-    private var nextId = 1L
+    private val ids = AutoIds()
 
     override fun observeAll(): Flow<List<PlannedEntity>> = rows
 
     override suspend fun insert(planned: List<PlannedEntity>) {
         val stored = planned.map { row ->
-            row.copy(id = if (row.id == 0L) nextId++ else row.id.also { nextId = maxOf(nextId, it + 1) })
+            row.copy(id = ids.assign(row.id))
         }
         rows.update { all -> (all + stored).sortedBy { it.id } }
     }
@@ -125,14 +127,14 @@ class FakePlannedDao : PlannedDao {
 /** A [PresetDao] over a list, in save order like the real query. */
 class FakePresetDao : PresetDao {
     private val rows = MutableStateFlow(emptyList<PresetEntity>())
-    private var nextId = 1L
+    private val ids = AutoIds()
 
     override fun observeAll(): Flow<List<PresetEntity>> = rows
 
     override suspend fun all(): List<PresetEntity> = rows.value
 
     override suspend fun insert(preset: PresetEntity): Long {
-        val id = if (preset.id == 0L) nextId++ else preset.id.also { nextId = maxOf(nextId, it + 1) }
+        val id = ids.assign(preset.id)
         rows.update { all -> (all + preset.copy(id = id)).sortedBy { it.id } }
         return id
     }
@@ -214,7 +216,25 @@ class RecordingCuePlayer : CuePlayer {
     override fun release() = Unit
 }
 
+/** Room's autoGenerate for a fake DAO: an id of 0 takes the next one, and a given id moves the next past it. */
+private class AutoIds {
+    private var next = 1L
+
+    fun assign(id: Long): Long = if (id == 0L) next++ else id.also { next = maxOf(next, it + 1) }
+}
+
 const val DAY_MILLIS = 24L * 60 * 60 * 1000
+
+/** The tests' today: Thursday 15 October 2026, as an epoch day. */
+val TODAY: Long = epochDayOf(2026, 10, 15)
+
+/** Midday of [epochDay] in epoch millis, well clear of either midnight. */
+fun noonOf(epochDay: Long): Long = epochDay * DAY_MILLIS + DAY_MILLIS / 2
+
+/** The built-ins tests lean on, found by name so that reordering [builtInPresets] can't change what they test. */
+val tabataPreset: Preset = builtInPresets.single { it.name == "Tabata" }
+val hiitPreset: Preset = builtInPresets.single { it.name == "HIIT 30/30" }
+val hangboardPreset: Preset = builtInPresets.single { it.name == "Hangboard" }
 
 /**
  * Days are epoch days in UTC, as the platforms count them, so tests don't depend on a time zone. Day 0,

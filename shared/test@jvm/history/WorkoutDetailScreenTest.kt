@@ -9,15 +9,15 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.plan.DayChoice
-import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-private val hiit = builtInPresets[1]
+private val hiit = hiitPreset
 
 private val workout = FinishedWorkout(
     id = 4,

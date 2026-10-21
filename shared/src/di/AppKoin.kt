@@ -6,10 +6,9 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import dev.justinsmith.interval.data.AppDatabase
 import dev.justinsmith.interval.data.IntervalRepository
-import dev.justinsmith.interval.data.MIGRATION_3_4
+import dev.justinsmith.interval.data.buildAppDatabase
 import dev.justinsmith.interval.data.siblingSync
 import dev.justinsmith.interval.platform.PlatformStorage
 import dev.justinsmith.interval.platform.WallClock
@@ -42,11 +41,7 @@ val storageModule: Module = module {
         onClose { it?.cancel() }
     }
     single<AppDatabase> {
-        get<PlatformStorage>().databaseBuilder()
-            .addMigrations(MIGRATION_3_4)
-            .setDriver(BundledSQLiteDriver())
-            .setQueryCoroutineContext(Dispatchers.IO)
-            .build()
+        get<PlatformStorage>().databaseBuilder().buildAppDatabase()
     }.withOptions {
         onClose { it?.close() }
     }
