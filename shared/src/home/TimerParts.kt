@@ -70,7 +70,6 @@ import dev.justinsmith.interval.ui.editRes
 import dev.justinsmith.interval.ui.labelRes
 import dev.justinsmith.interval.ui.phaseStripe
 import dev.justinsmith.interval.ui.presetNameOrCustom
-import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.interval.ui.rememberRising
 import dev.justinsmith.interval.ui.stripe
 import dev.justinsmith.interval.ui.surfaceButton
@@ -171,7 +170,6 @@ private fun ActivityPill(activity: Activity, onClick: () -> Unit, modifier: Modi
     Row(
         modifier
             .heightIn(min = Sizes.pillHeight)
-            .pressScale(interaction)
             .surfaceButton(interaction, Corners.full, palette.surfaceVariant, onClick)
             .semantics(mergeDescendants = true) { contentDescription = description }
             .padding(start = Spacing.space16, end = Spacing.space12),
