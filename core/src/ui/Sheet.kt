@@ -44,6 +44,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.contentDescription
@@ -56,6 +57,7 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import androidx.window.core.layout.WindowSizeClass
 import com.composeunstyled.DialogPanel
 import com.composeunstyled.DragIndication
+import com.composeunstyled.ModalBottomSheetState
 import com.composeunstyled.Scrim
 import com.composeunstyled.Sheet
 import com.composeunstyled.SheetDetent
@@ -108,9 +110,20 @@ private fun BottomSheet(
     val palette = IntervalTheme.palette
     val dragHandle = stringResource(Res.string.sheet_drag_handle_cd)
     // No half-open stop: a sheet opens whole, and scrolls inside when it has less room than it needs.
-    val sheetState = rememberModalBottomSheetState(initialDetent = SheetDetent.Hidden)
+    // It arrives as anything arriving does, and leaves quicker, whether by a way out or a tap outside.
+    val sheetState = rememberModalBottomSheetState(
+        initialDetent = SheetDetent.Hidden,
+        animationSpec = tween(Motion.ENTER_MILLIS, easing = EnterEasing),
+        dismissAnimationSpec = sheetExitSpec(),
+    )
     val scope = rememberCoroutineScope()
-    val hide: () -> Unit = { scope.launch { sheetState.animateTo(SheetDetent.Hidden) } }
+    val hide: () -> Unit = {
+        scope.launch {
+            // The modal's own animateTo takes no spec: slide away first, then let it close behind.
+            sheetState.bottomSheetState.animateTo(SheetDetent.Hidden, sheetExitSpec())
+            sheetState.animateTo(SheetDetent.Hidden)
+        }
+    }
     val currentOnDismiss by rememberUpdatedState(onDismiss)
     LaunchedEffect(sheetState) {
         launch { sheetState.animateTo(SheetDetent.FullyExpanded) }
@@ -119,7 +132,18 @@ private fun BottomSheet(
             .first { it == SheetDetent.Hidden }
         currentOnDismiss()
     }
-    UnstyledModalBottomSheet(state = sheetState, overlay = { Scrim(scrimColor = scrimColor()) }) {
+    UnstyledModalBottomSheet(
+        state = sheetState,
+        overlay = {
+            // The dim follows the sheet, opening, closing and dragged alike. A tap outside hides the
+            // overlay at once, so it fades too.
+            Scrim(
+                modifier = Modifier.graphicsLayer { alpha = sheetState.shownShare() },
+                scrimColor = scrimColor(),
+                exit = fadeOut(tween(Motion.EXIT_MILLIS)),
+            )
+        },
+    ) {
         Sheet(Modifier.fillMaxWidth()) {
             ModalBackHandler(hide)
             Box(Modifier.fillMaxWidth().withinBarsAndKeyboard(), contentAlignment = Alignment.TopCenter) {
@@ -230,6 +254,15 @@ private fun SideSheet(
         }
     }
 }
+
+private fun sheetExitSpec() = tween<Float>(Motion.EXIT_MILLIS, easing = ExitEasing)
+
+/**
+ * How much of the way open the sheet is, 0 hidden to 1 open. Before the sheet is first laid out it
+ * has no offset, and the state's progress reads as fully open: that counts as hidden.
+ */
+private fun ModalBottomSheetState.shownShare(): Float =
+    if (offset > 0f) progress(SheetDetent.Hidden, SheetDetent.FullyExpanded) else 0f
 
 /** A sheet's content under its handle or close button: it scrolls, its blocks spaced alike in every sheet. */
 @Composable

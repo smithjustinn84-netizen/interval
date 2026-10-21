@@ -311,7 +311,10 @@ object Motion {
     /** Switching tabs: the old tab fades out quickly, then the new one fades in, grown from [FADE_THROUGH_SCALE]. */
     const val FADE_THROUGH_SCALE = 0.96f
 
-    /** How long the old tab fades before the new one starts to come in. */
+    /**
+     * How long the old page or tab fades before the new one starts to come in. The two never show at
+     * once, half-seen, as a plain crossfade would.
+     */
     const val FADE_THROUGH_GAP_MILLIS = 90
 
     /** A dialog grows in from this scale. */
