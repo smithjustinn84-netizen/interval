@@ -16,6 +16,8 @@ import dev.justinsmith.bells.resources.block_sets_sided
 import dev.justinsmith.bells.resources.common_joined
 import dev.justinsmith.bells.resources.program_abf_name
 import dev.justinsmith.bells.resources.program_abf_summary
+import dev.justinsmith.bells.resources.program_beginner_full_body_name
+import dev.justinsmith.bells.resources.program_beginner_full_body_summary
 import dev.justinsmith.bells.resources.program_clean_press_name
 import dev.justinsmith.bells.resources.program_clean_press_summary
 import dev.justinsmith.bells.resources.program_countdown_name
@@ -26,6 +28,12 @@ import dev.justinsmith.bells.resources.program_day
 import dev.justinsmith.bells.resources.program_days_count
 import dev.justinsmith.bells.resources.program_easy_strength_name
 import dev.justinsmith.bells.resources.program_easy_strength_summary
+import dev.justinsmith.bells.resources.program_first_hundred_name
+import dev.justinsmith.bells.resources.program_first_hundred_summary
+import dev.justinsmith.bells.resources.program_foundations_name
+import dev.justinsmith.bells.resources.program_foundations_summary
+import dev.justinsmith.bells.resources.program_get_up_practice_name
+import dev.justinsmith.bells.resources.program_get_up_practice_summary
 import dev.justinsmith.bells.resources.program_goblet_row_name
 import dev.justinsmith.bells.resources.program_goblet_row_summary
 import dev.justinsmith.bells.resources.program_grappler_strength_name
@@ -98,6 +106,10 @@ fun programName(id: ProgramId): String = stringResource(
         ProgramId.RoundConditioning -> Res.string.program_rounds_name
         ProgramId.GripAndPull -> Res.string.program_grip_pull_name
         ProgramId.ShoulderArmor -> Res.string.program_shoulder_armor_name
+        ProgramId.KettlebellFoundations -> Res.string.program_foundations_name
+        ProgramId.FirstHundredSwings -> Res.string.program_first_hundred_name
+        ProgramId.BeginnerFullBody -> Res.string.program_beginner_full_body_name
+        ProgramId.GetUpPractice -> Res.string.program_get_up_practice_name
     },
 )
 
@@ -137,6 +149,10 @@ private fun programSummary(id: ProgramId): String = stringResource(
         ProgramId.RoundConditioning -> Res.string.program_rounds_summary
         ProgramId.GripAndPull -> Res.string.program_grip_pull_summary
         ProgramId.ShoulderArmor -> Res.string.program_shoulder_armor_summary
+        ProgramId.KettlebellFoundations -> Res.string.program_foundations_summary
+        ProgramId.FirstHundredSwings -> Res.string.program_first_hundred_summary
+        ProgramId.BeginnerFullBody -> Res.string.program_beginner_full_body_summary
+        ProgramId.GetUpPractice -> Res.string.program_get_up_practice_summary
     },
 )
 

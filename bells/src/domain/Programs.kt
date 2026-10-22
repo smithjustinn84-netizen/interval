@@ -101,6 +101,8 @@ private const val CUSTOM_PREFIX = "custom:"
 
 /** The kind of program a built-in is, which groups it on the Programs page. */
 enum class ProgramFamily {
+    /** Light, with few lifts to learn: where someone new to the bell starts. */
+    Beginner,
     Classic,
 
     /** After Dan John's kettlebell programming. */
@@ -130,6 +132,10 @@ enum class ProgramId(val family: ProgramFamily = ProgramFamily.Classic) {
     RoundConditioning(ProgramFamily.Grappling),
     GripAndPull(ProgramFamily.Grappling),
     ShoulderArmor(ProgramFamily.Grappling),
+    KettlebellFoundations(ProgramFamily.Beginner),
+    FirstHundredSwings(ProgramFamily.Beginner),
+    BeginnerFullBody(ProgramFamily.Beginner),
+    GetUpPractice(ProgramFamily.Beginner),
 }
 
 private fun builtIn(id: ProgramId, days: List<List<Block>>, daysPerWeek: Int, weeks: Int) =
@@ -146,6 +152,12 @@ private val armorBuildingComplex =
 /** [ladders] clean and press ladders of 1 up to [top], a side. */
 private fun pressLadders(ladders: Int, top: Int) =
     Block(BuiltInExercise.Press, rounds = ladders, kind = BlockKind.Ladder, rungs = (1..top).toList())
+
+/** [reps] two-hand swings on the minute for ten minutes, after deadlifts to groove the hinge. */
+private fun swingDay(reps: Int) = listOf(
+    Block(BuiltInExercise.Deadlift, rounds = 2, reps = 10),
+    Block(BuiltInExercise.TwoHandSwing, rounds = 10, reps = reps, kind = BlockKind.Emom),
+)
 
 /** Six minutes of [exercise], [reps] at the top of each: as long as a round on the mat. */
 private fun round(exercise: Exercise, reps: Int) = Block(exercise, rounds = 6, reps = reps, kind = BlockKind.Emom)
@@ -397,6 +409,59 @@ val builtInPrograms: List<Program> = listOf(
         ),
         daysPerWeek = 3,
         weeks = 6,
+    ),
+    // The hinge, the squat and the get-up, before anything fast.
+    builtIn(
+        ProgramId.KettlebellFoundations,
+        days = listOf(
+            listOf(
+                Block(BuiltInExercise.Deadlift, rounds = 3, reps = 10),
+                Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 8),
+                Block(BuiltInExercise.Halo, rounds = 2, reps = 6),
+            ),
+            listOf(
+                Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 10),
+                Block(BuiltInExercise.GetUp, rounds = 3, reps = 1),
+            ),
+        ),
+        daysPerWeek = 3,
+        weeks = 4,
+    ),
+    // Swings on the minute, from 50 a day to 100.
+    builtIn(
+        ProgramId.FirstHundredSwings,
+        days = listOf(swingDay(reps = 5), swingDay(reps = 8), swingDay(reps = 10)),
+        daysPerWeek = 3,
+        weeks = 4,
+    ),
+    builtIn(
+        ProgramId.BeginnerFullBody,
+        days = listOf(
+            listOf(
+                Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 8),
+                Block(BuiltInExercise.Press, rounds = 3, reps = 5),
+                Block(BuiltInExercise.Row, rounds = 3, reps = 8),
+            ),
+            listOf(
+                Block(BuiltInExercise.Deadlift, rounds = 3, reps = 8),
+                Block(BuiltInExercise.Clean, rounds = 3, reps = 5),
+                Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 10),
+            ),
+        ),
+        daysPerWeek = 2,
+        weeks = 6,
+    ),
+    builtIn(
+        ProgramId.GetUpPractice,
+        days = listOf(
+            listOf(
+                Block(BuiltInExercise.GetUp, rounds = 5, reps = 1),
+                Block(BuiltInExercise.Halo, rounds = 2, reps = 8),
+                Block(BuiltInExercise.GobletSquat, rounds = 2, reps = 5),
+            ),
+        ),
+        daysPerWeek = 3,
+        weeks = 4,
     ),
 )
 

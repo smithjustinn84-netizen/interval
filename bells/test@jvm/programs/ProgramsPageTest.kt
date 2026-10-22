@@ -14,6 +14,7 @@ import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.bells.ui.waitForText
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /** Programs, from Today: a program's sheet before following it, and the question before switching. */
 class ProgramsPageTest {
@@ -81,5 +82,18 @@ class ProgramsPageTest {
         onNodeWithText("Follow this program").performScrollTo().performClick()
         waitForText("Day 1 of 12 · week 1")
         assertEquals(ProgramId.RoundConditioning.name, app.storage.following.row.value?.programId)
+    }
+
+    @Test
+    fun `getting started comes first and its programs are followed from it`() = bellsAppTest { app ->
+        onNodeWithText("Follow a program").performClick()
+        waitForText("Getting started")
+        val top = { text: String -> onNodeWithText(text).fetchSemanticsNode().boundsInRoot.top }
+        assertTrue(top("Getting started") < top("Classics"))
+        onNodeWithText("Kettlebell foundations").performScrollTo().performClick()
+        waitForText("Follow this program")
+        onNodeWithText("Follow this program").performScrollTo().performClick()
+        waitForText("Day 1 of 12 · week 1")
+        assertEquals(ProgramId.KettlebellFoundations.name, app.storage.following.row.value?.programId)
     }
 }

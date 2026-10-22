@@ -259,6 +259,15 @@
     <string name="program_grip_pull_summary">Rows, high pulls, cleans and one-arm swings a side, for grips that hold · 2 days a week for 6 weeks</string>
     <string name="program_shoulder_armor_name">Shoulder armor</string>
     <string name="program_shoulder_armor_summary">Halos, get-ups, windmills and bottoms-up presses, for shoulders that hold up under frames and locks · 3 days a week for 6 weeks</string>
+    <string name="program_foundations_name">Kettlebell foundations</string>
+    <string name="program_foundations_summary">Deadlifts, goblet squats and halos one day; swings and get-ups the next. Learn each lift light · 3 days a week for 4 weeks</string>
+    <string name="program_first_hundred_name">Your first 100 swings</string>
+    <string name="program_first_hundred_summary">Deadlifts to groove the hinge, then two-hand swings on the minute for 10 minutes, from 5 a minute up to 10 · 3 days a week for 4 weeks</string>
+    <string name="program_beginner_full_body_name">Full body for beginners</string>
+    <string name="program_beginner_full_body_summary">Goblet squats, presses and rows one day; deadlifts, cleans and swings the other, a few sets of each · 2 days a week for 6 weeks</string>
+    <string name="program_get_up_practice_name">Get-up practice</string>
+    <string name="program_get_up_practice_summary">5 get-ups a side, slow, with halos and goblet squats to open the shoulders and hips · 3 days a week for 4 weeks</string>
+    <string name="programs_beginner">Getting started</string>
     <string name="programs_classics">Classics</string>
     <string name="programs_dan_john">Dan John–inspired</string>
     <string name="programs_grappling">For grapplers</string>

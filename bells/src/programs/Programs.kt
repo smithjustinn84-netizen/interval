@@ -42,6 +42,7 @@ import dev.justinsmith.bells.resources.program_stop
 import dev.justinsmith.bells.resources.program_switch
 import dev.justinsmith.bells.resources.program_switch_text
 import dev.justinsmith.bells.resources.program_switch_title
+import dev.justinsmith.bells.resources.programs_beginner
 import dev.justinsmith.bells.resources.programs_classics
 import dev.justinsmith.bells.resources.programs_dan_john
 import dev.justinsmith.bells.resources.programs_edit_cd
@@ -208,6 +209,7 @@ fun ProgramsScreen(
 @Composable
 private fun familyName(family: ProgramFamily): String = stringResource(
     when (family) {
+        ProgramFamily.Beginner -> Res.string.programs_beginner
         ProgramFamily.Classic -> Res.string.programs_classics
         ProgramFamily.DanJohn -> Res.string.programs_dan_john
         ProgramFamily.Grappling -> Res.string.programs_grappling

@@ -194,5 +194,21 @@ class ProgramsTest {
         )
     }
 
+    @Test
+    fun `getting started has four programs and the swings build to 100 a day`() {
+        assertEquals(
+            listOf(
+                ProgramId.KettlebellFoundations,
+                ProgramId.FirstHundredSwings,
+                ProgramId.BeginnerFullBody,
+                ProgramId.GetUpPractice,
+            ),
+            ProgramId.entries.filter { it.family == ProgramFamily.Beginner },
+        )
+        val swings = program(ProgramId.FirstHundredSwings)
+        assertEquals(listOf(50, 80, 100), swings.days.map { it[1].totalReps })
+        assertEquals(BuiltInExercise.Deadlift, swings.dayAfter(0)?.blocks?.first()?.exercise)
+    }
+
     private fun assertNotNullDay(day: ProgramDay?): ProgramDay = kotlin.test.assertNotNull(day)
 }
