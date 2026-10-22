@@ -18,6 +18,7 @@ import dev.justinsmith.bells.domain.Program
 import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.domain.SetLog
+import dev.justinsmith.bells.domain.kettlebellLifts
 import dev.justinsmith.bells.domain.program
 import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.bells.fakes.FakeIntervalActivity
@@ -124,7 +125,7 @@ class TodayScreenTest {
             ProgramKey.Custom("long"),
             days = listOf(
                 List(12) {
-                    Block(BuiltInExercise.entries[it % BuiltInExercise.entries.size], rounds = 5, reps = 5)
+                    Block(kettlebellLifts[it % kettlebellLifts.size], rounds = 5, reps = 5)
                 },
             ),
             daysPerWeek = 3,

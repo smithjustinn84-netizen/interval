@@ -88,16 +88,40 @@ class TrainingTest {
                 "TwoHandSwing", "OneHandSwing", "Clean", "Press", "Snatch", "GetUp", "GobletSquat", "Row", "Jerk",
                 "LongCycle", "Halo", "FrontSquat", "ArmorBuildingComplex",
             ),
-            BuiltInExercise.entries.map { it.key },
+            kettlebellLifts.map { it.key },
         )
         BuiltInExercise.entries.forEach { assertEquals(it, Exercise.parse(it.key)) }
-        assertNull(Exercise.parse("Burpee"))
+        assertNull(Exercise.parse("Deadlift"))
     }
 
     @Test
-    fun `every built-in so far is a kettlebell lift counted in reps`() {
-        assertEquals(setOf(Equipment.Kettlebell), BuiltInExercise.entries.map { it.equipment }.toSet())
-        assertEquals(setOf(Measure.Reps), BuiltInExercise.entries.map { it.measure }.toSet())
+    fun `the starter catalogue has 68 exercises across four kinds of equipment`() {
+        assertEquals(
+            mapOf(Equipment.Kettlebell to 13, Equipment.Bodyweight to 22, Equipment.Band to 15, Equipment.Mat to 18),
+            BuiltInExercise.entries.groupingBy { it.equipment }.eachCount(),
+        )
+        assertEquals(BuiltInExercise.entries.take(13), kettlebellLifts)
+    }
+
+    @Test
+    fun `only kettlebell lifts can be done with two bells`() {
+        BuiltInExercise.entries.filter { it.equipment != Equipment.Kettlebell }.forEach {
+            assertEquals(Doubles.Never, it.doubles, it.key)
+        }
+    }
+
+    @Test
+    fun `holds are the exercises measured in time`() {
+        assertEquals(
+            listOf(
+                BuiltInExercise.WallSit,
+                BuiltInExercise.Plank,
+                BuiltInExercise.SidePlank,
+                BuiltInExercise.HollowHold,
+                BuiltInExercise.Swimming,
+            ),
+            BuiltInExercise.entries.filter { it.measure == Measure.Time },
+        )
     }
 
     @Test

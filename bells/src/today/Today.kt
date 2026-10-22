@@ -33,13 +33,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.data.IntervalActivity
 import dev.justinsmith.bells.data.IntervalWorkout
-import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.LiftSession
 import dev.justinsmith.bells.domain.Program
 import dev.justinsmith.bells.domain.ProgramDay
 import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.domain.formatKg
+import dev.justinsmith.bells.domain.kettlebellLifts
 import dev.justinsmith.bells.domain.suggestedBell
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.common_joined
@@ -204,7 +204,7 @@ class TodayViewModel(
             }.orEmpty(),
             inProgress = active != null,
             bells = sessions.reversed().flatMap { it.sets }.let { history ->
-                BuiltInExercise.entries.flatMap {
+                kettlebellLifts.flatMap {
                     listOf(it to false, it to true)
                 }.associateWith { (exercise, double) ->
                     suggestedBell(exercise, double, history, SetDraft.DEFAULT_BELL_KG)

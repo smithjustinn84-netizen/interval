@@ -26,11 +26,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.domain.Block
 import dev.justinsmith.bells.domain.BlockKind
-import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.Doubles
 import dev.justinsmith.bells.domain.ProgramDraft
 import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.domain.asKind
+import dev.justinsmith.bells.domain.kettlebellLifts
 import dev.justinsmith.bells.domain.withExercise
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.block_add_rung
@@ -339,7 +339,7 @@ private fun BlockSheet(
             verticalArrangement = Arrangement.spacedBy(Spacing.space8),
         ) {
             GroupLabel(stringResource(Res.string.log_exercise))
-            ChoiceRow(BuiltInExercise.entries, block.exercise, {
+            ChoiceRow(kettlebellLifts, block.exercise, {
                 exerciseName(it)
             }, { e -> onChange { it.withExercise(e) } })
             if (block.exercise.doubles == Doubles.Optional) {

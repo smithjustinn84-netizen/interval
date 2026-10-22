@@ -36,6 +36,64 @@
     <string name="exercise_front_squat">Front squat</string>
     <!-- Dan John's complex with two bells: 2 cleans, a press and 3 front squats make one. -->
     <string name="exercise_armor_building_complex">Armor Building Complex</string>
+    <!-- Bodyweight -->
+    <string name="exercise_push_up">Push-up</string>
+    <string name="exercise_incline_push_up">Incline push-up</string>
+    <string name="exercise_pike_push_up">Pike push-up</string>
+    <string name="exercise_bench_dip">Bench dip</string>
+    <string name="exercise_pull_up">Pull-up</string>
+    <string name="exercise_chin_up">Chin-up</string>
+    <string name="exercise_inverted_row">Inverted row</string>
+    <string name="exercise_air_squat">Air squat</string>
+    <string name="exercise_split_squat">Split squat</string>
+    <string name="exercise_reverse_lunge">Reverse lunge</string>
+    <string name="exercise_bulgarian_split_squat">Bulgarian split squat</string>
+    <string name="exercise_step_up">Step-up</string>
+    <string name="exercise_glute_bridge">Glute bridge</string>
+    <string name="exercise_single_leg_glute_bridge">Single-leg glute bridge</string>
+    <string name="exercise_wall_sit">Wall sit</string>
+    <string name="exercise_calf_raise">Calf raise</string>
+    <string name="exercise_plank">Plank</string>
+    <string name="exercise_side_plank">Side plank</string>
+    <string name="exercise_hollow_hold">Hollow hold</string>
+    <string name="exercise_dead_bug">Dead bug</string>
+    <string name="exercise_burpee">Burpee</string>
+    <string name="exercise_mountain_climber">Mountain climber</string>
+    <!-- Resistance band -->
+    <string name="exercise_band_pull_apart">Band pull-apart</string>
+    <string name="exercise_band_face_pull">Face pull</string>
+    <string name="exercise_band_seated_row">Seated row</string>
+    <string name="exercise_band_lat_pulldown">Lat pulldown</string>
+    <string name="exercise_band_chest_press">Chest press</string>
+    <string name="exercise_band_overhead_press">Overhead press</string>
+    <string name="exercise_band_biceps_curl">Biceps curl</string>
+    <string name="exercise_band_triceps_pushdown">Triceps pushdown</string>
+    <string name="exercise_band_pallof_press">Pallof press</string>
+    <string name="exercise_band_woodchop">Woodchop</string>
+    <string name="exercise_band_squat">Banded squat</string>
+    <string name="exercise_band_good_morning">Good morning</string>
+    <string name="exercise_band_glute_bridge">Banded glute bridge</string>
+    <string name="exercise_band_lateral_walk">Lateral band walk</string>
+    <string name="exercise_band_clamshell">Clamshell</string>
+    <!-- Mat Pilates -->
+    <string name="exercise_hundred">The hundred</string>
+    <string name="exercise_roll_up">Roll-up</string>
+    <string name="exercise_single_leg_circles">Single-leg circles</string>
+    <string name="exercise_rolling_like_a_ball">Rolling like a ball</string>
+    <string name="exercise_single_leg_stretch">Single-leg stretch</string>
+    <string name="exercise_double_leg_stretch">Double-leg stretch</string>
+    <string name="exercise_scissors">Scissors</string>
+    <string name="exercise_criss_cross">Criss-cross</string>
+    <string name="exercise_spine_stretch_forward">Spine stretch forward</string>
+    <string name="exercise_saw">Saw</string>
+    <string name="exercise_swan">Swan</string>
+    <string name="exercise_single_leg_kick">Single-leg kick</string>
+    <string name="exercise_side_kick_series">Side kick series</string>
+    <string name="exercise_teaser">Teaser</string>
+    <string name="exercise_swimming">Swimming</string>
+    <string name="exercise_shoulder_bridge">Shoulder bridge</string>
+    <string name="exercise_seal">Seal</string>
+    <string name="exercise_leg_pull_front">Leg pull front</string>
     <string name="side_left">Left</string>
     <string name="side_right">Right</string>
 

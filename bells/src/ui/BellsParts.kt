@@ -25,19 +25,6 @@ import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.common_joined
-import dev.justinsmith.bells.resources.exercise_armor_building_complex
-import dev.justinsmith.bells.resources.exercise_clean
-import dev.justinsmith.bells.resources.exercise_front_squat
-import dev.justinsmith.bells.resources.exercise_get_up
-import dev.justinsmith.bells.resources.exercise_goblet_squat
-import dev.justinsmith.bells.resources.exercise_halo
-import dev.justinsmith.bells.resources.exercise_jerk
-import dev.justinsmith.bells.resources.exercise_long_cycle
-import dev.justinsmith.bells.resources.exercise_one_hand_swing
-import dev.justinsmith.bells.resources.exercise_press
-import dev.justinsmith.bells.resources.exercise_row
-import dev.justinsmith.bells.resources.exercise_snatch
-import dev.justinsmith.bells.resources.exercise_two_hand_swing
 import dev.justinsmith.bells.resources.lift_double
 import dev.justinsmith.bells.resources.session_title_more
 import dev.justinsmith.bells.resources.session_title_two
@@ -48,24 +35,7 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.surfaceButton
-import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
-
-private fun BuiltInExercise.label(): StringResource = when (this) {
-    BuiltInExercise.TwoHandSwing -> Res.string.exercise_two_hand_swing
-    BuiltInExercise.OneHandSwing -> Res.string.exercise_one_hand_swing
-    BuiltInExercise.Clean -> Res.string.exercise_clean
-    BuiltInExercise.Press -> Res.string.exercise_press
-    BuiltInExercise.Snatch -> Res.string.exercise_snatch
-    BuiltInExercise.GetUp -> Res.string.exercise_get_up
-    BuiltInExercise.GobletSquat -> Res.string.exercise_goblet_squat
-    BuiltInExercise.Row -> Res.string.exercise_row
-    BuiltInExercise.Jerk -> Res.string.exercise_jerk
-    BuiltInExercise.LongCycle -> Res.string.exercise_long_cycle
-    BuiltInExercise.Halo -> Res.string.exercise_halo
-    BuiltInExercise.FrontSquat -> Res.string.exercise_front_squat
-    BuiltInExercise.ArmorBuildingComplex -> Res.string.exercise_armor_building_complex
-}
 
 /** An exercise's name: "Two-hand swing". */
 @Composable

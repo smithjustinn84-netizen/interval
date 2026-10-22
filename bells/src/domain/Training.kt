@@ -44,35 +44,101 @@ sealed interface Exercise {
     }
 }
 
-/** The exercises that ship with the app, stored by name. Screens name them from the app's strings. */
+/**
+ * The exercises that ship with the app, stored by name: a name, once shipped, never changes. Screens name
+ * them from the app's strings. Only a kettlebell lift can be done with two bells.
+ */
 enum class BuiltInExercise(
+    override val equipment: Equipment,
     override val perSide: Boolean,
     override val focus: Focus,
-    override val doubles: Doubles = Doubles.Optional,
-    override val equipment: Equipment = Equipment.Kettlebell,
     override val measure: Measure = Measure.Reps,
+    override val doubles: Doubles = if (equipment == Equipment.Kettlebell) Doubles.Optional else Doubles.Never,
 ) : Exercise {
-    TwoHandSwing(perSide = false, Focus.FullBody, doubles = Doubles.Never),
+    TwoHandSwing(Equipment.Kettlebell, perSide = false, Focus.FullBody, doubles = Doubles.Never),
 
     /** With two bells, the double swing. */
-    OneHandSwing(perSide = true, Focus.FullBody),
-    Clean(perSide = true, Focus.FullBody),
-    Press(perSide = true, Focus.UpperBody),
-    Snatch(perSide = true, Focus.FullBody),
-    GetUp(perSide = true, Focus.FullBody, doubles = Doubles.Never),
-    GobletSquat(perSide = false, Focus.LowerBody, doubles = Doubles.Never),
-    Row(perSide = true, Focus.UpperBody),
-    Jerk(perSide = true, Focus.FullBody),
-    LongCycle(perSide = true, Focus.FullBody),
-    Halo(perSide = false, Focus.UpperBody, doubles = Doubles.Never),
-    FrontSquat(perSide = false, Focus.LowerBody),
+    OneHandSwing(Equipment.Kettlebell, perSide = true, Focus.FullBody),
+    Clean(Equipment.Kettlebell, perSide = true, Focus.FullBody),
+    Press(Equipment.Kettlebell, perSide = true, Focus.UpperBody),
+    Snatch(Equipment.Kettlebell, perSide = true, Focus.FullBody),
+    GetUp(Equipment.Kettlebell, perSide = true, Focus.FullBody, doubles = Doubles.Never),
+    GobletSquat(Equipment.Kettlebell, perSide = false, Focus.LowerBody, doubles = Doubles.Never),
+    Row(Equipment.Kettlebell, perSide = true, Focus.UpperBody),
+    Jerk(Equipment.Kettlebell, perSide = true, Focus.FullBody),
+    LongCycle(Equipment.Kettlebell, perSide = true, Focus.FullBody),
+    Halo(Equipment.Kettlebell, perSide = false, Focus.UpperBody, doubles = Doubles.Never),
+    FrontSquat(Equipment.Kettlebell, perSide = false, Focus.LowerBody),
 
     /** Dan John's Armor Building Complex with two bells: 2 cleans, a press and 3 front squats, as one rep. */
-    ArmorBuildingComplex(perSide = false, Focus.FullBody, doubles = Doubles.Always),
+    ArmorBuildingComplex(Equipment.Kettlebell, perSide = false, Focus.FullBody, doubles = Doubles.Always),
+
+    PushUp(Equipment.Bodyweight, perSide = false, Focus.UpperBody),
+    InclinePushUp(Equipment.Bodyweight, perSide = false, Focus.UpperBody),
+    PikePushUp(Equipment.Bodyweight, perSide = false, Focus.UpperBody),
+    BenchDip(Equipment.Bodyweight, perSide = false, Focus.UpperBody),
+    PullUp(Equipment.Bodyweight, perSide = false, Focus.UpperBody),
+    ChinUp(Equipment.Bodyweight, perSide = false, Focus.UpperBody),
+    InvertedRow(Equipment.Bodyweight, perSide = false, Focus.UpperBody),
+    AirSquat(Equipment.Bodyweight, perSide = false, Focus.LowerBody),
+    SplitSquat(Equipment.Bodyweight, perSide = true, Focus.LowerBody),
+    ReverseLunge(Equipment.Bodyweight, perSide = true, Focus.LowerBody),
+    BulgarianSplitSquat(Equipment.Bodyweight, perSide = true, Focus.LowerBody),
+    StepUp(Equipment.Bodyweight, perSide = true, Focus.LowerBody),
+    GluteBridge(Equipment.Bodyweight, perSide = false, Focus.LowerBody),
+    SingleLegGluteBridge(Equipment.Bodyweight, perSide = true, Focus.LowerBody),
+    WallSit(Equipment.Bodyweight, perSide = false, Focus.LowerBody, Measure.Time),
+    CalfRaise(Equipment.Bodyweight, perSide = false, Focus.LowerBody),
+    Plank(Equipment.Bodyweight, perSide = false, Focus.Core, Measure.Time),
+    SidePlank(Equipment.Bodyweight, perSide = true, Focus.Core, Measure.Time),
+    HollowHold(Equipment.Bodyweight, perSide = false, Focus.Core, Measure.Time),
+    DeadBug(Equipment.Bodyweight, perSide = true, Focus.Core),
+    Burpee(Equipment.Bodyweight, perSide = false, Focus.FullBody),
+    MountainClimber(Equipment.Bodyweight, perSide = false, Focus.FullBody),
+
+    // Bands: pulls assume a door anchor or a post. Prefixed, so a key never clashes with a bell lift's.
+    BandPullApart(Equipment.Band, perSide = false, Focus.UpperBody),
+    BandFacePull(Equipment.Band, perSide = false, Focus.UpperBody),
+    BandSeatedRow(Equipment.Band, perSide = false, Focus.UpperBody),
+    BandLatPulldown(Equipment.Band, perSide = false, Focus.UpperBody),
+    BandChestPress(Equipment.Band, perSide = false, Focus.UpperBody),
+    BandOverheadPress(Equipment.Band, perSide = false, Focus.UpperBody),
+    BandBicepsCurl(Equipment.Band, perSide = false, Focus.UpperBody),
+    BandTricepsPushdown(Equipment.Band, perSide = false, Focus.UpperBody),
+    BandPallofPress(Equipment.Band, perSide = true, Focus.Core),
+    BandWoodchop(Equipment.Band, perSide = true, Focus.Core),
+    BandSquat(Equipment.Band, perSide = false, Focus.LowerBody),
+    BandGoodMorning(Equipment.Band, perSide = false, Focus.LowerBody),
+    BandGluteBridge(Equipment.Band, perSide = false, Focus.LowerBody),
+    BandLateralWalk(Equipment.Band, perSide = true, Focus.LowerBody),
+    BandClamshell(Equipment.Band, perSide = true, Focus.LowerBody),
+
+    // Mat Pilates, in the classical order.
+    Hundred(Equipment.Mat, perSide = false, Focus.Core),
+    RollUp(Equipment.Mat, perSide = false, Focus.Core),
+    SingleLegCircles(Equipment.Mat, perSide = true, Focus.Core),
+    RollingLikeABall(Equipment.Mat, perSide = false, Focus.Core),
+    SingleLegStretch(Equipment.Mat, perSide = false, Focus.Core),
+    DoubleLegStretch(Equipment.Mat, perSide = false, Focus.Core),
+    Scissors(Equipment.Mat, perSide = false, Focus.Core),
+    CrissCross(Equipment.Mat, perSide = false, Focus.Core),
+    SpineStretchForward(Equipment.Mat, perSide = false, Focus.FullBody),
+    Saw(Equipment.Mat, perSide = true, Focus.FullBody),
+    Swan(Equipment.Mat, perSide = false, Focus.UpperBody),
+    SingleLegKick(Equipment.Mat, perSide = true, Focus.LowerBody),
+    SideKickSeries(Equipment.Mat, perSide = true, Focus.LowerBody),
+    Teaser(Equipment.Mat, perSide = false, Focus.Core),
+    Swimming(Equipment.Mat, perSide = false, Focus.FullBody, Measure.Time),
+    ShoulderBridge(Equipment.Mat, perSide = true, Focus.LowerBody),
+    Seal(Equipment.Mat, perSide = false, Focus.Core),
+    LegPullFront(Equipment.Mat, perSide = false, Focus.FullBody),
     ;
 
     override val key: String get() = name
 }
+
+/** The built-in kettlebell lifts, in order: all the Log sheet and the program editor offer for now. */
+val kettlebellLifts: List<BuiltInExercise> = BuiltInExercise.entries.filter { it.equipment == Equipment.Kettlebell }
 
 /** What an exercise is done with. */
 enum class Equipment { Kettlebell, Bodyweight, Band, Mat }

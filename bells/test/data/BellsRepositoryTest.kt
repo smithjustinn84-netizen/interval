@@ -179,7 +179,7 @@ class BellsRepositoryTest {
 
     @Test
     fun `a stored program of only unknown lifts is left out`() = runTest {
-        val days = """[[{"exercise":"Burpee","kind":"Sets","rounds":3,"reps":5}]]"""
+        val days = """[[{"exercise":"Deadlift","kind":"Sets","rounds":3,"reps":5}]]"""
         programDao.rows.value = listOf(CustomProgramEntity("abc", "Future", 3, 4, days, 0))
         followingDao.row.value = FollowingEntity(programId = "custom:abc", startedAtEpochMillis = 0)
         assertTrue(repository.customPrograms.value.isEmpty())
@@ -188,7 +188,7 @@ class BellsRepositoryTest {
 
     @Test
     fun `a stored block of an unknown lift drops only that block`() = runTest {
-        val days = """[[{"exercise":"Burpee","kind":"Sets","rounds":3,"reps":5}],""" +
+        val days = """[[{"exercise":"Deadlift","kind":"Sets","rounds":3,"reps":5}],""" +
             """[{"exercise":"Press","kind":"Sets","rounds":3,"reps":5,"extra":true}]]"""
         programDao.rows.value = listOf(CustomProgramEntity("abc", "Mixed", 3, 4, days, 0))
         val made = repository.customPrograms.value.single()
