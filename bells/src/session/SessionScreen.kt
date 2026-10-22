@@ -35,7 +35,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
-import dev.justinsmith.bells.domain.Equipment
+import dev.justinsmith.bells.domain.ExerciseFilters
 import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.formatKg
 import dev.justinsmith.bells.resources.Res
@@ -92,7 +92,7 @@ import org.koin.compose.currentKoinScope
 @Composable
 fun SessionRoute(onExit: () -> Unit) {
     val scope = currentKoinScope()
-    val viewModel = viewModel { SessionViewModel(scope.get(), scope.get(), scope.get()) }
+    val viewModel = viewModel { SessionViewModel(scope.get(), scope.get(), scope.get(), scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val finished = state.finished
     if (finished != null) {
@@ -118,7 +118,7 @@ fun SessionRoute(onExit: () -> Unit) {
         state = state,
         actions = SessionActions(
             onDraft = viewModel::updateDraft,
-            onEquipment = viewModel::chooseEquipment,
+            onFilters = viewModel::updateFilters,
             onLog = viewModel::logSet,
             onLogNext = viewModel::logNext,
             onStartPlannedEmom = viewModel::startPlannedEmom,
@@ -173,7 +173,7 @@ private fun LeaveGuard(emomRunning: Boolean, hasSets: Boolean, onLeave: () -> Un
 /** What the session screen's controls do. */
 data class SessionActions(
     val onDraft: ((SetDraft) -> SetDraft) -> Unit = {},
-    val onEquipment: (Equipment) -> Unit = {},
+    val onFilters: ((ExerciseFilters) -> ExerciseFilters) -> Unit = {},
     val onLog: () -> Unit = {},
     val onLogNext: () -> Unit = {},
     val onStartPlannedEmom: () -> Unit = {},

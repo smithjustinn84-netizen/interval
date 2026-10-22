@@ -71,6 +71,10 @@ data class ProgramEditor(val uid: String? = null) : NavKey
 @Serializable
 data object OwnedBells : NavKey
 
+/** Every exercise there is to log: built-in and the user's own, to search and narrow. Pushed from Lift. */
+@Serializable
+data object ExerciseLibrary : NavKey
+
 /** One finished kettlebell session, by its uid: its sets and records, and Delete. Pushed from History. */
 @Serializable
 data class LiftDetail(val uid: String) : NavKey

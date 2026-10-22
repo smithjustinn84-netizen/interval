@@ -3,15 +3,18 @@
 package dev.justinsmith.bells.session
 
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.bells.ui.waitForText
 import kotlin.test.Test
@@ -20,15 +23,26 @@ import kotlin.test.assertTrue
 
 /** A session from Today to the summary, through the whole app over fakes. */
 class SessionFlowTest {
+    /** On the Log sheet: Change, then narrow the library by [search] or [equipment], and pick [name]. */
+    private fun DesktopComposeUiTest.pick(name: String, search: String? = null, equipment: String? = null) {
+        waitForText("Change")
+        onNodeWithText("Change").performClick()
+        waitForText("Search exercises")
+        search?.let { onNode(hasSetTextAction()).performTextInput(it) }
+        equipment?.let { onNodeWithText(it).performClick() }
+        waitForText(name)
+        onAllNodesWithText(name).onLast().performScrollTo().performClick()
+        waitForText("Change")
+    }
+
     @Test
     fun `a band set logs its band and moves no weight`() = bellsAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
-        onNodeWithText("Band").performClick()
-        // The first band exercise, on the medium band.
-        waitForText("Band pull-apart")
-        onNodeWithText("Medium").assertExists()
+        pick("Band pull-apart", equipment = "Band")
+        // On the medium band to start.
+        waitForText("Medium")
         onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("Medium × 10")
         onNodeWithText("0 kg").assertExists()
@@ -41,9 +55,7 @@ class SessionFlowTest {
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
-        onNodeWithText("Bodyweight").performClick()
-        waitForText("Side plank")
-        onNodeWithText("Side plank").performScrollTo().performClick()
+        pick("Side plank", search = "side plank")
         waitForText("Held")
         onNodeWithText("0:30").assertExists()
         onNodeWithText("An EMOM").assertDoesNotExist()
@@ -60,7 +72,7 @@ class SessionFlowTest {
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
-        onNodeWithText("Bodyweight").performClick()
+        pick("Push-up", search = "pushup")
         waitForText("Added weight")
         onNodeWithText("None").assertExists()
         onNodeWithText("8").performScrollTo().performClick()
@@ -93,7 +105,7 @@ class SessionFlowTest {
         onNodeWithText("Log set").performClick()
         // A two-hand swing can't be doubled; a clean can, and then has no side.
         onNodeWithText("Two bells").assertDoesNotExist()
-        onNodeWithText("Clean").performClick()
+        pick("Clean", search = "clean")
         onNodeWithText("Left").assertExists()
         onNodeWithText("Two bells").performScrollTo().performClick()
         onNodeWithText("Left").assertDoesNotExist()

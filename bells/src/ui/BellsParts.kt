@@ -84,7 +84,13 @@ fun sessionTitle(exercises: List<Exercise>): String = when (exercises.size) {
 
 /** One of a set of choices laid out in a wrapping row: selected, it takes the accent's border and tint. */
 @Composable
-fun Choice(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun Choice(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    role: Role = Role.RadioButton,
+) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
     Box(
@@ -95,7 +101,7 @@ fun Choice(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modif
                 Corners.radius12,
                 if (selected) palette.accentTint else palette.surfaceVariant,
                 onClick = onClick,
-                role = Role.RadioButton,
+                role = role,
             )
             .border(Sizes.border, if (selected) palette.accent else palette.surfaceVariant, Corners.radius12)
             .semantics { this.selected = selected }

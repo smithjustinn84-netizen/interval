@@ -3,6 +3,7 @@ package dev.justinsmith.bells.session
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.bells.data.BellsRepository
+import dev.justinsmith.bells.data.ExerciseFilterStore
 import dev.justinsmith.bells.domain.BandLevel
 import dev.justinsmith.bells.domain.BlockKind
 import dev.justinsmith.bells.domain.BuiltInExercise
@@ -11,6 +12,7 @@ import dev.justinsmith.bells.domain.EmomPhase
 import dev.justinsmith.bells.domain.EmomState
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
+import dev.justinsmith.bells.domain.ExerciseFilters
 import dev.justinsmith.bells.domain.LiftSession
 import dev.justinsmith.bells.domain.Measure
 import dev.justinsmith.bells.domain.PersonalRecord
@@ -20,8 +22,11 @@ import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.domain.newRecords
 import dev.justinsmith.bells.domain.nextPlanned
+import dev.justinsmith.bells.domain.offeredExercises
+import dev.justinsmith.bells.domain.recentExercises
 import dev.justinsmith.bells.domain.standardBells
 import dev.justinsmith.bells.domain.suggestedBell
+import dev.justinsmith.bells.library.LibraryList
 import dev.justinsmith.bells.platform.Beeper
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.formatClock
@@ -127,8 +132,8 @@ data class SessionUiState(
     val emom: EmomRun? = null,
     val emomState: EmomState? = null,
     val finished: Finished? = null,
-    /** What the sheet offers: every built-in, then the user's own not archived. */
-    val exercises: List<Exercise> = BuiltInExercise.entries,
+    /** What the sheet's picker offers, the ones done lately first, and how it is narrowed. */
+    val library: LibraryList = LibraryList(offeredExercises(emptyList())),
 )
 
 /**
@@ -139,6 +144,7 @@ class SessionViewModel(
     private val repository: BellsRepository,
     private val clock: WallClock,
     private val beeper: Beeper,
+    private val filters: ExerciseFilterStore,
     tickMillis: Long = TICK_MILLIS,
 ) : ViewModel() {
     private val draft = MutableStateFlow(SetDraft())
@@ -153,8 +159,14 @@ class SessionViewModel(
         }
     }
 
-    private val view = combine(draft, finished, emom, repository.customExercises) { draft, finished, emom, made ->
-        View(draft, finished, emom, BuiltInExercise.entries + made.filterNot { it.archived })
+    private val view = combine(draft, finished, emom, repository.customExercises, filters.filters) {
+            draft,
+            finished,
+            emom,
+            made,
+            narrowed,
+        ->
+        View(draft, finished, emom, offeredExercises(made), narrowed)
     }
 
     val state: StateFlow<SessionUiState> =
@@ -182,7 +194,14 @@ class SessionViewModel(
                 emom = run,
                 emomState = emomState,
                 finished = chosen.finished,
-                exercises = chosen.exercises,
+                library = LibraryList(
+                    chosen.exercises,
+                    recentExercises(
+                        repository.sessions.value.reversed().flatMap { it.sets } + active?.sets.orEmpty(),
+                        chosen.exercises,
+                    ),
+                    chosen.filters,
+                ),
             )
         }.stateIn(viewModelScope, SharingStarted.Eagerly, SessionUiState())
 
@@ -213,16 +232,8 @@ class SessionViewModel(
         }
     }
 
-    /**
-     * Picks the exercise of [equipment] last logged, in this session or before, else the first of it the sheet
-     * offers.
-     */
-    fun chooseEquipment(equipment: Equipment) {
-        val offered = state.value.exercises.filter { it.equipment == equipment }
-        val history = repository.sessions.value.reversed().flatMap { it.sets } + repository.active.value?.sets.orEmpty()
-        val last = history.lastOrNull { set -> offered.any { it.key == set.exercise.key } }?.exercise
-        val pick = offered.firstOrNull { it.key == last?.key } ?: offered.firstOrNull() ?: return
-        updateDraft { it.copy(exercise = pick) }
+    fun updateFilters(transform: (ExerciseFilters) -> ExerciseFilters) {
+        filters.update(transform)
     }
 
     fun logSet() {
@@ -374,6 +385,7 @@ class SessionViewModel(
         val finished: Finished?,
         val emom: EmomRun?,
         val exercises: List<Exercise>,
+        val filters: ExerciseFilters,
     )
 
     private companion object {

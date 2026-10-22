@@ -182,12 +182,42 @@
     <string name="common_cancel">Cancel</string>
 
     <!-- Log a set -->
+    <!-- The exercise library: on its own page from Lift, and as the Log sheet's picker -->
+    <string name="library_title">Exercises</string>
+    <string name="library_search">Search exercises</string>
+    <plurals name="library_count">
+        <item quantity="one">%1$d exercise</item>
+        <item quantity="other">%1$d exercises</item>
+    </plurals>
+    <string name="library_clear">Clear</string>
+    <string name="library_filters">Filters</string>
+    <string name="library_filters_count">Filters · %1$d</string>
+    <string name="library_recent">Recent</string>
+    <string name="library_all">All</string>
+    <string name="library_empty_query">No exercise matches “%1$s”</string>
+    <string name="library_empty">No exercise matches these filters</string>
+    <string name="library_empty_hint">Check the spelling, or clear a filter.</string>
+    <string name="library_focus">Focus</string>
+    <string name="library_measured">Measured by</string>
+    <string name="library_yours_only">Only yours</string>
+    <!-- A tag on an exercise the user added. -->
+    <string name="library_yours">Yours</string>
+    <string name="library_entry_text">Bells, bodyweight, bands and the mat</string>
+    <string name="measure_reps">Reps</string>
+    <string name="measure_time">Time</string>
+    <!-- In a line of an exercise's facts: "Bodyweight · Time · a side · Core". -->
+    <string name="exercise_a_side">a side</string>
+    <string name="focus_upper_body">Upper body</string>
+    <string name="focus_lower_body">Lower body</string>
+    <string name="focus_core">Core</string>
+    <string name="focus_full_body">Full body</string>
+    <string name="log_change">Change</string>
+
     <string name="log_title">Add to the session</string>
     <string name="log_kind_set">A set</string>
     <string name="log_kind_emom">An EMOM</string>
     <string name="log_reps_each_minute">Reps each minute</string>
     <string name="log_first_side">First side</string>
-    <string name="log_equipment">Equipment</string>
     <string name="log_exercise">Exercise</string>
     <string name="log_added">Added weight</string>
     <string name="log_added_none">None</string>

@@ -3,6 +3,9 @@ package dev.justinsmith.bells.ui
 import androidx.compose.runtime.Composable
 import dev.justinsmith.bells.domain.BandLevel
 import dev.justinsmith.bells.domain.Equipment
+import dev.justinsmith.bells.domain.Exercise
+import dev.justinsmith.bells.domain.Focus
+import dev.justinsmith.bells.domain.Measure
 import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.domain.formatKg
@@ -17,6 +20,13 @@ import dev.justinsmith.bells.resources.equipment_band
 import dev.justinsmith.bells.resources.equipment_bodyweight
 import dev.justinsmith.bells.resources.equipment_kettlebell
 import dev.justinsmith.bells.resources.equipment_mat
+import dev.justinsmith.bells.resources.exercise_a_side
+import dev.justinsmith.bells.resources.focus_core
+import dev.justinsmith.bells.resources.focus_full_body
+import dev.justinsmith.bells.resources.focus_lower_body
+import dev.justinsmith.bells.resources.focus_upper_body
+import dev.justinsmith.bells.resources.measure_reps
+import dev.justinsmith.bells.resources.measure_time
 import dev.justinsmith.bells.resources.set_line
 import dev.justinsmith.bells.resources.set_line_added
 import dev.justinsmith.bells.resources.set_line_added_held
@@ -94,3 +104,30 @@ fun equipmentName(equipment: Equipment): String = stringResource(
         Equipment.Mat -> Res.string.equipment_mat
     },
 )
+
+@Composable
+fun focusName(focus: Focus): String = stringResource(
+    when (focus) {
+        Focus.UpperBody -> Res.string.focus_upper_body
+        Focus.LowerBody -> Res.string.focus_lower_body
+        Focus.Core -> Res.string.focus_core
+        Focus.FullBody -> Res.string.focus_full_body
+    },
+)
+
+@Composable
+fun measureName(measure: Measure): String = stringResource(
+    when (measure) {
+        Measure.Reps -> Res.string.measure_reps
+        Measure.Time -> Res.string.measure_time
+    },
+)
+
+/** An exercise's facts in a line: "Bodyweight · Time · a side · Core". */
+@Composable
+fun exerciseFacts(exercise: Exercise): String = listOfNotNull(
+    equipmentName(exercise.equipment),
+    measureName(exercise.measure),
+    if (exercise.perSide) stringResource(Res.string.exercise_a_side) else null,
+    focusName(exercise.focus),
+).reduce { line, fact -> stringResource(Res.string.common_joined, line, fact) }

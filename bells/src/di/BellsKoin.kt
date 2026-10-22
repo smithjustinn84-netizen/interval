@@ -4,6 +4,7 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import dev.justinsmith.bells.data.BellsDatabase
 import dev.justinsmith.bells.data.BellsRepository
+import dev.justinsmith.bells.data.ExerciseFilterStore
 import dev.justinsmith.bells.data.MIGRATION_3_4
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -42,6 +43,7 @@ val bellsStorageModule: Module = module {
 
 val bellsDataModule: Module = module {
     single { BellsRepository(get(), get(), get(), get(), get(), scope = get(BellsStorageScope), clock = get()) }
+    single { ExerciseFilterStore() }
 }
 
 /**

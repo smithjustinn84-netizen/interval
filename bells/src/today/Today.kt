@@ -45,6 +45,8 @@ import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.common_joined
 import dev.justinsmith.bells.resources.kg_pair
 import dev.justinsmith.bells.resources.kg_value
+import dev.justinsmith.bells.resources.library_entry_text
+import dev.justinsmith.bells.resources.library_title
 import dev.justinsmith.bells.resources.program_change
 import dev.justinsmith.bells.resources.program_finished
 import dev.justinsmith.bells.resources.program_follow_cta
@@ -220,6 +222,7 @@ fun TodayRoute(
     onChooseProgram: () -> Unit,
     onOpenBells: () -> Unit,
     onOpenSession: (uid: String) -> Unit = {},
+    onOpenExercises: () -> Unit = {},
 ) {
     val scope = currentKoinScope()
     val viewModel = viewModel { TodayViewModel(scope.get(), scope.get(), scope.get(), scope.get()) }
@@ -233,6 +236,7 @@ fun TodayRoute(
         onChooseProgram = onChooseProgram,
         onOpenBells = onOpenBells,
         onOpenSession = onOpenSession,
+        onOpenExercises = onOpenExercises,
     )
 }
 
@@ -248,6 +252,7 @@ fun TodayScreen(
     modifier: Modifier = Modifier,
     onOpenBells: () -> Unit = {},
     onOpenSession: (uid: String) -> Unit = {},
+    onOpenExercises: () -> Unit = {},
 ) {
     val palette = IntervalTheme.palette
     val card = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4)
@@ -261,6 +266,15 @@ fun TodayScreen(
         item(key = "last", span = StaggeredGridItemSpan.FullLine) { LastCard(state, onOpenSession, card) }
         item(key = "program", span = StaggeredGridItemSpan.FullLine) {
             ProgramCard(state, onChooseProgram, card)
+        }
+        item(key = "exercises", span = StaggeredGridItemSpan.FullLine) {
+            ListCard(card) {
+                LinkRow(
+                    stringResource(Res.string.library_title),
+                    stringResource(Res.string.library_entry_text),
+                    onOpenExercises,
+                )
+            }
         }
     }
 }

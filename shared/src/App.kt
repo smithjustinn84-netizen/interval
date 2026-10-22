@@ -41,6 +41,7 @@ import androidx.savedstate.serialization.SavedStateConfiguration
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.gear.GearRoute
 import dev.justinsmith.bells.history.LiftDetailRoute
+import dev.justinsmith.bells.library.ExerciseLibraryRoute
 import dev.justinsmith.bells.programs.ProgramEditorRoute
 import dev.justinsmith.bells.programs.ProgramsRoute
 import dev.justinsmith.bells.session.SessionRoute
@@ -54,6 +55,7 @@ import dev.justinsmith.interval.history.HistoryRoute
 import dev.justinsmith.interval.history.WorkoutDetailRoute
 import dev.justinsmith.interval.home.TimerRoute
 import dev.justinsmith.interval.nav.About
+import dev.justinsmith.interval.nav.ExerciseLibrary
 import dev.justinsmith.interval.nav.HistoryTab
 import dev.justinsmith.interval.nav.Licenses
 import dev.justinsmith.interval.nav.LiftDetail
@@ -119,6 +121,7 @@ internal val navConfiguration = SavedStateConfiguration {
             subclass(Programs::class)
             subclass(ProgramEditor::class)
             subclass(OwnedBells::class)
+            subclass(ExerciseLibrary::class)
             subclass(LiftDetail::class)
         }
     }
@@ -266,6 +269,7 @@ private fun appEntries(
             onChooseProgram = { backStack.push(Programs) },
             onOpenBells = { backStack.push(OwnedBells) },
             onOpenSession = { backStack.push(LiftDetail(it)) },
+            onOpenExercises = { backStack.push(ExerciseLibrary) },
         )
     }
     entry<Lifting>(metadata = pageKind(PageKind.Mode)) {
@@ -280,6 +284,7 @@ private fun appEntries(
     }
     entry<ProgramEditor> { key -> ProgramEditorRoute(uid = key.uid, onBack = { backStack.removeLastOrNull() }) }
     entry<OwnedBells> { GearRoute(onBack = { backStack.removeLastOrNull() }) }
+    entry<ExerciseLibrary> { ExerciseLibraryRoute(onBack = { backStack.removeLastOrNull() }) }
     entry<LiftDetail> { key -> LiftDetailRoute(uid = key.uid, onBack = { backStack.removeLastOrNull() }) }
     entry<HistoryTab>(metadata = pageKind(PageKind.Tab)) {
         HistoryRoute(

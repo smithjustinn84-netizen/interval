@@ -16,8 +16,10 @@ import androidx.compose.ui.Modifier
 import dev.justinsmith.bells.domain.BandLevel
 import dev.justinsmith.bells.domain.Doubles
 import dev.justinsmith.bells.domain.Equipment
+import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.domain.formatKg
+import dev.justinsmith.bells.library.ExercisePicker
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.emom_fewer_minutes
 import dev.justinsmith.bells.resources.emom_minutes
@@ -28,7 +30,7 @@ import dev.justinsmith.bells.resources.log_added
 import dev.justinsmith.bells.resources.log_added_none
 import dev.justinsmith.bells.resources.log_band
 import dev.justinsmith.bells.resources.log_bell
-import dev.justinsmith.bells.resources.log_equipment
+import dev.justinsmith.bells.resources.log_change
 import dev.justinsmith.bells.resources.log_exercise
 import dev.justinsmith.bells.resources.log_fewer_reps
 import dev.justinsmith.bells.resources.log_first_side
@@ -46,7 +48,7 @@ import dev.justinsmith.bells.resources.log_title
 import dev.justinsmith.bells.resources.session_log
 import dev.justinsmith.bells.ui.ChoiceRow
 import dev.justinsmith.bells.ui.bandName
-import dev.justinsmith.bells.ui.equipmentName
+import dev.justinsmith.bells.ui.exerciseFacts
 import dev.justinsmith.bells.ui.exerciseName
 import dev.justinsmith.bells.ui.sideName
 import dev.justinsmith.interval.timer.formatClock
@@ -55,6 +57,7 @@ import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RepeatButton
 import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.Spacing
@@ -76,8 +79,22 @@ internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismi
     // Saved by name: an enum is not saveable on every platform.
     var kindName by rememberSaveable { mutableStateOf(LogKind.Set.name) }
     val kind = if (draft.held) LogKind.Set else LogKind.valueOf(kindName)
-    val equipment = draft.exercise.equipment
+    // Change swaps the sheet for the library until an exercise is picked.
+    var picking by rememberSaveable { mutableStateOf(false) }
     IntervalSheet(stringResource(Res.string.log_title), onDismiss = onDismiss) { hide ->
+        if (picking) {
+            ExercisePicker(
+                state.library,
+                actions.onFilters,
+                Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
+                selected = draft.exercise,
+                onPick = { e ->
+                    actions.onDraft { it.copy(exercise = e) }
+                    picking = false
+                },
+            )
+            return@IntervalSheet
+        }
         Column(
             Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
             verticalArrangement = Arrangement.spacedBy(Spacing.space8),
@@ -93,15 +110,7 @@ internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismi
                     modifier = Modifier.padding(bottom = Spacing.space8),
                 )
             }
-            GroupLabel(stringResource(Res.string.log_equipment))
-            ChoiceRow(Equipment.entries, equipment, { equipmentName(it) }, actions.onEquipment)
-            GroupLabel(stringResource(Res.string.log_exercise))
-            ChoiceRow(
-                state.exercises.filter { it.equipment == equipment },
-                draft.exercise,
-                { exerciseName(it) },
-                { e -> actions.onDraft { it.copy(exercise = e) } },
-            )
+            ExerciseCard(draft.exercise, onChange = { picking = true })
             LoadPicker(state, actions)
             MeasurePicker(draft, emom = kind == LogKind.Emom, actions)
             if (kind == LogKind.Emom) {
@@ -130,6 +139,34 @@ internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismi
                 },
                 modifier = Modifier.fillMaxWidth().padding(top = Spacing.space16, bottom = Spacing.space8),
             )
+        }
+    }
+}
+
+/** The exercise the set is of, its facts under its name, and Change to pick another from the library. */
+@Composable
+private fun ExerciseCard(exercise: Exercise, onChange: () -> Unit) {
+    val palette = IntervalTheme.palette
+    ListCard {
+        Row(
+            Modifier.padding(
+                start = Spacing.space16,
+                end = Spacing.space4,
+                top = Spacing.space12,
+                bottom = Spacing.space12,
+            ),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    stringResource(Res.string.log_exercise),
+                    style = IntervalTheme.type.caption,
+                    color = palette.textDim,
+                )
+                Text(exerciseName(exercise), style = IntervalTheme.type.section, color = palette.text)
+                Text(exerciseFacts(exercise), style = IntervalTheme.type.meta, color = palette.textDim)
+            }
+            QuietTextButton(stringResource(Res.string.log_change), onChange)
         }
     }
 }
