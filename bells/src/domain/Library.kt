@@ -10,9 +10,11 @@ data class ExerciseFilters(
     val measure: Set<Measure> = emptySet(),
     /** Only the exercises the user added. */
     val yoursOnly: Boolean = false,
+    /** The user's archived exercises listed too; only the library offers it, never the Log sheet. */
+    val showArchived: Boolean = false,
 ) {
     /** How many choices are set besides the equipment, which the library keeps in a row of its own. */
-    val moreCount: Int get() = focus.size + measure.size + (if (yoursOnly) 1 else 0)
+    val moreCount: Int get() = focus.size + measure.size + listOf(yoursOnly, showArchived).count { it }
 
     val isEmpty: Boolean get() = this == ExerciseFilters()
 
@@ -23,9 +25,9 @@ data class ExerciseFilters(
             (!yoursOnly || exercise is CustomExercise)
 }
 
-/** What the library and the Log sheet offer: every built-in, then those of [made] not archived. */
-fun offeredExercises(made: List<CustomExercise>): List<Exercise> =
-    BuiltInExercise.entries + made.filterNot { it.archived }
+/** What the library and the Log sheet offer: every built-in, then those of [made] not archived, unless [archived]. */
+fun offeredExercises(made: List<CustomExercise>, archived: Boolean = false): List<Exercise> =
+    BuiltInExercise.entries + made.filter { archived || !it.archived }
 
 /** This set with [item] taken out if it is in, or put in if it isn't. */
 fun <T> Set<T>.toggled(item: T): Set<T> = if (item in this) this - item else this + item

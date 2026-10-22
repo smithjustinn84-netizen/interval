@@ -36,7 +36,7 @@ class ExerciseLibraryViewModel(repository: BellsRepository, private val filters:
                 active,
                 narrowed,
             ->
-            val offered = offeredExercises(made)
+            val offered = offeredExercises(made, archived = narrowed.showArchived)
             val history = sessions.reversed().flatMap { it.sets } + active?.sets.orEmpty()
             LibraryList(offered, recentExercises(history, offered), narrowed)
         }.stateIn(viewModelScope, SharingStarted.Eagerly, LibraryList(offeredExercises(emptyList())))
@@ -80,6 +80,7 @@ fun ExerciseLibraryScreen(
             onPick = { exercise -> (exercise as? CustomExercise)?.let { onEdit(it.uid) } },
             canPick = { it is CustomExercise },
             onAdd = onNew,
+            archivable = true,
         )
     }
 }

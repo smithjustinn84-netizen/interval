@@ -36,6 +36,7 @@ import dev.justinsmith.bells.domain.toggled
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.library_add_named
 import dev.justinsmith.bells.resources.library_all
+import dev.justinsmith.bells.resources.library_archived
 import dev.justinsmith.bells.resources.library_clear
 import dev.justinsmith.bells.resources.library_count
 import dev.justinsmith.bells.resources.library_empty
@@ -47,6 +48,7 @@ import dev.justinsmith.bells.resources.library_focus
 import dev.justinsmith.bells.resources.library_measured
 import dev.justinsmith.bells.resources.library_recent
 import dev.justinsmith.bells.resources.library_search
+import dev.justinsmith.bells.resources.library_show_archived
 import dev.justinsmith.bells.resources.library_yours
 import dev.justinsmith.bells.resources.library_yours_only
 import dev.justinsmith.bells.ui.Choice
@@ -79,7 +81,8 @@ data class LibraryList(
  * The exercise library: a search, the equipment to narrow to, and behind Filters the focus, what it is
  * measured by and only the user's own; then the recent ones, while nothing narrows, and all that match. With
  * [onPick] a row picks its exercise ([canPick] says which can be), the [selected] one ticked; without, the
- * rows just inform. With [onAdd], a search that finds nothing offers to add it as the user's own.
+ * rows just inform. With [onAdd], a search that finds nothing offers to add it as the user's own. Only an
+ * [archivable] picker, the library's, offers the user's archived exercises among its filters.
  */
 @Composable
 fun ExercisePicker(
@@ -90,6 +93,7 @@ fun ExercisePicker(
     onPick: ((Exercise) -> Unit)? = null,
     canPick: (Exercise) -> Boolean = { true },
     onAdd: ((name: String) -> Unit)? = null,
+    archivable: Boolean = false,
 ) {
     val query = rememberTextFieldState()
     var more by rememberSaveable { mutableStateOf(false) }
@@ -126,7 +130,7 @@ fun ExercisePicker(
                 { more = !more },
             )
         }
-        if (more) MoreFilters(filters, onFilters)
+        if (more) MoreFilters(filters, onFilters, archivable)
         if (!narrowed && list.recents.isNotEmpty()) {
             GroupLabel(stringResource(Res.string.library_recent))
             ExerciseList(list.recents, names, selected, onPick, canPick)
@@ -140,9 +144,13 @@ fun ExercisePicker(
     }
 }
 
-/** The facets besides equipment: focus, what it is measured by, and only the user's own. */
+/** The facets besides equipment: focus, what it is measured by, only the user's own and, if [archivable], archived. */
 @Composable
-private fun MoreFilters(filters: ExerciseFilters, onFilters: ((ExerciseFilters) -> ExerciseFilters) -> Unit) {
+private fun MoreFilters(
+    filters: ExerciseFilters,
+    onFilters: ((ExerciseFilters) -> ExerciseFilters) -> Unit,
+    archivable: Boolean,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         GroupLabel(stringResource(Res.string.library_focus))
         FilterChips(Focus.entries, filters.focus, {
@@ -158,6 +166,14 @@ private fun MoreFilters(filters: ExerciseFilters, onFilters: ((ExerciseFilters) 
             onClick = { onFilters { it.copy(yoursOnly = !it.yoursOnly) } },
             role = Role.Checkbox,
         )
+        if (archivable) {
+            Choice(
+                stringResource(Res.string.library_show_archived),
+                filters.showArchived,
+                onClick = { onFilters { it.copy(showArchived = !it.showArchived) } },
+                role = Role.Checkbox,
+            )
+        }
     }
 }
 
@@ -194,7 +210,7 @@ private fun ExerciseList(
     }
 }
 
-/** An exercise's name over its facts, tagged when the user added it, ticked when [selected]. */
+/** An exercise's name over its facts, tagged when the user added it (or archived it), ticked when [selected]. */
 @Composable
 private fun ExerciseRow(exercise: Exercise, name: String, selected: Boolean, onPick: (() -> Unit)?) {
     val palette = IntervalTheme.palette
@@ -219,7 +235,11 @@ private fun ExerciseRow(exercise: Exercise, name: String, selected: Boolean, onP
             Text(exerciseFacts(exercise), style = IntervalTheme.type.meta, color = palette.textDim)
         }
         if (exercise is CustomExercise) {
-            Text(stringResource(Res.string.library_yours), style = IntervalTheme.type.caption, color = palette.accent)
+            Text(
+                stringResource(if (exercise.archived) Res.string.library_archived else Res.string.library_yours),
+                style = IntervalTheme.type.caption,
+                color = if (exercise.archived) palette.textDim else palette.accent,
+            )
         }
         if (selected) {
             Icon(

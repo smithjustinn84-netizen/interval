@@ -25,6 +25,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -136,6 +137,19 @@ class BellsRepositoryTest {
         val set = assertNotNull(repository.active.value).sets.single()
         assertEquals(added, set.exercise)
         assertEquals(30, set.seconds)
+    }
+
+    @Test
+    fun `an archived exercise stays archived when changed and comes back when restored`() = runTest {
+        val uid = repository.saveExercise(null, ExerciseDraft("Copenhagen plank", Equipment.Bodyweight))
+        repository.setArchived(uid, archived = true)
+        assertTrue(repository.customExercises.value.single().archived)
+        repository.saveExercise(uid, ExerciseDraft("Copenhagen plank long lever", Equipment.Bodyweight))
+        val changed = repository.customExercises.value.single()
+        assertEquals("Copenhagen plank long lever", changed.name)
+        assertTrue(changed.archived)
+        repository.setArchived(uid, archived = false)
+        assertFalse(repository.customExercises.value.single().archived)
     }
 
     @Test

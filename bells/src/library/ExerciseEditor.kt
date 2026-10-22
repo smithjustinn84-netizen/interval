@@ -21,6 +21,9 @@ import dev.justinsmith.bells.domain.canSave
 import dev.justinsmith.bells.domain.exerciseNameKey
 import dev.justinsmith.bells.domain.takenNames
 import dev.justinsmith.bells.resources.Res
+import dev.justinsmith.bells.resources.exercise_archive
+import dev.justinsmith.bells.resources.exercise_archive_hint
+import dev.justinsmith.bells.resources.exercise_archived_note
 import dev.justinsmith.bells.resources.exercise_cues
 import dev.justinsmith.bells.resources.exercise_cues_placeholder
 import dev.justinsmith.bells.resources.exercise_editor_edit
@@ -32,6 +35,7 @@ import dev.justinsmith.bells.resources.exercise_name_placeholder
 import dev.justinsmith.bells.resources.exercise_name_taken
 import dev.justinsmith.bells.resources.exercise_one_side
 import dev.justinsmith.bells.resources.exercise_one_side_hint
+import dev.justinsmith.bells.resources.exercise_restore
 import dev.justinsmith.bells.resources.exercise_save
 import dev.justinsmith.bells.resources.library_focus
 import dev.justinsmith.bells.resources.library_measured
@@ -46,6 +50,7 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.NameField
 import dev.justinsmith.interval.ui.ScrollPage
+import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ToggleRow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -56,19 +61,20 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
 /**
- * The exercise being added or changed: whether it is saved already, the names of the user's others it can't
- * take, and whether sets of it are logged, which fixes its equipment and measure.
+ * The exercise being added or changed: whether it is saved already (and archived), the names of the user's
+ * others it can't take, and whether sets of it are logged, which fixes its equipment and measure.
  */
 data class ExerciseEditorUiState(
     val draft: ExerciseDraft = ExerciseDraft(),
     val saved: Boolean = false,
+    val archived: Boolean = false,
     val taken: Set<String> = emptySet(),
     val locked: Boolean = false,
 )
 
 /**
- * Adds an exercise, named [name] to start (from a search that found nothing), or changes the user's [uid];
- * one archived or gone meanwhile is added afresh.
+ * Adds an exercise, named [name] to start (from a search that found nothing), or changes, archives or
+ * restores the user's [uid]; one gone meanwhile is added afresh.
  */
 class ExerciseEditorViewModel(private val repository: BellsRepository, uid: String?, name: String) : ViewModel() {
     private val existing = uid?.let { id -> repository.customExercises.value.firstOrNull { it.uid == id } }
@@ -79,6 +85,7 @@ class ExerciseEditorViewModel(private val repository: BellsRepository, uid: Stri
                 ExerciseDraft(it.name, it.equipment, it.measure, it.perSide, it.focus, it.cues)
             } ?: ExerciseDraft(name = name.trim()),
             saved = existing != null,
+            archived = existing?.archived == true,
             taken = takenNames(repository.customExercises.value, uid),
             locked = existing != null &&
                 (repository.sessions.value.flatMap { it.sets } + repository.active.value?.sets.orEmpty())
@@ -108,6 +115,12 @@ class ExerciseEditorViewModel(private val repository: BellsRepository, uid: Stri
         repository.saveExercise(uid, state.draft.copy(name = name, cues = cues))
         return true
     }
+
+    /** Archives the exercise, or restores an archived one; nothing for one not saved yet. */
+    fun toggleArchived() {
+        val uid = uid ?: return
+        repository.setArchived(uid, !_state.value.archived)
+    }
 }
 
 @Composable
@@ -120,10 +133,17 @@ fun ExerciseEditorRoute(uid: String?, name: String, onBack: () -> Unit) {
         onChange = viewModel::change,
         onSave = { name, cues -> if (viewModel.save(name, cues)) onBack() },
         onBack = onBack,
+        onArchive = {
+            viewModel.toggleArchived()
+            onBack()
+        },
     )
 }
 
-/** An exercise of the user's: its name, what it is done with, how it is counted and sided, its focus, cues. */
+/**
+ * An exercise of the user's: its name, what it is done with, how it is counted and sided, its focus, cues.
+ * One saved can be archived, or restored, with [onArchive].
+ */
 @Composable
 fun ExerciseEditorScreen(
     state: ExerciseEditorUiState,
@@ -131,6 +151,7 @@ fun ExerciseEditorScreen(
     onSave: (name: String, cues: String) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    onArchive: () -> Unit = {},
 ) {
     val draft = state.draft
     val palette = IntervalTheme.palette
@@ -139,6 +160,13 @@ fun ExerciseEditorScreen(
     val title = stringResource(if (state.saved) Res.string.exercise_editor_edit else Res.string.exercise_editor_new)
     ScrollPage(title, modifier, navigation = { BackAction(onBack) }) {
         val typed = name.text.toString()
+        if (state.archived) {
+            Text(
+                stringResource(Res.string.exercise_archived_note),
+                style = IntervalTheme.type.meta,
+                color = palette.text,
+            )
+        }
         GroupLabel(stringResource(Res.string.exercise_name))
         NameField(
             name,
@@ -185,6 +213,20 @@ fun ExerciseEditorScreen(
                 { onSave(typed.trim(), cues.text.toString()) },
                 Modifier.fillMaxWidth().padding(top = Spacing.space16),
             )
+        }
+        if (state.saved) {
+            SecondaryButton(
+                stringResource(if (state.archived) Res.string.exercise_restore else Res.string.exercise_archive),
+                onArchive,
+                Modifier.fillMaxWidth().padding(top = Spacing.space8),
+            )
+            if (!state.archived) {
+                Text(
+                    stringResource(Res.string.exercise_archive_hint),
+                    style = IntervalTheme.type.meta,
+                    color = palette.textDim,
+                )
+            }
         }
     }
 }

@@ -202,6 +202,9 @@
     <string name="library_yours_only">Only yours</string>
     <!-- A tag on an exercise the user added. -->
     <string name="library_yours">Yours</string>
+    <string name="library_show_archived">Show archived</string>
+    <!-- A tag on an exercise the user added and archived. -->
+    <string name="library_archived">Archived</string>
     <string name="library_entry_text">Bells, bodyweight, bands and the mat</string>
     <string name="measure_reps">Reps</string>
     <string name="measure_time">Time</string>
@@ -227,6 +230,10 @@
     <string name="exercise_cues">Cues</string>
     <string name="exercise_cues_placeholder">What to remember mid-set (optional)</string>
     <string name="exercise_save">Save exercise</string>
+    <string name="exercise_archive">Archive exercise</string>
+    <string name="exercise_archive_hint">The Log sheet stops offering it. Its sets stay in your history.</string>
+    <string name="exercise_restore">Restore exercise</string>
+    <string name="exercise_archived_note">Archived: the Log sheet doesn’t offer it.</string>
 
     <string name="log_title">Add to the session</string>
     <string name="log_kind_set">A set</string>

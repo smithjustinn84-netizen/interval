@@ -11,6 +11,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import dev.justinsmith.bells.data.CustomExerciseEntity
+import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.bells.ui.waitForText
 import kotlin.test.Test
@@ -69,5 +71,32 @@ class ExerciseLibraryTest {
         onNodeWithText("Log set").performClick()
         onNodeWithText("Change").performClick()
         waitForText("15 exercises")
+    }
+
+    @Test
+    fun `show archived on the library leaves the Log sheet without them`() = bellsAppTest(
+        storage = FakeBellsStorage().apply {
+            exercises.rows.value = listOf(
+                CustomExerciseEntity("e1", "Copenhagen plank", "Bodyweight", "Time", true, "Core", "", true, 0),
+            )
+        },
+    ) { app ->
+        onNodeWithText("Exercises").performScrollTo().performClick()
+        waitForText("Search exercises")
+        onNodeWithText("Filters").performClick()
+        onNodeWithText("Show archived").performScrollTo().performClick()
+        waitForText("Filters · 1")
+        onNodeWithText("Copenhagen plank").assertExists()
+        app.back()
+        waitForText("Start session")
+        onNodeWithText("Start session").performClick()
+        waitForText("Log set")
+        onNodeWithText("Log set").performClick()
+        onNodeWithText("Change").performClick()
+        waitForText("Search exercises")
+        onNodeWithText("Filters").assertExists()
+        onNodeWithText("Copenhagen plank").assertDoesNotExist()
+        onNodeWithText("Filters").performClick()
+        onNodeWithText("Show archived").assertDoesNotExist()
     }
 }

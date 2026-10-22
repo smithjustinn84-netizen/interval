@@ -83,6 +83,14 @@ class LibraryTest {
     }
 
     @Test
+    fun `show archived lists them too and counts as a filter`() {
+        val archived = plank.copy(uid = "a", archived = true)
+        assertEquals(listOf(plank, archived), offeredExercises(listOf(plank, archived), archived = true).takeLast(2))
+        assertEquals(1, ExerciseFilters(showArchived = true).moreCount)
+        assertEquals(2, ExerciseFilters(yoursOnly = true, showArchived = true).moreCount)
+    }
+
+    @Test
     fun `a name of yours is taken by another of yours whatever its case`() {
         val taken = takenNames(listOf(plank), uid = null)
         assertEquals(setOf("copenhagen plank"), taken)

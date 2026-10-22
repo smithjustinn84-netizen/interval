@@ -177,7 +177,8 @@ class SessionViewModel(
             made,
             narrowed,
         ->
-        View(draft, finished, emom, offeredExercises(made), narrowed)
+        // The sheet never offers an archived exercise, whatever the library shows.
+        View(draft, finished, emom, offeredExercises(made), narrowed.copy(showArchived = false))
     }
 
     val state: StateFlow<SessionUiState> =

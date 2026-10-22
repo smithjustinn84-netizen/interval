@@ -312,24 +312,32 @@ class BellsRepository(
 
     /**
      * Saves [draft] as the exercise [uid], or as a new one with null; returns its uid. Its name is kept as
-     * written, trimmed.
+     * written, trimmed, and an archived one stays archived.
      */
     @OptIn(ExperimentalUuidApi::class)
     fun saveExercise(uid: String?, draft: ExerciseDraft): String {
         val id = uid ?: Uuid.random().toHexString()
-        val row = CustomExerciseEntity(
+        val made = CustomExercise(
             id,
             draft.name.trim(),
-            draft.equipment.name,
-            draft.measure.name,
+            draft.equipment,
+            draft.measure,
             draft.perSide,
-            draft.focus.name,
+            draft.focus,
             draft.cues.trim(),
-            archived = false,
-            updatedAtEpochMillis = clock.nowMillis(),
+            archived = _customExercises.value.any { it.uid == id && it.archived },
         )
-        persist { customExerciseDao.upsert(row) }
+        persist { customExerciseDao.upsert(made.toEntity(clock.nowMillis())) }
         return id
+    }
+
+    /**
+     * Archives the user's exercise [uid], which the Log sheet then no longer offers, or with false brings it
+     * back. Its sets keep it either way.
+     */
+    fun setArchived(uid: String, archived: Boolean) {
+        val made = _customExercises.value.firstOrNull { it.uid == uid } ?: return
+        persist { customExerciseDao.upsert(made.copy(archived = archived).toEntity(clock.nowMillis())) }
     }
 
     fun setOwned(kg: Double, owned: Boolean) {
@@ -391,6 +399,18 @@ private fun CustomExerciseEntity.toDomain(): CustomExercise? = CustomExercise(
     focus = Focus.entries.firstOrNull { it.name == focus } ?: return null,
     cues = cues,
     archived = archived,
+)
+
+private fun CustomExercise.toEntity(updatedAtEpochMillis: Long) = CustomExerciseEntity(
+    uid,
+    name,
+    equipment.name,
+    measure.name,
+    perSide,
+    focus.name,
+    cues,
+    archived,
+    updatedAtEpochMillis,
 )
 
 private fun SessionEntity.toDomain(sets: List<SetLog>) = LiftSession(

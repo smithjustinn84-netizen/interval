@@ -121,4 +121,28 @@ class ExerciseEditorTest {
         val row = app.storage.exercises.rows.value.single()
         assertEquals(listOf("e1", "Side plank on a bench", "Time"), listOf(row.uid, row.name, row.measure))
     }
+
+    @Test
+    fun `an archived exercise leaves the Log sheet and Show archived brings it back to restore`() = bellsAppTest(
+        storage = FakeBellsStorage().apply { exercises.rows.value = listOf(plank) },
+    ) { app ->
+        onNodeWithText("Exercises").performScrollTo().performClick()
+        waitForText("Search exercises")
+        onNodeWithText("Copenhagen plank").performScrollTo().performClick()
+        waitForText("Edit exercise")
+        onNodeWithText("Archive exercise").performScrollTo().performClick()
+        waitForText("Search exercises")
+        onNodeWithText("Copenhagen plank").assertDoesNotExist()
+        assertEquals(true, app.storage.exercises.rows.value.single().archived)
+        // The library shows it again behind Filters, tagged, and it can be restored.
+        onNodeWithText("Filters").performScrollTo().performClick()
+        onNodeWithText("Show archived").performScrollTo().performClick()
+        waitForText("Archived")
+        onNodeWithText("Copenhagen plank").performScrollTo().performClick()
+        waitForText("Archived: the Log sheet doesn’t offer it.")
+        onNodeWithText("Restore exercise").performScrollTo().performClick()
+        waitForText("Search exercises")
+        onNodeWithText("Yours").assertExists()
+        assertEquals(false, app.storage.exercises.rows.value.single().archived)
+    }
 }
