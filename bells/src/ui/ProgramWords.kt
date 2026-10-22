@@ -28,9 +28,29 @@ import dev.justinsmith.bells.resources.program_easy_strength_name
 import dev.justinsmith.bells.resources.program_easy_strength_summary
 import dev.justinsmith.bells.resources.program_goblet_row_name
 import dev.justinsmith.bells.resources.program_goblet_row_summary
+import dev.justinsmith.bells.resources.program_grappler_strength_name
+import dev.justinsmith.bells.resources.program_grappler_strength_summary
+import dev.justinsmith.bells.resources.program_grip_pull_name
+import dev.justinsmith.bells.resources.program_grip_pull_summary
+import dev.justinsmith.bells.resources.program_iron_cardio_name
+import dev.justinsmith.bells.resources.program_iron_cardio_summary
 import dev.justinsmith.bells.resources.program_ladders_name
 import dev.justinsmith.bells.resources.program_ladders_summary
+import dev.justinsmith.bells.resources.program_long_cycle_name
+import dev.justinsmith.bells.resources.program_long_cycle_summary
+import dev.justinsmith.bells.resources.program_program_minimum_name
+import dev.justinsmith.bells.resources.program_program_minimum_summary
+import dev.justinsmith.bells.resources.program_rite_of_passage_name
+import dev.justinsmith.bells.resources.program_rite_of_passage_summary
+import dev.justinsmith.bells.resources.program_rounds_name
+import dev.justinsmith.bells.resources.program_rounds_summary
 import dev.justinsmith.bells.resources.program_schedule
+import dev.justinsmith.bells.resources.program_shoulder_armor_name
+import dev.justinsmith.bells.resources.program_shoulder_armor_summary
+import dev.justinsmith.bells.resources.program_simple_sinister_name
+import dev.justinsmith.bells.resources.program_simple_sinister_summary
+import dev.justinsmith.bells.resources.program_snatch_test_name
+import dev.justinsmith.bells.resources.program_snatch_test_summary
 import dev.justinsmith.bells.resources.program_ten_thousand_name
 import dev.justinsmith.bells.resources.program_ten_thousand_summary
 import org.jetbrains.compose.resources.pluralStringResource
@@ -68,6 +88,16 @@ fun programName(id: ProgramId): String = stringResource(
         ProgramId.ArmorBuildingFormula -> Res.string.program_abf_name
         ProgramId.TenThousandSwings -> Res.string.program_ten_thousand_name
         ProgramId.SwingSquatCountdown -> Res.string.program_countdown_name
+        ProgramId.SimpleAndSinister -> Res.string.program_simple_sinister_name
+        ProgramId.ProgramMinimum -> Res.string.program_program_minimum_name
+        ProgramId.RiteOfPassage -> Res.string.program_rite_of_passage_name
+        ProgramId.IronCardio -> Res.string.program_iron_cardio_name
+        ProgramId.SnatchTestPrep -> Res.string.program_snatch_test_name
+        ProgramId.LongCycleEmom -> Res.string.program_long_cycle_name
+        ProgramId.GrapplerStrength -> Res.string.program_grappler_strength_name
+        ProgramId.RoundConditioning -> Res.string.program_rounds_name
+        ProgramId.GripAndPull -> Res.string.program_grip_pull_name
+        ProgramId.ShoulderArmor -> Res.string.program_shoulder_armor_name
     },
 )
 
@@ -97,6 +127,16 @@ private fun programSummary(id: ProgramId): String = stringResource(
         ProgramId.ArmorBuildingFormula -> Res.string.program_abf_summary
         ProgramId.TenThousandSwings -> Res.string.program_ten_thousand_summary
         ProgramId.SwingSquatCountdown -> Res.string.program_countdown_summary
+        ProgramId.SimpleAndSinister -> Res.string.program_simple_sinister_summary
+        ProgramId.ProgramMinimum -> Res.string.program_program_minimum_summary
+        ProgramId.RiteOfPassage -> Res.string.program_rite_of_passage_summary
+        ProgramId.IronCardio -> Res.string.program_iron_cardio_summary
+        ProgramId.SnatchTestPrep -> Res.string.program_snatch_test_summary
+        ProgramId.LongCycleEmom -> Res.string.program_long_cycle_summary
+        ProgramId.GrapplerStrength -> Res.string.program_grappler_strength_summary
+        ProgramId.RoundConditioning -> Res.string.program_rounds_summary
+        ProgramId.GripAndPull -> Res.string.program_grip_pull_summary
+        ProgramId.ShoulderArmor -> Res.string.program_shoulder_armor_summary
     },
 )
 

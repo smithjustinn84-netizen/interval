@@ -99,19 +99,37 @@ sealed interface ProgramKey {
 
 private const val CUSTOM_PREFIX = "custom:"
 
-/**
- * The built-in programs, by a stable id that is stored. Screens name them from the app's strings. [danJohn]
- * ones follow Dan John's kettlebell programming.
- */
-enum class ProgramId(val danJohn: Boolean = false) {
+/** The kind of program a built-in is, which groups it on the Programs page. */
+enum class ProgramFamily {
+    Classic,
+
+    /** After Dan John's kettlebell programming. */
+    DanJohn,
+
+    /** Strength and conditioning for grapplers, light enough to sit beside mat time. */
+    Grappling,
+}
+
+/** The built-in programs, by a stable id that is stored. Screens name them from the app's strings. */
+enum class ProgramId(val family: ProgramFamily = ProgramFamily.Classic) {
     DailySwingsGetUps,
     PressLadders,
     CleanPressEmom,
     GobletSquatRow,
-    EasyStrength(danJohn = true),
-    ArmorBuildingFormula(danJohn = true),
-    TenThousandSwings(danJohn = true),
-    SwingSquatCountdown(danJohn = true),
+    EasyStrength(ProgramFamily.DanJohn),
+    ArmorBuildingFormula(ProgramFamily.DanJohn),
+    TenThousandSwings(ProgramFamily.DanJohn),
+    SwingSquatCountdown(ProgramFamily.DanJohn),
+    SimpleAndSinister,
+    ProgramMinimum,
+    RiteOfPassage,
+    IronCardio,
+    SnatchTestPrep,
+    LongCycleEmom,
+    GrapplerStrength(ProgramFamily.Grappling),
+    RoundConditioning(ProgramFamily.Grappling),
+    GripAndPull(ProgramFamily.Grappling),
+    ShoulderArmor(ProgramFamily.Grappling),
 }
 
 private fun builtIn(id: ProgramId, days: List<List<Block>>, daysPerWeek: Int, weeks: Int) =
@@ -124,6 +142,13 @@ private val fiveHundredSwings =
 /** Twenty minutes of the Armor Building Complex, one every minute. */
 private val armorBuildingComplex =
     Block(BuiltInExercise.ArmorBuildingComplex, rounds = 20, reps = 1, kind = BlockKind.Emom, double = true)
+
+/** [ladders] clean and press ladders of 1 up to [top], a side. */
+private fun pressLadders(ladders: Int, top: Int) =
+    Block(BuiltInExercise.Press, rounds = ladders, kind = BlockKind.Ladder, rungs = (1..top).toList())
+
+/** Six minutes of [exercise], [reps] at the top of each: as long as a round on the mat. */
+private fun round(exercise: Exercise, reps: Int) = Block(exercise, rounds = 6, reps = reps, kind = BlockKind.Emom)
 
 val builtInPrograms: List<Program> = listOf(
     builtIn(
@@ -235,9 +260,149 @@ val builtInPrograms: List<Program> = listOf(
         daysPerWeek = 3,
         weeks = 4,
     ),
+    // 100 one-arm swings and 10 get-ups, every training day.
+    builtIn(
+        ProgramId.SimpleAndSinister,
+        days = listOf(
+            listOf(
+                Block(BuiltInExercise.OneHandSwing, rounds = 5, reps = 10),
+                Block(BuiltInExercise.GetUp, rounds = 5, reps = 1),
+            ),
+        ),
+        daysPerWeek = 5,
+        weeks = 12,
+    ),
+    // Swings one day, get-ups the next.
+    builtIn(
+        ProgramId.ProgramMinimum,
+        days = listOf(
+            listOf(Block(BuiltInExercise.TwoHandSwing, rounds = 12, reps = 10, kind = BlockKind.Emom)),
+            listOf(Block(BuiltInExercise.GetUp, rounds = 5, reps = 1)),
+        ),
+        daysPerWeek = 4,
+        weeks = 4,
+    ),
+    // Heavy, light and medium days of ladders, at the stage the book builds to; snatches or swings after.
+    builtIn(
+        ProgramId.RiteOfPassage,
+        days = listOf(
+            listOf(pressLadders(ladders = 5, top = 5), Block(BuiltInExercise.Snatch, rounds = 5, reps = 5)),
+            listOf(
+                pressLadders(ladders = 5, top = 3),
+                Block(BuiltInExercise.TwoHandSwing, rounds = 10, reps = 10, kind = BlockKind.Emom),
+            ),
+            listOf(pressLadders(ladders = 5, top = 4), Block(BuiltInExercise.OneHandSwing, rounds = 5, reps = 10)),
+        ),
+        daysPerWeek = 3,
+        weeks = 12,
+    ),
+    builtIn(
+        ProgramId.IronCardio,
+        days = listOf(
+            listOf(
+                Block(BuiltInExercise.IronCardio, rounds = 20, reps = 3, kind = BlockKind.Emom),
+                Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 20),
+            ),
+            listOf(Block(BuiltInExercise.IronCardio, rounds = 30, reps = 2, kind = BlockKind.Emom)),
+        ),
+        daysPerWeek = 3,
+        weeks = 6,
+    ),
+    // Snatches on the minute, the third day at the test's pace: 100 in 5 minutes.
+    builtIn(
+        ProgramId.SnatchTestPrep,
+        days = listOf(
+            listOf(Block(BuiltInExercise.Snatch, rounds = 10, reps = 8, kind = BlockKind.Emom)),
+            listOf(Block(BuiltInExercise.Snatch, rounds = 12, reps = 10, kind = BlockKind.Emom)),
+            listOf(Block(BuiltInExercise.Snatch, rounds = 5, reps = 20, kind = BlockKind.Emom)),
+        ),
+        daysPerWeek = 3,
+        weeks = 6,
+    ),
+    builtIn(
+        ProgramId.LongCycleEmom,
+        days = listOf(
+            listOf(Block(BuiltInExercise.LongCycle, rounds = 10, reps = 6, kind = BlockKind.Emom)),
+            listOf(
+                Block(BuiltInExercise.Jerk, rounds = 10, reps = 8, kind = BlockKind.Emom),
+                Block(BuiltInExercise.Snatch, rounds = 5, reps = 10),
+            ),
+            listOf(Block(BuiltInExercise.LongCycle, rounds = 12, reps = 5, kind = BlockKind.Emom)),
+        ),
+        daysPerWeek = 3,
+        weeks = 6,
+    ),
+    // Heavy and low in reps, so it leaves something for the mat.
+    builtIn(
+        ProgramId.GrapplerStrength,
+        days = listOf(
+            listOf(
+                Block(BuiltInExercise.FrontSquat, rounds = 5, reps = 5, double = true),
+                Block(BuiltInExercise.Row, rounds = 4, reps = 8),
+                Block(BuiltInExercise.GetUp, rounds = 3, reps = 1),
+            ),
+            listOf(
+                Block(BuiltInExercise.Deadlift, rounds = 5, reps = 5, double = true),
+                pressLadders(ladders = 3, top = 3),
+                Block(BuiltInExercise.Windmill, rounds = 3, reps = 5),
+            ),
+        ),
+        daysPerWeek = 2,
+        weeks = 8,
+    ),
+    // Four six-minute rounds a day, each lift on the minute.
+    builtIn(
+        ProgramId.RoundConditioning,
+        days = listOf(
+            listOf(
+                round(BuiltInExercise.TwoHandSwing, reps = 15),
+                round(BuiltInExercise.Snatch, reps = 6),
+                round(BuiltInExercise.HighPull, reps = 8),
+                round(BuiltInExercise.GobletSquat, reps = 10),
+            ),
+            listOf(
+                round(BuiltInExercise.OneHandSwing, reps = 10),
+                round(BuiltInExercise.Clean, reps = 5),
+                round(BuiltInExercise.RackedLunge, reps = 6),
+                round(BuiltInExercise.Halo, reps = 8),
+            ),
+        ),
+        daysPerWeek = 2,
+        weeks = 6,
+    ),
+    // For the grips and pulls a guard is made of.
+    builtIn(
+        ProgramId.GripAndPull,
+        days = listOf(
+            listOf(
+                Block(BuiltInExercise.Row, rounds = 5, reps = 8),
+                Block(BuiltInExercise.HighPull, rounds = 5, reps = 8),
+                Block(BuiltInExercise.Clean, rounds = 5, reps = 5),
+                Block(BuiltInExercise.OneHandSwing, rounds = 5, reps = 15),
+            ),
+        ),
+        daysPerWeek = 2,
+        weeks = 6,
+    ),
+    // Shoulders that hold up under frames and locks.
+    builtIn(
+        ProgramId.ShoulderArmor,
+        days = listOf(
+            listOf(
+                Block(BuiltInExercise.Halo, rounds = 3, reps = 10),
+                Block(BuiltInExercise.GetUp, rounds = 5, reps = 1),
+                Block(BuiltInExercise.Windmill, rounds = 3, reps = 5),
+                Block(BuiltInExercise.BottomsUpPress, rounds = 3, reps = 5),
+            ),
+        ),
+        daysPerWeek = 3,
+        weeks = 6,
+    ),
 )
 
-fun program(id: ProgramId): Program = builtInPrograms.first { it.key == ProgramKey.BuiltIn(id) }
+fun program(
+    id: ProgramId,
+): Program = builtInPrograms.first { it.key == ProgramKey.BuiltIn(id) }
 
 /**
  * Of [planned], the first set not yet done by [logged]: the n-th planned set of a lift (and side) is done by

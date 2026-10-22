@@ -128,6 +128,16 @@ enum class BuiltInExercise(
 
     /** Dan John's Armor Building Complex with two bells: 2 cleans, a press and 3 front squats, as one rep. */
     ArmorBuildingComplex(Equipment.Kettlebell, perSide = false, Focus.FullBody, doubles = Doubles.Always),
+    Deadlift(Equipment.Kettlebell, perSide = false, Focus.LowerBody),
+    HighPull(Equipment.Kettlebell, perSide = true, Focus.FullBody),
+
+    /** A reverse lunge with the bell in the rack, a side at a time; with two bells, both racked. */
+    RackedLunge(Equipment.Kettlebell, perSide = true, Focus.LowerBody),
+    Windmill(Equipment.Kettlebell, perSide = true, Focus.Core, doubles = Doubles.Never),
+    BottomsUpPress(Equipment.Kettlebell, perSide = true, Focus.UpperBody, doubles = Doubles.Never),
+
+    /** Iron Cardio: a clean, a press and a squat, as one rep; with two bells, double Iron Cardio. */
+    IronCardio(Equipment.Kettlebell, perSide = true, Focus.FullBody),
 
     PushUp(Equipment.Bodyweight, perSide = false, Focus.UpperBody),
     InclinePushUp(Equipment.Bodyweight, perSide = false, Focus.UpperBody),

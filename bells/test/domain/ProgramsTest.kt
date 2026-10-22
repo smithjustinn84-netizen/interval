@@ -149,5 +149,50 @@ class ProgramsTest {
         assertEquals(ProgramId.entries.map { ProgramKey.BuiltIn(it) }, builtInPrograms.map { it.key })
     }
 
+    @Test
+    fun `simple and sinister is 100 one-arm swings and 10 get-ups a day`() {
+        val day = assertNotNullDay(program(ProgramId.SimpleAndSinister).dayAfter(0))
+        assertEquals(100, day.blocks[0].totalReps)
+        assertEquals(10, day.blocks[1].totalReps)
+        assertEquals(60, day.program.totalDays)
+    }
+
+    @Test
+    fun `rite of passage presses most on the heavy day and least on the light`() {
+        val (heavy, light, medium) = program(ProgramId.RiteOfPassage).days.map { it[0] }
+        listOf(heavy, light, medium).forEach { assertEquals(5, it.rounds) }
+        assertTrue(light.totalReps < medium.totalReps && medium.totalReps < heavy.totalReps)
+    }
+
+    @Test
+    fun `snatch test prep has a day at the test pace of 100 in 5 minutes`() {
+        val test = program(ProgramId.SnatchTestPrep).days[2].single()
+        assertEquals(BlockKind.Emom, test.kind)
+        assertEquals(5, test.rounds)
+        assertEquals(100, test.totalReps)
+    }
+
+    @Test
+    fun `round conditioning is four six-minute rounds a day`() {
+        program(ProgramId.RoundConditioning).days.forEach { day ->
+            assertEquals(4, day.size)
+            day.forEach { assertEquals(6, it.plannedSets().size) }
+        }
+    }
+
+    @Test
+    fun `every built-in is done with kettlebells and the grapplers have their own family`() {
+        builtInPrograms.flatMap { it.days.flatten() }.forEach { assertTrue(it.exercise in kettlebellLifts) }
+        assertEquals(
+            listOf(
+                ProgramId.GrapplerStrength,
+                ProgramId.RoundConditioning,
+                ProgramId.GripAndPull,
+                ProgramId.ShoulderArmor,
+            ),
+            ProgramId.entries.filter { it.family == ProgramFamily.Grappling },
+        )
+    }
+
     private fun assertNotNullDay(day: ProgramDay?): ProgramDay = kotlin.test.assertNotNull(day)
 }

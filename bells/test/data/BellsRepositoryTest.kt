@@ -143,12 +143,12 @@ class BellsRepositoryTest {
         repository.startSession()
         val session = assertNotNull(repository.active.value).uid
         sessionDao.sets.value = listOf(
-            SetEntity(0, session, "Deadlift", 60.0, 5, null, 0, equipment = "Kettlebell"),
+            SetEntity(0, session, "SeesawPress", 60.0, 5, null, 0, equipment = "Kettlebell"),
             SetEntity(0, session, "custom:gone", 0.0, 0, null, 1, equipment = "Mat", seconds = 40),
         )
-        val (deadlift, gone) = assertNotNull(repository.active.value).sets
-        assertEquals(UnknownExercise("Deadlift", Equipment.Kettlebell, Measure.Reps), deadlift.exercise)
-        assertEquals(300.0, deadlift.tonnageKg)
+        val (seesaw, gone) = assertNotNull(repository.active.value).sets
+        assertEquals(UnknownExercise("SeesawPress", Equipment.Kettlebell, Measure.Reps), seesaw.exercise)
+        assertEquals(300.0, seesaw.tonnageKg)
         assertEquals(UnknownExercise("custom:gone", Equipment.Mat, Measure.Time), gone.exercise)
     }
 
@@ -251,7 +251,7 @@ class BellsRepositoryTest {
 
     @Test
     fun `a stored program of only unknown lifts is left out`() = runTest {
-        val days = """[[{"exercise":"Deadlift","kind":"Sets","rounds":3,"reps":5}]]"""
+        val days = """[[{"exercise":"SeesawPress","kind":"Sets","rounds":3,"reps":5}]]"""
         programDao.rows.value = listOf(CustomProgramEntity("abc", "Future", 3, 4, days, 0))
         followingDao.row.value = FollowingEntity(programId = "custom:abc", startedAtEpochMillis = 0)
         assertTrue(repository.customPrograms.value.isEmpty())
@@ -260,7 +260,7 @@ class BellsRepositoryTest {
 
     @Test
     fun `a stored block of an unknown lift drops only that block`() = runTest {
-        val days = """[[{"exercise":"Deadlift","kind":"Sets","rounds":3,"reps":5}],""" +
+        val days = """[[{"exercise":"SeesawPress","kind":"Sets","rounds":3,"reps":5}],""" +
             """[{"exercise":"Press","kind":"Sets","rounds":3,"reps":5,"extra":true}]]"""
         programDao.rows.value = listOf(CustomProgramEntity("abc", "Mixed", 3, 4, days, 0))
         val made = repository.customPrograms.value.single()

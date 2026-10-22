@@ -86,12 +86,13 @@ class TrainingTest {
         assertEquals(
             listOf(
                 "TwoHandSwing", "OneHandSwing", "Clean", "Press", "Snatch", "GetUp", "GobletSquat", "Row", "Jerk",
-                "LongCycle", "Halo", "FrontSquat", "ArmorBuildingComplex",
+                "LongCycle", "Halo", "FrontSquat", "ArmorBuildingComplex", "Deadlift", "HighPull", "RackedLunge",
+                "Windmill", "BottomsUpPress", "IronCardio",
             ),
             kettlebellLifts.map { it.key },
         )
         BuiltInExercise.entries.forEach { assertEquals(it, Exercise.parse(it.key)) }
-        assertNull(Exercise.parse("Deadlift"))
+        assertNull(Exercise.parse("SeesawPress"))
     }
 
     @Test
@@ -107,7 +108,7 @@ class TrainingTest {
     fun `the catalogue runs built-ins then the user's by name then unknowns`() {
         val zercher = CustomExercise("z", "zercher carry", Equipment.Kettlebell, Measure.Reps, false, Focus.FullBody)
         val bear = CustomExercise("b", "Bear crawl", Equipment.Bodyweight, Measure.Time, false, Focus.FullBody)
-        val unknown = UnknownExercise("Deadlift", Equipment.Kettlebell, Measure.Reps)
+        val unknown = UnknownExercise("SeesawPress", Equipment.Kettlebell, Measure.Reps)
         assertEquals(
             listOf(BuiltInExercise.TwoHandSwing, BuiltInExercise.Seal, bear, zercher, unknown),
             listOf(unknown, zercher, BuiltInExercise.Seal, bear, BuiltInExercise.TwoHandSwing)
@@ -117,12 +118,12 @@ class TrainingTest {
     }
 
     @Test
-    fun `the starter catalogue has 68 exercises across four kinds of equipment`() {
+    fun `the starter catalogue has 74 exercises across four kinds of equipment`() {
         assertEquals(
-            mapOf(Equipment.Kettlebell to 13, Equipment.Bodyweight to 22, Equipment.Band to 15, Equipment.Mat to 18),
+            mapOf(Equipment.Kettlebell to 19, Equipment.Bodyweight to 22, Equipment.Band to 15, Equipment.Mat to 18),
             BuiltInExercise.entries.groupingBy { it.equipment }.eachCount(),
         )
-        assertEquals(BuiltInExercise.entries.take(13), kettlebellLifts)
+        assertEquals(BuiltInExercise.entries.take(19), kettlebellLifts)
     }
 
     @Test

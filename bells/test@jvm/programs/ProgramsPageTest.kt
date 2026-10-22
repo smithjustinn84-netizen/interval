@@ -70,4 +70,16 @@ class ProgramsPageTest {
         waitForText("Following")
         onNodeWithText("Follow this program").assertDoesNotExist()
     }
+
+    @Test
+    fun `a program for grapplers is followed from its own group`() = bellsAppTest { app ->
+        onNodeWithText("Follow a program").performClick()
+        waitForText("For grapplers")
+        onNodeWithText("For grapplers").performScrollTo()
+        onNodeWithText("Round conditioning").performScrollTo().performClick()
+        waitForText("Follow this program")
+        onNodeWithText("Follow this program").performScrollTo().performClick()
+        waitForText("Day 1 of 12 · week 1")
+        assertEquals(ProgramId.RoundConditioning.name, app.storage.following.row.value?.programId)
+    }
 }

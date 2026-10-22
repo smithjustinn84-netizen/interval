@@ -36,6 +36,12 @@
     <string name="exercise_front_squat">Front squat</string>
     <!-- Dan John's complex with two bells: 2 cleans, a press and 3 front squats make one. -->
     <string name="exercise_armor_building_complex">Armor Building Complex</string>
+    <string name="exercise_deadlift">Deadlift</string>
+    <string name="exercise_high_pull">High pull</string>
+    <string name="exercise_racked_lunge">Racked reverse lunge</string>
+    <string name="exercise_windmill">Windmill</string>
+    <string name="exercise_bottoms_up_press">Bottoms-up press</string>
+    <string name="exercise_iron_cardio">Iron Cardio</string>
     <!-- A logged set's exercise this version of the app doesn't know, from a newer one. -->
     <string name="exercise_unknown">Unknown exercise</string>
     <!-- Bodyweight -->
@@ -209,8 +215,29 @@
     <string name="program_ten_thousand_summary">500 swings a day in ladders of 10-15-25-50, with press or goblet squat ladders of 1-2-3 · 5 days a week for 4 weeks</string>
     <string name="program_countdown_name">Swing and squat countdown</string>
     <string name="program_countdown_summary">Goblet squats from 10 down to 1 and 10 sets of 15 swings, after the Humane Burpee · 3 days a week for 4 weeks</string>
+    <string name="program_simple_sinister_name">Simple &amp; Sinister</string>
+    <string name="program_simple_sinister_summary">100 one-arm swings in sets of 10, then 10 get-ups, a side at a time · 5 days a week for 12 weeks</string>
+    <string name="program_program_minimum_name">Program Minimum</string>
+    <string name="program_program_minimum_summary">12 minutes of swings on the minute one day, 5 get-ups a side the next, after Enter the Kettlebell · 4 days a week for 4 weeks</string>
+    <string name="program_rite_of_passage_name">Rite of Passage</string>
+    <string name="program_rite_of_passage_summary">5 clean and press ladders: to 5 on the heavy day, 3 on the light and 4 on the medium, then snatches or swings. Build to it from 3 ladders of 1-2-3 · 3 days a week for 12 weeks</string>
+    <string name="program_iron_cardio_name">Iron Cardio</string>
+    <string name="program_iron_cardio_summary">A clean, a press and a squat as one rep, on the minute for 20 or 30 minutes, with 100 swings on the shorter day · 3 days a week for 6 weeks</string>
+    <string name="program_snatch_test_name">Snatch test prep</string>
+    <string name="program_snatch_test_summary">Snatches on the minute, alternating hands, and a day at the test's pace of 100 in 5 minutes · 3 days a week for 6 weeks</string>
+    <string name="program_long_cycle_name">Long cycle EMOM</string>
+    <string name="program_long_cycle_summary">Long cycles on the minute, alternating sides, with a day of jerks and snatches between · 3 days a week for 6 weeks</string>
+    <string name="program_grappler_strength_name">Strength for the mat</string>
+    <string name="program_grappler_strength_summary">Double front squats or deadlifts, rows, presses, get-ups and windmills, heavy and low in reps · 2 days a week for 8 weeks</string>
+    <string name="program_rounds_name">Round conditioning</string>
+    <string name="program_rounds_summary">Four six-minute rounds of swings, snatches, pulls, squats and lunges on the minute, like rounds on the mat · 2 days a week for 6 weeks</string>
+    <string name="program_grip_pull_name">Grip and pull</string>
+    <string name="program_grip_pull_summary">Rows, high pulls, cleans and one-arm swings a side, for grips that hold · 2 days a week for 6 weeks</string>
+    <string name="program_shoulder_armor_name">Shoulder armor</string>
+    <string name="program_shoulder_armor_summary">Halos, get-ups, windmills and bottoms-up presses, for shoulders that hold up under frames and locks · 3 days a week for 6 weeks</string>
     <string name="programs_classics">Classics</string>
     <string name="programs_dan_john">Dan John–inspired</string>
+    <string name="programs_grappling">For grapplers</string>
     <string name="programs_yours">Your programs</string>
     <string name="programs_new">New program</string>
     <string name="programs_new_hint">Lay out your own days of sets, EMOMs and ladders.</string>

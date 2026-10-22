@@ -29,6 +29,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.domain.Program
 import dev.justinsmith.bells.domain.ProgramDay
+import dev.justinsmith.bells.domain.ProgramFamily
 import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.domain.builtInPrograms
 import dev.justinsmith.bells.resources.Res
@@ -44,6 +45,7 @@ import dev.justinsmith.bells.resources.program_switch_title
 import dev.justinsmith.bells.resources.programs_classics
 import dev.justinsmith.bells.resources.programs_dan_john
 import dev.justinsmith.bells.resources.programs_edit_cd
+import dev.justinsmith.bells.resources.programs_grappling
 import dev.justinsmith.bells.resources.programs_new
 import dev.justinsmith.bells.resources.programs_new_hint
 import dev.justinsmith.bells.resources.programs_title
@@ -136,15 +138,16 @@ fun ProgramsScreen(
     modifier: Modifier = Modifier,
     followingDay: ProgramDay? = null,
 ) {
-    val (danJohn, classics) = builtInPrograms.partition { (it.key as? ProgramKey.BuiltIn)?.id?.danJohn == true }
+    val families = builtInPrograms.groupBy { (it.key as? ProgramKey.BuiltIn)?.id?.family }
     // Saved by their stored keys: a program is not saveable.
     var previewing by rememberSaveable { mutableStateOf<String?>(null) }
     var switching by rememberSaveable { mutableStateOf<String?>(null) }
     val programOf = { stored: String? -> (builtInPrograms + custom).firstOrNull { it.key.stored == stored } }
     val onOpen = { key: ProgramKey -> previewing = key.stored }
     ScrollPage(stringResource(Res.string.programs_title), modifier, navigation = { BackAction(actions.onBack) }) {
-        ProgramGroup(stringResource(Res.string.programs_classics), classics, following, onOpen, actions)
-        ProgramGroup(stringResource(Res.string.programs_dan_john), danJohn, following, onOpen, actions)
+        ProgramFamily.entries.forEach { family ->
+            ProgramGroup(familyName(family), families[family].orEmpty(), following, onOpen, actions)
+        }
         GroupLabel(stringResource(Res.string.programs_yours))
         ListCard {
             custom.forEach { program ->
@@ -200,6 +203,16 @@ fun ProgramsScreen(
         )
     }
 }
+
+/** The heading over a family of built-in programs. */
+@Composable
+private fun familyName(family: ProgramFamily): String = stringResource(
+    when (family) {
+        ProgramFamily.Classic -> Res.string.programs_classics
+        ProgramFamily.DanJohn -> Res.string.programs_dan_john
+        ProgramFamily.Grappling -> Res.string.programs_grappling
+    },
+)
 
 /**
  * A program before it is followed: what it is, each of its days block by block, and Follow this program,
