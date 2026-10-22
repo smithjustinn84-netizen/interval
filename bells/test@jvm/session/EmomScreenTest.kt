@@ -11,10 +11,10 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.EmomCue
 import dev.justinsmith.bells.domain.EmomPhase
 import dev.justinsmith.bells.domain.EmomState
-import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.bells.ui.runUiTest
@@ -24,7 +24,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-private val swings = EmomRun(Exercise.TwoHandSwing, 24.0, 10, minutes = 10, firstSide = Side.Left, startedAtMillis = 0)
+private val swings =
+    EmomRun(BuiltInExercise.TwoHandSwing, 24.0, 10, minutes = 10, firstSide = Side.Left, startedAtMillis = 0)
 
 class EmomScreenTest {
     @Test
@@ -56,7 +57,7 @@ class EmomScreenTest {
 
     @Test
     fun `a one-sided lift alternates sides minute by minute`() = runUiTest {
-        val presses = swings.copy(exercise = Exercise.Press, bellKg = 16.0, reps = 5)
+        val presses = swings.copy(exercise = BuiltInExercise.Press, bellKg = 16.0, reps = 5)
         var state by mutableStateOf(EmomState(EmomPhase.Work, 1, 10, 50, 0.1f))
         setBellsContent { EmomScreen(presses, state, onFinishSet = {}, onStop = {}) }
         onNodeWithText("Press · 16 kg × 5 · Left").assertExists()

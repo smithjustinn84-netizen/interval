@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.Doubles
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.Side
@@ -50,25 +51,27 @@ import dev.justinsmith.interval.ui.surfaceButton
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
-private fun Exercise.label(): StringResource = when (this) {
-    Exercise.TwoHandSwing -> Res.string.exercise_two_hand_swing
-    Exercise.OneHandSwing -> Res.string.exercise_one_hand_swing
-    Exercise.Clean -> Res.string.exercise_clean
-    Exercise.Press -> Res.string.exercise_press
-    Exercise.Snatch -> Res.string.exercise_snatch
-    Exercise.GetUp -> Res.string.exercise_get_up
-    Exercise.GobletSquat -> Res.string.exercise_goblet_squat
-    Exercise.Row -> Res.string.exercise_row
-    Exercise.Jerk -> Res.string.exercise_jerk
-    Exercise.LongCycle -> Res.string.exercise_long_cycle
-    Exercise.Halo -> Res.string.exercise_halo
-    Exercise.FrontSquat -> Res.string.exercise_front_squat
-    Exercise.ArmorBuildingComplex -> Res.string.exercise_armor_building_complex
+private fun BuiltInExercise.label(): StringResource = when (this) {
+    BuiltInExercise.TwoHandSwing -> Res.string.exercise_two_hand_swing
+    BuiltInExercise.OneHandSwing -> Res.string.exercise_one_hand_swing
+    BuiltInExercise.Clean -> Res.string.exercise_clean
+    BuiltInExercise.Press -> Res.string.exercise_press
+    BuiltInExercise.Snatch -> Res.string.exercise_snatch
+    BuiltInExercise.GetUp -> Res.string.exercise_get_up
+    BuiltInExercise.GobletSquat -> Res.string.exercise_goblet_squat
+    BuiltInExercise.Row -> Res.string.exercise_row
+    BuiltInExercise.Jerk -> Res.string.exercise_jerk
+    BuiltInExercise.LongCycle -> Res.string.exercise_long_cycle
+    BuiltInExercise.Halo -> Res.string.exercise_halo
+    BuiltInExercise.FrontSquat -> Res.string.exercise_front_squat
+    BuiltInExercise.ArmorBuildingComplex -> Res.string.exercise_armor_building_complex
 }
 
 /** An exercise's name: "Two-hand swing". */
 @Composable
-fun exerciseName(exercise: Exercise): String = stringResource(exercise.label())
+fun exerciseName(exercise: Exercise): String = when (exercise) {
+    is BuiltInExercise -> stringResource(exercise.label())
+}
 
 /**
  * A lift's name, saying when it is done with two bells: "Press · Two bells". A lift only done with two, like

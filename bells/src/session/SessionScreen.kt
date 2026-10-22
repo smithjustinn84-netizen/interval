@@ -35,8 +35,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.Doubles
-import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.domain.formatKg
@@ -392,7 +392,7 @@ private fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismis
                 modifier = Modifier.padding(bottom = Spacing.space8),
             )
             GroupLabel(stringResource(Res.string.log_exercise))
-            ChoiceRow(Exercise.entries, draft.exercise, {
+            ChoiceRow(BuiltInExercise.entries, draft.exercise, {
                 exerciseName(it)
             }, { e -> actions.onDraft { it.copy(exercise = e) } })
             GroupLabel(stringResource(Res.string.log_bell))

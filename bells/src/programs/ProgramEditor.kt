@@ -26,8 +26,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.domain.Block
 import dev.justinsmith.bells.domain.BlockKind
+import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.Doubles
-import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.ProgramDraft
 import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.domain.asKind
@@ -339,7 +339,7 @@ private fun BlockSheet(
             verticalArrangement = Arrangement.spacedBy(Spacing.space8),
         ) {
             GroupLabel(stringResource(Res.string.log_exercise))
-            ChoiceRow(Exercise.entries, block.exercise, {
+            ChoiceRow(BuiltInExercise.entries, block.exercise, {
                 exerciseName(it)
             }, { e -> onChange { it.withExercise(e) } })
             if (block.exercise.doubles == Doubles.Optional) {

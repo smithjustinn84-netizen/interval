@@ -210,7 +210,7 @@ class BellsRepository(
             val doubled = exercise.doubled(double)
             val sided = side.takeIf { exercise.sided(doubled) }
             sessionDao.insert(
-                SetEntity(0, active.uid, exercise.name, bellKg, reps, sided?.name, clock.nowMillis(), doubled),
+                SetEntity(0, active.uid, exercise.key, bellKg, reps, sided?.name, clock.nowMillis(), doubled),
             )
         }
     }
@@ -227,7 +227,7 @@ class BellsRepository(
                 SetEntity(
                     set.id,
                     active.uid,
-                    set.exercise.name,
+                    set.exercise.key,
                     set.bellKg,
                     set.reps,
                     set.side?.name,
@@ -296,7 +296,7 @@ class BellsRepository(
  * as such, though logged before sets had the column.
  */
 private fun SetEntity.toDomain(): SetLog? {
-    val lift = Exercise.named(exercise) ?: return null
+    val lift = Exercise.parse(exercise) ?: return null
     return SetLog(
         id,
         lift,

@@ -173,7 +173,7 @@ data class SessionEntity(
 data class SetEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "session_uid") val sessionUid: String,
-    /** An [dev.justinsmith.bells.domain.Exercise] by name. */
+    /** An [dev.justinsmith.bells.domain.Exercise] by its key. */
     val exercise: String,
     @ColumnInfo(name = "bell_kg") val bellKg: Double,
     val reps: Int,

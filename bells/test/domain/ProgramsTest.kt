@@ -10,14 +10,14 @@ class ProgramsTest {
 
     @Test
     fun `a one-sided block is done on both sides and an EMOM alternates by minute`() {
-        assertEquals(10, Block(Exercise.GetUp, rounds = 5, reps = 1).plannedSets().size)
-        val emom = Block(Exercise.Clean, rounds = 4, reps = 3, kind = BlockKind.Emom).plannedSets()
+        assertEquals(10, Block(BuiltInExercise.GetUp, rounds = 5, reps = 1).plannedSets().size)
+        val emom = Block(BuiltInExercise.Clean, rounds = 4, reps = 3, kind = BlockKind.Emom).plannedSets()
         assertEquals(listOf(Side.Left, Side.Right, Side.Left, Side.Right), emom.map { it.side })
     }
 
     @Test
     fun `a ladder climbs its rungs on each side`() {
-        val ladder = Block(Exercise.Press, rounds = 2, kind = BlockKind.Ladder, rungs = listOf(1, 2, 3))
+        val ladder = Block(BuiltInExercise.Press, rounds = 2, kind = BlockKind.Ladder, rungs = listOf(1, 2, 3))
         assertEquals(listOf(1, 1, 2, 2, 3, 3, 1, 1, 2, 2, 3, 3), ladder.plannedSets().map { it.reps })
         assertEquals(24, ladder.totalReps)
     }
@@ -40,24 +40,25 @@ class ProgramsTest {
 
     @Test
     fun `the next planned set skips what has been logged by lift and side`() {
-        val planned = Block(Exercise.GetUp, rounds = 2, reps = 1).plannedSets() // L R L R
+        val planned = Block(BuiltInExercise.GetUp, rounds = 2, reps = 1).plannedSets() // L R L R
         assertEquals(0, nextPlanned(planned, emptyList()))
-        assertEquals(1, nextPlanned(planned, listOf(logged(Exercise.GetUp, Side.Left))))
+        assertEquals(1, nextPlanned(planned, listOf(logged(BuiltInExercise.GetUp, Side.Left))))
         assertEquals(
             3,
             nextPlanned(
                 planned,
                 listOf(
-                    logged(Exercise.GetUp, Side.Left),
-                    logged(Exercise.GetUp, Side.Right),
-                    logged(Exercise.GetUp, Side.Left),
+                    logged(BuiltInExercise.GetUp, Side.Left),
+                    logged(BuiltInExercise.GetUp, Side.Right),
+                    logged(BuiltInExercise.GetUp, Side.Left),
                 ),
             ),
         )
         assertNull(
             nextPlanned(
                 planned,
-                List(2) { logged(Exercise.GetUp, Side.Left) } + List(2) { logged(Exercise.GetUp, Side.Right) },
+                List(2) { logged(BuiltInExercise.GetUp, Side.Left) } +
+                    List(2) { logged(BuiltInExercise.GetUp, Side.Right) },
             ),
         )
     }
@@ -65,33 +66,42 @@ class ProgramsTest {
     @Test
     fun `the suggested bell is the last used for the lift`() {
         val history =
-            listOf(SetLog(0, Exercise.Press, 16.0, 5, Side.Left, 0), SetLog(0, Exercise.Press, 20.0, 3, Side.Left, 1))
-        assertEquals(20.0, suggestedBell(Exercise.Press, false, history, fallback = 12.0))
-        assertEquals(12.0, suggestedBell(Exercise.Snatch, false, history, fallback = 12.0))
+            listOf(
+                SetLog(0, BuiltInExercise.Press, 16.0, 5, Side.Left, 0),
+                SetLog(0, BuiltInExercise.Press, 20.0, 3, Side.Left, 1),
+            )
+        assertEquals(20.0, suggestedBell(BuiltInExercise.Press, false, history, fallback = 12.0))
+        assertEquals(12.0, suggestedBell(BuiltInExercise.Snatch, false, history, fallback = 12.0))
     }
 
     @Test
     fun `the suggested bell for two bells is the last pair used else the last single`() {
-        val single = SetLog(0, Exercise.Press, 20.0, 3, Side.Left, 0)
-        val pair = SetLog(0, Exercise.Press, 16.0, 5, null, 1, double = true)
-        assertEquals(20.0, suggestedBell(Exercise.Press, true, listOf(single), fallback = 12.0))
-        assertEquals(16.0, suggestedBell(Exercise.Press, true, listOf(pair, single), fallback = 12.0))
-        assertEquals(20.0, suggestedBell(Exercise.Press, false, listOf(single, pair), fallback = 12.0))
+        val single = SetLog(0, BuiltInExercise.Press, 20.0, 3, Side.Left, 0)
+        val pair = SetLog(0, BuiltInExercise.Press, 16.0, 5, null, 1, double = true)
+        assertEquals(20.0, suggestedBell(BuiltInExercise.Press, true, listOf(single), fallback = 12.0))
+        assertEquals(16.0, suggestedBell(BuiltInExercise.Press, true, listOf(pair, single), fallback = 12.0))
+        assertEquals(20.0, suggestedBell(BuiltInExercise.Press, false, listOf(single, pair), fallback = 12.0))
     }
 
     @Test
     fun `a block with two bells plans sets with no side and its EMOM does not alternate`() {
-        val sets = Block(Exercise.Clean, rounds = 3, reps = 5, double = true).plannedSets()
-        assertEquals(List(3) { PlannedSet(Exercise.Clean, 5, null, double = true) }, sets)
-        val emom = Block(Exercise.Press, rounds = 4, reps = 3, kind = BlockKind.Emom, double = true).plannedSets()
+        val sets = Block(BuiltInExercise.Clean, rounds = 3, reps = 5, double = true).plannedSets()
+        assertEquals(List(3) { PlannedSet(BuiltInExercise.Clean, 5, null, double = true) }, sets)
+        val emom = Block(
+            BuiltInExercise.Press,
+            rounds = 4,
+            reps = 3,
+            kind = BlockKind.Emom,
+            double = true,
+        ).plannedSets()
         assertEquals(List(4) { null }, emom.map { it.side })
     }
 
     @Test
     fun `a planned double set of a one-sided lift is not done by a single one`() {
-        val planned = Block(Exercise.Clean, rounds = 1, reps = 5, double = true).plannedSets()
-        assertEquals(0, nextPlanned(planned, listOf(logged(Exercise.Clean, Side.Left))))
-        assertNull(nextPlanned(planned, listOf(SetLog(0, Exercise.Clean, 16.0, 5, null, 0, double = true))))
+        val planned = Block(BuiltInExercise.Clean, rounds = 1, reps = 5, double = true).plannedSets()
+        assertEquals(0, nextPlanned(planned, listOf(logged(BuiltInExercise.Clean, Side.Left))))
+        assertNull(nextPlanned(planned, listOf(SetLog(0, BuiltInExercise.Clean, 16.0, 5, null, 0, double = true))))
     }
 
     @Test
@@ -104,14 +114,14 @@ class ProgramsTest {
         val swings = program(ProgramId.TenThousandSwings)
         assertEquals(20, swings.totalDays)
         swings.days.forEach { day -> assertEquals(500, day[0].totalReps) }
-        assertEquals(Exercise.GobletSquat, swings.dayAfter(1)?.blocks?.get(1)?.exercise)
+        assertEquals(BuiltInExercise.GobletSquat, swings.dayAfter(1)?.blocks?.get(1)?.exercise)
     }
 
     @Test
     fun `the armor building formula presses on the second day of three`() {
         val abf = program(ProgramId.ArmorBuildingFormula)
-        assertEquals(Exercise.ArmorBuildingComplex, abf.dayAfter(0)?.blocks?.single()?.exercise)
-        assertEquals(Exercise.Press, abf.dayAfter(1)?.blocks?.first()?.exercise)
+        assertEquals(BuiltInExercise.ArmorBuildingComplex, abf.dayAfter(0)?.blocks?.single()?.exercise)
+        assertEquals(BuiltInExercise.Press, abf.dayAfter(1)?.blocks?.first()?.exercise)
         assertEquals(20, abf.dayAfter(2)?.plannedSets()?.size)
         assertEquals(18, abf.totalDays)
     }

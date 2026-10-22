@@ -1,28 +1,25 @@
 package dev.justinsmith.bells.domain
 
 /**
- * The lifts Bells logs. [perSide] ones are logged one side at a time, unless done with two bells; [doubles]
- * says whether they can be.
+ * An exercise Bells logs: one of the [BuiltInExercise]s. [perSide] ones are logged one side at a time,
+ * unless done with two bells; [doubles] says whether they can be. Sets and programs store it by [key].
  */
-enum class Exercise(val perSide: Boolean, val doubles: Doubles = Doubles.Optional) {
-    TwoHandSwing(perSide = false, doubles = Doubles.Never),
+sealed interface Exercise {
+    /** How it is stored, with its sets and in programs; never changes once shipped. */
+    val key: String
 
-    /** With two bells, the double swing. */
-    OneHandSwing(perSide = true),
-    Clean(perSide = true),
-    Press(perSide = true),
-    Snatch(perSide = true),
-    GetUp(perSide = true, doubles = Doubles.Never),
-    GobletSquat(perSide = false, doubles = Doubles.Never),
-    Row(perSide = true),
-    Jerk(perSide = true),
-    LongCycle(perSide = true),
-    Halo(perSide = false, doubles = Doubles.Never),
-    FrontSquat(perSide = false),
+    /** What it is done with, which decides the load a set of it takes. */
+    val equipment: Equipment
 
-    /** Dan John's Armor Building Complex with two bells: 2 cleans, a press and 3 front squats, as one rep. */
-    ArmorBuildingComplex(perSide = false, doubles = Doubles.Always),
-    ;
+    /** Whether a set of it counts reps or time held. */
+    val measure: Measure
+
+    /** Where it works most. */
+    val focus: Focus
+
+    val perSide: Boolean
+
+    val doubles: Doubles
 
     /** Whether a set of it is done with two bells, when [requested] is what was asked for. */
     fun doubled(requested: Boolean): Boolean = when (doubles) {
@@ -35,10 +32,56 @@ enum class Exercise(val perSide: Boolean, val doubles: Doubles = Doubles.Optiona
     fun sided(double: Boolean): Boolean = perSide && !double
 
     companion object {
-        /** By [name], as stored; an unknown name (from a newer build) reads as null. */
-        fun named(name: String): Exercise? = entries.firstOrNull { it.name == name }
+        /** The exercise [key] names, as stored; an unknown one (from a newer build) reads as null. */
+        fun parse(key: String): Exercise? = BuiltInExercise.entries.firstOrNull { it.key == key }
+
+        /** The catalogue's order: the built-ins as they are declared. */
+        val order: Comparator<Exercise> = compareBy { exercise ->
+            when (exercise) {
+                is BuiltInExercise -> exercise.ordinal
+            }
+        }
     }
 }
+
+/** The exercises that ship with the app, stored by name. Screens name them from the app's strings. */
+enum class BuiltInExercise(
+    override val perSide: Boolean,
+    override val focus: Focus,
+    override val doubles: Doubles = Doubles.Optional,
+    override val equipment: Equipment = Equipment.Kettlebell,
+    override val measure: Measure = Measure.Reps,
+) : Exercise {
+    TwoHandSwing(perSide = false, Focus.FullBody, doubles = Doubles.Never),
+
+    /** With two bells, the double swing. */
+    OneHandSwing(perSide = true, Focus.FullBody),
+    Clean(perSide = true, Focus.FullBody),
+    Press(perSide = true, Focus.UpperBody),
+    Snatch(perSide = true, Focus.FullBody),
+    GetUp(perSide = true, Focus.FullBody, doubles = Doubles.Never),
+    GobletSquat(perSide = false, Focus.LowerBody, doubles = Doubles.Never),
+    Row(perSide = true, Focus.UpperBody),
+    Jerk(perSide = true, Focus.FullBody),
+    LongCycle(perSide = true, Focus.FullBody),
+    Halo(perSide = false, Focus.UpperBody, doubles = Doubles.Never),
+    FrontSquat(perSide = false, Focus.LowerBody),
+
+    /** Dan John's Armor Building Complex with two bells: 2 cleans, a press and 3 front squats, as one rep. */
+    ArmorBuildingComplex(perSide = false, Focus.FullBody, doubles = Doubles.Always),
+    ;
+
+    override val key: String get() = name
+}
+
+/** What an exercise is done with. */
+enum class Equipment { Kettlebell, Bodyweight, Band, Mat }
+
+/** How a set is counted: reps, or the time held. */
+enum class Measure { Reps, Time }
+
+/** Where an exercise works most. */
+enum class Focus { UpperBody, LowerBody, Core, FullBody }
 
 /** Whether a lift can be done with a bell in each hand: never, by choice, or only so. */
 enum class Doubles { Never, Optional, Always }
@@ -106,9 +149,10 @@ data class PersonalRecord(
 )
 
 /** Each exercise's [PersonalRecord] over [sets], one bell and two kept apart, in the catalogue's order. */
-fun personalRecords(sets: List<SetLog>): List<PersonalRecord> = sets.groupBy { it.exercise to it.double }
+fun personalRecords(sets: List<SetLog>): List<PersonalRecord> = sets.groupBy { it.exercise.key to it.double }
     .map { (lift, done) ->
-        val (exercise, double) = lift
+        val exercise = done.first().exercise
+        val double = lift.second
         val heaviest = done.maxOf { it.bellKg }
         val most = done.maxWith(compareBy<SetLog> { it.reps }.thenBy { it.bellKg })
         PersonalRecord(
@@ -120,17 +164,17 @@ fun personalRecords(sets: List<SetLog>): List<PersonalRecord> = sets.groupBy { i
             double = double,
         )
     }
-    .sortedWith(compareBy<PersonalRecord> { it.exercise.ordinal }.thenBy { it.double })
+    .sortedWith(compareBy(Exercise.order, PersonalRecord::exercise).thenBy { it.double })
 
 /**
  * The records [session] set: those of its lifts (one bell or two) whose record over [before] plus the
  * session beats the record over [before] alone, by a heavier bell or more reps at the heaviest or in one set.
  */
 fun newRecords(before: List<SetLog>, session: LiftSession): List<PersonalRecord> {
-    val old = personalRecords(before).associateBy { it.exercise to it.double }
-    val done = session.sets.map { it.exercise to it.double }.toSet()
+    val old = personalRecords(before).associateBy { it.exercise.key to it.double }
+    val done = session.sets.map { it.exercise.key to it.double }.toSet()
     return personalRecords(before + session.sets).filter { record ->
-        val lift = record.exercise to record.double
+        val lift = record.exercise.key to record.double
         lift in done && old[lift].let { was ->
             was == null ||
                 record.heaviestKg > was.heaviestKg ||

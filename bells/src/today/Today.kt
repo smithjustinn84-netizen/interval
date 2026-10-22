@@ -33,6 +33,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.data.IntervalActivity
 import dev.justinsmith.bells.data.IntervalWorkout
+import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.LiftSession
 import dev.justinsmith.bells.domain.Program
@@ -203,7 +204,9 @@ class TodayViewModel(
             }.orEmpty(),
             inProgress = active != null,
             bells = sessions.reversed().flatMap { it.sets }.let { history ->
-                Exercise.entries.flatMap { listOf(it to false, it to true) }.associateWith { (exercise, double) ->
+                BuiltInExercise.entries.flatMap {
+                    listOf(it to false, it to true)
+                }.associateWith { (exercise, double) ->
                     suggestedBell(exercise, double, history, SetDraft.DEFAULT_BELL_KG)
                 }
             },

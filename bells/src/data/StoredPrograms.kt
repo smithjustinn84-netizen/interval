@@ -24,7 +24,7 @@ private val json = Json { ignoreUnknownKeys = true }
 /** [days] as [CustomProgramEntity.days] holds them. */
 internal fun encodeDays(days: List<List<Block>>): String = json.encodeToString(
     days.map { day ->
-        day.map { StoredBlock(it.exercise.name, it.kind.name, it.rounds, it.reps, it.rungs, it.double) }
+        day.map { StoredBlock(it.exercise.key, it.kind.name, it.rounds, it.reps, it.rungs, it.double) }
     },
 )
 
@@ -45,7 +45,7 @@ internal fun CustomProgramEntity.toProgram(): Program? {
 }
 
 private fun StoredBlock.toBlock(): Block? {
-    val lift = Exercise.named(exercise) ?: return null
+    val lift = Exercise.parse(exercise) ?: return null
     val kind = BlockKind.entries.firstOrNull { it.name == kind } ?: return null
     if (rounds < 1 || (kind == BlockKind.Ladder && rungs.isEmpty())) return null
     return Block(lift, rounds, reps, kind, rungs, lift.doubled(double))

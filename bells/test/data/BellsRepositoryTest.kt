@@ -2,7 +2,7 @@ package dev.justinsmith.bells.data
 
 import dev.justinsmith.bells.domain.Block
 import dev.justinsmith.bells.domain.BlockKind
-import dev.justinsmith.bells.domain.Exercise
+import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.ProgramDraft
 import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.domain.ProgramKey
@@ -33,8 +33,8 @@ class BellsRepositoryTest {
     private val pressAndSwings = ProgramDraft(
         name = "Press and swings",
         days = listOf(
-            listOf(Block(Exercise.Press, rounds = 2, kind = BlockKind.Ladder, rungs = listOf(1, 2))),
-            listOf(Block(Exercise.TwoHandSwing, rounds = 5, reps = 20)),
+            listOf(Block(BuiltInExercise.Press, rounds = 2, kind = BlockKind.Ladder, rungs = listOf(1, 2))),
+            listOf(Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 20)),
         ),
         daysPerWeek = 2,
         weeks = 3,
@@ -42,15 +42,15 @@ class BellsRepositoryTest {
 
     private fun finishDayOf(key: ProgramKey) {
         repository.startSession(key)
-        repository.logSet(Exercise.Press, 16.0, 1, Side.Left)
+        repository.logSet(BuiltInExercise.Press, 16.0, 1, Side.Left)
         repository.finishSession("Press")
     }
 
     private fun swingsAndGetUps() {
         repository.startSession()
-        repository.logSet(Exercise.TwoHandSwing, 24.0, 10, Side.Left)
+        repository.logSet(BuiltInExercise.TwoHandSwing, 24.0, 10, Side.Left)
         now += 60_000
-        repository.logSet(Exercise.GetUp, 20.0, 5, Side.Right)
+        repository.logSet(BuiltInExercise.GetUp, 20.0, 5, Side.Right)
         now += 60_000
         repository.finishSession("Swings and get-ups")
     }
@@ -59,9 +59,9 @@ class BellsRepositoryTest {
     fun `a session logs sets and finishes under its title`() = runTest {
         repository.startSession()
         assertNotNull(repository.active.value)
-        repository.logSet(Exercise.TwoHandSwing, 24.0, 10, Side.Left)
+        repository.logSet(BuiltInExercise.TwoHandSwing, 24.0, 10, Side.Left)
         val set = repository.active.value?.sets?.single()
-        assertEquals(Exercise.TwoHandSwing, set?.exercise)
+        assertEquals(BuiltInExercise.TwoHandSwing, set?.exercise)
         // A two-sided lift keeps no side.
         assertNull(set?.side)
         now += 600_000
@@ -75,8 +75,8 @@ class BellsRepositoryTest {
     @Test
     fun `a set with two bells keeps no side and one that can't be doubled is single`() = runTest {
         repository.startSession()
-        repository.logSet(Exercise.Press, 16.0, 5, Side.Left, double = true)
-        repository.logSet(Exercise.GetUp, 16.0, 1, Side.Left, double = true)
+        repository.logSet(BuiltInExercise.Press, 16.0, 5, Side.Left, double = true)
+        repository.logSet(BuiltInExercise.GetUp, 16.0, 1, Side.Left, double = true)
         val (press, getUp) = assertNotNull(repository.active.value).sets
         assertTrue(press.double)
         assertNull(press.side)
@@ -87,7 +87,7 @@ class BellsRepositoryTest {
     @Test
     fun `a stored Armor Building Complex set reads as two bells`() = runTest {
         repository.startSession()
-        repository.logSet(Exercise.ArmorBuildingComplex, 24.0, 1, null)
+        repository.logSet(BuiltInExercise.ArmorBuildingComplex, 24.0, 1, null)
         assertTrue(assertNotNull(repository.active.value).sets.single().double)
     }
 
@@ -131,7 +131,7 @@ class BellsRepositoryTest {
         assertEquals(1, repository.programDay.value?.number)
         repository.startSession(ladders)
         assertEquals(ladders, repository.active.value?.program)
-        repository.logSet(Exercise.Press, 16.0, 1, Side.Left)
+        repository.logSet(BuiltInExercise.Press, 16.0, 1, Side.Left)
         repository.finishSession("Press")
         assertEquals(2, repository.programDay.value?.number)
         repository.stopFollowing()
@@ -150,7 +150,7 @@ class BellsRepositoryTest {
         assertEquals(BlockKind.Ladder, repository.programDay.value?.blocks?.single()?.kind)
         finishDayOf(made.key)
         assertEquals(2, repository.programDay.value?.number)
-        assertEquals(Exercise.TwoHandSwing, repository.programDay.value?.blocks?.single()?.exercise)
+        assertEquals(BuiltInExercise.TwoHandSwing, repository.programDay.value?.blocks?.single()?.exercise)
     }
 
     @Test
@@ -192,6 +192,6 @@ class BellsRepositoryTest {
             """[{"exercise":"Press","kind":"Sets","rounds":3,"reps":5,"extra":true}]]"""
         programDao.rows.value = listOf(CustomProgramEntity("abc", "Mixed", 3, 4, days, 0))
         val made = repository.customPrograms.value.single()
-        assertEquals(listOf(listOf(Block(Exercise.Press, rounds = 3, reps = 5))), made.days)
+        assertEquals(listOf(listOf(Block(BuiltInExercise.Press, rounds = 3, reps = 5))), made.days)
     }
 }

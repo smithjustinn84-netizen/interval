@@ -2,7 +2,7 @@ package dev.justinsmith.bells.data
 
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import dev.justinsmith.bells.domain.Exercise
+import dev.justinsmith.bells.domain.BuiltInExercise
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -45,8 +45,8 @@ class BellsRoomTest {
     @Test
     fun `a set removed and put back keeps its place and its id`() {
         repository.startSession()
-        repository.logSet(Exercise.TwoHandSwing, 24.0, 10, null)
-        repository.logSet(Exercise.Press, 16.0, 5, null)
+        repository.logSet(BuiltInExercise.TwoHandSwing, 24.0, 10, null)
+        repository.logSet(BuiltInExercise.Press, 16.0, 5, null)
         val sets = await({ repository.active.value?.sets.orEmpty() }) { it.size == 2 }
         val first = sets.first()
         repository.removeSet(first.id)

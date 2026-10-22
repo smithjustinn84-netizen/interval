@@ -6,7 +6,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class ProgramDraftTest {
-    private val swings = Block(Exercise.TwoHandSwing, rounds = 5, reps = 10)
+    private val swings = Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 10)
 
     @Test
     fun `a draft saves once named with a block on every day`() {
@@ -35,16 +35,16 @@ class ProgramDraftTest {
         val ladder = swings.asKind(BlockKind.Ladder)
         assertEquals(listOf(1, 2, 3), ladder.rungs)
         assertEquals(swings.copy(kind = BlockKind.Ladder, rungs = listOf(1, 2, 3)), ladder)
-        val fromLadder = Block(Exercise.Press, rounds = 3, kind = BlockKind.Ladder, rungs = listOf(1, 2))
+        val fromLadder = Block(BuiltInExercise.Press, rounds = 3, kind = BlockKind.Ladder, rungs = listOf(1, 2))
         assertEquals(ProgramDraft.NEW_REPS, fromLadder.asKind(BlockKind.Emom).reps)
     }
 
     @Test
     fun `a block keeps two bells only for a lift that can take them`() {
-        val doubleClean = Block(Exercise.Clean, rounds = 5, reps = 5, double = true)
-        assertEquals(false, doubleClean.withExercise(Exercise.GetUp).double)
-        assertEquals(true, doubleClean.withExercise(Exercise.Press).double)
-        assertEquals(true, swings.withExercise(Exercise.ArmorBuildingComplex).double)
+        val doubleClean = Block(BuiltInExercise.Clean, rounds = 5, reps = 5, double = true)
+        assertEquals(false, doubleClean.withExercise(BuiltInExercise.GetUp).double)
+        assertEquals(true, doubleClean.withExercise(BuiltInExercise.Press).double)
+        assertEquals(true, swings.withExercise(BuiltInExercise.ArmorBuildingComplex).double)
     }
 
     @Test

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.domain.BlockKind
+import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.EmomClock
 import dev.justinsmith.bells.domain.EmomPhase
 import dev.justinsmith.bells.domain.EmomState
@@ -33,7 +34,7 @@ import kotlinx.coroutines.launch
 
 /** The set the Log sheet will log, kept between sets so the next starts where the last left off. */
 data class SetDraft(
-    val exercise: Exercise = Exercise.TwoHandSwing,
+    val exercise: Exercise = BuiltInExercise.TwoHandSwing,
     val bellKg: Double = DEFAULT_BELL_KG,
     val reps: Int = DEFAULT_REPS,
     val side: Side = Side.Left,

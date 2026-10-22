@@ -41,7 +41,7 @@ data class ProgramDraft(
         const val MAX_RUNGS = 10
 
         /** A block as one is added: 5 sets of 10 two-hand swings. */
-        val NEW_BLOCK = Block(Exercise.TwoHandSwing, rounds = 5, reps = 10)
+        val NEW_BLOCK = Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 10)
 
         /** The rungs a block gets on becoming a ladder. */
         val NEW_RUNGS = listOf(1, 2, 3)
