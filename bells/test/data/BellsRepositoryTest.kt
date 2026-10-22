@@ -1,14 +1,21 @@
 package dev.justinsmith.bells.data
 
+import dev.justinsmith.bells.domain.BandLevel
 import dev.justinsmith.bells.domain.Block
 import dev.justinsmith.bells.domain.BlockKind
 import dev.justinsmith.bells.domain.BuiltInExercise
+import dev.justinsmith.bells.domain.Equipment
+import dev.justinsmith.bells.domain.ExerciseDraft
+import dev.justinsmith.bells.domain.Focus
+import dev.justinsmith.bells.domain.Measure
 import dev.justinsmith.bells.domain.ProgramDraft
 import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.domain.Side
+import dev.justinsmith.bells.domain.UnknownExercise
 import dev.justinsmith.bells.domain.program
 import dev.justinsmith.bells.fakes.FakeBellDao
+import dev.justinsmith.bells.fakes.FakeCustomExerciseDao
 import dev.justinsmith.bells.fakes.FakeCustomProgramDao
 import dev.justinsmith.bells.fakes.FakeFollowingDao
 import dev.justinsmith.bells.fakes.FakeSessionDao
@@ -28,7 +35,9 @@ class BellsRepositoryTest {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
     private val followingDao = FakeFollowingDao()
     private val programDao = FakeCustomProgramDao()
-    private val repository = BellsRepository(sessionDao, FakeBellDao(), followingDao, programDao, scope) { now }
+    private val exerciseDao = FakeCustomExerciseDao()
+    private val repository =
+        BellsRepository(sessionDao, FakeBellDao(), followingDao, programDao, exerciseDao, scope) { now }
 
     private val pressAndSwings = ProgramDraft(
         name = "Press and swings",
@@ -89,6 +98,69 @@ class BellsRepositoryTest {
         repository.startSession()
         repository.logSet(BuiltInExercise.ArmorBuildingComplex, 24.0, 1, null)
         assertTrue(assertNotNull(repository.active.value).sets.single().double)
+    }
+
+    @Test
+    fun `a held set keeps its seconds and a band set its band`() = runTest {
+        repository.startSession()
+        repository.logSet(BuiltInExercise.SidePlank, 0.0, 0, Side.Left, seconds = 45)
+        repository.logSet(BuiltInExercise.BandPullApart, 0.0, 20, null, band = BandLevel.Medium)
+        val (plank, pullApart) = assertNotNull(repository.active.value).sets
+        assertEquals(45, plank.seconds)
+        assertEquals(Side.Left, plank.side)
+        assertEquals(Equipment.Bodyweight, plank.equipment)
+        assertEquals(BandLevel.Medium, pullApart.band)
+        assertEquals(Equipment.Band, pullApart.equipment)
+    }
+
+    @Test
+    fun `seconds and a band are dropped from an exercise that takes neither`() = runTest {
+        repository.startSession()
+        repository.logSet(BuiltInExercise.PushUp, 0.0, 15, null, seconds = 30, band = BandLevel.Heavy)
+        val pushUp = assertNotNull(repository.active.value).sets.single()
+        assertNull(pushUp.seconds)
+        assertNull(pushUp.band)
+    }
+
+    @Test
+    fun `an exercise the user adds is listed trimmed and its sets read with it`() = runTest {
+        val uid = repository.saveExercise(
+            null,
+            ExerciseDraft(" Copenhagen plank ", Equipment.Bodyweight, Measure.Time, perSide = true, Focus.Core),
+        )
+        val added = repository.customExercises.value.single()
+        assertEquals("Copenhagen plank", added.name)
+        assertEquals(uid, added.uid)
+        repository.startSession()
+        repository.logSet(added, 0.0, 0, Side.Right, seconds = 30)
+        val set = assertNotNull(repository.active.value).sets.single()
+        assertEquals(added, set.exercise)
+        assertEquals(30, set.seconds)
+    }
+
+    @Test
+    fun `a set this build cannot name is kept as an unknown exercise`() = runTest {
+        repository.startSession()
+        val session = assertNotNull(repository.active.value).uid
+        sessionDao.sets.value = listOf(
+            SetEntity(0, session, "Deadlift", 60.0, 5, null, 0, equipment = "Kettlebell"),
+            SetEntity(0, session, "custom:gone", 0.0, 0, null, 1, equipment = "Mat", seconds = 40),
+        )
+        val (deadlift, gone) = assertNotNull(repository.active.value).sets
+        assertEquals(UnknownExercise("Deadlift", Equipment.Kettlebell, Measure.Reps), deadlift.exercise)
+        assertEquals(300.0, deadlift.tonnageKg)
+        assertEquals(UnknownExercise("custom:gone", Equipment.Mat, Measure.Time), gone.exercise)
+    }
+
+    @Test
+    fun `a set logged before version 7 was done with a kettlebell`() = runTest {
+        repository.startSession()
+        val session = assertNotNull(repository.active.value).uid
+        sessionDao.sets.value = listOf(SetEntity(0, session, "Press", 16.0, 5, "Left", 0))
+        val press = assertNotNull(repository.active.value).sets.single()
+        assertEquals(BuiltInExercise.Press, press.exercise)
+        assertEquals(Equipment.Kettlebell, press.equipment)
+        assertNull(press.seconds)
     }
 
     @Test

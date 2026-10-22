@@ -36,6 +36,8 @@
     <string name="exercise_front_squat">Front squat</string>
     <!-- Dan John's complex with two bells: 2 cleans, a press and 3 front squats make one. -->
     <string name="exercise_armor_building_complex">Armor Building Complex</string>
+    <!-- A logged set's exercise this version of the app doesn't know, from a newer one. -->
+    <string name="exercise_unknown">Unknown exercise</string>
     <!-- Bodyweight -->
     <string name="exercise_push_up">Push-up</string>
     <string name="exercise_incline_push_up">Incline push-up</string>

@@ -2,6 +2,8 @@ package dev.justinsmith.bells.fakes
 
 import dev.justinsmith.bells.data.BellDao
 import dev.justinsmith.bells.data.BellEntity
+import dev.justinsmith.bells.data.CustomExerciseDao
+import dev.justinsmith.bells.data.CustomExerciseEntity
 import dev.justinsmith.bells.data.CustomProgramDao
 import dev.justinsmith.bells.data.CustomProgramEntity
 import dev.justinsmith.bells.data.FollowingDao
@@ -121,6 +123,16 @@ class FakeCustomProgramDao : CustomProgramDao {
     override suspend fun delete(uid: String) = rows.update { all -> all.filterNot { it.uid == uid } }
 }
 
+class FakeCustomExerciseDao : CustomExerciseDao {
+    val rows = MutableStateFlow(emptyList<CustomExerciseEntity>())
+
+    override fun observeAll(): Flow<List<CustomExerciseEntity>> =
+        rows.map { all -> all.sortedWith(compareBy({ it.name.lowercase() }, { it.uid })) }
+
+    override suspend fun upsert(exercise: CustomExerciseEntity) =
+        rows.update { all -> all.filterNot { it.uid == exercise.uid } + exercise }
+}
+
 /** The rest of the app as Bells sees it: interval workouts and a weekly goal a test sets. */
 class FakeIntervalActivity : IntervalActivity {
     override val workouts = MutableStateFlow(emptyList<IntervalWorkout>())
@@ -157,6 +169,7 @@ class FakeBellsStorage {
     val bells = FakeBellDao()
     val following = FakeFollowingDao()
     val programs = FakeCustomProgramDao()
+    val exercises = FakeCustomExerciseDao()
 }
 
 /** Stands in for `rememberBellsPlatformModule()`. Tests never load the real one: it writes a database file. */
@@ -172,6 +185,7 @@ fun fakeBellsStorageModule(storage: FakeBellsStorage): Module = module {
     single<BellDao> { storage.bells }
     single<FollowingDao> { storage.following }
     single<CustomProgramDao> { storage.programs }
+    single<CustomExerciseDao> { storage.exercises }
 }
 
 /**

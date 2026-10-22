@@ -3,14 +3,21 @@
 package dev.justinsmith.bells.data
 
 import co.touchlab.kermit.Logger
+import dev.justinsmith.bells.domain.BandLevel
+import dev.justinsmith.bells.domain.CustomExercise
+import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
+import dev.justinsmith.bells.domain.ExerciseDraft
+import dev.justinsmith.bells.domain.Focus
 import dev.justinsmith.bells.domain.LiftSession
+import dev.justinsmith.bells.domain.Measure
 import dev.justinsmith.bells.domain.Program
 import dev.justinsmith.bells.domain.ProgramDay
 import dev.justinsmith.bells.domain.ProgramDraft
 import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.Side
+import dev.justinsmith.bells.domain.UnknownExercise
 import dev.justinsmith.bells.domain.builtInPrograms
 import dev.justinsmith.interval.platform.WallClock
 import kotlinx.coroutines.CancellationException
@@ -42,6 +49,7 @@ class BellsRepository(
     private val bellDao: BellDao,
     private val followingDao: FollowingDao,
     private val customProgramDao: CustomProgramDao,
+    private val customExerciseDao: CustomExerciseDao,
     private val scope: CoroutineScope,
     private val clock: WallClock,
 ) {
@@ -66,6 +74,11 @@ class BellsRepository(
     /** The bells the user owns, lightest first. */
     val bells: StateFlow<List<Double>> = _bells.asStateFlow()
 
+    private val _customExercises = MutableStateFlow(emptyList<CustomExercise>())
+
+    /** The exercises the user added, archived ones too, by name. */
+    val customExercises: StateFlow<List<CustomExercise>> = _customExercises.asStateFlow()
+
     private val _customPrograms = MutableStateFlow(emptyList<Program>())
 
     /** The programs the user made, by name. */
@@ -88,12 +101,19 @@ class BellsRepository(
         scope.launch {
             val sessionsLoaded = CompletableDeferred<Unit>()
             val bellsLoaded = CompletableDeferred<Unit>()
+            val exercises = customExerciseDao.observeAll().orEmpty("exercises").map { rows ->
+                rows.mapNotNull { it.toDomain() }
+            }
             launch {
-                combine(sessionDao.observeSessions(), sessionDao.observeSets()) { sessions, sets ->
-                    val bySession = sets.mapNotNull { it.toDomain()?.let { set -> it.sessionUid to set } }
-                        .groupBy({ it.first }, { it.second })
-                    sessions.map { it.toDomain(bySession[it.uid].orEmpty()) }
-                }.orEmpty("sessions").collect { all ->
+                // The user's exercises come with the sets, which name them.
+                combine(sessionDao.observeSessions(), sessionDao.observeSets(), exercises) { sessions, sets, made ->
+                    val bySession = sets.groupBy({ it.sessionUid }, { it.toDomain(made) })
+                    made to sessions.map { it.toDomain(bySession[it.uid].orEmpty()) }
+                }.catch { e ->
+                    log.e(e) { "Couldn't read sessions" }
+                    emit(emptyList<CustomExercise>() to emptyList())
+                }.collect { (made, all) ->
+                    _customExercises.value = made
                     _sessions.value = all.filter { it.finishedAtEpochMillis != null }
                     _active.value = all.firstOrNull { it.finishedAtEpochMillis == null }
                     sessionsLoaded.complete(Unit)
@@ -203,14 +223,36 @@ class BellsRepository(
         persist { followingDao.clear() }
     }
 
-    /** Logs a set to the session in progress, with two bells when [double] and [exercise] can be. */
-    fun logSet(exercise: Exercise, bellKg: Double, reps: Int, side: Side?, double: Boolean = false) {
+    /**
+     * Logs a set to the session in progress, with two bells when [double] and [exercise] can be. A held
+     * exercise keeps its [seconds], a band one its [band]; each is dropped from any other.
+     */
+    fun logSet(
+        exercise: Exercise,
+        bellKg: Double,
+        reps: Int,
+        side: Side?,
+        double: Boolean = false,
+        seconds: Int? = null,
+        band: BandLevel? = null,
+    ) {
         persist {
             val active = sessionDao.active() ?: return@persist
             val doubled = exercise.doubled(double)
-            val sided = side.takeIf { exercise.sided(doubled) }
             sessionDao.insert(
-                SetEntity(0, active.uid, exercise.key, bellKg, reps, sided?.name, clock.nowMillis(), doubled),
+                SetEntity(
+                    0,
+                    active.uid,
+                    exercise.key,
+                    bellKg,
+                    reps,
+                    side.takeIf { exercise.sided(doubled) }?.name,
+                    clock.nowMillis(),
+                    doubled,
+                    equipment = exercise.equipment.name,
+                    seconds = seconds.takeIf { exercise.measure == Measure.Time },
+                    band = band.takeIf { exercise.equipment == Equipment.Band }?.name,
+                ),
             )
         }
     }
@@ -233,6 +275,9 @@ class BellsRepository(
                     set.side?.name,
                     set.loggedAtEpochMillis,
                     set.double,
+                    set.equipment.name,
+                    set.seconds,
+                    set.band?.name,
                 ),
             )
         }
@@ -265,6 +310,28 @@ class BellsRepository(
         persist { sessionDao.markDeleted(uid, now) }
     }
 
+    /**
+     * Saves [draft] as the exercise [uid], or as a new one with null; returns its uid. Its name is kept as
+     * written, trimmed.
+     */
+    @OptIn(ExperimentalUuidApi::class)
+    fun saveExercise(uid: String?, draft: ExerciseDraft): String {
+        val id = uid ?: Uuid.random().toHexString()
+        val row = CustomExerciseEntity(
+            id,
+            draft.name.trim(),
+            draft.equipment.name,
+            draft.measure.name,
+            draft.perSide,
+            draft.focus.name,
+            draft.cues.trim(),
+            archived = false,
+            updatedAtEpochMillis = clock.nowMillis(),
+        )
+        persist { customExerciseDao.upsert(row) }
+        return id
+    }
+
     fun setOwned(kg: Double, owned: Boolean) {
         persist { if (owned) bellDao.upsert(BellEntity(kg)) else bellDao.delete(kg) }
     }
@@ -292,23 +359,39 @@ class BellsRepository(
 }
 
 /**
- * A set of an exercise this build doesn't know is left out. One of a lift only done with two bells is read
- * as such, though logged before sets had the column.
+ * A set, naming one of [made] or a built-in; one this build can't name reads as an [UnknownExercise], so it
+ * is never lost. A set logged before version 7 was done with a kettlebell. One of a lift only done with two
+ * bells is read as such, though logged before sets had the column.
  */
-private fun SetEntity.toDomain(): SetLog? {
-    val lift = Exercise.parse(exercise) ?: return null
+private fun SetEntity.toDomain(made: List<CustomExercise>): SetLog {
+    val done = equipment?.let { e -> Equipment.entries.firstOrNull { it.name == e } } ?: Equipment.Kettlebell
+    val lift = Exercise.parse(exercise, made)
+        ?: UnknownExercise(exercise, done, if (seconds != null) Measure.Time else Measure.Reps)
     return SetLog(
         id,
         lift,
         bellKg,
         reps,
-        side?.let { s ->
-            Side.entries.firstOrNull { it.name == s }
-        },
+        side?.let { s -> Side.entries.firstOrNull { it.name == s } },
         loggedAtEpochMillis,
         lift.doubled(doubled),
+        equipment = done,
+        seconds = seconds,
+        band = band?.let { b -> BandLevel.entries.firstOrNull { it.name == b } },
     )
 }
+
+/** An exercise the user added; one whose kinds this build doesn't know is left out. */
+private fun CustomExerciseEntity.toDomain(): CustomExercise? = CustomExercise(
+    uid,
+    name,
+    equipment = Equipment.entries.firstOrNull { it.name == equipment } ?: return null,
+    measure = Measure.entries.firstOrNull { it.name == measure } ?: return null,
+    perSide = perSide,
+    focus = Focus.entries.firstOrNull { it.name == focus } ?: return null,
+    cues = cues,
+    archived = archived,
+)
 
 private fun SessionEntity.toDomain(sets: List<SetLog>) = LiftSession(
     uid,

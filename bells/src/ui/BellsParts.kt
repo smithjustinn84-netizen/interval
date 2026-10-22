@@ -20,11 +20,14 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.bells.domain.BuiltInExercise
+import dev.justinsmith.bells.domain.CustomExercise
 import dev.justinsmith.bells.domain.Doubles
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.Side
+import dev.justinsmith.bells.domain.UnknownExercise
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.common_joined
+import dev.justinsmith.bells.resources.exercise_unknown
 import dev.justinsmith.bells.resources.lift_double
 import dev.justinsmith.bells.resources.session_title_more
 import dev.justinsmith.bells.resources.session_title_two
@@ -41,6 +44,8 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun exerciseName(exercise: Exercise): String = when (exercise) {
     is BuiltInExercise -> stringResource(exercise.label())
+    is CustomExercise -> exercise.name
+    is UnknownExercise -> stringResource(Res.string.exercise_unknown)
 }
 
 /**

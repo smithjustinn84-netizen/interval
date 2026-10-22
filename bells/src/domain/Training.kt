@@ -1,8 +1,9 @@
 package dev.justinsmith.bells.domain
 
 /**
- * An exercise Bells logs: one of the [BuiltInExercise]s. [perSide] ones are logged one side at a time,
- * unless done with two bells; [doubles] says whether they can be. Sets and programs store it by [key].
+ * An exercise Bells logs: one of the [BuiltInExercise]s, one the user added ([CustomExercise]), or one a set
+ * names that this build can't ([UnknownExercise]). [perSide] ones are logged one side at a time, unless done
+ * with two bells; [doubles] says whether they can be. Sets and programs store it by [key].
  */
 sealed interface Exercise {
     /** How it is stored, with its sets and in programs; never changes once shipped. */
@@ -32,17 +33,72 @@ sealed interface Exercise {
     fun sided(double: Boolean): Boolean = perSide && !double
 
     companion object {
-        /** The exercise [key] names, as stored; an unknown one (from a newer build) reads as null. */
-        fun parse(key: String): Exercise? = BuiltInExercise.entries.firstOrNull { it.key == key }
+        /**
+         * The exercise [key] names, as stored: a built-in, or one of [custom]; null for one this build doesn't
+         * know (from a newer build) or that is gone.
+         */
+        fun parse(key: String, custom: List<CustomExercise> = emptyList()): Exercise? =
+            if (key.startsWith(CUSTOM_EXERCISE_PREFIX)) {
+                custom.firstOrNull { it.key == key }
+            } else {
+                BuiltInExercise.entries.firstOrNull { it.key == key }
+            }
 
-        /** The catalogue's order: the built-ins as they are declared. */
-        val order: Comparator<Exercise> = compareBy { exercise ->
+        /** The catalogue's order: the built-ins as they are declared, then the user's by name, then unknowns. */
+        val order: Comparator<Exercise> = compareBy<Exercise> { exercise ->
             when (exercise) {
                 is BuiltInExercise -> exercise.ordinal
+                is CustomExercise -> BuiltInExercise.entries.size
+                is UnknownExercise -> BuiltInExercise.entries.size + 1
             }
-        }
+        }.thenBy { (it as? CustomExercise)?.name?.lowercase() }.thenBy { it.key }
     }
 }
+
+private const val CUSTOM_EXERCISE_PREFIX = "custom:"
+
+/**
+ * An exercise the user added, by its [uid], named as they wrote it, with [cues] to remember mid-set. An
+ * [archived] one is out of the picker but keeps its sets. A kettlebell one can be done with two bells.
+ */
+data class CustomExercise(
+    val uid: String,
+    val name: String,
+    override val equipment: Equipment,
+    override val measure: Measure,
+    override val perSide: Boolean,
+    override val focus: Focus,
+    val cues: String = "",
+    val archived: Boolean = false,
+) : Exercise {
+    override val key: String get() = CUSTOM_EXERCISE_PREFIX + uid
+
+    override val doubles: Doubles get() = if (equipment == Equipment.Kettlebell) Doubles.Optional else Doubles.Never
+}
+
+/**
+ * What a set names that this build can't: an exercise from a newer build, or one of the user's no longer
+ * there. It keeps the set, with the [equipment] and [measure] the set was logged with, and whatever bells.
+ */
+data class UnknownExercise(
+    override val key: String,
+    override val equipment: Equipment,
+    override val measure: Measure,
+) : Exercise {
+    override val focus: Focus get() = Focus.FullBody
+    override val perSide: Boolean get() = false
+    override val doubles: Doubles get() = Doubles.Optional
+}
+
+/** What makes a [CustomExercise], as the user lays it out. */
+data class ExerciseDraft(
+    val name: String = "",
+    val equipment: Equipment = Equipment.Bodyweight,
+    val measure: Measure = Measure.Reps,
+    val perSide: Boolean = false,
+    val focus: Focus = Focus.FullBody,
+    val cues: String = "",
+)
 
 /**
  * The exercises that ship with the app, stored by name: a name, once shipped, never changes. Screens name
@@ -155,9 +211,14 @@ enum class Doubles { Never, Optional, Always }
 /** The side a one-sided set was done on. */
 enum class Side { Left, Right }
 
+/** The resistance bands every user starts with, lightest first, as the common colours run. */
+enum class BandLevel { ExtraLight, Light, Medium, Heavy, ExtraHeavy }
+
 /**
  * One logged set: [reps] of [exercise] with a [bellKg] bell, or a pair of them when [double], on [side] for
- * a one-sided lift.
+ * a one-sided lift. The set keeps the [equipment] it was done with, so changing an exercise later never
+ * changes what its sets were. A held set lasted [seconds]; a band set used [band]. For bodyweight [bellKg]
+ * is the weight added, for a band or the mat it is 0.
  */
 data class SetLog(
     val id: Long,
@@ -167,6 +228,9 @@ data class SetLog(
     val side: Side?,
     val loggedAtEpochMillis: Long,
     val double: Boolean = false,
+    val equipment: Equipment = exercise.equipment,
+    val seconds: Int? = null,
+    val band: BandLevel? = null,
 ) {
     /** The weight moved: the bell, or both, times the reps. */
     val tonnageKg: Double get() = bellKg * reps * (if (double) 2 else 1)

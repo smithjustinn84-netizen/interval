@@ -22,7 +22,9 @@ import kotlinx.coroutines.flow.Flow
  * Bells' sessions and their sets, the user's bells and the program they follow. Version 2 added
  * [FollowingEntity] and the program day a session was; version 3 settings shared with Interval, then a
  * sibling app; version 4 dropped them, and the copy of Interval's workouts, once Bells became part of it;
- * version 5 added the programs the user makes, [CustomProgramEntity]; version 6 sets done with two bells.
+ * version 5 added the programs the user makes, [CustomProgramEntity]; version 6 sets done with two bells;
+ * version 7 sets of any equipment, held or with a band, and the exercises the user adds,
+ * [CustomExerciseEntity]. Every version adds; none rewrites a row.
  */
 @Database(
     entities = [
@@ -31,14 +33,16 @@ import kotlinx.coroutines.flow.Flow
         BellEntity::class,
         FollowingEntity::class,
         CustomProgramEntity::class,
+        CustomExerciseEntity::class,
     ],
-    version = 6,
+    version = 7,
     // 3 to 4 is MIGRATION_3_4, added in bellsStorageModule.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
         AutoMigration(from = 4, to = 5),
         AutoMigration(from = 5, to = 6),
+        AutoMigration(from = 6, to = 7),
     ],
 )
 @ConstructedBy(BellsDatabaseConstructor::class)
@@ -50,6 +54,8 @@ abstract class BellsDatabase : RoomDatabase() {
     abstract fun followingDao(): FollowingDao
 
     abstract fun customProgramDao(): CustomProgramDao
+
+    abstract fun customExerciseDao(): CustomExerciseDao
 }
 
 /** Room generates the `actual` for each platform. */
@@ -144,6 +150,15 @@ interface CustomProgramDao {
 }
 
 @Dao
+interface CustomExerciseDao {
+    @Query("SELECT * FROM custom_exercise ORDER BY name COLLATE NOCASE, uid")
+    fun observeAll(): Flow<List<CustomExerciseEntity>>
+
+    @Upsert
+    suspend fun upsert(exercise: CustomExerciseEntity)
+}
+
+@Dao
 interface BellDao {
     @Query("SELECT * FROM bell ORDER BY kg")
     fun observeAll(): Flow<List<BellEntity>>
@@ -182,6 +197,33 @@ data class SetEntity(
     @ColumnInfo(name = "logged_at") val loggedAtEpochMillis: Long,
     /** Done with a bell in each hand, both of [bellKg]. */
     @ColumnInfo(defaultValue = "0") val doubled: Boolean = false,
+    /**
+     * What it was done with, a [dev.justinsmith.bells.domain.Equipment] by name; null for a set logged
+     * before version 7, all kettlebell.
+     */
+    val equipment: String? = null,
+    /** How long it was held; null for a set counted in reps. */
+    val seconds: Int? = null,
+    /** The band used, a [dev.justinsmith.bells.domain.BandLevel] by name; null for a set without one. */
+    val band: String? = null,
+)
+
+/**
+ * An exercise the user added. [equipment], [measure] and [focus] are their enums by name; [archived] keeps
+ * it, and its sets, out of the picker.
+ */
+@Entity(tableName = "custom_exercise")
+data class CustomExerciseEntity(
+    /** 32 hex digits, never reused. */
+    @PrimaryKey val uid: String,
+    val name: String,
+    val equipment: String,
+    val measure: String,
+    @ColumnInfo(name = "per_side") val perSide: Boolean,
+    val focus: String,
+    val cues: String,
+    val archived: Boolean,
+    @ColumnInfo(name = "updated_at") val updatedAtEpochMillis: Long,
 )
 
 /**

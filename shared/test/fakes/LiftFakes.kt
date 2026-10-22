@@ -3,6 +3,8 @@ package dev.justinsmith.interval.fakes
 import dev.justinsmith.bells.data.BellDao
 import dev.justinsmith.bells.data.BellEntity
 import dev.justinsmith.bells.data.BellsRepository
+import dev.justinsmith.bells.data.CustomExerciseDao
+import dev.justinsmith.bells.data.CustomExerciseEntity
 import dev.justinsmith.bells.data.CustomProgramDao
 import dev.justinsmith.bells.data.CustomProgramEntity
 import dev.justinsmith.bells.data.FollowingDao
@@ -119,12 +121,23 @@ class FakeCustomProgramDao : CustomProgramDao {
     override suspend fun delete(uid: String) = rows.update { all -> all.filterNot { it.uid == uid } }
 }
 
+class FakeCustomExerciseDao : CustomExerciseDao {
+    val rows = MutableStateFlow(emptyList<CustomExerciseEntity>())
+
+    override fun observeAll(): Flow<List<CustomExerciseEntity>> =
+        rows.map { all -> all.sortedWith(compareBy({ it.name.lowercase() }, { it.uid })) }
+
+    override suspend fun upsert(exercise: CustomExerciseEntity) =
+        rows.update { all -> all.filterNot { it.uid == exercise.uid } + exercise }
+}
+
 /** Lift's storage in memory: no database, and writes run at once on the caller's thread. */
 class FakeLiftStorage {
     val sessions = FakeSessionDao()
     val bells = FakeBellDao()
     val following = FakeFollowingDao()
     val programs = FakeCustomProgramDao()
+    val exercises = FakeCustomExerciseDao()
 
     /** A repository over this storage, its writes landed by the time a call returns. */
     fun repository(now: WallClock = WallClock { 0L }): BellsRepository = BellsRepository(
@@ -132,6 +145,7 @@ class FakeLiftStorage {
         bells,
         following,
         programs,
+        exercises,
         CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
         now,
     )
@@ -189,4 +203,5 @@ fun fakeLiftStorageModule(storage: FakeLiftStorage = FakeLiftStorage()): Module 
     single<BellDao> { storage.bells }
     single<FollowingDao> { storage.following }
     single<CustomProgramDao> { storage.programs }
+    single<CustomExerciseDao> { storage.exercises }
 }

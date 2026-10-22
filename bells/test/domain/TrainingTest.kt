@@ -95,6 +95,28 @@ class TrainingTest {
     }
 
     @Test
+    fun `an exercise the user added is found by its key among theirs`() {
+        val plank = CustomExercise("a1", "Copenhagen plank", Equipment.Bodyweight, Measure.Time, true, Focus.Core)
+        assertEquals("custom:a1", plank.key)
+        assertEquals(plank, Exercise.parse("custom:a1", listOf(plank)))
+        assertNull(Exercise.parse("custom:b2", listOf(plank)))
+        assertEquals(Doubles.Never, plank.doubles)
+    }
+
+    @Test
+    fun `the catalogue runs built-ins then the user's by name then unknowns`() {
+        val zercher = CustomExercise("z", "zercher carry", Equipment.Kettlebell, Measure.Reps, false, Focus.FullBody)
+        val bear = CustomExercise("b", "Bear crawl", Equipment.Bodyweight, Measure.Time, false, Focus.FullBody)
+        val unknown = UnknownExercise("Deadlift", Equipment.Kettlebell, Measure.Reps)
+        assertEquals(
+            listOf(BuiltInExercise.TwoHandSwing, BuiltInExercise.Seal, bear, zercher, unknown),
+            listOf(unknown, zercher, BuiltInExercise.Seal, bear, BuiltInExercise.TwoHandSwing)
+                .sortedWith(Exercise.order),
+        )
+        assertEquals(Doubles.Optional, zercher.doubles)
+    }
+
+    @Test
     fun `the starter catalogue has 68 exercises across four kinds of equipment`() {
         assertEquals(
             mapOf(Equipment.Kettlebell to 13, Equipment.Bodyweight to 22, Equipment.Band to 15, Equipment.Mat to 18),
