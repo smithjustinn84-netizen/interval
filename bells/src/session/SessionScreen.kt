@@ -35,32 +35,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
-import dev.justinsmith.bells.domain.Doubles
+import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.SetLog
-import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.domain.formatKg
-import dev.justinsmith.bells.domain.kettlebellLifts
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.common_cancel
 import dev.justinsmith.bells.resources.common_joined
-import dev.justinsmith.bells.resources.emom_fewer_minutes
-import dev.justinsmith.bells.resources.emom_minutes
-import dev.justinsmith.bells.resources.emom_more_minutes
-import dev.justinsmith.bells.resources.emom_start
 import dev.justinsmith.bells.resources.kg_value
-import dev.justinsmith.bells.resources.lift_double
-import dev.justinsmith.bells.resources.log_bell
-import dev.justinsmith.bells.resources.log_exercise
-import dev.justinsmith.bells.resources.log_fewer_reps
-import dev.justinsmith.bells.resources.log_first_side
-import dev.justinsmith.bells.resources.log_kind_emom
-import dev.justinsmith.bells.resources.log_kind_set
-import dev.justinsmith.bells.resources.log_more_reps
-import dev.justinsmith.bells.resources.log_no_bells
-import dev.justinsmith.bells.resources.log_reps
-import dev.justinsmith.bells.resources.log_reps_each_minute
-import dev.justinsmith.bells.resources.log_side
-import dev.justinsmith.bells.resources.log_title
 import dev.justinsmith.bells.resources.next_day_done
 import dev.justinsmith.bells.resources.next_emom
 import dev.justinsmith.bells.resources.next_log
@@ -84,15 +65,10 @@ import dev.justinsmith.bells.resources.session_stay
 import dev.justinsmith.bells.resources.session_time
 import dev.justinsmith.bells.resources.session_title
 import dev.justinsmith.bells.resources.session_undo
-import dev.justinsmith.bells.resources.set_line
-import dev.justinsmith.bells.resources.set_line_double
-import dev.justinsmith.bells.resources.set_line_side
-import dev.justinsmith.bells.ui.ChoiceRow
 import dev.justinsmith.bells.ui.StatTile
-import dev.justinsmith.bells.ui.exerciseName
 import dev.justinsmith.bells.ui.liftName
 import dev.justinsmith.bells.ui.sessionTitle
-import dev.justinsmith.bells.ui.sideName
+import dev.justinsmith.bells.ui.setLine
 import dev.justinsmith.interval.platform.KeepScreenOn
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.ConfirmDialog
@@ -100,18 +76,14 @@ import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
-import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.Motion
-import dev.justinsmith.interval.ui.RepeatButton
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SecondaryButton
-import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TitleBar
-import dev.justinsmith.interval.ui.ToggleRow
 import dev.justinsmith.interval.ui.surfaceButton
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
@@ -146,6 +118,7 @@ fun SessionRoute(onExit: () -> Unit) {
         state = state,
         actions = SessionActions(
             onDraft = viewModel::updateDraft,
+            onEquipment = viewModel::chooseEquipment,
             onLog = viewModel::logSet,
             onLogNext = viewModel::logNext,
             onStartPlannedEmom = viewModel::startPlannedEmom,
@@ -200,6 +173,7 @@ private fun LeaveGuard(emomRunning: Boolean, hasSets: Boolean, onLeave: () -> Un
 /** What the session screen's controls do. */
 data class SessionActions(
     val onDraft: ((SetDraft) -> SetDraft) -> Unit = {},
+    val onEquipment: (Equipment) -> Unit = {},
     val onLog: () -> Unit = {},
     val onLogNext: () -> Unit = {},
     val onStartPlannedEmom: () -> Unit = {},
@@ -258,7 +232,7 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
                 UndoBar(
                     stringResource(
                         Res.string.session_set_removed,
-                        setLine(set.bellKg, set.reps, set.side, set.double),
+                        setLine(set),
                     ),
                     onUndo = {
                         removed = null
@@ -317,7 +291,7 @@ private fun LoggedSets(state: SessionUiState, onRemove: (SetLog) -> Unit) {
 
 @Composable
 private fun SetRow(set: SetLog, onRemove: () -> Unit) {
-    val line = setLine(set.bellKg, set.reps, set.side, set.double)
+    val line = setLine(set)
     Row(
         Modifier.fillMaxWidth().height(Sizes.listRow).padding(start = Spacing.space16, end = Spacing.space4),
         verticalAlignment = Alignment.CenterVertically,
@@ -352,119 +326,6 @@ private fun UndoBar(text: String, onUndo: () -> Unit, modifier: Modifier = Modif
         ) {
             Text(stringResource(Res.string.session_undo), style = IntervalTheme.type.control, color = palette.text)
         }
-    }
-}
-
-/** A set in words: "24 kg × 10", "20 kg × 5 · Left", or with two bells "2 × 16 kg × 5". */
-@Composable
-fun setLine(bellKg: Double, reps: Int, side: Side?, double: Boolean = false): String = when {
-    double -> stringResource(Res.string.set_line_double, formatKg(bellKg), reps)
-    side == null -> stringResource(Res.string.set_line, formatKg(bellKg), reps)
-    else -> stringResource(Res.string.set_line_side, formatKg(bellKg), reps, sideName(side))
-}
-
-/** What the Log sheet adds: one set now, or an EMOM of the set every minute. */
-private enum class LogKind { Set, Emom }
-
-/**
- * Pick a set or an EMOM, then the lift, the bell (or two) and the reps; for a set, the side of a one-sided
- * lift, for an EMOM its minutes and first side. Then log the set, or start the EMOM.
- */
-@Composable
-private fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismiss: () -> Unit) {
-    val draft = state.draft
-    val palette = IntervalTheme.palette
-    // Saved by name: an enum is not saveable on every platform.
-    var kindName by rememberSaveable { mutableStateOf(LogKind.Set.name) }
-    val kind = LogKind.valueOf(kindName)
-    IntervalSheet(stringResource(Res.string.log_title), onDismiss = onDismiss) { hide ->
-        Column(
-            Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
-            verticalArrangement = Arrangement.spacedBy(Spacing.space8),
-        ) {
-            SegmentedPicker(
-                LogKind.entries,
-                kind,
-                label = {
-                    stringResource(if (it == LogKind.Set) Res.string.log_kind_set else Res.string.log_kind_emom)
-                },
-                onSelect = { kindName = it.name },
-                modifier = Modifier.padding(bottom = Spacing.space8),
-            )
-            GroupLabel(stringResource(Res.string.log_exercise))
-            ChoiceRow(kettlebellLifts, draft.exercise, {
-                exerciseName(it)
-            }, { e -> actions.onDraft { it.copy(exercise = e) } })
-            GroupLabel(stringResource(Res.string.log_bell))
-            ChoiceRow(state.bells, draft.bellKg, { formatKg(it) }, { kg -> actions.onDraft { it.copy(bellKg = kg) } })
-            if (!state.ownsBells) {
-                Text(stringResource(Res.string.log_no_bells), style = IntervalTheme.type.meta, color = palette.textDim)
-            }
-            if (draft.exercise.doubles == Doubles.Optional) {
-                ListCard {
-                    ToggleRow(
-                        stringResource(Res.string.lift_double),
-                        null,
-                        checked = draft.double,
-                        onToggle = { actions.onDraft { it.copy(double = !it.double) } },
-                    )
-                }
-            }
-            GroupLabel(
-                stringResource(if (kind == LogKind.Set) Res.string.log_reps else Res.string.log_reps_each_minute),
-            )
-            CountStepper(
-                draft.reps,
-                fewer = stringResource(Res.string.log_fewer_reps),
-                more = stringResource(Res.string.log_more_reps),
-                max = SetDraft.MAX_REPS,
-                onStep = { step -> actions.onDraft { it.copy(reps = it.reps + step) } },
-            )
-            if (kind == LogKind.Emom) {
-                GroupLabel(stringResource(Res.string.emom_minutes))
-                CountStepper(
-                    draft.minutes,
-                    fewer = stringResource(Res.string.emom_fewer_minutes),
-                    more = stringResource(Res.string.emom_more_minutes),
-                    max = SetDraft.MAX_MINUTES,
-                    onStep = { step -> actions.onDraft { it.copy(minutes = it.minutes + step) } },
-                )
-            }
-            if (draft.exercise.sided(draft.doubled)) {
-                GroupLabel(
-                    stringResource(if (kind == LogKind.Set) Res.string.log_side else Res.string.log_first_side),
-                )
-                ChoiceRow(Side.entries, draft.side, {
-                    sideName(it)
-                }, { side -> actions.onDraft { it.copy(side = side) } })
-            }
-            AccentButton(
-                stringResource(if (kind == LogKind.Set) Res.string.session_log else Res.string.emom_start),
-                onClick = {
-                    if (kind == LogKind.Set) actions.onLog() else actions.onStartEmom()
-                    hide()
-                },
-                modifier = Modifier.fillMaxWidth().padding(top = Spacing.space16, bottom = Spacing.space8),
-            )
-        }
-    }
-}
-
-/** A count from 1 to [max], large, with − and + that repeat while held. */
-@Composable
-private fun CountStepper(value: Int, fewer: String, more: String, max: Int, onStep: (Int) -> Unit) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
-    ) {
-        Text(
-            value.toString(),
-            style = IntervalTheme.type.display,
-            color = IntervalTheme.palette.text,
-            modifier = Modifier.weight(1f),
-        )
-        RepeatButton("−", fewer, enabled = value > 1, onStep = { onStep(-1) })
-        RepeatButton("+", more, enabled = value < max, onStep = { onStep(1) })
     }
 }
 

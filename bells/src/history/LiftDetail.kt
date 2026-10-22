@@ -27,8 +27,8 @@ import dev.justinsmith.bells.resources.history_delete
 import dev.justinsmith.bells.resources.history_delete_text
 import dev.justinsmith.bells.resources.history_delete_title
 import dev.justinsmith.bells.session.SessionStats
-import dev.justinsmith.bells.session.setLine
 import dev.justinsmith.bells.ui.liftName
+import dev.justinsmith.bells.ui.setLine
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.ConfirmDialog
@@ -123,7 +123,7 @@ fun LiftDetailScreen(
                 sets.forEachIndexed { i, set ->
                     if (i > 0) RowDivider()
                     Text(
-                        setLine(set.bellKg, set.reps, set.side, set.double),
+                        setLine(set),
                         style = IntervalTheme.type.body,
                         color = palette.text,
                         modifier = Modifier.padding(Spacing.space16),

@@ -44,6 +44,7 @@ import dev.justinsmith.bells.resources.emom_stop
 import dev.justinsmith.bells.resources.emom_work
 import dev.justinsmith.bells.resources.summary_done
 import dev.justinsmith.bells.ui.liftName
+import dev.justinsmith.bells.ui.setLine
 import dev.justinsmith.interval.platform.KeepScreenOn
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.Corners
@@ -182,7 +183,7 @@ private fun EmomReadout(run: EmomRun, state: EmomState, color: Color) {
             color = colors.onGround,
         )
         val side = run.sideOf(state.minute)
-        val task = setLine(run.bellKg, run.reps, side, run.double)
+        val task = setLine(run.bellKg, run.reps, side, run.double, run.exercise.equipment, band = run.band)
         Text(
             if (state.phase ==
                 EmomPhase.Rest

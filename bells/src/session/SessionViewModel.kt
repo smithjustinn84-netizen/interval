@@ -3,13 +3,16 @@ package dev.justinsmith.bells.session
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.bells.data.BellsRepository
+import dev.justinsmith.bells.domain.BandLevel
 import dev.justinsmith.bells.domain.BlockKind
 import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.EmomClock
 import dev.justinsmith.bells.domain.EmomPhase
 import dev.justinsmith.bells.domain.EmomState
+import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.LiftSession
+import dev.justinsmith.bells.domain.Measure
 import dev.justinsmith.bells.domain.PersonalRecord
 import dev.justinsmith.bells.domain.PlannedSet
 import dev.justinsmith.bells.domain.ProgramDay
@@ -32,7 +35,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/** The set the Log sheet will log, kept between sets so the next starts where the last left off. */
+/**
+ * The set the Log sheet will log, kept between sets so the next starts where the last left off. Each kind of
+ * load keeps its own value, so going from a bell to a band and back finds the bell where it was.
+ */
 data class SetDraft(
     val exercise: Exercise = BuiltInExercise.TwoHandSwing,
     val bellKg: Double = DEFAULT_BELL_KG,
@@ -42,16 +48,36 @@ data class SetDraft(
     val minutes: Int = DEFAULT_MINUTES,
     /** Two bells asked for: kept while a lift that can't be doubled is picked, for the next that can. */
     val double: Boolean = false,
+    /** Weight added to a bodyweight exercise; 0 for none. */
+    val addedKg: Double = 0.0,
+    /** How long a hold lasted. */
+    val seconds: Int = DEFAULT_SECONDS,
+    val band: BandLevel = BandLevel.Medium,
 ) {
     /** Whether the set is done with two bells. */
     val doubled: Boolean get() = exercise.doubled(double)
+
+    /** The weight the set is logged with: the bell, the weight added to bodyweight, or none. */
+    val loadKg: Double get() = when (exercise.equipment) {
+        Equipment.Kettlebell -> bellKg
+        Equipment.Bodyweight -> addedKg
+        Equipment.Band, Equipment.Mat -> 0.0
+    }
+
+    /** Whether the set is a hold, timed rather than counted. */
+    val held: Boolean get() = exercise.measure == Measure.Time
 
     companion object {
         const val DEFAULT_BELL_KG = 16.0
         const val DEFAULT_REPS = 10
         const val DEFAULT_MINUTES = 10
+        const val DEFAULT_SECONDS = 30
         const val MAX_REPS = 999
         const val MAX_MINUTES = 60
+
+        /** A hold steps by five seconds, up to ten minutes. */
+        const val SECONDS_STEP = 5
+        const val MAX_SECONDS = 600
     }
 }
 
@@ -74,6 +100,8 @@ data class EmomRun(
     val startedAtMillis: Long,
     val done: Set<Int> = emptySet(),
     val double: Boolean = false,
+    /** The band, for an exercise done with one. */
+    val band: BandLevel? = null,
 ) {
     /** The side of minute [minute] (from 1): a one-sided lift with one bell alternates. */
     fun sideOf(minute: Int): Side? = if (exercise.sided(double)) {
@@ -99,6 +127,8 @@ data class SessionUiState(
     val emom: EmomRun? = null,
     val emomState: EmomState? = null,
     val finished: Finished? = null,
+    /** What the sheet offers: every built-in, then the user's own not archived. */
+    val exercises: List<Exercise> = BuiltInExercise.entries,
 )
 
 /**
@@ -123,16 +153,19 @@ class SessionViewModel(
         }
     }
 
-    private val view = combine(draft, finished, emom) { draft, finished, emom -> Triple(draft, finished, emom) }
+    private val view = combine(draft, finished, emom, repository.customExercises) { draft, finished, emom, made ->
+        View(draft, finished, emom, BuiltInExercise.entries + made.filterNot { it.archived })
+    }
 
     val state: StateFlow<SessionUiState> =
         combine(repository.active, repository.bells, repository.programDay, view, ticks) {
                 active,
                 owned,
                 day,
-                (draft, finished, run),
+                chosen,
                 now,
             ->
+            val run = chosen.emom
             val emomState = run?.let { EmomClock(it.minutes).at(now - it.startedAtMillis, it.done) }
             val plan = active?.takeIf { it.program != null && it.program == day?.program?.key }?.let { day }
             SessionUiState(
@@ -143,12 +176,13 @@ class SessionViewModel(
                 },
                 bells = owned.ifEmpty { standardBells },
                 ownsBells = owned.isNotEmpty(),
-                draft = draft,
+                draft = chosen.draft,
                 upNext = plan?.let { upNext(it, active.sets) },
                 dayDone = plan != null && nextPlanned(plan.plannedSets(), active.sets) == null,
                 emom = run,
                 emomState = emomState,
-                finished = finished,
+                finished = chosen.finished,
+                exercises = chosen.exercises,
             )
         }.stateIn(viewModelScope, SharingStarted.Eagerly, SessionUiState())
 
@@ -173,14 +207,35 @@ class SessionViewModel(
                 d.copy(
                     reps = d.reps.coerceIn(1, SetDraft.MAX_REPS),
                     minutes = d.minutes.coerceIn(1, SetDraft.MAX_MINUTES),
+                    seconds = d.seconds.coerceIn(SetDraft.SECONDS_STEP, SetDraft.MAX_SECONDS),
                 )
             }
         }
     }
 
+    /**
+     * Picks the exercise of [equipment] last logged, in this session or before, else the first of it the sheet
+     * offers.
+     */
+    fun chooseEquipment(equipment: Equipment) {
+        val offered = state.value.exercises.filter { it.equipment == equipment }
+        val history = repository.sessions.value.reversed().flatMap { it.sets } + repository.active.value?.sets.orEmpty()
+        val last = history.lastOrNull { set -> offered.any { it.key == set.exercise.key } }?.exercise
+        val pick = offered.firstOrNull { it.key == last?.key } ?: offered.firstOrNull() ?: return
+        updateDraft { it.copy(exercise = pick) }
+    }
+
     fun logSet() {
         val set = draft.value
-        repository.logSet(set.exercise, set.bellKg, set.reps, set.side, set.doubled)
+        repository.logSet(
+            set.exercise,
+            set.loadKg,
+            if (set.held) 0 else set.reps,
+            set.side,
+            set.doubled,
+            seconds = set.seconds.takeIf { set.held },
+            band = set.band,
+        )
         // A one-sided lift usually goes on with the other side.
         if (set.exercise.sided(set.doubled)) {
             draft.update {
@@ -213,7 +268,19 @@ class SessionViewModel(
     /** Starts an EMOM of the sheet's lift, bell and reps for its minutes. */
     fun startDraftEmom() {
         val d = draft.value
-        startEmom(d.exercise, d.bellKg, d.reps, d.minutes, d.side, d.doubled)
+        if (d.held) return
+        startEmom(
+            d.exercise,
+            d.loadKg,
+            d.reps,
+            d.minutes,
+            d.side,
+            d.doubled,
+            d.band.takeIf {
+                d.exercise.equipment ==
+                    Equipment.Band
+            },
+        )
     }
 
     /** Logs this minute's set: the EMOM rests out the minute. */
@@ -221,7 +288,7 @@ class SessionViewModel(
         val run = emom.value ?: return
         val now = state.value.emomState ?: return
         if (now.phase != EmomPhase.Work) return
-        repository.logSet(run.exercise, run.bellKg, run.reps, run.sideOf(now.minute), run.double)
+        repository.logSet(run.exercise, run.bellKg, run.reps, run.sideOf(now.minute), run.double, band = run.band)
         emom.value = run.copy(done = run.done + now.minute)
     }
 
@@ -264,10 +331,11 @@ class SessionViewModel(
         minutes: Int,
         firstSide: Side,
         double: Boolean,
+        band: BandLevel? = null,
     ) {
         val now = clock.nowMillis()
         lastCueMillis = 0L
-        emom.value = EmomRun(exercise, bellKg, reps, minutes, firstSide, now, double = double)
+        emom.value = EmomRun(exercise, bellKg, reps, minutes, firstSide, now, double = double, band = band)
     }
 
     private fun playCues(now: Long) {
@@ -299,6 +367,14 @@ class SessionViewModel(
             emomMinutes,
         )
     }
+
+    /** What the screen chose, and the exercises it can choose from. */
+    private data class View(
+        val draft: SetDraft,
+        val finished: Finished?,
+        val emom: EmomRun?,
+        val exercises: List<Exercise>,
+    )
 
     private companion object {
         const val TICK_MILLIS = 250L

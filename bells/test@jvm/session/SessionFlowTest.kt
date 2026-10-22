@@ -21,6 +21,57 @@ import kotlin.test.assertTrue
 /** A session from Today to the summary, through the whole app over fakes. */
 class SessionFlowTest {
     @Test
+    fun `a band set logs its band and moves no weight`() = bellsAppTest { app ->
+        onNodeWithText("Start session").performClick()
+        waitForText("Log set")
+        onNodeWithText("Log set").performClick()
+        onNodeWithText("Band").performClick()
+        // The first band exercise, on the medium band.
+        waitForText("Band pull-apart")
+        onNodeWithText("Medium").assertExists()
+        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
+        waitForText("Medium × 10")
+        onNodeWithText("0 kg").assertExists()
+        val set = app.storage.sessions.sets.value.single()
+        assertEquals(Triple("BandPullApart", "Band", "Medium"), Triple(set.exercise, set.equipment, set.band))
+    }
+
+    @Test
+    fun `a hold logs how long it lasted on its side and is never an EMOM`() = bellsAppTest { app ->
+        onNodeWithText("Start session").performClick()
+        waitForText("Log set")
+        onNodeWithText("Log set").performClick()
+        onNodeWithText("Bodyweight").performClick()
+        waitForText("Side plank")
+        onNodeWithText("Side plank").performScrollTo().performClick()
+        waitForText("Held")
+        onNodeWithText("0:30").assertExists()
+        onNodeWithText("An EMOM").assertDoesNotExist()
+        onNodeWithContentDescription("Five seconds more").performScrollTo().performClick()
+        waitForText("0:35")
+        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
+        waitForText("0:35 · Left")
+        val set = app.storage.sessions.sets.value.single()
+        assertEquals(Triple(35, 0, "Left"), Triple(set.seconds, set.reps, set.side))
+    }
+
+    @Test
+    fun `weight added to bodyweight counts toward moved`() = bellsAppTest { app ->
+        onNodeWithText("Start session").performClick()
+        waitForText("Log set")
+        onNodeWithText("Log set").performClick()
+        onNodeWithText("Bodyweight").performClick()
+        waitForText("Added weight")
+        onNodeWithText("None").assertExists()
+        onNodeWithText("8").performScrollTo().performClick()
+        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
+        waitForText("+8 kg × 10")
+        onNodeWithText("Push-up").assertExists()
+        onNodeWithText("80 kg").assertExists()
+        assertEquals(8.0, app.storage.sessions.sets.value.single().bellKg)
+    }
+
+    @Test
     fun `logging a set adds it to the session`() = bellsAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log your first set: pick the lift, the bell and the reps.")

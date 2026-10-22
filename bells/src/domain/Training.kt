@@ -242,8 +242,14 @@ data class SetLog(
     val seconds: Int? = null,
     val band: BandLevel? = null,
 ) {
-    /** The weight moved: the bell, or both, times the reps. */
-    val tonnageKg: Double get() = bellKg * reps * (if (double) 2 else 1)
+    /**
+     * The weight moved: the bell, or both, or the weight added to bodyweight, times the reps. A band, the mat
+     * and a hold move none that can be weighed.
+     */
+    val tonnageKg: Double get() = when (equipment) {
+        Equipment.Kettlebell, Equipment.Bodyweight -> bellKg * reps * (if (double) 2 else 1)
+        Equipment.Band, Equipment.Mat -> 0.0
+    }
 }
 
 /**
@@ -288,8 +294,13 @@ data class PersonalRecord(
     val double: Boolean = false,
 )
 
-/** Each exercise's [PersonalRecord] over [sets], one bell and two kept apart, in the catalogue's order. */
-fun personalRecords(sets: List<SetLog>): List<PersonalRecord> = sets.groupBy { it.exercise.key to it.double }
+/**
+ * Each kettlebell lift's [PersonalRecord] over [sets], one bell and two kept apart, in the catalogue's order.
+ * Sets of other equipment set none yet.
+ */
+fun personalRecords(sets: List<SetLog>): List<PersonalRecord> = sets
+    .filter { it.equipment == Equipment.Kettlebell && it.exercise.equipment == Equipment.Kettlebell }
+    .groupBy { it.exercise.key to it.double }
     .map { (lift, done) ->
         val exercise = done.first().exercise
         val double = lift.second

@@ -55,6 +55,28 @@ class TrainingTest {
     }
 
     @Test
+    fun `moved counts weight added to bodyweight but no band or mat or hold`() {
+        val pushUps = SetLog(1, BuiltInExercise.PushUp, 10.0, 6, null, 0)
+        val bare = SetLog(2, BuiltInExercise.PushUp, 0.0, 15, null, 0)
+        val band = SetLog(3, BuiltInExercise.BandPullApart, 0.0, 20, null, 0, band = BandLevel.Medium)
+        val mat = SetLog(4, BuiltInExercise.Hundred, 0.0, 100, null, 0)
+        val hold = SetLog(5, BuiltInExercise.Plank, 10.0, 0, null, 0, seconds = 60)
+        assertEquals(60.0, session(pushUps, bare, band, mat, hold).tonnageKg)
+    }
+
+    @Test
+    fun `only kettlebell sets set records for now`() {
+        val records = personalRecords(
+            listOf(
+                set(BuiltInExercise.Press, 16.0, 5),
+                SetLog(9, BuiltInExercise.PushUp, 10.0, 6, null, 0),
+                SetLog(10, BuiltInExercise.Plank, 0.0, 0, null, 0, seconds = 60),
+            ),
+        )
+        assertEquals(listOf(BuiltInExercise.Press), records.map { it.exercise })
+    }
+
+    @Test
     fun `records with two bells are kept apart from those with one`() {
         val records =
             personalRecords(

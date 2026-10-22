@@ -11,8 +11,25 @@
     <!-- Weights and counts -->
     <string name="kg_value">%1$s kg</string>
     <string name="set_line">%1$s kg × %2$d</string>
-    <string name="set_line_side">%1$s kg × %2$d · %3$s</string>
     <string name="set_line_double">2 × %1$s kg × %2$d</string>
+    <!-- Reps with no weight to say: bodyweight or the mat. -->
+    <string name="set_line_reps">× %1$d</string>
+    <!-- Weight added to a bodyweight exercise, then reps: "+10 kg × 6". -->
+    <string name="set_line_added">+%1$s kg × %2$d</string>
+    <!-- Weight added to a hold, then how long it lasted: "+10 kg · 0:45". -->
+    <string name="set_line_added_held">+%1$s kg · %2$s</string>
+    <!-- A band by name, then reps: "Medium × 20". -->
+    <string name="set_line_band">%1$s × %2$d</string>
+    <string name="equipment_kettlebell">Kettlebell</string>
+    <string name="equipment_bodyweight">Bodyweight</string>
+    <string name="equipment_band">Band</string>
+    <string name="equipment_mat">Mat</string>
+    <!-- The five bands everyone starts with, lightest first, by the names their usual colours go by. -->
+    <string name="band_extra_light">Extra light</string>
+    <string name="band_light">Light</string>
+    <string name="band_medium">Medium</string>
+    <string name="band_heavy">Heavy</string>
+    <string name="band_extra_heavy">Extra heavy</string>
     <string name="kg_pair">2 × %1$s kg</string>
     <string name="lift_double">Two bells</string>
     <plurals name="sets_count">
@@ -170,7 +187,14 @@
     <string name="log_kind_emom">An EMOM</string>
     <string name="log_reps_each_minute">Reps each minute</string>
     <string name="log_first_side">First side</string>
-    <string name="log_exercise">Lift</string>
+    <string name="log_equipment">Equipment</string>
+    <string name="log_exercise">Exercise</string>
+    <string name="log_added">Added weight</string>
+    <string name="log_added_none">None</string>
+    <string name="log_band">Band</string>
+    <string name="log_held">Held</string>
+    <string name="log_less_time">Five seconds less</string>
+    <string name="log_more_time">Five seconds more</string>
     <string name="log_bell">Bell</string>
     <string name="log_reps">Reps</string>
     <string name="log_side">Side</string>
