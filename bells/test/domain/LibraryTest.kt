@@ -81,4 +81,15 @@ class LibraryTest {
         assertEquals(BuiltInExercise.entries.size + 1, offered.size)
         assertEquals(plank, offered.last())
     }
+
+    @Test
+    fun `a name of yours is taken by another of yours whatever its case`() {
+        val taken = takenNames(listOf(plank), uid = null)
+        assertEquals(setOf("copenhagen plank"), taken)
+        assertFalse(ExerciseDraft().canSave(" COPENHAGEN plank ", taken))
+        assertFalse(ExerciseDraft().canSave("   ", taken))
+        assertTrue(ExerciseDraft().canSave("Copenhagen plank long lever", taken))
+        // Changing it, its own name is free.
+        assertTrue(ExerciseDraft().canSave("Copenhagen plank", takenNames(listOf(plank), uid = "p")))
+    }
 }

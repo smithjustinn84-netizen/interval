@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
@@ -41,6 +42,7 @@ import androidx.savedstate.serialization.SavedStateConfiguration
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.gear.GearRoute
 import dev.justinsmith.bells.history.LiftDetailRoute
+import dev.justinsmith.bells.library.ExerciseEditorRoute
 import dev.justinsmith.bells.library.ExerciseLibraryRoute
 import dev.justinsmith.bells.programs.ProgramEditorRoute
 import dev.justinsmith.bells.programs.ProgramsRoute
@@ -55,6 +57,7 @@ import dev.justinsmith.interval.history.HistoryRoute
 import dev.justinsmith.interval.history.WorkoutDetailRoute
 import dev.justinsmith.interval.home.TimerRoute
 import dev.justinsmith.interval.nav.About
+import dev.justinsmith.interval.nav.ExerciseEditor
 import dev.justinsmith.interval.nav.ExerciseLibrary
 import dev.justinsmith.interval.nav.HistoryTab
 import dev.justinsmith.interval.nav.Licenses
@@ -122,6 +125,7 @@ internal val navConfiguration = SavedStateConfiguration {
             subclass(ProgramEditor::class)
             subclass(OwnedBells::class)
             subclass(ExerciseLibrary::class)
+            subclass(ExerciseEditor::class)
             subclass(LiftDetail::class)
         }
     }
@@ -263,29 +267,7 @@ private fun appEntries(
             onStartWorkout = { backStack.push(Workout) },
         )
     }
-    entry<LiftTab>(metadata = pageKind(PageKind.Tab)) {
-        TodayRoute(
-            onStartSession = { backStack.push(Lifting) },
-            onChooseProgram = { backStack.push(Programs) },
-            onOpenBells = { backStack.push(OwnedBells) },
-            onOpenSession = { backStack.push(LiftDetail(it)) },
-            onOpenExercises = { backStack.push(ExerciseLibrary) },
-        )
-    }
-    entry<Lifting>(metadata = pageKind(PageKind.Mode)) {
-        SessionRoute(onExit = { backStack.removeLastOrNull() })
-    }
-    entry<Programs> {
-        ProgramsRoute(
-            onNew = { backStack.push(ProgramEditor()) },
-            onEdit = { backStack.push(ProgramEditor(it)) },
-            onBack = { backStack.removeLastOrNull() },
-        )
-    }
-    entry<ProgramEditor> { key -> ProgramEditorRoute(uid = key.uid, onBack = { backStack.removeLastOrNull() }) }
-    entry<OwnedBells> { GearRoute(onBack = { backStack.removeLastOrNull() }) }
-    entry<ExerciseLibrary> { ExerciseLibraryRoute(onBack = { backStack.removeLastOrNull() }) }
-    entry<LiftDetail> { key -> LiftDetailRoute(uid = key.uid, onBack = { backStack.removeLastOrNull() }) }
+    liftEntries(backStack)
     entry<HistoryTab>(metadata = pageKind(PageKind.Tab)) {
         HistoryRoute(
             onOpenWorkout = { backStack.push(WorkoutDetail(it)) },
@@ -319,6 +301,45 @@ private fun appEntries(
         )
     }
     entry<Licenses> { LicensesRoute(onBack = { backStack.removeLastOrNull() }) }
+}
+
+/** Lift's screens: the tab, a session, programs, bells, the exercise library and a finished session. */
+private fun EntryProviderScope<NavKey>.liftEntries(backStack: NavBackStack<NavKey>) {
+    entry<LiftTab>(metadata = pageKind(PageKind.Tab)) {
+        TodayRoute(
+            onStartSession = { backStack.push(Lifting) },
+            onChooseProgram = { backStack.push(Programs) },
+            onOpenBells = { backStack.push(OwnedBells) },
+            onOpenSession = { backStack.push(LiftDetail(it)) },
+            onOpenExercises = { backStack.push(ExerciseLibrary) },
+        )
+    }
+    entry<Lifting>(metadata = pageKind(PageKind.Mode)) {
+        SessionRoute(
+            onExit = { backStack.removeLastOrNull() },
+            onNewExercise = { backStack.push(ExerciseEditor(name = it)) },
+        )
+    }
+    entry<Programs> {
+        ProgramsRoute(
+            onNew = { backStack.push(ProgramEditor()) },
+            onEdit = { backStack.push(ProgramEditor(it)) },
+            onBack = { backStack.removeLastOrNull() },
+        )
+    }
+    entry<ProgramEditor> { key -> ProgramEditorRoute(uid = key.uid, onBack = { backStack.removeLastOrNull() }) }
+    entry<OwnedBells> { GearRoute(onBack = { backStack.removeLastOrNull() }) }
+    entry<ExerciseLibrary> {
+        ExerciseLibraryRoute(
+            onBack = { backStack.removeLastOrNull() },
+            onNew = { backStack.push(ExerciseEditor(name = it)) },
+            onEdit = { backStack.push(ExerciseEditor(uid = it)) },
+        )
+    }
+    entry<ExerciseEditor> { key ->
+        ExerciseEditorRoute(key.uid, key.name, onBack = { backStack.removeLastOrNull() })
+    }
+    entry<LiftDetail> { key -> LiftDetailRoute(uid = key.uid, onBack = { backStack.removeLastOrNull() }) }
 }
 
 /**

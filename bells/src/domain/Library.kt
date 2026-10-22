@@ -47,3 +47,18 @@ fun recentExercises(sets: List<SetLog>, offered: List<Exercise>, limit: Int = RE
 
 /** How many exercises the library lists as recent. */
 const val RECENT_EXERCISES = 4
+
+/** How the user's names are compared: trimmed, case ignored. */
+fun exerciseNameKey(name: String): String = name.trim().lowercase()
+
+/** The names taken among [made], the exercise [uid] being changed aside: no two of the user's share one. */
+fun takenNames(made: List<CustomExercise>, uid: String?): Set<String> =
+    made.filter { it.uid != uid }.map { exerciseNameKey(it.name) }.toSet()
+
+/** Whether this can be saved as [name]: a name, and not one [taken] already. */
+fun ExerciseDraft.canSave(name: String, taken: Set<String>): Boolean =
+    name.isNotBlank() && exerciseNameKey(name) !in taken
+
+/** The longest name and cues an exercise of the user's takes. */
+const val MAX_EXERCISE_NAME = 40
+const val MAX_EXERCISE_CUES = 120

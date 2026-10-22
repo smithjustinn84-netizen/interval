@@ -34,6 +34,7 @@ import dev.justinsmith.bells.domain.Measure
 import dev.justinsmith.bells.domain.nameMatches
 import dev.justinsmith.bells.domain.toggled
 import dev.justinsmith.bells.resources.Res
+import dev.justinsmith.bells.resources.library_add_named
 import dev.justinsmith.bells.resources.library_all
 import dev.justinsmith.bells.resources.library_clear
 import dev.justinsmith.bells.resources.library_count
@@ -61,6 +62,7 @@ import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.NameField
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
+import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import org.jetbrains.compose.resources.pluralStringResource
@@ -76,7 +78,8 @@ data class LibraryList(
 /**
  * The exercise library: a search, the equipment to narrow to, and behind Filters the focus, what it is
  * measured by and only the user's own; then the recent ones, while nothing narrows, and all that match. With
- * [onPick] a row picks its exercise, the [selected] one ticked; without, the rows just inform.
+ * [onPick] a row picks its exercise ([canPick] says which can be), the [selected] one ticked; without, the
+ * rows just inform. With [onAdd], a search that finds nothing offers to add it as the user's own.
  */
 @Composable
 fun ExercisePicker(
@@ -85,6 +88,8 @@ fun ExercisePicker(
     modifier: Modifier = Modifier,
     selected: Exercise? = null,
     onPick: ((Exercise) -> Unit)? = null,
+    canPick: (Exercise) -> Boolean = { true },
+    onAdd: ((name: String) -> Unit)? = null,
 ) {
     val query = rememberTextFieldState()
     var more by rememberSaveable { mutableStateOf(false) }
@@ -124,13 +129,13 @@ fun ExercisePicker(
         if (more) MoreFilters(filters, onFilters)
         if (!narrowed && list.recents.isNotEmpty()) {
             GroupLabel(stringResource(Res.string.library_recent))
-            ExerciseList(list.recents, names, selected, onPick)
+            ExerciseList(list.recents, names, selected, onPick, canPick)
             GroupLabel(stringResource(Res.string.library_all))
         }
         if (shown.isEmpty()) {
-            NoMatch(text)
+            NoMatch(text, onAdd)
         } else {
-            ExerciseList(shown, names, selected, onPick)
+            ExerciseList(shown, names, selected, onPick, canPick)
         }
     }
 }
@@ -174,6 +179,7 @@ private fun ExerciseList(
     names: Map<String, String>,
     selected: Exercise?,
     onPick: ((Exercise) -> Unit)?,
+    canPick: (Exercise) -> Boolean,
 ) {
     ListCard {
         exercises.forEachIndexed { i, exercise ->
@@ -182,7 +188,7 @@ private fun ExerciseList(
                 exercise,
                 names.getValue(exercise.key),
                 selected = exercise.key == selected?.key,
-                onPick = onPick?.let { pick -> { pick(exercise) } },
+                onPick = onPick?.takeIf { canPick(exercise) }?.let { pick -> { pick(exercise) } },
             )
         }
     }
@@ -226,9 +232,9 @@ private fun ExerciseRow(exercise: Exercise, name: String, selected: Boolean, onP
     }
 }
 
-/** Nothing matches: the search, if there is one, and how to find more. */
+/** Nothing matches: the search, if there is one, how to find more, and with [onAdd] Add it as an exercise. */
 @Composable
-private fun NoMatch(query: String) {
+private fun NoMatch(query: String, onAdd: ((name: String) -> Unit)?) {
     val palette = IntervalTheme.palette
     Column(Modifier.padding(vertical = Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
         Text(
@@ -241,6 +247,13 @@ private fun NoMatch(query: String) {
             color = palette.text,
         )
         Text(stringResource(Res.string.library_empty_hint), style = IntervalTheme.type.meta, color = palette.textDim)
+        if (onAdd != null && query.isNotBlank()) {
+            SecondaryButton(
+                stringResource(Res.string.library_add_named, query.trim()),
+                { onAdd(query.trim()) },
+                Modifier.fillMaxWidth().padding(top = Spacing.space8),
+            )
+        }
     }
 }
 

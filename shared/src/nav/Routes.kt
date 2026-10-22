@@ -75,6 +75,13 @@ data object OwnedBells : NavKey
 @Serializable
 data object ExerciseLibrary : NavKey
 
+/**
+ * An exercise of the user's: a new one, named [name] to start (from a search that found nothing), or theirs
+ * by [uid] to change. Pushed from the library, or from a session's Log sheet.
+ */
+@Serializable
+data class ExerciseEditor(val uid: String? = null, val name: String = "") : NavKey
+
 /** One finished kettlebell session, by its uid: its sets and records, and Delete. Pushed from History. */
 @Serializable
 data class LiftDetail(val uid: String) : NavKey

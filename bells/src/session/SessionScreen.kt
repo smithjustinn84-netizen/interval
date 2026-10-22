@@ -35,6 +35,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import dev.justinsmith.bells.data.ExerciseFilterStore
 import dev.justinsmith.bells.domain.ExerciseFilters
 import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.formatKg
@@ -90,9 +91,10 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
 @Composable
-fun SessionRoute(onExit: () -> Unit) {
+fun SessionRoute(onExit: () -> Unit, onNewExercise: (name: String) -> Unit = {}) {
     val scope = currentKoinScope()
-    val viewModel = viewModel { SessionViewModel(scope.get(), scope.get(), scope.get(), scope.get()) }
+    val filters = scope.get<ExerciseFilterStore>()
+    val viewModel = viewModel { SessionViewModel(scope.get(), scope.get(), scope.get(), filters) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val finished = state.finished
     if (finished != null) {
@@ -118,7 +120,11 @@ fun SessionRoute(onExit: () -> Unit) {
         state = state,
         actions = SessionActions(
             onDraft = viewModel::updateDraft,
-            onFilters = viewModel::updateFilters,
+            onFilters = filters::update,
+            onAddExercise = { name ->
+                viewModel.expectNewExercise()
+                onNewExercise(name)
+            },
             onLog = viewModel::logSet,
             onLogNext = viewModel::logNext,
             onStartPlannedEmom = viewModel::startPlannedEmom,
@@ -174,6 +180,7 @@ private fun LeaveGuard(emomRunning: Boolean, hasSets: Boolean, onLeave: () -> Un
 data class SessionActions(
     val onDraft: ((SetDraft) -> SetDraft) -> Unit = {},
     val onFilters: ((ExerciseFilters) -> ExerciseFilters) -> Unit = {},
+    val onAddExercise: (name: String) -> Unit = {},
     val onLog: () -> Unit = {},
     val onLogNext: () -> Unit = {},
     val onStartPlannedEmom: () -> Unit = {},

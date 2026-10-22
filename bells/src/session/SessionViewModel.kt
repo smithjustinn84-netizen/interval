@@ -216,6 +216,9 @@ class SessionViewModel(
             )
         }.stateIn(viewModelScope, SharingStarted.Eagerly, SessionUiState())
 
+    /** The user's exercises when the sheet went to add one: the first not among them is the one added. */
+    private var awaitingAdd: Set<String>? = null
+
     init {
         if (repository.active.value == null) repository.startSession()
         // Start from the user's own bells: the lightest they own at or above the default.
@@ -229,6 +232,21 @@ class SessionViewModel(
         viewModelScope.launch {
             ticks.collect { now -> playCues(now) }
         }
+        // An exercise added from the sheet's search is the one the sheet goes on with.
+        viewModelScope.launch {
+            repository.customExercises.collect { made ->
+                val before = awaitingAdd ?: return@collect
+                made.firstOrNull { it.uid !in before }?.let { added ->
+                    awaitingAdd = null
+                    updateDraft { it.copy(exercise = added) }
+                }
+            }
+        }
+    }
+
+    /** The sheet is off to add an exercise: once it is saved, the sheet picks it. */
+    fun expectNewExercise() {
+        awaitingAdd = repository.customExercises.value.map { it.uid }.toSet()
     }
 
     fun updateDraft(transform: (SetDraft) -> SetDraft) {
@@ -241,10 +259,6 @@ class SessionViewModel(
                 )
             }
         }
-    }
-
-    fun updateFilters(transform: (ExerciseFilters) -> ExerciseFilters) {
-        filters.update(transform)
     }
 
     fun logSet() {

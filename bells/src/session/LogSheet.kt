@@ -14,6 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import dev.justinsmith.bells.domain.BandLevel
+import dev.justinsmith.bells.domain.CustomExercise
 import dev.justinsmith.bells.domain.Doubles
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
@@ -92,6 +93,10 @@ internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismi
                     actions.onDraft { it.copy(exercise = e) }
                     picking = false
                 },
+                onAdd = { name ->
+                    picking = false
+                    actions.onAddExercise(name)
+                },
             )
             return@IntervalSheet
         }
@@ -165,6 +170,9 @@ private fun ExerciseCard(exercise: Exercise, onChange: () -> Unit) {
                 )
                 Text(exerciseName(exercise), style = IntervalTheme.type.section, color = palette.text)
                 Text(exerciseFacts(exercise), style = IntervalTheme.type.meta, color = palette.textDim)
+                (exercise as? CustomExercise)?.cues?.takeIf { it.isNotBlank() }?.let { cues ->
+                    Text(cues, style = IntervalTheme.type.meta, color = palette.text)
+                }
             }
             QuietTextButton(stringResource(Res.string.log_change), onChange)
         }

@@ -212,6 +212,21 @@
     <string name="focus_core">Core</string>
     <string name="focus_full_body">Full body</string>
     <string name="log_change">Change</string>
+    <!-- Exercises the user adds: the library's New, the empty search's Add, and the editor -->
+    <string name="library_new">New exercise</string>
+    <string name="library_add_named">Add “%1$s” as an exercise</string>
+    <string name="exercise_editor_new">New exercise</string>
+    <string name="exercise_editor_edit">Edit exercise</string>
+    <string name="exercise_name">Name</string>
+    <string name="exercise_name_placeholder">Exercise name</string>
+    <string name="exercise_name_taken">One of yours already has this name.</string>
+    <string name="exercise_equipment">Equipment</string>
+    <string name="exercise_locked">Sets of it are logged, so its equipment and measure stay as they are.</string>
+    <string name="exercise_one_side">One side at a time</string>
+    <string name="exercise_one_side_hint">Each set asks Left or Right</string>
+    <string name="exercise_cues">Cues</string>
+    <string name="exercise_cues_placeholder">What to remember mid-set (optional)</string>
+    <string name="exercise_save">Save exercise</string>
 
     <string name="log_title">Add to the session</string>
     <string name="log_kind_set">A set</string>

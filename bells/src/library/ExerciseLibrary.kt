@@ -1,6 +1,5 @@
 package dev.justinsmith.bells.library
 
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -10,14 +9,17 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.data.ExerciseFilterStore
+import dev.justinsmith.bells.domain.CustomExercise
 import dev.justinsmith.bells.domain.ExerciseFilters
 import dev.justinsmith.bells.domain.offeredExercises
 import dev.justinsmith.bells.domain.recentExercises
 import dev.justinsmith.bells.resources.Res
+import dev.justinsmith.bells.resources.library_new
 import dev.justinsmith.bells.resources.library_title
 import dev.justinsmith.interval.ui.BackAction
+import dev.justinsmith.interval.ui.IconAction
+import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.ScrollPage
-import dev.justinsmith.interval.ui.Spacing
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -45,26 +47,39 @@ class ExerciseLibraryViewModel(repository: BellsRepository, private val filters:
 }
 
 @Composable
-fun ExerciseLibraryRoute(onBack: () -> Unit) {
+fun ExerciseLibraryRoute(onBack: () -> Unit, onNew: (name: String) -> Unit = {}, onEdit: (uid: String) -> Unit = {}) {
     val scope = currentKoinScope()
     val viewModel = viewModel { ExerciseLibraryViewModel(scope.get(), scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
-    ExerciseLibraryScreen(state, onFilters = viewModel::updateFilters, onBack = onBack)
+    ExerciseLibraryScreen(state, onFilters = viewModel::updateFilters, onBack = onBack, onNew = onNew, onEdit = onEdit)
 }
 
-/** The exercise library, opened from Lift: every exercise there is to log, to look through and narrow. */
+/**
+ * The exercise library, opened from Lift: every exercise there is to log, to look through and narrow. New
+ * adds one of the user's own, as does a search that finds nothing ([onNew], with the search); one of theirs
+ * opens to change ([onEdit]).
+ */
 @Composable
 fun ExerciseLibraryScreen(
     list: LibraryList,
     onFilters: ((ExerciseFilters) -> ExerciseFilters) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    onNew: (name: String) -> Unit = {},
+    onEdit: (uid: String) -> Unit = {},
 ) {
-    ScrollPage(stringResource(Res.string.library_title), modifier, navigation = { BackAction(onBack) }) {
+    ScrollPage(
+        stringResource(Res.string.library_title),
+        modifier,
+        navigation = { BackAction(onBack) },
+        actions = { IconAction(IntervalIcons.Add, stringResource(Res.string.library_new), { onNew("") }) },
+    ) {
         ExercisePicker(
             list,
             onFilters,
-            Modifier.padding(start = Spacing.space16, end = Spacing.space16, bottom = Spacing.space24),
+            onPick = { exercise -> (exercise as? CustomExercise)?.let { onEdit(it.uid) } },
+            canPick = { it is CustomExercise },
+            onAdd = onNew,
         )
     }
 }
