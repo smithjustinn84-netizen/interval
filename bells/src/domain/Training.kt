@@ -221,6 +221,9 @@ enum class Doubles { Never, Optional, Always }
 /** The side a one-sided set was done on. */
 enum class Side { Left, Right }
 
+/** The side a one-sided exercise goes on with. */
+val Side.other: Side get() = if (this == Side.Left) Side.Right else Side.Left
+
 /** The resistance bands every user starts with, lightest first, as the common colours run. */
 enum class BandLevel { ExtraLight, Light, Medium, Heavy, ExtraHeavy }
 

@@ -13,6 +13,7 @@ import dev.justinsmith.bells.domain.EmomState
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.ExerciseFilters
+import dev.justinsmith.bells.domain.HoldState
 import dev.justinsmith.bells.domain.LiftSession
 import dev.justinsmith.bells.domain.Measure
 import dev.justinsmith.bells.domain.PersonalRecord
@@ -23,6 +24,7 @@ import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.domain.newRecords
 import dev.justinsmith.bells.domain.nextPlanned
 import dev.justinsmith.bells.domain.offeredExercises
+import dev.justinsmith.bells.domain.other
 import dev.justinsmith.bells.domain.recentExercises
 import dev.justinsmith.bells.domain.standardBells
 import dev.justinsmith.bells.domain.suggestedBand
@@ -142,6 +144,11 @@ data class SessionUiState(
     val dayDone: Boolean = false,
     val emom: EmomRun? = null,
     val emomState: EmomState? = null,
+    /** A hold being timed on the Log sheet. */
+    val hold: HoldRun? = null,
+    val holdState: HoldState? = null,
+    /** The side to time next, for the same length, after the first side of a one-sided hold. */
+    val otherSide: Side? = null,
     val finished: Finished? = null,
     /** What the sheet's picker offers, the ones done lately first, and how it is narrowed. */
     val library: LibraryList = LibraryList(offeredExercises(emptyList())),
@@ -163,6 +170,9 @@ class SessionViewModel(
     private val emom = MutableStateFlow<EmomRun?>(null)
     private var lastCueMillis = 0L
 
+    /** Times a hold from the sheet, logging it when done. */
+    val holds = HoldTimer(clock, beeper) { set, seconds -> logSet(set, seconds) }
+
     private val ticks = flow {
         while (true) {
             emit(clock.nowMillis())
@@ -170,15 +180,17 @@ class SessionViewModel(
         }
     }
 
-    private val view = combine(draft, finished, emom, repository.customExercises, filters.filters) {
+    private val runs = combine(emom, holds.state, ::Pair)
+
+    private val view = combine(draft, finished, runs, repository.customExercises, filters.filters) {
             draft,
             finished,
-            emom,
+            (emom, timing),
             made,
             narrowed,
         ->
         // The sheet never offers an archived exercise, whatever the library shows.
-        View(draft, finished, emom, offeredExercises(made), narrowed.copy(showArchived = false))
+        View(draft, finished, emom, timing, offeredExercises(made), narrowed.copy(showArchived = false))
     }
 
     val state: StateFlow<SessionUiState> =
@@ -191,6 +203,7 @@ class SessionViewModel(
             ->
             val run = chosen.emom
             val emomState = run?.let { EmomClock(it.minutes).at(now - it.startedAtMillis, it.done) }
+            val hold = chosen.timing.run
             val plan = active?.takeIf { it.program != null && it.program == day?.program?.key }?.let { day }
             SessionUiState(
                 session = active,
@@ -205,6 +218,11 @@ class SessionViewModel(
                 dayDone = plan != null && nextPlanned(plan.plannedSets(), active.sets) == null,
                 emom = run,
                 emomState = emomState,
+                hold = hold,
+                holdState = hold?.let { it.clock.at(now - it.startedAtMillis) },
+                otherSide = chosen.timing.offer
+                    ?.takeIf { it.exercise == chosen.draft.exercise && it.side == chosen.draft.side }
+                    ?.side,
                 finished = chosen.finished,
                 library = LibraryList(
                     chosen.exercises,
@@ -262,31 +280,19 @@ class SessionViewModel(
         }
     }
 
-    fun logSet() {
-        val set = draft.value
+    /** Logs [set], by default the sheet's: a hold for [seconds], fewer when a timed one is stopped early. */
+    fun logSet(set: SetDraft = draft.value, seconds: Int = set.seconds) {
         repository.logSet(
             set.exercise,
             set.loadKg,
             if (set.held) 0 else set.reps,
             set.side,
             set.doubled,
-            seconds = set.seconds.takeIf { set.held },
+            seconds = seconds.takeIf { set.held },
             band = set.band,
         )
         // A one-sided lift usually goes on with the other side.
-        if (set.exercise.sided(set.doubled)) {
-            draft.update {
-                it.copy(
-                    side = if (it.side ==
-                        Side.Left
-                    ) {
-                        Side.Right
-                    } else {
-                        Side.Left
-                    },
-                )
-            }
-        }
+        if (set.exercise.sided(set.doubled)) draft.update { it.copy(side = set.side.other) }
     }
 
     /** Logs the plan's next set as planned, with its suggested load: a hold for its seconds. */
@@ -364,6 +370,7 @@ class SessionViewModel(
     fun finish(title: String) {
         val session = repository.active.value ?: return
         emom.value = null
+        holds.cancel()
         if (session.sets.isEmpty()) {
             repository.discardSession()
             return
@@ -376,6 +383,7 @@ class SessionViewModel(
 
     fun discard() {
         emom.value = null
+        holds.cancel()
         repository.discardSession()
     }
 
@@ -394,6 +402,7 @@ class SessionViewModel(
     }
 
     private fun playCues(now: Long) {
+        holds.tick(now)
         val run = emom.value ?: return
         val clockOfRun = EmomClock(run.minutes)
         val elapsed = now - run.startedAtMillis
@@ -433,6 +442,7 @@ class SessionViewModel(
         val draft: SetDraft,
         val finished: Finished?,
         val emom: EmomRun?,
+        val timing: HoldTiming,
         val exercises: List<Exercise>,
         val filters: ExerciseFilters,
     )

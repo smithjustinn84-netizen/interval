@@ -1,31 +1,47 @@
 package dev.justinsmith.bells.session
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import dev.justinsmith.bells.domain.BandLevel
 import dev.justinsmith.bells.domain.CustomExercise
 import dev.justinsmith.bells.domain.Doubles
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
+import dev.justinsmith.bells.domain.HoldPhase
+import dev.justinsmith.bells.domain.HoldState
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.domain.formatKg
 import dev.justinsmith.bells.library.ExercisePicker
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.emom_fewer_minutes
+import dev.justinsmith.bells.resources.emom_get_ready
 import dev.justinsmith.bells.resources.emom_minutes
 import dev.justinsmith.bells.resources.emom_more_minutes
 import dev.justinsmith.bells.resources.emom_start
+import dev.justinsmith.bells.resources.hold_hold
+import dev.justinsmith.bells.resources.hold_other_side
+import dev.justinsmith.bells.resources.hold_stop
+import dev.justinsmith.bells.resources.hold_stop_note
+import dev.justinsmith.bells.resources.hold_time_it
 import dev.justinsmith.bells.resources.lift_double
 import dev.justinsmith.bells.resources.log_added
 import dev.justinsmith.bells.resources.log_added_none
@@ -47,6 +63,7 @@ import dev.justinsmith.bells.resources.log_reps_each_minute
 import dev.justinsmith.bells.resources.log_side
 import dev.justinsmith.bells.resources.log_title
 import dev.justinsmith.bells.resources.session_log
+import dev.justinsmith.bells.resources.summary_done
 import dev.justinsmith.bells.ui.ChoiceRow
 import dev.justinsmith.bells.ui.bandName
 import dev.justinsmith.bells.ui.exerciseFacts
@@ -58,9 +75,13 @@ import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RepeatButton
+import dev.justinsmith.interval.ui.RollingText
+import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.SegmentedPicker
+import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ToggleRow
 import org.jetbrains.compose.resources.stringResource
@@ -72,7 +93,8 @@ private enum class LogKind { Set, Emom }
  * Pick a set or an EMOM, then what it is done with and the exercise, its load (a bell or two, weight added
  * to bodyweight, a band, or none on the mat) and its reps, or for a hold how long; for a set, the side of a
  * one-sided exercise, for an EMOM its minutes and first side. A hold is only ever a set. Then log the set, or
- * start the EMOM.
+ * start the EMOM. A hold can also be timed here: the sheet counts it down and closes once it is logged, unless
+ * it offers the other side. Closing it mid-hold drops the hold.
  */
 @Composable
 internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismiss: () -> Unit) {
@@ -82,7 +104,18 @@ internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismi
     val kind = if (draft.held) LogKind.Set else LogKind.valueOf(kindName)
     // Change swaps the sheet for the library until an exercise is picked.
     var picking by rememberSaveable { mutableStateOf(false) }
-    IntervalSheet(stringResource(Res.string.log_title), onDismiss = onDismiss) { hide ->
+    val onClose = {
+        actions.onCancelHold()
+        onDismiss()
+    }
+    IntervalSheet(stringResource(Res.string.log_title), onDismiss = onClose) { hide ->
+        val hold = state.hold
+        val holdState = state.holdState
+        CloseWhenTimed(timing = hold != null, offering = state.otherSide != null, hide)
+        if (hold != null && holdState != null) {
+            HoldCountdown(hold, holdState, actions.onStopHold)
+            return@IntervalSheet
+        }
         if (picking) {
             ExercisePicker(
                 state.library,
@@ -117,17 +150,8 @@ internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismi
             }
             ExerciseCard(draft.exercise, onChange = { picking = true })
             LoadPicker(state, actions)
-            MeasurePicker(draft, emom = kind == LogKind.Emom, actions)
-            if (kind == LogKind.Emom) {
-                GroupLabel(stringResource(Res.string.emom_minutes))
-                CountStepper(
-                    draft.minutes,
-                    fewer = stringResource(Res.string.emom_fewer_minutes),
-                    more = stringResource(Res.string.emom_more_minutes),
-                    max = SetDraft.MAX_MINUTES,
-                    onStep = { step -> actions.onDraft { it.copy(minutes = it.minutes + step) } },
-                )
-            }
+            MeasurePicker(draft, emom = kind == LogKind.Emom, state.otherSide, actions)
+            if (kind == LogKind.Emom) EmomMinutes(draft, actions)
             if (draft.exercise.sided(draft.doubled)) {
                 GroupLabel(
                     stringResource(if (kind == LogKind.Set) Res.string.log_side else Res.string.log_first_side),
@@ -179,9 +203,12 @@ private fun ExerciseCard(exercise: Exercise, onChange: () -> Unit) {
     }
 }
 
-/** How much of it: the reps (each minute, for an EMOM), or for a hold how long, in steps of five seconds. */
+/**
+ * How much of it: the reps (each minute, for an EMOM), or for a hold how long, in steps of five seconds, with
+ * Time it to count it down; after a one-sided hold's first side is timed, the [otherSide] for the same length.
+ */
 @Composable
-private fun MeasurePicker(draft: SetDraft, emom: Boolean, actions: SessionActions) {
+private fun MeasurePicker(draft: SetDraft, emom: Boolean, otherSide: Side?, actions: SessionActions) {
     if (draft.held) {
         GroupLabel(stringResource(Res.string.log_held))
         Stepper(
@@ -193,7 +220,20 @@ private fun MeasurePicker(draft: SetDraft, emom: Boolean, actions: SessionAction
             onStep = { step ->
                 actions.onDraft { it.copy(seconds = it.seconds + step * SetDraft.SECONDS_STEP) }
             },
-        )
+        ) {
+            SecondaryButton(
+                stringResource(Res.string.hold_time_it),
+                actions.onTimeHold,
+                Modifier.widthIn(min = Sizes.pillWidth),
+            )
+        }
+        otherSide?.let { side ->
+            AccentButton(
+                stringResource(Res.string.hold_other_side, sideName(side)),
+                actions.onTimeHold,
+                Modifier.fillMaxWidth().padding(top = Spacing.space8),
+            )
+        }
     } else {
         GroupLabel(
             stringResource(if (!emom) Res.string.log_reps else Res.string.log_reps_each_minute),
@@ -270,6 +310,7 @@ private fun Stepper(
     canLower: Boolean,
     canRaise: Boolean,
     onStep: (Int) -> Unit,
+    trailing: @Composable () -> Unit = {},
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -283,5 +324,90 @@ private fun Stepper(
         )
         RepeatButton("−", fewer, enabled = canLower, onStep = { onStep(-1) })
         RepeatButton("+", more, enabled = canRaise, onStep = { onStep(1) })
+        trailing()
+    }
+}
+
+/** How many minutes an EMOM started from the sheet runs. */
+@Composable
+private fun EmomMinutes(draft: SetDraft, actions: SessionActions) {
+    GroupLabel(stringResource(Res.string.emom_minutes))
+    CountStepper(
+        draft.minutes,
+        fewer = stringResource(Res.string.emom_fewer_minutes),
+        more = stringResource(Res.string.emom_more_minutes),
+        max = SetDraft.MAX_MINUTES,
+        onStep = { step -> actions.onDraft { it.copy(minutes = it.minutes + step) } },
+    )
+}
+
+/** Once a timed hold is logged the sheet's work is done, as after Log set, unless it offers the other side. */
+@Composable
+private fun CloseWhenTimed(timing: Boolean, offering: Boolean, hide: () -> Unit) {
+    var wasTiming by remember { mutableStateOf(timing) }
+    val close by rememberUpdatedState(hide)
+    LaunchedEffect(timing) {
+        if (wasTiming && !timing && !offering) close()
+        wasTiming = timing
+    }
+}
+
+/**
+ * A hold counting down, in the workout's colours: amber through the count-in, red while held. The clock
+ * rolls each second; a haptic marks each phase, the beeps come from the view model. Stop logs what was held.
+ */
+@Composable
+private fun HoldCountdown(run: HoldRun, state: HoldState, onStop: () -> Unit) {
+    val colors = IntervalTheme.workout
+    val phaseColor = when (state.phase) {
+        HoldPhase.GetReady -> colors.prep
+        HoldPhase.Hold -> colors.work
+        HoldPhase.Done -> colors.done
+    }
+    val color by animateColorAsState(phaseColor, tween(Motion.PHASE_CROSSFADE_MILLIS))
+    val haptics = LocalHapticFeedback.current
+    LaunchedEffect(state.phase) { haptics.performHapticFeedback(HapticFeedbackType.Confirm) }
+    Column(
+        Modifier.fillMaxWidth().padding(horizontal = Spacing.space20, vertical = Spacing.space16),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+    ) {
+        Text(
+            stringResource(
+                when (state.phase) {
+                    HoldPhase.GetReady -> Res.string.emom_get_ready
+                    HoldPhase.Hold -> Res.string.hold_hold
+                    HoldPhase.Done -> Res.string.summary_done
+                },
+            ),
+            style = IntervalTheme.type.stat,
+            color = color,
+        )
+        RollingText(
+            formatClock(state.secondsLeft),
+            rising = false,
+            style = IntervalTheme.type.display,
+            color = IntervalTheme.palette.text,
+        )
+        val set = run.set
+        Text(
+            if (set.exercise.sided(set.doubled)) {
+                "${exerciseName(set.exercise)} · ${sideName(set.side)}"
+            } else {
+                exerciseName(set.exercise)
+            },
+            style = IntervalTheme.type.label,
+            color = IntervalTheme.palette.textDim,
+        )
+        SecondaryButton(
+            stringResource(Res.string.hold_stop),
+            onStop,
+            Modifier.fillMaxWidth().padding(top = Spacing.space16),
+        )
+        Text(
+            stringResource(Res.string.hold_stop_note),
+            style = IntervalTheme.type.meta,
+            color = IntervalTheme.palette.textDim,
+        )
     }
 }

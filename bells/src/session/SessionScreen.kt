@@ -108,6 +108,7 @@ fun SessionRoute(onExit: () -> Unit, onNewExercise: (name: String) -> Unit = {})
         hasSets = !state.session?.sets.isNullOrEmpty(),
         onLeave = {
             viewModel.stopEmom()
+            viewModel.holds.cancel()
             onExit()
         },
     )
@@ -129,6 +130,9 @@ fun SessionRoute(onExit: () -> Unit, onNewExercise: (name: String) -> Unit = {})
             onLogNext = viewModel::logNext,
             onStartPlannedEmom = viewModel::startPlannedEmom,
             onStartEmom = viewModel::startDraftEmom,
+            onTimeHold = { viewModel.holds.start(state.draft) },
+            onStopHold = viewModel.holds::stop,
+            onCancelHold = viewModel.holds::cancel,
             onRemoveSet = viewModel::removeSet,
             onRestoreSet = viewModel::restoreSet,
             onFinish = {
@@ -185,6 +189,10 @@ data class SessionActions(
     val onLogNext: () -> Unit = {},
     val onStartPlannedEmom: () -> Unit = {},
     val onStartEmom: () -> Unit = {},
+    /** Times the sheet's hold; Stop logs the seconds held, Cancel drops it. */
+    val onTimeHold: () -> Unit = {},
+    val onStopHold: () -> Unit = {},
+    val onCancelHold: () -> Unit = {},
     val onRemoveSet: (Long) -> Unit = {},
     val onRestoreSet: (SetLog) -> Unit = {},
     val onFinish: () -> Unit = {},

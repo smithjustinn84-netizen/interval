@@ -15,6 +15,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import dev.justinsmith.bells.domain.EmomCue
 import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.bells.ui.waitForText
 import kotlin.test.Test
@@ -85,6 +86,39 @@ class SessionFlowTest {
         waitForText("New records")
         onNodeWithText("Heaviest Medium × 10").assertExists()
         onNodeWithText("Longest 0:30").assertExists()
+    }
+
+    @Test
+    fun `a timed plank counts itself down then logs and offers the other side`() = bellsAppTest { app ->
+        onNodeWithText("Start session").performClick()
+        waitForText("Log set")
+        onNodeWithText("Log set").performClick()
+        pick("Side plank", search = "side plank")
+        onNodeWithText("Time it").performScrollTo().performClick()
+        waitForText("Get ready")
+        onNodeWithText("Side plank · Left").assertExists()
+        // Three seconds in, then ten of the thirty held.
+        app.clock.set(13_000)
+        waitForText("0:20")
+        onNodeWithText("Hold").assertExists()
+        assertTrue(app.storage.sessions.sets.value.isEmpty())
+        app.clock.set(40_000)
+        waitForText("Time the other side: Right")
+        waitForText("0:30 · Left")
+        val first = app.storage.sessions.sets.value.single()
+        assertEquals(Triple(30, 0, "Left"), Triple(first.seconds, first.reps, first.side))
+        assertEquals(EmomCue.Finished, app.beeper.cues.last())
+        assertTrue(EmomCue.Start in app.beeper.cues)
+        // The other side for the same length, stopped early: the whole seconds held are logged.
+        onNodeWithText("Time the other side: Right").performScrollTo().performClick()
+        waitForText("Side plank · Right")
+        app.clock.set(40_000 + 3_000 + 12_400)
+        waitForText("0:18")
+        onNodeWithText("Stop").performScrollTo().performClick()
+        waitForText("0:12 · Right")
+        val second = app.storage.sessions.sets.value.last()
+        assertEquals(12 to "Right", second.seconds to second.side)
+        onNodeWithText("Time the other side: Left").assertDoesNotExist()
     }
 
     @Test
