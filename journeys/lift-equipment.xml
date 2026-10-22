@@ -39,7 +39,7 @@
     <action>Tap "Log set" at the bottom of the sheet</action>
     <action>Verify that the session shows "Push-up" with a set "+8 kg × 10", and "Moved" reads "240 kg"</action>
     <action>Tap "Finish"</action>
-    <action>Verify that the summary shows "Done", "Counts toward your week and your goal", and under "New records" only "Two-hand swing"</action>
+    <action>Verify that the summary shows "Done", "Counts toward your week and your goal", and under "New records" all four in their own words: "Two-hand swing" with "Heaviest 16 kg × 10", "Band pull-apart" with "Heaviest Heavy × 10", "Side plank" with "Longest 0:45" and "Push-up" with "Most added +8 kg × 10"</action>
     <action>Tap "Done"</action>
     <action>Verify that the Lift tab shows "Last session" with "Two-hand swing and 3 more", "4 sets" and "240 kg"</action>
   </actions>

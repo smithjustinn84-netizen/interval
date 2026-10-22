@@ -26,9 +26,8 @@ import dev.justinsmith.bells.resources.bells_records
 import dev.justinsmith.bells.resources.bells_records_empty
 import dev.justinsmith.bells.resources.bells_title
 import dev.justinsmith.bells.resources.kg_value
-import dev.justinsmith.bells.resources.record_line
 import dev.justinsmith.bells.ui.Choice
-import dev.justinsmith.bells.ui.liftName
+import dev.justinsmith.bells.ui.RecordRow
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -107,24 +106,7 @@ fun GearScreen(state: GearUiState, onToggle: (Double) -> Unit, onBack: () -> Uni
                     }
                     state.records.forEachIndexed { i, record ->
                         if (i > 0) RowDivider()
-                        Column(Modifier.padding(Spacing.space16)) {
-                            Text(
-                                liftName(record.exercise, record.double),
-                                style = IntervalTheme.type.label,
-                                color = palette.text,
-                            )
-                            Text(
-                                stringResource(
-                                    Res.string.record_line,
-                                    formatKg(record.heaviestKg),
-                                    record.repsAtHeaviest,
-                                    record.mostReps,
-                                    formatKg(record.mostRepsKg),
-                                ),
-                                style = IntervalTheme.type.meta,
-                                color = palette.textDim,
-                            )
-                        }
+                        RecordRow(record)
                     }
                 }
             }

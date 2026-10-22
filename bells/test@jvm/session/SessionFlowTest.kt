@@ -68,6 +68,26 @@ class SessionFlowTest {
     }
 
     @Test
+    fun `a band set and a hold are records on the summary in their own words`() = bellsAppTest {
+        onNodeWithText("Start session").performClick()
+        waitForText("Log set")
+        onNodeWithText("Log set").performClick()
+        pick("Band pull-apart", equipment = "Band")
+        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
+        waitForText("Medium × 10")
+        onNodeWithText("Log set").performClick()
+        // The Band chip is still on from the first pick: tapping it again lets the plank through.
+        pick("Plank", search = "plank", equipment = "Band")
+        waitForText("Held")
+        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
+        waitForText("0:30")
+        onNodeWithText("Finish").performClick()
+        waitForText("New records")
+        onNodeWithText("Heaviest Medium × 10").assertExists()
+        onNodeWithText("Longest 0:30").assertExists()
+    }
+
+    @Test
     fun `weight added to bodyweight counts toward moved`() = bellsAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")

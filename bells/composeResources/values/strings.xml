@@ -271,7 +271,16 @@
     <string name="bells_owned_hint">Tap the sizes you own; the log offers just those.</string>
     <string name="bells_records">Personal records</string>
     <string name="bells_records_empty">Log a session to set your first records.</string>
-    <string name="record_line">Heaviest %1$s kg × %2$d · most reps %3$d at %4$s kg</string>
+    <!-- A record's parts, joined by " · ": "Heaviest 20 kg × 5 · most reps 12 at 12 kg". %1$s is a load:
+         "20 kg", "+8 kg" or a band's name. -->
+    <string name="record_heaviest">Heaviest %1$s × %2$d</string>
+    <string name="record_most_added">Most added +%1$s kg × %2$d</string>
+    <string name="record_most_reps_at">most reps %1$d at %2$s</string>
+    <string name="record_most_reps_with">most reps %1$d with %2$s</string>
+    <string name="record_most_reps_none_added">most reps %1$d with none added</string>
+    <string name="record_most_reps">Most reps %1$d</string>
+    <string name="record_longest">Longest %1$s</string>
+    <string name="record_added_kg">+%1$s kg</string>
 
     <!-- Programs -->
     <string name="programs_title">Programs</string>
