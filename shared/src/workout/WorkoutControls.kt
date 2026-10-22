@@ -35,9 +35,9 @@ import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.IntervalTheme
-import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.WorkoutColors
 import dev.justinsmith.interval.ui.surfaceButton
 import org.jetbrains.compose.resources.stringResource
 
@@ -98,8 +98,8 @@ internal fun BottomControls(
 }
 
 /**
- * Pause / Resume, filled with the phase colour ([primaryFill]) under an ink label. Paused, the fill
- * is [PhaseColors.onGround] instead: ink doesn't read on the paused grey.
+ * Pause / Resume, filled with the phase colour ([primaryFill]) under [WorkoutColors.onFill]'s label. Paused, the fill
+ * is [WorkoutColors.onGround] instead: a label doesn't read on the paused grey.
  */
 @Composable
 internal fun PrimaryButton(
@@ -113,7 +113,7 @@ internal fun PrimaryButton(
         onTogglePause,
         modifier,
         background = primaryFill,
-        content = PhaseColors.ink,
+        content = IntervalTheme.workout.onFill(primaryFill),
         style = IntervalTheme.type.value,
     )
 }
@@ -123,8 +123,8 @@ internal fun BigButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    background: Color = PhaseColors.control,
-    content: Color = PhaseColors.onGround,
+    background: Color = IntervalTheme.workout.control,
+    content: Color = IntervalTheme.workout.onGround,
     style: TextStyle = IntervalTheme.type.control,
     description: String? = null,
 ) {
@@ -150,7 +150,7 @@ private fun PillButton(
     Box(
         modifier
             .sizeIn(minWidth = Sizes.pillWidth, minHeight = Sizes.pillHeight)
-            .surfaceButton(interaction, Corners.radius12, PhaseColors.control, onClick)
+            .surfaceButton(interaction, Corners.radius12, IntervalTheme.workout.control, onClick)
             .semantics { contentDescription = description }
             .padding(horizontal = Spacing.space16),
         contentAlignment = Alignment.Center,
@@ -158,7 +158,7 @@ private fun PillButton(
         Text(
             text,
             style = IntervalTheme.type.control,
-            color = PhaseColors.onGround,
+            color = IntervalTheme.workout.onGround,
             modifier = Modifier.clearAndSetSemantics {},
         )
     }

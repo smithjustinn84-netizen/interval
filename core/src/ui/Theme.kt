@@ -13,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -82,9 +83,53 @@ data class IntervalPalette(
 }
 
 /**
- * Workout colors, the same in light and dark ("Gym dark"). The screen stays near-black; the phase
- * colour is the ring, the edge band, the phase word and the primary control, so it still reads from
- * across a room without flooding the screen.
+ * The workout's colours (the timer, its summary, an EMOM), following the theme. The phase colour is
+ * the ring, the edge band, the phase word and the primary control, so it still reads from across a
+ * room without flooding the screen. Dark is [PhaseColors]' near-black "Gym dark"; light keeps the
+ * page's ground and deepens the phases, as Setup's marks do.
+ */
+@Immutable
+data class WorkoutColors(
+    val prep: Color,
+    val work: Color,
+    val rest: Color,
+    val done: Color,
+    /** The ring and band while paused. A paused primary control fills with [onGround] instead. */
+    val paused: Color,
+    /** The workout screen's background. */
+    val ground: Color,
+    /** Fill of the secondary controls (End, Skip, Back, +10s, Repeat), stat tiles, and the ring's track. */
+    val control: Color,
+    /** Upcoming round dots. */
+    val upcoming: Color,
+    /** Clock, status, finished round dots, and the labels on [control]. */
+    val onGround: Color,
+    /** Next up, the resting tap hint, and the phase word while paused. */
+    val onGroundDim: Color,
+    /** The lanes round the ring: their lines, and every other lane's fill. */
+    val laneLine: Color,
+    val laneFill: Color,
+) {
+    /**
+     * The label on a phase-coloured or [onGround] fill: ink or white, whichever reads better. Worked
+     * out from the fill, since fills crossfade between phases and light mode's are dark.
+     */
+    fun onFill(fill: Color): Color {
+        val lum = fill.luminance()
+        val inkContrast = (lum + CONTRAST_OFFSET) / (PhaseColors.ink.luminance() + CONTRAST_OFFSET)
+        val whiteContrast = (1f + CONTRAST_OFFSET) / (lum + CONTRAST_OFFSET)
+        return if (inkContrast >= whiteContrast) PhaseColors.ink else Color.White
+    }
+
+    private companion object {
+        /** WCAG's flare term in a contrast ratio. */
+        const val CONTRAST_OFFSET = 0.05f
+    }
+}
+
+/**
+ * Gym dark: the workout's fixed colours, which [darkWorkoutColors] uses as they are. The splash and
+ * the sheet scrim use them in either theme.
  */
 object PhaseColors {
     val prep = Color(0xFFF2A81D)
@@ -110,7 +155,7 @@ object PhaseColors {
     /** Next up, the resting tap hint, and the phase word while paused. */
     val onGroundDim = Color(0xFF97A3B3)
 
-    /** Label on a phase-coloured or [onGround] fill; it doesn't follow the theme. */
+    /** Label on a bright fill; [WorkoutColors.onFill] picks it or white. */
     val ink = Color(0xFF0B0D10)
 
     /** The lanes round the ring: their lines, and every other lane's fill, a whisper of [control] over the ground. */
@@ -147,6 +192,40 @@ internal val darkPalette = IntervalPalette(
     workMark = PhaseColors.work,
     restMark = PhaseColors.rest,
     onPrepTint = PhaseColors.prep,
+)
+
+internal val darkWorkoutColors = WorkoutColors(
+    prep = PhaseColors.prep,
+    work = PhaseColors.work,
+    rest = PhaseColors.rest,
+    done = PhaseColors.done,
+    paused = PhaseColors.paused,
+    ground = PhaseColors.ground,
+    control = PhaseColors.control,
+    upcoming = PhaseColors.upcoming,
+    onGround = PhaseColors.onGround,
+    onGroundDim = PhaseColors.onGroundDim,
+    laneLine = PhaseColors.laneLine,
+    laneFill = PhaseColors.laneFill,
+)
+
+/**
+ * The light page under the workout, with the phases deepened past Setup's marks: the phase word is
+ * text on the ground, and white labels the primary control filled with each.
+ */
+internal val lightWorkoutColors = WorkoutColors(
+    prep = Color(0xFF966003),
+    work = Color(0xFFC4361F),
+    rest = lightPalette.restMark,
+    done = lightPalette.accent,
+    paused = lightPalette.textDim,
+    ground = lightPalette.background,
+    control = lightPalette.surfaceVariant,
+    upcoming = lightPalette.line,
+    onGround = lightPalette.text,
+    onGroundDim = lightPalette.textDim,
+    laneLine = lightPalette.laneLine,
+    laneFill = lightPalette.laneFill,
 )
 
 /**
@@ -198,6 +277,7 @@ private fun intervalType(body: TextStyle, condensed: FontFamily): IntervalType {
 }
 
 private val LocalIntervalPalette = staticCompositionLocalOf { lightPalette }
+private val LocalWorkoutColors = staticCompositionLocalOf { lightWorkoutColors }
 private val LocalIntervalType = staticCompositionLocalOf<IntervalType> {
     error("IntervalType is provided by IntervalTheme")
 }
@@ -209,6 +289,7 @@ fun IntervalTheme(
     content: @Composable () -> Unit,
 ) {
     val palette = if (darkTheme) darkPalette else lightPalette
+    val workout = if (darkTheme) darkWorkoutColors else lightWorkoutColors
     val barlow = FontFamily(
         Font(Res.font.barlow_regular, FontWeight.Normal),
         Font(Res.font.barlow_semibold, FontWeight.SemiBold),
@@ -249,7 +330,11 @@ fun IntervalTheme(
         }
     }
     val type = remember(typography, condensed) { intervalType(typography.bodyLarge, condensed) }
-    CompositionLocalProvider(LocalIntervalPalette provides palette, LocalIntervalType provides type) {
+    CompositionLocalProvider(
+        LocalIntervalPalette provides palette,
+        LocalWorkoutColors provides workout,
+        LocalIntervalType provides type,
+    ) {
         // MaterialTheme provides bodyLarge as the default text style, so unstyled Text is Barlow too.
         MaterialTheme(colorScheme = colors, typography = typography, content = content)
     }
@@ -260,6 +345,11 @@ object IntervalTheme {
     val palette: IntervalPalette
         @Composable @ReadOnlyComposable
         get() = LocalIntervalPalette.current
+
+    /** The workout's colours: the timer, its summary, an EMOM. */
+    val workout: WorkoutColors
+        @Composable @ReadOnlyComposable
+        get() = LocalWorkoutColors.current
 
     val type: IntervalType
         @Composable @ReadOnlyComposable

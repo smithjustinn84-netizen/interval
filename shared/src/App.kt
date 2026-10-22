@@ -154,9 +154,8 @@ internal fun AppContent(koin: KoinApplication, introPlaying: Boolean = false) {
         }
         IntervalTheme(darkTheme = dark) {
             val backStack = rememberNavBackStack(navConfiguration, TimerTab)
-            // The workout and a session are dark in either theme, and so is the intro while it covers the app.
-            val top = backStack.lastOrNull()
-            SystemBarIcons(lightIcons = dark || top == Workout || top == Lifting || introPlaying)
+            // The intro is dark in either theme while it covers the app.
+            SystemBarIcons(lightIcons = dark || introPlaying)
             AppShell(backStack)
         }
     }
@@ -269,9 +268,8 @@ private fun appEntries(
             onOpenSession = { backStack.push(LiftDetail(it)) },
         )
     }
-    // Gym dark in either theme, as the workout is: read at arm's length, mid-set.
     entry<Lifting>(metadata = pageKind(PageKind.Mode)) {
-        IntervalTheme(darkTheme = true) { SessionRoute(onExit = { backStack.removeLastOrNull() }) }
+        SessionRoute(onExit = { backStack.removeLastOrNull() })
     }
     entry<Programs> {
         ProgramsRoute(

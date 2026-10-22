@@ -21,7 +21,6 @@ import dev.justinsmith.bells.resources.summary_done
 import dev.justinsmith.bells.resources.summary_shared
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.IntervalTheme
-import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import org.jetbrains.compose.resources.stringResource
@@ -43,7 +42,7 @@ fun SummaryScreen(finished: Finished, onDone: () -> Unit, modifier: Modifier = M
                 Text(
                     stringResource(Res.string.summary_done),
                     style = IntervalTheme.type.display,
-                    color = PhaseColors.done,
+                    color = IntervalTheme.workout.done,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth().padding(top = Spacing.space24),
                 )

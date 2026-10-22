@@ -43,7 +43,7 @@ private const val PHONE_HEIGHT = 891
 fun runUiTest(block: suspend DesktopComposeUiTest.() -> Unit) =
     runDesktopComposeUiTest(width = PHONE_WIDTH, height = PHONE_HEIGHT, block = block)
 
-/** Sets [content] inside the theme, Gym dark, as a session always is. */
+/** Sets [content] inside the dark theme. */
 fun DesktopComposeUiTest.setBellsContent(content: @Composable () -> Unit) {
     setContent { IntervalTheme(darkTheme = true, content = content) }
 }

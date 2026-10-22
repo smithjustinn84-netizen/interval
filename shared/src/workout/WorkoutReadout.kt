@@ -64,7 +64,6 @@ import dev.justinsmith.interval.ui.EnterEasing
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.MAX_ROUND_MARKS
 import dev.justinsmith.interval.ui.Motion
-import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StandardEasing
@@ -79,7 +78,7 @@ internal fun RoundStatus(state: WorkoutUiState, modifier: Modifier = Modifier) {
     Text(
         stringResource(Res.string.workout_status, state.round, state.rounds, state.sessionLeft),
         style = IntervalTheme.type.label,
-        color = PhaseColors.onGround,
+        color = IntervalTheme.workout.onGround,
         textAlign = TextAlign.Center,
         modifier = modifier,
     )
@@ -103,8 +102,8 @@ internal fun RoundDots(state: WorkoutUiState, accent: Color, modifier: Modifier 
             val round = index + 1
             val target = when {
                 round == active -> accent
-                round <= state.completedRounds -> PhaseColors.onGround
-                else -> PhaseColors.upcoming
+                round <= state.completedRounds -> IntervalTheme.workout.onGround
+                else -> IntervalTheme.workout.upcoming
             }
             val color by animateColorAsState(target, tween(Motion.STATE_MILLIS, easing = StandardEasing), label = "dot")
             Box(
@@ -118,7 +117,7 @@ internal fun RoundDots(state: WorkoutUiState, accent: Color, modifier: Modifier 
 }
 
 /**
- * How far through the current interval, as a ring in the phase colour over a dark track. The ring
+ * How far through the current interval, as a ring in the phase colour over the control-coloured track. The ring
  * [glide]s to each new [progress] so it turns rather than steps, except across a jump (a new
  * interval, Back), which it snaps to; the summary drives its own slower sweep and turns gliding off.
  */
@@ -132,12 +131,13 @@ internal fun ProgressRing(progress: Float, accent: Color, modifier: Modifier = M
             shown.animateTo(progress, tween(Motion.RING_GLIDE_MILLIS, easing = LinearEasing))
         }
     }
+    val track = IntervalTheme.workout.control
     Canvas(modifier.clearAndSetSemantics {}) {
         val stroke = Sizes.ring.toPx()
         val diameter = size.minDimension - stroke
         val topLeft = Offset((size.width - diameter) / 2, (size.height - diameter) / 2)
         val arc = Size(diameter, diameter)
-        drawArc(PhaseColors.control, 0f, Angles.FULL_TURN, useCenter = false, topLeft, arc, style = Stroke(stroke))
+        drawArc(track, 0f, Angles.FULL_TURN, useCenter = false, topLeft, arc, style = Stroke(stroke))
         val sweep = shown.value.coerceIn(0f, 1f)
         if (sweep > 0f) {
             drawArc(
@@ -164,7 +164,7 @@ internal fun RingReadout(state: WorkoutUiState, accent: Color, diameter: Dp, mod
             Text(
                 nextUpText(state.next),
                 style = IntervalTheme.type.label,
-                color = PhaseColors.onGroundDim,
+                color = IntervalTheme.workout.onGroundDim,
                 textAlign = TextAlign.Center,
             )
         }
@@ -191,7 +191,7 @@ internal fun LandscapeReadout(
         }
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             PhaseLabel(state, accent)
-            Text(nextUpText(state.next), style = IntervalTheme.type.label, color = PhaseColors.onGroundDim)
+            Text(nextUpText(state.next), style = IntervalTheme.type.label, color = IntervalTheme.workout.onGroundDim)
             RoundStatus(state)
             RoundDots(state, accent, Modifier.padding(top = Spacing.space4))
             TapHint(state)
@@ -230,7 +230,7 @@ private fun PhaseLabel(state: WorkoutUiState, accent: Color) {
         Text(
             stringResource(res),
             style = IntervalTheme.type.stat,
-            color = if (state.paused) PhaseColors.onGroundDim else accent,
+            color = if (state.paused) IntervalTheme.workout.onGroundDim else accent,
         )
     }
 }
@@ -264,7 +264,7 @@ private fun Clock(state: WorkoutUiState, accent: Color, size: TextUnit) {
         }
     }
     val color by animateColorAsState(
-        if (state.countingDown) accent else PhaseColors.onGround,
+        if (state.countingDown) accent else IntervalTheme.workout.onGround,
         tween(Motion.STATE_MILLIS, easing = StandardEasing),
         label = "clock",
     )
@@ -288,7 +288,7 @@ internal fun TapHint(state: WorkoutUiState, modifier: Modifier = Modifier) {
     Text(
         stringResource(if (state.paused) Res.string.workout_tap_resume else Res.string.workout_tap_pause),
         style = IntervalTheme.type.meta,
-        color = if (state.paused) PhaseColors.onGround else PhaseColors.onGroundDim,
+        color = if (state.paused) IntervalTheme.workout.onGround else IntervalTheme.workout.onGroundDim,
         fontWeight = if (state.paused) FontWeight.SemiBold else FontWeight.Normal,
         textAlign = TextAlign.Center,
         modifier = if (breathing) modifier.breathing() else modifier,

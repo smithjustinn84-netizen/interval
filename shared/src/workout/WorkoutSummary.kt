@@ -53,7 +53,6 @@ import dev.justinsmith.interval.ui.EnterEasing
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
-import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.enterRising
@@ -146,8 +145,8 @@ private fun SummaryActions(
                 stringResource(Res.string.common_done),
                 onExit,
                 Modifier.fillMaxWidth().height(Sizes.control),
-                background = PhaseColors.done,
-                content = PhaseColors.ink,
+                background = IntervalTheme.workout.done,
+                content = IntervalTheme.workout.onFill(IntervalTheme.workout.done),
                 style = IntervalTheme.type.value,
             )
         }
@@ -195,13 +194,13 @@ private fun SummaryReadout(
                 Icon(
                     IntervalIcons.Check,
                     contentDescription = null,
-                    tint = PhaseColors.onGroundDim,
+                    tint = IntervalTheme.workout.onGroundDim,
                     modifier = Modifier.size(Sizes.icon),
                 )
                 Text(
                     stringResource(Res.string.workout_saved),
                     style = IntervalTheme.type.meta,
-                    color = PhaseColors.onGroundDim,
+                    color = IntervalTheme.workout.onGroundDim,
                 )
             }
         }
@@ -218,7 +217,7 @@ private fun ColumnScope.SummaryTitle(state: WorkoutUiState, entrance: MutableTra
         Text(
             stringResource(if (state.ended) Res.string.workout_ended else Res.string.workout_done),
             style = IntervalTheme.type.display,
-            color = PhaseColors.done,
+            color = IntervalTheme.workout.done,
         )
     }
     if (ring) {
@@ -230,13 +229,13 @@ private fun ColumnScope.SummaryTitle(state: WorkoutUiState, entrance: MutableTra
             )
         }
         Box(Modifier.size(Sizes.summaryRing), contentAlignment = Alignment.Center) {
-            ProgressRing(sweep.value, PhaseColors.done, Modifier.fillMaxSize(), glide = false)
+            ProgressRing(sweep.value, IntervalTheme.workout.done, Modifier.fillMaxSize(), glide = false)
             Column { AnimatedVisibility(entrance, enter = enterRising()) { title() } }
         }
     } else {
         AnimatedVisibility(entrance, enter = enterRising()) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                RoundDots(state, PhaseColors.done, Modifier.padding(bottom = Spacing.space12))
+                RoundDots(state, IntervalTheme.workout.done, Modifier.padding(bottom = Spacing.space12))
                 title()
             }
         }
@@ -260,14 +259,14 @@ private fun SummaryLines(state: WorkoutUiState, modifier: Modifier = Modifier) {
                 pluralStringResource(Res.plurals.workout_summary_finished, state.rounds, state.rounds, state.total)
             },
             style = IntervalTheme.type.section,
-            color = PhaseColors.onGround,
+            color = IntervalTheme.workout.onGround,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = Spacing.space8),
         )
         Text(
             shapeText(state),
             style = IntervalTheme.type.meta,
-            color = PhaseColors.onGroundDim,
+            color = IntervalTheme.workout.onGroundDim,
             textAlign = TextAlign.Center,
         )
     }
@@ -284,15 +283,15 @@ private fun Stat(value: String, label: String, modifier: Modifier = Modifier) {
     Column(
         modifier
             .clip(Corners.radius18)
-            .background(PhaseColors.control)
+            .background(IntervalTheme.workout.control)
             .padding(top = Spacing.space16, bottom = Spacing.space12),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(value, style = IntervalTheme.type.stat, color = PhaseColors.onGround)
+        Text(value, style = IntervalTheme.type.stat, color = IntervalTheme.workout.onGround)
         Text(
             label,
             style = IntervalTheme.type.caption,
-            color = PhaseColors.onGroundDim,
+            color = IntervalTheme.workout.onGroundDim,
             modifier = Modifier.padding(top = Spacing.space4),
         )
     }

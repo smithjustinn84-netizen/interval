@@ -60,10 +60,10 @@ import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LaneAnchor
 import dev.justinsmith.interval.ui.Motion
-import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.WorkoutColors
 import dev.justinsmith.interval.ui.WorkoutLanes
 import dev.justinsmith.interval.ui.isLandscape
 import dev.justinsmith.interval.ui.laneRing
@@ -106,7 +106,7 @@ fun WorkoutRoute(onExit: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 /**
- * The full-screen timer, with no tab bar, on a near-black ground. The phase colour is the progress
+ * The full-screen timer, with no tab bar, on the workout's ground. The phase colour is the progress
  * ring, the band along the top edge, the phase word and the primary control, so it reads from across
  * a room; tapping anywhere in the middle pauses or resumes. Wider-than-tall windows move the
  * controls into side rails at thumb reach, which leaves the middle for a much bigger clock.
@@ -149,7 +149,7 @@ fun WorkoutScreen(
     BoxWithConstraints(
         modifier
             .fillMaxSize()
-            .background(PhaseColors.ground)
+            .background(IntervalTheme.workout.ground)
             .focusRequester(focus)
             .focusable()
             .workoutKeys(
@@ -202,14 +202,15 @@ fun WorkoutScreen(
 
 /**
  * The phase colour, crossfading as the phase changes: grey while paused, blue once done. For the
- * [primary] control's fill, paused is [PhaseColors.onGround] instead, since ink fails on the grey.
+ * [primary] control's fill, paused is [WorkoutColors.onGround] instead, since no label reads on the grey.
  */
 @Composable
 private fun phaseColor(state: WorkoutUiState, primary: Boolean): Color {
+    val colors = IntervalTheme.workout
     val target = when {
-        state.isDone -> PhaseColors.done
-        state.paused -> if (primary) PhaseColors.onGround else PhaseColors.paused
-        else -> PhaseColors.of(state.phase)
+        state.isDone -> colors.done
+        state.paused -> if (primary) colors.onGround else colors.paused
+        else -> colors.of(state.phase)
     }
     val color by animateColorAsState(
         target,

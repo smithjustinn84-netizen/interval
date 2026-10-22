@@ -60,18 +60,26 @@ class ThemeContrastTest {
 
     @Test
     fun `workout text reads where the system says it does`() {
-        listOf(PhaseColors.ground, PhaseColors.control).forEach { ground ->
-            assertContrast(4.5, PhaseColors.onGround, ground, "onGround on $ground")
-            assertContrast(4.5, PhaseColors.onGroundDim, ground, "onGroundDim on $ground")
+        mapOf("light" to lightWorkoutColors, "dark" to darkWorkoutColors).forEach { (theme, w) ->
+            listOf(w.ground, w.control).forEach { ground ->
+                assertContrast(4.5, w.onGround, ground, "$theme onGround on $ground")
+                assertContrast(4.5, w.onGroundDim, ground, "$theme onGroundDim on $ground")
+            }
+            // The phase word and the ring sit on the ground; onFill labels the primary control filled with them.
+            listOf(w.prep, w.work, w.rest, w.done).forEach { phase ->
+                assertContrast(4.5, phase, w.ground, "$theme $phase on ground")
+                assertContrast(4.5, w.onFill(phase), phase, "$theme label on $phase")
+            }
+            // Paused, the primary control fills with onGround, since no label reads on the paused grey.
+            assertContrast(4.5, w.onFill(w.onGround), w.onGround, "$theme label on onGround")
+            assertContrast(3.0, w.paused, w.ground, "$theme paused ring on ground")
         }
-        // The phase word and the ring sit on the ground; ink labels the primary control filled with them.
-        listOf(PhaseColors.prep, PhaseColors.work, PhaseColors.rest, PhaseColors.done).forEach { phase ->
-            assertContrast(4.5, phase, PhaseColors.ground, "$phase on ground")
-            assertContrast(4.5, PhaseColors.ink, phase, "ink on $phase")
-        }
-        // Paused, the primary control fills with onGround, since ink fails on the paused grey.
-        assertContrast(4.5, PhaseColors.ink, PhaseColors.onGround, "ink on onGround")
-        assertContrast(3.0, PhaseColors.paused, PhaseColors.ground, "paused ring on ground")
+    }
+
+    @Test
+    fun `dark workout labels stay ink`() {
+        val w = darkWorkoutColors
+        listOf(w.prep, w.work, w.rest, w.done, w.onGround).forEach { assertEquals(PhaseColors.ink, w.onFill(it)) }
     }
 
     @Test

@@ -176,6 +176,7 @@ fun Modifier.laneRing(anchor: LaneAnchor): Modifier = onPlaced { anchor.ring = i
 @Composable
 fun WorkoutLanes(anchor: LaneAnchor, accent: Color, modifier: Modifier = Modifier) {
     val clock = rememberLaneClock()
+    val colors = IntervalTheme.workout
     Spacer(
         modifier
             .graphicsLayer { clip = true }
@@ -191,12 +192,12 @@ fun WorkoutLanes(anchor: LaneAnchor, accent: Color, modifier: Modifier = Modifie
                     val ring = anchor.ring?.takeIf { it.isAttached } ?: return@onDrawBehind
                     val center = lanes.localPositionOf(ring, Offset(ring.size.width / 2f, ring.size.height / 2f))
                     val first = min(ring.size.width, ring.size.height) / 2f + gap
-                    drawLanes(center, first, step, PhaseColors.laneLine, PhaseColors.laneFill, laneStroke)
+                    drawLanes(center, first, step, colors.laneLine, colors.laneFill, laneStroke)
                     val now = clock.longValue
                     val leadHead = Angles.TWELVE_O_CLOCK + now / Motion.LEAD_COMET_TURN_MILLIS * Angles.FULL_TURN
                     val chaseHead = CHASE_COMET_START_DEGREES + now / Motion.CHASE_COMET_TURN_MILLIS * Angles.FULL_TURN
                     lead.draw(this, center, first + lead.lane * step, leadHead, accent.copy(alpha = LEAD_COMET_ALPHA))
-                    val dim = PhaseColors.onGroundDim.copy(alpha = CHASE_COMET_ALPHA)
+                    val dim = colors.onGroundDim.copy(alpha = CHASE_COMET_ALPHA)
                     chase.draw(this, center, first + chase.lane * step, chaseHead, dim)
                 }
             },

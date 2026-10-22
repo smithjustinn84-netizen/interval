@@ -49,7 +49,6 @@ import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
-import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
@@ -57,7 +56,7 @@ import dev.justinsmith.interval.ui.surfaceButton
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * An EMOM, in the workout's Gym dark look: the phase colour on the band, the ring (the minute going by),
+ * An EMOM, in the workout's look: the phase colour on the band, the ring (the minute going by),
  * the phase word and Set done. Count-in amber, work red until the set is done, then rest green until the
  * next minute. A haptic marks each change; the beeps come from the view model.
  */
@@ -69,17 +68,18 @@ fun EmomScreen(
     onStop: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val colors = IntervalTheme.workout
     val phaseColor = when (state.phase) {
-        EmomPhase.GetReady -> PhaseColors.prep
-        EmomPhase.Work -> PhaseColors.work
-        EmomPhase.Rest -> PhaseColors.rest
-        EmomPhase.Done -> PhaseColors.done
+        EmomPhase.GetReady -> colors.prep
+        EmomPhase.Work -> colors.work
+        EmomPhase.Rest -> colors.rest
+        EmomPhase.Done -> colors.done
     }
     val color by animateColorAsState(phaseColor, tween(Motion.PHASE_CROSSFADE_MILLIS))
     val haptics = LocalHapticFeedback.current
     LaunchedEffect(state.phase, state.minute) { haptics.performHapticFeedback(HapticFeedbackType.Confirm) }
     KeepScreenOn()
-    Box(modifier.fillMaxSize().background(PhaseColors.ground), contentAlignment = Alignment.TopCenter) {
+    Box(modifier.fillMaxSize().background(colors.ground), contentAlignment = Alignment.TopCenter) {
         Column(
             Modifier.widthIn(
                 max = Sizes.contentWide,
@@ -95,7 +95,7 @@ fun EmomScreen(
                 Text(
                     stringResource(Res.string.emom_minute, state.minute, state.minutes),
                     style = IntervalTheme.type.label,
-                    color = PhaseColors.onGround,
+                    color = colors.onGround,
                     modifier = Modifier.weight(1f).padding(horizontal = Spacing.space8),
                 )
             }
@@ -114,7 +114,7 @@ fun EmomScreen(
                     .surfaceButton(
                         interaction,
                         Corners.radius18,
-                        if (working) color else PhaseColors.control,
+                        if (working) color else colors.control,
                         onClick = onFinishSet,
                         enabled = working,
                     ),
@@ -123,7 +123,7 @@ fun EmomScreen(
                 Text(
                     stringResource(Res.string.emom_set_done),
                     style = IntervalTheme.type.value,
-                    color = if (working) PhaseColors.ink else PhaseColors.onGroundDim,
+                    color = if (working) colors.onFill(color) else colors.onGroundDim,
                 )
             }
         }
@@ -138,11 +138,12 @@ private fun StopPill(onStop: () -> Unit) {
 /** The minute going by, from 12 o'clock clockwise, over the control-coloured track. */
 @Composable
 private fun Ring(progress: Float, color: Color, modifier: Modifier = Modifier) {
+    val track = IntervalTheme.workout.control
     Canvas(modifier) {
         val stroke = Sizes.ring.toPx()
         val inset = stroke / 2
         val arcSize = Size(size.width - stroke, size.height - stroke)
-        drawArc(PhaseColors.control, 0f, FULL_TURN, false, Offset(inset, inset), arcSize, style = Stroke(stroke))
+        drawArc(track, 0f, FULL_TURN, false, Offset(inset, inset), arcSize, style = Stroke(stroke))
         drawArc(
             color,
             START_ANGLE,
@@ -161,6 +162,7 @@ private const val START_ANGLE = -90f
 /** Inside the ring: the phase word, the clock, and the set to do (or next, while resting). */
 @Composable
 private fun EmomReadout(run: EmomRun, state: EmomState, color: Color) {
+    val colors = IntervalTheme.workout
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             stringResource(
@@ -177,7 +179,7 @@ private fun EmomReadout(run: EmomRun, state: EmomState, color: Color) {
         Text(
             formatClock(state.secondsLeft),
             style = IntervalTheme.type.display,
-            color = PhaseColors.onGround,
+            color = colors.onGround,
         )
         val side = run.sideOf(state.minute)
         val task = setLine(run.bellKg, run.reps, side, run.double)
@@ -190,7 +192,7 @@ private fun EmomReadout(run: EmomRun, state: EmomState, color: Color) {
                 "${liftName(run.exercise, run.double)} · $task"
             },
             style = IntervalTheme.type.label,
-            color = PhaseColors.onGroundDim,
+            color = colors.onGroundDim,
         )
     }
 }
