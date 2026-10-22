@@ -1,0 +1,49 @@
+<journey name="Lift: the exercise library and exercises of your own">
+  <description>
+    Search and narrow the library from Lift, add an exercise from a search that finds nothing, change it,
+    pick it on the Log sheet and log a set of it, then see its equipment locked. Run on a fresh install
+    (adb shell pm clear dev.justinsmith.interval).
+  </description>
+  <actions>
+    <action>Tap the "Lift" tab, then the "Exercises" card</action>
+    <action>Verify that a page titled "Exercises" shows "Search exercises", the chips "Kettlebell", "Bodyweight", "Band" and "Mat", "74 exercises" and "Filters", and a "New exercise" button in the title bar</action>
+    <action>Type "PUSHUP" into "Search exercises"</action>
+    <action>Verify that "3 exercises" is shown with "Push-up", "Incline push-up" and "Pike push-up", each over "Bodyweight · Reps · Upper body", and a "Clear" button</action>
+    <action>Tap "Clear"</action>
+    <action>Verify that the search is empty and "74 exercises" is shown</action>
+    <action>Tap the "Mat" chip</action>
+    <action>Verify that "18 exercises" is shown, starting with "The hundred"</action>
+    <action>Tap "Filters"</action>
+    <action>Verify that "Focus" (Upper body, Lower body, Core, Full body), "Measured by" (Reps, Time) and "Only yours" are shown</action>
+    <action>Tap "Time" under "Measured by"</action>
+    <action>Verify that "1 exercise" is shown, "Swimming", and the button reads "Filters · 1"</action>
+    <action>Tap "Clear"</action>
+    <action>Verify that "74 exercises" is shown and the button reads "Filters"</action>
+    <action>Type "Copenhagen plank" into "Search exercises"</action>
+    <action>Verify that "No exercise matches “Copenhagen plank”" is shown with "Check the spelling, or clear a filter." and a button "Add “Copenhagen plank” as an exercise"</action>
+    <action>Tap "Add “Copenhagen plank” as an exercise"</action>
+    <action>Verify that a page titled "New exercise" shows "Copenhagen plank" in its "Name" field, "Bodyweight" and "Reps" selected, "One side at a time" off, "Full body" selected, and "Save exercise"</action>
+    <action>Tap "Time", turn on "One side at a time", tap "Core"</action>
+    <action>Type "Top knee on the bench" into the "Cues" field</action>
+    <action>Tap "Save exercise"</action>
+    <action>Verify that the library is shown, still searching "Copenhagen plank", with "1 exercise": "Copenhagen plank" over "Bodyweight · Time · a side · Core", tagged "Yours"</action>
+    <action>Tap "Copenhagen plank"</action>
+    <action>Verify that a page titled "Edit exercise" is shown with "Equipment" and "Measured by" chips</action>
+    <action>Tap "Back"</action>
+    <action>Tap "New exercise" in the title bar, type "copenhagen PLANK" into the "Name" field</action>
+    <action>Verify that "One of yours already has this name." is shown and there is no "Save exercise"</action>
+    <action>Tap "Back" twice to return to the Lift tab</action>
+    <action>Tap "Start session", then "Log set", then "Change"</action>
+    <action>Type "copen" into "Search exercises" and tap "Copenhagen plank"</action>
+    <action>Verify that the exercise card reads "Copenhagen plank" over "Bodyweight · Time · a side · Core" with "Top knee on the bench" under it, and "Held" reads "0:30"</action>
+    <action>Tap "Log set" at the bottom of the sheet</action>
+    <action>Verify that the session shows "Copenhagen plank" with a set "0:30 · Left"</action>
+    <action>Tap "Log set", then "Change", then clear the search and type "Turkish sit-up"</action>
+    <action>Tap "Add “Turkish sit-up” as an exercise", then "Save exercise"</action>
+    <action>Verify that the sheet is back with its exercise card reading "Turkish sit-up" over "Bodyweight · Reps · Full body"</action>
+    <action>Swipe the sheet down, tap "Finish", then "Done"</action>
+    <action>Tap the "Exercises" card, type "copenhagen", tap "Copenhagen plank"</action>
+    <action>Verify that "Edit exercise" says "Sets of it are logged, so its equipment and measure stay as they are." and shows no "Kettlebell" chip</action>
+    <action>Tap "Back" twice to return to the Lift tab</action>
+  </actions>
+</journey>

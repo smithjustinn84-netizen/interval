@@ -108,6 +108,8 @@ adb shell pm clear dev.justinsmith.interval      # Most journeys expect a fresh 
 | `presets.xml` | Save the current settings from the Presets tab, put a built-in on the Timer and start one from its sheet, edit and delete the saved one |
 | `settings.xml` | Toggle a cue, switch to Dark and back, settings persist |
 | `system-back.xml` | System back from a tab returns to Timer; during a workout it pauses and asks |
+| `lift-equipment.xml` | A Lift session logging a bell, a band, a hold on one side and bodyweight with weight added, each in its own words, Moved counting only the weighed load, then the summary |
+| `exercise-library.xml` | The library from Lift: search, equipment chips, Filters and Clear; Add from a search that finds nothing, edit, a name already taken; pick your own on the Log sheet; equipment locked once logged |
 
 On the `amper-37` image, the first tap into a text field may open Gboard's "Try out your stylus"
 tutorial. Cancel it and type again. It's the emulator's keyboard, not the app.

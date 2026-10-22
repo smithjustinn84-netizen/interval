@@ -1,0 +1,46 @@
+<journey name="Lift: every kind of equipment">
+  <description>
+    One free session logging a kettlebell set, a band set, a timed hold on one side and a bodyweight set
+    with weight added. Each set is checked in its own words, Moved is checked to count only the weighed
+    load, and the session is finished. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
+  </description>
+  <actions>
+    <action>Tap the "Lift" tab</action>
+    <action>Verify that "No sessions yet" is shown and an "Exercises" card says "Bells, bodyweight, bands and the mat"</action>
+    <action>Tap "Start session"</action>
+    <action>Verify that the session screen is shown with "Time", "Moved" at "0 kg", and "Log set"</action>
+    <action>Tap "Log set"</action>
+    <action>Verify that a sheet titled "Add to the session" shows "A set" and "An EMOM", and an exercise card reading "Two-hand swing" over "Kettlebell · Reps · Full body", with "Change"</action>
+    <action>Verify that "Bell" chips are shown, "16" selected, and "Reps" reads "10"</action>
+    <action>Tap "Log set" at the bottom of the sheet</action>
+    <action>Verify that the session shows "Two-hand swing" with a set "16 kg × 10", and "Moved" reads "160 kg"</action>
+    <action>Tap "Log set", then "Change" on the exercise card</action>
+    <action>Verify that the sheet shows "Search exercises", the chips "Kettlebell", "Bodyweight", "Band" and "Mat", and "Recent" listing "Two-hand swing"</action>
+    <action>Tap the "Band" chip</action>
+    <action>Verify that "15 exercises" is shown and the list starts with "Band pull-apart"</action>
+    <action>Tap "Band pull-apart"</action>
+    <action>Verify that the exercise card reads "Band pull-apart" over "Band · Reps · Upper body", and "Band" chips are shown from "Extra light" to "Extra heavy" with "Medium" selected</action>
+    <action>Tap "Heavy", then tap "Log set" at the bottom of the sheet</action>
+    <action>Verify that the session shows "Band pull-apart" with a set "Heavy × 10", and "Moved" still reads "160 kg"</action>
+    <action>Tap "Log set", then "Change", then tap "Clear" to drop the Band filter</action>
+    <action>Type "side plank" into "Search exercises"</action>
+    <action>Verify that "1 exercise" is shown: "Side plank", "Bodyweight · Time · a side · Core"</action>
+    <action>Tap "Side plank"</action>
+    <action>Verify that "A set" and "An EMOM" are gone, "Held" reads "0:30", "Added weight" offers "None" selected, and "Side" offers "Left" selected</action>
+    <action>Tap "+" beside "0:30" three times</action>
+    <action>Verify that "Held" reads "0:45"</action>
+    <action>Tap "Log set" at the bottom of the sheet</action>
+    <action>Verify that the session shows "Side plank" with a set "0:45 · Left", and "Moved" still reads "160 kg"</action>
+    <action>Tap "Log set" and verify that "Side" now has "Right" selected</action>
+    <action>Tap "Change", tap "Clear", type "pushup" into "Search exercises"</action>
+    <action>Verify that "3 exercises" is shown: "Push-up", "Incline push-up" and "Pike push-up"</action>
+    <action>Tap "Push-up"</action>
+    <action>Verify that "Added weight" offers "None" selected, then tap "8"</action>
+    <action>Tap "Log set" at the bottom of the sheet</action>
+    <action>Verify that the session shows "Push-up" with a set "+8 kg × 10", and "Moved" reads "240 kg"</action>
+    <action>Tap "Finish"</action>
+    <action>Verify that the summary shows "Done", "Counts toward your week and your goal", and under "New records" only "Two-hand swing"</action>
+    <action>Tap "Done"</action>
+    <action>Verify that the Lift tab shows "Last session" with "Two-hand swing and 3 more", "4 sets" and "240 kg"</action>
+  </actions>
+</journey>
