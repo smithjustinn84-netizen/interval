@@ -10,6 +10,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import dev.justinsmith.bells.data.FollowingEntity
 import dev.justinsmith.bells.domain.Block
 import dev.justinsmith.bells.domain.BuiltInExercise
@@ -87,6 +88,29 @@ class TodayScreenTest {
         intervals = FakeIntervalActivity().apply { weeklyGoal.value = 4 },
     ) {
         waitForText("4 more to hit 4")
+    }
+
+    @Test
+    fun `a program's bodyweight sets log with no bell and its plank for its seconds`() = bellsAppTest(
+        FakeBellsStorage().apply {
+            following.row.value = FollowingEntity(programId = ProgramId.BodyweightBasics.name, startedAtEpochMillis = 0)
+        },
+    ) { app ->
+        onNodeWithText("Start day 1").performClick()
+        waitForText("Up next · 1 of 12 sets")
+        onNodeWithText("× 10").assertExists()
+        // Three each of push-ups, squats and rows, then the plank.
+        for (done in 1..9) {
+            onNodeWithText("Log it").performScrollTo().performClick()
+            waitForText("Up next · ${done + 1} of 12 sets")
+        }
+        val pushUp = app.storage.sessions.sets.value.first()
+        assertEquals(Triple("PushUp", "Bodyweight", 0.0), Triple(pushUp.exercise, pushUp.equipment, pushUp.bellKg))
+        onNodeWithText("0:30").assertExists()
+        onNodeWithText("Log it").performScrollTo().performClick()
+        waitForText("Up next · 11 of 12 sets")
+        val plank = app.storage.sessions.sets.value.last()
+        assertEquals(Triple("Plank", 30, 0), Triple(plank.exercise, plank.seconds, plank.reps))
     }
 
     @Test

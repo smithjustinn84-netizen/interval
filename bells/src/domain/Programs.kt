@@ -6,7 +6,8 @@ enum class BlockKind { Sets, Emom, Ladder }
 /**
  * One part of a program day. [Sets]: [rounds] sets of [reps]. [Emom]: [rounds] minutes, [reps] at the top
  * of each. [Ladder]: [rounds] ladders, each climbing [rungs]. A one-sided lift does each set on both sides,
- * unless it is done with two bells ([double]).
+ * unless it is done with two bells ([double]). For a hold ([Measure.Time]), [reps] counts the seconds held,
+ * and a hold is only ever sets.
  */
 data class Block(
     val exercise: Exercise,
@@ -40,8 +41,11 @@ data class Block(
         }
 }
 
-/** One set a program asks for, with two bells when [double]. */
-data class PlannedSet(val exercise: Exercise, val reps: Int, val side: Side?, val double: Boolean = false)
+/** One set a program asks for, with two bells when [double]. A hold's [reps] are the seconds it lasts. */
+data class PlannedSet(val exercise: Exercise, val reps: Int, val side: Side?, val double: Boolean = false) {
+    /** Whether it is a hold, timed rather than counted. */
+    val held: Boolean get() = exercise.measure == Measure.Time
+}
 
 /**
  * A program: [days] repeat in turn, [daysPerWeek] of them a week, for [weeks] weeks. A built-in is named from
@@ -110,6 +114,9 @@ enum class ProgramFamily {
 
     /** Strength and conditioning for grapplers, light enough to sit beside mat time. */
     Grappling,
+
+    /** Bodyweight alone, or with bells, bands and the mat. */
+    Mixed,
 }
 
 /** The built-in programs, by a stable id that is stored. Screens name them from the app's strings. */
@@ -136,6 +143,11 @@ enum class ProgramId(val family: ProgramFamily = ProgramFamily.Classic) {
     FirstHundredSwings(ProgramFamily.Beginner),
     BeginnerFullBody(ProgramFamily.Beginner),
     GetUpPractice(ProgramFamily.Beginner),
+    BodyweightBasics(ProgramFamily.Mixed),
+    BodyweightEmom(ProgramFamily.Mixed),
+    BellsAndBodyweight(ProgramFamily.Mixed),
+    BandsAndBells(ProgramFamily.Mixed),
+    CoreOnTheMat(ProgramFamily.Mixed),
 }
 
 private fun builtIn(id: ProgramId, days: List<List<Block>>, daysPerWeek: Int, weeks: Int) =
@@ -463,6 +475,94 @@ val builtInPrograms: List<Program> = listOf(
         daysPerWeek = 3,
         weeks = 4,
     ),
+    builtIn(
+        ProgramId.BodyweightBasics,
+        days = listOf(
+            listOf(
+                Block(BuiltInExercise.PushUp, rounds = 3, reps = 10),
+                Block(BuiltInExercise.AirSquat, rounds = 3, reps = 15),
+                Block(BuiltInExercise.InvertedRow, rounds = 3, reps = 8),
+                Block(BuiltInExercise.Plank, rounds = 3, reps = 30),
+            ),
+            listOf(
+                Block(BuiltInExercise.ReverseLunge, rounds = 3, reps = 8),
+                Block(BuiltInExercise.BenchDip, rounds = 3, reps = 10),
+                Block(BuiltInExercise.GluteBridge, rounds = 3, reps = 12),
+                Block(BuiltInExercise.SidePlank, rounds = 2, reps = 20),
+            ),
+        ),
+        daysPerWeek = 3,
+        weeks = 6,
+    ),
+    builtIn(
+        ProgramId.BodyweightEmom,
+        days = listOf(
+            listOf(
+                Block(BuiltInExercise.Burpee, rounds = 10, reps = 6, kind = BlockKind.Emom),
+                Block(BuiltInExercise.AirSquat, rounds = 10, reps = 15, kind = BlockKind.Emom),
+            ),
+            listOf(
+                Block(BuiltInExercise.PushUp, rounds = 10, reps = 8, kind = BlockKind.Emom),
+                Block(BuiltInExercise.MountainClimber, rounds = 10, reps = 20, kind = BlockKind.Emom),
+            ),
+        ),
+        daysPerWeek = 3,
+        weeks = 4,
+    ),
+    builtIn(
+        ProgramId.BellsAndBodyweight,
+        days = listOf(
+            listOf(
+                Block(BuiltInExercise.TwoHandSwing, rounds = 10, reps = 10, kind = BlockKind.Emom),
+                Block(BuiltInExercise.PushUp, rounds = 5, reps = 10),
+                Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 10),
+            ),
+            listOf(
+                Block(BuiltInExercise.Clean, rounds = 3, reps = 5),
+                Block(BuiltInExercise.PullUp, rounds = 5, reps = 5),
+                pressLadders(ladders = 3, top = 3),
+                Block(BuiltInExercise.HollowHold, rounds = 3, reps = 20),
+            ),
+        ),
+        daysPerWeek = 3,
+        weeks = 6,
+    ),
+    // Bands for the small pulls and the core, bells for the big lifts.
+    builtIn(
+        ProgramId.BandsAndBells,
+        days = listOf(
+            listOf(
+                Block(BuiltInExercise.Press, rounds = 3, reps = 5),
+                Block(BuiltInExercise.BandPullApart, rounds = 3, reps = 15),
+                Block(BuiltInExercise.Row, rounds = 3, reps = 8),
+                Block(BuiltInExercise.BandFacePull, rounds = 3, reps = 15),
+            ),
+            listOf(
+                Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 10),
+                Block(BuiltInExercise.BandPallofPress, rounds = 3, reps = 10),
+                Block(BuiltInExercise.Deadlift, rounds = 3, reps = 10),
+                Block(BuiltInExercise.BandGluteBridge, rounds = 3, reps = 15),
+            ),
+        ),
+        daysPerWeek = 2,
+        weeks = 6,
+    ),
+    // Classical mat work for the trunk, then a bell for the same work standing and rising.
+    builtIn(
+        ProgramId.CoreOnTheMat,
+        days = listOf(
+            listOf(
+                Block(BuiltInExercise.Hundred, rounds = 1, reps = 100),
+                Block(BuiltInExercise.RollUp, rounds = 2, reps = 6),
+                Block(BuiltInExercise.SingleLegStretch, rounds = 2, reps = 10),
+                Block(BuiltInExercise.Swimming, rounds = 2, reps = 30),
+                Block(BuiltInExercise.Windmill, rounds = 2, reps = 5),
+                Block(BuiltInExercise.GetUp, rounds = 3, reps = 1),
+            ),
+        ),
+        daysPerWeek = 2,
+        weeks = 6,
+    ),
 )
 
 fun program(
@@ -489,6 +589,10 @@ fun nextPlanned(planned: List<PlannedSet>, logged: List<SetLog>): Int? {
     }
     return null
 }
+
+/** The band to suggest for [exercise]: the last one used for it, else [fallback]. */
+fun suggestedBand(exercise: Exercise, history: List<SetLog>, fallback: BandLevel): BandLevel =
+    history.lastOrNull { it.exercise.key == exercise.key && it.band != null }?.band ?: fallback
 
 /**
  * The bell to suggest for [exercise], with two bells or one ([double]): the last one used for it so, else

@@ -25,6 +25,7 @@ import dev.justinsmith.bells.domain.nextPlanned
 import dev.justinsmith.bells.domain.offeredExercises
 import dev.justinsmith.bells.domain.recentExercises
 import dev.justinsmith.bells.domain.standardBells
+import dev.justinsmith.bells.domain.suggestedBand
 import dev.justinsmith.bells.domain.suggestedBell
 import dev.justinsmith.bells.library.LibraryList
 import dev.justinsmith.bells.platform.Beeper
@@ -89,8 +90,18 @@ data class SetDraft(
 /** A session just finished, for the summary: it as saved and the records it set. */
 data class Finished(val session: LiftSession, val records: List<PersonalRecord>)
 
-/** The plan's next set: which of [total] it is, with the bell to use, and whether it opens an EMOM of [emomMinutes]. */
-data class UpNext(val set: PlannedSet, val bellKg: Double, val number: Int, val total: Int, val emomMinutes: Int?)
+/**
+ * The plan's next set: which of [total] it is, with its load (the bell, the weight added to bodyweight, or none,
+ * and the [band] for band work), and whether it opens an EMOM of [emomMinutes].
+ */
+data class UpNext(
+    val set: PlannedSet,
+    val bellKg: Double,
+    val number: Int,
+    val total: Int,
+    val emomMinutes: Int?,
+    val band: BandLevel? = null,
+)
 
 /**
  * An EMOM under way: its lift, bell (or two, when [double]) and reps, when it started, and the minutes whose
@@ -263,17 +274,35 @@ class SessionViewModel(
         }
     }
 
-    /** Logs the plan's next set as planned, with its suggested bell. */
+    /** Logs the plan's next set as planned, with its suggested load: a hold for its seconds. */
     fun logNext() {
         val next = state.value.upNext ?: return
-        repository.logSet(next.set.exercise, next.bellKg, next.set.reps, next.set.side, next.set.double)
+        val set = next.set
+        repository.logSet(
+            set.exercise,
+            next.bellKg,
+            if (set.held) 0 else set.reps,
+            set.side,
+            set.double,
+            seconds = set.reps.takeIf { set.held },
+            band = next.band,
+        )
     }
 
     /** Starts the plan's next block as an EMOM, if it is one. */
     fun startPlannedEmom() {
         val next = state.value.upNext ?: return
         val minutes = next.emomMinutes ?: return
-        startEmom(next.set.exercise, next.bellKg, next.set.reps, minutes, next.set.side ?: Side.Left, next.set.double)
+        if (next.set.held) return
+        startEmom(
+            next.set.exercise,
+            next.bellKg,
+            next.set.reps,
+            minutes,
+            next.set.side ?: Side.Left,
+            next.set.double,
+            next.band,
+        )
     }
 
     /** Starts an EMOM of the sheet's lift, bell and reps for its minutes. */
@@ -370,13 +399,18 @@ class SessionViewModel(
             (index < start + size).also { if (!it) start += size }
         }
         val emomMinutes = if (block.kind == BlockKind.Emom && index == start) block.rounds else null
-        return UpNext(
-            set,
-            suggestedBell(set.exercise, set.double, history, draft.value.bellKg),
-            index + 1,
-            planned.size,
-            emomMinutes,
-        )
+        // Weight added to bodyweight starts at none; a band and the mat take no weight.
+        val load = when (set.exercise.equipment) {
+            Equipment.Kettlebell -> suggestedBell(set.exercise, set.double, history, draft.value.bellKg)
+            Equipment.Bodyweight -> suggestedBell(set.exercise, double = false, history, fallback = 0.0)
+            Equipment.Band, Equipment.Mat -> 0.0
+        }
+        val band = if (set.exercise.equipment == Equipment.Band) {
+            suggestedBand(set.exercise, history, draft.value.band)
+        } else {
+            null
+        }
+        return UpNext(set, load, index + 1, planned.size, emomMinutes, band)
     }
 
     /** What the screen chose, and the exercises it can choose from. */

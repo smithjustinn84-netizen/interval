@@ -181,8 +181,10 @@ class ProgramsTest {
     }
 
     @Test
-    fun `every built-in is done with kettlebells and the grapplers have their own family`() {
-        builtInPrograms.flatMap { it.days.flatten() }.forEach { assertTrue(it.exercise in kettlebellLifts) }
+    fun `only the mixed programs leave the bells and the grapplers have their own family`() {
+        builtInPrograms.filter { (it.key as ProgramKey.BuiltIn).id.family != ProgramFamily.Mixed }
+            .flatMap { it.days.flatten() }
+            .forEach { assertTrue(it.exercise in kettlebellLifts) }
         assertEquals(
             listOf(
                 ProgramId.GrapplerStrength,
@@ -208,6 +210,26 @@ class ProgramsTest {
         val swings = program(ProgramId.FirstHundredSwings)
         assertEquals(listOf(50, 80, 100), swings.days.map { it[1].totalReps })
         assertEquals(BuiltInExercise.Deadlift, swings.dayAfter(0)?.blocks?.first()?.exercise)
+    }
+
+    @Test
+    fun `a hold is only ever planned as sets of seconds`() {
+        val holds = builtInPrograms.flatMap { it.days.flatten() }.filter { it.exercise.measure == Measure.Time }
+        assertTrue(holds.isNotEmpty())
+        holds.forEach { assertEquals(BlockKind.Sets, it.kind) }
+        val plank = program(ProgramId.BodyweightBasics).days[0].last().plannedSets().first()
+        assertTrue(plank.held)
+        assertEquals(30, plank.reps)
+    }
+
+    @Test
+    fun `the band suggested is the last one used for the exercise`() {
+        val history = listOf(
+            SetLog(0, BuiltInExercise.BandFacePull, 0.0, 15, null, 0, band = BandLevel.Heavy),
+            SetLog(0, BuiltInExercise.BandPullApart, 0.0, 15, null, 1, band = BandLevel.Light),
+        )
+        assertEquals(BandLevel.Heavy, suggestedBand(BuiltInExercise.BandFacePull, history, BandLevel.Medium))
+        assertEquals(BandLevel.Medium, suggestedBand(BuiltInExercise.BandSquat, history, BandLevel.Medium))
     }
 
     private fun assertNotNullDay(day: ProgramDay?): ProgramDay = kotlin.test.assertNotNull(day)

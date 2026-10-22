@@ -33,6 +33,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.data.IntervalActivity
 import dev.justinsmith.bells.data.IntervalWorkout
+import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.LiftSession
 import dev.justinsmith.bells.domain.Program
@@ -434,14 +435,17 @@ private fun ProgramCard(state: TodayUiState, onChooseProgram: () -> Unit, modifi
                     Text(liftName(block.exercise, block.double), style = IntervalTheme.type.label, color = palette.text)
                     Text(blockLine(block), style = IntervalTheme.type.meta, color = palette.textDim)
                 }
-                Text(
-                    stringResource(
-                        if (block.double) Res.string.kg_pair else Res.string.kg_value,
-                        formatKg(state.bells[block.exercise to block.double] ?: SetDraft.DEFAULT_BELL_KG),
-                    ),
-                    style = IntervalTheme.type.value,
-                    color = palette.text,
-                )
+                // Only a bell has a weight to suggest ahead of the session.
+                if (block.exercise.equipment == Equipment.Kettlebell) {
+                    Text(
+                        stringResource(
+                            if (block.double) Res.string.kg_pair else Res.string.kg_value,
+                            formatKg(state.bells[block.exercise to block.double] ?: SetDraft.DEFAULT_BELL_KG),
+                        ),
+                        style = IntervalTheme.type.value,
+                        color = palette.text,
+                    )
+                }
             }
         }
         RowDivider()

@@ -358,7 +358,15 @@ private fun UpNextCard(state: SessionUiState, actions: SessionActions) {
             )
             Text(liftName(next.set.exercise, next.set.double), style = IntervalTheme.type.section, color = palette.text)
             Text(
-                setLine(next.bellKg, next.set.reps, next.set.side, next.set.double),
+                setLine(
+                    next.bellKg,
+                    if (next.set.held) 0 else next.set.reps,
+                    next.set.side,
+                    next.set.double,
+                    next.set.exercise.equipment,
+                    next.set.reps.takeIf { next.set.held },
+                    next.band,
+                ),
                 style = IntervalTheme.type.value,
                 color = palette.text,
             )

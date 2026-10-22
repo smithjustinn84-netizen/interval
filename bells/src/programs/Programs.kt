@@ -47,6 +47,7 @@ import dev.justinsmith.bells.resources.programs_classics
 import dev.justinsmith.bells.resources.programs_dan_john
 import dev.justinsmith.bells.resources.programs_edit_cd
 import dev.justinsmith.bells.resources.programs_grappling
+import dev.justinsmith.bells.resources.programs_mixed
 import dev.justinsmith.bells.resources.programs_new
 import dev.justinsmith.bells.resources.programs_new_hint
 import dev.justinsmith.bells.resources.programs_title
@@ -213,6 +214,7 @@ private fun familyName(family: ProgramFamily): String = stringResource(
         ProgramFamily.Classic -> Res.string.programs_classics
         ProgramFamily.DanJohn -> Res.string.programs_dan_john
         ProgramFamily.Grappling -> Res.string.programs_grappling
+        ProgramFamily.Mixed -> Res.string.programs_mixed
     },
 )
 

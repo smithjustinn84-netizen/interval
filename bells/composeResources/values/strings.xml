@@ -298,9 +298,20 @@
     <string name="program_get_up_practice_name">Get-up practice</string>
     <string name="program_get_up_practice_summary">5 get-ups a side, slow, with halos and goblet squats to open the shoulders and hips · 3 days a week for 4 weeks</string>
     <string name="programs_beginner">Getting started</string>
+    <string name="program_bodyweight_basics_name">Bodyweight basics</string>
+    <string name="program_bodyweight_basics_summary">Push-ups, squats, rows and a plank one day; lunges, dips, bridges and side planks the next · 3 days a week for 6 weeks</string>
+    <string name="program_bodyweight_emom_name">Bodyweight EMOM</string>
+    <string name="program_bodyweight_emom_summary">Burpees and air squats, or push-ups and mountain climbers, on the minute for 10 minutes each · 3 days a week for 4 weeks</string>
+    <string name="program_bells_bodyweight_name">Bells and bodyweight</string>
+    <string name="program_bells_bodyweight_summary">Swings with push-ups and goblet squats; cleans with pull-ups, press ladders and a hollow hold · 3 days a week for 6 weeks</string>
+    <string name="program_bands_bells_name">Bands and bells</string>
+    <string name="program_bands_bells_summary">Presses and rows with band pull-aparts and face pulls; squats and deadlifts with Pallof presses and banded bridges · 2 days a week for 6 weeks</string>
+    <string name="program_core_mat_name">Core on the mat</string>
+    <string name="program_core_mat_summary">The hundred, roll-ups, single-leg stretches and swimming, then windmills and get-ups with a bell · 2 days a week for 6 weeks</string>
     <string name="programs_classics">Classics</string>
     <string name="programs_dan_john">Dan John–inspired</string>
     <string name="programs_grappling">For grapplers</string>
+    <string name="programs_mixed">Bodyweight and mixed</string>
     <string name="programs_yours">Your programs</string>
     <string name="programs_new">New program</string>
     <string name="programs_new_hint">Lay out your own days of sets, EMOMs and ladders.</string>
@@ -333,6 +344,9 @@
     <string name="today_last_open_cd">Open the last session</string>
     <string name="block_sets">%1$d × %2$d</string>
     <string name="block_sets_sided">%1$d × %2$d a side</string>
+    <!-- Sets of a hold: "3 × 0:30" -->
+    <string name="block_hold">%1$d × %2$s</string>
+    <string name="block_hold_sided">%1$d × %2$s a side</string>
     <plurals name="block_emom">
         <item quantity="one">%2$d every minute for %1$d minute</item>
         <item quantity="other">%2$d every minute for %1$d minutes</item>

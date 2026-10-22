@@ -3,12 +3,15 @@ package dev.justinsmith.bells.ui
 import androidx.compose.runtime.Composable
 import dev.justinsmith.bells.domain.Block
 import dev.justinsmith.bells.domain.BlockKind
+import dev.justinsmith.bells.domain.Measure
 import dev.justinsmith.bells.domain.Program
 import dev.justinsmith.bells.domain.ProgramDay
 import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.block_emom
+import dev.justinsmith.bells.resources.block_hold
+import dev.justinsmith.bells.resources.block_hold_sided
 import dev.justinsmith.bells.resources.block_ladder
 import dev.justinsmith.bells.resources.block_ladder_sided
 import dev.justinsmith.bells.resources.block_sets
@@ -16,10 +19,20 @@ import dev.justinsmith.bells.resources.block_sets_sided
 import dev.justinsmith.bells.resources.common_joined
 import dev.justinsmith.bells.resources.program_abf_name
 import dev.justinsmith.bells.resources.program_abf_summary
+import dev.justinsmith.bells.resources.program_bands_bells_name
+import dev.justinsmith.bells.resources.program_bands_bells_summary
 import dev.justinsmith.bells.resources.program_beginner_full_body_name
 import dev.justinsmith.bells.resources.program_beginner_full_body_summary
+import dev.justinsmith.bells.resources.program_bells_bodyweight_name
+import dev.justinsmith.bells.resources.program_bells_bodyweight_summary
+import dev.justinsmith.bells.resources.program_bodyweight_basics_name
+import dev.justinsmith.bells.resources.program_bodyweight_basics_summary
+import dev.justinsmith.bells.resources.program_bodyweight_emom_name
+import dev.justinsmith.bells.resources.program_bodyweight_emom_summary
 import dev.justinsmith.bells.resources.program_clean_press_name
 import dev.justinsmith.bells.resources.program_clean_press_summary
+import dev.justinsmith.bells.resources.program_core_mat_name
+import dev.justinsmith.bells.resources.program_core_mat_summary
 import dev.justinsmith.bells.resources.program_countdown_name
 import dev.justinsmith.bells.resources.program_countdown_summary
 import dev.justinsmith.bells.resources.program_daily_name
@@ -61,6 +74,7 @@ import dev.justinsmith.bells.resources.program_snatch_test_name
 import dev.justinsmith.bells.resources.program_snatch_test_summary
 import dev.justinsmith.bells.resources.program_ten_thousand_name
 import dev.justinsmith.bells.resources.program_ten_thousand_summary
+import dev.justinsmith.interval.timer.formatClock
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -110,6 +124,11 @@ fun programName(id: ProgramId): String = stringResource(
         ProgramId.FirstHundredSwings -> Res.string.program_first_hundred_name
         ProgramId.BeginnerFullBody -> Res.string.program_beginner_full_body_name
         ProgramId.GetUpPractice -> Res.string.program_get_up_practice_name
+        ProgramId.BodyweightBasics -> Res.string.program_bodyweight_basics_name
+        ProgramId.BodyweightEmom -> Res.string.program_bodyweight_emom_name
+        ProgramId.BellsAndBodyweight -> Res.string.program_bells_bodyweight_name
+        ProgramId.BandsAndBells -> Res.string.program_bands_bells_name
+        ProgramId.CoreOnTheMat -> Res.string.program_core_mat_name
     },
 )
 
@@ -153,16 +172,27 @@ private fun programSummary(id: ProgramId): String = stringResource(
         ProgramId.FirstHundredSwings -> Res.string.program_first_hundred_summary
         ProgramId.BeginnerFullBody -> Res.string.program_beginner_full_body_summary
         ProgramId.GetUpPractice -> Res.string.program_get_up_practice_summary
+        ProgramId.BodyweightBasics -> Res.string.program_bodyweight_basics_summary
+        ProgramId.BodyweightEmom -> Res.string.program_bodyweight_emom_summary
+        ProgramId.BellsAndBodyweight -> Res.string.program_bells_bodyweight_summary
+        ProgramId.BandsAndBells -> Res.string.program_bands_bells_summary
+        ProgramId.CoreOnTheMat -> Res.string.program_core_mat_summary
     },
 )
 
 /**
- * A block's shape: "10 × 10", "5 × 1 a side", "10 every minute for 10 minutes", "3 ladders of 1-2-3 a side",
- * "5 ladders of 10-15-25-50".
+ * A block's shape: "10 × 10", "5 × 1 a side", "3 × 0:30" for a hold, "10 every minute for 10 minutes",
+ * "3 ladders of 1-2-3 a side", "5 ladders of 10-15-25-50".
  */
 @Composable
 fun blockLine(block: Block): String = when (block.kind) {
-    BlockKind.Sets -> if (block.exercise.sided(block.double)) {
+    BlockKind.Sets -> if (block.exercise.measure == Measure.Time) {
+        stringResource(
+            if (block.exercise.sided(block.double)) Res.string.block_hold_sided else Res.string.block_hold,
+            block.rounds,
+            formatClock(block.reps),
+        )
+    } else if (block.exercise.sided(block.double)) {
         stringResource(Res.string.block_sets_sided, block.rounds, block.reps)
     } else {
         stringResource(Res.string.block_sets, block.rounds, block.reps)

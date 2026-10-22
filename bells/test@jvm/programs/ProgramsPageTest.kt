@@ -96,4 +96,14 @@ class ProgramsPageTest {
         waitForText("Day 1 of 12 · week 1")
         assertEquals(ProgramId.KettlebellFoundations.name, app.storage.following.row.value?.programId)
     }
+
+    @Test
+    fun `a bodyweight program shows its holds in seconds`() = bellsAppTest {
+        onNodeWithText("Follow a program").performClick()
+        waitForText("Bodyweight and mixed")
+        onNodeWithText("Bodyweight basics").performScrollTo().performClick()
+        waitForText("Follow this program")
+        onNodeWithText("3 × 0:30").assertExists()
+        onNodeWithText("2 × 0:20 a side").assertExists()
+    }
 }
