@@ -109,8 +109,16 @@ fun IntervalSheet(
 @Composable
 fun sheetIsSideways(): Boolean {
     val window = LocalWindowInfo.current.containerSize
-    return !opensBeside(currentWindowAdaptiveInfoV2().windowSizeClass) && window.width > window.height
+    return !windowIsRoomy() && window.width > window.height
 }
+
+/**
+ * Whether the window is at least Material's medium width and height: a tablet either way up, an unfolded
+ * foldable, a desktop. Where a sheet opens beside rather than rising, and where a screen laid out for a phone
+ * has room to spare. A phone on its side is too short to be. Read live, so a screen follows a resize.
+ */
+@Composable
+fun windowIsRoomy(): Boolean = opensBeside(currentWindowAdaptiveInfoV2().windowSizeClass)
 
 /**
  * A sheet's form in two parts, [first] (what it is) then [second] (how much, and the action): one column, or

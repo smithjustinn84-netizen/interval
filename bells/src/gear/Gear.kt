@@ -143,6 +143,7 @@ fun GearRoute(onBack: () -> Unit) {
 /**
  * What the user has, opened from Lift: every standard bell size, the owned ones selected; their bands,
  * lightest first, each opening to rename, recolour, move or archive, and a new one to add; then the records.
+ * On a wider window the bands and the records sit side by side under the bells.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -179,10 +180,10 @@ fun GearScreen(
                 )
             }
         }
-        item(key = "bands", span = StaggeredGridItemSpan.FullLine) {
+        item(key = "bands") {
             BandsSection(state.bands, onOpen = { editing = it.id }, onAdd = { editing = NEW_BAND }, modifier = card)
         }
-        item(key = "records", span = StaggeredGridItemSpan.FullLine) {
+        item(key = "records") {
             Column(card) {
                 GroupLabel(stringResource(Res.string.bells_records))
                 ListCard {

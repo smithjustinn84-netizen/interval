@@ -3,6 +3,8 @@ package dev.justinsmith.bells.history
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,9 +38,10 @@ import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.RowDivider
-import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.SecondaryButton
+import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.TabGrid
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -94,7 +97,8 @@ fun LiftDetailRoute(uid: String, onBack: () -> Unit, modifier: Modifier = Modifi
 
 /**
  * A finished session's page: its title and when, its numbers and records, every set by lift, and Delete
- * (after asking). Once the session is gone, deleted from here or elsewhere, the page goes back.
+ * (after asking). On a wider window the lifts sit side by side. Once the session is gone, deleted from here
+ * or elsewhere, the page goes back.
  */
 @Composable
 fun LiftDetailScreen(
@@ -109,30 +113,46 @@ fun LiftDetailScreen(
     if (session == null) return
     val palette = IntervalTheme.palette
     var confirming by rememberSaveable { mutableStateOf(false) }
-    ScrollPage(session.title, modifier, navigation = { BackAction(onBack) }) {
-        Text(
-            stringResource(Res.string.common_joined, state.date, state.time),
-            style = IntervalTheme.type.meta,
-            color = palette.textDim,
-            modifier = Modifier.padding(bottom = Spacing.space16),
-        )
-        SessionStats(session, state.records)
-        session.sets.groupBy { it.exercise to it.double }.forEach { (lift, sets) ->
-            GroupLabel(liftName(lift.first, lift.second), Modifier.padding(top = Spacing.space16))
-            ListCard {
-                sets.forEachIndexed { i, set ->
-                    if (i > 0) RowDivider()
-                    Text(
-                        setLine(set),
-                        style = IntervalTheme.type.body,
-                        color = palette.text,
-                        modifier = Modifier.padding(Spacing.space16),
-                    )
+    val gutter = Modifier.padding(horizontal = Spacing.space16)
+    // One column on a phone; wider windows lay the lifts out side by side under the numbers.
+    TabGrid(session.title, modifier, navigation = { BackAction(onBack) }) {
+        item(key = "numbers", span = StaggeredGridItemSpan.FullLine) {
+            Column(gutter) {
+                Text(
+                    stringResource(Res.string.common_joined, state.date, state.time),
+                    style = IntervalTheme.type.meta,
+                    color = palette.textDim,
+                    modifier = Modifier.padding(bottom = Spacing.space16),
+                )
+                SessionStats(session, state.records)
+            }
+        }
+        session.sets.groupBy { it.exercise to it.double }.entries.forEachIndexed { i, (lift, sets) ->
+            item(key = "lift-$i") {
+                Column(gutter) {
+                    GroupLabel(liftName(lift.first, lift.second), Modifier.padding(top = Spacing.space16))
+                    ListCard {
+                        sets.forEachIndexed { j, set ->
+                            if (j > 0) RowDivider()
+                            Text(
+                                setLine(set),
+                                style = IntervalTheme.type.body,
+                                color = palette.text,
+                                modifier = Modifier.padding(Spacing.space16),
+                            )
+                        }
+                    }
                 }
             }
         }
-        Column(Modifier.padding(top = Spacing.space24)) {
-            SecondaryButton(stringResource(Res.string.history_delete), { confirming = true }, Modifier.fillMaxWidth())
+        item(key = "delete", span = StaggeredGridItemSpan.FullLine) {
+            Column(gutter.padding(top = Spacing.space24)) {
+                SecondaryButton(
+                    stringResource(Res.string.history_delete),
+                    { confirming = true },
+                    Modifier.widthIn(max = Sizes.content).fillMaxWidth(),
+                )
+            }
         }
     }
     if (confirming) {

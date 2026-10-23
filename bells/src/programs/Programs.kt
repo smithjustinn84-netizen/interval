@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -72,10 +73,10 @@ import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
-import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.SheetColumns
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.interval.ui.sheetIsSideways
 import kotlinx.coroutines.flow.StateFlow
 import org.jetbrains.compose.resources.stringResource
@@ -133,9 +134,10 @@ fun ProgramsRoute(onNew: () -> Unit, onEdit: (uid: String) -> Unit, onBack: () -
 }
 
 /**
- * The built-in programs, then the user's own. A tap opens a program's sheet, its days laid out, from which
- * it is followed from its first day. Following one in place of a program part done asks first:
- * [followingDay] is the followed program's next day, null for none or once it is over.
+ * The built-in programs by family, then the user's own, side by side on a wider window. A tap opens a
+ * program's sheet, its days laid out, from which it is followed from its first day. Following one in place
+ * of a program part done asks first: [followingDay] is the followed program's next day, null for none or
+ * once it is over.
  */
 @Composable
 fun ProgramsScreen(
@@ -152,33 +154,30 @@ fun ProgramsScreen(
     val programOf = { stored: String? -> (builtInPrograms + custom).firstOrNull { it.key.stored == stored } }
     val notices = LocalNotices.current
     val onOpen = { key: ProgramKey -> previewing = key.stored }
-    ScrollPage(stringResource(Res.string.programs_title), modifier, navigation = { BackAction(actions.onBack) }) {
+    val gutter = Modifier.padding(horizontal = Spacing.space16)
+    // One column on a phone; wider windows lay the families out side by side.
+    TabGrid(stringResource(Res.string.programs_title), modifier, navigation = { BackAction(actions.onBack) }) {
         ProgramFamily.entries.forEach { family ->
-            ProgramGroup(familyName(family), families[family].orEmpty(), following, onOpen, actions)
-        }
-        GroupLabel(stringResource(Res.string.programs_yours))
-        ListCard {
-            custom.forEach { program ->
-                ProgramRow(program, program.key == following, onOpen, actions)
-                RowDivider()
+            item(key = family.name) {
+                Column(gutter) {
+                    ProgramGroup(familyName(family), families[family].orEmpty(), following, onOpen, actions)
+                }
             }
-            LinkRow(
-                stringResource(Res.string.programs_new),
-                stringResource(Res.string.programs_new_hint),
-                onClick = actions.onNew,
-            )
         }
+        item(key = "yours") { YoursGroup(custom, following, onOpen, actions, gutter) }
         val followed = programOf(following?.stored)
         if (followed != null) {
-            val stopped = stringResource(Res.string.notice_program_stopped, programName(followed))
-            QuietTextButton(
-                stringResource(Res.string.program_stop),
-                onClick = {
-                    notices.show(stopped)
-                    actions.onStop()
-                },
-                Modifier.padding(top = Spacing.space12),
-            )
+            item(key = "stop", span = StaggeredGridItemSpan.FullLine) {
+                val stopped = stringResource(Res.string.notice_program_stopped, programName(followed))
+                QuietTextButton(
+                    stringResource(Res.string.program_stop),
+                    onClick = {
+                        notices.show(stopped)
+                        actions.onStop()
+                    },
+                    gutter.padding(top = Spacing.space12),
+                )
+            }
         }
     }
     programOf(previewing)?.let { program ->
@@ -343,6 +342,31 @@ private fun ProgramGroup(
         programs.forEachIndexed { i, program ->
             if (i > 0) RowDivider()
             ProgramRow(program, program.key == following, onOpen, actions)
+        }
+    }
+}
+
+/** The programs the user made, then a way to make one. */
+@Composable
+private fun YoursGroup(
+    custom: List<Program>,
+    following: ProgramKey?,
+    onOpen: (ProgramKey) -> Unit,
+    actions: ProgramsActions,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier) {
+        GroupLabel(stringResource(Res.string.programs_yours))
+        ListCard {
+            custom.forEach { program ->
+                ProgramRow(program, program.key == following, onOpen, actions)
+                RowDivider()
+            }
+            LinkRow(
+                stringResource(Res.string.programs_new),
+                stringResource(Res.string.programs_new_hint),
+                onClick = actions.onNew,
+            )
         }
     }
 }

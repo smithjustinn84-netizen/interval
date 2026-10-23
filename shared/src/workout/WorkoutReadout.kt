@@ -33,7 +33,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.sp
 import dev.justinsmith.interval.platform.prefersReducedMotion
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.next_last_round
@@ -59,6 +58,7 @@ import dev.justinsmith.interval.ui.ProgressRing
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StandardEasing
+import dev.justinsmith.interval.ui.ringClockSize
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -240,16 +240,3 @@ private fun Modifier.breathing(): Modifier {
     )
     return graphicsLayer { this.alpha = alpha }
 }
-
-/**
- * The clock fills the share of the ring its digits allow, up to [max], the clock style's size: "0:14"
- * in a phone's ring comes out around 160sp, as the design canvas draws it, and "10:00" smaller.
- */
-private fun ringClockSize(diameter: Dp, chars: Int, max: TextUnit): TextUnit =
-    (diameter.value * RING_CLOCK_SHARE / (chars * CLOCK_EMS_PER_CHAR)).coerceAtMost(max.value).sp
-
-/** How much of the ring's width the clock may take, leaving the stroke and some air. */
-private const val RING_CLOCK_SHARE = 0.82f
-
-/** Width per clock character in Barlow Condensed ExtraBold. */
-private const val CLOCK_EMS_PER_CHAR = 0.46f

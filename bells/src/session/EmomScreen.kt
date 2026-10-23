@@ -30,10 +30,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.unit.min
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
+import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.EmomClock
 import dev.justinsmith.bells.domain.EmomPhase
 import dev.justinsmith.bells.domain.EmomState
+import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.emom_get_ready
 import dev.justinsmith.bells.resources.emom_minute
@@ -51,12 +54,15 @@ import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.CountdownClock
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.ProgressRing
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.isLandscape
+import dev.justinsmith.interval.ui.ringClockSize
 import dev.justinsmith.interval.ui.surfaceButton
+import dev.justinsmith.interval.ui.windowIsRoomy
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -88,17 +94,30 @@ fun EmomScreen(
     }
     KeepScreenOn()
     BoxWithConstraints(modifier.fillMaxSize().background(colors.ground), contentAlignment = Alignment.TopCenter) {
-        if (isLandscape) {
+        // A tablet has the height for the readout inside the ring either way up, and room for a bigger ring.
+        val roomy = windowIsRoomy()
+        if (isLandscape && !roomy) {
             LandscapeEmom(run, state, color, onFinishSet, onStop)
         } else {
-            PortraitEmom(run, state, color, onFinishSet, onStop)
+            PortraitEmom(run, state, color, onFinishSet, onStop, roomy)
         }
     }
 }
 
-/** Upright: the band, Stop and the minute across the top, the ring with the readout inside, Set done at the foot. */
+/**
+ * Upright, and on a tablet either way up: the band, Stop and the minute across the top, the ring with the
+ * readout inside, Set done at the foot. On a tablet ([roomy]) the ring grows past a phone's widest, and the
+ * clock in it to the workout's size.
+ */
 @Composable
-private fun PortraitEmom(run: EmomRun, state: EmomState, color: Color, onFinishSet: () -> Unit, onStop: () -> Unit) {
+private fun PortraitEmom(
+    run: EmomRun,
+    state: EmomState,
+    color: Color,
+    onFinishSet: () -> Unit,
+    onStop: () -> Unit,
+    roomy: Boolean,
+) {
     Column(
         Modifier.widthIn(
             max = Sizes.contentWide,
@@ -114,7 +133,7 @@ private fun PortraitEmom(run: EmomRun, state: EmomState, color: Color, onFinishS
             MinuteText(state, Modifier.weight(1f).padding(horizontal = Spacing.space8))
         }
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-            val diameter = min(min(maxWidth, maxHeight), Sizes.ringMax)
+            val diameter = minOf(maxWidth, maxHeight, if (roomy) Sizes.ringMaxRoomy else Sizes.ringMax)
             ProgressRing(
                 state.minuteProgress,
                 color,
@@ -123,7 +142,8 @@ private fun PortraitEmom(run: EmomRun, state: EmomState, color: Color, onFinishS
             )
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 PhaseWord(state, color)
-                ClockText(state, color)
+                val type = IntervalTheme.type
+                ClockText(state, color, diameter, if (roomy) type.clock else type.display)
                 TaskText(run, state)
             }
         }
@@ -157,14 +177,15 @@ private fun LandscapeEmom(run: EmomRun, state: EmomState, color: Color, onFinish
             horizontalArrangement = Arrangement.spacedBy(Spacing.space16),
         ) {
             BoxWithConstraints(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
-                Box(Modifier.size(minOf(maxWidth, maxHeight, Sizes.ringMax)), contentAlignment = Alignment.Center) {
+                val diameter = minOf(maxWidth, maxHeight, Sizes.ringMax)
+                Box(Modifier.size(diameter), contentAlignment = Alignment.Center) {
                     ProgressRing(
                         state.minuteProgress,
                         color,
                         Modifier.fillMaxSize(),
                         glideMillis = Motion.EMOM_RING_GLIDE_MILLIS,
                     )
-                    ClockText(state, color)
+                    ClockText(state, color, diameter, IntervalTheme.type.clock)
                 }
             }
             Column(
@@ -244,15 +265,21 @@ private fun PhaseWord(state: EmomState, color: Color) {
     )
 }
 
-/** The seconds left in the minute (or the count-in), popping on its last three as the beeps go. */
+/**
+ * The seconds left in the minute (or the count-in), popping on its last three as the beeps go. It fills the
+ * share of a ring [diameter] across its digits allow, up to the size of its [style]: on a phone the display
+ * style between the phase word and the set, the clock style alone in the ring or in a tablet's.
+ */
 @Composable
-private fun ClockText(state: EmomState, color: Color) {
+private fun ClockText(state: EmomState, color: Color, diameter: Dp, style: TextStyle) {
+    val text = formatClock(state.secondsLeft)
+    val size = ringClockSize(diameter, text.length, style.fontSize)
     CountdownClock(
-        formatClock(state.secondsLeft),
+        text,
         intervalKey = state.phase to state.minute,
         countingDown = state.phase != EmomPhase.Done && state.secondsLeft in 1..EmomClock.COUNTDOWN,
         accent = color,
-        style = IntervalTheme.type.display,
+        style = style.copy(fontSize = size, lineHeight = size),
     )
 }
 
@@ -270,4 +297,24 @@ private fun TaskText(run: EmomRun, state: EmomState) {
         style = IntervalTheme.type.label,
         color = IntervalTheme.workout.onGroundDim,
     )
+}
+
+@PreviewFormFactors
+@Composable
+private fun EmomScreenPreview() {
+    IntervalTheme(darkTheme = true) {
+        EmomScreen(
+            EmomRun(
+                BuiltInExercise.TwoHandSwing,
+                bellKg = 24.0,
+                reps = 10,
+                minutes = 10,
+                firstSide = Side.Left,
+                startedAtMillis = 0,
+            ),
+            EmomState(EmomPhase.Work, minute = 3, minutes = 10, secondsLeft = 45, minuteProgress = 0.25f),
+            onFinishSet = {},
+            onStop = {},
+        )
+    }
 }

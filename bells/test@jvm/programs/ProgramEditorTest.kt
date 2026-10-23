@@ -12,6 +12,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import dev.justinsmith.bells.ui.bellsAppTest
+import dev.justinsmith.bells.ui.scrollToText
 import dev.justinsmith.bells.ui.waitForText
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -22,8 +23,9 @@ class ProgramEditorTest {
     @Test
     fun `a program made on the editor is saved and followed from Today`() = bellsAppTest { app ->
         onNodeWithText("Follow a program").performClick()
-        waitForText("Dan John–inspired")
-        onNodeWithText("New program").performScrollTo().performClick()
+        scrollToText("Dan John–inspired")
+        scrollToText("New program")
+        onNodeWithText("New program").performClick()
         waitForText("Day 1")
         // Nothing to save until it has a name and a block on every day.
         onNodeWithText("Save program").assertDoesNotExist()
@@ -56,8 +58,8 @@ class ProgramEditorTest {
     @Test
     fun `a block of a lift that can be doubled offers two bells`() = bellsAppTest { app ->
         onNodeWithText("Follow a program").performClick()
-        waitForText("New program")
-        onNodeWithText("New program").performScrollTo().performClick()
+        scrollToText("New program")
+        onNodeWithText("New program").performClick()
         waitForText("Day 1")
         onNodeWithText("Add block").performScrollTo().performClick()
         onNodeWithText("Two bells").assertDoesNotExist()
@@ -76,8 +78,8 @@ class ProgramEditorTest {
     @Test
     fun `a block can be of any exercise with the load it names`() = bellsAppTest { app ->
         onNodeWithText("Follow a program").performClick()
-        waitForText("New program")
-        onNodeWithText("New program").performScrollTo().performClick()
+        scrollToText("New program")
+        onNodeWithText("New program").performClick()
         waitForText("Day 1")
         onNodeWithText("Add block").performScrollTo().performClick()
         // A kettlebell lift's bell is left to last time until one is picked.
@@ -103,8 +105,8 @@ class ProgramEditorTest {
     @Test
     fun `a program made can be changed and deleted`() = bellsAppTest { app ->
         onNodeWithText("Follow a program").performClick()
-        waitForText("New program")
-        onNodeWithText("New program").performScrollTo().performClick()
+        scrollToText("New program")
+        onNodeWithText("New program").performClick()
         waitForText("Day 1")
         onNodeWithText("Add block").performScrollTo().performClick()
         onNodeWithText("Done").performScrollTo().performClick()
@@ -116,7 +118,7 @@ class ProgramEditorTest {
         waitForText("Edit program")
         onNodeWithText("Delete program").performScrollTo().performClick()
         onNodeWithText("Delete").performClick()
-        waitForText("Dan John–inspired")
+        scrollToText("Dan John–inspired")
         onNodeWithText("Swings").assertDoesNotExist()
         assertTrue(app.storage.programs.rows.value.isEmpty())
     }

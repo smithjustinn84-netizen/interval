@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -346,7 +347,14 @@ private fun AnnounceRecord(state: SessionUiState, notices: Notices) {
     }
 }
 
-/** The session screen's parts, which [SessionLayout] lays out upright or on its side. */
+/**
+ * Whether a session's screens (the session, its summary) go side by side: on a phone on its side, and on any
+ * window wide enough for their fixed column and a list beside it, as a tablet is either way up.
+ */
+internal val BoxWithConstraintsScope.hasRoomBeside: Boolean
+    get() = isLandscape || maxWidth >= Sizes.setupColumnLandscape + Sizes.listColumn
+
+/** The session screen's parts, which [SessionLayout] lays out in one column or two. */
 private class SessionParts(
     val bar: @Composable () -> Unit,
     val tiles: @Composable () -> Unit,
@@ -355,8 +363,9 @@ private class SessionParts(
 )
 
 /**
- * Upright, one column: the title, then the clock, what is next and what is done scrolling, then Log set.
- * Sideways, the title, the clock and Log set on the left, and what is next and what is done on the right.
+ * A phone upright, one column: the title, then the clock, what is next and what is done scrolling, then Log
+ * set. With [hasRoomBeside] (on its side, or a tablet either way up), the title, the clock and Log set on the
+ * left, and what is next and what is done on the right.
  */
 @Composable
 private fun SessionLayout(parts: SessionParts, modifier: Modifier = Modifier) {
@@ -365,7 +374,7 @@ private fun SessionLayout(parts: SessionParts, modifier: Modifier = Modifier) {
         modifier.fillMaxSize().background(IntervalTheme.palette.background),
         contentAlignment = Alignment.TopCenter,
     ) {
-        if (isLandscape) {
+        if (hasRoomBeside) {
             Row(Modifier.fillMaxSize().safeDrawingPadding(), horizontalArrangement = Arrangement.Center) {
                 Column(Modifier.width(Sizes.setupColumnLandscape).fillMaxHeight()) {
                     parts.bar()

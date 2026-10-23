@@ -14,7 +14,9 @@ import dev.justinsmith.bells.data.FollowingEntity
 import dev.justinsmith.bells.data.SessionEntity
 import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.fakes.FakeBellsStorage
+import dev.justinsmith.bells.ui.Window
 import dev.justinsmith.bells.ui.bellsAppTest
+import dev.justinsmith.bells.ui.scrollToText
 import dev.justinsmith.bells.ui.waitForText
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -34,8 +36,8 @@ class ProgramsPageTest {
     @Test
     fun `a program opens its days and is followed from its sheet`() = bellsAppTest { app ->
         onNodeWithText("Follow a program").performClick()
-        waitForText("Goblet squat and row")
-        onNodeWithText("Goblet squat and row").performScrollTo().performClick()
+        scrollToText("Goblet squat and row")
+        onNodeWithText("Goblet squat and row").performClick()
         waitForText("Follow this program")
         onNodeWithText("Day 1").assertExists()
         // Nothing followed yet, so nothing is replaced and nothing asked.
@@ -46,13 +48,13 @@ class ProgramsPageTest {
     }
 
     @Test
-    fun `on a phone on its side Follow shows beside the days`() = bellsAppTest(sideways = true) {
+    fun `on a phone on its side Follow shows beside the days`() = bellsAppTest(window = Window.PhoneSideways) {
         // Today's grid composes only what is in view, so it scrolls to the card first.
         waitForText("Start session")
         onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Follow a program"))
         onNodeWithText("Follow a program").performClick()
-        waitForText("Goblet squat and row")
-        onNodeWithText("Goblet squat and row").performScrollTo().performClick()
+        scrollToText("Goblet squat and row")
+        onNodeWithText("Goblet squat and row").performClick()
         waitForText("Follow this program")
         onNodeWithText("Day 1").assertIsDisplayed()
         onNodeWithText("Follow this program").assertIsDisplayed()
@@ -62,8 +64,8 @@ class ProgramsPageTest {
     fun `switching part way through a program asks first`() = bellsAppTest(dayTwoOfGobletSquatRow()) { app ->
         waitForText("Day 2 of 8 · week 1")
         onNodeWithText("Change program").performScrollTo().performClick()
-        waitForText("Easy Strength")
-        onNodeWithText("Easy Strength").performScrollTo().performClick()
+        scrollToText("Easy Strength")
+        onNodeWithText("Easy Strength").performClick()
         waitForText("Replaces Goblet squat and row · day 2 of 8")
         onNodeWithText("Follow this program").performScrollTo().performClick()
         waitForText("Switch to Easy Strength?")
@@ -71,7 +73,8 @@ class ProgramsPageTest {
         onNodeWithText("Switch to Easy Strength?").assertDoesNotExist()
         assertEquals(ProgramId.GobletSquatRow.name, app.storage.following.row.value?.programId)
 
-        onNodeWithText("Easy Strength").performScrollTo().performClick()
+        scrollToText("Easy Strength")
+        onNodeWithText("Easy Strength").performClick()
         onNodeWithText("Follow this program").performScrollTo().performClick()
         waitForText("Switch")
         onNodeWithText("Switch").performClick()
@@ -83,8 +86,8 @@ class ProgramsPageTest {
     fun `the program followed shows as Following on its sheet`() = bellsAppTest(dayTwoOfGobletSquatRow()) {
         waitForText("Change program")
         onNodeWithText("Change program").performScrollTo().performClick()
-        waitForText("Goblet squat and row")
-        onNodeWithText("Goblet squat and row").performScrollTo().performClick()
+        scrollToText("Goblet squat and row")
+        onNodeWithText("Goblet squat and row").performClick()
         waitForText("Following")
         onNodeWithText("Follow this program").assertDoesNotExist()
     }
@@ -92,9 +95,9 @@ class ProgramsPageTest {
     @Test
     fun `a program for grapplers is followed from its own group`() = bellsAppTest { app ->
         onNodeWithText("Follow a program").performClick()
-        waitForText("For grapplers")
-        onNodeWithText("For grapplers").performScrollTo()
-        onNodeWithText("Round conditioning").performScrollTo().performClick()
+        scrollToText("For grapplers")
+        scrollToText("Round conditioning")
+        onNodeWithText("Round conditioning").performClick()
         waitForText("Follow this program")
         onNodeWithText("Follow this program").performScrollTo().performClick()
         waitForText("Day 1 of 12 · week 1")
@@ -107,7 +110,8 @@ class ProgramsPageTest {
         waitForText("Getting started")
         val top = { text: String -> onNodeWithText(text).fetchSemanticsNode().boundsInRoot.top }
         assertTrue(top("Getting started") < top("Classics"))
-        onNodeWithText("Kettlebell foundations").performScrollTo().performClick()
+        scrollToText("Kettlebell foundations")
+        onNodeWithText("Kettlebell foundations").performClick()
         waitForText("Follow this program")
         onNodeWithText("Follow this program").performScrollTo().performClick()
         waitForText("Day 1 of 12 · week 1")
@@ -117,8 +121,8 @@ class ProgramsPageTest {
     @Test
     fun `a bodyweight program shows its holds in seconds`() = bellsAppTest {
         onNodeWithText("Follow a program").performClick()
-        waitForText("Bodyweight and mixed")
-        onNodeWithText("Bodyweight basics").performScrollTo().performClick()
+        scrollToText("Bodyweight basics")
+        onNodeWithText("Bodyweight basics").performClick()
         waitForText("Follow this program")
         onNodeWithText("3 × 0:30").assertExists()
         onNodeWithText("2 × 0:20 a side").assertExists()

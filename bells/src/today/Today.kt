@@ -41,6 +41,7 @@ import dev.justinsmith.bells.domain.LiftSession
 import dev.justinsmith.bells.domain.Program
 import dev.justinsmith.bells.domain.ProgramDay
 import dev.justinsmith.bells.domain.ProgramKey
+import dev.justinsmith.bells.domain.builtInPrograms
 import dev.justinsmith.bells.domain.formatKg
 import dev.justinsmith.bells.domain.kettlebellLifts
 import dev.justinsmith.bells.domain.suggestedBell
@@ -101,6 +102,7 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.Motion
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
@@ -247,7 +249,8 @@ fun TodayRoute(
 
 /**
  * The Lift tab: the week, lifts and intervals alike, the last session (a tap opens it), and the program's
- * day. Start (or Resume) session stays pinned under them, however long the day, as Start workout does.
+ * day. Start (or Resume) session stays pinned under them, however long the day, as Start workout does. On a
+ * wider window the cards under the week sit side by side.
  */
 @Composable
 fun TodayScreen(
@@ -268,11 +271,11 @@ fun TodayScreen(
         bottomBar = { StartRow(state, onStartSession, Modifier.widthIn(max = Sizes.content)) },
     ) {
         item(key = "week", span = StaggeredGridItemSpan.FullLine) { WeekCard(state, card) }
-        item(key = "last", span = StaggeredGridItemSpan.FullLine) { LastCard(state, onOpenSession, card) }
-        item(key = "program", span = StaggeredGridItemSpan.FullLine) {
+        item(key = "last") { LastCard(state, onOpenSession, card) }
+        item(key = "program") {
             ProgramCard(state, onChooseProgram, card)
         }
-        item(key = "exercises", span = StaggeredGridItemSpan.FullLine) {
+        item(key = "exercises") {
             ListCard(card) {
                 LinkRow(
                     stringResource(Res.string.library_title),
@@ -554,5 +557,27 @@ private fun StartRow(state: TodayUiState, onStartSession: (ProgramKey?) -> Unit,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+}
+
+@PreviewFormFactors
+@Composable
+private fun TodayScreenPreview() {
+    IntervalTheme(darkTheme = true) {
+        TodayScreen(
+            TodayUiState(
+                last = LiftSession(
+                    "s",
+                    startedAtEpochMillis = 0,
+                    finishedAtEpochMillis = 2_400_000,
+                    title = "Day 1",
+                    sets = emptyList(),
+                ),
+                lastWhen = "7:42 AM",
+                following = builtInPrograms.first(),
+            ),
+            onStartSession = {},
+            onChooseProgram = {},
+        )
     }
 }

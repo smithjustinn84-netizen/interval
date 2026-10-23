@@ -192,6 +192,9 @@ object Sizes {
     val ring = 22.dp
     val ringMax = 420.dp
 
+    /** An EMOM's ring at its widest on a tablet or a desktop, where the readout sits inside it at any turn. */
+    val ringMaxRoomy = 560.dp
+
     /**
      * The lanes behind the Setup tabs: a track whose centre sits this far past the column's start
      * edge and below its bottom, so the lanes sweep in from the side and bend down; the innermost

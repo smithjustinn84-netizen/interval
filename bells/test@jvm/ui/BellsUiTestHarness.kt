@@ -12,7 +12,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.hasScrollToNodeAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavEntry
@@ -43,17 +46,17 @@ import org.koin.compose.KoinIsolatedContext
 import org.koin.core.KoinApplication
 import java.util.concurrent.atomic.AtomicLong
 
-/** A phone's window, as Interval's harness sizes it, at density 1 so pixels are dp. */
-private const val PHONE_WIDTH = 411
-private const val PHONE_HEIGHT = 891
+/** The window sizes Interval's harness and the previews use, at density 1 so pixels are dp. */
+enum class Window(val width: Int, val height: Int) {
+    Phone(width = 411, height = 891),
+    PhoneSideways(width = 891, height = 411),
+    Tablet(width = 1280, height = 800),
+    TabletPortrait(width = 800, height = 1280),
+}
 
-/** Runs [block] in a phone-sized desktop window, on its side when [sideways]. */
-fun runUiTest(sideways: Boolean = false, block: suspend DesktopComposeUiTest.() -> Unit) =
-    if (sideways) {
-        runDesktopComposeUiTest(width = PHONE_HEIGHT, height = PHONE_WIDTH, block = block)
-    } else {
-        runDesktopComposeUiTest(width = PHONE_WIDTH, height = PHONE_HEIGHT, block = block)
-    }
+/** Runs [block] in a desktop window of [window]'s size. */
+fun runUiTest(window: Window = Window.Phone, block: suspend DesktopComposeUiTest.() -> Unit) =
+    runDesktopComposeUiTest(width = window.width, height = window.height, block = block)
 
 /** Sets [content] inside the dark theme. */
 fun DesktopComposeUiTest.setBellsContent(content: @Composable () -> Unit) {
@@ -69,6 +72,15 @@ private const val STATE_TIMEOUT_MILLIS = 5_000L
  */
 fun DesktopComposeUiTest.waitForText(text: String) =
     waitUntil(timeoutMillis = STATE_TIMEOUT_MILLIS) { onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
+
+/**
+ * Scrolls the page's grid, which composes only what is in view, until [text] is among what it composes:
+ * Today, Programs. It waits for the page to come, as [waitForText] does.
+ */
+fun DesktopComposeUiTest.scrollToText(text: String) =
+    waitUntil(timeoutMillis = STATE_TIMEOUT_MILLIS) {
+        runCatching { onNode(hasScrollToNodeAction()).performScrollToNode(hasText(text)) }.isSuccess
+    }
 
 /**
  * What a whole-app test drives: the fake storage under the app, its clock, the beeps it played, and [back],
@@ -167,9 +179,9 @@ private fun BellsHost(koin: KoinApplication, back: NavigationEventDispatcherOwne
 fun bellsAppTest(
     storage: FakeBellsStorage = FakeBellsStorage(),
     intervals: FakeIntervalActivity = FakeIntervalActivity(),
-    sideways: Boolean = false,
+    window: Window = Window.Phone,
     block: suspend DesktopComposeUiTest.(BellsAppFixture) -> Unit,
-) = runUiTest(sideways) {
+) = runUiTest(window) {
     val clock = AtomicLong(0L)
     val beeper = RecordingBeeper()
     val koin = bellsTestKoin(storage, fakeBellsPlatformModule(beeper = beeper), now = clock::get, intervals = intervals)

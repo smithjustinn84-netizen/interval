@@ -77,7 +77,6 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ToggleRow
 import dev.justinsmith.interval.ui.enterRising
-import dev.justinsmith.interval.ui.isLandscape
 import dev.justinsmith.interval.ui.rememberEntrance
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -118,8 +117,9 @@ fun SummaryScreen(
             else -> null
         }
         if (burst != null) Burst(burst, Modifier.matchParentSize(), delayMillis = Motion.ENTER_MILLIS)
-        if (isLandscape) {
-            // Sideways: Done, the title and the way out on the left, the numbers and changes scrolling on the right.
+        if (hasRoomBeside) {
+            // Sideways, or on a tablet: Done, the title and the way out on the left, the numbers and changes
+            // scrolling on the right.
             Row(
                 Modifier.fillMaxSize().safeDrawingPadding().padding(Spacing.space20),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.space20, Alignment.CenterHorizontally),
@@ -136,7 +136,7 @@ fun SummaryScreen(
                 Column(
                     Modifier
                         .weight(1f, fill = false)
-                        .widthIn(max = Sizes.content)
+                        .widthIn(max = Sizes.contentWide)
                         .fillMaxHeight()
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(Spacing.space8),

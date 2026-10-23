@@ -27,6 +27,7 @@ import dev.justinsmith.bells.domain.LiftSession
 import dev.justinsmith.bells.domain.PlanChanges
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.domain.builtInPrograms
+import dev.justinsmith.bells.ui.Window
 import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.bells.ui.runUiTest
 import dev.justinsmith.bells.ui.setBellsContent
@@ -37,7 +38,7 @@ import kotlin.test.assertTrue
 /** A session on a phone on its side: what it needs next is in view, with nothing to scroll, and turning keeps it. */
 class SidewaysTest {
     @Test
-    fun `Log set and the summary's Done show without scrolling`() = bellsAppTest(sideways = true) { app ->
+    fun `Log set and the summary's Done show without scrolling`() = bellsAppTest(window = Window.PhoneSideways) { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Finish").assertIsDisplayed()
@@ -53,7 +54,7 @@ class SidewaysTest {
     }
 
     @Test
-    fun `an EMOM shows its clock and Set done`() = runUiTest(sideways = true) {
+    fun `an EMOM shows its clock and Set done`() = runUiTest(Window.PhoneSideways) {
         val run = EmomRun(BuiltInExercise.TwoHandSwing, 24.0, 10, 10, firstSide = Side.Left, startedAtMillis = 0)
         setBellsContent { EmomScreen(run, EmomState(EmomPhase.Work, 3, 10, 45, 0.25f), onFinishSet = {}, onStop = {}) }
         onNodeWithText("0:45").assertIsDisplayed()

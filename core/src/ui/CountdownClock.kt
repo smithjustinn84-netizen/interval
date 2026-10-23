@@ -12,6 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.sp
 
 /**
  * A countdown's digits ([text]) on the workout's ground. The clock pops as a new interval starts (a
@@ -55,3 +58,16 @@ fun CountdownClock(
         },
     )
 }
+
+/**
+ * The clock fills the share of the ring its digits allow, up to [max], the clock style's size: "0:14"
+ * in a phone's ring comes out around 160sp, as the design canvas draws it, and "10:00" smaller.
+ */
+fun ringClockSize(diameter: Dp, chars: Int, max: TextUnit): TextUnit =
+    (diameter.value * RING_CLOCK_SHARE / (chars * CLOCK_EMS_PER_CHAR)).coerceAtMost(max.value).sp
+
+/** How much of the ring's width the clock may take, leaving the stroke and some air. */
+private const val RING_CLOCK_SHARE = 0.82f
+
+/** Width per clock character in Barlow Condensed ExtraBold. */
+private const val CLOCK_EMS_PER_CHAR = 0.46f
