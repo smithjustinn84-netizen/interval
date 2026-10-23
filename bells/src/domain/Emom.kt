@@ -20,6 +20,12 @@ enum class EmomCue { Countdown, Start, Finished }
  * state [elapsedMillis] after it started, given which minutes have their set [done] (from 1).
  */
 class EmomClock(val minutes: Int, private val countInMillis: Long = COUNT_IN_MILLIS) {
+    /** When the last minute ends and the EMOM is done. */
+    val lengthMillis: Long get() = countInMillis + minutes * MINUTE_MILLIS
+
+    /** True once the EMOM has been done for [DONE_HOLD_MILLIS]: time to leave Done on screen, then go. */
+    fun isOver(elapsedMillis: Long): Boolean = elapsedMillis >= lengthMillis + DONE_HOLD_MILLIS
+
     fun at(elapsedMillis: Long, done: Set<Int>): EmomState {
         if (elapsedMillis < countInMillis) {
             return EmomState(
@@ -65,6 +71,11 @@ class EmomClock(val minutes: Int, private val countInMillis: Long = COUNT_IN_MIL
         const val MINUTE_MILLIS = 60_000L
         const val SECOND_MILLIS = 1_000L
         const val COUNT_IN_MILLIS = 10_000L
-        private const val COUNTDOWN = 3
+
+        /** How many seconds before each minute get a beep: the last three. */
+        const val COUNTDOWN = 3
+
+        /** Done stays on screen this long before the session comes back. */
+        const val DONE_HOLD_MILLIS = 1_500L
     }
 }

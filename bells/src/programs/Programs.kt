@@ -33,6 +33,8 @@ import dev.justinsmith.bells.domain.ProgramFamily
 import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.domain.builtInPrograms
 import dev.justinsmith.bells.resources.Res
+import dev.justinsmith.bells.resources.notice_program_followed
+import dev.justinsmith.bells.resources.notice_program_stopped
 import dev.justinsmith.bells.resources.program_follow
 import dev.justinsmith.bells.resources.program_following
 import dev.justinsmith.bells.resources.program_keep
@@ -67,6 +69,7 @@ import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.ScrollPage
@@ -147,6 +150,7 @@ fun ProgramsScreen(
     var previewing by rememberSaveable { mutableStateOf<String?>(null) }
     var switching by rememberSaveable { mutableStateOf<String?>(null) }
     val programOf = { stored: String? -> (builtInPrograms + custom).firstOrNull { it.key.stored == stored } }
+    val notices = LocalNotices.current
     val onOpen = { key: ProgramKey -> previewing = key.stored }
     ScrollPage(stringResource(Res.string.programs_title), modifier, navigation = { BackAction(actions.onBack) }) {
         ProgramFamily.entries.forEach { family ->
@@ -164,10 +168,15 @@ fun ProgramsScreen(
                 onClick = actions.onNew,
             )
         }
-        if (following != null) {
+        val followed = programOf(following?.stored)
+        if (followed != null) {
+            val stopped = stringResource(Res.string.notice_program_stopped, programName(followed))
             QuietTextButton(
                 stringResource(Res.string.program_stop),
-                actions.onStop,
+                onClick = {
+                    notices.show(stopped)
+                    actions.onStop()
+                },
                 Modifier.padding(top = Spacing.space12),
             )
         }
@@ -175,6 +184,7 @@ fun ProgramsScreen(
     programOf(previewing)?.let { program ->
         // Only a day past the first has anything to lose.
         val replacing = followingDay?.takeIf { it.program.key != program.key }
+        val followedText = stringResource(Res.string.notice_program_followed, programName(program))
         ProgramSheet(
             program,
             current = program.key == following,
@@ -184,6 +194,7 @@ fun ProgramsScreen(
                     previewing = null
                     switching = program.key.stored
                 } else {
+                    notices.show(followedText)
                     actions.onFollow(program.key)
                 }
             },
@@ -194,6 +205,7 @@ fun ProgramsScreen(
     val replaced = followingDay
     if (switchTo != null && replaced != null) {
         val name = programName(switchTo)
+        val followedText = stringResource(Res.string.notice_program_followed, name)
         ConfirmDialog(
             title = stringResource(Res.string.program_switch_title, name),
             text = stringResource(Res.string.program_switch_text, replaced.number, programName(replaced.program), name),
@@ -201,6 +213,7 @@ fun ProgramsScreen(
             dismiss = stringResource(Res.string.program_keep),
             onConfirm = {
                 switching = null
+                notices.show(followedText)
                 actions.onFollow(switchTo.key)
             },
             onDismiss = { switching = null },

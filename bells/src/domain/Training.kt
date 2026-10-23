@@ -353,7 +353,29 @@ fun newRecords(before: List<SetLog>, session: LiftSession): List<PersonalRecord>
     }
 }
 
+/**
+ * Of [sets], logged in that order after [before], the ids of those that beat a record standing as they
+ * were logged: a heavier load, more reps at the heaviest or in one set, or a longer hold. A lift's first
+ * set ever has no record to beat, so it is not one; the summary's [newRecords] lists it all the same.
+ */
+fun recordSetIds(before: List<SetLog>, sets: List<SetLog>): Set<Long> {
+    val prior = before.filter { it.exercise !is UnknownExercise }
+        .groupBy { it.lift }
+        .mapValuesTo(mutableMapOf()) { it.value.toMutableList() }
+    val ids = mutableSetOf<Long>()
+    for (set in sets) {
+        if (set.exercise is UnknownExercise) continue
+        val same = prior.getOrPut(set.lift) { mutableListOf() }
+        val was = personalRecords(same).singleOrNull()
+        same += set
+        if (was != null && personalRecords(same).single().beats(was)) ids += set.id
+    }
+    return ids
+}
+
 private enum class RecordKind { Weighted, Banded, Held }
+
+private val SetLog.lift: Triple<String, Boolean, RecordKind> get() = Triple(exercise.key, double, recordKind)
 
 private val SetLog.recordKind: RecordKind get() = when {
     seconds != null -> RecordKind.Held

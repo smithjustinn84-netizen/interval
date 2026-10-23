@@ -1,10 +1,11 @@
 package dev.justinsmith.bells.session
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -13,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,11 +32,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigationevent.NavigationEventInfo
@@ -43,6 +41,7 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import dev.justinsmith.bells.data.ExerciseFilterStore
 import dev.justinsmith.bells.domain.Block
+import dev.justinsmith.bells.domain.EmomState
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.ExerciseFilters
 import dev.justinsmith.bells.domain.SetLog
@@ -59,6 +58,7 @@ import dev.justinsmith.bells.resources.next_plan
 import dev.justinsmith.bells.resources.next_progress
 import dev.justinsmith.bells.resources.next_skip
 import dev.justinsmith.bells.resources.next_title
+import dev.justinsmith.bells.resources.notice_record
 import dev.justinsmith.bells.resources.session_discard
 import dev.justinsmith.bells.resources.session_discard_text
 import dev.justinsmith.bells.resources.session_discard_title
@@ -78,6 +78,7 @@ import dev.justinsmith.bells.resources.session_stay
 import dev.justinsmith.bells.resources.session_time
 import dev.justinsmith.bells.resources.session_title
 import dev.justinsmith.bells.resources.session_undo
+import dev.justinsmith.bells.ui.RecordTag
 import dev.justinsmith.bells.ui.StatTile
 import dev.justinsmith.bells.ui.liftName
 import dev.justinsmith.bells.ui.sessionTitle
@@ -85,22 +86,26 @@ import dev.justinsmith.bells.ui.setLine
 import dev.justinsmith.interval.platform.KeepScreenOn
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.ConfirmDialog
-import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.Motion
+import dev.justinsmith.interval.ui.NoticeAction
+import dev.justinsmith.interval.ui.Notices
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TitleBar
+import dev.justinsmith.interval.ui.enterRising
+import dev.justinsmith.interval.ui.fadeThrough
+import dev.justinsmith.interval.ui.fadeThroughContent
 import dev.justinsmith.interval.ui.isLandscape
-import dev.justinsmith.interval.ui.surfaceButton
-import kotlinx.coroutines.delay
+import dev.justinsmith.interval.ui.rememberArrival
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
@@ -108,69 +113,106 @@ import org.koin.compose.currentKoinScope
 fun SessionRoute(onExit: () -> Unit, onNewExercise: (name: String) -> Unit = {}) {
     val scope = currentKoinScope()
     val filters = scope.get<ExerciseFilterStore>()
-    val viewModel = viewModel { SessionViewModel(scope.get(), scope.get(), scope.get(), filters) }
+    val viewModel =
+        viewModel { SessionViewModel(scope.get(), scope.get(), scope.get(), filters, scope.get(), scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val finished = state.finished
-    if (finished != null) {
-        SummaryScreen(finished, onDone = onExit, onKeep = viewModel::keepChanges)
-        return
-    }
     val emom = state.emom
     val emomState = state.emomState
-    LeaveGuard(
-        emomRunning = emom != null,
-        hasSets = !state.session?.sets.isNullOrEmpty(),
-        onLeave = {
-            viewModel.stopEmom()
-            viewModel.holds.cancel()
-            onExit()
-        },
-    )
-    if (emom != null && emomState != null) {
-        EmomScreen(emom, emomState, onFinishSet = viewModel::emomSetDone, onStop = viewModel::stopEmom)
-        return
-    }
-    val title = sessionTitle(state.session?.exercises.orEmpty())
-    SessionScreen(
-        state = state,
-        actions = SessionActions(
-            onDraft = viewModel::updateDraft,
-            onFilters = filters::update,
-            onAddExercise = { name ->
-                viewModel.expectNewExercise()
-                onNewExercise(name)
-            },
-            onLog = viewModel::logSet,
-            onLogNext = viewModel::logNext,
-            onStartPlannedEmom = viewModel::startPlannedEmom,
-            onStartEmom = viewModel::startDraftEmom,
-            onTimeHold = { viewModel.holds.start(state.draft) },
-            onStopHold = viewModel.holds::stop,
-            onCancelHold = viewModel.holds::cancel,
-            onRemoveSet = viewModel::removeSet,
-            onRestoreSet = viewModel::restoreSet,
-            onEditSet = viewModel::editSet,
-            onSaveEdit = viewModel::saveEdit,
-            onCancelEdit = viewModel::cancelEdit,
-            onChangeBlock = viewModel::changeBlock,
-            onSwapBlock = viewModel::swapBlock,
-            onSkipBlock = viewModel::skipBlock,
-            onUnskipBlock = viewModel::unskipBlock,
-            onFinish = {
-                if (state.session?.sets.isNullOrEmpty()) {
-                    viewModel.discard()
-                    onExit()
-                } else {
-                    viewModel.finish(title)
-                }
-            },
-            onDiscard = {
-                viewModel.discard()
+    if (finished == null) {
+        LeaveGuard(
+            emomRunning = emom != null,
+            hasSets = !state.session?.sets.isNullOrEmpty(),
+            onLeave = {
+                viewModel.stopEmom()
+                viewModel.holds.cancel()
                 onExit()
             },
-        ),
-    )
+        )
+    }
+    val title = sessionTitle(state.session?.exercises.orEmpty())
+    val page = when {
+        finished != null -> SessionPage.Summary(finished)
+        emom != null && emomState != null -> SessionPage.Emom(emom, emomState)
+        else -> SessionPage.Logging
+    }
+    // The session, its EMOM and its summary take one another's place with a fade through, as pages do.
+    AnimatedContent(
+        targetState = page,
+        transitionSpec = { fadeThrough(Motion.PAGE_MILLIS) },
+        contentKey = { it::class },
+        label = "sessionPage",
+    ) { shown ->
+        when (shown) {
+            is SessionPage.Summary -> SummaryScreen(shown.finished, onDone = onExit, onKeep = viewModel::keepChanges)
+
+            is SessionPage.Emom -> EmomScreen(
+                shown.run,
+                shown.state,
+                onFinishSet = viewModel::emomSetDone,
+                onStop = viewModel::stopEmom,
+            )
+
+            SessionPage.Logging -> SessionScreen(
+                state,
+                sessionActions(viewModel, filters, state, title, onExit, onNewExercise),
+            )
+        }
+    }
 }
+
+/** Which of the Lifting page's faces is up. Each carries what it shows, so a face on its way out still has it. */
+private sealed interface SessionPage {
+    data class Summary(val finished: Finished) : SessionPage
+
+    data class Emom(val run: EmomRun, val state: EmomState) : SessionPage
+
+    data object Logging : SessionPage
+}
+
+private fun sessionActions(
+    viewModel: SessionViewModel,
+    filters: ExerciseFilterStore,
+    state: SessionUiState,
+    title: String,
+    onExit: () -> Unit,
+    onNewExercise: (name: String) -> Unit,
+): SessionActions = SessionActions(
+    onDraft = viewModel::updateDraft,
+    onFilters = filters::update,
+    onAddExercise = { name ->
+        viewModel.expectNewExercise()
+        onNewExercise(name)
+    },
+    onLog = viewModel::logSet,
+    onLogNext = viewModel::logNext,
+    onStartPlannedEmom = viewModel::startPlannedEmom,
+    onStartEmom = viewModel::startDraftEmom,
+    onTimeHold = { viewModel.holds.start(state.draft) },
+    onStopHold = viewModel.holds::stop,
+    onCancelHold = viewModel.holds::cancel,
+    onRemoveSet = viewModel::removeSet,
+    onRestoreSet = viewModel::restoreSet,
+    onEditSet = viewModel::editSet,
+    onSaveEdit = viewModel::saveEdit,
+    onCancelEdit = viewModel::cancelEdit,
+    onChangeBlock = viewModel::changeBlock,
+    onSwapBlock = viewModel::swapBlock,
+    onSkipBlock = viewModel::skipBlock,
+    onUnskipBlock = viewModel::unskipBlock,
+    onFinish = {
+        if (state.session?.sets.isNullOrEmpty()) {
+            viewModel.discard()
+            onExit()
+        } else {
+            viewModel.finish(title)
+        }
+    },
+    onDiscard = {
+        viewModel.discard()
+        onExit()
+    },
+)
 
 /**
  * Back, or the back gesture, asks before leaving a session with sets logged or an EMOM running: the sets
@@ -237,17 +279,16 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
     var planning by rememberSaveable { mutableStateOf(false) }
     // The block of today's plan open to change, -1 for none: a plain number saves on every platform.
     var changing by rememberSaveable { mutableIntStateOf(-1) }
-    // The set just removed, offered back for a few seconds.
-    var removed by remember { mutableStateOf<SetLog?>(null) }
-    LaunchedEffect(removed) {
-        if (removed != null) {
-            delay(Motion.UNDO_MILLIS)
-            removed = null
-        }
-    }
     KeepScreenOn()
+    val notices = LocalNotices.current
+    val undo = stringResource(Res.string.session_undo)
+    AnnounceRecord(state, notices)
     val sets = SetActions(
-        onRemove = { removed = it.also { set -> actions.onRemoveSet(set.id) } },
+        // The set just removed is offered back for a few seconds.
+        onRemove = { set, removedText ->
+            actions.onRemoveSet(set.id)
+            notices.show(removedText, NoticeAction(undo) { actions.onRestoreSet(set) })
+        },
         onEdit = {
             actions.onEditSet(it.id)
             logging = true
@@ -266,18 +307,6 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
         plan = {
             UpNextCard(state, actions, onChange = { changing = it }, onPlan = { planning = true })
             LoggedSets(state, sets)
-        },
-        undo = { undoModifier ->
-            removed?.let { set ->
-                UndoBar(
-                    stringResource(Res.string.session_set_removed, setLine(set)),
-                    onUndo = {
-                        removed = null
-                        actions.onRestoreSet(set)
-                    },
-                    undoModifier,
-                )
-            }
         },
         buttons = { SessionButtons(onFinish = actions.onFinish, onLog = { logging = true }) },
     )
@@ -299,12 +328,29 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
     }
 }
 
+/**
+ * A set logged while the screen is up that beat a record is announced once, under the thumb and in a
+ * notice; a record already standing when the screen opened (a session resumed) is not.
+ */
+@Composable
+private fun AnnounceRecord(state: SessionUiState, notices: Notices) {
+    val haptics = LocalHapticFeedback.current
+    val latest = state.latestRecord
+    val recordText = latest?.let { stringResource(Res.string.notice_record, setLine(it)) }
+    val seenAtOpen = remember { latest?.id }
+    LaunchedEffect(latest?.id) {
+        if (latest != null && latest.id != seenAtOpen && recordText != null) {
+            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+            notices.show(recordText)
+        }
+    }
+}
+
 /** The session screen's parts, which [SessionLayout] lays out upright or on its side. */
 private class SessionParts(
     val bar: @Composable () -> Unit,
     val tiles: @Composable () -> Unit,
     val plan: @Composable ColumnScope.() -> Unit,
-    val undo: @Composable (Modifier) -> Unit,
     val buttons: @Composable () -> Unit,
 )
 
@@ -340,7 +386,6 @@ private fun SessionLayout(parts: SessionParts, modifier: Modifier = Modifier) {
                         verticalArrangement = scrolling,
                         content = parts.plan,
                     )
-                    parts.undo(Modifier.padding(bottom = Spacing.space16))
                 }
             }
         } else {
@@ -353,7 +398,6 @@ private fun SessionLayout(parts: SessionParts, modifier: Modifier = Modifier) {
                     parts.tiles()
                     parts.plan(this)
                 }
-                parts.undo(Modifier.padding(start = Spacing.space16, end = Spacing.space16, top = Spacing.space8))
                 parts.buttons()
             }
         }
@@ -366,10 +410,12 @@ private fun SessionTiles(state: SessionUiState) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             StatTile(stringResource(Res.string.session_time), state.elapsed, Modifier.weight(1f))
+            val moved = state.session?.tonnageKg ?: 0.0
             StatTile(
                 stringResource(Res.string.session_moved),
-                stringResource(Res.string.kg_value, formatKg(state.session?.tonnageKg ?: 0.0)),
+                stringResource(Res.string.kg_value, formatKg(moved)),
                 Modifier.weight(1f),
+                rank = moved.toInt(),
             )
         }
         state.sinceLast?.let {
@@ -390,8 +436,8 @@ private fun SessionButtons(onFinish: () -> Unit, onLog: () -> Unit) {
     }
 }
 
-/** What a logged set's row does: × removes it, a tap opens it to change. */
-private class SetActions(val onRemove: (SetLog) -> Unit, val onEdit: (SetLog) -> Unit)
+/** What a logged set's row does: × removes it (the row words the notice), a tap opens it to change. */
+private class SetActions(val onRemove: (SetLog, removedText: String) -> Unit, val onEdit: (SetLog) -> Unit)
 
 /** The sets logged so far, by lift; before the first, and with no plan, how to log one. */
 @Composable
@@ -405,22 +451,36 @@ private fun LoggedSets(state: SessionUiState, actions: SetActions) {
             modifier = Modifier.padding(vertical = Spacing.space16),
         )
     }
+    // The sets on show when the screen opened stand still; one logged since rises into its card.
+    val atOpen = remember { sets.map { it.id }.toSet() }
     sets.groupBy { it.exercise to it.double }.forEach { (lift, done) ->
         GroupLabel(liftName(lift.first, lift.second))
-        ListCard {
+        ListCard(Modifier.animateContentSize()) {
             done.forEachIndexed { i, set ->
-                if (i > 0) RowDivider()
-                SetRow(set, onRemove = { actions.onRemove(set) }, onEdit = { actions.onEdit(set) })
+                key(set.id) {
+                    AnimatedVisibility(rememberArrival(set.id !in atOpen), enter = enterRising()) {
+                        Column {
+                            if (i > 0) RowDivider()
+                            SetRow(
+                                set,
+                                record = set.id in state.recordSetIds,
+                                onRemove = { actions.onRemove(set, it) },
+                                onEdit = { actions.onEdit(set) },
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
 
-/** A set logged: a tap opens it to change, × removes it. */
+/** A set logged: a tap opens it to change, × removes it; one that set a [record] is tagged. */
 @Composable
-private fun SetRow(set: SetLog, onRemove: () -> Unit, onEdit: () -> Unit) {
+private fun SetRow(set: SetLog, record: Boolean, onRemove: (removedText: String) -> Unit, onEdit: () -> Unit) {
     val line = setLine(set)
     val edit = stringResource(Res.string.session_edit_set_cd, line)
+    val removed = stringResource(Res.string.session_set_removed, line)
     Row(
         Modifier
             .fillMaxWidth()
@@ -430,35 +490,13 @@ private fun SetRow(set: SetLog, onRemove: () -> Unit, onEdit: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(line, style = IntervalTheme.type.label, color = IntervalTheme.palette.text, modifier = Modifier.weight(1f))
-        IconAction(IntervalIcons.Close, stringResource(Res.string.session_remove_set_cd, line), onRemove)
-    }
-}
-
-/** A removal just made, and Undo: read out as it appears. */
-@Composable
-private fun UndoBar(text: String, onUndo: () -> Unit, modifier: Modifier = Modifier) {
-    val palette = IntervalTheme.palette
-    val interaction = remember { MutableInteractionSource() }
-    Row(
-        modifier
-            .fillMaxWidth()
-            .heightIn(min = Sizes.listRow)
-            .clip(Corners.radius12)
-            .background(palette.surfaceVariant)
-            .semantics { liveRegion = LiveRegionMode.Polite }
-            .padding(start = Spacing.space16, end = Spacing.space4),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(text, style = IntervalTheme.type.label, color = palette.text, modifier = Modifier.weight(1f))
-        Box(
-            Modifier
-                .heightIn(min = Sizes.pillHeight)
-                .surfaceButton(interaction, Corners.radius12, Color.Transparent, onUndo)
-                .padding(horizontal = Spacing.space16),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(stringResource(Res.string.session_undo), style = IntervalTheme.type.control, color = palette.text)
-        }
+        if (record) RecordTag(Modifier.padding(end = Spacing.space8))
+        IconAction(
+            IntervalIcons.Close,
+            stringResource(Res.string.session_remove_set_cd, line),
+            onClick = { onRemove(removed) },
+            haptic = HapticFeedbackType.SegmentTick,
+        )
     }
 }
 
@@ -469,19 +507,37 @@ private fun UndoBar(text: String, onUndo: () -> Unit, modifier: Modifier = Modif
 @Composable
 private fun UpNextCard(state: SessionUiState, actions: SessionActions, onChange: (Int) -> Unit, onPlan: () -> Unit) {
     val palette = IntervalTheme.palette
-    val next = state.upNext
-    if (next == null) {
-        if (state.dayDone) {
-            Text(
-                stringResource(Res.string.next_day_done),
-                style = IntervalTheme.type.body,
-                color = palette.textDim,
-                modifier = Modifier.padding(vertical = Spacing.space8),
-            )
-            if (state.plan.any { it.open }) QuietTextButton(stringResource(Res.string.next_plan), onPlan)
+    // Each set logged fades the card through to the next; the last fades it through to the day's done.
+    AnimatedContent(
+        targetState = state.upNext,
+        transitionSpec = { fadeThroughContent() },
+        contentKey = { it?.number ?: NO_NEXT },
+        label = "upNext",
+    ) { next ->
+        if (next == null) {
+            Column {
+                if (state.dayDone) {
+                    Text(
+                        stringResource(Res.string.next_day_done),
+                        style = IntervalTheme.type.body,
+                        color = palette.textDim,
+                        modifier = Modifier.padding(vertical = Spacing.space8),
+                    )
+                    if (state.plan.any { it.open }) QuietTextButton(stringResource(Res.string.next_plan), onPlan)
+                }
+            }
+        } else {
+            NextSetCard(next, actions, onChange, onPlan)
         }
-        return
     }
+}
+
+/** The key of [UpNextCard]'s content once nothing is next. */
+private const val NO_NEXT = -1
+
+@Composable
+private fun NextSetCard(next: UpNext, actions: SessionActions, onChange: (Int) -> Unit, onPlan: () -> Unit) {
+    val palette = IntervalTheme.palette
     ListCard(Modifier.padding(top = Spacing.space8)) {
         Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
             Text(

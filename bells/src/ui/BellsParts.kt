@@ -1,5 +1,7 @@
 package dev.justinsmith.bells.ui
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -12,10 +14,13 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -29,14 +34,19 @@ import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.common_joined
 import dev.justinsmith.bells.resources.exercise_unknown
 import dev.justinsmith.bells.resources.lift_double
+import dev.justinsmith.bells.resources.record_tag
 import dev.justinsmith.bells.resources.session_title_more
 import dev.justinsmith.bells.resources.session_title_two
 import dev.justinsmith.bells.resources.side_left
 import dev.justinsmith.bells.resources.side_right
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.Motion
+import dev.justinsmith.interval.ui.RollingText
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.StandardEasing
+import dev.justinsmith.interval.ui.rememberRising
 import dev.justinsmith.interval.ui.surfaceButton
 import org.jetbrains.compose.resources.stringResource
 
@@ -82,7 +92,10 @@ fun sessionTitle(exercises: List<Exercise>): String = when (exercises.size) {
     else -> stringResource(Res.string.session_title_more, exerciseName(exercises[0]), exercises.size - 1)
 }
 
-/** One of a set of choices laid out in a wrapping row: selected, it takes the accent's border and tint. */
+/**
+ * One of a set of choices laid out in a wrapping row: selected, it takes the accent's border and tint,
+ * both following the state rather than snapping. A pick ticks; a [Role.Checkbox] answers as a switch.
+ */
 @Composable
 fun Choice(
     text: String,
@@ -93,23 +106,40 @@ fun Choice(
 ) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
+    val spec = tween<Color>(Motion.STATE_MILLIS, easing = StandardEasing)
+    val fill by animateColorAsState(if (selected) palette.accentTint else palette.surfaceVariant, spec, label = "fill")
+    val edge by animateColorAsState(if (selected) palette.accent else palette.surfaceVariant, spec, label = "edge")
+    val haptic = when {
+        role != Role.Checkbox -> HapticFeedbackType.SegmentTick
+        selected -> HapticFeedbackType.ToggleOff
+        else -> HapticFeedbackType.ToggleOn
+    }
     Box(
         modifier
             .heightIn(min = Sizes.pillHeight)
-            .surfaceButton(
-                interaction,
-                Corners.radius12,
-                if (selected) palette.accentTint else palette.surfaceVariant,
-                onClick = onClick,
-                role = role,
-            )
-            .border(Sizes.border, if (selected) palette.accent else palette.surfaceVariant, Corners.radius12)
+            .surfaceButton(interaction, Corners.radius12, fill, onClick = onClick, role = role, haptic = haptic)
+            .border(Sizes.border, edge, Corners.radius12)
             .semantics { this.selected = selected }
             .padding(horizontal = Spacing.space16),
         contentAlignment = Alignment.Center,
     ) {
         Text(text, style = IntervalTheme.type.label, color = palette.text)
     }
+}
+
+/** The tag on a set, or a record on the summary, that beat a record standing: "Record" on the accent's tint. */
+@Composable
+fun RecordTag(modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    Text(
+        stringResource(Res.string.record_tag),
+        style = IntervalTheme.type.caption,
+        color = palette.accent,
+        modifier = modifier
+            .clip(Corners.full)
+            .background(palette.accentTint)
+            .padding(horizontal = Spacing.space8, vertical = Spacing.space4),
+    )
 }
 
 /** [Choice]s for each of [options], wrapping onto as many lines as they need. */
@@ -131,9 +161,12 @@ fun <T> ChoiceRow(
     }
 }
 
-/** A figure with its caption on a card: "Time 14:32". */
+/**
+ * A figure with its caption on a card: "Time 14:32". Given the number behind it as [rank], the figure rolls
+ * to each new value; a figure that ticks every second (Time) passes none and simply changes.
+ */
 @Composable
-fun StatTile(label: String, value: String, modifier: Modifier = Modifier) {
+fun StatTile(label: String, value: String, modifier: Modifier = Modifier, rank: Int? = null) {
     val palette = IntervalTheme.palette
     Column(
         modifier
@@ -142,6 +175,10 @@ fun StatTile(label: String, value: String, modifier: Modifier = Modifier) {
             .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
     ) {
         Text(label, style = IntervalTheme.type.caption, color = palette.textDim)
-        Text(value, style = IntervalTheme.type.stat, color = palette.text)
+        if (rank != null) {
+            RollingText(value, rising = rememberRising(rank), style = IntervalTheme.type.stat, color = palette.text)
+        } else {
+            Text(value, style = IntervalTheme.type.stat, color = palette.text)
+        }
     }
 }

@@ -1,5 +1,6 @@
 package dev.justinsmith.bells.library
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -39,6 +40,7 @@ import dev.justinsmith.bells.resources.exercise_restore
 import dev.justinsmith.bells.resources.exercise_save
 import dev.justinsmith.bells.resources.library_focus
 import dev.justinsmith.bells.resources.library_measured
+import dev.justinsmith.bells.resources.notice_exercise_saved
 import dev.justinsmith.bells.ui.ChoiceRow
 import dev.justinsmith.bells.ui.equipmentName
 import dev.justinsmith.bells.ui.focusName
@@ -48,11 +50,14 @@ import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.NameField
 import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ToggleRow
+import dev.justinsmith.interval.ui.enterExpanding
+import dev.justinsmith.interval.ui.exitShrinking
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -206,14 +211,7 @@ fun ExerciseEditorScreen(
             label = stringResource(Res.string.exercise_cues),
             maxLength = MAX_EXERCISE_CUES,
         )
-        // Save is offered once there is a name of the user's own to save it as.
-        if (draft.canSave(typed, state.taken)) {
-            AccentButton(
-                stringResource(Res.string.exercise_save),
-                { onSave(typed.trim(), cues.text.toString()) },
-                Modifier.fillMaxWidth().padding(top = Spacing.space16),
-            )
-        }
+        SaveAction(draft.canSave(typed, state.taken), typed.trim(), onSave = { onSave(it, cues.text.toString()) })
         if (state.saved) {
             SecondaryButton(
                 stringResource(if (state.archived) Res.string.exercise_restore else Res.string.exercise_archive),
@@ -228,5 +226,25 @@ fun ExerciseEditorScreen(
                 )
             }
         }
+    }
+}
+
+/**
+ * Save, offered once there is a name of the user's own to save under, opening the room it takes; it
+ * says what it saved as it goes.
+ */
+@Composable
+private fun SaveAction(canSave: Boolean, name: String, onSave: (name: String) -> Unit) {
+    val notices = LocalNotices.current
+    val saved = stringResource(Res.string.notice_exercise_saved, name)
+    AnimatedVisibility(canSave, enter = enterExpanding(), exit = exitShrinking()) {
+        AccentButton(
+            stringResource(Res.string.exercise_save),
+            {
+                notices.show(saved)
+                onSave(name)
+            },
+            Modifier.fillMaxWidth().padding(top = Spacing.space16),
+        )
     }
 }

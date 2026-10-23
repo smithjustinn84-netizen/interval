@@ -15,7 +15,12 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import dev.justinsmith.bells.data.SessionEntity
+import dev.justinsmith.bells.data.SetEntity
+import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.EmomCue
+import dev.justinsmith.bells.fakes.FakeBellsStorage
+import dev.justinsmith.bells.fakes.FakeIntervalActivity
 import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.bells.ui.waitForText
 import kotlin.test.Test
@@ -23,6 +28,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /** A session from Today to the summary, through the whole app over fakes. */
+@Suppress("detekt.TooManyFunctions") // One way of logging per test, side by side.
 class SessionFlowTest {
     /** On the Log sheet: Change, then narrow the library by [search] or [equipment], and pick [name]. */
     private fun DesktopComposeUiTest.pick(name: String, search: String? = null, equipment: String? = null) {
@@ -190,6 +196,52 @@ class SessionFlowTest {
         onAllNodesWithText("Done").onLast().performClick()
         waitForText("Last session")
         onNodeWithText("Two-hand swing").assertExists()
+    }
+
+    @Test
+    fun `a set heavier than any before is tagged a record and announced`() = bellsAppTest(
+        storage = FakeBellsStorage().apply {
+            sessions.sessions.value = listOf(SessionEntity("old", 0, 60_000, "Two-hand swing", 60_000))
+            sessions.sets.value = listOf(SetEntity(1, "old", BuiltInExercise.TwoHandSwing.key, 16.0, 10, null, 30_000))
+        },
+    ) {
+        onNodeWithText("Start session").performClick()
+        waitForText("Log set")
+        onNodeWithText("Log set").performClick()
+        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
+        waitForText("16 kg × 10")
+        // The same as before: no record.
+        onNodeWithText("Record").assertDoesNotExist()
+        onNodeWithText("Log set").performClick()
+        waitForText("24")
+        onNodeWithText("24").performClick()
+        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
+        waitForText("24 kg × 10")
+        onNodeWithText("Record").assertExists()
+        onNodeWithText("New record · 24 kg × 10").assertExists()
+    }
+
+    @Test
+    fun `a lift's first set ever is not a record`() = bellsAppTest {
+        onNodeWithText("Start session").performClick()
+        waitForText("Log set")
+        onNodeWithText("Log set").performClick()
+        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
+        waitForText("16 kg × 10")
+        onNodeWithText("Record").assertDoesNotExist()
+    }
+
+    @Test
+    fun `the summary says where the week stands against the goal`() = bellsAppTest(
+        intervals = FakeIntervalActivity().apply { weeklyGoal.value = 3 },
+    ) {
+        onNodeWithText("Start session").performClick()
+        waitForText("Log set")
+        onNodeWithText("Log set").performClick()
+        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
+        waitForText("16 kg × 10")
+        onNodeWithText("Finish").performClick()
+        waitForText("1 of 3 this week")
     }
 
     @Test

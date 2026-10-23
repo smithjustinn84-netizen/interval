@@ -1,5 +1,6 @@
 package dev.justinsmith.bells.programs
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -58,6 +59,7 @@ import dev.justinsmith.bells.resources.editor_remove_day
 import dev.justinsmith.bells.resources.editor_save
 import dev.justinsmith.bells.resources.editor_schedule
 import dev.justinsmith.bells.resources.editor_weeks
+import dev.justinsmith.bells.resources.notice_program_saved
 import dev.justinsmith.bells.ui.blockLine
 import dev.justinsmith.bells.ui.liftName
 import dev.justinsmith.interval.ui.AccentButton
@@ -69,6 +71,7 @@ import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.NameField
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
@@ -77,6 +80,8 @@ import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.SheetColumns
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.enterExpanding
+import dev.justinsmith.interval.ui.exitShrinking
 import dev.justinsmith.interval.ui.sheetIsSideways
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -219,10 +224,19 @@ fun ProgramEditorScreen(state: ProgramEditorUiState, actions: ProgramEditorActio
             )
         }
         // Save is offered once there is something to save: a name, and a block on every day.
-        if (draft.copy(name = name.text.toString()).canSave) {
+        val notices = LocalNotices.current
+        val saved = stringResource(Res.string.notice_program_saved, name.text.toString().trim())
+        AnimatedVisibility(
+            draft.copy(name = name.text.toString()).canSave,
+            enter = enterExpanding(),
+            exit = exitShrinking(),
+        ) {
             AccentButton(
                 stringResource(Res.string.editor_save),
-                { actions.onSave(name.text.toString()) },
+                {
+                    notices.show(saved)
+                    actions.onSave(name.text.toString())
+                },
                 Modifier.fillMaxWidth().padding(top = Spacing.space8),
             )
         }

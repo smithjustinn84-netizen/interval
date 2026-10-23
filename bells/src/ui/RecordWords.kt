@@ -1,9 +1,12 @@
 package dev.justinsmith.bells.ui
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.PersonalRecord
@@ -26,10 +29,16 @@ import org.jetbrains.compose.resources.stringResource
 
 /** A record as a row of a list: the lift's name over [recordLine]. */
 @Composable
-fun RecordRow(record: PersonalRecord, modifier: Modifier = Modifier) {
+fun RecordRow(record: PersonalRecord, modifier: Modifier = Modifier, tagged: Boolean = false) {
     val palette = IntervalTheme.palette
     Column(modifier.padding(Spacing.space16)) {
-        Text(liftName(record.exercise, record.double), style = IntervalTheme.type.label, color = palette.text)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+        ) {
+            Text(liftName(record.exercise, record.double), style = IntervalTheme.type.label, color = palette.text)
+            if (tagged) RecordTag()
+        }
         Text(recordLine(record), style = IntervalTheme.type.meta, color = palette.textDim)
     }
 }

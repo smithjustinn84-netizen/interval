@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import dev.justinsmith.bells.domain.BuiltInExercise
+import dev.justinsmith.bells.domain.EmomClock
 import dev.justinsmith.bells.domain.EmomCue
 import dev.justinsmith.bells.domain.EmomPhase
 import dev.justinsmith.bells.domain.EmomState
@@ -82,8 +83,11 @@ class EmomScreenTest {
         waitForText("Rest")
         assertEquals(1, app.storage.sessions.sets.value.size)
 
-        // Past the last minute the EMOM ends and the session shows what it logged.
+        // Past the last minute Done holds for a beat; then the EMOM ends and the session shows what it logged.
         app.clock.set(10_000 + 10 * 60_000L)
+        waitForText("Done")
+        onNodeWithText("Set done").assertIsNotEnabled()
+        app.clock.set(10_000 + 10 * 60_000L + EmomClock.DONE_HOLD_MILLIS)
         waitForText("Finish")
         onNodeWithText("16 kg × 10").assertExists()
         assertTrue(EmomCue.Start in app.beeper.cues)

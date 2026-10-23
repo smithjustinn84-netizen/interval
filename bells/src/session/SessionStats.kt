@@ -25,11 +25,16 @@ import dev.justinsmith.interval.ui.Spacing
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * A finished session's numbers: its time and reps, the weight moved, then the [records] it set, if any.
- * The summary shows them as a session ends, and its page in History afterwards.
+ * A finished session's numbers: its time and reps, the weight moved, then the [records] it set, if any,
+ * each tagged when [highlight]. The summary shows them as a session ends, and its page in History afterwards.
  */
 @Composable
-fun SessionStats(session: LiftSession, records: List<PersonalRecord>, modifier: Modifier = Modifier) {
+fun SessionStats(
+    session: LiftSession,
+    records: List<PersonalRecord>,
+    modifier: Modifier = Modifier,
+    highlight: Boolean = false,
+) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             StatTile(
@@ -49,7 +54,7 @@ fun SessionStats(session: LiftSession, records: List<PersonalRecord>, modifier: 
             ListCard {
                 records.forEachIndexed { i, record ->
                     if (i > 0) RowDivider()
-                    RecordRow(record)
+                    RecordRow(record, tagged = highlight)
                 }
             }
         }

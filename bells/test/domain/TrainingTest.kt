@@ -42,6 +42,29 @@ class TrainingTest {
     }
 
     @Test
+    fun `a set is a record when it beats one standing but a lift's first never is`() {
+        val before = listOf(set(BuiltInExercise.TwoHandSwing, 24.0, 10))
+        val sets = listOf(
+            set(BuiltInExercise.TwoHandSwing, 24.0, 8).copy(id = 1),
+            set(BuiltInExercise.TwoHandSwing, 28.0, 5).copy(id = 2),
+            set(BuiltInExercise.TwoHandSwing, 28.0, 6).copy(id = 3),
+            set(BuiltInExercise.Snatch, 16.0, 10).copy(id = 4),
+            set(BuiltInExercise.Snatch, 16.0, 12).copy(id = 5),
+        )
+        assertEquals(setOf(2L, 3L, 5L), recordSetIds(before, sets))
+    }
+
+    @Test
+    fun `a record set with two bells is judged against two-bell sets alone`() {
+        val before = listOf(set(BuiltInExercise.Press, 24.0, 5))
+        val sets = listOf(
+            set(BuiltInExercise.Press, 16.0, 5, double = true).copy(id = 1),
+            set(BuiltInExercise.Press, 20.0, 5, double = true).copy(id = 2),
+        )
+        assertEquals(setOf(2L), recordSetIds(before, sets))
+    }
+
+    @Test
     fun `a session's weight moved and reps add up its sets`() {
         val done = session(set(BuiltInExercise.TwoHandSwing, 24.0, 10), set(BuiltInExercise.GetUp, 20.0, 5))
         assertEquals(340.0, done.tonnageKg)

@@ -2,11 +2,14 @@
 
 package dev.justinsmith.bells.ui
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onAllNodesWithText
@@ -33,6 +36,9 @@ import dev.justinsmith.bells.programs.ProgramsRoute
 import dev.justinsmith.bells.session.SessionRoute
 import dev.justinsmith.bells.today.TodayRoute
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.LocalNotices
+import dev.justinsmith.interval.ui.NoticeHost
+import dev.justinsmith.interval.ui.rememberNotices
 import org.koin.compose.KoinIsolatedContext
 import org.koin.core.KoinApplication
 import java.util.concurrent.atomic.AtomicLong
@@ -103,51 +109,55 @@ private fun BellsHost(koin: KoinApplication, back: NavigationEventDispatcherOwne
     KoinIsolatedContext(context = koin) {
         val backStack: SnapshotStateList<Page> = remember { listOf(Page.Today).toMutableStateList() }
         val pop: () -> Unit = { backStack.removeLastOrNull() }
+        val notices = rememberNotices()
         IntervalTheme(darkTheme = true) {
-            CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides back) {
-                NavDisplay(
-                    backStack = backStack,
-                    onBack = { if (backStack.size > 1) pop() },
-                    entryDecorators = listOf(
-                        rememberSaveableStateHolderNavEntryDecorator(),
-                        rememberViewModelStoreNavEntryDecorator(),
-                    ),
-                    entryProvider = { page ->
-                        NavEntry(page) {
-                            when (page) {
-                                Page.Today -> TodayRoute(
-                                    onStartSession = { backStack.add(Page.Session) },
-                                    onChooseProgram = { backStack.add(Page.Programs) },
-                                    onOpenBells = { backStack.add(Page.Bells) },
-                                    onOpenExercises = { backStack.add(Page.Exercises) },
-                                )
+            CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides back, LocalNotices provides notices) {
+                Box {
+                    NavDisplay(
+                        backStack = backStack,
+                        onBack = { if (backStack.size > 1) pop() },
+                        entryDecorators = listOf(
+                            rememberSaveableStateHolderNavEntryDecorator(),
+                            rememberViewModelStoreNavEntryDecorator(),
+                        ),
+                        entryProvider = { page ->
+                            NavEntry(page) {
+                                when (page) {
+                                    Page.Today -> TodayRoute(
+                                        onStartSession = { backStack.add(Page.Session) },
+                                        onChooseProgram = { backStack.add(Page.Programs) },
+                                        onOpenBells = { backStack.add(Page.Bells) },
+                                        onOpenExercises = { backStack.add(Page.Exercises) },
+                                    )
 
-                                Page.Session -> SessionRoute(
-                                    onExit = pop,
-                                    onNewExercise = { backStack.add(Page.ExerciseEditor(null, it)) },
-                                )
+                                    Page.Session -> SessionRoute(
+                                        onExit = pop,
+                                        onNewExercise = { backStack.add(Page.ExerciseEditor(null, it)) },
+                                    )
 
-                                Page.Programs -> ProgramsRoute(
-                                    onNew = { backStack.add(Page.Editor(null)) },
-                                    onEdit = { backStack.add(Page.Editor(it)) },
-                                    onBack = pop,
-                                )
+                                    Page.Programs -> ProgramsRoute(
+                                        onNew = { backStack.add(Page.Editor(null)) },
+                                        onEdit = { backStack.add(Page.Editor(it)) },
+                                        onBack = pop,
+                                    )
 
-                                is Page.Editor -> ProgramEditorRoute(page.uid, onBack = pop)
+                                    is Page.Editor -> ProgramEditorRoute(page.uid, onBack = pop)
 
-                                Page.Bells -> GearRoute(onBack = pop)
+                                    Page.Bells -> GearRoute(onBack = pop)
 
-                                Page.Exercises -> ExerciseLibraryRoute(
-                                    onBack = pop,
-                                    onNew = { backStack.add(Page.ExerciseEditor(null, it)) },
-                                    onEdit = { backStack.add(Page.ExerciseEditor(it, "")) },
-                                )
+                                    Page.Exercises -> ExerciseLibraryRoute(
+                                        onBack = pop,
+                                        onNew = { backStack.add(Page.ExerciseEditor(null, it)) },
+                                        onEdit = { backStack.add(Page.ExerciseEditor(it, "")) },
+                                    )
 
-                                is Page.ExerciseEditor -> ExerciseEditorRoute(page.uid, page.name, onBack = pop)
+                                    is Page.ExerciseEditor -> ExerciseEditorRoute(page.uid, page.name, onBack = pop)
+                                }
                             }
-                        }
-                    },
-                )
+                        },
+                    )
+                    NoticeHost(notices, Modifier.align(Alignment.BottomCenter))
+                }
             }
         }
     }

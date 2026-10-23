@@ -2,7 +2,6 @@ package dev.justinsmith.bells.session
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -28,14 +27,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.min
+import dev.justinsmith.bells.domain.EmomClock
 import dev.justinsmith.bells.domain.EmomPhase
 import dev.justinsmith.bells.domain.EmomState
 import dev.justinsmith.bells.resources.Res
@@ -52,8 +48,10 @@ import dev.justinsmith.bells.ui.setLine
 import dev.justinsmith.interval.platform.KeepScreenOn
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.Corners
+import dev.justinsmith.interval.ui.CountdownClock
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
+import dev.justinsmith.interval.ui.ProgressRing
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
@@ -83,7 +81,11 @@ fun EmomScreen(
     }
     val color by animateColorAsState(phaseColor, tween(Motion.PHASE_CROSSFADE_MILLIS))
     val haptics = LocalHapticFeedback.current
-    LaunchedEffect(state.phase, state.minute) { haptics.performHapticFeedback(HapticFeedbackType.Confirm) }
+    LaunchedEffect(state.phase, state.minute) {
+        haptics.performHapticFeedback(
+            if (state.phase == EmomPhase.Done) HapticFeedbackType.LongPress else HapticFeedbackType.Confirm,
+        )
+    }
     KeepScreenOn()
     BoxWithConstraints(modifier.fillMaxSize().background(colors.ground), contentAlignment = Alignment.TopCenter) {
         if (isLandscape) {
@@ -113,10 +115,15 @@ private fun PortraitEmom(run: EmomRun, state: EmomState, color: Color, onFinishS
         }
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             val diameter = min(min(maxWidth, maxHeight), Sizes.ringMax)
-            Ring(state.minuteProgress, color, Modifier.size(diameter))
+            ProgressRing(
+                state.minuteProgress,
+                color,
+                Modifier.size(diameter),
+                glideMillis = Motion.EMOM_RING_GLIDE_MILLIS,
+            )
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 PhaseWord(state, color)
-                ClockText(state)
+                ClockText(state, color)
                 TaskText(run, state)
             }
         }
@@ -151,8 +158,13 @@ private fun LandscapeEmom(run: EmomRun, state: EmomState, color: Color, onFinish
         ) {
             BoxWithConstraints(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
                 Box(Modifier.size(minOf(maxWidth, maxHeight, Sizes.ringMax)), contentAlignment = Alignment.Center) {
-                    Ring(state.minuteProgress, color, Modifier.fillMaxSize())
-                    ClockText(state)
+                    ProgressRing(
+                        state.minuteProgress,
+                        color,
+                        Modifier.fillMaxSize(),
+                        glideMillis = Motion.EMOM_RING_GLIDE_MILLIS,
+                    )
+                    ClockText(state, color)
                 }
             }
             Column(
@@ -215,30 +227,6 @@ private fun StopPill(onStop: () -> Unit) {
     SecondaryButton(stringResource(Res.string.emom_stop), onStop, Modifier.widthIn(min = Sizes.pillWidth))
 }
 
-/** The minute going by, from 12 o'clock clockwise, over the control-coloured track. */
-@Composable
-private fun Ring(progress: Float, color: Color, modifier: Modifier = Modifier) {
-    val track = IntervalTheme.workout.control
-    Canvas(modifier) {
-        val stroke = Sizes.ring.toPx()
-        val inset = stroke / 2
-        val arcSize = Size(size.width - stroke, size.height - stroke)
-        drawArc(track, 0f, FULL_TURN, false, Offset(inset, inset), arcSize, style = Stroke(stroke))
-        drawArc(
-            color,
-            START_ANGLE,
-            FULL_TURN * progress.coerceIn(0f, 1f),
-            false,
-            Offset(inset, inset),
-            arcSize,
-            style = Stroke(stroke, cap = StrokeCap.Round),
-        )
-    }
-}
-
-private const val FULL_TURN = 360f
-private const val START_ANGLE = -90f
-
 /** The phase word, in the phase colour. */
 @Composable
 private fun PhaseWord(state: EmomState, color: Color) {
@@ -256,10 +244,16 @@ private fun PhaseWord(state: EmomState, color: Color) {
     )
 }
 
-/** What is left of the minute. */
+/** The seconds left in the minute (or the count-in), popping on its last three as the beeps go. */
 @Composable
-private fun ClockText(state: EmomState) {
-    Text(formatClock(state.secondsLeft), style = IntervalTheme.type.display, color = IntervalTheme.workout.onGround)
+private fun ClockText(state: EmomState, color: Color) {
+    CountdownClock(
+        formatClock(state.secondsLeft),
+        intervalKey = state.phase to state.minute,
+        countingDown = state.phase != EmomPhase.Done && state.secondsLeft in 1..EmomClock.COUNTDOWN,
+        accent = color,
+        style = IntervalTheme.type.display,
+    )
 }
 
 /** The set to do, or next while resting. */

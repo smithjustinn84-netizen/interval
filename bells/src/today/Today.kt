@@ -1,5 +1,7 @@
 package dev.justinsmith.bells.today
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -98,10 +100,12 @@ import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.StandardEasing
 import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.interval.ui.pressScale
 import kotlinx.coroutines.flow.SharingStarted
@@ -358,6 +362,12 @@ private fun DayMark(day: WeekDay) {
         stringResource(Res.string.weekday_counts, day.bells, day.interval)
     }
     val description = stringResource(Res.string.weekday_cd, day.date, counts)
+    // A day's dot takes its colour as the first workout lands, rather than switching.
+    val dot by animateColorAsState(
+        fill ?: palette.surfaceVariant,
+        tween(Motion.STATE_MILLIS, easing = StandardEasing),
+        label = "day",
+    )
     Column(
         Modifier.clearAndSetSemantics { contentDescription = description },
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -367,7 +377,7 @@ private fun DayMark(day: WeekDay) {
             Modifier
                 .size(Sizes.weekBarMark)
                 .clip(Corners.full)
-                .background(fill ?: palette.surfaceVariant)
+                .background(dot)
                 .then(if (day.today) Modifier.border(Sizes.border, palette.text, Corners.full) else Modifier),
         )
         Text(

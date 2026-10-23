@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.data.ExerciseFilterStore
+import dev.justinsmith.bells.data.IntervalActivity
 import dev.justinsmith.bells.domain.Band
 import dev.justinsmith.bells.domain.Block
 import dev.justinsmith.bells.domain.BlockKind
@@ -38,13 +39,17 @@ import dev.justinsmith.bells.domain.planChanges
 import dev.justinsmith.bells.domain.plannedDone
 import dev.justinsmith.bells.domain.progressions
 import dev.justinsmith.bells.domain.recentExercises
+import dev.justinsmith.bells.domain.recordSetIds
 import dev.justinsmith.bells.domain.standardBells
 import dev.justinsmith.bells.domain.suggestedBand
 import dev.justinsmith.bells.domain.suggestedBell
 import dev.justinsmith.bells.library.LibraryList
 import dev.justinsmith.bells.platform.Beeper
+import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.timer.formatClock
+import dev.justinsmith.interval.timer.weekStanding
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -109,6 +114,8 @@ data class SetDraft(
 data class Finished(
     val session: LiftSession,
     val records: List<PersonalRecord>,
+    /** Where the week stands with this session in it. */
+    val week: WeekStanding? = null,
     val changes: PlanChanges? = null,
     val taken: Set<String> = emptySet(),
     val kept: ProgramKey? = null,
@@ -193,6 +200,10 @@ data class SessionUiState(
     val finished: Finished? = null,
     /** A set logged, open on the Log sheet to change: the sheet's draft is it until saved or closed. */
     val editing: SetLog? = null,
+    /** The sets of this session that beat a record standing as they were logged: see [recordSetIds]. */
+    val recordSetIds: Set<Long> = emptySet(),
+    /** The last set logged, when it is one of them: the one to announce. */
+    val latestRecord: SetLog? = null,
     /** What the sheet's picker offers, the ones done lately first, and how it is narrowed. */
     val library: LibraryList = LibraryList(offeredExercises(emptyList())),
 )
@@ -207,9 +218,14 @@ class SessionViewModel(
     private val clock: WallClock,
     private val beeper: Beeper,
     private val filters: ExerciseFilterStore,
+    private val intervals: IntervalActivity,
+    private val timestamps: TimestampFormatter,
     tickMillis: Long = TICK_MILLIS,
 ) : ViewModel() {
     private val draft = MutableStateFlow(SetDraft())
+
+    /** Every set of the sessions before this one: what a set logged now has to beat to be a record. */
+    private val setsBefore = repository.sessions.value.flatMap { it.sets }
     private val finished = MutableStateFlow<Finished?>(null)
     private val emom = MutableStateFlow<EmomRun?>(null)
     private var lastCueMillis = 0L
@@ -257,6 +273,7 @@ class SessionViewModel(
             val hold = chosen.timing.run
             val plan = active?.takeIf { it.program != null && it.program == day?.program?.key }
                 ?.let { day?.copy(plan = it.plan) }
+            val records = recordSetIds(setsBefore, active?.sets.orEmpty())
             SessionUiState(
                 session = active,
                 elapsed = formatClock(active?.elapsedSeconds(now) ?: 0),
@@ -279,6 +296,8 @@ class SessionViewModel(
                     ?.side,
                 finished = chosen.finished,
                 editing = chosen.editing,
+                recordSetIds = records,
+                latestRecord = active?.sets?.lastOrNull()?.takeIf { it.id in records },
                 library = LibraryList(
                     chosen.exercises,
                     recentExercises(
@@ -525,7 +544,14 @@ class SessionViewModel(
             ?.copy(plan = session.plan)
             ?.let { day -> planChanges(day, progressions(day, session.sets, bells, bands)) }
         val taken = repository.customPrograms.value.mapNotNull { it.name }.toSet()
-        finished.value = Finished(done, newRecords(before, done), changes, taken, bands = repository.bands.value)
+        finished.value = Finished(
+            done,
+            newRecords(before, done),
+            weekWithThis(),
+            changes,
+            taken,
+            bands = repository.bands.value,
+        )
         repository.finishSession(title)
     }
 
@@ -560,6 +586,15 @@ class SessionViewModel(
         emom.value = EmomRun(exercise, bellKg, reps, minutes, firstSide, now, double = double, band = band)
     }
 
+    /** The week as it stands with this session in it, the interval workouts counted too, as Lift's week card counts. */
+    private fun weekWithThis(): WeekStanding {
+        val today = timestamps.dayNumber(clock.nowMillis())
+        val days = repository.sessions.value.mapNotNull { it.finishedAtEpochMillis }.map(timestamps::dayNumber) +
+            intervals.workouts.value.map { timestamps.dayNumber(it.finishedAtEpochMillis) } +
+            today
+        return weekStanding(days, today, intervals.weeklyGoal.value)
+    }
+
     private fun playCues(now: Long) {
         holds.tick(now)
         val run = emom.value ?: return
@@ -567,7 +602,7 @@ class SessionViewModel(
         val elapsed = now - run.startedAtMillis
         clockOfRun.cuesBetween(lastCueMillis, elapsed).lastOrNull()?.let(beeper::beep)
         lastCueMillis = elapsed
-        if (clockOfRun.at(elapsed, run.done).phase == EmomPhase.Done) emom.value = null
+        if (clockOfRun.isOver(elapsed)) emom.value = null
     }
 
     private fun upNext(day: ProgramDay, logged: List<SetLog>): UpNext? {

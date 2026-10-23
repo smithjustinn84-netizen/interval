@@ -270,6 +270,20 @@
     <string name="summary_reps">Reps</string>
     <string name="summary_records">New records</string>
     <string name="summary_shared">Counts toward your week and your goal</string>
+    <!-- Where the week stands with this session in: "3 of 4 this week", or the count with no goal set -->
+    <string name="summary_week_of_goal">%1$d of %2$d this week</string>
+    <plurals name="summary_week_count">
+        <item quantity="one">%1$d workout this week</item>
+        <item quantity="other">%1$d workouts this week</item>
+    </plurals>
+    <plurals name="summary_streak">
+        <item quantity="one">%1$d-week streak</item>
+        <item quantity="other">%1$d-week streak</item>
+    </plurals>
+    <!-- The tag on a set, or a record on the summary, that beat a record standing -->
+    <string name="record_tag">Record</string>
+    <!-- The notice as such a set is logged: "New record · 24 kg × 10" -->
+    <string name="notice_record">New record · %1$s</string>
 
     <!-- On the summary of a program day changed in the session -->
     <string name="changes_title">Keep today's changes?</string>
@@ -530,4 +544,12 @@
     <string name="emom_stop">Stop</string>
     <string name="emom_next">Next: %1$s</string>
     <string name="emom_free">EMOM</string>
+
+    <!-- Notices: a line at the foot of the screen after something is saved or followed -->
+    <!-- "Saved Pistol squat" -->
+    <string name="notice_exercise_saved">Saved %1$s</string>
+    <!-- "Saved Easy Strength (yours)" -->
+    <string name="notice_program_saved">Saved %1$s</string>
+    <string name="notice_program_followed">Following %1$s</string>
+    <string name="notice_program_stopped">Stopped following %1$s</string>
 </resources>
