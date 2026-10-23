@@ -18,6 +18,7 @@ enum class Window(val width: Int, val height: Int) {
     Phone(width = 411, height = 891),
     PhoneSideways(width = 891, height = 411),
     Tablet(width = 1280, height = 800),
+    TabletPortrait(width = 800, height = 1280),
 }
 
 /** Runs [block] in a desktop window of [window]'s size. */

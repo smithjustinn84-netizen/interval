@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -20,10 +21,12 @@ import dev.justinsmith.interval.fakes.tabataPreset
 import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
+import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 private val tabata = tabataPreset
 private val hiit = hiitPreset
@@ -63,6 +66,7 @@ private val oneWorkout = HistoryUiState(
 
 private val empty = HistoryUiState(sections = emptyList(), week = restWeek)
 
+@Suppress("detekt.TooManyFunctions") // One behaviour per test, side by side.
 class HistoryScreenTest {
     private val events = mutableListOf<String>()
 
@@ -86,6 +90,30 @@ class HistoryScreenTest {
         onNodeWithText("Week").assertExists()
         onNodeWithText("Tabata").performClick()
         assertEquals(listOf("open 7"), events)
+    }
+
+    @Test
+    fun `the row open beside the log says it is selected`() = runUiTest(Window.Tablet) {
+        setThemedContent { HistoryScreen(oneWorkout, actions, selectedWorkout = 7) }
+        onNode(hasText("Tabata") and hasClickAction()).assertIsSelected()
+    }
+
+    @Test
+    fun `an upright tablet keeps the summary beside the log`() = runUiTest(Window.TabletPortrait) {
+        setThemedContent { HistoryScreen(oneWorkout, actions) }
+        val summary = onNodeWithText("Week").fetchSemanticsNode().boundsInRoot
+        val time = onNodeWithText("Time").fetchSemanticsNode().boundsInRoot
+        val day = onNodeWithText("Today").fetchSemanticsNode().boundsInRoot
+        assertTrue(summary.right <= day.left, "the log is beside the summary: $summary vs $day")
+        assertTrue(day.top < time.top, "and starts level with it, not under it: $time vs $day")
+    }
+
+    @Test
+    fun `a phone keeps the summary over the log`() = runUiTest {
+        setThemedContent { HistoryScreen(oneWorkout, actions) }
+        val summary = onNodeWithText("Week").fetchSemanticsNode().boundsInRoot
+        val day = onNodeWithText("Today").fetchSemanticsNode().boundsInRoot
+        assertTrue(day.top > summary.bottom, "the log is under the summary: $summary vs $day")
     }
 
     @Test

@@ -25,6 +25,7 @@ import dev.justinsmith.bells.domain.newRecords
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.common_cancel
 import dev.justinsmith.bells.resources.common_joined
+import dev.justinsmith.bells.resources.history_close_cd
 import dev.justinsmith.bells.resources.history_delete
 import dev.justinsmith.bells.resources.history_delete_text
 import dev.justinsmith.bells.resources.history_delete_title
@@ -35,6 +36,8 @@ import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.GroupLabel
+import dev.justinsmith.interval.ui.IconAction
+import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.RowDivider
@@ -87,18 +90,19 @@ class LiftDetailViewModel(
     }
 }
 
+/** Resolves a finished session's ViewModel and binds it to [LiftDetailScreen]; [inPane] beside History's log. */
 @Composable
-fun LiftDetailRoute(uid: String, onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun LiftDetailRoute(uid: String, onBack: () -> Unit, modifier: Modifier = Modifier, inPane: Boolean = false) {
     val scope = currentKoinScope()
     val viewModel = viewModel(key = uid) { LiftDetailViewModel(uid, scope.get(), scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
-    LiftDetailScreen(state, onDelete = viewModel::delete, onBack = onBack, modifier = modifier)
+    LiftDetailScreen(state, onDelete = viewModel::delete, onBack = onBack, modifier = modifier, inPane = inPane)
 }
 
 /**
  * A finished session's page: its title and when, its numbers and records, every set by lift, and Delete
  * (after asking). On a wider window the lifts sit side by side. Once the session is gone, deleted from here
- * or elsewhere, the page goes back.
+ * or elsewhere, the page goes back. Beside History's log ([inPane]) it closes rather than going back.
  */
 @Composable
 fun LiftDetailScreen(
@@ -106,6 +110,7 @@ fun LiftDetailScreen(
     onDelete: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    inPane: Boolean = false,
 ) {
     val session = state.session
     val back by rememberUpdatedState(onBack)
@@ -115,7 +120,14 @@ fun LiftDetailScreen(
     var confirming by rememberSaveable { mutableStateOf(false) }
     val gutter = Modifier.padding(horizontal = Spacing.space16)
     // One column on a phone; wider windows lay the lifts out side by side under the numbers.
-    TabGrid(session.title, modifier, navigation = { BackAction(onBack) }) {
+    TabGrid(
+        session.title,
+        modifier,
+        navigation = { if (!inPane) BackAction(onBack) },
+        actions = {
+            if (inPane) IconAction(IntervalIcons.Close, stringResource(Res.string.history_close_cd), onBack)
+        },
+    ) {
         item(key = "numbers", span = StaggeredGridItemSpan.FullLine) {
             Column(gutter) {
                 Text(

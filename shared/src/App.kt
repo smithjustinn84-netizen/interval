@@ -18,7 +18,10 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
+import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
+import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
 import androidx.compose.material3.adaptive.navigation3.SupportingPaneSceneStrategy
+import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
 import androidx.compose.material3.adaptive.navigation3.rememberSupportingPaneSceneStrategy
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
@@ -58,6 +61,7 @@ import dev.justinsmith.interval.about.LicensesRoute
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.data.ThemeMode
 import dev.justinsmith.interval.di.rememberAppKoin
+import dev.justinsmith.interval.history.HistoryPlaceholder
 import dev.justinsmith.interval.history.HistoryRoute
 import dev.justinsmith.interval.history.WorkoutDetailRoute
 import dev.justinsmith.interval.home.TimerRoute
@@ -182,8 +186,9 @@ internal fun AppContent(koin: KoinApplication, introPlaying: Boolean = false) {
 /**
  * One back stack: the Timer tab at the root, at most one other tab above it, then whatever was
  * pushed (Settings, Presets, Workout, a session). Back from Lift or History returns to Timer, as both
- * platforms expect. The navigation bar or rail shows only while a tab is on top, or while Settings sits beside
- * Timer: windows of Material's expanded width and up open Settings as a supporting pane.
+ * platforms expect. The navigation bar or rail shows only while a tab is on top, or while a page sits beside
+ * its tab: windows of Material's expanded width and up open Settings as a supporting pane beside Timer, and
+ * a finished workout or session beside History's log, a pane waiting for one until it is picked.
  */
 @Composable
 private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
@@ -193,8 +198,19 @@ private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
     val directive = calculatePaneScaffoldDirective(currentWindowAdaptiveInfoV2())
         .copy(maxVerticalPartitions = 1, verticalPartitionSpacerSize = 0.dp)
     val supportingPane = rememberSupportingPaneSceneStrategy<NavKey>(directive = directive)
+    // The placeholder beside History counts as a pane, so the default behaviour would pop History along with
+    // the workout beside it, landing on the Timer.
+    val listDetail = rememberListDetailSceneStrategy<NavKey>(
+        backNavigationBehavior = BackNavigationBehavior.PopLatest,
+        directive = directive,
+    )
     val twoPane = directive.maxHorizontalPartitions > 1
-    val currentTab = top as? Tab ?: TimerTab.takeIf { twoPane && top == Settings }
+    val currentTab = top as? Tab ?: when {
+        !twoPane -> null
+        top == Settings -> TimerTab
+        top.opensBesideHistory -> HistoryTab
+        else -> null
+    }
     val selectTab = { tab: Tab -> backStack.selectTab(tab) }
     val palette = IntervalTheme.palette
     BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -240,7 +256,7 @@ private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
                         rememberViewModelStoreNavEntryDecorator(),
                         if (materialBackPreview) backPreviewCorners() else null,
                     ),
-                    sceneStrategies = listOf(supportingPane),
+                    sceneStrategies = listOf(supportingPane, listDetail),
                     transitionSpec = pageTransition(),
                     popTransitionSpec = pagePopTransition(),
                     predictivePopTransitionSpec = if (materialBackPreview) {
@@ -289,11 +305,19 @@ private fun appEntries(
             onStartWorkout = { backStack.push(Workout) },
         )
     }
-    liftEntries(backStack)
-    entry<HistoryTab>(metadata = pageKind(PageKind.Tab)) {
+    liftEntries(backStack, twoPane)
+    entry<HistoryTab>(
+        metadata = ListDetailSceneStrategy.listPane(HISTORY_SCENE, detailPlaceholder = { HistoryPlaceholder() }) +
+            ListDetailSceneStrategy.preferredPaneSize(width = Sizes.listPane) +
+            pageKind(PageKind.Tab),
+    ) {
+        // Beside the log, the row whose workout is open shows it.
+        val open = backStack.lastOrNull().takeIf { twoPane }
         HistoryRoute(
-            onOpenWorkout = { backStack.push(WorkoutDetail(it)) },
-            onOpenLift = { backStack.push(LiftDetail(it)) },
+            selectedWorkout = (open as? WorkoutDetail)?.id,
+            selectedLift = (open as? LiftDetail)?.uid,
+            onOpenWorkout = { backStack.openDetail(WorkoutDetail(it)) },
+            onOpenLift = { backStack.openDetail(LiftDetail(it, fromHistory = true)) },
             onPlan = { backStack.push(Plan) },
             onStartWorkout = { backStack.push(Workout) },
             onShowTimer = { selectTab(TimerTab) },
@@ -307,11 +331,12 @@ private fun appEntries(
             inPane = twoPane,
         )
     }
-    entry<WorkoutDetail> { key ->
+    entry<WorkoutDetail>(metadata = ListDetailSceneStrategy.detailPane(HISTORY_SCENE)) { key ->
         WorkoutDetailRoute(
             id = key.id,
             onBack = { backStack.removeLastOrNull() },
             onStartWorkout = { backStack.push(Workout) },
+            inPane = twoPane,
         )
     }
     entry<Plan> { PlanRoute(onBack = { backStack.removeLastOrNull() }) }
@@ -325,8 +350,11 @@ private fun appEntries(
     entry<Licenses> { LicensesRoute(onBack = { backStack.removeLastOrNull() }) }
 }
 
-/** Lift's screens: the tab, a session, programs, bells, the exercise library and a finished session. */
-private fun EntryProviderScope<NavKey>.liftEntries(backStack: NavBackStack<NavKey>) {
+/**
+ * Lift's screens: the tab, a session, programs, bells, the exercise library and a finished session. A session
+ * opened from History goes beside its log when [twoPane]; from Lift it is a page of its own, as Lift has no list.
+ */
+private fun EntryProviderScope<NavKey>.liftEntries(backStack: NavBackStack<NavKey>, twoPane: Boolean) {
     entry<LiftTab>(metadata = pageKind(PageKind.Tab)) {
         TodayRoute(
             onStartSession = { backStack.push(Lifting) },
@@ -361,7 +389,15 @@ private fun EntryProviderScope<NavKey>.liftEntries(backStack: NavBackStack<NavKe
     entry<ExerciseEditor> { key ->
         ExerciseEditorRoute(key.uid, key.name, onBack = { backStack.removeLastOrNull() })
     }
-    entry<LiftDetail> { key -> LiftDetailRoute(uid = key.uid, onBack = { backStack.removeLastOrNull() }) }
+    entry<LiftDetail>(
+        metadata = { if (it.fromHistory) ListDetailSceneStrategy.detailPane(HISTORY_SCENE) else emptyMap() },
+    ) { key ->
+        LiftDetailRoute(
+            uid = key.uid,
+            onBack = { backStack.removeLastOrNull() },
+            inPane = twoPane && key.fromHistory,
+        )
+    }
 }
 
 /**
@@ -382,6 +418,23 @@ private fun Modifier.hairlineAtBottom(color: Color): Modifier = drawWithContent 
 /** Pushes [key] unless it is on top already: a double tap on Start must not stack two workouts. */
 private fun NavBackStack<NavKey>.push(key: NavKey) {
     if (lastOrNull() != key) add(key)
+}
+
+/** The scene History's log and the workout beside it share, apart from Settings beside the Timer. */
+private const val HISTORY_SCENE = "history"
+
+/** A finished workout or session opened from History: on a wide window it sits beside the log. */
+private val NavKey?.opensBesideHistory: Boolean
+    get() = this is WorkoutDetail || (this is LiftDetail && fromHistory)
+
+/**
+ * Opens [key] beside History's log, in place of whatever was open there, so Back closes it rather than walking
+ * through every workout looked at. On a phone nothing is open over History when a row is tapped.
+ */
+private fun NavBackStack<NavKey>.openDetail(key: NavKey) {
+    if (lastOrNull() == key) return
+    while (lastOrNull().opensBesideHistory) removeLastOrNull()
+    add(key)
 }
 
 /** Shows [tab]: Timer is the root, so it pops back to it; any other tab replaces what is above Timer. */

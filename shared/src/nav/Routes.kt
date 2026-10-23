@@ -82,6 +82,9 @@ data object ExerciseLibrary : NavKey
 @Serializable
 data class ExerciseEditor(val uid: String? = null, val name: String = "") : NavKey
 
-/** One finished kettlebell session, by its uid: its sets and records, and Delete. Pushed from History. */
+/**
+ * One finished kettlebell session, by its uid: its sets and records, and Delete. Pushed from History, where
+ * [fromHistory] opens it beside the log on a wide window, or from Lift, where it is always a page of its own.
+ */
 @Serializable
-data class LiftDetail(val uid: String) : NavKey
+data class LiftDetail(val uid: String, val fromHistory: Boolean = false) : NavKey

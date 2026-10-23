@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -139,8 +140,14 @@ private fun GoalRow(state: HistoryUiState, onSetGoal: () -> Unit) {
     val palette = IntervalTheme.palette
     val goal = state.goal
     if (goal == null) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
+        // The way to a goal goes under the count where the two don't fit side by side (a narrow column),
+        // rather than squeezing it.
+        FlowRow(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+        ) {
+            Column(Modifier.padding(end = Spacing.space16)) {
                 Text(
                     stringResource(Res.string.history_this_week),
                     style = IntervalTheme.type.caption,
@@ -152,7 +159,11 @@ private fun GoalRow(state: HistoryUiState, onSetGoal: () -> Unit) {
                     color = palette.text,
                 )
             }
-            ChipButton(stringResource(Res.string.history_goal_set), onSetGoal)
+            ChipButton(
+                stringResource(Res.string.history_goal_set),
+                onSetGoal,
+                Modifier.align(Alignment.CenterVertically),
+            )
         }
         return
     }

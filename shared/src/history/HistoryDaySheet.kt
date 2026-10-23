@@ -86,7 +86,7 @@ internal fun DaySheetContent(sheet: DaySheet, actions: HistoryActions, onAddWork
                 ListCard {
                     sheet.workouts.forEachIndexed { index, item ->
                         if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
-                        HistoryRow(item, actions.onOpenWorkout, actions.onOpenLift)
+                        HistoryRow(item, actions.onOpenWorkout, onOpenLift = actions.onOpenLift)
                     }
                 }
             }

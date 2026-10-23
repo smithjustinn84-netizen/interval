@@ -59,6 +59,12 @@ object Sizes {
     /** Maximum width of the Presets and History grids: two columns at most, so rows stay readable. */
     val listMax = 960.dp
 
+    /**
+     * Width of a list beside its detail on a wide window (History beside a workout): a phone's, so the list
+     * lays out as it does on a phone.
+     */
+    val listPane = 412.dp
+
     /** Narrowest window that gets a navigation rail instead of a bottom bar, as Material's medium width. */
     val railMinWidth = 600.dp
 

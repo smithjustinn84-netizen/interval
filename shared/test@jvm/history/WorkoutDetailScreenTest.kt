@@ -42,7 +42,7 @@ class WorkoutDetailScreenTest {
     private val events = mutableListOf<String>()
 
     @Composable
-    private fun Screen(state: WorkoutDetailUiState) {
+    private fun Screen(state: WorkoutDetailUiState, inPane: Boolean = false) {
         WorkoutDetailScreen(
             state = state,
             onBack = { events += "back" },
@@ -50,7 +50,16 @@ class WorkoutDetailScreenTest {
             onDelete = { events += "delete" },
             onPlanWeekly = { preset, days -> events += "weekly ${preset.name} ${days.sorted()}" },
             onPlanOnce = { preset, day -> events += "once ${preset.name} $day" },
+            inPane = inPane,
         )
+    }
+
+    @Test
+    fun `beside the log it closes rather than going back`() = runUiTest {
+        setThemedContent { Screen(state, inPane = true) }
+        onNodeWithContentDescription("Back").assertDoesNotExist()
+        onNodeWithContentDescription("Close workout").performClick()
+        assertEquals(listOf("back"), events)
     }
 
     @Test

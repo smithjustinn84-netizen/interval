@@ -5,9 +5,11 @@ package dev.justinsmith.interval
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -175,6 +177,59 @@ class AppNavigationTest {
 
         onNodeWithContentDescription("Close settings").performClick()
         onNodeWithText("Cues").assertDoesNotExist()
+    }
+
+    @Test
+    fun `on a tablet a finished workout opens beside History and closing it leaves the prompt`() =
+        appTest(Window.Tablet) { koin ->
+            koin.koin.get<IntervalRepository>().recordWorkout(builtInPresets.first().config, elapsedSeconds = 240)
+            tab("History").performClick()
+            onNodeWithText("Pick a workout").assertExists()
+
+            onNode(hasText("Tabata") and hasClickAction()).performClick()
+            onNodeWithText("Repeat now").assertExists()
+            onNodeWithText("Week").assertExists()
+            onNodeWithText("Pick a workout").assertDoesNotExist()
+            tab("History").assertIsSelected()
+            onNode(hasText("Tabata") and hasClickAction()).assertIsSelected()
+            onNodeWithContentDescription("Back").assertDoesNotExist()
+
+            onNodeWithContentDescription("Close workout").performClick()
+            onNodeWithText("Pick a workout").assertExists()
+            onNodeWithText("Week").assertExists()
+        }
+
+    @Test
+    fun `on a tablet another workout takes the open one's place`() = appTest(Window.Tablet) { koin ->
+        val (tabata, hiit) = builtInPresets
+        val repository = koin.koin.get<IntervalRepository>()
+        repository.recordWorkout(tabata.config, elapsedSeconds = 240)
+        repository.recordWorkout(hiit.config, elapsedSeconds = 600)
+        tab("History").performClick()
+        onNode(hasText(tabata.name) and hasClickAction()).performClick()
+        onNode(hasText(hiit.name) and hasClickAction()).performClick()
+        // The row, and the page beside it: the Tabata page has gone.
+        onAllNodesWithText(hiit.name).assertCountEquals(2)
+        onAllNodesWithText(tabata.name).assertCountEquals(1)
+
+        // One close, and History waits for a pick again rather than showing Tabata.
+        onNodeWithContentDescription("Close workout").performClick()
+        onNodeWithText("Pick a workout").assertExists()
+        onAllNodesWithText(tabata.name).assertCountEquals(1)
+    }
+
+    @Test
+    fun `on a tablet deleting the workout beside History leaves the prompt`() = appTest(Window.Tablet) { koin ->
+        koin.koin.get<IntervalRepository>().recordWorkout(builtInPresets.first().config, elapsedSeconds = 240)
+        tab("History").performClick()
+        onNode(hasText("Tabata") and hasClickAction()).performClick()
+        // History's own menu, then the workout's beside it.
+        onAllNodesWithContentDescription("More options").onLast().performClick()
+        onNodeWithText("Delete workout").performClick()
+        onNodeWithText("Delete").performClick()
+        onNodeWithText("Train to a plan").assertExists()
+        onNodeWithText("Pick a workout").assertExists()
+        tab("History").assertIsSelected()
     }
 
     @Test

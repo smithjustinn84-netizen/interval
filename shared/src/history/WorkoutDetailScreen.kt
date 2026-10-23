@@ -26,6 +26,7 @@ import dev.justinsmith.interval.plan.AddToPlanSheet
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.common_cancel
 import dev.justinsmith.interval.resources.common_joined
+import dev.justinsmith.interval.resources.detail_close_cd
 import dev.justinsmith.interval.resources.detail_delete_confirm
 import dev.justinsmith.interval.resources.detail_delete_menu
 import dev.justinsmith.interval.resources.detail_delete_text
@@ -64,9 +65,16 @@ import org.koin.compose.currentKoinScope
 /**
  * Resolves the page's ViewModel for the workout stored under [id] and binds it to [WorkoutDetailScreen].
  * Repeating puts it on the Timer, then [onStartWorkout]; once it is gone, deleted here or cleared, [onBack].
+ * [inPane] when it sits beside History's log.
  */
 @Composable
-fun WorkoutDetailRoute(id: Long, onBack: () -> Unit, onStartWorkout: () -> Unit, modifier: Modifier = Modifier) {
+fun WorkoutDetailRoute(
+    id: Long,
+    onBack: () -> Unit,
+    onStartWorkout: () -> Unit,
+    modifier: Modifier = Modifier,
+    inPane: Boolean = false,
+) {
     val scope = currentKoinScope()
     val viewModel = viewModel(key = "workout-$id") { WorkoutDetailViewModel(id, scope.get(), scope.get(), scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -91,12 +99,14 @@ fun WorkoutDetailRoute(id: Long, onBack: () -> Unit, onStartWorkout: () -> Unit,
         onPlanWeekly = viewModel::planWeekly,
         onPlanOnce = viewModel::planOnce,
         modifier = modifier,
+        inPane = inPane,
     )
 }
 
 /**
  * One finished workout: when it was, its shape and timeline, its figures, and the ways to repeat it now,
- * plan it again, or (from the overflow, behind a confirmation) delete it.
+ * plan it again, or (from the overflow, behind a confirmation) delete it. Beside History's log ([inPane]) it
+ * closes rather than going back, as Settings does beside the Timer.
  */
 @Composable
 fun WorkoutDetailScreen(
@@ -107,6 +117,7 @@ fun WorkoutDetailScreen(
     onPlanWeekly: (Preset, Set<Int>) -> Unit,
     onPlanOnce: (Preset, Long) -> Unit,
     modifier: Modifier = Modifier,
+    inPane: Boolean = false,
 ) {
     val workout = state.workout ?: return
     var menu by remember { mutableStateOf(false) }
@@ -116,8 +127,9 @@ fun WorkoutDetailScreen(
     ScrollPage(
         title,
         modifier,
-        navigation = { BackAction(onBack) },
+        navigation = { if (!inPane) BackAction(onBack) },
         actions = {
+            if (inPane) IconAction(IntervalIcons.Close, stringResource(Res.string.detail_close_cd), onBack)
             IntervalMenu(
                 expanded = menu,
                 onExpandedChange = { menu = it },

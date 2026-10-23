@@ -2,17 +2,30 @@ package dev.justinsmith.interval.history
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.intl.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -40,10 +54,8 @@ import dev.justinsmith.interval.plan.AddToPlanSheet
 import dev.justinsmith.interval.plan.DayChoice
 import dev.justinsmith.interval.plan.PlanRepeat
 import dev.justinsmith.interval.resources.Res
-import dev.justinsmith.interval.resources.activity_kettlebell
 import dev.justinsmith.interval.resources.common_cancel
 import dev.justinsmith.interval.resources.common_joined
-import dev.justinsmith.interval.resources.history_calories_value
 import dev.justinsmith.interval.resources.history_clear_confirm
 import dev.justinsmith.interval.resources.history_clear_menu
 import dev.justinsmith.interval.resources.history_clear_text
@@ -53,11 +65,9 @@ import dev.justinsmith.interval.resources.history_empty
 import dev.justinsmith.interval.resources.history_empty_plan
 import dev.justinsmith.interval.resources.history_empty_start
 import dev.justinsmith.interval.resources.history_empty_title
-import dev.justinsmith.interval.resources.history_ended_early
 import dev.justinsmith.interval.resources.history_more_options_cd
 import dev.justinsmith.interval.resources.history_most_done
 import dev.justinsmith.interval.resources.history_plan_cd
-import dev.justinsmith.interval.resources.history_planned
 import dev.justinsmith.interval.resources.history_resume
 import dev.justinsmith.interval.resources.history_start
 import dev.justinsmith.interval.resources.history_then
@@ -89,10 +99,12 @@ import dev.justinsmith.interval.ui.NoticeAction
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SecondaryButton
+import dev.justinsmith.interval.ui.SetupLanes
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StripeMark
 import dev.justinsmith.interval.ui.TabGrid
+import dev.justinsmith.interval.ui.TitleBar
 import dev.justinsmith.interval.ui.WeekdayForm
 import dev.justinsmith.interval.ui.fadeThroughContent
 import dev.justinsmith.interval.ui.joined
@@ -107,6 +119,7 @@ import org.koin.compose.currentKoinScope
  * Resolves the tab's ViewModel and binds it to [HistoryScreen]. Starting a workout puts it on the Timer,
  * then [onStartWorkout]; [onOpenWorkout] opens one finished workout, [onOpenLift] one kettlebell session,
  * [onPlan] the plan, [onShowTimer] the Timer tab. Starting the lift program's day opens [onStartSession].
+ * [selectedWorkout] or [selectedLift] is the one open beside the log, on a wide window.
  */
 @Composable
 fun HistoryRoute(
@@ -117,6 +130,8 @@ fun HistoryRoute(
     onShowTimer: () -> Unit,
     onStartSession: () -> Unit,
     modifier: Modifier = Modifier,
+    selectedWorkout: Long? = null,
+    selectedLift: String? = null,
 ) {
     val scope = currentKoinScope()
     val viewModel = viewModel { HistoryViewModel(scope.get(), scope.get(), scope.get(), scope.get()) }
@@ -170,7 +185,7 @@ fun HistoryRoute(
             },
         )
     }
-    HistoryScreen(state = state, actions = actions, modifier = modifier)
+    HistoryScreen(state, actions, modifier, selectedWorkout, selectedLift)
 }
 
 /** What the History tab's controls do. Each defaults to nothing, so a preview or test sets only its own. */
@@ -199,54 +214,62 @@ class HistoryActions(
 /**
  * The training log. A range picker leads to this week (goal, streak and a block per day), a month's
  * calendar, or all time; under it, what is planned next and every finished workout by day. A day opens
- * a sheet of its plans and workouts. Clearing lives in the overflow menu, behind a confirmation.
+ * a sheet of its plans and workouts. Clearing lives in the overflow menu, behind a confirmation. The row of
+ * [selectedWorkout] or [selectedLift] shows it is the one open beside the log.
+ *
+ * One column on a phone. With the width for two columns (an upright tablet), the summary keeps a column of
+ * its own beside the log, each scrolling by itself, rather than stretching across both over a log that
+ * zig-zags between them.
  */
 @Composable
-fun HistoryScreen(state: HistoryUiState, actions: HistoryActions, modifier: Modifier = Modifier) {
+fun HistoryScreen(
+    state: HistoryUiState,
+    actions: HistoryActions,
+    modifier: Modifier = Modifier,
+    selectedWorkout: Long? = null,
+    selectedLift: String? = null,
+) {
     var menu by remember { mutableStateOf(false) }
     var confirming by rememberSaveable { mutableStateOf(false) }
     // The day the day sheet's Add workout is planning on, while its add sheet is open.
     var addingOn by rememberSaveable { mutableStateOf<Long?>(null) }
-    val gutter = Modifier.padding(horizontal = Spacing.space16)
-    // One column on a phone; wider windows lay the days out side by side.
-    TabGrid(
-        stringResource(Res.string.history_title),
-        modifier,
-        actions = {
-            IconAction(IntervalIcons.Plan, stringResource(Res.string.history_plan_cd), actions.onPlan)
-            IntervalMenu(
-                expanded = menu,
-                onExpandedChange = { menu = it },
-                items = {
-                    IntervalMenuItem(stringResource(Res.string.history_clear_menu), onClick = { confirming = true })
-                },
-            ) {
-                IconAction(
-                    IntervalIcons.More,
-                    stringResource(Res.string.history_more_options_cd),
-                    onClick = { menu = true },
-                    enabled = state.sections.isNotEmpty(),
-                )
-            }
-        },
-    ) {
-        if (state.isEmpty) {
-            item(key = "empty", span = StaggeredGridItemSpan.FullLine) {
-                FirstRun(actions, Modifier.animateItem().then(gutter))
-            }
-        } else {
-            summaryItems(state, actions, gutter)
+    val title = stringResource(Res.string.history_title)
+    val titleActions: @Composable RowScope.() -> Unit = {
+        IconAction(IntervalIcons.Plan, stringResource(Res.string.history_plan_cd), actions.onPlan)
+        IntervalMenu(
+            expanded = menu,
+            onExpandedChange = { menu = it },
+            items = {
+                IntervalMenuItem(stringResource(Res.string.history_clear_menu), onClick = { confirming = true })
+            },
+        ) {
+            IconAction(
+                IntervalIcons.More,
+                stringResource(Res.string.history_more_options_cd),
+                onClick = { menu = true },
+                enabled = state.sections.isNotEmpty(),
+            )
         }
-        state.sections.forEach { section ->
-            // A day is one cell, its label with its card, so a column never splits a day.
-            item(key = section.dayNumber) {
-                Column(Modifier.animateItem().then(gutter)) {
-                    GroupLabel(dayHeading(section.day))
-                    ListCard {
-                        section.items.forEachIndexed { index, item ->
-                            if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
-                            HistoryRow(item, actions.onOpenWorkout, actions.onOpenLift)
-                        }
+    }
+    val selected = { item: HistoryItem ->
+        (item.id != null && item.id == selectedWorkout) || (item.liftUid != null && item.liftUid == selectedLift)
+    }
+    BoxWithConstraints(modifier.fillMaxSize()) {
+        if (maxWidth >= Sizes.listColumn * 2 && state.sections.isNotEmpty()) {
+            SummaryBesideLog(title, titleActions, state, actions, selected)
+        } else {
+            TabGrid(title, actions = titleActions) {
+                if (state.isEmpty) {
+                    item(key = "empty", span = StaggeredGridItemSpan.FullLine) {
+                        FirstRun(actions, Modifier.animateItem().then(Gutter))
+                    }
+                } else {
+                    summaryItems(state, actions)
+                }
+                state.sections.forEach { section ->
+                    // A day is one cell, its label with its card, so a column never splits a day.
+                    item(key = section.dayNumber) {
+                        DaySection(section, actions, selected, Modifier.animateItem().then(Gutter))
                     }
                 }
             }
@@ -280,45 +303,103 @@ fun HistoryScreen(state: HistoryUiState, actions: HistoryActions, modifier: Modi
     }
 }
 
+/** The page's side margins. */
+private val Gutter = Modifier.padding(horizontal = Spacing.space16)
+
+/**
+ * The tab laid out in two: the title across the top, and under it the range and its summary in a column of
+ * their own beside the log, a day after another down one column, newest first. Each scrolls by itself.
+ */
+@Composable
+private fun SummaryBesideLog(
+    title: String,
+    titleActions: @Composable RowScope.() -> Unit,
+    state: HistoryUiState,
+    actions: HistoryActions,
+    selected: (HistoryItem) -> Boolean,
+) {
+    Box(Modifier.fillMaxSize().background(IntervalTheme.palette.background), contentAlignment = Alignment.TopCenter) {
+        SetupLanes(Modifier.widthIn(max = Sizes.listMax).fillMaxSize())
+        Column(Modifier.widthIn(max = Sizes.listMax).fillMaxSize()) {
+            TitleBar(title, actions = titleActions)
+            Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.Center) {
+                Column(
+                    Modifier
+                        .width(Sizes.listColumn)
+                        .fillMaxHeight()
+                        .verticalScroll(rememberScrollState())
+                        .padding(bottom = Spacing.space24),
+                ) {
+                    RangePicker(state.range, actions.onRange, Gutter.padding(bottom = Spacing.space16))
+                    SummaryFor(state, actions, Gutter)
+                    if (state.showsUpNext) UpNextCard(state.upNext, actions, Gutter.padding(top = Spacing.space16))
+                    if (state.showsMostDone) MostDone(state.mostDone, Gutter)
+                }
+                LazyColumn(
+                    Modifier.weight(1f, fill = false).widthIn(max = Sizes.content).fillMaxHeight(),
+                    contentPadding = PaddingValues(bottom = Spacing.space24),
+                ) {
+                    items(state.sections, key = { it.dayNumber }) { section ->
+                        DaySection(section, actions, selected, Modifier.animateItem().then(Gutter))
+                    }
+                }
+            }
+        }
+    }
+}
+
 /** The range picker, its summary card, and Up next or the most done shapes under it. */
-private fun LazyStaggeredGridScope.summaryItems(state: HistoryUiState, actions: HistoryActions, gutter: Modifier) {
+private fun LazyStaggeredGridScope.summaryItems(state: HistoryUiState, actions: HistoryActions) {
     item(key = "range", span = StaggeredGridItemSpan.FullLine) {
         RangePicker(
             state.range,
             actions.onRange,
-            Modifier.animateItem().then(gutter).padding(bottom = Spacing.space16),
+            Modifier.animateItem().then(Gutter).padding(bottom = Spacing.space16),
         )
     }
     item(key = "summary", span = StaggeredGridItemSpan.FullLine) {
-        // Another range, or another month, fades through: one card's figures for the next.
-        AnimatedContent(
-            targetState = state.range to state.month.title,
-            modifier = Modifier.animateItem().then(gutter),
-            transitionSpec = { fadeThroughContent() },
-            label = "summary",
-        ) { (range, _) ->
-            when (range) {
-                TrainingRange.Week -> WeekSummary(state, { actions.onOpenDay(it) }, actions.onPlan)
-                TrainingRange.Month -> MonthSummary(state, actions.onShiftMonth, { actions.onOpenDay(it) })
-                TrainingRange.AllTime -> AllTimeSummary(state)
-            }
-        }
+        SummaryFor(state, actions, Modifier.animateItem().then(Gutter))
     }
-    if (state.upNext.isNotEmpty() && state.range != TrainingRange.AllTime) {
+    if (state.showsUpNext) {
         item(key = "upNext", span = StaggeredGridItemSpan.FullLine) {
             UpNextCard(
                 state.upNext,
                 actions,
-                Modifier.animateItem().then(gutter).padding(top = Spacing.space16),
+                Modifier.animateItem().then(Gutter).padding(top = Spacing.space16),
             )
         }
     }
-    if (state.range == TrainingRange.AllTime && state.mostDone.isNotEmpty()) {
+    if (state.showsMostDone) {
         item(key = "mostDone", span = StaggeredGridItemSpan.FullLine) {
-            MostDone(state.mostDone, Modifier.animateItem().then(gutter))
+            MostDone(state.mostDone, Modifier.animateItem().then(Gutter))
         }
     }
 }
+
+/** The summary card for the range: another range, or another month, fades through, one card's figures for the next. */
+@Composable
+private fun SummaryFor(state: HistoryUiState, actions: HistoryActions, modifier: Modifier = Modifier) {
+    AnimatedContent(
+        targetState = state.range to state.month.title,
+        modifier = modifier,
+        transitionSpec = { fadeThroughContent() },
+        label = "summary",
+    ) { (range, _) ->
+        when (range) {
+            TrainingRange.Week -> WeekSummary(state, { actions.onOpenDay(it) }, actions.onPlan)
+            TrainingRange.Month -> MonthSummary(state, actions.onShiftMonth, { actions.onOpenDay(it) })
+            TrainingRange.AllTime -> AllTimeSummary(state)
+        }
+    }
+}
+
+/** Up next shows under the week and the month, while anything is planned. */
+private val HistoryUiState.showsUpNext: Boolean
+    get() = upNext.isNotEmpty() && range != TrainingRange.AllTime
+
+/** All time lists the shapes done most, once there are any. */
+private val HistoryUiState.showsMostDone: Boolean
+    get() = range == TrainingRange.AllTime && mostDone.isNotEmpty()
 
 /** Before anything is done or planned: what History keeps, and the two ways to begin. */
 @Composable
@@ -503,79 +584,6 @@ private fun MostDone(rows: List<ShapeRow>, modifier: Modifier = Modifier) {
                     )
                 }
             }
-        }
-    }
-}
-
-/**
- * One finished workout, opening its page with a chevron saying so: an interval workout once stored, a
- * kettlebell session by [onOpenLift].
- */
-@Composable
-internal fun HistoryRow(
-    item: HistoryItem,
-    onOpen: (Long) -> Unit,
-    onOpenLift: (String) -> Unit = {},
-    modifier: Modifier = Modifier,
-) {
-    val palette = IntervalTheme.palette
-    val interaction = remember { MutableInteractionSource() }
-    val id = item.id
-    val lift = item.liftUid
-    val click: (() -> Unit)? = when {
-        id != null -> ({ onOpen(id) })
-        lift != null -> ({ onOpenLift(lift) })
-        else -> null
-    }
-    Row(
-        modifier
-            .fillMaxWidth()
-            .heightIn(min = Sizes.listRow)
-            .then(
-                if (click == null) {
-                    Modifier
-                } else {
-                    Modifier
-                        .clickable(
-                            interaction,
-                            LocalIndication.current,
-                            role = Role.Button,
-                            onClick = click,
-                        )
-                        .pressScale(interaction)
-                },
-            )
-            .padding(start = Spacing.space16, end = Spacing.space12, top = Spacing.space12, bottom = Spacing.space12),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
-    ) {
-        // Kettlebell sessions take the accent, as Lift draws them; interval workouts, the work mark.
-        StripeMark(if (lift == null) palette.workMark else palette.accent, height = Sizes.historyMarkHeight)
-        Column(Modifier.weight(1f)) {
-            val shape = workoutDescription(item.config)
-            val detail = listOfNotNull(
-                stringResource(Res.string.history_planned).takeIf { item.planned },
-                if (lift ==
-                    null
-                ) {
-                    shape.takeIf { item.presetName != null }
-                } else {
-                    stringResource(Res.string.activity_kettlebell)
-                },
-                stringResource(Res.string.history_ended_early).takeIf { item.endedEarly },
-                item.calories?.let { stringResource(Res.string.history_calories_value, it) },
-                item.time,
-            )
-            Text(item.presetName ?: shape, style = IntervalTheme.type.label, color = palette.text)
-            Text(
-                joined(detail),
-                style = IntervalTheme.type.meta,
-                color = palette.textDim,
-            )
-        }
-        Text(item.total, style = IntervalTheme.type.value, color = palette.text)
-        if (click != null) {
-            Icon(IntervalIcons.Chevron, null, tint = palette.textDim, modifier = Modifier.size(Sizes.icon))
         }
     }
 }

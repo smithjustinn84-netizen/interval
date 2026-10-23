@@ -159,6 +159,9 @@
     <string name="history_clear_confirm">Clear</string>
     <!-- The first run, before any workout or plan -->
     <string name="history_empty_title">Train to a plan</string>
+    <!-- Beside History's log on a wide window, until a workout is picked from it -->
+    <string name="history_pick_title">Pick a workout</string>
+    <string name="history_pick_text">Its timeline and figures open here.</string>
     <string name="history_empty">Pick the days you train and what you do on them. Every workout lands here, and the week fills in as it goes.</string>
     <string name="history_empty_plan">Plan your week</string>
     <string name="history_empty_start">Start a workout</string>
@@ -295,6 +298,8 @@
     <string name="detail_repeat">Repeat now</string>
     <string name="detail_plan_again">Plan again</string>
     <string name="detail_delete_menu">Delete workout</string>
+    <!-- Closes a finished workout open beside History's log -->
+    <string name="detail_close_cd">Close workout</string>
     <string name="detail_delete_title">Delete workout?</string>
     <!-- "HIIT 30/30 from Wednesday, Oct 14 comes off History…" -->
     <string name="detail_delete_text">%1$s from %2$s comes off History and its week's count. A plan it did shows as missed.</string>
