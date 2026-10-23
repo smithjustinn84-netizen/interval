@@ -27,6 +27,7 @@ class BellsRoomTest {
         database.followingDao(),
         database.customProgramDao(),
         database.customExerciseDao(),
+        database.bandDao(),
         scope,
     ) { 1_000L }
 

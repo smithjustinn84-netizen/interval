@@ -3,7 +3,8 @@
 package dev.justinsmith.bells.data
 
 import co.touchlab.kermit.Logger
-import dev.justinsmith.bells.domain.BandLevel
+import dev.justinsmith.bells.domain.Band
+import dev.justinsmith.bells.domain.BandColour
 import dev.justinsmith.bells.domain.CustomExercise
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
@@ -18,7 +19,10 @@ import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.domain.UnknownExercise
+import dev.justinsmith.bells.domain.bandOf
+import dev.justinsmith.bells.domain.bands
 import dev.justinsmith.bells.domain.builtInPrograms
+import dev.justinsmith.bells.domain.nextBandPosition
 import dev.justinsmith.interval.platform.WallClock
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -50,6 +54,7 @@ class BellsRepository(
     private val followingDao: FollowingDao,
     private val customProgramDao: CustomProgramDao,
     private val customExerciseDao: CustomExerciseDao,
+    private val bandDao: BandDao,
     private val scope: CoroutineScope,
     private val clock: WallClock,
 ) {
@@ -79,6 +84,11 @@ class BellsRepository(
     /** The exercises the user added, archived ones too, by name. */
     val customExercises: StateFlow<List<CustomExercise>> = _customExercises.asStateFlow()
 
+    private val _bands = MutableStateFlow(bands(emptyList()))
+
+    /** The user's bands, archived ones too, lightest first: the five every user starts with, then theirs. */
+    val bands: StateFlow<List<Band>> = _bands.asStateFlow()
+
     private val _customPrograms = MutableStateFlow(emptyList<Program>())
 
     /** The programs the user made, by name. */
@@ -104,16 +114,23 @@ class BellsRepository(
             val exercises = customExerciseDao.observeAll().orEmpty("exercises").map { rows ->
                 rows.mapNotNull { it.toDomain() }
             }
+            val owned = bandDao.observeAll().orEmpty("bands").map { rows -> bands(rows.map { it.toDomain() }) }
             launch {
-                // The user's exercises come with the sets, which name them.
-                combine(sessionDao.observeSessions(), sessionDao.observeSets(), exercises) { sessions, sets, made ->
-                    val bySession = sets.groupBy({ it.sessionUid }, { it.toDomain(made) })
-                    made to sessions.map { it.toDomain(bySession[it.uid].orEmpty()) }
+                // The user's exercises and bands come with the sets, which name them.
+                combine(sessionDao.observeSessions(), sessionDao.observeSets(), exercises, owned) {
+                        sessions,
+                        sets,
+                        made,
+                        bands,
+                    ->
+                    val bySession = sets.groupBy({ it.sessionUid }, { it.toDomain(made, bands) })
+                    Triple(made, bands, sessions.map { it.toDomain(bySession[it.uid].orEmpty()) })
                 }.catch { e ->
                     log.e(e) { "Couldn't read sessions" }
-                    emit(emptyList<CustomExercise>() to emptyList())
-                }.collect { (made, all) ->
+                    emit(Triple(emptyList(), bands(emptyList()), emptyList()))
+                }.collect { (made, bands, all) ->
                     _customExercises.value = made
+                    _bands.value = bands
                     _sessions.value = all.filter { it.finishedAtEpochMillis != null }
                     _active.value = all.firstOrNull { it.finishedAtEpochMillis == null }
                     sessionsLoaded.complete(Unit)
@@ -234,7 +251,7 @@ class BellsRepository(
         side: Side?,
         double: Boolean = false,
         seconds: Int? = null,
-        band: BandLevel? = null,
+        band: Band? = null,
     ) {
         persist {
             val active = sessionDao.active() ?: return@persist
@@ -251,7 +268,7 @@ class BellsRepository(
                     doubled,
                     equipment = exercise.equipment.name,
                     seconds = seconds.takeIf { exercise.measure == Measure.Time },
-                    band = band.takeIf { exercise.equipment == Equipment.Band }?.name,
+                    band = band.takeIf { exercise.equipment == Equipment.Band }?.id,
                 ),
             )
         }
@@ -277,7 +294,7 @@ class BellsRepository(
                     set.double,
                     set.equipment.name,
                     set.seconds,
-                    set.band?.name,
+                    set.band?.id,
                 ),
             )
         }
@@ -340,6 +357,38 @@ class BellsRepository(
         persist { customExerciseDao.upsert(made.copy(archived = archived).toEntity(clock.nowMillis())) }
     }
 
+    /** Saves [band] as changed: renamed (blank for its starting words), recoloured or archived. */
+    fun saveBand(band: Band) {
+        saveBands(listOf(band.copy(name = band.name.trim())))
+    }
+
+    /** Saves the order [bands] are in, each band's position its place. */
+    fun saveBands(bands: List<Band>) {
+        val now = clock.nowMillis()
+        persist { bandDao.upsert(bands.map { it.toEntity(now) }) }
+    }
+
+    /** Adds a band named [name] in [colour], heaviest of all; returns its id. */
+    @OptIn(ExperimentalUuidApi::class)
+    fun addBand(name: String, colour: BandColour): String {
+        val id = Uuid.random().toHexString()
+        saveBand(Band(id, name, colour, nextBandPosition(_bands.value)))
+        return id
+    }
+
+    /**
+     * Removes [band]: one the user added with no sets of it goes, any other (one they started with, or one
+     * with sets) is archived, so every set keeps its band.
+     */
+    fun removeBand(band: Band) {
+        val used = (_sessions.value.flatMap { it.sets } + _active.value?.sets.orEmpty()).any { it.band?.id == band.id }
+        if (band.level == null && !used) {
+            persist { bandDao.delete(band.id) }
+        } else {
+            saveBand(band.copy(archived = true))
+        }
+    }
+
     fun setOwned(kg: Double, owned: Boolean) {
         persist { if (owned) bellDao.upsert(BellEntity(kg)) else bellDao.delete(kg) }
     }
@@ -371,7 +420,7 @@ class BellsRepository(
  * is never lost. A set logged before version 7 was done with a kettlebell. One of a lift only done with two
  * bells is read as such, though logged before sets had the column.
  */
-private fun SetEntity.toDomain(made: List<CustomExercise>): SetLog {
+private fun SetEntity.toDomain(made: List<CustomExercise>, bands: List<Band>): SetLog {
     val done = equipment?.let { e -> Equipment.entries.firstOrNull { it.name == e } } ?: Equipment.Kettlebell
     val lift = Exercise.parse(exercise, made)
         ?: UnknownExercise(exercise, done, if (seconds != null) Measure.Time else Measure.Reps)
@@ -385,7 +434,7 @@ private fun SetEntity.toDomain(made: List<CustomExercise>): SetLog {
         lift.doubled(doubled),
         equipment = done,
         seconds = seconds,
-        band = band?.let { b -> BandLevel.entries.firstOrNull { it.name == b } },
+        band = band?.let { bandOf(it, bands) },
     )
 }
 
@@ -400,6 +449,12 @@ private fun CustomExerciseEntity.toDomain(): CustomExercise? = CustomExercise(
     cues = cues,
     archived = archived,
 )
+
+private fun BandEntity.toDomain() =
+    Band(id, name, BandColour.entries.firstOrNull { it.name == colour } ?: BandColour.Grey, position, archived)
+
+private fun Band.toEntity(updatedAtEpochMillis: Long) =
+    BandEntity(id, name, colour.name, position, archived, updatedAtEpochMillis)
 
 private fun CustomExercise.toEntity(updatedAtEpochMillis: Long) = CustomExerciseEntity(
     uid,

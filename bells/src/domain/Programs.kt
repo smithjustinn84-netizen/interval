@@ -590,9 +590,11 @@ fun nextPlanned(planned: List<PlannedSet>, logged: List<SetLog>): Int? {
     return null
 }
 
-/** The band to suggest for [exercise]: the last one used for it, else [fallback]. */
-fun suggestedBand(exercise: Exercise, history: List<SetLog>, fallback: BandLevel): BandLevel =
-    history.lastOrNull { it.exercise.key == exercise.key && it.band != null }?.band ?: fallback
+/** The band to suggest for [exercise]: the last one used for it if [offered] still, else [fallback]. */
+fun suggestedBand(exercise: Exercise, history: List<SetLog>, offered: List<Band>, fallback: Band): Band {
+    val last = history.lastOrNull { it.exercise.key == exercise.key && it.band != null }?.band
+    return offered.firstOrNull { it.id == last?.id } ?: fallback
+}
 
 /**
  * The bell to suggest for [exercise], with two bells or one ([double]): the last one used for it so, else

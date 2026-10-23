@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.data.ExerciseFilterStore
-import dev.justinsmith.bells.domain.BandLevel
+import dev.justinsmith.bells.domain.Band
 import dev.justinsmith.bells.domain.BlockKind
 import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.EmomClock
@@ -21,10 +21,13 @@ import dev.justinsmith.bells.domain.PlannedSet
 import dev.justinsmith.bells.domain.ProgramDay
 import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.Side
+import dev.justinsmith.bells.domain.bands
 import dev.justinsmith.bells.domain.newRecords
 import dev.justinsmith.bells.domain.nextPlanned
+import dev.justinsmith.bells.domain.offeredBands
 import dev.justinsmith.bells.domain.offeredExercises
 import dev.justinsmith.bells.domain.other
+import dev.justinsmith.bells.domain.ownedEquipment
 import dev.justinsmith.bells.domain.recentExercises
 import dev.justinsmith.bells.domain.standardBells
 import dev.justinsmith.bells.domain.suggestedBand
@@ -60,7 +63,7 @@ data class SetDraft(
     val addedKg: Double = 0.0,
     /** How long a hold lasted. */
     val seconds: Int = DEFAULT_SECONDS,
-    val band: BandLevel = BandLevel.Medium,
+    val band: Band = Band.Default,
 ) {
     /** Whether the set is done with two bells. */
     val doubled: Boolean get() = exercise.doubled(double)
@@ -102,7 +105,7 @@ data class UpNext(
     val number: Int,
     val total: Int,
     val emomMinutes: Int?,
-    val band: BandLevel? = null,
+    val band: Band? = null,
 )
 
 /**
@@ -119,7 +122,7 @@ data class EmomRun(
     val done: Set<Int> = emptySet(),
     val double: Boolean = false,
     /** The band, for an exercise done with one. */
-    val band: BandLevel? = null,
+    val band: Band? = null,
 ) {
     /** The side of minute [minute] (from 1): a one-sided lift with one bell alternates. */
     fun sideOf(minute: Int): Side? = if (exercise.sided(double)) {
@@ -138,6 +141,8 @@ data class SessionUiState(
     /** The bells the sheet offers: the user's own, or every standard size until they have said. */
     val bells: List<Double> = standardBells,
     val ownsBells: Boolean = false,
+    /** The bands the sheet offers, lightest first. */
+    val bands: List<Band> = offeredBands(bands(emptyList())),
     val draft: SetDraft = SetDraft(),
     /** For a program day: what comes next, or null once its sets are done ([dayDone]). */
     val upNext: UpNext? = null,
@@ -182,6 +187,8 @@ class SessionViewModel(
 
     private val runs = combine(emom, holds.state, ::Pair)
 
+    private val gear = combine(repository.bells, repository.bands, ::Pair)
+
     private val view = combine(draft, finished, runs, repository.customExercises, filters.filters) {
             draft,
             finished,
@@ -194,9 +201,9 @@ class SessionViewModel(
     }
 
     val state: StateFlow<SessionUiState> =
-        combine(repository.active, repository.bells, repository.programDay, view, ticks) {
+        combine(repository.active, gear, repository.programDay, view, ticks) {
                 active,
-                owned,
+                (owned, bands),
                 day,
                 chosen,
                 now,
@@ -213,6 +220,7 @@ class SessionViewModel(
                 },
                 bells = owned.ifEmpty { standardBells },
                 ownsBells = owned.isNotEmpty(),
+                bands = offeredBands(bands),
                 draft = chosen.draft,
                 upNext = plan?.let { upNext(it, active.sets) },
                 dayDone = plan != null && nextPlanned(plan.plannedSets(), active.sets) == null,
@@ -231,6 +239,7 @@ class SessionViewModel(
                         chosen.exercises,
                     ),
                     chosen.filters,
+                    ownedEquipment(owned, bands),
                 ),
             )
         }.stateIn(viewModelScope, SharingStarted.Eagerly, SessionUiState())
@@ -394,7 +403,7 @@ class SessionViewModel(
         minutes: Int,
         firstSide: Side,
         double: Boolean,
-        band: BandLevel? = null,
+        band: Band? = null,
     ) {
         val now = clock.nowMillis()
         lastCueMillis = 0L
@@ -430,7 +439,7 @@ class SessionViewModel(
             Equipment.Band, Equipment.Mat -> 0.0
         }
         val band = if (set.exercise.equipment == Equipment.Band) {
-            suggestedBand(set.exercise, history, draft.value.band)
+            suggestedBand(set.exercise, history, offeredBands(repository.bands.value), draft.value.band)
         } else {
             null
         }

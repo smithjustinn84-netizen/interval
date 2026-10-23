@@ -1,6 +1,8 @@
 package dev.justinsmith.bells.ui
 
 import androidx.compose.runtime.Composable
+import dev.justinsmith.bells.domain.Band
+import dev.justinsmith.bells.domain.BandColour
 import dev.justinsmith.bells.domain.BandLevel
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
@@ -15,6 +17,15 @@ import dev.justinsmith.bells.resources.band_extra_light
 import dev.justinsmith.bells.resources.band_heavy
 import dev.justinsmith.bells.resources.band_light
 import dev.justinsmith.bells.resources.band_medium
+import dev.justinsmith.bells.resources.band_unnamed
+import dev.justinsmith.bells.resources.colour_black
+import dev.justinsmith.bells.resources.colour_blue
+import dev.justinsmith.bells.resources.colour_green
+import dev.justinsmith.bells.resources.colour_grey
+import dev.justinsmith.bells.resources.colour_orange
+import dev.justinsmith.bells.resources.colour_purple
+import dev.justinsmith.bells.resources.colour_red
+import dev.justinsmith.bells.resources.colour_yellow
 import dev.justinsmith.bells.resources.common_joined
 import dev.justinsmith.bells.resources.equipment_band
 import dev.justinsmith.bells.resources.equipment_bodyweight
@@ -54,7 +65,7 @@ fun setLine(
     double: Boolean = false,
     equipment: Equipment = Equipment.Kettlebell,
     seconds: Int? = null,
-    band: BandLevel? = null,
+    band: Band? = null,
 ): String {
     val added = equipment == Equipment.Bodyweight && bellKg > 0
     val line = when {
@@ -83,9 +94,15 @@ fun setLine(
     return if (side == null) line else stringResource(Res.string.common_joined, line, sideName(side))
 }
 
-/** A band by the name its colour usually goes by: "Medium". */
+/** A band by the name the user gave it, or one they started with by the name its colour goes by: "Medium". */
 @Composable
-fun bandName(band: BandLevel): String = stringResource(
+fun bandName(band: Band): String = band.name.ifBlank {
+    band.level?.let { levelName(it) }
+        ?: stringResource(Res.string.band_unnamed)
+}
+
+@Composable
+private fun levelName(band: BandLevel): String = stringResource(
     when (band) {
         BandLevel.ExtraLight -> Res.string.band_extra_light
         BandLevel.Light -> Res.string.band_light
@@ -131,3 +148,17 @@ fun exerciseFacts(exercise: Exercise): String = listOfNotNull(
     if (exercise.perSide) stringResource(Res.string.exercise_a_side) else null,
     focusName(exercise.focus),
 ).reduce { line, fact -> stringResource(Res.string.common_joined, line, fact) }
+
+@Composable
+fun bandColourName(colour: BandColour): String = stringResource(
+    when (colour) {
+        BandColour.Yellow -> Res.string.colour_yellow
+        BandColour.Red -> Res.string.colour_red
+        BandColour.Green -> Res.string.colour_green
+        BandColour.Blue -> Res.string.colour_blue
+        BandColour.Black -> Res.string.colour_black
+        BandColour.Purple -> Res.string.colour_purple
+        BandColour.Orange -> Res.string.colour_orange
+        BandColour.Grey -> Res.string.colour_grey
+    },
+)

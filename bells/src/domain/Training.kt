@@ -224,7 +224,7 @@ enum class Side { Left, Right }
 /** The side a one-sided exercise goes on with. */
 val Side.other: Side get() = if (this == Side.Left) Side.Right else Side.Left
 
-/** The resistance bands every user starts with, lightest first, as the common colours run. */
+/** The resistance bands every user starts with, lightest first, as the common colours run; see [Band]. */
 enum class BandLevel { ExtraLight, Light, Medium, Heavy, ExtraHeavy }
 
 /**
@@ -243,7 +243,7 @@ data class SetLog(
     val double: Boolean = false,
     val equipment: Equipment = exercise.equipment,
     val seconds: Int? = null,
-    val band: BandLevel? = null,
+    val band: Band? = null,
 ) {
     /**
      * The weight moved: the bell, or both, or the weight added to bodyweight, times the reps. A band, the mat
@@ -306,10 +306,10 @@ sealed interface PersonalRecord {
     /** Band sets: the heaviest band with the most reps at it, and the most reps with any band, with that band. */
     data class Banded(
         override val exercise: Exercise,
-        val heaviest: BandLevel,
+        val heaviest: Band,
         val repsAtHeaviest: Int,
         val mostReps: Int,
-        val mostRepsBand: BandLevel,
+        val mostRepsBand: Band,
     ) : PersonalRecord {
         override val double: Boolean get() = false
     }
@@ -321,7 +321,7 @@ sealed interface PersonalRecord {
 
 /**
  * Each exercise's [PersonalRecord] over [sets], one bell and two kept apart, in the catalogue's order: a
- * hold by its length, a band set by its band (lightest to heaviest as [BandLevel] runs), any other by its
+ * hold by its length, a band set by its band (lightest to heaviest in the user's order of them), any other by its
  * weight and reps. Weight added to bodyweight is the bodyweight exercise's, never a bell's. Sets of an
  * exercise this build doesn't know set none.
  */
@@ -385,12 +385,12 @@ private fun weighted(exercise: Exercise, done: List<SetLog>, double: Boolean): P
 private fun banded(exercise: Exercise, done: List<SetLog>): PersonalRecord.Banded {
     // Every one has a band: that is what made it a band record.
     val sets = done.mapNotNull { set -> set.band?.let { it to set.reps } }
-    val heaviest = sets.maxOf { it.first }
-    val most = sets.maxWith(compareBy<Pair<BandLevel, Int>> { it.second }.thenBy { it.first })
+    val heaviest = sets.maxBy { it.first.position }.first
+    val most = sets.maxWith(compareBy<Pair<Band, Int>> { it.second }.thenBy { it.first.position })
     return PersonalRecord.Banded(
         exercise = exercise,
         heaviest = heaviest,
-        repsAtHeaviest = sets.filter { it.first == heaviest }.maxOf { it.second },
+        repsAtHeaviest = sets.filter { it.first.id == heaviest.id }.maxOf { it.second },
         mostReps = most.second,
         mostRepsBand = most.first,
     )
@@ -404,8 +404,8 @@ private fun PersonalRecord.beats(was: PersonalRecord): Boolean = when {
             mostReps > was.mostReps
 
     this is PersonalRecord.Banded && was is PersonalRecord.Banded ->
-        heaviest > was.heaviest ||
-            (heaviest == was.heaviest && repsAtHeaviest > was.repsAtHeaviest) ||
+        heaviest.position > was.heaviest.position ||
+            (heaviest.id == was.heaviest.id && repsAtHeaviest > was.repsAtHeaviest) ||
             mostReps > was.mostReps
 
     this is PersonalRecord.Held && was is PersonalRecord.Held -> longestSeconds > was.longestSeconds

@@ -1,5 +1,7 @@
 package dev.justinsmith.bells.data
 
+import dev.justinsmith.bells.domain.Band
+import dev.justinsmith.bells.domain.BandColour
 import dev.justinsmith.bells.domain.BandLevel
 import dev.justinsmith.bells.domain.Block
 import dev.justinsmith.bells.domain.BlockKind
@@ -14,6 +16,7 @@ import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.domain.UnknownExercise
 import dev.justinsmith.bells.domain.program
+import dev.justinsmith.bells.fakes.FakeBandDao
 import dev.justinsmith.bells.fakes.FakeBellDao
 import dev.justinsmith.bells.fakes.FakeCustomExerciseDao
 import dev.justinsmith.bells.fakes.FakeCustomProgramDao
@@ -37,8 +40,9 @@ class BellsRepositoryTest {
     private val followingDao = FakeFollowingDao()
     private val programDao = FakeCustomProgramDao()
     private val exerciseDao = FakeCustomExerciseDao()
+    private val bandDao = FakeBandDao()
     private val repository =
-        BellsRepository(sessionDao, FakeBellDao(), followingDao, programDao, exerciseDao, scope) { now }
+        BellsRepository(sessionDao, FakeBellDao(), followingDao, programDao, exerciseDao, bandDao, scope) { now }
 
     private val pressAndSwings = ProgramDraft(
         name = "Press and swings",
@@ -105,19 +109,19 @@ class BellsRepositoryTest {
     fun `a held set keeps its seconds and a band set its band`() = runTest {
         repository.startSession()
         repository.logSet(BuiltInExercise.SidePlank, 0.0, 0, Side.Left, seconds = 45)
-        repository.logSet(BuiltInExercise.BandPullApart, 0.0, 20, null, band = BandLevel.Medium)
+        repository.logSet(BuiltInExercise.BandPullApart, 0.0, 20, null, band = Band.of(BandLevel.Medium))
         val (plank, pullApart) = assertNotNull(repository.active.value).sets
         assertEquals(45, plank.seconds)
         assertEquals(Side.Left, plank.side)
         assertEquals(Equipment.Bodyweight, plank.equipment)
-        assertEquals(BandLevel.Medium, pullApart.band)
+        assertEquals(Band.of(BandLevel.Medium), pullApart.band)
         assertEquals(Equipment.Band, pullApart.equipment)
     }
 
     @Test
     fun `seconds and a band are dropped from an exercise that takes neither`() = runTest {
         repository.startSession()
-        repository.logSet(BuiltInExercise.PushUp, 0.0, 15, null, seconds = 30, band = BandLevel.Heavy)
+        repository.logSet(BuiltInExercise.PushUp, 0.0, 15, null, seconds = 30, band = Band.of(BandLevel.Heavy))
         val pushUp = assertNotNull(repository.active.value).sets.single()
         assertNull(pushUp.seconds)
         assertNull(pushUp.band)
@@ -150,6 +154,33 @@ class BellsRepositoryTest {
         assertTrue(changed.archived)
         repository.setArchived(uid, archived = false)
         assertFalse(repository.customExercises.value.single().archived)
+    }
+
+    @Test
+    fun `a band renamed reads by its new name on the sets done with it`() = runTest {
+        repository.startSession()
+        repository.logSet(BuiltInExercise.BandPullApart, 0.0, 15, null, band = Band.of(BandLevel.Heavy))
+        val heavy = repository.bands.value.single { it.id == "Heavy" }
+        repository.saveBand(heavy.copy(name = " Blue loop "))
+        assertEquals("Blue loop", assertNotNull(repository.active.value).sets.single().band?.name)
+        assertEquals("Blue loop", repository.bands.value.single { it.id == "Heavy" }.name)
+    }
+
+    @Test
+    fun `a band with sets or one started with is archived and one added unused is deleted`() = runTest {
+        val travel = repository.addBand("Travel band", BandColour.Purple)
+        val added = repository.bands.value.single { it.id == travel }
+        assertEquals(5, added.position)
+        repository.removeBand(added)
+        assertTrue(repository.bands.value.none { it.id == travel })
+        repository.removeBand(repository.bands.value.first())
+        assertTrue(repository.bands.value.first().archived)
+        val loop = repository.addBand("Loop", BandColour.Red)
+        val kept = repository.bands.value.single { it.id == loop }
+        repository.startSession()
+        repository.logSet(BuiltInExercise.BandPullApart, 0.0, 15, null, band = kept)
+        repository.removeBand(kept)
+        assertTrue(repository.bands.value.single { it.id == kept.id }.archived)
     }
 
     @Test

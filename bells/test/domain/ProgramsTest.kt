@@ -225,11 +225,16 @@ class ProgramsTest {
     @Test
     fun `the band suggested is the last one used for the exercise`() {
         val history = listOf(
-            SetLog(0, BuiltInExercise.BandFacePull, 0.0, 15, null, 0, band = BandLevel.Heavy),
-            SetLog(0, BuiltInExercise.BandPullApart, 0.0, 15, null, 1, band = BandLevel.Light),
+            SetLog(0, BuiltInExercise.BandFacePull, 0.0, 15, null, 0, band = Band.of(BandLevel.Heavy)),
+            SetLog(0, BuiltInExercise.BandPullApart, 0.0, 15, null, 1, band = Band.of(BandLevel.Light)),
         )
-        assertEquals(BandLevel.Heavy, suggestedBand(BuiltInExercise.BandFacePull, history, BandLevel.Medium))
-        assertEquals(BandLevel.Medium, suggestedBand(BuiltInExercise.BandSquat, history, BandLevel.Medium))
+        val offered = bands(emptyList())
+        val medium = Band.of(BandLevel.Medium)
+        assertEquals(Band.of(BandLevel.Heavy), suggestedBand(BuiltInExercise.BandFacePull, history, offered, medium))
+        assertEquals(medium, suggestedBand(BuiltInExercise.BandSquat, history, offered, medium))
+        // One no longer offered, archived since, is not suggested.
+        val heavyGone = offered.filterNot { it.level == BandLevel.Heavy }
+        assertEquals(medium, suggestedBand(BuiltInExercise.BandFacePull, history, heavyGone, medium))
     }
 
     private fun assertNotNullDay(day: ProgramDay?): ProgramDay = kotlin.test.assertNotNull(day)

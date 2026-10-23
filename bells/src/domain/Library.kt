@@ -12,17 +12,32 @@ data class ExerciseFilters(
     val yoursOnly: Boolean = false,
     /** The user's archived exercises listed too; only the library offers it, never the Log sheet. */
     val showArchived: Boolean = false,
+    /** Only the exercises done with what the user has: see [ownedEquipment]. */
+    val ownedOnly: Boolean = false,
 ) {
     /** How many choices are set besides the equipment, which the library keeps in a row of its own. */
-    val moreCount: Int get() = focus.size + measure.size + listOf(yoursOnly, showArchived).count { it }
+    val moreCount: Int get() = focus.size + measure.size + listOf(yoursOnly, showArchived, ownedOnly).count { it }
 
     val isEmpty: Boolean get() = this == ExerciseFilters()
 
-    fun matches(exercise: Exercise): Boolean =
+    /** Whether [exercise] gets through, [owned] being the equipment the user has. */
+    fun matches(exercise: Exercise, owned: Set<Equipment> = Equipment.entries.toSet()): Boolean =
         (equipment.isEmpty() || exercise.equipment in equipment) &&
             (focus.isEmpty() || exercise.focus in focus) &&
             (measure.isEmpty() || exercise.measure in measure) &&
-            (!yoursOnly || exercise is CustomExercise)
+            (!yoursOnly || exercise is CustomExercise) &&
+            (!ownedOnly || exercise.equipment in owned)
+}
+
+/**
+ * The equipment the user has: their body and the floor always, kettlebells once they own a [bells] size, and
+ * bands while one of [bands] is not archived.
+ */
+fun ownedEquipment(bells: List<Double>, bands: List<Band>): Set<Equipment> = buildSet {
+    add(Equipment.Bodyweight)
+    add(Equipment.Mat)
+    if (bells.isNotEmpty()) add(Equipment.Kettlebell)
+    if (bands.any { !it.archived }) add(Equipment.Band)
 }
 
 /** What the library and the Log sheet offer: every built-in, then those of [made] not archived, unless [archived]. */

@@ -12,6 +12,7 @@ import dev.justinsmith.bells.data.ExerciseFilterStore
 import dev.justinsmith.bells.domain.CustomExercise
 import dev.justinsmith.bells.domain.ExerciseFilters
 import dev.justinsmith.bells.domain.offeredExercises
+import dev.justinsmith.bells.domain.ownedEquipment
 import dev.justinsmith.bells.domain.recentExercises
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.library_new
@@ -30,15 +31,16 @@ import org.koin.compose.currentKoinScope
 /** Every exercise on offer, the ones done lately first, narrowed by the filters the Log sheet shares. */
 class ExerciseLibraryViewModel(repository: BellsRepository, private val filters: ExerciseFilterStore) : ViewModel() {
     val state: StateFlow<LibraryList> =
-        combine(repository.customExercises, repository.sessions, repository.active, filters.filters) {
-                made,
-                sessions,
-                active,
-                narrowed,
-            ->
+        combine(
+            repository.customExercises,
+            repository.sessions,
+            repository.active,
+            filters.filters,
+            combine(repository.bells, repository.bands, ::ownedEquipment),
+        ) { made, sessions, active, narrowed, owned ->
             val offered = offeredExercises(made, archived = narrowed.showArchived)
             val history = sessions.reversed().flatMap { it.sets } + active?.sets.orEmpty()
-            LibraryList(offered, recentExercises(history, offered), narrowed)
+            LibraryList(offered, recentExercises(history, offered), narrowed, owned)
         }.stateIn(viewModelScope, SharingStarted.Eagerly, LibraryList(offeredExercises(emptyList())))
 
     fun updateFilters(transform: (ExerciseFilters) -> ExerciseFilters) {

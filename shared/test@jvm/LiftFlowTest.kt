@@ -100,7 +100,7 @@ class LiftFlowTest {
     @Test
     fun `Lift opens the bells owned and Back returns`() = liftTest {
         tab("Lift").performClick()
-        onNodeWithContentDescription("Your bells and records").performClick()
+        onNodeWithContentDescription("Your equipment and records").performClick()
         onNodeWithText("Your bells").assertExists()
         tab("Lift").assertDoesNotExist()
         onNodeWithContentDescription("Back").performClick()

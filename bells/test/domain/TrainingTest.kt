@@ -58,7 +58,7 @@ class TrainingTest {
     fun `moved counts weight added to bodyweight but no band or mat or hold`() {
         val pushUps = SetLog(1, BuiltInExercise.PushUp, 10.0, 6, null, 0)
         val bare = SetLog(2, BuiltInExercise.PushUp, 0.0, 15, null, 0)
-        val band = SetLog(3, BuiltInExercise.BandPullApart, 0.0, 20, null, 0, band = BandLevel.Medium)
+        val band = SetLog(3, BuiltInExercise.BandPullApart, 0.0, 20, null, 0, band = Band.of(BandLevel.Medium))
         val mat = SetLog(4, BuiltInExercise.Hundred, 0.0, 100, null, 0)
         val hold = SetLog(5, BuiltInExercise.Plank, 10.0, 0, null, 0, seconds = 60)
         assertEquals(60.0, session(pushUps, bare, band, mat, hold).tonnageKg)
@@ -70,8 +70,8 @@ class TrainingTest {
             listOf(
                 SetLog(1, BuiltInExercise.PushUp, 0.0, 15, null, 0),
                 SetLog(2, BuiltInExercise.PushUp, 10.0, 6, null, 0),
-                SetLog(3, BuiltInExercise.BandPullApart, 0.0, 20, null, 0, band = BandLevel.Light),
-                SetLog(4, BuiltInExercise.BandPullApart, 0.0, 10, null, 0, band = BandLevel.Heavy),
+                SetLog(3, BuiltInExercise.BandPullApart, 0.0, 20, null, 0, band = Band.of(BandLevel.Light)),
+                SetLog(4, BuiltInExercise.BandPullApart, 0.0, 10, null, 0, band = Band.of(BandLevel.Heavy)),
                 SetLog(5, BuiltInExercise.Hundred, 0.0, 100, null, 0),
                 SetLog(6, BuiltInExercise.Plank, 0.0, 0, null, 0, seconds = 45),
                 SetLog(7, BuiltInExercise.Plank, 0.0, 0, null, 0, seconds = 90),
@@ -81,7 +81,13 @@ class TrainingTest {
         assertEquals(
             setOf(
                 PersonalRecord.Weighted(BuiltInExercise.PushUp, 10.0, 6, 15, 0.0),
-                PersonalRecord.Banded(BuiltInExercise.BandPullApart, BandLevel.Heavy, 10, 20, BandLevel.Light),
+                PersonalRecord.Banded(
+                    BuiltInExercise.BandPullApart,
+                    Band.of(BandLevel.Heavy),
+                    10,
+                    20,
+                    Band.of(BandLevel.Light),
+                ),
                 PersonalRecord.Weighted(BuiltInExercise.Hundred, 0.0, 100, 100, 0.0),
                 PersonalRecord.Held(BuiltInExercise.Plank, 90),
             ),
@@ -93,7 +99,7 @@ class TrainingTest {
     fun `a longer hold or a heavier band is a new record and an equal one is not`() {
         val plank = { seconds: Int -> SetLog(nextId++, BuiltInExercise.Plank, 0.0, 0, null, 0, seconds = seconds) }
         val band = { level: BandLevel, reps: Int ->
-            SetLog(nextId++, BuiltInExercise.BandPullApart, 0.0, reps, null, 0, band = level)
+            SetLog(nextId++, BuiltInExercise.BandPullApart, 0.0, reps, null, 0, band = Band.of(level))
         }
         val before = listOf(plank(60), band(BandLevel.Medium, 15))
         assertEquals(emptyList(), newRecords(before, session(plank(60), band(BandLevel.Medium, 15))))
@@ -102,7 +108,15 @@ class TrainingTest {
             newRecords(before, session(plank(75), band(BandLevel.Heavy, 5))).map { it.exercise }.toSet(),
         )
         assertEquals(
-            listOf(PersonalRecord.Banded(BuiltInExercise.BandPullApart, BandLevel.Medium, 20, 20, BandLevel.Medium)),
+            listOf(
+                PersonalRecord.Banded(
+                    BuiltInExercise.BandPullApart,
+                    Band.of(BandLevel.Medium),
+                    20,
+                    20,
+                    Band.of(BandLevel.Medium),
+                ),
+            ),
             newRecords(before, session(band(BandLevel.Medium, 20))),
         )
     }

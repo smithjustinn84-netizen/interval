@@ -21,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import dev.justinsmith.bells.domain.BandLevel
 import dev.justinsmith.bells.domain.CustomExercise
 import dev.justinsmith.bells.domain.Doubles
 import dev.justinsmith.bells.domain.Equipment
@@ -288,7 +287,9 @@ private fun LoadPicker(state: SessionUiState, actions: SessionActions) {
 
         Equipment.Band -> {
             GroupLabel(stringResource(Res.string.log_band))
-            ChoiceRow(BandLevel.entries, draft.band, { bandName(it) }, { b -> actions.onDraft { it.copy(band = b) } })
+            // The band picked, as it now stands: renamed since, it shows by its new name.
+            val picked = state.bands.firstOrNull { it.id == draft.band.id } ?: draft.band
+            ChoiceRow(state.bands, picked, { bandName(it) }, { b -> actions.onDraft { it.copy(band = b) } })
         }
 
         Equipment.Mat -> Unit

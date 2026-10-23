@@ -1,5 +1,7 @@
 package dev.justinsmith.bells.fakes
 
+import dev.justinsmith.bells.data.BandDao
+import dev.justinsmith.bells.data.BandEntity
 import dev.justinsmith.bells.data.BellDao
 import dev.justinsmith.bells.data.BellEntity
 import dev.justinsmith.bells.data.CustomExerciseDao
@@ -133,6 +135,19 @@ class FakeCustomExerciseDao : CustomExerciseDao {
         rows.update { all -> all.filterNot { it.uid == exercise.uid } + exercise }
 }
 
+class FakeBandDao : BandDao {
+    val rows = MutableStateFlow(emptyList<BandEntity>())
+
+    override fun observeAll(): Flow<List<BandEntity>> = rows.map { all ->
+        all.sortedWith(compareBy({ it.position }, { it.id }))
+    }
+
+    override suspend fun upsert(bands: List<BandEntity>) =
+        rows.update { all -> all.filterNot { row -> bands.any { it.id == row.id } } + bands }
+
+    override suspend fun delete(id: String) = rows.update { all -> all.filterNot { it.id == id } }
+}
+
 /** The rest of the app as Bells sees it: interval workouts and a weekly goal a test sets. */
 class FakeIntervalActivity : IntervalActivity {
     override val workouts = MutableStateFlow(emptyList<IntervalWorkout>())
@@ -170,6 +185,7 @@ class FakeBellsStorage {
     val following = FakeFollowingDao()
     val programs = FakeCustomProgramDao()
     val exercises = FakeCustomExerciseDao()
+    val bands = FakeBandDao()
 }
 
 /** Stands in for `rememberBellsPlatformModule()`. Tests never load the real one: it writes a database file. */
@@ -186,6 +202,7 @@ fun fakeBellsStorageModule(storage: FakeBellsStorage): Module = module {
     single<FollowingDao> { storage.following }
     single<CustomProgramDao> { storage.programs }
     single<CustomExerciseDao> { storage.exercises }
+    single<BandDao> { storage.bands }
 }
 
 /**

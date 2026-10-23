@@ -46,6 +46,7 @@ import dev.justinsmith.bells.resources.library_filters
 import dev.justinsmith.bells.resources.library_filters_count
 import dev.justinsmith.bells.resources.library_focus
 import dev.justinsmith.bells.resources.library_measured
+import dev.justinsmith.bells.resources.library_owned_only
 import dev.justinsmith.bells.resources.library_recent
 import dev.justinsmith.bells.resources.library_search
 import dev.justinsmith.bells.resources.library_show_archived
@@ -70,11 +71,15 @@ import dev.justinsmith.interval.ui.Spacing
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
-/** What the library lists: [exercises] in the catalogue's order, the [recents] first, narrowed by [filters]. */
+/**
+ * What the library lists: [exercises] in the catalogue's order, the [recents] first, narrowed by [filters],
+ * [owned] being the equipment the user has.
+ */
 data class LibraryList(
     val exercises: List<Exercise>,
     val recents: List<Exercise> = emptyList(),
     val filters: ExerciseFilters = ExerciseFilters(),
+    val owned: Set<Equipment> = Equipment.entries.toSet(),
 )
 
 /**
@@ -100,7 +105,7 @@ fun ExercisePicker(
     val filters = list.filters
     val names = list.exercises.associate { it.key to exerciseName(it) }
     val text = query.text.toString()
-    val shown = list.exercises.filter { filters.matches(it) && nameMatches(names.getValue(it.key), text) }
+    val shown = list.exercises.filter { filters.matches(it, list.owned) && nameMatches(names.getValue(it.key), text) }
     val narrowed = text.isNotBlank() || !filters.isEmpty
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         val search = stringResource(Res.string.library_search)
@@ -144,7 +149,7 @@ fun ExercisePicker(
     }
 }
 
-/** The facets besides equipment: focus, what it is measured by, only the user's own and, if [archivable], archived. */
+/** The facets besides equipment: focus, measure, only yours, only what you own, and archived if [archivable]. */
 @Composable
 private fun MoreFilters(
     filters: ExerciseFilters,
@@ -164,6 +169,12 @@ private fun MoreFilters(
             stringResource(Res.string.library_yours_only),
             filters.yoursOnly,
             onClick = { onFilters { it.copy(yoursOnly = !it.yoursOnly) } },
+            role = Role.Checkbox,
+        )
+        Choice(
+            stringResource(Res.string.library_owned_only),
+            filters.ownedOnly,
+            onClick = { onFilters { it.copy(ownedOnly = !it.ownedOnly) } },
             role = Role.Checkbox,
         )
         if (archivable) {

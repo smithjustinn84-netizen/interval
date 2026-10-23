@@ -30,6 +30,8 @@
     <string name="band_medium">Medium</string>
     <string name="band_heavy">Heavy</string>
     <string name="band_extra_heavy">Extra heavy</string>
+    <!-- A band whose name is lost: never one of the user's own. -->
+    <string name="band_unnamed">Band</string>
     <string name="kg_pair">2 × %1$s kg</string>
     <string name="lift_double">Two bells</string>
     <plurals name="sets_count">
@@ -140,7 +142,7 @@
     <string name="today_goal_met">Goal met this week</string>
     <string name="today_legend_bells">Lifts</string>
     <string name="today_legend_interval">Timer</string>
-    <string name="today_bells_cd">Your bells and records</string>
+    <string name="today_bells_cd">Your equipment and records</string>
     <string name="today_last">Last session</string>
     <string name="today_none_title">No sessions yet</string>
     <string name="today_none_text">Start one, log each set as you go, and it lands in your history.</string>
@@ -203,6 +205,7 @@
     <!-- A tag on an exercise the user added. -->
     <string name="library_yours">Yours</string>
     <string name="library_show_archived">Show archived</string>
+    <string name="library_owned_only">Only what I own</string>
     <!-- A tag on an exercise the user added and archived. -->
     <string name="library_archived">Archived</string>
     <string name="library_entry_text">Bells, bodyweight, bands and the mat</string>
@@ -271,9 +274,33 @@
     <string name="history_delete">Delete</string>
 
     <!-- Bells and records -->
-    <string name="bells_title">Bells</string>
+    <string name="bells_title">Your equipment</string>
     <string name="bells_owned">Your bells</string>
     <string name="bells_owned_hint">Tap the sizes you own; the log offers just those.</string>
+    <string name="bands_owned">Your bands</string>
+    <string name="bands_owned_hint">Lightest first. Tap one to rename, recolour or move it.</string>
+    <string name="bands_archived">Archived bands</string>
+    <string name="band_add">Add band</string>
+    <string name="band_editor_new">New band</string>
+    <string name="band_editor_edit">Edit band</string>
+    <string name="band_name">Name</string>
+    <string name="band_name_placeholder">Band name</string>
+    <string name="band_colour">Colour</string>
+    <string name="band_lighter">Lighter</string>
+    <string name="band_heavier">Heavier</string>
+    <string name="band_save">Save band</string>
+    <!-- A band the user started with, or one with sets, is archived: the log stops offering it. -->
+    <string name="band_archive">Archive band</string>
+    <string name="band_delete">Delete band</string>
+    <string name="band_restore">Restore band</string>
+    <string name="colour_yellow">Yellow</string>
+    <string name="colour_red">Red</string>
+    <string name="colour_green">Green</string>
+    <string name="colour_blue">Blue</string>
+    <string name="colour_black">Black</string>
+    <string name="colour_purple">Purple</string>
+    <string name="colour_orange">Orange</string>
+    <string name="colour_grey">Grey</string>
     <string name="bells_records">Personal records</string>
     <string name="bells_records_empty">Log a session to set your first records.</string>
     <!-- A record's parts, joined by " · ": "Heaviest 20 kg × 5 · most reps 12 at 12 kg". %1$s is a load:

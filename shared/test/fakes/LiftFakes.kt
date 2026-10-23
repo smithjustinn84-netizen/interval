@@ -1,5 +1,7 @@
 package dev.justinsmith.interval.fakes
 
+import dev.justinsmith.bells.data.BandDao
+import dev.justinsmith.bells.data.BandEntity
 import dev.justinsmith.bells.data.BellDao
 import dev.justinsmith.bells.data.BellEntity
 import dev.justinsmith.bells.data.BellsRepository
@@ -132,12 +134,24 @@ class FakeCustomExerciseDao : CustomExerciseDao {
 }
 
 /** Lift's storage in memory: no database, and writes run at once on the caller's thread. */
+class FakeBandDao : BandDao {
+    val rows = MutableStateFlow(emptyList<BandEntity>())
+
+    override fun observeAll(): Flow<List<BandEntity>> = rows
+
+    override suspend fun upsert(bands: List<BandEntity>) =
+        rows.update { all -> all.filterNot { row -> bands.any { it.id == row.id } } + bands }
+
+    override suspend fun delete(id: String) = rows.update { all -> all.filterNot { it.id == id } }
+}
+
 class FakeLiftStorage {
     val sessions = FakeSessionDao()
     val bells = FakeBellDao()
     val following = FakeFollowingDao()
     val programs = FakeCustomProgramDao()
     val exercises = FakeCustomExerciseDao()
+    val bands = FakeBandDao()
 
     /** A repository over this storage, its writes landed by the time a call returns. */
     fun repository(now: WallClock = WallClock { 0L }): BellsRepository = BellsRepository(
@@ -146,6 +160,7 @@ class FakeLiftStorage {
         following,
         programs,
         exercises,
+        bands,
         CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
         now,
     )
@@ -204,4 +219,5 @@ fun fakeLiftStorageModule(storage: FakeLiftStorage = FakeLiftStorage()): Module 
     single<FollowingDao> { storage.following }
     single<CustomProgramDao> { storage.programs }
     single<CustomExerciseDao> { storage.exercises }
+    single<BandDao> { storage.bands }
 }
