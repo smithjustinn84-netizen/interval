@@ -21,13 +21,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import dev.justinsmith.bells.domain.CustomExercise
-import dev.justinsmith.bells.domain.Doubles
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.HoldPhase
 import dev.justinsmith.bells.domain.HoldState
 import dev.justinsmith.bells.domain.Side
-import dev.justinsmith.bells.domain.formatKg
 import dev.justinsmith.bells.library.ExercisePicker
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.emom_fewer_minutes
@@ -40,11 +38,6 @@ import dev.justinsmith.bells.resources.hold_other_side
 import dev.justinsmith.bells.resources.hold_stop
 import dev.justinsmith.bells.resources.hold_stop_note
 import dev.justinsmith.bells.resources.hold_time_it
-import dev.justinsmith.bells.resources.lift_double
-import dev.justinsmith.bells.resources.log_added
-import dev.justinsmith.bells.resources.log_added_none
-import dev.justinsmith.bells.resources.log_band
-import dev.justinsmith.bells.resources.log_bell
 import dev.justinsmith.bells.resources.log_change
 import dev.justinsmith.bells.resources.log_exercise
 import dev.justinsmith.bells.resources.log_fewer_reps
@@ -55,7 +48,6 @@ import dev.justinsmith.bells.resources.log_kind_set
 import dev.justinsmith.bells.resources.log_less_time
 import dev.justinsmith.bells.resources.log_more_reps
 import dev.justinsmith.bells.resources.log_more_time
-import dev.justinsmith.bells.resources.log_no_bells
 import dev.justinsmith.bells.resources.log_reps
 import dev.justinsmith.bells.resources.log_reps_each_minute
 import dev.justinsmith.bells.resources.log_side
@@ -63,7 +55,7 @@ import dev.justinsmith.bells.resources.log_title
 import dev.justinsmith.bells.resources.session_log
 import dev.justinsmith.bells.resources.summary_done
 import dev.justinsmith.bells.ui.ChoiceRow
-import dev.justinsmith.bells.ui.bandName
+import dev.justinsmith.bells.ui.LoadPicker
 import dev.justinsmith.bells.ui.exerciseFacts
 import dev.justinsmith.bells.ui.exerciseName
 import dev.justinsmith.bells.ui.sideName
@@ -80,7 +72,6 @@ import dev.justinsmith.interval.ui.RollingText
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.Spacing
-import dev.justinsmith.interval.ui.ToggleRow
 import org.jetbrains.compose.resources.stringResource
 
 /** What the Log sheet adds: one set now, or an EMOM of the set every minute. */
@@ -146,7 +137,7 @@ internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismi
                 )
             }
             ExerciseCard(draft.exercise, onChange = { picking = true })
-            LoadPicker(state, actions)
+            DraftLoad(state, actions)
             MeasurePicker(draft, emom = kind == LogKind.Emom, state.otherSide, actions)
             if (kind == LogKind.Emom) EmomMinutes(draft, actions)
             if (draft.exercise.sided(draft.doubled)) {
@@ -171,7 +162,7 @@ internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismi
 
 /** The exercise the set is of, its facts under its name, and Change to pick another from the library. */
 @Composable
-private fun ExerciseCard(exercise: Exercise, onChange: () -> Unit) {
+internal fun ExerciseCard(exercise: Exercise, onChange: () -> Unit) {
     val palette = IntervalTheme.palette
     ListCard {
         Row(
@@ -244,53 +235,32 @@ private fun MeasurePicker(draft: SetDraft, emom: Boolean, otherSide: Side?, acti
     }
 }
 
-/** The load the exercise takes: a bell (or two), weight added to bodyweight, a band, or nothing on the mat. */
+/** The load the set takes, from the draft: a bell (or two), weight added to bodyweight, a band, or none. */
 @Composable
-private fun LoadPicker(state: SessionUiState, actions: SessionActions) {
+private fun DraftLoad(state: SessionUiState, actions: SessionActions) {
     val draft = state.draft
-    when (draft.exercise.equipment) {
-        Equipment.Kettlebell -> {
-            GroupLabel(stringResource(Res.string.log_bell))
-            ChoiceRow(state.bells, draft.bellKg, { formatKg(it) }, { kg -> actions.onDraft { it.copy(bellKg = kg) } })
-            if (!state.ownsBells) {
-                Text(
-                    stringResource(Res.string.log_no_bells),
-                    style = IntervalTheme.type.meta,
-                    color = IntervalTheme.palette.textDim,
-                )
-            }
-            if (draft.exercise.doubles == Doubles.Optional) {
-                ListCard {
-                    ToggleRow(
-                        stringResource(Res.string.lift_double),
-                        null,
-                        checked = draft.double,
-                        onToggle = { actions.onDraft { it.copy(double = !it.double) } },
-                    )
+    LoadPicker(
+        draft.exercise,
+        draft.double,
+        kg = if (draft.exercise.equipment == Equipment.Bodyweight) draft.addedKg else draft.bellKg,
+        band = draft.band,
+        bells = state.bells,
+        bands = state.bands,
+        onKg = { kg ->
+            kg?.let { picked ->
+                actions.onDraft {
+                    if (it.exercise.equipment == Equipment.Bodyweight) {
+                        it.copy(addedKg = picked)
+                    } else {
+                        it.copy(bellKg = picked)
+                    }
                 }
             }
-        }
-
-        Equipment.Bodyweight -> {
-            GroupLabel(stringResource(Res.string.log_added))
-            val none = stringResource(Res.string.log_added_none)
-            ChoiceRow(
-                listOf(0.0) + state.bells,
-                draft.addedKg,
-                { if (it == 0.0) none else formatKg(it) },
-                { kg -> actions.onDraft { it.copy(addedKg = kg) } },
-            )
-        }
-
-        Equipment.Band -> {
-            GroupLabel(stringResource(Res.string.log_band))
-            // The band picked, as it now stands: renamed since, it shows by its new name.
-            val picked = state.bands.firstOrNull { it.id == draft.band.id } ?: draft.band
-            ChoiceRow(state.bands, picked, { bandName(it) }, { b -> actions.onDraft { it.copy(band = b) } })
-        }
-
-        Equipment.Mat -> Unit
-    }
+        },
+        onBand = { band -> band?.let { picked -> actions.onDraft { it.copy(band = picked) } } },
+        onDouble = { actions.onDraft { it.copy(double = !it.double) } },
+        ownsBells = state.ownsBells,
+    )
 }
 
 /** A count from 1 to [max], large, with − and + that repeat while held. */

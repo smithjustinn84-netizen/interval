@@ -433,14 +433,21 @@ private fun ProgramCard(state: TodayUiState, onChooseProgram: () -> Unit, modifi
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(liftName(block.exercise, block.double), style = IntervalTheme.type.label, color = palette.text)
-                    Text(blockLine(block), style = IntervalTheme.type.meta, color = palette.textDim)
+                    // A bell's load shows beside it, as planned or as last used.
+                    Text(
+                        blockLine(block, withLoad = block.exercise.equipment != Equipment.Kettlebell),
+                        style = IntervalTheme.type.meta,
+                        color = palette.textDim,
+                    )
                 }
                 // Only a bell has a weight to suggest ahead of the session.
                 if (block.exercise.equipment == Equipment.Kettlebell) {
                     Text(
                         stringResource(
                             if (block.double) Res.string.kg_pair else Res.string.kg_value,
-                            formatKg(state.bells[block.exercise to block.double] ?: SetDraft.DEFAULT_BELL_KG),
+                            formatKg(
+                                block.kg ?: state.bells[block.exercise to block.double] ?: SetDraft.DEFAULT_BELL_KG,
+                            ),
                         ),
                         style = IntervalTheme.type.value,
                         color = palette.text,

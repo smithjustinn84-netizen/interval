@@ -61,7 +61,8 @@ class ProgramEditorTest {
         waitForText("Day 1")
         onNodeWithText("Add block").performScrollTo().performClick()
         onNodeWithText("Two bells").assertDoesNotExist()
-        onNodeWithText("Press").performClick()
+        onNodeWithText("Change").performClick()
+        onNodeWithText("Press").performScrollTo().performClick()
         onNodeWithText("Two bells").performScrollTo().performClick()
         onNodeWithText("Done").performScrollTo().performClick()
         waitForText("Press · Two bells")
@@ -70,6 +71,33 @@ class ProgramEditorTest {
         onNodeWithText("Save program").performScrollTo().performClick()
         waitForText("Doubles")
         assertTrue(app.storage.programs.rows.value.single().days.contains("\"double\":true"))
+    }
+
+    @Test
+    fun `a block can be of any exercise with the load it names`() = bellsAppTest { app ->
+        onNodeWithText("Follow a program").performClick()
+        waitForText("New program")
+        onNodeWithText("New program").performScrollTo().performClick()
+        waitForText("Day 1")
+        onNodeWithText("Add block").performScrollTo().performClick()
+        // A kettlebell lift's bell is left to last time until one is picked.
+        onNodeWithText("Last time").assertExists()
+        onNodeWithText("24").performScrollTo().performClick()
+        onNodeWithText("Done").performScrollTo().performClick()
+        waitForText("5 × 10 · 24 kg")
+
+        onNodeWithText("Two-hand swing").performClick()
+        onNodeWithText("Change").performClick()
+        onNodeWithText("Band pull-apart").performScrollTo().performClick()
+        // A band exercise takes a band, not the bell it had.
+        onNodeWithText("Medium").performScrollTo().performClick()
+        onNodeWithText("Done").performScrollTo().performClick()
+        waitForText("5 × 10 · Medium")
+        onNode(hasSetTextAction()).performTextInput("Pulls")
+        onNodeWithText("Save program").performScrollTo().performClick()
+        waitForText("Pulls")
+        val days = app.storage.programs.rows.value.single().days
+        assertTrue(days.contains("\"band\":\"Medium\"") && !days.contains("\"kg\""), days)
     }
 
     @Test

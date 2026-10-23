@@ -53,4 +53,30 @@ class ProgramDraftTest {
             Program(ProgramKey.Custom("a1"), listOf(listOf(swings)), daysPerWeek = 2, weeks = 6, name = "Mine")
         assertEquals(ProgramDraft("Mine", listOf(listOf(swings)), 2, 6), ProgramDraft.of(program))
     }
+
+    @Test
+    fun `a block keeps its load only while the equipment stays`() {
+        val bell = swings.copy(kg = 24.0)
+        assertEquals(24.0, bell.withExercise(BuiltInExercise.GobletSquat).kg)
+        val band = bell.withExercise(BuiltInExercise.BandPullApart)
+        assertEquals(null, band.kg)
+        assertEquals(10, band.reps)
+        assertEquals(null, band.copy(band = "Heavy").withExercise(BuiltInExercise.PushUp).band)
+    }
+
+    @Test
+    fun `a block becoming a hold runs as sets of thirty seconds`() {
+        val emom = swings.copy(kind = BlockKind.Emom)
+        val plank = emom.withExercise(BuiltInExercise.Plank)
+        assertEquals(BlockKind.Sets, plank.kind)
+        assertEquals(ProgramDraft.NEW_SECONDS, plank.reps)
+        assertEquals(ProgramDraft.NEW_REPS, plank.withExercise(BuiltInExercise.PushUp).reps)
+    }
+
+    @Test
+    fun `planned sets carry their block load`() {
+        val sets = Block(BuiltInExercise.Press, rounds = 2, reps = 5, kg = 16.0).plannedSets()
+        assertEquals(listOf(16.0), sets.map { it.kg }.distinct())
+        assertEquals(4, sets.size)
+    }
 }

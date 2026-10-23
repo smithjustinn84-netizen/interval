@@ -22,31 +22,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.bells.data.BellsRepository
+import dev.justinsmith.bells.data.ExerciseFilterStore
+import dev.justinsmith.bells.domain.Band
 import dev.justinsmith.bells.domain.Block
-import dev.justinsmith.bells.domain.BlockKind
-import dev.justinsmith.bells.domain.Doubles
+import dev.justinsmith.bells.domain.ExerciseFilters
 import dev.justinsmith.bells.domain.ProgramDraft
 import dev.justinsmith.bells.domain.ProgramKey
-import dev.justinsmith.bells.domain.asKind
-import dev.justinsmith.bells.domain.kettlebellLifts
+import dev.justinsmith.bells.domain.bands
+import dev.justinsmith.bells.domain.offeredBands
+import dev.justinsmith.bells.domain.standardBells
 import dev.justinsmith.bells.domain.withExercise
+import dev.justinsmith.bells.library.ExercisePicker
+import dev.justinsmith.bells.library.LibraryList
 import dev.justinsmith.bells.resources.Res
-import dev.justinsmith.bells.resources.block_add_rung
 import dev.justinsmith.bells.resources.block_done
-import dev.justinsmith.bells.resources.block_kind
-import dev.justinsmith.bells.resources.block_kind_emom
-import dev.justinsmith.bells.resources.block_kind_ladder
-import dev.justinsmith.bells.resources.block_kind_sets
 import dev.justinsmith.bells.resources.block_remove
-import dev.justinsmith.bells.resources.block_remove_rung
-import dev.justinsmith.bells.resources.block_reps
-import dev.justinsmith.bells.resources.block_rounds_emom
-import dev.justinsmith.bells.resources.block_rounds_ladder
-import dev.justinsmith.bells.resources.block_rounds_sets
-import dev.justinsmith.bells.resources.block_rung
-import dev.justinsmith.bells.resources.block_rungs
 import dev.justinsmith.bells.resources.block_title
 import dev.justinsmith.bells.resources.common_cancel
 import dev.justinsmith.bells.resources.editor_add_block
@@ -59,8 +52,6 @@ import dev.justinsmith.bells.resources.editor_delete_confirm
 import dev.justinsmith.bells.resources.editor_delete_text
 import dev.justinsmith.bells.resources.editor_delete_title
 import dev.justinsmith.bells.resources.editor_edit_title
-import dev.justinsmith.bells.resources.editor_fewer_cd
-import dev.justinsmith.bells.resources.editor_more_cd
 import dev.justinsmith.bells.resources.editor_name_label
 import dev.justinsmith.bells.resources.editor_name_placeholder
 import dev.justinsmith.bells.resources.editor_new_title
@@ -68,12 +59,7 @@ import dev.justinsmith.bells.resources.editor_remove_day
 import dev.justinsmith.bells.resources.editor_save
 import dev.justinsmith.bells.resources.editor_schedule
 import dev.justinsmith.bells.resources.editor_weeks
-import dev.justinsmith.bells.resources.lift_double
-import dev.justinsmith.bells.resources.log_exercise
-import dev.justinsmith.bells.session.SetDraft
-import dev.justinsmith.bells.ui.ChoiceRow
 import dev.justinsmith.bells.ui.blockLine
-import dev.justinsmith.bells.ui.exerciseName
 import dev.justinsmith.bells.ui.liftName
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.BackAction
@@ -86,26 +72,36 @@ import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.NameField
 import dev.justinsmith.interval.ui.QuietTextButton
-import dev.justinsmith.interval.ui.RepeatButton
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.SecondaryButton
-import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
-import dev.justinsmith.interval.ui.ToggleRow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
-/** The program being made or changed, and whether it is already saved (so it can be deleted). */
-data class ProgramEditorUiState(val draft: ProgramDraft = ProgramDraft(), val saved: Boolean = false)
+/**
+ * The program being made or changed, whether it is already saved (so it can be deleted), and what its blocks
+ * can be made of.
+ */
+data class ProgramEditorUiState(
+    val draft: ProgramDraft = ProgramDraft(),
+    val saved: Boolean = false,
+    val choices: BlockChoices = BlockChoices(standardBells, offeredBands(bands(emptyList())), LibraryList(emptyList())),
+)
 
 /** Makes a program, or changes the one the user made under [uid], until it is saved or deleted. */
-class ProgramEditorViewModel(private val repository: BellsRepository, uid: String?) : ViewModel() {
+class ProgramEditorViewModel(
+    private val repository: BellsRepository,
+    private val filters: ExerciseFilterStore,
+    uid: String?,
+) : ViewModel() {
     // A program deleted meanwhile (on another page of the back stack) is made afresh.
     private val existing =
         uid?.let { id -> repository.customPrograms.value.firstOrNull { it.key == ProgramKey.Custom(id) } }
@@ -113,7 +109,23 @@ class ProgramEditorViewModel(private val repository: BellsRepository, uid: Strin
     private val _state = MutableStateFlow(
         ProgramEditorUiState(existing?.let(ProgramDraft::of) ?: ProgramDraft(), saved = existing != null),
     )
-    val state: StateFlow<ProgramEditorUiState> = _state.asStateFlow()
+
+    private val choices = combine(
+        repository.bells,
+        repository.bands,
+        repository.customExercises,
+        filters.filters,
+    ) { owned, bands, made, narrowed ->
+        blockChoices(owned, bands, made, narrowed, repository.sessions.value.reversed().flatMap { it.sets })
+    }
+
+    val state: StateFlow<ProgramEditorUiState> = combine(_state, choices) { editing, choices ->
+        editing.copy(choices = choices)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, _state.value)
+
+    fun filter(transform: (ExerciseFilters) -> ExerciseFilters) {
+        filters.update(transform)
+    }
 
     fun change(transform: (ProgramDraft) -> ProgramDraft) {
         _state.update { it.copy(draft = transform(it.draft)) }
@@ -132,9 +144,10 @@ class ProgramEditorViewModel(private val repository: BellsRepository, uid: Strin
     }
 }
 
-/** What the editor does: change the draft, save it under a name, delete it, or go back. */
+/** What the editor does: change the draft or narrow its exercises, save it under a name, delete it, or go back. */
 data class ProgramEditorActions(
     val onChange: ((ProgramDraft) -> ProgramDraft) -> Unit = {},
+    val onFilters: ((ExerciseFilters) -> ExerciseFilters) -> Unit = {},
     val onSave: (name: String) -> Unit = {},
     val onDelete: () -> Unit = {},
     val onBack: () -> Unit = {},
@@ -143,12 +156,13 @@ data class ProgramEditorActions(
 @Composable
 fun ProgramEditorRoute(uid: String?, onBack: () -> Unit) {
     val scope = currentKoinScope()
-    val viewModel = viewModel { ProgramEditorViewModel(scope.get(), uid) }
+    val viewModel = viewModel { ProgramEditorViewModel(scope.get(), scope.get(), uid) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     ProgramEditorScreen(
         state,
         ProgramEditorActions(
             onChange = viewModel::change,
+            onFilters = viewModel::filter,
             onSave = { if (viewModel.save(it)) onBack() },
             onDelete = {
                 viewModel.delete()
@@ -182,6 +196,7 @@ fun ProgramEditorScreen(state: ProgramEditorUiState, actions: ProgramEditorActio
             DayCard(
                 day,
                 blocks,
+                state.choices.bands,
                 canRemove = draft.days.size > 1,
                 onOpen = { index ->
                     editingDay = day
@@ -223,6 +238,8 @@ fun ProgramEditorScreen(state: ProgramEditorUiState, actions: ProgramEditorActio
         val index = editingBlock
         BlockSheet(
             block,
+            state.choices,
+            actions.onFilters,
             onChange = { transform -> actions.onChange { it.changeBlock(day, index, transform) } },
             onRemove = { actions.onChange { it.removeBlock(day, index) } },
             onDismiss = {
@@ -288,6 +305,7 @@ private fun ScheduleCard(draft: ProgramDraft, onChange: ((ProgramDraft) -> Progr
 private fun DayCard(
     day: Int,
     blocks: List<Block>,
+    bands: List<Band>,
     canRemove: Boolean,
     onOpen: (Int) -> Unit,
     onAdd: () -> Unit,
@@ -310,7 +328,7 @@ private fun DayCard(
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(liftName(block.exercise, block.double), style = IntervalTheme.type.label, color = palette.text)
-                    Text(blockLine(block), style = IntervalTheme.type.meta, color = palette.textDim)
+                    Text(blockLine(block, bands), style = IntervalTheme.type.meta, color = palette.textDim)
                 }
                 Icon(IntervalIcons.Chevron, null, tint = palette.textDim, modifier = Modifier.size(Sizes.icon))
             }
@@ -320,56 +338,44 @@ private fun DayCard(
     }
 }
 
-/** One block: its lift (with two bells or one), how it runs, its rounds, and its reps or a ladder's rungs. */
+/**
+ * One block: its exercise, the load it names, how it runs, its rounds, and its reps, a hold's length or a
+ * ladder's rungs. Change swaps the sheet for the library until an exercise is picked.
+ */
 @Composable
 private fun BlockSheet(
     block: Block,
+    choices: BlockChoices,
+    onFilters: ((ExerciseFilters) -> ExerciseFilters) -> Unit,
     onChange: ((Block) -> Block) -> Unit,
     onRemove: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     // Removed once the sheet has slid away, so it never shows a block that is gone.
     var removing by remember { mutableStateOf(false) }
+    var picking by rememberSaveable { mutableStateOf(false) }
     IntervalSheet(stringResource(Res.string.block_title), onDismiss = {
         if (removing) onRemove()
         onDismiss()
     }) { hide ->
+        if (picking) {
+            ExercisePicker(
+                choices.library,
+                onFilters,
+                Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
+                selected = block.exercise,
+                onPick = { e ->
+                    onChange { it.withExercise(e) }
+                    picking = false
+                },
+            )
+            return@IntervalSheet
+        }
         Column(
             Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
             verticalArrangement = Arrangement.spacedBy(Spacing.space8),
         ) {
-            GroupLabel(stringResource(Res.string.log_exercise))
-            ChoiceRow(kettlebellLifts, block.exercise, {
-                exerciseName(it)
-            }, { e -> onChange { it.withExercise(e) } })
-            if (block.exercise.doubles == Doubles.Optional) {
-                ListCard {
-                    ToggleRow(
-                        stringResource(Res.string.lift_double),
-                        null,
-                        checked = block.double,
-                        onToggle = { onChange { it.copy(double = !it.double) } },
-                    )
-                }
-            }
-            GroupLabel(stringResource(Res.string.block_kind))
-            SegmentedPicker(BlockKind.entries, block.kind, { kindName(it) }, { k -> onChange { it.asKind(k) } })
-            StepperRow(
-                roundsName(block.kind),
-                block.rounds,
-                1..maxRounds(block.kind),
-                onSet = { n -> onChange { it.copy(rounds = n) } },
-            )
-            if (block.kind == BlockKind.Ladder) {
-                RungsEditor(block.rungs, onSet = { rungs -> onChange { it.copy(rungs = rungs) } })
-            } else {
-                StepperRow(
-                    stringResource(Res.string.block_reps),
-                    block.reps,
-                    1..SetDraft.MAX_REPS,
-                    onSet = { n -> onChange { it.copy(reps = n) } },
-                )
-            }
+            BlockFields(block, choices, onChange, onPickExercise = { picking = true })
             AccentButton(
                 stringResource(Res.string.block_done),
                 onClick = hide,
@@ -386,87 +392,3 @@ private fun BlockSheet(
         }
     }
 }
-
-/** A ladder's rungs, a stepper each, with a rung to add at the end or take off it. */
-@Composable
-private fun RungsEditor(rungs: List<Int>, onSet: (List<Int>) -> Unit) {
-    GroupLabel(stringResource(Res.string.block_rungs))
-    rungs.forEachIndexed { i, rung ->
-        StepperRow(
-            stringResource(Res.string.block_rung, i + 1),
-            rung,
-            1..SetDraft.MAX_REPS,
-            onSet = { n -> onSet(rungs.mapIndexed { j, r -> if (j == i) n else r }) },
-        )
-    }
-    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-        if (rungs.size < ProgramDraft.MAX_RUNGS) {
-            SecondaryButton(
-                stringResource(Res.string.block_add_rung),
-                { onSet(rungs + (rungs.last() + 1)) },
-                Modifier.weight(1f),
-            )
-        }
-        if (rungs.size > 1) {
-            SecondaryButton(
-                stringResource(Res.string.block_remove_rung),
-                { onSet(rungs.dropLast(1)) },
-                Modifier.weight(1f),
-            )
-        }
-    }
-}
-
-/** A number to step within [range]: its [label], the value, and − and +. */
-@Composable
-private fun StepperRow(
-    label: String,
-    value: Int,
-    range: IntRange,
-    onSet: (Int) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val palette = IntervalTheme.palette
-    Row(
-        modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
-    ) {
-        Text(label, style = IntervalTheme.type.label, color = palette.text, modifier = Modifier.weight(1f))
-        Text(value.toString(), style = IntervalTheme.type.value, color = palette.text)
-        RepeatButton(
-            "−",
-            stringResource(Res.string.editor_fewer_cd, label),
-            enabled = value > range.first,
-            onStep = { onSet((value - 1).coerceIn(range)) },
-        )
-        RepeatButton(
-            "+",
-            stringResource(Res.string.editor_more_cd, label),
-            enabled = value < range.last,
-            onStep = { onSet((value + 1).coerceIn(range)) },
-        )
-    }
-}
-
-@Composable
-private fun kindName(kind: BlockKind): String = stringResource(
-    when (kind) {
-        BlockKind.Sets -> Res.string.block_kind_sets
-        BlockKind.Emom -> Res.string.block_kind_emom
-        BlockKind.Ladder -> Res.string.block_kind_ladder
-    },
-)
-
-@Composable
-private fun roundsName(kind: BlockKind): String = stringResource(
-    when (kind) {
-        BlockKind.Sets -> Res.string.block_rounds_sets
-        BlockKind.Emom -> Res.string.block_rounds_emom
-        BlockKind.Ladder -> Res.string.block_rounds_ladder
-    },
-)
-
-/** An EMOM runs no longer than the timer allows; sets and ladders stop at [ProgramDraft.MAX_ROUNDS]. */
-private fun maxRounds(kind: BlockKind): Int =
-    if (kind == BlockKind.Emom) SetDraft.MAX_MINUTES else ProgramDraft.MAX_ROUNDS

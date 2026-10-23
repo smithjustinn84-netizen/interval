@@ -1,13 +1,17 @@
 package dev.justinsmith.bells.ui
 
 import androidx.compose.runtime.Composable
+import dev.justinsmith.bells.domain.Band
 import dev.justinsmith.bells.domain.Block
 import dev.justinsmith.bells.domain.BlockKind
+import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Measure
 import dev.justinsmith.bells.domain.Program
 import dev.justinsmith.bells.domain.ProgramDay
 import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.domain.ProgramKey
+import dev.justinsmith.bells.domain.bandOf
+import dev.justinsmith.bells.domain.formatKg
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.block_emom
 import dev.justinsmith.bells.resources.block_hold
@@ -17,6 +21,10 @@ import dev.justinsmith.bells.resources.block_ladder_sided
 import dev.justinsmith.bells.resources.block_sets
 import dev.justinsmith.bells.resources.block_sets_sided
 import dev.justinsmith.bells.resources.common_joined
+import dev.justinsmith.bells.resources.load_added
+import dev.justinsmith.bells.resources.load_double
+import dev.justinsmith.bells.resources.load_kg
+import dev.justinsmith.bells.resources.log_added_none
 import dev.justinsmith.bells.resources.program_abf_name
 import dev.justinsmith.bells.resources.program_abf_summary
 import dev.justinsmith.bells.resources.program_bands_bells_name
@@ -182,10 +190,34 @@ private fun programSummary(id: ProgramId): String = stringResource(
 
 /**
  * A block's shape: "10 × 10", "5 × 1 a side", "3 × 0:30" for a hold, "10 every minute for 10 minutes",
- * "3 ladders of 1-2-3 a side", "5 ladders of 10-15-25-50".
+ * "3 ladders of 1-2-3 a side", "5 ladders of 10-15-25-50"; then the load it names, if it does: "5 × 10 · 24 kg",
+ * "3 × 15 · Medium", unless not [withLoad]. [bands] are the user's, to name a band by.
  */
 @Composable
-fun blockLine(block: Block): String = when (block.kind) {
+fun blockLine(block: Block, bands: List<Band> = emptyList(), withLoad: Boolean = true): String {
+    val line = blockCount(block)
+    val load = blockLoad(block, bands)?.takeIf { withLoad } ?: return line
+    return stringResource(Res.string.common_joined, line, load)
+}
+
+/** The load [block] names in words, "24 kg", "2 × 16 kg", "+10 kg" or a band's name; null for none named. */
+@Composable
+fun blockLoad(block: Block, bands: List<Band> = emptyList()): String? = when (block.exercise.equipment) {
+    Equipment.Kettlebell -> block.kg?.let {
+        stringResource(if (block.double) Res.string.load_double else Res.string.load_kg, formatKg(it))
+    }
+
+    Equipment.Bodyweight -> block.kg?.let {
+        if (it > 0) stringResource(Res.string.load_added, formatKg(it)) else stringResource(Res.string.log_added_none)
+    }
+
+    Equipment.Band -> block.band?.let { bandName(bandOf(it, bands)) }
+
+    Equipment.Mat -> null
+}
+
+@Composable
+private fun blockCount(block: Block): String = when (block.kind) {
     BlockKind.Sets -> if (block.exercise.measure == Measure.Time) {
         stringResource(
             if (block.exercise.sided(block.double)) Res.string.block_hold_sided else Res.string.block_hold,

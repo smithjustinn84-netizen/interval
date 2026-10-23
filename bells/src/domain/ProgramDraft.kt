@@ -49,6 +49,9 @@ data class ProgramDraft(
         /** Reps a set gets when a ladder becomes sets or an EMOM. */
         const val NEW_REPS = 5
 
+        /** Seconds a hold gets when a block becomes one. */
+        const val NEW_SECONDS = 30
+
         /** [program]'s draft, to change it. */
         fun of(program: Program): ProgramDraft =
             ProgramDraft(program.name.orEmpty(), program.days, program.daysPerWeek, program.weeks)
@@ -62,5 +65,25 @@ fun Block.asKind(kind: BlockKind): Block = copy(
     reps = if (kind != BlockKind.Ladder && reps < 1) ProgramDraft.NEW_REPS else reps,
 )
 
-/** This block of [exercise]: still with two bells if it was and [exercise] can be, and with them if it must. */
-fun Block.withExercise(exercise: Exercise): Block = copy(exercise = exercise, double = exercise.doubled(double))
+/**
+ * This block of [exercise]: still with two bells if it was and [exercise] can be, and with them if it must. Its
+ * load stays while the equipment does; a hold is only ever sets, and a change between reps and time starts the
+ * count afresh.
+ */
+fun Block.withExercise(exercise: Exercise): Block {
+    val sameLoad = exercise.equipment == this.exercise.equipment
+    val sameMeasure = exercise.measure == this.exercise.measure
+    val held = exercise.measure == Measure.Time
+    return copy(
+        exercise = exercise,
+        double = exercise.doubled(double),
+        kind = if (held) BlockKind.Sets else kind,
+        reps = when {
+            sameMeasure -> reps
+            held -> ProgramDraft.NEW_SECONDS
+            else -> ProgramDraft.NEW_REPS
+        },
+        kg = kg.takeIf { sameLoad },
+        band = band.takeIf { sameLoad },
+    )
+}

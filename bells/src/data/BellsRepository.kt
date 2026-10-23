@@ -143,8 +143,9 @@ class BellsRepository(
                 }
             }
             val customLoaded = CompletableDeferred<Unit>()
-            val custom = customProgramDao.observeAll().orEmpty("programs").map { rows ->
-                rows.mapNotNull { it.toProgram() }
+            // A program's blocks can name the user's exercises, archived ones too.
+            val custom = combine(customProgramDao.observeAll().orEmpty("programs"), exercises) { rows, made ->
+                rows.mapNotNull { it.toProgram(made) }
             }
             launch {
                 custom.collect {

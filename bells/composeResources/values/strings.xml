@@ -460,6 +460,13 @@
     <string name="block_remove_rung">Remove last rung</string>
     <string name="block_done">Done</string>
     <string name="block_remove">Remove block</string>
+    <!-- A block's planned load: "24 kg", "2 × 16 kg", "+10 kg" -->
+    <string name="load_kg">%1$s kg</string>
+    <string name="load_double">2 × %1$s kg</string>
+    <string name="load_added">+%1$s kg</string>
+    <!-- The load a block leaves to the last set of its lift -->
+    <string name="load_last_time">Last time</string>
+    <string name="load_last_time_hint">Last time starts from what you used for it last.</string>
 
     <!-- Up next, in a programmed session -->
     <string name="next_title">Up next</string>

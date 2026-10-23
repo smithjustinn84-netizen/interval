@@ -432,14 +432,20 @@ class SessionViewModel(
             (index < start + size).also { if (!it) start += size }
         }
         val emomMinutes = if (block.kind == BlockKind.Emom && index == start) block.rounds else null
-        // Weight added to bodyweight starts at none; a band and the mat take no weight.
+        // The plan's load, when it names one; else what was used last time. Weight added to bodyweight starts
+        // at none; a band and the mat take no weight. A band the plan names that is archived or gone falls back.
         val load = when (set.exercise.equipment) {
-            Equipment.Kettlebell -> suggestedBell(set.exercise, set.double, history, draft.value.bellKg)
-            Equipment.Bodyweight -> suggestedBell(set.exercise, double = false, history, fallback = 0.0)
+            Equipment.Kettlebell ->
+                set.kg ?: suggestedBell(set.exercise, set.double, history, draft.value.bellKg)
+
+            Equipment.Bodyweight -> set.kg ?: suggestedBell(set.exercise, double = false, history, fallback = 0.0)
+
             Equipment.Band, Equipment.Mat -> 0.0
         }
         val band = if (set.exercise.equipment == Equipment.Band) {
-            suggestedBand(set.exercise, history, offeredBands(repository.bands.value), draft.value.band)
+            val offered = offeredBands(repository.bands.value)
+            offered.firstOrNull { it.id == set.band }
+                ?: suggestedBand(set.exercise, history, offered, draft.value.band)
         } else {
             null
         }

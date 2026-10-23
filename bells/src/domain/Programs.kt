@@ -7,7 +7,8 @@ enum class BlockKind { Sets, Emom, Ladder }
  * One part of a program day. [Sets]: [rounds] sets of [reps]. [Emom]: [rounds] minutes, [reps] at the top
  * of each. [Ladder]: [rounds] ladders, each climbing [rungs]. A one-sided lift does each set on both sides,
  * unless it is done with two bells ([double]). For a hold ([Measure.Time]), [reps] counts the seconds held,
- * and a hold is only ever sets.
+ * and a hold is only ever sets. Its load, when the plan names one: [kg], the bell or the weight added to
+ * bodyweight (0 for none), or [band], a [Band]'s id; null leaves it to what was used last time.
  */
 data class Block(
     val exercise: Exercise,
@@ -16,13 +17,16 @@ data class Block(
     val kind: BlockKind = BlockKind.Sets,
     val rungs: List<Int> = emptyList(),
     val double: Boolean = false,
+    val kg: Double? = null,
+    val band: String? = null,
 ) {
     /** The sets it comes to, in order: one-sided lifts left then right, except an EMOM, which alternates by minute. */
     fun plannedSets(): List<PlannedSet> = when (kind) {
         BlockKind.Sets -> (1..rounds).flatMap { sides(reps) }
 
         BlockKind.Emom -> (0 until rounds).map { minute ->
-            PlannedSet(exercise, reps, if (exercise.sided(double)) Side.entries[minute % 2] else null, double)
+            val side = if (exercise.sided(double)) Side.entries[minute % 2] else null
+            PlannedSet(exercise, reps, side, double, kg, band)
         }
 
         BlockKind.Ladder -> (1..rounds).flatMap { rungs.flatMap { rung -> sides(rung) } }
@@ -34,15 +38,25 @@ data class Block(
     private fun sides(reps: Int) =
         if (exercise.sided(double)) {
             Side.entries.map {
-                PlannedSet(exercise, reps, it, double)
+                PlannedSet(exercise, reps, it, double, kg, band)
             }
         } else {
-            listOf(PlannedSet(exercise, reps, null, double))
+            listOf(PlannedSet(exercise, reps, null, double, kg, band))
         }
 }
 
-/** One set a program asks for, with two bells when [double]. A hold's [reps] are the seconds it lasts. */
-data class PlannedSet(val exercise: Exercise, val reps: Int, val side: Side?, val double: Boolean = false) {
+/**
+ * One set a program asks for, with two bells when [double]. A hold's [reps] are the seconds it lasts. Its load
+ * is its block's: [kg] or [band], null for none named.
+ */
+data class PlannedSet(
+    val exercise: Exercise,
+    val reps: Int,
+    val side: Side?,
+    val double: Boolean = false,
+    val kg: Double? = null,
+    val band: String? = null,
+) {
     /** Whether it is a hold, timed rather than counted. */
     val held: Boolean get() = exercise.measure == Measure.Time
 }
