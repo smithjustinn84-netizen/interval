@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.data.ExerciseFilterStore
 import dev.justinsmith.bells.domain.Band
+import dev.justinsmith.bells.domain.Block
 import dev.justinsmith.bells.domain.BlockKind
 import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.EmomClock
@@ -17,8 +18,10 @@ import dev.justinsmith.bells.domain.HoldState
 import dev.justinsmith.bells.domain.LiftSession
 import dev.justinsmith.bells.domain.Measure
 import dev.justinsmith.bells.domain.PersonalRecord
+import dev.justinsmith.bells.domain.PlanBlock
 import dev.justinsmith.bells.domain.PlannedSet
 import dev.justinsmith.bells.domain.ProgramDay
+import dev.justinsmith.bells.domain.SessionPlan
 import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.domain.bands
@@ -28,6 +31,7 @@ import dev.justinsmith.bells.domain.offeredBands
 import dev.justinsmith.bells.domain.offeredExercises
 import dev.justinsmith.bells.domain.other
 import dev.justinsmith.bells.domain.ownedEquipment
+import dev.justinsmith.bells.domain.plannedDone
 import dev.justinsmith.bells.domain.recentExercises
 import dev.justinsmith.bells.domain.standardBells
 import dev.justinsmith.bells.domain.suggestedBand
@@ -106,7 +110,20 @@ data class UpNext(
     val total: Int,
     val emomMinutes: Int?,
     val band: Band? = null,
+    /** Which of the day's blocks it is in, from 0. */
+    val block: Int = 0,
 )
+
+/**
+ * One of the day's blocks as today's plan has it: [done] of its [total] sets done, and whether the session
+ * [changed] it from the program (its load, its count or its exercise).
+ */
+data class PlanRow(val entry: PlanBlock, val done: Int, val total: Int, val changed: Boolean) {
+    val block: Block get() = entry.block
+
+    /** Whether something is left to change: not every set done, or skipped and so to bring back. */
+    val open: Boolean get() = entry.skipped || done < total
+}
 
 /**
  * An EMOM under way: its lift, bell (or two, when [double]) and reps, when it started, and the minutes whose
@@ -147,6 +164,8 @@ data class SessionUiState(
     /** For a program day: what comes next, or null once its sets are done ([dayDone]). */
     val upNext: UpNext? = null,
     val dayDone: Boolean = false,
+    /** For a program day: its blocks as today's plan has them. */
+    val plan: List<PlanRow> = emptyList(),
     val emom: EmomRun? = null,
     val emomState: EmomState? = null,
     /** A hold being timed on the Log sheet. */
@@ -163,6 +182,7 @@ data class SessionUiState(
  * The session in progress: starts one when opened if none is, logs sets (from the plan, the sheet or an
  * EMOM), and finishes or discards it. [tickMillis] is how often the clocks move and cues are checked.
  */
+@Suppress("detekt.TooManyFunctions") // Every way a session changes, side by side.
 class SessionViewModel(
     private val repository: BellsRepository,
     private val clock: WallClock,
@@ -211,7 +231,8 @@ class SessionViewModel(
             val run = chosen.emom
             val emomState = run?.let { EmomClock(it.minutes).at(now - it.startedAtMillis, it.done) }
             val hold = chosen.timing.run
-            val plan = active?.takeIf { it.program != null && it.program == day?.program?.key }?.let { day }
+            val plan = active?.takeIf { it.program != null && it.program == day?.program?.key }
+                ?.let { day?.copy(plan = it.plan) }
             SessionUiState(
                 session = active,
                 elapsed = formatClock(active?.elapsedSeconds(now) ?: 0),
@@ -224,6 +245,7 @@ class SessionViewModel(
                 draft = chosen.draft,
                 upNext = plan?.let { upNext(it, active.sets) },
                 dayDone = plan != null && nextPlanned(plan.plannedSets(), active.sets) == null,
+                plan = plan?.let { planRows(it, active.sets) }.orEmpty(),
                 emom = run,
                 emomState = emomState,
                 hold = hold,
@@ -317,6 +339,42 @@ class SessionViewModel(
             seconds = set.reps.takeIf { set.held },
             band = next.band,
         )
+    }
+
+    /** Changes block [index] of today's plan by [transform]: its load, rounds or reps. */
+    fun changeBlock(index: Int, transform: (Block) -> Block) {
+        val (plan, _) = today() ?: return
+        repository.setSessionPlan(plan.change(index, transform))
+    }
+
+    /** Skips the rest of block [index] of today's plan: what comes next moves on. */
+    fun skipBlock(index: Int) {
+        val (plan, done) = today() ?: return
+        repository.setSessionPlan(plan.skip(index, done.getOrElse(index) { 0 }))
+    }
+
+    /** Plans block [index] of today's plan in full again. */
+    fun unskipBlock(index: Int) {
+        val (plan, _) = today() ?: return
+        repository.setSessionPlan(plan.unskip(index))
+    }
+
+    /** Swaps [exercise] in for the sets of block [index] still to do. */
+    fun swapBlock(index: Int, exercise: Exercise) {
+        val (plan, done) = today() ?: return
+        val count = done.getOrElse(index) { 0 }
+        if (plan.canSwap(index, count)) repository.setSessionPlan(plan.swap(index, exercise, count))
+    }
+
+    /**
+     * Today's plan as the repository has it now, not as last drawn, so a change made straight after another
+     * builds on it, and the sets of each block done; null in a free session.
+     */
+    private fun today(): Pair<SessionPlan, List<Int>>? {
+        val active = repository.active.value ?: return null
+        val day = repository.programDay.value?.takeIf { active.program != null && it.program.key == active.program }
+            ?.copy(plan = active.plan) ?: return null
+        return day.today to planRows(day, active.sets).map { it.done }
     }
 
     /** Starts the plan's next block as an EMOM, if it is one. */
@@ -421,17 +479,21 @@ class SessionViewModel(
     }
 
     private fun upNext(day: ProgramDay, logged: List<SetLog>): UpNext? {
-        val planned = day.plannedSets()
+        val blocks = day.blockSets()
+        val planned = blocks.flatten()
         val index = nextPlanned(planned, logged) ?: return null
         val set = planned[index]
         val history = repository.sessions.value.reversed().flatMap { it.sets } + logged
-        // The block it falls in, to tell an EMOM's first minute from the rest.
+        // The block it falls in, to tell an EMOM's first minute from the rest: after a swap, the first
+        // minute of the exercise swapped in.
         var start = 0
-        val block = day.blocks.first { b ->
-            val size = b.plannedSets().size
-            (index < start + size).also { if (!it) start += size }
+        val blockIndex = blocks.indexOfFirst { b -> (index < start + b.size).also { if (!it) start += b.size } }
+        val entry = day.today.blocks[blockIndex]
+        val emomMinutes = if (entry.block.kind == BlockKind.Emom && index == start + entry.firstOfBlock) {
+            blocks[blockIndex].size - entry.firstOfBlock
+        } else {
+            null
         }
-        val emomMinutes = if (block.kind == BlockKind.Emom && index == start) block.rounds else null
         // The plan's load, when it names one; else what was used last time. Weight added to bodyweight starts
         // at none; a band and the mat take no weight. A band the plan names that is archived or gone falls back.
         val load = when (set.exercise.equipment) {
@@ -449,7 +511,20 @@ class SessionViewModel(
         } else {
             null
         }
-        return UpNext(set, load, index + 1, planned.size, emomMinutes, band)
+        return UpNext(set, load, index + 1, planned.size, emomMinutes, band, blockIndex)
+    }
+
+    /** [day]'s blocks as today's plan has them, with the sets of each [logged] has done. */
+    private fun planRows(day: ProgramDay, logged: List<SetLog>): List<PlanRow> {
+        val blocks = day.blockSets()
+        val done = plannedDone(blocks.flatten(), logged)
+        var start = 0
+        return day.today.blocks.mapIndexed { i, entry ->
+            val size = blocks[i].size
+            val count = done.subList(start, start + size).count { it }
+            start += size
+            PlanRow(entry, count, size, changed = entry.block != day.blocks.getOrNull(i))
+        }
     }
 
     /** What the screen chose, and the exercises it can choose from. */

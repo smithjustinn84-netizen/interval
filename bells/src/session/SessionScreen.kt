@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -36,6 +37,8 @@ import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import dev.justinsmith.bells.data.ExerciseFilterStore
+import dev.justinsmith.bells.domain.Block
+import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.ExerciseFilters
 import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.formatKg
@@ -43,10 +46,13 @@ import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.common_cancel
 import dev.justinsmith.bells.resources.common_joined
 import dev.justinsmith.bells.resources.kg_value
+import dev.justinsmith.bells.resources.next_change
 import dev.justinsmith.bells.resources.next_day_done
 import dev.justinsmith.bells.resources.next_emom
 import dev.justinsmith.bells.resources.next_log
+import dev.justinsmith.bells.resources.next_plan
 import dev.justinsmith.bells.resources.next_progress
+import dev.justinsmith.bells.resources.next_skip
 import dev.justinsmith.bells.resources.next_title
 import dev.justinsmith.bells.resources.session_discard
 import dev.justinsmith.bells.resources.session_discard_text
@@ -80,6 +86,7 @@ import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.Motion
+import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
@@ -135,6 +142,10 @@ fun SessionRoute(onExit: () -> Unit, onNewExercise: (name: String) -> Unit = {})
             onCancelHold = viewModel.holds::cancel,
             onRemoveSet = viewModel::removeSet,
             onRestoreSet = viewModel::restoreSet,
+            onChangeBlock = viewModel::changeBlock,
+            onSwapBlock = viewModel::swapBlock,
+            onSkipBlock = viewModel::skipBlock,
+            onUnskipBlock = viewModel::unskipBlock,
             onFinish = {
                 if (state.session?.sets.isNullOrEmpty()) {
                     viewModel.discard()
@@ -195,6 +206,11 @@ data class SessionActions(
     val onCancelHold: () -> Unit = {},
     val onRemoveSet: (Long) -> Unit = {},
     val onRestoreSet: (SetLog) -> Unit = {},
+    /** Today's plan: block [Int] changed, given another exercise, skipped, or brought back. */
+    val onChangeBlock: (Int, (Block) -> Block) -> Unit = { _, _ -> },
+    val onSwapBlock: (Int, Exercise) -> Unit = { _, _ -> },
+    val onSkipBlock: (Int) -> Unit = {},
+    val onUnskipBlock: (Int) -> Unit = {},
     val onFinish: () -> Unit = {},
     val onDiscard: () -> Unit = {},
 )
@@ -205,6 +221,9 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
     val palette = IntervalTheme.palette
     var logging by rememberSaveable { mutableStateOf(false) }
     var discarding by rememberSaveable { mutableStateOf(false) }
+    var planning by rememberSaveable { mutableStateOf(false) }
+    // The block of today's plan open to change, -1 for none: a plain number saves on every platform.
+    var changing by rememberSaveable { mutableIntStateOf(-1) }
     // The set just removed, offered back for a few seconds.
     var removed by remember { mutableStateOf<SetLog?>(null) }
     LaunchedEffect(removed) {
@@ -237,7 +256,7 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
                 state.sinceLast?.let {
                     StatTile(stringResource(Res.string.session_since_last), it, Modifier.fillMaxWidth())
                 }
-                UpNextCard(state, actions)
+                UpNextCard(state, actions, onChange = { changing = it }, onPlan = { planning = true })
                 LoggedSets(state, onRemove = { set ->
                     removed = set
                     actions.onRemoveSet(set.id)
@@ -245,10 +264,7 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
             }
             removed?.let { set ->
                 UndoBar(
-                    stringResource(
-                        Res.string.session_set_removed,
-                        setLine(set),
-                    ),
+                    stringResource(Res.string.session_set_removed, setLine(set)),
                     onUndo = {
                         removed = null
                         actions.onRestoreSet(set)
@@ -266,6 +282,7 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
         }
     }
     if (logging) LogSetSheet(state, actions, onDismiss = { logging = false })
+    PlanSheets(state, actions, planning, changing, onPlanning = { planning = it }, onChanging = { changing = it })
     if (discarding) {
         ConfirmDialog(
             title = stringResource(Res.string.session_discard_title),
@@ -344,9 +361,12 @@ private fun UndoBar(text: String, onUndo: () -> Unit, modifier: Modifier = Modif
     }
 }
 
-/** In a program day: the next planned set, with its bell, to log in one tap or to start its EMOM. */
+/**
+ * In a program day: the next planned set, with its load, to log in one tap or to start its EMOM; Change opens
+ * its block to change for today, Skip skips the rest of it, and Today's plan lists every block.
+ */
 @Composable
-private fun UpNextCard(state: SessionUiState, actions: SessionActions) {
+private fun UpNextCard(state: SessionUiState, actions: SessionActions, onChange: (Int) -> Unit, onPlan: () -> Unit) {
     val palette = IntervalTheme.palette
     val next = state.upNext
     if (next == null) {
@@ -357,6 +377,7 @@ private fun UpNextCard(state: SessionUiState, actions: SessionActions) {
                 color = palette.textDim,
                 modifier = Modifier.padding(vertical = Spacing.space8),
             )
+            if (state.plan.any { it.open }) QuietTextButton(stringResource(Res.string.next_plan), onPlan)
         }
         return
     }
@@ -398,6 +419,19 @@ private fun UpNextCard(state: SessionUiState, actions: SessionActions) {
                     Modifier.fillMaxWidth().padding(top = Spacing.space8),
                 )
             }
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+                SecondaryButton(stringResource(Res.string.next_change), { onChange(next.block) }, Modifier.weight(1f))
+                SecondaryButton(
+                    stringResource(Res.string.next_skip),
+                    { actions.onSkipBlock(next.block) },
+                    Modifier.weight(1f),
+                )
+            }
+            QuietTextButton(
+                stringResource(Res.string.next_plan),
+                onPlan,
+                Modifier.align(Alignment.CenterHorizontally),
+            )
         }
     }
 }

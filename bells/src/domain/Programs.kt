@@ -86,9 +86,27 @@ data class Program(
     }
 }
 
-/** Day [number] (from 1) of [program], in [week] (from 1), and what it asks for. */
-data class ProgramDay(val program: Program, val number: Int, val week: Int, val blocks: List<Block>) {
-    fun plannedSets(): List<PlannedSet> = blocks.flatMap { it.plannedSets() }
+/**
+ * Day [number] (from 1) of [program], in [week] (from 1), and what it asks for: its [blocks] as programmed, or
+ * as a session's [plan] changed them.
+ */
+data class ProgramDay(
+    val program: Program,
+    val number: Int,
+    val week: Int,
+    val blocks: List<Block>,
+    val plan: SessionPlan? = null,
+) {
+    /** Which of the program's days it is, from 0. */
+    val dayIndex: Int get() = (number - 1) % program.days.size
+
+    /** Today's plan: as the session changed it, or as programmed. */
+    val today: SessionPlan get() = plan ?: SessionPlan.of(blocks)
+
+    /** Each block's sets, in order. */
+    fun blockSets(): List<List<PlannedSet>> = today.blocks.map { it.plannedSets() }
+
+    fun plannedSets(): List<PlannedSet> = blockSets().flatten()
 }
 
 /** A program's id as it is stored, with its sessions and as the one followed. */
@@ -589,20 +607,8 @@ fun program(
  * with two bells has no side, so for a one-sided lift a planned double set is done only by a double one; for
  * a lift with no sides, one bell or two does it.
  */
-fun nextPlanned(planned: List<PlannedSet>, logged: List<SetLog>): Int? {
-    val used = mutableMapOf<Pair<String, Side?>, Int>()
-    logged.forEach { set ->
-        val key = set.exercise.key to set.side
-        used[key] = (used[key] ?: 0) + 1
-    }
-    planned.forEachIndexed { i, set ->
-        val key = set.exercise.key to set.side
-        val left = used[key] ?: 0
-        if (left == 0) return i
-        used[key] = left - 1
-    }
-    return null
-}
+fun nextPlanned(planned: List<PlannedSet>, logged: List<SetLog>): Int? =
+    plannedDone(planned, logged).indexOfFirst { !it }.takeIf { it >= 0 }
 
 /** The band to suggest for [exercise]: the last one used for it if [offered] still, else [fallback]. */
 fun suggestedBand(exercise: Exercise, history: List<SetLog>, offered: List<Band>, fallback: Band): Band {

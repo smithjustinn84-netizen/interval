@@ -160,9 +160,9 @@ internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismi
     }
 }
 
-/** The exercise the set is of, its facts under its name, and Change to pick another from the library. */
+/** The exercise the set is of, its facts under its name, and Change, with [onChange], to pick another. */
 @Composable
-internal fun ExerciseCard(exercise: Exercise, onChange: () -> Unit) {
+internal fun ExerciseCard(exercise: Exercise, onChange: (() -> Unit)?) {
     val palette = IntervalTheme.palette
     ListCard {
         Row(
@@ -186,7 +186,7 @@ internal fun ExerciseCard(exercise: Exercise, onChange: () -> Unit) {
                     Text(cues, style = IntervalTheme.type.meta, color = palette.text)
                 }
             }
-            QuietTextButton(stringResource(Res.string.log_change), onChange)
+            onChange?.let { QuietTextButton(stringResource(Res.string.log_change), it) }
         }
     }
 }

@@ -474,6 +474,21 @@
     <string name="next_log">Log it</string>
     <string name="next_emom">Start EMOM</string>
     <string name="next_day_done">Today's sets are done. Finish when you are.</string>
+    <string name="next_change">Change</string>
+    <string name="next_skip">Skip</string>
+    <string name="next_plan">Today's plan</string>
+
+    <!-- Today's plan, changed in the session -->
+    <string name="plan_title">Today's plan</string>
+    <string name="plan_block_title">Today's block</string>
+    <!-- Under a block of today's plan: "2 of 6 done" -->
+    <string name="plan_done_of">%1$d of %2$d done</string>
+    <string name="plan_changed">Changed</string>
+    <string name="plan_skipped">Skipped</string>
+    <string name="plan_skip_rest">Skip the rest</string>
+    <string name="plan_skip_block">Skip this block</string>
+    <string name="plan_unskip">Bring it back</string>
+    <string name="plan_hint">Changes here are for today. When you finish, you can keep them in the program.</string>
 
     <!-- EMOM -->
     <string name="emom_title">EMOM</string>

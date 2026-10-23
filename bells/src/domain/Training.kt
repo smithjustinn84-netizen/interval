@@ -267,6 +267,8 @@ data class LiftSession(
     val sets: List<SetLog>,
     /** The program it is a day of, or null for a free session. */
     val program: ProgramKey? = null,
+    /** The day's plan as this session changed it; null while it is as programmed. */
+    val plan: SessionPlan? = null,
 ) {
     val tonnageKg: Double get() = sets.sumOf { it.tonnageKg }
 

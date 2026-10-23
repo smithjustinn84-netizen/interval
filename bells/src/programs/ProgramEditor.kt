@@ -233,21 +233,10 @@ fun ProgramEditorScreen(state: ProgramEditorUiState, actions: ProgramEditorActio
             )
         }
     }
-    draft.days.getOrNull(editingDay)?.getOrNull(editingBlock)?.let { block ->
-        val day = editingDay
-        val index = editingBlock
-        BlockSheet(
-            block,
-            state.choices,
-            actions.onFilters,
-            onChange = { transform -> actions.onChange { it.changeBlock(day, index, transform) } },
-            onRemove = { actions.onChange { it.removeBlock(day, index) } },
-            onDismiss = {
-                editingDay = -1
-                editingBlock = -1
-            },
-        )
-    }
+    EditingBlock(state, actions, editingDay, editingBlock, onClose = {
+        editingDay = -1
+        editingBlock = -1
+    })
     if (deleting) {
         DeleteDialog(
             onConfirm = {
@@ -257,6 +246,26 @@ fun ProgramEditorScreen(state: ProgramEditorUiState, actions: ProgramEditorActio
             onDismiss = { deleting = false },
         )
     }
+}
+
+/** Block [index] of day [day], open in its sheet while there is one. */
+@Composable
+private fun EditingBlock(
+    state: ProgramEditorUiState,
+    actions: ProgramEditorActions,
+    day: Int,
+    index: Int,
+    onClose: () -> Unit,
+) {
+    val block = state.draft.days.getOrNull(day)?.getOrNull(index) ?: return
+    BlockSheet(
+        block,
+        state.choices,
+        actions.onFilters,
+        onChange = { transform -> actions.onChange { it.changeBlock(day, index, transform) } },
+        onRemove = { actions.onChange { it.removeBlock(day, index) } },
+        onDismiss = onClose,
+    )
 }
 
 @Composable

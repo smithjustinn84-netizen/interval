@@ -24,7 +24,8 @@ import kotlinx.coroutines.flow.Flow
  * sibling app; version 4 dropped them, and the copy of Interval's workouts, once Bells became part of it;
  * version 5 added the programs the user makes, [CustomProgramEntity]; version 6 sets done with two bells;
  * version 7 sets of any equipment, held or with a band, and the exercises the user adds,
- * [CustomExerciseEntity]; version 8 the user's changes to their bands and the bands they add, [BandEntity].
+ * [CustomExerciseEntity]; version 8 the user's changes to their bands and the bands they add, [BandEntity];
+ * version 9 a session's day as it changed it, and the days done of a program before following it.
  * Every version adds; none rewrites a row.
  */
 @Database(
@@ -37,7 +38,7 @@ import kotlinx.coroutines.flow.Flow
         CustomExerciseEntity::class,
         BandEntity::class,
     ],
-    version = 8,
+    version = 9,
     // 3 to 4 is MIGRATION_3_4, added in bellsStorageModule.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -46,6 +47,7 @@ import kotlinx.coroutines.flow.Flow
         AutoMigration(from = 5, to = 6),
         AutoMigration(from = 6, to = 7),
         AutoMigration(from = 7, to = 8),
+        AutoMigration(from = 8, to = 9),
     ],
 )
 @ConstructedBy(BellsDatabaseConstructor::class)
@@ -110,6 +112,9 @@ interface SessionDao {
 
     @Query("DELETE FROM lift_set WHERE id = :id")
     suspend fun deleteSet(id: Long)
+
+    @Query("UPDATE session SET plan = :plan WHERE uid = :uid")
+    suspend fun setPlan(uid: String, plan: String?)
 
     @Query("UPDATE session SET finished_at = :at, title = :title, updated_at = :at WHERE uid = :uid")
     suspend fun finish(uid: String, title: String, at: Long)
@@ -199,6 +204,8 @@ data class SessionEntity(
     val deleted: Boolean = false,
     /** The program it was a day of, a [dev.justinsmith.bells.domain.ProgramKey] as stored; null for a free session. */
     @ColumnInfo(name = "program_id") val programId: String? = null,
+    /** The day as the session changed it, in [encodePlan]'s shape; null while it is as programmed. */
+    val plan: String? = null,
 )
 
 @Entity(tableName = "lift_set", indices = [Index("session_uid")])
@@ -252,6 +259,8 @@ data class FollowingEntity(
     @PrimaryKey val id: Int = 0,
     @ColumnInfo(name = "program_id") val programId: String,
     @ColumnInfo(name = "started_at") val startedAtEpochMillis: Long,
+    /** Days of it counted as done before [startedAtEpochMillis]: a copy followed from where its original was. */
+    @ColumnInfo(name = "days_before", defaultValue = "0") val daysBefore: Int = 0,
 )
 
 /**

@@ -5,8 +5,10 @@ import dev.justinsmith.bells.domain.BlockKind
 import dev.justinsmith.bells.domain.CustomExercise
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
+import dev.justinsmith.bells.domain.PlanBlock
 import dev.justinsmith.bells.domain.Program
 import dev.justinsmith.bells.domain.ProgramKey
+import dev.justinsmith.bells.domain.SessionPlan
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -70,4 +72,36 @@ internal fun StoredBlock.toBlock(made: List<CustomExercise>): Block? {
         kg = kg?.takeIf { weighed && it >= 0 },
         band = band?.takeIf { lift.equipment == Equipment.Band },
     )
+}
+
+/** One block of a session's plan as [SessionEntity.plan] stores it, in [PlanBlock]'s terms. */
+@Serializable
+internal data class StoredPlanBlock(
+    val block: StoredBlock,
+    val kept: Int? = null,
+    val before: StoredBlock? = null,
+    val beforeDone: Int = 0,
+)
+
+/** [plan] as [SessionEntity.plan] holds it. */
+internal fun encodePlan(plan: SessionPlan): String = json.encodeToString(
+    plan.blocks.map { StoredPlanBlock(it.block.toStored(), it.kept, it.before?.toStored(), it.beforeDone) },
+)
+
+/**
+ * The plan [stored] holds, its blocks naming built-ins or [made]; null, the day as programmed, if any of it
+ * can't be read.
+ */
+internal fun decodePlan(stored: String, made: List<CustomExercise>): SessionPlan? {
+    val blocks = try {
+        json.decodeFromString<List<StoredPlanBlock>>(stored)
+    } catch (_: IllegalArgumentException) {
+        return null
+    }
+    val plan = blocks.map { entry ->
+        val block = entry.block.toBlock(made) ?: return null
+        val before = entry.before?.let { it.toBlock(made) ?: return null }
+        PlanBlock(block, entry.kept?.coerceAtLeast(0), before, entry.beforeDone.coerceAtLeast(0))
+    }
+    return SessionPlan(plan).takeIf { plan.isNotEmpty() }
 }
