@@ -84,20 +84,16 @@ internal fun blockChoices(
 }
 
 /**
- * A block's fields: its exercise (Change asks for another through [onPickExercise], when there is one), the
- * load it names or leaves to last time, how it runs (a hold only ever as sets, and fixed with [lockKind]), its
- * rounds from [fewestRounds], and its reps, a hold's length, or a ladder's rungs.
+ * What a block is: its exercise (Change asks for another through [onPickExercise], when there is one) and the
+ * load it names or leaves to last time. [BlockCounts] follows it, under it or beside it.
  */
 @Composable
-internal fun BlockFields(
+internal fun BlockLoad(
     block: Block,
     choices: BlockChoices,
     onChange: ((Block) -> Block) -> Unit,
     onPickExercise: (() -> Unit)?,
-    fewestRounds: Int = 1,
-    lockKind: Boolean = false,
 ) {
-    val held = block.exercise.measure == Measure.Time
     ExerciseCard(block.exercise, onChange = onPickExercise)
     if (block.exercise.equipment != Equipment.Mat) {
         LoadPicker(
@@ -118,6 +114,20 @@ internal fun BlockFields(
             color = IntervalTheme.palette.textDim,
         )
     }
+}
+
+/**
+ * How much of a block: how it runs (a hold only ever as sets, and fixed with [lockKind]), its rounds from
+ * [fewestRounds], and its reps, a hold's length, or a ladder's rungs.
+ */
+@Composable
+internal fun BlockCounts(
+    block: Block,
+    onChange: ((Block) -> Block) -> Unit,
+    fewestRounds: Int = 1,
+    lockKind: Boolean = false,
+) {
+    val held = block.exercise.measure == Measure.Time
     if (!held && !lockKind) {
         GroupLabel(stringResource(Res.string.block_kind))
         SegmentedPicker(BlockKind.entries, block.kind, { kindName(it) }, { k -> onChange { it.asKind(k) } })

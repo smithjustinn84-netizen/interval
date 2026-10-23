@@ -2,17 +2,21 @@ package dev.justinsmith.bells.session
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -59,6 +63,7 @@ import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ToggleRow
+import dev.justinsmith.interval.ui.isLandscape
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -74,43 +79,108 @@ fun SummaryScreen(
 ) {
     val palette = IntervalTheme.palette
     val session = finished.session
-    Box(modifier.fillMaxSize().background(palette.background), contentAlignment = Alignment.TopCenter) {
-        Column(
-            Modifier.widthIn(max = Sizes.content).fillMaxSize().safeDrawingPadding().padding(Spacing.space20),
-            verticalArrangement = Arrangement.spacedBy(Spacing.space8),
-        ) {
+    val choices = rememberChangesChoices()
+    BoxWithConstraints(modifier.fillMaxSize().background(palette.background), contentAlignment = Alignment.TopCenter) {
+        if (isLandscape) {
+            // Sideways: Done, the title and the way out on the left, the numbers and changes scrolling on the right.
+            Row(
+                Modifier.fillMaxSize().safeDrawingPadding().padding(Spacing.space20),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.space20, Alignment.CenterHorizontally),
+            ) {
+                Column(
+                    Modifier.width(Sizes.setupColumnLandscape).fillMaxHeight(),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+                ) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
+                        SummaryHeading(session.title)
+                    }
+                    SummaryFooter(onDone)
+                }
+                Column(
+                    Modifier
+                        .weight(1f, fill = false)
+                        .widthIn(max = Sizes.content)
+                        .fillMaxHeight()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+                ) {
+                    SessionStats(session, finished.records)
+                    ChangesCard(finished, choices, onKeep)
+                }
+            }
+        } else {
             Column(
-                Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                Modifier.widthIn(max = Sizes.content).fillMaxSize().safeDrawingPadding().padding(Spacing.space20),
                 verticalArrangement = Arrangement.spacedBy(Spacing.space8),
             ) {
-                Text(
-                    stringResource(Res.string.summary_done),
-                    style = IntervalTheme.type.display,
-                    color = IntervalTheme.workout.done,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().padding(top = Spacing.space24),
-                )
-                Text(
-                    session.title,
-                    style = IntervalTheme.type.section,
-                    color = palette.text,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.space16),
-                )
-                SessionStats(session, finished.records)
-                ChangesCard(finished, onKeep)
+                Column(
+                    Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+                ) {
+                    SummaryHeading(session.title, Modifier.padding(top = Spacing.space24, bottom = Spacing.space16))
+                    SessionStats(session, finished.records)
+                    ChangesCard(finished, choices, onKeep)
+                }
+                SummaryFooter(onDone)
             }
-            Text(
-                stringResource(Res.string.summary_shared),
-                style = IntervalTheme.type.meta,
-                color = palette.textDim,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            AccentButton(stringResource(Res.string.summary_done), onDone, Modifier.fillMaxWidth())
         }
     }
 }
+
+/** Done in the done colour over the session's title. */
+@Composable
+private fun SummaryHeading(title: String, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxWidth()) {
+        Text(
+            stringResource(Res.string.summary_done),
+            style = IntervalTheme.type.display,
+            color = IntervalTheme.workout.done,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Text(
+            title,
+            style = IntervalTheme.type.section,
+            color = IntervalTheme.palette.text,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+/** Where the session went, and Done. */
+@Composable
+private fun SummaryFooter(onDone: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+        Text(
+            stringResource(Res.string.summary_shared),
+            style = IntervalTheme.type.meta,
+            color = IntervalTheme.palette.textDim,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        AccentButton(stringResource(Res.string.summary_done), onDone, Modifier.fillMaxWidth())
+    }
+}
+
+/**
+ * What was chosen on the changes card. Held by [SummaryScreen] above its layout, so turning the phone, which
+ * moves the card to the other column, keeps the choices.
+ */
+private class ChangesChoices(
+    val dismissed: MutableState<Boolean>,
+    // Saved by name: an enum is not saveable on every platform.
+    val scopeName: MutableState<String>,
+    // The steps up left out, by place, as text: a plain string saves on every platform.
+    val declined: MutableState<String>,
+)
+
+@Composable
+private fun rememberChangesChoices() = ChangesChoices(
+    dismissed = rememberSaveable { mutableStateOf(false) },
+    scopeName = rememberSaveable { mutableStateOf(SaveScope.ThisDay.name) },
+    declined = rememberSaveable { mutableStateOf("") },
+)
 
 /**
  * A program day's changes, offered to keep: each block as programmed and as it was done, and Next time, the
@@ -119,13 +189,11 @@ fun SummaryScreen(
  * kept, where they went.
  */
 @Composable
-private fun ChangesCard(finished: Finished, onKeep: (SaveScope, String, Set<Int>) -> Unit) {
+private fun ChangesCard(finished: Finished, choices: ChangesChoices, onKeep: (SaveScope, String, Set<Int>) -> Unit) {
     val changes = finished.changes ?: return
-    var dismissed by rememberSaveable { mutableStateOf(false) }
-    // Saved by name: an enum is not saveable on every platform.
-    var scopeName by rememberSaveable { mutableStateOf(SaveScope.ThisDay.name) }
-    // The steps up left out, by place, as text: a plain string saves on every platform.
-    var declined by rememberSaveable { mutableStateOf("") }
+    var dismissed by choices.dismissed
+    var scopeName by choices.scopeName
+    var declined by choices.declined
     val left = declined.split(',').mapNotNull { it.toIntOrNull() }.toSet()
     val taken = changes.nudges.indices.toSet() - left
     val name = programName(changes.program)

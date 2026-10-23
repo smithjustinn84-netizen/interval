@@ -5,14 +5,18 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -94,6 +98,7 @@ import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TitleBar
+import dev.justinsmith.interval.ui.isLandscape
 import dev.justinsmith.interval.ui.surfaceButton
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
@@ -227,7 +232,6 @@ data class SessionActions(
 /** The session in progress: its time and weight moved, its sets by lift, and Log set. */
 @Composable
 fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modifier = Modifier) {
-    val palette = IntervalTheme.palette
     var logging by rememberSaveable { mutableStateOf(false) }
     var discarding by rememberSaveable { mutableStateOf(false) }
     var planning by rememberSaveable { mutableStateOf(false) }
@@ -242,35 +246,28 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
         }
     }
     KeepScreenOn()
-    Box(modifier.fillMaxSize().background(palette.background), contentAlignment = Alignment.TopCenter) {
-        Column(Modifier.widthIn(max = Sizes.content).fillMaxSize().safeDrawingPadding()) {
+    val sets = SetActions(
+        onRemove = { removed = it.also { set -> actions.onRemoveSet(set.id) } },
+        onEdit = {
+            actions.onEditSet(it.id)
+            logging = true
+        },
+    )
+    val parts = SessionParts(
+        bar = {
             TitleBar(
                 stringResource(Res.string.session_title),
                 navigation = {
                     IconAction(IntervalIcons.Close, stringResource(Res.string.session_discard), { discarding = true })
                 },
             )
-            Column(
-                Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Spacing.space16),
-                verticalArrangement = Arrangement.spacedBy(Spacing.space8),
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-                    StatTile(stringResource(Res.string.session_time), state.elapsed, Modifier.weight(1f))
-                    StatTile(
-                        stringResource(Res.string.session_moved),
-                        stringResource(Res.string.kg_value, formatKg(state.session?.tonnageKg ?: 0.0)),
-                        Modifier.weight(1f),
-                    )
-                }
-                state.sinceLast?.let {
-                    StatTile(stringResource(Res.string.session_since_last), it, Modifier.fillMaxWidth())
-                }
-                UpNextCard(state, actions, onChange = { changing = it }, onPlan = { planning = true })
-                LoggedSets(state, onRemove = { removed = it.also { set -> actions.onRemoveSet(set.id) } }, onEdit = {
-                    actions.onEditSet(it.id)
-                    logging = true
-                })
-            }
+        },
+        tiles = { SessionTiles(state) },
+        plan = {
+            UpNextCard(state, actions, onChange = { changing = it }, onPlan = { planning = true })
+            LoggedSets(state, sets)
+        },
+        undo = { undoModifier ->
             removed?.let { set ->
                 UndoBar(
                     stringResource(Res.string.session_set_removed, setLine(set)),
@@ -278,18 +275,13 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
                         removed = null
                         actions.onRestoreSet(set)
                     },
-                    Modifier.padding(start = Spacing.space16, end = Spacing.space16, top = Spacing.space8),
+                    undoModifier,
                 )
             }
-            Row(
-                Modifier.padding(Spacing.space16),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
-            ) {
-                SecondaryButton(stringResource(Res.string.session_finish), actions.onFinish, Modifier.weight(1f))
-                AccentButton(stringResource(Res.string.session_log), { logging = true }, Modifier.weight(2f))
-            }
-        }
-    }
+        },
+        buttons = { SessionButtons(onFinish = actions.onFinish, onLog = { logging = true }) },
+    )
+    SessionLayout(parts, modifier)
     if (logging) LogSetSheet(state, actions, onDismiss = { logging = false })
     PlanSheets(state, actions, planning, changing, onPlanning = { planning = it }, onChanging = { changing = it })
     if (discarding) {
@@ -307,9 +299,103 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
     }
 }
 
+/** The session screen's parts, which [SessionLayout] lays out upright or on its side. */
+private class SessionParts(
+    val bar: @Composable () -> Unit,
+    val tiles: @Composable () -> Unit,
+    val plan: @Composable ColumnScope.() -> Unit,
+    val undo: @Composable (Modifier) -> Unit,
+    val buttons: @Composable () -> Unit,
+)
+
+/**
+ * Upright, one column: the title, then the clock, what is next and what is done scrolling, then Log set.
+ * Sideways, the title, the clock and Log set on the left, and what is next and what is done on the right.
+ */
+@Composable
+private fun SessionLayout(parts: SessionParts, modifier: Modifier = Modifier) {
+    val scrolling = Arrangement.spacedBy(Spacing.space8)
+    BoxWithConstraints(
+        modifier.fillMaxSize().background(IntervalTheme.palette.background),
+        contentAlignment = Alignment.TopCenter,
+    ) {
+        if (isLandscape) {
+            Row(Modifier.fillMaxSize().safeDrawingPadding(), horizontalArrangement = Arrangement.Center) {
+                Column(Modifier.width(Sizes.setupColumnLandscape).fillMaxHeight()) {
+                    parts.bar()
+                    Column(
+                        Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Spacing.space16),
+                    ) { parts.tiles() }
+                    parts.buttons()
+                }
+                Column(
+                    Modifier
+                        .weight(1f, fill = false)
+                        .widthIn(max = Sizes.contentWide)
+                        .fillMaxHeight()
+                        .padding(end = Spacing.space16),
+                ) {
+                    Column(
+                        Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(vertical = Spacing.space16),
+                        verticalArrangement = scrolling,
+                        content = parts.plan,
+                    )
+                    parts.undo(Modifier.padding(bottom = Spacing.space16))
+                }
+            }
+        } else {
+            Column(Modifier.widthIn(max = Sizes.content).fillMaxSize().safeDrawingPadding()) {
+                parts.bar()
+                Column(
+                    Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Spacing.space16),
+                    verticalArrangement = scrolling,
+                ) {
+                    parts.tiles()
+                    parts.plan(this)
+                }
+                parts.undo(Modifier.padding(start = Spacing.space16, end = Spacing.space16, top = Spacing.space8))
+                parts.buttons()
+            }
+        }
+    }
+}
+
+/** The session's time and weight moved, and how long since the last one. */
+@Composable
+private fun SessionTiles(state: SessionUiState) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+            StatTile(stringResource(Res.string.session_time), state.elapsed, Modifier.weight(1f))
+            StatTile(
+                stringResource(Res.string.session_moved),
+                stringResource(Res.string.kg_value, formatKg(state.session?.tonnageKg ?: 0.0)),
+                Modifier.weight(1f),
+            )
+        }
+        state.sinceLast?.let {
+            StatTile(stringResource(Res.string.session_since_last), it, Modifier.fillMaxWidth())
+        }
+    }
+}
+
+/** Finish, and Log set, which opens the sheet. */
+@Composable
+private fun SessionButtons(onFinish: () -> Unit, onLog: () -> Unit) {
+    Row(
+        Modifier.padding(Spacing.space16),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+    ) {
+        SecondaryButton(stringResource(Res.string.session_finish), onFinish, Modifier.weight(1f))
+        AccentButton(stringResource(Res.string.session_log), onLog, Modifier.weight(2f))
+    }
+}
+
+/** What a logged set's row does: × removes it, a tap opens it to change. */
+private class SetActions(val onRemove: (SetLog) -> Unit, val onEdit: (SetLog) -> Unit)
+
 /** The sets logged so far, by lift; before the first, and with no plan, how to log one. */
 @Composable
-private fun LoggedSets(state: SessionUiState, onRemove: (SetLog) -> Unit, onEdit: (SetLog) -> Unit) {
+private fun LoggedSets(state: SessionUiState, actions: SetActions) {
     val sets = state.session?.sets.orEmpty()
     if (sets.isEmpty() && state.upNext == null) {
         Text(
@@ -324,7 +410,7 @@ private fun LoggedSets(state: SessionUiState, onRemove: (SetLog) -> Unit, onEdit
         ListCard {
             done.forEachIndexed { i, set ->
                 if (i > 0) RowDivider()
-                SetRow(set, onRemove = { onRemove(set) }, onEdit = { onEdit(set) })
+                SetRow(set, onRemove = { actions.onRemove(set) }, onEdit = { actions.onEdit(set) })
             }
         }
     }

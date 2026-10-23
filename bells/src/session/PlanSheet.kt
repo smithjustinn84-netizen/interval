@@ -23,7 +23,8 @@ import dev.justinsmith.bells.domain.ExerciseFilters
 import dev.justinsmith.bells.domain.SessionPlan
 import dev.justinsmith.bells.library.ExercisePicker
 import dev.justinsmith.bells.programs.BlockChoices
-import dev.justinsmith.bells.programs.BlockFields
+import dev.justinsmith.bells.programs.BlockCounts
+import dev.justinsmith.bells.programs.BlockLoad
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.block_done
 import dev.justinsmith.bells.resources.plan_block_title
@@ -44,8 +45,10 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SecondaryButton
+import dev.justinsmith.interval.ui.SheetColumns
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.sheetIsSideways
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -189,6 +192,7 @@ internal fun PlanBlockSheet(
     onDismiss: () -> Unit,
 ) {
     var picking by rememberSaveable { mutableStateOf(false) }
+    val sideways = sheetIsSideways()
     IntervalSheet(stringResource(Res.string.plan_block_title), onDismiss = onDismiss) { hide ->
         if (picking) {
             ExercisePicker(
@@ -203,11 +207,11 @@ internal fun PlanBlockSheet(
             )
             return@IntervalSheet
         }
-        Column(
-            Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
-            verticalArrangement = Arrangement.spacedBy(Spacing.space8),
-        ) {
-            if (row.entry.skipped) {
+        if (row.entry.skipped) {
+            Column(
+                Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
+                verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+            ) {
                 Text(
                     liftName(row.block.exercise, row.block.double),
                     style = IntervalTheme.type.section,
@@ -226,29 +230,32 @@ internal fun PlanBlockSheet(
                     },
                     Modifier.fillMaxWidth().padding(top = Spacing.space16),
                 )
-                return@Column
             }
-            BlockFields(
-                row.block,
-                state.blockChoices,
-                actions.onChange,
-                onPickExercise = if (canSwap) ({ picking = true }) else null,
-                fewestRounds = row.entry.roundsDone(row.done),
-                lockKind = row.done > 0,
-            )
-            AccentButton(
-                stringResource(Res.string.block_done),
-                onClick = hide,
-                modifier = Modifier.fillMaxWidth().padding(top = Spacing.space16),
-            )
-            SecondaryButton(
-                stringResource(if (row.done > 0) Res.string.plan_skip_rest else Res.string.plan_skip_block),
-                {
-                    actions.onSkip()
-                    hide()
-                },
-                Modifier.fillMaxWidth(),
-            )
+            return@IntervalSheet
         }
+        // What the block is, then how much of it and the way out, side by side on a phone on its side.
+        SheetColumns(
+            sideways,
+            first = {
+                BlockLoad(row.block, state.blockChoices, actions.onChange, if (canSwap) ({ picking = true }) else null)
+            },
+            second = {
+                BlockCounts(row.block, actions.onChange, row.entry.roundsDone(row.done), lockKind = row.done > 0)
+                AccentButton(
+                    stringResource(Res.string.block_done),
+                    onClick = hide,
+                    modifier = Modifier.fillMaxWidth().padding(top = Spacing.space16),
+                )
+                SecondaryButton(
+                    stringResource(if (row.done > 0) Res.string.plan_skip_rest else Res.string.plan_skip_block),
+                    {
+                        actions.onSkip()
+                        hide()
+                    },
+                    Modifier.fillMaxWidth(),
+                )
+            },
+            modifier = Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
+        )
     }
 }

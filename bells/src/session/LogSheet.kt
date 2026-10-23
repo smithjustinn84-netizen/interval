@@ -4,9 +4,12 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -20,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.unit.em
 import dev.justinsmith.bells.domain.CustomExercise
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
@@ -73,7 +77,9 @@ import dev.justinsmith.interval.ui.RepeatButton
 import dev.justinsmith.interval.ui.RollingText
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.SegmentedPicker
+import dev.justinsmith.interval.ui.SheetColumns
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.sheetIsSideways
 import org.jetbrains.compose.resources.stringResource
 
 /** What the Log sheet adds: one set now, or an EMOM of the set every minute. */
@@ -101,6 +107,7 @@ internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismi
         onDismiss()
     }
     val title = stringResource(if (editing) Res.string.log_edit_title else Res.string.log_title)
+    val sideways = sheetIsSideways()
     IntervalSheet(title, onDismiss = onClose) { hide ->
         val hold = state.hold
         val holdState = state.holdState
@@ -126,10 +133,8 @@ internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismi
             )
             return@IntervalSheet
         }
-        Column(
-            Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
-            verticalArrangement = Arrangement.spacedBy(Spacing.space8),
-        ) {
+        // What the set is first, then how much of it and the action, side by side on a phone on its side.
+        val what: @Composable ColumnScope.() -> Unit = {
             if (!draft.held && !editing) {
                 SegmentedPicker(
                     LogKind.entries,
@@ -144,11 +149,19 @@ internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismi
             // A set logged keeps its exercise: what it was done with is what it was.
             ExerciseCard(draft.exercise, onChange = if (editing) null else ({ picking = true }))
             DraftLoad(state, actions)
+        }
+        val howMuch: @Composable ColumnScope.() -> Unit = {
             MeasurePicker(draft, emom = kind == LogKind.Emom, state.otherSide, actions, timing = !editing)
             if (kind == LogKind.Emom) EmomMinutes(draft, actions)
             if (draft.exercise.sided(draft.doubled)) SidePicker(draft, first = kind == LogKind.Emom, actions)
             SheetAction(kind, editing, actions, hide)
         }
+        SheetColumns(
+            sideways,
+            first = what,
+            second = howMuch,
+            modifier = Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
+        )
     }
 }
 
@@ -313,11 +326,17 @@ private fun Stepper(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
     ) {
-        Text(
+        // On one line, shrinking to fit: half a sheet on a phone on its side is too narrow for a hold's length
+        // at full size. A line height in em, so it shrinks with the font.
+        BasicText(
             value,
-            style = IntervalTheme.type.display,
-            color = IntervalTheme.palette.text,
-            modifier = Modifier.weight(1f),
+            Modifier.weight(1f),
+            style = IntervalTheme.type.display.copy(color = IntervalTheme.palette.text, lineHeight = 1.em),
+            maxLines = 1,
+            autoSize = TextAutoSize.StepBased(
+                minFontSize = IntervalTheme.type.stat.fontSize,
+                maxFontSize = IntervalTheme.type.display.fontSize,
+            ),
         )
         RepeatButton("−", fewer, enabled = canLower, onStep = { onStep(-1) })
         RepeatButton("+", more, enabled = canRaise, onStep = { onStep(1) })

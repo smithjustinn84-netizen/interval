@@ -1,7 +1,6 @@
 package dev.justinsmith.bells.programs
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -75,8 +74,10 @@ import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.SecondaryButton
+import dev.justinsmith.interval.ui.SheetColumns
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.sheetIsSideways
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -363,6 +364,7 @@ private fun BlockSheet(
     // Removed once the sheet has slid away, so it never shows a block that is gone.
     var removing by remember { mutableStateOf(false) }
     var picking by rememberSaveable { mutableStateOf(false) }
+    val sideways = sheetIsSideways()
     IntervalSheet(stringResource(Res.string.block_title), onDismiss = {
         if (removing) onRemove()
         onDismiss()
@@ -380,24 +382,26 @@ private fun BlockSheet(
             )
             return@IntervalSheet
         }
-        Column(
-            Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
-            verticalArrangement = Arrangement.spacedBy(Spacing.space8),
-        ) {
-            BlockFields(block, choices, onChange, onPickExercise = { picking = true })
-            AccentButton(
-                stringResource(Res.string.block_done),
-                onClick = hide,
-                modifier = Modifier.fillMaxWidth().padding(top = Spacing.space16),
-            )
-            QuietTextButton(
-                stringResource(Res.string.block_remove),
-                {
-                    removing = true
-                    hide()
-                },
-                Modifier.align(Alignment.CenterHorizontally),
-            )
-        }
+        SheetColumns(
+            sideways,
+            first = { BlockLoad(block, choices, onChange, onPickExercise = { picking = true }) },
+            second = {
+                BlockCounts(block, onChange)
+                AccentButton(
+                    stringResource(Res.string.block_done),
+                    onClick = hide,
+                    modifier = Modifier.fillMaxWidth().padding(top = Spacing.space16),
+                )
+                QuietTextButton(
+                    stringResource(Res.string.block_remove),
+                    {
+                        removing = true
+                        hide()
+                    },
+                    Modifier.align(Alignment.CenterHorizontally),
+                )
+            },
+            modifier = Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
+        )
     }
 }

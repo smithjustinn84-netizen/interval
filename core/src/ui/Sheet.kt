@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -47,9 +48,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
@@ -93,12 +96,53 @@ fun IntervalSheet(
     // Read here, not inside the modal, which may be a window of its own. Kept for as long as the
     // sheet is open, so resizing the window mid-edit does not swap the sheet and lose its content.
     val windowSize = currentWindowAdaptiveInfoV2().windowSizeClass
-    val beside = remember {
-        windowSize.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND) &&
-            windowSize.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)
-    }
+    val beside = remember { opensBeside(windowSize) }
     if (beside) SideSheet(title, onDismiss, content) else BottomSheet(title, onDismiss, content)
 }
+
+/**
+ * Whether an [IntervalSheet] opened now rises over a window wider than it is tall: a phone on its side. Its
+ * content has the width for two columns and not the height for one, so a long form splits in two and keeps
+ * its last button in view. Read it before opening the sheet, as the sheet reads the window; it follows the
+ * phone turned with the sheet open.
+ */
+@Composable
+fun sheetIsSideways(): Boolean {
+    val window = LocalWindowInfo.current.containerSize
+    return !opensBeside(currentWindowAdaptiveInfoV2().windowSizeClass) && window.width > window.height
+}
+
+/**
+ * A sheet's form in two parts, [first] (what it is) then [second] (how much, and the action): one column, or
+ * on a phone on its side ([sideways], from [sheetIsSideways]) two side by side, so the action shows without
+ * scrolling. Each part's items are [spacing] apart.
+ */
+@Composable
+fun SheetColumns(
+    sideways: Boolean,
+    first: @Composable ColumnScope.() -> Unit,
+    second: @Composable ColumnScope.() -> Unit,
+    modifier: Modifier = Modifier,
+    spacing: Dp = Spacing.space8,
+) {
+    val arrangement = Arrangement.spacedBy(spacing)
+    if (sideways) {
+        Row(modifier, horizontalArrangement = Arrangement.spacedBy(Spacing.space20)) {
+            Column(Modifier.weight(1f), verticalArrangement = arrangement, content = first)
+            Column(Modifier.weight(1f), verticalArrangement = arrangement, content = second)
+        }
+    } else {
+        Column(modifier, verticalArrangement = arrangement) {
+            first()
+            second()
+        }
+    }
+}
+
+/** A window at least Material's medium width and height gets a side sheet. */
+private fun opensBeside(windowSize: WindowSizeClass) =
+    windowSize.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND) &&
+        windowSize.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)
 
 /** The phone's sheet: it rises whole from the bottom, stops under the status bar and above the keyboard. */
 @Composable

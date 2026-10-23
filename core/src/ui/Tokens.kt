@@ -65,7 +65,10 @@ object Sizes {
     /** The line between the content and the bottom navigation bar. */
     val hairline = 1.dp
 
-    /** Width of the setup column holding the header, presets and Start in landscape. */
+    /**
+     * Width of the fixed column on a screen laid out sideways: the Timer's total and Start, a session's clock
+     * and Log set, an EMOM's controls, a summary's way out.
+     */
     val setupColumnLandscape = 380.dp
 
     /** Width of each side rail of workout controls in landscape. */

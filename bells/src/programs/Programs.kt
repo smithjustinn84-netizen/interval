@@ -70,8 +70,10 @@ import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.ScrollPage
+import dev.justinsmith.interval.ui.SheetColumns
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.sheetIsSideways
 import kotlinx.coroutines.flow.StateFlow
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
@@ -233,58 +235,84 @@ private fun ProgramSheet(
 ) {
     val palette = IntervalTheme.palette
     val name = programName(program)
+    val sideways = sheetIsSideways()
     IntervalSheet(title = name, onDismiss = onDismiss) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
-            Text(name, style = IntervalTheme.type.value, color = palette.text)
-            Text(programSummary(program), style = IntervalTheme.type.body, color = palette.textDim)
-        }
-        program.days.forEachIndexed { i, blocks ->
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-                GroupLabel(stringResource(Res.string.program_preview_day, i + 1))
-                // On the sheet's own surface a card needs the variant fill to show as one.
-                Column(Modifier.fillMaxWidth().clip(Corners.radius18).background(palette.surfaceVariant)) {
-                    blocks.forEachIndexed { j, block ->
-                        if (j > 0) RowDivider()
-                        Column(
-                            Modifier.fillMaxWidth().padding(horizontal = Spacing.space16, vertical = Spacing.space12),
-                        ) {
-                            Text(
-                                liftName(block.exercise, block.double),
-                                style = IntervalTheme.type.label,
-                                color = palette.text,
-                            )
-                            Text(blockLine(block), style = IntervalTheme.type.meta, color = palette.textDim)
-                        }
+        // What the program is, its days, then Follow; on a phone on its side Follow stays by the name, the
+        // days beside.
+        SheetColumns(
+            sideways,
+            first = {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+                    Text(name, style = IntervalTheme.type.value, color = palette.text)
+                    Text(programSummary(program), style = IntervalTheme.type.body, color = palette.textDim)
+                }
+                if (sideways) FollowFooter(current, replacing, onFollow)
+            },
+            second = {
+                ProgramDays(program)
+                if (!sideways) FollowFooter(current, replacing, onFollow)
+            },
+            spacing = Spacing.space20,
+        )
+    }
+}
+
+/** Each day of [program], its blocks in a card. */
+@Composable
+private fun ProgramDays(program: Program) {
+    val palette = IntervalTheme.palette
+    program.days.forEachIndexed { i, blocks ->
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+            GroupLabel(stringResource(Res.string.program_preview_day, i + 1))
+            // On the sheet's own surface a card needs the variant fill to show as one.
+            Column(Modifier.fillMaxWidth().clip(Corners.radius18).background(palette.surfaceVariant)) {
+                blocks.forEachIndexed { j, block ->
+                    if (j > 0) RowDivider()
+                    Column(
+                        Modifier.fillMaxWidth().padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+                    ) {
+                        Text(
+                            liftName(block.exercise, block.double),
+                            style = IntervalTheme.type.label,
+                            color = palette.text,
+                        )
+                        Text(blockLine(block), style = IntervalTheme.type.meta, color = palette.textDim)
                     }
                 }
             }
         }
-        if (current) {
-            Text(
-                stringResource(Res.string.program_following),
-                style = IntervalTheme.type.label,
-                color = palette.accent,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
-            )
-        } else {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-                replacing?.let { day ->
-                    Text(
-                        stringResource(
-                            Res.string.program_replaces,
-                            programName(day.program),
-                            day.number,
-                            day.program.totalDays,
-                        ),
-                        style = IntervalTheme.type.meta,
-                        color = palette.textDim,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                    )
-                }
-                AccentButton(stringResource(Res.string.program_follow), onFollow, Modifier.fillMaxWidth())
+    }
+}
+
+/** Following, for the program followed; otherwise Follow, under the day it takes the place of. */
+@Composable
+private fun FollowFooter(current: Boolean, replacing: ProgramDay?, onFollow: () -> Unit) {
+    val palette = IntervalTheme.palette
+    if (current) {
+        Text(
+            stringResource(Res.string.program_following),
+            style = IntervalTheme.type.label,
+            color = palette.accent,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+        )
+    } else {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+            replacing?.let { day ->
+                Text(
+                    stringResource(
+                        Res.string.program_replaces,
+                        programName(day.program),
+                        day.number,
+                        day.program.totalDays,
+                    ),
+                    style = IntervalTheme.type.meta,
+                    color = palette.textDim,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                )
             }
+            AccentButton(stringResource(Res.string.program_follow), onFollow, Modifier.fillMaxWidth())
         }
     }
 }

@@ -41,9 +41,13 @@ import java.util.concurrent.atomic.AtomicLong
 private const val PHONE_WIDTH = 411
 private const val PHONE_HEIGHT = 891
 
-/** Runs [block] in a phone-sized desktop window. */
-fun runUiTest(block: suspend DesktopComposeUiTest.() -> Unit) =
-    runDesktopComposeUiTest(width = PHONE_WIDTH, height = PHONE_HEIGHT, block = block)
+/** Runs [block] in a phone-sized desktop window, on its side when [sideways]. */
+fun runUiTest(sideways: Boolean = false, block: suspend DesktopComposeUiTest.() -> Unit) =
+    if (sideways) {
+        runDesktopComposeUiTest(width = PHONE_HEIGHT, height = PHONE_WIDTH, block = block)
+    } else {
+        runDesktopComposeUiTest(width = PHONE_WIDTH, height = PHONE_HEIGHT, block = block)
+    }
 
 /** Sets [content] inside the dark theme. */
 fun DesktopComposeUiTest.setBellsContent(content: @Composable () -> Unit) {
@@ -153,8 +157,9 @@ private fun BellsHost(koin: KoinApplication, back: NavigationEventDispatcherOwne
 fun bellsAppTest(
     storage: FakeBellsStorage = FakeBellsStorage(),
     intervals: FakeIntervalActivity = FakeIntervalActivity(),
+    sideways: Boolean = false,
     block: suspend DesktopComposeUiTest.(BellsAppFixture) -> Unit,
-) = runUiTest {
+) = runUiTest(sideways) {
     val clock = AtomicLong(0L)
     val beeper = RecordingBeeper()
     val koin = bellsTestKoin(storage, fakeBellsPlatformModule(beeper = beeper), now = clock::get, intervals = intervals)

@@ -3,9 +3,13 @@
 package dev.justinsmith.bells.programs
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasScrollToNodeAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import dev.justinsmith.bells.data.FollowingEntity
 import dev.justinsmith.bells.data.SessionEntity
 import dev.justinsmith.bells.domain.ProgramId
@@ -39,6 +43,19 @@ class ProgramsPageTest {
         onNodeWithText("Follow this program").performScrollTo().performClick()
         waitForText("Day 1 of 8 · week 1")
         assertEquals(ProgramId.GobletSquatRow.name, app.storage.following.row.value?.programId)
+    }
+
+    @Test
+    fun `on a phone on its side Follow shows beside the days`() = bellsAppTest(sideways = true) {
+        // Today's grid composes only what is in view, so it scrolls to the card first.
+        waitForText("Start session")
+        onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Follow a program"))
+        onNodeWithText("Follow a program").performClick()
+        waitForText("Goblet squat and row")
+        onNodeWithText("Goblet squat and row").performScrollTo().performClick()
+        waitForText("Follow this program")
+        onNodeWithText("Day 1").assertIsDisplayed()
+        onNodeWithText("Follow this program").assertIsDisplayed()
     }
 
     @Test

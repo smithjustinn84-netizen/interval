@@ -5,16 +5,20 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,6 +57,7 @@ import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.isLandscape
 import dev.justinsmith.interval.ui.surfaceButton
 import org.jetbrains.compose.resources.stringResource
 
@@ -80,54 +85,128 @@ fun EmomScreen(
     val haptics = LocalHapticFeedback.current
     LaunchedEffect(state.phase, state.minute) { haptics.performHapticFeedback(HapticFeedbackType.Confirm) }
     KeepScreenOn()
-    Box(modifier.fillMaxSize().background(colors.ground), contentAlignment = Alignment.TopCenter) {
-        Column(
-            Modifier.widthIn(
-                max = Sizes.contentWide,
-            ).fillMaxSize().safeDrawingPadding().padding(horizontal = Spacing.space16),
-            horizontalAlignment = Alignment.CenterHorizontally,
+    BoxWithConstraints(modifier.fillMaxSize().background(colors.ground), contentAlignment = Alignment.TopCenter) {
+        if (isLandscape) {
+            LandscapeEmom(run, state, color, onFinishSet, onStop)
+        } else {
+            PortraitEmom(run, state, color, onFinishSet, onStop)
+        }
+    }
+}
+
+/** Upright: the band, Stop and the minute across the top, the ring with the readout inside, Set done at the foot. */
+@Composable
+private fun PortraitEmom(run: EmomRun, state: EmomState, color: Color, onFinishSet: () -> Unit, onStop: () -> Unit) {
+    Column(
+        Modifier.widthIn(
+            max = Sizes.contentWide,
+        ).fillMaxSize().safeDrawingPadding().padding(horizontal = Spacing.space16),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(Modifier.fillMaxWidth().height(Sizes.phaseBand).clip(Corners.full).background(color))
+        Row(
+            Modifier.fillMaxWidth().padding(top = Spacing.space8),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(Modifier.fillMaxWidth().height(Sizes.phaseBand).clip(Corners.full).background(color))
-            Row(
-                Modifier.fillMaxWidth().padding(top = Spacing.space8),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                StopPill(onStop)
-                Text(
-                    stringResource(Res.string.emom_minute, state.minute, state.minutes),
-                    style = IntervalTheme.type.label,
-                    color = colors.onGround,
-                    modifier = Modifier.weight(1f).padding(horizontal = Spacing.space8),
-                )
-            }
-            BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                val diameter = min(min(maxWidth, maxHeight), Sizes.ringMax)
-                Ring(state.minuteProgress, color, Modifier.size(diameter))
-                EmomReadout(run, state, color)
-            }
-            val working = state.phase == EmomPhase.Work
-            val interaction = remember { MutableInteractionSource() }
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = Spacing.space16)
-                    .height(Sizes.control)
-                    .surfaceButton(
-                        interaction,
-                        Corners.radius18,
-                        if (working) color else colors.control,
-                        onClick = onFinishSet,
-                        enabled = working,
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    stringResource(Res.string.emom_set_done),
-                    style = IntervalTheme.type.value,
-                    color = if (working) colors.onFill(color) else colors.onGroundDim,
-                )
+            StopPill(onStop)
+            MinuteText(state, Modifier.weight(1f).padding(horizontal = Spacing.space8))
+        }
+        BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+            val diameter = min(min(maxWidth, maxHeight), Sizes.ringMax)
+            Ring(state.minuteProgress, color, Modifier.size(diameter))
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                PhaseWord(state, color)
+                ClockText(state)
+                TaskText(run, state)
             }
         }
+        SetDone(state, color, onFinishSet, Modifier.fillMaxWidth().padding(bottom = Spacing.space16))
+    }
+}
+
+/**
+ * Sideways, as the workout lies: the band down the start edge, the clock alone in the ring, and beside it a
+ * column of Stop and the minute, the phase word and the set, and Set done at its foot. A phone on its side is
+ * too short for the readout inside the ring.
+ */
+@Composable
+private fun LandscapeEmom(run: EmomRun, state: EmomState, color: Color, onFinishSet: () -> Unit, onStop: () -> Unit) {
+    Box(Modifier.fillMaxSize()) {
+        Box(
+            Modifier
+                .align(Alignment.CenterStart)
+                .safeDrawingPadding()
+                .fillMaxHeight()
+                .width(Sizes.phaseBand)
+                .clip(Corners.full)
+                .background(color),
+        )
+        Row(
+            Modifier
+                .fillMaxSize()
+                .safeDrawingPadding()
+                .padding(start = Sizes.phaseBand + Spacing.space8, end = Spacing.space20)
+                .padding(vertical = Spacing.space16),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space16),
+        ) {
+            BoxWithConstraints(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
+                Box(Modifier.size(minOf(maxWidth, maxHeight, Sizes.ringMax)), contentAlignment = Alignment.Center) {
+                    Ring(state.minuteProgress, color, Modifier.fillMaxSize())
+                    ClockText(state)
+                }
+            }
+            Column(
+                Modifier.width(Sizes.setupColumnLandscape).fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    StopPill(onStop)
+                    MinuteText(state, Modifier.weight(1f).padding(horizontal = Spacing.space8))
+                }
+                Spacer(Modifier.weight(1f))
+                PhaseWord(state, color)
+                TaskText(run, state)
+                Spacer(Modifier.weight(1f))
+                SetDone(state, color, onFinishSet, Modifier.fillMaxWidth())
+            }
+        }
+    }
+}
+
+/** "Minute 3 of 10". */
+@Composable
+private fun MinuteText(state: EmomState, modifier: Modifier = Modifier) {
+    Text(
+        stringResource(Res.string.emom_minute, state.minute, state.minutes),
+        style = IntervalTheme.type.label,
+        color = IntervalTheme.workout.onGround,
+        modifier = modifier,
+    )
+}
+
+/** Set done, in the phase colour and live only while working. */
+@Composable
+private fun SetDone(state: EmomState, color: Color, onFinishSet: () -> Unit, modifier: Modifier = Modifier) {
+    val colors = IntervalTheme.workout
+    val working = state.phase == EmomPhase.Work
+    val interaction = remember { MutableInteractionSource() }
+    Box(
+        modifier
+            .height(Sizes.control)
+            .surfaceButton(
+                interaction,
+                Corners.radius18,
+                if (working) color else colors.control,
+                onClick = onFinishSet,
+                enabled = working,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            stringResource(Res.string.emom_set_done),
+            style = IntervalTheme.type.value,
+            color = if (working) colors.onFill(color) else colors.onGroundDim,
+        )
     }
 }
 
@@ -160,40 +239,41 @@ private fun Ring(progress: Float, color: Color, modifier: Modifier = Modifier) {
 private const val FULL_TURN = 360f
 private const val START_ANGLE = -90f
 
-/** Inside the ring: the phase word, the clock, and the set to do (or next, while resting). */
+/** The phase word, in the phase colour. */
 @Composable
-private fun EmomReadout(run: EmomRun, state: EmomState, color: Color) {
-    val colors = IntervalTheme.workout
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            stringResource(
-                when (state.phase) {
-                    EmomPhase.GetReady -> Res.string.emom_get_ready
-                    EmomPhase.Work -> Res.string.emom_work
-                    EmomPhase.Rest -> Res.string.emom_rest
-                    EmomPhase.Done -> Res.string.summary_done
-                },
-            ),
-            style = IntervalTheme.type.stat,
-            color = color,
-        )
-        Text(
-            formatClock(state.secondsLeft),
-            style = IntervalTheme.type.display,
-            color = colors.onGround,
-        )
-        val side = run.sideOf(state.minute)
-        val task = setLine(run.bellKg, run.reps, side, run.double, run.exercise.equipment, band = run.band)
-        Text(
-            if (state.phase ==
-                EmomPhase.Rest
-            ) {
-                stringResource(Res.string.emom_next, task)
-            } else {
-                "${liftName(run.exercise, run.double)} · $task"
+private fun PhaseWord(state: EmomState, color: Color) {
+    Text(
+        stringResource(
+            when (state.phase) {
+                EmomPhase.GetReady -> Res.string.emom_get_ready
+                EmomPhase.Work -> Res.string.emom_work
+                EmomPhase.Rest -> Res.string.emom_rest
+                EmomPhase.Done -> Res.string.summary_done
             },
-            style = IntervalTheme.type.label,
-            color = colors.onGroundDim,
-        )
-    }
+        ),
+        style = IntervalTheme.type.stat,
+        color = color,
+    )
+}
+
+/** What is left of the minute. */
+@Composable
+private fun ClockText(state: EmomState) {
+    Text(formatClock(state.secondsLeft), style = IntervalTheme.type.display, color = IntervalTheme.workout.onGround)
+}
+
+/** The set to do, or next while resting. */
+@Composable
+private fun TaskText(run: EmomRun, state: EmomState) {
+    val side = run.sideOf(state.minute)
+    val task = setLine(run.bellKg, run.reps, side, run.double, run.exercise.equipment, band = run.band)
+    Text(
+        if (state.phase == EmomPhase.Rest) {
+            stringResource(Res.string.emom_next, task)
+        } else {
+            "${liftName(run.exercise, run.double)} · $task"
+        },
+        style = IntervalTheme.type.label,
+        color = IntervalTheme.workout.onGroundDim,
+    )
 }
