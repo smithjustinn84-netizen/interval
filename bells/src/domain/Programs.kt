@@ -149,6 +149,9 @@ enum class ProgramFamily {
 
     /** Bodyweight alone, or with bells, bands and the mat. */
     Mixed,
+
+    /** The barbell: the Olympic lifts, and the strength lifts under them. */
+    Barbell,
 }
 
 /** The built-in programs, by a stable id that is stored. Screens name them from the app's strings. */
@@ -180,9 +183,11 @@ enum class ProgramId(val family: ProgramFamily = ProgramFamily.Classic) {
     BellsAndBodyweight(ProgramFamily.Mixed),
     BandsAndBells(ProgramFamily.Mixed),
     CoreOnTheMat(ProgramFamily.Mixed),
+    OlympicFoundations(ProgramFamily.Barbell),
+    BarbellFiveByFive(ProgramFamily.Barbell),
 }
 
-private fun builtIn(id: ProgramId, days: List<List<Block>>, daysPerWeek: Int, weeks: Int) =
+internal fun builtIn(id: ProgramId, days: List<List<Block>>, daysPerWeek: Int, weeks: Int) =
     Program(ProgramKey.BuiltIn(id), days, daysPerWeek, weeks)
 
 /** 500 swings in five ladders of 10, 15, 25 and 50: a day of 10,000 Swings. */
@@ -595,7 +600,7 @@ val builtInPrograms: List<Program> = listOf(
         daysPerWeek = 2,
         weeks = 6,
     ),
-)
+) + barbellPrograms
 
 fun program(
     id: ProgramId,

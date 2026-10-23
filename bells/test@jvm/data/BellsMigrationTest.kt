@@ -104,6 +104,8 @@ class BellsMigrationTest {
             assertEquals(null, session?.plan)
             database.sessionDao().setPlan("s1", "[]")
             assertEquals("[]", database.sessionDao().active()?.plan)
+            // Version 10's bar starts unset.
+            assertEquals(null, database.bellDao().observeBar().first())
         } finally {
             database.close()
         }

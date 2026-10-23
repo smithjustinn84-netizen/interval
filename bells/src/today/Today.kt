@@ -35,15 +35,18 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.data.IntervalActivity
 import dev.justinsmith.bells.data.IntervalWorkout
+import dev.justinsmith.bells.domain.DEFAULT_BAR_KG
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.LiftSession
 import dev.justinsmith.bells.domain.Program
 import dev.justinsmith.bells.domain.ProgramDay
 import dev.justinsmith.bells.domain.ProgramKey
+import dev.justinsmith.bells.domain.barbellLifts
 import dev.justinsmith.bells.domain.builtInPrograms
 import dev.justinsmith.bells.domain.formatKg
 import dev.justinsmith.bells.domain.kettlebellLifts
+import dev.justinsmith.bells.domain.suggestedBar
 import dev.justinsmith.bells.domain.suggestedBell
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.common_joined
@@ -137,7 +140,10 @@ data class TodayUiState(
     /** The program followed, if any, and its next day: null once it is over. */
     val following: Program? = null,
     val programDay: ProgramDay? = null,
-    /** The bell to suggest for each lift, with one bell and with two: the last one used for it so. */
+    /**
+     * The weight to suggest for each bell lift, with one bell and with two, and each barbell lift (with one): the
+     * last used for it so.
+     */
     val bells: Map<Pair<Exercise, Boolean>, Double> = emptyMap(),
     /** Workouts a week the user aims for, lifts and intervals alike, as set on Plan; null for none. */
     val weeklyGoal: Int? = null,
@@ -217,7 +223,7 @@ class TodayViewModel(
                     listOf(it to false, it to true)
                 }.associateWith { (exercise, double) ->
                     suggestedBell(exercise, double, history, SetDraft.DEFAULT_BELL_KG)
-                }
+                } + barbellLifts.associate { (it to false) to suggestedBar(it, history, repository.bar.value) }
             },
         )
     }
@@ -446,20 +452,26 @@ private fun ProgramCard(state: TodayUiState, onChooseProgram: () -> Unit, modifi
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(liftName(block.exercise, block.double), style = IntervalTheme.type.label, color = palette.text)
-                    // A bell's load shows beside it, as planned or as last used.
+                    // A bell's or a bar's load shows beside it, as planned or as last used.
                     Text(
-                        blockLine(block, withLoad = block.exercise.equipment != Equipment.Kettlebell),
+                        blockLine(block, withLoad = !block.exercise.hasSuggestedLoad),
                         style = IntervalTheme.type.meta,
                         color = palette.textDim,
                     )
                 }
-                // Only a bell has a weight to suggest ahead of the session.
-                if (block.exercise.equipment == Equipment.Kettlebell) {
+                // Only a bell or a bar has a weight to suggest ahead of the session.
+                if (block.exercise.hasSuggestedLoad) {
                     Text(
                         stringResource(
                             if (block.double) Res.string.kg_pair else Res.string.kg_value,
                             formatKg(
-                                block.kg ?: state.bells[block.exercise to block.double] ?: SetDraft.DEFAULT_BELL_KG,
+                                block.kg ?: state.bells[block.exercise to block.double] ?: if (
+                                    block.exercise.equipment == Equipment.Barbell
+                                ) {
+                                    DEFAULT_BAR_KG
+                                } else {
+                                    SetDraft.DEFAULT_BELL_KG
+                                },
                             ),
                         ),
                         style = IntervalTheme.type.value,
@@ -581,3 +593,7 @@ private fun TodayScreenPreview() {
         )
     }
 }
+
+/** Whether Today suggests a weight for [this] ahead of the session: a bell lift's, or a barbell lift's. */
+private val Exercise.hasSuggestedLoad: Boolean
+    get() = equipment == Equipment.Kettlebell || equipment == Equipment.Barbell

@@ -19,6 +19,26 @@ import dev.justinsmith.bells.resources.exercise_band_seated_row
 import dev.justinsmith.bells.resources.exercise_band_squat
 import dev.justinsmith.bells.resources.exercise_band_triceps_pushdown
 import dev.justinsmith.bells.resources.exercise_band_woodchop
+import dev.justinsmith.bells.resources.exercise_barbell_back_squat
+import dev.justinsmith.bells.resources.exercise_barbell_bench_press
+import dev.justinsmith.bells.resources.exercise_barbell_clean
+import dev.justinsmith.bells.resources.exercise_barbell_clean_and_jerk
+import dev.justinsmith.bells.resources.exercise_barbell_clean_pull
+import dev.justinsmith.bells.resources.exercise_barbell_deadlift
+import dev.justinsmith.bells.resources.exercise_barbell_front_squat
+import dev.justinsmith.bells.resources.exercise_barbell_hang_clean
+import dev.justinsmith.bells.resources.exercise_barbell_hang_snatch
+import dev.justinsmith.bells.resources.exercise_barbell_jerk
+import dev.justinsmith.bells.resources.exercise_barbell_overhead_press
+import dev.justinsmith.bells.resources.exercise_barbell_overhead_squat
+import dev.justinsmith.bells.resources.exercise_barbell_power_clean
+import dev.justinsmith.bells.resources.exercise_barbell_power_snatch
+import dev.justinsmith.bells.resources.exercise_barbell_push_press
+import dev.justinsmith.bells.resources.exercise_barbell_romanian_deadlift
+import dev.justinsmith.bells.resources.exercise_barbell_row
+import dev.justinsmith.bells.resources.exercise_barbell_snatch
+import dev.justinsmith.bells.resources.exercise_barbell_snatch_balance
+import dev.justinsmith.bells.resources.exercise_barbell_snatch_pull
 import dev.justinsmith.bells.resources.exercise_bench_dip
 import dev.justinsmith.bells.resources.exercise_bottoms_up_press
 import dev.justinsmith.bells.resources.exercise_bulgarian_split_squat
@@ -79,6 +99,7 @@ import dev.justinsmith.bells.resources.exercise_windmill
 import org.jetbrains.compose.resources.StringResource
 
 /** A built-in exercise's name in the app's strings. */
+@Suppress("detekt.LongMethod") // One arm for each built-in.
 internal fun BuiltInExercise.label(): StringResource = when (this) {
     BuiltInExercise.TwoHandSwing -> Res.string.exercise_two_hand_swing
     BuiltInExercise.OneHandSwing -> Res.string.exercise_one_hand_swing
@@ -99,6 +120,26 @@ internal fun BuiltInExercise.label(): StringResource = when (this) {
     BuiltInExercise.Windmill -> Res.string.exercise_windmill
     BuiltInExercise.BottomsUpPress -> Res.string.exercise_bottoms_up_press
     BuiltInExercise.IronCardio -> Res.string.exercise_iron_cardio
+    BuiltInExercise.BarbellSnatch -> Res.string.exercise_barbell_snatch
+    BuiltInExercise.BarbellCleanAndJerk -> Res.string.exercise_barbell_clean_and_jerk
+    BuiltInExercise.BarbellClean -> Res.string.exercise_barbell_clean
+    BuiltInExercise.BarbellJerk -> Res.string.exercise_barbell_jerk
+    BuiltInExercise.BarbellPowerSnatch -> Res.string.exercise_barbell_power_snatch
+    BuiltInExercise.BarbellPowerClean -> Res.string.exercise_barbell_power_clean
+    BuiltInExercise.BarbellHangSnatch -> Res.string.exercise_barbell_hang_snatch
+    BuiltInExercise.BarbellHangClean -> Res.string.exercise_barbell_hang_clean
+    BuiltInExercise.BarbellSnatchPull -> Res.string.exercise_barbell_snatch_pull
+    BuiltInExercise.BarbellCleanPull -> Res.string.exercise_barbell_clean_pull
+    BuiltInExercise.BarbellOverheadSquat -> Res.string.exercise_barbell_overhead_squat
+    BuiltInExercise.BarbellSnatchBalance -> Res.string.exercise_barbell_snatch_balance
+    BuiltInExercise.BarbellPushPress -> Res.string.exercise_barbell_push_press
+    BuiltInExercise.BarbellBackSquat -> Res.string.exercise_barbell_back_squat
+    BuiltInExercise.BarbellFrontSquat -> Res.string.exercise_barbell_front_squat
+    BuiltInExercise.BarbellDeadlift -> Res.string.exercise_barbell_deadlift
+    BuiltInExercise.BarbellRomanianDeadlift -> Res.string.exercise_barbell_romanian_deadlift
+    BuiltInExercise.BarbellBenchPress -> Res.string.exercise_barbell_bench_press
+    BuiltInExercise.BarbellOverheadPress -> Res.string.exercise_barbell_overhead_press
+    BuiltInExercise.BarbellRow -> Res.string.exercise_barbell_row
     BuiltInExercise.PushUp -> Res.string.exercise_push_up
     BuiltInExercise.InclinePushUp -> Res.string.exercise_incline_push_up
     BuiltInExercise.PikePushUp -> Res.string.exercise_pike_push_up

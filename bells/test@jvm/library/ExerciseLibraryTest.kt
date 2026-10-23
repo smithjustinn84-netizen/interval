@@ -23,7 +23,7 @@ class ExerciseLibraryTest {
     fun `the library opens from Lift and finds an exercise however it is typed`() = bellsAppTest {
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
-        onNodeWithText("74 exercises").assertExists()
+        onNodeWithText("94 exercises").assertExists()
         onNode(hasSetTextAction()).performTextInput("PUSHUP")
         // The push-up and its two variations, each with its facts.
         waitForText("3 exercises")
@@ -31,7 +31,7 @@ class ExerciseLibraryTest {
         onNodeWithText("Pike push-up").assertExists()
         onAllNodesWithText("Bodyweight · Reps · Upper body").assertCountEquals(3)
         onNodeWithText("Clear").performClick()
-        waitForText("74 exercises")
+        waitForText("94 exercises")
     }
 
     @Test
@@ -55,7 +55,7 @@ class ExerciseLibraryTest {
         onNode(hasSetTextAction()).performTextInput("zercher carry")
         waitForText("No exercise matches “zercher carry”")
         onNode(hasSetTextAction()).performTextClearance()
-        waitForText("74 exercises")
+        waitForText("94 exercises")
     }
 
     @Test

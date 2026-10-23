@@ -121,8 +121,9 @@ class ProgramEditorViewModel(
         repository.bands,
         repository.customExercises,
         filters.filters,
-    ) { owned, bands, made, narrowed ->
-        blockChoices(owned, bands, made, narrowed, repository.sessions.value.reversed().flatMap { it.sets })
+        repository.bar,
+    ) { owned, bands, made, narrowed, bar ->
+        blockChoices(owned, bands, made, narrowed, repository.sessions.value.reversed().flatMap { it.sets }, bar)
     }
 
     val state: StateFlow<ProgramEditorUiState> = combine(_state, choices) { editing, choices ->

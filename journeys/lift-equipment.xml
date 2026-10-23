@@ -6,7 +6,7 @@
   </description>
   <actions>
     <action>Tap the "Lift" tab</action>
-    <action>Verify that "No sessions yet" is shown and an "Exercises" card says "Bells, bodyweight, bands and the mat"</action>
+    <action>Verify that "No sessions yet" is shown and an "Exercises" card says "Bells, barbells, bodyweight, bands and the mat"</action>
     <action>Tap "Start session"</action>
     <action>Verify that the session screen is shown with "Time", "Moved" at "0 kg", and "Log set"</action>
     <action>Tap "Log set"</action>
@@ -15,7 +15,7 @@
     <action>Tap "Log set" at the bottom of the sheet</action>
     <action>Verify that the session shows "Two-hand swing" with a set "16 kg × 10", and "Moved" reads "160 kg"</action>
     <action>Tap "Log set", then "Change" on the exercise card</action>
-    <action>Verify that the sheet shows "Search exercises", the chips "Kettlebell", "Bodyweight", "Band" and "Mat", and "Recent" listing "Two-hand swing"</action>
+    <action>Verify that the sheet shows "Search exercises", the chips "Kettlebell", "Barbell", "Bodyweight", "Band" and "Mat", and "Recent" listing "Two-hand swing"</action>
     <action>Tap the "Band" chip</action>
     <action>Verify that "15 exercises" is shown and the list starts with "Band pull-apart"</action>
     <action>Tap "Band pull-apart"</action>

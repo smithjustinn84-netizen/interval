@@ -11,6 +11,7 @@ import dev.justinsmith.bells.domain.Measure
 import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.domain.formatKg
+import dev.justinsmith.bells.domain.platesPerSide
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.band_extra_heavy
 import dev.justinsmith.bells.resources.band_extra_light
@@ -18,6 +19,10 @@ import dev.justinsmith.bells.resources.band_heavy
 import dev.justinsmith.bells.resources.band_light
 import dev.justinsmith.bells.resources.band_medium
 import dev.justinsmith.bells.resources.band_unnamed
+import dev.justinsmith.bells.resources.bar_empty
+import dev.justinsmith.bells.resources.bar_plates
+import dev.justinsmith.bells.resources.bar_too_light
+import dev.justinsmith.bells.resources.bar_unloadable
 import dev.justinsmith.bells.resources.colour_black
 import dev.justinsmith.bells.resources.colour_blue
 import dev.justinsmith.bells.resources.colour_green
@@ -28,6 +33,7 @@ import dev.justinsmith.bells.resources.colour_red
 import dev.justinsmith.bells.resources.colour_yellow
 import dev.justinsmith.bells.resources.common_joined
 import dev.justinsmith.bells.resources.equipment_band
+import dev.justinsmith.bells.resources.equipment_barbell
 import dev.justinsmith.bells.resources.equipment_bodyweight
 import dev.justinsmith.bells.resources.equipment_kettlebell
 import dev.justinsmith.bells.resources.equipment_mat
@@ -36,8 +42,10 @@ import dev.justinsmith.bells.resources.focus_core
 import dev.justinsmith.bells.resources.focus_full_body
 import dev.justinsmith.bells.resources.focus_lower_body
 import dev.justinsmith.bells.resources.focus_upper_body
+import dev.justinsmith.bells.resources.log_no_bar
 import dev.justinsmith.bells.resources.measure_reps
 import dev.justinsmith.bells.resources.measure_time
+import dev.justinsmith.bells.resources.plates_plus
 import dev.justinsmith.bells.resources.set_line
 import dev.justinsmith.bells.resources.set_line_added
 import dev.justinsmith.bells.resources.set_line_added_held
@@ -53,7 +61,8 @@ fun setLine(set: SetLog): String =
     setLine(set.bellKg, set.reps, set.side, set.double, set.equipment, set.seconds, set.band)
 
 /**
- * A set in words, by what it was done with: a bell "24 kg × 10", two "2 × 16 kg × 5"; bodyweight "× 15", or
+ * A set in words, by what it was done with: a bell "24 kg × 10", two "2 × 16 kg × 5"; a bar "62.5 kg × 3";
+ * bodyweight "× 15", or
  * "+10 kg × 6" with weight added; a band "Medium × 20"; the mat "× 10"; a hold "0:45", or "+10 kg · 0:45".
  * A one-sided set adds its side: "24 kg × 10 · Left".
  */
@@ -83,7 +92,8 @@ fun setLine(
             reps,
         )
 
-        equipment == Equipment.Kettlebell -> stringResource(Res.string.set_line, formatKg(bellKg), reps)
+        equipment == Equipment.Kettlebell || equipment == Equipment.Barbell ->
+            stringResource(Res.string.set_line, formatKg(bellKg), reps)
 
         added -> stringResource(Res.string.set_line_added, formatKg(bellKg), reps)
 
@@ -92,6 +102,30 @@ fun setLine(
         else -> stringResource(Res.string.set_line_reps, reps)
     }
     return if (side == null) line else stringResource(Res.string.common_joined, line, sideName(side))
+}
+
+/**
+ * The plates [totalKg] takes a side of the user's [bar]: "20 kg bar · 20 + 1.25 a side", or that it is empty,
+ * lighter than the bar or can't be made; with no bar, where to set one.
+ */
+@Composable
+fun platesLine(totalKg: Double, bar: Double?): String {
+    if (bar == null) return stringResource(Res.string.log_no_bar)
+    val barKg = formatKg(bar)
+    val plates = platesPerSide(totalKg, bar)
+    return when {
+        totalKg < bar -> stringResource(Res.string.bar_too_light, barKg)
+
+        plates == null -> stringResource(Res.string.bar_unloadable, barKg)
+
+        plates.isEmpty() -> stringResource(Res.string.bar_empty, barKg)
+
+        else -> {
+            var side = formatKg(plates.first())
+            for (plate in plates.drop(1)) side = stringResource(Res.string.plates_plus, side, formatKg(plate))
+            stringResource(Res.string.bar_plates, barKg, side)
+        }
+    }
 }
 
 /** A band by the name the user gave it, or one they started with by the name its colour goes by: "Medium". */
@@ -116,6 +150,7 @@ private fun levelName(band: BandLevel): String = stringResource(
 fun equipmentName(equipment: Equipment): String = stringResource(
     when (equipment) {
         Equipment.Kettlebell -> Res.string.equipment_kettlebell
+        Equipment.Barbell -> Res.string.equipment_barbell
         Equipment.Bodyweight -> Res.string.equipment_bodyweight
         Equipment.Band -> Res.string.equipment_band
         Equipment.Mat -> Res.string.equipment_mat

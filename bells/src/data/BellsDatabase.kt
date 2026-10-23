@@ -26,7 +26,8 @@ import kotlinx.coroutines.flow.Flow
  * version 5 added the programs the user makes, [CustomProgramEntity]; version 6 sets done with two bells;
  * version 7 sets of any equipment, held or with a band, and the exercises the user adds,
  * [CustomExerciseEntity]; version 8 the user's changes to their bands and the bands they add, [BandEntity];
- * version 9 a session's day as it changed it, and the days done of a program before following it.
+ * version 9 a session's day as it changed it, and the days done of a program before following it; version 10
+ * the user's barbell, [BarEntity].
  * Every version adds; none rewrites a row.
  */
 @Database(
@@ -38,8 +39,9 @@ import kotlinx.coroutines.flow.Flow
         CustomProgramEntity::class,
         CustomExerciseEntity::class,
         BandEntity::class,
+        BarEntity::class,
     ],
-    version = 9,
+    version = 10,
     // 3 to 4 is MIGRATION_3_4, added in bellsStorageModule.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -49,6 +51,7 @@ import kotlinx.coroutines.flow.Flow
         AutoMigration(from = 6, to = 7),
         AutoMigration(from = 7, to = 8),
         AutoMigration(from = 8, to = 9),
+        AutoMigration(from = 9, to = 10),
     ],
 )
 @ConstructedBy(BellsDatabaseConstructor::class)
@@ -184,6 +187,7 @@ interface CustomExerciseDao {
     suspend fun upsert(exercise: CustomExerciseEntity)
 }
 
+/** The bells the user owns, and their barbell. */
 @Dao
 interface BellDao {
     @Query("SELECT * FROM bell ORDER BY kg")
@@ -194,6 +198,15 @@ interface BellDao {
 
     @Query("DELETE FROM bell WHERE kg = :kg")
     suspend fun delete(kg: Double)
+
+    @Query("SELECT * FROM bar WHERE id = 0")
+    fun observeBar(): Flow<BarEntity?>
+
+    @Upsert
+    suspend fun upsertBar(bar: BarEntity)
+
+    @Query("DELETE FROM bar")
+    suspend fun clearBar()
 }
 
 @Entity(tableName = "session", indices = [Index("started_at")])
@@ -286,6 +299,10 @@ data class BandEntity(
 /** A bell the user owns. */
 @Entity(tableName = "bell")
 data class BellEntity(@PrimaryKey val kg: Double)
+
+/** The user's barbell, by what it weighs empty: one row at most, [id] 0. */
+@Entity(tableName = "bar")
+data class BarEntity(@PrimaryKey val id: Int = 0, val kg: Double)
 
 /** A program the user made. [days] is its days' blocks as JSON, in [encodeDays]'s shape. */
 @Entity(tableName = "custom_program")

@@ -23,6 +23,7 @@ class StoredProgramsTest {
                 Block(BuiltInExercise.Press, rounds = 5, reps = 5, double = true, kg = 16.0),
                 Block(BuiltInExercise.BandPullApart, rounds = 3, reps = 15, band = "Heavy"),
                 Block(BuiltInExercise.PushUp, rounds = 3, reps = 10, kg = 0.0),
+                Block(BuiltInExercise.BarbellBackSquat, rounds = 5, reps = 5, kg = 62.5),
                 Block(BuiltInExercise.TwoHandSwing, rounds = 10, reps = 10, kind = BlockKind.Emom),
             ),
         )

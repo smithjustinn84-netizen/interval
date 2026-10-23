@@ -27,6 +27,7 @@ import dev.justinsmith.bells.domain.BandColour
 import dev.justinsmith.bells.domain.MAX_BAND_NAME
 import dev.justinsmith.bells.domain.PersonalRecord
 import dev.justinsmith.bells.domain.bands
+import dev.justinsmith.bells.domain.bars
 import dev.justinsmith.bells.domain.formatKg
 import dev.justinsmith.bells.domain.moved
 import dev.justinsmith.bells.domain.offeredBands
@@ -48,6 +49,9 @@ import dev.justinsmith.bells.resources.band_save
 import dev.justinsmith.bells.resources.bands_archived
 import dev.justinsmith.bells.resources.bands_owned
 import dev.justinsmith.bells.resources.bands_owned_hint
+import dev.justinsmith.bells.resources.bar_none
+import dev.justinsmith.bells.resources.bar_owned
+import dev.justinsmith.bells.resources.bar_owned_hint
 import dev.justinsmith.bells.resources.bells_owned
 import dev.justinsmith.bells.resources.bells_owned_hint
 import dev.justinsmith.bells.resources.bells_records
@@ -79,27 +83,36 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
 /**
- * The bells the user owns, their bands (archived ones too) lightest first with the ids of those with sets, and
- * their records across every session.
+ * The bells the user owns, their [bar] (what it weighs empty; null for none), their bands (archived ones too)
+ * lightest first with the ids of those with sets, and their records across every session.
  */
 data class GearUiState(
     val owned: Set<Double> = emptySet(),
+    val bar: Double? = null,
     val bands: List<Band> = bands(emptyList()),
     val usedBands: Set<String> = emptySet(),
     val records: List<PersonalRecord> = emptyList(),
 )
 
-/** The bells and bands the user has, and their records. */
+/** The bells, bar and bands the user has, and their records. */
 class GearViewModel(private val repository: BellsRepository) : ViewModel() {
     val state: StateFlow<GearUiState> =
-        combine(repository.bells, repository.bands, repository.sessions) { bells, bands, sessions ->
+        combine(repository.bells, repository.bar, repository.bands, repository.sessions) {
+                bells,
+                bar,
+                bands,
+                sessions,
+            ->
             val sets = sessions.flatMap { it.sets }
-            GearUiState(bells.toSet(), bands, sets.mapNotNull { it.band?.id }.toSet(), personalRecords(sets))
+            GearUiState(bells.toSet(), bar, bands, sets.mapNotNull { it.band?.id }.toSet(), personalRecords(sets))
         }.stateIn(viewModelScope, SharingStarted.Eagerly, GearUiState())
 
     fun toggle(kg: Double) {
         repository.setOwned(kg, owned = kg !in state.value.owned)
     }
+
+    /** Sets the user's bar to one weighing [kg] empty, or to none. */
+    fun setBar(kg: Double?) = repository.setBar(kg)
 
     /** Saves [band] as [name] (blank for its starting words) in [colour], or adds a band with a null one. */
     fun saveBand(band: Band?, name: String, colour: BandColour) {
@@ -137,11 +150,11 @@ fun GearRoute(onBack: () -> Unit) {
     val actions = remember(viewModel) {
         BandActions(viewModel::saveBand, viewModel::move, viewModel::remove, viewModel::restore)
     }
-    GearScreen(state, onToggle = viewModel::toggle, onBack = onBack, bandActions = actions)
+    GearScreen(state, onToggle = viewModel::toggle, onBack = onBack, bandActions = actions, onBar = viewModel::setBar)
 }
 
 /**
- * What the user has, opened from Lift: every standard bell size, the owned ones selected; their bands,
+ * What the user has, opened from Lift: every standard bell size, the owned ones selected; their bar; their bands,
  * lightest first, each opening to rename, recolour, move or archive, and a new one to add; then the records.
  * On a wider window the bands and the records sit side by side under the bells.
  */
@@ -153,6 +166,7 @@ fun GearScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     bandActions: BandActions = BandActions(),
+    onBar: (Double?) -> Unit = {},
 ) {
     val palette = IntervalTheme.palette
     val card = Modifier.padding(horizontal = Spacing.space16)
@@ -179,6 +193,9 @@ fun GearScreen(
                     modifier = Modifier.padding(top = Spacing.space8),
                 )
             }
+        }
+        item(key = "bar", span = StaggeredGridItemSpan.FullLine) {
+            BarSection(state.bar, onBar, card)
         }
         item(key = "bands") {
             BandsSection(state.bands, onOpen = { editing = it.id }, onAdd = { editing = NEW_BAND }, modifier = card)
@@ -219,6 +236,24 @@ fun GearScreen(
                 onDismiss = { editing = null },
             )
         }
+    }
+}
+
+/** The user's bar by what it weighs empty, or None: a tap on another picks it ([onBar]). */
+@Composable
+private fun BarSection(bar: Double?, onBar: (Double?) -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier) {
+        GroupLabel(stringResource(Res.string.bar_owned))
+        val none = stringResource(Res.string.bar_none)
+        ChoiceRow(listOf(null) + bars, bar, { kg ->
+            kg?.let { stringResource(Res.string.kg_value, formatKg(it)) } ?: none
+        }, onBar)
+        Text(
+            stringResource(Res.string.bar_owned_hint),
+            style = IntervalTheme.type.meta,
+            color = IntervalTheme.palette.textDim,
+            modifier = Modifier.padding(top = Spacing.space8),
+        )
     }
 }
 

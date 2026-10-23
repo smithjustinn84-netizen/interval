@@ -36,7 +36,7 @@ class ExerciseLibraryViewModel(repository: BellsRepository, private val filters:
             repository.sessions,
             repository.active,
             filters.filters,
-            combine(repository.bells, repository.bands, ::ownedEquipment),
+            combine(repository.bells, repository.bands, repository.bar, ::ownedEquipment),
         ) { made, sessions, active, narrowed, owned ->
             val offered = offeredExercises(made, archived = narrowed.showArchived)
             val history = sessions.reversed().flatMap { it.sets } + active?.sets.orEmpty()

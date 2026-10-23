@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.unit.em
 import dev.justinsmith.bells.domain.CustomExercise
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
@@ -62,6 +59,7 @@ import dev.justinsmith.bells.resources.session_log
 import dev.justinsmith.bells.resources.summary_done
 import dev.justinsmith.bells.ui.ChoiceRow
 import dev.justinsmith.bells.ui.LoadPicker
+import dev.justinsmith.bells.ui.Stepper
 import dev.justinsmith.bells.ui.exerciseFacts
 import dev.justinsmith.bells.ui.exerciseName
 import dev.justinsmith.bells.ui.sideName
@@ -73,7 +71,6 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.QuietTextButton
-import dev.justinsmith.interval.ui.RepeatButton
 import dev.justinsmith.interval.ui.RollingText
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.SegmentedPicker
@@ -278,24 +275,28 @@ private fun MeasurePicker(
     }
 }
 
-/** The load the set takes, from the draft: a bell (or two), weight added to bodyweight, a band, or none. */
+/** The load the set takes, from the draft: a bell (or two), the bar, weight added to bodyweight, a band, or none. */
 @Composable
 private fun DraftLoad(state: SessionUiState, actions: SessionActions) {
     val draft = state.draft
     LoadPicker(
         draft.exercise,
         draft.double,
-        kg = if (draft.exercise.equipment == Equipment.Bodyweight) draft.addedKg else draft.bellKg,
+        kg = when (draft.exercise.equipment) {
+            Equipment.Bodyweight -> draft.addedKg
+            Equipment.Barbell -> draft.barKg
+            else -> draft.bellKg
+        },
         band = draft.band,
         bells = state.bells,
         bands = state.bands,
         onKg = { kg ->
             kg?.let { picked ->
                 actions.onDraft {
-                    if (it.exercise.equipment == Equipment.Bodyweight) {
-                        it.copy(addedKg = picked)
-                    } else {
-                        it.copy(bellKg = picked)
+                    when (it.exercise.equipment) {
+                        Equipment.Bodyweight -> it.copy(addedKg = picked)
+                        Equipment.Barbell -> it.copy(barKg = picked)
+                        else -> it.copy(bellKg = picked)
                     }
                 }
             }
@@ -303,6 +304,7 @@ private fun DraftLoad(state: SessionUiState, actions: SessionActions) {
         onBand = { band -> band?.let { picked -> actions.onDraft { it.copy(band = picked) } } },
         onDouble = { actions.onDraft { it.copy(double = !it.double) } },
         ownsBells = state.ownsBells,
+        bar = state.bar,
     )
 }
 
@@ -310,37 +312,6 @@ private fun DraftLoad(state: SessionUiState, actions: SessionActions) {
 @Composable
 private fun CountStepper(value: Int, fewer: String, more: String, max: Int, onStep: (Int) -> Unit) {
     Stepper(value.toString(), fewer, more, canLower = value > 1, canRaise = value < max, onStep = onStep)
-}
-
-/** A value, large, with − and + that repeat while held, each a step down or up. */
-@Composable
-private fun Stepper(
-    value: String,
-    fewer: String,
-    more: String,
-    canLower: Boolean,
-    canRaise: Boolean,
-    onStep: (Int) -> Unit,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
-    ) {
-        // On one line, shrinking to fit: half a sheet on a phone on its side is too narrow for a hold's length
-        // at full size. A line height in em, so it shrinks with the font.
-        BasicText(
-            value,
-            Modifier.weight(1f),
-            style = IntervalTheme.type.display.copy(color = IntervalTheme.palette.text, lineHeight = 1.em),
-            maxLines = 1,
-            autoSize = TextAutoSize.StepBased(
-                minFontSize = IntervalTheme.type.stat.fontSize,
-                maxFontSize = IntervalTheme.type.display.fontSize,
-            ),
-        )
-        RepeatButton("−", fewer, enabled = canLower, onStep = { onStep(-1) })
-        RepeatButton("+", more, enabled = canRaise, onStep = { onStep(1) })
-    }
 }
 
 /** How many minutes an EMOM started from the sheet runs. */

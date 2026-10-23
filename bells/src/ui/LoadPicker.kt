@@ -5,18 +5,26 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import dev.justinsmith.bells.domain.BAR_KG_STEP
 import dev.justinsmith.bells.domain.Band
+import dev.justinsmith.bells.domain.DEFAULT_BAR_KG
 import dev.justinsmith.bells.domain.Doubles
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
+import dev.justinsmith.bells.domain.MAX_BAR_KG
 import dev.justinsmith.bells.domain.formatKg
 import dev.justinsmith.bells.resources.Res
+import dev.justinsmith.bells.resources.kg_value
 import dev.justinsmith.bells.resources.lift_double
 import dev.justinsmith.bells.resources.load_last_time
+import dev.justinsmith.bells.resources.load_set_weight
 import dev.justinsmith.bells.resources.log_added
 import dev.justinsmith.bells.resources.log_added_none
 import dev.justinsmith.bells.resources.log_band
+import dev.justinsmith.bells.resources.log_bar_weight
 import dev.justinsmith.bells.resources.log_bell
+import dev.justinsmith.bells.resources.log_heavier
+import dev.justinsmith.bells.resources.log_lighter
 import dev.justinsmith.bells.resources.log_no_bells
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -26,10 +34,10 @@ import dev.justinsmith.interval.ui.ToggleRow
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The load [exercise] takes: a bell (or two, when [double]), weight added to bodyweight, a band, or nothing on
- * the mat. [kg] is the bell or the weight added, [band] the band, each among [bells] and [bands]. With
- * [lastTime], a plan's load, it can also be left to what was used last time: null. Without [ownsBells] a hint
- * says where to add them.
+ * The load [exercise] takes: a bell (or two, when [double]), the total on the user's [bar], weight added to
+ * bodyweight, a band, or nothing on the mat. [kg] is the bell, the total or the weight added, [band] the band,
+ * each among [bells] and [bands]. With [lastTime], a plan's load, it can also be left to what was used last
+ * time: null. Without [ownsBells] a hint says where to add them.
  */
 @Composable
 fun LoadPicker(
@@ -45,11 +53,14 @@ fun LoadPicker(
     modifier: Modifier = Modifier,
     lastTime: Boolean = false,
     ownsBells: Boolean = true,
+    bar: Double? = null,
 ) {
     val nothing: List<Nothing?> = if (lastTime) listOf(null) else emptyList()
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         when (exercise.equipment) {
             Equipment.Kettlebell -> BellChoices(exercise, double, kg, nothing + bells, onKg, onDouble, ownsBells)
+
+            Equipment.Barbell -> BarChoices(kg, bar, lastTime, onKg)
 
             Equipment.Bodyweight -> AddedChoices(kg, nothing + listOf(0.0) + bells, onKg)
 
@@ -101,4 +112,35 @@ private fun AddedChoices(kg: Double?, options: List<Double?>, onKg: (Double?) ->
     val none = stringResource(Res.string.log_added_none)
     GroupLabel(stringResource(Res.string.log_added))
     ChoiceRow(options, kg, { option -> option?.let { if (it == 0.0) none else formatKg(it) } ?: last }, onKg)
+}
+
+/**
+ * The total on the bar, in steps of [BAR_KG_STEP] from the empty [bar] up, and the plates a side it takes. For
+ * a plan ([lastTime]) it can be left to last time (a null [kg]) instead.
+ */
+@Composable
+private fun BarChoices(kg: Double?, bar: Double?, lastTime: Boolean, onKg: (Double?) -> Unit) {
+    GroupLabel(stringResource(Res.string.log_bar_weight))
+    if (lastTime) {
+        val last = stringResource(Res.string.load_last_time)
+        val set = stringResource(Res.string.load_set_weight)
+        ChoiceRow(listOf(false, true), kg != null, { if (it) set else last }, { named ->
+            onKg(if (named) kg ?: bar ?: DEFAULT_BAR_KG else null)
+        })
+    }
+    if (kg == null) return
+    val lightest = bar ?: 0.0
+    Stepper(
+        stringResource(Res.string.kg_value, formatKg(kg)),
+        fewer = stringResource(Res.string.log_lighter),
+        more = stringResource(Res.string.log_heavier),
+        canLower = kg - BAR_KG_STEP >= lightest,
+        canRaise = kg + BAR_KG_STEP <= MAX_BAR_KG,
+        onStep = { step -> onKg((kg + step * BAR_KG_STEP).coerceIn(lightest, MAX_BAR_KG)) },
+    )
+    Text(
+        platesLine(kg, bar),
+        style = IntervalTheme.type.meta,
+        color = IntervalTheme.palette.textDim,
+    )
 }

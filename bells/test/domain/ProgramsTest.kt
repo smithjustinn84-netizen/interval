@@ -181,8 +181,10 @@ class ProgramsTest {
     }
 
     @Test
-    fun `only the mixed programs leave the bells and the grapplers have their own family`() {
-        builtInPrograms.filter { (it.key as ProgramKey.BuiltIn).id.family != ProgramFamily.Mixed }
+    fun `only the mixed and barbell programs leave the bells and the grapplers have their own family`() {
+        builtInPrograms.filter {
+            (it.key as ProgramKey.BuiltIn).id.family !in setOf(ProgramFamily.Mixed, ProgramFamily.Barbell)
+        }
             .flatMap { it.days.flatten() }
             .forEach { assertTrue(it.exercise in kettlebellLifts) }
         assertEquals(
@@ -194,6 +196,22 @@ class ProgramsTest {
             ),
             ProgramId.entries.filter { it.family == ProgramFamily.Grappling },
         )
+    }
+
+    @Test
+    fun `the barbell family is Olympic foundations and a 5x5 of barbell lifts alone`() {
+        assertEquals(
+            listOf(ProgramId.OlympicFoundations, ProgramId.BarbellFiveByFive),
+            ProgramId.entries.filter { it.family == ProgramFamily.Barbell },
+        )
+        listOf(ProgramId.OlympicFoundations, ProgramId.BarbellFiveByFive).forEach { id ->
+            program(id).days.flatten().forEach {
+                assertTrue(it.exercise in barbellLifts, it.exercise.key)
+                assertNull(it.kg)
+            }
+        }
+        assertEquals(36, program(ProgramId.BarbellFiveByFive).totalDays)
+        assertEquals(24, program(ProgramId.OlympicFoundations).totalDays)
     }
 
     @Test

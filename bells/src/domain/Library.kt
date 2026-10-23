@@ -30,13 +30,14 @@ data class ExerciseFilters(
 }
 
 /**
- * The equipment the user has: their body and the floor always, kettlebells once they own a [bells] size, and
- * bands while one of [bands] is not archived.
+ * The equipment the user has: their body and the floor always, kettlebells once they own a [bells] size, a
+ * barbell once they have said which [bar], and bands while one of [bands] is not archived.
  */
-fun ownedEquipment(bells: List<Double>, bands: List<Band>): Set<Equipment> = buildSet {
+fun ownedEquipment(bells: List<Double>, bands: List<Band>, bar: Double? = null): Set<Equipment> = buildSet {
     add(Equipment.Bodyweight)
     add(Equipment.Mat)
     if (bells.isNotEmpty()) add(Equipment.Kettlebell)
+    if (bar != null) add(Equipment.Barbell)
     if (bands.any { !it.archived }) add(Equipment.Band)
 }
 

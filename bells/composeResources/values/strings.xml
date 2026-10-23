@@ -21,6 +21,7 @@
     <!-- A band by name, then reps: "Medium × 20". -->
     <string name="set_line_band">%1$s × %2$d</string>
     <string name="equipment_kettlebell">Kettlebell</string>
+    <string name="equipment_barbell">Barbell</string>
     <string name="equipment_bodyweight">Bodyweight</string>
     <string name="equipment_band">Band</string>
     <string name="equipment_mat">Mat</string>
@@ -61,6 +62,27 @@
     <string name="exercise_windmill">Windmill</string>
     <string name="exercise_bottoms_up_press">Bottoms-up press</string>
     <string name="exercise_iron_cardio">Iron Cardio</string>
+    <!-- Barbell. The jerk is the split jerk; a clean and jerk is one rep. -->
+    <string name="exercise_barbell_snatch">Barbell snatch</string>
+    <string name="exercise_barbell_clean_and_jerk">Clean and jerk</string>
+    <string name="exercise_barbell_clean">Barbell clean</string>
+    <string name="exercise_barbell_jerk">Split jerk</string>
+    <string name="exercise_barbell_power_snatch">Power snatch</string>
+    <string name="exercise_barbell_power_clean">Power clean</string>
+    <string name="exercise_barbell_hang_snatch">Hang snatch</string>
+    <string name="exercise_barbell_hang_clean">Hang clean</string>
+    <string name="exercise_barbell_snatch_pull">Snatch pull</string>
+    <string name="exercise_barbell_clean_pull">Clean pull</string>
+    <string name="exercise_barbell_overhead_squat">Overhead squat</string>
+    <string name="exercise_barbell_snatch_balance">Snatch balance</string>
+    <string name="exercise_barbell_push_press">Push press</string>
+    <string name="exercise_barbell_back_squat">Back squat</string>
+    <string name="exercise_barbell_front_squat">Barbell front squat</string>
+    <string name="exercise_barbell_deadlift">Barbell deadlift</string>
+    <string name="exercise_barbell_romanian_deadlift">Romanian deadlift</string>
+    <string name="exercise_barbell_bench_press">Bench press</string>
+    <string name="exercise_barbell_overhead_press">Overhead press</string>
+    <string name="exercise_barbell_row">Barbell row</string>
     <!-- A logged set's exercise this version of the app doesn't know, from a newer one. -->
     <string name="exercise_unknown">Unknown exercise</string>
     <!-- Bodyweight -->
@@ -208,7 +230,7 @@
     <string name="library_owned_only">Only what I own</string>
     <!-- A tag on an exercise the user added and archived. -->
     <string name="library_archived">Archived</string>
-    <string name="library_entry_text">Bells, bodyweight, bands and the mat</string>
+    <string name="library_entry_text">Bells, barbells, bodyweight, bands and the mat</string>
     <string name="measure_reps">Reps</string>
     <string name="measure_time">Time</string>
     <!-- In a line of an exercise's facts: "Bodyweight · Time · a side · Core". -->
@@ -259,6 +281,16 @@
     <string name="hold_stop_note">Stop early to log the seconds held so far.</string>
     <string name="hold_other_side">Time the other side: %1$s</string>
     <string name="log_bell">Bell</string>
+    <string name="log_bar_weight">On the bar</string>
+    <string name="log_lighter">Lighter</string>
+    <string name="log_heavier">Heavier</string>
+    <!-- The plates for one side of the bar: "20 kg bar · 20 + 1.25 a side". -->
+    <string name="bar_plates">%1$s kg bar · %2$s a side</string>
+    <string name="plates_plus">%1$s + %2$s</string>
+    <string name="bar_empty">%1$s kg bar, empty</string>
+    <string name="bar_too_light">Lighter than your %1$s kg bar</string>
+    <string name="bar_unloadable">%1$s kg bar · not loadable with standard plates</string>
+    <string name="log_no_bar">Set your bar under Your equipment on Lift to see the plates a side.</string>
     <string name="log_reps">Reps</string>
     <string name="log_side">Side</string>
     <string name="log_fewer_reps">Fewer reps</string>
@@ -316,6 +348,9 @@
     <!-- Bells and records -->
     <string name="bells_title">Your equipment</string>
     <string name="bells_owned">Your bells</string>
+    <string name="bar_owned">Your bar</string>
+    <string name="bar_none">None</string>
+    <string name="bar_owned_hint">What your barbell weighs empty; the log works out the plates a side from it.</string>
     <string name="bells_owned_hint">Tap the sizes you own; the log offers just those.</string>
     <string name="bands_owned">Your bands</string>
     <string name="bands_owned_hint">Lightest first. Tap one to rename, recolour or move it.</string>
@@ -411,10 +446,15 @@
     <string name="program_bands_bells_summary">Presses and rows with band pull-aparts and face pulls; squats and deadlifts with Pallof presses and banded bridges · 2 days a week for 6 weeks</string>
     <string name="program_core_mat_name">Core on the mat</string>
     <string name="program_core_mat_summary">The hundred, roll-ups, single-leg stretches and swimming, then windmills and get-ups with a bell · 2 days a week for 6 weeks</string>
+    <string name="program_olympic_foundations_name">Olympic foundations</string>
+    <string name="program_olympic_foundations_summary">Power snatches, overhead squats and snatch pulls; power cleans, push presses and clean pulls; then the full snatch and clean and jerk, with a squat each day · 3 days a week for 8 weeks</string>
+    <string name="program_five_by_five_name">Barbell 5×5</string>
+    <string name="program_five_by_five_summary">Back squats every day, with bench presses and rows, or overhead presses and a set of deadlifts · 3 days a week for 12 weeks</string>
     <string name="programs_classics">Classics</string>
     <string name="programs_dan_john">Dan John–inspired</string>
     <string name="programs_grappling">For grapplers</string>
     <string name="programs_mixed">Bodyweight and mixed</string>
+    <string name="programs_barbell">Barbell</string>
     <string name="programs_yours">Your programs</string>
     <string name="programs_new">New program</string>
     <string name="programs_new_hint">Lay out your own days of sets, EMOMs and ladders.</string>
@@ -506,6 +546,7 @@
     <string name="load_added">+%1$s kg</string>
     <!-- The load a block leaves to the last set of its lift -->
     <string name="load_last_time">Last time</string>
+    <string name="load_set_weight">Set weight</string>
     <string name="load_last_time_hint">Last time starts from what you used for it last.</string>
 
     <!-- Up next, in a programmed session -->

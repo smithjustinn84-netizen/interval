@@ -2,6 +2,7 @@ package dev.justinsmith.interval.fakes
 
 import dev.justinsmith.bells.data.BandDao
 import dev.justinsmith.bells.data.BandEntity
+import dev.justinsmith.bells.data.BarEntity
 import dev.justinsmith.bells.data.BellDao
 import dev.justinsmith.bells.data.BellEntity
 import dev.justinsmith.bells.data.BellsRepository
@@ -97,6 +98,18 @@ class FakeBellDao : BellDao {
     override suspend fun upsert(bell: BellEntity) = rows.update { all -> all.filterNot { it.kg == bell.kg } + bell }
 
     override suspend fun delete(kg: Double) = rows.update { all -> all.filterNot { it.kg == kg } }
+
+    val bar = MutableStateFlow<BarEntity?>(null)
+
+    override fun observeBar(): Flow<BarEntity?> = bar
+
+    override suspend fun upsertBar(bar: BarEntity) {
+        this.bar.value = bar
+    }
+
+    override suspend fun clearBar() {
+        bar.value = null
+    }
 }
 
 class FakeFollowingDao : FollowingDao {

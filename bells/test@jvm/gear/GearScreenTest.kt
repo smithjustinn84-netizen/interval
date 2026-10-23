@@ -15,11 +15,21 @@ import dev.justinsmith.bells.ui.waitForText
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-/** Your equipment: the bells owned and the bands, renamed, moved, archived and added. */
+/** Your equipment: the bells owned, the bar, and the bands, renamed, moved, archived and added. */
 class GearScreenTest {
     private fun DesktopComposeUiTest.openEquipment() {
         onNodeWithContentDescription("Your equipment and records").performClick()
         waitForText("Your bands")
+    }
+
+    @Test
+    fun `the bar chosen is stored and none clears it`() = bellsAppTest { app ->
+        openEquipment()
+        onNodeWithText("Your bar").performScrollTo()
+        onNodeWithText("15 kg").performScrollTo().performClick()
+        waitUntil { app.storage.bells.bar.value?.kg == 15.0 }
+        onNodeWithText("None").performScrollTo().performClick()
+        waitUntil { app.storage.bells.bar.value == null }
     }
 
     @Test

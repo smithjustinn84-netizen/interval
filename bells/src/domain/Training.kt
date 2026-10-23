@@ -1,5 +1,7 @@
 package dev.justinsmith.bells.domain
 
+import kotlin.math.roundToLong
+
 /**
  * An exercise Bells logs: one of the [BuiltInExercise]s, one the user added ([CustomExercise]), or one a set
  * names that this build can't ([UnknownExercise]). [perSide] ones are logged one side at a time, unless done
@@ -139,6 +141,33 @@ enum class BuiltInExercise(
     /** Iron Cardio: a clean, a press and a squat, as one rep; with two bells, double Iron Cardio. */
     IronCardio(Equipment.Kettlebell, perSide = true, Focus.FullBody),
 
+    // Barbell: the Olympic lifts and their pulls and squats, then the strength lifts. Prefixed, so a key never
+    // clashes with a bell lift's.
+    BarbellSnatch(Equipment.Barbell, perSide = false, Focus.FullBody),
+
+    /** A clean and a jerk, as one rep. */
+    BarbellCleanAndJerk(Equipment.Barbell, perSide = false, Focus.FullBody),
+    BarbellClean(Equipment.Barbell, perSide = false, Focus.FullBody),
+
+    /** The split jerk, from the rack. */
+    BarbellJerk(Equipment.Barbell, perSide = false, Focus.FullBody),
+    BarbellPowerSnatch(Equipment.Barbell, perSide = false, Focus.FullBody),
+    BarbellPowerClean(Equipment.Barbell, perSide = false, Focus.FullBody),
+    BarbellHangSnatch(Equipment.Barbell, perSide = false, Focus.FullBody),
+    BarbellHangClean(Equipment.Barbell, perSide = false, Focus.FullBody),
+    BarbellSnatchPull(Equipment.Barbell, perSide = false, Focus.FullBody),
+    BarbellCleanPull(Equipment.Barbell, perSide = false, Focus.FullBody),
+    BarbellOverheadSquat(Equipment.Barbell, perSide = false, Focus.FullBody),
+    BarbellSnatchBalance(Equipment.Barbell, perSide = false, Focus.FullBody),
+    BarbellPushPress(Equipment.Barbell, perSide = false, Focus.UpperBody),
+    BarbellBackSquat(Equipment.Barbell, perSide = false, Focus.LowerBody),
+    BarbellFrontSquat(Equipment.Barbell, perSide = false, Focus.LowerBody),
+    BarbellDeadlift(Equipment.Barbell, perSide = false, Focus.LowerBody),
+    BarbellRomanianDeadlift(Equipment.Barbell, perSide = false, Focus.LowerBody),
+    BarbellBenchPress(Equipment.Barbell, perSide = false, Focus.UpperBody),
+    BarbellOverheadPress(Equipment.Barbell, perSide = false, Focus.UpperBody),
+    BarbellRow(Equipment.Barbell, perSide = false, Focus.UpperBody),
+
     PushUp(Equipment.Bodyweight, perSide = false, Focus.UpperBody),
     InclinePushUp(Equipment.Bodyweight, perSide = false, Focus.UpperBody),
     PikePushUp(Equipment.Bodyweight, perSide = false, Focus.UpperBody),
@@ -206,8 +235,17 @@ enum class BuiltInExercise(
 /** The built-in kettlebell lifts, in order: all the Log sheet and the program editor offer for now. */
 val kettlebellLifts: List<BuiltInExercise> = BuiltInExercise.entries.filter { it.equipment == Equipment.Kettlebell }
 
+/** The built-in barbell lifts, in order. */
+val barbellLifts: List<BuiltInExercise> = BuiltInExercise.entries.filter { it.equipment == Equipment.Barbell }
+
 /** What an exercise is done with. */
-enum class Equipment { Kettlebell, Bodyweight, Band, Mat }
+enum class Equipment { Kettlebell, Barbell, Bodyweight, Band, Mat }
+
+/** Whether a set done with it is weighed: a bell, the total on a bar, or weight added to bodyweight. */
+val Equipment.takesKg: Boolean get() = when (this) {
+    Equipment.Kettlebell, Equipment.Barbell, Equipment.Bodyweight -> true
+    Equipment.Band, Equipment.Mat -> false
+}
 
 /** How a set is counted: reps, or the time held. */
 enum class Measure { Reps, Time }
@@ -230,8 +268,8 @@ enum class BandLevel { ExtraLight, Light, Medium, Heavy, ExtraHeavy }
 /**
  * One logged set: [reps] of [exercise] with a [bellKg] bell, or a pair of them when [double], on [side] for
  * a one-sided lift. The set keeps the [equipment] it was done with, so changing an exercise later never
- * changes what its sets were. A held set lasted [seconds]; a band set used [band]. For bodyweight [bellKg]
- * is the weight added, for a band or the mat it is 0.
+ * changes what its sets were. A held set lasted [seconds]; a band set used [band]. For a barbell [bellKg] is
+ * the total on the bar, for bodyweight the weight added, for a band or the mat it is 0.
  */
 data class SetLog(
     val id: Long,
@@ -246,11 +284,11 @@ data class SetLog(
     val band: Band? = null,
 ) {
     /**
-     * The weight moved: the bell, or both, or the weight added to bodyweight, times the reps. A band, the mat
-     * and a hold move none that can be weighed.
+     * The weight moved: the bell, or both, the bar as loaded, or the weight added to bodyweight, times the
+     * reps. A band, the mat and a hold move none that can be weighed.
      */
     val tonnageKg: Double get() = when (equipment) {
-        Equipment.Kettlebell, Equipment.Bodyweight -> bellKg * reps * (if (double) 2 else 1)
+        Equipment.Kettlebell, Equipment.Barbell, Equipment.Bodyweight -> bellKg * reps * (if (double) 2 else 1)
         Equipment.Band, Equipment.Mat -> 0.0
     }
 }
@@ -441,10 +479,20 @@ private fun PersonalRecord.beats(was: PersonalRecord): Boolean = when {
 val standardBells: List<Double> =
     listOf(4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 20.0, 24.0, 28.0, 32.0, 36.0, 40.0, 44.0, 48.0)
 
-/** A weight as Bells writes it: no decimals for a whole number ("24"), otherwise one ("1.5"). */
+/**
+ * A weight as Bells writes it, to the hundredth and no further than it needs: "24", "1.5", or a change plate's
+ * "1.25".
+ */
 fun formatKg(kg: Double): String {
-    val whole = kg.toLong()
-    return if (kg == whole.toDouble()) whole.toString() else ((kg * TENTHS).toLong() / TENTHS.toDouble()).toString()
+    val hundredths = (kg * HUNDREDTHS).roundToLong()
+    val whole = hundredths / HUNDREDTHS
+    val part = hundredths % HUNDREDTHS
+    return when {
+        part == 0L -> whole.toString()
+        part % TENTH == 0L -> "$whole.${part / TENTH}"
+        else -> "$whole.${part.toString().padStart(2, '0')}"
+    }
 }
 
-private const val TENTHS = 10
+private const val HUNDREDTHS = 100L
+private const val TENTH = 10L

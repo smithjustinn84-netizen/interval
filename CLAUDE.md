@@ -38,7 +38,8 @@ Amper source layout, not Gradle's:
   `shared` (`dev.justinsmith.interval.ui`, `.platform`, `.timer`) and has its own resources
   (`dev.justinsmith.core.resources`: the Barlow fonts and its components' few words). `shared` exports it.
 - `bells/` is the kettlebell side behind the **Lift** tab (package `dev.justinsmith.bells`), a library
-  `shared` depends on: log sets of reps with a bell, owned bells and bands (`gear/Gear.kt`, the bands in `domain/Bands.kt`) and personal records, built-in programs
+  `shared` depends on: log sets of reps with a bell or a barbell, owned bells, the bar and bands (`gear/Gear.kt`, the bands in
+  `domain/Bands.kt`, the plates a side in `domain/Barbell.kt`) and personal records, built-in programs
   (`domain/Programs.kt`, data not words: names are strings) whose next day lays out the session, EMOMs timed
   by the pure `EmomClock` with beeps through `Beeper`, and a finished session's page (`history/LiftDetail.kt`).
   Same conventions as `shared` (`XRoute`/`XScreen`, Koin, Room, strings in its own `composeResources`), but

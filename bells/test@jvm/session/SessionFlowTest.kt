@@ -7,6 +7,7 @@ import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
@@ -15,6 +16,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import dev.justinsmith.bells.data.BarEntity
 import dev.justinsmith.bells.data.SessionEntity
 import dev.justinsmith.bells.data.SetEntity
 import dev.justinsmith.bells.domain.BuiltInExercise
@@ -125,6 +127,27 @@ class SessionFlowTest {
         val second = app.storage.sessions.sets.value.last()
         assertEquals(12 to "Right", second.seconds to second.side)
         onNodeWithText("Time the other side: Left").assertDoesNotExist()
+    }
+
+    @Test
+    fun `a barbell set steps the total on the bar and shows the plates a side`() = bellsAppTest(
+        FakeBellsStorage().apply { bells.bar.value = BarEntity(kg = 20.0) },
+    ) { app ->
+        onNodeWithText("Start session").performClick()
+        waitForText("Log set")
+        onNodeWithText("Log set").performClick()
+        pick("Power clean", search = "power clean")
+        // A lift never done starts on the empty bar.
+        waitForText("On the bar")
+        onNodeWithText("20 kg bar, empty").assertExists()
+        onNodeWithContentDescription("Lighter").assertIsNotEnabled()
+        repeat(17) { onNodeWithContentDescription("Heavier").performClick() }
+        waitForText("62.5 kg")
+        onNodeWithText("20 kg bar · 20 + 1.25 a side").assertExists()
+        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
+        waitForText("62.5 kg × 10")
+        val set = app.storage.sessions.sets.value.single()
+        assertEquals(Triple("BarbellPowerClean", "Barbell", 62.5), Triple(set.exercise, set.equipment, set.bellKg))
     }
 
     @Test

@@ -1,0 +1,33 @@
+<journey name="Lift: a barbell and its plates">
+  <description>
+    Set a 20 kg bar under Your equipment, follow Barbell 5×5, log day 1's first back squat on the empty bar,
+    then a power clean at 60 kg off the plan with its plates a side checked, and finish. Run on a fresh install
+    (adb shell pm clear dev.justinsmith.interval).
+  </description>
+  <actions>
+    <action>Tap the "Lift" tab, then the "Your equipment and records" button</action>
+    <action>Verify that "Your bar" offers "None" selected, "10 kg", "15 kg" and "20 kg", above "Your bands"</action>
+    <action>Tap "20 kg" under "Your bar", then go back</action>
+    <action>Tap "Follow a program"</action>
+    <action>Scroll to the "Barbell" group and verify it lists "Olympic foundations" and "Barbell 5×5"</action>
+    <action>Tap "Barbell 5×5", then "Follow this program"</action>
+    <action>Verify that Lift shows "Day 1 of 36 · week 1", "Back squat" "5 × 5" with "20 kg", "Bench press", "Barbell row", and "Start day 1"</action>
+    <action>Tap "Start day 1"</action>
+    <action>Verify that the session shows "Up next · 1 of 15 sets", "Back squat" and "20 kg × 5"</action>
+    <action>Tap "Log it"</action>
+    <action>Verify that the session lists "Back squat" with a set "20 kg × 5", "Moved" at "100 kg", and "Up next · 2 of 15 sets"</action>
+    <action>Tap "Log set", then "Change", and type "power clean" into "Search exercises"</action>
+    <action>Tap "Power clean"</action>
+    <action>Verify that the exercise card reads "Power clean" over "Barbell · Reps · Full body", "On the bar" reads "20 kg", and "20 kg bar, empty" is shown under it</action>
+    <action>Tap "+" beside "20 kg" 16 times</action>
+    <action>Verify that "On the bar" reads "60 kg" and "20 kg bar · 20 a side" is shown</action>
+    <action>Tap "+" once more</action>
+    <action>Verify that it reads "62.5 kg" and "20 kg bar · 20 + 1.25 a side"</action>
+    <action>Tap "Log set" at the bottom of the sheet</action>
+    <action>Verify that the session shows "Power clean" with a set "62.5 kg × 10", and "Moved" reads "725 kg"</action>
+    <action>Tap "Finish"</action>
+    <action>Verify that the summary lists "Back squat" with "Heaviest 20 kg × 5" and "Power clean" with "Heaviest 62.5 kg × 10" under "New records"</action>
+    <action>Tap "Done"</action>
+    <action>Verify that Lift shows "Day 2 of 36 · week 1" with "Back squat", "Overhead press" and "Barbell deadlift"</action>
+  </actions>
+</journey>

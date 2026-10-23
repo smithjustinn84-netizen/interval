@@ -9,6 +9,7 @@ import dev.justinsmith.bells.domain.PlanBlock
 import dev.justinsmith.bells.domain.Program
 import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.domain.SessionPlan
+import dev.justinsmith.bells.domain.takesKg
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -61,7 +62,6 @@ internal fun StoredBlock.toBlock(made: List<CustomExercise>): Block? {
     val lift = Exercise.parse(exercise, made) ?: return null
     val kind = BlockKind.entries.firstOrNull { it.name == kind } ?: return null
     if (rounds < 1 || (kind == BlockKind.Ladder && rungs.isEmpty())) return null
-    val weighed = lift.equipment == Equipment.Kettlebell || lift.equipment == Equipment.Bodyweight
     return Block(
         lift,
         rounds,
@@ -69,7 +69,7 @@ internal fun StoredBlock.toBlock(made: List<CustomExercise>): Block? {
         kind,
         rungs,
         lift.doubled(double),
-        kg = kg?.takeIf { weighed && it >= 0 },
+        kg = kg?.takeIf { lift.equipment.takesKg && it >= 0 },
         band = band?.takeIf { lift.equipment == Equipment.Band },
     )
 }

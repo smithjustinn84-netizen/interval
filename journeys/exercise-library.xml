@@ -6,11 +6,11 @@
   </description>
   <actions>
     <action>Tap the "Lift" tab, then the "Exercises" card</action>
-    <action>Verify that a page titled "Exercises" shows "Search exercises", the chips "Kettlebell", "Bodyweight", "Band" and "Mat", "74 exercises" and "Filters", and a "New exercise" button in the title bar</action>
+    <action>Verify that a page titled "Exercises" shows "Search exercises", the chips "Kettlebell", "Barbell", "Bodyweight", "Band" and "Mat", "94 exercises" and "Filters", and a "New exercise" button in the title bar</action>
     <action>Type "PUSHUP" into "Search exercises"</action>
     <action>Verify that "3 exercises" is shown with "Push-up", "Incline push-up" and "Pike push-up", each over "Bodyweight · Reps · Upper body", and a "Clear" button</action>
     <action>Tap "Clear"</action>
-    <action>Verify that the search is empty and "74 exercises" is shown</action>
+    <action>Verify that the search is empty and "94 exercises" is shown</action>
     <action>Tap the "Mat" chip</action>
     <action>Verify that "18 exercises" is shown, starting with "The hundred"</action>
     <action>Tap "Filters"</action>
@@ -18,7 +18,7 @@
     <action>Tap "Time" under "Measured by"</action>
     <action>Verify that "1 exercise" is shown, "Swimming", and the button reads "Filters · 1"</action>
     <action>Tap "Clear"</action>
-    <action>Verify that "74 exercises" is shown and the button reads "Filters"</action>
+    <action>Verify that "94 exercises" is shown and the button reads "Filters"</action>
     <action>Type "Copenhagen plank" into "Search exercises"</action>
     <action>Verify that "No exercise matches “Copenhagen plank”" is shown with "Check the spelling, or clear a filter." and a button "Add “Copenhagen plank” as an exercise"</action>
     <action>Tap "Add “Copenhagen plank” as an exercise"</action>

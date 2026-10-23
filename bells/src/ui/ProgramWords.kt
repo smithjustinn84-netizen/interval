@@ -51,6 +51,8 @@ import dev.justinsmith.bells.resources.program_easy_strength_name
 import dev.justinsmith.bells.resources.program_easy_strength_summary
 import dev.justinsmith.bells.resources.program_first_hundred_name
 import dev.justinsmith.bells.resources.program_first_hundred_summary
+import dev.justinsmith.bells.resources.program_five_by_five_name
+import dev.justinsmith.bells.resources.program_five_by_five_summary
 import dev.justinsmith.bells.resources.program_foundations_name
 import dev.justinsmith.bells.resources.program_foundations_summary
 import dev.justinsmith.bells.resources.program_get_up_practice_name
@@ -67,6 +69,8 @@ import dev.justinsmith.bells.resources.program_ladders_name
 import dev.justinsmith.bells.resources.program_ladders_summary
 import dev.justinsmith.bells.resources.program_long_cycle_name
 import dev.justinsmith.bells.resources.program_long_cycle_summary
+import dev.justinsmith.bells.resources.program_olympic_foundations_name
+import dev.justinsmith.bells.resources.program_olympic_foundations_summary
 import dev.justinsmith.bells.resources.program_program_minimum_name
 import dev.justinsmith.bells.resources.program_program_minimum_summary
 import dev.justinsmith.bells.resources.program_rite_of_passage_name
@@ -137,6 +141,8 @@ fun programName(id: ProgramId): String = stringResource(
         ProgramId.BellsAndBodyweight -> Res.string.program_bells_bodyweight_name
         ProgramId.BandsAndBells -> Res.string.program_bands_bells_name
         ProgramId.CoreOnTheMat -> Res.string.program_core_mat_name
+        ProgramId.OlympicFoundations -> Res.string.program_olympic_foundations_name
+        ProgramId.BarbellFiveByFive -> Res.string.program_five_by_five_name
     },
 )
 
@@ -185,6 +191,8 @@ private fun programSummary(id: ProgramId): String = stringResource(
         ProgramId.BellsAndBodyweight -> Res.string.program_bells_bodyweight_summary
         ProgramId.BandsAndBells -> Res.string.program_bands_bells_summary
         ProgramId.CoreOnTheMat -> Res.string.program_core_mat_summary
+        ProgramId.OlympicFoundations -> Res.string.program_olympic_foundations_summary
+        ProgramId.BarbellFiveByFive -> Res.string.program_five_by_five_summary
     },
 )
 
@@ -200,12 +208,17 @@ fun blockLine(block: Block, bands: List<Band> = emptyList(), withLoad: Boolean =
     return stringResource(Res.string.common_joined, line, load)
 }
 
-/** The load [block] names in words, "24 kg", "2 × 16 kg", "+10 kg" or a band's name; null for none named. */
+/**
+ * The load [block] names in words, "24 kg", "2 × 16 kg", a bar's "60 kg", "+10 kg" or a band's name; null for
+ * none named.
+ */
 @Composable
 fun blockLoad(block: Block, bands: List<Band> = emptyList()): String? = when (block.exercise.equipment) {
     Equipment.Kettlebell -> block.kg?.let {
         stringResource(if (block.double) Res.string.load_double else Res.string.load_kg, formatKg(it))
     }
+
+    Equipment.Barbell -> block.kg?.let { stringResource(Res.string.load_kg, formatKg(it)) }
 
     Equipment.Bodyweight -> block.kg?.let {
         if (it > 0) stringResource(Res.string.load_added, formatKg(it)) else stringResource(Res.string.log_added_none)

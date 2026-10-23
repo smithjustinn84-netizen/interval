@@ -49,5 +49,7 @@ class BandsTest {
         assertEquals(false, filters.matches(BuiltInExercise.Press, owned))
         assertEquals(true, filters.matches(BuiltInExercise.PushUp, owned))
         assertEquals(1, filters.moreCount)
+        assertEquals(false, Equipment.Barbell in ownedEquipment(listOf(16.0), bands))
+        assertEquals(true, Equipment.Barbell in ownedEquipment(emptyList(), archived, bar = 20.0))
     }
 }

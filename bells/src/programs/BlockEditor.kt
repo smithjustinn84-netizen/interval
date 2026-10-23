@@ -57,11 +57,14 @@ data class BlockChoices(
     val bells: List<Double>,
     val bands: List<Band>,
     val library: LibraryList,
+    /** What the user's barbell weighs empty; null until they have said. */
+    val bar: Double? = null,
 )
 
 /**
  * What blocks can be made of: the bells owned (every standard size until some are), the bands not archived,
- * and the exercises offered, the ones in [history] lately first, narrowed by [filters] but never to archived.
+ * the user's [bar], and the exercises offered, the ones in [history] lately first, narrowed by [filters] but
+ * never to archived.
  */
 internal fun blockChoices(
     owned: List<Double>,
@@ -69,6 +72,7 @@ internal fun blockChoices(
     made: List<CustomExercise>,
     filters: ExerciseFilters,
     history: List<SetLog>,
+    bar: Double? = null,
 ): BlockChoices {
     val offered = offeredExercises(made)
     return BlockChoices(
@@ -78,8 +82,9 @@ internal fun blockChoices(
             offered,
             recentExercises(history, offered),
             filters.copy(showArchived = false),
-            ownedEquipment(owned, bands),
+            ownedEquipment(owned, bands, bar),
         ),
+        bar,
     )
 }
 
@@ -107,6 +112,7 @@ internal fun BlockLoad(
             onBand = { band -> onChange { it.copy(band = band?.id) } },
             onDouble = { onChange { it.copy(double = !it.double) } },
             lastTime = true,
+            bar = choices.bar,
         )
         Text(
             stringResource(Res.string.load_last_time_hint),

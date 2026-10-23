@@ -3,6 +3,7 @@ package dev.justinsmith.bells.domain
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class TrainingTest {
     private var nextId = 1L
@@ -208,12 +209,34 @@ class TrainingTest {
     }
 
     @Test
-    fun `the starter catalogue has 74 exercises across four kinds of equipment`() {
+    fun `the starter catalogue has 94 exercises across five kinds of equipment`() {
         assertEquals(
-            mapOf(Equipment.Kettlebell to 19, Equipment.Bodyweight to 22, Equipment.Band to 15, Equipment.Mat to 18),
+            mapOf(
+                Equipment.Kettlebell to 19,
+                Equipment.Barbell to 20,
+                Equipment.Bodyweight to 22,
+                Equipment.Band to 15,
+                Equipment.Mat to 18,
+            ),
             BuiltInExercise.entries.groupingBy { it.equipment }.eachCount(),
         )
         assertEquals(BuiltInExercise.entries.take(19), kettlebellLifts)
+        assertEquals(BuiltInExercise.entries.drop(19).take(20), barbellLifts)
+    }
+
+    @Test
+    fun `every barbell lift is prefixed so no key clashes with a bell lift`() {
+        barbellLifts.forEach {
+            assertTrue(it.key.startsWith("Barbell"), it.key)
+            assertEquals(false, it.perSide, it.key)
+        }
+    }
+
+    @Test
+    fun `a barbell set moves the bar as loaded times the reps`() {
+        val set = SetLog(1, BuiltInExercise.BarbellBackSquat, 62.5, 5, null, 0)
+        assertEquals(312.5, set.tonnageKg)
+        assertTrue(Equipment.Barbell.takesKg)
     }
 
     @Test
@@ -242,5 +265,8 @@ class TrainingTest {
         assertEquals("24", formatKg(24.0))
         assertEquals("1.5", formatKg(1.5))
         assertEquals("2400", formatKg(2400.0))
+        assertEquals("1.25", formatKg(1.25))
+        assertEquals("61.25", formatKg(61.25))
+        assertEquals("0.05", formatKg(0.05))
     }
 }

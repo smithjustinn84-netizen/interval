@@ -82,6 +82,11 @@ class BellsRepository(
     /** The bells the user owns, lightest first. */
     val bells: StateFlow<List<Double>> = _bells.asStateFlow()
 
+    private val _bar = MutableStateFlow<Double?>(null)
+
+    /** What the user's barbell weighs empty, or null until they say they have one. */
+    val bar: StateFlow<Double?> = _bar.asStateFlow()
+
     private val _customExercises = MutableStateFlow(emptyList<CustomExercise>())
 
     /** The exercises the user added, archived ones too, by name. */
@@ -145,6 +150,16 @@ class BellsRepository(
                     bellsLoaded.complete(Unit)
                 }
             }
+            val barLoaded = CompletableDeferred<Unit>()
+            launch {
+                bellDao.observeBar().catch { e ->
+                    log.e(e) { "Couldn't read the bar" }
+                    emit(null)
+                }.collect { row ->
+                    _bar.value = row?.kg
+                    barLoaded.complete(Unit)
+                }
+            }
             val customLoaded = CompletableDeferred<Unit>()
             // A program's blocks can name the user's exercises, archived ones too.
             val custom = combine(customProgramDao.observeAll().orEmpty("programs"), exercises) { rows, made ->
@@ -182,6 +197,7 @@ class BellsRepository(
             customLoaded.await()
             sessionsLoaded.await()
             bellsLoaded.await()
+            barLoaded.await()
             _ready.value = true
         }
     }
@@ -445,6 +461,11 @@ class BellsRepository(
 
     fun setOwned(kg: Double, owned: Boolean) {
         persist { if (owned) bellDao.upsert(BellEntity(kg)) else bellDao.delete(kg) }
+    }
+
+    /** Sets the user's barbell to one weighing [kg] empty, or to none. */
+    fun setBar(kg: Double?) {
+        persist { if (kg != null) bellDao.upsertBar(BarEntity(kg = kg)) else bellDao.clearBar() }
     }
 
     private fun <T> Flow<List<T>>.orEmpty(what: String): Flow<List<T>> = catch { e ->

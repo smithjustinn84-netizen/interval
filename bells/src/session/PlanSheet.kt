@@ -91,7 +91,7 @@ internal fun PlanSheets(
 }
 
 /** The choices a block of today's plan can be made of: the sheet's bells, bands and library. */
-internal val SessionUiState.blockChoices: BlockChoices get() = BlockChoices(bells, bands, library)
+internal val SessionUiState.blockChoices: BlockChoices get() = BlockChoices(bells, bands, library, bar)
 
 /**
  * Today's plan: each of the day's blocks with how many of its sets are done, changed or skipped ones marked.

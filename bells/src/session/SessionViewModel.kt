@@ -9,6 +9,7 @@ import dev.justinsmith.bells.domain.Band
 import dev.justinsmith.bells.domain.Block
 import dev.justinsmith.bells.domain.BlockKind
 import dev.justinsmith.bells.domain.BuiltInExercise
+import dev.justinsmith.bells.domain.DEFAULT_BAR_KG
 import dev.justinsmith.bells.domain.EmomClock
 import dev.justinsmith.bells.domain.EmomPhase
 import dev.justinsmith.bells.domain.EmomState
@@ -17,6 +18,7 @@ import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.ExerciseFilters
 import dev.justinsmith.bells.domain.HoldState
 import dev.justinsmith.bells.domain.LiftSession
+import dev.justinsmith.bells.domain.MAX_BAR_KG
 import dev.justinsmith.bells.domain.Measure
 import dev.justinsmith.bells.domain.PersonalRecord
 import dev.justinsmith.bells.domain.PlanBlock
@@ -42,6 +44,7 @@ import dev.justinsmith.bells.domain.recentExercises
 import dev.justinsmith.bells.domain.recordSetIds
 import dev.justinsmith.bells.domain.standardBells
 import dev.justinsmith.bells.domain.suggestedBand
+import dev.justinsmith.bells.domain.suggestedBar
 import dev.justinsmith.bells.domain.suggestedBell
 import dev.justinsmith.bells.library.LibraryList
 import dev.justinsmith.bells.platform.Beeper
@@ -75,6 +78,8 @@ data class SetDraft(
     val double: Boolean = false,
     /** Weight added to a bodyweight exercise; 0 for none. */
     val addedKg: Double = 0.0,
+    /** The total on the bar, for a barbell lift. */
+    val barKg: Double = DEFAULT_BAR_KG,
     /** How long a hold lasted. */
     val seconds: Int = DEFAULT_SECONDS,
     val band: Band = Band.Default,
@@ -82,9 +87,10 @@ data class SetDraft(
     /** Whether the set is done with two bells. */
     val doubled: Boolean get() = exercise.doubled(double)
 
-    /** The weight the set is logged with: the bell, the weight added to bodyweight, or none. */
+    /** The weight the set is logged with: the bell, the bar as loaded, the weight added to bodyweight, or none. */
     val loadKg: Double get() = when (exercise.equipment) {
         Equipment.Kettlebell -> bellKg
+        Equipment.Barbell -> barKg
         Equipment.Bodyweight -> addedKg
         Equipment.Band, Equipment.Mat -> 0.0
     }
@@ -124,8 +130,8 @@ data class Finished(
 )
 
 /**
- * The plan's next set: which of [total] it is, with its load (the bell, the weight added to bodyweight, or none,
- * and the [band] for band work), and whether it opens an EMOM of [emomMinutes].
+ * The plan's next set: which of [total] it is, with its load (the bell, the bar as loaded, the weight added to
+ * bodyweight, or none, and the [band] for band work), and whether it opens an EMOM of [emomMinutes].
  */
 data class UpNext(
     val set: PlannedSet,
@@ -182,6 +188,8 @@ data class SessionUiState(
     /** The bells the sheet offers: the user's own, or every standard size until they have said. */
     val bells: List<Double> = standardBells,
     val ownsBells: Boolean = false,
+    /** What the user's barbell weighs empty; null until they have said. */
+    val bar: Double? = null,
     /** The bands the sheet offers, lightest first. */
     val bands: List<Band> = offeredBands(bands(emptyList())),
     val draft: SetDraft = SetDraft(),
@@ -247,7 +255,7 @@ class SessionViewModel(
 
     private val runs = combine(emom, holds.state, editing, ::Triple)
 
-    private val gear = combine(repository.bells, repository.bands, ::Pair)
+    private val gear = combine(repository.bells, repository.bands, repository.bar, ::Triple)
 
     private val view = combine(draft, finished, runs, repository.customExercises, filters.filters) {
             draft,
@@ -263,7 +271,7 @@ class SessionViewModel(
     val state: StateFlow<SessionUiState> =
         combine(repository.active, gear, repository.programDay, view, ticks) {
                 active,
-                (owned, bands),
+                (owned, bands, bar),
                 day,
                 chosen,
                 now,
@@ -282,6 +290,7 @@ class SessionViewModel(
                 },
                 bells = owned.ifEmpty { standardBells },
                 ownsBells = owned.isNotEmpty(),
+                bar = bar,
                 bands = offeredBands(bands),
                 draft = chosen.draft,
                 upNext = plan?.let { upNext(it, active.sets) },
@@ -305,7 +314,7 @@ class SessionViewModel(
                         chosen.exercises,
                     ),
                     chosen.filters,
-                    ownedEquipment(owned, bands),
+                    ownedEquipment(owned, bands, bar),
                 ),
             )
         }.stateIn(viewModelScope, SharingStarted.Eagerly, SessionUiState())
@@ -344,9 +353,17 @@ class SessionViewModel(
     }
 
     fun updateDraft(transform: (SetDraft) -> SetDraft) {
-        draft.update {
-            transform(it).let { d ->
+        draft.update { before ->
+            transform(before).let { changed ->
+                // A barbell lift picked starts from what it was last done with: a snatch is no deadlift.
+                if (changed.exercise != before.exercise && changed.exercise.equipment == Equipment.Barbell) {
+                    changed.copy(barKg = suggestedBar(changed.exercise, history(), repository.bar.value))
+                } else {
+                    changed
+                }
+            }.let { d ->
                 d.copy(
+                    barKg = d.barKg.coerceIn(repository.bar.value ?: 0.0, MAX_BAR_KG),
                     reps = d.reps.coerceIn(1, SetDraft.MAX_REPS),
                     minutes = d.minutes.coerceIn(1, SetDraft.MAX_MINUTES),
                     seconds = d.seconds.coerceIn(SetDraft.SECONDS_STEP, SetDraft.MAX_SECONDS),
@@ -481,6 +498,7 @@ class SessionViewModel(
             d.copy(
                 exercise = set.exercise,
                 bellKg = if (set.equipment == Equipment.Kettlebell) set.bellKg else d.bellKg,
+                barKg = if (set.equipment == Equipment.Barbell) set.bellKg else d.barKg,
                 addedKg = if (set.equipment == Equipment.Bodyweight) set.bellKg else d.addedKg,
                 reps = set.reps.coerceAtLeast(1),
                 side = set.side ?: d.side,
@@ -610,7 +628,7 @@ class SessionViewModel(
         val planned = blocks.flatten()
         val index = nextPlanned(planned, logged) ?: return null
         val set = planned[index]
-        val history = repository.sessions.value.reversed().flatMap { it.sets } + logged
+        val history = history(logged)
         // The block it falls in, to tell an EMOM's first minute from the rest: after a swap, the first
         // minute of the exercise swapped in.
         var start = 0
@@ -627,6 +645,8 @@ class SessionViewModel(
             Equipment.Kettlebell ->
                 set.kg ?: suggestedBell(set.exercise, set.double, history, draft.value.bellKg)
 
+            Equipment.Barbell -> set.kg ?: suggestedBar(set.exercise, history, repository.bar.value)
+
             Equipment.Bodyweight -> set.kg ?: suggestedBell(set.exercise, double = false, history, fallback = 0.0)
 
             Equipment.Band, Equipment.Mat -> 0.0
@@ -640,6 +660,10 @@ class SessionViewModel(
         }
         return UpNext(set, load, index + 1, planned.size, emomMinutes, band, blockIndex)
     }
+
+    /** Every set logged, oldest first: those of the sessions finished, then [logged], by default this one's. */
+    private fun history(logged: List<SetLog> = repository.active.value?.sets.orEmpty()): List<SetLog> =
+        repository.sessions.value.reversed().flatMap { it.sets } + logged
 
     /** [day]'s blocks as today's plan has them, with the sets of each [logged] has done. */
     private fun planRows(day: ProgramDay, logged: List<SetLog>): List<PlanRow> {

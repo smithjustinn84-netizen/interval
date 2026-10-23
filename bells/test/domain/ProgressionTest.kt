@@ -27,6 +27,27 @@ class ProgressionTest {
     }
 
     @Test
+    fun `a barbell block done in full adds two and a half kilos to the bar`() {
+        val squats = Block(BuiltInExercise.BarbellBackSquat, rounds = 5, reps = 5, kg = 60.0)
+        val done = sets(5) { set(BuiltInExercise.BarbellBackSquat, 60.0, reps = 5) }
+        assertEquals(squats.copy(kg = 62.5), nextStep(squats, done, bells, bands))
+        // With none named it goes up from the lightest done.
+        val unnamed = squats.copy(kg = null)
+        assertEquals(unnamed.copy(kg = 62.5), nextStep(unnamed, done, bells, bands))
+    }
+
+    @Test
+    fun `a barbell block done under its weight earns nothing`() {
+        val squats = Block(BuiltInExercise.BarbellBackSquat, rounds = 2, reps = 5, kg = 60.0)
+        val done =
+            listOf(
+                set(BuiltInExercise.BarbellBackSquat, 60.0, reps = 5),
+                set(BuiltInExercise.BarbellBackSquat, 57.5, reps = 5),
+            )
+        assertNull(nextStep(squats, done, bells, bands))
+    }
+
+    @Test
     fun `a block with no load named goes up from the lightest bell done`() {
         val goblets = Block(BuiltInExercise.GobletSquat, rounds = 2, reps = 10)
         val done = listOf(set(BuiltInExercise.GobletSquat, 24.0), set(BuiltInExercise.GobletSquat, 28.0))

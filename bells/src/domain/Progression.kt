@@ -24,6 +24,7 @@ private const val EMOM_MAX_MINUTES = 60
  * every one was done, at its reps (or a hold's seconds) or more and at its load or more. The load is the plan's,
  * or with none named the lightest done. Next time is a step up:
  * - a kettlebell lift in sets, the next bell of [bells] heavier; with none, a rep more;
+ * - a barbell lift, [BAR_KG_STEP] more on the bar;
  * - weight added to bodyweight, [ADDED_KG_STEP] more; bodyweight without, and the mat, a rep more;
  * - a band, the next of [bands] heavier; with none, a rep more;
  * - a hold, five seconds more; an EMOM, a minute more; a ladder, nothing.
@@ -50,6 +51,9 @@ private fun stepUp(block: Block, kg: Double, band: Band?, bells: List<Double>, b
         block.exercise.equipment == Equipment.Kettlebell ->
             bells.filter { it > kg }.minOrNull()?.let { block.copy(kg = it) } ?: oneMore
 
+        block.exercise.equipment == Equipment.Barbell ->
+            block.copy(kg = (kg + BAR_KG_STEP).coerceAtMost(MAX_BAR_KG)).takeIf { it != block } ?: oneMore
+
         block.exercise.equipment == Equipment.Bodyweight && kg > 0 -> block.copy(kg = kg + ADDED_KG_STEP)
 
         band != null -> bands.firstOrNull { it.position > band.position && !it.archived }
@@ -59,13 +63,12 @@ private fun stepUp(block: Block, kg: Double, band: Band?, bells: List<Double>, b
     }
 }
 
-/** Whether every one of [sets] was at [block]'s reps (a hold's seconds) or more, and its bell or more. */
+/** Whether every one of [sets] was at [block]'s reps (a hold's seconds) or more, and its load or more. */
 private fun metPlan(block: Block, sets: List<SetLog>): Boolean {
     val held = block.exercise.measure == Measure.Time
     if (sets.any { (if (held) it.seconds ?: 0 else it.reps) < block.reps }) return false
-    val weighed = block.exercise.equipment == Equipment.Kettlebell || block.exercise.equipment == Equipment.Bodyweight
     val kg = block.kg ?: return true
-    return !weighed || sets.none { it.bellKg < kg }
+    return !block.exercise.equipment.takesKg || sets.none { it.bellKg < kg }
 }
 
 /** The band [block] was done with: the plan's, if every set used it or a heavier one, else the lightest used. */

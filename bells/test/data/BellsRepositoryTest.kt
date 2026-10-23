@@ -121,6 +121,27 @@ class BellsRepositoryTest {
     }
 
     @Test
+    fun `a barbell set keeps the total on the bar`() = runTest {
+        repository.startSession()
+        repository.logSet(BuiltInExercise.BarbellPowerClean, 62.5, 3, null)
+        val clean = assertNotNull(repository.active.value).sets.single()
+        assertEquals(Equipment.Barbell, clean.equipment)
+        assertEquals(62.5, clean.bellKg)
+        assertEquals(187.5, clean.tonnageKg)
+    }
+
+    @Test
+    fun `the bar is kept until it is set to none`() = runTest {
+        assertNull(repository.bar.value)
+        repository.setBar(15.0)
+        assertEquals(15.0, repository.bar.value)
+        repository.setBar(20.0)
+        assertEquals(20.0, repository.bar.value)
+        repository.setBar(null)
+        assertNull(repository.bar.value)
+    }
+
+    @Test
     fun `seconds and a band are dropped from an exercise that takes neither`() = runTest {
         repository.startSession()
         repository.logSet(BuiltInExercise.PushUp, 0.0, 15, null, seconds = 30, band = Band.of(BandLevel.Heavy))
