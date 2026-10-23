@@ -1,5 +1,7 @@
 package dev.justinsmith.interval.ui
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -44,6 +46,11 @@ fun NameField(
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
+    val ring by animateColorAsState(
+        if (focused) palette.accent else Color.Transparent,
+        tween(Motion.STATE_MILLIS, easing = StandardEasing),
+        label = "focusRing",
+    )
     UnstyledTextField(
         state = state,
         accessibilityLabel = label,
@@ -61,7 +68,7 @@ fun NameField(
             .widthIn(min = Sizes.fieldMin)
             .clip(Corners.radius12)
             .background(palette.surfaceVariant)
-            .border(Sizes.border, if (focused) palette.accent else Color.Transparent, Corners.radius12)
+            .border(Sizes.border, ring, Corners.radius12)
             .padding(horizontal = Spacing.space16),
     ) {
         // The field's text sits on its vertical centre, however tall the field.

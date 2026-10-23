@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.ui
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.LocalIndication
@@ -172,27 +173,30 @@ fun ToggleRow(
 
 /**
  * What a list shows before it has anything: an [icon] in a ring of the accent's tint, a [title] and
- * a line of [text] saying what will appear, centred in whatever card holds it.
+ * a line of [text] saying what will appear, centred in whatever card holds it. It rises in as the
+ * list would have.
  */
 @Composable
 fun EmptyState(icon: ImageVector, title: String, text: String, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
-    Column(
-        modifier.fillMaxWidth().padding(horizontal = Spacing.space24, vertical = Spacing.space32),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(Spacing.space4),
-    ) {
-        Box(
-            Modifier
-                .padding(bottom = Spacing.space12)
-                .size(Sizes.emptyIconRing)
-                .clip(CircleShape)
-                .background(palette.accentTint),
-            contentAlignment = Alignment.Center,
+    AnimatedVisibility(rememberEntrance(), modifier, enter = enterRising()) {
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = Spacing.space24, vertical = Spacing.space32),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Spacing.space4),
         ) {
-            Icon(icon, contentDescription = null, tint = palette.accent, modifier = Modifier.size(Sizes.emptyIcon))
+            Box(
+                Modifier
+                    .padding(bottom = Spacing.space12)
+                    .size(Sizes.emptyIconRing)
+                    .clip(CircleShape)
+                    .background(palette.accentTint),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = palette.accent, modifier = Modifier.size(Sizes.emptyIcon))
+            }
+            Text(title, style = IntervalTheme.type.section, color = palette.text, textAlign = TextAlign.Center)
+            Text(text, style = IntervalTheme.type.body, color = palette.textDim, textAlign = TextAlign.Center)
         }
-        Text(title, style = IntervalTheme.type.section, color = palette.text, textAlign = TextAlign.Center)
-        Text(text, style = IntervalTheme.type.body, color = palette.textDim, textAlign = TextAlign.Center)
     }
 }

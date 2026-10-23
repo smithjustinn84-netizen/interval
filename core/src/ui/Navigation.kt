@@ -3,8 +3,6 @@ package dev.justinsmith.interval.ui
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection
 import androidx.compose.animation.ContentTransform
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -63,10 +61,10 @@ private fun <T : Any> appPageTransition(): AnimatedContentTransitionScope<Scene<
     when {
         twoPane -> crossfade()
 
-        tabChange -> fadeThrough()
+        tabChange -> fadeThrough(Motion.PAGE_MILLIS)
 
         else -> ContentTransform(
-            targetContentEnter = lateFadeIn() +
+            targetContentEnter = lateFadeIn(Motion.PAGE_MILLIS) +
                 slideIntoContainer(SlideDirection.Start, pageSpec()) { (it * Motion.PAGE_SLIDE_SHARE).toInt() },
             initialContentExit = quickFadeOut() +
                 slideOutOfContainer(SlideDirection.Start, pageSpec()) { (it * Motion.PAGE_SLIDE_SHARE / 2).toInt() },
@@ -78,10 +76,10 @@ private fun <T : Any> appPagePopTransition(): AnimatedContentTransitionScope<Sce
     when {
         twoPane -> crossfade()
 
-        tabChange -> fadeThrough()
+        tabChange -> fadeThrough(Motion.PAGE_MILLIS)
 
         else -> ContentTransform(
-            targetContentEnter = lateFadeIn() +
+            targetContentEnter = lateFadeIn(Motion.PAGE_MILLIS) +
                 slideIntoContainer(SlideDirection.End, pageSpec()) { (it * Motion.PAGE_SLIDE_SHARE / 2).toInt() },
             initialContentExit = quickFadeOut() +
                 slideOutOfContainer(SlideDirection.End, pageSpec()) { (it * Motion.PAGE_SLIDE_SHARE).toInt() },
@@ -138,22 +136,6 @@ private val <T : Any> AnimatedContentTransitionScope<Scene<T>>.tabChange: Boolea
 /** Either scene shows two pages side by side (Settings beside the Timer on a wide window). */
 private val <T : Any> AnimatedContentTransitionScope<Scene<T>>.twoPane: Boolean
     get() = targetState.entries.size > 1 || initialState.entries.size > 1
-
-private fun fadeThrough(): ContentTransform = ContentTransform(
-    targetContentEnter = lateFadeIn() +
-        scaleIn(
-            tween(Motion.PAGE_MILLIS - Motion.FADE_THROUGH_GAP_MILLIS, Motion.FADE_THROUGH_GAP_MILLIS, EnterEasing),
-            initialScale = Motion.FADE_THROUGH_SCALE,
-        ),
-    initialContentExit = quickFadeOut(),
-)
-
-/** The leaving page's fade: over in [Motion.FADE_THROUGH_GAP_MILLIS], before the arriving page shows. */
-private fun quickFadeOut(): ExitTransition = fadeOut(tween(Motion.FADE_THROUGH_GAP_MILLIS))
-
-/** The arriving page's fade, held back until the leaving page has gone. */
-private fun lateFadeIn(): EnterTransition =
-    fadeIn(tween(Motion.PAGE_MILLIS - Motion.FADE_THROUGH_GAP_MILLIS, Motion.FADE_THROUGH_GAP_MILLIS))
 
 private fun crossfade(): ContentTransform =
     ContentTransform(fadeIn(tween(Motion.EXIT_MILLIS)), fadeOut(tween(Motion.EXIT_MILLIS)))

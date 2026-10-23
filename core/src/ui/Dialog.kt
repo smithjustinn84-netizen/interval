@@ -1,8 +1,8 @@
 package dev.justinsmith.interval.ui
 
-import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +17,11 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,22 +32,37 @@ import com.composeunstyled.UnstyledDialog
 /**
  * A centred dialog drawn from Interval tokens: a [title], its [body] and a row of [actions] that
  * share the width. Back, Esc and a tap outside the panel all call [onDismiss].
+ *
+ * The scrim fades up and the panel grows in over it; leaving, the panel shrinks back as it fades and
+ * the scrim fades with it. An action calls the `leave` it is given with what it does, which runs once
+ * the dialog has gone: the state that showed the dialog flips then, not while it is still on screen.
  */
 @Composable
 fun IntervalDialog(
     title: String,
     onDismiss: () -> Unit,
-    actions: @Composable RowScope.() -> Unit,
+    actions: @Composable RowScope.(leave: (then: () -> Unit) -> Unit) -> Unit,
     body: @Composable ColumnScope.() -> Unit,
 ) {
     val palette = IntervalTheme.palette
-    // The scrim fades up and the panel grows in over it. Leaving is instant, with no exit to animate:
-    // a dialog leaves composition the moment its action runs, along with the state that showed it.
+    var visible by remember { mutableStateOf(true) }
+    // Plain, not state: the panel may be disposed in the very composition that hides it, before any
+    // recomposition could hand it a newer value.
+    val exit = remember { DialogExit() }
+    val leave: (() -> Unit) -> Unit = { then ->
+        exit.then = then
+        visible = false
+    }
+    val dismiss = { leave(onDismiss) }
     UnstyledDialog(
-        visible = true,
-        onDismissRequest = onDismiss,
+        visible = visible,
+        onDismissRequest = dismiss,
         overlay = {
-            Scrim(scrimColor = scrimColor(), enter = fadeIn(tween(Motion.ENTER_MILLIS)), exit = ExitTransition.None)
+            Scrim(
+                scrimColor = scrimColor(),
+                enter = fadeIn(tween(Motion.ENTER_MILLIS)),
+                exit = fadeOut(tween(Motion.EXIT_MILLIS)),
+            )
         },
     ) {
         Box(Modifier.fillMaxSize().safeDrawingPadding().padding(Spacing.space24), contentAlignment = Alignment.Center) {
@@ -53,9 +73,11 @@ fun IntervalDialog(
                     .background(palette.surface),
                 paneTitle = title,
                 enter = enterGrowing(),
-                exit = ExitTransition.None,
+                exit = exitShrinkingBack(),
             ) {
-                ModalBackHandler(onDismiss)
+                // The panel leaves composition once its exit has played: the action runs then.
+                DisposableEffect(Unit) { onDispose { exit.then?.invoke() } }
+                ModalBackHandler(dismiss)
                 Column(
                     Modifier.holdInitialFocus().padding(
                         start = Spacing.space20,
@@ -70,12 +92,18 @@ fun IntervalDialog(
                     Row(
                         Modifier.fillMaxWidth().padding(top = Spacing.space16),
                         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
-                        content = actions,
-                    )
+                    ) {
+                        actions(leave)
+                    }
                 }
             }
         }
     }
+}
+
+/** What a dialog does once it has gone: set by the action that closed it, run as the panel leaves. */
+private class DialogExit {
+    var then: (() -> Unit)? = null
 }
 
 /** Asks before an action that can't be undone: title, one line of text, a dismiss and a confirm action. */
@@ -91,9 +119,9 @@ fun ConfirmDialog(
     IntervalDialog(
         title = title,
         onDismiss = onDismiss,
-        actions = {
-            DialogButton(dismiss, onClick = onDismiss, primary = false)
-            DialogButton(confirm, onClick = onConfirm, primary = true)
+        actions = { leave ->
+            DialogButton(dismiss, onClick = { leave(onDismiss) }, primary = false)
+            DialogButton(confirm, onClick = { leave(onConfirm) }, primary = true)
         },
     ) {
         Text(text, style = IntervalTheme.type.body, color = IntervalTheme.palette.textDim)

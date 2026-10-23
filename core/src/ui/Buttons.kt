@@ -106,11 +106,12 @@ fun RowScope.DialogButton(
         primary = primary,
         style = IntervalTheme.type.control,
         padding = Spacing.space12,
+        haptic = if (primary) HapticFeedbackType.Confirm else null,
         modifier = modifier.weight(1f),
     )
 }
 
-/** A full-width accent button for a sheet's confirming action. */
+/** A full-width accent button for a sheet's confirming action. It confirms under the thumb. */
 @Composable
 fun AccentButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     ModalButton(
@@ -119,6 +120,7 @@ fun AccentButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifie
         primary = true,
         style = IntervalTheme.type.value,
         padding = Spacing.space24,
+        haptic = HapticFeedbackType.Confirm,
         modifier = modifier,
     )
 }
@@ -132,6 +134,7 @@ fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modi
         primary = false,
         style = IntervalTheme.type.label,
         padding = Spacing.space24,
+        haptic = null,
         modifier = modifier,
     )
 }
@@ -159,6 +162,7 @@ private fun ModalButton(
     primary: Boolean,
     style: TextStyle,
     padding: Dp,
+    haptic: HapticFeedbackType?,
     modifier: Modifier = Modifier,
 ) {
     val palette = IntervalTheme.palette
@@ -167,7 +171,7 @@ private fun ModalButton(
     Box(
         modifier
             .heightIn(min = Sizes.save)
-            .surfaceButton(interaction, Corners.radius18, fill, onClick)
+            .surfaceButton(interaction, Corners.radius18, fill, onClick, haptic = haptic)
             .padding(horizontal = padding),
         contentAlignment = Alignment.Center,
     ) {
@@ -178,7 +182,9 @@ private fun ModalButton(
 /**
  * What every tappable surface shares: it shrinks while pressed ([pressScale]), is clipped to [shape] on
  * [fill], and takes the tap with the app's indication, as [role]. Size, border and contents are the
- * caller's.
+ * caller's. A control that commits something passes the [haptic] it answers the tap with: Confirm for
+ * a save or a start, a tick for a pick or a step, the toggle pair for a switch; one that only
+ * navigates or cancels passes none.
  */
 @Composable
 fun Modifier.surfaceButton(
@@ -189,14 +195,21 @@ fun Modifier.surfaceButton(
     enabled: Boolean = true,
     role: Role = Role.Button,
     onClickLabel: String? = null,
-): Modifier = pressScale(interaction)
-    .clip(shape)
-    .background(fill)
-    .clickable(
-        interactionSource = interaction,
-        indication = LocalIndication.current,
-        enabled = enabled,
-        onClickLabel = onClickLabel,
-        role = role,
-        onClick = onClick,
-    )
+    haptic: HapticFeedbackType? = null,
+): Modifier {
+    val haptics = LocalHapticFeedback.current
+    return pressScale(interaction)
+        .clip(shape)
+        .background(fill)
+        .clickable(
+            interactionSource = interaction,
+            indication = LocalIndication.current,
+            enabled = enabled,
+            onClickLabel = onClickLabel,
+            role = role,
+            onClick = {
+                haptic?.let(haptics::performHapticFeedback)
+                onClick()
+            },
+        )
+}

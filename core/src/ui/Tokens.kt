@@ -231,6 +231,10 @@ object Sizes {
     /** The circle drawn inside that hit area: its fill and its ripple. */
     val iconButtonVisual = 40.dp
 
+    /** A [Burst]'s rings: the gap between them, and their stroke as they set out. */
+    val burstGap = 18.dp
+    val burstStroke = 14.dp
+
     /** The tinted ring round an [EmptyState]'s icon. */
     val emptyIconRing = 56.dp
 
@@ -329,6 +333,9 @@ object Motion {
     /** How long Undo stays offered after something is removed. */
     const val UNDO_MILLIS = 5_000L
 
+    /** A notice with nothing to act on (Saved as Tabata) stays this long. */
+    const val NOTICE_MILLIS = 2_500L
+
     /** The gap between items in a staggered entrance, such as the summary's lines or the week chart's bars. */
     const val STAGGER_MILLIS = 50
 
@@ -349,8 +356,14 @@ object Motion {
     const val RING_GLIDE_MILLIS = 160
     const val RING_SNAP_SHARE = 0.3f
 
+    /** An EMOM's ring glides tick to tick too; its ViewModel ticks every 250ms. */
+    const val EMOM_RING_GLIDE_MILLIS = 250
+
     /** The summary's ring draws itself closed over this long. */
     const val SUMMARY_RING_MILLIS = 900
+
+    /** A [Burst] of rings opens from the centre to past the corners in this long, as the intro's does. */
+    const val BURST_MILLIS = 540
 
     /** The resume hint breathes while paused: a cycle this long, down to this alpha. */
     const val BREATH_MILLIS = 1600

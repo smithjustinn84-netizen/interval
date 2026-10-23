@@ -60,7 +60,7 @@ Compose:
   CompositionLocalAllowlist:
     active: true
     # The theme's own locals, read through IntervalTheme like MaterialTheme's.
-    allowedCompositionLocals: ['LocalIntervalPalette', 'LocalWorkoutColors', 'LocalIntervalType']
+    allowedCompositionLocals: ['LocalIntervalPalette', 'LocalWorkoutColors', 'LocalIntervalType', 'LocalNotices']
   CompositionLocalNaming:
     active: true
   ConditionHoist:

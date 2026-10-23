@@ -22,10 +22,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -99,8 +101,9 @@ private fun Modifier.capTopAt(capTop: Dp, capHeight: Dp): Modifier = layout { me
 
 /**
  * An icon-only top-bar action, with its [description] for screen readers: the gear on Timer, + on
- * Presets, ⋯ on History. The whole 48dp box takes the touch; the circle and its ripple follow the
- * glyph, which a [TitleBar] raises to its title.
+ * Presets, ⋯ on History. The whole 48dp box takes the touch; the circle, its press and its ripple
+ * follow the glyph, which a [TitleBar] raises to its title. One that commits something (removes a
+ * set, say) passes the [haptic] it answers with, as [surfaceButton] does.
  */
 @Composable
 fun IconAction(
@@ -109,9 +112,11 @@ fun IconAction(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    haptic: HapticFeedbackType? = null,
 ) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
+    val haptics = LocalHapticFeedback.current
     Box(
         modifier
             .size(Sizes.iconButton)
@@ -120,7 +125,10 @@ fun IconAction(
                 indication = null,
                 enabled = enabled,
                 role = Role.Button,
-                onClick = onClick,
+                onClick = {
+                    haptic?.let(haptics::performHapticFeedback)
+                    onClick()
+                },
             )
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
@@ -128,6 +136,7 @@ fun IconAction(
         Box(
             Modifier
                 .offset(y = LocalTitleBarGlyphShift.current)
+                .pressScale(interaction)
                 .size(Sizes.iconButtonVisual)
                 .clip(CircleShape)
                 .indication(interaction, LocalIndication.current),

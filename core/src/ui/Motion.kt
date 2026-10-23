@@ -17,6 +17,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
@@ -87,6 +88,15 @@ fun Modifier.pressScale(interaction: InteractionSource): Modifier {
 fun rememberEntrance(): MutableTransitionState<Boolean> =
     remember { MutableTransitionState(false).apply { targetState = true } }
 
+/**
+ * For a row in a list that grows while it is on screen: a row the screen opened with is simply there
+ * (not [isNew]), while one logged or saved since rises in once, as [rememberEntrance] does. Callers
+ * remember the ids on show at open and pass `id !in atOpen`.
+ */
+@Composable
+fun rememberArrival(isNew: Boolean): MutableTransitionState<Boolean> =
+    if (isNew) rememberEntrance() else remember { MutableTransitionState(true) }
+
 /** Something arriving: it fades in as it rises from a little below its place, after [delayMillis]. */
 fun enterRising(delayMillis: Int = 0): EnterTransition {
     val spec = tween<Float>(Motion.ENTER_MILLIS, delayMillis, EnterEasing)
@@ -98,6 +108,11 @@ fun enterRising(delayMillis: Int = 0): EnterTransition {
 fun enterGrowing(): EnterTransition =
     fadeIn(tween(Motion.ENTER_MILLIS)) +
         scaleIn(tween(Motion.ENTER_MILLIS, easing = EnterEasing), initialScale = Motion.DIALOG_SCALE)
+
+/** The reverse of [enterGrowing], quicker: a dialog fades as it shrinks back to where it grew from. */
+fun exitShrinkingBack(): ExitTransition =
+    fadeOut(tween(Motion.EXIT_MILLIS)) +
+        scaleOut(tween(Motion.EXIT_MILLIS, easing = ExitEasing), targetScale = Motion.DIALOG_SCALE)
 
 /** A line that appears with a control's state: it fades in as it opens the room it takes. */
 fun enterExpanding(): EnterTransition =
