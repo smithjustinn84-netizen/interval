@@ -72,9 +72,11 @@ import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
+import dev.justinsmith.interval.ui.RollingText
 import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.rememberRising
 import dev.justinsmith.interval.ui.surfaceButton
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -124,8 +126,8 @@ internal fun WeekSummary(
     SummaryCard(modifier) {
         GoalRow(state, onSetGoal)
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-            Stat(stringResource(Res.string.history_time), state.summary.time, accent = true)
-            state.summary.calories?.let { Stat(stringResource(Res.string.history_calories), it.toString()) }
+            Stat(stringResource(Res.string.history_time), state.summary.time, state.summary.totalSeconds, accent = true)
+            state.summary.calories?.let { Stat(stringResource(Res.string.history_calories), it.toString(), it) }
         }
         WeekStrip(state.week, onDay)
         Legend()
@@ -231,21 +233,30 @@ private fun GoalRing(count: Int, goal: Int, modifier: Modifier = Modifier) {
                 )
             }
         }
-        Text(
+        RollingText(
             stringResource(Res.string.history_goal_ring, count, goal),
+            rising = rememberRising(count),
             style = IntervalTheme.type.value,
             color = palette.text,
         )
     }
 }
 
-/** A small figure under its caption. */
+/**
+ * A small figure under its caption, rolling to its new value as [rank] (the number behind it) rises or
+ * falls; a figure that never changes on its page passes none.
+ */
 @Composable
-internal fun RowScope.Stat(caption: String, value: String, accent: Boolean = false) {
+internal fun RowScope.Stat(caption: String, value: String, rank: Int = 0, accent: Boolean = false) {
     val palette = IntervalTheme.palette
     Column(Modifier.weight(1f)) {
         Text(caption, style = IntervalTheme.type.caption, color = palette.textDim)
-        Text(value, style = IntervalTheme.type.stat, color = if (accent) palette.accent else palette.text)
+        RollingText(
+            value,
+            rising = rememberRising(rank),
+            style = IntervalTheme.type.stat,
+            color = if (accent) palette.accent else palette.text,
+        )
     }
 }
 
@@ -273,8 +284,8 @@ internal fun MonthSummary(
             IconAction(IntervalIcons.Chevron, stringResource(Res.string.history_month_next_cd), { onShiftMonth(1) })
         }
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-            Stat(stringResource(Res.string.history_workouts), state.summary.count.toString())
-            Stat(stringResource(Res.string.history_time), state.summary.time, accent = true)
+            Stat(stringResource(Res.string.history_workouts), state.summary.count.toString(), state.summary.count)
+            Stat(stringResource(Res.string.history_time), state.summary.time, state.summary.totalSeconds, accent = true)
             if (state.summary.plannedDue > 0) {
                 Stat(
                     stringResource(Res.string.history_planned_done),
@@ -283,6 +294,7 @@ internal fun MonthSummary(
                         state.summary.plannedDone,
                         state.summary.plannedDue,
                     ),
+                    state.summary.plannedDone,
                 )
             }
         }
@@ -303,18 +315,24 @@ internal fun AllTimeSummary(state: HistoryUiState, modifier: Modifier = Modifier
             )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-            Stat(stringResource(Res.string.history_workouts), state.summary.count.toString())
-            Stat(stringResource(Res.string.history_time), longTotal(state.summary.totalSeconds), accent = true)
+            Stat(stringResource(Res.string.history_workouts), state.summary.count.toString(), state.summary.count)
+            Stat(
+                stringResource(Res.string.history_time),
+                longTotal(state.summary.totalSeconds),
+                state.summary.totalSeconds,
+                accent = true,
+            )
         }
         val calories = state.summary.calories
         val best = state.streak?.best
         if (calories != null || best != null) {
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-                calories?.let { Stat(stringResource(Res.string.history_calories), it.toString()) }
+                calories?.let { Stat(stringResource(Res.string.history_calories), it.toString(), it) }
                 best?.let {
                     Stat(
                         stringResource(Res.string.history_best_streak),
                         pluralStringResource(Res.plurals.history_weeks, it, it),
+                        it,
                     )
                 }
             }

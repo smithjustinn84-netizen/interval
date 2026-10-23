@@ -16,6 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import dev.justinsmith.interval.resources.Res
@@ -32,6 +34,7 @@ fun StartButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     val shape = Corners.radius18
     val glow = palette.accent.copy(alpha = Opacity.START_SHADOW)
     val interaction = remember { MutableInteractionSource() }
+    val haptics = LocalHapticFeedback.current
     Row(
         modifier
             .height(Sizes.start)
@@ -40,6 +43,7 @@ fun StartButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
             .clip(shape)
             .background(palette.accent)
             .clickable(interactionSource = interaction, indication = LocalIndication.current, role = Role.Button) {
+                haptics.performHapticFeedback(HapticFeedbackType.Confirm)
                 onClick()
             },
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12, Alignment.CenterHorizontally),

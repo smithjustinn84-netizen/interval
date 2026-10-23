@@ -40,6 +40,7 @@ import kotlin.time.Duration.Companion.seconds
  * Dispatchers.IO as in the app. The common tests' fakes finish every write before a call returns; these
  * check the app still behaves when writes are genuinely asynchronous.
  */
+@Suppress("detekt.TooManyFunctions") // One stored thing per test, side by side.
 class StorageTest {
     private val directory: File = Files.createTempDirectory("interval-storage").toFile()
 
@@ -206,6 +207,26 @@ class StorageTest {
             val rows = database.historyDao().all()
             assertTrue(rows.all { it.deleted })
             assertEquals(listOf(3_000L, 3_000L, 2_000L), rows.map { it.updatedAtEpochMillis })
+        }
+    }
+
+    @Test
+    fun `a deleted workout comes back on restore and stays back after a restart`() {
+        withApp { repository ->
+            repository.recordWorkout(IntervalConfig(), elapsedSeconds = 240)
+            settled(repository) { it.history.value.size == 1 }
+            val id = requireNotNull(repository.history.value.single().id)
+            clock = 2_000
+            repository.deleteWorkout(id)
+            settled(repository) { it.history.value.isEmpty() }
+            clock = 3_000
+            repository.restoreWorkout(id)
+            settled(repository) { it.history.value.size == 1 }
+        }
+        withApp { repository ->
+            assertEquals(listOf(240), repository.history.value.map { it.elapsedSeconds })
+            val row = database.historyDao().all().single()
+            assertTrue(!row.deleted && row.updatedAtEpochMillis == 3_000L)
         }
     }
 

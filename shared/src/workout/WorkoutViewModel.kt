@@ -2,16 +2,21 @@ package dev.justinsmith.interval.workout
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.platform.CuePlayer
+import dev.justinsmith.interval.platform.TimestampFormatter
+import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.Cue
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.Step
+import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.timer.WorkoutState
 import dev.justinsmith.interval.timer.matching
+import dev.justinsmith.interval.timer.weekStanding
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,9 +31,13 @@ import kotlin.time.TimeSource
  * Runs one workout from the saved configuration: a coroutine ticker feeds elapsed time into
  * [WorkoutEngine], cues go to the [CuePlayer], and a finished workout is recorded in the history.
  */
+@Suppress("detekt.TooManyFunctions") // Every way a workout moves, side by side.
 class WorkoutViewModel(
     private val repository: IntervalRepository,
     private val player: CuePlayer,
+    private val bells: BellsRepository,
+    private val timestamps: TimestampFormatter,
+    private val clock: WallClock,
     private val timeSource: TimeSource.WithComparableMarks = TimeSource.Monotonic,
 ) : ViewModel() {
     private val config = repository.config.value
@@ -39,6 +48,9 @@ class WorkoutViewModel(
     private var engine: WorkoutState
     private var running = false
     private var ended = false
+
+    /** Where the week stands with this workout in it, from the moment it is recorded; for the summary. */
+    private var week: WeekStanding? = null
 
     /** Time the timer has run, pauses excluded: skips shorten it, added time lengthens it. */
     private var activeMillis = 0L
@@ -130,6 +142,7 @@ class WorkoutViewModel(
         stopTicker()
         running = false
         ended = true
+        week = weekWithThis()
         repository.recordWorkout(config, activeSeconds, endedEarly = true, workSeconds = workSeconds)
         publish()
     }
@@ -146,6 +159,7 @@ class WorkoutViewModel(
     fun restart() {
         stopTicker()
         ended = false
+        week = null
         activeMillis = 0
         workMillis = 0
         begin()
@@ -164,6 +178,7 @@ class WorkoutViewModel(
         if (engine.isDone) {
             running = false
             stopTicker()
+            week = weekWithThis()
             repository.recordWorkout(config, activeSeconds, workSeconds = workSeconds)
         }
         publish()
@@ -186,7 +201,20 @@ class WorkoutViewModel(
         presets = presets,
         keepScreenOn = keepScreenOn,
         calories = body.calories(workSeconds, activeSeconds - workSeconds, config.activity),
+        week = week,
     )
+
+    /**
+     * The week as it stands with this workout in it, both kinds of workout counted as History counts
+     * them. Worked out before the write, which lands later, so the summary has it as it arrives.
+     */
+    private fun weekWithThis(): WeekStanding {
+        val today = timestamps.dayNumber(clock.nowMillis())
+        val days = repository.history.value.map { timestamps.dayNumber(it.finishedAtEpochMillis) } +
+            bells.sessions.value.mapNotNull { it.finishedAtEpochMillis }.map(timestamps::dayNumber) +
+            today
+        return weekStanding(days, today, repository.appSettings.value.weeklyGoal)
+    }
 
     private fun play(cues: List<Cue>) {
         val settings = repository.cueSettings.value

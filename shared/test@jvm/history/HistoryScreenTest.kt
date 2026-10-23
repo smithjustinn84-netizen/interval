@@ -71,7 +71,7 @@ class HistoryScreenTest {
         onRange = { events += "range $it" },
         onOpenDay = { events += "day $it" },
         onStart = { name, _ -> events += "start $name" },
-        onRemovePlanned = { events += "remove $it" },
+        onRemovePlanned = { id, _ -> events += "remove $id" },
         onPlanOnce = { preset, day -> events += "once ${preset.name} $day" },
         onOpenWorkout = { events += "open $it" },
         onPlan = { events += "plan" },
@@ -222,6 +222,7 @@ class HistoryScreenTest {
         onNodeWithContentDescription("More options").performClick()
         onNodeWithText("Clear history").performClick()
         onNodeWithText("Clear").performClick()
+        waitForIdle()
         assertEquals(listOf("clear"), events)
         onNodeWithText("Clear history?").assertDoesNotExist()
     }

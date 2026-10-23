@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.presets
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
@@ -16,6 +17,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -30,6 +32,8 @@ import dev.justinsmith.interval.resources.common_calories_estimate
 import dev.justinsmith.interval.resources.common_cancel
 import dev.justinsmith.interval.resources.common_joined
 import dev.justinsmith.interval.resources.common_save
+import dev.justinsmith.interval.resources.notice_preset_deleted
+import dev.justinsmith.interval.resources.notice_undo
 import dev.justinsmith.interval.resources.presets_built_in
 import dev.justinsmith.interval.resources.presets_calories_estimate_as
 import dev.justinsmith.interval.resources.presets_current_unsaved
@@ -56,13 +60,17 @@ import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.MiniTimeline
+import dev.justinsmith.interval.ui.NoticeAction
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
+import dev.justinsmith.interval.ui.enterRising
 import dev.justinsmith.interval.ui.labelRes
 import dev.justinsmith.interval.ui.pressScale
+import dev.justinsmith.interval.ui.rememberArrival
 import dev.justinsmith.interval.ui.selectableCard
 import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.interval.ui.workoutDescription
@@ -96,6 +104,7 @@ fun PresetsRoute(
         onSave = viewModel::save,
         onSaveCurrent = viewModel::saveCurrent,
         onDelete = viewModel::delete,
+        onRestore = viewModel::restore,
         modifier = modifier,
         onBack = onBack,
     )
@@ -108,7 +117,7 @@ fun PresetsRoute(
  * match no preset sit on top with Save, which opens the [PresetEditor] on them and keeps whatever it
  * saves on the Timer ([onSaveCurrent]); + in the title bar starts a new preset from them instead,
  * leaving the Timer alone ([onSave]). While those settings are unsaved, a preset's sheet says that
- * starting or loading it replaces them.
+ * starting or loading it replaces them. A deleted preset is offered back for a moment ([onRestore]).
  */
 @Composable
 fun PresetsScreen(
@@ -119,9 +128,12 @@ fun PresetsScreen(
     onSaveCurrent: (Preset) -> Unit,
     onDelete: (Preset) -> Unit,
     modifier: Modifier = Modifier,
+    onRestore: (Preset) -> Unit = {},
     onBack: (() -> Unit)? = null,
 ) {
     var open by rememberSaveable(stateSaver = PresetSaver) { mutableStateOf<Preset?>(null) }
+    val notices = LocalNotices.current
+    val undo = stringResource(Res.string.notice_undo)
     var draft by rememberPresetDraft()
     var deleting by rememberSaveable(stateSaver = PresetSaver) { mutableStateOf<Preset?>(null) }
     PresetsList(
@@ -165,6 +177,7 @@ fun PresetsScreen(
         },
     )
     deleting?.let { preset ->
+        val deletedText = stringResource(Res.string.notice_preset_deleted, preset.name)
         ConfirmDialog(
             title = stringResource(Res.string.presets_delete_title, preset.name),
             text = stringResource(Res.string.presets_delete_text),
@@ -172,6 +185,7 @@ fun PresetsScreen(
             dismiss = stringResource(Res.string.common_cancel),
             onConfirm = {
                 onDelete(preset)
+                notices.show(deletedText, NoticeAction(undo) { onRestore(preset) })
                 deleting = null
                 open = null
             },
@@ -228,8 +242,16 @@ private fun PresetsList(
                         )
                     }
                 }
+                // Cards here at open stand still; one saved (or restored) since rises into the group.
+                val atOpen = remember { state.custom.map { it.preset.id }.toSet() }
                 CardColumn {
-                    state.custom.forEach { item -> PresetCard(item, onClick = { onOpen(item.preset) }) }
+                    state.custom.forEach { item ->
+                        key(item.preset.id) {
+                            AnimatedVisibility(rememberArrival(item.preset.id !in atOpen), enter = enterRising()) {
+                                PresetCard(item, onClick = { onOpen(item.preset) })
+                            }
+                        }
+                    }
                 }
             }
         }

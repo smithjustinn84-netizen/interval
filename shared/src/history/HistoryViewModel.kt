@@ -294,8 +294,15 @@ class HistoryViewModel(
         bells.startSession(program)
     }
 
-    fun removePlanned(planId: Long) {
+    /** Takes the plan off, handing it back for Undo ([restorePlanned]); null when it was gone already. */
+    fun removePlanned(planId: Long): PlannedWorkout? {
+        val plan = repository.planned.value.firstOrNull { it.id == planId }
         repository.removePlanned(planId)
+        return plan
+    }
+
+    fun restorePlanned(plan: PlannedWorkout) {
+        repository.restorePlanned(plan)
     }
 
     fun clear() {

@@ -67,7 +67,7 @@ class PlanScreenTest {
                 routine.plans.forEach { events += "described ${it.workout.name} ${it.weekdays.sorted()} ${it.days}" }
                 events += "goal ${routine.goal}"
             },
-            onRemove = { events += "remove $it" },
+            onRemove = { id, _ -> events += "remove $id" },
         )
     }
 

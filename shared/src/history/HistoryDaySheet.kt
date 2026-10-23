@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.history_add_workout
 import dev.justinsmith.interval.resources.history_day_nothing
@@ -21,6 +22,7 @@ import dev.justinsmith.interval.resources.history_remove_cd
 import dev.justinsmith.interval.resources.history_routine_note
 import dev.justinsmith.interval.resources.history_state_done
 import dev.justinsmith.interval.resources.history_state_missed
+import dev.justinsmith.interval.resources.notice_plan_removed
 import dev.justinsmith.interval.ui.DialogButton
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
@@ -148,10 +150,12 @@ private fun PlanRow(plan: SheetPlan, sheet: DaySheet, actions: HistoryActions) {
             StartPill(primary = false, onClick = { actions.onStart(plan.name, plan.config) })
         }
         if (!plan.weekly && plan.state != PlanState.Done) {
+            val removed = stringResource(Res.string.notice_plan_removed, plan.name)
             IconAction(
                 IntervalIcons.Close,
                 stringResource(Res.string.history_remove_cd, plan.name),
-                { actions.onRemovePlanned(plan.planId) },
+                { actions.onRemovePlanned(plan.planId, removed) },
+                haptic = HapticFeedbackType.SegmentTick,
             )
         }
     }

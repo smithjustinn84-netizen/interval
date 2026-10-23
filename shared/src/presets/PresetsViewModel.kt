@@ -85,6 +85,11 @@ class PresetsViewModel(private val repository: IntervalRepository) : ViewModel()
         repository.deletePreset(preset)
     }
 
+    /** Undo on [delete]: the preset comes back under its own id. */
+    fun restore(preset: Preset) {
+        repository.restorePreset(preset)
+    }
+
     private fun buildState(config: IntervalConfig, presets: List<Preset>, app: AppSettings): PresetsUiState {
         // Every total and estimate is the preset as it would run from the Timer: with the user's own
         // get-ready countdown, and the Timer's activity unless the preset names one.

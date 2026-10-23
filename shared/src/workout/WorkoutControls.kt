@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.workout
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -38,6 +40,7 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.WorkoutColors
+import dev.justinsmith.interval.ui.fadeThroughContent
 import dev.justinsmith.interval.ui.surfaceButton
 import org.jetbrains.compose.resources.stringResource
 
@@ -59,6 +62,7 @@ internal fun SkipPill(onSkip: () -> Unit, modifier: Modifier = Modifier) {
         onClick = onSkip,
         description = stringResource(Res.string.workout_skip_cd),
         modifier = modifier,
+        haptic = HapticFeedbackType.SegmentTick,
     )
 }
 
@@ -70,6 +74,7 @@ internal fun BackButton(onBack: () -> Unit, modifier: Modifier = Modifier) {
         onBack,
         modifier,
         description = stringResource(Res.string.workout_back_cd),
+        haptic = HapticFeedbackType.SegmentTick,
     )
 }
 
@@ -80,6 +85,7 @@ internal fun AddTimeButton(onAddTime: () -> Unit, modifier: Modifier = Modifier)
         onAddTime,
         modifier,
         description = stringResource(Res.string.workout_add_time_cd),
+        haptic = HapticFeedbackType.SegmentTick,
     )
 }
 
@@ -99,7 +105,8 @@ internal fun BottomControls(
 
 /**
  * Pause / Resume, filled with the phase colour ([primaryFill]) under [WorkoutColors.onFill]'s label. Paused, the fill
- * is [WorkoutColors.onGround] instead: a label doesn't read on the paused grey.
+ * is [WorkoutColors.onGround] instead: a label doesn't read on the paused grey. The label fades through
+ * to its other word, and the tap answers like a switch: off to pause, on to resume.
  */
 @Composable
 internal fun PrimaryButton(
@@ -108,14 +115,21 @@ internal fun PrimaryButton(
     onTogglePause: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val content = IntervalTheme.workout.onFill(primaryFill)
     BigButton(
-        stringResource(if (state.running) Res.string.workout_pause else Res.string.workout_resume),
         onTogglePause,
         modifier,
         background = primaryFill,
-        content = IntervalTheme.workout.onFill(primaryFill),
-        style = IntervalTheme.type.value,
-    )
+        haptic = if (state.running) HapticFeedbackType.ToggleOff else HapticFeedbackType.ToggleOn,
+    ) {
+        AnimatedContent(state.running, transitionSpec = { fadeThroughContent() }, label = "pauseResume") { running ->
+            Text(
+                stringResource(if (running) Res.string.workout_pause else Res.string.workout_resume),
+                style = IntervalTheme.type.value,
+                color = content,
+            )
+        }
+    }
 }
 
 @Composable
@@ -127,15 +141,33 @@ internal fun BigButton(
     content: Color = IntervalTheme.workout.onGround,
     style: TextStyle = IntervalTheme.type.control,
     description: String? = null,
+    haptic: HapticFeedbackType? = null,
+) {
+    BigButton(
+        onClick,
+        modifier.then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier),
+        background,
+        haptic,
+    ) {
+        Text(text, style = style, color = content)
+    }
+}
+
+/** A [BigButton] whose face is the caller's: a label that changes in place, say. */
+@Composable
+internal fun BigButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    background: Color = IntervalTheme.workout.control,
+    haptic: HapticFeedbackType? = null,
+    content: @Composable () -> Unit,
 ) {
     val interaction = remember { MutableInteractionSource() }
     Box(
-        modifier
-            .surfaceButton(interaction, Corners.radius18, background, onClick)
-            .then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier),
+        modifier.surfaceButton(interaction, Corners.radius18, background, onClick, haptic = haptic),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = style, color = content)
+        content()
     }
 }
 
@@ -145,12 +177,13 @@ private fun PillButton(
     onClick: () -> Unit,
     description: String,
     modifier: Modifier = Modifier,
+    haptic: HapticFeedbackType? = null,
 ) {
     val interaction = remember { MutableInteractionSource() }
     Box(
         modifier
             .sizeIn(minWidth = Sizes.pillWidth, minHeight = Sizes.pillHeight)
-            .surfaceButton(interaction, Corners.radius12, IntervalTheme.workout.control, onClick)
+            .surfaceButton(interaction, Corners.radius12, IntervalTheme.workout.control, onClick, haptic = haptic)
             .semantics { contentDescription = description }
             .padding(horizontal = Spacing.space16),
         contentAlignment = Alignment.Center,

@@ -24,6 +24,7 @@ import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.activity_title
 import dev.justinsmith.interval.resources.common_cancel
 import dev.justinsmith.interval.resources.common_save
+import dev.justinsmith.interval.resources.notice_preset_saved
 import dev.justinsmith.interval.resources.preset_editor_copy_title
 import dev.justinsmith.interval.resources.preset_editor_edit_title
 import dev.justinsmith.interval.resources.preset_editor_new_title
@@ -52,6 +53,7 @@ import dev.justinsmith.interval.ui.FieldRow
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
+import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.NameField
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
@@ -122,9 +124,12 @@ internal fun PresetEditor(
     var editingName by rememberSaveable { mutableStateOf<String?>(null) }
     val editing = editingName?.let(ConfigField::valueOf)
     var choosingActivity by rememberSaveable { mutableStateOf(false) }
+    val notices = LocalNotices.current
+    val savedText = stringResource(Res.string.notice_preset_saved, storedName)
     IntervalSheet(title = title, onDismiss = onDismiss) { hide ->
         val save = {
             onSave(Preset(wanted, draft.config, draft.id))
+            notices.show(savedText)
             hide()
         }
         EditorHeader(title, onCancel = hide)

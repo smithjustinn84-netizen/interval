@@ -113,6 +113,7 @@ class PresetsScreenTest {
 
         onNodeWithText("Delete").performClick()
         onAllNodesWithText("Delete").onLast().performClick()
+        waitForIdle()
         assertEquals(listOf(morning), deleted)
         onNodeWithText("Delete Morning?").assertDoesNotExist()
     }

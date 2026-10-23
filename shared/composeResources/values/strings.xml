@@ -438,8 +438,26 @@
     <!-- Rounds finished of all: "3/8" -->
     <string name="workout_stat_rounds_value">%1$d/%2$d</string>
     <string name="workout_saved">Saved to history</string>
+    <!-- Under it, where the week stands with this workout in: "3 of 4 this week", or the count with no goal set -->
+    <string name="summary_week_of_goal">%1$d of %2$d this week</string>
+    <plurals name="summary_week_count">
+        <item quantity="one">%1$d workout this week</item>
+        <item quantity="other">%1$d workouts this week</item>
+    </plurals>
     <string name="workout_repeat">Repeat</string>
     <string name="workout_save_preset">Save as preset</string>
+
+    <!-- Notices: a line at the foot of the screen after something is saved, added or removed, with Undo where it can be -->
+    <string name="notice_undo">Undo</string>
+    <!-- "Saved as Tabata 2" -->
+    <string name="notice_preset_saved">Saved as %1$s</string>
+    <string name="notice_preset_deleted">Deleted %1$s</string>
+    <string name="notice_plan_added">Added to the plan</string>
+    <!-- A one-off taken off the plan: "Removed Tabata" -->
+    <string name="notice_plan_removed">Removed %1$s</string>
+    <!-- A weekly plan taken off a day: "Removed Tabata from Monday" -->
+    <string name="notice_plan_removed_on">Removed %1$s from %2$s</string>
+    <string name="notice_workout_deleted">Workout deleted</string>
 
     <!-- Spoken cues -->
     <string name="cue_get_ready">Get ready</string>

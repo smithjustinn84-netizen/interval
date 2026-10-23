@@ -3,6 +3,7 @@ package dev.justinsmith.interval.workout
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.timer.WorkoutState
 import dev.justinsmith.interval.timer.ceilSeconds
@@ -55,6 +56,10 @@ data class WorkoutUiState(
     val keepScreenOn: Boolean = false,
     /** The estimated calories burned so far, for the summary; null when no body weight is set. */
     val calories: Int? = null,
+    /** The time the timer has run, in seconds, behind [elapsed]. */
+    val elapsedSeconds: Int = 0,
+    /** Where the week stands with this workout in it, once it is recorded. */
+    val week: WeekStanding? = null,
 ) {
     /** Offer "Save as preset" on the summary: no preset has this shape yet. */
     val canSavePreset: Boolean get() = presetName == null
@@ -82,6 +87,7 @@ fun WorkoutState.toUiState(
     presets: List<Preset> = emptyList(),
     keepScreenOn: Boolean = false,
     calories: Int? = null,
+    week: WeekStanding? = null,
 ): WorkoutUiState {
     val rounds = config.rounds
     val secondsLeft = ceilSeconds(remainingMillis)
@@ -118,6 +124,8 @@ fun WorkoutState.toUiState(
         ended = ended,
         presetName = presetName,
         elapsed = formatClock(elapsedSeconds),
+        elapsedSeconds = elapsedSeconds,
+        week = week,
         presets = presets,
         keepScreenOn = keepScreenOn,
         calories = calories,

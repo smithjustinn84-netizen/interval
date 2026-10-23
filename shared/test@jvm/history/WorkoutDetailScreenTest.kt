@@ -83,6 +83,7 @@ class WorkoutDetailScreenTest {
         onNodeWithContentDescription("More options").performClick()
         onNodeWithText("Delete workout").performClick()
         onNodeWithText("Delete").performClick()
+        waitForIdle()
         assertEquals(listOf("delete"), events)
     }
 

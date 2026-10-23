@@ -38,6 +38,8 @@ import dev.justinsmith.interval.resources.detail_work
 import dev.justinsmith.interval.resources.history_calories
 import dev.justinsmith.interval.resources.history_ended_early
 import dev.justinsmith.interval.resources.history_more_options_cd
+import dev.justinsmith.interval.resources.notice_undo
+import dev.justinsmith.interval.resources.notice_workout_deleted
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.BackAction
@@ -48,6 +50,8 @@ import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalMenu
 import dev.justinsmith.interval.ui.IntervalMenuItem
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.LocalNotices
+import dev.justinsmith.interval.ui.NoticeAction
 import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
@@ -69,6 +73,9 @@ fun WorkoutDetailRoute(id: Long, onBack: () -> Unit, onStartWorkout: () -> Unit,
     val gone = state.workout == null
     val leave by rememberUpdatedState(onBack)
     LaunchedEffect(gone) { if (gone) leave() }
+    val notices = LocalNotices.current
+    val undo = stringResource(Res.string.notice_undo)
+    val deleted = stringResource(Res.string.notice_workout_deleted)
     WorkoutDetailScreen(
         state = state,
         onBack = onBack,
@@ -76,7 +83,11 @@ fun WorkoutDetailRoute(id: Long, onBack: () -> Unit, onStartWorkout: () -> Unit,
             viewModel.putOnTimer()
             onStartWorkout()
         },
-        onDelete = viewModel::delete,
+        // The notice outlives this page, which leaves once the workout is gone.
+        onDelete = {
+            viewModel.delete()
+            notices.show(deleted, NoticeAction(undo, viewModel::restore))
+        },
         onPlanWeekly = viewModel::planWeekly,
         onPlanOnce = viewModel::planOnce,
         modifier = modifier,

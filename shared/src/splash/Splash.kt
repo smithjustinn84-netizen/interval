@@ -32,6 +32,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.justinsmith.interval.platform.SystemBarIcons
+import dev.justinsmith.interval.platform.prefersReducedMotion
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.app_name
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -77,10 +78,21 @@ internal fun Splash(ready: Boolean, onFinish: () -> Unit, modifier: Modifier = M
     val title = remember { Animatable(0f) }
     val isReady by rememberUpdatedState(ready)
     val finish by rememberUpdatedState(onFinish)
+    val reduced = prefersReducedMotion()
     LaunchedEffect(Unit) {
         // Animations are timed from frames, so a slow frame skips them ahead. A cold start's first
         // frames are slow (iOS debug builds especially), so the mark holds still until they settle.
         settle()
+        if (reduced) {
+            // No sweep, no burst: the mark and the name stand as the splash drew them until the app
+            // is ready, then the ground simply opens.
+            listOf(hand, title).forEach { it.snapTo(1f) }
+            snapshotFlow { isReady }.first { it }
+            settle()
+            burst.animateTo(1f, tween(REDUCED_OPEN_MILLIS))
+            finish()
+            return@LaunchedEffect
+        }
         launch {
             title.animateTo(1f, tween(TITLE_MILLIS, TITLE_DELAY_MILLIS, LinearOutSlowInEasing))
         }
@@ -181,6 +193,9 @@ private const val TITLE_MILLIS = 450
 private const val DIP_MILLIS = 140
 private const val DIP_SCALE = 0.86f
 private const val BURST_MILLIS = 540
+
+/** Under reduced motion the ground opens in this long, with no ripple to speak of. */
+private const val REDUCED_OPEN_MILLIS = 200
 
 /** At the end of the burst the mark has grown this much more… */
 private const val BURST_GROWTH = 1.8f

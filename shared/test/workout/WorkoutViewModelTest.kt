@@ -6,12 +6,15 @@ import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.data.BodySettings
 import dev.justinsmith.interval.data.CueSettings
 import dev.justinsmith.interval.data.IntervalRepository
+import dev.justinsmith.interval.fakes.FakeLiftStorage
 import dev.justinsmith.interval.fakes.FakeStorage
+import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.MainDispatcherTest
 import dev.justinsmith.interval.fakes.RecordingCuePlayer
 import dev.justinsmith.interval.fakes.deferredStorageScope
 import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.Speech
+import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
@@ -35,6 +38,7 @@ import kotlin.test.assertTrue
 
 class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
     private val repository = FakeStorage().repository(now = { 7L })
+    private val lifts = FakeLiftStorage().repository()
     private val player = RecordingCuePlayer()
     private val viewModels = mutableListOf<WorkoutViewModel>()
 
@@ -49,7 +53,8 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
 
     /** A workout over [repository], timed by the test's clock, stopped once the test ends. */
     private fun TestScope.workoutViewModel(repository: IntervalRepository = this@WorkoutViewModelTest.repository) =
-        WorkoutViewModel(repository, player, testScheduler.timeSource).also { viewModels += it }
+        WorkoutViewModel(repository, player, lifts, FixedTimestampFormatter, WallClock { 7L }, testScheduler.timeSource)
+            .also { viewModels += it }
 
     @Test
     fun `a workout runs to done cues each phase and is recorded`() = runTest(dispatcher) {

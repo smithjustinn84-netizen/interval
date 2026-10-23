@@ -22,6 +22,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.pressKey
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
+import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.timer.WorkoutState
 import dev.justinsmith.interval.ui.Window
@@ -85,6 +86,7 @@ class WorkoutScreenTest {
         onNodeWithContentDescription("End workout").performClick()
         onNodeWithText("No round is finished yet, so nothing is saved.").assertExists()
         onNodeWithText("End workout").performClick()
+        waitForIdle()
         assertEquals(listOf("toggle pause", "exit"), calls)
     }
 
@@ -94,6 +96,7 @@ class WorkoutScreenTest {
         onNodeWithContentDescription("End workout").performClick()
         onNodeWithText("1 of 8 rounds done. What you finished is saved to history.").assertExists()
         onNodeWithText("End workout").performClick()
+        waitForIdle()
         assertEquals(listOf("end early"), calls)
     }
 
@@ -171,6 +174,17 @@ class WorkoutScreenTest {
         state = done.toUiState(running = false, calories = 64)
         onNodeWithText("kcal").assertExists()
         onNodeWithText("64").assertExists()
+    }
+
+    @Test
+    fun `the summary says where the week stands`() = runUiTest {
+        var state by mutableStateOf(done.toUiState(running = false, week = WeekStanding(3, goal = 4, streak = 0)))
+        setThemedContent { Screen(state) }
+        onNodeWithText("3 of 4 this week").assertExists()
+        state = done.toUiState(running = false, week = WeekStanding(4, goal = 4, streak = 2))
+        onNodeWithText("Goal met this week · 2-week streak").assertExists()
+        state = done.toUiState(running = false, week = WeekStanding(3, goal = null, streak = 0))
+        onNodeWithText("3 workouts this week").assertExists()
     }
 
     @Test

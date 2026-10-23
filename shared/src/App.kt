@@ -3,14 +3,17 @@
 package dev.justinsmith.interval
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.plus
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
@@ -20,8 +23,10 @@ import androidx.compose.material3.adaptive.navigation3.rememberSupportingPaneSce
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
@@ -81,9 +86,13 @@ import dev.justinsmith.interval.presets.PresetsRoute
 import dev.justinsmith.interval.settings.SettingsRoute
 import dev.justinsmith.interval.splash.WithIntro
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.NavigationItems
+import dev.justinsmith.interval.ui.NoticeHost
+import dev.justinsmith.interval.ui.Notices
 import dev.justinsmith.interval.ui.PageKind
 import dev.justinsmith.interval.ui.Sizes
+import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.backPreviewCorners
 import dev.justinsmith.interval.ui.backPreviewTransition
 import dev.justinsmith.interval.ui.navigationSuiteColors
@@ -91,6 +100,7 @@ import dev.justinsmith.interval.ui.navigationSuiteType
 import dev.justinsmith.interval.ui.pageKind
 import dev.justinsmith.interval.ui.pagePopTransition
 import dev.justinsmith.interval.ui.pageTransition
+import dev.justinsmith.interval.ui.rememberNotices
 import dev.justinsmith.interval.workout.WorkoutRoute
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -161,9 +171,10 @@ internal fun AppContent(koin: KoinApplication, introPlaying: Boolean = false) {
         }
         IntervalTheme(darkTheme = dark) {
             val backStack = rememberNavBackStack(navConfiguration, TimerTab)
+            val notices = rememberNotices()
             // The intro is dark in either theme while it covers the app.
             SystemBarIcons(lightIcons = dark || introPlaying)
-            AppShell(backStack)
+            CompositionLocalProvider(LocalNotices provides notices) { AppShell(backStack, notices) }
         }
     }
 }
@@ -175,7 +186,7 @@ internal fun AppContent(koin: KoinApplication, introPlaying: Boolean = false) {
  * Timer: windows of Material's expanded width and up open Settings as a supporting pane.
  */
 @Composable
-private fun AppShell(backStack: NavBackStack<NavKey>) {
+private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
     val top = backStack.lastOrNull()
     // Side by side only: Material would also stack Timer over Settings on a tall tablet in portrait,
     // which leaves both too short. There Settings opens full screen, as on a phone.
@@ -205,38 +216,49 @@ private fun AppShell(backStack: NavBackStack<NavKey>) {
             containerColor = palette.background,
             contentColor = palette.text,
         ) {
+            val content = Modifier
+                .fillMaxSize()
+                .then(if (bar) Modifier.hairlineAtBottom(palette.line) else Modifier)
+                .then(
+                    if (insets != null) {
+                        Modifier.windowInsetsPadding(insets).consumeWindowInsets(insets)
+                    } else {
+                        Modifier
+                    },
+                )
             // NavDisplay stays at one place in the tree whatever the bars do, so its entries keep their state.
-            NavDisplay(
-                backStack = backStack,
-                onBack = { if (backStack.size > 1) backStack.removeLastOrNull() },
-                // Passing this replaces NavDisplay's default list, so the saveable-state holder is
-                // repeated. The ViewModel store decorator follows it: it needs the holder above it.
-                // On Android the back preview's corners clip each entry's content, innermost.
-                entryDecorators = listOfNotNull(
-                    rememberSaveableStateHolderNavEntryDecorator(),
-                    rememberViewModelStoreNavEntryDecorator(),
-                    if (materialBackPreview) backPreviewCorners() else null,
-                ),
-                sceneStrategies = listOf(supportingPane),
-                transitionSpec = pageTransition(),
-                popTransitionSpec = pagePopTransition(),
-                predictivePopTransitionSpec = if (materialBackPreview) {
-                    backPreviewTransition()
-                } else {
-                    defaultPredictivePopTransitionSpec()
-                },
-                modifier = Modifier
-                    .fillMaxSize()
-                    .then(if (bar) Modifier.hairlineAtBottom(palette.line) else Modifier)
-                    .then(
-                        if (insets != null) {
-                            Modifier.windowInsetsPadding(insets).consumeWindowInsets(insets)
-                        } else {
-                            Modifier
-                        },
+            // A notice floats over the content's foot: above the bar, and over a full-screen mode.
+            Box(content) {
+                NavDisplay(
+                    backStack = backStack,
+                    onBack = { if (backStack.size > 1) backStack.removeLastOrNull() },
+                    // Passing this replaces NavDisplay's default list, so the saveable-state holder is
+                    // repeated. The ViewModel store decorator follows it: it needs the holder above it.
+                    // On Android the back preview's corners clip each entry's content, innermost.
+                    entryDecorators = listOfNotNull(
+                        rememberSaveableStateHolderNavEntryDecorator(),
+                        rememberViewModelStoreNavEntryDecorator(),
+                        if (materialBackPreview) backPreviewCorners() else null,
                     ),
-                entryProvider = appEntries(backStack, twoPane, selectTab),
-            )
+                    sceneStrategies = listOf(supportingPane),
+                    transitionSpec = pageTransition(),
+                    popTransitionSpec = pagePopTransition(),
+                    predictivePopTransitionSpec = if (materialBackPreview) {
+                        backPreviewTransition()
+                    } else {
+                        defaultPredictivePopTransitionSpec()
+                    },
+                    modifier = Modifier.fillMaxSize(),
+                    entryProvider = appEntries(backStack, twoPane, selectTab),
+                )
+                NoticeHost(
+                    notices,
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .then(if (insets == null) Modifier.safeDrawingPadding() else Modifier)
+                        .padding(Spacing.space16),
+                )
+            }
         }
     }
 }

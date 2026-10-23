@@ -86,6 +86,11 @@ class WorkoutDetailViewModel(
         repository.applyPreset(Preset(workout.name, workout.config))
     }
 
+    /** Undo on [delete]. */
+    fun restore() {
+        repository.restoreWorkout(id)
+    }
+
     fun delete() {
         repository.deleteWorkout(id)
     }

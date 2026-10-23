@@ -201,6 +201,45 @@ class IntervalRepositoryTest {
     }
 
     @Test
+    fun `a deleted preset restored keeps its id and its place in the list`() {
+        val repository = repository()
+        repository.saveCurrentAsPreset("First")
+        repository.saveCurrentAsPreset("Second")
+        repository.saveCurrentAsPreset("Third")
+        val second = repository.customPresets.value[1]
+        repository.deletePreset(second)
+        assertEquals(listOf("First", "Third"), repository.customPresets.value.map { it.name })
+        repository.restorePreset(second)
+        assertEquals(listOf("First", "Second", "Third"), repository.customPresets.value.map { it.name })
+        assertEquals(second.id, repository.customPresets.value[1].id)
+    }
+
+    @Test
+    fun `a removed plan restored keeps its id and the day it was made`() {
+        val repository = repository()
+        val tabata = builtInPresets.first()
+        repository.planWeekly(tabata, setOf(1, 3))
+        clock += 500
+        val monday = repository.planned.value.first()
+        repository.removePlanned(monday.id)
+        assertEquals(1, repository.planned.value.size)
+        repository.restorePlanned(monday)
+        assertEquals(listOf(monday, repository.planned.value[1]), repository.planned.value)
+        assertEquals(1_000L, repository.planned.value.first().createdAtEpochMillis)
+    }
+
+    @Test
+    fun `a deleted workout restored is back in the history`() {
+        val repository = repository()
+        repository.recordWorkout(IntervalConfig(), elapsedSeconds = 240)
+        val id = requireNotNull(repository.history.value.single().id)
+        repository.deleteWorkout(id)
+        assertEquals(emptyList(), repository.history.value)
+        repository.restoreWorkout(id)
+        assertEquals(listOf(240), repository.history.value.map { it.elapsedSeconds })
+    }
+
+    @Test
     fun `presets list the built-ins then the saved ones marked custom`() {
         val repository = repository()
         repository.saveCurrentAsPreset("Mine")

@@ -9,6 +9,8 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import dev.justinsmith.interval.nav.HistoryTab
 import dev.justinsmith.interval.nav.LiftTab
 import dev.justinsmith.interval.nav.Tab
@@ -40,10 +42,14 @@ fun NavigationItems(current: Tab, type: NavigationSuiteType, onSelect: (Tab) -> 
         unselectedIconColor = palette.textDim,
         unselectedTextColor = palette.textDim,
     )
+    val haptics = LocalHapticFeedback.current
     Tabs.forEach { spec ->
         NavigationSuiteItem(
             selected = spec.tab == current,
-            onClick = { onSelect(spec.tab) },
+            onClick = {
+                if (spec.tab != current) haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                onSelect(spec.tab)
+            },
             icon = { Icon(spec.icon, contentDescription = null, modifier = Modifier.size(Sizes.icon)) },
             label = { Text(stringResource(spec.label), style = IntervalTheme.type.caption) },
             navigationSuiteType = type,

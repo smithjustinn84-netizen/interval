@@ -4,6 +4,7 @@ package dev.justinsmith.interval.plan
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -25,9 +26,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.data.AppSettings
@@ -35,6 +36,9 @@ import dev.justinsmith.interval.history.dayHeading
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.common_joined
 import dev.justinsmith.interval.resources.history_streak
+import dev.justinsmith.interval.resources.notice_plan_removed
+import dev.justinsmith.interval.resources.notice_plan_removed_on
+import dev.justinsmith.interval.resources.notice_undo
 import dev.justinsmith.interval.resources.plan_add_on_date
 import dev.justinsmith.interval.resources.plan_add_weekday_cd
 import dev.justinsmith.interval.resources.plan_describe_cd
@@ -59,13 +63,17 @@ import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.LocalNotices
+import dev.justinsmith.interval.ui.NoticeAction
 import dev.justinsmith.interval.ui.RepeatButton
+import dev.justinsmith.interval.ui.RollingText
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StripeMark
 import dev.justinsmith.interval.ui.WeekdayForm
+import dev.justinsmith.interval.ui.rememberRising
 import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.interval.ui.weekdayText
 import dev.justinsmith.interval.ui.workoutDescription
@@ -79,6 +87,8 @@ fun PlanRoute(onBack: () -> Unit, modifier: Modifier = Modifier) {
     val scope = currentKoinScope()
     val viewModel = viewModel { PlanViewModel(scope.get(), scope.get(), scope.get(), scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val notices = LocalNotices.current
+    val undo = stringResource(Res.string.notice_undo)
     PlanScreen(
         state = state,
         onBack = onBack,
@@ -86,7 +96,11 @@ fun PlanRoute(onBack: () -> Unit, modifier: Modifier = Modifier) {
         onPlanWeekly = viewModel::planWeekly,
         onPlanOnce = viewModel::planOnce,
         onPlanRoutine = viewModel::planDescribed,
-        onRemove = viewModel::removePlanned,
+        onRemove = { planId, removedText ->
+            viewModel.removePlanned(planId)?.let { plan ->
+                notices.show(removedText, NoticeAction(undo) { viewModel.restorePlanned(plan) })
+            }
+        },
         modifier = modifier,
     )
 }
@@ -97,7 +111,8 @@ private const val ADD_ON_DATE = -1
 
 /**
  * The plan: the weekly goal's stepper, the routine as a row per weekday with its workouts and a + to add
- * one, and the one-offs still to come. Each planned workout comes off with its own remove button.
+ * one, and the one-offs still to come. Each planned workout comes off with its own remove button, which
+ * hands [onRemove] its id and the line saying what went ("Removed Tabata from Monday").
  */
 @Composable
 fun PlanScreen(
@@ -107,7 +122,7 @@ fun PlanScreen(
     onPlanWeekly: (Preset, Set<Int>) -> Unit,
     onPlanOnce: (Preset, Long) -> Unit,
     onPlanRoutine: (DescribedRoutine) -> Unit,
-    onRemove: (Long) -> Unit,
+    onRemove: (planId: Long, removedText: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var adding by rememberSaveable { mutableIntStateOf(ADD_CLOSED) }
@@ -213,13 +228,14 @@ private fun GoalCard(state: PlanUiState, onStepGoal: (Int) -> Unit) {
                 onStep = { onStepGoal(-1) },
                 modifier = Modifier.size(Sizes.segment),
             )
-            Text(
-                goal?.toString() ?: stringResource(Res.string.plan_goal_off),
-                style = IntervalTheme.type.value,
-                color = if (goal == null) palette.textDim else palette.text,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.width(Sizes.pillWidth),
-            )
+            Box(Modifier.width(Sizes.pillWidth), contentAlignment = Alignment.Center) {
+                RollingText(
+                    goal?.toString() ?: stringResource(Res.string.plan_goal_off),
+                    rising = rememberRising(goal ?: 0),
+                    style = IntervalTheme.type.value,
+                    color = if (goal == null) palette.textDim else palette.text,
+                )
+            }
             RepeatButton(
                 "+",
                 stringResource(Res.string.plan_goal_more_cd),
@@ -233,7 +249,7 @@ private fun GoalCard(state: PlanUiState, onStepGoal: (Int) -> Unit) {
 
 /** A weekday: its short name, a chip per workout planned on it every week (tap to remove), and +. */
 @Composable
-private fun RoutineRow(day: RoutineDay, onAdd: () -> Unit, onRemove: (Long) -> Unit) {
+private fun RoutineRow(day: RoutineDay, onAdd: () -> Unit, onRemove: (Long, String) -> Unit) {
     val palette = IntervalTheme.palette
     val dayName = weekdayText(day.weekday)
     Row(
@@ -259,8 +275,9 @@ private fun RoutineRow(day: RoutineDay, onAdd: () -> Unit, onRemove: (Long) -> U
                 Text(stringResource(Res.string.plan_rest), style = IntervalTheme.type.meta, color = palette.textDim)
             }
             day.plans.forEach { plan ->
+                val removed = stringResource(Res.string.notice_plan_removed_on, plan.name, dayName)
                 PlanChip(plan.name, stringResource(Res.string.plan_remove_on_cd, plan.name, dayName)) {
-                    onRemove(plan.planId)
+                    onRemove(plan.planId, removed)
                 }
             }
         }
@@ -276,7 +293,13 @@ private fun PlanChip(name: String, description: String, onRemove: () -> Unit) {
     Row(
         Modifier
             .heightIn(min = Sizes.segment)
-            .surfaceButton(interaction, Corners.full, palette.surfaceVariant, onRemove)
+            .surfaceButton(
+                interaction,
+                Corners.full,
+                palette.surfaceVariant,
+                onRemove,
+                haptic = HapticFeedbackType.SegmentTick,
+            )
             .semantics(mergeDescendants = true) { contentDescription = description }
             .padding(start = Spacing.space12, end = Spacing.space8),
         verticalAlignment = Alignment.CenterVertically,
@@ -289,8 +312,9 @@ private fun PlanChip(name: String, description: String, onRemove: () -> Unit) {
 }
 
 @Composable
-private fun OneOffRow(oneOff: OneOff, onRemove: (Long) -> Unit) {
+private fun OneOffRow(oneOff: OneOff, onRemove: (Long, String) -> Unit) {
     val palette = IntervalTheme.palette
+    val removed = stringResource(Res.string.notice_plan_removed, oneOff.entry.name)
     Row(
         Modifier
             .fillMaxWidth()
@@ -315,7 +339,8 @@ private fun OneOffRow(oneOff: OneOff, onRemove: (Long) -> Unit) {
         IconAction(
             IntervalIcons.Close,
             stringResource(Res.string.plan_remove_cd, oneOff.entry.name, dayHeading(oneOff.day)),
-            { onRemove(oneOff.entry.planId) },
+            { onRemove(oneOff.entry.planId, removed) },
+            haptic = HapticFeedbackType.SegmentTick,
         )
     }
 }

@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.history
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -66,6 +67,7 @@ import dev.justinsmith.interval.resources.history_today
 import dev.justinsmith.interval.resources.history_tomorrow
 import dev.justinsmith.interval.resources.history_up_next
 import dev.justinsmith.interval.resources.history_yesterday
+import dev.justinsmith.interval.resources.notice_undo
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
@@ -82,6 +84,8 @@ import dev.justinsmith.interval.ui.IntervalMenu
 import dev.justinsmith.interval.ui.IntervalMenuItem
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.LocalNotices
+import dev.justinsmith.interval.ui.NoticeAction
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SecondaryButton
@@ -90,6 +94,7 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StripeMark
 import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.interval.ui.WeekdayForm
+import dev.justinsmith.interval.ui.fadeThroughContent
 import dev.justinsmith.interval.ui.joined
 import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.interval.ui.surfaceButton
@@ -125,7 +130,9 @@ fun HistoryRoute(
     val plan by rememberUpdatedState(onPlan)
     val showTimer by rememberUpdatedState(onShowTimer)
     val startSession by rememberUpdatedState(onStartSession)
-    val actions = remember(viewModel) {
+    val notices = LocalNotices.current
+    val undo = stringResource(Res.string.notice_undo)
+    val actions = remember(viewModel, notices, undo) {
         HistoryActions(
             onClear = viewModel::clear,
             onRange = viewModel::setRange,
@@ -136,7 +143,11 @@ fun HistoryRoute(
                 viewModel.openDay(null)
                 startWorkout()
             },
-            onRemovePlanned = viewModel::removePlanned,
+            onRemovePlanned = { planId, removedText ->
+                viewModel.removePlanned(planId)?.let { plan ->
+                    notices.show(removedText, NoticeAction(undo) { viewModel.restorePlanned(plan) })
+                }
+            },
             onPlanWeekly = viewModel::planWeekly,
             onPlanOnce = viewModel::planOnce,
             onOpenWorkout = {
@@ -172,7 +183,8 @@ class HistoryActions(
     val onOpenDay: (Long?) -> Unit = {},
     /** Starts a workout of this name and shape now. */
     val onStart: (String, IntervalConfig) -> Unit = { _, _ -> },
-    val onRemovePlanned: (Long) -> Unit = {},
+    /** Takes a one-off off the plan, with the line saying so ("Removed Tabata"). */
+    val onRemovePlanned: (planId: Long, removedText: String) -> Unit = { _, _ -> },
     val onPlanWeekly: (Preset, Set<Int>) -> Unit = { _, _ -> },
     val onPlanOnce: (Preset, Long) -> Unit = { _, _ -> },
     val onOpenWorkout: (Long) -> Unit = {},
@@ -278,11 +290,18 @@ private fun LazyStaggeredGridScope.summaryItems(state: HistoryUiState, actions: 
         )
     }
     item(key = "summary", span = StaggeredGridItemSpan.FullLine) {
-        val card = Modifier.animateItem().then(gutter)
-        when (state.range) {
-            TrainingRange.Week -> WeekSummary(state, { actions.onOpenDay(it) }, actions.onPlan, card)
-            TrainingRange.Month -> MonthSummary(state, actions.onShiftMonth, { actions.onOpenDay(it) }, card)
-            TrainingRange.AllTime -> AllTimeSummary(state, card)
+        // Another range, or another month, fades through: one card's figures for the next.
+        AnimatedContent(
+            targetState = state.range to state.month.title,
+            modifier = Modifier.animateItem().then(gutter),
+            transitionSpec = { fadeThroughContent() },
+            label = "summary",
+        ) { (range, _) ->
+            when (range) {
+                TrainingRange.Week -> WeekSummary(state, { actions.onOpenDay(it) }, actions.onPlan)
+                TrainingRange.Month -> MonthSummary(state, actions.onShiftMonth, { actions.onOpenDay(it) })
+                TrainingRange.AllTime -> AllTimeSummary(state)
+            }
         }
     }
     if (state.upNext.isNotEmpty() && state.range != TrainingRange.AllTime) {

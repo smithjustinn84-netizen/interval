@@ -45,6 +45,7 @@ private const val SETTLED_SLACK = 12f
 private fun DesktopComposeUiTest.tab(label: String): SemanticsNodeInteraction =
     onNode(hasText(label) and hasClickAction())
 
+@Suppress("detekt.TooManyFunctions") // One journey per test, side by side.
 class AppNavigationTest {
     @Test
     fun `the app opens on the timer`() = appTest {
@@ -191,6 +192,48 @@ class AppNavigationTest {
         onNodeWithText("Delete workout").performClick()
         onNodeWithText("Delete").performClick()
         onNodeWithText("Train to a plan").assertExists()
+    }
+
+    @Test
+    fun `deleting a workout says so and Undo brings it back`() = appTest { koin ->
+        koin.koin.get<IntervalRepository>().recordWorkout(builtInPresets.first().config, elapsedSeconds = 240)
+        tab("History").performClick()
+        onNodeWithText("Tabata").performClick()
+        onNodeWithContentDescription("More options").performClick()
+        onNodeWithText("Delete workout").performClick()
+        onNodeWithText("Delete").performClick()
+        onNodeWithText("Train to a plan").assertExists()
+        onNodeWithText("Workout deleted").assertExists()
+        onNodeWithText("Undo").performClick()
+        onNodeWithText("Tabata").assertExists()
+        onNodeWithText("Workout deleted").assertDoesNotExist()
+    }
+
+    @Test
+    fun `a saved preset says its name and a deleted one comes back with Undo`() = appTest {
+        onNodeWithContentDescription("All presets").performClick()
+        onNodeWithContentDescription("New preset").performClick()
+        onAllNodesWithText("Save").onLast().performClick()
+        onNodeWithText("Saved as 30/15 ×8").assertExists()
+        onNodeWithText("30/15 ×8").performClick()
+        onNodeWithText("Delete").performClick()
+        onAllNodesWithText("Delete").onLast().performClick()
+        onNodeWithText("Deleted 30/15 ×8").assertExists()
+        onNodeWithText("Nothing saved yet").assertExists()
+        onNodeWithText("Undo").performClick()
+        onNodeWithText("30/15 ×8").assertExists()
+    }
+
+    @Test
+    fun `a plan taken off a day comes back with Undo`() = appTest { koin ->
+        koin.koin.get<IntervalRepository>().planWeekly(builtInPresets.first(), setOf(1))
+        tab("History").performClick()
+        onNodeWithContentDescription("Plan").performClick()
+        onNodeWithContentDescription("Remove Tabata from Monday").performClick()
+        onNodeWithContentDescription("Remove Tabata from Monday").assertDoesNotExist()
+        onNodeWithText("Removed Tabata from Monday").assertExists()
+        onNodeWithText("Undo").performClick()
+        onNodeWithContentDescription("Remove Tabata from Monday").assertExists()
     }
 
     @Test

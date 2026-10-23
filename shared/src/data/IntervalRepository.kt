@@ -275,6 +275,15 @@ class IntervalRepository(
         persist { presetDao.delete(id) }
     }
 
+    /**
+     * Puts a preset [deletePreset] removed back under its own id, so it returns to its place in the
+     * list and any plan made from it finds it again: Undo. Its name is kept unique as on a save.
+     */
+    fun restorePreset(preset: Preset) {
+        if (preset.id == null) return
+        persist { presetDao.insert(preset.named().toEntity()) }
+    }
+
     // Named inside the write against what is stored, not against [presets]: that follows the database, so
     // two saves in a row would both miss the other and take the same name.
     private suspend fun Preset.named(): Preset =
@@ -304,6 +313,12 @@ class IntervalRepository(
         persist { historyDao.delete(id, now) }
     }
 
+    /** Brings back a workout [deleteWorkout] removed: Undo. Its row was only marked, so nothing is lost. */
+    fun restoreWorkout(id: Long) {
+        val now = clock.nowMillis()
+        persist { historyDao.restore(id, now) }
+    }
+
     /** Removes every workout from the history, leaving each row marked deleted as [deleteWorkout] does. */
     fun clearHistory() {
         val now = clock.nowMillis()
@@ -324,6 +339,11 @@ class IntervalRepository(
 
     fun removePlanned(id: Long) {
         persist { plannedDao.delete(id) }
+    }
+
+    /** Puts a plan [removePlanned] took off back as it was, its id and the day it was made included: Undo. */
+    fun restorePlanned(plan: PlannedWorkout) {
+        persist { plannedDao.insert(listOf(plan.toEntity())) }
     }
 
     private fun Preset.planned(schedule: PlanSchedule) = PlannedWorkout(

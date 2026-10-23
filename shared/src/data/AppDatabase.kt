@@ -108,6 +108,10 @@ interface HistoryDao {
     @Query("UPDATE history SET deleted = 1, updated_at = :now WHERE id = :id")
     suspend fun delete(id: Long, now: Long)
 
+    /** Brings a deleted workout back at [now]: Undo on [delete]. */
+    @Query("UPDATE history SET deleted = 0, updated_at = :now WHERE id = :id")
+    suspend fun restore(id: Long, now: Long)
+
     /** Marks every workout not yet deleted as deleted at [now]. */
     @Query("UPDATE history SET deleted = 1, updated_at = :now WHERE deleted = 0")
     suspend fun clear(now: Long)

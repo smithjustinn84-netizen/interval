@@ -3,8 +3,6 @@ package dev.justinsmith.interval.workout
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -15,7 +13,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,16 +23,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
@@ -58,18 +49,18 @@ import dev.justinsmith.interval.resources.workout_status
 import dev.justinsmith.interval.resources.workout_tap_pause
 import dev.justinsmith.interval.resources.workout_tap_resume
 import dev.justinsmith.interval.timer.Phase
-import dev.justinsmith.interval.ui.Angles
 import dev.justinsmith.interval.ui.Corners
+import dev.justinsmith.interval.ui.CountdownClock
 import dev.justinsmith.interval.ui.EnterEasing
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.MAX_ROUND_MARKS
 import dev.justinsmith.interval.ui.Motion
+import dev.justinsmith.interval.ui.ProgressRing
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StandardEasing
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
-import kotlin.math.abs
 
 /** "Round 3 of 8 · 4:03 left". */
 @Composable
@@ -111,43 +102,6 @@ internal fun RoundDots(state: WorkoutUiState, accent: Color, modifier: Modifier 
                     .weight(1f, fill = false)
                     .size(Sizes.roundMarkWidth, Sizes.roundMarkHeight)
                     .background(color, Corners.full),
-            )
-        }
-    }
-}
-
-/**
- * How far through the current interval, as a ring in the phase colour over the control-coloured track. The ring
- * [glide]s to each new [progress] so it turns rather than steps, except across a jump (a new
- * interval, Back), which it snaps to; the summary drives its own slower sweep and turns gliding off.
- */
-@Composable
-internal fun ProgressRing(progress: Float, accent: Color, modifier: Modifier = Modifier, glide: Boolean = true) {
-    val shown = remember { Animatable(progress) }
-    LaunchedEffect(progress, glide) {
-        if (!glide || abs(progress - shown.value) > Motion.RING_SNAP_SHARE) {
-            shown.snapTo(progress)
-        } else {
-            shown.animateTo(progress, tween(Motion.RING_GLIDE_MILLIS, easing = LinearEasing))
-        }
-    }
-    val track = IntervalTheme.workout.control
-    Canvas(modifier.clearAndSetSemantics {}) {
-        val stroke = Sizes.ring.toPx()
-        val diameter = size.minDimension - stroke
-        val topLeft = Offset((size.width - diameter) / 2, (size.height - diameter) / 2)
-        val arc = Size(diameter, diameter)
-        drawArc(track, 0f, Angles.FULL_TURN, useCenter = false, topLeft, arc, style = Stroke(stroke))
-        val sweep = shown.value.coerceIn(0f, 1f)
-        if (sweep > 0f) {
-            drawArc(
-                accent,
-                startAngle = Angles.TWELVE_O_CLOCK,
-                sweepAngle = Angles.FULL_TURN * sweep,
-                useCenter = false,
-                topLeft = topLeft,
-                size = arc,
-                style = Stroke(stroke, cap = StrokeCap.Round),
             )
         }
     }
@@ -245,39 +199,15 @@ private fun nextUpText(next: NextUp?): String = when (next) {
     null -> ""
 }
 
-/**
- * The countdown. It pops as each new interval starts, so the change registers even in peripheral
- * vision, and in an interval's last seconds it takes the phase colour and pops with each beep: the
- * end is coming, visibly, from across the room.
- */
+/** The digits inside the ring: see [CountdownClock]. A phase or round change starts a new interval. */
 @Composable
 private fun Clock(state: WorkoutUiState, accent: Color, size: TextUnit) {
-    val scale = remember { Animatable(1f) }
-    LaunchedEffect(state.phase, state.completedRounds) {
-        scale.snapTo(Motion.CLOCK_POP_SCALE)
-        scale.animateTo(1f, tween(Motion.CLOCK_POP_MILLIS))
-    }
-    LaunchedEffect(state.secondsLeft, state.countingDown) {
-        if (state.countingDown) {
-            scale.snapTo(Motion.COUNTDOWN_POP_SCALE)
-            scale.animateTo(1f, tween(Motion.CLOCK_POP_MILLIS))
-        }
-    }
-    val color by animateColorAsState(
-        if (state.countingDown) accent else IntervalTheme.workout.onGround,
-        tween(Motion.STATE_MILLIS, easing = StandardEasing),
-        label = "clock",
-    )
-    Text(
+    CountdownClock(
         state.clock,
+        intervalKey = state.phase to state.completedRounds,
+        countingDown = state.countingDown,
+        accent = accent,
         style = IntervalTheme.type.clock.copy(fontSize = size, lineHeight = size),
-        color = color,
-        maxLines = 1,
-        softWrap = false,
-        modifier = Modifier.graphicsLayer {
-            scaleX = scale.value
-            scaleY = scale.value
-        },
     )
 }
 

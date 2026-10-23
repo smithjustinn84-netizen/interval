@@ -38,6 +38,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.common_joined
+import dev.justinsmith.interval.resources.notice_plan_added
 import dev.justinsmith.interval.resources.plan_add_confirm
 import dev.justinsmith.interval.resources.plan_add_title
 import dev.justinsmith.interval.resources.plan_every_week
@@ -53,6 +54,7 @@ import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SegmentedPicker
@@ -119,6 +121,8 @@ fun AddToPlanSheet(
                 PlanRepeat.Weekly -> WeekdayPicker(weekdays, onChange = { weekdays = it })
                 PlanRepeat.Once -> DayPicker(days, day, onPick = { day = it })
             }
+            val notices = LocalNotices.current
+            val added = stringResource(Res.string.notice_plan_added)
             AccentButton(
                 stringResource(Res.string.plan_add_confirm),
                 onClick = {
@@ -131,6 +135,7 @@ fun AddToPlanSheet(
 
                         PlanRepeat.Once -> onPlanOnce(preset, day)
                     }
+                    notices.show(added)
                     hide()
                 },
                 modifier = Modifier.fillMaxWidth(),
