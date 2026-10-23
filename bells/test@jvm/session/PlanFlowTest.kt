@@ -125,4 +125,30 @@ class PlanFlowTest {
         onNodeWithText("Keep today's changes?").assertDoesNotExist()
         assertTrue(app.storage.programs.rows.value.isEmpty())
     }
+
+    @Test
+    fun `a day done in full offers a step up for next time`() = bellsAppTest(followed()) { app ->
+        startDay()
+        repeat(9) { n ->
+            onNodeWithText("Log it").performScrollTo().performClick()
+            if (n < 8) waitForText("Up next · ${n + 2} of 9 sets")
+        }
+        waitForText("Today's sets are done. Finish when you are.")
+        onNodeWithText("Finish").performClick()
+        waitForText("Ready for more?")
+        // No bells owned: the next standard size up from the 16 kg done.
+        onNodeWithText("3 × 10 → 3 × 10 · 20 kg").assertExists()
+        onNodeWithText("3 × 10 a side → 3 × 10 a side · 20 kg").assertExists()
+        // Rows stay as they are; the goblet squats go up.
+        // The card's, under the records.
+        onAllNodesWithText("Row").onLast().performScrollTo().performClick()
+        onNodeWithText("Save as Goblet squat and row (yours)").performScrollTo().performClick()
+        waitForText("Saved as Goblet squat and row (yours). You follow it from day 2.")
+        val days = app.storage.programs.rows.value.single().days
+        assertTrue(
+            days.contains("\"exercise\":\"GobletSquat\",\"kind\":\"Sets\",\"rounds\":3,\"reps\":10,\"kg\":20.0"),
+            days,
+        )
+        assertTrue(days.contains("\"exercise\":\"Row\",\"kind\":\"Sets\",\"rounds\":3,\"reps\":10}"), days)
+    }
 }

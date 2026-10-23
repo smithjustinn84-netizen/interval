@@ -24,7 +24,21 @@ data class PlanChanges(
     val dayNumber: Int,
     val dayIndex: Int,
     val changes: List<BlockChange>,
+    /** The steps up the day earned, each from its block as done: offered for next time, not yet kept. */
+    val nudges: List<BlockChange> = emptyList(),
 ) {
+    /**
+     * These changes with the [nudges] at [taken] kept too, each over its block's own change; what is kept is
+     * then each block as programmed and as it is to be.
+     */
+    fun withNudges(taken: Set<Int>): PlanChanges {
+        val programmed = program.days[dayIndex]
+        val picked = nudges.filterIndexed { i, _ -> i in taken }
+            .mapNotNull { nudge -> programmed.getOrNull(nudge.index)?.let { BlockChange(nudge.index, it, nudge.to) } }
+        val kept = changes.filterNot { c -> picked.any { it.index == c.index } } + picked
+        return copy(changes = kept.sortedBy { it.index }, nudges = emptyList())
+    }
+
     /**
      * The program's days with the changes kept, as far as [scope] reaches. Every day: a load changed goes to
      * every block of the exercise with as many bells; rounds, reps or rungs only to those of the same kind that
@@ -64,14 +78,18 @@ private fun BlockChange.carry(block: Block): Block {
     return carried
 }
 
-/** What a session changed of [day]; null when it changed nothing, or [day] has no plan of its own. */
-fun planChanges(day: ProgramDay): PlanChanges? {
-    val plan = day.plan ?: return null
-    if (plan.blocks.size != day.blocks.size) return null
-    val changes = day.blocks.zip(plan.changedBlocks).mapIndexedNotNull { i, (from, to) ->
-        BlockChange(i, from, to).takeIf { from != to }
-    }
-    return PlanChanges(day.program, day.number, day.dayIndex, changes).takeIf { changes.isNotEmpty() }
+/**
+ * What a session changed of [day], and the steps up it earned ([nudges]); null when it changed nothing and
+ * earned none.
+ */
+fun planChanges(day: ProgramDay, nudges: List<BlockChange> = emptyList()): PlanChanges? {
+    val changes = day.plan?.takeIf { it.blocks.size == day.blocks.size }?.let { plan ->
+        day.blocks.zip(plan.changedBlocks).mapIndexedNotNull { i, (from, to) ->
+            BlockChange(i, from, to).takeIf { from != to }
+        }
+    }.orEmpty()
+    return PlanChanges(day.program, day.number, day.dayIndex, changes, nudges)
+        .takeIf { changes.isNotEmpty() || nudges.isNotEmpty() }
 }
 
 /**

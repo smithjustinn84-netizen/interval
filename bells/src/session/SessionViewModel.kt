@@ -36,6 +36,7 @@ import dev.justinsmith.bells.domain.other
 import dev.justinsmith.bells.domain.ownedEquipment
 import dev.justinsmith.bells.domain.planChanges
 import dev.justinsmith.bells.domain.plannedDone
+import dev.justinsmith.bells.domain.progressions
 import dev.justinsmith.bells.domain.recentExercises
 import dev.justinsmith.bells.domain.standardBells
 import dev.justinsmith.bells.domain.suggestedBand
@@ -517,22 +518,24 @@ class SessionViewModel(
         val before = repository.sessions.value.flatMap { it.sets }
         val done = session.copy(finishedAtEpochMillis = clock.nowMillis(), title = title)
         // Taken now: once the session is saved, the program day moves on to the next.
+        val bells = repository.bells.value.ifEmpty { standardBells }
+        val bands = offeredBands(repository.bands.value)
         val changes = repository.programDay.value
             ?.takeIf { session.program != null && it.program.key == session.program }
             ?.copy(plan = session.plan)
-            ?.let(::planChanges)
+            ?.let { day -> planChanges(day, progressions(day, session.sets, bells, bands)) }
         val taken = repository.customPrograms.value.mapNotNull { it.name }.toSet()
         finished.value = Finished(done, newRecords(before, done), changes, taken, bands = repository.bands.value)
         repository.finishSession(title)
     }
 
     /**
-     * Keeps the finished session's changes in their program, as far as [scope] reaches, or in a copy named
-     * [copyName]: see [BellsRepository.saveChanges].
+     * Keeps the finished session's changes, and the steps up at [nudges], in their program, as far as [scope]
+     * reaches, or in a copy named [copyName]: see [BellsRepository.saveChanges].
      */
-    fun keepChanges(scope: SaveScope, copyName: String) {
+    fun keepChanges(scope: SaveScope, copyName: String, nudges: Set<Int> = emptySet()) {
         val done = finished.value ?: return
-        val changes = done.changes ?: return
+        val changes = done.changes?.withNudges(nudges)?.takeIf { it.changes.isNotEmpty() } ?: return
         if (done.kept != null) return
         finished.value = done.copy(kept = repository.saveChanges(changes, scope, copyName))
     }

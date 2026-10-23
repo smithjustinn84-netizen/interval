@@ -273,8 +273,12 @@
 
     <!-- On the summary of a program day changed in the session -->
     <string name="changes_title">Keep today's changes?</string>
+    <!-- When the day changed nothing but earned a step up -->
+    <string name="changes_title_next">Ready for more?</string>
     <!-- A block changed: "3 × 10 → 3 × 10 · 28 kg", or a swap: "Two-hand swing → Goblet squat" -->
     <string name="change_line">%1$s → %2$s</string>
+    <!-- Above the steps up a day earned, each to keep in the program or not -->
+    <string name="changes_next_time">Next time</string>
     <string name="changes_this_day">This day</string>
     <string name="changes_every_day">Every day</string>
     <string name="changes_this_day_hint">Only day %1$d of the program changes.</string>

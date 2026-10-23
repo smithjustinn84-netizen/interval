@@ -100,16 +100,5 @@ data class SessionPlan(val blocks: List<PlanBlock>) {
  * Of [planned], which are done by [logged]: the n-th planned set of a lift (and side) by the n-th logged one,
  * whatever its bell or reps, as [nextPlanned] counts them.
  */
-fun plannedDone(planned: List<PlannedSet>, logged: List<SetLog>): List<Boolean> {
-    val used = mutableMapOf<Pair<String, Side?>, Int>()
-    logged.forEach { set ->
-        val key = set.exercise.key to set.side
-        used[key] = (used[key] ?: 0) + 1
-    }
-    return planned.map { set ->
-        val key = set.exercise.key to set.side
-        val left = used[key] ?: 0
-        if (left > 0) used[key] = left - 1
-        left > 0
-    }
-}
+fun plannedDone(planned: List<PlannedSet>, logged: List<SetLog>): List<Boolean> =
+    plannedMatches(planned, logged).map { it != null }
