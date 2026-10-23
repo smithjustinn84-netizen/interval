@@ -12,6 +12,7 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
+import androidx.room.Update
 import androidx.room.Upsert
 import androidx.room.migration.Migration
 import androidx.sqlite.SQLiteConnection
@@ -112,6 +113,9 @@ interface SessionDao {
 
     @Query("DELETE FROM lift_set WHERE id = :id")
     suspend fun deleteSet(id: Long)
+
+    @Update
+    suspend fun update(set: SetEntity)
 
     @Query("UPDATE session SET plan = :plan WHERE uid = :uid")
     suspend fun setPlan(uid: String, plan: String?)

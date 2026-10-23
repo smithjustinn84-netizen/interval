@@ -39,6 +39,8 @@ import dev.justinsmith.bells.resources.hold_stop
 import dev.justinsmith.bells.resources.hold_stop_note
 import dev.justinsmith.bells.resources.hold_time_it
 import dev.justinsmith.bells.resources.log_change
+import dev.justinsmith.bells.resources.log_edit_save
+import dev.justinsmith.bells.resources.log_edit_title
 import dev.justinsmith.bells.resources.log_exercise
 import dev.justinsmith.bells.resources.log_fewer_reps
 import dev.justinsmith.bells.resources.log_first_side
@@ -87,16 +89,19 @@ private enum class LogKind { Set, Emom }
 @Composable
 internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismiss: () -> Unit) {
     val draft = state.draft
+    val editing = state.editing != null
     // Saved by name: an enum is not saveable on every platform.
     var kindName by rememberSaveable { mutableStateOf(LogKind.Set.name) }
-    val kind = if (draft.held) LogKind.Set else LogKind.valueOf(kindName)
+    val kind = if (draft.held || editing) LogKind.Set else LogKind.valueOf(kindName)
     // Change swaps the sheet for the library until an exercise is picked.
     var picking by rememberSaveable { mutableStateOf(false) }
     val onClose = {
         actions.onCancelHold()
+        actions.onCancelEdit()
         onDismiss()
     }
-    IntervalSheet(stringResource(Res.string.log_title), onDismiss = onClose) { hide ->
+    val title = stringResource(if (editing) Res.string.log_edit_title else Res.string.log_title)
+    IntervalSheet(title, onDismiss = onClose) { hide ->
         val hold = state.hold
         val holdState = state.holdState
         CloseWhenTimed(timing = hold != null, offering = state.otherSide != null, hide)
@@ -125,7 +130,7 @@ internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismi
             Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
             verticalArrangement = Arrangement.spacedBy(Spacing.space8),
         ) {
-            if (!draft.held) {
+            if (!draft.held && !editing) {
                 SegmentedPicker(
                     LogKind.entries,
                     kind,
@@ -136,28 +141,45 @@ internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismi
                     modifier = Modifier.padding(bottom = Spacing.space8),
                 )
             }
-            ExerciseCard(draft.exercise, onChange = { picking = true })
+            // A set logged keeps its exercise: what it was done with is what it was.
+            ExerciseCard(draft.exercise, onChange = if (editing) null else ({ picking = true }))
             DraftLoad(state, actions)
-            MeasurePicker(draft, emom = kind == LogKind.Emom, state.otherSide, actions)
+            MeasurePicker(draft, emom = kind == LogKind.Emom, state.otherSide, actions, timing = !editing)
             if (kind == LogKind.Emom) EmomMinutes(draft, actions)
-            if (draft.exercise.sided(draft.doubled)) {
-                GroupLabel(
-                    stringResource(if (kind == LogKind.Set) Res.string.log_side else Res.string.log_first_side),
-                )
-                ChoiceRow(Side.entries, draft.side, {
-                    sideName(it)
-                }, { side -> actions.onDraft { it.copy(side = side) } })
-            }
-            AccentButton(
-                stringResource(if (kind == LogKind.Set) Res.string.session_log else Res.string.emom_start),
-                onClick = {
-                    if (kind == LogKind.Set) actions.onLog() else actions.onStartEmom()
-                    hide()
-                },
-                modifier = Modifier.fillMaxWidth().padding(top = Spacing.space16, bottom = Spacing.space8),
-            )
+            if (draft.exercise.sided(draft.doubled)) SidePicker(draft, first = kind == LogKind.Emom, actions)
+            SheetAction(kind, editing, actions, hide)
         }
     }
+}
+
+/** The side of a one-sided exercise: the set's, or an EMOM's [first]. */
+@Composable
+private fun SidePicker(draft: SetDraft, first: Boolean, actions: SessionActions) {
+    GroupLabel(stringResource(if (first) Res.string.log_first_side else Res.string.log_side))
+    ChoiceRow(Side.entries, draft.side, { sideName(it) }, { side -> actions.onDraft { it.copy(side = side) } })
+}
+
+/** What the sheet does last: Save set for a set logged, Log set, or Start EMOM; then it closes. */
+@Composable
+private fun SheetAction(kind: LogKind, editing: Boolean, actions: SessionActions, hide: () -> Unit) {
+    AccentButton(
+        stringResource(
+            when {
+                editing -> Res.string.log_edit_save
+                kind == LogKind.Set -> Res.string.session_log
+                else -> Res.string.emom_start
+            },
+        ),
+        onClick = {
+            when {
+                editing -> actions.onSaveEdit()
+                kind == LogKind.Set -> actions.onLog()
+                else -> actions.onStartEmom()
+            }
+            hide()
+        },
+        modifier = Modifier.fillMaxWidth().padding(top = Spacing.space16, bottom = Spacing.space8),
+    )
 }
 
 /** The exercise the set is of, its facts under its name, and Change, with [onChange], to pick another. */
@@ -196,7 +218,13 @@ internal fun ExerciseCard(exercise: Exercise, onChange: (() -> Unit)?) {
  * Time it to count it down; after a one-sided hold's first side is timed, the [otherSide] for the same length.
  */
 @Composable
-private fun MeasurePicker(draft: SetDraft, emom: Boolean, otherSide: Side?, actions: SessionActions) {
+private fun MeasurePicker(
+    draft: SetDraft,
+    emom: Boolean,
+    otherSide: Side?,
+    actions: SessionActions,
+    timing: Boolean = true,
+) {
     if (draft.held) {
         // One column: the length, then Time it under it (beside the steppers it squeezed the clock onto two
         // lines on a phone), then the other side when there is one.
@@ -212,8 +240,10 @@ private fun MeasurePicker(draft: SetDraft, emom: Boolean, otherSide: Side?, acti
                     actions.onDraft { it.copy(seconds = it.seconds + step * SetDraft.SECONDS_STEP) }
                 },
             )
-            SecondaryButton(stringResource(Res.string.hold_time_it), actions.onTimeHold, Modifier.fillMaxWidth())
-            otherSide?.let { side ->
+            if (timing) {
+                SecondaryButton(stringResource(Res.string.hold_time_it), actions.onTimeHold, Modifier.fillMaxWidth())
+            }
+            otherSide?.takeIf { timing }?.let { side ->
                 AccentButton(
                     stringResource(Res.string.hold_other_side, sideName(side)),
                     actions.onTimeHold,

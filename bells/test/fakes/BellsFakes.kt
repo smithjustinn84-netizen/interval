@@ -64,6 +64,8 @@ class FakeSessionDao : SessionDao {
 
     override suspend fun deleteSet(id: Long) = sets.update { all -> all.filterNot { it.id == id } }
 
+    override suspend fun update(set: SetEntity) = sets.update { all -> all.map { if (it.id == set.id) set else it } }
+
     override suspend fun setPlan(uid: String, plan: String?) = sessions.update { all ->
         all.map { if (it.uid == uid) it.copy(plan = plan) else it }
     }

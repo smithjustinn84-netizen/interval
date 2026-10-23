@@ -239,6 +239,9 @@
     <string name="exercise_archived_note">Archived: the Log sheet doesn’t offer it.</string>
 
     <string name="log_title">Add to the session</string>
+    <string name="log_edit_title">Change the set</string>
+    <string name="log_edit_save">Save set</string>
+    <string name="session_edit_set_cd">Change %1$s</string>
     <string name="log_kind_set">A set</string>
     <string name="log_kind_emom">An EMOM</string>
     <string name="log_reps_each_minute">Reps each minute</string>

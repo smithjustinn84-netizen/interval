@@ -190,6 +190,8 @@ data class SessionUiState(
     /** The side to time next, for the same length, after the first side of a one-sided hold. */
     val otherSide: Side? = null,
     val finished: Finished? = null,
+    /** A set logged, open on the Log sheet to change: the sheet's draft is it until saved or closed. */
+    val editing: SetLog? = null,
     /** What the sheet's picker offers, the ones done lately first, and how it is narrowed. */
     val library: LibraryList = LibraryList(offeredExercises(emptyList())),
 )
@@ -221,19 +223,24 @@ class SessionViewModel(
         }
     }
 
-    private val runs = combine(emom, holds.state, ::Pair)
+    private val editing = MutableStateFlow<SetLog?>(null)
+
+    /** The sheet's draft for a new set, put aside while a set logged is changed. */
+    private var freeDraft: SetDraft? = null
+
+    private val runs = combine(emom, holds.state, editing, ::Triple)
 
     private val gear = combine(repository.bells, repository.bands, ::Pair)
 
     private val view = combine(draft, finished, runs, repository.customExercises, filters.filters) {
             draft,
             finished,
-            (emom, timing),
+            (emom, timing, changing),
             made,
             narrowed,
         ->
         // The sheet never offers an archived exercise, whatever the library shows.
-        View(draft, finished, emom, timing, offeredExercises(made), narrowed.copy(showArchived = false))
+        View(draft, finished, emom, timing, offeredExercises(made), narrowed.copy(showArchived = false), changing)
     }
 
     val state: StateFlow<SessionUiState> =
@@ -270,6 +277,7 @@ class SessionViewModel(
                     ?.takeIf { it.exercise == chosen.draft.exercise && it.side == chosen.draft.side }
                     ?.side,
                 finished = chosen.finished,
+                editing = chosen.editing,
                 library = LibraryList(
                     chosen.exercises,
                     recentExercises(
@@ -444,6 +452,54 @@ class SessionViewModel(
         repository.removeSet(id)
     }
 
+    /** Opens set [id] on the sheet to change: the draft becomes it, the one for a new set put aside. */
+    fun editSet(id: Long) {
+        val set = repository.active.value?.sets?.firstOrNull { it.id == id } ?: return
+        if (editing.value == null) freeDraft = draft.value
+        editing.value = set
+        draft.update { d ->
+            d.copy(
+                exercise = set.exercise,
+                bellKg = if (set.equipment == Equipment.Kettlebell) set.bellKg else d.bellKg,
+                addedKg = if (set.equipment == Equipment.Bodyweight) set.bellKg else d.addedKg,
+                reps = set.reps.coerceAtLeast(1),
+                side = set.side ?: d.side,
+                double = set.double,
+                seconds = set.seconds ?: d.seconds,
+                band = set.band ?: d.band,
+            )
+        }
+    }
+
+    /** Saves the set being changed as the sheet's draft now has it. */
+    fun saveEdit() {
+        val set = editing.value ?: return
+        val d = draft.value
+        repository.updateSet(
+            set.copy(
+                bellKg = d.loadKg,
+                reps = if (d.held) 0 else d.reps,
+                side = d.side,
+                double = d.doubled,
+                seconds = d.seconds.takeIf { d.held },
+                band = d.band.takeIf { d.exercise.equipment == Equipment.Band },
+            ),
+        )
+        endEdit()
+    }
+
+    /** Leaves the set being changed as it was; the draft for a new set comes back. */
+    fun cancelEdit() {
+        endEdit()
+    }
+
+    private fun endEdit() {
+        if (editing.value == null) return
+        editing.value = null
+        freeDraft?.let { draft.value = it }
+        freeDraft = null
+    }
+
     /** Puts back a set just removed. */
     fun restoreSet(set: SetLog) {
         repository.restoreSet(set)
@@ -568,6 +624,7 @@ class SessionViewModel(
         val timing: HoldTiming,
         val exercises: List<Exercise>,
         val filters: ExerciseFilters,
+        val editing: SetLog?,
     )
 
     private companion object {

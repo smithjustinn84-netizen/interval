@@ -306,6 +306,28 @@ class BellsRepository(
         }
     }
 
+    /**
+     * Changes the logged set [set.id] to [set]: its load, reps or seconds and side. It keeps its session and when
+     * it was logged; a held exercise keeps seconds and a band one its band, each dropped from any other.
+     */
+    fun updateSet(set: SetLog) {
+        persist {
+            val row = sessionDao.allSets().firstOrNull { it.id == set.id } ?: return@persist
+            val exercise = set.exercise
+            val doubled = exercise.doubled(set.double)
+            sessionDao.update(
+                row.copy(
+                    bellKg = set.bellKg,
+                    reps = set.reps,
+                    side = set.side.takeIf { exercise.sided(doubled) }?.name,
+                    doubled = doubled,
+                    seconds = set.seconds.takeIf { exercise.measure == Measure.Time },
+                    band = set.band.takeIf { exercise.equipment == Equipment.Band }?.id,
+                ),
+            )
+        }
+    }
+
     fun removeSet(id: Long) {
         persist { sessionDao.deleteSet(id) }
     }

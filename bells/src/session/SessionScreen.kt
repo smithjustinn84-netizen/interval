@@ -1,6 +1,7 @@
 package dev.justinsmith.bells.session
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -57,6 +58,7 @@ import dev.justinsmith.bells.resources.next_title
 import dev.justinsmith.bells.resources.session_discard
 import dev.justinsmith.bells.resources.session_discard_text
 import dev.justinsmith.bells.resources.session_discard_title
+import dev.justinsmith.bells.resources.session_edit_set_cd
 import dev.justinsmith.bells.resources.session_empty
 import dev.justinsmith.bells.resources.session_finish
 import dev.justinsmith.bells.resources.session_leave
@@ -142,6 +144,9 @@ fun SessionRoute(onExit: () -> Unit, onNewExercise: (name: String) -> Unit = {})
             onCancelHold = viewModel.holds::cancel,
             onRemoveSet = viewModel::removeSet,
             onRestoreSet = viewModel::restoreSet,
+            onEditSet = viewModel::editSet,
+            onSaveEdit = viewModel::saveEdit,
+            onCancelEdit = viewModel::cancelEdit,
             onChangeBlock = viewModel::changeBlock,
             onSwapBlock = viewModel::swapBlock,
             onSkipBlock = viewModel::skipBlock,
@@ -206,6 +211,10 @@ data class SessionActions(
     val onCancelHold: () -> Unit = {},
     val onRemoveSet: (Long) -> Unit = {},
     val onRestoreSet: (SetLog) -> Unit = {},
+    /** A set logged opened on the sheet to change, then saved or left as it was. */
+    val onEditSet: (Long) -> Unit = {},
+    val onSaveEdit: () -> Unit = {},
+    val onCancelEdit: () -> Unit = {},
     /** Today's plan: block [Int] changed, given another exercise, skipped, or brought back. */
     val onChangeBlock: (Int, (Block) -> Block) -> Unit = { _, _ -> },
     val onSwapBlock: (Int, Exercise) -> Unit = { _, _ -> },
@@ -257,9 +266,9 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
                     StatTile(stringResource(Res.string.session_since_last), it, Modifier.fillMaxWidth())
                 }
                 UpNextCard(state, actions, onChange = { changing = it }, onPlan = { planning = true })
-                LoggedSets(state, onRemove = { set ->
-                    removed = set
-                    actions.onRemoveSet(set.id)
+                LoggedSets(state, onRemove = { removed = it.also { set -> actions.onRemoveSet(set.id) } }, onEdit = {
+                    actions.onEditSet(it.id)
+                    logging = true
                 })
             }
             removed?.let { set ->
@@ -300,7 +309,7 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
 
 /** The sets logged so far, by lift; before the first, and with no plan, how to log one. */
 @Composable
-private fun LoggedSets(state: SessionUiState, onRemove: (SetLog) -> Unit) {
+private fun LoggedSets(state: SessionUiState, onRemove: (SetLog) -> Unit, onEdit: (SetLog) -> Unit) {
     val sets = state.session?.sets.orEmpty()
     if (sets.isEmpty() && state.upNext == null) {
         Text(
@@ -315,17 +324,23 @@ private fun LoggedSets(state: SessionUiState, onRemove: (SetLog) -> Unit) {
         ListCard {
             done.forEachIndexed { i, set ->
                 if (i > 0) RowDivider()
-                SetRow(set, onRemove = { onRemove(set) })
+                SetRow(set, onRemove = { onRemove(set) }, onEdit = { onEdit(set) })
             }
         }
     }
 }
 
+/** A set logged: a tap opens it to change, × removes it. */
 @Composable
-private fun SetRow(set: SetLog, onRemove: () -> Unit) {
+private fun SetRow(set: SetLog, onRemove: () -> Unit, onEdit: () -> Unit) {
     val line = setLine(set)
+    val edit = stringResource(Res.string.session_edit_set_cd, line)
     Row(
-        Modifier.fillMaxWidth().height(Sizes.listRow).padding(start = Spacing.space16, end = Spacing.space4),
+        Modifier
+            .fillMaxWidth()
+            .height(Sizes.listRow)
+            .clickable(onClickLabel = edit, onClick = onEdit)
+            .padding(start = Spacing.space16, end = Spacing.space4),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(line, style = IntervalTheme.type.label, color = IntervalTheme.palette.text, modifier = Modifier.weight(1f))
