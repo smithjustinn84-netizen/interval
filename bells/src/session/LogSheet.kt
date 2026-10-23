@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -80,7 +79,6 @@ import dev.justinsmith.interval.ui.RepeatButton
 import dev.justinsmith.interval.ui.RollingText
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.SegmentedPicker
-import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ToggleRow
 import org.jetbrains.compose.resources.stringResource
@@ -209,29 +207,28 @@ private fun ExerciseCard(exercise: Exercise, onChange: () -> Unit) {
 @Composable
 private fun MeasurePicker(draft: SetDraft, emom: Boolean, otherSide: Side?, actions: SessionActions) {
     if (draft.held) {
-        GroupLabel(stringResource(Res.string.log_held))
-        Stepper(
-            formatClock(draft.seconds),
-            fewer = stringResource(Res.string.log_less_time),
-            more = stringResource(Res.string.log_more_time),
-            canLower = draft.seconds > SetDraft.SECONDS_STEP,
-            canRaise = draft.seconds < SetDraft.MAX_SECONDS,
-            onStep = { step ->
-                actions.onDraft { it.copy(seconds = it.seconds + step * SetDraft.SECONDS_STEP) }
-            },
-        ) {
-            SecondaryButton(
-                stringResource(Res.string.hold_time_it),
-                actions.onTimeHold,
-                Modifier.widthIn(min = Sizes.pillWidth),
+        // One column: the length, then Time it under it (beside the steppers it squeezed the clock onto two
+        // lines on a phone), then the other side when there is one.
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+            GroupLabel(stringResource(Res.string.log_held))
+            Stepper(
+                formatClock(draft.seconds),
+                fewer = stringResource(Res.string.log_less_time),
+                more = stringResource(Res.string.log_more_time),
+                canLower = draft.seconds > SetDraft.SECONDS_STEP,
+                canRaise = draft.seconds < SetDraft.MAX_SECONDS,
+                onStep = { step ->
+                    actions.onDraft { it.copy(seconds = it.seconds + step * SetDraft.SECONDS_STEP) }
+                },
             )
-        }
-        otherSide?.let { side ->
-            AccentButton(
-                stringResource(Res.string.hold_other_side, sideName(side)),
-                actions.onTimeHold,
-                Modifier.fillMaxWidth().padding(top = Spacing.space8),
-            )
+            SecondaryButton(stringResource(Res.string.hold_time_it), actions.onTimeHold, Modifier.fillMaxWidth())
+            otherSide?.let { side ->
+                AccentButton(
+                    stringResource(Res.string.hold_other_side, sideName(side)),
+                    actions.onTimeHold,
+                    Modifier.fillMaxWidth(),
+                )
+            }
         }
     } else {
         GroupLabel(
@@ -311,7 +308,6 @@ private fun Stepper(
     canLower: Boolean,
     canRaise: Boolean,
     onStep: (Int) -> Unit,
-    trailing: @Composable () -> Unit = {},
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -325,7 +321,6 @@ private fun Stepper(
         )
         RepeatButton("−", fewer, enabled = canLower, onStep = { onStep(-1) })
         RepeatButton("+", more, enabled = canRaise, onStep = { onStep(1) })
-        trailing()
     }
 }
 

@@ -260,7 +260,7 @@
     <string name="log_side">Side</string>
     <string name="log_fewer_reps">Fewer reps</string>
     <string name="log_more_reps">More reps</string>
-    <string name="log_no_bells">Add the bells you own under Your bells on Lift; until then every size shows.</string>
+    <string name="log_no_bells">Add the bells you own under Your equipment on Lift; until then every size shows.</string>
 
     <!-- Summary -->
     <string name="summary_done">Done</string>
