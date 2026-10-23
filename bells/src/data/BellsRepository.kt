@@ -12,10 +12,12 @@ import dev.justinsmith.bells.domain.ExerciseDraft
 import dev.justinsmith.bells.domain.Focus
 import dev.justinsmith.bells.domain.LiftSession
 import dev.justinsmith.bells.domain.Measure
+import dev.justinsmith.bells.domain.PlanChanges
 import dev.justinsmith.bells.domain.Program
 import dev.justinsmith.bells.domain.ProgramDay
 import dev.justinsmith.bells.domain.ProgramDraft
 import dev.justinsmith.bells.domain.ProgramKey
+import dev.justinsmith.bells.domain.SaveScope
 import dev.justinsmith.bells.domain.SessionPlan
 import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.Side
@@ -229,6 +231,23 @@ class BellsRepository(
         )
         persist { customProgramDao.upsert(row) }
         return id
+    }
+
+    /**
+     * Keeps [changes] in their program, as far as [scope] reaches: in place, for one the user made, whose place
+     * stays; for a built-in, in a copy named [copyName], which is followed from the day after while the built-in
+     * is and goes on. Returns the program kept in.
+     */
+    fun saveChanges(changes: PlanChanges, scope: SaveScope, copyName: String): ProgramKey {
+        val program = changes.program
+        val key = program.key
+        if (key is ProgramKey.Custom) {
+            saveProgram(key.uid, changes.draft(scope, program.name.orEmpty()))
+            return key
+        }
+        val copy = ProgramKey.Custom(saveProgram(null, changes.draft(scope, copyName)))
+        if (changes.goesOn && _following.value?.key == key) follow(copy, daysDone = changes.dayNumber)
+        return copy
     }
 
     /** Deletes the program [uid] made, and stops following it if it is the one followed. */

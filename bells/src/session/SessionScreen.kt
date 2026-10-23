@@ -105,7 +105,7 @@ fun SessionRoute(onExit: () -> Unit, onNewExercise: (name: String) -> Unit = {})
     val state by viewModel.state.collectAsStateWithLifecycle()
     val finished = state.finished
     if (finished != null) {
-        SummaryScreen(finished, onDone = onExit)
+        SummaryScreen(finished, onDone = onExit, onKeep = viewModel::keepChanges)
         return
     }
     val emom = state.emom

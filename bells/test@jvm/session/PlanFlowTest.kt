@@ -86,4 +86,43 @@ class PlanFlowTest {
         waitForText("Changed")
         onNodeWithText("2 of 3 done").assertExists()
     }
+
+    @Test
+    fun `a change kept on finishing goes in a copy followed from the next day`() = bellsAppTest(followed()) { app ->
+        startDay()
+        onAllNodesWithText("Change").onFirst().performScrollTo().performClick()
+        waitForText("Exercise")
+        onNodeWithText("28").performScrollTo().performClick()
+        onNodeWithText("Done").performScrollTo().performClick()
+        waitForText("28 kg × 10")
+        onNodeWithText("Log it").performScrollTo().performClick()
+        waitForText("Up next · 2 of 9 sets")
+        onNodeWithText("Finish").performClick()
+        waitForText("Keep today's changes?")
+        onNodeWithText("3 × 10 → 3 × 10 · 28 kg").assertExists()
+        onNodeWithText("Every day").performScrollTo().performClick()
+        onNodeWithText("Save as Goblet squat and row (yours)").performScrollTo().performClick()
+        waitForText("Saved as Goblet squat and row (yours). You follow it from day 2.")
+        val saved = app.storage.programs.rows.value.single()
+        assertEquals("Goblet squat and row (yours)", saved.name)
+        assertTrue(saved.days.contains("\"kg\":28.0"))
+        assertEquals(1, app.storage.following.row.value?.daysBefore)
+        onAllNodesWithText("Done").onLast().performClick()
+        waitForText("Start day 2")
+        onNodeWithText("Goblet squat and row (yours)", substring = true).assertExists()
+    }
+
+    @Test
+    fun `today only keeps the program as it was`() = bellsAppTest(followed()) { app ->
+        startDay()
+        onNodeWithText("Skip").performScrollTo().performClick()
+        waitForText("Up next · 1 of 6 sets")
+        onNodeWithText("Log it").performScrollTo().performClick()
+        waitForText("Up next · 2 of 6 sets")
+        onNodeWithText("Finish").performClick()
+        waitForText("Done")
+        // A skip is for the day it was skipped: nothing to keep.
+        onNodeWithText("Keep today's changes?").assertDoesNotExist()
+        assertTrue(app.storage.programs.rows.value.isEmpty())
+    }
 }

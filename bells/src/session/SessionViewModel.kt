@@ -19,8 +19,11 @@ import dev.justinsmith.bells.domain.LiftSession
 import dev.justinsmith.bells.domain.Measure
 import dev.justinsmith.bells.domain.PersonalRecord
 import dev.justinsmith.bells.domain.PlanBlock
+import dev.justinsmith.bells.domain.PlanChanges
 import dev.justinsmith.bells.domain.PlannedSet
 import dev.justinsmith.bells.domain.ProgramDay
+import dev.justinsmith.bells.domain.ProgramKey
+import dev.justinsmith.bells.domain.SaveScope
 import dev.justinsmith.bells.domain.SessionPlan
 import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.Side
@@ -31,6 +34,7 @@ import dev.justinsmith.bells.domain.offeredBands
 import dev.justinsmith.bells.domain.offeredExercises
 import dev.justinsmith.bells.domain.other
 import dev.justinsmith.bells.domain.ownedEquipment
+import dev.justinsmith.bells.domain.planChanges
 import dev.justinsmith.bells.domain.plannedDone
 import dev.justinsmith.bells.domain.recentExercises
 import dev.justinsmith.bells.domain.standardBells
@@ -96,8 +100,20 @@ data class SetDraft(
     }
 }
 
-/** A session just finished, for the summary: it as saved and the records it set. */
-data class Finished(val session: LiftSession, val records: List<PersonalRecord>)
+/**
+ * A session just finished, for the summary: it as saved and the records it set; for a program day changed,
+ * the [changes] to offer to keep, the names the user's programs already have, and once kept, the program they
+ * were [kept] in.
+ */
+data class Finished(
+    val session: LiftSession,
+    val records: List<PersonalRecord>,
+    val changes: PlanChanges? = null,
+    val taken: Set<String> = emptySet(),
+    val kept: ProgramKey? = null,
+    /** The user's bands, to name a band a change plans by. */
+    val bands: List<Band> = emptyList(),
+)
 
 /**
  * The plan's next set: which of [total] it is, with its load (the bell, the weight added to bodyweight, or none,
@@ -444,8 +460,25 @@ class SessionViewModel(
         }
         val before = repository.sessions.value.flatMap { it.sets }
         val done = session.copy(finishedAtEpochMillis = clock.nowMillis(), title = title)
-        finished.value = Finished(done, newRecords(before, done))
+        // Taken now: once the session is saved, the program day moves on to the next.
+        val changes = repository.programDay.value
+            ?.takeIf { session.program != null && it.program.key == session.program }
+            ?.copy(plan = session.plan)
+            ?.let(::planChanges)
+        val taken = repository.customPrograms.value.mapNotNull { it.name }.toSet()
+        finished.value = Finished(done, newRecords(before, done), changes, taken, bands = repository.bands.value)
         repository.finishSession(title)
+    }
+
+    /**
+     * Keeps the finished session's changes in their program, as far as [scope] reaches, or in a copy named
+     * [copyName]: see [BellsRepository.saveChanges].
+     */
+    fun keepChanges(scope: SaveScope, copyName: String) {
+        val done = finished.value ?: return
+        val changes = done.changes ?: return
+        if (done.kept != null) return
+        finished.value = done.copy(kept = repository.saveChanges(changes, scope, copyName))
     }
 
     fun discard() {

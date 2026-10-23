@@ -13,8 +13,10 @@ import dev.justinsmith.bells.domain.Measure
 import dev.justinsmith.bells.domain.ProgramDraft
 import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.domain.ProgramKey
+import dev.justinsmith.bells.domain.SaveScope
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.domain.UnknownExercise
+import dev.justinsmith.bells.domain.planChanges
 import dev.justinsmith.bells.domain.program
 import dev.justinsmith.bells.fakes.FakeBandDao
 import dev.justinsmith.bells.fakes.FakeBellDao
@@ -310,5 +312,62 @@ class BellsRepositoryTest {
         programDao.rows.value = listOf(CustomProgramEntity("abc", "Mixed", 3, 4, days, 0))
         val made = repository.customPrograms.value.single()
         assertEquals(listOf(listOf(Block(BuiltInExercise.Press, rounds = 3, reps = 5))), made.days)
+    }
+
+    @Test
+    fun `a session plan changed is kept with the session`() = runTest {
+        repository.follow(ProgramKey.BuiltIn(ProgramId.GobletSquatRow))
+        repository.startSession(ProgramKey.BuiltIn(ProgramId.GobletSquatRow))
+        val plan = repository.programDay.value!!.today.change(0) { it.copy(kg = 28.0) }
+        repository.setSessionPlan(plan)
+        assertEquals(plan, repository.active.value?.plan)
+        assertEquals(
+            28.0,
+            sessionDao.sessions.value.single().plan?.let {
+                decodePlan(it, emptyList())
+            }?.blocks?.first()?.block?.kg,
+        )
+    }
+
+    @Test
+    fun `changes to a built-in go in a copy followed from the day after`() = runTest {
+        val key = ProgramKey.BuiltIn(ProgramId.GobletSquatRow)
+        repository.follow(key)
+        finishDayOf(key)
+        val day = repository.programDay.value!!.copy(number = 1)
+        val changes = planChanges(day.copy(plan = day.today.change(0) { it.copy(kg = 28.0) }))!!
+        val copy = repository.saveChanges(changes, SaveScope.ThisDay, "Goblet squat and row (yours)")
+        assertTrue(copy is ProgramKey.Custom)
+        assertEquals(copy, repository.following.value?.key)
+        assertEquals(2, repository.programDay.value?.number)
+        assertEquals(28.0, repository.following.value?.days?.single()?.first()?.kg)
+        assertEquals("Goblet squat and row (yours)", repository.following.value?.name)
+    }
+
+    @Test
+    fun `changes to a program made are kept in it and its place stays`() = runTest {
+        val uid = repository.saveProgram(null, pressAndSwings)
+        val key = ProgramKey.Custom(uid)
+        repository.follow(key)
+        finishDayOf(key)
+        val program = repository.customPrograms.value.single()
+        val day = program.dayAfter(0)!!
+        val changes = planChanges(day.copy(plan = day.today.change(0) { it.copy(rounds = 3) }))!!
+        assertEquals(key, repository.saveChanges(changes, SaveScope.ThisDay, "unused"))
+        assertEquals(1, repository.customPrograms.value.size)
+        assertEquals(3, repository.customPrograms.value.single().days.first().single().rounds)
+        assertEquals(2, repository.programDay.value?.number)
+    }
+
+    @Test
+    fun `changes on the last day of a built-in are kept in a copy not followed`() = runTest {
+        val key = ProgramKey.BuiltIn(ProgramId.GobletSquatRow)
+        repository.follow(key)
+        val last = program(ProgramId.GobletSquatRow).let { it.dayAfter(it.totalDays - 1)!! }
+        val changes = planChanges(last.copy(plan = last.today.change(1) { it.copy(reps = 12) }))!!
+        assertFalse(changes.goesOn)
+        repository.saveChanges(changes, SaveScope.ThisDay, "Mine")
+        assertEquals(key, repository.following.value?.key)
+        assertEquals("Mine", repository.customPrograms.value.single().name)
     }
 }
