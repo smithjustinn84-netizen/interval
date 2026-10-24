@@ -7,6 +7,12 @@ import androidx.datastore.preferences.core.Preferences
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.deferredStorageScope
 import dev.justinsmith.interval.fakes.saveCurrentAsPreset
+import dev.justinsmith.interval.model.AppSettings
+import dev.justinsmith.interval.model.BodySettings
+import dev.justinsmith.interval.model.CueSettings
+import dev.justinsmith.interval.model.HistoryEntry
+import dev.justinsmith.interval.model.PlanSchedule
+import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.Effort

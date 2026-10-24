@@ -1,6 +1,6 @@
 package dev.justinsmith.interval.plan
 
-import dev.justinsmith.interval.data.AppSettings
+import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset

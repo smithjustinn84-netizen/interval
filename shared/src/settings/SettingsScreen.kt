@@ -18,9 +18,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.justinsmith.interval.data.AppSettings
-import dev.justinsmith.interval.data.CueSettings
-import dev.justinsmith.interval.data.ThemeMode
+import dev.justinsmith.interval.model.AppSettings
+import dev.justinsmith.interval.model.CueSettings
+import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.effort_easy
 import dev.justinsmith.interval.resources.effort_hard

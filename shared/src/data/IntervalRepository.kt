@@ -8,19 +8,19 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import co.touchlab.kermit.Logger
+import dev.justinsmith.interval.model.AppSettings
+import dev.justinsmith.interval.model.CueSettings
+import dev.justinsmith.interval.model.HistoryEntry
+import dev.justinsmith.interval.model.PlanSchedule
+import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.storage.SerialWriter
 import dev.justinsmith.interval.storage.orEmptyOnError
-import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
-import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
-import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.interval.timer.builtInPresets
-import dev.justinsmith.interval.timer.estimateCalories
 import dev.justinsmith.interval.timer.matching
-import dev.justinsmith.interval.timer.plannedWorkSeconds
 import dev.justinsmith.interval.timer.storedName
 import dev.justinsmith.interval.timer.withPreset
 import kotlinx.coroutines.CompletableDeferred
@@ -34,78 +34,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
-
-/** Which feedback plays during a workout. */
-data class CueSettings(
-    val sound: Boolean = true,
-    val voice: Boolean = true,
-    val halfway: Boolean = true,
-    val vibrate: Boolean = true,
-)
-
-/** How the app picks light or dark. */
-enum class ThemeMode { System, Light, Dark }
-
-/**
- * What the calorie estimates are worked out from. [weightKg] starts at [WeightUnit.Kg]'s default, so the
- * estimates show from the first run; null means the user turned them off.
- */
-data class BodySettings(
-    val weightKg: Double? = WeightUnit.Kg.default.toDouble(),
-    val unit: WeightUnit = WeightUnit.Kg,
-    val effort: Effort = Effort.Hard,
-) {
-    /**
-     * The calories of [workSeconds] of [activity] at [effort] and [otherSeconds] recovering, or null
-     * without a weight.
-     */
-    fun calories(workSeconds: Int, otherSeconds: Int, activity: Activity): Int? =
-        weightKg?.let { estimateCalories(workSeconds, otherSeconds, it, effort, activity) }
-
-    /** What [config] will burn if it runs as planned, get ready included; null without a weight. */
-    fun plannedCalories(config: IntervalConfig): Int? {
-        val work = config.rounds * config.workSeconds
-        return calories(work, config.totalSeconds - work, config.activity)
-    }
-}
-
-/** App-wide preferences that are not part of a workout's shape. */
-data class AppSettings(
-    val theme: ThemeMode = ThemeMode.Dark,
-    val keepScreenOn: Boolean = true,
-    val body: BodySettings = BodySettings(),
-    /** Workouts a week the user aims for, within [WEEKLY_GOAL_RANGE]; null until they set one. */
-    val weeklyGoal: Int? = null,
-) {
-    companion object {
-        val WEEKLY_GOAL_RANGE = 1..14
-    }
-}
-
-/**
- * A finished workout that ran for [elapsedSeconds], pauses excluded, to the end or [endedEarly]. Of that,
- * [workActiveSeconds] were work; null for one recorded before work time was kept. [id] is the one it is
- * stored under, null until it has been.
- */
-data class HistoryEntry(
-    val finishedAtEpochMillis: Long,
-    val config: IntervalConfig,
-    val elapsedSeconds: Int,
-    val endedEarly: Boolean,
-    val workActiveSeconds: Int? = null,
-    val id: Long? = null,
-) {
-    /** How much of [elapsedSeconds] was work. An older entry's is estimated from its plan. */
-    val workDoneSeconds: Int
-        get() {
-            val work = workActiveSeconds ?: config.plannedWorkSeconds(elapsedSeconds, endedEarly)
-            return work.coerceAtMost(elapsedSeconds)
-        }
-
-    /** The calories it burned by [body], or null without a weight. */
-    fun calories(body: BodySettings): Int? =
-        body.calories(workDoneSeconds, elapsedSeconds - workDoneSeconds, config.activity)
-}
 
 /**
  * The app's saved state: the current setup, cue toggles, app settings, custom presets, workout history and

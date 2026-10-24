@@ -2,10 +2,10 @@
 
 package dev.justinsmith.interval.home
 
-import dev.justinsmith.interval.data.BodySettings
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.MainDispatcherTest
 import dev.justinsmith.interval.fakes.saveCurrentAsPreset
+import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.Effort

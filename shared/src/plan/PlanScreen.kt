@@ -31,8 +31,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.justinsmith.interval.data.AppSettings
 import dev.justinsmith.interval.history.dayHeading
+import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.common_joined
 import dev.justinsmith.interval.resources.history_streak

@@ -18,10 +18,10 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import dev.justinsmith.interval.data.AppSettings
-import dev.justinsmith.interval.data.BodySettings
-import dev.justinsmith.interval.data.CueSettings
-import dev.justinsmith.interval.data.ThemeMode
+import dev.justinsmith.interval.model.AppSettings
+import dev.justinsmith.interval.model.BodySettings
+import dev.justinsmith.interval.model.CueSettings
+import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.interval.ui.Window

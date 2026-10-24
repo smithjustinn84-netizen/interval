@@ -17,6 +17,9 @@ import androidx.room.migration.Migration
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.execSQL
+import dev.justinsmith.interval.model.HistoryEntry
+import dev.justinsmith.interval.model.PlanSchedule
+import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset

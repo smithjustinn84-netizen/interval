@@ -3,8 +3,6 @@
 package dev.justinsmith.interval.workout
 
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.interval.data.BodySettings
-import dev.justinsmith.interval.data.CueSettings
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.fakes.FakeLiftStorage
 import dev.justinsmith.interval.fakes.FakeStorage
@@ -12,6 +10,8 @@ import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.MainDispatcherTest
 import dev.justinsmith.interval.fakes.RecordingCuePlayer
 import dev.justinsmith.interval.fakes.deferredStorageScope
+import dev.justinsmith.interval.model.BodySettings
+import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.platform.WallClock

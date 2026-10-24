@@ -1,4 +1,4 @@
-package dev.justinsmith.interval.data
+package dev.justinsmith.interval.model
 
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.weekdayOf

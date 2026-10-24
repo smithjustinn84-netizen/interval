@@ -2,6 +2,7 @@ package dev.justinsmith.interval.data
 
 import dev.justinsmith.bells.data.IntervalActivity
 import dev.justinsmith.bells.data.IntervalWorkout
+import dev.justinsmith.interval.model.HistoryEntry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow

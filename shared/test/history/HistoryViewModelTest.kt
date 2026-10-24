@@ -5,8 +5,6 @@ package dev.justinsmith.interval.history
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.domain.ProgramKey
-import dev.justinsmith.interval.data.BodySettings
-import dev.justinsmith.interval.data.PlanSchedule
 import dev.justinsmith.interval.fakes.DAY_MILLIS
 import dev.justinsmith.interval.fakes.FakeLiftStorage
 import dev.justinsmith.interval.fakes.FakeStorage
@@ -16,6 +14,8 @@ import dev.justinsmith.interval.fakes.TODAY
 import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.fakes.tabataPreset
+import dev.justinsmith.interval.model.BodySettings
+import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig

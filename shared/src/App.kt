@@ -65,12 +65,12 @@ import dev.justinsmith.bells.today.TodayRoute
 import dev.justinsmith.interval.about.AboutRoute
 import dev.justinsmith.interval.about.LicensesRoute
 import dev.justinsmith.interval.data.IntervalRepository
-import dev.justinsmith.interval.data.ThemeMode
 import dev.justinsmith.interval.di.rememberAppKoin
 import dev.justinsmith.interval.history.HistoryPlaceholder
 import dev.justinsmith.interval.history.HistoryRoute
 import dev.justinsmith.interval.history.WorkoutDetailRoute
 import dev.justinsmith.interval.home.TimerRoute
+import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.nav.About
 import dev.justinsmith.interval.nav.ExerciseEditor
 import dev.justinsmith.interval.nav.ExerciseLibrary

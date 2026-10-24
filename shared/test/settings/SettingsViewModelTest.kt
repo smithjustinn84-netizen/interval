@@ -2,10 +2,10 @@
 
 package dev.justinsmith.interval.settings
 
-import dev.justinsmith.interval.data.ThemeMode
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.MainDispatcherTest
 import dev.justinsmith.interval.fakes.RecordingCuePlayer
+import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.Beep
 import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.Speech

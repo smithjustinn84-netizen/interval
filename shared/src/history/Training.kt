@@ -1,10 +1,10 @@
 package dev.justinsmith.interval.history
 
-import dev.justinsmith.interval.data.BodySettings
-import dev.justinsmith.interval.data.HistoryEntry
-import dev.justinsmith.interval.data.LiftWorkout
-import dev.justinsmith.interval.data.PlanSchedule
-import dev.justinsmith.interval.data.PlannedWorkout
+import dev.justinsmith.interval.model.BodySettings
+import dev.justinsmith.interval.model.HistoryEntry
+import dev.justinsmith.interval.model.LiftWorkout
+import dev.justinsmith.interval.model.PlanSchedule
+import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.monthDaysOf

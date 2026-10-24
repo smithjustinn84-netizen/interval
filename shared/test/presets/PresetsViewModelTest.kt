@@ -2,10 +2,10 @@
 
 package dev.justinsmith.interval.presets
 
-import dev.justinsmith.interval.data.BodySettings
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.MainDispatcherTest
 import dev.justinsmith.interval.fakes.hiitPreset
+import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig

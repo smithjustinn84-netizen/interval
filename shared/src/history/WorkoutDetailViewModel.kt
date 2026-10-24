@@ -2,10 +2,10 @@ package dev.justinsmith.interval.history
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.interval.data.AppSettings
-import dev.justinsmith.interval.data.HistoryEntry
 import dev.justinsmith.interval.data.IntervalRepository
-import dev.justinsmith.interval.data.PlannedWorkout
+import dev.justinsmith.interval.model.AppSettings
+import dev.justinsmith.interval.model.HistoryEntry
+import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.plan.DayChoice
 import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.plan.dayChoices

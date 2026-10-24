@@ -2,8 +2,8 @@ package dev.justinsmith.interval.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.interval.data.AppSettings
 import dev.justinsmith.interval.data.IntervalRepository
+import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig

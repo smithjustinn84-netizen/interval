@@ -1,4 +1,4 @@
-package dev.justinsmith.interval.data
+package dev.justinsmith.interval.model
 
 import dev.justinsmith.bells.domain.LiftSession
 import dev.justinsmith.interval.timer.Activity

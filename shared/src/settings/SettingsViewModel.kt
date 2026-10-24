@@ -2,11 +2,11 @@ package dev.justinsmith.interval.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.interval.data.AppSettings
-import dev.justinsmith.interval.data.BodySettings
-import dev.justinsmith.interval.data.CueSettings
 import dev.justinsmith.interval.data.IntervalRepository
-import dev.justinsmith.interval.data.ThemeMode
+import dev.justinsmith.interval.model.AppSettings
+import dev.justinsmith.interval.model.BodySettings
+import dev.justinsmith.interval.model.CueSettings
+import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.Beep
 import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.Haptic

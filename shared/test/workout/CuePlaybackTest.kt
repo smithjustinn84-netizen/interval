@@ -1,7 +1,7 @@
 package dev.justinsmith.interval.workout
 
-import dev.justinsmith.interval.data.CueSettings
 import dev.justinsmith.interval.fakes.RecordingCuePlayer
+import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.platform.Beep
 import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.Speech

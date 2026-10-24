@@ -9,6 +9,11 @@ import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.execSQL
 import dev.justinsmith.interval.fakes.saveCurrentAsPreset
+import dev.justinsmith.interval.model.AppSettings
+import dev.justinsmith.interval.model.CueSettings
+import dev.justinsmith.interval.model.HistoryEntry
+import dev.justinsmith.interval.model.PlanSchedule
+import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.DATABASE_NAME
 import dev.justinsmith.interval.platform.PREFERENCES_NAME
 import dev.justinsmith.interval.timer.Activity
