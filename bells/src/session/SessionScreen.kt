@@ -201,14 +201,8 @@ private fun sessionActions(
     onSwapBlock = viewModel::swapBlock,
     onSkipBlock = viewModel::skipBlock,
     onUnskipBlock = viewModel::unskipBlock,
-    onFinish = {
-        if (state.session?.sets.isNullOrEmpty()) {
-            viewModel.discard()
-            onExit()
-        } else {
-            viewModel.finish(title)
-        }
-    },
+    // A session with nothing logged is thrown away, and with no summary to show, the page closes.
+    onFinish = { if (!viewModel.finish(title)) onExit() },
     onDiscard = {
         viewModel.discard()
         onExit()

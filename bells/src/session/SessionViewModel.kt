@@ -541,14 +541,17 @@ class SessionViewModel(
         repository.restoreSet(set)
     }
 
-    /** Finishes the session as [title], keeping it here for the summary with the records it set. */
-    fun finish(title: String) {
-        val session = repository.active.value ?: return
+    /**
+     * Finishes the session as [title], keeping it here for the summary with the records it set. One with no
+     * sets has nothing to save and is thrown away instead. True when it was saved, and the summary follows.
+     */
+    fun finish(title: String): Boolean {
+        val session = repository.active.value ?: return false
         emom.value = null
         holds.cancel()
         if (session.sets.isEmpty()) {
             repository.discardSession()
-            return
+            return false
         }
         val before = repository.sessions.value.flatMap { it.sets }
         val done = session.copy(finishedAtEpochMillis = clock.nowMillis(), title = title)
@@ -569,6 +572,7 @@ class SessionViewModel(
             bands = repository.bands.value,
         )
         repository.finishSession(title)
+        return true
     }
 
     /**
