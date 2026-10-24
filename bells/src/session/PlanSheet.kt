@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import dev.justinsmith.bells.domain.Block
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.ExerciseFilters
+import dev.justinsmith.bells.domain.PlanRow
 import dev.justinsmith.bells.domain.SessionPlan
 import dev.justinsmith.bells.library.ExercisePicker
 import dev.justinsmith.bells.programs.BlockChoices

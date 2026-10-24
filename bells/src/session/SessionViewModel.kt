@@ -7,7 +7,6 @@ import dev.justinsmith.bells.data.ExerciseFilterStore
 import dev.justinsmith.bells.data.IntervalActivity
 import dev.justinsmith.bells.domain.Band
 import dev.justinsmith.bells.domain.Block
-import dev.justinsmith.bells.domain.BlockKind
 import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.DEFAULT_BAR_KG
 import dev.justinsmith.bells.domain.DEFAULT_BELL_KG
@@ -22,8 +21,8 @@ import dev.justinsmith.bells.domain.LiftSession
 import dev.justinsmith.bells.domain.MAX_BAR_KG
 import dev.justinsmith.bells.domain.Measure
 import dev.justinsmith.bells.domain.PersonalRecord
-import dev.justinsmith.bells.domain.PlanBlock
 import dev.justinsmith.bells.domain.PlanChanges
+import dev.justinsmith.bells.domain.PlanRow
 import dev.justinsmith.bells.domain.PlannedSet
 import dev.justinsmith.bells.domain.ProgramDay
 import dev.justinsmith.bells.domain.ProgramKey
@@ -34,20 +33,21 @@ import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.domain.bands
 import dev.justinsmith.bells.domain.newRecords
 import dev.justinsmith.bells.domain.nextPlanned
+import dev.justinsmith.bells.domain.nextSet
 import dev.justinsmith.bells.domain.offeredBands
 import dev.justinsmith.bells.domain.offeredExercises
 import dev.justinsmith.bells.domain.other
 import dev.justinsmith.bells.domain.ownedEquipment
 import dev.justinsmith.bells.domain.planChanges
-import dev.justinsmith.bells.domain.plannedDone
+import dev.justinsmith.bells.domain.planRows
+import dev.justinsmith.bells.domain.plannedBand
 import dev.justinsmith.bells.domain.progressions
 import dev.justinsmith.bells.domain.recentExercises
 import dev.justinsmith.bells.domain.recordSetIds
 import dev.justinsmith.bells.domain.setsOldestFirst
 import dev.justinsmith.bells.domain.standardBells
-import dev.justinsmith.bells.domain.suggestedBand
 import dev.justinsmith.bells.domain.suggestedBar
-import dev.justinsmith.bells.domain.suggestedBell
+import dev.justinsmith.bells.domain.suggestedLoad
 import dev.justinsmith.bells.library.LibraryList
 import dev.justinsmith.bells.platform.Beeper
 import dev.justinsmith.interval.platform.TimestampFormatter
@@ -146,17 +146,6 @@ data class UpNext(
     /** Which of the day's blocks it is in, from 0. */
     val block: Int = 0,
 )
-
-/**
- * One of the day's blocks as today's plan has it: [done] of its [total] sets done, and whether the session
- * [changed] it from the program (its load, its count or its exercise).
- */
-data class PlanRow(val entry: PlanBlock, val done: Int, val total: Int, val changed: Boolean) {
-    val block: Block get() = entry.block
-
-    /** Whether something is left to change: not every set done, or skipped and so to bring back. */
-    val open: Boolean get() = entry.skipped || done < total
-}
 
 /**
  * An EMOM under way: its lift, bell (or two, when [double]) and reps, when it started, and the minutes whose
@@ -292,7 +281,7 @@ class SessionViewModel(
                 draft = chosen.draft,
                 upNext = plan?.let { upNext(it, active.sets) },
                 dayDone = plan != null && nextPlanned(plan.plannedSets(), active.sets) == null,
-                plan = plan?.let { planRows(it, active.sets) }.orEmpty(),
+                plan = plan?.planRows(active.sets).orEmpty(),
                 emom = chosen.emom,
                 hold = chosen.timing.run,
                 otherSide = chosen.timing.offer
@@ -444,7 +433,7 @@ class SessionViewModel(
         val active = repository.active.value ?: return null
         val day = repository.programDay.value?.takeIf { active.program != null && it.program.key == active.program }
             ?.copy(plan = active.plan) ?: return null
-        return day.today to planRows(day, active.sets).map { it.done }
+        return day.today to day.planRows(active.sets).map { it.done }
     }
 
     /** Starts the plan's next block as an EMOM, if it is one. */
@@ -633,59 +622,22 @@ class SessionViewModel(
     }
 
     private fun upNext(day: ProgramDay, logged: List<SetLog>): UpNext? {
-        val blocks = day.blockSets()
-        val planned = blocks.flatten()
-        val index = nextPlanned(planned, logged) ?: return null
-        val set = planned[index]
+        val next = day.nextSet(logged) ?: return null
         val history = history(logged)
-        // The block it falls in, to tell an EMOM's first minute from the rest: after a swap, the first
-        // minute of the exercise swapped in.
-        var start = 0
-        val blockIndex = blocks.indexOfFirst { b -> (index < start + b.size).also { if (!it) start += b.size } }
-        val entry = day.today.blocks[blockIndex]
-        val emomMinutes = if (entry.block.kind == BlockKind.Emom && index == start + entry.firstOfBlock) {
-            blocks[blockIndex].size - entry.firstOfBlock
-        } else {
-            null
-        }
-        // The plan's load, when it names one; else what was used last time. Weight added to bodyweight starts
-        // at none; a band and the mat take no weight. A band the plan names that is archived or gone falls back.
-        val load = when (set.exercise.equipment) {
-            Equipment.Kettlebell ->
-                set.kg ?: suggestedBell(set.exercise, set.double, history, draft.value.bellKg)
-
-            Equipment.Barbell -> set.kg ?: suggestedBar(set.exercise, history, repository.bar.value)
-
-            Equipment.Bodyweight -> set.kg ?: suggestedBell(set.exercise, double = false, history, fallback = 0.0)
-
-            Equipment.Band, Equipment.Mat -> 0.0
-        }
-        val band = if (set.exercise.equipment == Equipment.Band) {
-            val offered = offeredBands(repository.bands.value)
-            offered.firstOrNull { it.id == set.band }
-                ?: suggestedBand(set.exercise, history, offered, draft.value.band)
-        } else {
-            null
-        }
-        return UpNext(set, load, index + 1, planned.size, emomMinutes, band, blockIndex)
+        return UpNext(
+            set = next.set,
+            bellKg = suggestedLoad(next.set, history, repository.bar.value, draft.value.bellKg),
+            number = next.index + 1,
+            total = next.total,
+            emomMinutes = next.emomMinutes,
+            band = plannedBand(next.set, history, offeredBands(repository.bands.value), draft.value.band),
+            block = next.block,
+        )
     }
 
     /** Every set logged, oldest first: those of the sessions finished, then [logged], by default this one's. */
     private fun history(logged: List<SetLog> = repository.active.value?.sets.orEmpty()): List<SetLog> =
         repository.sessions.value.setsOldestFirst() + logged
-
-    /** [day]'s blocks as today's plan has them, with the sets of each [logged] has done. */
-    private fun planRows(day: ProgramDay, logged: List<SetLog>): List<PlanRow> {
-        val blocks = day.blockSets()
-        val done = plannedDone(blocks.flatten(), logged)
-        var start = 0
-        return day.today.blocks.mapIndexed { i, entry ->
-            val size = blocks[i].size
-            val count = done.subList(start, start + size).count { it }
-            start += size
-            PlanRow(entry, count, size, changed = entry.block != day.blocks.getOrNull(i))
-        }
-    }
 
     /** What the screen chose, and the exercises it can choose from. */
     private data class View(
