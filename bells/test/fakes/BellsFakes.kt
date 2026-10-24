@@ -53,6 +53,10 @@ class FakeSessionDao : SessionDao {
 
     override suspend fun allSets() = sets.value.sortedWith(loggedOrder)
 
+    override suspend fun set(id: Long) = sets.value.firstOrNull { it.id == id }
+
+    override suspend fun countSets(uid: String) = sets.value.count { it.sessionUid == uid }
+
     override suspend fun active() = sessions.value.firstOrNull { it.finishedAtEpochMillis == null && !it.deleted }
 
     override suspend fun insert(session: SessionEntity) = sessions.update { it + session }

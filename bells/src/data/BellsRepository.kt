@@ -324,7 +324,7 @@ class BellsRepository(
      */
     fun updateSet(set: SetLog) {
         writer.persist {
-            val row = sessionDao.allSets().firstOrNull { it.id == set.id } ?: return@persist
+            val row = sessionDao.set(set.id) ?: return@persist
             val exercise = set.exercise
             val doubled = exercise.doubled(set.double)
             sessionDao.update(
@@ -370,7 +370,7 @@ class BellsRepository(
     fun finishSession(title: String) {
         writer.persist {
             val active = sessionDao.active() ?: return@persist
-            if (sessionDao.allSets().none { it.sessionUid == active.uid }) {
+            if (sessionDao.countSets(active.uid) == 0) {
                 sessionDao.discard(active.uid)
             } else {
                 sessionDao.finish(active.uid, title, clock.nowMillis())

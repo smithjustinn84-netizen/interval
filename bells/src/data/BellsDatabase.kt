@@ -98,6 +98,13 @@ interface SessionDao {
     @Query("SELECT * FROM lift_set ORDER BY logged_at, id")
     suspend fun allSets(): List<SetEntity>
 
+    @Query("SELECT * FROM lift_set WHERE id = :id")
+    suspend fun set(id: Long): SetEntity?
+
+    /** How many sets session [uid] has. */
+    @Query("SELECT COUNT(*) FROM lift_set WHERE session_uid = :uid")
+    suspend fun countSets(uid: String): Int
+
     @Query("SELECT * FROM session WHERE finished_at IS NULL AND deleted = 0 LIMIT 1")
     suspend fun active(): SessionEntity?
 
