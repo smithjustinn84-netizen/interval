@@ -160,32 +160,26 @@ class TodayViewModel(
     private val clock: WallClock,
 ) : ViewModel() {
     val state: StateFlow<TodayUiState> =
-        combine(
-            repository.sessions,
-            intervals.workouts,
-            repository.active,
-            repository.following,
-            repository.programDay,
-        ) {
-                sessions,
-                interval,
-                active,
-                following,
-                day,
-            ->
-            build(sessions, interval, active).copy(following = following, programDay = day)
-        }.combine(intervals.weeklyGoal) { state, goal ->
-            state.copy(weeklyGoal = goal)
-        }.stateIn(
-            viewModelScope,
-            SharingStarted.Eagerly,
-            build(repository.sessions.value, intervals.workouts.value, repository.active.value)
-                .copy(
-                    following = repository.following.value,
-                    programDay = repository.programDay.value,
-                    weeklyGoal = intervals.weeklyGoal.value,
-                ),
-        )
+        combine(repository.sessions, intervals.workouts, repository.active, repository.bar, ::build)
+            .combine(
+                combine(repository.following, repository.programDay, intervals.weeklyGoal, ::Triple),
+            ) { state, (following, day, goal) ->
+                state.copy(following = following, programDay = day, weeklyGoal = goal)
+            }.stateIn(
+                viewModelScope,
+                SharingStarted.Eagerly,
+                build(
+                    repository.sessions.value,
+                    intervals.workouts.value,
+                    repository.active.value,
+                    repository.bar.value,
+                )
+                    .copy(
+                        following = repository.following.value,
+                        programDay = repository.programDay.value,
+                        weeklyGoal = intervals.weeklyGoal.value,
+                    ),
+            )
 
     /** Starts the session about to open: [program]'s next day, or a free one with null. */
     fun start(program: ProgramKey?) {
@@ -196,6 +190,7 @@ class TodayViewModel(
         sessions: List<LiftSession>,
         interval: List<IntervalWorkout>,
         active: LiftSession?,
+        bar: Double?,
     ): TodayUiState {
         val today = timestamps.dayNumber(clock.nowMillis())
         val bellsDays = sessions.mapNotNull { it.finishedAtEpochMillis?.let(timestamps::dayNumber) }
@@ -223,7 +218,7 @@ class TodayViewModel(
                     listOf(it to false, it to true)
                 }.associateWith { (exercise, double) ->
                     suggestedBell(exercise, double, history, SetDraft.DEFAULT_BELL_KG)
-                } + barbellLifts.associate { (it to false) to suggestedBar(it, history, repository.bar.value) }
+                } + barbellLifts.associate { (it to false) to suggestedBar(it, history, bar) }
             },
         )
     }
