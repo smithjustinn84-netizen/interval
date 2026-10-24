@@ -46,29 +46,14 @@ fun ProgramDay.planRows(logged: List<SetLog>): List<PlanRow> {
     }
 }
 
-/**
- * The load to suggest for [set]: the plan's, when it names one, else what was used last in [history]. A bell
- * falls back to [bellKg], a bar to the user's [bar]; weight added to bodyweight starts at none, and a band
- * and the mat take no weight.
- */
-fun suggestedLoad(set: PlannedSet, history: List<SetLog>, bar: Double?, bellKg: Double): Double =
-    when (set.exercise.equipment) {
-        Equipment.Kettlebell -> set.kg ?: suggestedBell(set.exercise, set.double, history, bellKg)
-        Equipment.Barbell -> set.kg ?: suggestedBar(set.exercise, history, bar)
-        Equipment.Bodyweight -> set.kg ?: suggestedBell(set.exercise, double = false, history, fallback = 0.0)
-        Equipment.Band, Equipment.Mat -> 0.0
-    }
-
-/**
- * The band for [set], when it is band work: the one the plan names while still [offered], else the one
- * last used for it, else [fallback]. Null for any other set.
- */
-fun plannedBand(set: PlannedSet, history: List<SetLog>, offered: List<Band>, fallback: Band): Band? =
-    if (set.exercise.equipment == Equipment.Band) {
-        offered.firstOrNull { it.id == set.band } ?: suggestedBand(set.exercise, history, offered, fallback)
-    } else {
-        null
-    }
-
 /** Where each block's sets start among the day's, laid end to end. */
 private fun List<List<PlannedSet>>.starts(): List<Int> = runningFold(0) { at, block -> at + block.size }
+
+/**
+ * Of [planned], the first set not yet done by [logged]: the n-th planned set of a lift (and side) is done by
+ * the n-th logged one, whatever its bell or reps, so going off plan never blocks what comes next. A set
+ * with two bells has no side, so for a one-sided lift a planned double set is done only by a double one; for
+ * a lift with no sides, one bell or two does it.
+ */
+fun nextPlanned(planned: List<PlannedSet>, logged: List<SetLog>): Int? =
+    plannedDone(planned, logged).indexOfFirst { !it }.takeIf { it >= 0 }
