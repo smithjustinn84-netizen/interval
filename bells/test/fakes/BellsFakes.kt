@@ -79,7 +79,15 @@ class FakeSessionDao : SessionDao {
     }
 
     override suspend fun finish(uid: String, title: String, at: Long) = sessions.update { all ->
-        all.map { if (it.uid == uid) it.copy(finishedAtEpochMillis = at, title = title, updatedAtEpochMillis = at) else it }
+        all.map {
+            if (it.uid ==
+                uid
+            ) {
+                it.copy(finishedAtEpochMillis = at, title = title, updatedAtEpochMillis = at)
+            } else {
+                it
+            }
+        }
     }
 
     override suspend fun markDeleted(uid: String, now: Long) = sessions.update { all ->

@@ -9,6 +9,8 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.interval.storage.SerialWriter
+import dev.justinsmith.interval.storage.orEmptyOnError
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.timer.Effort
@@ -21,18 +23,13 @@ import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.plannedWorkSeconds
 import dev.justinsmith.interval.timer.storedName
 import dev.justinsmith.interval.timer.withPreset
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.uuid.ExperimentalUuidApi
@@ -131,6 +128,7 @@ class IntervalRepository(
     private val clock: WallClock,
 ) {
     private val log = Logger.withTag("IntervalRepository")
+    private val writer = SerialWriter(scope, log)
 
     private val _ready = MutableStateFlow(false)
 
@@ -158,10 +156,6 @@ class IntervalRepository(
 
     private val _history = MutableStateFlow(emptyList<HistoryEntry>())
 
-    // Queued in call order and run one at a time, so a save can't overtake an earlier one (a clear
-    // landing before the insert it followed, presets stored out of order).
-    private val writes = Channel<suspend () -> Unit>(Channel.UNLIMITED)
-
     /** Newest first. */
     val history: StateFlow<List<HistoryEntry>> = _history.asStateFlow()
 
@@ -172,14 +166,11 @@ class IntervalRepository(
 
     init {
         scope.launch {
-            for (write in writes) runLogged(write)
-        }
-        scope.launch {
             val presetsLoaded = CompletableDeferred<Unit>()
             val historyLoaded = CompletableDeferred<Unit>()
             val plannedLoaded = CompletableDeferred<Unit>()
             launch {
-                presetDao.observeAll().orEmptyOnError("presets").collect { rows ->
+                presetDao.observeAll().orEmptyOnError("presets", log).collect { rows ->
                     val custom = rows.map { it.toDomain() }
                     _customPresets.value = custom
                     _presets.value = builtInPresets + custom
@@ -187,13 +178,13 @@ class IntervalRepository(
                 }
             }
             launch {
-                historyDao.observeAll().orEmptyOnError("history").collect { rows ->
+                historyDao.observeAll().orEmptyOnError("history", log).collect { rows ->
                     _history.value = rows.map { it.toDomain() }
                     historyLoaded.complete(Unit)
                 }
             }
             launch {
-                plannedDao.observeAll().orEmptyOnError("plans").collect { rows ->
+                plannedDao.observeAll().orEmptyOnError("plans", log).collect { rows ->
                     _planned.value = rows.mapNotNull { it.toDomain() }
                     plannedLoaded.complete(Unit)
                 }
@@ -234,7 +225,7 @@ class IntervalRepository(
         write: (MutablePreferences, T) -> Unit,
     ) {
         value.update(transform)
-        persist { settings.edit { write(it, value.value) } }
+        writer.persist { settings.edit { write(it, value.value) } }
     }
 
     /** Puts [preset] on the Timer, keeping the user's get-ready countdown and, mostly, activity: see [withPreset]. */
@@ -247,7 +238,7 @@ class IntervalRepository(
      * shape's ("40/20 ×6"), and one another preset has gets a number ("Tabata 2").
      */
     fun savePreset(preset: Preset) {
-        persist { presetDao.insert(preset.copy(id = null).named().toEntity()) }
+        writer.persist { presetDao.insert(preset.copy(id = null).named().toEntity()) }
     }
 
     /** Saves [preset] as a new one of the user's own and puts its shape on the Timer. */
@@ -265,14 +256,14 @@ class IntervalRepository(
         if (preset.id == null) return
         // Asked now: once the write lands, the list already holds the new shape.
         val onTimer = _presets.value.matching(_config.value)?.id == preset.id
-        persist { presetDao.update(preset.named().toEntity()) }
+        writer.persist { presetDao.update(preset.named().toEntity()) }
         if (onTimer) applyPreset(preset)
     }
 
     /** Removes one of the user's own presets. Built-ins have no id and are left alone. */
     fun deletePreset(preset: Preset) {
         val id = preset.id ?: return
-        persist { presetDao.delete(id) }
+        writer.persist { presetDao.delete(id) }
     }
 
     /**
@@ -281,7 +272,7 @@ class IntervalRepository(
      */
     fun restorePreset(preset: Preset) {
         if (preset.id == null) return
-        persist { presetDao.insert(preset.named().toEntity()) }
+        writer.persist { presetDao.insert(preset.named().toEntity()) }
     }
 
     // Named inside the write against what is stored, not against [presets]: that follows the database, so
@@ -301,7 +292,9 @@ class IntervalRepository(
     ) {
         val now = clock.nowMillis()
         val entry = HistoryEntry(now, config, elapsedSeconds, endedEarly, workSeconds)
-        persist { historyDao.insert(entry.toEntity(uid = Uuid.random().toHexString(), updatedAtEpochMillis = now)) }
+        writer.persist {
+            historyDao.insert(entry.toEntity(uid = Uuid.random().toHexString(), updatedAtEpochMillis = now))
+        }
     }
 
     /**
@@ -310,40 +303,40 @@ class IntervalRepository(
      */
     fun deleteWorkout(id: Long) {
         val now = clock.nowMillis()
-        persist { historyDao.delete(id, now) }
+        writer.persist { historyDao.delete(id, now) }
     }
 
     /** Brings back a workout [deleteWorkout] removed: Undo. Its row was only marked, so nothing is lost. */
     fun restoreWorkout(id: Long) {
         val now = clock.nowMillis()
-        persist { historyDao.restore(id, now) }
+        writer.persist { historyDao.restore(id, now) }
     }
 
     /** Removes every workout from the history, leaving each row marked deleted as [deleteWorkout] does. */
     fun clearHistory() {
         val now = clock.nowMillis()
-        persist { historyDao.clear(now) }
+        writer.persist { historyDao.clear(now) }
     }
 
     /** Plans [preset] for every week on each of [weekdays] (1 for Monday through 7): one plan per day. */
     fun planWeekly(preset: Preset, weekdays: Set<Int>) {
         val days = weekdays.filter { it in 1..DAYS_PER_WEEK }.sorted()
         if (days.isEmpty()) return
-        persist { plannedDao.insert(days.map { preset.planned(PlanSchedule.Weekly(it)).toEntity() }) }
+        writer.persist { plannedDao.insert(days.map { preset.planned(PlanSchedule.Weekly(it)).toEntity() }) }
     }
 
     /** Plans [preset] once, on [epochDay]. */
     fun planOnce(preset: Preset, epochDay: Long) {
-        persist { plannedDao.insert(listOf(preset.planned(PlanSchedule.Once(epochDay)).toEntity())) }
+        writer.persist { plannedDao.insert(listOf(preset.planned(PlanSchedule.Once(epochDay)).toEntity())) }
     }
 
     fun removePlanned(id: Long) {
-        persist { plannedDao.delete(id) }
+        writer.persist { plannedDao.delete(id) }
     }
 
     /** Puts a plan [removePlanned] took off back as it was, its id and the day it was made included: Undo. */
     fun restorePlanned(plan: PlannedWorkout) {
-        persist { plannedDao.insert(listOf(plan.toEntity())) }
+        writer.persist { plannedDao.insert(listOf(plan.toEntity())) }
     }
 
     private fun Preset.planned(schedule: PlanSchedule) = PlannedWorkout(
@@ -354,36 +347,4 @@ class IntervalRepository(
         presetId = id,
         createdAtEpochMillis = clock.nowMillis(),
     )
-
-    // A failed read shows an empty list at once, so the app still starts, then is tried again a few times:
-    // `catch` alone ends the flow, and one bad read would stop the list following the database for good.
-    private fun <T> Flow<List<T>>.orEmptyOnError(what: String): Flow<List<T>> =
-        retryWhen { e, attempt ->
-            log.e(e) { "Couldn't read $what" }
-            if (attempt == 0L) emit(emptyList())
-            val again = e !is CancellationException && attempt < READ_RETRIES
-            if (again) delay(READ_RETRY_DELAY_MILLIS * (attempt + 1))
-            again
-        }.catch { emit(emptyList()) }
-
-    private fun persist(write: suspend () -> Unit) {
-        writes.trySend(write)
-    }
-
-    // A failed write is logged, never thrown: losing one save must not crash a workout.
-    @Suppress("detekt.TooGenericExceptionCaught")
-    private suspend fun runLogged(write: suspend () -> Unit) {
-        try {
-            write()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            log.e(e) { "Couldn't save" }
-        }
-    }
-
-    private companion object {
-        const val READ_RETRIES = 3L
-        const val READ_RETRY_DELAY_MILLIS = 500L
-    }
 }

@@ -27,16 +27,15 @@ import dev.justinsmith.bells.domain.bands
 import dev.justinsmith.bells.domain.builtInPrograms
 import dev.justinsmith.bells.domain.nextBandPosition
 import dev.justinsmith.interval.platform.WallClock
-import kotlinx.coroutines.CancellationException
+import dev.justinsmith.interval.storage.SerialWriter
+import dev.justinsmith.interval.storage.orEmptyOnError
+import dev.justinsmith.interval.storage.orOnError
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -62,7 +61,7 @@ class BellsRepository(
     private val clock: WallClock,
 ) {
     private val log = Logger.withTag("BellsRepository")
-    private val writes = Channel<suspend () -> Unit>(Channel.UNLIMITED)
+    private val writer = SerialWriter(scope, log)
 
     private val _ready = MutableStateFlow(false)
     val ready: StateFlow<Boolean> = _ready.asStateFlow()
@@ -115,14 +114,15 @@ class BellsRepository(
     val programDay: StateFlow<ProgramDay?> = _programDay.asStateFlow()
 
     init {
-        scope.launch { for (write in writes) runLogged(write) }
         scope.launch {
             val sessionsLoaded = CompletableDeferred<Unit>()
             val bellsLoaded = CompletableDeferred<Unit>()
-            val exercises = customExerciseDao.observeAll().orEmpty("exercises").map { rows ->
+            val exercises = customExerciseDao.observeAll().orEmptyOnError("exercises", log).map { rows ->
                 rows.mapNotNull { it.toDomain() }
             }
-            val owned = bandDao.observeAll().orEmpty("bands").map { rows -> bands(rows.map { it.toDomain() }) }
+            val owned = bandDao.observeAll().orEmptyOnError("bands", log).map { rows ->
+                bands(rows.map { it.toDomain() })
+            }
             launch {
                 // The user's exercises and bands come with the sets, which name them.
                 combine(sessionDao.observeSessions(), sessionDao.observeSets(), exercises, owned) {
@@ -133,10 +133,11 @@ class BellsRepository(
                     ->
                     val bySession = sets.groupBy({ it.sessionUid }, { it.toDomain(made, bands) })
                     Triple(made, bands, sessions.map { it.toDomain(bySession[it.uid].orEmpty(), made) })
-                }.catch { e ->
-                    log.e(e) { "Couldn't read sessions" }
-                    emit(Triple(emptyList(), bands(emptyList()), emptyList()))
-                }.collect { (made, bands, all) ->
+                }.orOnError(
+                    Triple(emptyList(), bands(emptyList()), emptyList()),
+                    "sessions",
+                    log,
+                ).collect { (made, bands, all) ->
                     _customExercises.value = made
                     _bands.value = bands
                     _sessions.value = all.filter { it.finishedAtEpochMillis != null }
@@ -145,26 +146,24 @@ class BellsRepository(
                 }
             }
             launch {
-                bellDao.observeAll().orEmpty("bells").collect { rows ->
+                bellDao.observeAll().orEmptyOnError("bells", log).collect { rows ->
                     _bells.value = rows.map { it.kg }
                     bellsLoaded.complete(Unit)
                 }
             }
             val barLoaded = CompletableDeferred<Unit>()
             launch {
-                bellDao.observeBar().catch { e ->
-                    log.e(e) { "Couldn't read the bar" }
-                    emit(null)
-                }.collect { row ->
+                bellDao.observeBar().orOnError(null, "the bar", log).collect { row ->
                     _bar.value = row?.kg
                     barLoaded.complete(Unit)
                 }
             }
             val customLoaded = CompletableDeferred<Unit>()
             // A program's blocks can name the user's exercises, archived ones too.
-            val custom = combine(customProgramDao.observeAll().orEmpty("programs"), exercises) { rows, made ->
-                rows.mapNotNull { it.toProgram(made) }
-            }
+            val custom =
+                combine(customProgramDao.observeAll().orEmptyOnError("programs", log), exercises) { rows, made ->
+                    rows.mapNotNull { it.toProgram(made) }
+                }
             launch {
                 custom.collect {
                     _customPrograms.value = it
@@ -184,10 +183,7 @@ class BellsRepository(
                             program to program.dayAfter(row.daysBefore + done)
                         }
                     }
-                }.catch { e ->
-                    log.e(e) { "Couldn't read the program" }
-                    emit(null to null)
-                }.collect { (program, day) ->
+                }.orOnError(null to null, "the program", log).collect { (program, day) ->
                     _following.value = program
                     _programDay.value = day
                     followingLoaded.complete(Unit)
@@ -205,7 +201,7 @@ class BellsRepository(
     /** Starts a session, a day of [program] or a free one, unless one is in progress already. */
     @OptIn(ExperimentalUuidApi::class)
     fun startSession(program: ProgramKey? = null) {
-        persist {
+        writer.persist {
             if (sessionDao.active() == null) {
                 val now = clock.nowMillis()
                 sessionDao.insert(
@@ -226,7 +222,7 @@ class BellsRepository(
     fun follow(program: ProgramKey, daysDone: Int = 0) {
         val now = clock.nowMillis()
         val row = FollowingEntity(programId = program.stored, startedAtEpochMillis = now, daysBefore = daysDone)
-        persist { followingDao.upsert(row) }
+        writer.persist { followingDao.upsert(row) }
     }
 
     /**
@@ -245,7 +241,7 @@ class BellsRepository(
             encodeDays(draft.days),
             updatedAtEpochMillis = now,
         )
-        persist { customProgramDao.upsert(row) }
+        writer.persist { customProgramDao.upsert(row) }
         return id
     }
 
@@ -268,14 +264,14 @@ class BellsRepository(
 
     /** Deletes the program [uid] made, and stops following it if it is the one followed. */
     fun deleteProgram(uid: String) {
-        persist {
+        writer.persist {
             followingDao.clearIfFollowing(ProgramKey.Custom(uid).stored)
             customProgramDao.delete(uid)
         }
     }
 
     fun stopFollowing() {
-        persist { followingDao.clear() }
+        writer.persist { followingDao.clear() }
     }
 
     /**
@@ -291,7 +287,7 @@ class BellsRepository(
         seconds: Int? = null,
         band: Band? = null,
     ) {
-        persist {
+        writer.persist {
             val active = sessionDao.active() ?: return@persist
             val doubled = exercise.doubled(double)
             sessionDao.insert(
@@ -316,7 +312,7 @@ class BellsRepository(
     fun setSessionPlan(plan: SessionPlan?) {
         // Shown at once, so a change made straight after builds on this one.
         _active.value = _active.value?.copy(plan = plan)
-        persist {
+        writer.persist {
             val active = sessionDao.active() ?: return@persist
             sessionDao.setPlan(active.uid, plan?.let(::encodePlan))
         }
@@ -327,7 +323,7 @@ class BellsRepository(
      * it was logged; a held exercise keeps seconds and a band one its band, each dropped from any other.
      */
     fun updateSet(set: SetLog) {
-        persist {
+        writer.persist {
             val row = sessionDao.allSets().firstOrNull { it.id == set.id } ?: return@persist
             val exercise = set.exercise
             val doubled = exercise.doubled(set.double)
@@ -345,12 +341,12 @@ class BellsRepository(
     }
 
     fun removeSet(id: Long) {
-        persist { sessionDao.deleteSet(id) }
+        writer.persist { sessionDao.deleteSet(id) }
     }
 
     /** Puts back [set], just removed, into the session in progress, in its place among the others. */
     fun restoreSet(set: SetLog) {
-        persist {
+        writer.persist {
             val active = sessionDao.active() ?: return@persist
             sessionDao.insert(
                 SetEntity(
@@ -372,7 +368,7 @@ class BellsRepository(
 
     /** Finishes the session in progress under [title]; one with no sets is dropped instead. */
     fun finishSession(title: String) {
-        persist {
+        writer.persist {
             val active = sessionDao.active() ?: return@persist
             if (sessionDao.allSets().none { it.sessionUid == active.uid }) {
                 sessionDao.discard(active.uid)
@@ -384,7 +380,7 @@ class BellsRepository(
 
     /** Drops the session in progress and its sets. */
     fun discardSession() {
-        persist {
+        writer.persist {
             val active = sessionDao.active() ?: return@persist
             sessionDao.discardSets(active.uid)
             sessionDao.discard(active.uid)
@@ -394,7 +390,7 @@ class BellsRepository(
     /** Deletes a finished session, leaving its row behind as a tombstone. */
     fun deleteSession(uid: String) {
         val now = clock.nowMillis()
-        persist { sessionDao.markDeleted(uid, now) }
+        writer.persist { sessionDao.markDeleted(uid, now) }
     }
 
     /**
@@ -414,7 +410,7 @@ class BellsRepository(
             draft.cues.trim(),
             archived = _customExercises.value.any { it.uid == id && it.archived },
         )
-        persist { customExerciseDao.upsert(made.toEntity(clock.nowMillis())) }
+        writer.persist { customExerciseDao.upsert(made.toEntity(clock.nowMillis())) }
         return id
     }
 
@@ -424,7 +420,7 @@ class BellsRepository(
      */
     fun setArchived(uid: String, archived: Boolean) {
         val made = _customExercises.value.firstOrNull { it.uid == uid } ?: return
-        persist { customExerciseDao.upsert(made.copy(archived = archived).toEntity(clock.nowMillis())) }
+        writer.persist { customExerciseDao.upsert(made.copy(archived = archived).toEntity(clock.nowMillis())) }
     }
 
     /** Saves [band] as changed: renamed (blank for its starting words), recoloured or archived. */
@@ -435,7 +431,7 @@ class BellsRepository(
     /** Saves the order [bands] are in, each band's position its place. */
     fun saveBands(bands: List<Band>) {
         val now = clock.nowMillis()
-        persist { bandDao.upsert(bands.map { it.toEntity(now) }) }
+        writer.persist { bandDao.upsert(bands.map { it.toEntity(now) }) }
     }
 
     /** Adds a band named [name] in [colour], heaviest of all; returns its id. */
@@ -453,40 +449,19 @@ class BellsRepository(
     fun removeBand(band: Band) {
         val used = (_sessions.value.flatMap { it.sets } + _active.value?.sets.orEmpty()).any { it.band?.id == band.id }
         if (band.level == null && !used) {
-            persist { bandDao.delete(band.id) }
+            writer.persist { bandDao.delete(band.id) }
         } else {
             saveBand(band.copy(archived = true))
         }
     }
 
     fun setOwned(kg: Double, owned: Boolean) {
-        persist { if (owned) bellDao.upsert(BellEntity(kg)) else bellDao.delete(kg) }
+        writer.persist { if (owned) bellDao.upsert(BellEntity(kg)) else bellDao.delete(kg) }
     }
 
     /** Sets the user's barbell to one weighing [kg] empty, or to none. */
     fun setBar(kg: Double?) {
-        persist { if (kg != null) bellDao.upsertBar(BarEntity(kg = kg)) else bellDao.clearBar() }
-    }
-
-    private fun <T> Flow<List<T>>.orEmpty(what: String): Flow<List<T>> = catch { e ->
-        log.e(e) { "Couldn't read $what" }
-        emit(emptyList())
-    }
-
-    private fun persist(write: suspend () -> Unit) {
-        writes.trySend(write)
-    }
-
-    // A failed write is logged, never thrown: losing one save must not crash a session.
-    @Suppress("detekt.TooGenericExceptionCaught")
-    private suspend fun runLogged(write: suspend () -> Unit) {
-        try {
-            write()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            log.e(e) { "Couldn't save" }
-        }
+        writer.persist { if (kg != null) bellDao.upsertBar(BarEntity(kg = kg)) else bellDao.clearBar() }
     }
 }
 
