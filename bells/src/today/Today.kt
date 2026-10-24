@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -75,6 +74,7 @@ import dev.justinsmith.bells.resources.today_start_day
 import dev.justinsmith.bells.resources.today_this_week
 import dev.justinsmith.bells.resources.today_title
 import dev.justinsmith.bells.resources.today_week_count
+import dev.justinsmith.bells.resources.today_week_workouts
 import dev.justinsmith.bells.resources.weekday_cd
 import dev.justinsmith.bells.resources.weekday_counts
 import dev.justinsmith.bells.resources.weekday_initial_1
@@ -254,9 +254,10 @@ fun TodayRoute(
 }
 
 /**
- * The Lift tab: the week, lifts and intervals alike, the last session (a tap opens it), and the program's
- * day. Start (or Resume) session stays pinned under them, however long the day, as Start workout does. On a
- * wider window the cards under the week sit side by side.
+ * The Lift tab: the week, lifts and intervals alike, the program's day (what's next before what's past), the
+ * last session (a tap opens it) and the exercises. Start (or Resume) session stays pinned under them, however
+ * long the day, as Start workout does. On a wider window the week is a column's card like the others, so its
+ * days sit close and what's next sits beside it.
  */
 @Composable
 fun TodayScreen(
@@ -276,11 +277,9 @@ fun TodayScreen(
         actions = { IconAction(IntervalIcons.Bell, stringResource(Res.string.today_bells_cd), onOpenBells) },
         bottomBar = { StartRow(state, onStartSession, Modifier.widthIn(max = Sizes.content)) },
     ) {
-        item(key = "week", span = StaggeredGridItemSpan.FullLine) { WeekCard(state, card) }
+        item(key = "week") { WeekCard(state, card) }
+        item(key = "program") { ProgramCard(state, onChooseProgram, card) }
         item(key = "last") { LastCard(state, onOpenSession, card) }
-        item(key = "program") {
-            ProgramCard(state, onChooseProgram, card)
-        }
         item(key = "exercises") {
             ListCard(card) {
                 LinkRow(
@@ -485,7 +484,10 @@ private fun ProgramCard(state: TodayUiState, onChooseProgram: () -> Unit, modifi
     }
 }
 
-/** This week, lifts and intervals alike: a mark a day, and the count. */
+/**
+ * This week, lifts and intervals alike: a mark a day, and the count. The Timer's share of the count, and the
+ * legend saying which mark is which, wait until there is something for them to tell apart.
+ */
 @Composable
 private fun WeekCard(state: TodayUiState, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
@@ -499,12 +501,16 @@ private fun WeekCard(state: TodayUiState, modifier: Modifier = Modifier) {
                     modifier = Modifier.weight(1f),
                 )
                 Text(
-                    pluralStringResource(
-                        Res.plurals.today_week_count,
-                        state.weekCount,
-                        state.weekCount,
-                        state.intervalCount,
-                    ),
+                    if (state.intervalCount > 0) {
+                        pluralStringResource(
+                            Res.plurals.today_week_count,
+                            state.weekCount,
+                            state.weekCount,
+                            state.intervalCount,
+                        )
+                    } else {
+                        pluralStringResource(Res.plurals.today_week_workouts, state.weekCount, state.weekCount)
+                    },
                     style = IntervalTheme.type.meta,
                     color = palette.textDim,
                 )
@@ -524,9 +530,11 @@ private fun WeekCard(state: TodayUiState, modifier: Modifier = Modifier) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 state.week.forEach { day -> DayMark(day) }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space16)) {
-                Legend(palette.accent, stringResource(Res.string.today_legend_bells))
-                Legend(palette.workMark, stringResource(Res.string.today_legend_interval))
+            if (state.weekCount > 0) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space16)) {
+                    Legend(palette.accent, stringResource(Res.string.today_legend_bells))
+                    Legend(palette.workMark, stringResource(Res.string.today_legend_interval))
+                }
             }
         }
     }

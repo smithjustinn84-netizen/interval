@@ -84,6 +84,20 @@ class TodayScreenTest {
     }
 
     @Test
+    fun `an empty week shows its count alone and no legend`() = runUiTest {
+        val week = (0L until 7L).map {
+            WeekDay(it, it.toInt() + 1, bells = 0, interval = 0, today = it == 0L, date = "day $it")
+        }
+        var state by mutableStateOf(TodayUiState(week = week))
+        setBellsContent { TodayScreen(state, onStartSession = {}, onChooseProgram = {}) }
+        onNodeWithText("0 workouts").assertExists()
+        onNodeWithText("Lifts").assertDoesNotExist()
+        state = state.copy(week = week.mapIndexed { i, day -> if (i == 0) day.copy(interval = 1) else day })
+        onNodeWithText("1 workout · 1 on the Timer").assertExists()
+        onNodeWithText("Lifts").assertExists()
+    }
+
+    @Test
     fun `the goal set on Plan reaches Today`() = bellsAppTest(
         intervals = FakeIntervalActivity().apply { weeklyGoal.value = 4 },
     ) {

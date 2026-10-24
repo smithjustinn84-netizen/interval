@@ -63,8 +63,9 @@ fun BackAction(onBack: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 /**
- * A page of cards, a tab's (History, Lift) or one pushed from it (Presets, the bells): the lanes behind,
- * then a grid of one column on a phone and more as the window widens, its [TitleBar] across the top.
+ * A page of cards, a tab's (History, Lift) or one pushed from it (Presets, the bells): the lanes behind, filling
+ * the window rather than stopping at the column's edge, then a grid of one column on a phone and more as the
+ * window widens, its [TitleBar] across the top.
  * [content] adds the grid's items under it. A pushed page passes [navigation], its Back, and keeps inside
  * the safe area itself, as a [ScrollPage] does; a tab's sits inside the navigation bar's. [bottomBar] stays
  * pinned under the grid, over the same lanes, for an action that must never scroll away (Lift's Start).
@@ -79,7 +80,7 @@ fun TabGrid(
     content: LazyStaggeredGridScope.() -> Unit,
 ) {
     Box(modifier.fillMaxSize().background(IntervalTheme.palette.background), contentAlignment = Alignment.TopCenter) {
-        SetupLanes(Modifier.widthIn(max = Sizes.listMax).fillMaxSize())
+        SetupLanes(Modifier.matchParentSize())
         Column(
             Modifier
                 .widthIn(max = Sizes.listMax)

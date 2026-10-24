@@ -45,6 +45,17 @@ class TabletTest {
     }
 
     @Test
+    fun `Today puts the week beside the program's day`() = runUiTest(Window.Tablet) {
+        val goblet = program(ProgramId.GobletSquatRow)
+        val state = TodayUiState(following = goblet, programDay = goblet.dayAfter(0))
+        setBellsContent { TodayScreen(state, onStartSession = {}, onChooseProgram = {}) }
+        val week = onNodeWithText("This week").assertIsDisplayed().getUnclippedBoundsInRoot()
+        val day = onNodeWithText("Day 1 of 8 · week 1").assertIsDisplayed().getUnclippedBoundsInRoot()
+        assertTrue(day.left >= week.right)
+        assertTrue(day.top < week.bottom)
+    }
+
+    @Test
     fun `Programs lays its families side by side`() = bellsAppTest(window = Window.Tablet) {
         waitForText("Follow a program")
         onNodeWithText("Follow a program").performClick()

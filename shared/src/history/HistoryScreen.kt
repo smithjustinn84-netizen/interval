@@ -319,7 +319,7 @@ private fun SummaryBesideLog(
     selected: (HistoryItem) -> Boolean,
 ) {
     Box(Modifier.fillMaxSize().background(IntervalTheme.palette.background), contentAlignment = Alignment.TopCenter) {
-        SetupLanes(Modifier.widthIn(max = Sizes.listMax).fillMaxSize())
+        SetupLanes(Modifier.matchParentSize())
         Column(Modifier.widthIn(max = Sizes.listMax).fillMaxSize()) {
             TitleBar(title, actions = titleActions)
             Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.Center) {

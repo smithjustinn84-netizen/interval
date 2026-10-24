@@ -156,6 +156,11 @@
         <item quantity="one">%1$d workout · %2$d on the Timer</item>
         <item quantity="other">%1$d workouts · %2$d on the Timer</item>
     </plurals>
+    <!-- This week's count with none on the Timer: "0 workouts" -->
+    <plurals name="today_week_workouts">
+        <item quantity="one">%1$d workout</item>
+        <item quantity="other">%1$d workouts</item>
+    </plurals>
     <!-- The weekly goal, set on Plan, lifts and intervals alike: "1 more to hit 4" -->
     <plurals name="today_goal_left">
         <item quantity="one">%1$d more to hit %2$d</item>
@@ -473,7 +478,7 @@
     <string name="program_day">Day %1$d of %2$d · week %3$d</string>
     <string name="program_finished">Finished · pick another program</string>
     <string name="program_follow_cta">Follow a program</string>
-    <string name="program_follow_hint">Each day's sets are laid out for you, with the bell you last used.</string>
+    <string name="program_follow_hint">Each day planned, at the weight last used</string>
     <string name="program_change">Change program</string>
     <string name="program_following">Following</string>
     <string name="program_stop">Stop following</string>
