@@ -3,6 +3,10 @@
 package dev.justinsmith.bells.library
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
@@ -17,11 +21,13 @@ import dev.justinsmith.bells.data.CustomExerciseEntity
 import dev.justinsmith.bells.data.SessionEntity
 import dev.justinsmith.bells.data.SetEntity
 import dev.justinsmith.bells.fakes.FakeBellsStorage
+import dev.justinsmith.bells.ui.Window
 import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.bells.ui.waitForText
 import kotlinx.coroutines.flow.update
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /** Exercises of the user's own: added from the library or a session's search, and changed. */
 class ExerciseEditorTest {
@@ -32,15 +38,15 @@ class ExerciseEditorTest {
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
         onNodeWithContentDescription("New exercise").performClick()
-        waitForText("Exercise name")
-        onAllNodes(hasSetTextAction()).onFirst().performTextInput("Copenhagen plank")
+        waitForText("Equipment")
+        onNode(hasSetTextAction() and hasContentDescription("Name")).performTextInput("Copenhagen plank")
         onNodeWithText("Time").performClick()
         onNodeWithText("One side at a time").performClick()
         onNodeWithText("Core").performScrollTo().performClick()
         onNodeWithText("Save exercise").performScrollTo().performClick()
-        waitForText("Search exercises")
+        // The sheet gone, the library lists it among the user's own.
+        waitForText("Yours · 1")
         onNodeWithText("Copenhagen plank").assertExists()
-        onNodeWithText("Yours").assertExists()
         val row = app.storage.exercises.rows.value.single()
         assertEquals(
             listOf("Copenhagen plank", "Bodyweight", "Time", "true", "Core"),
@@ -55,11 +61,11 @@ class ExerciseEditorTest {
         onNode(hasSetTextAction()).performTextInput("Turkish sit-up")
         waitForText("Add “Turkish sit-up” as an exercise")
         onNodeWithText("Add “Turkish sit-up” as an exercise").performClick()
-        waitForText("New exercise")
+        waitForText("Equipment")
         onNodeWithText("Save exercise").performScrollTo().performClick()
         // Back on the library, the search kept, it now finds the exercise just added.
         waitForText("1 exercise")
-        onNodeWithText("Yours").assertExists()
+        onNodeWithText("Yours · 1").assertExists()
         assertEquals("Turkish sit-up", app.storage.exercises.rows.value.single().name)
     }
 
@@ -70,8 +76,8 @@ class ExerciseEditorTest {
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
         onNodeWithContentDescription("New exercise").performClick()
-        waitForText("Exercise name")
-        onAllNodes(hasSetTextAction()).onFirst().performTextInput("copenhagen PLANK")
+        waitForText("Equipment")
+        onNode(hasSetTextAction() and hasContentDescription("Name")).performTextInput("copenhagen PLANK")
         waitForText("One of yours already has this name.")
         onNodeWithText("Save exercise").assertDoesNotExist()
     }
@@ -85,12 +91,13 @@ class ExerciseEditorTest {
         waitForText("Search exercises")
         onNode(hasSetTextAction()).performTextInput("Copenhagen plank")
         onNodeWithText("Add “Copenhagen plank” as an exercise").performScrollTo().performClick()
-        waitForText("New exercise")
-        onNodeWithText("Time").performClick()
+        waitForText("Equipment")
+        // The sheet's Time, over the session's.
+        onAllNodesWithText("Time").onLast().performClick()
         onNodeWithText("One side at a time").performClick()
         onNodeWithText("Save exercise").performScrollTo().performClick()
-        // Back on the sheet, the new exercise picked.
-        waitForText("Bodyweight · Time · a side · Full body")
+        // Back on the Log sheet, the new exercise picked.
+        waitForText("Bodyweight · Time a side · Full body")
         onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("0:30 · Left")
         assertEquals(
@@ -110,14 +117,15 @@ class ExerciseEditorTest {
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
         onAllNodesWithText("Copenhagen plank").onFirst().performScrollTo().performClick()
-        waitForText("Edit exercise")
+        waitForText("Equipment")
         onNodeWithText("Sets of it are logged, so its equipment and measure stay as they are.").assertExists()
-        onNodeWithText("Kettlebell").assertDoesNotExist()
-        val name = onAllNodes(hasSetTextAction()).onFirst()
+        // Only the library's chip, behind the sheet: the sheet offers no equipment to pick.
+        onAllNodesWithText("Kettlebell").assertCountEquals(1)
+        val name = onNode(hasSetTextAction() and hasContentDescription("Name"))
         name.performTextClearance()
         name.performTextInput("Side plank on a bench")
         onNodeWithText("Save exercise").performScrollTo().performClick()
-        waitForText("Search exercises")
+        waitForText("Side plank on a bench")
         val row = app.storage.exercises.rows.value.single()
         assertEquals(listOf("e1", "Side plank on a bench", "Time"), listOf(row.uid, row.name, row.measure))
     }
@@ -129,7 +137,7 @@ class ExerciseEditorTest {
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
         onNodeWithText("Copenhagen plank").performScrollTo().performClick()
-        waitForText("Edit exercise")
+        waitForText("Equipment")
         onNodeWithText("Archive exercise").performScrollTo().performClick()
         waitForText("Search exercises")
         onNodeWithText("Copenhagen plank").assertDoesNotExist()
@@ -142,7 +150,26 @@ class ExerciseEditorTest {
         waitForText("Archived: the Log sheet doesn’t offer it.")
         onNodeWithText("Restore exercise").performScrollTo().performClick()
         waitForText("Search exercises")
-        onNodeWithText("Yours").assertExists()
+        onNodeWithText("Archived").assertDoesNotExist()
+        assertEquals(false, app.storage.exercises.rows.value.single().archived)
+    }
+
+    @Test
+    fun `on a tablet the editor opens beside the library and Back closes it`() = bellsAppTest(
+        storage = FakeBellsStorage().apply { exercises.rows.value = listOf(plank) },
+        window = Window.Tablet,
+    ) { app ->
+        onNodeWithText("Exercises").performScrollTo().performClick()
+        waitForText("Search exercises")
+        onNodeWithText("Copenhagen plank").performClick()
+        waitForText("Equipment")
+        // The library stays where it was, under the sheet.
+        val library = onNodeWithText("Search exercises").assertIsDisplayed().getUnclippedBoundsInRoot()
+        val sheet = onNodeWithText("Archive exercise").performScrollTo().getUnclippedBoundsInRoot()
+        assertTrue(sheet.left >= library.left)
+        app.back()
+        waitUntil(timeoutMillis = 5_000) { onAllNodesWithText("Archive exercise").fetchSemanticsNodes().isEmpty() }
+        onNodeWithText("Search exercises").assertIsDisplayed()
         assertEquals(false, app.storage.exercises.rows.value.single().archived)
     }
 }

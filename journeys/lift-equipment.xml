@@ -24,7 +24,7 @@
     <action>Verify that the session shows "Band pull-apart" with a set "Heavy × 10", and "Moved" still reads "160 kg"</action>
     <action>Tap "Log set", then "Change", then tap "Clear" to drop the Band filter</action>
     <action>Type "side plank" into "Search exercises"</action>
-    <action>Verify that "1 exercise" is shown: "Side plank", "Bodyweight · Time · a side · Core"</action>
+    <action>Verify that "1 exercise" is shown: "Side plank", "Bodyweight · Time a side · Core"</action>
     <action>Tap "Side plank"</action>
     <action>Verify that "A set" and "An EMOM" are gone, "Held" reads "0:30", "Added weight" offers "None" selected, and "Side" offers "Left" selected</action>
     <action>Tap "+" beside "0:30" three times</action>

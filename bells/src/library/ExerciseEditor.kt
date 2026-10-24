@@ -1,16 +1,22 @@
 package dev.justinsmith.bells.library
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.mapSaver
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.ExerciseDraft
@@ -46,22 +52,17 @@ import dev.justinsmith.bells.ui.equipmentName
 import dev.justinsmith.bells.ui.focusName
 import dev.justinsmith.bells.ui.measureName
 import dev.justinsmith.interval.ui.AccentButton
-import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.GroupLabel
+import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.NameField
-import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ToggleRow
 import dev.justinsmith.interval.ui.enterExpanding
 import dev.justinsmith.interval.ui.exitShrinking
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
@@ -78,17 +79,26 @@ data class ExerciseEditorUiState(
 )
 
 /**
- * Adds an exercise, named [name] to start (from a search that found nothing), or changes, archives or
- * restores the user's [uid]; one gone meanwhile is added afresh.
+ * The exercise a sheet is adding, named [name] to start (from a search that found nothing), or changing,
+ * archiving or restoring: the user's [uid]; one gone meanwhile is added afresh. It lives as long as the sheet,
+ * kept by [rememberExerciseEditor] across a configuration change and process death, so a sheet opened again
+ * starts from what is saved rather than from a draft left behind.
  */
-class ExerciseEditorViewModel(private val repository: BellsRepository, uid: String?, name: String) : ViewModel() {
-    private val existing = uid?.let { id -> repository.customExercises.value.firstOrNull { it.uid == id } }
+@Stable
+class ExerciseEditor(
+    private val repository: BellsRepository,
+    private val openedUid: String?,
+    private val openedName: String,
+    restored: ExerciseDraft? = null,
+) {
+    private val existing = openedUid?.let { id -> repository.customExercises.value.firstOrNull { it.uid == id } }
     private val uid = existing?.uid
-    private val _state = MutableStateFlow(
+
+    var state by mutableStateOf(
         ExerciseEditorUiState(
-            draft = existing?.let {
+            draft = restored ?: existing?.let {
                 ExerciseDraft(it.name, it.equipment, it.measure, it.perSide, it.focus, it.cues)
-            } ?: ExerciseDraft(name = name.trim()),
+            } ?: ExerciseDraft(name = openedName.trim()),
             saved = existing != null,
             archived = existing?.archived == true,
             taken = takenNames(repository.customExercises.value, uid),
@@ -97,25 +107,22 @@ class ExerciseEditorViewModel(private val repository: BellsRepository, uid: Stri
                     .any { it.exercise.key == existing.key },
         ),
     )
-    val state: StateFlow<ExerciseEditorUiState> = _state.asStateFlow()
+        private set
 
     /** Changes the draft; a locked one keeps its equipment and measure. */
     fun change(transform: (ExerciseDraft) -> ExerciseDraft) {
-        _state.update { state ->
-            val changed = transform(state.draft)
-            state.copy(
-                draft = if (state.locked) {
-                    changed.copy(equipment = state.draft.equipment, measure = state.draft.measure)
-                } else {
-                    changed
-                },
-            )
-        }
+        val changed = transform(state.draft)
+        state = state.copy(
+            draft = if (state.locked) {
+                changed.copy(equipment = state.draft.equipment, measure = state.draft.measure)
+            } else {
+                changed
+            },
+        )
     }
 
     /** Saves it as [name] with [cues]; false, and nothing saved, while it can't be. */
     fun save(name: String, cues: String): Boolean {
-        val state = _state.value
         if (!state.draft.canSave(name, state.taken)) return false
         repository.saveExercise(uid, state.draft.copy(name = name, cues = cues))
         return true
@@ -124,37 +131,95 @@ class ExerciseEditorViewModel(private val repository: BellsRepository, uid: Stri
     /** Archives the exercise, or restores an archived one; nothing for one not saved yet. */
     fun toggleArchived() {
         val uid = uid ?: return
-        repository.setArchived(uid, !_state.value.archived)
+        repository.setArchived(uid, !state.archived)
+    }
+
+    companion object {
+        /** Keeps what was opened and the draft, enums by their names: not every platform saves an enum. */
+        fun saver(repository: BellsRepository): Saver<ExerciseEditor, Any> = mapSaver(
+            save = {
+                val draft = it.state.draft
+                mapOf(
+                    UID to it.openedUid.orEmpty(),
+                    OPENED_NAME to it.openedName,
+                    NAME to draft.name,
+                    EQUIPMENT to draft.equipment.name,
+                    MEASURE to draft.measure.name,
+                    PER_SIDE to draft.perSide,
+                    FOCUS to draft.focus.name,
+                    CUES to draft.cues,
+                )
+            },
+            restore = {
+                ExerciseEditor(
+                    repository,
+                    openedUid = (it.getValue(UID) as String).ifEmpty { null },
+                    openedName = it.getValue(OPENED_NAME) as String,
+                    restored = ExerciseDraft(
+                        name = it.getValue(NAME) as String,
+                        equipment = Equipment.valueOf(it.getValue(EQUIPMENT) as String),
+                        measure = Measure.valueOf(it.getValue(MEASURE) as String),
+                        perSide = it.getValue(PER_SIDE) as Boolean,
+                        focus = Focus.valueOf(it.getValue(FOCUS) as String),
+                        cues = it.getValue(CUES) as String,
+                    ),
+                )
+            },
+        )
+
+        private const val UID = "uid"
+        private const val OPENED_NAME = "openedName"
+        private const val NAME = "name"
+        private const val EQUIPMENT = "equipment"
+        private const val MEASURE = "measure"
+        private const val PER_SIDE = "perSide"
+        private const val FOCUS = "focus"
+        private const val CUES = "cues"
     }
 }
 
+/** The [ExerciseEditor] for [uid], or a new exercise named [name], for as long as the caller shows it. */
 @Composable
-fun ExerciseEditorRoute(uid: String?, name: String, onBack: () -> Unit) {
-    val scope = currentKoinScope()
-    val viewModel = viewModel { ExerciseEditorViewModel(scope.get(), uid, name) }
-    val state by viewModel.state.collectAsStateWithLifecycle()
-    ExerciseEditorScreen(
-        state,
-        onChange = viewModel::change,
-        onSave = { name, cues -> if (viewModel.save(name, cues)) onBack() },
-        onBack = onBack,
-        onArchive = {
-            viewModel.toggleArchived()
-            onBack()
-        },
-    )
+fun rememberExerciseEditor(uid: String?, name: String): ExerciseEditor {
+    val repository = currentKoinScope().get<BellsRepository>()
+    val saver = remember(repository) { ExerciseEditor.saver(repository) }
+    return rememberSaveable(uid, name, saver = saver) { ExerciseEditor(repository, uid, name) }
 }
 
 /**
- * An exercise of the user's: its name, what it is done with, how it is counted and sided, its focus, cues.
- * One saved can be archived, or restored, with [onArchive].
+ * The sheet that adds an exercise of the user's, named [name] to start, or changes their [uid]: beside the
+ * page on a tablet, rising from the bottom on a phone, as a band or a preset does. Saving, archiving and
+ * restoring close it; so does every other way out, which saves nothing.
  */
 @Composable
-fun ExerciseEditorScreen(
+fun ExerciseEditorSheet(uid: String?, name: String, onDismiss: () -> Unit) {
+    val editor = rememberExerciseEditor(uid, name)
+    val title = stringResource(
+        if (editor.state.saved) Res.string.exercise_editor_edit else Res.string.exercise_editor_new,
+    )
+    IntervalSheet(title, onDismiss = onDismiss) { hide ->
+        ExerciseEditorForm(
+            editor.state,
+            onChange = editor::change,
+            onSave = { typed, cues -> if (editor.save(typed, cues)) hide() },
+            onArchive = {
+                editor.toggleArchived()
+                hide()
+            },
+            modifier = Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
+        )
+    }
+}
+
+/**
+ * An exercise of the user's, as a sheet's form: its name, what it is done with, how it is counted and sided,
+ * its focus, cues. One saved can be archived, or restored, with [onArchive].
+ */
+@Composable
+fun ExerciseEditorForm(
     state: ExerciseEditorUiState,
     onChange: ((ExerciseDraft) -> ExerciseDraft) -> Unit,
     onSave: (name: String, cues: String) -> Unit,
-    onBack: () -> Unit,
     modifier: Modifier = Modifier,
     onArchive: () -> Unit = {},
 ) {
@@ -162,8 +227,7 @@ fun ExerciseEditorScreen(
     val palette = IntervalTheme.palette
     val name = rememberTextFieldState(draft.name)
     val cues = rememberTextFieldState(draft.cues)
-    val title = stringResource(if (state.saved) Res.string.exercise_editor_edit else Res.string.exercise_editor_new)
-    ScrollPage(title, modifier, navigation = { BackAction(onBack) }) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         val typed = name.text.toString()
         if (state.archived) {
             Text(

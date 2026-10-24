@@ -37,7 +37,7 @@ import dev.justinsmith.bells.resources.equipment_barbell
 import dev.justinsmith.bells.resources.equipment_bodyweight
 import dev.justinsmith.bells.resources.equipment_kettlebell
 import dev.justinsmith.bells.resources.equipment_mat
-import dev.justinsmith.bells.resources.exercise_a_side
+import dev.justinsmith.bells.resources.exercise_measure_a_side
 import dev.justinsmith.bells.resources.focus_core
 import dev.justinsmith.bells.resources.focus_full_body
 import dev.justinsmith.bells.resources.focus_lower_body
@@ -175,12 +175,16 @@ fun measureName(measure: Measure): String = stringResource(
     },
 )
 
-/** An exercise's facts in a line: "Bodyweight · Time · a side · Core". */
+/**
+ * An exercise's facts in a line: "Bodyweight · Time a side · Core". Without [equipment], for a list that is
+ * already grouped by it, just "Time a side · Core".
+ */
 @Composable
-fun exerciseFacts(exercise: Exercise): String = listOfNotNull(
-    equipmentName(exercise.equipment),
-    measureName(exercise.measure),
-    if (exercise.perSide) stringResource(Res.string.exercise_a_side) else null,
+fun exerciseFacts(exercise: Exercise, equipment: Boolean = true): String = listOfNotNull(
+    if (equipment) equipmentName(exercise.equipment) else null,
+    measureName(exercise.measure).let { measure ->
+        if (exercise.perSide) stringResource(Res.string.exercise_measure_a_side, measure) else measure
+    },
     focusName(exercise.focus),
 ).reduce { line, fact -> stringResource(Res.string.common_joined, line, fact) }
 

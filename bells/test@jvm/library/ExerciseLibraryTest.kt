@@ -25,11 +25,12 @@ class ExerciseLibraryTest {
         waitForText("Search exercises")
         onNodeWithText("94 exercises").assertExists()
         onNode(hasSetTextAction()).performTextInput("PUSHUP")
-        // The push-up and its two variations, each with its facts.
+        // The push-up and its two variations, in a card of their own, each with its facts.
         waitForText("3 exercises")
+        onNodeWithText("Bodyweight · 3").assertExists()
         onNodeWithText("Push-up").assertExists()
         onNodeWithText("Pike push-up").assertExists()
-        onAllNodesWithText("Bodyweight · Reps · Upper body").assertCountEquals(3)
+        onAllNodesWithText("Reps · Upper body").assertCountEquals(3)
         onNodeWithText("Clear").performClick()
         waitForText("94 exercises")
     }

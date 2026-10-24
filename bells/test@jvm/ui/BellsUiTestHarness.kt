@@ -32,7 +32,6 @@ import dev.justinsmith.bells.fakes.RecordingBeeper
 import dev.justinsmith.bells.fakes.bellsTestKoin
 import dev.justinsmith.bells.fakes.fakeBellsPlatformModule
 import dev.justinsmith.bells.gear.GearRoute
-import dev.justinsmith.bells.library.ExerciseEditorRoute
 import dev.justinsmith.bells.library.ExerciseLibraryRoute
 import dev.justinsmith.bells.programs.ProgramEditorRoute
 import dev.justinsmith.bells.programs.ProgramsRoute
@@ -110,8 +109,6 @@ private sealed interface Page {
 
     data object Exercises : Page
 
-    data class ExerciseEditor(val uid: String?, val name: String) : Page
-
     data class Editor(val uid: String?) : Page
 }
 
@@ -142,10 +139,7 @@ private fun BellsHost(koin: KoinApplication, back: NavigationEventDispatcherOwne
                                         onOpenExercises = { backStack.add(Page.Exercises) },
                                     )
 
-                                    Page.Session -> SessionRoute(
-                                        onExit = pop,
-                                        onNewExercise = { backStack.add(Page.ExerciseEditor(null, it)) },
-                                    )
+                                    Page.Session -> SessionRoute(onExit = pop)
 
                                     Page.Programs -> ProgramsRoute(
                                         onNew = { backStack.add(Page.Editor(null)) },
@@ -157,13 +151,7 @@ private fun BellsHost(koin: KoinApplication, back: NavigationEventDispatcherOwne
 
                                     Page.Bells -> GearRoute(onBack = pop)
 
-                                    Page.Exercises -> ExerciseLibraryRoute(
-                                        onBack = pop,
-                                        onNew = { backStack.add(Page.ExerciseEditor(null, it)) },
-                                        onEdit = { backStack.add(Page.ExerciseEditor(it, "")) },
-                                    )
-
-                                    is Page.ExerciseEditor -> ExerciseEditorRoute(page.uid, page.name, onBack = pop)
+                                    Page.Exercises -> ExerciseLibraryRoute(onBack = pop)
                                 }
                             }
                         },

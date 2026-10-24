@@ -1,16 +1,21 @@
 package dev.justinsmith.interval.ui
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,13 +27,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
@@ -139,20 +147,62 @@ fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modi
     )
 }
 
-/** A borderless action in the dim ink, for the quiet choices of a sheet: Cancel, Edit, Delete. */
+/**
+ * A borderless action in the dim ink, for the quiet choices of a sheet: Cancel, Edit, Delete. With [expanded]
+ * it opens and closes what sits under it (a library's Filters): a chevron turns down while closed and up while
+ * open, and a screen reader hears which.
+ */
 @Composable
-fun QuietTextButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun QuietTextButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, expanded: Boolean? = null) {
     val interaction = remember { MutableInteractionSource() }
-    Box(
+    val palette = IntervalTheme.palette
+    Row(
         modifier
             .heightIn(min = Sizes.pillHeight)
             .surfaceButton(interaction, Corners.radius12, Color.Transparent, onClick)
-            .padding(horizontal = Spacing.space16),
-        contentAlignment = Alignment.Center,
+            .then(
+                when (expanded) {
+                    null -> Modifier
+
+                    true -> Modifier.semantics {
+                        collapse {
+                            onClick()
+                            true
+                        }
+                    }
+
+                    false -> Modifier.semantics {
+                        expand {
+                            onClick()
+                            true
+                        }
+                    }
+                },
+            )
+            .padding(start = Spacing.space16, end = if (expanded == null) Spacing.space16 else Spacing.space8),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space4),
     ) {
-        Text(text, style = IntervalTheme.type.label, color = IntervalTheme.palette.textDim)
+        Text(text, style = IntervalTheme.type.label, color = palette.textDim)
+        if (expanded != null) {
+            val turn by animateFloatAsState(
+                if (expanded) CHEVRON_UP else CHEVRON_DOWN,
+                tween(Motion.STATE_MILLIS, easing = StandardEasing),
+                label = "chevron",
+            )
+            Icon(
+                IntervalIcons.Chevron,
+                contentDescription = null,
+                tint = palette.textDim,
+                modifier = Modifier.size(Sizes.icon).rotate(turn),
+            )
+        }
     }
 }
+
+/** How far [QuietTextButton]'s chevron, drawn pointing to the end, turns to point down, or up. */
+private const val CHEVRON_DOWN = 90f
+private const val CHEVRON_UP = -90f
 
 /** The button recipe dialogs and sheets share: accent when [primary], a quiet fill otherwise. */
 @Composable

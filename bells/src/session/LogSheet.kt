@@ -27,13 +27,16 @@ import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.HoldPhase
 import dev.justinsmith.bells.domain.HoldState
 import dev.justinsmith.bells.domain.Side
+import dev.justinsmith.bells.library.ExerciseEditorForm
 import dev.justinsmith.bells.library.ExercisePicker
+import dev.justinsmith.bells.library.rememberExerciseEditor
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.emom_fewer_minutes
 import dev.justinsmith.bells.resources.emom_get_ready
 import dev.justinsmith.bells.resources.emom_minutes
 import dev.justinsmith.bells.resources.emom_more_minutes
 import dev.justinsmith.bells.resources.emom_start
+import dev.justinsmith.bells.resources.exercise_editor_new
 import dev.justinsmith.bells.resources.hold_hold
 import dev.justinsmith.bells.resources.hold_other_side
 import dev.justinsmith.bells.resources.hold_stop
@@ -96,14 +99,22 @@ internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismi
     // Saved by name: an enum is not saveable on every platform.
     var kindName by rememberSaveable { mutableStateOf(LogKind.Set.name) }
     val kind = if (draft.held || editing) LogKind.Set else LogKind.valueOf(kindName)
-    // Change swaps the sheet for the library until an exercise is picked.
+    // Change swaps the sheet for the library until an exercise is picked, and the library's Add for a new
+    // exercise of that name until it is saved, when the sheet comes back with it picked.
     var picking by rememberSaveable { mutableStateOf(false) }
+    var adding by rememberSaveable { mutableStateOf<String?>(null) }
     val onClose = {
         actions.onCancelHold()
         actions.onCancelEdit()
         onDismiss()
     }
-    val title = stringResource(if (editing) Res.string.log_edit_title else Res.string.log_title)
+    val title = stringResource(
+        when {
+            adding != null -> Res.string.exercise_editor_new
+            editing -> Res.string.log_edit_title
+            else -> Res.string.log_title
+        },
+    )
     val sideways = sheetIsSideways()
     IntervalSheet(title, onDismiss = onClose) { hide ->
         val hold = state.hold
@@ -113,20 +124,17 @@ internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismi
             HoldCountdown(hold, holdState, actions.onStopHold)
             return@IntervalSheet
         }
-        if (picking) {
-            ExercisePicker(
-                state.library,
-                actions.onFilters,
-                Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
-                selected = draft.exercise,
-                onPick = { e ->
-                    actions.onDraft { it.copy(exercise = e) }
+        if (picking || adding != null) {
+            ExerciseChoice(
+                state,
+                actions,
+                adding,
+                onPick = { picking = false },
+                onAdd = {
                     picking = false
+                    adding = it
                 },
-                onAdd = { name ->
-                    picking = false
-                    actions.onAddExercise(name)
-                },
+                onSave = { adding = null },
             )
             return@IntervalSheet
         }
@@ -158,6 +166,47 @@ internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismi
             first = what,
             second = howMuch,
             modifier = Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
+        )
+    }
+}
+
+/**
+ * What the Log sheet shows in place of the set while its exercise is being chosen: the library, until one is
+ * picked ([onPick]) or Add starts a new one by its name ([onAdd]); then, while [adding], that exercise's
+ * form, until it is saved ([onSave]) and comes back picked.
+ */
+@Composable
+private fun ExerciseChoice(
+    state: SessionUiState,
+    actions: SessionActions,
+    adding: String?,
+    onPick: () -> Unit,
+    onAdd: (name: String) -> Unit,
+    onSave: () -> Unit,
+) {
+    val modifier = Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8)
+    if (adding == null) {
+        ExercisePicker(
+            state.library,
+            actions.onFilters,
+            modifier,
+            selected = state.draft.exercise,
+            onPick = { e ->
+                actions.onDraft { it.copy(exercise = e) }
+                onPick()
+            },
+            onAdd = { name ->
+                actions.onAddExercise()
+                onAdd(name)
+            },
+        )
+    } else {
+        val editor = rememberExerciseEditor(uid = null, name = adding)
+        ExerciseEditorForm(
+            editor.state,
+            onChange = editor::change,
+            onSave = { typed, cues -> if (editor.save(typed, cues)) onSave() },
+            modifier = modifier,
         )
     }
 }

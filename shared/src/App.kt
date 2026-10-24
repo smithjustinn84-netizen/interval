@@ -56,7 +56,6 @@ import androidx.savedstate.serialization.SavedStateConfiguration
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.gear.GearRoute
 import dev.justinsmith.bells.history.LiftDetailRoute
-import dev.justinsmith.bells.library.ExerciseEditorRoute
 import dev.justinsmith.bells.library.ExerciseLibraryRoute
 import dev.justinsmith.bells.programs.ProgramEditorRoute
 import dev.justinsmith.bells.programs.ProgramsRoute
@@ -72,7 +71,6 @@ import dev.justinsmith.interval.history.WorkoutDetailRoute
 import dev.justinsmith.interval.home.TimerRoute
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.nav.About
-import dev.justinsmith.interval.nav.ExerciseEditor
 import dev.justinsmith.interval.nav.ExerciseLibrary
 import dev.justinsmith.interval.nav.HistoryTab
 import dev.justinsmith.interval.nav.Licenses
@@ -146,7 +144,6 @@ internal val navConfiguration = SavedStateConfiguration {
             subclass(ProgramEditor::class)
             subclass(OwnedBells::class)
             subclass(ExerciseLibrary::class)
-            subclass(ExerciseEditor::class)
             subclass(LiftDetail::class)
         }
     }
@@ -414,10 +411,7 @@ private fun EntryProviderScope<NavKey>.liftEntries(backStack: NavBackStack<NavKe
         )
     }
     entry<Lifting>(metadata = pageKind(PageKind.Mode)) {
-        SessionRoute(
-            onExit = { backStack.removeLastOrNull() },
-            onNewExercise = { backStack.push(ExerciseEditor(name = it)) },
-        )
+        SessionRoute(onExit = { backStack.removeLastOrNull() })
     }
     entry<Programs> {
         ProgramsRoute(
@@ -429,14 +423,7 @@ private fun EntryProviderScope<NavKey>.liftEntries(backStack: NavBackStack<NavKe
     entry<ProgramEditor> { key -> ProgramEditorRoute(uid = key.uid, onBack = { backStack.removeLastOrNull() }) }
     entry<OwnedBells> { GearRoute(onBack = { backStack.removeLastOrNull() }) }
     entry<ExerciseLibrary> {
-        ExerciseLibraryRoute(
-            onBack = { backStack.removeLastOrNull() },
-            onNew = { backStack.push(ExerciseEditor(name = it)) },
-            onEdit = { backStack.push(ExerciseEditor(uid = it)) },
-        )
-    }
-    entry<ExerciseEditor> { key ->
-        ExerciseEditorRoute(key.uid, key.name, onBack = { backStack.removeLastOrNull() })
+        ExerciseLibraryRoute(onBack = { backStack.removeLastOrNull() })
     }
     entry<LiftDetail>(
         metadata = { if (it.fromHistory) ListDetailSceneStrategy.detailPane(HISTORY_SCENE) else emptyMap() },

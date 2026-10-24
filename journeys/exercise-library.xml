@@ -6,9 +6,9 @@
   </description>
   <actions>
     <action>Tap the "Lift" tab, then the "Exercises" card</action>
-    <action>Verify that a page titled "Exercises" shows "Search exercises", the chips "Kettlebell", "Barbell", "Bodyweight", "Band" and "Mat", "94 exercises" and "Filters", and a "New exercise" button in the title bar</action>
+    <action>Verify that a page titled "Exercises" shows "Search exercises", the chips "Kettlebell", "Barbell", "Bodyweight", "Band" and "Mat", "94 exercises" and "Filters" with a chevron, a "New exercise" button in the title bar, and cards headed "Kettlebell · 19" and "Barbell · 20" (side by side on a tablet)</action>
     <action>Type "PUSHUP" into "Search exercises"</action>
-    <action>Verify that "3 exercises" is shown with "Push-up", "Incline push-up" and "Pike push-up", each over "Bodyweight · Reps · Upper body", and a "Clear" button</action>
+    <action>Verify that "3 exercises" is shown with "Push-up", "Incline push-up" and "Pike push-up", in a card headed "Bodyweight · 3", each over "Reps · Upper body", and a "Clear" button</action>
     <action>Tap "Clear"</action>
     <action>Verify that the search is empty and "94 exercises" is shown</action>
     <action>Tap the "Mat" chip</action>
@@ -22,28 +22,28 @@
     <action>Type "Copenhagen plank" into "Search exercises"</action>
     <action>Verify that "No exercise matches “Copenhagen plank”" is shown with "Check the spelling, or clear a filter." and a button "Add “Copenhagen plank” as an exercise"</action>
     <action>Tap "Add “Copenhagen plank” as an exercise"</action>
-    <action>Verify that a page titled "New exercise" shows "Copenhagen plank" in its "Name" field, "Bodyweight" and "Reps" selected, "One side at a time" off, "Full body" selected, and "Save exercise"</action>
+    <action>Verify that a sheet opens over the library (beside it on a tablet, rising from the bottom on a phone) and shows "Copenhagen plank" in its "Name" field, "Bodyweight" and "Reps" selected, "One side at a time" off, "Full body" selected, and "Save exercise"</action>
     <action>Tap "Time", turn on "One side at a time", tap "Core"</action>
     <action>Type "Top knee on the bench" into the "Cues" field</action>
     <action>Tap "Save exercise"</action>
-    <action>Verify that the library is shown, still searching "Copenhagen plank", with "1 exercise": "Copenhagen plank" over "Bodyweight · Time · a side · Core", tagged "Yours"</action>
+    <action>Verify that the library is shown, the sheet gone, still searching "Copenhagen plank", with "1 exercise": a card headed "Yours · 1" with "Copenhagen plank" over "Bodyweight · Time a side · Core" and a chevron</action>
     <action>Tap "Copenhagen plank"</action>
-    <action>Verify that a page titled "Edit exercise" is shown with "Equipment" and "Measured by" chips</action>
-    <action>Tap "Back"</action>
+    <action>Verify that the sheet opens again with "Equipment" and "Measured by" chips, and "Archive exercise"</action>
+    <action>Tap "Back" to close the sheet</action>
     <action>Tap "New exercise" in the title bar, type "copenhagen PLANK" into the "Name" field</action>
     <action>Verify that "One of yours already has this name." is shown and there is no "Save exercise"</action>
-    <action>Tap "Back" twice to return to the Lift tab</action>
+    <action>Tap "Back" to close the sheet, then "Back" to return to the Lift tab</action>
     <action>Tap "Start session", then "Log set", then "Change"</action>
     <action>Type "copen" into "Search exercises" and tap "Copenhagen plank"</action>
-    <action>Verify that the exercise card reads "Copenhagen plank" over "Bodyweight · Time · a side · Core" with "Top knee on the bench" under it, and "Held" reads "0:30"</action>
+    <action>Verify that the exercise card reads "Copenhagen plank" over "Bodyweight · Time a side · Core" with "Top knee on the bench" under it, and "Held" reads "0:30"</action>
     <action>Tap "Log set" at the bottom of the sheet</action>
     <action>Verify that the session shows "Copenhagen plank" with a set "0:30 · Left"</action>
     <action>Tap "Log set", then "Change", then clear the search and type "Turkish sit-up"</action>
-    <action>Tap "Add “Turkish sit-up” as an exercise", then "Save exercise"</action>
+    <action>Tap "Add “Turkish sit-up” as an exercise": the same sheet turns into the new exercise's form. Tap "Save exercise"</action>
     <action>Verify that the sheet is back with its exercise card reading "Turkish sit-up" over "Bodyweight · Reps · Full body"</action>
     <action>Swipe the sheet down, tap "Finish", then "Done"</action>
     <action>Tap the "Exercises" card, type "copenhagen", tap "Copenhagen plank"</action>
-    <action>Verify that "Edit exercise" says "Sets of it are logged, so its equipment and measure stay as they are." and shows no "Kettlebell" chip</action>
-    <action>Tap "Back" twice to return to the Lift tab</action>
+    <action>Verify that the sheet says "Sets of it are logged, so its equipment and measure stay as they are." and shows no "Kettlebell" chip</action>
+    <action>Tap "Back" to close the sheet, then "Back" to return to the Lift tab</action>
   </actions>
 </journey>

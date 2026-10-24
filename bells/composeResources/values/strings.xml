@@ -223,6 +223,8 @@
     <string name="library_filters_count">Filters · %1$d</string>
     <string name="library_recent">Recent</string>
     <string name="library_all">All</string>
+    <!-- A group of the library's exercises by what they are done with, and how many: "Kettlebell · 30". -->
+    <string name="library_group">%1$s · %2$d</string>
     <string name="library_empty_query">No exercise matches “%1$s”</string>
     <string name="library_empty">No exercise matches these filters</string>
     <string name="library_empty_hint">Check the spelling, or clear a filter.</string>
@@ -239,7 +241,8 @@
     <string name="measure_reps">Reps</string>
     <string name="measure_time">Time</string>
     <!-- In a line of an exercise's facts: "Bodyweight · Time · a side · Core". -->
-    <string name="exercise_a_side">a side</string>
+    <!-- How an exercise done one side at a time is measured: "Reps a side", "Time a side". -->
+    <string name="exercise_measure_a_side">%1$s a side</string>
     <string name="focus_upper_body">Upper body</string>
     <string name="focus_lower_body">Lower body</string>
     <string name="focus_core">Core</string>

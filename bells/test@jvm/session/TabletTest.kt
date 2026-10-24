@@ -17,11 +17,14 @@ import dev.justinsmith.bells.domain.LiftSession
 import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.Side
+import dev.justinsmith.bells.domain.offeredExercises
 import dev.justinsmith.bells.domain.program
 import dev.justinsmith.bells.gear.GearScreen
 import dev.justinsmith.bells.gear.GearUiState
 import dev.justinsmith.bells.history.LiftDetailScreen
 import dev.justinsmith.bells.history.LiftDetailUiState
+import dev.justinsmith.bells.library.ExerciseLibraryScreen
+import dev.justinsmith.bells.library.LibraryList
 import dev.justinsmith.bells.today.TodayScreen
 import dev.justinsmith.bells.today.TodayUiState
 import dev.justinsmith.bells.ui.Window
@@ -64,6 +67,17 @@ class TabletTest {
         val bar = onNodeWithText("Your bar").assertIsDisplayed().getUnclippedBoundsInRoot()
         assertTrue(bar.left >= bells.right)
         assertTrue(bar.top < bells.bottom)
+    }
+
+    @Test
+    fun `the exercise library lays its cards side by side`() = runUiTest(Window.Tablet) {
+        setBellsContent {
+            ExerciseLibraryScreen(LibraryList(offeredExercises(emptyList())), onFilters = {}, onBack = {})
+        }
+        val bells = onNodeWithText("Kettlebell · 19").assertIsDisplayed().getUnclippedBoundsInRoot()
+        val bars = onNodeWithText("Barbell · 20").assertIsDisplayed().getUnclippedBoundsInRoot()
+        assertTrue(bars.left >= bells.right)
+        assertTrue(bars.top < bells.bottom)
     }
 
     @Test

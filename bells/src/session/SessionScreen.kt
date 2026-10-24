@@ -111,7 +111,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
 @Composable
-fun SessionRoute(onExit: () -> Unit, onNewExercise: (name: String) -> Unit = {}) {
+fun SessionRoute(onExit: () -> Unit) {
     val scope = currentKoinScope()
     val filters = scope.get<ExerciseFilterStore>()
     val viewModel =
@@ -156,7 +156,7 @@ fun SessionRoute(onExit: () -> Unit, onNewExercise: (name: String) -> Unit = {})
 
             SessionPage.Logging -> SessionScreen(
                 state,
-                sessionActions(viewModel, filters, title, onExit, onNewExercise),
+                sessionActions(viewModel, filters, title, onExit),
             )
         }
     }
@@ -176,14 +176,10 @@ private fun sessionActions(
     filters: ExerciseFilterStore,
     title: String,
     onExit: () -> Unit,
-    onNewExercise: (name: String) -> Unit,
 ): SessionActions = SessionActions(
     onDraft = viewModel::updateDraft,
     onFilters = filters::update,
-    onAddExercise = { name ->
-        viewModel.expectNewExercise()
-        onNewExercise(name)
-    },
+    onAddExercise = viewModel::expectNewExercise,
     onLog = viewModel::logSet,
     onLogNext = viewModel::logNext,
     onStartPlannedEmom = viewModel::startPlannedEmom,
@@ -241,7 +237,8 @@ private fun LeaveGuard(emomRunning: Boolean, hasSets: Boolean, onLeave: () -> Un
 data class SessionActions(
     val onDraft: ((SetDraft) -> SetDraft) -> Unit = {},
     val onFilters: ((ExerciseFilters) -> ExerciseFilters) -> Unit = {},
-    val onAddExercise: (name: String) -> Unit = {},
+    // The Log sheet is off to add an exercise of the user's: once it is saved, the sheet has it picked.
+    val onAddExercise: () -> Unit = {},
     val onLog: () -> Unit = {},
     val onLogNext: () -> Unit = {},
     val onStartPlannedEmom: () -> Unit = {},
