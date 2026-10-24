@@ -10,6 +10,7 @@ import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.monthDaysOf
 import dev.justinsmith.interval.timer.sameShape
 import dev.justinsmith.interval.timer.weekStartOf
+import dev.justinsmith.interval.timer.weeksMeetingGoal
 import dev.justinsmith.interval.timer.weekdayOf
 
 /** How one planned workout stands on one day. */
@@ -201,12 +202,7 @@ class TrainingLog(
     fun streak(goal: Int): Streak {
         val first = firstWorkoutDay ?: return Streak(0, 0)
         val current = weekStartOf(today)
-        var week = if (countInWeek(current) >= goal) current else current - DAYS_PER_WEEK
-        var run = 0
-        while (countInWeek(week) >= goal) {
-            run++
-            week -= DAYS_PER_WEEK
-        }
+        val run = weeksMeetingGoal(current, goal, ::countInWeek)
         var best = 0
         var going = 0
         var start = weekStartOf(first)

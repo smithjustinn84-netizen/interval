@@ -48,4 +48,9 @@ class WeekStandingTest {
         assertEquals(1, standing.streak)
         assertFalse(standing.goalMet)
     }
+
+    @Test
+    fun `a goal of none holds no streak rather than counting every week`() {
+        assertEquals(0, weeksMeetingGoal(monday, goal = 0) { 0 })
+    }
 }
