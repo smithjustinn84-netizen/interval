@@ -50,7 +50,7 @@ object Sizes {
     /** Maximum width of the setup column. */
     val content = 460.dp
 
-    /** Maximum width of the Timer tab's right-hand column of choices, when the window has room. */
+    /** Maximum width of the Timer tab's column (its right-hand column sideways), when the window has room. */
     val contentWide = 760.dp
 
     /** Narrowest column of the Presets and History grids; wider windows fit more columns. */

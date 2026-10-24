@@ -116,8 +116,9 @@ fun TimerScreen(
                 }
             }
         } else {
-            Box(Modifier.align(Alignment.TopCenter).widthIn(max = Sizes.content).fillMaxSize()) {
-                SetupLanes(Modifier.matchParentSize())
+            // Upright: one column, as wide as a tablet's, over lanes that fill the window.
+            SetupLanes(Modifier.matchParentSize())
+            Box(Modifier.align(Alignment.TopCenter).widthIn(max = Sizes.contentWide).fillMaxSize()) {
                 Column(Modifier.fillMaxSize()) {
                     TimerTitleBar(state.canSavePreset, onSave, onDescribe, onOpenSettings)
                     Total(state, onEditActivity, Modifier.padding(horizontal = Spacing.space20))
