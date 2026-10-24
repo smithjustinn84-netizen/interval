@@ -8,6 +8,7 @@ import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.Focus
 import dev.justinsmith.bells.domain.Measure
+import dev.justinsmith.bells.domain.Muscle
 import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.domain.formatKg
@@ -45,6 +46,24 @@ import dev.justinsmith.bells.resources.focus_upper_body
 import dev.justinsmith.bells.resources.log_no_bar
 import dev.justinsmith.bells.resources.measure_reps
 import dev.justinsmith.bells.resources.measure_time
+import dev.justinsmith.bells.resources.muscle_abs
+import dev.justinsmith.bells.resources.muscle_adductors
+import dev.justinsmith.bells.resources.muscle_biceps
+import dev.justinsmith.bells.resources.muscle_calves
+import dev.justinsmith.bells.resources.muscle_chest
+import dev.justinsmith.bells.resources.muscle_forearms
+import dev.justinsmith.bells.resources.muscle_glutes
+import dev.justinsmith.bells.resources.muscle_hamstrings
+import dev.justinsmith.bells.resources.muscle_hip_flexors
+import dev.justinsmith.bells.resources.muscle_lats
+import dev.justinsmith.bells.resources.muscle_lower_back
+import dev.justinsmith.bells.resources.muscle_obliques
+import dev.justinsmith.bells.resources.muscle_quads
+import dev.justinsmith.bells.resources.muscle_rear_delts
+import dev.justinsmith.bells.resources.muscle_shoulders
+import dev.justinsmith.bells.resources.muscle_traps
+import dev.justinsmith.bells.resources.muscle_triceps
+import dev.justinsmith.bells.resources.muscle_upper_back
 import dev.justinsmith.bells.resources.plates_plus
 import dev.justinsmith.bells.resources.set_line
 import dev.justinsmith.bells.resources.set_line_added
@@ -199,5 +218,29 @@ fun bandColourName(colour: BandColour): String = stringResource(
         BandColour.Purple -> Res.string.colour_purple
         BandColour.Orange -> Res.string.colour_orange
         BandColour.Grey -> Res.string.colour_grey
+    },
+)
+
+@Composable
+fun muscleName(muscle: Muscle): String = stringResource(
+    when (muscle) {
+        Muscle.Glutes -> Res.string.muscle_glutes
+        Muscle.Hamstrings -> Res.string.muscle_hamstrings
+        Muscle.Quads -> Res.string.muscle_quads
+        Muscle.Calves -> Res.string.muscle_calves
+        Muscle.Adductors -> Res.string.muscle_adductors
+        Muscle.HipFlexors -> Res.string.muscle_hip_flexors
+        Muscle.LowerBack -> Res.string.muscle_lower_back
+        Muscle.Abs -> Res.string.muscle_abs
+        Muscle.Obliques -> Res.string.muscle_obliques
+        Muscle.Lats -> Res.string.muscle_lats
+        Muscle.UpperBack -> Res.string.muscle_upper_back
+        Muscle.Traps -> Res.string.muscle_traps
+        Muscle.Chest -> Res.string.muscle_chest
+        Muscle.Shoulders -> Res.string.muscle_shoulders
+        Muscle.RearDelts -> Res.string.muscle_rear_delts
+        Muscle.Biceps -> Res.string.muscle_biceps
+        Muscle.Triceps -> Res.string.muscle_triceps
+        Muscle.Forearms -> Res.string.muscle_forearms
     },
 )

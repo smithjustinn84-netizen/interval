@@ -251,6 +251,28 @@
     <!-- Exercises the user adds: the library's New, the empty search's Add, and the editor -->
     <string name="library_new">New exercise</string>
     <!-- An exercise's page, opened from the library -->
+    <string name="detail_works">Works</string>
+    <!-- The muscles it works less: "Also Lower back · Abs" -->
+    <string name="detail_also">Also %1$s</string>
+    <!-- Muscles, as an exercise's page names what it works -->
+    <string name="muscle_glutes">Glutes</string>
+    <string name="muscle_hamstrings">Hamstrings</string>
+    <string name="muscle_quads">Quads</string>
+    <string name="muscle_calves">Calves</string>
+    <string name="muscle_adductors">Adductors</string>
+    <string name="muscle_hip_flexors">Hip flexors</string>
+    <string name="muscle_lower_back">Lower back</string>
+    <string name="muscle_abs">Abs</string>
+    <string name="muscle_obliques">Obliques</string>
+    <string name="muscle_lats">Lats</string>
+    <string name="muscle_upper_back">Upper back</string>
+    <string name="muscle_traps">Traps</string>
+    <string name="muscle_chest">Chest</string>
+    <string name="muscle_shoulders">Shoulders</string>
+    <string name="muscle_rear_delts">Rear delts</string>
+    <string name="muscle_biceps">Biceps</string>
+    <string name="muscle_triceps">Triceps</string>
+    <string name="muscle_forearms">Forearms and grip</string>
     <string name="detail_history">Your history</string>
     <!-- How often it was done and when last: "Done 3 times · last Sunday, Oct 11" -->
     <plurals name="detail_done">

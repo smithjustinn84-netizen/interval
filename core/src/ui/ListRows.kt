@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -53,14 +54,21 @@ fun GroupLabel(text: String, modifier: Modifier = Modifier) {
     )
 }
 
-/** A white card holding a group of rows, separated by [RowDivider]s. */
+/**
+ * A white card holding a group of rows, separated by [RowDivider]s. On a sheet, which is the card's own surface,
+ * it takes the [fill] of the sheet's fields instead, so it still stands out.
+ */
 @Composable
-fun ListCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+fun ListCard(
+    modifier: Modifier = Modifier,
+    fill: Color = IntervalTheme.palette.surface,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     Column(
         modifier
             .fillMaxWidth()
             .clip(Corners.radius18)
-            .background(IntervalTheme.palette.surface),
+            .background(fill),
         content = content,
     )
 }

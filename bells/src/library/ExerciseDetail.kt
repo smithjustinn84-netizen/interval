@@ -22,23 +22,33 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.CustomExercise
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.ExerciseHistory
+import dev.justinsmith.bells.domain.Muscle
+import dev.justinsmith.bells.domain.Muscles
 import dev.justinsmith.bells.domain.PastSession
+import dev.justinsmith.bells.domain.UnknownExercise
+import dev.justinsmith.bells.domain.muscles
 import dev.justinsmith.bells.resources.Res
+import dev.justinsmith.bells.resources.common_joined
+import dev.justinsmith.bells.resources.detail_also
 import dev.justinsmith.bells.resources.detail_best
 import dev.justinsmith.bells.resources.detail_done
 import dev.justinsmith.bells.resources.detail_edit
 import dev.justinsmith.bells.resources.detail_history
 import dev.justinsmith.bells.resources.detail_never
 import dev.justinsmith.bells.resources.detail_open_session
+import dev.justinsmith.bells.resources.detail_works
 import dev.justinsmith.bells.resources.exercise_archived_note
 import dev.justinsmith.bells.resources.exercise_cues
 import dev.justinsmith.bells.resources.exercise_editor_edit
 import dev.justinsmith.bells.ui.RecordRow
+import dev.justinsmith.bells.ui.cues
 import dev.justinsmith.bells.ui.exerciseFacts
 import dev.justinsmith.bells.ui.exerciseName
+import dev.justinsmith.bells.ui.muscleName
 import dev.justinsmith.bells.ui.setLine
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalIcons
@@ -51,6 +61,7 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.pressScale
 import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringArrayResource
 import org.jetbrains.compose.resources.stringResource
 
 /** A past session with an exercise, and the day it was, as the platform words it: "Sunday, Oct 11". */
@@ -114,19 +125,60 @@ private fun ColumnScope.ExerciseHead(exercise: Exercise, onEdit: (() -> Unit)?) 
     if ((exercise as? CustomExercise)?.archived == true) {
         Text(stringResource(Res.string.exercise_archived_note), style = IntervalTheme.type.meta, color = palette.text)
     }
-    (exercise as? CustomExercise)?.cues?.takeIf { it.isNotBlank() }?.let { cues ->
-        GroupLabel(stringResource(Res.string.exercise_cues))
-        ListCard {
+    when (exercise) {
+        is BuiltInExercise -> {
+            Cues(stringArrayResource(exercise.cues()))
+            Works(exercise.muscles)
+        }
+
+        is CustomExercise -> exercise.cues.takeIf { it.isNotBlank() }?.let { Cues(listOf(it)) }
+
+        is UnknownExercise -> Unit
+    }
+    onEdit?.let { SecondaryButton(stringResource(Res.string.detail_edit), it, Modifier.fillMaxWidth()) }
+}
+
+/** How to do it, a line each, in a card. */
+@Composable
+private fun Cues(lines: List<String>) {
+    val palette = IntervalTheme.palette
+    GroupLabel(stringResource(Res.string.exercise_cues))
+    ListCard(fill = IntervalTheme.palette.surfaceVariant) {
+        lines.forEachIndexed { i, line ->
+            if (i > 0) RowDivider()
             Text(
-                cues,
+                line,
                 style = IntervalTheme.type.body,
                 color = palette.text,
                 modifier = Modifier.padding(Spacing.space16),
             )
         }
     }
-    onEdit?.let { SecondaryButton(stringResource(Res.string.detail_edit), it, Modifier.fillMaxWidth()) }
 }
+
+/** What it works most, then what it works [Muscles.also]: "Glutes · Hamstrings", "Also Lower back · Abs". */
+@Composable
+private fun Works(muscles: Muscles) {
+    val palette = IntervalTheme.palette
+    GroupLabel(stringResource(Res.string.detail_works))
+    ListCard(fill = IntervalTheme.palette.surfaceVariant) {
+        Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+            Text(joined(muscles.primary), style = IntervalTheme.type.label, color = palette.text)
+            if (muscles.also.isNotEmpty()) {
+                Text(
+                    stringResource(Res.string.detail_also, joined(muscles.also)),
+                    style = IntervalTheme.type.meta,
+                    color = palette.textDim,
+                )
+            }
+        }
+    }
+}
+
+/** Muscles in a line: "Glutes · Hamstrings · Lower back". */
+@Composable
+private fun joined(muscles: List<Muscle>): String =
+    muscles.map { muscleName(it) }.reduce { line, name -> stringResource(Res.string.common_joined, line, name) }
 
 /**
  * The user's history with it: how often and when last, their best, and its recent sessions, each a card of
@@ -148,7 +200,7 @@ private fun ColumnScope.History(state: ExerciseDetailUiState, onOpen: (uid: Stri
     )
     if (history.records.isNotEmpty()) {
         GroupLabel(stringResource(Res.string.detail_best))
-        ListCard {
+        ListCard(fill = IntervalTheme.palette.surfaceVariant) {
             history.records.forEachIndexed { i, record ->
                 if (i > 0) RowDivider()
                 RecordRow(record)
@@ -164,7 +216,7 @@ private fun PastSessionCard(dated: DatedSession, onOpen: (uid: String) -> Unit) 
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
     GroupLabel(dated.date)
-    ListCard {
+    ListCard(fill = IntervalTheme.palette.surfaceVariant) {
         Row(
             Modifier
                 .fillMaxWidth()

@@ -31,12 +31,16 @@ class ExerciseDetailTest {
     }
 
     @Test
-    fun `a built-in never done opens to say so`() = bellsAppTest {
+    fun `a built-in never done shows how to do it and what it works`() = bellsAppTest {
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
         onNodeWithText("Goblet squat").performScrollTo().performClick()
         waitForText("Your history")
-        onNodeWithText("Not logged yet. Its sets will show here.").assertExists()
+        // How to do it, and what it works.
+        onNodeWithText("Sit between your heels with the chest up").assertExists()
+        onNodeWithText("Quads · Glutes").assertExists()
+        onNodeWithText("Also Adductors · Abs · Upper back").assertExists()
+        onNodeWithText("Not logged yet. Its sets will show here.").performScrollTo().assertExists()
         onNodeWithText("Edit").assertDoesNotExist()
     }
 
