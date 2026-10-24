@@ -15,8 +15,11 @@ import dev.justinsmith.bells.domain.EmomPhase
 import dev.justinsmith.bells.domain.EmomState
 import dev.justinsmith.bells.domain.LiftSession
 import dev.justinsmith.bells.domain.ProgramId
+import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.domain.program
+import dev.justinsmith.bells.history.LiftDetailScreen
+import dev.justinsmith.bells.history.LiftDetailUiState
 import dev.justinsmith.bells.today.TodayScreen
 import dev.justinsmith.bells.today.TodayUiState
 import dev.justinsmith.bells.ui.Window
@@ -53,12 +56,36 @@ class TabletTest {
     }
 
     @Test
-    fun `a session on an upright tablet puts Log set beside the sets`() = bellsAppTest(window = Window.TabletPortrait) {
+    fun `a session on an upright tablet keeps one wider column`() = bellsAppTest(window = Window.TabletPortrait) {
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
+        onNodeWithText("Log set").performClick()
+        waitForText("Reps")
+        onAllNodesWithText("Log set").onLast().performClick()
+        waitForText("16 kg × 10")
+        val time = onNodeWithText("Time").assertIsDisplayed().getUnclippedBoundsInRoot()
+        val since = onNodeWithText("Since last set").assertIsDisplayed().getUnclippedBoundsInRoot()
+        val set = onNodeWithText("16 kg × 10").assertIsDisplayed().getUnclippedBoundsInRoot()
         val log = onNodeWithText("Log set").assertIsDisplayed().getUnclippedBoundsInRoot()
-        val sets = onNodeWithText("Log your first set", substring = true).assertIsDisplayed().getUnclippedBoundsInRoot()
-        assertTrue(sets.left >= log.right)
+        // The numbers in one row, the sets under them and Log set at the foot, not a column of each.
+        assertTrue(since.top == time.top && since.left > time.right)
+        assertTrue(set.top > time.bottom && log.top > set.bottom)
+    }
+
+    @Test
+    fun `a finished session on a tablet puts its lifts beside its numbers`() = runUiTest(Window.Tablet) {
+        val sets = listOf(
+            SetLog(1, BuiltInExercise.TwoHandSwing, 24.0, 10, null, 0),
+            SetLog(2, BuiltInExercise.GobletSquat, 20.0, 8, null, 0),
+        )
+        val state = LiftDetailUiState(LiftSession("s", 0, 600_000, "Swings and squats", sets), "Saturday", "1:21 PM")
+        setBellsContent { LiftDetailScreen(state, onDelete = {}, onBack = {}) }
+        val moved = onNodeWithText("Moved").assertIsDisplayed().getUnclippedBoundsInRoot()
+        val swing = onNodeWithText("24 kg × 10").assertIsDisplayed().getUnclippedBoundsInRoot()
+        val delete = onNodeWithText("Delete").assertIsDisplayed().getUnclippedBoundsInRoot()
+        assertTrue(swing.left > moved.right)
+        // Delete is centred under both, not stuck to the first column.
+        assertTrue(delete.left > moved.left + 100.dp)
     }
 
     @Test

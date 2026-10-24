@@ -16,7 +16,7 @@ Compose Multiplatform app for **Android, iOS and desktop (JVM)**, built with the
 ./kotlin do format                  # ktlint auto-format
 ./kotlin check detekt               # detekt + Compose rules over every module (config: detekt.yml)
 ./kotlin check                      # All checks (tests + lint + detekt)
-./kotlin run -m desktopApp          # Desktop window (with Compose Hot Reload)
+./kotlin run -m desktopApp --compose-hot-reload   # Desktop window that reloads on every save
 ./kotlin package -m androidApp -f aab   # Release bundle (R8 on; rules in androidApp/proguard-rules.pro).
                                         # Unsigned until a keystore is set up (`./kotlin tool generate-keystore`)
 ./kotlin show modules | settings | dependencies | tasks
@@ -26,6 +26,15 @@ Compose Multiplatform app for **Android, iOS and desktop (JVM)**, built with the
 `detekt-plugin`).
 
 Running on the Android emulator or iOS simulator: the `run-on-device` skill.
+
+**UI and UX work: reach for Compose Hot Reload first.** Run the desktop app with `--compose-hot-reload` (from
+your own jj workspace) and leave it up while you edit: each save recompiles and swaps the code in place, so a
+layout or motion change shows in seconds without losing the screen you are on. Size the window to the form
+factor you are checking (`InitialSize` in `desktopApp/src/main.kt`, reverted before committing). To see the
+window yourself you need either a computer-use grant for the running app (`MainKt`, `com.jetbrains.jbr.java`)
+or the toolchain's `./kotlin compose-hot-reload-mcp-server` registered as an MCP server. Without either, render
+the screen from a throwaway `test@jvm` test (`onRoot().captureToImage()` to a PNG at a harness `Window`) and
+delete the test after. The emulator is for what only a device shows: insets, the keyboard, system bars.
 
 ## Layout
 

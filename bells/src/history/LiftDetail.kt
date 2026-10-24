@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -119,7 +120,7 @@ fun LiftDetailScreen(
     val palette = IntervalTheme.palette
     var confirming by rememberSaveable { mutableStateOf(false) }
     val gutter = Modifier.padding(horizontal = Spacing.space16)
-    // One column on a phone; wider windows lay the lifts out side by side under the numbers.
+    // One column on a phone; a wider window puts the numbers in one column and the lifts beside them.
     TabGrid(
         session.title,
         modifier,
@@ -128,21 +129,21 @@ fun LiftDetailScreen(
             if (inPane) IconAction(IntervalIcons.Close, stringResource(Res.string.history_close_cd), onBack)
         },
     ) {
-        item(key = "numbers", span = StaggeredGridItemSpan.FullLine) {
-            Column(gutter) {
-                Text(
-                    stringResource(Res.string.common_joined, state.date, state.time),
-                    style = IntervalTheme.type.meta,
-                    color = palette.textDim,
-                    modifier = Modifier.padding(bottom = Spacing.space16),
-                )
-                SessionStats(session, state.records)
-            }
+        item(key = "when", span = StaggeredGridItemSpan.FullLine) {
+            Text(
+                stringResource(Res.string.common_joined, state.date, state.time),
+                style = IntervalTheme.type.meta,
+                color = palette.textDim,
+                modifier = gutter.padding(bottom = Spacing.space16),
+            )
         }
+        // A cell of its own, so on a wide window the numbers keep a column's width and the lifts sit beside them.
+        item(key = "numbers") { SessionStats(session, state.records, gutter.padding(bottom = Spacing.space16)) }
         session.sets.groupBy { it.exercise to it.double }.entries.forEachIndexed { i, (lift, sets) ->
             item(key = "lift-$i") {
-                Column(gutter) {
-                    GroupLabel(liftName(lift.first, lift.second), Modifier.padding(top = Spacing.space16))
+                // Spaced below rather than above, so beside the numbers a lift's label lines up with their top.
+                Column(gutter.padding(bottom = Spacing.space16)) {
+                    GroupLabel(liftName(lift.first, lift.second))
                     ListCard {
                         sets.forEachIndexed { j, set ->
                             if (j > 0) RowDivider()
@@ -158,7 +159,10 @@ fun LiftDetailScreen(
             }
         }
         item(key = "delete", span = StaggeredGridItemSpan.FullLine) {
-            Column(gutter.padding(top = Spacing.space24)) {
+            Column(
+                gutter.fillMaxWidth().padding(top = Spacing.space8),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 SecondaryButton(
                     stringResource(Res.string.history_delete),
                     { confirming = true },

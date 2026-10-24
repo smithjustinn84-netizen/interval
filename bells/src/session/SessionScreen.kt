@@ -304,7 +304,7 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
                 },
             )
         },
-        tiles = { SessionTiles(state) },
+        tiles = { wide -> SessionTiles(state, wide) },
         plan = {
             UpNextCard(state, actions, onChange = { changing = it }, onPlan = { planning = true })
             LoggedSets(state, sets)
@@ -348,24 +348,26 @@ private fun AnnounceRecord(state: SessionUiState, notices: Notices) {
 }
 
 /**
- * Whether a session's screens (the session, its summary) go side by side: on a phone on its side, and on any
- * window wide enough for their fixed column and a list beside it, as a tablet is either way up.
+ * Whether a session's screens (the session, its summary) are upright on a window wider than a phone, as a tablet
+ * held upright is: they keep one column, the width of the Timer's choices rather than a phone's. Two columns
+ * there left the fixed one mostly empty between its numbers and its buttons.
  */
-internal val BoxWithConstraintsScope.hasRoomBeside: Boolean
-    get() = isLandscape || maxWidth >= Sizes.setupColumnLandscape + Sizes.listColumn
+internal val BoxWithConstraintsScope.isWideUpright: Boolean
+    get() = !isLandscape && maxWidth >= Sizes.setupColumnLandscape + Sizes.listColumn
 
 /** The session screen's parts, which [SessionLayout] lays out in one column or two. */
 private class SessionParts(
     val bar: @Composable () -> Unit,
-    val tiles: @Composable () -> Unit,
+    /** The session's numbers, in one row when [wide] and two otherwise. */
+    val tiles: @Composable (wide: Boolean) -> Unit,
     val plan: @Composable ColumnScope.() -> Unit,
     val buttons: @Composable () -> Unit,
 )
 
 /**
- * A phone upright, one column: the title, then the clock, what is next and what is done scrolling, then Log
- * set. With [hasRoomBeside] (on its side, or a tablet either way up), the title, the clock and Log set on the
- * left, and what is next and what is done on the right.
+ * Upright, one column: the title, then the clock, what is next and what is done scrolling, then Log set; on a
+ * tablet ([isWideUpright]) the column widens and the numbers sit in one row. On its side, the title, the clock
+ * and Log set on the left, and what is next and what is done on the right.
  */
 @Composable
 private fun SessionLayout(parts: SessionParts, modifier: Modifier = Modifier) {
@@ -374,13 +376,13 @@ private fun SessionLayout(parts: SessionParts, modifier: Modifier = Modifier) {
         modifier.fillMaxSize().background(IntervalTheme.palette.background),
         contentAlignment = Alignment.TopCenter,
     ) {
-        if (hasRoomBeside) {
+        if (isLandscape) {
             Row(Modifier.fillMaxSize().safeDrawingPadding(), horizontalArrangement = Arrangement.Center) {
                 Column(Modifier.width(Sizes.setupColumnLandscape).fillMaxHeight()) {
                     parts.bar()
                     Column(
                         Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Spacing.space16),
-                    ) { parts.tiles() }
+                    ) { parts.tiles(false) }
                     parts.buttons()
                 }
                 Column(
@@ -398,13 +400,18 @@ private fun SessionLayout(parts: SessionParts, modifier: Modifier = Modifier) {
                 }
             }
         } else {
-            Column(Modifier.widthIn(max = Sizes.content).fillMaxSize().safeDrawingPadding()) {
+            val wide = isWideUpright
+            Column(
+                Modifier.widthIn(
+                    max = if (wide) Sizes.contentWide else Sizes.content,
+                ).fillMaxSize().safeDrawingPadding(),
+            ) {
                 parts.bar()
                 Column(
                     Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Spacing.space16),
                     verticalArrangement = scrolling,
                 ) {
-                    parts.tiles()
+                    parts.tiles(wide)
                     parts.plan(this)
                 }
                 parts.buttons()
@@ -413,22 +420,35 @@ private fun SessionLayout(parts: SessionParts, modifier: Modifier = Modifier) {
     }
 }
 
-/** The session's time and weight moved, and how long since the last one. */
+/** The session's time and weight moved, and how long since the last one: in one row when [wide]. */
 @Composable
-private fun SessionTiles(state: SessionUiState) {
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+private fun SessionTiles(state: SessionUiState, wide: Boolean) {
+    val moved = state.session?.tonnageKg ?: 0.0
+    val time = @Composable { modifier: Modifier ->
+        StatTile(stringResource(Res.string.session_time), state.elapsed, modifier)
+    }
+    val weight = @Composable { modifier: Modifier ->
+        StatTile(
+            stringResource(Res.string.session_moved),
+            stringResource(Res.string.kg_value, formatKg(moved)),
+            modifier,
+            rank = moved.toInt(),
+        )
+    }
+    val since = state.sinceLast
+    if (wide) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-            StatTile(stringResource(Res.string.session_time), state.elapsed, Modifier.weight(1f))
-            val moved = state.session?.tonnageKg ?: 0.0
-            StatTile(
-                stringResource(Res.string.session_moved),
-                stringResource(Res.string.kg_value, formatKg(moved)),
-                Modifier.weight(1f),
-                rank = moved.toInt(),
-            )
+            time(Modifier.weight(1f))
+            weight(Modifier.weight(1f))
+            if (since != null) StatTile(stringResource(Res.string.session_since_last), since, Modifier.weight(1f))
         }
-        state.sinceLast?.let {
-            StatTile(stringResource(Res.string.session_since_last), it, Modifier.fillMaxWidth())
+    } else {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+                time(Modifier.weight(1f))
+                weight(Modifier.weight(1f))
+            }
+            if (since != null) StatTile(stringResource(Res.string.session_since_last), since, Modifier.fillMaxWidth())
         }
     }
 }
