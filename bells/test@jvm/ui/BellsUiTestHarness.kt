@@ -32,6 +32,7 @@ import dev.justinsmith.bells.fakes.RecordingBeeper
 import dev.justinsmith.bells.fakes.bellsTestKoin
 import dev.justinsmith.bells.fakes.fakeBellsPlatformModule
 import dev.justinsmith.bells.gear.GearRoute
+import dev.justinsmith.bells.history.LiftDetailRoute
 import dev.justinsmith.bells.library.ExerciseLibraryRoute
 import dev.justinsmith.bells.programs.ProgramEditorRoute
 import dev.justinsmith.bells.programs.ProgramsRoute
@@ -109,6 +110,8 @@ private sealed interface Page {
 
     data object Exercises : Page
 
+    data class Finished(val uid: String) : Page
+
     data class Editor(val uid: String?) : Page
 }
 
@@ -151,7 +154,12 @@ private fun BellsHost(koin: KoinApplication, back: NavigationEventDispatcherOwne
 
                                     Page.Bells -> GearRoute(onBack = pop)
 
-                                    Page.Exercises -> ExerciseLibraryRoute(onBack = pop)
+                                    Page.Exercises -> ExerciseLibraryRoute(
+                                        onBack = pop,
+                                        onOpenSession = { backStack.add(Page.Finished(it)) },
+                                    )
+
+                                    is Page.Finished -> LiftDetailRoute(page.uid, onBack = pop)
                                 }
                             }
                         },

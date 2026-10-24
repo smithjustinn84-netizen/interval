@@ -28,7 +28,9 @@
     <action>Tap "Save exercise"</action>
     <action>Verify that the library is shown, the sheet gone, still searching "Copenhagen plank", with "1 exercise": a card headed "Yours · 1" with "Copenhagen plank" over "Bodyweight · Time a side · Core" and a chevron</action>
     <action>Tap "Copenhagen plank"</action>
-    <action>Verify that the sheet opens again with "Equipment" and "Measured by" chips, and "Archive exercise"</action>
+    <action>Verify that its page opens in a sheet: "Copenhagen plank" over "Bodyweight · Time a side · Core", "Cues" with "Top knee on the bench", an "Edit" button, and under "Your history" "Not logged yet. Its sets will show here."</action>
+    <action>Tap "Edit"</action>
+    <action>Verify that the same sheet shows "Equipment" and "Measured by" chips, and "Archive exercise"</action>
     <action>Tap "Back" to close the sheet</action>
     <action>Tap "New exercise" in the title bar, type "copenhagen PLANK" into the "Name" field</action>
     <action>Verify that "One of yours already has this name." is shown and there is no "Save exercise"</action>
@@ -43,7 +45,11 @@
     <action>Verify that the sheet is back with its exercise card reading "Turkish sit-up" over "Bodyweight · Reps · Full body"</action>
     <action>Swipe the sheet down, tap "Finish", then "Done"</action>
     <action>Tap the "Exercises" card, type "copenhagen", tap "Copenhagen plank"</action>
+    <action>Verify that its page shows "Done 1 time · last" with today's date, "Your best" with "Longest 0:30", and a card with "0:30 · Left"; then tap "Edit"</action>
     <action>Verify that the sheet says "Sets of it are logged, so its equipment and measure stay as they are." and shows no "Kettlebell" chip</action>
+    <action>Tap "Back" to close the sheet</action>
+    <action>Clear the search and tap "Goblet squat"</action>
+    <action>Verify that its page shows "Goblet squat" over "Kettlebell · Reps · Lower body", no "Edit" button, and "Not logged yet. Its sets will show here."</action>
     <action>Tap "Back" to close the sheet, then "Back" to return to the Lift tab</action>
   </actions>
 </journey>

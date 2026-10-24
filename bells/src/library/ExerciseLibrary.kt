@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -19,6 +20,8 @@ import dev.justinsmith.bells.domain.CustomExercise
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.ExerciseFilters
+import dev.justinsmith.bells.domain.LiftSession
+import dev.justinsmith.bells.domain.exerciseHistory
 import dev.justinsmith.bells.domain.offeredExercises
 import dev.justinsmith.bells.domain.ownedEquipment
 import dev.justinsmith.bells.domain.recentExercises
@@ -30,12 +33,14 @@ import dev.justinsmith.bells.resources.library_recent
 import dev.justinsmith.bells.resources.library_title
 import dev.justinsmith.bells.resources.library_yours
 import dev.justinsmith.bells.ui.equipmentName
+import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -43,8 +48,17 @@ import kotlinx.coroutines.flow.stateIn
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
-/** Every exercise on offer, the ones done lately first, narrowed by the filters the Log sheet shares. */
-class ExerciseLibraryViewModel(repository: BellsRepository, private val filters: ExerciseFilterStore) : ViewModel() {
+/**
+ * Every exercise on offer, the ones done lately first, narrowed by the filters the Log sheet shares; and the one
+ * [open], if any, with the user's history with it.
+ */
+class ExerciseLibraryViewModel(
+    repository: BellsRepository,
+    private val filters: ExerciseFilterStore,
+    private val timestamps: TimestampFormatter,
+) : ViewModel() {
+    private val opened = MutableStateFlow<String?>(null)
+
     val state: StateFlow<LibraryList> =
         combine(
             repository.customExercises,
@@ -58,39 +72,63 @@ class ExerciseLibraryViewModel(repository: BellsRepository, private val filters:
             LibraryList(offered, recentExercises(history, offered), narrowed, owned)
         }.stateIn(viewModelScope, SharingStarted.Eagerly, LibraryList(offeredExercises(emptyList())))
 
+    /** The exercise open, by its key, and the user's history with it; null while none is, or once it is gone. */
+    val detail: StateFlow<ExerciseDetailUiState?> =
+        combine(opened, repository.sessions, repository.customExercises) { key, sessions, made ->
+            key?.let { Exercise.parse(it, made) }?.let { detailOf(it, sessions) }
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
     fun updateFilters(transform: (ExerciseFilters) -> ExerciseFilters) {
         filters.update(transform)
     }
+
+    /** Opens the exercise [key] names, or closes the one open with null. */
+    fun open(key: String?) {
+        opened.value = key
+    }
+
+    private fun detailOf(exercise: Exercise, sessions: List<LiftSession>): ExerciseDetailUiState {
+        val history = exerciseHistory(exercise, sessions)
+        return ExerciseDetailUiState(
+            exercise,
+            history,
+            lastDone = history.lastDoneAtEpochMillis?.let(timestamps::date).orEmpty(),
+            recent = history.recent.map { DatedSession(it, timestamps.date(it.startedAtEpochMillis)) },
+        )
+    }
 }
 
+/** The library, an exercise's page over it, and a new exercise's form; a session on its page by [onOpenSession]. */
 @Composable
-fun ExerciseLibraryRoute(onBack: () -> Unit) {
+fun ExerciseLibraryRoute(onBack: () -> Unit, onOpenSession: (uid: String) -> Unit = {}) {
     val scope = currentKoinScope()
-    val viewModel = viewModel { ExerciseLibraryViewModel(scope.get(), scope.get()) }
+    val viewModel = viewModel { ExerciseLibraryViewModel(scope.get(), scope.get(), scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
-    var editing by rememberSaveable { mutableStateOf<String?>(null) }
+    val detail by viewModel.detail.collectAsStateWithLifecycle()
+    // Kept here rather than in the view model, so an exercise open survives the process being let go.
+    var opened by rememberSaveable { mutableStateOf<String?>(null) }
     var adding by rememberSaveable { mutableStateOf<String?>(null) }
+    LaunchedEffect(opened) { viewModel.open(opened) }
     ExerciseLibraryScreen(
         state,
         onFilters = viewModel::updateFilters,
         onBack = onBack,
         onNew = { adding = it },
-        onEdit = { editing = it },
+        onOpen = { opened = it },
     )
-    if (editing != null || adding != null) {
-        ExerciseEditorSheet(editing, adding.orEmpty(), onDismiss = {
-            editing = null
-            adding = null
-        })
+    // Until the view model has caught up with what was opened, there is nothing to show yet.
+    detail?.takeIf { opened != null && it.exercise.key == opened }?.let { shown ->
+        ExerciseDetailSheet(shown, onOpenSession, onDismiss = { opened = null })
     }
+    adding?.let { name -> ExerciseEditorSheet(null, name, onDismiss = { adding = null }) }
 }
 
 /**
  * The exercise library, opened from Lift: every exercise there is to log, to look through and narrow. Under
  * the search and the filters, a card for the recent ones while nothing narrows, one for the user's own, then
  * one for each kind of equipment with any to show: one column on a phone, side by side as the window widens.
- * New adds one of the user's own, as does a search that finds nothing ([onNew], with the search); one of theirs
- * opens to change ([onEdit]). The built-ins just inform, so take no tap.
+ * New adds one of the user's own, as does a search that finds nothing ([onNew], with the search). Any exercise
+ * opens its page ([onOpen], by its key).
  */
 @Composable
 fun ExerciseLibraryScreen(
@@ -99,12 +137,12 @@ fun ExerciseLibraryScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     onNew: (name: String) -> Unit = {},
-    onEdit: (uid: String) -> Unit = {},
+    onOpen: (key: String) -> Unit = {},
 ) {
     val picker = rememberPickerState()
     val matches = pickerMatches(list, picker)
-    val onPick = { exercise: Exercise -> if (exercise is CustomExercise) onEdit(exercise.uid) }
-    val canPick = { exercise: Exercise -> exercise is CustomExercise }
+    val onPick = { exercise: Exercise -> onOpen(exercise.key) }
+    val canPick = { _: Exercise -> true }
     val card = Modifier.padding(horizontal = Spacing.space16)
     TabGrid(
         stringResource(Res.string.library_title),

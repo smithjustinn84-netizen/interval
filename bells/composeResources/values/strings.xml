@@ -250,6 +250,17 @@
     <string name="log_change">Change</string>
     <!-- Exercises the user adds: the library's New, the empty search's Add, and the editor -->
     <string name="library_new">New exercise</string>
+    <!-- An exercise's page, opened from the library -->
+    <string name="detail_history">Your history</string>
+    <!-- How often it was done and when last: "Done 3 times · last Sunday, Oct 11" -->
+    <plurals name="detail_done">
+        <item quantity="one">Done %1$d time · last %2$s</item>
+        <item quantity="other">Done %1$d times · last %2$s</item>
+    </plurals>
+    <string name="detail_never">Not logged yet. Its sets will show here.</string>
+    <string name="detail_best">Your best</string>
+    <string name="detail_edit">Edit</string>
+    <string name="detail_open_session">Open the session</string>
     <string name="library_add_named">Add “%1$s” as an exercise</string>
     <string name="exercise_editor_new">New exercise</string>
     <string name="exercise_editor_edit">Edit exercise</string>

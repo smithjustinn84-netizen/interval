@@ -423,7 +423,10 @@ private fun EntryProviderScope<NavKey>.liftEntries(backStack: NavBackStack<NavKe
     entry<ProgramEditor> { key -> ProgramEditorRoute(uid = key.uid, onBack = { backStack.removeLastOrNull() }) }
     entry<OwnedBells> { GearRoute(onBack = { backStack.removeLastOrNull() }) }
     entry<ExerciseLibrary> {
-        ExerciseLibraryRoute(onBack = { backStack.removeLastOrNull() })
+        ExerciseLibraryRoute(
+            onBack = { backStack.removeLastOrNull() },
+            onOpenSession = { backStack.push(LiftDetail(it)) },
+        )
     }
     entry<LiftDetail>(
         metadata = { if (it.fromHistory) ListDetailSceneStrategy.detailPane(HISTORY_SCENE) else emptyMap() },

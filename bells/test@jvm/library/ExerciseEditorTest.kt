@@ -2,6 +2,7 @@
 
 package dev.justinsmith.bells.library
 
+import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -31,6 +32,11 @@ import kotlin.test.assertTrue
 
 /** Exercises of the user's own: added from the library or a session's search, and changed. */
 class ExerciseEditorTest {
+    private fun DesktopComposeUiTest.edit() {
+        waitForText("Edit")
+        onNodeWithText("Edit").performScrollTo().performClick()
+    }
+
     private val plank = CustomExerciseEntity("e1", "Copenhagen plank", "Bodyweight", "Time", true, "Core", "", false, 0)
 
     @Test
@@ -117,6 +123,8 @@ class ExerciseEditorTest {
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
         onAllNodesWithText("Copenhagen plank").onFirst().performScrollTo().performClick()
+        // Its page first, then Edit for the form.
+        edit()
         waitForText("Equipment")
         onNodeWithText("Sets of it are logged, so its equipment and measure stay as they are.").assertExists()
         // Only the library's chip, behind the sheet: the sheet offers no equipment to pick.
@@ -137,6 +145,8 @@ class ExerciseEditorTest {
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
         onNodeWithText("Copenhagen plank").performScrollTo().performClick()
+        // Its page first, then Edit for the form.
+        edit()
         waitForText("Equipment")
         onNodeWithText("Archive exercise").performScrollTo().performClick()
         waitForText("Search exercises")
@@ -147,6 +157,8 @@ class ExerciseEditorTest {
         onNodeWithText("Show archived").performScrollTo().performClick()
         waitForText("Archived")
         onNodeWithText("Copenhagen plank").performScrollTo().performClick()
+        // Its page first, then Edit for the form.
+        edit()
         waitForText("Archived: the Log sheet doesn’t offer it.")
         onNodeWithText("Restore exercise").performScrollTo().performClick()
         waitForText("Search exercises")
@@ -162,6 +174,8 @@ class ExerciseEditorTest {
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
         onNodeWithText("Copenhagen plank").performClick()
+        // Its page first, then Edit for the form.
+        edit()
         waitForText("Equipment")
         // The library stays where it was, under the sheet.
         val library = onNodeWithText("Search exercises").assertIsDisplayed().getUnclippedBoundsInRoot()
