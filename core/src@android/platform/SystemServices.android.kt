@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.provider.Settings
 import android.text.format.DateFormat
+import android.view.View
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
@@ -17,13 +18,18 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import java.util.WeakHashMap
+
+// `keepScreenOn` is one flag per view, so one count per view; weak, so a closed Activity's view can go.
+private val awakeHolds = WeakHashMap<View, AwakeHolds>()
 
 @Composable
 actual fun KeepScreenOn() {
     val view = LocalView.current
     DisposableEffect(view) {
-        view.keepScreenOn = true
-        onDispose { view.keepScreenOn = false }
+        val holds = awakeHolds.getOrPut(view, ::AwakeHolds)
+        if (holds.acquire()) view.keepScreenOn = true
+        onDispose { if (holds.release()) view.keepScreenOn = false }
     }
 }
 

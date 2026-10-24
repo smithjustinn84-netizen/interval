@@ -35,9 +35,29 @@ interface AppInfo {
     val version: String?
 }
 
-/** Keeps the display awake while this is in the composition. */
+/**
+ * Keeps the display awake while this is in the composition. Several callers may hold it at once (a page on
+ * its way out and the one replacing it): the display may sleep again only once the last one leaves.
+ */
 @Composable
 expect fun KeepScreenOn()
+
+/**
+ * Counts the [KeepScreenOn]s holding one display awake, so one caller leaving doesn't let the screen sleep
+ * under another. Main thread only, as composition effects are.
+ */
+internal class AwakeHolds {
+    private var count = 0
+
+    /** Takes a hold; true when it is the first, and the display should now be kept awake. */
+    fun acquire(): Boolean = count++ == 0
+
+    /** Gives a hold back; true when it was the last, and the display may sleep again. */
+    fun release(): Boolean {
+        check(count > 0) { "Released a hold that was never acquired" }
+        return --count == 0
+    }
+}
 
 /**
  * Sets the system bars' icons to suit what is drawn under them: [lightIcons] for dark content (the

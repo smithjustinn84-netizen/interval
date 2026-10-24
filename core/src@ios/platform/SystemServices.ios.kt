@@ -40,11 +40,14 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 
+// The idle timer is one app-wide flag, so one count for the app.
+private val awakeHolds = AwakeHolds()
+
 @Composable
 actual fun KeepScreenOn() {
     DisposableEffect(Unit) {
-        UIApplication.sharedApplication.idleTimerDisabled = true
-        onDispose { UIApplication.sharedApplication.idleTimerDisabled = false }
+        if (awakeHolds.acquire()) UIApplication.sharedApplication.idleTimerDisabled = true
+        onDispose { if (awakeHolds.release()) UIApplication.sharedApplication.idleTimerDisabled = false }
     }
 }
 
