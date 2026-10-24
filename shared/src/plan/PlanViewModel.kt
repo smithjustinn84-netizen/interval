@@ -17,9 +17,6 @@ import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
-import dev.justinsmith.interval.timer.dateOfEpochDay
-import dev.justinsmith.interval.timer.defaultPresetName
-import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.weekdayOf
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -34,12 +31,6 @@ data class RoutineDay(val weekday: Int, val plans: List<PlanEntry>)
 
 /** A one-off still to come, on [epochDay], headed [day]. */
 data class OneOff(val entry: PlanEntry, val epochDay: Long, val day: HistoryDay)
-
-/** A workout the add sheet offers: a preset, or whatever is on the Timer. */
-data class PlanChoice(val preset: Preset, val onTimer: Boolean = false)
-
-/** A day the add sheet offers for a one-off. */
-data class DayChoice(val epochDay: Long, val weekday: Int, val dayOfMonth: Int)
 
 data class PlanUiState(
     /** Workouts a week the user aims for; null when there is no goal. */
@@ -89,18 +80,9 @@ class PlanViewModel(
             ),
         )
 
-    /** Raises or lowers the goal by one: up from none starts at [DEFAULT_GOAL], down from one turns it off. */
+    /** Raises or lowers the goal by one, as [steppedGoal] does. */
     fun stepGoal(direction: Int) {
-        repository.updateAppSettings { app ->
-            val range = AppSettings.WEEKLY_GOAL_RANGE
-            val goal = app.weeklyGoal
-            val next = when {
-                goal == null -> if (direction > 0) DEFAULT_GOAL else null
-                goal + direction < range.first -> null
-                else -> (goal + direction).coerceAtMost(range.last)
-            }
-            app.copy(weeklyGoal = next)
-        }
+        repository.updateAppSettings { it.copy(weeklyGoal = steppedGoal(it.weeklyGoal, direction)) }
     }
 
     fun planWeekly(preset: Preset, weekdays: Set<Int>) {
@@ -143,10 +125,8 @@ class PlanViewModel(
         val entries = planned.associateWith { PlanEntry(it.id, it.name, it.config) }
         return PlanUiState(
             goal = app.weeklyGoal,
-            streak =
-            app.weeklyGoal?.let {
-                TrainingLog(history, planned, today, lifts, timestamps::dayNumber).streak(it).current
-            }
+            streak = app.weeklyGoal
+                ?.let { TrainingLog(history, planned, today, lifts, timestamps::dayNumber).streak(it).current }
                 ?: 0,
             routine = (1..DAYS_PER_WEEK).map { weekday ->
                 RoutineDay(
@@ -158,10 +138,7 @@ class PlanViewModel(
             },
             oneOffs = planned
                 .mapNotNull { plan ->
-                    (plan.schedule as? PlanSchedule.Once)?.epochDay?.takeIf { it >= today }?.let {
-                        plan to
-                            it
-                    }
+                    (plan.schedule as? PlanSchedule.Once)?.epochDay?.takeIf { it >= today }?.let { plan to it }
                 }
                 .sortedWith(compareBy({ it.second }, { it.first.id }))
                 .map { (plan, day) -> OneOff(entries.getValue(plan), day, heading(day, today)) },
@@ -177,25 +154,4 @@ class PlanViewModel(
         today + 1 -> HistoryDay.Tomorrow
         else -> HistoryDay.On(timestamps.dateOfDay(day))
     }
-
-    private companion object {
-        const val DEFAULT_GOAL = 3
-    }
 }
-
-/**
- * What can be planned: the Timer's workout first, under its preset's name or its shape's, then every
- * preset.
- */
-fun planChoices(presets: List<Preset>, config: IntervalConfig): List<PlanChoice> {
-    val onTimer = presets.matching(config)?.let { Preset(it.name, config, it.id) }
-        ?: Preset(config.defaultPresetName(), config)
-    return listOf(PlanChoice(onTimer, onTimer = true)) + presets.map { PlanChoice(it) }
-}
-
-/** The days a one-off can go on: today and the [count] − 1 after it. */
-fun dayChoices(today: Long, count: Int = ONE_OFF_DAYS): List<DayChoice> =
-    (today until today + count).map { DayChoice(it, weekdayOf(it), dateOfEpochDay(it).day) }
-
-/** Two weeks of days to pick a one-off from. */
-const val ONE_OFF_DAYS = 14

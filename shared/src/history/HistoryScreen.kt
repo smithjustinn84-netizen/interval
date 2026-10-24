@@ -51,8 +51,8 @@ import dev.justinsmith.bells.ui.programDayLifts
 import dev.justinsmith.bells.ui.programDayLine
 import dev.justinsmith.bells.ui.programName
 import dev.justinsmith.interval.plan.AddToPlanSheet
-import dev.justinsmith.interval.plan.DayChoice
 import dev.justinsmith.interval.plan.PlanRepeat
+import dev.justinsmith.interval.plan.dayChoices
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.common_cancel
 import dev.justinsmith.interval.resources.common_joined
@@ -81,7 +81,6 @@ import dev.justinsmith.interval.resources.notice_undo
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
-import dev.justinsmith.interval.timer.dateOfEpochDay
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.interval.ui.AccentButton
@@ -279,7 +278,7 @@ fun HistoryScreen(
     addingOn?.let { day ->
         AddToPlanSheet(
             choices = state.choices,
-            days = listOf(DayChoice(day, weekdayOf(day), dateOfEpochDay(day).day)),
+            days = dayChoices(day, count = 1),
             onPlanWeekly = actions.onPlanWeekly,
             onPlanOnce = actions.onPlanOnce,
             onDismiss = { addingOn = null },

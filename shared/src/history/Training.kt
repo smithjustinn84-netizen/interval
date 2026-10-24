@@ -10,8 +10,8 @@ import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.monthDaysOf
 import dev.justinsmith.interval.timer.sameShape
 import dev.justinsmith.interval.timer.weekStartOf
-import dev.justinsmith.interval.timer.weeksMeetingGoal
 import dev.justinsmith.interval.timer.weekdayOf
+import dev.justinsmith.interval.timer.weeksMeetingGoal
 
 /** How one planned workout stands on one day. */
 enum class PlanState {
