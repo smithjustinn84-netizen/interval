@@ -11,7 +11,6 @@ import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.DEFAULT_BAR_KG
 import dev.justinsmith.bells.domain.DEFAULT_BELL_KG
 import dev.justinsmith.bells.domain.EmomClock
-import dev.justinsmith.bells.domain.EmomPhase
 import dev.justinsmith.bells.domain.EmomState
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
@@ -147,30 +146,6 @@ data class UpNext(
     val block: Int = 0,
 )
 
-/**
- * An EMOM under way: its lift, bell (or two, when [double]) and reps, when it started, and the minutes whose
- * set is done.
- */
-data class EmomRun(
-    val exercise: Exercise,
-    val bellKg: Double,
-    val reps: Int,
-    val minutes: Int,
-    val firstSide: Side,
-    val startedAtMillis: Long,
-    val done: Set<Int> = emptySet(),
-    val double: Boolean = false,
-    /** The band, for an exercise done with one. */
-    val band: Band? = null,
-) {
-    /** The side of minute [minute] (from 1): a one-sided lift with one bell alternates. */
-    fun sideOf(minute: Int): Side? = if (exercise.sided(double)) {
-        Side.entries[(firstSide.ordinal + minute - 1) % Side.entries.size]
-    } else {
-        null
-    }
-}
-
 data class SessionUiState(
     val session: LiftSession? = null,
     /** How long it has run: "14:32". */
@@ -227,8 +202,11 @@ class SessionViewModel(
     /** Every set of the sessions before this one: what a set logged now has to beat to be a record. */
     private val setsBefore = repository.sessions.value.flatMap { it.sets }
     private val finished = MutableStateFlow<Finished?>(null)
-    private val emom = MutableStateFlow<EmomRun?>(null)
-    private var lastCueMillis = 0L
+
+    /** Runs an EMOM, logging each minute's set as it is done. */
+    private val emom = EmomRunner(clock, beeper) { run, minute ->
+        repository.logSet(run.exercise, run.bellKg, run.reps, run.sideOf(minute), run.double, band = run.band)
+    }
 
     /** Times a hold from the sheet, logging it when done. */
     val holds = HoldTimer(clock, beeper) { set, seconds -> logSet(set, seconds) }
@@ -246,7 +224,7 @@ class SessionViewModel(
     /** The sheet's draft for a new set, put aside while a set logged is changed. */
     private var freeDraft: SetDraft? = null
 
-    private val runs = combine(emom, holds.state, editing, ::Triple)
+    private val runs = combine(emom.state, holds.state, editing, ::Triple)
 
     private val gear = combine(repository.bells, repository.bands, repository.bar, ::Triple)
 
@@ -441,7 +419,7 @@ class SessionViewModel(
         val next = state.value.upNext ?: return
         val minutes = next.emomMinutes ?: return
         if (next.set.held) return
-        startEmom(
+        emom.start(
             next.set.exercise,
             next.bellKg,
             next.set.reps,
@@ -456,31 +434,24 @@ class SessionViewModel(
     fun startDraftEmom() {
         val d = draft.value
         if (d.held) return
-        startEmom(
+        emom.start(
             d.exercise,
             d.loadKg,
             d.reps,
             d.minutes,
             d.side,
             d.doubled,
-            d.band.takeIf {
-                d.exercise.equipment ==
-                    Equipment.Band
-            },
+            d.band.takeIf { d.exercise.equipment == Equipment.Band },
         )
     }
 
     /** Logs this minute's set: the EMOM rests out the minute. */
     fun emomSetDone() {
-        val run = emom.value ?: return
-        val now = state.value.emomState ?: return
-        if (now.phase != EmomPhase.Work) return
-        repository.logSet(run.exercise, run.bellKg, run.reps, run.sideOf(now.minute), run.double, band = run.band)
-        emom.value = run.copy(done = run.done + now.minute)
+        emom.setDone()
     }
 
     fun stopEmom() {
-        emom.value = null
+        emom.stop()
     }
 
     fun removeSet(id: Long) {
@@ -547,7 +518,7 @@ class SessionViewModel(
      */
     fun finish(title: String): Boolean {
         val session = repository.active.value ?: return false
-        emom.value = null
+        emom.stop()
         holds.cancel()
         if (session.sets.isEmpty()) {
             repository.discardSession()
@@ -587,23 +558,9 @@ class SessionViewModel(
     }
 
     fun discard() {
-        emom.value = null
+        emom.stop()
         holds.cancel()
         repository.discardSession()
-    }
-
-    private fun startEmom(
-        exercise: Exercise,
-        bellKg: Double,
-        reps: Int,
-        minutes: Int,
-        firstSide: Side,
-        double: Boolean,
-        band: Band? = null,
-    ) {
-        val now = clock.nowMillis()
-        lastCueMillis = 0L
-        emom.value = EmomRun(exercise, bellKg, reps, minutes, firstSide, now, double = double, band = band)
     }
 
     /** The week as it stands with this session in it, the interval workouts counted too, as Lift's week card counts. */
@@ -617,12 +574,7 @@ class SessionViewModel(
 
     private fun playCues(now: Long) {
         holds.tick(now)
-        val run = emom.value ?: return
-        val clockOfRun = EmomClock(run.minutes)
-        val elapsed = now - run.startedAtMillis
-        clockOfRun.cuesBetween(lastCueMillis, elapsed).lastOrNull()?.let(beeper::beep)
-        lastCueMillis = elapsed
-        if (clockOfRun.isOver(elapsed)) emom.value = null
+        emom.tick(now)
     }
 
     private fun upNext(day: ProgramDay, logged: List<SetLog>): UpNext? {
