@@ -35,6 +35,8 @@ import org.koin.dsl.module
 
 // Lift's storage over lists, as Bells' own tests fake it: Amper doesn't share test sources between modules.
 
+private val loggedOrder = compareBy<SetEntity>({ it.loggedAtEpochMillis }, { it.id })
+
 /** A [SessionDao] over lists, as the real queries order them. */
 class FakeSessionDao : SessionDao {
     val sessions = MutableStateFlow(emptyList<SessionEntity>())
@@ -44,9 +46,10 @@ class FakeSessionDao : SessionDao {
     override fun observeSessions(): Flow<List<SessionEntity>> =
         sessions.map { all -> all.filterNot { it.deleted }.sortedByDescending { it.startedAtEpochMillis } }
 
-    override fun observeSets(): Flow<List<SetEntity>> = sets
+    // As the queries order them: as logged.
+    override fun observeSets(): Flow<List<SetEntity>> = sets.map { it.sortedWith(loggedOrder) }
 
-    override suspend fun allSets() = sets.value
+    override suspend fun allSets() = sets.value.sortedWith(loggedOrder)
 
     override suspend fun set(id: Long) = sets.value.firstOrNull { it.id == id }
 
@@ -63,7 +66,11 @@ class FakeSessionDao : SessionDao {
         }
     }
 
-    override suspend fun insert(set: SetEntity) = sets.update { it + set.copy(id = nextId++) }
+    // As Room: an id of 0 is generated, any other is kept (a set restored to its place).
+    override suspend fun insert(set: SetEntity) = sets.update {
+        val id = if (set.id == 0L) nextId++ else set.id.also { nextId = maxOf(nextId, it + 1) }
+        it + set.copy(id = id)
+    }
 
     override suspend fun deleteSet(id: Long) = sets.update { all -> all.filterNot { it.id == id } }
 
