@@ -54,11 +54,13 @@ import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.weekStanding
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -241,12 +243,13 @@ class SessionViewModel(
     /** Times a hold from the sheet, logging it when done. */
     val holds = HoldTimer(clock, beeper) { set, seconds -> logSet(set, seconds) }
 
+    /** The time, once a tick: one clock for the clocks on screen and the cues alike. */
     private val ticks = flow {
         while (true) {
             emit(clock.nowMillis())
             delay(tickMillis)
         }
-    }
+    }.shareIn(viewModelScope, SharingStarted.WhileSubscribed(), replay = 1)
 
     private val editing = MutableStateFlow<SetLog?>(null)
 
@@ -268,26 +271,19 @@ class SessionViewModel(
         View(draft, finished, emom, timing, offeredExercises(made), narrowed.copy(showArchived = false), changing)
     }
 
-    val state: StateFlow<SessionUiState> =
-        combine(repository.active, gear, repository.programDay, view, ticks) {
+    /** Everything but the clocks, worked out again only when something changes, not every tick. */
+    private val untimed: Flow<SessionUiState> =
+        combine(repository.active, gear, repository.programDay, view) {
                 active,
                 (owned, bands, bar),
                 day,
                 chosen,
-                now,
             ->
-            val run = chosen.emom
-            val emomState = run?.let { EmomClock(it.minutes).at(now - it.startedAtMillis, it.done) }
-            val hold = chosen.timing.run
             val plan = active?.takeIf { it.program != null && it.program == day?.program?.key }
                 ?.let { day?.copy(plan = it.plan) }
             val records = recordSetIds(setsBefore, active?.sets.orEmpty())
             SessionUiState(
                 session = active,
-                elapsed = formatClock(active?.elapsedSeconds(now) ?: 0),
-                sinceLast = active?.sets?.lastOrNull()?.let {
-                    formatClock(((now - it.loggedAtEpochMillis) / MILLIS_PER_SECOND).toInt())
-                },
                 bells = owned.ifEmpty { standardBells },
                 ownsBells = owned.isNotEmpty(),
                 bar = bar,
@@ -296,10 +292,8 @@ class SessionViewModel(
                 upNext = plan?.let { upNext(it, active.sets) },
                 dayDone = plan != null && nextPlanned(plan.plannedSets(), active.sets) == null,
                 plan = plan?.let { planRows(it, active.sets) }.orEmpty(),
-                emom = run,
-                emomState = emomState,
-                hold = hold,
-                holdState = hold?.let { it.clock.at(now - it.startedAtMillis) },
+                emom = chosen.emom,
+                hold = chosen.timing.run,
                 otherSide = chosen.timing.offer
                     ?.takeIf { it.exercise == chosen.draft.exercise && it.side == chosen.draft.side }
                     ?.side,
@@ -317,7 +311,21 @@ class SessionViewModel(
                     ownedEquipment(owned, bands, bar),
                 ),
             )
-        }.stateIn(viewModelScope, SharingStarted.Eagerly, SessionUiState())
+        }
+
+    val state: StateFlow<SessionUiState> =
+        combine(untimed, ticks) { state, now -> state.at(now) }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, SessionUiState())
+
+    /** This state with its clocks read at [now]. */
+    private fun SessionUiState.at(now: Long): SessionUiState = copy(
+        elapsed = formatClock(session?.elapsedSeconds(now) ?: 0),
+        sinceLast = session?.sets?.lastOrNull()?.let {
+            formatClock(((now - it.loggedAtEpochMillis) / MILLIS_PER_SECOND).toInt())
+        },
+        emomState = emom?.let { EmomClock(it.minutes).at(now - it.startedAtMillis, it.done) },
+        holdState = hold?.let { it.clock.at(now - it.startedAtMillis) },
+    )
 
     /** The user's exercises when the sheet went to add one: the first not among them is the one added. */
     private var awaitingAdd: Set<String>? = null
