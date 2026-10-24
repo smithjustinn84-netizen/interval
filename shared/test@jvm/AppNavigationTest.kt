@@ -233,6 +233,41 @@ class AppNavigationTest {
     }
 
     @Test
+    fun `beside the timer settings slides in from the end and slides back out`() = appTest(Window.Tablet) {
+        mainClock.autoAdvance = false
+        onNodeWithContentDescription("Settings").performClick()
+        mainClock.advanceTimeBy(Motion.PAGE_MILLIS / 5L)
+        val arriving = onNodeWithText("Cues").fetchSemanticsNode().boundsInRoot
+        mainClock.advanceTimeBy(Motion.PAGE_MILLIS * 3L)
+        val settled = onNodeWithText("Cues").fetchSemanticsNode().boundsInRoot
+        assertTrue(arriving.left > settled.left + SETTLED_SLACK, "still sliding in: $arriving vs $settled")
+        onNodeWithText("Start workout").assertExists()
+
+        onNodeWithContentDescription("Close settings").performClick()
+        mainClock.advanceTimeBy(Motion.PAGE_MILLIS / 5L)
+        val leaving = onNodeWithText("Cues").fetchSemanticsNode().boundsInRoot
+        assertTrue(leaving.left > settled.left + SETTLED_SLACK, "sliding out, not gone at once: $leaving vs $settled")
+        mainClock.advanceTimeBy(Motion.PAGE_MILLIS * 3L)
+        onNodeWithText("Cues").assertDoesNotExist()
+    }
+
+    @Test
+    fun `the desktop window opens settings beside the timer`() = appTest(Window.Desktop) {
+        onNodeWithContentDescription("Settings").performClick()
+        onNodeWithText("Cues").assertExists()
+        onNodeWithText("Start workout").assertExists()
+    }
+
+    @Test
+    fun `on a tablet held upright settings opens full screen`() = appTest(Window.TabletPortrait) {
+        onNodeWithContentDescription("Settings").performClick()
+        onNodeWithText("Cues").assertExists()
+        onNodeWithText("Start workout").assertDoesNotExist()
+        onNodeWithContentDescription("Back").performClick()
+        onNodeWithText("Start workout").assertExists()
+    }
+
+    @Test
     fun `a finished workout opens from History and deleting it goes back`() = appTest { koin ->
         val tabata = builtInPresets.first()
         koin.koin.get<IntervalRepository>().recordWorkout(tabata.config, elapsedSeconds = 240)

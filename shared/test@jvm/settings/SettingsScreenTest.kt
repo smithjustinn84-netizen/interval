@@ -24,10 +24,12 @@ import dev.justinsmith.interval.data.CueSettings
 import dev.justinsmith.interval.data.ThemeMode
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.WeightUnit
+import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 private val defaults = SettingsUiState(
     cues = CueSettings(vibrate = false),
@@ -58,6 +60,23 @@ class SettingsScreenTest {
             onClearWeight = { calls += "clear weight" },
             onSetEffort = { calls += it },
         )
+    }
+
+    @Test
+    fun `full screen on a tablet the groups sit side by side`() = runUiTest(Window.TabletPortrait) {
+        setThemedContent { Screen() }
+        val cues = onNodeWithText("Cues").fetchSemanticsNode().boundsInRoot
+        val workout = onNodeWithText("Workout").fetchSemanticsNode().boundsInRoot
+        assertTrue(workout.left > cues.right, "Workout beside Cues: $cues, $workout")
+    }
+
+    @Test
+    fun `beside the timer the groups stay in one column`() = runUiTest(Window.TabletPortrait) {
+        setThemedContent { Screen(inPane = true) }
+        val cues = onNodeWithText("Cues").fetchSemanticsNode().boundsInRoot
+        val workout = onNodeWithText("Workout").fetchSemanticsNode().boundsInRoot
+        assertEquals(cues.left, workout.left)
+        assertTrue(workout.top > cues.bottom, "Workout under Cues: $cues, $workout")
     }
 
     @Test

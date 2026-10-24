@@ -2,6 +2,8 @@
 
 package dev.justinsmith.interval
 
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -31,9 +33,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -44,6 +49,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.ui.NavDisplay
 import androidx.navigation3.ui.defaultPredictivePopTransitionSpec
 import androidx.savedstate.serialization.SavedStateConfiguration
@@ -101,6 +107,7 @@ import dev.justinsmith.interval.ui.backPreviewCorners
 import dev.justinsmith.interval.ui.backPreviewTransition
 import dev.justinsmith.interval.ui.navigationSuiteColors
 import dev.justinsmith.interval.ui.navigationSuiteType
+import dev.justinsmith.interval.ui.onlyBeside
 import dev.justinsmith.interval.ui.pageKind
 import dev.justinsmith.interval.ui.pagePopTransition
 import dev.justinsmith.interval.ui.pageTransition
@@ -187,28 +194,19 @@ internal fun AppContent(koin: KoinApplication, introPlaying: Boolean = false) {
  * One back stack: the Timer tab at the root, at most one other tab above it, then whatever was
  * pushed (Settings, Presets, Workout, a session). Back from Lift or History returns to Timer, as both
  * platforms expect. The navigation bar or rail shows only while a tab is on top, or while a page sits beside
- * its tab: windows of Material's expanded width and up open Settings as a supporting pane beside Timer, and
- * a finished workout or session beside History's log, a pane waiting for one until it is picked.
+ * its tab: windows of [Sizes.twoPaneMinWidth] and up open Settings as a supporting pane beside Timer, and
+ * windows of Material's expanded width and up a finished workout or session beside History's log, a pane
+ * waiting for one until it is picked.
  */
 @Composable
 private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
     val top = backStack.lastOrNull()
-    // Side by side only: Material would also stack Timer over Settings on a tall tablet in portrait,
-    // which leaves both too short. There Settings opens full screen, as on a phone.
-    val directive = calculatePaneScaffoldDirective(currentWindowAdaptiveInfoV2())
-        .copy(maxVerticalPartitions = 1, verticalPartitionSpacerSize = 0.dp)
-    val supportingPane = rememberSupportingPaneSceneStrategy<NavKey>(directive = directive)
-    // The placeholder beside History counts as a pane, so the default behaviour would pop History along with
-    // the workout beside it, landing on the Timer.
-    val listDetail = rememberListDetailSceneStrategy<NavKey>(
-        backNavigationBehavior = BackNavigationBehavior.PopLatest,
-        directive = directive,
-    )
-    val twoPane = directive.maxHorizontalPartitions > 1
+    val panes = rememberPanes()
+    val twoPane = panes.historyBeside
+    val settingsBeside = panes.settingsBeside
     val currentTab = top as? Tab ?: when {
-        !twoPane -> null
-        top == Settings -> TimerTab
-        top.opensBesideHistory -> HistoryTab
+        settingsBeside && top == Settings -> TimerTab
+        twoPane && top.opensBesideHistory -> HistoryTab
         else -> null
     }
     val selectTab = { tab: Tab -> backStack.selectTab(tab) }
@@ -245,28 +243,33 @@ private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
             // NavDisplay stays at one place in the tree whatever the bars do, so its entries keep their state.
             // A notice floats over the content's foot: above the bar, and over a full-screen mode.
             Box(content) {
-                NavDisplay(
-                    backStack = backStack,
-                    onBack = { if (backStack.size > 1) backStack.removeLastOrNull() },
-                    // Passing this replaces NavDisplay's default list, so the saveable-state holder is
-                    // repeated. The ViewModel store decorator follows it: it needs the holder above it.
-                    // On Android the back preview's corners clip each entry's content, innermost.
-                    entryDecorators = listOfNotNull(
-                        rememberSaveableStateHolderNavEntryDecorator(),
-                        rememberViewModelStoreNavEntryDecorator(),
-                        if (materialBackPreview) backPreviewCorners() else null,
-                    ),
-                    sceneStrategies = listOf(supportingPane, listDetail),
-                    transitionSpec = pageTransition(),
-                    popTransitionSpec = pagePopTransition(),
-                    predictivePopTransitionSpec = if (materialBackPreview) {
-                        backPreviewTransition()
-                    } else {
-                        defaultPredictivePopTransitionSpec()
-                    },
-                    modifier = Modifier.fillMaxSize(),
-                    entryProvider = appEntries(backStack, twoPane, selectTab),
-                )
+                SharedTransitionLayout(Modifier.fillMaxSize()) {
+                    NavDisplay(
+                        backStack = backStack,
+                        onBack = { if (backStack.size > 1) backStack.removeLastOrNull() },
+                        // Passing this replaces NavDisplay's default list, so the saveable-state holder is
+                        // repeated. The ViewModel store decorator follows it: it needs the holder above it.
+                        // On Android the back preview's corners clip each entry's content, innermost.
+                        entryDecorators = listOfNotNull(
+                            rememberSaveableStateHolderNavEntryDecorator(),
+                            rememberViewModelStoreNavEntryDecorator(),
+                            if (materialBackPreview) backPreviewCorners() else null,
+                        ),
+                        sceneStrategies = panes.strategies,
+                        // The Timer is in the scene both alone and beside Settings, so it moves between them
+                        // rather than fading out of one and into the other.
+                        sharedTransitionScope = this,
+                        transitionSpec = pageTransition(),
+                        popTransitionSpec = pagePopTransition(),
+                        predictivePopTransitionSpec = if (materialBackPreview) {
+                            backPreviewTransition()
+                        } else {
+                            defaultPredictivePopTransitionSpec()
+                        },
+                        modifier = Modifier.fillMaxSize(),
+                        entryProvider = appEntries(backStack, twoPane, settingsBeside, selectTab, sharedScope = this),
+                    )
+                }
                 NoticeHost(
                     notices,
                     Modifier
@@ -279,11 +282,53 @@ private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
     }
 }
 
-/** The screen for each [NavKey], and what each screen's actions do to the [backStack]. */
+/** Which pages the window pairs, and the scene strategies that lay the pairs out. */
+private class Panes(
+    val strategies: List<SceneStrategy<NavKey>>,
+    /** A finished workout or session opens beside History's log. */
+    val historyBeside: Boolean,
+    /** Settings opens beside the Timer. */
+    val settingsBeside: Boolean,
+)
+
+@Composable
+private fun rememberPanes(): Panes {
+    // Side by side only: Material would also stack a pair on a tall tablet in portrait, which leaves both
+    // too short. There the second page opens full screen, as on a phone.
+    val historyDirective = calculatePaneScaffoldDirective(currentWindowAdaptiveInfoV2())
+        .copy(maxVerticalPartitions = 1, verticalPartitionSpacerSize = 0.dp)
+    // Settings pairs only with room for a phone-wide Timer beside it: from Material's 840dp the Timer would be
+    // left narrower than a phone.
+    val windowWidth = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp() }
+    val settingsBeside = windowWidth >= Sizes.twoPaneMinWidth
+    val settingsDirective = historyDirective.copy(
+        maxHorizontalPartitions = if (settingsBeside) 2 else 1,
+        defaultPanePreferredWidth = Sizes.settingsPane,
+    )
+    val supportingPane = rememberSupportingPaneSceneStrategy<NavKey>(directive = settingsDirective)
+    // The placeholder beside History counts as a pane, so the default behaviour would pop History along with
+    // the workout beside it, landing on the Timer.
+    val listDetail = rememberListDetailSceneStrategy<NavKey>(
+        backNavigationBehavior = BackNavigationBehavior.PopLatest,
+        directive = historyDirective,
+    )
+    return Panes(
+        strategies = listOf(supportingPane.onlyBeside(), listDetail),
+        historyBeside = historyDirective.maxHorizontalPartitions > 1,
+        settingsBeside = settingsBeside,
+    )
+}
+
+/**
+ * The screen for each [NavKey], and what each screen's actions do to the [backStack]. [twoPane] when a finished
+ * workout opens beside History's log, [settingsBeside] when Settings opens beside the Timer.
+ */
 private fun appEntries(
     backStack: NavBackStack<NavKey>,
     twoPane: Boolean,
+    settingsBeside: Boolean,
     selectTab: (Tab) -> Unit,
+    sharedScope: SharedTransitionScope,
 ): (NavKey) -> NavEntry<NavKey> = entryProvider {
     entry<TimerTab>(metadata = SupportingPaneSceneStrategy.mainPane() + pageKind(PageKind.Tab)) {
         TimerRoute(
@@ -292,10 +337,14 @@ private fun appEntries(
             onOpenSettings = {
                 when {
                     backStack.lastOrNull() != Settings -> backStack.add(Settings)
-                    twoPane -> backStack.removeLastOrNull()
+                    settingsBeside -> backStack.removeLastOrNull()
                 }
             },
             onSeeAllPresets = { backStack.push(Presets) },
+            // As Settings opens or closes beside it, the Timer lays out at the size it is going to, once,
+            // rather than squeezing through every width on the way, and shows only as much as its pane
+            // has grown to, so Settings is seen leaving rather than covered at once.
+            modifier = with(sharedScope) { Modifier.clipToBounds().skipToLookaheadSize() },
         )
     }
     entry<Presets> {
@@ -324,11 +373,11 @@ private fun appEntries(
             onStartSession = { backStack.push(Lifting) },
         )
     }
-    entry<Settings>(metadata = SupportingPaneSceneStrategy.supportingPane()) {
+    entry<Settings>(metadata = SupportingPaneSceneStrategy.supportingPane() + pageKind(PageKind.Beside)) {
         SettingsRoute(
             onBack = { backStack.removeLastOrNull() },
             onShowAbout = { backStack.push(About) },
-            inPane = twoPane,
+            inPane = settingsBeside,
         )
     }
     entry<WorkoutDetail>(metadata = ListDetailSceneStrategy.detailPane(HISTORY_SCENE)) { key ->

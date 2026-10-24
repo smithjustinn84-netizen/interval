@@ -65,6 +65,15 @@ object Sizes {
      */
     val listPane = 412.dp
 
+    /** Width of Settings when it opens beside the Timer. */
+    val settingsPane = 400.dp
+
+    /**
+     * Narrowest window that opens Settings beside the Timer rather than over it: room for the rail,
+     * [settingsPane] and a Timer still as wide as a phone's.
+     */
+    val twoPaneMinWidth = 1000.dp
+
     /** Narrowest window that gets a navigation rail instead of a bottom bar, as Material's medium width. */
     val railMinWidth = 600.dp
 
@@ -317,6 +326,9 @@ object Motion {
 
     /** A pushed page slides in from this share of the width, and the page beneath drifts out by half of it. */
     const val PAGE_SLIDE_SHARE = 0.12f
+
+    /** Settings opening beside the Timer slides in from about its own share of the window's width. */
+    const val PANE_SLIDE_SHARE = 0.4f
 
     /** The workout rises into place from this share of the window's height below it, and drops back as far. */
     const val WORKOUT_RISE_SHARE = 0.24f

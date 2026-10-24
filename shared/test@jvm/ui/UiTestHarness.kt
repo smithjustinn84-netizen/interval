@@ -19,6 +19,9 @@ enum class Window(val width: Int, val height: Int) {
     PhoneSideways(width = 891, height = 411),
     Tablet(width = 1280, height = 800),
     TabletPortrait(width = 800, height = 1280),
+
+    /** The desktop app's first window: wide enough for Settings beside the Timer, but only just. */
+    Desktop(width = 1024, height = 720),
 }
 
 /** Runs [block] in a desktop window of [window]'s size. */

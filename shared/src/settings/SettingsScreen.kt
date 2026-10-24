@@ -12,6 +12,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.data.AppSettings
@@ -66,7 +70,9 @@ import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.SegmentedPicker
+import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.interval.ui.ToggleRow
 import dev.justinsmith.interval.ui.ValueSheet
 import dev.justinsmith.interval.ui.enterExpanding
@@ -127,38 +133,35 @@ fun SettingsScreen(
 ) {
     var editingPrep by rememberSaveable { mutableStateOf(false) }
     var editingWeight by rememberSaveable { mutableStateOf(false) }
-    ScrollPage(
-        stringResource(Res.string.settings_title),
-        modifier = modifier,
-        navigation = { if (!inPane) BackAction(onBack) },
-        actions = {
-            if (inPane) IconAction(IntervalIcons.Close, stringResource(Res.string.settings_close_cd), onBack)
-        },
-    ) {
-        GroupLabel(stringResource(Res.string.settings_cues))
-        CuesCard(state.cues, onToggle)
-        GroupLabel(stringResource(Res.string.settings_workout))
-        ListCard {
-            FieldRow(ConfigField.Prep, state.prepSeconds, onClick = { editingPrep = true }, compact = true)
-            RowDivider()
-            ToggleRow(
-                stringResource(Res.string.settings_keep_screen_on),
-                stringResource(Res.string.settings_keep_screen_on_hint),
-                state.app.keepScreenOn,
-                onToggle = onToggleKeepScreenOn,
-            )
+    val groups = settingsGroups(
+        state,
+        onToggle,
+        onEditPrep = { editingPrep = true },
+        onToggleKeepScreenOn,
+        onEditWeight = { editingWeight = true },
+        onSetEffort,
+        onSetTheme,
+        onShowAbout,
+    )
+    if (inPane) {
+        // Beside the Timer: one column, a line along the edge it shares with the Timer.
+        ScrollPage(
+            stringResource(Res.string.settings_title),
+            modifier = modifier.hairlineAtStart(IntervalTheme.palette.line),
+            actions = { IconAction(IntervalIcons.Close, stringResource(Res.string.settings_close_cd), onBack) },
+        ) {
+            groups.forEach { group -> group.content() }
         }
-        GroupLabel(stringResource(Res.string.settings_calories))
-        CaloriesCard(state, onEditWeight = { editingWeight = true }, onSetEffort = onSetEffort)
-        GroupLabel(stringResource(Res.string.settings_appearance))
-        SegmentedPicker(ThemeMode.entries, state.app.theme, label = { stringResource(it.labelRes) }, onSetTheme)
-        GroupLabel(stringResource(Res.string.settings_about))
-        ListCard {
-            LinkRow(
-                stringResource(Res.string.settings_about_app),
-                stringResource(Res.string.settings_about_app_hint),
-                onClick = onShowAbout,
-            )
+    } else {
+        // Full screen: one column on a phone, the groups side by side as the window widens.
+        TabGrid(
+            stringResource(Res.string.settings_title),
+            modifier,
+            navigation = { BackAction(onBack) },
+        ) {
+            groups.forEach { group ->
+                item(key = group.key) { Column(Modifier.padding(horizontal = Spacing.space16)) { group.content() } }
+            }
         }
     }
     if (editingPrep) {
@@ -181,6 +184,66 @@ fun SettingsScreen(
             onDismiss = { editingWeight = false },
         )
     }
+}
+
+/** One group of settings, its label over its card, keyed for the grid. */
+private class SettingsGroup(val key: String, val content: @Composable () -> Unit)
+
+/** The groups in order: cues, the workout, calories, appearance and About. */
+@Suppress("detekt.LongParameterList") // One callback per setting, as the screen takes them.
+private fun settingsGroups(
+    state: SettingsUiState,
+    onToggle: (CueToggle) -> Unit,
+    onEditPrep: () -> Unit,
+    onToggleKeepScreenOn: () -> Unit,
+    onEditWeight: () -> Unit,
+    onSetEffort: (Effort) -> Unit,
+    onSetTheme: (ThemeMode) -> Unit,
+    onShowAbout: () -> Unit,
+): List<SettingsGroup> = listOf(
+    SettingsGroup("cues") {
+        GroupLabel(stringResource(Res.string.settings_cues))
+        CuesCard(state.cues, onToggle)
+    },
+    SettingsGroup("workout") {
+        GroupLabel(stringResource(Res.string.settings_workout))
+        ListCard {
+            FieldRow(ConfigField.Prep, state.prepSeconds, onClick = onEditPrep, compact = true)
+            RowDivider()
+            ToggleRow(
+                stringResource(Res.string.settings_keep_screen_on),
+                stringResource(Res.string.settings_keep_screen_on_hint),
+                state.app.keepScreenOn,
+                onToggle = onToggleKeepScreenOn,
+            )
+        }
+    },
+    SettingsGroup("calories") {
+        GroupLabel(stringResource(Res.string.settings_calories))
+        CaloriesCard(state, onEditWeight = onEditWeight, onSetEffort = onSetEffort)
+    },
+    SettingsGroup("appearance") {
+        GroupLabel(stringResource(Res.string.settings_appearance))
+        SegmentedPicker(ThemeMode.entries, state.app.theme, label = { stringResource(it.labelRes) }, onSetTheme)
+    },
+    SettingsGroup("about") {
+        GroupLabel(stringResource(Res.string.settings_about))
+        ListCard {
+            LinkRow(
+                stringResource(Res.string.settings_about_app),
+                stringResource(Res.string.settings_about_app_hint),
+                onClick = onShowAbout,
+            )
+        }
+    },
+)
+
+/** A line along the start edge, drawn over the content: where a pane meets the one beside it. */
+private fun Modifier.hairlineAtStart(color: Color): Modifier = drawWithContent {
+    drawContent()
+    val stroke = Sizes.hairline.toPx()
+    val x = if (layoutDirection == LayoutDirection.Ltr) stroke / 2 else size.width - stroke / 2
+    drawLine(color, Offset(x, 0f), Offset(x, size.height), stroke)
 }
 
 /**

@@ -16,6 +16,7 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.Dp
 import androidx.navigation3.scene.Scene
+import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.ui.defaultPopTransitionSpec
 import androidx.navigation3.ui.defaultTransitionSpec
 import dev.justinsmith.interval.platform.platformPageTransitions
@@ -36,13 +37,16 @@ fun navigationSuiteType(width: Dp, height: Dp): NavigationSuiteType {
  *   drifts away under it, the page beneath fading out quickly before the new one fades in;
  * - the workout, a mode of its own rather than a page, rises over the app as the app sinks back;
  * - from one tab to another the old fades out, then the new fades in a touch larger;
- * - Settings opening beside the Timer crossfades, the Timer staying where it is.
- * On a platform with page transitions of its own (iOS), those run instead, except for the workout:
- * rising is how iOS presents a full-screen mode too.
+ * - Settings opening beside the Timer slides in from the end as the Timer, the same entry in both
+ *   scenes, narrows to make room (NavDisplay moves it as a shared element); a pair of panes to or from
+ *   anything else crossfades.
+ * On a platform with page transitions of its own (iOS), those run instead, except for the workout
+ * (rising is how iOS presents a full-screen mode too) and Settings beside the Timer, which is no page.
  */
 fun <T : Any> pageTransition(): AnimatedContentTransitionScope<Scene<T>>.() -> ContentTransform = {
     when {
         workoutChange -> workoutRise()
+        besideChange -> paneOpen()
         platformPageTransitions -> defaultTransitionSpec<T>()(this)
         else -> appPageTransition<T>()(this)
     }
@@ -52,6 +56,7 @@ fun <T : Any> pageTransition(): AnimatedContentTransitionScope<Scene<T>>.() -> C
 fun <T : Any> pagePopTransition(): AnimatedContentTransitionScope<Scene<T>>.() -> ContentTransform = {
     when {
         workoutChange -> workoutDrop()
+        besideChange -> paneClose()
         platformPageTransitions -> defaultPopTransitionSpec<T>()(this)
         else -> appPagePopTransition<T>()(this)
     }
@@ -97,12 +102,28 @@ enum class PageKind {
 
     /** A mode of its own over the app (the workout), rather than a page one level deeper. */
     Mode,
+
+    /** A page that opens beside the one under it on a wide window (Settings beside the Timer). */
+    Beside,
 }
 
 /** The metadata marking an entry as [kind], for `entry<X>(metadata = …)`. */
 fun pageKind(kind: PageKind): Map<String, Any> = mapOf(PAGE_KIND to kind)
 
 private const val PAGE_KIND = "dev.justinsmith.interval.pageKind"
+
+/**
+ * This strategy, asked only while a [PageKind.Beside] page is on top. Material's supporting-pane strategy
+ * would also take the page under it on its own, as a scaffold scene with the same key as the pair's; opening
+ * the pair would then be no change of scene, and nothing would move.
+ */
+fun <T : Any> SceneStrategy<T>.onlyBeside(): SceneStrategy<T> = SceneStrategy { entries ->
+    if (entries.lastOrNull()?.metadata?.get(PAGE_KIND) == PageKind.Beside) {
+        with(this@onlyBeside) { calculateScene(entries) }
+    } else {
+        null
+    }
+}
 
 private val Scene<*>.topKind: Any?
     get() = entries.lastOrNull()?.metadata?.get(PAGE_KIND)
@@ -136,6 +157,35 @@ private val <T : Any> AnimatedContentTransitionScope<Scene<T>>.tabChange: Boolea
 /** Either scene shows two pages side by side (Settings beside the Timer on a wide window). */
 private val <T : Any> AnimatedContentTransitionScope<Scene<T>>.twoPane: Boolean
     get() = targetState.entries.size > 1 || initialState.entries.size > 1
+
+/**
+ * One scene is the other with one more page beside it: Settings opening or closing beside the Timer.
+ * Only the second pane comes or goes; the first stays, moving over.
+ */
+private val <T : Any> AnimatedContentTransitionScope<Scene<T>>.besideChange: Boolean
+    get() {
+        val (fewer, more) = if (targetState.entries.size > initialState.entries.size) {
+            initialState to targetState
+        } else {
+            targetState to initialState
+        }
+        return more.entries.size == 2 &&
+            more.entries.dropLast(1).map { it.contentKey } == fewer.entries.map { it.contentKey }
+    }
+
+/** The second pane slides in from the end over its own width as it fades up; the first moves on its own. */
+private fun <T : Any> AnimatedContentTransitionScope<Scene<T>>.paneOpen(): ContentTransform = ContentTransform(
+    targetContentEnter = fadeIn(pageSpec()) +
+        slideIntoContainer(SlideDirection.Start, pageSpec()) { (it * Motion.PANE_SLIDE_SHARE).toInt() },
+    initialContentExit = fadeOut(exitSpec()),
+)
+
+/** The reverse of [paneOpen]: the second pane slides back out to the end, kept on top as NavDisplay keeps a pop. */
+private fun <T : Any> AnimatedContentTransitionScope<Scene<T>>.paneClose(): ContentTransform = ContentTransform(
+    targetContentEnter = fadeIn(pageSpec()),
+    initialContentExit = fadeOut(exitSpec()) +
+        slideOutOfContainer(SlideDirection.End, pageSpec()) { (it * Motion.PANE_SLIDE_SHARE).toInt() },
+)
 
 private fun crossfade(): ContentTransform =
     ContentTransform(fadeIn(tween(Motion.EXIT_MILLIS)), fadeOut(tween(Motion.EXIT_MILLIS)))
