@@ -10,10 +10,11 @@ import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.HistoryEntry
-import dev.justinsmith.interval.model.LiftWorkout
+import dev.justinsmith.interval.model.LoggedWorkout
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.asLiftWorkouts
+import dev.justinsmith.interval.model.loggedWorkouts
 import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.plan.planChoices
 import dev.justinsmith.interval.platform.TimestampFormatter
@@ -332,19 +333,18 @@ class HistoryViewModel(
         val body = app.body
         val week = log.week()
 
-        // Both kinds of workout, newest first, so grouping keeps both the days and the rows within them in order.
-        val rows = history.map { it.finishedAtEpochMillis to it } + lifts.map { it.finishedAtEpochMillis to it }
-        val sections = rows.sortedByDescending { it.first }
-            .groupBy { timestamps.dayNumber(it.first) }
-            .map { (dayNumber, entries) ->
+        // Newest first, so grouping keeps both the days and the rows within them in order.
+        val sections = loggedWorkouts(history, lifts)
+            .groupBy { timestamps.dayNumber(it.finishedAtEpochMillis) }
+            .map { (dayNumber, workouts) ->
                 val done = log.day(dayNumber).plans.mapNotNull { it.workoutId }.toSet()
-                val items = entries.map { (_, entry) ->
-                    when (entry) {
-                        is HistoryEntry -> item(entry, presets, body, entry.id in done)
-                        else -> liftItem(entry as LiftWorkout, body)
-                    }
-                }
-                HistorySection(timestamps.heading(dayNumber, today), dayNumber, items)
+                HistorySection(
+                    timestamps.heading(dayNumber, today),
+                    dayNumber,
+                    workouts.map {
+                        item(it, presets, body, done)
+                    },
+                )
             }
 
         val monthOf = monthStartAfter(today, view.monthOffset)
@@ -380,6 +380,7 @@ class HistoryViewModel(
             choices = planChoices(presets, config),
             daySheet = view.openDay?.let { day ->
                 val training = log.day(day)
+                val done = training.plans.mapNotNull { it.workoutId }.toSet()
                 DaySheet(
                     epochDay = day,
                     day = timestamps.heading(day, today),
@@ -393,39 +394,43 @@ class HistoryViewModel(
                             state = plan.state,
                         )
                     },
-                    workouts = (
-                        training.workouts.map { entry ->
-                            entry.finishedAtEpochMillis to
-                                item(entry, presets, body, training.plans.any { it.workoutId == entry.id })
-                        } + training.liftWorkouts.map { it.finishedAtEpochMillis to liftItem(it, body) }
-                        ).sortedByDescending { it.first }.map { it.second },
+                    workouts = loggedWorkouts(training.workouts, training.liftWorkouts).map {
+                        item(it, presets, body, done)
+                    },
                     past = day < today,
                 )
             },
         )
     }
 
-    private fun item(entry: HistoryEntry, presets: List<Preset>, body: BodySettings, planned: Boolean) =
-        HistoryItem(
-            presetName = presets.matching(entry.config)?.name,
-            config = entry.config,
-            endedEarly = entry.endedEarly,
-            time = timestamps.time(entry.finishedAtEpochMillis),
-            total = formatClock(entry.elapsedSeconds),
-            calories = entry.calories(body),
-            id = entry.id,
-            planned = planned,
-        )
+    /** [workout]'s row; an interval workout is [planned] when its id is among those the day's plans were done by. */
+    private fun item(workout: LoggedWorkout, presets: List<Preset>, body: BodySettings, planned: Set<Long>) =
+        when (workout) {
+            is LoggedWorkout.Interval -> workout.entry.let { entry ->
+                HistoryItem(
+                    presetName = presets.matching(entry.config)?.name,
+                    config = entry.config,
+                    endedEarly = entry.endedEarly,
+                    time = timestamps.time(entry.finishedAtEpochMillis),
+                    total = formatClock(entry.elapsedSeconds),
+                    calories = entry.calories(body),
+                    id = entry.id,
+                    planned = entry.id in planned,
+                )
+            }
 
-    private fun liftItem(workout: LiftWorkout, body: BodySettings) = HistoryItem(
-        presetName = workout.title,
-        config = IntervalConfig(activity = Activity.Kettlebell),
-        endedEarly = false,
-        time = timestamps.time(workout.finishedAtEpochMillis),
-        total = formatClock(workout.elapsedSeconds),
-        calories = workout.calories(body),
-        liftUid = workout.uid,
-    )
+            is LoggedWorkout.Lift -> workout.workout.let { lift ->
+                HistoryItem(
+                    presetName = lift.title,
+                    config = IntervalConfig(activity = Activity.Kettlebell),
+                    endedEarly = false,
+                    time = timestamps.time(lift.finishedAtEpochMillis),
+                    total = formatClock(lift.elapsedSeconds),
+                    calories = lift.calories(body),
+                    liftUid = lift.uid,
+                )
+            }
+        }
 
     private fun cell(day: TrainingDay, inMonth: Boolean) = DayCell(
         epochDay = day.epochDay,
