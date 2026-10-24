@@ -10,6 +10,7 @@ import dev.justinsmith.bells.domain.Block
 import dev.justinsmith.bells.domain.BlockKind
 import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.DEFAULT_BAR_KG
+import dev.justinsmith.bells.domain.DEFAULT_BELL_KG
 import dev.justinsmith.bells.domain.EmomClock
 import dev.justinsmith.bells.domain.EmomPhase
 import dev.justinsmith.bells.domain.EmomState
@@ -102,7 +103,6 @@ data class SetDraft(
     val held: Boolean get() = exercise.measure == Measure.Time
 
     companion object {
-        const val DEFAULT_BELL_KG = 16.0
         const val DEFAULT_REPS = 10
         const val DEFAULT_MINUTES = 10
         const val DEFAULT_SECONDS = 30
@@ -336,7 +336,7 @@ class SessionViewModel(
         // Start from the user's own bells: the lightest they own at or above the default.
         repository.bells.value.let { owned ->
             if (owned.isNotEmpty()) {
-                val bell = owned.firstOrNull { it >= SetDraft.DEFAULT_BELL_KG } ?: owned.last()
+                val bell = owned.firstOrNull { it >= DEFAULT_BELL_KG } ?: owned.last()
                 draft.update { it.copy(bellKg = bell) }
             }
         }

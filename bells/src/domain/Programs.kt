@@ -629,3 +629,10 @@ fun suggestedBell(exercise: Exercise, double: Boolean, history: List<SetLog>, fa
     history.lastOrNull { it.exercise.key == exercise.key && it.double == double }?.bellKg
         ?: history.lastOrNull { it.exercise.key == exercise.key }?.bellKg
         ?: fallback
+
+/** The bell a lift starts at before it has a history or the user's own bells say otherwise. */
+const val DEFAULT_BELL_KG = 16.0
+
+/** What [exercise] starts at with nothing to go on: the standard bar for a barbell lift, else [DEFAULT_BELL_KG]. */
+fun startingLoadKg(exercise: Exercise): Double =
+    if (exercise.equipment == Equipment.Barbell) DEFAULT_BAR_KG else DEFAULT_BELL_KG

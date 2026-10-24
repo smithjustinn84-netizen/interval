@@ -34,7 +34,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.data.IntervalActivity
 import dev.justinsmith.bells.data.IntervalWorkout
-import dev.justinsmith.bells.domain.DEFAULT_BAR_KG
+import dev.justinsmith.bells.domain.Block
+import dev.justinsmith.bells.domain.DEFAULT_BELL_KG
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.LiftSession
@@ -46,6 +47,7 @@ import dev.justinsmith.bells.domain.builtInPrograms
 import dev.justinsmith.bells.domain.formatKg
 import dev.justinsmith.bells.domain.kettlebellLifts
 import dev.justinsmith.bells.domain.setsOldestFirst
+import dev.justinsmith.bells.domain.startingLoadKg
 import dev.justinsmith.bells.domain.suggestedBar
 import dev.justinsmith.bells.domain.suggestedBell
 import dev.justinsmith.bells.resources.Res
@@ -86,7 +88,6 @@ import dev.justinsmith.bells.resources.weekday_initial_5
 import dev.justinsmith.bells.resources.weekday_initial_6
 import dev.justinsmith.bells.resources.weekday_initial_7
 import dev.justinsmith.bells.resources.weekday_rest
-import dev.justinsmith.bells.session.SetDraft
 import dev.justinsmith.bells.ui.blockLine
 import dev.justinsmith.bells.ui.liftName
 import dev.justinsmith.bells.ui.programDayLine
@@ -150,6 +151,10 @@ data class TodayUiState(
     val weeklyGoal: Int? = null,
 ) {
     val weekCount: Int get() = week.sumOf { it.bells + it.interval }
+
+    /** The load to show beside [block]: the plan's, else the one last used for its lift, else where it starts. */
+    fun suggestedKg(block: Block): Double =
+        block.kg ?: bells[block.exercise to block.double] ?: startingLoadKg(block.exercise)
     val intervalCount: Int get() = week.sumOf { it.interval }
 }
 
@@ -218,7 +223,7 @@ class TodayViewModel(
                 kettlebellLifts.flatMap {
                     listOf(it to false, it to true)
                 }.associateWith { (exercise, double) ->
-                    suggestedBell(exercise, double, history, SetDraft.DEFAULT_BELL_KG)
+                    suggestedBell(exercise, double, history, DEFAULT_BELL_KG)
                 } + barbellLifts.associate { (it to false) to suggestedBar(it, history, bar) }
             },
         )
@@ -459,15 +464,7 @@ private fun ProgramCard(state: TodayUiState, onChooseProgram: () -> Unit, modifi
                     Text(
                         stringResource(
                             if (block.double) Res.string.kg_pair else Res.string.kg_value,
-                            formatKg(
-                                block.kg ?: state.bells[block.exercise to block.double] ?: if (
-                                    block.exercise.equipment == Equipment.Barbell
-                                ) {
-                                    DEFAULT_BAR_KG
-                                } else {
-                                    SetDraft.DEFAULT_BELL_KG
-                                },
-                            ),
+                            formatKg(state.suggestedKg(block)),
                         ),
                         style = IntervalTheme.type.value,
                         color = palette.text,
