@@ -68,10 +68,10 @@ import dev.justinsmith.interval.ui.NoticeAction
 import dev.justinsmith.interval.ui.RepeatButton
 import dev.justinsmith.interval.ui.RollingText
 import dev.justinsmith.interval.ui.RowDivider
-import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StripeMark
+import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.interval.ui.WeekdayForm
 import dev.justinsmith.interval.ui.rememberRising
 import dev.justinsmith.interval.ui.surfaceButton
@@ -127,7 +127,8 @@ fun PlanScreen(
 ) {
     var adding by rememberSaveable { mutableIntStateOf(ADD_CLOSED) }
     var describing by rememberSaveable { mutableStateOf(false) }
-    ScrollPage(
+    // One column on a phone; wider, the routine beside the goal and the one-offs.
+    TabGrid(
         stringResource(Res.string.plan_title),
         modifier,
         navigation = { BackAction(onBack) },
@@ -135,46 +136,54 @@ fun PlanScreen(
             IconAction(IntervalIcons.Describe, stringResource(Res.string.plan_describe_cd), { describing = true })
         },
     ) {
-        GoalCard(state, onStepGoal)
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-            GroupLabel(stringResource(Res.string.plan_routine), Modifier.weight(1f))
-            Text(
-                stringResource(Res.string.plan_every_week),
-                style = IntervalTheme.type.caption,
-                color = IntervalTheme.palette.textDim,
-                modifier = Modifier.padding(bottom = Spacing.space8, end = Spacing.space4),
-            )
-        }
-        ListCard {
-            state.routine.forEachIndexed { index, day ->
-                if (index > 0) RowDivider()
-                RoutineRow(day, onAdd = { adding = day.weekday }, onRemove = onRemove)
+        item(key = "goal") { GoalCard(state, onStepGoal, Modifier.padding(horizontal = Spacing.space16)) }
+        item(key = "routine") {
+            Column(Modifier.padding(horizontal = Spacing.space16)) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+                    GroupLabel(stringResource(Res.string.plan_routine), Modifier.weight(1f))
+                    Text(
+                        stringResource(Res.string.plan_every_week),
+                        style = IntervalTheme.type.caption,
+                        color = IntervalTheme.palette.textDim,
+                        modifier = Modifier.padding(bottom = Spacing.space8, end = Spacing.space4),
+                    )
+                }
+                ListCard {
+                    state.routine.forEachIndexed { index, day ->
+                        if (index > 0) RowDivider()
+                        RoutineRow(day, onAdd = { adding = day.weekday }, onRemove = onRemove)
+                    }
+                }
             }
         }
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-            GroupLabel(stringResource(Res.string.plan_one_offs), Modifier.weight(1f))
-            val interaction = remember { MutableInteractionSource() }
-            Text(
-                stringResource(Res.string.plan_add_on_date),
-                style = IntervalTheme.type.label,
-                color = IntervalTheme.palette.accent,
-                modifier = Modifier
-                    .surfaceButton(interaction, Corners.radius12, Color.Transparent, { adding = ADD_ON_DATE })
-                    .padding(Spacing.space8),
-            )
-        }
-        ListCard {
-            if (state.oneOffs.isEmpty()) {
-                Text(
-                    stringResource(Res.string.plan_one_offs_empty),
-                    style = IntervalTheme.type.meta,
-                    color = IntervalTheme.palette.textDim,
-                    modifier = Modifier.padding(Spacing.space16),
-                )
-            }
-            state.oneOffs.forEachIndexed { index, oneOff ->
-                if (index > 0) RowDivider()
-                OneOffRow(oneOff, onRemove)
+        item(key = "oneOffs") {
+            Column(Modifier.padding(horizontal = Spacing.space16)) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+                    GroupLabel(stringResource(Res.string.plan_one_offs), Modifier.weight(1f))
+                    val interaction = remember { MutableInteractionSource() }
+                    Text(
+                        stringResource(Res.string.plan_add_on_date),
+                        style = IntervalTheme.type.label,
+                        color = IntervalTheme.palette.accent,
+                        modifier = Modifier
+                            .surfaceButton(interaction, Corners.radius12, Color.Transparent, { adding = ADD_ON_DATE })
+                            .padding(Spacing.space8),
+                    )
+                }
+                ListCard {
+                    if (state.oneOffs.isEmpty()) {
+                        Text(
+                            stringResource(Res.string.plan_one_offs_empty),
+                            style = IntervalTheme.type.meta,
+                            color = IntervalTheme.palette.textDim,
+                            modifier = Modifier.padding(Spacing.space16),
+                        )
+                    }
+                    state.oneOffs.forEachIndexed { index, oneOff ->
+                        if (index > 0) RowDivider()
+                        OneOffRow(oneOff, onRemove)
+                    }
+                }
             }
         }
     }
@@ -194,10 +203,10 @@ fun PlanScreen(
 
 /** The weekly goal between − and +, "Off" below one; the streak under it while there is one. */
 @Composable
-private fun GoalCard(state: PlanUiState, onStepGoal: (Int) -> Unit) {
+private fun GoalCard(state: PlanUiState, onStepGoal: (Int) -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val goal = state.goal
-    ListCard {
+    ListCard(modifier) {
         Row(
             Modifier.padding(
                 start = Spacing.space20,

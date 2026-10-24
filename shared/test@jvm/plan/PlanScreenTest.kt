@@ -23,10 +23,12 @@ import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.weekdayOf
+import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 private val tabata = tabataPreset
 private val hiit = hiitPreset
@@ -69,6 +71,16 @@ class PlanScreenTest {
             },
             onRemove = { id, _ -> events += "remove $id" },
         )
+    }
+
+    @Test
+    fun `on a tablet the routine sits beside the goal and the one-offs`() = runUiTest(Window.TabletPortrait) {
+        setThemedContent { Screen(state) }
+        val goal = onNodeWithText("Workouts a week · 5-week streak").fetchSemanticsNode().boundsInRoot
+        val routine = onNodeWithText("Routine").fetchSemanticsNode().boundsInRoot
+        val oneOffs = onNodeWithText("One-offs").fetchSemanticsNode().boundsInRoot
+        assertTrue(routine.left > goal.right, "Routine beside the goal: $goal, $routine")
+        assertTrue(oneOffs.top > goal.bottom && oneOffs.right < routine.left, "One-offs under the goal: $oneOffs")
     }
 
     @Test
