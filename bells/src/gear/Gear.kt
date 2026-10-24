@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -156,7 +155,8 @@ fun GearRoute(onBack: () -> Unit) {
 /**
  * What the user has, opened from Lift: every standard bell size, the owned ones selected; their bar; their bands,
  * lightest first, each opening to rename, recolour, move or archive, and a new one to add; then the records.
- * On a wider window the bands and the records sit side by side under the bells.
+ * Each sits in a card under its label, as a column's cell: on a wider window the bar sits beside the bells, and
+ * the bands and the records fill whichever column is shorter.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -173,17 +173,20 @@ fun GearScreen(
     // The band being changed, by id; NEW_BAND for one being added.
     var editing by rememberSaveable { mutableStateOf<String?>(null) }
     TabGrid(stringResource(Res.string.bells_title), modifier, navigation = { BackAction(onBack) }) {
-        item(key = "owned", span = StaggeredGridItemSpan.FullLine) {
+        item(key = "owned") {
             Column(card) {
                 GroupLabel(stringResource(Res.string.bells_owned))
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.space8),
-                ) {
-                    standardBells.forEach { kg ->
-                        Choice(stringResource(Res.string.kg_value, formatKg(kg)), kg in state.owned, onClick = {
-                            onToggle(kg)
-                        })
+                ListCard {
+                    FlowRow(
+                        Modifier.padding(Spacing.space16),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+                    ) {
+                        standardBells.forEach { kg ->
+                            Choice(stringResource(Res.string.kg_value, formatKg(kg)), kg in state.owned, onClick = {
+                                onToggle(kg)
+                            })
+                        }
                     }
                 }
                 Text(
@@ -194,7 +197,7 @@ fun GearScreen(
                 )
             }
         }
-        item(key = "bar", span = StaggeredGridItemSpan.FullLine) {
+        item(key = "bar") {
             BarSection(state.bar, onBar, card)
         }
         item(key = "bands") {
@@ -245,9 +248,11 @@ private fun BarSection(bar: Double?, onBar: (Double?) -> Unit, modifier: Modifie
     Column(modifier) {
         GroupLabel(stringResource(Res.string.bar_owned))
         val none = stringResource(Res.string.bar_none)
-        ChoiceRow(listOf(null) + bars, bar, { kg ->
-            kg?.let { stringResource(Res.string.kg_value, formatKg(it)) } ?: none
-        }, onBar)
+        ListCard {
+            ChoiceRow(listOf(null) + bars, bar, { kg ->
+                kg?.let { stringResource(Res.string.kg_value, formatKg(it)) } ?: none
+            }, onBar, Modifier.padding(Spacing.space16))
+        }
         Text(
             stringResource(Res.string.bar_owned_hint),
             style = IntervalTheme.type.meta,

@@ -357,7 +357,7 @@
     <string name="bells_owned">Your bells</string>
     <string name="bar_owned">Your bar</string>
     <string name="bar_none">None</string>
-    <string name="bar_owned_hint">What your barbell weighs empty; the log works out the plates a side from it.</string>
+    <string name="bar_owned_hint">What the bar weighs empty, to work out the plates a side</string>
     <string name="bells_owned_hint">Tap the sizes you own; the log offers just those.</string>
     <string name="bands_owned">Your bands</string>
     <string name="bands_owned_hint">Lightest first. Tap one to rename, recolour or move it.</string>

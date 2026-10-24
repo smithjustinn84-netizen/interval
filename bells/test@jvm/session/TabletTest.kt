@@ -18,6 +18,8 @@ import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.domain.program
+import dev.justinsmith.bells.gear.GearScreen
+import dev.justinsmith.bells.gear.GearUiState
 import dev.justinsmith.bells.history.LiftDetailScreen
 import dev.justinsmith.bells.history.LiftDetailUiState
 import dev.justinsmith.bells.today.TodayScreen
@@ -53,6 +55,15 @@ class TabletTest {
         val day = onNodeWithText("Day 1 of 8 · week 1").assertIsDisplayed().getUnclippedBoundsInRoot()
         assertTrue(day.left >= week.right)
         assertTrue(day.top < week.bottom)
+    }
+
+    @Test
+    fun `Your equipment puts the bar beside the bells`() = runUiTest(Window.Tablet) {
+        setBellsContent { GearScreen(GearUiState(), onToggle = {}, onBack = {}) }
+        val bells = onNodeWithText("Your bells").assertIsDisplayed().getUnclippedBoundsInRoot()
+        val bar = onNodeWithText("Your bar").assertIsDisplayed().getUnclippedBoundsInRoot()
+        assertTrue(bar.left >= bells.right)
+        assertTrue(bar.top < bells.bottom)
     }
 
     @Test
