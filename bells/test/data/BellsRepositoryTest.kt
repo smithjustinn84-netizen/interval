@@ -89,6 +89,21 @@ class BellsRepositoryTest {
     }
 
     @Test
+    fun `a set removed then restored comes back with its id in its place`() = runTest {
+        repository.startSession()
+        repository.logSet(BuiltInExercise.TwoHandSwing, 24.0, 10, Side.Left)
+        now += 60_000
+        repository.logSet(BuiltInExercise.GetUp, 20.0, 1, Side.Left)
+        now += 60_000
+        repository.logSet(BuiltInExercise.Press, 16.0, 5, Side.Left)
+        val before = assertNotNull(repository.active.value).sets
+        val middle = before[1]
+        repository.removeSet(middle.id)
+        repository.restoreSet(middle)
+        assertEquals(before, repository.active.value?.sets)
+    }
+
+    @Test
     fun `a set with two bells keeps no side and one that can't be doubled is single`() = runTest {
         repository.startSession()
         repository.logSet(BuiltInExercise.Press, 16.0, 5, Side.Left, double = true)

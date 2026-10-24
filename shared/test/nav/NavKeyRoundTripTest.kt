@@ -37,7 +37,11 @@ class NavKeyRoundTripTest {
             ProgramEditor(),
             ProgramEditor("p1"),
             OwnedBells,
+            ExerciseLibrary,
+            ExerciseEditor(),
+            ExerciseEditor("e1", "Halo"),
             LiftDetail("b1"),
+            LiftDetail("b1", fromHistory = true),
         )
         for (route in routes) {
             assertEquals(route, json.decodeFromString(serializer, json.encodeToString(serializer, route)))

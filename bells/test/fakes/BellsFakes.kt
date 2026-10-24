@@ -38,6 +38,8 @@ import org.koin.dsl.koinApplication
 import org.koin.dsl.module
 
 /** [SessionDao] over lists, as the real queries order them. */
+private val loggedOrder = compareBy<SetEntity>({ it.loggedAtEpochMillis }, { it.id })
+
 class FakeSessionDao : SessionDao {
     val sessions = MutableStateFlow(emptyList<SessionEntity>())
     val sets = MutableStateFlow(emptyList<SetEntity>())
@@ -46,9 +48,10 @@ class FakeSessionDao : SessionDao {
     override fun observeSessions(): Flow<List<SessionEntity>> =
         sessions.map { all -> all.filterNot { it.deleted }.sortedByDescending { it.startedAtEpochMillis } }
 
-    override fun observeSets(): Flow<List<SetEntity>> = sets
+    // As the queries order them: as logged.
+    override fun observeSets(): Flow<List<SetEntity>> = sets.map { it.sortedWith(loggedOrder) }
 
-    override suspend fun allSets() = sets.value
+    override suspend fun allSets() = sets.value.sortedWith(loggedOrder)
 
     override suspend fun active() = sessions.value.firstOrNull { it.finishedAtEpochMillis == null && !it.deleted }
 
@@ -61,7 +64,11 @@ class FakeSessionDao : SessionDao {
         }
     }
 
-    override suspend fun insert(set: SetEntity) = sets.update { it + set.copy(id = nextId++) }
+    // As Room: an id of 0 is generated, any other is kept (a set restored to its place).
+    override suspend fun insert(set: SetEntity) = sets.update {
+        val id = if (set.id == 0L) nextId++ else set.id.also { nextId = maxOf(nextId, it + 1) }
+        it + set.copy(id = id)
+    }
 
     override suspend fun deleteSet(id: Long) = sets.update { all -> all.filterNot { it.id == id } }
 
@@ -72,15 +79,7 @@ class FakeSessionDao : SessionDao {
     }
 
     override suspend fun finish(uid: String, title: String, at: Long) = sessions.update { all ->
-        all.map {
-            if (it.uid ==
-                uid
-            ) {
-                it.copy(finishedAtEpochMillis = at, title = title, updatedAtEpochMillis = at)
-            } else {
-                it
-            }
-        }
+        all.map { if (it.uid == uid) it.copy(finishedAtEpochMillis = at, title = title, updatedAtEpochMillis = at) else it }
     }
 
     override suspend fun markDeleted(uid: String, now: Long) = sessions.update { all ->
