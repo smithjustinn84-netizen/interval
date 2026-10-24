@@ -6,6 +6,7 @@ import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.history.TrainingLog
+import dev.justinsmith.interval.history.heading
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.LiftWorkout
@@ -141,7 +142,7 @@ class PlanViewModel(
                     (plan.schedule as? PlanSchedule.Once)?.epochDay?.takeIf { it >= today }?.let { plan to it }
                 }
                 .sortedWith(compareBy({ it.second }, { it.first.id }))
-                .map { (plan, day) -> OneOff(entries.getValue(plan), day, heading(day, today)) },
+                .map { (plan, day) -> OneOff(entries.getValue(plan), day, timestamps.heading(day, today)) },
             choices = planChoices(presets, config),
             days = dayChoices(today),
             todayWeekday = weekdayOf(today),

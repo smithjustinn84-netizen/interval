@@ -37,18 +37,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 
-/** The heading over one day: "Today", "Yesterday", "Tomorrow", or its date. */
-sealed interface HistoryDay {
-    data object Today : HistoryDay
-
-    data object Yesterday : HistoryDay
-
-    data object Tomorrow : HistoryDay
-
-    /** Any other day, as the platform formats its date: "Sunday, Oct 11". */
-    data class On(val date: String) : HistoryDay
-}
-
 data class HistoryItem(
     /** The matching preset's name, or null for a workout no preset has; the row then leads with its shape. */
     val presetName: String?,
@@ -175,14 +163,6 @@ data class HistoryUiState(
 
     /** The most workouts in one of [weeks], for scaling its bars; at least the goal, so its line fits. */
     val weeksMax: Int get() = maxOf(weeks.maxOfOrNull { it.count } ?: 0, goal ?: 0, 1)
-}
-
-/** A day's heading: Today, Yesterday or Tomorrow beside [today], else its date. */
-private fun TimestampFormatter.heading(day: Long, today: Long): HistoryDay = when (day) {
-    today -> HistoryDay.Today
-    today - 1 -> HistoryDay.Yesterday
-    today + 1 -> HistoryDay.Tomorrow
-    else -> HistoryDay.On(dateOfDay(day))
 }
 
 /**

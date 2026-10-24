@@ -117,11 +117,7 @@ class WorkoutDetailViewModel(
                 id = id,
                 presetName = presets.matching(entry.config)?.name,
                 config = entry.config,
-                day = when (day) {
-                    today -> HistoryDay.Today
-                    today - 1 -> HistoryDay.Yesterday
-                    else -> HistoryDay.On(timestamps.dateOfDay(day))
-                },
+                day = timestamps.heading(day, today),
                 time = timestamps.time(entry.finishedAtEpochMillis),
                 total = formatClock(entry.elapsedSeconds),
                 work = formatClock(entry.workDoneSeconds),
