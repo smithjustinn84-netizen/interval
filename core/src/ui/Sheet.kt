@@ -48,7 +48,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
@@ -57,7 +56,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
-import androidx.window.core.layout.WindowSizeClass
 import com.composeunstyled.DialogPanel
 import com.composeunstyled.DragIndication
 import com.composeunstyled.ModalBottomSheetState
@@ -101,26 +99,6 @@ fun IntervalSheet(
 }
 
 /**
- * Whether an [IntervalSheet] opened now rises over a window wider than it is tall: a phone on its side. Its
- * content has the width for two columns and not the height for one, so a long form splits in two and keeps
- * its last button in view. Read it before opening the sheet, as the sheet reads the window; it follows the
- * phone turned with the sheet open.
- */
-@Composable
-fun sheetIsSideways(): Boolean {
-    val window = LocalWindowInfo.current.containerSize
-    return !windowIsRoomy() && window.width > window.height
-}
-
-/**
- * Whether the window is at least Material's medium width and height: a tablet either way up, an unfolded
- * foldable, a desktop. Where a sheet opens beside rather than rising, and where a screen laid out for a phone
- * has room to spare. A phone on its side is too short to be. Read live, so a screen follows a resize.
- */
-@Composable
-fun windowIsRoomy(): Boolean = opensBeside(currentWindowAdaptiveInfoV2().windowSizeClass)
-
-/**
  * A sheet's form in two parts, [first] (what it is) then [second] (how much, and the action): one column, or
  * on a phone on its side ([sideways], from [sheetIsSideways]) two side by side, so the action shows without
  * scrolling. Each part's items are [spacing] apart.
@@ -146,11 +124,6 @@ fun SheetColumns(
         }
     }
 }
-
-/** A window at least Material's medium width and height gets a side sheet. */
-private fun opensBeside(windowSize: WindowSizeClass) =
-    windowSize.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND) &&
-        windowSize.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)
 
 /** The phone's sheet: it rises whole from the bottom, stops under the status bar and above the keyboard. */
 @Composable
@@ -216,18 +189,7 @@ private fun BottomSheet(
                         Modifier
                             .size(Sizes.dragHandleWidth, Sizes.dragHandleHeight)
                             .semantics { contentDescription = dragHandle }
-                            .drawBehind {
-                                val handle = Size(Sizes.handleWidth.toPx(), Sizes.handleHeight.toPx())
-                                drawRoundRect(
-                                    color = palette.textDim.copy(alpha = Opacity.HANDLE),
-                                    topLeft = Offset(
-                                        (size.width - handle.width) / 2,
-                                        (size.height - handle.height) / 2,
-                                    ),
-                                    size = handle,
-                                    cornerRadius = CornerRadius(handle.height / 2),
-                                )
-                            },
+                            .handle(palette.textDim.copy(alpha = Opacity.HANDLE)),
                     )
                     SheetBody(hide, content = content)
                 }
@@ -305,6 +267,17 @@ private fun SideSheet(
             }
         }
     }
+}
+
+/** The drag handle's pill, drawn in [color] at the middle of a larger target. */
+private fun Modifier.handle(color: Color) = drawBehind {
+    val handle = Size(Sizes.handleWidth.toPx(), Sizes.handleHeight.toPx())
+    drawRoundRect(
+        color = color,
+        topLeft = Offset((size.width - handle.width) / 2, (size.height - handle.height) / 2),
+        size = handle,
+        cornerRadius = CornerRadius(handle.height / 2),
+    )
 }
 
 private fun sheetExitSpec() = tween<Float>(Motion.EXIT_MILLIS, easing = ExitEasing)
