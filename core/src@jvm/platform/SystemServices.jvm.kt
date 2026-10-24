@@ -4,8 +4,10 @@ import androidx.compose.runtime.Composable
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.chrono.IsoChronology
 import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
+import java.time.format.DateTimeFormatterBuilder
+import java.util.Locale
 
 /** Desktop displays follow the OS power settings; nothing to hold here. */
 @Composable
@@ -27,22 +29,43 @@ actual fun epochMillisNow(): Long = System.currentTimeMillis()
 
 actual fun systemTimestampFormatter(): TimestampFormatter = JavaTimeFormatter()
 
-private class JavaTimeFormatter : TimestampFormatter {
-    // Templates rather than a fixed pattern, so each locale orders the parts its way. Desktop locales
-    // don't change while the app runs, so these are built once.
-    private val dateFormat = DateTimeFormatter.ofLocalizedPattern("MMMEEEEd")
-    private val timeFormat = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
-    private val monthFormat = DateTimeFormatter.ofLocalizedPattern("yMMMM")
+internal class JavaTimeFormatter : TimestampFormatter {
+    // Built again when the locale changes, as Android's are, so the two word a date alike.
+    private var formats: Formats? = null
 
-    override fun date(epochMillis: Long): String = dateFormat.format(zoned(epochMillis))
+    override fun date(epochMillis: Long): String = formats().date.format(zoned(epochMillis))
 
-    override fun time(epochMillis: Long): String = timeFormat.format(zoned(epochMillis))
+    override fun time(epochMillis: Long): String = formats().time.format(zoned(epochMillis))
 
     override fun dayNumber(epochMillis: Long): Long = zoned(epochMillis).toLocalDate().toEpochDay()
 
-    override fun dateOfDay(epochDay: Long): String = dateFormat.format(LocalDate.ofEpochDay(epochDay))
+    override fun dateOfDay(epochDay: Long): String = formats().date.format(LocalDate.ofEpochDay(epochDay))
 
-    override fun monthTitle(epochDay: Long): String = monthFormat.format(LocalDate.ofEpochDay(epochDay))
+    override fun monthTitle(epochDay: Long): String = formats().month.format(LocalDate.ofEpochDay(epochDay))
 
     private fun zoned(epochMillis: Long) = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault())
+
+    private fun formats(): Formats {
+        val locale = Locale.getDefault(Locale.Category.FORMAT)
+        return formats?.takeIf { it.locale == locale } ?: Formats(locale).also { formats = it }
+    }
+
+    // Android's skeletons, so each locale orders the parts and picks 12 or 24 hours its way. Java takes a
+    // skeleton's letters in a fixed order ("MMMEEEEd" for Android's "EEEEMMMd", "jm" for its "jmm") and, unlike
+    // Android, keeps the closest pattern's own field widths: "Sun" where the skeleton asks for "Sunday". So the
+    // weekday is widened again, as Android does.
+    private class Formats(val locale: Locale) {
+        val date: DateTimeFormatter = localized("MMMEEEEd") { it.replace(SHORT_WEEKDAY, "EEEE") }
+        val time: DateTimeFormatter = localized("jm")
+        val month: DateTimeFormatter = localized("yMMMM")
+
+        private fun localized(skeleton: String, adjust: (String) -> String = { it }): DateTimeFormatter {
+            val pattern = DateTimeFormatterBuilder.getLocalizedDateTimePattern(skeleton, IsoChronology.INSTANCE, locale)
+            return DateTimeFormatter.ofPattern(adjust(pattern), locale)
+        }
+    }
+
+    private companion object {
+        val SHORT_WEEKDAY = Regex("E{1,3}(?!E)")
+    }
 }
