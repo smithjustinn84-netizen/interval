@@ -14,6 +14,15 @@ class TrainingTest {
     private fun session(vararg sets: SetLog) = LiftSession("s", 0, 60_000, "", sets.toList())
 
     @Test
+    fun `sessions held newest first give their sets oldest first`() {
+        val first = set(BuiltInExercise.Press, 16.0, 5)
+        val second = set(BuiltInExercise.Press, 20.0, 5)
+        val third = set(BuiltInExercise.Press, 24.0, 3)
+        val newestFirst = listOf(session(third), session(first, second))
+        assertEquals(listOf(first, second, third), newestFirst.setsOldestFirst())
+    }
+
+    @Test
     fun `a record is the heaviest bell with its best reps and the most reps with any bell`() {
         val records = personalRecords(
             listOf(

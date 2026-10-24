@@ -42,6 +42,7 @@ import dev.justinsmith.bells.domain.plannedDone
 import dev.justinsmith.bells.domain.progressions
 import dev.justinsmith.bells.domain.recentExercises
 import dev.justinsmith.bells.domain.recordSetIds
+import dev.justinsmith.bells.domain.setsOldestFirst
 import dev.justinsmith.bells.domain.standardBells
 import dev.justinsmith.bells.domain.suggestedBand
 import dev.justinsmith.bells.domain.suggestedBar
@@ -304,7 +305,7 @@ class SessionViewModel(
                 library = LibraryList(
                     chosen.exercises,
                     recentExercises(
-                        repository.sessions.value.reversed().flatMap { it.sets } + active?.sets.orEmpty(),
+                        repository.sessions.value.setsOldestFirst() + active?.sets.orEmpty(),
                         chosen.exercises,
                     ),
                     chosen.filters,
@@ -671,7 +672,7 @@ class SessionViewModel(
 
     /** Every set logged, oldest first: those of the sessions finished, then [logged], by default this one's. */
     private fun history(logged: List<SetLog> = repository.active.value?.sets.orEmpty()): List<SetLog> =
-        repository.sessions.value.reversed().flatMap { it.sets } + logged
+        repository.sessions.value.setsOldestFirst() + logged
 
     /** [day]'s blocks as today's plan has them, with the sets of each [logged] has done. */
     private fun planRows(day: ProgramDay, logged: List<SetLog>): List<PlanRow> {

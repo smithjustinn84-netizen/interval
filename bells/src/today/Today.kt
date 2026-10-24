@@ -45,6 +45,7 @@ import dev.justinsmith.bells.domain.barbellLifts
 import dev.justinsmith.bells.domain.builtInPrograms
 import dev.justinsmith.bells.domain.formatKg
 import dev.justinsmith.bells.domain.kettlebellLifts
+import dev.justinsmith.bells.domain.setsOldestFirst
 import dev.justinsmith.bells.domain.suggestedBar
 import dev.justinsmith.bells.domain.suggestedBell
 import dev.justinsmith.bells.resources.Res
@@ -213,7 +214,7 @@ class TodayViewModel(
                 if (timestamps.dayNumber(at) == today) timestamps.time(at) else timestamps.date(at)
             }.orEmpty(),
             inProgress = active != null,
-            bells = sessions.reversed().flatMap { it.sets }.let { history ->
+            bells = sessions.setsOldestFirst().let { history ->
                 kettlebellLifts.flatMap {
                     listOf(it to false, it to true)
                 }.associateWith { (exercise, double) ->

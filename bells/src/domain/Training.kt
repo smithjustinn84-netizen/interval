@@ -324,6 +324,12 @@ data class LiftSession(
     }
 }
 
+/**
+ * Every set of these sessions, held newest first as the repository holds them, oldest first: the order a
+ * suggestion reads the last one done from.
+ */
+fun List<LiftSession>.setsOldestFirst(): List<SetLog> = asReversed().flatMap { it.sets }
+
 /** The best an [exercise] has been done, with one bell or two ([double]), in the terms its sets are counted. */
 sealed interface PersonalRecord {
     val exercise: Exercise

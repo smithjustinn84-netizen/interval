@@ -33,6 +33,7 @@ import dev.justinsmith.bells.domain.ProgramDraft
 import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.domain.bands
 import dev.justinsmith.bells.domain.offeredBands
+import dev.justinsmith.bells.domain.setsOldestFirst
 import dev.justinsmith.bells.domain.standardBells
 import dev.justinsmith.bells.domain.withExercise
 import dev.justinsmith.bells.library.ExercisePicker
@@ -123,7 +124,7 @@ class ProgramEditorViewModel(
         filters.filters,
         repository.bar,
     ) { owned, bands, made, narrowed, bar ->
-        blockChoices(owned, bands, made, narrowed, repository.sessions.value.reversed().flatMap { it.sets }, bar)
+        blockChoices(owned, bands, made, narrowed, repository.sessions.value.setsOldestFirst(), bar)
     }
 
     val state: StateFlow<ProgramEditorUiState> = combine(_state, choices) { editing, choices ->

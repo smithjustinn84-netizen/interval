@@ -14,6 +14,7 @@ import dev.justinsmith.bells.domain.ExerciseFilters
 import dev.justinsmith.bells.domain.offeredExercises
 import dev.justinsmith.bells.domain.ownedEquipment
 import dev.justinsmith.bells.domain.recentExercises
+import dev.justinsmith.bells.domain.setsOldestFirst
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.library_new
 import dev.justinsmith.bells.resources.library_title
@@ -39,7 +40,7 @@ class ExerciseLibraryViewModel(repository: BellsRepository, private val filters:
             combine(repository.bells, repository.bands, repository.bar, ::ownedEquipment),
         ) { made, sessions, active, narrowed, owned ->
             val offered = offeredExercises(made, archived = narrowed.showArchived)
-            val history = sessions.reversed().flatMap { it.sets } + active?.sets.orEmpty()
+            val history = sessions.setsOldestFirst() + active?.sets.orEmpty()
             LibraryList(offered, recentExercises(history, offered), narrowed, owned)
         }.stateIn(viewModelScope, SharingStarted.Eagerly, LibraryList(offeredExercises(emptyList())))
 
