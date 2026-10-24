@@ -26,6 +26,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.domain.Program
@@ -79,18 +80,37 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.interval.ui.sheetIsSideways
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
+/** The program followed, if any, and its next day; and the programs the user made. */
+data class ProgramsUiState(
+    val following: Program? = null,
+    val followingDay: ProgramDay? = null,
+    val custom: List<Program> = emptyList(),
+)
+
 /** The built-in programs, the ones the user made, which one is followed and its next day. */
 class ProgramsViewModel(private val repository: BellsRepository) : ViewModel() {
-    val following: StateFlow<Program?> = repository.following
-    val programDay: StateFlow<ProgramDay?> = repository.programDay
-    val custom: StateFlow<List<Program>> = repository.customPrograms
+    val state: StateFlow<ProgramsUiState> =
+        combine(repository.following, repository.programDay, repository.customPrograms, ::ProgramsUiState)
+            .stateIn(
+                viewModelScope,
+                SharingStarted.Eagerly,
+                ProgramsUiState(
+                    repository.following.value,
+                    repository.programDay.value,
+                    repository.customPrograms.value,
+                ),
+            )
 
+    /** Follows [key] from its first day; the program followed already keeps its place. */
     fun follow(key: ProgramKey) {
-        repository.follow(key)
+        if (key != repository.following.value?.key) repository.follow(key)
     }
 
     fun stop() {
@@ -111,16 +131,14 @@ data class ProgramsActions(
 fun ProgramsRoute(onNew: () -> Unit, onEdit: (uid: String) -> Unit, onBack: () -> Unit) {
     val scope = currentKoinScope()
     val viewModel = viewModel { ProgramsViewModel(scope.get()) }
-    val following by viewModel.following.collectAsStateWithLifecycle()
-    val custom by viewModel.custom.collectAsStateWithLifecycle()
-    val day by viewModel.programDay.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     ProgramsScreen(
-        following = following?.key,
-        custom = custom,
-        followingDay = day,
+        following = state.following?.key,
+        custom = state.custom,
+        followingDay = state.followingDay,
         actions = ProgramsActions(
             onFollow = {
-                if (it != following?.key) viewModel.follow(it)
+                viewModel.follow(it)
                 onBack()
             },
             onStop = {
