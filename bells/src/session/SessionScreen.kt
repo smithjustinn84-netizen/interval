@@ -126,7 +126,7 @@ fun SessionRoute(onExit: () -> Unit, onNewExercise: (name: String) -> Unit = {})
             hasSets = !state.session?.sets.isNullOrEmpty(),
             onLeave = {
                 viewModel.stopEmom()
-                viewModel.holds.cancel()
+                viewModel.cancelHold()
                 onExit()
             },
         )
@@ -156,7 +156,7 @@ fun SessionRoute(onExit: () -> Unit, onNewExercise: (name: String) -> Unit = {})
 
             SessionPage.Logging -> SessionScreen(
                 state,
-                sessionActions(viewModel, filters, state, title, onExit, onNewExercise),
+                sessionActions(viewModel, filters, title, onExit, onNewExercise),
             )
         }
     }
@@ -174,7 +174,6 @@ private sealed interface SessionPage {
 private fun sessionActions(
     viewModel: SessionViewModel,
     filters: ExerciseFilterStore,
-    state: SessionUiState,
     title: String,
     onExit: () -> Unit,
     onNewExercise: (name: String) -> Unit,
@@ -189,9 +188,9 @@ private fun sessionActions(
     onLogNext = viewModel::logNext,
     onStartPlannedEmom = viewModel::startPlannedEmom,
     onStartEmom = viewModel::startDraftEmom,
-    onTimeHold = { viewModel.holds.start(state.draft) },
-    onStopHold = viewModel.holds::stop,
-    onCancelHold = viewModel.holds::cancel,
+    onTimeHold = viewModel::startHold,
+    onStopHold = viewModel::stopHold,
+    onCancelHold = viewModel::cancelHold,
     onRemoveSet = viewModel::removeSet,
     onRestoreSet = viewModel::restoreSet,
     onEditSet = viewModel::editSet,

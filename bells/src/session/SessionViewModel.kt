@@ -209,7 +209,7 @@ class SessionViewModel(
     }
 
     /** Times a hold from the sheet, logging it when done. */
-    val holds = HoldTimer(clock, beeper) { set, seconds -> logSet(set, seconds) }
+    private val holds = HoldTimer(clock, beeper) { set, seconds -> logSet(set, seconds) }
 
     /** The time, once a tick: one clock for the clocks on screen and the cues alike. */
     private val ticks = flow {
@@ -443,6 +443,21 @@ class SessionViewModel(
             d.doubled,
             d.band.takeIf { d.exercise.equipment == Equipment.Band },
         )
+    }
+
+    /** Starts timing the sheet's hold: the other side of the one just done, if that is on offer. */
+    fun startHold() {
+        holds.start(draft.value)
+    }
+
+    /** Stops the hold early, logging the whole seconds held. */
+    fun stopHold() {
+        holds.stop()
+    }
+
+    /** Stops the hold without logging it. */
+    fun cancelHold() {
+        holds.cancel()
     }
 
     /** Logs this minute's set: the EMOM rests out the minute. */
