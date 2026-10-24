@@ -1,5 +1,8 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package dev.justinsmith.interval.history
 
+import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.MainDispatcherTest
@@ -7,7 +10,15 @@ import dev.justinsmith.interval.fakes.TODAY
 import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.model.BodySettings
+import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.timer.IntervalConfig
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -68,5 +79,21 @@ class WorkoutDetailViewModelTest : MainDispatcherTest() {
     @Test
     fun `an id with no workout shows none`() {
         assertNull(viewModel(id = 42).state.value.workout)
+    }
+
+    @Test
+    fun `a workout of today is of yesterday once midnight passes with the page open`() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        var now = noonOf(TODAY)
+        val shared = FakeStorage().repository(now = { now })
+        shared.recordWorkout(hiit.config, elapsedSeconds = 580)
+        val page = WorkoutDetailViewModel(1, shared, FixedTimestampFormatter, clock = { now })
+        assertEquals(HistoryDay.Today, page.state.value.workout?.day)
+
+        now = noonOf(TODAY + 1)
+        advanceTimeBy(DAY_CHECK_MILLIS + 1)
+
+        assertEquals(HistoryDay.Yesterday, page.state.value.workout?.day)
+        page.viewModelScope.cancel()
     }
 }

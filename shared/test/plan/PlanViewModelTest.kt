@@ -1,5 +1,8 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package dev.justinsmith.interval.plan
 
+import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.fakes.FakeLiftStorage
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
@@ -9,8 +12,16 @@ import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.fakes.tabataPreset
 import dev.justinsmith.interval.history.HistoryDay
+import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -110,5 +121,20 @@ class PlanViewModelTest : MainDispatcherTest() {
     fun `a preset on the Timer is offered under its own name`() {
         repository.applyPreset(tabata)
         assertEquals("Tabata", viewModel.state.value.choices.first().preset.name)
+    }
+
+    @Test
+    fun `a one-off's heading moves on at midnight with the screen open`() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        var now = noonOf(TODAY)
+        repository.planOnce(hiit, TODAY + 1)
+        val plan = PlanViewModel(repository, bells, FixedTimestampFormatter, clock = { now })
+        assertEquals(listOf(HistoryDay.Tomorrow), plan.state.value.oneOffs.map { it.day })
+
+        now = noonOf(TODAY + 1)
+        advanceTimeBy(DAY_CHECK_MILLIS + 1)
+
+        assertEquals(listOf(HistoryDay.Today), plan.state.value.oneOffs.map { it.day })
+        plan.viewModelScope.cancel()
     }
 }

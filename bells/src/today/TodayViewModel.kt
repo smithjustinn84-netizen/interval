@@ -18,8 +18,10 @@ import dev.justinsmith.bells.domain.setsOldestFirst
 import dev.justinsmith.bells.domain.startingLoadKg
 import dev.justinsmith.bells.domain.suggestedBar
 import dev.justinsmith.bells.domain.suggestedBell
+import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.interval.platform.days
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.timer.weekStartOf
 import dev.justinsmith.interval.timer.weekdayOf
@@ -69,9 +71,17 @@ class TodayViewModel(
     private val intervals: IntervalActivity,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
+    dayCheckMillis: Long = DAY_CHECK_MILLIS,
 ) : ViewModel() {
+    // Read again each midnight, so the week strip and its "today" move on with the screen open.
     val state: StateFlow<TodayUiState> =
-        combine(repository.sessions, intervals.workouts, repository.active, repository.bar, ::build)
+        combine(
+            repository.sessions,
+            intervals.workouts,
+            repository.active,
+            repository.bar,
+            clock.days(timestamps, dayCheckMillis),
+        ) { sessions, interval, active, bar, _ -> build(sessions, interval, active, bar) }
             .combine(
                 combine(repository.following, repository.programDay, intervals.weeklyGoal, ::Triple),
             ) { state, (following, day, goal) ->

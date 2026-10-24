@@ -13,8 +13,10 @@ import dev.justinsmith.interval.model.LiftWorkout
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.asLiftWorkouts
+import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.interval.platform.days
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
@@ -58,14 +60,22 @@ class PlanViewModel(
     private val bells: BellsRepository,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
+    dayCheckMillis: Long = DAY_CHECK_MILLIS,
 ) : ViewModel() {
+    // Read again each midnight, so the one-offs and their headings move on with the screen open.
     val state: StateFlow<PlanUiState> =
         combine(
             repository.planned,
             repository.presets,
             repository.config,
             repository.appSettings,
-            combine(repository.history, bells.sessions) { history, sessions -> history to sessions.asLiftWorkouts() },
+            combine(repository.history, bells.sessions, clock.days(timestamps, dayCheckMillis)) {
+                    history,
+                    sessions,
+                    _,
+                ->
+                history to sessions.asLiftWorkouts()
+            },
         ) { planned, presets, config, app, (history, lifts) ->
             buildState(planned, presets, config, app, history, lifts)
         }.stateIn(

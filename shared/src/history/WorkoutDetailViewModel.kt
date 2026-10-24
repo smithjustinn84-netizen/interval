@@ -9,8 +9,10 @@ import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.plan.DayChoice
 import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.plan.dayChoices
+import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.interval.platform.days
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.defaultPresetName
@@ -60,13 +62,22 @@ class WorkoutDetailViewModel(
     private val repository: IntervalRepository,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
+    dayCheckMillis: Long = DAY_CHECK_MILLIS,
 ) : ViewModel() {
+    // Read again each midnight, so "Today" turns to "Yesterday" with the page open.
     val state: StateFlow<WorkoutDetailUiState> =
-        combine(repository.history, repository.planned, repository.presets, repository.appSettings) {
+        combine(
+            repository.history,
+            repository.planned,
+            repository.presets,
+            repository.appSettings,
+            clock.days(timestamps, dayCheckMillis),
+        ) {
                 history,
                 planned,
                 presets,
                 app,
+                _,
             ->
             buildState(history, planned, presets, app)
         }.stateIn(

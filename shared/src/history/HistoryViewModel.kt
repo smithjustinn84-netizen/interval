@@ -16,8 +16,10 @@ import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.asLiftWorkouts
 import dev.justinsmith.interval.model.loggedWorkouts
 import dev.justinsmith.interval.plan.planChoices
+import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.interval.platform.days
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
@@ -26,13 +28,10 @@ import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.monthStartAfter
 import dev.justinsmith.interval.timer.monthStartOf
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 
@@ -77,12 +76,7 @@ class HistoryViewModel(
     private val clock: WallClock,
     dayCheckMillis: Long = DAY_CHECK_MILLIS,
 ) : ViewModel() {
-    private val days = flow {
-        while (true) {
-            emit(timestamps.dayNumber(clock.nowMillis()))
-            delay(dayCheckMillis)
-        }
-    }.distinctUntilChanged()
+    private val days = clock.days(timestamps, dayCheckMillis)
 
     private val view = MutableStateFlow(HistoryView())
 
@@ -295,7 +289,6 @@ class HistoryViewModel(
     )
 
     private companion object {
-        const val DAY_CHECK_MILLIS = 60_000L
         const val WEEKS_SHOWN = 12
         const val MOST_DONE_SHOWN = 3
     }
