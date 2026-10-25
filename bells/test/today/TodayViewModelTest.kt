@@ -8,7 +8,7 @@ import dev.justinsmith.bells.domain.DEFAULT_BAR_KG
 import dev.justinsmith.bells.domain.barbellLifts
 import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.bells.fakes.FakeIntervalActivity
-import dev.justinsmith.bells.fakes.FixedTimestampFormatter
+import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

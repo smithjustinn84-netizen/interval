@@ -9,7 +9,7 @@ import dev.justinsmith.bells.data.SetEntity
 import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.fakes.FakeBellsStorage
-import dev.justinsmith.bells.fakes.FixedTimestampFormatter
+import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

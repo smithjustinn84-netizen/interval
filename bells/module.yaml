@@ -5,7 +5,9 @@ product:
   platforms: [android, iosArm64, iosSimulatorArm64, jvm]
 
 dependencies:
-  - ../core: exported
+  - //core: exported
+  # Its domain, pure Kotlin, so a change to a screen never recompiles it (and its tests run alone).
+  - //bells-domain: exported
   - $compose.runtime
   - $compose.ui
   - $compose.components.resources
@@ -25,6 +27,8 @@ dependencies:
 
 test-dependencies:
   - $libs.kotlinx.coroutines.test
+  # The shared fakes and the UI harness.
+  - //core-testing
 
 # Compose UI tests run on the desktop JVM only, as in shared: common `test/` also runs as Android local tests.
 test-dependencies@jvm:

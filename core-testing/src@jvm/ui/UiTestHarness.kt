@@ -11,6 +11,10 @@ import androidx.compose.runtime.saveable.SaveableStateRegistry
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.hasScrollToNodeAction
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 
 /** The window sizes the previews use (`PreviewFormFactors`), at density 1 so pixels are dp. */
@@ -28,10 +32,29 @@ enum class Window(val width: Int, val height: Int) {
 fun runUiTest(window: Window = Window.Phone, block: suspend DesktopComposeUiTest.() -> Unit) =
     runDesktopComposeUiTest(width = window.width, height = window.height, block = block)
 
-/** Sets [content] inside the app theme, light, so tests don't depend on the machine's appearance. */
-fun DesktopComposeUiTest.setThemedContent(content: @Composable () -> Unit) {
-    setContent { IntervalTheme(darkTheme = false, content = content) }
+/** Sets [content] inside the app theme, light unless [dark], so tests don't depend on the machine's appearance. */
+fun DesktopComposeUiTest.setThemedContent(dark: Boolean = false, content: @Composable () -> Unit) {
+    setContent { IntervalTheme(darkTheme = dark, content = content) }
 }
+
+/** How long a view model on the main thread, ticking in real time, may take to show what the test did. */
+private const val STATE_TIMEOUT_MILLIS = 5_000L
+
+/**
+ * Waits for [text] to show. The real view models emit on `Dispatchers.Main` (Swing's thread), which the
+ * test's idling doesn't track, so whole-app tests wait for what the state brings rather than assert at once.
+ */
+fun DesktopComposeUiTest.waitForText(text: String) =
+    waitUntil(timeoutMillis = STATE_TIMEOUT_MILLIS) { onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
+
+/**
+ * Scrolls the page's grid, which composes only what is in view, until [text] is among what it composes.
+ * It waits for the page to come, as [waitForText] does.
+ */
+fun DesktopComposeUiTest.scrollToText(text: String) =
+    waitUntil(timeoutMillis = STATE_TIMEOUT_MILLIS) {
+        runCatching { onNode(hasScrollToNodeAction()).performScrollToNode(hasText(text)) }.isSuccess
+    }
 
 /**
  * Saves and restores [setContent]'s `rememberSaveable` state, as a process death or (on Android) a

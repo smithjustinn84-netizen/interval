@@ -1,0 +1,13 @@
+# Every library module: warnings fail the build, and ktlint and detekt run over it. Modules with tests apply
+# `tested-lib` (which adds the test libraries and the fakes in `core-testing`); `core-testing` applies this one.
+settings:
+  kotlin:
+    allWarningsAsErrors: true
+    # No module-wide `optIns`: opt in per file (`@file:OptIn`). Since toolchain 0.13 a module's flags reach
+    # the Kotlin/Native cache build of every dependency, where an unresolved marker fails the iOS link.
+
+plugins:
+  lint-plugin:
+    enabled: true
+  detekt-plugin:
+    enabled: true

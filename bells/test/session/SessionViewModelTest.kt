@@ -19,8 +19,8 @@ import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.domain.program
 import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.bells.fakes.FakeIntervalActivity
-import dev.justinsmith.bells.fakes.FixedTimestampFormatter
 import dev.justinsmith.bells.fakes.RecordingBeeper
+import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

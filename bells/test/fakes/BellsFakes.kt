@@ -21,6 +21,7 @@ import dev.justinsmith.bells.di.BellsStorageScope
 import dev.justinsmith.bells.di.bellsModules
 import dev.justinsmith.bells.domain.EmomCue
 import dev.justinsmith.bells.platform.Beeper
+import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import kotlinx.coroutines.CoroutineScope
@@ -202,21 +203,6 @@ class RecordingBeeper : Beeper {
         cues += cue
     }
 }
-
-/** Days of 24 hours from the epoch, in words a test can match. */
-object FixedTimestampFormatter : TimestampFormatter {
-    override fun date(epochMillis: Long): String = dateOfDay(dayNumber(epochMillis))
-
-    override fun time(epochMillis: Long): String = "at $epochMillis"
-
-    override fun dayNumber(epochMillis: Long): Long = epochMillis.floorDiv(DAY_MILLIS)
-
-    override fun dateOfDay(epochDay: Long): String = "day $epochDay"
-
-    override fun monthTitle(epochDay: Long): String = "month of day $epochDay"
-}
-
-private const val DAY_MILLIS = 86_400_000L
 
 /** Bells' storage over the fakes: no database, and writes run at once on the caller's thread. */
 class FakeBellsStorage {

@@ -4,9 +4,9 @@ product:
 
 dependencies:
   # The theme, components and platform hooks every app shares; exported so the app shells see them too.
-  - ../core: exported
+  - //core: exported
   # Kettlebell training, behind the Lift tab: its screens, sessions and database.
-  - ../bells
+  - //bells
   - $compose.runtime
   - $compose.foundation: exported
   - $compose.material3: exported
@@ -31,6 +31,8 @@ dependencies:
 
 test-dependencies:
   - $libs.kotlinx.coroutines.test
+  # The shared fakes and the UI harness.
+  - //core-testing
 
 # Compose UI tests run on the desktop JVM only: common `test/` also runs as Android local tests,
 # which have no Robolectric here, so `runComposeUiTest` lives in `test@jvm/`.

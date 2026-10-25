@@ -11,9 +11,9 @@ naming:
   InvalidPackageDeclaration:
     # Amper's src/ is the package root, with no dev/justinsmith/interval/ directories above it.
     rootPackage: 'dev.justinsmith.interval'
-    # The plugins keep their own package (…interval.lint, …interval.detekt) directly in src/, as does
-    # Lift's module (dev.justinsmith.bells).
-    excludes: ['**/lint-plugin/**', '**/detekt-plugin/**', '**/bells/**']
+    # The plugins keep their own package (…interval.lint, …interval.detekt) directly in src/, as do
+    # Lift's modules (dev.justinsmith.bells, in `bells` and every `bells-*`).
+    excludes: ['**/lint-plugin/**', '**/detekt-plugin/**', '**/bells/**', '**/bells-*/**']
   MatchingDeclarationName:
     # Off for the same reason as ktlint's filename rule (.editorconfig): expect/actual files are named
     # after the expect side (Platform.android.kt holds AndroidPlatform), plugin files after their role.

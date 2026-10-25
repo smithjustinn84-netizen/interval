@@ -24,8 +24,6 @@ import dev.justinsmith.interval.platform.WorkoutControls
 import dev.justinsmith.interval.platform.WorkoutStatus
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
-import dev.justinsmith.interval.timer.dateOfEpochDay
-import dev.justinsmith.interval.timer.epochDayOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -235,34 +233,10 @@ private class AutoIds {
     fun assign(id: Long): Long = if (id == 0L) next++ else id.also { next = maxOf(next, it + 1) }
 }
 
-const val DAY_MILLIS = 24L * 60 * 60 * 1000
-
-/** The tests' today: Thursday 15 October 2026, as an epoch day. */
-val TODAY: Long = epochDayOf(2026, 10, 15)
-
-/** Midday of [epochDay] in epoch millis, well clear of either midnight. */
-fun noonOf(epochDay: Long): Long = epochDay * DAY_MILLIS + DAY_MILLIS / 2
-
 /** The built-ins tests lean on, found by name so that reordering [builtInPresets] can't change what they test. */
 val tabataPreset: Preset = builtInPresets.single { it.name == "Tabata" }
 val hiitPreset: Preset = builtInPresets.single { it.name == "HIIT 30/30" }
 val hangboardPreset: Preset = builtInPresets.single { it.name == "Hangboard" }
-
-/**
- * Days are epoch days in UTC, as the platforms count them, so tests don't depend on a time zone. Day 0,
- * 1 January 1970, is a Thursday.
- */
-object FixedTimestampFormatter : TimestampFormatter {
-    override fun date(epochMillis: Long): String = dateOfDay(dayNumber(epochMillis))
-
-    override fun time(epochMillis: Long): String = "at $epochMillis"
-
-    override fun dayNumber(epochMillis: Long): Long = epochMillis.floorDiv(DAY_MILLIS)
-
-    override fun dateOfDay(epochDay: Long): String = "day $epochDay"
-
-    override fun monthTitle(epochDay: Long): String = dateOfEpochDay(epochDay).let { "${it.month}/${it.year}" }
-}
 
 /**
  * Stands in for `rememberPlatformModule()`. Tests must never load the real one: on the JVM it writes
@@ -277,11 +251,6 @@ fun fakePlatformModule(
     single { formatter }
     single<AppInfo> { FakeAppInfo }
     single { background }
-}
-
-/** A build that calls itself [version]. */
-object FakeAppInfo : AppInfo {
-    override val version: String = "1.2.3"
 }
 
 /**

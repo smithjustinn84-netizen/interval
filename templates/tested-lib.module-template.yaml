@@ -1,0 +1,7 @@
+# A library with tests: coroutines' test scheduler, and the shared fakes and UI harness in `core-testing`.
+apply:
+  - //templates/lib.module-template.yaml
+
+test-dependencies:
+  - $libs.kotlinx.coroutines.test
+  - //core-testing

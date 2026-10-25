@@ -1,0 +1,8 @@
+# Bells' domain: exercises, programs and their days, sets and sessions, records, the pure clocks (EMOM, hold,
+# rest), what to load next. Plain Kotlin with no dependencies, so it compiles and tests in seconds.
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/tested-lib.module-template.yaml
