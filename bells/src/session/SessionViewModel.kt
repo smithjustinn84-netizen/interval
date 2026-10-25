@@ -45,9 +45,13 @@ import dev.justinsmith.bells.domain.recentExercises
 import dev.justinsmith.bells.domain.recordSetIds
 import dev.justinsmith.bells.domain.setsOldestFirst
 import dev.justinsmith.bells.domain.standardBells
+import dev.justinsmith.bells.domain.steppedBand
+import dev.justinsmith.bells.domain.steppedKg
 import dev.justinsmith.bells.domain.suggestedBar
 import dev.justinsmith.bells.domain.suggestedLoad
+import dev.justinsmith.bells.library.ExerciseDetailUiState
 import dev.justinsmith.bells.library.LibraryList
+import dev.justinsmith.bells.library.exerciseDetail
 import dev.justinsmith.bells.platform.Beeper
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
@@ -144,6 +148,8 @@ data class UpNext(
     val band: Band? = null,
     /** Which of the day's blocks it is in, from 0. */
     val block: Int = 0,
+    /** The last set of the lift in a session before this one, to go by; null the first time. */
+    val lastTime: SetLog? = null,
 )
 
 data class SessionUiState(
@@ -181,6 +187,8 @@ data class SessionUiState(
     val latestRecord: SetLog? = null,
     /** What the sheet's picker offers, the ones done lately first, and how it is narrowed. */
     val library: LibraryList = LibraryList(offeredExercises(emptyList())),
+    /** The exercise whose page is open, and the user's history with it. */
+    val detail: ExerciseDetailUiState? = null,
 )
 
 /**
@@ -220,6 +228,17 @@ class SessionViewModel(
     }.shareIn(viewModelScope, SharingStarted.WhileSubscribed(), replay = 1)
 
     private val editing = MutableStateFlow<SetLog?>(null)
+
+    /** The exercise whose page is open, by its key. */
+    private val opened = MutableStateFlow<String?>(null)
+
+    private val detail: Flow<ExerciseDetailUiState?> =
+        combine(opened, repository.sessions, repository.customExercises) { key, sessions, made ->
+            key?.let { Exercise.parse(it, made) }?.let { exerciseDetail(it, sessions, timestamps) }
+        }
+
+    /** What was up next when the Log sheet last opened on it. */
+    private var sheetOpenedOn: UpNext? = null
 
     /** The sheet's draft for a new set, put aside while a set logged is changed. */
     private var freeDraft: SetDraft? = null
@@ -282,7 +301,7 @@ class SessionViewModel(
         }
 
     val state: StateFlow<SessionUiState> =
-        combine(untimed, ticks) { state, now -> state.at(now) }
+        combine(untimed, ticks, detail) { state, now, page -> state.at(now).copy(detail = page) }
             .stateIn(viewModelScope, SharingStarted.Eagerly, SessionUiState())
 
     /** This state with its clocks read at [now]. */
@@ -378,6 +397,57 @@ class SessionViewModel(
         )
     }
 
+    /**
+     * Steps the next set's load one [step] (−1 or +1): a bell, the bar's smallest pair of plates, or a band.
+     * The rest of its block takes it, for today. Worked out from the plan as it is now, not as last drawn, so a
+     * held + steps once a repeat.
+     */
+    fun stepNextLoad(step: Int) {
+        val active = repository.active.value ?: return
+        val (plan, _) = today() ?: return
+        val next = programDay(active)?.let { upNext(it, active.sets) } ?: return
+        val equipment = next.set.exercise.equipment
+        val changed = if (equipment == Equipment.Band) {
+            steppedBand(next.band, step, offeredBands(repository.bands.value))
+                ?.let { band -> plan.change(next.block) { it.copy(band = band.id) } }
+        } else {
+            val bells = repository.bells.value.ifEmpty { standardBells }
+            steppedKg(equipment, next.bellKg, step, bells, repository.bar.value)
+                ?.let { kg -> plan.change(next.block) { it.copy(kg = kg) } }
+        }
+        changed?.let(repository::setSessionPlan)
+    }
+
+    /**
+     * The Log sheet opening: on a program day it starts on the set up next, as planned, unless it was opened on
+     * that same set before and may have been changed since.
+     */
+    fun openLogSheet() {
+        val next = state.value.upNext ?: return
+        if (editing.value != null || next == sheetOpenedOn) return
+        sheetOpenedOn = next
+        val set = next.set
+        val load = next.bellKg
+        draft.update { d ->
+            d.copy(
+                exercise = set.exercise,
+                bellKg = if (set.exercise.equipment == Equipment.Kettlebell) load else d.bellKg,
+                barKg = if (set.exercise.equipment == Equipment.Barbell) load else d.barKg,
+                addedKg = if (set.exercise.equipment == Equipment.Bodyweight) load else d.addedKg,
+                reps = if (set.held) d.reps else set.reps.coerceIn(1, SetDraft.MAX_REPS),
+                seconds = if (set.held) set.reps.coerceIn(SetDraft.SECONDS_STEP, SetDraft.MAX_SECONDS) else d.seconds,
+                side = set.side ?: d.side,
+                double = set.double,
+                band = next.band ?: d.band,
+            )
+        }
+    }
+
+    /** Opens the page of the exercise [key] names, or closes the one open with null. */
+    fun openExercise(key: String?) {
+        opened.value = key
+    }
+
     /** Changes block [index] of today's plan by [transform]: its load, rounds or reps. */
     fun changeBlock(index: Int, transform: (Block) -> Block) {
         val (plan, _) = today() ?: return
@@ -409,10 +479,14 @@ class SessionViewModel(
      */
     private fun today(): Pair<SessionPlan, List<Int>>? {
         val active = repository.active.value ?: return null
-        val day = repository.programDay.value?.takeIf { active.program != null && it.program.key == active.program }
-            ?.copy(plan = active.plan) ?: return null
+        val day = programDay(active) ?: return null
         return day.today to day.planRows(active.sets).map { it.done }
     }
+
+    /** The program day [active] is, with today's plan as it has it; null in a free session. */
+    private fun programDay(active: LiftSession): ProgramDay? =
+        repository.programDay.value?.takeIf { active.program != null && it.program.key == active.program }
+            ?.copy(plan = active.plan)
 
     /** Starts the plan's next block as an EMOM, if it is one. */
     fun startPlannedEmom() {
@@ -603,6 +677,8 @@ class SessionViewModel(
             emomMinutes = next.emomMinutes,
             band = plannedBand(next.set, history, offeredBands(repository.bands.value), draft.value.band),
             block = next.block,
+            lastTime = repository.sessions.value.setsOldestFirst()
+                .lastOrNull { it.exercise == next.set.exercise && it.double == next.set.double },
         )
     }
 

@@ -1,0 +1,187 @@
+package dev.justinsmith.bells.session
+
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import dev.justinsmith.bells.domain.Equipment
+import dev.justinsmith.bells.domain.steppedBand
+import dev.justinsmith.bells.domain.steppedKg
+import dev.justinsmith.bells.resources.Res
+import dev.justinsmith.bells.resources.common_joined
+import dev.justinsmith.bells.resources.next_change
+import dev.justinsmith.bells.resources.next_day_done
+import dev.justinsmith.bells.resources.next_emom
+import dev.justinsmith.bells.resources.next_how_to
+import dev.justinsmith.bells.resources.next_how_to_cd
+import dev.justinsmith.bells.resources.next_last_time
+import dev.justinsmith.bells.resources.next_log
+import dev.justinsmith.bells.resources.next_plan
+import dev.justinsmith.bells.resources.next_progress
+import dev.justinsmith.bells.resources.next_skip
+import dev.justinsmith.bells.resources.next_title
+import dev.justinsmith.bells.ui.LoadStepper
+import dev.justinsmith.bells.ui.countLine
+import dev.justinsmith.bells.ui.liftName
+import dev.justinsmith.bells.ui.loadLine
+import dev.justinsmith.bells.ui.platesLine
+import dev.justinsmith.bells.ui.setLine
+import dev.justinsmith.interval.ui.AccentButton
+import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.QuietTextButton
+import dev.justinsmith.interval.ui.SecondaryButton
+import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.fadeThroughContent
+import org.jetbrains.compose.resources.stringResource
+
+/**
+ * In a program day: the next planned set, its load a tap a step lighter or heavier for the rest of its block,
+ * what was lifted last time, and the set to log in one tap or its EMOM to start. How to opens the exercise's
+ * page; Change opens its block to change for today, Skip skips the rest of it, and Today's plan lists every block.
+ */
+@Composable
+internal fun UpNextCard(
+    state: SessionUiState,
+    actions: SessionActions,
+    onChange: (Int) -> Unit,
+    onPlan: () -> Unit,
+) {
+    val palette = IntervalTheme.palette
+    // Each set logged fades the card through to the next; the last fades it through to the day's done.
+    AnimatedContent(
+        targetState = state.upNext,
+        transitionSpec = { fadeThroughContent() },
+        contentKey = { it?.number ?: NO_NEXT },
+        label = "upNext",
+    ) { next ->
+        if (next == null) {
+            Column {
+                if (state.dayDone) {
+                    Text(
+                        stringResource(Res.string.next_day_done),
+                        style = IntervalTheme.type.body,
+                        color = palette.textDim,
+                        modifier = Modifier.padding(vertical = Spacing.space8),
+                    )
+                    if (state.plan.any { it.open }) QuietTextButton(stringResource(Res.string.next_plan), onPlan)
+                }
+            }
+        } else {
+            NextSetCard(next, state, actions, onChange, onPlan)
+        }
+    }
+}
+
+/** The key of [UpNextCard]'s content once nothing is next. */
+private const val NO_NEXT = -1
+
+@Composable
+private fun NextSetCard(
+    next: UpNext,
+    state: SessionUiState,
+    actions: SessionActions,
+    onChange: (Int) -> Unit,
+    onPlan: () -> Unit,
+) {
+    val palette = IntervalTheme.palette
+    val set = next.set
+    ListCard(Modifier.padding(top = Spacing.space8)) {
+        Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+            Text(
+                stringResource(
+                    Res.string.common_joined,
+                    stringResource(Res.string.next_title),
+                    stringResource(Res.string.next_progress, next.number, next.total),
+                ),
+                style = IntervalTheme.type.caption,
+                color = palette.textDim,
+            )
+            val name = liftName(set.exercise, set.double)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(name, style = IntervalTheme.type.section, color = palette.text, modifier = Modifier.weight(1f))
+                val howTo = stringResource(Res.string.next_how_to_cd, name)
+                QuietTextButton(
+                    stringResource(Res.string.next_how_to),
+                    { actions.onOpenExercise(set.exercise.key) },
+                    Modifier.semantics { contentDescription = howTo },
+                )
+            }
+            NextLoad(next, state, actions)
+            next.lastTime?.let { last ->
+                Text(
+                    stringResource(Res.string.next_last_time, setLine(last)),
+                    style = IntervalTheme.type.meta,
+                    color = palette.textDim,
+                )
+            }
+            if (next.emomMinutes != null) {
+                AccentButton(
+                    stringResource(Res.string.next_emom),
+                    actions.onStartPlannedEmom,
+                    Modifier.fillMaxWidth().padding(top = Spacing.space8),
+                )
+            } else {
+                AccentButton(
+                    stringResource(Res.string.next_log),
+                    actions.onLogNext,
+                    Modifier.fillMaxWidth().padding(top = Spacing.space8),
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+                SecondaryButton(stringResource(Res.string.next_change), { onChange(next.block) }, Modifier.weight(1f))
+                SecondaryButton(
+                    stringResource(Res.string.next_skip),
+                    { actions.onSkipBlock(next.block) },
+                    Modifier.weight(1f),
+                )
+            }
+            QuietTextButton(
+                stringResource(Res.string.next_plan),
+                onPlan,
+                Modifier.align(Alignment.CenterHorizontally),
+            )
+        }
+    }
+}
+
+/**
+ * The next set's load, large, with Lighter and Heavier a bell, the bar's smallest plates or a band either way,
+ * then how much of it: "× 10 · Left". The bar adds its plates a side. With no load to change, the mat or a
+ * band not yet known, only how much.
+ */
+@Composable
+private fun NextLoad(next: UpNext, state: SessionUiState, actions: SessionActions) {
+    val set = next.set
+    val equipment = set.exercise.equipment
+    val count = countLine(if (set.held) 0 else set.reps, set.side, set.reps.takeIf { set.held })
+    val load = loadLine(next.bellKg, set.double, equipment, next.band)
+    if (load == null) {
+        Text(count, style = IntervalTheme.type.value, color = IntervalTheme.palette.text)
+        return
+    }
+    val canStep = { step: Int ->
+        if (equipment == Equipment.Band) {
+            steppedBand(next.band, step, state.bands) != null
+        } else {
+            steppedKg(equipment, next.bellKg, step, state.bells, state.bar) != null
+        }
+    }
+    LoadStepper(
+        load,
+        canLower = canStep(-1),
+        canRaise = canStep(1),
+        onStep = actions.onStepLoad,
+        note = if (equipment == Equipment.Barbell) platesLine(next.bellKg, state.bar) else null,
+        compact = true,
+    )
+    Text(count, style = IntervalTheme.type.value, color = IntervalTheme.palette.text)
+}

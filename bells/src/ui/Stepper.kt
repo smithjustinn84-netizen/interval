@@ -12,7 +12,10 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.RepeatButton
 import dev.justinsmith.interval.ui.Spacing
 
-/** A value, large, with − and + that repeat while held, each a step down or up. */
+/**
+ * A value, large ([compact]: the size of a tile's number), with − and + that repeat while held, each a step down
+ * or up.
+ */
 @Composable
 internal fun Stepper(
     value: String,
@@ -21,7 +24,9 @@ internal fun Stepper(
     canLower: Boolean,
     canRaise: Boolean,
     onStep: (Int) -> Unit,
+    compact: Boolean = false,
 ) {
+    val largest = if (compact) IntervalTheme.type.stat else IntervalTheme.type.display
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
@@ -31,11 +36,11 @@ internal fun Stepper(
         BasicText(
             value,
             Modifier.weight(1f),
-            style = IntervalTheme.type.display.copy(color = IntervalTheme.palette.text, lineHeight = 1.em),
+            style = largest.copy(color = IntervalTheme.palette.text, lineHeight = 1.em),
             maxLines = 1,
             autoSize = TextAutoSize.StepBased(
                 minFontSize = IntervalTheme.type.stat.fontSize,
-                maxFontSize = IntervalTheme.type.display.fontSize,
+                maxFontSize = largest.fontSize,
             ),
         )
         RepeatButton("−", fewer, enabled = canLower, onStep = { onStep(-1) })

@@ -607,6 +607,13 @@
     <string name="next_change">Change</string>
     <string name="next_skip">Skip</string>
     <string name="next_plan">Today's plan</string>
+    <!-- Opens the exercise's page: how to do it, what it works, and the user's history with it. -->
+    <string name="next_how_to">How to</string>
+    <string name="next_how_to_cd">How to do %1$s</string>
+    <!-- The last set of the lift in an earlier session: "Last time · 16 kg × 8". -->
+    <string name="next_last_time">Last time · %1$s</string>
+    <!-- Leaves the exercise's page on the Log sheet for the set again. -->
+    <string name="log_back_to_set">Back to the set</string>
 
     <!-- Today's plan, changed in the session -->
     <string name="plan_title">Today's plan</string>

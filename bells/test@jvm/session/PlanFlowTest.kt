@@ -8,15 +8,19 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import dev.justinsmith.bells.data.FollowingEntity
+import dev.justinsmith.bells.data.SessionEntity
+import dev.justinsmith.bells.data.SetEntity
 import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.bells.ui.waitForText
+import kotlinx.coroutines.flow.update
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -36,12 +40,12 @@ class PlanFlowTest {
     @Test
     fun `a block given another bell is up next and logged with it`() = bellsAppTest(followed()) { app ->
         startDay()
-        onNodeWithText("16 kg × 10").assertExists()
+        onNodeWithText("16 kg").assertExists()
         onAllNodesWithText("Change").onFirst().performScrollTo().performClick()
         waitForText("Exercise")
         onNodeWithText("28").performScrollTo().performClick()
         onNodeWithText("Done").performScrollTo().performClick()
-        waitForText("28 kg × 10")
+        waitForText("28 kg")
         onNodeWithText("Log it").performScrollTo().performClick()
         waitForText("Up next · 2 of 9 sets")
         assertEquals(28.0, app.storage.sessions.sets.value.single().bellKg)
@@ -94,7 +98,7 @@ class PlanFlowTest {
         waitForText("Exercise")
         onNodeWithText("28").performScrollTo().performClick()
         onNodeWithText("Done").performScrollTo().performClick()
-        waitForText("28 kg × 10")
+        waitForText("28 kg")
         onNodeWithText("Log it").performScrollTo().performClick()
         waitForText("Up next · 2 of 9 sets")
         onNodeWithText("Finish").performClick()
@@ -150,5 +154,75 @@ class PlanFlowTest {
             days,
         )
         assertTrue(days.contains("\"exercise\":\"Row\",\"kind\":\"Sets\",\"rounds\":3,\"reps\":10}"), days)
+    }
+
+    @Test
+    fun `Heavier on Up next takes the rest of the block up a bell`() = bellsAppTest(followed()) { app ->
+        startDay()
+        onNodeWithText("16 kg").assertExists()
+        onNodeWithContentDescription("Heavier").performScrollTo().performClick()
+        waitForText("20 kg")
+        onNodeWithText("Log it").performScrollTo().performClick()
+        waitForText("Up next · 2 of 9 sets")
+        // The next set of the block goes on at the new bell.
+        onNodeWithText("20 kg").assertExists()
+        assertEquals(20.0, app.storage.sessions.sets.value.single().bellKg)
+        assertTrue(app.storage.sessions.sessions.value.single().plan.orEmpty().contains("\"kg\":20.0"))
+        onNodeWithText("Today's plan").performScrollTo().performClick()
+        waitForText("Changed")
+    }
+
+    @Test
+    fun `the Log sheet starts on the set up next`() = bellsAppTest(followed()) { app ->
+        startDay()
+        onNodeWithText("Log set").performClick()
+        waitForText("Exercise")
+        onNodeWithText("Kettlebell · Reps · Lower body").assertExists()
+        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
+        waitForText("Up next · 2 of 9 sets")
+        val set = app.storage.sessions.sets.value.single()
+        assertEquals(Triple("GobletSquat", 16.0, 10), Triple(set.exercise, set.bellKg, set.reps))
+    }
+
+    @Test
+    fun `How to on Up next opens the exercise's page with no Edit`() = bellsAppTest(followed()) {
+        startDay()
+        onNodeWithText("How to").performScrollTo().performClick()
+        waitForText("Sit between your heels with the chest up")
+        onNodeWithText("Your history").assertExists()
+        onNodeWithText("Edit").assertDoesNotExist()
+    }
+
+    @Test
+    fun `How to on the Log sheet shows the page in place and goes back to the set`() = bellsAppTest(followed()) {
+        startDay()
+        onNodeWithText("Log set").performClick()
+        waitForText("Exercise")
+        // The sheet's, over Up next's.
+        onAllNodesWithText("How to").onLast().performClick()
+        waitForText("Sit between your heels with the chest up")
+        onNodeWithText("Back to the set").performScrollTo().performClick()
+        waitForText("Reps")
+        onNodeWithText("Sit between your heels with the chest up").assertDoesNotExist()
+    }
+
+    @Test
+    fun `Last time is the lift's last set before today and never one just logged`() = bellsAppTest(
+        followed().apply {
+            sessions.sessions.update { it + SessionEntity("s0", 0, 60_000, "Squats", 60_000) }
+            sessions.sets.update { it + SetEntity(1, "s0", "GobletSquat", 16.0, 8, null, 10) }
+        },
+    ) {
+        startDay()
+        onNodeWithText("Last time · 16 kg × 8").assertExists()
+        onNodeWithText("Log it").performScrollTo().performClick()
+        waitForText("Up next · 2 of 9 sets")
+        onNodeWithText("Last time · 16 kg × 8").assertExists()
+    }
+
+    @Test
+    fun `a lift never done has no Last time`() = bellsAppTest(followed()) {
+        startDay()
+        onNodeWithText("Last time", substring = true).assertDoesNotExist()
     }
 }

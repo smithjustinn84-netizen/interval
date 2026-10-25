@@ -85,11 +85,17 @@ data class ExerciseDetailUiState(
 
 /**
  * An exercise's page, as a sheet over the library, beside it on a tablet: its name and facts, its cues, then
- * the user's history with it, their best and the sessions it was in, each opening on [onOpenSession]. One of
- * the user's own offers Edit, which turns the sheet into its form until it is saved or archived.
+ * the user's history with it, their best and the sessions it was in, each opening on [onOpenSession] when there
+ * is one. One of the user's own offers Edit while [editable], which turns the sheet into its form until it is
+ * saved or archived: not from a session, whose sets and plan hold the exercise as it is.
  */
 @Composable
-fun ExerciseDetailSheet(state: ExerciseDetailUiState, onOpenSession: (uid: String) -> Unit, onDismiss: () -> Unit) {
+fun ExerciseDetailSheet(
+    state: ExerciseDetailUiState,
+    onOpenSession: ((uid: String) -> Unit)?,
+    onDismiss: () -> Unit,
+    editable: Boolean = true,
+) {
     val exercise = state.exercise
     var editing by rememberSaveable { mutableStateOf(false) }
     val title = if (editing) stringResource(Res.string.exercise_editor_edit) else exerciseName(exercise)
@@ -114,15 +120,36 @@ fun ExerciseDetailSheet(state: ExerciseDetailUiState, onOpenSession: (uid: Strin
                     modifier = modifier,
                 )
             } else {
-                Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-                    ExerciseHead(exercise, onEdit = if (exercise is CustomExercise) ({ editing = true }) else null)
-                    History(state, onOpen = { uid ->
-                        hide()
-                        onOpenSession(uid)
-                    })
-                }
+                ExerciseDetailContent(
+                    state,
+                    onEdit = if (editable && exercise is CustomExercise) ({ editing = true }) else null,
+                    onOpenSession = onOpenSession?.let { open ->
+                        { uid ->
+                            hide()
+                            open(uid)
+                        }
+                    },
+                    modifier = modifier,
+                )
             }
         }
+    }
+}
+
+/**
+ * The page itself, in the sheet or in place on the Log sheet: the exercise, Edit when [onEdit] is given, then
+ * the user's history with it, each past session opening on [onOpenSession] when it is given.
+ */
+@Composable
+internal fun ExerciseDetailContent(
+    state: ExerciseDetailUiState,
+    onEdit: (() -> Unit)?,
+    onOpenSession: ((uid: String) -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+        ExerciseHead(state.exercise, onEdit)
+        History(state, onOpenSession)
     }
 }
 
@@ -203,10 +230,10 @@ private fun joined(muscles: List<Muscle>): String =
 
 /**
  * The user's history with it: how often and when last, their best, and its recent sessions, each a card of
- * its sets under its date that opens the session on [onOpen]; or that it is not logged yet.
+ * its sets under its date that opens the session on [onOpen], if given; or that it is not logged yet.
  */
 @Composable
-private fun ColumnScope.History(state: ExerciseDetailUiState, onOpen: (uid: String) -> Unit) {
+private fun ColumnScope.History(state: ExerciseDetailUiState, onOpen: ((uid: String) -> Unit)?) {
     val palette = IntervalTheme.palette
     val history = state.history
     GroupLabel(stringResource(Res.string.detail_history))
@@ -234,10 +261,10 @@ private fun ColumnScope.History(state: ExerciseDetailUiState, onOpen: (uid: Stri
 
 /**
  * A past session's sets with the exercise under its date, the same set in a row told once with how many, the
- * whole card opening the session.
+ * whole card opening the session when there is [onOpen].
  */
 @Composable
-private fun PastSessionCard(dated: DatedSession, onOpen: (uid: String) -> Unit) {
+private fun PastSessionCard(dated: DatedSession, onOpen: ((uid: String) -> Unit)?) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
     GroupLabel(dated.date)
@@ -246,13 +273,20 @@ private fun PastSessionCard(dated: DatedSession, onOpen: (uid: String) -> Unit) 
             Modifier
                 .fillMaxWidth()
                 .heightIn(min = Sizes.listRow)
-                .clickable(
-                    interaction,
-                    LocalIndication.current,
-                    role = Role.Button,
-                    onClickLabel = stringResource(Res.string.detail_open_session),
-                ) { onOpen(dated.session.uid) }
-                .pressScale(interaction)
+                .then(
+                    if (onOpen == null) {
+                        Modifier
+                    } else {
+                        Modifier
+                            .clickable(
+                                interaction,
+                                LocalIndication.current,
+                                role = Role.Button,
+                                onClickLabel = stringResource(Res.string.detail_open_session),
+                            ) { onOpen(dated.session.uid) }
+                            .pressScale(interaction)
+                    },
+                )
                 .padding(start = Spacing.space16, end = Spacing.space12, top = Spacing.space8, bottom = Spacing.space8),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
@@ -275,12 +309,14 @@ private fun PastSessionCard(dated: DatedSession, onOpen: (uid: String) -> Unit) 
                     )
                 }
             }
-            Icon(
-                IntervalIcons.Chevron,
-                contentDescription = null,
-                tint = palette.textDim,
-                modifier = Modifier.size(Sizes.icon),
-            )
+            if (onOpen != null) {
+                Icon(
+                    IntervalIcons.Chevron,
+                    contentDescription = null,
+                    tint = palette.textDim,
+                    modifier = Modifier.size(Sizes.icon),
+                )
+            }
         }
     }
 }

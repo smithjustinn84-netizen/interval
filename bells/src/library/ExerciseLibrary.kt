@@ -75,7 +75,7 @@ class ExerciseLibraryViewModel(
     /** The exercise open, by its key, and the user's history with it; null while none is, or once it is gone. */
     val detail: StateFlow<ExerciseDetailUiState?> =
         combine(opened, repository.sessions, repository.customExercises) { key, sessions, made ->
-            key?.let { Exercise.parse(it, made) }?.let { detailOf(it, sessions) }
+            key?.let { Exercise.parse(it, made) }?.let { exerciseDetail(it, sessions, timestamps) }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     fun updateFilters(transform: (ExerciseFilters) -> ExerciseFilters) {
@@ -86,16 +86,21 @@ class ExerciseLibraryViewModel(
     fun open(key: String?) {
         opened.value = key
     }
+}
 
-    private fun detailOf(exercise: Exercise, sessions: List<LiftSession>): ExerciseDetailUiState {
-        val history = exerciseHistory(exercise, sessions)
-        return ExerciseDetailUiState(
-            exercise,
-            history,
-            lastDone = history.lastDoneAtEpochMillis?.let(timestamps::date).orEmpty(),
-            recent = history.recent.map { DatedSession(it, timestamps.date(it.startedAtEpochMillis)) },
-        )
-    }
+/** [exercise]'s page: the user's history with it in [sessions], each day as [timestamps] words it. */
+internal fun exerciseDetail(
+    exercise: Exercise,
+    sessions: List<LiftSession>,
+    timestamps: TimestampFormatter,
+): ExerciseDetailUiState {
+    val history = exerciseHistory(exercise, sessions)
+    return ExerciseDetailUiState(
+        exercise,
+        history,
+        lastDone = history.lastDoneAtEpochMillis?.let(timestamps::date).orEmpty(),
+        recent = history.recent.map { DatedSession(it, timestamps.date(it.startedAtEpochMillis)) },
+    )
 }
 
 /** The library, an exercise's page over it, and a new exercise's form; a session on its page by [onOpenSession]. */

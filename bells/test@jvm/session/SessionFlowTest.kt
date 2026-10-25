@@ -157,7 +157,8 @@ class SessionFlowTest {
         onNodeWithText("Log set").performClick()
         pick("Push-up", search = "pushup")
         waitForText("Added weight")
-        onNodeWithText("None").assertExists()
+        // On the stepper, and its chip.
+        onAllNodesWithText("None").assertCountEquals(2)
         onNodeWithText("8").performScrollTo().performClick()
         onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("+8 kg × 10")

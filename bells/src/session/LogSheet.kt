@@ -27,6 +27,8 @@ import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.HoldPhase
 import dev.justinsmith.bells.domain.HoldState
 import dev.justinsmith.bells.domain.Side
+import dev.justinsmith.bells.library.ExerciseDetailContent
+import dev.justinsmith.bells.library.ExerciseDetailUiState
 import dev.justinsmith.bells.library.ExerciseEditorForm
 import dev.justinsmith.bells.library.ExercisePicker
 import dev.justinsmith.bells.library.rememberExerciseEditor
@@ -42,6 +44,7 @@ import dev.justinsmith.bells.resources.hold_other_side
 import dev.justinsmith.bells.resources.hold_stop
 import dev.justinsmith.bells.resources.hold_stop_note
 import dev.justinsmith.bells.resources.hold_time_it
+import dev.justinsmith.bells.resources.log_back_to_set
 import dev.justinsmith.bells.resources.log_change
 import dev.justinsmith.bells.resources.log_edit_save
 import dev.justinsmith.bells.resources.log_edit_title
@@ -58,6 +61,7 @@ import dev.justinsmith.bells.resources.log_reps
 import dev.justinsmith.bells.resources.log_reps_each_minute
 import dev.justinsmith.bells.resources.log_side
 import dev.justinsmith.bells.resources.log_title
+import dev.justinsmith.bells.resources.next_how_to
 import dev.justinsmith.bells.resources.session_log
 import dev.justinsmith.bells.resources.summary_done
 import dev.justinsmith.bells.ui.ChoiceRow
@@ -72,6 +76,7 @@ import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.ModalBackHandler
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RollingText
@@ -103,25 +108,25 @@ internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismi
     // exercise of that name until it is saved, when the sheet comes back with it picked.
     var picking by rememberSaveable { mutableStateOf(false) }
     var adding by rememberSaveable { mutableStateOf<String?>(null) }
+    // How to swaps the set for the exercise's page until Back to the set.
+    var reading by rememberSaveable { mutableStateOf(false) }
     val onClose = {
+        actions.onOpenExercise(null)
         actions.onCancelHold()
         actions.onCancelEdit()
         onDismiss()
     }
-    val title = stringResource(
-        when {
-            adding != null -> Res.string.exercise_editor_new
-            editing -> Res.string.log_edit_title
-            else -> Res.string.log_title
-        },
-    )
     val sideways = sheetIsSideways()
-    IntervalSheet(title, onDismiss = onClose) { hide ->
+    IntervalSheet(logSheetTitle(draft.exercise, reading, adding != null, editing), onDismiss = onClose) { hide ->
         val hold = state.hold
         val holdState = state.holdState
         CloseWhenTimed(timing = hold != null, offering = state.otherSide != null, hide)
         if (hold != null && holdState != null) {
             HoldCountdown(hold, holdState, actions.onStopHold)
+            return@IntervalSheet
+        }
+        state.detail?.takeIf { reading }?.let { detail ->
+            ExercisePage(detail, onBack = { reading = false }, actions)
             return@IntervalSheet
         }
         if (picking || adding != null) {
@@ -152,7 +157,14 @@ internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismi
                 )
             }
             // A set logged keeps its exercise: what it was done with is what it was.
-            ExerciseCard(draft.exercise, onChange = if (editing) null else ({ picking = true }))
+            ExerciseCard(
+                draft.exercise,
+                onChange = if (editing) null else ({ picking = true }),
+                onHowTo = {
+                    actions.onOpenExercise(draft.exercise.key)
+                    reading = true
+                },
+            )
             DraftLoad(state, actions)
         }
         val howMuch: @Composable ColumnScope.() -> Unit = {
@@ -211,6 +223,42 @@ private fun ExerciseChoice(
     }
 }
 
+/** The Log sheet's title: the exercise while its page is up, else what the sheet is doing. */
+@Composable
+private fun logSheetTitle(exercise: Exercise, reading: Boolean, adding: Boolean, editing: Boolean): String =
+    if (reading) {
+        exerciseName(exercise)
+    } else {
+        stringResource(
+            when {
+                adding -> Res.string.exercise_editor_new
+                editing -> Res.string.log_edit_title
+                else -> Res.string.log_title
+            },
+        )
+    }
+
+/**
+ * The exercise's page in place of the set, with no Edit and no sessions to open from here, and Back to the set
+ * ([onBack]), which the back gesture also does; either closes the page.
+ */
+@Composable
+private fun ExercisePage(detail: ExerciseDetailUiState, onBack: () -> Unit, actions: SessionActions) {
+    val back = {
+        onBack()
+        actions.onOpenExercise(null)
+    }
+    ModalBackHandler(back)
+    Column(Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8)) {
+        ExerciseDetailContent(detail, onEdit = null, onOpenSession = null)
+        SecondaryButton(
+            stringResource(Res.string.log_back_to_set),
+            back,
+            Modifier.fillMaxWidth().padding(top = Spacing.space16, bottom = Spacing.space8),
+        )
+    }
+}
+
 /** The side of a one-sided exercise: the set's, or an EMOM's [first]. */
 @Composable
 private fun SidePicker(draft: SetDraft, first: Boolean, actions: SessionActions) {
@@ -241,9 +289,12 @@ private fun SheetAction(kind: LogKind, editing: Boolean, actions: SessionActions
     )
 }
 
-/** The exercise the set is of, its facts under its name, and Change, with [onChange], to pick another. */
+/**
+ * The exercise the set is of, its facts under its name, How to ([onHowTo]) for its page, and Change, with
+ * [onChange], to pick another.
+ */
 @Composable
-internal fun ExerciseCard(exercise: Exercise, onChange: (() -> Unit)?) {
+internal fun ExerciseCard(exercise: Exercise, onChange: (() -> Unit)?, onHowTo: (() -> Unit)? = null) {
     val palette = IntervalTheme.palette
     ListCard {
         Row(
@@ -266,6 +317,7 @@ internal fun ExerciseCard(exercise: Exercise, onChange: (() -> Unit)?) {
                 (exercise as? CustomExercise)?.cues?.takeIf { it.isNotBlank() }?.let { cues ->
                     Text(cues, style = IntervalTheme.type.meta, color = palette.text)
                 }
+                onHowTo?.let { QuietTextButton(stringResource(Res.string.next_how_to), it) }
             }
             onChange?.let { QuietTextButton(stringResource(Res.string.log_change), it) }
         }

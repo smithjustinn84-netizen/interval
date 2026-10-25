@@ -47,18 +47,10 @@ import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.ExerciseFilters
 import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.formatKg
+import dev.justinsmith.bells.library.ExerciseDetailSheet
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.common_cancel
-import dev.justinsmith.bells.resources.common_joined
 import dev.justinsmith.bells.resources.kg_value
-import dev.justinsmith.bells.resources.next_change
-import dev.justinsmith.bells.resources.next_day_done
-import dev.justinsmith.bells.resources.next_emom
-import dev.justinsmith.bells.resources.next_log
-import dev.justinsmith.bells.resources.next_plan
-import dev.justinsmith.bells.resources.next_progress
-import dev.justinsmith.bells.resources.next_skip
-import dev.justinsmith.bells.resources.next_title
 import dev.justinsmith.bells.resources.notice_record
 import dev.justinsmith.bells.resources.session_discard
 import dev.justinsmith.bells.resources.session_discard_text
@@ -96,7 +88,6 @@ import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.NoticeAction
 import dev.justinsmith.interval.ui.Notices
-import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
@@ -104,7 +95,6 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TitleBar
 import dev.justinsmith.interval.ui.enterRising
 import dev.justinsmith.interval.ui.fadeThrough
-import dev.justinsmith.interval.ui.fadeThroughContent
 import dev.justinsmith.interval.ui.isLandscape
 import dev.justinsmith.interval.ui.rememberArrival
 import org.jetbrains.compose.resources.stringResource
@@ -182,6 +172,9 @@ private fun sessionActions(
     onAddExercise = viewModel::expectNewExercise,
     onLog = viewModel::logSet,
     onLogNext = viewModel::logNext,
+    onOpenLog = viewModel::openLogSheet,
+    onStepLoad = viewModel::stepNextLoad,
+    onOpenExercise = viewModel::openExercise,
     onStartPlannedEmom = viewModel::startPlannedEmom,
     onStartEmom = viewModel::startDraftEmom,
     onTimeHold = viewModel::startHold,
@@ -241,6 +234,12 @@ data class SessionActions(
     val onAddExercise: () -> Unit = {},
     val onLog: () -> Unit = {},
     val onLogNext: () -> Unit = {},
+    /** The Log sheet opening: on a program day it starts on the set up next. */
+    val onOpenLog: () -> Unit = {},
+    /** The next set's load a step lighter (−1) or heavier (+1), for the rest of its block today. */
+    val onStepLoad: (Int) -> Unit = {},
+    /** An exercise's page, by its key, opened; null closes it. */
+    val onOpenExercise: (String?) -> Unit = {},
     val onStartPlannedEmom: () -> Unit = {},
     val onStartEmom: () -> Unit = {},
     /** Times the sheet's hold; Stop logs the seconds held, Cancel drops it. */
@@ -268,6 +267,8 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
     var logging by rememberSaveable { mutableStateOf(false) }
     var discarding by rememberSaveable { mutableStateOf(false) }
     var planning by rememberSaveable { mutableStateOf(false) }
+    // The exercise's page open over the session, from Up next.
+    var reading by rememberSaveable { mutableStateOf(false) }
     // The block of today's plan open to change, -1 for none: a plain number saves on every platform.
     var changing by rememberSaveable { mutableIntStateOf(-1) }
     KeepScreenOn()
@@ -296,13 +297,32 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
         },
         tiles = { wide -> SessionTiles(state, wide) },
         plan = {
-            UpNextCard(state, actions, onChange = { changing = it }, onPlan = { planning = true })
+            UpNextCard(
+                state,
+                actions.copy(
+                    onOpenExercise = {
+                        actions.onOpenExercise(it)
+                        reading = true
+                    },
+                ),
+                onChange = { changing = it },
+                onPlan = { planning = true },
+            )
             LoggedSets(state, sets)
         },
-        buttons = { SessionButtons(onFinish = actions.onFinish, onLog = { logging = true }) },
+        buttons = {
+            SessionButtons(
+                onFinish = actions.onFinish,
+                onLog = {
+                    actions.onOpenLog()
+                    logging = true
+                },
+            )
+        },
     )
     SessionLayout(parts, modifier)
     if (logging) LogSetSheet(state, actions, onDismiss = { logging = false })
+    if (reading) ExercisePageSheet(state, actions, onDismiss = { reading = false })
     PlanSheets(state, actions, planning, changing, onPlanning = { planning = it }, onChanging = { changing = it })
     if (discarding) {
         ConfirmDialog(
@@ -317,6 +337,24 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
             onDismiss = { discarding = false },
         )
     }
+}
+
+/**
+ * The page of the exercise up next, over the session: no Edit, as its sets and today's plan hold it as it is,
+ * and no past session to open from here.
+ */
+@Composable
+private fun ExercisePageSheet(state: SessionUiState, actions: SessionActions, onDismiss: () -> Unit) {
+    val detail = state.detail ?: return
+    ExerciseDetailSheet(
+        detail,
+        onOpenSession = null,
+        onDismiss = {
+            onDismiss()
+            actions.onOpenExercise(null)
+        },
+        editable = false,
+    )
 }
 
 /**
@@ -516,98 +554,5 @@ private fun SetRow(set: SetLog, record: Boolean, onRemove: (removedText: String)
             onClick = { onRemove(removed) },
             haptic = HapticFeedbackType.SegmentTick,
         )
-    }
-}
-
-/**
- * In a program day: the next planned set, with its load, to log in one tap or to start its EMOM; Change opens
- * its block to change for today, Skip skips the rest of it, and Today's plan lists every block.
- */
-@Composable
-private fun UpNextCard(state: SessionUiState, actions: SessionActions, onChange: (Int) -> Unit, onPlan: () -> Unit) {
-    val palette = IntervalTheme.palette
-    // Each set logged fades the card through to the next; the last fades it through to the day's done.
-    AnimatedContent(
-        targetState = state.upNext,
-        transitionSpec = { fadeThroughContent() },
-        contentKey = { it?.number ?: NO_NEXT },
-        label = "upNext",
-    ) { next ->
-        if (next == null) {
-            Column {
-                if (state.dayDone) {
-                    Text(
-                        stringResource(Res.string.next_day_done),
-                        style = IntervalTheme.type.body,
-                        color = palette.textDim,
-                        modifier = Modifier.padding(vertical = Spacing.space8),
-                    )
-                    if (state.plan.any { it.open }) QuietTextButton(stringResource(Res.string.next_plan), onPlan)
-                }
-            }
-        } else {
-            NextSetCard(next, actions, onChange, onPlan)
-        }
-    }
-}
-
-/** The key of [UpNextCard]'s content once nothing is next. */
-private const val NO_NEXT = -1
-
-@Composable
-private fun NextSetCard(next: UpNext, actions: SessionActions, onChange: (Int) -> Unit, onPlan: () -> Unit) {
-    val palette = IntervalTheme.palette
-    ListCard(Modifier.padding(top = Spacing.space8)) {
-        Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
-            Text(
-                stringResource(
-                    Res.string.common_joined,
-                    stringResource(Res.string.next_title),
-                    stringResource(Res.string.next_progress, next.number, next.total),
-                ),
-                style = IntervalTheme.type.caption,
-                color = palette.textDim,
-            )
-            Text(liftName(next.set.exercise, next.set.double), style = IntervalTheme.type.section, color = palette.text)
-            Text(
-                setLine(
-                    next.bellKg,
-                    if (next.set.held) 0 else next.set.reps,
-                    next.set.side,
-                    next.set.double,
-                    next.set.exercise.equipment,
-                    next.set.reps.takeIf { next.set.held },
-                    next.band,
-                ),
-                style = IntervalTheme.type.value,
-                color = palette.text,
-            )
-            if (next.emomMinutes != null) {
-                AccentButton(
-                    stringResource(Res.string.next_emom),
-                    actions.onStartPlannedEmom,
-                    Modifier.fillMaxWidth().padding(top = Spacing.space8),
-                )
-            } else {
-                AccentButton(
-                    stringResource(Res.string.next_log),
-                    actions.onLogNext,
-                    Modifier.fillMaxWidth().padding(top = Spacing.space8),
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-                SecondaryButton(stringResource(Res.string.next_change), { onChange(next.block) }, Modifier.weight(1f))
-                SecondaryButton(
-                    stringResource(Res.string.next_skip),
-                    { actions.onSkipBlock(next.block) },
-                    Modifier.weight(1f),
-                )
-            }
-            QuietTextButton(
-                stringResource(Res.string.next_plan),
-                onPlan,
-                Modifier.align(Alignment.CenterHorizontally),
-            )
-        }
     }
 }

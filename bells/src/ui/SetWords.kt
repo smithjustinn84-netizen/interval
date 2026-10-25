@@ -43,6 +43,10 @@ import dev.justinsmith.bells.resources.focus_core
 import dev.justinsmith.bells.resources.focus_full_body
 import dev.justinsmith.bells.resources.focus_lower_body
 import dev.justinsmith.bells.resources.focus_upper_body
+import dev.justinsmith.bells.resources.kg_value
+import dev.justinsmith.bells.resources.load_added
+import dev.justinsmith.bells.resources.load_double
+import dev.justinsmith.bells.resources.log_added_none
 import dev.justinsmith.bells.resources.log_no_bar
 import dev.justinsmith.bells.resources.measure_reps
 import dev.justinsmith.bells.resources.measure_time
@@ -120,6 +124,40 @@ fun setLine(
 
         else -> stringResource(Res.string.set_line_reps, reps)
     }
+    return if (side == null) line else stringResource(Res.string.common_joined, line, sideName(side))
+}
+
+/**
+ * The load alone, as Up next steps it: a bell "24 kg", two "2 × 16 kg", a bar "62.5 kg", weight added to
+ * bodyweight "+10 kg" or none, a band by name; null on the mat, or a band not yet known.
+ */
+@Composable
+fun loadLine(kg: Double, double: Boolean, equipment: Equipment, band: Band?): String? = when (equipment) {
+    Equipment.Kettlebell -> if (double) {
+        stringResource(Res.string.load_double, formatKg(kg))
+    } else {
+        stringResource(Res.string.kg_value, formatKg(kg))
+    }
+
+    Equipment.Barbell -> stringResource(Res.string.kg_value, formatKg(kg))
+
+    Equipment.Bodyweight -> if (kg > 0) {
+        stringResource(Res.string.load_added, formatKg(kg))
+    } else {
+        stringResource(Res.string.log_added_none)
+    }
+
+    Equipment.Band -> band?.let { bandName(it) }
+
+    Equipment.Mat -> null
+}
+
+/**
+ * How much of a set, its load aside: "× 10", a hold "0:45", with its side when it has one: "× 10 · Left".
+ */
+@Composable
+fun countLine(reps: Int, side: Side?, seconds: Int? = null): String {
+    val line = seconds?.let(::formatClock) ?: stringResource(Res.string.set_line_reps, reps)
     return if (side == null) line else stringResource(Res.string.common_joined, line, sideName(side))
 }
 
