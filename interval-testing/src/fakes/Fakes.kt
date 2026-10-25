@@ -3,10 +3,6 @@ package dev.justinsmith.interval.fakes
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
-import dev.justinsmith.bells.fakes.FakeBellsStorage
-import dev.justinsmith.bells.fakes.RecordingBeeper
-import dev.justinsmith.bells.fakes.fakeBellsPlatformModule
-import dev.justinsmith.bells.fakes.fakeBellsStorageModule
 import dev.justinsmith.interval.data.HistoryDao
 import dev.justinsmith.interval.data.HistoryEntity
 import dev.justinsmith.interval.data.IntervalRepository
@@ -15,7 +11,6 @@ import dev.justinsmith.interval.data.PlannedEntity
 import dev.justinsmith.interval.data.PresetDao
 import dev.justinsmith.interval.data.PresetEntity
 import dev.justinsmith.interval.di.StorageScope
-import dev.justinsmith.interval.di.appModules
 import dev.justinsmith.interval.platform.AppInfo
 import dev.justinsmith.interval.platform.BackgroundWorkout
 import dev.justinsmith.interval.platform.Beep
@@ -40,11 +35,9 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
-import org.koin.core.KoinApplication
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.onClose
 import org.koin.core.module.dsl.withOptions
-import org.koin.dsl.koinApplication
 import org.koin.dsl.module
 
 /** A [DataStore] held in memory. Updates apply one at a time, as DataStore's do. */
@@ -255,26 +248,4 @@ fun fakePlatformModule(
     single { formatter }
     single<AppInfo> { FakeAppInfo }
     single { background }
-}
-
-/**
- * The app's real container over fake platform services and storage, for `AppContent`, Lift's included.
- * Time stands at [now], or follows [clock] when a test moves it.
- */
-fun testKoin(
-    platformModule: Module = fakePlatformModule(),
-    storage: FakeStorage = FakeStorage(),
-    now: Long = 0L,
-    lift: FakeBellsStorage = FakeBellsStorage(),
-    beeper: RecordingBeeper = RecordingBeeper(),
-    clock: WallClock = WallClock { now },
-): KoinApplication = koinApplication {
-    modules(
-        appModules(
-            platformModule,
-            fakeStorageModule(storage),
-            bellsPlatform = fakeBellsPlatformModule(beeper),
-            bellsStorage = fakeBellsStorageModule(lift),
-        ) + module { single { clock } },
-    )
 }

@@ -21,7 +21,6 @@
     <string name="nav_lift">Lift</string>
     <string name="nav_history">History</string>
 
-    <!-- A workout's shape -->
     <!-- "20s on · 10s off · ×8": work, rest (each a short duration), rounds. -->
     <string name="config_description">%1$s on · %2$s off · ×%3$d</string>
     <!-- "20s on · 10s off · ×8 · 4:40 total" -->
@@ -51,7 +50,6 @@
     <string name="field_rest_more">More rest time</string>
     <string name="field_rounds_more">More rounds</string>
 
-    <!-- The edit sheet -->
     <!-- A tablet's side sheet has no drag handle; this button is its way out -->
     <string name="value_sheet_new_total">New total</string>
     <string name="value_sheet_quick_picks">Quick picks</string>
@@ -427,13 +425,6 @@
     <string name="workout_end_confirm">End workout</string>
     <string name="workout_done">Done</string>
     <string name="workout_ended">Ended</string>
-    <!-- Android's ongoing notification for a running workout: its channel, as Settings lists it -->
-    <string name="notification_channel_workout">Workout in progress</string>
-    <string name="notification_channel_workout_description">The running timer: its clock, phase and round, with Pause and End.</string>
-    <!-- Under the notification's clock: "Work · Round 3 of 8", or "Paused · Round 3 of 8" -->
-    <string name="notification_workout_text">%1$s · Round %2$d of %3$d</string>
-    <!-- iOS's notification for each change of phase while the app is away: the phase is its title, this its text -->
-    <string name="notification_round">Round %1$d of %2$d</string>
     <!-- Under Done: "8 rounds · 4:40 total" -->
     <plurals name="workout_summary_finished">
         <item quantity="one">%1$d round · %2$s total</item>
@@ -471,11 +462,4 @@
     <string name="notice_plan_removed_on">Removed %1$s from %2$s</string>
     <string name="notice_workout_deleted">Workout deleted</string>
 
-    <!-- Spoken cues -->
-    <string name="cue_get_ready">Get ready</string>
-    <string name="cue_work">Work</string>
-    <string name="cue_last_round_work">Last round. Work</string>
-    <string name="cue_rest">Rest</string>
-    <string name="cue_halfway">Halfway</string>
-    <string name="cue_finished">Done. Nice work</string>
 </resources>

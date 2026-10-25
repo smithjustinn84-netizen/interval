@@ -1,3 +1,5 @@
+# The app itself: its navigation and container over every feature, and the About pages. What the three app
+# shells (`androidApp`, `iosApp`, `desktopApp`) depend on.
 product:
   type: kmp/lib
   platforms: [android, iosArm64, iosSimulatorArm64, jvm]
@@ -5,6 +7,10 @@ product:
 dependencies:
   # The theme, components and platform hooks every app shares; exported so the app shells see them too.
   - //core: exported
+  # The workout's domain and models, its storage and what it needs from the platform.
+  - //interval-domain
+  - //interval-data
+  - //interval-platform
   # Kettlebell training, behind the Lift tab: its screens, and its repository and Koin modules.
   - //bells
   - //bells-data
@@ -26,14 +32,12 @@ dependencies:
   - $libs.koin.core
   - $libs.koin.compose
   - $libs.kermit
-  - $libs.androidx.room.runtime
-  - $libs.androidx.sqlite.bundled
-  - $libs.androidx.datastore.preferences.core
 
 test-dependencies:
   - $libs.kotlinx.coroutines.test
-  # The shared fakes and the UI harness, and Bells' storage fakes.
+  # The shared fakes and the UI harness, and each side's storage fakes.
   - //core-testing
+  - //interval-testing
   - //bells-testing
 
 # Compose UI tests run on the desktop JVM only: common `test/` also runs as Android local tests,
@@ -49,8 +53,6 @@ test-dependencies@jvm:
 # in release builds too; R8 strips what the app never calls.
 dependencies@android:
   - $compose.uiTooling
-  # rememberLauncherForActivityResult, to ask for the notification permission when a workout starts.
-  - $libs.androidx.activity.compose
 
 settings:
   compose:
@@ -61,19 +63,9 @@ settings:
       exposedAccessors: true
   kotlin:
     allWarningsAsErrors: true
-    # Room's KMP database constructor is an `expect object` whose `actual` KSP generates, and
-    # expect/actual classes still warn as Beta. The flag only silences that warning, so it is safe in
-    # the native cache build of dependencies too (see the note on `optIns` below).
-    freeCompilerArgs: [-Xexpect-actual-classes]
+    # The navigation keys are @Serializable, for the saved back stack.
     serialization: json
-    ksp:
-      processors:
-        - $libs.androidx.room.compiler
-      processorOptions:
-        room.schemaLocation: ./schemas
-    # No module-wide `optIns`: opt in per file (`@file:OptIn`). Since toolchain 0.13 the module's
-    # flags reach the native compiler-cache build of every dependency, where a marker the library
-    # cannot see is an "unresolved" warning, which allWarningsAsErrors turns into a failed iOS link.
+    # No module-wide `optIns`: opt in per file (`@file:OptIn`). See templates/lib.module-template.yaml.
 
 plugins:
   lint-plugin:

@@ -2,7 +2,8 @@
 # `actual object XDatabaseConstructor` needs, and JSON for what the database stores as text. The KSP
 # processor and `room.schemaLocation` stay in the module's own file: the schemas path is the module's.
 dependencies:
-  - $libs.androidx.room.runtime
+  # Exported: the database builder a platform supplies is a Room type.
+  - $libs.androidx.room.runtime: exported
   - $libs.androidx.sqlite.bundled
 
 settings:

@@ -1,0 +1,14 @@
+# Interval's domain: the workout's configuration and presets, the engine that steps it, calories, the
+# description parser, and the plain models the repository stores (settings, history, plans, a workout's
+# progress). Plain Kotlin over `core`'s clock and calendar maths, and Lift's domain for a logged session.
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/tested-lib.module-template.yaml
+
+dependencies:
+  - //core
+  # `LiftWorkout` is a finished Lift session as History and Plan count it.
+  - //bells-domain

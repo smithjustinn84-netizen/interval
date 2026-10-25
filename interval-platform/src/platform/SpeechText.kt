@@ -1,13 +1,13 @@
 package dev.justinsmith.interval.platform
 
 import co.touchlab.kermit.Logger
-import dev.justinsmith.interval.resources.Res
-import dev.justinsmith.interval.resources.cue_finished
-import dev.justinsmith.interval.resources.cue_get_ready
-import dev.justinsmith.interval.resources.cue_halfway
-import dev.justinsmith.interval.resources.cue_last_round_work
-import dev.justinsmith.interval.resources.cue_rest
-import dev.justinsmith.interval.resources.cue_work
+import dev.justinsmith.interval.platform.resources.Res
+import dev.justinsmith.interval.platform.resources.cue_finished
+import dev.justinsmith.interval.platform.resources.cue_get_ready
+import dev.justinsmith.interval.platform.resources.cue_halfway
+import dev.justinsmith.interval.platform.resources.cue_last_round_work
+import dev.justinsmith.interval.platform.resources.cue_rest
+import dev.justinsmith.interval.platform.resources.cue_work
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope

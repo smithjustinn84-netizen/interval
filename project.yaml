@@ -8,6 +8,10 @@ modules:
   - core-testing
   - desktopApp
   - detekt-plugin
+  - interval-data
+  - interval-domain
+  - interval-platform
+  - interval-testing
   - iosApp
   - lint-plugin
   - shared

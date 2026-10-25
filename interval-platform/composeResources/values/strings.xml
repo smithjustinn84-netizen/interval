@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="phase_get_ready">Get ready</string>
+    <string name="phase_work">Work</string>
+    <string name="phase_rest">Rest</string>
+    <string name="phase_done">Done</string>
+    <string name="workout_paused">Paused</string>
+    <string name="workout_pause">Pause</string>
+    <string name="workout_resume">Resume</string>
+    <string name="workout_end">End</string>
+    <string name="notification_channel_workout">Workout in progress</string>
+    <string name="notification_channel_workout_description">The running timer: its clock, phase and round, with Pause and End.</string>
+    <string name="notification_workout_text">%1$s · Round %2$d of %3$d</string>
+    <string name="notification_round">Round %1$d of %2$d</string>
+    <string name="cue_get_ready">Get ready</string>
+    <string name="cue_work">Work</string>
+    <string name="cue_last_round_work">Last round. Work</string>
+    <string name="cue_rest">Rest</string>
+    <string name="cue_halfway">Halfway</string>
+    <string name="cue_finished">Done. Nice work</string>
+</resources>
