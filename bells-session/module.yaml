@@ -1,0 +1,19 @@
+# A session: logging sets, the EMOM, hold and rest timers, the plan sheets and the summary; the programs,
+# their editor and the one followed's progress (the two share the block editor); and a finished session's page.
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/compose-lib.module-template.yaml
+
+dependencies:
+  - //bells-library: exported
+
+test-dependencies:
+  - //bells-testing
+
+settings:
+  compose:
+    resources:
+      packageName: dev.justinsmith.bells.session.resources

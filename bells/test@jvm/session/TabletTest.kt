@@ -27,11 +27,11 @@ import dev.justinsmith.bells.library.ExerciseLibraryScreen
 import dev.justinsmith.bells.library.LibraryList
 import dev.justinsmith.bells.today.TodayScreen
 import dev.justinsmith.bells.today.TodayUiState
-import dev.justinsmith.bells.ui.Window
 import dev.justinsmith.bells.ui.bellsAppTest
-import dev.justinsmith.bells.ui.runUiTest
 import dev.justinsmith.bells.ui.setBellsContent
-import dev.justinsmith.bells.ui.waitForText
+import dev.justinsmith.interval.ui.Window
+import dev.justinsmith.interval.ui.runUiTest
+import dev.justinsmith.interval.ui.waitForText
 import kotlin.test.Test
 import kotlin.test.assertTrue
 

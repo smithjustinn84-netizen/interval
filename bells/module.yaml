@@ -1,59 +1,34 @@
 # Bells, Interval's kettlebell training behind its Lift tab: log sets of reps with a bell, follow a program,
-# time EMOMs, and keep the bells owned and the records set. Its screens, over `bells-data` (its database and
-# repository) and `bells-domain`; `shared` wires its routes.
+# time EMOMs, and keep the bells owned and the records set. This module is Lift's entry point, its keys and
+# the entry for each, over its features (`bells-today`, `bells-session`, `bells-library`, `bells-ui`), its
+# storage (`bells-data`) and its domain (`bells-domain`); `shared` wires it into the app. Its tests drive
+# Lift's flows end to end.
 product:
   type: kmp/lib
   platforms: [android, iosArm64, iosSimulatorArm64, jvm]
 
+apply:
+  - //templates/compose-lib.module-template.yaml
+
 dependencies:
-  - //core: exported
-  # Its domain, pure Kotlin, so a change to a screen never recompiles it (and its tests run alone).
-  - //bells-domain: exported
-  # Its database, repository and Koin modules; exported so `shared` can wire them.
+  - //bells-today: exported
+  - //bells-session: exported
+  - //bells-library: exported
+  - //bells-ui: exported
   - //bells-data: exported
-  - $compose.runtime
-  - $compose.ui
-  - $compose.components.resources
-  - $compose.preview
-  - $libs.compose.material3.navigation.suite
-  - $libs.androidx.lifecycle.viewmodel: exported
-  - $libs.androidx.lifecycle.viewmodel.compose: exported
-  - $libs.androidx.lifecycle.runtime.compose
-  - $libs.androidx.lifecycle.viewmodel.navigation3
+  - //bells-domain: exported
+  - $libs.compose.material3.adaptive.navigation3
   - $libs.androidx.navigation3.runtime
   - $libs.androidx.navigation3.ui
-  - $libs.koin.core
-  - $libs.koin.compose
-  - $libs.kermit
 
 test-dependencies:
-  - $libs.kotlinx.coroutines.test
-  # The shared fakes and the UI harness, and Bells' own storage fakes.
-  - //core-testing
   - //bells-testing
 
-# Compose UI tests run on the desktop JVM only, as in shared: common `test/` also runs as Android local tests.
+# The flow tests host Lift's pages on a NavDisplay of their own, with entry-scoped ViewModels as the app has.
 test-dependencies@jvm:
-  - $compose.uiTest
-  # Skiko's native renderer; without it `runComposeUiTest` fails with LibraryLoadException.
-  - $compose.desktop.currentOs
-  # Dispatchers.Main for viewModelScope: the tests compose the real routes.
-  - $libs.kotlinx.coroutines.swing
-
-dependencies@android:
-  - $compose.uiTooling
+  - $libs.androidx.lifecycle.viewmodel.navigation3
 
 settings:
-  compose:
-    enabled: true
-    resources:
-      packageName: dev.justinsmith.bells.resources
-      exposedAccessors: true
   kotlin:
-    allWarningsAsErrors: true
-    # No module-wide `optIns`: opt in per file (`@file:OptIn`). See templates/lib.module-template.yaml.
-plugins:
-  lint-plugin:
-    enabled: true
-  detekt-plugin:
-    enabled: true
+    # The keys are @Serializable, for the app's saved back stack.
+    serialization: json

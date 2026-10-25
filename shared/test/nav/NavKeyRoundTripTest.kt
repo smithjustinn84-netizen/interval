@@ -1,6 +1,13 @@
 package dev.justinsmith.interval.nav
 
 import androidx.navigation3.runtime.NavKey
+import dev.justinsmith.bells.nav.ExerciseLibrary
+import dev.justinsmith.bells.nav.LiftDetail
+import dev.justinsmith.bells.nav.LiftTab
+import dev.justinsmith.bells.nav.Lifting
+import dev.justinsmith.bells.nav.OwnedBells
+import dev.justinsmith.bells.nav.ProgramEditor
+import dev.justinsmith.bells.nav.Programs
 import dev.justinsmith.interval.nav.About
 import dev.justinsmith.interval.nav.Licenses
 import dev.justinsmith.interval.navConfiguration

@@ -32,7 +32,6 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
-import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
@@ -44,14 +43,11 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.navigation3.ui.defaultPredictivePopTransitionSpec
 import androidx.savedstate.serialization.SavedStateConfiguration
 import dev.justinsmith.bells.data.BellsRepository
-import dev.justinsmith.bells.gear.GearRoute
-import dev.justinsmith.bells.history.LiftDetailRoute
-import dev.justinsmith.bells.library.ExerciseLibraryRoute
-import dev.justinsmith.bells.programs.ProgramEditorRoute
-import dev.justinsmith.bells.programs.ProgramProgressRoute
-import dev.justinsmith.bells.programs.ProgramsRoute
-import dev.justinsmith.bells.session.SessionRoute
-import dev.justinsmith.bells.today.TodayRoute
+import dev.justinsmith.bells.nav.LiftDetail
+import dev.justinsmith.bells.nav.LiftTab
+import dev.justinsmith.bells.nav.Lifting
+import dev.justinsmith.bells.nav.liftEntries
+import dev.justinsmith.bells.nav.liftRoutes
 import dev.justinsmith.interval.about.AboutRoute
 import dev.justinsmith.interval.about.LicensesRoute
 import dev.justinsmith.interval.data.IntervalRepository
@@ -62,23 +58,16 @@ import dev.justinsmith.interval.history.WorkoutDetailRoute
 import dev.justinsmith.interval.home.TimerRoute
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.nav.About
-import dev.justinsmith.interval.nav.ExerciseLibrary
 import dev.justinsmith.interval.nav.HistoryTab
 import dev.justinsmith.interval.nav.Licenses
-import dev.justinsmith.interval.nav.LiftDetail
-import dev.justinsmith.interval.nav.LiftTab
-import dev.justinsmith.interval.nav.Lifting
-import dev.justinsmith.interval.nav.OwnedBells
 import dev.justinsmith.interval.nav.Plan
 import dev.justinsmith.interval.nav.Presets
-import dev.justinsmith.interval.nav.ProgramEditor
-import dev.justinsmith.interval.nav.ProgramProgress
-import dev.justinsmith.interval.nav.Programs
 import dev.justinsmith.interval.nav.Settings
 import dev.justinsmith.interval.nav.Tab
 import dev.justinsmith.interval.nav.TimerTab
 import dev.justinsmith.interval.nav.Workout
 import dev.justinsmith.interval.nav.WorkoutDetail
+import dev.justinsmith.interval.nav.push
 import dev.justinsmith.interval.plan.PlanRoute
 import dev.justinsmith.interval.platform.SystemBarIcons
 import dev.justinsmith.interval.platform.WallClock
@@ -135,13 +124,7 @@ internal val navConfiguration = SavedStateConfiguration {
             subclass(WorkoutDetail::class)
             subclass(Plan::class)
             subclass(Presets::class)
-            subclass(Lifting::class)
-            subclass(Programs::class)
-            subclass(ProgramProgress::class)
-            subclass(ProgramEditor::class)
-            subclass(OwnedBells::class)
-            subclass(ExerciseLibrary::class)
-            subclass(LiftDetail::class)
+            liftRoutes()
         }
     }
 }
@@ -356,7 +339,7 @@ private fun appEntries(
             onStartWorkout = { backStack.startWorkout(clock) },
         )
     }
-    liftEntries(backStack, twoPane)
+    liftEntries(backStack, twoPane, HISTORY_SCENE)
     entry<HistoryTab>(
         metadata = ListDetailSceneStrategy.listPane(HISTORY_SCENE, detailPlaceholder = { HistoryPlaceholder() }) +
             ListDetailSceneStrategy.preferredPaneSize(width = Sizes.listPane) +
@@ -404,72 +387,11 @@ private fun appEntries(
 }
 
 /**
- * Lift's screens: the tab, a session, programs, bells, the exercise library and a finished session. A session
- * opened from History goes beside its log when [twoPane]; from Lift it is a page of its own, as Lift has no list.
- */
-private fun EntryProviderScope<NavKey>.liftEntries(backStack: NavBackStack<NavKey>, twoPane: Boolean) {
-    entry<LiftTab>(metadata = pageKind(PageKind.Tab)) {
-        TodayRoute(
-            onStartSession = { backStack.push(Lifting) },
-            onChooseProgram = { backStack.push(Programs) },
-            onOpenBells = { backStack.push(OwnedBells) },
-            onOpenSession = { backStack.push(LiftDetail(it)) },
-            onOpenExercises = { backStack.push(ExerciseLibrary) },
-            onOpenProgram = { backStack.push(ProgramProgress) },
-        )
-    }
-    entry<Lifting>(metadata = pageKind(PageKind.Mode)) {
-        SessionRoute(onExit = { backStack.removeLastOrNull() })
-    }
-    entry<Programs> {
-        ProgramsRoute(
-            onNew = { backStack.push(ProgramEditor()) },
-            onEdit = { backStack.push(ProgramEditor(it)) },
-            onOpenProgress = { backStack.push(ProgramProgress) },
-            onBack = { backStack.removeLastOrNull() },
-        )
-    }
-    entry<ProgramEditor> { key -> ProgramEditorRoute(uid = key.uid, onBack = { backStack.removeLastOrNull() }) }
-    entry<ProgramProgress> {
-        ProgramProgressRoute(
-            onOpenSession = { backStack.push(LiftDetail(it)) },
-            // In place of the page, so Back from Programs lands on Lift, whichever page opened it.
-            onPickAnother = {
-                backStack.removeLastOrNull()
-                backStack.push(Programs)
-            },
-            onBack = { backStack.removeLastOrNull() },
-        )
-    }
-    entry<OwnedBells> { GearRoute(onBack = { backStack.removeLastOrNull() }) }
-    entry<ExerciseLibrary> {
-        ExerciseLibraryRoute(
-            onBack = { backStack.removeLastOrNull() },
-            onOpenSession = { backStack.push(LiftDetail(it)) },
-        )
-    }
-    entry<LiftDetail>(
-        metadata = { if (it.fromHistory) ListDetailSceneStrategy.detailPane(HISTORY_SCENE) else emptyMap() },
-    ) { key ->
-        LiftDetailRoute(
-            uid = key.uid,
-            onBack = { backStack.removeLastOrNull() },
-            inPane = twoPane && key.fromHistory,
-        )
-    }
-}
-
-/**
  * True once both stores are read: the interval side's and Lift's. Until then the app draws nothing, so
  * no screen starts from defaults.
  */
 private fun storageReady(interval: IntervalRepository, lift: BellsRepository): Flow<Boolean> =
     combine(interval.ready, lift.ready) { intervalReady, liftReady -> intervalReady && liftReady }
-
-/** Pushes [key] unless it is on top already, so a double tap can't stack two of a page. */
-private fun NavBackStack<NavKey>.push(key: NavKey) {
-    if (lastOrNull() != key) add(key)
-}
 
 /** Starts a workout now, by [clock], unless one is on top already: a double tap on Start must not stack two. */
 private fun NavBackStack<NavKey>.startWorkout(clock: WallClock) {

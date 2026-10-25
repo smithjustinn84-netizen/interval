@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="library_title">Exercises</string>
+    <string name="library_search">Search exercises</string>
+    <plurals name="library_count">
+        <item quantity="one">%1$d exercise</item>
+        <item quantity="other">%1$d exercises</item>
+    </plurals>
+    <string name="library_clear">Clear</string>
+    <string name="library_filters">Filters</string>
+    <string name="library_filters_count">Filters · %1$d</string>
+    <string name="library_recent">Recent</string>
+    <string name="library_all">All</string>
+    <string name="library_group">%1$s · %2$d</string>
+    <string name="library_empty_query">No exercise matches “%1$s”</string>
+    <string name="library_empty">No exercise matches these filters</string>
+    <string name="library_empty_hint">Check the spelling, or clear a filter.</string>
+    <string name="library_focus">Focus</string>
+    <string name="library_measured">Measured by</string>
+    <string name="library_yours_only">Only yours</string>
+    <string name="library_yours">Yours</string>
+    <string name="library_show_archived">Show archived</string>
+    <string name="library_owned_only">Only what I own</string>
+    <string name="library_archived">Archived</string>
+    <string name="library_new">New exercise</string>
+    <string name="detail_works">Works</string>
+    <string name="detail_also">Also %1$s</string>
+    <string name="detail_history">Your history</string>
+    <plurals name="detail_done">
+        <item quantity="one">Done %1$d time · last %2$s</item>
+        <item quantity="other">Done %1$d times · last %2$s</item>
+    </plurals>
+    <string name="detail_never">Not logged yet. Its sets will show here.</string>
+    <string name="detail_best">Your best</string>
+    <string name="detail_edit">Edit</string>
+    <string name="detail_no_cues">No cues yet. Add some with Edit.</string>
+    <plurals name="detail_sets_repeated">
+        <item quantity="one">%2$s · %1$d set</item>
+        <item quantity="other">%2$s · %1$d sets</item>
+    </plurals>
+    <string name="detail_open_session">Open the session</string>
+    <string name="library_add_named">Add “%1$s” as an exercise</string>
+    <string name="exercise_editor_new">New exercise</string>
+    <string name="exercise_editor_edit">Edit exercise</string>
+    <string name="exercise_name">Name</string>
+    <string name="exercise_name_placeholder">Exercise name</string>
+    <string name="exercise_name_taken">One of yours already has this name.</string>
+    <string name="exercise_equipment">Equipment</string>
+    <string name="exercise_locked">Sets of it are logged, so its equipment and measure stay as they are.</string>
+    <string name="exercise_one_side">One side at a time</string>
+    <string name="exercise_one_side_hint">Each set asks Left or Right</string>
+    <string name="exercise_cues">Cues</string>
+    <string name="exercise_cues_placeholder">What to remember mid-set (optional)</string>
+    <string name="exercise_save">Save exercise</string>
+    <string name="exercise_archive">Archive exercise</string>
+    <string name="exercise_archive_hint">The Log sheet stops offering it. Its sets stay in your history.</string>
+    <string name="exercise_restore">Restore exercise</string>
+    <string name="exercise_archived_note">Archived: the Log sheet doesn’t offer it.</string>
+    <string name="notice_exercise_saved">Saved %1$s</string>
+    <string name="common_joined">%1$s · %2$s</string>
+</resources>

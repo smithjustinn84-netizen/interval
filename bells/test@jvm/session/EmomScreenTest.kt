@@ -19,9 +19,9 @@ import dev.justinsmith.bells.domain.EmomPhase
 import dev.justinsmith.bells.domain.EmomState
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.ui.bellsAppTest
-import dev.justinsmith.bells.ui.runUiTest
 import dev.justinsmith.bells.ui.setBellsContent
-import dev.justinsmith.bells.ui.waitForText
+import dev.justinsmith.interval.ui.runUiTest
+import dev.justinsmith.interval.ui.waitForText
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

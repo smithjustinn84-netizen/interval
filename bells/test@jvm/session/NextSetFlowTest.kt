@@ -22,9 +22,9 @@ import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.fakes.FakeBellsStorage
-import dev.justinsmith.bells.ui.Window
 import dev.justinsmith.bells.ui.bellsAppTest
-import dev.justinsmith.bells.ui.waitForText
+import dev.justinsmith.interval.ui.Window
+import dev.justinsmith.interval.ui.waitForText
 import kotlinx.coroutines.flow.update
 import kotlin.test.Test
 import kotlin.test.assertEquals

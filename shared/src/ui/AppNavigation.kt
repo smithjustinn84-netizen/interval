@@ -11,8 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import dev.justinsmith.bells.nav.LiftTab
 import dev.justinsmith.interval.nav.HistoryTab
-import dev.justinsmith.interval.nav.LiftTab
 import dev.justinsmith.interval.nav.Tab
 import dev.justinsmith.interval.nav.TimerTab
 import dev.justinsmith.interval.resources.Res

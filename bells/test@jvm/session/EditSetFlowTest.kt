@@ -12,7 +12,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import dev.justinsmith.bells.ui.bellsAppTest
-import dev.justinsmith.bells.ui.waitForText
+import dev.justinsmith.interval.ui.waitForText
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

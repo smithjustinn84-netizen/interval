@@ -27,7 +27,7 @@ import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.domain.RepRange
 import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.bells.ui.bellsAppTest
-import dev.justinsmith.bells.ui.waitForText
+import dev.justinsmith.interval.ui.waitForText
 import kotlinx.coroutines.flow.update
 import kotlin.test.Test
 import kotlin.test.assertEquals

@@ -1,0 +1,29 @@
+# A library of screens: Compose over `core`'s theme and components, ViewModels resolved through Koin in
+# composition, its own strings in `composeResources/` (set `settings.compose.resources.packageName`), and
+# the test libraries and fakes of `tested-lib`.
+apply:
+  - //templates/tested-lib.module-template.yaml
+
+dependencies:
+  - //core
+  - $compose.runtime
+  - $compose.foundation
+  - $compose.material3
+  - $compose.ui
+  - $compose.components.resources
+  - $compose.preview
+  - $libs.androidx.lifecycle.viewmodel
+  - $libs.androidx.lifecycle.viewmodel.compose
+  - $libs.androidx.lifecycle.runtime.compose
+  - $libs.koin.core
+  - $libs.koin.compose
+  - $libs.kermit
+
+# Renders the @Preview functions in the IDE. Amper has no debug-only dependency scope, so it ships in release
+# builds too; R8 strips what the app never calls.
+dependencies@android:
+  - $compose.uiTooling
+
+settings:
+  compose:
+    enabled: true

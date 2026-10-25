@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="today_title">Lift</string>
+    <string name="kg_pair">2 × %1$s kg</string>
+    <plurals name="sets_count">
+        <item quantity="one">%1$d set</item>
+        <item quantity="other">%1$d sets</item>
+    </plurals>
+    <string name="today_this_week">This week</string>
+    <plurals name="today_week_count">
+        <item quantity="one">%1$d workout · %2$d on the Timer</item>
+        <item quantity="other">%1$d workouts · %2$d on the Timer</item>
+    </plurals>
+    <plurals name="today_week_workouts">
+        <item quantity="one">%1$d workout</item>
+        <item quantity="other">%1$d workouts</item>
+    </plurals>
+    <plurals name="today_goal_left">
+        <item quantity="one">%1$d more to hit %2$d</item>
+        <item quantity="other">%1$d more to hit %2$d</item>
+    </plurals>
+    <string name="today_legend_bells">Lifts</string>
+    <string name="today_legend_interval">Timer</string>
+    <string name="today_bells_cd">Your equipment and records</string>
+    <string name="today_last">Last session</string>
+    <string name="today_none_title">No sessions yet</string>
+    <string name="today_none_text">Start one, log each set as you go, and it lands in your history.</string>
+    <string name="today_start">Start session</string>
+    <string name="today_resume">Resume session</string>
+    <string name="weekday_initial_1">M</string>
+    <string name="weekday_initial_2">T</string>
+    <string name="weekday_initial_3">W</string>
+    <string name="weekday_initial_4">T</string>
+    <string name="weekday_initial_5">F</string>
+    <string name="weekday_initial_6">S</string>
+    <string name="weekday_initial_7">S</string>
+    <string name="weekday_cd">%1$s: %2$s</string>
+    <string name="weekday_counts">%1$d lifting, %2$d on the Timer</string>
+    <string name="weekday_rest">rest</string>
+    <string name="library_entry_text">Bells, barbells, bodyweight, bands and the mat</string>
+    <string name="bells_title">Your equipment</string>
+    <string name="bells_owned">Your bells</string>
+    <string name="bar_owned">Your bar</string>
+    <string name="bar_none">None</string>
+    <string name="bar_owned_hint">What the bar weighs empty, to work out the plates a side</string>
+    <string name="bells_owned_hint">Tap the sizes you own; the log offers just those.</string>
+    <string name="bands_owned">Your bands</string>
+    <string name="bands_owned_hint">Lightest first. Tap one to rename, recolour or move it.</string>
+    <string name="bands_archived">Archived bands</string>
+    <string name="band_add">Add band</string>
+    <string name="band_editor_new">New band</string>
+    <string name="band_editor_edit">Edit band</string>
+    <string name="band_name">Name</string>
+    <string name="band_name_placeholder">Band name</string>
+    <string name="band_colour">Colour</string>
+    <string name="band_lighter">Lighter</string>
+    <string name="band_heavier">Heavier</string>
+    <string name="band_save">Save band</string>
+    <string name="band_archive">Archive band</string>
+    <string name="band_delete">Delete band</string>
+    <string name="band_restore">Restore band</string>
+    <string name="bells_records">Personal records</string>
+    <string name="bells_records_empty">Log a session to set your first records.</string>
+    <string name="program_follow_cta">Follow a program</string>
+    <string name="program_follow_hint">Each day planned, at the weight last used</string>
+    <string name="program_change">Change program</string>
+    <string name="program_open_cd">Open the program</string>
+    <string name="today_last_open_cd">Open the last session</string>
+    <string name="today_start_day">Start day %1$d</string>
+    <string name="today_free_session">Free session</string>
+    <string name="today_start_day_over_text">Its sets are not saved: the day starts fresh.</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_joined">%1$s · %2$s</string>
+    <string name="kg_value">%1$s kg</string>
+    <string name="library_title">Exercises</string>
+    <string name="program_finished">Finished</string>
+    <string name="session_leave_title">Leave the session?</string>
+    <string name="today_goal_met">Goal met this week</string>
+</resources>

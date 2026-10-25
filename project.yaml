@@ -3,7 +3,11 @@ modules:
   - bells
   - bells-data
   - bells-domain
+  - bells-library
+  - bells-session
   - bells-testing
+  - bells-today
+  - bells-ui
   - core
   - core-testing
   - desktopApp

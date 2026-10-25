@@ -16,7 +16,7 @@ import androidx.compose.ui.test.performTextInput
 import dev.justinsmith.bells.data.CustomExerciseEntity
 import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.bells.ui.bellsAppTest
-import dev.justinsmith.bells.ui.waitForText
+import dev.justinsmith.interval.ui.waitForText
 import kotlin.test.Test
 
 /** The library from Lift: searching, narrowing and clearing, over the whole app on fakes. */

@@ -14,10 +14,10 @@ import dev.justinsmith.bells.data.FollowingEntity
 import dev.justinsmith.bells.data.SessionEntity
 import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.fakes.FakeBellsStorage
-import dev.justinsmith.bells.ui.Window
 import dev.justinsmith.bells.ui.bellsAppTest
-import dev.justinsmith.bells.ui.scrollToText
-import dev.justinsmith.bells.ui.waitForText
+import dev.justinsmith.interval.ui.Window
+import dev.justinsmith.interval.ui.scrollToText
+import dev.justinsmith.interval.ui.waitForText
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
