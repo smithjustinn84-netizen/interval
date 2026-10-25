@@ -53,7 +53,10 @@ Amper source layout, not Gradle's:
   `domain/Bands.kt`, the plates a side in `domain/Barbell.kt`) and personal records, built-in programs
   (`domain/BuiltInPrograms.kt`, data not words: names are strings) whose next day lays out the session
   (`domain/DayProgress.kt`; what to load from `domain/Suggestions.kt`), EMOMs timed by the pure `EmomClock`
-  and run by `EmomRunner` with beeps through `Beeper`, and a finished session's page (`history/LiftDetail.kt`).
+  and run by `EmomRunner` with beeps through `Beeper`, a finished session's page (`history/LiftDetail.kt`), and
+  the exercise library (`library/`): each exercise's page opens in a sheet (`ExerciseDetail.kt`), the built-ins'
+  cues in `composeResources/values/cues.xml` (mapped in `ui/ExerciseCues.kt`) and what they work in
+  `domain/Muscles.kt`, both an exhaustive `when` per built-in.
   `domain/` is pure: no Room, Compose or Koin.
   Same conventions as `shared` (`XRoute`/`XScreen`, Koin, Room, strings in its own `composeResources`), but
   no navigation of its own: its routes are wired in `shared/src/App.kt` (`LiftTab`, `Lifting`, `Programs`,

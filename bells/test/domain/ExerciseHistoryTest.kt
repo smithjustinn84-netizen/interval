@@ -55,4 +55,21 @@ class ExerciseHistoryTest {
         assertEquals(emptyList(), history.recent)
         assertEquals(emptyList(), history.records)
     }
+
+    @Test
+    fun `the same set in a row folds into one and order is kept`() {
+        val left = SetLog(1, BuiltInExercise.Press, 16.0, 5, Side.Left, 0)
+        val runs = collapsedSets(
+            listOf(
+                left,
+                left.copy(id = 2),
+                left.copy(id = 3, side = Side.Right),
+                left.copy(id = 4),
+                left.copy(id = 5, bellKg = 20.0),
+            ),
+        )
+        assertEquals(listOf(2, 1, 1, 1), runs.map { it.count })
+        assertEquals(listOf(Side.Left, Side.Right, Side.Left, Side.Left), runs.map { it.set.side })
+        assertEquals(20.0, runs.last().set.bellKg)
+    }
 }

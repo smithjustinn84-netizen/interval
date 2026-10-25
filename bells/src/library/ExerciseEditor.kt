@@ -33,7 +33,6 @@ import dev.justinsmith.bells.resources.exercise_archive_hint
 import dev.justinsmith.bells.resources.exercise_archived_note
 import dev.justinsmith.bells.resources.exercise_cues
 import dev.justinsmith.bells.resources.exercise_cues_placeholder
-import dev.justinsmith.bells.resources.exercise_editor_edit
 import dev.justinsmith.bells.resources.exercise_editor_new
 import dev.justinsmith.bells.resources.exercise_equipment
 import dev.justinsmith.bells.resources.exercise_locked
@@ -187,25 +186,18 @@ fun rememberExerciseEditor(uid: String?, name: String): ExerciseEditor {
 }
 
 /**
- * The sheet that adds an exercise of the user's, named [name] to start, or changes their [uid]: beside the
- * page on a tablet, rising from the bottom on a phone, as a band or a preset does. Saving, archiving and
- * restoring close it; so does every other way out, which saves nothing.
+ * The sheet that adds an exercise of the user's, named [name] to start: beside the page on a tablet, rising from
+ * the bottom on a phone, as a band or a preset does. Saving closes it; so does every other way out, which saves
+ * nothing. One already saved is changed from its page ([ExerciseDetailSheet]).
  */
 @Composable
-fun ExerciseEditorSheet(uid: String?, name: String, onDismiss: () -> Unit) {
-    val editor = rememberExerciseEditor(uid, name)
-    val title = stringResource(
-        if (editor.state.saved) Res.string.exercise_editor_edit else Res.string.exercise_editor_new,
-    )
-    IntervalSheet(title, onDismiss = onDismiss) { hide ->
+fun ExerciseEditorSheet(name: String, onDismiss: () -> Unit) {
+    val editor = rememberExerciseEditor(uid = null, name = name)
+    IntervalSheet(stringResource(Res.string.exercise_editor_new), onDismiss = onDismiss) { hide ->
         ExerciseEditorForm(
             editor.state,
             onChange = editor::change,
             onSave = { typed, cues -> if (editor.save(typed, cues)) hide() },
-            onArchive = {
-                editor.toggleArchived()
-                hide()
-            },
             modifier = Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
         )
     }

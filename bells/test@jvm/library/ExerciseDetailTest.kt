@@ -51,7 +51,9 @@ class ExerciseDetailTest {
         // In the recent card, as well as the kettlebell one.
         onAllNodesWithText("Press").onFirst().performClick()
         waitForText("Done 1 time · last day 0")
+        // One record, told without the name the page already has.
         onNodeWithText("Your best").assertExists()
+        onNodeWithText("Heaviest 16 kg × 5").assertExists()
         onNodeWithText("16 kg × 5 · Left").performScrollTo().assertExists()
         onNodeWithText("16 kg × 5 · Right").performClick()
         // The sheet gone, the session's own page.
@@ -95,5 +97,20 @@ class ExerciseDetailTest {
         val library = onNodeWithText("Search exercises").assertIsDisplayed().getUnclippedBoundsInRoot()
         val page = onNodeWithText("Your history").assertIsDisplayed().getUnclippedBoundsInRoot()
         assertTrue(page.left > library.left)
+    }
+
+    @Test
+    fun `one of yours with no cues says how to add some`() = bellsAppTest(
+        storage = FakeBellsStorage().apply {
+            exercises.rows.value = listOf(
+                CustomExerciseEntity("e1", "Turkish sit-up", "Kettlebell", "Reps", false, "Core", "", false, 0),
+            )
+        },
+    ) {
+        onNodeWithText("Exercises").performScrollTo().performClick()
+        waitForText("Search exercises")
+        onNodeWithText("Turkish sit-up").performClick()
+        waitForText("No cues yet. Add some with Edit.")
+        onNodeWithText("Cues").assertDoesNotExist()
     }
 }

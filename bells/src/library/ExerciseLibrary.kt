@@ -120,7 +120,7 @@ fun ExerciseLibraryRoute(onBack: () -> Unit, onOpenSession: (uid: String) -> Uni
     detail?.takeIf { opened != null && it.exercise.key == opened }?.let { shown ->
         ExerciseDetailSheet(shown, onOpenSession, onDismiss = { opened = null })
     }
-    adding?.let { name -> ExerciseEditorSheet(null, name, onDismiss = { adding = null }) }
+    adding?.let { name -> ExerciseEditorSheet(name, onDismiss = { adding = null }) }
 }
 
 /**

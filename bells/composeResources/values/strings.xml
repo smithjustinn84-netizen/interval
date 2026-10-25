@@ -282,6 +282,12 @@
     <string name="detail_never">Not logged yet. Its sets will show here.</string>
     <string name="detail_best">Your best</string>
     <string name="detail_edit">Edit</string>
+    <string name="detail_no_cues">No cues yet. Add some with Edit.</string>
+    <!-- The same set done more than once in a row: "16 kg × 10 · Left · 3 sets" -->
+    <plurals name="detail_sets_repeated">
+        <item quantity="one">%2$s · %1$d set</item>
+        <item quantity="other">%2$s · %1$d sets</item>
+    </plurals>
     <string name="detail_open_session">Open the session</string>
     <string name="library_add_named">Add “%1$s” as an exercise</string>
     <string name="exercise_editor_new">New exercise</string>

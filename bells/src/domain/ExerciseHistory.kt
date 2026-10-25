@@ -39,3 +39,24 @@ fun exerciseHistory(
 
 /** How many of its sessions an exercise's page lists. */
 const val RECENT_SESSIONS = 10
+
+/** [count] sets in a row, each the same as [set]: the same load, reps or hold, side and band. */
+data class SetRun(val set: SetLog, val count: Int)
+
+/** [sets] in order, each run of the same set in a row folded into one [SetRun]. */
+fun collapsedSets(sets: List<SetLog>): List<SetRun> = buildList {
+    for (set in sets) {
+        val last = lastOrNull()
+        if (last != null &&
+            last.set.sameAs(set)
+        ) {
+            set(lastIndex, last.copy(count = last.count + 1))
+        } else {
+            add(SetRun(set, 1))
+        }
+    }
+}
+
+private fun SetLog.sameAs(other: SetLog) = exercise.key == other.exercise.key && bellKg == other.bellKg &&
+    reps == other.reps && side == other.side && double == other.double && equipment == other.equipment &&
+    seconds == other.seconds && band == other.band

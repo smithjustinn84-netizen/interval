@@ -27,11 +27,18 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Spacing
 import org.jetbrains.compose.resources.stringResource
 
-/** A record as a row of a list: the lift's name over [recordLine]. */
+/**
+ * A record as a row of a list: the lift's name over [recordLine]; without [named], for a page that is the lift's
+ * own, the line alone.
+ */
 @Composable
-fun RecordRow(record: PersonalRecord, modifier: Modifier = Modifier, tagged: Boolean = false) {
+fun RecordRow(record: PersonalRecord, modifier: Modifier = Modifier, tagged: Boolean = false, named: Boolean = true) {
     val palette = IntervalTheme.palette
     Column(modifier.padding(Spacing.space16)) {
+        if (!named) {
+            Text(recordLine(record), style = IntervalTheme.type.body, color = palette.text)
+            return@Column
+        }
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.space8),

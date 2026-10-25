@@ -1,5 +1,6 @@
 package dev.justinsmith.bells.library
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -30,6 +31,7 @@ import dev.justinsmith.bells.domain.Muscle
 import dev.justinsmith.bells.domain.Muscles
 import dev.justinsmith.bells.domain.PastSession
 import dev.justinsmith.bells.domain.UnknownExercise
+import dev.justinsmith.bells.domain.collapsedSets
 import dev.justinsmith.bells.domain.muscles
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.common_joined
@@ -39,7 +41,9 @@ import dev.justinsmith.bells.resources.detail_done
 import dev.justinsmith.bells.resources.detail_edit
 import dev.justinsmith.bells.resources.detail_history
 import dev.justinsmith.bells.resources.detail_never
+import dev.justinsmith.bells.resources.detail_no_cues
 import dev.justinsmith.bells.resources.detail_open_session
+import dev.justinsmith.bells.resources.detail_sets_repeated
 import dev.justinsmith.bells.resources.detail_works
 import dev.justinsmith.bells.resources.exercise_archived_note
 import dev.justinsmith.bells.resources.exercise_cues
@@ -55,10 +59,11 @@ import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
-import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.fadeThroughContent
 import dev.justinsmith.interval.ui.pressScale
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringArrayResource
@@ -90,37 +95,50 @@ fun ExerciseDetailSheet(state: ExerciseDetailUiState, onOpenSession: (uid: Strin
     val title = if (editing) stringResource(Res.string.exercise_editor_edit) else exerciseName(exercise)
     IntervalSheet(title, onDismiss = onDismiss) { hide ->
         val modifier = Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8)
-        if (editing && exercise is CustomExercise) {
-            val editor = rememberExerciseEditor(exercise.uid, "")
-            ExerciseEditorForm(
-                editor.state,
-                onChange = editor::change,
-                onSave = { typed, cues -> if (editor.save(typed, cues)) hide() },
-                onArchive = {
-                    editor.toggleArchived()
-                    hide()
-                },
-                modifier = modifier,
-            )
-        } else {
-            Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-                ExerciseHead(exercise, onEdit = if (exercise is CustomExercise) ({ editing = true }) else null)
-                History(state, onOpen = { uid ->
-                    hide()
-                    onOpenSession(uid)
-                })
+        // The page and the form take one another's place with a fade through, as a session's faces do.
+        AnimatedContent(
+            targetState = editing && exercise is CustomExercise,
+            transitionSpec = { fadeThroughContent() },
+            label = "exerciseDetail",
+        ) { form ->
+            if (form && exercise is CustomExercise) {
+                val editor = rememberExerciseEditor(exercise.uid, "")
+                ExerciseEditorForm(
+                    editor.state,
+                    onChange = editor::change,
+                    onSave = { typed, cues -> if (editor.save(typed, cues)) hide() },
+                    onArchive = {
+                        editor.toggleArchived()
+                        hide()
+                    },
+                    modifier = modifier,
+                )
+            } else {
+                Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+                    ExerciseHead(exercise, onEdit = if (exercise is CustomExercise) ({ editing = true }) else null)
+                    History(state, onOpen = { uid ->
+                        hide()
+                        onOpenSession(uid)
+                    })
+                }
             }
         }
     }
 }
 
-/** The exercise's name over its facts, a note if archived, its cues, and Edit with [onEdit]. */
+/**
+ * The exercise's name over its facts, with Edit beside them for one of the user's own ([onEdit]); a note if
+ * archived; then its cues, or a hint to add some, and for a built-in what it works.
+ */
 @Composable
 private fun ColumnScope.ExerciseHead(exercise: Exercise, onEdit: (() -> Unit)?) {
     val palette = IntervalTheme.palette
-    Column {
-        Text(exerciseName(exercise), style = IntervalTheme.type.section, color = palette.text)
-        Text(exerciseFacts(exercise), style = IntervalTheme.type.meta, color = palette.textDim)
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(exerciseName(exercise), style = IntervalTheme.type.section, color = palette.text)
+            Text(exerciseFacts(exercise), style = IntervalTheme.type.meta, color = palette.textDim)
+        }
+        onEdit?.let { QuietTextButton(stringResource(Res.string.detail_edit), it) }
     }
     if ((exercise as? CustomExercise)?.archived == true) {
         Text(stringResource(Res.string.exercise_archived_note), style = IntervalTheme.type.meta, color = palette.text)
@@ -131,11 +149,14 @@ private fun ColumnScope.ExerciseHead(exercise: Exercise, onEdit: (() -> Unit)?) 
             Works(exercise.muscles)
         }
 
-        is CustomExercise -> exercise.cues.takeIf { it.isNotBlank() }?.let { Cues(listOf(it)) }
+        is CustomExercise -> if (exercise.cues.isBlank()) {
+            Text(stringResource(Res.string.detail_no_cues), style = IntervalTheme.type.meta, color = palette.textDim)
+        } else {
+            Cues(listOf(exercise.cues))
+        }
 
         is UnknownExercise -> Unit
     }
-    onEdit?.let { SecondaryButton(stringResource(Res.string.detail_edit), it, Modifier.fillMaxWidth()) }
 }
 
 /** How to do it, a line each, in a card. */
@@ -203,14 +224,18 @@ private fun ColumnScope.History(state: ExerciseDetailUiState, onOpen: (uid: Stri
         ListCard(fill = IntervalTheme.palette.surfaceVariant) {
             history.records.forEachIndexed { i, record ->
                 if (i > 0) RowDivider()
-                RecordRow(record)
+                // Named only when one bell and two each have one, to tell them apart.
+                RecordRow(record, named = history.records.size > 1)
             }
         }
     }
     state.recent.forEach { dated -> PastSessionCard(dated, onOpen) }
 }
 
-/** A past session's sets with the exercise under its date, the whole card opening the session. */
+/**
+ * A past session's sets with the exercise under its date, the same set in a row told once with how many, the
+ * whole card opening the session.
+ */
 @Composable
 private fun PastSessionCard(dated: DatedSession, onOpen: (uid: String) -> Unit) {
     val palette = IntervalTheme.palette
@@ -233,8 +258,21 @@ private fun PastSessionCard(dated: DatedSession, onOpen: (uid: String) -> Unit) 
             horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
         ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
-                dated.session.sets.forEach { set ->
-                    Text(setLine(set), style = IntervalTheme.type.body, color = palette.text)
+                collapsedSets(dated.session.sets).forEach { run ->
+                    Text(
+                        if (run.count == 1) {
+                            setLine(run.set)
+                        } else {
+                            pluralStringResource(
+                                Res.plurals.detail_sets_repeated,
+                                run.count,
+                                run.count,
+                                setLine(run.set),
+                            )
+                        },
+                        style = IntervalTheme.type.body,
+                        color = palette.text,
+                    )
                 }
             }
             Icon(
