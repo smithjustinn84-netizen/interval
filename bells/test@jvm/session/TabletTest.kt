@@ -96,8 +96,6 @@ class TabletTest {
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
-        waitForText("Reps")
-        onAllNodesWithText("Log set").onLast().performClick()
         waitForText("16 kg × 10")
         val time = onNodeWithText("Time").assertIsDisplayed().getUnclippedBoundsInRoot()
         // Straight after a set, its rest counts down where Since last set stands.

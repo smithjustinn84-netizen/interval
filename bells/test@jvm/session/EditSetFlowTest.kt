@@ -7,7 +7,6 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -24,7 +23,6 @@ class EditSetFlowTest {
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
-        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("16 kg × 10")
         onNodeWithText("16 kg × 10").performClick()
         onNode(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, "Change the set")).assertExists()
@@ -39,7 +37,7 @@ class EditSetFlowTest {
         val set = app.storage.sessions.sets.value.single()
         assertEquals(24.0 to 11, set.bellKg to set.reps)
         // The sheet for a new set is back as it was: an EMOM, and Change to pick the exercise.
-        onNodeWithText("Log set").performClick()
+        onNodeWithContentDescription("Add set or EMOM").performClick()
         onNode(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, "Add to the session")).assertExists()
         onNodeWithText("An EMOM").assertExists()
         // The sheet's Change, and the Next set card's behind it.

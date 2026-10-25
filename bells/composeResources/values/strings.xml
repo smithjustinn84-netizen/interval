@@ -197,6 +197,8 @@
     <string name="session_rest_less_cd">Rest 15 seconds less</string>
     <string name="session_rest_more_cd">Rest 15 seconds more</string>
     <string name="session_log">Log set</string>
+    <string name="session_add_cd">Add set or EMOM</string>
+    <string name="session_extra_set">Extra set</string>
     <string name="session_finish">Finish</string>
     <string name="session_discard">Discard</string>
     <string name="session_remove_set_cd">Remove %1$s</string>
@@ -653,7 +655,6 @@
     <!-- Up next, in a programmed session -->
     <string name="next_title">Up next</string>
     <string name="next_progress">%1$d of %2$d sets</string>
-    <string name="next_log">Log it</string>
     <string name="next_emom">Start EMOM</string>
     <string name="next_day_done">Today's sets are done. Finish when you are.</string>
     <string name="next_change">Change</string>

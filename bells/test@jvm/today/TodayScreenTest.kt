@@ -13,7 +13,6 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import dev.justinsmith.bells.data.FollowingEntity
 import dev.justinsmith.bells.data.SessionEntity
 import dev.justinsmith.bells.data.SetEntity
@@ -193,13 +192,13 @@ class TodayScreenTest {
         onNodeWithText("× 10").assertExists()
         // Three each of push-ups, squats and rows, then the plank.
         for (done in 1..9) {
-            onNodeWithText("Log it").performScrollTo().performClick()
+            onNodeWithText("Log set").performClick()
             waitForText("Up next · ${done + 1} of 12 sets")
         }
         val pushUp = app.storage.sessions.sets.value.first()
         assertEquals(Triple("PushUp", "Bodyweight", 0.0), Triple(pushUp.exercise, pushUp.equipment, pushUp.bellKg))
         onNodeWithText("0:30").assertExists()
-        onNodeWithText("Log it").performScrollTo().performClick()
+        onNodeWithText("Log set").performClick()
         waitForText("Up next · 11 of 12 sets")
         val plank = app.storage.sessions.sets.value.last()
         assertEquals(Triple("Plank", 30, 0), Triple(plank.exercise, plank.seconds, plank.reps))
@@ -213,7 +212,7 @@ class TodayScreenTest {
     ) { app ->
         onNodeWithText("Start day 1").performClick()
         waitForText("Up next · 1 of 9 sets")
-        onNodeWithText("Log it").performClick()
+        onNodeWithText("Log set").performClick()
         waitForText("Up next · 2 of 9 sets")
         assertEquals(ProgramId.GobletSquatRow.name, app.storage.sessions.sessions.value.single().programId)
     }

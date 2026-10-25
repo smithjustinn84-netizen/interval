@@ -4,6 +4,7 @@ package dev.justinsmith.bells.session
 
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
@@ -20,6 +21,7 @@ import dev.justinsmith.bells.data.SessionEntity
 import dev.justinsmith.bells.data.SetEntity
 import dev.justinsmith.bells.data.encodeDays
 import dev.justinsmith.bells.domain.Block
+import dev.justinsmith.bells.domain.BlockKind
 import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.domain.RepRange
@@ -53,7 +55,7 @@ class PlanFlowTest {
         onNodeWithText("28").performScrollTo().performClick()
         onNodeWithText("Done").performScrollTo().performClick()
         waitForText("28 kg")
-        onNodeWithText("Log it").performScrollTo().performClick()
+        onNodeWithText("Log set").performClick()
         waitForText("Up next · 2 of 9 sets")
         assertEquals(28.0, app.storage.sessions.sets.value.single().bellKg)
         assertTrue(app.storage.sessions.sessions.value.single().plan.orEmpty().contains("\"kg\":28.0"))
@@ -70,9 +72,9 @@ class PlanFlowTest {
     ) {
         onNodeWithText("Start day 1").performClick()
         waitForText("Up next · 1 of 2 sets")
-        onNodeWithText("Log it").performScrollTo().performClick()
+        onNodeWithText("Log set").performClick()
         waitForText("Up next · 2 of 2 sets")
-        onNodeWithText("Log it").performScrollTo().performClick()
+        onNodeWithText("Log set").performClick()
         waitForText("Today's sets are done. Finish when you are.")
         onNodeWithText("Finish").performClick()
         waitForText("Top of the range")
@@ -95,7 +97,7 @@ class PlanFlowTest {
     @Test
     fun `swapping part way keeps the sets done`() = bellsAppTest(followed()) { app ->
         startDay()
-        onNodeWithText("Log it").performScrollTo().performClick()
+        onNodeWithText("Log set").performClick()
         waitForText("Up next · 2 of 9 sets")
         onAllNodesWithText("Change").onFirst().performScrollTo().performClick()
         waitForText("Exercise")
@@ -109,7 +111,7 @@ class PlanFlowTest {
         onNodeWithText("Done").performScrollTo().performClick()
         waitForText("Front squat")
         onNodeWithText("Up next · 2 of 9 sets").assertExists()
-        onNodeWithText("Log it").performScrollTo().performClick()
+        onNodeWithText("Log set").performClick()
         waitForText("Up next · 3 of 9 sets")
         assertEquals(
             listOf("GobletSquat", "FrontSquat"),
@@ -128,7 +130,7 @@ class PlanFlowTest {
         onNodeWithText("28").performScrollTo().performClick()
         onNodeWithText("Done").performScrollTo().performClick()
         waitForText("28 kg")
-        onNodeWithText("Log it").performScrollTo().performClick()
+        onNodeWithText("Log set").performClick()
         waitForText("Up next · 2 of 9 sets")
         onNodeWithText("Finish").performClick()
         waitForText("Keep today's changes?")
@@ -153,7 +155,7 @@ class PlanFlowTest {
         onNodeWithText("28").performScrollTo().performClick()
         onNodeWithText("Done").performScrollTo().performClick()
         waitForText("28 kg")
-        onNodeWithText("Log it").performScrollTo().performClick()
+        onNodeWithText("Log set").performClick()
         waitForText("Up next · 2 of 9 sets")
         onNodeWithText("Finish").performClick()
         waitForText("Keep today's changes?")
@@ -200,7 +202,7 @@ class PlanFlowTest {
         startDay()
         onNodeWithText("Skip").performScrollTo().performClick()
         waitForText("Up next · 1 of 6 sets")
-        onNodeWithText("Log it").performScrollTo().performClick()
+        onNodeWithText("Log set").performClick()
         waitForText("Up next · 2 of 6 sets")
         onNodeWithText("Finish").performClick()
         waitForText("Done")
@@ -213,10 +215,12 @@ class PlanFlowTest {
     fun `a day done in full offers a step up for next time`() = bellsAppTest(followed()) { app ->
         startDay()
         repeat(9) { n ->
-            onNodeWithText("Log it").performScrollTo().performClick()
+            onNodeWithText("Log set").performClick()
             if (n < 8) waitForText("Up next · ${n + 2} of 9 sets")
         }
         waitForText("Today's sets are done. Finish when you are.")
+        onNodeWithText("Extra set").assertExists()
+        onNodeWithText("Log set").assertDoesNotExist()
         onNodeWithText("Finish").performClick()
         waitForText("Ready for more?")
         // Both build to 15 reps before a heavier bell: a rep more first.
@@ -244,7 +248,7 @@ class PlanFlowTest {
         onNodeWithText("16 kg").assertExists()
         onNodeWithContentDescription("Heavier").performScrollTo().performClick()
         waitForText("20 kg")
-        onNodeWithText("Log it").performScrollTo().performClick()
+        onNodeWithText("Log set").performClick()
         waitForText("Up next · 2 of 9 sets")
         // The next set of the block goes on at the new bell.
         onNodeWithText("20 kg").assertExists()
@@ -257,13 +261,47 @@ class PlanFlowTest {
     @Test
     fun `the Log sheet starts on the set up next`() = bellsAppTest(followed()) { app ->
         startDay()
-        onNodeWithText("Log set").performClick()
+        onNodeWithContentDescription("Add set or EMOM").performClick()
         waitForText("Exercise")
         onNodeWithText("Kettlebell · Reps · Lower body").assertExists()
         onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("Up next · 2 of 9 sets")
         val set = app.storage.sessions.sets.value.single()
         assertEquals(Triple("GobletSquat", 16.0, 10), Triple(set.exercise, set.bellKg, set.reps))
+    }
+
+    @Test
+    fun `an EMOM block up next puts Start EMOM at the foot`() = bellsAppTest(
+        FakeBellsStorage().apply {
+            val swings = Block(BuiltInExercise.TwoHandSwing, kind = BlockKind.Emom, rounds = 5, reps = 10)
+            programs.rows.value =
+                listOf(CustomProgramEntity("p1", "Swings", 3, 4, encodeDays(listOf(listOf(swings))), 0))
+            following.row.value = FollowingEntity(programId = "custom:p1", startedAtEpochMillis = 0)
+        },
+    ) {
+        onNodeWithText("Start day 1").performClick()
+        waitForText("Up next · 1 of 5 sets")
+        onNodeWithText("Log set").assertDoesNotExist()
+        onNodeWithText("Start EMOM").assertIsDisplayed().performClick()
+        waitForText("Get ready")
+    }
+
+    @Test
+    fun `Extra set after a day is done opens the Log sheet for one more`() = bellsAppTest(
+        FakeBellsStorage().apply {
+            val squats = Block(BuiltInExercise.GobletSquat, rounds = 1, reps = 10)
+            programs.rows.value = listOf(CustomProgramEntity("p1", "One", 3, 4, encodeDays(listOf(listOf(squats))), 0))
+            following.row.value = FollowingEntity(programId = "custom:p1", startedAtEpochMillis = 0)
+        },
+    ) { app ->
+        onNodeWithText("Start day 1").performClick()
+        waitForText("Up next · 1 of 1 sets")
+        onNodeWithText("Log set").performClick()
+        waitForText("Today's sets are done. Finish when you are.")
+        onNodeWithText("Extra set").performClick()
+        waitForText("Exercise")
+        onNodeWithText("Log set").performScrollTo().performClick()
+        assertEquals(2, app.storage.sessions.sets.value.size)
     }
 
     @Test
@@ -278,7 +316,7 @@ class PlanFlowTest {
     @Test
     fun `How to on the Log sheet shows the page in place and goes back to the set`() = bellsAppTest(followed()) {
         startDay()
-        onNodeWithText("Log set").performClick()
+        onNodeWithContentDescription("Add set or EMOM").performClick()
         waitForText("Exercise")
         // The sheet's, over Up next's.
         onAllNodesWithText("How to").onLast().performClick()
@@ -297,7 +335,7 @@ class PlanFlowTest {
     ) {
         startDay()
         onNodeWithText("Last time · 16 kg × 8").assertExists()
-        onNodeWithText("Log it").performScrollTo().performClick()
+        onNodeWithText("Log set").performClick()
         waitForText("Up next · 2 of 9 sets")
         onNodeWithText("Last time · 16 kg × 8").assertExists()
     }

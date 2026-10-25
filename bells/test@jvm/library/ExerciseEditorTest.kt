@@ -92,7 +92,7 @@ class ExerciseEditorTest {
     fun `an exercise added from the Log sheet comes back picked`() = bellsAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
-        onNodeWithText("Log set").performClick()
+        onNodeWithContentDescription("Add set or EMOM").performClick()
         onAllNodesWithText("Change").onLast().performClick()
         waitForText("Search exercises")
         onNode(hasSetTextAction()).performTextInput("Copenhagen plank")

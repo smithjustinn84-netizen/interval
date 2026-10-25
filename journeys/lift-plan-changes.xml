@@ -8,12 +8,12 @@
     <action>Tap the "Lift" tab, then "Follow a program"</action>
     <action>Tap "Goblet squat and row", then "Follow this program"</action>
     <action>Tap "Start day 1"</action>
-    <action>Verify that the session shows "Up next · 1 of 9 sets", "Goblet squat", "16 kg × 10", "Log it", "Change", "Skip" and "Today's plan"</action>
+    <action>Verify that the session shows "Up next · 1 of 9 sets", "Goblet squat", "16 kg × 10", "Change", "Skip" and "Today's plan", with "Log set" at the bottom</action>
     <action>Tap "Change" on the Up next card</action>
     <action>Verify that a sheet shows an exercise card "Goblet squat" with "Change", "Bell" chips with "Last time" selected, "How it runs", "Sets" at "3" and "Reps" at "10"</action>
     <action>Tap "24", then "Done"</action>
     <action>Verify that Up next reads "24 kg × 10"</action>
-    <action>Tap "Log it"</action>
+    <action>Tap "Log set"</action>
     <action>Verify that "Up next · 2 of 9 sets" is shown and the session lists "Goblet squat" with a set "24 kg × 10", "Moved" at "240 kg"</action>
     <action>Tap the set "24 kg × 10"</action>
     <action>Verify that a sheet shows "Goblet squat" without "Change", no "An EMOM", and "Save set"</action>

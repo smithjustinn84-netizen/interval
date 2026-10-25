@@ -35,12 +35,12 @@
     <action>Tap "New exercise" in the title bar, type "copenhagen PLANK" into the "Name" field</action>
     <action>Verify that "One of yours already has this name." is shown and there is no "Save exercise"</action>
     <action>Tap "Back" to close the sheet, then "Back" to return to the Lift tab</action>
-    <action>Tap "Start session", then "Log set", then "Change"</action>
+    <action>Tap "Start session", then "Add set or EMOM" in the title bar, then "Change" on the exercise card</action>
     <action>Type "copen" into "Search exercises" and tap "Copenhagen plank"</action>
     <action>Verify that the exercise card reads "Copenhagen plank" over "Bodyweight · Time a side · Core" with "Top knee on the bench" under it, and "Held" reads "0:30"</action>
     <action>Tap "Log set" at the bottom of the sheet</action>
     <action>Verify that the session shows "Copenhagen plank" with a set "0:30 · Left"</action>
-    <action>Tap "Log set", then "Change", then clear the search and type "Turkish sit-up"</action>
+    <action>Tap "Add set or EMOM" in the title bar, then "Change" on the exercise card, then clear the search and type "Turkish sit-up"</action>
     <action>Tap "Add “Turkish sit-up” as an exercise": the same sheet turns into the new exercise's form. Tap "Save exercise"</action>
     <action>Verify that the sheet is back with its exercise card reading "Turkish sit-up" over "Bodyweight · Reps · Full body"</action>
     <action>Swipe the sheet down, tap "Finish", then "Done"</action>

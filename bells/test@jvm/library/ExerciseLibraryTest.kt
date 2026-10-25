@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -70,7 +71,7 @@ class ExerciseLibraryTest {
         waitForText("Start session")
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
-        onNodeWithText("Log set").performClick()
+        onNodeWithContentDescription("Add set or EMOM").performClick()
         onAllNodesWithText("Change").onLast().performClick()
         waitForText("15 exercises")
     }
@@ -93,7 +94,7 @@ class ExerciseLibraryTest {
         waitForText("Start session")
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
-        onNodeWithText("Log set").performClick()
+        onNodeWithContentDescription("Add set or EMOM").performClick()
         onAllNodesWithText("Change").onLast().performClick()
         waitForText("Search exercises")
         onNodeWithText("Filters").assertExists()

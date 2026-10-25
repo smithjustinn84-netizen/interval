@@ -14,6 +14,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -42,7 +43,8 @@ class SidewaysTest {
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Finish").assertIsDisplayed()
-        onNodeWithText("Log set").assertIsDisplayed().performClick()
+        onNodeWithText("Log set").assertIsDisplayed()
+        onNodeWithContentDescription("Add set or EMOM").assertIsDisplayed().performClick()
         // The sheet's own Log set beside the reps, with the screen's under the sheet.
         waitForText("Reps")
         onAllNodesWithText("Log set").onLast().assertIsDisplayed().performClick()

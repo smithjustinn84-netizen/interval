@@ -13,10 +13,10 @@
     <action>Tap "Barbell 5×5", then "Follow this program"</action>
     <action>Verify that Lift shows "Day 1 of 36 · week 1", "Back squat" "5 × 5" with "20 kg", "Bench press", "Barbell row", and "Start day 1"</action>
     <action>Tap "Start day 1"</action>
-    <action>Verify that the session shows "Up next · 1 of 15 sets", "Back squat" and "20 kg × 5"</action>
-    <action>Tap "Log it"</action>
+    <action>Verify that the session shows "Up next · 1 of 15 sets", "Back squat" and "20 kg × 5", with "Log set" at the bottom</action>
+    <action>Tap "Log set"</action>
     <action>Verify that the session lists "Back squat" with a set "20 kg × 5", "Moved" at "100 kg", and "Up next · 2 of 15 sets"</action>
-    <action>Tap "Log set", then "Change", and type "power clean" into "Search exercises"</action>
+    <action>Tap "Add set or EMOM" in the title bar, then "Change" on the exercise card, and type "power clean" into "Search exercises"</action>
     <action>Tap "Power clean"</action>
     <action>Verify that the exercise card reads "Power clean" over "Barbell · Reps · Full body", "On the bar" reads "20 kg", and "20 kg bar, empty" is shown under it</action>
     <action>Tap "+" beside "20 kg" 16 times</action>

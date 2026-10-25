@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -14,14 +13,11 @@ import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.common_joined
 import dev.justinsmith.bells.resources.next_change
 import dev.justinsmith.bells.resources.next_day_done
-import dev.justinsmith.bells.resources.next_emom
-import dev.justinsmith.bells.resources.next_log
 import dev.justinsmith.bells.resources.next_plan
 import dev.justinsmith.bells.resources.next_progress
 import dev.justinsmith.bells.resources.next_skip
 import dev.justinsmith.bells.resources.next_title
 import dev.justinsmith.bells.ui.countLine
-import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.QuietTextButton
@@ -32,7 +28,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * In a program day: the next planned set, its load a tap a step lighter or heavier for the rest of its block,
- * what was lifted last time, and the set to log in one tap or its EMOM to start. How to opens the exercise's
+ * and what was lifted last time; the session's foot logs the set or starts its EMOM. How to opens the exercise's
  * page; Change opens its block to change for today, Skip skips the rest of it, and Today's plan lists every block.
  */
 @Composable
@@ -95,20 +91,10 @@ private fun NextSetCard(
             LiftHeading(set.exercise, set.double, actions.onOpenExercise)
             NextLoad(next, state, actions)
             LastTimeLine(next.lastTime)
-            if (next.emomMinutes != null) {
-                AccentButton(
-                    stringResource(Res.string.next_emom),
-                    actions.onStartPlannedEmom,
-                    Modifier.fillMaxWidth().padding(top = Spacing.space8),
-                )
-            } else {
-                AccentButton(
-                    stringResource(Res.string.next_log),
-                    actions.onLogNext,
-                    Modifier.fillMaxWidth().padding(top = Spacing.space8),
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+            Row(
+                Modifier.padding(top = Spacing.space8),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+            ) {
                 SecondaryButton(stringResource(Res.string.next_change), { onChange(next.block) }, Modifier.weight(1f))
                 SecondaryButton(
                     stringResource(Res.string.next_skip),

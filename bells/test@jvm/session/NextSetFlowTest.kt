@@ -47,9 +47,9 @@ class NextSetFlowTest {
     fun `a free session logs the card's set in one tap and keeps it for the next`() = bellsAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Next set")
-        onNodeWithText("Log it").performClick()
+        onNodeWithText("Log set").performClick()
         waitForText("16 kg × 10")
-        onNodeWithText("Log it").performClick()
+        onNodeWithText("Log set").performClick()
         waitUntil { onAllNodesWithText("16 kg × 10").fetchSemanticsNodes().size == 2 }
         // The card still reads the same set.
         onNodeWithText("16 kg").assertExists()
@@ -65,7 +65,7 @@ class NextSetFlowTest {
         waitForText("20 kg")
         onNodeWithContentDescription("More reps").performClick()
         waitForText("× 11")
-        onNodeWithText("Log it").performClick()
+        onNodeWithText("Log set").performClick()
         waitForText("20 kg × 11")
         assertEquals(20.0 to 11, app.storage.sessions.sets.value.single().let { it.bellKg to it.reps })
     }
@@ -86,13 +86,37 @@ class NextSetFlowTest {
         onNodeWithText("Left").assertExists()
         onNodeWithText("Right").assertExists()
         // Its bell, not its reps: those stay as set.
-        onNodeWithText("Log it").performClick()
+        onNodeWithText("Log set").performClick()
         waitForText("12 kg × 10 · Left")
         // The other side is up next.
-        onNodeWithText("Log it").performClick()
+        onNodeWithText("Log set").performClick()
         waitForText("12 kg × 10 · Right")
         val today = app.storage.sessions.sets.value.filter { it.sessionUid != "s1" }
         assertEquals(listOf("Left", "Right"), today.map { it.side })
+    }
+
+    @Test
+    fun `Two bells on the card doubles the load and drops the side`() = bellsAppTest { app ->
+        onNodeWithText("Start session").performClick()
+        waitForText("Next set")
+        onNodeWithText("Two bells").assertDoesNotExist()
+        onNodeWithText("Change").performClick()
+        waitForText("Search exercises")
+        onNode(hasSetTextAction()).performTextInput("clean")
+        waitForText("Clean")
+        onAllNodesWithText("Clean").onLast().performScrollTo().performClick()
+        waitForText("Two bells")
+        onNodeWithText("Left").assertExists()
+        onNodeWithText("Two bells").performClick()
+        onNodeWithText("Left").assertDoesNotExist()
+        waitForText("2 × 16 kg")
+        onNodeWithText("Clean · Two bells").assertExists()
+        onNodeWithText("Log set").performClick()
+        waitForText("2 × 16 kg × 10")
+        onNodeWithText("320 kg").assertExists()
+        val set = app.storage.sessions.sets.value.single()
+        assertTrue(set.doubled)
+        assertEquals(null, set.side)
     }
 
     @Test
@@ -121,7 +145,7 @@ class NextSetFlowTest {
         waitForText("Next set")
         onNodeWithContentDescription("Heavier").performClick()
         waitForText("20 kg")
-        onNodeWithText("Log set").performClick()
+        onNodeWithContentDescription("Add set or EMOM").performClick()
         waitForText("Reps")
         // The sheet's stepper reads what the card set.
         onAllNodesWithText("20 kg").assertCountEquals(2)
@@ -142,7 +166,7 @@ class NextSetFlowTest {
         waitForText("Save exercise")
         onNodeWithText("Save exercise").performScrollTo().performClick()
         waitForText("Copenhagen plank")
-        onNodeWithText("Log it").assertExists()
+        onNodeWithText("Log set").assertExists()
         onNodeWithText("Search exercises").assertDoesNotExist()
     }
 
@@ -156,7 +180,7 @@ class NextSetFlowTest {
         onAllNodesWithText("Press").assertCountEquals(2)
         onNodeWithText("24 kg").assertExists()
         onNodeWithText("× 5").assertExists()
-        onNodeWithText("Log it").performClick()
+        onNodeWithText("Log set").performClick()
         waitForText("24 kg × 5 · Right")
         assertEquals(listOf("Left", "Right"), app.storage.sessions.sets.value.map { it.side })
     }

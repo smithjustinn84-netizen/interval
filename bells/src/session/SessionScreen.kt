@@ -51,11 +51,14 @@ import dev.justinsmith.bells.library.ExerciseDetailSheet
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.common_cancel
 import dev.justinsmith.bells.resources.kg_value
+import dev.justinsmith.bells.resources.next_emom
 import dev.justinsmith.bells.resources.notice_record
+import dev.justinsmith.bells.resources.session_add_cd
 import dev.justinsmith.bells.resources.session_discard
 import dev.justinsmith.bells.resources.session_discard_text
 import dev.justinsmith.bells.resources.session_discard_title
 import dev.justinsmith.bells.resources.session_edit_set_cd
+import dev.justinsmith.bells.resources.session_extra_set
 import dev.justinsmith.bells.resources.session_finish
 import dev.justinsmith.bells.resources.session_leave
 import dev.justinsmith.bells.resources.session_leave_emom_text
@@ -291,7 +294,10 @@ data class SessionActions(
     val onDiscard: () -> Unit = {},
 )
 
-/** The session in progress: its time and weight moved, its sets by lift, and Log set. */
+/**
+ * The session in progress: its time and weight moved, what is next and what is done, + in the title bar for the
+ * Log sheet (another set or an EMOM), and Log set or Finish at the foot.
+ */
 @Composable
 fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modifier = Modifier) {
     var logging by rememberSaveable { mutableStateOf(false) }
@@ -309,6 +315,10 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
     val notices = LocalNotices.current
     val undo = stringResource(Res.string.session_undo)
     AnnounceRecord(state, notices)
+    val openSheet = {
+        actions.onOpenLog()
+        logging = true
+    }
     val sets = SetActions(
         // The set just removed is offered back for a few seconds.
         onRemove = { set, removedText ->
@@ -327,6 +337,7 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
                 navigation = {
                     IconAction(IntervalIcons.Close, stringResource(Res.string.session_discard), { discarding = true })
                 },
+                actions = { IconAction(IntervalIcons.Add, stringResource(Res.string.session_add_cd), openSheet) },
             )
         },
         tiles = { wide -> SessionTiles(state, actions, wide) },
@@ -337,31 +348,28 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
                     reading = true
                 },
             )
-            if (state.free) {
-                // Not while a set logged is being changed: the draft is that set until it is saved or left.
-                if (state.editing == null) {
-                    DraftSetCard(
-                        state,
-                        opening,
-                        onChange = { picking = true },
-                        onTimeIt = {
-                            actions.onTimeHold()
-                            logging = true
-                        },
-                    )
-                }
-            } else {
+            // Not while a set logged is being changed: the draft is that set until it is saved or left.
+            if (state.free && state.editing == null) {
+                DraftSetCard(
+                    state,
+                    opening,
+                    onChange = { picking = true },
+                    onTimeIt = {
+                        actions.onTimeHold()
+                        logging = true
+                    },
+                )
+            } else if (!state.free) {
                 UpNextCard(state, opening, onChange = { changing = it }, onPlan = { planning = true })
             }
             LoggedSets(state, sets)
         },
         buttons = {
             SessionButtons(
+                state,
+                actions,
                 onFinish = { if (state.session?.sets.isNullOrEmpty()) leaving = true else actions.onFinish() },
-                onLog = {
-                    actions.onOpenLog()
-                    logging = true
-                },
+                onOpenSheet = openSheet,
             )
         },
     )
@@ -370,13 +378,7 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
     if (reading) ExercisePageSheet(state, actions, onDismiss = { reading = false })
     if (picking) ExercisePickerSheet(state, actions, onDismiss = { picking = false })
     PlanSheets(state, actions, planning, changing, onPlanning = { planning = it }, onChanging = { changing = it })
-    EndDialogs(
-        leaving,
-        discarding,
-        onDiscard = actions.onDiscard,
-        onLeaving = { leaving = it },
-        onDiscarding = { discarding = it },
-    )
+    EndDialogs(leaving, discarding, actions.onDiscard, { leaving = it }, { discarding = it })
 }
 
 /**
@@ -584,15 +586,38 @@ private fun SessionTiles(state: SessionUiState, actions: SessionActions, wide: B
     }
 }
 
-/** Finish, and Log set, which opens the sheet. */
+/**
+ * The session's foot: Finish beside Log set (or Start EMOM when an EMOM block is up next); once a program day's
+ * sets are done, Extra set beside Finish in the accent.
+ */
 @Composable
-private fun SessionButtons(onFinish: () -> Unit, onLog: () -> Unit) {
+private fun SessionButtons(
+    state: SessionUiState,
+    actions: SessionActions,
+    onFinish: () -> Unit,
+    onOpenSheet: () -> Unit,
+) {
+    val next = state.upNext
     Row(
         Modifier.padding(Spacing.space16),
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
     ) {
-        SecondaryButton(stringResource(Res.string.session_finish), onFinish, Modifier.weight(1f))
-        AccentButton(stringResource(Res.string.session_log), onLog, Modifier.weight(2f))
+        if (state.dayDone) {
+            SecondaryButton(stringResource(Res.string.session_extra_set), onOpenSheet, Modifier.weight(1f))
+            AccentButton(stringResource(Res.string.session_finish), onFinish, Modifier.weight(2f))
+        } else {
+            SecondaryButton(stringResource(Res.string.session_finish), onFinish, Modifier.weight(1f))
+            val emom = next?.emomMinutes != null
+            AccentButton(
+                stringResource(if (emom) Res.string.next_emom else Res.string.session_log),
+                onClick = when {
+                    emom -> actions.onStartPlannedEmom
+                    next != null -> actions.onLogNext
+                    else -> actions.onLog
+                },
+                modifier = Modifier.weight(2f),
+            )
+        }
     }
 }
 

@@ -14,6 +14,7 @@ import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.steppedBand
 import dev.justinsmith.bells.domain.steppedKg
 import dev.justinsmith.bells.resources.Res
+import dev.justinsmith.bells.resources.next_change
 import dev.justinsmith.bells.resources.next_how_to
 import dev.justinsmith.bells.resources.next_how_to_cd
 import dev.justinsmith.bells.resources.next_last_time
@@ -28,9 +29,17 @@ import org.jetbrains.compose.resources.stringResource
 
 // The pieces a card about one set shares: Up next on a program day, and Next set in a free session.
 
-/** The lift's name, large, with How to for its page ([onHowTo], by the exercise's key). */
+/**
+ * The lift's name, large, with How to for its page ([onHowTo], by the exercise's key) and, when [onChange] is
+ * given, Change to pick another lift.
+ */
 @Composable
-internal fun LiftHeading(exercise: Exercise, double: Boolean, onHowTo: (String) -> Unit) {
+internal fun LiftHeading(
+    exercise: Exercise,
+    double: Boolean,
+    onHowTo: (String) -> Unit,
+    onChange: (() -> Unit)? = null,
+) {
     val name = liftName(exercise, double)
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
@@ -45,6 +54,7 @@ internal fun LiftHeading(exercise: Exercise, double: Boolean, onHowTo: (String) 
             { onHowTo(exercise.key) },
             Modifier.semantics { contentDescription = howTo },
         )
+        onChange?.let { QuietTextButton(stringResource(Res.string.next_change), it) }
     }
 }
 

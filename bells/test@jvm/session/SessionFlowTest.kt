@@ -54,7 +54,7 @@ class SessionFlowTest {
     fun `a band set logs its band and moves no weight`() = bellsAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
-        onNodeWithText("Log set").performClick()
+        onNodeWithContentDescription("Add set or EMOM").performClick()
         pick("Band pull-apart", equipment = "Band")
         // On the medium band to start.
         waitForText("Medium")
@@ -69,7 +69,7 @@ class SessionFlowTest {
     fun `a hold logs how long it lasted on its side and is never an EMOM`() = bellsAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
-        onNodeWithText("Log set").performClick()
+        onNodeWithContentDescription("Add set or EMOM").performClick()
         pick("Side plank", search = "side plank")
         waitForText("Held")
         // The card's length and the sheet's: one draft.
@@ -87,11 +87,11 @@ class SessionFlowTest {
     fun `a band set and a hold are records on the summary in their own words`() = bellsAppTest {
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
-        onNodeWithText("Log set").performClick()
+        onNodeWithContentDescription("Add set or EMOM").performClick()
         pick("Band pull-apart", equipment = "Band")
         onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("Medium × 10")
-        onNodeWithText("Log set").performClick()
+        onNodeWithContentDescription("Add set or EMOM").performClick()
         // The Band chip is still on from the first pick: tapping it again lets the plank through.
         pick("Plank", search = "plank", equipment = "Band")
         waitForText("Held")
@@ -107,7 +107,7 @@ class SessionFlowTest {
     fun `a timed plank counts itself down then logs and offers the other side`() = bellsAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
-        onNodeWithText("Log set").performClick()
+        onNodeWithContentDescription("Add set or EMOM").performClick()
         pick("Side plank", search = "side plank")
         onAllNodesWithText("Time it").onLast().performScrollTo().performClick()
         waitForText("Get ready")
@@ -142,7 +142,7 @@ class SessionFlowTest {
     ) { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
-        onNodeWithText("Log set").performClick()
+        onNodeWithContentDescription("Add set or EMOM").performClick()
         pick("Power clean", search = "power clean")
         // A lift never done starts on the empty bar.
         waitForText("On the bar")
@@ -162,7 +162,7 @@ class SessionFlowTest {
     fun `weight added to bodyweight counts toward moved`() = bellsAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
-        onNodeWithText("Log set").performClick()
+        onNodeWithContentDescription("Add set or EMOM").performClick()
         pick("Push-up", search = "pushup")
         waitForText("Added weight")
         // On the card's stepper, the sheet's, and its chip.
@@ -181,9 +181,6 @@ class SessionFlowTest {
         onNodeWithText("Start session").performClick()
         waitForText("Next set")
         onNodeWithText("Log set").performClick()
-        onNode(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, "Add to the session")).assertExists()
-        // The sheet's own Log set, over the screen's.
-        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("16 kg × 10")
         onAllNodesWithText("Two-hand swing").assertCountEquals(2)
         onNodeWithText("160 kg").assertExists()
@@ -196,7 +193,6 @@ class SessionFlowTest {
         onNodeWithText("Start session").performClick()
         waitForText("Next set")
         onNodeWithText("Log set").performClick()
-        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("Rest")
         onNodeWithText("1:30").assertExists()
         onNodeWithText("Since last set").assertDoesNotExist()
@@ -212,12 +208,12 @@ class SessionFlowTest {
     fun `a set with two bells has no side and moves twice the weight`() = bellsAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
-        onNodeWithText("Log set").performClick()
+        onNodeWithContentDescription("Add set or EMOM").performClick()
         // A two-hand swing can't be doubled; a clean can, and then has no side.
         onNodeWithText("Two bells").assertDoesNotExist()
         pick("Clean", search = "clean")
         onAllNodesWithText("Left").assertCountEquals(2)
-        onNodeWithText("Two bells").performScrollTo().performClick()
+        onAllNodesWithText("Two bells").onLast().performScrollTo().performClick()
         onNodeWithText("Left").assertDoesNotExist()
         onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("2 × 16 kg × 10")
@@ -233,7 +229,6 @@ class SessionFlowTest {
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
-        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("16 kg × 10")
         app.clock.set(90_000)
         onNodeWithText("Finish").performClick()
@@ -258,11 +253,10 @@ class SessionFlowTest {
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
-        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("16 kg × 10")
         // The same as before: no record.
         onNodeWithText("Record").assertDoesNotExist()
-        onNodeWithText("Log set").performClick()
+        onNodeWithContentDescription("Add set or EMOM").performClick()
         waitForText("24")
         onNodeWithText("24").performClick()
         onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
@@ -276,7 +270,6 @@ class SessionFlowTest {
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
-        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("16 kg × 10")
         onNodeWithText("Record").assertDoesNotExist()
     }
@@ -288,7 +281,6 @@ class SessionFlowTest {
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
-        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("16 kg × 10")
         onNodeWithText("Finish").performClick()
         waitForText("1 of 3 this week")
@@ -317,7 +309,6 @@ class SessionFlowTest {
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
-        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("16 kg × 10")
         onNodeWithContentDescription("Remove 16 kg × 10").performClick()
         waitForText("Removed 16 kg × 10")
@@ -334,7 +325,6 @@ class SessionFlowTest {
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
-        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("16 kg × 10")
         app.back()
         waitForText("Leave the session?")
@@ -371,7 +361,7 @@ class SessionFlowTest {
     fun `the sheet's EMOM side starts an EMOM of the lift picked`() = bellsAppTest {
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
-        onNodeWithText("Log set").performClick()
+        onNodeWithContentDescription("Add set or EMOM").performClick()
         onNodeWithText("Minutes").assertDoesNotExist()
         onNodeWithText("An EMOM").performClick()
         // The sheet is a window of its own: wait for it to redraw as an EMOM.
@@ -397,9 +387,8 @@ class SessionFlowTest {
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
-        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("16 kg × 10")
-        onNodeWithText("Log set").performClick()
+        onNodeWithContentDescription("Add set or EMOM").performClick()
         onNode(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, "Add to the session")).assertExists()
         app.back()
         waitUntil(timeoutMillis = 5_000) { onAllNodesWithText("Log set").fetchSemanticsNodes().size == 1 }
