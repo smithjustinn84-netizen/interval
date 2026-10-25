@@ -47,7 +47,9 @@ import dev.justinsmith.bells.domain.setsOldestFirst
 import dev.justinsmith.bells.domain.standardBells
 import dev.justinsmith.bells.domain.steppedBand
 import dev.justinsmith.bells.domain.steppedKg
+import dev.justinsmith.bells.domain.suggestedBand
 import dev.justinsmith.bells.domain.suggestedBar
+import dev.justinsmith.bells.domain.suggestedBell
 import dev.justinsmith.bells.domain.suggestedLoad
 import dev.justinsmith.bells.library.ExerciseDetailUiState
 import dev.justinsmith.bells.library.LibraryList
@@ -166,6 +168,13 @@ data class SessionUiState(
     /** The bands the sheet offers, lightest first. */
     val bands: List<Band> = offeredBands(bands(emptyList())),
     val draft: SetDraft = SetDraft(),
+    /** Whether no program day lays the session out: the Next set card composes [draft]. */
+    val free: Boolean = false,
+    /**
+     * In a free session: the last set of [draft]'s lift in a session before this one, to go by; null the
+     * first time.
+     */
+    val draftLastTime: SetLog? = null,
     /** For a program day: what comes next, or null once its sets are done ([dayDone]). */
     val upNext: UpNext? = null,
     val dayDone: Boolean = false,
@@ -276,6 +285,8 @@ class SessionViewModel(
                 bar = bar,
                 bands = offeredBands(bands),
                 draft = chosen.draft,
+                free = active != null && plan == null,
+                draftLastTime = if (plan == null) lastTime(chosen.draft.exercise, chosen.draft.doubled) else null,
                 upNext = plan?.let { upNext(it, active.sets) },
                 dayDone = plan != null && nextPlanned(plan.plannedSets(), active.sets) == null,
                 plan = plan?.planRows(active.sets).orEmpty(),
@@ -326,6 +337,10 @@ class SessionViewModel(
                 draft.update { it.copy(bellKg = bell) }
             }
         }
+        // A session resumed goes on where it left off: its last set, the other side for a one-sided lift.
+        repository.active.value?.sets?.lastOrNull()?.let { last ->
+            draft.update { it.from(last, flipSide = true) }
+        }
         // Cues play from here, not the screen, so they keep time whatever is drawn.
         viewModelScope.launch {
             ticks.collect { now -> playCues(now) }
@@ -350,12 +365,8 @@ class SessionViewModel(
     fun updateDraft(transform: (SetDraft) -> SetDraft) {
         draft.update { before ->
             transform(before).let { changed ->
-                // A barbell lift picked starts from what it was last done with: a snatch is no deadlift.
-                if (changed.exercise != before.exercise && changed.exercise.equipment == Equipment.Barbell) {
-                    changed.copy(barKg = suggestedBar(changed.exercise, history(), repository.bar.value))
-                } else {
-                    changed
-                }
+                // A lift picked starts from what it was last done with: a snatch is no deadlift, a press no swing.
+                if (changed.exercise != before.exercise) changed.suggested(history()) else changed
             }.let { d ->
                 d.copy(
                     barKg = d.barKg.coerceIn(repository.bar.value ?: 0.0, MAX_BAR_KG),
@@ -364,6 +375,34 @@ class SessionViewModel(
                     seconds = d.seconds.coerceIn(SetDraft.SECONDS_STEP, SetDraft.MAX_SECONDS),
                 )
             }
+        }
+    }
+
+    /** This draft's load as its lift was last done, or as it is when the lift has no history. */
+    private fun SetDraft.suggested(history: List<SetLog>): SetDraft = when (exercise.equipment) {
+        Equipment.Kettlebell -> copy(bellKg = suggestedBell(exercise, doubled, history, fallback = bellKg))
+        Equipment.Barbell -> copy(barKg = suggestedBar(exercise, history, repository.bar.value))
+        Equipment.Bodyweight -> copy(addedKg = suggestedBell(exercise, double = false, history, fallback = 0.0))
+        Equipment.Band -> copy(band = suggestedBand(exercise, history, offeredBands(repository.bands.value), band))
+        Equipment.Mat -> this
+    }
+
+    /**
+     * Steps the sheet's load one [step] (−1 lighter, +1 heavier): the next of the user's bells, the bar's smallest
+     * pair of plates, the next weight added to bodyweight, or the next band. Nothing on the mat, or at either end.
+     */
+    fun stepDraftLoad(step: Int) {
+        val bells = repository.bells.value.ifEmpty { standardBells }
+        val bar = repository.bar.value
+        val bands = offeredBands(repository.bands.value)
+        updateDraft { d ->
+            when (val equipment = d.exercise.equipment) {
+                Equipment.Kettlebell -> steppedKg(equipment, d.bellKg, step, bells, bar)?.let { d.copy(bellKg = it) }
+                Equipment.Barbell -> steppedKg(equipment, d.barKg, step, bells, bar)?.let { d.copy(barKg = it) }
+                Equipment.Bodyweight -> steppedKg(equipment, d.addedKg, step, bells, bar)?.let { d.copy(addedKg = it) }
+                Equipment.Band -> steppedBand(d.band, step, bands)?.let { d.copy(band = it) }
+                Equipment.Mat -> null
+            } ?: d
         }
     }
 
@@ -552,19 +591,26 @@ class SessionViewModel(
         val set = repository.active.value?.sets?.firstOrNull { it.id == id } ?: return
         if (editing.value == null) freeDraft = draft.value
         editing.value = set
-        draft.update { d ->
-            d.copy(
-                exercise = set.exercise,
-                bellKg = if (set.equipment == Equipment.Kettlebell) set.bellKg else d.bellKg,
-                barKg = if (set.equipment == Equipment.Barbell) set.bellKg else d.barKg,
-                addedKg = if (set.equipment == Equipment.Bodyweight) set.bellKg else d.addedKg,
-                reps = set.reps.coerceAtLeast(1),
-                side = set.side ?: d.side,
-                double = set.double,
-                seconds = set.seconds ?: d.seconds,
-                band = set.band ?: d.band,
-            )
-        }
+        draft.update { it.from(set, flipSide = false) }
+    }
+
+    /**
+     * This draft as [set] has it, for its equipment; the rest stays. With [flipSide], the other side of a
+     * one-sided lift, to go on with.
+     */
+    private fun SetDraft.from(set: SetLog, flipSide: Boolean): SetDraft {
+        val side = set.side ?: side
+        return copy(
+            exercise = set.exercise,
+            bellKg = if (set.equipment == Equipment.Kettlebell) set.bellKg else bellKg,
+            barKg = if (set.equipment == Equipment.Barbell) set.bellKg else barKg,
+            addedKg = if (set.equipment == Equipment.Bodyweight) set.bellKg else addedKg,
+            reps = set.reps.coerceAtLeast(1),
+            side = if (flipSide && set.exercise.sided(set.double)) side.other else side,
+            double = set.double,
+            seconds = set.seconds ?: seconds,
+            band = set.band ?: band,
+        )
     }
 
     /** Saves the set being changed as the sheet's draft now has it. */
@@ -677,10 +723,13 @@ class SessionViewModel(
             emomMinutes = next.emomMinutes,
             band = plannedBand(next.set, history, offeredBands(repository.bands.value), draft.value.band),
             block = next.block,
-            lastTime = repository.sessions.value.setsOldestFirst()
-                .lastOrNull { it.exercise == next.set.exercise && it.double == next.set.double },
+            lastTime = lastTime(next.set.exercise, next.set.double),
         )
     }
+
+    /** The last set of [exercise], with two bells or one ([double]), in a session before this one. */
+    private fun lastTime(exercise: Exercise, double: Boolean): SetLog? = repository.sessions.value.setsOldestFirst()
+        .lastOrNull { it.exercise.key == exercise.key && it.double == double }
 
     /** Every set logged, oldest first: those of the sessions finished, then [logged], by default this one's. */
     private fun history(logged: List<SetLog> = repository.active.value?.sets.orEmpty()): List<SetLog> =
