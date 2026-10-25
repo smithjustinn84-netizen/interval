@@ -10,30 +10,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import dev.justinsmith.bells.domain.Equipment
-import dev.justinsmith.bells.domain.steppedBand
-import dev.justinsmith.bells.domain.steppedKg
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.common_joined
 import dev.justinsmith.bells.resources.next_change
 import dev.justinsmith.bells.resources.next_day_done
 import dev.justinsmith.bells.resources.next_emom
-import dev.justinsmith.bells.resources.next_how_to
-import dev.justinsmith.bells.resources.next_how_to_cd
-import dev.justinsmith.bells.resources.next_last_time
 import dev.justinsmith.bells.resources.next_log
 import dev.justinsmith.bells.resources.next_plan
 import dev.justinsmith.bells.resources.next_progress
 import dev.justinsmith.bells.resources.next_skip
 import dev.justinsmith.bells.resources.next_title
-import dev.justinsmith.bells.ui.LoadStepper
 import dev.justinsmith.bells.ui.countLine
-import dev.justinsmith.bells.ui.liftName
-import dev.justinsmith.bells.ui.loadLine
-import dev.justinsmith.bells.ui.platesLine
-import dev.justinsmith.bells.ui.setLine
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
@@ -105,24 +92,9 @@ private fun NextSetCard(
                 style = IntervalTheme.type.caption,
                 color = palette.textDim,
             )
-            val name = liftName(set.exercise, set.double)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(name, style = IntervalTheme.type.section, color = palette.text, modifier = Modifier.weight(1f))
-                val howTo = stringResource(Res.string.next_how_to_cd, name)
-                QuietTextButton(
-                    stringResource(Res.string.next_how_to),
-                    { actions.onOpenExercise(set.exercise.key) },
-                    Modifier.semantics { contentDescription = howTo },
-                )
-            }
+            LiftHeading(set.exercise, set.double, actions.onOpenExercise)
             NextLoad(next, state, actions)
-            next.lastTime?.let { last ->
-                Text(
-                    stringResource(Res.string.next_last_time, setLine(last)),
-                    style = IntervalTheme.type.meta,
-                    color = palette.textDim,
-                )
-            }
+            LastTimeLine(next.lastTime)
             if (next.emomMinutes != null) {
                 AccentButton(
                     stringResource(Res.string.next_emom),
@@ -154,34 +126,16 @@ private fun NextSetCard(
 }
 
 /**
- * The next set's load, large, with Lighter and Heavier a bell, the bar's smallest plates or a band either way,
- * then how much of it: "× 10 · Left". The bar adds its plates a side. With no load to change, the mat or a
- * band not yet known, only how much.
+ * The next set's load, large, with Lighter and Heavier a step either way ([LoadStep]), then how much of it:
+ * "× 10 · Left". With no load to change, the mat or a band not yet known, only how much.
  */
 @Composable
 private fun NextLoad(next: UpNext, state: SessionUiState, actions: SessionActions) {
     val set = next.set
-    val equipment = set.exercise.equipment
-    val count = countLine(if (set.held) 0 else set.reps, set.side, set.reps.takeIf { set.held })
-    val load = loadLine(next.bellKg, set.double, equipment, next.band)
-    if (load == null) {
-        Text(count, style = IntervalTheme.type.value, color = IntervalTheme.palette.text)
-        return
-    }
-    val canStep = { step: Int ->
-        if (equipment == Equipment.Band) {
-            steppedBand(next.band, step, state.bands) != null
-        } else {
-            steppedKg(equipment, next.bellKg, step, state.bells, state.bar) != null
-        }
-    }
-    LoadStepper(
-        load,
-        canLower = canStep(-1),
-        canRaise = canStep(1),
-        onStep = actions.onStepLoad,
-        note = if (equipment == Equipment.Barbell) platesLine(next.bellKg, state.bar) else null,
-        compact = true,
+    LoadStep(next.bellKg, set.exercise.equipment, state, actions.onStepLoad, double = set.double, band = next.band)
+    Text(
+        countLine(if (set.held) 0 else set.reps, set.side, set.reps.takeIf { set.held }),
+        style = IntervalTheme.type.value,
+        color = IntervalTheme.palette.text,
     )
-    Text(count, style = IntervalTheme.type.value, color = IntervalTheme.palette.text)
 }

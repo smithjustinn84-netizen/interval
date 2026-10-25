@@ -188,7 +188,7 @@ internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismi
  * form, until it is saved ([onSave]) and comes back picked.
  */
 @Composable
-private fun ExerciseChoice(
+internal fun ExerciseChoice(
     state: SessionUiState,
     actions: SessionActions,
     adding: String?,

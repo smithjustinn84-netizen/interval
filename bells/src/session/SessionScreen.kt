@@ -179,6 +179,7 @@ private fun sessionActions(
     onLogNext = viewModel::logNext,
     onOpenLog = viewModel::openLogSheet,
     onStepLoad = viewModel::stepNextLoad,
+    onStepDraftLoad = viewModel::stepDraftLoad,
     onOpenExercise = viewModel::openExercise,
     onStartPlannedEmom = viewModel::startPlannedEmom,
     onStartEmom = viewModel::startDraftEmom,
@@ -261,6 +262,8 @@ data class SessionActions(
     val onOpenLog: () -> Unit = {},
     /** The next set's load a step lighter (−1) or heavier (+1), for the rest of its block today. */
     val onStepLoad: (Int) -> Unit = {},
+    /** The sheet's draft a step lighter (−1) or heavier (+1): the Next set card's load in a free session. */
+    val onStepDraftLoad: (Int) -> Unit = {},
     /** An exercise's page, by its key, opened; null closes it. */
     val onOpenExercise: (String?) -> Unit = {},
     val onStartPlannedEmom: () -> Unit = {},
