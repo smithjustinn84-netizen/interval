@@ -2,6 +2,7 @@
 
 package dev.justinsmith.interval
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -16,6 +17,11 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.navigationevent.DirectNavigationEventInput
+import androidx.navigationevent.NavigationEvent
+import androidx.navigationevent.NavigationEventDispatcher
+import androidx.navigationevent.NavigationEventDispatcherOwner
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.fakes.testKoin
 import dev.justinsmith.interval.timer.builtInPresets
@@ -131,6 +137,42 @@ class AppNavigationTest {
         mainClock.advanceTimeBy(Motion.PAGE_MILLIS * 2L)
         val settled = tab("Lift").fetchSemanticsNode().boundsInRoot
         assertTrue(abs(settled.top - before.top) < SETTLED_SLACK, "back in its place: $settled vs $before")
+    }
+
+    @Test
+    fun `a back swipe toward Lift brings the bar in with the finger and lets it go again`() = runUiTest(Window.Phone) {
+        val koin = testKoin()
+        val owner = object : NavigationEventDispatcherOwner {
+            override val navigationEventDispatcher = NavigationEventDispatcher()
+        }
+        val input = DirectNavigationEventInput()
+        owner.navigationEventDispatcher.addInput(input)
+        try {
+            setContent {
+                CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides owner) { AppContent(koin) }
+            }
+            tab("Lift").performClick()
+            val before = tab("Lift").fetchSemanticsNode().boundsInRoot
+            onNodeWithContentDescription(EQUIPMENT).performClick()
+            waitForIdle()
+            tab("Lift").assertDoesNotExist()
+            input.backStarted(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT))
+            input.backProgressed(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT, progress = 0.5f))
+            waitForIdle()
+            val halfway = tab("Lift").fetchSemanticsNode().boundsInRoot
+            assertTrue(halfway.top > before.top + SETTLED_SLACK, "on its way in, not in place: $halfway vs $before")
+            input.backCancelled()
+            waitForIdle()
+            tab("Lift").assertDoesNotExist()
+            input.backStarted(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT))
+            input.backProgressed(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT, progress = 0.5f))
+            input.backCompleted()
+            waitForIdle()
+            val settled = tab("Lift").fetchSemanticsNode().boundsInRoot
+            assertTrue(abs(settled.top - before.top) < SETTLED_SLACK, "back in its place: $settled vs $before")
+        } finally {
+            koin.close()
+        }
     }
 
     @Test

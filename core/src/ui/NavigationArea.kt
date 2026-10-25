@@ -1,6 +1,9 @@
 package dev.justinsmith.interval.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.SeekableTransitionState
+import androidx.compose.animation.core.rememberTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -20,12 +23,16 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuite
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
@@ -36,6 +43,10 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneDecoratorStrategy
+import androidx.navigation3.scene.SceneInfo
+import androidx.navigationevent.NavigationEventTransitionState
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
+import kotlinx.coroutines.flow.collectLatest
 
 /**
  * The navigation area: the bar along a phone's foot or the rail along a wider window's start. It lies over the
@@ -103,8 +114,9 @@ private data class TabScene<T : Any>(val inner: Scene<T>, val area: NavigationAr
 /**
  * The area over the pages' edge: the bar along the window's foot, or the rail along its start, with [items]
  * in it. As [visible] turns false it slides off its edge and fades, in step with the page pushed over its tab,
- * and comes back the same way as the tab returns; the pages under it never move. The bar carries the hairline
- * along its top.
+ * and comes back the same way as the tab returns; the pages under it never move. A back swipe that would
+ * return to a tab brings it in with the finger, as far as the swipe has come, and lets it go again if the
+ * swipe is let go. The bar carries the hairline along its top.
  */
 @Composable
 fun NavigationAreaBar(
@@ -116,9 +128,23 @@ fun NavigationAreaBar(
     val bar = area.bar
     // The rail leaves toward the start: left in LTR, right in RTL.
     val start = if (LocalLayoutDirection.current == LayoutDirection.Rtl) 1 else -1
-    AnimatedVisibility(
-        visible,
-        modifier,
+    val shown = rememberUpdatedState(visible)
+    val swipe = rememberUpdatedState(backSwipeToTab())
+    val state = remember { SeekableTransitionState(visible) }
+    LaunchedEffect(state) {
+        snapshotFlow { shown.value to swipe.value }.collectLatest { (target, fraction) ->
+            if (!target && fraction != null) {
+                // Seek the time at which the slide stands as far in as the swipe has come, so the area tracks the
+                // finger, and letting go carries on from there.
+                state.seekTo(EnterEasing.inverse(fraction), targetState = true)
+            } else {
+                state.animateTo(target)
+            }
+        }
+    }
+    rememberTransition(state, label = "navigationArea").AnimatedVisibility(
+        visible = { it },
+        modifier = modifier,
         enter = fadeIn(areaFade()) +
             (if (bar) slideInVertically(areaSlide()) { it } else slideInHorizontally(areaSlide()) { it * start }),
         exit = fadeOut(areaFade()) +
@@ -134,6 +160,36 @@ fun NavigationAreaBar(
         )
     }
 }
+
+/**
+ * How far a back swipe that NavDisplay would answer by returning to a tab's scene has come, from 0 to 1, or
+ * null while there is no such swipe. The dispatcher's history is the active handler's: a sheet's or a
+ * dialog's names no scene, and a swipe toward any other page leaves the area where it is.
+ */
+@Composable
+private fun backSwipeToTab(): Float? {
+    val dispatcher = LocalNavigationEventDispatcherOwner.current?.navigationEventDispatcher ?: return null
+    val gesture by dispatcher.transitionState.collectAsState()
+    val history by dispatcher.history.collectAsState()
+    val swipe = gesture as? NavigationEventTransitionState.InProgress ?: return null
+    if (swipe.direction != NavigationEventTransitionState.TRANSITIONING_BACK) return null
+    val back = history.mergedHistory.getOrNull(history.currentIndex - 1) as? SceneInfo<*> ?: return null
+    return if (back.scene.entries.any { it.isTab }) swipe.latestEvent.progress else null
+}
+
+/** The time at which this easing's move stands at [value], found by bisection: easings only ever climb. */
+private fun Easing.inverse(value: Float): Float {
+    var low = 0f
+    var high = 1f
+    repeat(INVERSE_STEPS) {
+        val mid = (low + high) / 2
+        if (transform(mid) < value) low = mid else high = mid
+    }
+    return (low + high) / 2
+}
+
+/** Halvings enough to place the time within a frame of the full move. */
+private const val INVERSE_STEPS = 16
 
 /** The page's own pace and easing, so the area and the page move as one. */
 private fun <T> areaSlide() = tween<T>(Motion.PAGE_MILLIS, easing = EnterEasing)
