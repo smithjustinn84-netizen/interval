@@ -82,6 +82,9 @@ toolchain (`$compose.*`).
 - **Page layouts**: a pushed page that scrolls is a `ScrollPage` (Back is `BackAction`), a tab of cards a
   `TabGrid`. Any screen that saves or edits a preset opens it through `PresetEditorHost`
   (`PresetDraft.saveCurrent(config)` for the settings on the Timer).
+  The navigation bar or rail is an overlay (`NavigationAreaBar`, `core/src/ui/NavigationArea.kt`) that slides
+  away as a page is pushed over a tab; a tab's scene reserves its room through `NavigationArea.tabScenes()`, so a
+  tab screen pads nothing itself and a pushed page pads `safeDrawing`.
 - **ViewModels** expose `StateFlow<UiState>` from a private `MutableStateFlow`. They are entry-scoped by
   `rememberViewModelStoreNavEntryDecorator`.
 - **DI is Koin DSL** (no annotations/KSP) in an isolated container: `shared/src/di/AppKoin.kt`. Add a module

@@ -15,6 +15,7 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteDefaul
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.Dp
+import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.ui.defaultPopTransitionSpec
@@ -111,6 +112,9 @@ enum class PageKind {
 fun pageKind(kind: PageKind): Map<String, Any> = mapOf(PAGE_KIND to kind)
 
 private const val PAGE_KIND = "dev.justinsmith.interval.pageKind"
+
+/** Whether this entry is a [PageKind.Tab]: a destination of the navigation bar or rail. */
+internal val NavEntry<*>.isTab: Boolean get() = metadata[PAGE_KIND] == PageKind.Tab
 
 /**
  * This strategy, asked only while a [PageKind.Beside] page is on top. Material's supporting-pane strategy

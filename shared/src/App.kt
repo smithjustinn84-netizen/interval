@@ -7,16 +7,11 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.plus
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.Surface
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
@@ -25,8 +20,6 @@ import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
 import androidx.compose.material3.adaptive.navigation3.SupportingPaneSceneStrategy
 import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
 import androidx.compose.material3.adaptive.navigation3.rememberSupportingPaneSceneStrategy
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -34,9 +27,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
@@ -98,6 +88,7 @@ import dev.justinsmith.interval.settings.SettingsRoute
 import dev.justinsmith.interval.splash.WithIntro
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LocalNotices
+import dev.justinsmith.interval.ui.NavigationAreaBar
 import dev.justinsmith.interval.ui.NavigationItems
 import dev.justinsmith.interval.ui.NoticeHost
 import dev.justinsmith.interval.ui.Notices
@@ -106,13 +97,14 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.backPreviewCorners
 import dev.justinsmith.interval.ui.backPreviewTransition
-import dev.justinsmith.interval.ui.navigationSuiteColors
 import dev.justinsmith.interval.ui.navigationSuiteType
 import dev.justinsmith.interval.ui.onlyBeside
 import dev.justinsmith.interval.ui.pageKind
 import dev.justinsmith.interval.ui.pagePopTransition
 import dev.justinsmith.interval.ui.pageTransition
+import dev.justinsmith.interval.ui.rememberNavigationArea
 import dev.justinsmith.interval.ui.rememberNotices
+import dev.justinsmith.interval.ui.tabScenes
 import dev.justinsmith.interval.workout.WorkoutRoute
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -198,7 +190,8 @@ internal fun AppContent(koin: KoinApplication, introPlaying: Boolean = false) {
  * platforms expect. The navigation bar or rail shows only while a tab is on top, or while a page sits beside
  * its tab: windows of [Sizes.twoPaneMinWidth] and up open Settings as a supporting pane beside Timer, and
  * windows of Material's expanded width and up a finished workout or session beside History's log, a pane
- * waiting for one until it is picked.
+ * waiting for one until it is picked. The bar or rail lies over the pages and slides away as a page is pushed
+ * over its tab ([NavigationAreaBar]).
  */
 @Composable
 private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
@@ -215,37 +208,18 @@ private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
     val selectTab = { tab: Tab -> backStack.selectTab(tab) }
     val palette = IntervalTheme.palette
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        // Full-screen destinations get no navigation area at all, rather than one animating away, so
-        // the workout lays out once at its full size.
-        val type = if (currentTab == null) NavigationSuiteType.None else navigationSuiteType(maxWidth, maxHeight)
-        val bar = type == NavigationSuiteType.NavigationBar
-        // The bar or rail takes the system insets on its side; full-screen destinations (Settings,
-        // Workout) handle their own, so the workout's colour runs under the system bars.
-        val insets = when {
-            currentTab == null -> null
-            bar -> WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
-            else -> WindowInsets.safeDrawing.only(WindowInsetsSides.Vertical + WindowInsetsSides.End)
-        }
-        NavigationSuiteScaffold(
-            navigationItems = { currentTab?.let { NavigationItems(it, type, selectTab) } },
-            navigationSuiteType = type,
-            navigationSuiteColors = navigationSuiteColors(),
-            containerColor = palette.background,
-            contentColor = palette.text,
-        ) {
-            val content = Modifier
-                .fillMaxSize()
-                .then(if (bar) Modifier.hairlineAtBottom(palette.line) else Modifier)
-                .then(
-                    if (insets != null) {
-                        Modifier.windowInsetsPadding(insets).consumeWindowInsets(insets)
-                    } else {
-                        Modifier
-                    },
-                )
-            // NavDisplay stays at one place in the tree whatever the bars do, so its entries keep their state.
-            // A notice floats over the content's foot: above the bar, and over a full-screen mode.
-            Box(content) {
+        // The bar or rail is decided by the window alone and lies over the pages: NavDisplay fills the window
+        // whatever is on top, so a page lays out once, at its size. A tab's scene keeps the area's room clear
+        // itself and holds it while it leaves, so the tab under a push stays still as the area slides off.
+        val area = rememberNavigationArea(navigationSuiteType(maxWidth, maxHeight))
+        val tabScenes = remember(area) { area.tabScenes<NavKey>() }
+        // The area still names the tab it leaves with.
+        val shown = remember { ShownTab(currentTab ?: TimerTab) }
+        currentTab?.let { shown.tab = it }
+        Surface(Modifier.fillMaxSize(), color = palette.background, contentColor = palette.text) {
+            // NavDisplay stays at one place in the tree whatever the area does, so its entries keep their state.
+            // A notice floats over the content's foot: above the bar, and over a full-screen page.
+            Box(Modifier.fillMaxSize()) {
                 SharedTransitionLayout(Modifier.fillMaxSize()) {
                     NavDisplay(
                         backStack = backStack,
@@ -259,6 +233,7 @@ private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
                             if (materialBackPreview) backPreviewCorners() else null,
                         ),
                         sceneStrategies = panes.strategies,
+                        sceneDecoratorStrategies = listOf(tabScenes),
                         // The Timer is in the scene both alone and beside Settings, so it moves between them
                         // rather than fading out of one and into the other.
                         sharedTransitionScope = this,
@@ -280,17 +255,33 @@ private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
                         ),
                     )
                 }
+                NavigationAreaBar(
+                    area,
+                    visible = currentTab != null,
+                    Modifier.align(if (area.bar) Alignment.BottomCenter else Alignment.TopStart),
+                ) {
+                    NavigationItems(shown.tab, area.type, selectTab)
+                }
                 NoticeHost(
                     notices,
                     Modifier
                         .align(Alignment.BottomCenter)
-                        .then(if (insets == null) Modifier.safeDrawingPadding() else Modifier)
+                        .then(
+                            if (currentTab != null) {
+                                Modifier.windowInsetsPadding(area.tabInsets())
+                            } else {
+                                Modifier.safeDrawingPadding()
+                            },
+                        )
                         .padding(Spacing.space16),
                 )
             }
         }
     }
 }
+
+/** The tab the navigation area names: the one on top, or the last one while the area leaves. */
+private class ShownTab(var tab: Tab)
 
 /** Which pages the window pairs, and the scene strategies that lay the pairs out. */
 private class Panes(
@@ -474,14 +465,6 @@ private fun EntryProviderScope<NavKey>.liftEntries(backStack: NavBackStack<NavKe
  */
 private fun storageReady(interval: IntervalRepository, lift: BellsRepository): Flow<Boolean> =
     combine(interval.ready, lift.ready) { intervalReady, liftReady -> intervalReady && liftReady }
-
-/** The line along the top of the bottom bar, drawn over the bottom edge of the content above it. */
-private fun Modifier.hairlineAtBottom(color: Color): Modifier = drawWithContent {
-    drawContent()
-    val stroke = Sizes.hairline.toPx()
-    val y = size.height - stroke / 2
-    drawLine(color, Offset(0f, y), Offset(size.width, y), stroke)
-}
 
 /** Pushes [key] unless it is on top already, so a double tap can't stack two of a page. */
 private fun NavBackStack<NavKey>.push(key: NavKey) {

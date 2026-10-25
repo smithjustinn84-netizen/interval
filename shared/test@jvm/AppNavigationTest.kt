@@ -47,6 +47,13 @@ private const val SETTLED_SLACK = 12f
 private fun DesktopComposeUiTest.tab(label: String): SemanticsNodeInteraction =
     onNode(hasText(label) and hasClickAction())
 
+/** A page's title: the one node with that text and nothing to tap, apart from the bar's item. */
+private fun DesktopComposeUiTest.pageTitle(title: String): SemanticsNodeInteraction =
+    onNode(hasText(title) and !hasClickAction())
+
+/** The Lift tab's bell, which opens Your equipment. */
+private const val EQUIPMENT = "Your equipment and records"
+
 @Suppress("detekt.TooManyFunctions") // One journey per test, side by side.
 class AppNavigationTest {
     @Test
@@ -76,6 +83,54 @@ class AppNavigationTest {
         mainClock.advanceTimeBy(Motion.PAGE_MILLIS * 2L)
         val settled = onNodeWithText("Start session").fetchSemanticsNode().boundsInRoot
         assertTrue(abs(moving.left - settled.left) < SETTLED_SLACK, "not sliding sideways: $moving vs $settled")
+    }
+
+    @Test
+    fun `switching tabs keeps the bar put`() = appTest {
+        val before = tab("Lift").fetchSemanticsNode().boundsInRoot
+        mainClock.autoAdvance = false
+        tab("Lift").performClick()
+        mainClock.advanceTimeBy(Motion.PAGE_MILLIS / 2L)
+        val during = tab("Lift").fetchSemanticsNode().boundsInRoot
+        mainClock.advanceTimeBy(Motion.PAGE_MILLIS * 2L)
+        val after = tab("Lift").fetchSemanticsNode().boundsInRoot
+        assertTrue(abs(during.top - before.top) < SETTLED_SLACK, "the bar held still: $during vs $before")
+        assertTrue(abs(after.top - before.top) < SETTLED_SLACK, "the bar is where it was: $after vs $before")
+    }
+
+    @Test
+    fun `pushing a page from Lift leaves the tab where it was as it goes`() = appTest {
+        tab("Lift").performClick()
+        val startBefore = onNodeWithText("Start session").fetchSemanticsNode().boundsInRoot
+        val titleBefore = pageTitle("Lift").fetchSemanticsNode().boundsInRoot
+        mainClock.autoAdvance = false
+        onNodeWithContentDescription(EQUIPMENT).performClick()
+        mainClock.advanceTimeBy(Motion.PAGE_MILLIS / 4L)
+        // Vertically only: the leaving page drifts sideways by design.
+        val start = onNodeWithText("Start session").fetchSemanticsNode().boundsInRoot
+        val title = pageTitle("Lift").fetchSemanticsNode().boundsInRoot
+        assertTrue(abs(start.bottom - startBefore.bottom) < SETTLED_SLACK, "Start held: $start vs $startBefore")
+        assertTrue(abs(title.top - titleBefore.top) < SETTLED_SLACK, "the title held its place: $title vs $titleBefore")
+    }
+
+    @Test
+    fun `the bar slides away with the push and comes back with the pop`() = appTest {
+        tab("Lift").performClick()
+        val before = tab("Lift").fetchSemanticsNode().boundsInRoot
+        mainClock.autoAdvance = false
+        onNodeWithContentDescription(EQUIPMENT).performClick()
+        mainClock.advanceTimeBy(Motion.PAGE_MILLIS / 4L)
+        val leaving = tab("Lift").fetchSemanticsNode().boundsInRoot
+        assertTrue(leaving.top > before.top + SETTLED_SLACK, "sliding down, not gone at once: $leaving vs $before")
+        mainClock.advanceTimeBy(Motion.PAGE_MILLIS * 2L)
+        tab("Lift").assertDoesNotExist()
+        onNodeWithContentDescription("Back").performClick()
+        mainClock.advanceTimeBy(Motion.PAGE_MILLIS / 4L)
+        val returning = tab("Lift").fetchSemanticsNode().boundsInRoot
+        assertTrue(returning.top > before.top + SETTLED_SLACK, "sliding back up: $returning vs $before")
+        mainClock.advanceTimeBy(Motion.PAGE_MILLIS * 2L)
+        val settled = tab("Lift").fetchSemanticsNode().boundsInRoot
+        assertTrue(abs(settled.top - before.top) < SETTLED_SLACK, "back in its place: $settled vs $before")
     }
 
     @Test

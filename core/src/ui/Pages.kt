@@ -72,10 +72,11 @@ fun BackAction(onBack: () -> Unit, modifier: Modifier = Modifier) {
  * A page of cards, a tab's (History, Lift) or one pushed from it (Presets, the bells): the lanes behind, filling
  * the window rather than stopping at the column's edge, then a grid of one column on a phone and more as the
  * window widens, its [TitleBar] across the top.
- * [content] adds the grid's items under it. A pushed page passes [navigation], its Back, and keeps inside
- * the safe area itself, though its cards scroll on under the gesture bar rather than stopping above it; a tab's
- * sits inside the navigation bar's. [bottomBar] stays pinned under the grid, over the same lanes, for an action
- * that must never scroll away (Lift's Start).
+ * [content] adds the grid's items under it. A pushed page passes [navigation], its Back. The page keeps inside
+ * the safe area, though its cards scroll on under the gesture bar rather than stopping above it; under a tab the
+ * scene has taken the system's and the navigation bar's share already, so nothing is left to keep out of.
+ * [bottomBar] stays pinned under the grid, over the same lanes, for an action that must never scroll away
+ * (Lift's Start).
  */
 @Composable
 fun TabGrid(
@@ -86,7 +87,7 @@ fun TabGrid(
     bottomBar: (@Composable () -> Unit)? = null,
     content: LazyStaggeredGridScope.() -> Unit,
 ) {
-    val safe = if (navigation != null) WindowInsets.safeDrawing else WindowInsets(0)
+    val safe = WindowInsets.safeDrawing
     // With nothing pinned under it, the grid runs to the window's foot and keeps the inset as padding instead.
     val under = bottomBar == null
     val foot = safe.asPaddingValues().calculateBottomPadding()
