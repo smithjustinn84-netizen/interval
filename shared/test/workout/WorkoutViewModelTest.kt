@@ -21,6 +21,7 @@ import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.timer.UpcomingChange
 import dev.justinsmith.interval.timer.estimateCalories
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -504,6 +505,31 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
         controls.togglePause()
         assertTrue(viewModel.state.value.running)
         viewModel.pause()
+    }
+
+    @Test
+    fun `the changes ahead are read from where the workout stands and stop with it`() = runTest(dispatcher) {
+        val viewModel = workoutViewModel()
+        val controls = assertNotNull(background.controls)
+        // run() ticks once past the time asked for: 2.1 s of the first 5 s work interval are gone.
+        run(2_000)
+        assertEquals(
+            listOf(
+                UpcomingChange(Phase.Rest, round = 1, offsetMillis = 2_900),
+                UpcomingChange(Phase.Work, round = 2, offsetMillis = 7_900),
+                UpcomingChange(Phase.Done, round = 2, offsetMillis = 12_900),
+            ),
+            controls.upcomingChanges(),
+        )
+
+        viewModel.pause()
+        assertTrue(controls.upcomingChanges().isEmpty())
+        viewModel.resume()
+        assertEquals(3, controls.upcomingChanges().size)
+
+        run(15_000)
+        assertTrue(viewModel.state.value.isDone)
+        assertTrue(controls.upcomingChanges().isEmpty())
     }
 
     @Test

@@ -16,6 +16,7 @@ import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.Step
+import dev.justinsmith.interval.timer.UpcomingChange
 import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.timer.WorkoutState
@@ -95,6 +96,10 @@ class WorkoutViewModel(
         override fun togglePause() = this@WorkoutViewModel.togglePause()
 
         override fun end() = endOffScreen()
+
+        // Up to a tick behind the clock: the platform's notifications land within a tenth of a second of the cue.
+        override fun upcomingChanges(): List<UpcomingChange> =
+            if (running && !over) WorkoutEngine.upcomingChanges(engine) else emptyList()
     }
 
     init {

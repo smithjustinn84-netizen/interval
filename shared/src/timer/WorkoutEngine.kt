@@ -51,6 +51,17 @@ sealed interface Cue {
 }
 
 /**
+ * A change of phase ahead of a running workout: what starts, in which round, and how long from now. The
+ * platform schedules a notification for each when the app leaves the screen ([WorkoutEngine.upcomingChanges]).
+ */
+data class UpcomingChange(
+    val phase: Phase,
+    /** 1-based, like [WorkoutState.round]; for [Phase.Done] the last round. */
+    val round: Int,
+    val offsetMillis: Long,
+)
+
+/**
  * The result of an engine call: the new state and the cues it produced, in order. For a [WorkoutEngine.tick],
  * also the time it moved the workout on by, [activeMillis], which stops counting at the workout's end, and
  * the part of that spent in work intervals, [workMillis], for the calorie estimate.
@@ -183,6 +194,24 @@ object WorkoutEngine {
 
             else -> state
         }
+    }
+
+    /**
+     * Every change of phase still to come, nearest first, as the workout stands at [state]: the end of the
+     * current interval, then each interval after it, down to [Phase.Done]. Offsets count from now, so the
+     * first is the time left in the current interval, and the last is [WorkoutState.sessionRemainingMillis].
+     * Pure: what a phone that is about to suspend the app can schedule in its stead. Empty once done.
+     */
+    fun upcomingChanges(state: WorkoutState): List<UpcomingChange> {
+        val changes = mutableListOf<UpcomingChange>()
+        var current = state
+        var offset = 0L
+        while (!current.isDone) {
+            offset += current.remainingMillis.coerceAtLeast(0)
+            current = advance(current).state
+            changes += UpcomingChange(current.phase, current.round, offset)
+        }
+        return changes
     }
 
     fun addTime(state: WorkoutState, millis: Long = ADD_TIME_MILLIS): WorkoutState {

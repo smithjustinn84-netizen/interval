@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.room.RoomDatabase
 import dev.justinsmith.interval.data.AppDatabase
 import dev.justinsmith.interval.timer.Phase
+import dev.justinsmith.interval.timer.UpcomingChange
 import org.koin.core.module.Module
 
 /** The sounds the app plays. Each platform maps them to tones it has. */
@@ -50,7 +51,10 @@ data class WorkoutStatus(
     val rounds: Int,
 )
 
-/** What the platform's own controls of a workout do: the notification's Pause or Resume, and its End. */
+/**
+ * The platform's hold on a running workout: what its own controls do (the notification's Pause or Resume,
+ * and its End), and what it can ask of the workout to stand in for it while the app is suspended.
+ */
 interface WorkoutControls {
     fun togglePause()
 
@@ -59,12 +63,21 @@ interface WorkoutControls {
      * waits in the app; with none it is dropped, as the screen's End drops it.
      */
     fun end()
+
+    /**
+     * Every change of phase ahead of the workout as it stands this instant, nearest first, down to the end
+     * ([WorkoutEngine.upcomingChanges][dev.justinsmith.interval.timer.WorkoutEngine.upcomingChanges]). Empty
+     * while it is paused or over: nothing is coming.
+     */
+    fun upcomingChanges(): List<UpcomingChange>
 }
 
 /**
  * Keeps a workout counting and in view while the app is off screen. Android runs a foreground service
  * with an ongoing notification: the phase, the clock, the round, and Pause or Resume and End, which act on
- * the workout through its [WorkoutControls]. iOS and desktop keep nothing: see their actuals for why.
+ * the workout through its [WorkoutControls]. iOS, which suspends the app, schedules a local notification for
+ * each change of phase ahead ([WorkoutControls.upcomingChanges]) as the app leaves the screen, and drops them
+ * when it comes back. Desktop keeps nothing: see its actual for why.
  */
 interface BackgroundWorkout {
     /** A workout has begun, or come back after a restart: from now until [stop], keep it going and in view. */
@@ -80,7 +93,8 @@ interface BackgroundWorkout {
 /**
  * Asks, when a workout starts, for whatever the platform needs before it can show the workout off screen:
  * Android 13's permission to post notifications, once, the first time (the system stops asking after two
- * refusals). iOS and desktop need nothing.
+ * refusals); iOS's authorization to show notifications, which the system asks for once and then answers from
+ * the user's settings. Desktop needs nothing.
  */
 @Composable
 expect fun AskToShowWorkoutOffScreen()

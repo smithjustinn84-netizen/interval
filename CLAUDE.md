@@ -125,7 +125,9 @@ toolchain (`$compose.*`).
   saved as `WorkoutProgress` in the repository at each change and restored by the `Workout` route's id. On
   Android `BackgroundWorkout` starts `WorkoutService` (`shared/src@android/platform/`, declared in
   `androidApp`'s manifest as `specialUse`), whose notification's Pause and End drive the ViewModel through
-  `WorkoutControls`. iOS and desktop keep nothing: the iOS actual says why.
+  `WorkoutControls`. iOS schedules a local notification per phase change ahead (`WorkoutEngine.upcomingChanges`,
+  pure, through `WorkoutControls.upcomingChanges`) as the app leaves the screen, and drops them on return; its
+  actual says why not background audio. Desktop keeps nothing.
 
 ## Testing
 
