@@ -375,6 +375,9 @@
     <string name="change_line">%1$s → %2$s</string>
     <!-- Above the steps up a day earned, each to keep in the program or not -->
     <string name="changes_next_time">Next time</string>
+    <!-- Blocks done at the top of their rep range, with no heavier bell, bar or band to go to -->
+    <string name="topped_out_title">Top of the range</string>
+    <string name="topped_out_hint">Every set reached the top, with nothing heavier to go to yet. Add a heavier bell or band in Gear, or plan more weight.</string>
     <string name="changes_this_day">This day</string>
     <string name="changes_every_day">Every day</string>
     <string name="changes_this_day_hint">Only day %1$d of the program changes.</string>
@@ -572,6 +575,8 @@
     <string name="today_last_open_cd">Open the last session</string>
     <string name="block_sets">%1$d × %2$d</string>
     <string name="block_sets_sided">%1$d × %2$d a side</string>
+    <!-- A block's sets or minutes and the reps they build within: "3 × 11 (10–15)" -->
+    <string name="block_in_range">%1$s (%2$d–%3$d)</string>
     <!-- Sets of a hold: "3 × 0:30" -->
     <string name="block_hold">%1$d × %2$s</string>
     <string name="block_hold_sided">%1$d × %2$s a side</string>
@@ -621,6 +626,11 @@
     <string name="block_rounds_emom">Minutes</string>
     <string name="block_rounds_ladder">Ladders</string>
     <string name="block_reps">Reps</string>
+    <string name="block_reps_now">Reps now</string>
+    <string name="block_range">Build reps first</string>
+    <string name="block_range_hint">A rep more each time, then more weight once every set reaches the top</string>
+    <string name="block_range_bottom">From</string>
+    <string name="block_range_top">Up to</string>
     <string name="block_rungs">Rungs</string>
     <string name="block_rung">Rung %1$d</string>
     <string name="block_add_rung">Add rung</string>

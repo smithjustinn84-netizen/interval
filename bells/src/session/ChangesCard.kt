@@ -40,6 +40,8 @@ import dev.justinsmith.bells.resources.changes_this_day_hint
 import dev.justinsmith.bells.resources.changes_title
 import dev.justinsmith.bells.resources.changes_title_next
 import dev.justinsmith.bells.resources.changes_today_only
+import dev.justinsmith.bells.resources.topped_out_hint
+import dev.justinsmith.bells.resources.topped_out_title
 import dev.justinsmith.bells.ui.blockLine
 import dev.justinsmith.bells.ui.liftName
 import dev.justinsmith.bells.ui.programName
@@ -208,6 +210,28 @@ private fun KeptLine(changes: PlanChanges, name: String, copy: String) {
         style = IntervalTheme.type.label,
         color = IntervalTheme.palette.accent,
     )
+}
+
+/**
+ * The blocks [finished] at the top of their range with nothing heavier to go to: each lift, as done, and that a
+ * heavier bell is what comes next.
+ */
+@Composable
+internal fun ToppedOutCard(finished: Finished) {
+    if (finished.toppedOut.isEmpty()) return
+    val palette = IntervalTheme.palette
+    GroupLabel(stringResource(Res.string.topped_out_title), Modifier.padding(top = Spacing.space16))
+    ListCard {
+        Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+            finished.toppedOut.forEach { block ->
+                Column {
+                    Text(liftName(block.exercise, block.double), style = IntervalTheme.type.label, color = palette.text)
+                    Text(blockLine(block, finished.bands), style = IntervalTheme.type.meta, color = palette.textDim)
+                }
+            }
+            Text(stringResource(Res.string.topped_out_hint), style = IntervalTheme.type.meta, color = palette.textDim)
+        }
+    }
 }
 
 /** One block changed: its lift, then as programmed → as done; a swap names both lifts. */

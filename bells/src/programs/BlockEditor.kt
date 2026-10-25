@@ -14,6 +14,7 @@ import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.ExerciseFilters
 import dev.justinsmith.bells.domain.Measure
 import dev.justinsmith.bells.domain.ProgramDraft
+import dev.justinsmith.bells.domain.RepRange
 import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.asKind
 import dev.justinsmith.bells.domain.bandOf
@@ -22,6 +23,7 @@ import dev.justinsmith.bells.domain.offeredExercises
 import dev.justinsmith.bells.domain.ownedEquipment
 import dev.justinsmith.bells.domain.recentExercises
 import dev.justinsmith.bells.domain.standardBells
+import dev.justinsmith.bells.domain.withRange
 import dev.justinsmith.bells.library.LibraryList
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.block_add_rung
@@ -29,8 +31,13 @@ import dev.justinsmith.bells.resources.block_kind
 import dev.justinsmith.bells.resources.block_kind_emom
 import dev.justinsmith.bells.resources.block_kind_ladder
 import dev.justinsmith.bells.resources.block_kind_sets
+import dev.justinsmith.bells.resources.block_range
+import dev.justinsmith.bells.resources.block_range_bottom
+import dev.justinsmith.bells.resources.block_range_hint
+import dev.justinsmith.bells.resources.block_range_top
 import dev.justinsmith.bells.resources.block_remove_rung
 import dev.justinsmith.bells.resources.block_reps
+import dev.justinsmith.bells.resources.block_reps_now
 import dev.justinsmith.bells.resources.block_rounds_emom
 import dev.justinsmith.bells.resources.block_rounds_ladder
 import dev.justinsmith.bells.resources.block_rounds_sets
@@ -50,6 +57,7 @@ import dev.justinsmith.interval.ui.RepeatButton
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.ToggleRow
 import org.jetbrains.compose.resources.stringResource
 
 /** What a block can be made of: the bells and bands to plan with, and the exercises to pick from. */
@@ -124,7 +132,8 @@ internal fun BlockLoad(
 
 /**
  * How much of a block: how it runs (a hold only ever as sets, and fixed with [lockKind]), its rounds from
- * [fewestRounds], and its reps, a hold's length, or a ladder's rungs.
+ * [fewestRounds], and its reps, a hold's length, or a ladder's rungs. The range reps build within is the
+ * program's to set, with [rangeEditable]; a session changes only the reps.
  */
 @Composable
 internal fun BlockCounts(
@@ -132,6 +141,7 @@ internal fun BlockCounts(
     onChange: ((Block) -> Block) -> Unit,
     fewestRounds: Int = 1,
     lockKind: Boolean = false,
+    rangeEditable: Boolean = true,
 ) {
     val held = block.exercise.measure == Measure.Time
     if (!held && !lockKind) {
@@ -157,11 +167,51 @@ internal fun BlockCounts(
         block.kind == BlockKind.Ladder ->
             RungsEditor(block.rungs, onSet = { rungs -> onChange { it.copy(rungs = rungs) } })
 
+        rangeEditable -> RepsEditor(block, onChange)
+
         else -> StepperRow(
             stringResource(Res.string.block_reps),
             block.reps,
             1..SetDraft.MAX_REPS,
             onSet = { n -> onChange { it.copy(reps = n) } },
+        )
+    }
+}
+
+/**
+ * A counted block's reps: fixed, or built within a range, its bottom and top each a stepper and the reps where
+ * it stands kept between them.
+ */
+@Composable
+private fun RepsEditor(block: Block, onChange: ((Block) -> Block) -> Unit) {
+    val range = block.ranged
+    StepperRow(
+        stringResource(if (range != null) Res.string.block_reps_now else Res.string.block_reps),
+        block.reps,
+        range?.let { it.bottom..it.top } ?: 1..SetDraft.MAX_REPS,
+        onSet = { n -> onChange { it.copy(reps = n) } },
+    )
+    // Work on the mat has no load to go up to, so nothing to build reps towards.
+    if (block.exercise.equipment != Equipment.Mat) {
+        ToggleRow(
+            stringResource(Res.string.block_range),
+            stringResource(Res.string.block_range_hint),
+            checked = range != null,
+            onToggle = { onChange { it.withRange(on = it.ranged == null, maxReps = SetDraft.MAX_REPS) } },
+        )
+    }
+    if (range != null) {
+        StepperRow(
+            stringResource(Res.string.block_range_bottom),
+            range.bottom,
+            1 until range.top,
+            onSet = { n -> onChange { it.withRange(RepRange(n, range.top)) } },
+        )
+        StepperRow(
+            stringResource(Res.string.block_range_top),
+            range.top,
+            range.bottom + 1..SetDraft.MAX_REPS,
+            onSet = { n -> onChange { it.withRange(RepRange(range.bottom, n)) } },
         )
     }
 }

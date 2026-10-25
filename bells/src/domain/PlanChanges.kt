@@ -41,8 +41,8 @@ data class PlanChanges(
 
     /**
      * The program's days with the changes kept, as far as [scope] reaches. Every day: a load changed goes to
-     * every block of the exercise with as many bells; rounds, reps or rungs only to those of the same kind that
-     * had what this one had; a swap or a change of kind or bells stays on this day.
+     * every block of the exercise with as many bells; rounds, reps, rungs or a range only to those of the same
+     * kind that had what this one had; a swap or a change of kind or bells stays on this day.
      */
     fun applied(scope: SaveScope): List<List<Block>> = program.days.mapIndexed { d, blocks ->
         blocks.mapIndexed { i, block ->
@@ -70,11 +70,16 @@ private fun BlockChange.carry(block: Block): Block {
     if (block.double == from.double && (to.kg != from.kg || to.band != from.band)) {
         carried = carried.copy(kg = to.kg, band = to.band)
     }
-    if (block.kind == from.kind && from.kind == to.kind) {
-        if (to.rounds != from.rounds && block.rounds == from.rounds) carried = carried.copy(rounds = to.rounds)
-        if (to.reps != from.reps && block.reps == from.reps) carried = carried.copy(reps = to.reps)
-        if (to.rungs != from.rungs && block.rungs == from.rungs) carried = carried.copy(rungs = to.rungs)
-    }
+    return if (block.kind == from.kind && from.kind == to.kind) carryCounts(carried) else carried
+}
+
+/** [block] with the rounds, reps, rungs and range this change changed, each where it had what this one had. */
+private fun BlockChange.carryCounts(block: Block): Block {
+    var carried = block
+    if (to.rounds != from.rounds && block.rounds == from.rounds) carried = carried.copy(rounds = to.rounds)
+    if (to.reps != from.reps && block.reps == from.reps) carried = carried.copy(reps = to.reps)
+    if (to.rungs != from.rungs && block.rungs == from.rungs) carried = carried.copy(rungs = to.rungs)
+    if (to.range != from.range && block.range == from.range) carried = carried.copy(range = to.range)
     return carried
 }
 

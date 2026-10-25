@@ -119,7 +119,7 @@ fun SummaryScreen(
                     verticalArrangement = Arrangement.spacedBy(Spacing.space8),
                 ) {
                     Arrival(entrance, STATS_STEP) { SessionStats(session, finished.records, highlight = true) }
-                    Arrival(entrance, CHANGES_STEP) { Column { ChangesCard(finished, choices, onKeep) } }
+                    Arrival(entrance, CHANGES_STEP) { Column { NextTimeCards(finished, choices, onKeep) } }
                 }
             }
         } else {
@@ -140,12 +140,19 @@ fun SummaryScreen(
                         SummaryHeading(session.title, Modifier.padding(top = Spacing.space24, bottom = Spacing.space16))
                     }
                     Arrival(entrance, STATS_STEP) { SessionStats(session, finished.records, highlight = true) }
-                    Arrival(entrance, CHANGES_STEP) { Column { ChangesCard(finished, choices, onKeep) } }
+                    Arrival(entrance, CHANGES_STEP) { Column { NextTimeCards(finished, choices, onKeep) } }
                 }
                 Arrival(entrance, FOOTER_STEP) { SummaryFooter(finished, leave) }
             }
         }
     }
+}
+
+/** What the session means for next time: the changes to keep, and the blocks at the top of their range. */
+@Composable
+private fun NextTimeCards(finished: Finished, choices: ChangesChoices, onKeep: (SaveScope, String, Set<Int>) -> Unit) {
+    ChangesCard(finished, choices, onKeep)
+    ToppedOutCard(finished)
 }
 
 /** The session that brings the week to its goal gets the intro's ripple; a record, a ring of the accent. */

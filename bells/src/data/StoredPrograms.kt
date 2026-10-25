@@ -8,6 +8,7 @@ import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.PlanBlock
 import dev.justinsmith.bells.domain.Program
 import dev.justinsmith.bells.domain.ProgramKey
+import dev.justinsmith.bells.domain.RepRange
 import dev.justinsmith.bells.domain.SessionPlan
 import dev.justinsmith.bells.domain.takesKg
 import kotlinx.serialization.Serializable
@@ -27,6 +28,8 @@ internal data class StoredBlock(
     val double: Boolean = false,
     val kg: Double? = null,
     val band: String? = null,
+    val rangeBottom: Int? = null,
+    val rangeTop: Int? = null,
 )
 
 private val json = Json { ignoreUnknownKeys = true }
@@ -38,7 +41,8 @@ internal fun encodeDays(days: List<List<Block>>): String = json.encodeToString(
     },
 )
 
-internal fun Block.toStored() = StoredBlock(exercise.key, kind.name, rounds, reps, rungs, double, kg, band)
+internal fun Block.toStored() =
+    StoredBlock(exercise.key, kind.name, rounds, reps, rungs, double, kg, band, range?.bottom, range?.top)
 
 /**
  * The program this row holds, its blocks naming built-ins or [made]. A block of a lift or kind this build
@@ -57,7 +61,10 @@ internal fun CustomProgramEntity.toProgram(made: List<CustomExercise> = emptyLis
     return Program(ProgramKey.Custom(uid), blocks, daysPerWeek.coerceAtLeast(1), weeks.coerceAtLeast(1), name)
 }
 
-/** The block this names, of a built-in or one of [made]; a load that doesn't suit the lift is dropped. */
+/**
+ * The block this names, of a built-in or one of [made]; a load that doesn't suit the lift is dropped, and a
+ * range that doesn't climb.
+ */
 internal fun StoredBlock.toBlock(made: List<CustomExercise>): Block? {
     val lift = Exercise.parse(exercise, made) ?: return null
     val kind = BlockKind.entries.firstOrNull { it.name == kind } ?: return null
@@ -71,6 +78,11 @@ internal fun StoredBlock.toBlock(made: List<CustomExercise>): Block? {
         lift.doubled(double),
         kg = kg?.takeIf { lift.equipment.takesKg && it >= 0 },
         band = band?.takeIf { lift.equipment == Equipment.Band },
+        range = if (rangeBottom != null && rangeTop != null && rangeBottom in 1 until rangeTop) {
+            RepRange(rangeBottom, rangeTop)
+        } else {
+            null
+        },
     )
 }
 

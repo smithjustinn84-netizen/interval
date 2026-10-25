@@ -241,7 +241,13 @@ internal fun PlanBlockSheet(
                 BlockLoad(row.block, state.blockChoices, actions.onChange, if (canSwap) ({ picking = true }) else null)
             },
             second = {
-                BlockCounts(row.block, actions.onChange, row.entry.roundsDone(row.done), lockKind = row.done > 0)
+                BlockCounts(
+                    row.block,
+                    actions.onChange,
+                    row.entry.roundsDone(row.done),
+                    lockKind = row.done > 0,
+                    rangeEditable = false,
+                )
                 AccentButton(
                     stringResource(Res.string.block_done),
                     onClick = hide,

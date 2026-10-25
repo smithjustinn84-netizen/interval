@@ -49,6 +49,9 @@ data class ProgramDraft(
         /** Reps a set gets when a ladder becomes sets or an EMOM. */
         const val NEW_REPS = 5
 
+        /** How far a range climbs when one is turned on, from the reps a block had. */
+        const val RANGE_SPAN = 5
+
         /** Seconds a hold gets when a block becomes one. */
         const val NEW_SECONDS = 30
 
@@ -63,6 +66,7 @@ fun Block.asKind(kind: BlockKind): Block = copy(
     kind = kind,
     rungs = if (kind == BlockKind.Ladder && rungs.isEmpty()) ProgramDraft.NEW_RUNGS else rungs,
     reps = if (kind != BlockKind.Ladder && reps < 1) ProgramDraft.NEW_REPS else reps,
+    range = range.takeIf { kind != BlockKind.Ladder },
 )
 
 /**
@@ -85,5 +89,16 @@ fun Block.withExercise(exercise: Exercise): Block {
         },
         kg = kg.takeIf { sameLoad },
         band = band.takeIf { sameLoad },
+        range = range.takeIf { !held },
     )
 }
+
+/** This block building within a range from its reps, up to [maxReps]; or, [on] false, at fixed reps again. */
+fun Block.withRange(on: Boolean, maxReps: Int): Block {
+    if (!on) return copy(range = null)
+    val bottom = reps.coerceIn(1, maxReps - 1)
+    return withRange(RepRange(bottom, (bottom + ProgramDraft.RANGE_SPAN).coerceAtMost(maxReps)))
+}
+
+/** This block building within [range], its reps kept within it. */
+fun Block.withRange(range: RepRange): Block = copy(range = range, reps = reps.coerceIn(range.bottom, range.top))

@@ -118,12 +118,13 @@ val builtInPrograms: List<Program> = listOf(
         daysPerWeek = 3,
         weeks = 4,
     ),
+    // Each built to 15 at a bell before the next: too big a jump to take at 10.
     builtIn(
         ProgramId.GobletSquatRow,
         days = listOf(
             listOf(
-                Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 10),
-                Block(BuiltInExercise.Row, rounds = 3, reps = 10),
+                Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 10, range = RepRange(10, 15)),
+                Block(BuiltInExercise.Row, rounds = 3, reps = 10, range = RepRange(10, 15)),
             ),
         ),
         daysPerWeek = 2,

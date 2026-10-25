@@ -129,4 +129,80 @@ class ProgressionTest {
         assertEquals(listOf(BlockChange(0, goblets, goblets.copy(reps = 12))), changes.withNudges(emptySet()).changes)
         assertEquals(listOf(BlockChange(0, goblets, nudge.to)), changes.withNudges(setOf(0)).changes)
     }
+
+    @Test
+    fun `a block building within a range adds a rep at the same bell`() {
+        val goblets = Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 10, kg = 16.0, range = RepRange(10, 15))
+        val done = sets(3) { set(BuiltInExercise.GobletSquat, 16.0) }
+        assertEquals(goblets.copy(reps = 11), nextStep(goblets, done, bells, bands))
+        // One set short of where it stands earns nothing.
+        assertNull(nextStep(goblets, done.dropLast(1) + set(BuiltInExercise.GobletSquat, 16.0, reps = 9), bells, bands))
+    }
+
+    @Test
+    fun `the top of a range earns the next bell back at its bottom`() {
+        val goblets = Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 15, kg = 16.0, range = RepRange(10, 15))
+        val done = sets(3) { set(BuiltInExercise.GobletSquat, 16.0, reps = 15) }
+        assertEquals(goblets.copy(kg = 24.0, reps = 10), nextStep(goblets, done, bells, bands))
+    }
+
+    @Test
+    fun `the top of a range with no heavier bell earns nothing`() {
+        val goblets = Block(BuiltInExercise.GobletSquat, rounds = 2, reps = 15, kg = 28.0, range = RepRange(10, 15))
+        val done = sets(2) { set(BuiltInExercise.GobletSquat, 28.0, reps = 15) }
+        assertNull(nextStep(goblets, done, bells, bands))
+    }
+
+    @Test
+    fun `a barbell range adds to the bar at its top and starts again`() {
+        val squats = Block(BuiltInExercise.BarbellBackSquat, rounds = 3, reps = 8, kg = 60.0, range = RepRange(5, 8))
+        val done = sets(3) { set(BuiltInExercise.BarbellBackSquat, 60.0, reps = 8) }
+        assertEquals(squats.copy(kg = 62.5, reps = 5), nextStep(squats, done, bells, bands))
+    }
+
+    @Test
+    fun `an EMOM building within a range adds reps not minutes`() {
+        val emom =
+            Block(
+                BuiltInExercise.Snatch,
+                rounds = 10,
+                reps = 5,
+                kind = BlockKind.Emom,
+                kg = 16.0,
+                range = RepRange(5, 8),
+            )
+        val done = List(10) { set(BuiltInExercise.Snatch, 16.0, reps = 5, side = Side.entries[it % 2]) }
+        assertEquals(emom.copy(reps = 6), nextStep(emom, done, bells, bands))
+    }
+
+    @Test
+    fun `the top of a range on the heaviest bell is topped out and short of it is not`() {
+        val goblets = Block(BuiltInExercise.GobletSquat, rounds = 2, reps = 15, kg = 28.0, range = RepRange(10, 15))
+        val program = Program(ProgramKey.Custom("p"), listOf(listOf(goblets)), daysPerWeek = 1, weeks = 1)
+        val day = program.dayAfter(0)!!
+        val full = sets(2) { set(BuiltInExercise.GobletSquat, 28.0, reps = 15) }
+        assertEquals(listOf(goblets), toppedOut(day, full, bells, bands))
+        assertEquals(emptyList(), toppedOut(day, full.take(1), bells, bands))
+        assertEquals(emptyList(), toppedOut(day, full, bells + 32.0, bands))
+    }
+
+    @Test
+    fun `a band range done with a lighter band than planned is not topped out`() {
+        val owned = bands(emptyList()).filterNot { it.archived }
+        val (light, medium) = owned[0] to owned[1]
+        val heaviest = owned.last()
+        val pullAparts =
+            Block(BuiltInExercise.BandPullApart, rounds = 1, reps = 15, band = medium.id, range = RepRange(10, 15))
+        val day = Program(ProgramKey.Custom("p"), listOf(listOf(pullAparts)), daysPerWeek = 1, weeks = 1).dayAfter(0)!!
+        assertEquals(
+            emptyList(),
+            toppedOut(day, listOf(set(BuiltInExercise.BandPullApart, reps = 15, band = light)), bells, owned),
+        )
+        val atHeaviest = pullAparts.copy(band = heaviest.id)
+        val heavyDay = day.copy(blocks = listOf(atHeaviest))
+        assertEquals(
+            listOf(atHeaviest),
+            toppedOut(heavyDay, listOf(set(BuiltInExercise.BandPullApart, reps = 15, band = heaviest)), bells, owned),
+        )
+    }
 }

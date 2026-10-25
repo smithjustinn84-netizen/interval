@@ -52,6 +52,7 @@ import dev.justinsmith.bells.domain.suggestedBand
 import dev.justinsmith.bells.domain.suggestedBar
 import dev.justinsmith.bells.domain.suggestedBell
 import dev.justinsmith.bells.domain.suggestedLoad
+import dev.justinsmith.bells.domain.toppedOut
 import dev.justinsmith.bells.library.ExerciseDetailUiState
 import dev.justinsmith.bells.library.LibraryList
 import dev.justinsmith.bells.library.exerciseDetail
@@ -138,6 +139,8 @@ data class Finished(
     val bands: List<Band> = emptyList(),
     /** The program this session finished, when it was its last day. */
     val lastDayOf: Program? = null,
+    /** Its blocks done in full at the top of their range, with no heavier load to go to. */
+    val toppedOut: List<Block> = emptyList(),
 )
 
 /**
@@ -668,9 +671,8 @@ class SessionViewModel(
         val bells = repository.bells.value.ifEmpty { standardBells }
         val bands = offeredBands(repository.bands.value)
         val day = repository.programDay.value?.takeIf { session.program != null && it.program.key == session.program }
-        val changes = day?.copy(plan = session.plan)?.let {
-            planChanges(it, progressions(it, session.sets, bells, bands))
-        }
+        val asDone = day?.copy(plan = session.plan)
+        val changes = asDone?.let { planChanges(it, progressions(it, session.sets, bells, bands)) }
         val taken = repository.customPrograms.value.mapNotNull { it.name }.toSet()
         finished.value = Finished(
             done,
@@ -680,6 +682,7 @@ class SessionViewModel(
             taken,
             bands = repository.bands.value,
             lastDayOf = day?.program?.takeIf { day.number >= it.totalDays },
+            toppedOut = asDone?.let { toppedOut(it, session.sets, bells, bands) }.orEmpty(),
         )
         repository.finishSession(title)
         return true

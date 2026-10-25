@@ -13,10 +13,16 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import dev.justinsmith.bells.data.BellEntity
+import dev.justinsmith.bells.data.CustomProgramEntity
 import dev.justinsmith.bells.data.FollowingEntity
 import dev.justinsmith.bells.data.SessionEntity
 import dev.justinsmith.bells.data.SetEntity
+import dev.justinsmith.bells.data.encodeDays
+import dev.justinsmith.bells.domain.Block
+import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.ProgramId
+import dev.justinsmith.bells.domain.RepRange
 import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.bells.ui.waitForText
@@ -28,7 +34,7 @@ import kotlin.test.assertTrue
 /** Changing a program day's plan in the session: a block's load, skipping one, and swapping its exercise. */
 @Suppress("detekt.TooManyFunctions") // One change, and one way of keeping it, per test, side by side.
 class PlanFlowTest {
-    /** Goblet squat and row: 3 × 10 goblet squats, then 3 × 10 rows a side. */
+    /** Goblet squat and row: 3 × 10 goblet squats, then 3 × 10 rows a side, each building to 15. */
     private fun followed() = FakeBellsStorage().apply {
         following.row.value = FollowingEntity(programId = ProgramId.GobletSquatRow.name, startedAtEpochMillis = 0)
     }
@@ -51,6 +57,28 @@ class PlanFlowTest {
         waitForText("Up next · 2 of 9 sets")
         assertEquals(28.0, app.storage.sessions.sets.value.single().bellKg)
         assertTrue(app.storage.sessions.sessions.value.single().plan.orEmpty().contains("\"kg\":28.0"))
+    }
+
+    @Test
+    fun `the top of a range on the heaviest bell owned says a heavier bell is next`() = bellsAppTest(
+        FakeBellsStorage().apply {
+            val squats = Block(BuiltInExercise.GobletSquat, rounds = 2, reps = 12, kg = 24.0, range = RepRange(10, 12))
+            programs.rows.value = listOf(CustomProgramEntity("p1", "Mine", 3, 4, encodeDays(listOf(listOf(squats))), 0))
+            following.row.value = FollowingEntity(programId = "custom:p1", startedAtEpochMillis = 0)
+            bells.rows.value = listOf(BellEntity(16.0), BellEntity(24.0))
+        },
+    ) {
+        onNodeWithText("Start day 1").performClick()
+        waitForText("Up next · 1 of 2 sets")
+        onNodeWithText("Log it").performScrollTo().performClick()
+        waitForText("Up next · 2 of 2 sets")
+        onNodeWithText("Log it").performScrollTo().performClick()
+        waitForText("Today's sets are done. Finish when you are.")
+        onNodeWithText("Finish").performClick()
+        waitForText("Top of the range")
+        onNodeWithText("2 × 12 (10–12) · 24 kg").performScrollTo().assertExists()
+        // Nothing to step up to: no offer for next time.
+        onNodeWithText("Ready for more?").assertDoesNotExist()
     }
 
     @Test
@@ -104,7 +132,7 @@ class PlanFlowTest {
         waitForText("Up next · 2 of 9 sets")
         onNodeWithText("Finish").performClick()
         waitForText("Keep today's changes?")
-        onNodeWithText("3 × 10 → 3 × 10 · 28 kg").assertExists()
+        onNodeWithText("3 × 10 (10–15) → 3 × 10 (10–15) · 28 kg").assertExists()
         onNodeWithText("Every day").performScrollTo().performClick()
         onNodeWithText("Save as Goblet squat and row (yours)").performScrollTo().performClick()
         waitForText("Saved as Goblet squat and row (yours). You follow it from day 2.")
@@ -191,9 +219,9 @@ class PlanFlowTest {
         waitForText("Today's sets are done. Finish when you are.")
         onNodeWithText("Finish").performClick()
         waitForText("Ready for more?")
-        // No bells owned: the next standard size up from the 16 kg done.
-        onNodeWithText("3 × 10 → 3 × 10 · 20 kg").assertExists()
-        onNodeWithText("3 × 10 a side → 3 × 10 a side · 20 kg").assertExists()
+        // Both build to 15 reps before a heavier bell: a rep more first.
+        onNodeWithText("3 × 10 (10–15) → 3 × 11 (10–15)").assertExists()
+        onNodeWithText("3 × 10 a side (10–15) → 3 × 11 a side (10–15)").assertExists()
         // Rows stay as they are; the goblet squats go up.
         // The card's, under the records.
         onAllNodesWithText("Row").onLast().performScrollTo().performClick()
@@ -201,10 +229,13 @@ class PlanFlowTest {
         waitForText("Saved as Goblet squat and row (yours). You follow it from day 2.")
         val days = app.storage.programs.rows.value.single().days
         assertTrue(
-            days.contains("\"exercise\":\"GobletSquat\",\"kind\":\"Sets\",\"rounds\":3,\"reps\":10,\"kg\":20.0"),
+            days.contains("\"exercise\":\"GobletSquat\",\"kind\":\"Sets\",\"rounds\":3,\"reps\":11,\"rangeBottom\":10"),
             days,
         )
-        assertTrue(days.contains("\"exercise\":\"Row\",\"kind\":\"Sets\",\"rounds\":3,\"reps\":10}"), days)
+        assertTrue(
+            days.contains("\"exercise\":\"Row\",\"kind\":\"Sets\",\"rounds\":3,\"reps\":10,\"rangeBottom\":10"),
+            days,
+        )
     }
 
     @Test

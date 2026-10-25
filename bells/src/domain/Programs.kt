@@ -8,7 +8,9 @@ enum class BlockKind { Sets, Emom, Ladder }
  * of each. [Ladder]: [rounds] ladders, each climbing [rungs]. A one-sided lift does each set on both sides,
  * unless it is done with two bells ([double]). For a hold ([Measure.Time]), [reps] counts the seconds held,
  * and a hold is only ever sets. Its load, when the plan names one: [kg], the bell or the weight added to
- * bodyweight (0 for none), or [band], a [Band]'s id; null leaves it to what was used last time.
+ * bodyweight (0 for none), or [band], a [Band]'s id; null leaves it to what was used last time. Sets or an EMOM
+ * of a counted lift can build within a [range]: [reps] is then where it stands, and the load goes up only once
+ * every set reaches the top (see [nextStep]).
  */
 data class Block(
     val exercise: Exercise,
@@ -19,7 +21,11 @@ data class Block(
     val double: Boolean = false,
     val kg: Double? = null,
     val band: String? = null,
+    val range: RepRange? = null,
 ) {
+    /** The [range] it builds within: none for a ladder or a hold, which never take one. */
+    val ranged: RepRange? get() = range?.takeIf { kind != BlockKind.Ladder && exercise.measure == Measure.Reps }
+
     /** The sets it comes to, in order: one-sided lifts left then right, except an EMOM, which alternates by minute. */
     fun plannedSets(): List<PlannedSet> = when (kind) {
         BlockKind.Sets -> (1..rounds).flatMap { sides(reps) }
@@ -43,6 +49,16 @@ data class Block(
         } else {
             listOf(PlannedSet(exercise, reps, null, double, kg, band))
         }
+}
+
+/**
+ * Reps to build within, from [bottom] to [top]: a set done at [top] every time earns the next load, back at
+ * [bottom]. Double progression, as kettlebells need it, their jumps too big to take at the same reps.
+ */
+data class RepRange(val bottom: Int, val top: Int) {
+    init {
+        require(bottom in 1 until top) { "A range climbs from one rep or more" }
+    }
 }
 
 /**

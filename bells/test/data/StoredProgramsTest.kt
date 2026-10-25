@@ -7,6 +7,7 @@ import dev.justinsmith.bells.domain.CustomExercise
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Focus
 import dev.justinsmith.bells.domain.Measure
+import dev.justinsmith.bells.domain.RepRange
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -25,6 +26,7 @@ class StoredProgramsTest {
                 Block(BuiltInExercise.PushUp, rounds = 3, reps = 10, kg = 0.0),
                 Block(BuiltInExercise.BarbellBackSquat, rounds = 5, reps = 5, kg = 62.5),
                 Block(BuiltInExercise.TwoHandSwing, rounds = 10, reps = 10, kind = BlockKind.Emom),
+                Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 12, kg = 16.0, range = RepRange(10, 15)),
             ),
         )
         assertEquals(days, row(encodeDays(days)).toProgram()?.days)
@@ -35,6 +37,13 @@ class StoredProgramsTest {
         val old = """[[{"exercise":"TwoHandSwing","kind":"Sets","rounds":5,"reps":10}]]"""
         val block = row(old).toProgram()?.days?.single()?.single()
         assertEquals(Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 10), block)
+    }
+
+    @Test
+    fun `a range that does not climb is dropped`() {
+        val stored = """[[{"exercise":"GobletSquat","kind":"Sets","rounds":3,"reps":10,""" +
+            """"rangeBottom":12,"rangeTop":10}]]"""
+        assertNull(row(stored).toProgram()?.days?.single()?.single()?.range)
     }
 
     @Test
