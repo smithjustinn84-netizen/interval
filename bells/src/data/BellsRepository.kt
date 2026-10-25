@@ -10,6 +10,7 @@ import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.ExerciseDraft
 import dev.justinsmith.bells.domain.Focus
+import dev.justinsmith.bells.domain.Followed
 import dev.justinsmith.bells.domain.LiftSession
 import dev.justinsmith.bells.domain.Measure
 import dev.justinsmith.bells.domain.PlanChanges
@@ -25,6 +26,7 @@ import dev.justinsmith.bells.domain.UnknownExercise
 import dev.justinsmith.bells.domain.bandOf
 import dev.justinsmith.bells.domain.bands
 import dev.justinsmith.bells.domain.builtInPrograms
+import dev.justinsmith.bells.domain.lastDayDone
 import dev.justinsmith.bells.domain.nextBandPosition
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.storage.SerialWriter
@@ -103,13 +105,17 @@ class BellsRepository(
 
     private val _programDay = MutableStateFlow<ProgramDay?>(null)
     private val _following = MutableStateFlow<Program?>(null)
+    private val _followed = MutableStateFlow<Followed?>(null)
 
     /** The program the user follows, if any, as it stands: a change to one they made shows at once. */
     val following: StateFlow<Program?> = _following.asStateFlow()
 
+    /** [following] with when it was followed from and the days of it counted done before; null for none. */
+    val followed: StateFlow<Followed?> = _followed.asStateFlow()
+
     /**
-     * The day of [following] to do next, counted by the sessions of it finished; null when none is followed or
-     * it is over.
+     * The day of [following] to do next: the one after the last day done, as its sessions were logged (see
+     * [lastDayDone]); null when none is followed or it is over.
      */
     val programDay: StateFlow<ProgramDay?> = _programDay.asStateFlow()
 
@@ -173,18 +179,24 @@ class BellsRepository(
             val followingLoaded = CompletableDeferred<Unit>()
             launch {
                 combine(followingDao.observe(), custom) { row, made ->
-                    row?.let { r -> resolve(r.programId, made)?.let { it to r } }
+                    row?.let { r ->
+                        resolve(r.programId, made)?.let { Followed(it, r.startedAtEpochMillis, r.daysBefore) }
+                    }
                 }.flatMapLatest { followed ->
                     if (followed == null) {
                         flowOf(null to null)
                     } else {
-                        val (program, row) = followed
-                        sessionDao.observeProgramDays(program.key.stored, row.startedAtEpochMillis).map { done ->
-                            program to program.dayAfter(row.daysBefore + done)
+                        val program = followed.program
+                        sessionDao.observeProgramSessions(
+                            program.key.stored,
+                            followed.startedAtEpochMillis,
+                        ).map { rows ->
+                            followed to program.dayAfter(lastDayDone(rows.map { it.programDay }, followed.daysBefore))
                         }
                     }
-                }.orOnError(null to null, "the program", log).collect { (program, day) ->
-                    _following.value = program
+                }.orOnError(null to null, "the program", log).collect { (followed, day) ->
+                    _followed.value = followed
+                    _following.value = followed?.program
                     _programDay.value = day
                     followingLoaded.complete(Unit)
                 }
@@ -198,9 +210,13 @@ class BellsRepository(
         }
     }
 
-    /** Starts a session, a day of [program] or a free one, unless one is in progress already. */
+    /**
+     * Starts a session, a day of [program] or a free one, unless one is in progress already. A day of the
+     * program followed is logged as the day it is.
+     */
     @OptIn(ExperimentalUuidApi::class)
     fun startSession(program: ProgramKey? = null) {
+        val day = _programDay.value?.takeIf { program != null && it.program.key == program }?.number
         writer.persist {
             if (sessionDao.active() == null) {
                 val now = clock.nowMillis()
@@ -212,6 +228,7 @@ class BellsRepository(
                         title = "",
                         updatedAtEpochMillis = now,
                         programId = program?.stored,
+                        programDay = day,
                     ),
                 )
             }
@@ -526,6 +543,7 @@ private fun SessionEntity.toDomain(sets: List<SetLog>, made: List<CustomExercise
     sets,
     programId?.let(ProgramKey::parse),
     plan?.let { decodePlan(it, made) },
+    programDay,
 )
 
 /** The program [stored] names: a built-in, or one of [made]; null for one gone or unknown. */

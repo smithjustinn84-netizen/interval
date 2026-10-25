@@ -78,12 +78,15 @@ data class Program(
 
     val totalDays: Int get() = daysPerWeek * weeks
 
-    /** Where someone stands after [done] sessions of it: the day to do next, or null once it is over. */
-    fun dayAfter(done: Int): ProgramDay? = if (done >= totalDays) {
-        null
-    } else {
-        ProgramDay(this, number = done + 1, week = done / daysPerWeek + 1, blocks = days[done % days.size])
-    }
+    /** Where someone stands after [done] days of it: the day to do next, or null once it is over. */
+    fun dayAfter(done: Int): ProgramDay? = if (done >= totalDays) null else day(done + 1)
+
+    /**
+     * Day [number] (from 1) as programmed, its days taken in turn: laid out past the last of its weeks too,
+     * for a day done of a program since made shorter.
+     */
+    fun day(number: Int): ProgramDay =
+        ProgramDay(this, number, week = (number - 1) / daysPerWeek + 1, blocks = days[(number - 1) % days.size])
 }
 
 /**
@@ -108,6 +111,12 @@ data class ProgramDay(
 
     fun plannedSets(): List<PlannedSet> = blockSets().flatten()
 }
+
+/**
+ * The program followed, from [startedAtEpochMillis]: its days are the sessions of it since. [daysBefore] of
+ * it were counted done before then with no session of its own: a copy followed from where its original was.
+ */
+data class Followed(val program: Program, val startedAtEpochMillis: Long, val daysBefore: Int = 0)
 
 /** A program's id as it is stored, with its sessions and as the one followed. */
 sealed interface ProgramKey {

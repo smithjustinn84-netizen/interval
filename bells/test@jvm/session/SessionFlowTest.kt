@@ -18,10 +18,12 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import dev.justinsmith.bells.data.BarEntity
+import dev.justinsmith.bells.data.FollowingEntity
 import dev.justinsmith.bells.data.SessionEntity
 import dev.justinsmith.bells.data.SetEntity
 import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.EmomCue
+import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.bells.fakes.FakeIntervalActivity
 import dev.justinsmith.bells.ui.bellsAppTest
@@ -387,5 +389,24 @@ class SessionFlowTest {
         onNodeWithText("Leave the session?").assertDoesNotExist()
         app.back()
         waitForText("Leave the session?")
+    }
+
+    @Test
+    fun `the summary of a program's last day says it finished`() = bellsAppTest(
+        FakeBellsStorage().apply {
+            val goblets = ProgramId.GobletSquatRow.name
+            following.row.value = FollowingEntity(programId = goblets, startedAtEpochMillis = 0)
+            sessions.sessions.value = (1..7).map { day ->
+                val at = day * 1_000L
+                SessionEntity("d$day", at, at + 1, "Day", at + 1, programId = goblets, programDay = day)
+            } + SessionEntity("open", 10_000, null, "", 10_000, programId = goblets, programDay = 8)
+            sessions.sets.value = listOf(SetEntity(1, "open", BuiltInExercise.GobletSquat.key, 16.0, 10, null, 10_000))
+        },
+    ) {
+        waitForText("Resume session")
+        onNodeWithText("Resume session").performClick()
+        waitForText("Finish")
+        onNodeWithText("Finish").performClick()
+        waitForText("Goblet squat and row finished · every day done")
     }
 }

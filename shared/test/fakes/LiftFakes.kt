@@ -59,12 +59,13 @@ class FakeSessionDao : SessionDao {
 
     override suspend fun insert(session: SessionEntity) = sessions.update { it + session }
 
-    override fun observeProgramDays(programId: String, since: Long): Flow<Int> = sessions.map { all ->
-        all.count {
-            it.programId == programId && it.finishedAtEpochMillis != null && !it.deleted &&
-                it.startedAtEpochMillis >= since
+    override fun observeProgramSessions(programId: String, since: Long): Flow<List<SessionEntity>> =
+        sessions.map { all ->
+            all.filter {
+                it.programId == programId && it.finishedAtEpochMillis != null && !it.deleted &&
+                    it.startedAtEpochMillis >= since
+            }.sortedBy { it.startedAtEpochMillis }
         }
-    }
 
     // As Room: an id of 0 is generated, any other is kept (a set restored to its place).
     override suspend fun insert(set: SetEntity) = sets.update {

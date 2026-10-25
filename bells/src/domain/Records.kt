@@ -59,10 +59,13 @@ fun personalRecords(sets: List<SetLog>): List<PersonalRecord> = sets
  * session beats the record over [before] alone, by a heavier load, or more reps at the heaviest or in one set,
  * or a longer hold.
  */
-fun newRecords(before: List<SetLog>, session: LiftSession): List<PersonalRecord> {
+fun newRecords(before: List<SetLog>, session: LiftSession): List<PersonalRecord> = newRecords(before, session.sets)
+
+/** The records [sets], logged after [before], set between them, as [newRecords] judges a session's. */
+fun newRecords(before: List<SetLog>, sets: List<SetLog>): List<PersonalRecord> {
     val old = personalRecords(before).associateBy { it.lift }
-    val done = personalRecords(session.sets).map { it.lift }.toSet()
-    return personalRecords(before + session.sets).filter { record ->
+    val done = personalRecords(sets).map { it.lift }.toSet()
+    return personalRecords(before + sets).filter { record ->
         record.lift in done && old[record.lift].let { was -> was == null || record.beats(was) }
     }
 }

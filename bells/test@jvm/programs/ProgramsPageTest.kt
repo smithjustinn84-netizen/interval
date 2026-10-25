@@ -127,4 +127,17 @@ class ProgramsPageTest {
         onNodeWithText("3 × 0:30").assertExists()
         onNodeWithText("2 × 0:20 a side").assertExists()
     }
+
+    @Test
+    fun `the program followed opens its days done from its sheet`() = bellsAppTest(dayTwoOfGobletSquatRow()) {
+        waitForText("Change program")
+        onNodeWithText("Change program").performScrollTo().performClick()
+        scrollToText("Goblet squat and row")
+        onNodeWithText("Goblet squat and row").performClick()
+        waitForText("Days done and left")
+        onNodeWithText("Days done and left").performScrollTo().performClick()
+        waitForText("Days left")
+        onNodeWithText("Day 2 of 8 · week 1").assertExists()
+        onNodeWithText("Day 1").assertExists()
+    }
 }

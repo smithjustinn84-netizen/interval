@@ -66,6 +66,13 @@ data object Lifting : NavKey
 @Serializable
 data object Programs : NavKey
 
+/**
+ * The program followed: its days done and left, or once it is over what it came to. Pushed from the Lift
+ * tab's program card and from Programs.
+ */
+@Serializable
+data object ProgramProgress : NavKey
+
 /** A program the user makes, or changes by its [uid]. Pushed from Programs. */
 @Serializable
 data class ProgramEditor(val uid: String? = null) : NavKey

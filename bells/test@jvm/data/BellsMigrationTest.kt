@@ -5,6 +5,7 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.execSQL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import kotlin.test.AfterTest
@@ -111,6 +112,30 @@ class BellsMigrationTest {
         }
     }
 
+    @Test
+    fun `version 10 opens at version 11 with its sessions' days unknown`() = runBlocking {
+        BundledSQLiteDriver().open(file.absolutePath).apply {
+            VERSION_10.forEach { execSQL(it) }
+            execSQL("INSERT INTO session VALUES ('s1', 0, 60000, 'Press', 60000, 0, 'EasyStrength', NULL)")
+            execSQL("INSERT INTO following VALUES (0, 'EasyStrength', 0, 0)")
+            execSQL("PRAGMA user_version = 10")
+            close()
+        }
+        val database = Room.databaseBuilder<BellsDatabase>(name = file.absolutePath)
+            .setDriver(BundledSQLiteDriver())
+            .setQueryCoroutineContext(Dispatchers.IO)
+            .build()
+        try {
+            val dao = database.sessionDao()
+            val days = { dao.observeProgramSessions("EasyStrength", 0).map { rows -> rows.map { it.programDay } } }
+            assertEquals(listOf(null), days().first())
+            dao.insert(SessionEntity("s2", 1, 2, "Press", 2, programId = "EasyStrength", programDay = 2))
+            assertEquals(listOf(null, 2), days().first())
+        } finally {
+            database.close()
+        }
+    }
+
     private companion object {
         /** `schemas/…/6.json`: its tables and indices, then its identity, which Room checks on opening. */
         val VERSION_6 = listOf(
@@ -187,6 +212,36 @@ class BellsMigrationTest {
             "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
             "INSERT OR REPLACE INTO room_master_table (id,identity_hash) " +
                 "VALUES(42, '27c740ecb009ae0a3b92f6c27cb24786')",
+        )
+
+        /** `schemas/…/10.json`: version 8's tables as 10 left them, a session's plan, days before and the bar. */
+        val VERSION_10 = listOf(
+            "CREATE TABLE IF NOT EXISTS `session` (`uid` TEXT NOT NULL, `started_at` INTEGER NOT NULL, " +
+                "`finished_at` INTEGER, `title` TEXT NOT NULL, `updated_at` INTEGER NOT NULL, " +
+                "`deleted` INTEGER NOT NULL, `program_id` TEXT, `plan` TEXT, PRIMARY KEY(`uid`))",
+            "CREATE INDEX IF NOT EXISTS `index_session_started_at` ON `session` (`started_at`)",
+            "CREATE TABLE IF NOT EXISTS `lift_set` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`session_uid` TEXT NOT NULL, `exercise` TEXT NOT NULL, `bell_kg` REAL NOT NULL, " +
+                "`reps` INTEGER NOT NULL, `side` TEXT, `logged_at` INTEGER NOT NULL, " +
+                "`doubled` INTEGER NOT NULL DEFAULT 0, `equipment` TEXT, `seconds` INTEGER, `band` TEXT)",
+            "CREATE INDEX IF NOT EXISTS `index_lift_set_session_uid` ON `lift_set` (`session_uid`)",
+            "CREATE TABLE IF NOT EXISTS `bell` (`kg` REAL NOT NULL, PRIMARY KEY(`kg`))",
+            "CREATE TABLE IF NOT EXISTS `following` (`id` INTEGER NOT NULL, `program_id` TEXT NOT NULL, " +
+                "`started_at` INTEGER NOT NULL, `days_before` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`id`))",
+            "CREATE TABLE IF NOT EXISTS `custom_program` (`uid` TEXT NOT NULL, `name` TEXT NOT NULL, " +
+                "`days_per_week` INTEGER NOT NULL, `weeks` INTEGER NOT NULL, `days` TEXT NOT NULL, " +
+                "`updated_at` INTEGER NOT NULL, PRIMARY KEY(`uid`))",
+            "CREATE TABLE IF NOT EXISTS `custom_exercise` (`uid` TEXT NOT NULL, `name` TEXT NOT NULL, " +
+                "`equipment` TEXT NOT NULL, `measure` TEXT NOT NULL, `per_side` INTEGER NOT NULL, " +
+                "`focus` TEXT NOT NULL, `cues` TEXT NOT NULL, `archived` INTEGER NOT NULL, " +
+                "`updated_at` INTEGER NOT NULL, PRIMARY KEY(`uid`))",
+            "CREATE TABLE IF NOT EXISTS `band` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `colour` TEXT NOT NULL, " +
+                "`position` INTEGER NOT NULL, `archived` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, " +
+                "PRIMARY KEY(`id`))",
+            "CREATE TABLE IF NOT EXISTS `bar` (`id` INTEGER NOT NULL, `kg` REAL NOT NULL, PRIMARY KEY(`id`))",
+            "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+            "INSERT OR REPLACE INTO room_master_table (id,identity_hash) " +
+                "VALUES(42, '382d85dd2bf73d9be02ace826b8015f1')",
         )
     }
 }

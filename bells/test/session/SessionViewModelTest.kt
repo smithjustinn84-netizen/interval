@@ -5,6 +5,7 @@ package dev.justinsmith.bells.session
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.data.ExerciseFilterStore
+import dev.justinsmith.bells.data.FollowingEntity
 import dev.justinsmith.bells.data.SessionEntity
 import dev.justinsmith.bells.data.SetEntity
 import dev.justinsmith.bells.domain.BAR_KG_STEP
@@ -13,6 +14,7 @@ import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.domain.Side
+import dev.justinsmith.bells.domain.program
 import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.bells.fakes.FakeIntervalActivity
 import dev.justinsmith.bells.fakes.FixedTimestampFormatter
@@ -236,5 +238,34 @@ class SessionViewModelTest {
 
     private companion object {
         const val EARLIER = "earlier"
+    }
+
+    @Test
+    fun `finishing the program's last day says which program it finished`() {
+        val goblets = ProgramKey.BuiltIn(ProgramId.GobletSquatRow)
+        storage.following.row.value = FollowingEntity(programId = goblets.stored, startedAtEpochMillis = 0)
+        storage.sessions.sessions.value = (1..7).map { day ->
+            val at = day * 1_000L
+            SessionEntity("d$day", at, at + 1, "Day", at + 1, programId = goblets.stored, programDay = day)
+        }
+        assertEquals(8, repository.programDay.value?.number)
+        repository.startSession(goblets)
+        repository.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
+        viewModel().use {
+            assertTrue(finish("Day 8"))
+            assertEquals(program(ProgramId.GobletSquatRow), state.value.finished?.lastDayOf)
+        }
+    }
+
+    @Test
+    fun `finishing a day before the last names no program finished`() {
+        val goblets = ProgramKey.BuiltIn(ProgramId.GobletSquatRow)
+        storage.following.row.value = FollowingEntity(programId = goblets.stored, startedAtEpochMillis = 0)
+        repository.startSession(goblets)
+        repository.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
+        viewModel().use {
+            assertTrue(finish("Day 1"))
+            assertNull(state.value.finished?.lastDayOf)
+        }
     }
 }

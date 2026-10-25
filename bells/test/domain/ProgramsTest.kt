@@ -39,6 +39,15 @@ class ProgramsTest {
     }
 
     @Test
+    fun `a day past the program's weeks still lays out`() {
+        val goblets = program(ProgramId.GobletSquatRow)
+        val day = goblets.day(goblets.totalDays + 1)
+        assertEquals(goblets.days[0], day.blocks)
+        assertEquals(goblets.weeks + 1, day.week)
+        assertEquals(goblets.dayAfter(2), goblets.day(3))
+    }
+
+    @Test
     fun `the next planned set skips what has been logged by lift and side`() {
         val planned = Block(BuiltInExercise.GetUp, rounds = 2, reps = 1).plannedSets() // L R L R
         assertEquals(0, nextPlanned(planned, emptyList()))

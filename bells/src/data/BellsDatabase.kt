@@ -27,7 +27,7 @@ import kotlinx.coroutines.flow.Flow
  * version 7 sets of any equipment, held or with a band, and the exercises the user adds,
  * [CustomExerciseEntity]; version 8 the user's changes to their bands and the bands they add, [BandEntity];
  * version 9 a session's day as it changed it, and the days done of a program before following it; version 10
- * the user's barbell, [BarEntity].
+ * the user's barbell, [BarEntity]; version 11 which day of its program a session was.
  * Every version adds; none rewrites a row.
  */
 @Database(
@@ -41,7 +41,7 @@ import kotlinx.coroutines.flow.Flow
         BandEntity::class,
         BarEntity::class,
     ],
-    version = 10,
+    version = 11,
     // 3 to 4 is MIGRATION_3_4, added in bellsStorageModule.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -52,6 +52,7 @@ import kotlinx.coroutines.flow.Flow
         AutoMigration(from = 7, to = 8),
         AutoMigration(from = 8, to = 9),
         AutoMigration(from = 9, to = 10),
+        AutoMigration(from = 10, to = 11),
     ],
 )
 @ConstructedBy(BellsDatabaseConstructor::class)
@@ -111,12 +112,12 @@ interface SessionDao {
     @Insert
     suspend fun insert(session: SessionEntity)
 
-    /** How many sessions of [programId] finished since [since]: the days of it done. */
+    /** The sessions of [programId] finished since [since], oldest first: the days of it done, each as logged. */
     @Query(
-        "SELECT COUNT(*) FROM session WHERE program_id = :programId AND finished_at IS NOT NULL " +
-            "AND deleted = 0 AND started_at >= :since",
+        "SELECT * FROM session WHERE program_id = :programId AND finished_at IS NOT NULL " +
+            "AND deleted = 0 AND started_at >= :since ORDER BY started_at",
     )
-    fun observeProgramDays(programId: String, since: Long): Flow<Int>
+    fun observeProgramSessions(programId: String, since: Long): Flow<List<SessionEntity>>
 
     @Insert
     suspend fun insert(set: SetEntity)
@@ -230,6 +231,8 @@ data class SessionEntity(
     @ColumnInfo(name = "program_id") val programId: String? = null,
     /** The day as the session changed it, in [encodePlan]'s shape; null while it is as programmed. */
     val plan: String? = null,
+    /** Which day of its program it was, from 1; null for a free session, or one logged before sessions kept it. */
+    @ColumnInfo(name = "program_day") val programDay: Int? = null,
 )
 
 @Entity(tableName = "lift_set", indices = [Index("session_uid")])

@@ -58,6 +58,7 @@ import dev.justinsmith.bells.gear.GearRoute
 import dev.justinsmith.bells.history.LiftDetailRoute
 import dev.justinsmith.bells.library.ExerciseLibraryRoute
 import dev.justinsmith.bells.programs.ProgramEditorRoute
+import dev.justinsmith.bells.programs.ProgramProgressRoute
 import dev.justinsmith.bells.programs.ProgramsRoute
 import dev.justinsmith.bells.session.SessionRoute
 import dev.justinsmith.bells.today.TodayRoute
@@ -81,6 +82,7 @@ import dev.justinsmith.interval.nav.OwnedBells
 import dev.justinsmith.interval.nav.Plan
 import dev.justinsmith.interval.nav.Presets
 import dev.justinsmith.interval.nav.ProgramEditor
+import dev.justinsmith.interval.nav.ProgramProgress
 import dev.justinsmith.interval.nav.Programs
 import dev.justinsmith.interval.nav.Settings
 import dev.justinsmith.interval.nav.Tab
@@ -143,6 +145,7 @@ internal val navConfiguration = SavedStateConfiguration {
             subclass(Presets::class)
             subclass(Lifting::class)
             subclass(Programs::class)
+            subclass(ProgramProgress::class)
             subclass(ProgramEditor::class)
             subclass(OwnedBells::class)
             subclass(ExerciseLibrary::class)
@@ -421,6 +424,7 @@ private fun EntryProviderScope<NavKey>.liftEntries(backStack: NavBackStack<NavKe
             onOpenBells = { backStack.push(OwnedBells) },
             onOpenSession = { backStack.push(LiftDetail(it)) },
             onOpenExercises = { backStack.push(ExerciseLibrary) },
+            onOpenProgram = { backStack.push(ProgramProgress) },
         )
     }
     entry<Lifting>(metadata = pageKind(PageKind.Mode)) {
@@ -430,10 +434,22 @@ private fun EntryProviderScope<NavKey>.liftEntries(backStack: NavBackStack<NavKe
         ProgramsRoute(
             onNew = { backStack.push(ProgramEditor()) },
             onEdit = { backStack.push(ProgramEditor(it)) },
+            onOpenProgress = { backStack.push(ProgramProgress) },
             onBack = { backStack.removeLastOrNull() },
         )
     }
     entry<ProgramEditor> { key -> ProgramEditorRoute(uid = key.uid, onBack = { backStack.removeLastOrNull() }) }
+    entry<ProgramProgress> {
+        ProgramProgressRoute(
+            onOpenSession = { backStack.push(LiftDetail(it)) },
+            // In place of the page, so Back from Programs lands on Lift, whichever page opened it.
+            onPickAnother = {
+                backStack.removeLastOrNull()
+                backStack.push(Programs)
+            },
+            onBack = { backStack.removeLastOrNull() },
+        )
+    }
     entry<OwnedBells> { GearRoute(onBack = { backStack.removeLastOrNull() }) }
     entry<ExerciseLibrary> {
         ExerciseLibraryRoute(

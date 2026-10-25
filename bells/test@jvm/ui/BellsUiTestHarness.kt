@@ -35,6 +35,7 @@ import dev.justinsmith.bells.gear.GearRoute
 import dev.justinsmith.bells.history.LiftDetailRoute
 import dev.justinsmith.bells.library.ExerciseLibraryRoute
 import dev.justinsmith.bells.programs.ProgramEditorRoute
+import dev.justinsmith.bells.programs.ProgramProgressRoute
 import dev.justinsmith.bells.programs.ProgramsRoute
 import dev.justinsmith.bells.session.SessionRoute
 import dev.justinsmith.bells.today.TodayRoute
@@ -106,6 +107,8 @@ private sealed interface Page {
 
     data object Programs : Page
 
+    data object Progress : Page
+
     data object Bells : Page
 
     data object Exercises : Page
@@ -140,6 +143,8 @@ private fun BellsHost(koin: KoinApplication, back: NavigationEventDispatcherOwne
                                         onChooseProgram = { backStack.add(Page.Programs) },
                                         onOpenBells = { backStack.add(Page.Bells) },
                                         onOpenExercises = { backStack.add(Page.Exercises) },
+                                        onOpenSession = { backStack.add(Page.Finished(it)) },
+                                        onOpenProgram = { backStack.add(Page.Progress) },
                                     )
 
                                     Page.Session -> SessionRoute(onExit = pop)
@@ -147,6 +152,16 @@ private fun BellsHost(koin: KoinApplication, back: NavigationEventDispatcherOwne
                                     Page.Programs -> ProgramsRoute(
                                         onNew = { backStack.add(Page.Editor(null)) },
                                         onEdit = { backStack.add(Page.Editor(it)) },
+                                        onBack = pop,
+                                        onOpenProgress = { backStack.add(Page.Progress) },
+                                    )
+
+                                    Page.Progress -> ProgramProgressRoute(
+                                        onOpenSession = { backStack.add(Page.Finished(it)) },
+                                        onPickAnother = {
+                                            pop()
+                                            backStack.add(Page.Programs)
+                                        },
                                         onBack = pop,
                                     )
 

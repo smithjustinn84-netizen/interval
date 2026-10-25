@@ -42,6 +42,7 @@ import dev.justinsmith.bells.resources.program_following
 import dev.justinsmith.bells.resources.program_keep
 import dev.justinsmith.bells.resources.program_preview_day
 import dev.justinsmith.bells.resources.program_replaces
+import dev.justinsmith.bells.resources.program_see_progress
 import dev.justinsmith.bells.resources.program_stop
 import dev.justinsmith.bells.resources.program_switch
 import dev.justinsmith.bells.resources.program_switch_text
@@ -75,6 +76,7 @@ import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
+import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.SheetColumns
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
@@ -125,10 +127,17 @@ data class ProgramsActions(
     val onNew: () -> Unit = {},
     val onEdit: (uid: String) -> Unit = {},
     val onBack: () -> Unit = {},
+    /** Opens the program followed: its days done and left. */
+    val onOpenProgress: () -> Unit = {},
 )
 
 @Composable
-fun ProgramsRoute(onNew: () -> Unit, onEdit: (uid: String) -> Unit, onBack: () -> Unit) {
+fun ProgramsRoute(
+    onNew: () -> Unit,
+    onEdit: (uid: String) -> Unit,
+    onBack: () -> Unit,
+    onOpenProgress: () -> Unit = {},
+) {
     val scope = currentKoinScope()
     val viewModel = viewModel { ProgramsViewModel(scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -148,6 +157,7 @@ fun ProgramsRoute(onNew: () -> Unit, onEdit: (uid: String) -> Unit, onBack: () -
             onNew = onNew,
             onEdit = onEdit,
             onBack = onBack,
+            onOpenProgress = onOpenProgress,
         ),
     )
 }
@@ -216,6 +226,10 @@ fun ProgramsScreen(
                     actions.onFollow(program.key)
                 }
             },
+            onOpenProgress = {
+                previewing = null
+                actions.onOpenProgress()
+            },
             onDismiss = { previewing = null },
         )
     }
@@ -255,7 +269,7 @@ private fun familyName(family: ProgramFamily): String = stringResource(
 /**
  * A program before it is followed: what it is, each of its days block by block, and Follow this program,
  * over a line naming the program and day it replaces when one is followed. The program followed shows
- * Following instead.
+ * Following instead, and the way to its days done and left.
  */
 @Composable
 private fun ProgramSheet(
@@ -263,6 +277,7 @@ private fun ProgramSheet(
     current: Boolean,
     replacing: ProgramDay?,
     onFollow: () -> Unit,
+    onOpenProgress: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val palette = IntervalTheme.palette
@@ -278,11 +293,11 @@ private fun ProgramSheet(
                     Text(name, style = IntervalTheme.type.value, color = palette.text)
                     Text(programSummary(program), style = IntervalTheme.type.body, color = palette.textDim)
                 }
-                if (sideways) FollowFooter(current, replacing, onFollow)
+                if (sideways) FollowFooter(current, replacing, onFollow, onOpenProgress)
             },
             second = {
                 ProgramDays(program)
-                if (!sideways) FollowFooter(current, replacing, onFollow)
+                if (!sideways) FollowFooter(current, replacing, onFollow, onOpenProgress)
             },
             spacing = Spacing.space20,
         )
@@ -316,18 +331,24 @@ private fun ProgramDays(program: Program) {
     }
 }
 
-/** Following, for the program followed; otherwise Follow, under the day it takes the place of. */
+/**
+ * Following and the way to its days done, for the program followed; otherwise Follow, under the day it takes
+ * the place of.
+ */
 @Composable
-private fun FollowFooter(current: Boolean, replacing: ProgramDay?, onFollow: () -> Unit) {
+private fun FollowFooter(current: Boolean, replacing: ProgramDay?, onFollow: () -> Unit, onOpenProgress: () -> Unit) {
     val palette = IntervalTheme.palette
     if (current) {
-        Text(
-            stringResource(Res.string.program_following),
-            style = IntervalTheme.type.label,
-            color = palette.accent,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center,
-        )
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+            Text(
+                stringResource(Res.string.program_following),
+                style = IntervalTheme.type.label,
+                color = palette.accent,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+            )
+            SecondaryButton(stringResource(Res.string.program_see_progress), onOpenProgress, Modifier.fillMaxWidth())
+        }
     } else {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             replacing?.let { day ->

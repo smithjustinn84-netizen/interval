@@ -350,6 +350,8 @@
     <string name="summary_reps">Reps</string>
     <string name="summary_records">New records</string>
     <string name="summary_shared">Counts toward your week and your goal</string>
+    <!-- On the summary of a program's last day: "Easy Strength finished · every day done" -->
+    <string name="summary_program_finished">%1$s finished · every day done</string>
     <!-- Where the week stands with this session in: "3 of 4 this week", or the count with no goal set -->
     <string name="summary_week_of_goal">%1$d of %2$d this week</string>
     <plurals name="summary_week_count">
@@ -398,6 +400,8 @@
     <string name="history_delete">Delete</string>
     <!-- Closes a finished session open beside History's log -->
     <string name="history_close_cd">Close session</string>
+    <!-- Under a session's date, the program day it was: "Easy Strength · day 7" -->
+    <string name="history_program_day">%1$s · day %2$d</string>
 
     <!-- Bells and records -->
     <string name="bells_title">Your equipment</string>
@@ -523,7 +527,7 @@
         <item quantity="other">%2$d a week for %1$d weeks</item>
     </plurals>
     <string name="program_day">Day %1$d of %2$d · week %3$d</string>
-    <string name="program_finished">Finished · pick another program</string>
+    <string name="program_finished">Finished</string>
     <string name="program_follow_cta">Follow a program</string>
     <string name="program_follow_hint">Each day planned, at the weight last used</string>
     <string name="program_change">Change program</string>
@@ -538,6 +542,33 @@
     <string name="program_switch_text">Day %1$d of %2$s is next. %3$s starts at day 1; past sessions stay in History.</string>
     <string name="program_switch">Switch</string>
     <string name="program_keep">Keep current</string>
+    <!-- The program followed: its days done and left, opened from Lift's program card and from its sheet on Programs -->
+    <string name="program_open_cd">Open the program</string>
+    <string name="program_see_progress">Days done and left</string>
+    <string name="program_days_done_label">Days done</string>
+    <string name="program_days_left_label">Days left</string>
+    <string name="program_week">Week %1$d</string>
+    <!-- A day on the map, read out: "Day 3: done" -->
+    <string name="program_day_cd">Day %1$d: %2$s</string>
+    <string name="program_day_done">done</string>
+    <string name="program_day_next">next</string>
+    <string name="program_day_to_come">to come</string>
+    <string name="program_day_done_before">done before</string>
+    <!-- A day below one done with no session: deleted since -->
+    <string name="program_day_missed">not logged</string>
+    <string name="program_days_done">Days done</string>
+    <string name="program_none_done">No days done yet. Start day 1 from Lift.</string>
+    <!-- Under a day done: "Mon, Oct 13 · 9 of 9 sets" -->
+    <string name="program_sets_done">%1$d of %2$d sets</string>
+    <string name="program_open_session_cd">Open the session</string>
+    <!-- The days of a copy done under the program it was copied from: "Days 1 to 4" -->
+    <string name="program_days_before_copy">Days 1 to %1$d</string>
+    <string name="program_day_before_copy">Done before the copy</string>
+    <!-- Once every day is done -->
+    <string name="program_records_set">Records set</string>
+    <string name="program_follow_again">Follow again</string>
+    <string name="program_pick_another">Pick another program</string>
+    <string name="program_follow_again_hint">Starts again at day 1. These sessions stay in History.</string>
     <string name="today_last_open_cd">Open the last session</string>
     <string name="block_sets">%1$d × %2$d</string>
     <string name="block_sets_sided">%1$d × %2$d a side</string>

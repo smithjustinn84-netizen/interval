@@ -258,4 +258,50 @@ class TodayScreenTest {
         onNodeWithText("Start day 1").assertIsDisplayed()
         onNodeWithText("Change program").assertIsNotDisplayed()
     }
+
+    @Test
+    fun `a finished program's card says so and opens the program`() = runUiTest {
+        var opened = 0
+        val state = TodayUiState(following = program(ProgramId.GobletSquatRow), programDay = null)
+        setBellsContent {
+            TodayScreen(state, onStartSession = {}, onChooseProgram = {}, onOpenProgram = { opened++ })
+        }
+        onNodeWithText("Finished").assertIsDisplayed()
+        onNodeWithText("Finished · pick another program").assertDoesNotExist()
+        onNodeWithText("Finished").performClick()
+        assertEquals(1, opened)
+    }
+
+    @Test
+    fun `the program's header opens its days done and left`() = bellsAppTest(
+        FakeBellsStorage().apply {
+            val goblets = ProgramId.GobletSquatRow.name
+            following.row.value = FollowingEntity(programId = goblets, startedAtEpochMillis = 0)
+            sessions.sessions.value = listOf(
+                SessionEntity("d1", 0, 600_000, "Goblet squat and row", 600_000, programId = goblets, programDay = 1),
+            )
+        },
+    ) {
+        waitForText("Day 2 of 8 · week 1")
+        onNodeWithText("Day 2 of 8 · week 1").performClick()
+        waitForText("Days left")
+        onNodeWithText("Day 1").assertExists()
+        onNodeWithText("day 0 · 0 of 9 sets").assertExists()
+    }
+
+    @Test
+    fun `a program day's page names its program and day`() = bellsAppTest(
+        FakeBellsStorage().apply {
+            val goblets = ProgramId.GobletSquatRow.name
+            following.row.value = FollowingEntity(programId = goblets, startedAtEpochMillis = 0)
+            sessions.sessions.value = listOf(
+                SessionEntity("d2", 0, 600_000, "Goblet squat", 600_000, programId = goblets, programDay = 2),
+            )
+            sessions.sets.value = listOf(SetEntity(1, "d2", BuiltInExercise.GobletSquat.key, 16.0, 10, null, 0))
+        },
+    ) {
+        waitForText("Last session")
+        onNodeWithText("Last session").performClick()
+        waitForText("Goblet squat and row · day 2")
+    }
 }

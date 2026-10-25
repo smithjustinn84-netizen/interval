@@ -9,6 +9,7 @@ import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.ExerciseDraft
 import dev.justinsmith.bells.domain.Focus
+import dev.justinsmith.bells.domain.Followed
 import dev.justinsmith.bells.domain.Measure
 import dev.justinsmith.bells.domain.ProgramDraft
 import dev.justinsmith.bells.domain.ProgramId
@@ -286,11 +287,56 @@ class BellsRepositoryTest {
         assertEquals(1, repository.programDay.value?.number)
         repository.startSession(ladders)
         assertEquals(ladders, repository.active.value?.program)
+        // Logged as the day it is.
+        assertEquals(1, repository.active.value?.day)
         repository.logSet(BuiltInExercise.Press, 16.0, 1, Side.Left)
         repository.finishSession("Press")
+        assertEquals(1, repository.sessions.value.first().day)
         assertEquals(2, repository.programDay.value?.number)
+        assertEquals(Followed(program(ProgramId.PressLadders), 1_000, daysBefore = 0), repository.followed.value)
         repository.stopFollowing()
         assertNull(repository.programDay.value)
+        assertNull(repository.followed.value)
+    }
+
+    @Test
+    fun `deleting a day from the middle leaves the next day where it was`() = runTest {
+        val ladders = ProgramKey.BuiltIn(ProgramId.PressLadders)
+        repository.follow(ladders)
+        repeat(3) {
+            finishDayOf(ladders)
+            now += 60_000
+        }
+        assertEquals(4, repository.programDay.value?.number)
+        repository.deleteSession(repository.sessions.value[1].uid)
+        assertEquals(listOf(3, 1), repository.sessions.value.map { it.day })
+        assertEquals(4, repository.programDay.value?.number)
+    }
+
+    @Test
+    fun `a session logged before days were kept counts as the day after the last`() = runTest {
+        val ladders = ProgramKey.BuiltIn(ProgramId.PressLadders)
+        repository.follow(ladders)
+        finishDayOf(ladders)
+        now += 60_000
+        // As a build before this one left it: the day is unknown, and it follows the day before it.
+        sessionDao.sessions.value += SessionEntity("old", now, now + 1, "Press", now, programId = ladders.stored)
+        assertEquals(3, repository.programDay.value?.number)
+        now += 60_000
+        finishDayOf(ladders)
+        assertEquals(listOf(3, null, 1), repository.sessions.value.map { it.day })
+        assertEquals(4, repository.programDay.value?.number)
+    }
+
+    @Test
+    fun `a session started while no program is followed has no day`() = runTest {
+        val ladders = ProgramKey.BuiltIn(ProgramId.PressLadders)
+        repository.startSession(ladders)
+        assertNull(repository.active.value?.day)
+        repository.discardSession()
+        repository.follow(ladders)
+        repository.startSession(ProgramKey.BuiltIn(ProgramId.EasyStrength))
+        assertNull(repository.active.value?.day)
     }
 
     @Test

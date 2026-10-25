@@ -14,6 +14,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import dev.justinsmith.bells.data.FollowingEntity
+import dev.justinsmith.bells.data.SessionEntity
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.fakes.FakeLiftStorage
 import dev.justinsmith.interval.fakes.testKoin
@@ -143,5 +145,23 @@ class LiftFlowTest {
         waitForText("24 kg × 10")
         onNodeWithText("Delete").assertExists()
         tab("Lift").assertDoesNotExist()
+    }
+
+    @Test
+    fun `the program followed opens from Lift and a day opens its session`() = liftTest(
+        FakeLiftStorage().apply {
+            val goblets = "GobletSquatRow"
+            following.row.value = FollowingEntity(programId = goblets, startedAtEpochMillis = 0)
+            sessions.sessions.value = listOf(
+                SessionEntity("d1", 0, 600_000, "Goblet squat and row", 600_000, programId = goblets, programDay = 1),
+            )
+        },
+    ) {
+        tab("Lift").performClick()
+        waitForText("Day 2 of 8 · week 1")
+        onNodeWithText("Day 2 of 8 · week 1").performClick()
+        waitForText("Days left")
+        onNodeWithText("Day 1").performClick()
+        waitForText("Goblet squat and row · day 1")
     }
 }

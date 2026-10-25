@@ -35,6 +35,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.LiftSession
+import dev.justinsmith.bells.domain.Program
+import dev.justinsmith.bells.domain.ProgramDay
 import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.domain.builtInPrograms
 import dev.justinsmith.bells.domain.formatKg
@@ -49,6 +51,7 @@ import dev.justinsmith.bells.resources.program_change
 import dev.justinsmith.bells.resources.program_finished
 import dev.justinsmith.bells.resources.program_follow_cta
 import dev.justinsmith.bells.resources.program_follow_hint
+import dev.justinsmith.bells.resources.program_open_cd
 import dev.justinsmith.bells.resources.session_leave_title
 import dev.justinsmith.bells.resources.sets_count
 import dev.justinsmith.bells.resources.today_bells_cd
@@ -113,6 +116,7 @@ fun TodayRoute(
     onOpenBells: () -> Unit,
     onOpenSession: (uid: String) -> Unit = {},
     onOpenExercises: () -> Unit = {},
+    onOpenProgram: () -> Unit = {},
 ) {
     val scope = currentKoinScope()
     val viewModel = viewModel { TodayViewModel(scope.get(), scope.get(), scope.get(), scope.get()) }
@@ -132,6 +136,7 @@ fun TodayRoute(
         onOpenBells = onOpenBells,
         onOpenSession = onOpenSession,
         onOpenExercises = onOpenExercises,
+        onOpenProgram = onOpenProgram,
     )
 }
 
@@ -150,6 +155,7 @@ fun TodayScreen(
     onOpenBells: () -> Unit = {},
     onOpenSession: (uid: String) -> Unit = {},
     onOpenExercises: () -> Unit = {},
+    onOpenProgram: () -> Unit = {},
 ) {
     val palette = IntervalTheme.palette
     val card = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4)
@@ -160,7 +166,7 @@ fun TodayScreen(
         bottomBar = { StartRow(state, onStartSession, Modifier.widthIn(max = Sizes.content)) },
     ) {
         item(key = "week") { WeekCard(state, card) }
-        item(key = "program") { ProgramCard(state, onChooseProgram, card) }
+        item(key = "program") { ProgramCard(state, onChooseProgram, onOpenProgram, card) }
         item(key = "last") { LastCard(state, onOpenSession, card) }
         item(key = "exercises") {
             ListCard(card) {
@@ -296,9 +302,17 @@ private val weekdayInitials = listOf(
     Res.string.weekday_initial_7,
 )
 
-/** The program day to do, with each block's lift, shape and suggested bell; or the way to pick a program. */
+/**
+ * The program day to do, with each block's lift, shape and suggested bell; or the way to pick a program. A tap
+ * on the header opens the program: its days done and left, or once it is finished what it came to.
+ */
 @Composable
-private fun ProgramCard(state: TodayUiState, onChooseProgram: () -> Unit, modifier: Modifier = Modifier) {
+private fun ProgramCard(
+    state: TodayUiState,
+    onChooseProgram: () -> Unit,
+    onOpenProgram: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val palette = IntervalTheme.palette
     val following = state.following
     val day = state.programDay
@@ -313,18 +327,7 @@ private fun ProgramCard(state: TodayUiState, onChooseProgram: () -> Unit, modifi
         return
     }
     ListCard(modifier) {
-        Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
-            Text(
-                if (day == null) {
-                    stringResource(Res.string.program_finished)
-                } else {
-                    programDayLine(day)
-                },
-                style = IntervalTheme.type.caption,
-                color = palette.textDim,
-            )
-            Text(programName(following), style = IntervalTheme.type.section, color = palette.text)
-        }
+        ProgramHeader(following, day, onOpenProgram)
         day?.blocks?.forEach { block ->
             RowDivider()
             Row(
@@ -355,6 +358,47 @@ private fun ProgramCard(state: TodayUiState, onChooseProgram: () -> Unit, modifi
         }
         RowDivider()
         LinkRow(stringResource(Res.string.program_change), null, onClick = onChooseProgram)
+    }
+}
+
+/** Where the program stands over its name, opened by a tap: its days done and left. */
+@Composable
+private fun ProgramHeader(following: Program, day: ProgramDay?, onOpenProgram: () -> Unit) {
+    val palette = IntervalTheme.palette
+    val interaction = remember { MutableInteractionSource() }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(
+                interaction,
+                LocalIndication.current,
+                onClickLabel = stringResource(Res.string.program_open_cd),
+                role = Role.Button,
+            ) { onOpenProgram() }
+            .pressScale(interaction)
+            .padding(
+                start = Spacing.space16,
+                top = Spacing.space16,
+                bottom = Spacing.space16,
+                end = Spacing.space12,
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+            Text(
+                if (day == null) stringResource(Res.string.program_finished) else programDayLine(day),
+                style = IntervalTheme.type.caption,
+                color = palette.textDim,
+            )
+            Text(programName(following), style = IntervalTheme.type.section, color = palette.text)
+        }
+        Icon(
+            IntervalIcons.Chevron,
+            contentDescription = null,
+            tint = palette.textDim,
+            modifier = Modifier.size(Sizes.icon),
+        )
     }
 }
 

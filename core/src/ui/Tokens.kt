@@ -135,6 +135,12 @@ object Sizes {
     /** A planned or missed day in the week chart: an outlined or filled block this tall. */
     val weekBarMark = 32.dp
 
+    /**
+     * A day on a program's map: a round mark, smaller than the week strip's so seven and their week's label fit
+     * a phone's card.
+     */
+    val programDayMark = 20.dp
+
     /** The ring of this week's workouts against the weekly goal, and its stroke. */
     val goalRing = 76.dp
     val goalRingStroke = 8.dp

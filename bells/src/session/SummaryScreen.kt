@@ -36,11 +36,13 @@ import dev.justinsmith.bells.domain.SaveScope
 import dev.justinsmith.bells.resources.Res
 import dev.justinsmith.bells.resources.common_joined
 import dev.justinsmith.bells.resources.summary_done
+import dev.justinsmith.bells.resources.summary_program_finished
 import dev.justinsmith.bells.resources.summary_shared
 import dev.justinsmith.bells.resources.summary_streak
 import dev.justinsmith.bells.resources.summary_week_count
 import dev.justinsmith.bells.resources.summary_week_of_goal
 import dev.justinsmith.bells.resources.today_goal_met
+import dev.justinsmith.bells.ui.programName
 import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.Burst
@@ -193,7 +195,7 @@ private fun SummaryHeading(title: String, modifier: Modifier = Modifier) {
     }
 }
 
-/** Where the week stands with the session in it, where the session went, and Done. */
+/** Where the week stands with the session in it, the program it finished if it did, where it went, and Done. */
 @Composable
 private fun SummaryFooter(finished: Finished, onDone: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
@@ -202,6 +204,15 @@ private fun SummaryFooter(finished: Finished, onDone: () -> Unit) {
                 weekText(week),
                 style = IntervalTheme.type.label,
                 color = IntervalTheme.palette.text,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        finished.lastDayOf?.let { program ->
+            Text(
+                stringResource(Res.string.summary_program_finished, programName(program)),
+                style = IntervalTheme.type.label,
+                color = IntervalTheme.palette.accent,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )

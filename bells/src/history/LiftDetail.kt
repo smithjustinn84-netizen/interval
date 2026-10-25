@@ -1,5 +1,6 @@
 package dev.justinsmith.bells.history
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -24,8 +25,10 @@ import dev.justinsmith.bells.resources.history_close_cd
 import dev.justinsmith.bells.resources.history_delete
 import dev.justinsmith.bells.resources.history_delete_text
 import dev.justinsmith.bells.resources.history_delete_title
+import dev.justinsmith.bells.resources.history_program_day
 import dev.justinsmith.bells.session.SessionStats
 import dev.justinsmith.bells.ui.liftName
+import dev.justinsmith.bells.ui.programName
 import dev.justinsmith.bells.ui.setLine
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.ConfirmDialog
@@ -52,9 +55,10 @@ fun LiftDetailRoute(uid: String, onBack: () -> Unit, modifier: Modifier = Modifi
 }
 
 /**
- * A finished session's page: its title and when, its numbers and records, every set by lift, and Delete
- * (after asking). On a wider window the lifts sit side by side. Once the session is gone, deleted from here
- * or elsewhere, the page goes back. Beside History's log ([inPane]) it closes rather than going back.
+ * A finished session's page: its title, when and which program day it was, its numbers and records, every
+ * set by lift, and Delete (after asking). On a wider window the lifts sit side by side. Once the session is
+ * gone, deleted from here or elsewhere, the page goes back. Beside History's log ([inPane]) it closes rather
+ * than going back.
  */
 @Composable
 fun LiftDetailScreen(
@@ -81,12 +85,7 @@ fun LiftDetailScreen(
         },
     ) {
         item(key = "when", span = StaggeredGridItemSpan.FullLine) {
-            Text(
-                stringResource(Res.string.common_joined, state.date, state.time),
-                style = IntervalTheme.type.meta,
-                color = palette.textDim,
-                modifier = gutter.padding(bottom = Spacing.space16),
-            )
+            When(state, gutter.padding(bottom = Spacing.space16))
         }
         // A cell of its own, so on a wide window the numbers keep a column's width and the lifts sit beside them.
         item(key = "numbers") { SessionStats(session, state.records, gutter.padding(bottom = Spacing.space16)) }
@@ -134,5 +133,27 @@ fun LiftDetailScreen(
             },
             onDismiss = { confirming = false },
         )
+    }
+}
+
+/** When the session was, and under it the program day it was, if it was one. */
+@Composable
+private fun When(state: LiftDetailUiState, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+        Text(
+            stringResource(Res.string.common_joined, state.date, state.time),
+            style = IntervalTheme.type.meta,
+            color = palette.textDim,
+        )
+        val program = state.program
+        val day = state.session?.day
+        if (program != null && day != null) {
+            Text(
+                stringResource(Res.string.history_program_day, programName(program), day),
+                style = IntervalTheme.type.meta,
+                color = palette.textDim,
+            )
+        }
     }
 }

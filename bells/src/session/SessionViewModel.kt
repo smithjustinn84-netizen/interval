@@ -23,6 +23,7 @@ import dev.justinsmith.bells.domain.PersonalRecord
 import dev.justinsmith.bells.domain.PlanChanges
 import dev.justinsmith.bells.domain.PlanRow
 import dev.justinsmith.bells.domain.PlannedSet
+import dev.justinsmith.bells.domain.Program
 import dev.justinsmith.bells.domain.ProgramDay
 import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.domain.SaveScope
@@ -135,6 +136,8 @@ data class Finished(
     val kept: ProgramKey? = null,
     /** The user's bands, to name a band a change plans by. */
     val bands: List<Band> = emptyList(),
+    /** The program this session finished, when it was its last day. */
+    val lastDayOf: Program? = null,
 )
 
 /**
@@ -664,10 +667,10 @@ class SessionViewModel(
         // Taken now: once the session is saved, the program day moves on to the next.
         val bells = repository.bells.value.ifEmpty { standardBells }
         val bands = offeredBands(repository.bands.value)
-        val changes = repository.programDay.value
-            ?.takeIf { session.program != null && it.program.key == session.program }
-            ?.copy(plan = session.plan)
-            ?.let { day -> planChanges(day, progressions(day, session.sets, bells, bands)) }
+        val day = repository.programDay.value?.takeIf { session.program != null && it.program.key == session.program }
+        val changes = day?.copy(plan = session.plan)?.let {
+            planChanges(it, progressions(it, session.sets, bells, bands))
+        }
         val taken = repository.customPrograms.value.mapNotNull { it.name }.toSet()
         finished.value = Finished(
             done,
@@ -676,6 +679,7 @@ class SessionViewModel(
             changes,
             taken,
             bands = repository.bands.value,
+            lastDayOf = day?.program?.takeIf { day.number >= it.totalDays },
         )
         repository.finishSession(title)
         return true
