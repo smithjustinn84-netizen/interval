@@ -14,8 +14,14 @@ modules:
   - detekt-plugin
   - interval-data
   - interval-domain
+  - interval-history
+  - interval-home
   - interval-platform
+  - interval-presets
+  - interval-settings
   - interval-testing
+  - interval-ui
+  - interval-workout
   - iosApp
   - lint-plugin
   - shared

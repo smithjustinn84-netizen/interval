@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="common_done">Done</string>
+    <string name="common_joined">%1$s · %2$s</string>
+    <string name="history_goal_met">Goal met this week</string>
+    <plurals name="history_streak">
+        <item quantity="one">%1$d-week streak</item>
+        <item quantity="other">%1$d-week streak</item>
+    </plurals>
+    <string name="phase_get_ready">Get ready</string>
+    <string name="phase_work">Work</string>
+    <string name="phase_rest">Rest</string>
+    <string name="phase_done">Done</string>
+    <string name="workout_paused">Paused</string>
+    <string name="next_work">Next: work %1$s</string>
+    <string name="next_rest">Next: rest %1$s</string>
+    <string name="next_round">Next: round %1$d of %2$d</string>
+    <string name="next_last_round">Last round — finish strong</string>
+    <string name="workout_status">Round %1$d of %2$d · %3$s left</string>
+    <string name="workout_tap_pause">Tap anywhere to pause</string>
+    <string name="workout_tap_resume">Tap anywhere to resume</string>
+    <string name="workout_pause">Pause</string>
+    <string name="workout_resume">Resume</string>
+    <string name="workout_end">End</string>
+    <string name="workout_end_cd">End workout</string>
+    <string name="workout_back">Back</string>
+    <string name="workout_back_cd">Back to previous interval</string>
+    <string name="workout_skip">Skip</string>
+    <string name="workout_skip_cd">Skip to next interval</string>
+    <string name="workout_add_time">+%1$ds</string>
+    <string name="workout_add_time_cd">Add ten seconds</string>
+    <string name="workout_end_title">End workout?</string>
+    <plurals name="workout_end_progress">
+        <item quantity="one">%1$d of %2$d round done. What you finished is saved to history.</item>
+        <item quantity="other">%1$d of %2$d rounds done. What you finished is saved to history.</item>
+    </plurals>
+    <string name="workout_end_nothing">No round is finished yet, so nothing is saved.</string>
+    <string name="workout_end_confirm">End workout</string>
+    <string name="workout_done">Done</string>
+    <string name="workout_ended">Ended</string>
+    <plurals name="workout_summary_finished">
+        <item quantity="one">%1$d round · %2$s total</item>
+        <item quantity="other">%1$d rounds · %2$s total</item>
+    </plurals>
+    <plurals name="workout_summary_ended">
+        <item quantity="one">%1$d of %2$d round · %3$s</item>
+        <item quantity="other">%1$d of %2$d rounds · %3$s</item>
+    </plurals>
+    <string name="workout_stat_time">Time</string>
+    <string name="workout_stat_rounds">Rounds</string>
+    <string name="workout_stat_calories">kcal</string>
+    <string name="workout_stat_rounds_value">%1$d/%2$d</string>
+    <string name="workout_saved">Saved to history</string>
+    <string name="summary_week_of_goal">%1$d of %2$d this week</string>
+    <plurals name="summary_week_count">
+        <item quantity="one">%1$d workout this week</item>
+        <item quantity="other">%1$d workouts this week</item>
+    </plurals>
+    <string name="workout_repeat">Repeat</string>
+    <string name="workout_save_preset">Save as preset</string>
+</resources>

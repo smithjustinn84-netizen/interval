@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_save">Save</string>
+    <string name="common_joined">%1$s · %2$s</string>
+    <string name="common_prep_line">%1$s to get ready</string>
+    <string name="common_calories_estimate">≈ %1$d kcal</string>
+    <string name="presets_calories_estimate_as">≈ %1$d kcal as %2$s</string>
+    <string name="activity_title">Activity</string>
+    <string name="preset_save_title">Save as preset</string>
+    <string name="preset_name_label">Name</string>
+    <string name="preset_name_count">%1$d / %2$d</string>
+    <string name="presets_title">Presets</string>
+    <string name="presets_new_cd">New preset</string>
+    <string name="presets_current_unsaved">On the Timer · not saved</string>
+    <string name="presets_built_in">Built-in</string>
+    <string name="presets_yours">Yours</string>
+    <string name="presets_empty_title">Nothing saved yet</string>
+    <string name="presets_empty">Save one from the Timer or the end of a workout.</string>
+    <string name="presets_on_timer">On the Timer</string>
+    <string name="presets_put_on_timer">Put on Timer</string>
+    <string name="presets_replaces_unsaved">Replaces the unsaved settings on the Timer.</string>
+    <string name="presets_edit">Edit</string>
+    <string name="presets_delete">Delete</string>
+    <string name="presets_save_copy">Save a copy</string>
+    <string name="preset_copy_name">%1$s copy</string>
+    <string name="presets_delete_title">Delete %1$s?</string>
+    <string name="presets_delete_text">History keeps the workouts you did with it. The Timer keeps its settings.</string>
+    <string name="preset_editor_edit_title">Edit preset</string>
+    <string name="preset_editor_new_title">New preset</string>
+    <string name="preset_editor_copy_title">Save a copy</string>
+    <string name="preset_editor_total">Total</string>
+    <string name="preset_editor_prep_hint">Get ready time comes from Settings.</string>
+    <string name="preset_editor_saves_as">Saves as %1$s</string>
+    <string name="preset_editor_same_shape">Same shape as %1$s</string>
+    <string name="notice_undo">Undo</string>
+    <string name="notice_preset_saved">Saved as %1$s</string>
+    <string name="notice_preset_deleted">Deleted %1$s</string>
+</resources>

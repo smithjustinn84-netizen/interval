@@ -7,10 +7,16 @@ product:
 dependencies:
   # The theme, components and platform hooks every app shares; exported so the app shells see them too.
   - //core: exported
-  # The workout's domain and models, its storage and what it needs from the platform.
+  # The workout's domain and models, its storage and what it needs from the platform, and its screens.
   - //interval-domain
   - //interval-data
   - //interval-platform
+  - //interval-ui
+  - //interval-presets
+  - //interval-home
+  - //interval-workout
+  - //interval-settings
+  - //interval-history
   # Kettlebell training, behind the Lift tab: its screens, and its repository and Koin modules.
   - //bells
   - //bells-data

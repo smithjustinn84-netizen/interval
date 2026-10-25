@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="common_settings">Settings</string>
+    <string name="common_joined">%1$s · %2$s</string>
+    <string name="timer_title">Timer</string>
+    <string name="timer_total">Total</string>
+    <string name="common_prep_line">%1$s to get ready</string>
+    <string name="common_calories_estimate">≈ %1$d kcal</string>
+    <string name="activity_title">Activity</string>
+    <string name="activity_choose_cd">Activity: %1$s. Change</string>
+    <string name="timer_all_presets_cd">All presets</string>
+    <string name="timer_save_as_preset_cd">Save as preset</string>
+    <string name="timer_describe_cd">Describe a workout</string>
+    <string name="describe_title">Describe a workout</string>
+    <string name="describe_field_label">Workout in words</string>
+    <string name="describe_placeholder">40/20 x8 on the rower</string>
+    <string name="describe_hint">Try “tabata”, “45 on 15 off x10” or “20 min of burpees, short rests”.</string>
+    <string name="describe_kept_hint">Dimmed values stay as they are on the Timer.</string>
+    <string name="describe_use">Use</string>
+    <string name="describe_save_preset">Save as preset</string>
+    <string name="preset_editor_total">Total</string>
+</resources>

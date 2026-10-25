@@ -1,0 +1,22 @@
+# The workout: full screen while it runs, its readout and controls, and its summary when it ends.
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/compose-lib.module-template.yaml
+
+dependencies:
+  - //interval-presets: exported
+  - //interval-platform: exported
+  # The week's standing counts Lift's sessions too.
+  - //bells-data
+
+test-dependencies:
+  - //interval-testing
+  - //bells-testing
+
+settings:
+  compose:
+    resources:
+      packageName: dev.justinsmith.interval.workout.resources

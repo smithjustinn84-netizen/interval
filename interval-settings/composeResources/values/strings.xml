@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="common_done">Done</string>
+    <string name="value_sheet_hint_hold">Hold − or + to change faster.</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_close_cd">Close settings</string>
+    <string name="settings_cues">Cues</string>
+    <string name="settings_sound">Sound cues</string>
+    <string name="settings_sound_hint">Beeps at each phase change</string>
+    <string name="settings_voice">Voice</string>
+    <string name="settings_voice_hint">Spoken countdown and phase names</string>
+    <string name="settings_halfway">Halfway alert</string>
+    <string name="settings_halfway_hint">A cue in the middle of intervals over %1$ds</string>
+    <string name="settings_halfway_needs_cue">Turn on sound or voice to hear it</string>
+    <string name="settings_vibrate">Vibrate</string>
+    <string name="settings_vibrate_hint">Buzz at each phase change</string>
+    <string name="settings_cues_all_off">Workouts will run without any cues</string>
+    <string name="settings_workout">Workout</string>
+    <string name="settings_keep_screen_on">Keep screen on</string>
+    <string name="settings_keep_screen_on_hint">While a workout is running</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="settings_calories">Calories</string>
+    <string name="settings_weight">Body weight</string>
+    <string name="settings_weight_unset">Off. Set it to see calorie estimates</string>
+    <string name="settings_weight_value">%1$d %2$s</string>
+    <string name="settings_effort_hint">How hard you push in work intervals. Calories are an estimate from this, your weight and the activity on the Timer.</string>
+    <string name="effort_easy">Easy</string>
+    <string name="effort_steady">Steady</string>
+    <string name="effort_hard">Hard</string>
+    <string name="effort_max">Max</string>
+    <string name="unit_kg">kg</string>
+    <string name="unit_lb">lb</string>
+    <string name="weight_less_cd">Less weight</string>
+    <string name="weight_more_cd">More weight</string>
+    <string name="weight_sheet_privacy">Only used to estimate calories. It stays on this device.</string>
+    <string name="weight_sheet_clear">Turn off calorie estimates</string>
+    <string name="settings_about">About</string>
+    <string name="settings_about_app">About Interval</string>
+    <string name="settings_about_app_hint">Version, credits and licenses</string>
+</resources>
