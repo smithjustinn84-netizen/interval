@@ -60,6 +60,7 @@ import dev.justinsmith.bells.resources.session_empty
 import dev.justinsmith.bells.resources.session_finish
 import dev.justinsmith.bells.resources.session_leave
 import dev.justinsmith.bells.resources.session_leave_emom_text
+import dev.justinsmith.bells.resources.session_leave_empty_text
 import dev.justinsmith.bells.resources.session_leave_text
 import dev.justinsmith.bells.resources.session_leave_title
 import dev.justinsmith.bells.resources.session_log
@@ -117,6 +118,10 @@ fun SessionRoute(onExit: () -> Unit) {
             onLeave = {
                 viewModel.stopEmom()
                 viewModel.cancelHold()
+                onExit()
+            },
+            onDiscard = {
+                viewModel.discard()
                 onExit()
             },
         )
@@ -189,7 +194,7 @@ private fun sessionActions(
     onSwapBlock = viewModel::swapBlock,
     onSkipBlock = viewModel::skipBlock,
     onUnskipBlock = viewModel::unskipBlock,
-    // A session with nothing logged is thrown away, and with no summary to show, the page closes.
+    // The screen asks first when nothing is logged; should one slip through, it is thrown away and the page closes.
     onFinish = { if (!viewModel.finish(title)) onExit() },
     onDiscard = {
         viewModel.discard()
@@ -198,32 +203,50 @@ private fun sessionActions(
 )
 
 /**
- * Back, or the back gesture, asks before leaving a session with sets logged or an EMOM running: the sets
- * stay, for Resume session on Lift, but the EMOM's clock can't. With neither, Back just leaves.
+ * Back, or the back gesture, asks before leaving a session: with sets logged or an EMOM running, the sets stay,
+ * for Resume session on Lift, but the EMOM's clock can't. With nothing logged there is nothing to keep, and Leave
+ * drops the session, as × → Discard does: a session with no sets is never kept.
  */
 @Composable
-private fun LeaveGuard(emomRunning: Boolean, hasSets: Boolean, onLeave: () -> Unit) {
+private fun LeaveGuard(emomRunning: Boolean, hasSets: Boolean, onLeave: () -> Unit, onDiscard: () -> Unit) {
     var asking by rememberSaveable { mutableStateOf(false) }
     NavigationBackHandler(
         state = rememberNavigationEventState(NavigationEventInfo.None),
-        isBackEnabled = emomRunning || hasSets,
         onBackCompleted = { asking = true },
     )
     if (asking) {
-        ConfirmDialog(
-            title = stringResource(Res.string.session_leave_title),
-            text = stringResource(
-                if (emomRunning) Res.string.session_leave_emom_text else Res.string.session_leave_text,
-            ),
-            confirm = stringResource(Res.string.session_leave),
-            dismiss = stringResource(Res.string.session_stay),
-            onConfirm = {
+        LeaveDialog(
+            emomRunning = emomRunning,
+            hasSets = hasSets,
+            onLeave = {
                 asking = false
-                onLeave()
+                if (hasSets) onLeave() else onDiscard()
             },
             onDismiss = { asking = false },
         )
     }
+}
+
+/**
+ * "Leave the session?", Stay or Leave: what Leave does to the sets, or that there are none to keep. Back asks it
+ * on every session, Finish on one with nothing logged.
+ */
+@Composable
+private fun LeaveDialog(emomRunning: Boolean, hasSets: Boolean, onLeave: () -> Unit, onDismiss: () -> Unit) {
+    ConfirmDialog(
+        title = stringResource(Res.string.session_leave_title),
+        text = stringResource(
+            when {
+                !hasSets -> Res.string.session_leave_empty_text
+                emomRunning -> Res.string.session_leave_emom_text
+                else -> Res.string.session_leave_text
+            },
+        ),
+        confirm = stringResource(Res.string.session_leave),
+        dismiss = stringResource(Res.string.session_stay),
+        onConfirm = onLeave,
+        onDismiss = onDismiss,
+    )
 }
 
 /** What the session screen's controls do. */
@@ -266,6 +289,8 @@ data class SessionActions(
 fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modifier = Modifier) {
     var logging by rememberSaveable { mutableStateOf(false) }
     var discarding by rememberSaveable { mutableStateOf(false) }
+    // Finish with nothing logged: the same ask as Back, since there is nothing to save.
+    var leaving by rememberSaveable { mutableStateOf(false) }
     var planning by rememberSaveable { mutableStateOf(false) }
     // The exercise's page open over the session, from Up next.
     var reading by rememberSaveable { mutableStateOf(false) }
@@ -312,7 +337,7 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
         },
         buttons = {
             SessionButtons(
-                onFinish = actions.onFinish,
+                onFinish = { if (state.session?.sets.isNullOrEmpty()) leaving = true else actions.onFinish() },
                 onLog = {
                     actions.onOpenLog()
                     logging = true
@@ -324,6 +349,38 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
     if (logging) LogSetSheet(state, actions, onDismiss = { logging = false })
     if (reading) ExercisePageSheet(state, actions, onDismiss = { reading = false })
     PlanSheets(state, actions, planning, changing, onPlanning = { planning = it }, onChanging = { changing = it })
+    EndDialogs(
+        leaving,
+        discarding,
+        onDiscard = actions.onDiscard,
+        onLeaving = { leaving = it },
+        onDiscarding = { discarding = it },
+    )
+}
+
+/**
+ * The two ways out of a session that drop it: Finish with nothing logged ([leaving], asked in Back's words) and
+ * × ([discarding]). Each confirms with [onDiscard].
+ */
+@Composable
+private fun EndDialogs(
+    leaving: Boolean,
+    discarding: Boolean,
+    onDiscard: () -> Unit,
+    onLeaving: (Boolean) -> Unit,
+    onDiscarding: (Boolean) -> Unit,
+) {
+    if (leaving) {
+        LeaveDialog(
+            emomRunning = false,
+            hasSets = false,
+            onLeave = {
+                onLeaving(false)
+                onDiscard()
+            },
+            onDismiss = { onLeaving(false) },
+        )
+    }
     if (discarding) {
         ConfirmDialog(
             title = stringResource(Res.string.session_discard_title),
@@ -331,10 +388,10 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
             confirm = stringResource(Res.string.session_discard),
             dismiss = stringResource(Res.string.common_cancel),
             onConfirm = {
-                discarding = false
-                actions.onDiscard()
+                onDiscarding(false)
+                onDiscard()
             },
-            onDismiss = { discarding = false },
+            onDismiss = { onDiscarding(false) },
         )
     }
 }

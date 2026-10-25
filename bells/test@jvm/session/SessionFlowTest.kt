@@ -269,11 +269,20 @@ class SessionFlowTest {
     }
 
     @Test
-    fun `finishing with no sets drops the session`() = bellsAppTest { app ->
+    fun `finishing with no sets asks as Back does and Leave drops the session`() = bellsAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Finish")
         onNodeWithText("Finish").performClick()
+        waitForText("Leave the session?")
+        onNodeWithText("Nothing is logged yet, so the session isn't kept.").assertExists()
+        onNodeWithText("Stay").performClick()
+        onNodeWithText("Leave the session?").assertDoesNotExist()
+        onNodeWithText("Finish").assertExists()
+        onNodeWithText("Finish").performClick()
+        waitForText("Leave")
+        onNodeWithText("Leave").performClick()
         waitForText("No sessions yet")
+        onNodeWithText("Start session").assertExists()
         assertTrue(app.storage.sessions.sessions.value.isEmpty())
     }
 
@@ -314,12 +323,22 @@ class SessionFlowTest {
     }
 
     @Test
-    fun `back with nothing logged just leaves`() = bellsAppTest {
+    fun `back with nothing logged asks and Leave drops the session`() = bellsAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Finish")
-        it.back()
-        waitForText("Resume session")
+        app.back()
+        waitForText("Leave the session?")
+        onNodeWithText("Nothing is logged yet, so the session isn't kept.").assertExists()
+        onNodeWithText("Stay").performClick()
         onNodeWithText("Leave the session?").assertDoesNotExist()
+        onNodeWithText("Finish").assertExists()
+        app.back()
+        waitForText("Leave")
+        onNodeWithText("Leave").performClick()
+        // Nothing to resume: the session is gone, not waiting.
+        waitForText("Start session")
+        onNodeWithText("Resume session").assertDoesNotExist()
+        assertTrue(app.storage.sessions.sessions.value.isEmpty())
     }
 
     @Test
@@ -335,6 +354,14 @@ class SessionFlowTest {
         onNodeWithText("Minutes").performScrollTo().assertExists()
         onNodeWithText("Start EMOM").performScrollTo().performClick()
         waitForText("Set done")
+        // Before its first set there is nothing to keep; once one is done, the EMOM's own words.
+        it.back()
+        waitForText("Nothing is logged yet, so the session isn't kept.")
+        onNodeWithText("Stay").performClick()
+        it.clock.set(10_000)
+        waitForText("Work")
+        onNodeWithText("Set done").performClick()
+        waitForText("Rest")
         it.back()
         waitForText("The EMOM stops. Its sets so far are kept: Resume session on Lift picks it up.")
     }

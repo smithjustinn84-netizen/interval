@@ -19,7 +19,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,6 +39,7 @@ import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.domain.builtInPrograms
 import dev.justinsmith.bells.domain.formatKg
 import dev.justinsmith.bells.resources.Res
+import dev.justinsmith.bells.resources.common_cancel
 import dev.justinsmith.bells.resources.common_joined
 import dev.justinsmith.bells.resources.kg_pair
 import dev.justinsmith.bells.resources.kg_value
@@ -45,6 +49,7 @@ import dev.justinsmith.bells.resources.program_change
 import dev.justinsmith.bells.resources.program_finished
 import dev.justinsmith.bells.resources.program_follow_cta
 import dev.justinsmith.bells.resources.program_follow_hint
+import dev.justinsmith.bells.resources.session_leave_title
 import dev.justinsmith.bells.resources.sets_count
 import dev.justinsmith.bells.resources.today_bells_cd
 import dev.justinsmith.bells.resources.today_free_session
@@ -59,6 +64,7 @@ import dev.justinsmith.bells.resources.today_none_title
 import dev.justinsmith.bells.resources.today_resume
 import dev.justinsmith.bells.resources.today_start
 import dev.justinsmith.bells.resources.today_start_day
+import dev.justinsmith.bells.resources.today_start_day_over_text
 import dev.justinsmith.bells.resources.today_this_week
 import dev.justinsmith.bells.resources.today_title
 import dev.justinsmith.bells.resources.today_week_count
@@ -79,6 +85,7 @@ import dev.justinsmith.bells.ui.programDayLine
 import dev.justinsmith.bells.ui.programName
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.AccentButton
+import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EmptyState
 import dev.justinsmith.interval.ui.IconAction
@@ -113,7 +120,12 @@ fun TodayRoute(
     TodayScreen(
         state,
         onStartSession = { program ->
-            if (!state.inProgress) viewModel.start(program)
+            when {
+                !state.inProgress -> viewModel.start(program)
+
+                // Start day N while a session is open: the day takes the open session's place.
+                program != null -> viewModel.startOver(program)
+            }
             onStartSession()
         },
         onChooseProgram = onChooseProgram,
@@ -402,10 +414,15 @@ private fun WeekCard(state: TodayUiState, modifier: Modifier = Modifier) {
     }
 }
 
-/** Resume a session in progress, or start the program's day or a free one. */
+/**
+ * Resume a session in progress, or start the program's day or a free one. While a session is open and a day is
+ * pending, both: Resume first, and Start day N, which takes the open session's place, asking first if it has
+ * sets.
+ */
 @Composable
 private fun StartRow(state: TodayUiState, onStartSession: (ProgramKey?) -> Unit, modifier: Modifier = Modifier) {
     val day = state.programDay
+    var asking by rememberSaveable { mutableStateOf(false) }
     Row(
         modifier.padding(
             start = Spacing.space16,
@@ -416,6 +433,19 @@ private fun StartRow(state: TodayUiState, onStartSession: (ProgramKey?) -> Unit,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
     ) {
         when {
+            state.inProgress && day != null -> {
+                SecondaryButton(
+                    stringResource(Res.string.today_start_day, day.number),
+                    { if (state.openHasSets) asking = true else onStartSession(day.program.key) },
+                    Modifier.weight(1f),
+                )
+                AccentButton(
+                    stringResource(Res.string.today_resume),
+                    onClick = { onStartSession(null) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
             state.inProgress -> AccentButton(
                 stringResource(Res.string.today_resume),
                 onClick = { onStartSession(null) },
@@ -439,6 +469,19 @@ private fun StartRow(state: TodayUiState, onStartSession: (ProgramKey?) -> Unit,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+    if (asking && day != null) {
+        ConfirmDialog(
+            title = stringResource(Res.string.session_leave_title),
+            text = stringResource(Res.string.today_start_day_over_text),
+            confirm = stringResource(Res.string.today_start_day, day.number),
+            dismiss = stringResource(Res.string.common_cancel),
+            onConfirm = {
+                asking = false
+                onStartSession(day.program.key)
+            },
+            onDismiss = { asking = false },
+        )
     }
 }
 

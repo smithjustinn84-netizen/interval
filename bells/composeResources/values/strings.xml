@@ -206,6 +206,8 @@
     <string name="session_leave_title">Leave the session?</string>
     <string name="session_leave_text">Its sets are kept: Resume session on Lift picks it up.</string>
     <string name="session_leave_emom_text">The EMOM stops. Its sets so far are kept: Resume session on Lift picks it up.</string>
+    <!-- Back, or Finish, with no set logged: a session with no sets is never kept -->
+    <string name="session_leave_empty_text">Nothing is logged yet, so the session isn't kept.</string>
     <string name="session_leave">Leave</string>
     <string name="session_stay">Stay</string>
     <string name="common_cancel">Cancel</string>
@@ -383,6 +385,10 @@
     <string name="changes_copy_hint">%1$s can't be changed, so your changes go in a copy you then follow from day %2$d.</string>
     <string name="changes_copy_hint_last">%1$s can't be changed, so your changes go in a copy of it.</string>
     <string name="changes_today_only">Today only</string>
+    <!-- Done, or Back, with the changes neither saved nor set aside -->
+    <string name="changes_ask_text">Keep saves them as the card has them. Drop leaves the program as it was.</string>
+    <string name="changes_keep">Keep</string>
+    <string name="changes_drop">Drop</string>
     <string name="changes_kept">Saved to %1$s.</string>
     <string name="changes_kept_copy">Saved as %1$s. You follow it from day %2$d.</string>
     <string name="changes_kept_copy_last">Saved as %1$s, under your programs.</string>
@@ -553,6 +559,8 @@
     </plurals>
     <string name="today_start_day">Start day %1$d</string>
     <string name="today_free_session">Free session</string>
+    <!-- Start day N on Lift while a session with sets is open: the day takes its place -->
+    <string name="today_start_day_over_text">Its sets are not saved: the day starts fresh.</string>
 
     <!-- Making or changing a program -->
     <string name="editor_new_title">New program</string>

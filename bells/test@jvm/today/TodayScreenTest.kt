@@ -6,12 +6,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import dev.justinsmith.bells.data.FollowingEntity
+import dev.justinsmith.bells.data.SessionEntity
+import dev.justinsmith.bells.data.SetEntity
 import dev.justinsmith.bells.domain.Block
 import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.LiftSession
@@ -29,6 +34,7 @@ import dev.justinsmith.bells.ui.setBellsContent
 import dev.justinsmith.bells.ui.waitForText
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class TodayScreenTest {
     @Test
@@ -64,6 +70,78 @@ class TodayScreenTest {
         onNodeWithText("Start day 1").performClick()
         onNodeWithText("Free session").performClick()
         assertEquals(listOf<ProgramKey?>(ProgramKey.BuiltIn(ProgramId.GobletSquatRow), null), started)
+    }
+
+    @Test
+    fun `with a session open Today offers the day beside Resume and asks only when it has sets`() = runUiTest {
+        val started = mutableListOf<ProgramKey?>()
+        var state by mutableStateOf(
+            TodayUiState(
+                inProgress = true,
+                following = program(ProgramId.GobletSquatRow),
+                programDay = program(ProgramId.GobletSquatRow).dayAfter(0),
+            ),
+        )
+        setBellsContent { TodayScreen(state, onStartSession = { started += it }, onChooseProgram = {}) }
+        onNodeWithText("Resume session").assertExists()
+        onNodeWithText("Free session").assertDoesNotExist()
+        // Nothing logged: the day starts without a word.
+        onNodeWithText("Start day 1").performClick()
+        onNodeWithText("Leave the session?").assertDoesNotExist()
+        assertEquals(listOf<ProgramKey?>(ProgramKey.BuiltIn(ProgramId.GobletSquatRow)), started)
+        state = state.copy(openHasSets = true)
+        onNodeWithText("Start day 1").performClick()
+        onNodeWithText("Leave the session?").assertExists()
+        onNodeWithText("Its sets are not saved: the day starts fresh.").assertExists()
+        onNodeWithText("Cancel").performClick()
+        waitUntil { onAllNodesWithText("Leave the session?").fetchSemanticsNodes().isEmpty() }
+        assertEquals(1, started.size)
+        onNodeWithText("Start day 1").performClick()
+        onAllNodesWithText("Start day 1").assertCountEquals(2)
+        onAllNodesWithText("Start day 1").onLast().performClick()
+        // The dialog's action runs once its exit has played.
+        waitUntil { started.size == 2 }
+        assertEquals(ProgramKey.BuiltIn(ProgramId.GobletSquatRow), started.last())
+        onNodeWithText("Resume session").performClick()
+        assertEquals(null, started.last())
+    }
+
+    @Test
+    fun `starting the day over a session with sets asks then takes its place`() = bellsAppTest(
+        FakeBellsStorage().apply {
+            following.row.value = FollowingEntity(programId = ProgramId.GobletSquatRow.name, startedAtEpochMillis = 0)
+            sessions.sessions.value = listOf(SessionEntity("open", 0, null, "", 0))
+            sessions.sets.value = listOf(SetEntity(1, "open", BuiltInExercise.TwoHandSwing.key, 16.0, 10, null, 0))
+        },
+    ) { app ->
+        waitForText("Resume session")
+        onNodeWithText("Start day 1").performClick()
+        waitForText("Leave the session?")
+        onNodeWithText("Cancel").performClick()
+        onNodeWithText("Leave the session?").assertDoesNotExist()
+        assertEquals(1, app.storage.sessions.sets.value.size)
+        onNodeWithText("Start day 1").performClick()
+        waitForText("Its sets are not saved: the day starts fresh.")
+        onAllNodesWithText("Start day 1").onLast().performClick()
+        waitForText("Up next · 1 of 9 sets")
+        val open = app.storage.sessions.sessions.value.single { it.finishedAtEpochMillis == null }
+        assertEquals(ProgramId.GobletSquatRow.name, open.programId)
+        assertTrue(app.storage.sessions.sets.value.isEmpty())
+    }
+
+    @Test
+    fun `starting the day over a session with no sets drops it without asking`() = bellsAppTest(
+        FakeBellsStorage().apply {
+            following.row.value = FollowingEntity(programId = ProgramId.GobletSquatRow.name, startedAtEpochMillis = 0)
+            sessions.sessions.value = listOf(SessionEntity("open", 0, null, "", 0))
+        },
+    ) { app ->
+        waitForText("Resume session")
+        onNodeWithText("Start day 1").performClick()
+        waitForText("Up next · 1 of 9 sets")
+        onNodeWithText("Leave the session?").assertDoesNotExist()
+        val open = app.storage.sessions.sessions.value.single { it.finishedAtEpochMillis == null }
+        assertEquals(ProgramId.GobletSquatRow.name, open.programId)
     }
 
     @Test

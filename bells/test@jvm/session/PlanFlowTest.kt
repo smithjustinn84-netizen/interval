@@ -26,6 +26,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /** Changing a program day's plan in the session: a block's load, skipping one, and swapping its exercise. */
+@Suppress("detekt.TooManyFunctions") // One change, and one way of keeping it, per test, side by side.
 class PlanFlowTest {
     /** Goblet squat and row: 3 × 10 goblet squats, then 3 × 10 rows a side. */
     private fun followed() = FakeBellsStorage().apply {
@@ -114,6 +115,56 @@ class PlanFlowTest {
         onAllNodesWithText("Done").onLast().performClick()
         waitForText("Start day 2")
         onNodeWithText("Goblet squat and row (yours)", substring = true).assertExists()
+    }
+
+    /** A block given the 28 kg bell and logged with it, then Finish: the summary offers to keep the change. */
+    private fun DesktopComposeUiTest.finishChanged() {
+        startDay()
+        onAllNodesWithText("Change").onFirst().performScrollTo().performClick()
+        waitForText("Exercise")
+        onNodeWithText("28").performScrollTo().performClick()
+        onNodeWithText("Done").performScrollTo().performClick()
+        waitForText("28 kg")
+        onNodeWithText("Log it").performScrollTo().performClick()
+        waitForText("Up next · 2 of 9 sets")
+        onNodeWithText("Finish").performClick()
+        waitForText("Keep today's changes?")
+    }
+
+    @Test
+    fun `Done with the changes undecided asks and Drop leaves the program as it was`() = bellsAppTest(
+        followed(),
+    ) { app ->
+        finishChanged()
+        onAllNodesWithText("Done").onLast().performClick()
+        waitForText("Keep saves them as the card has them. Drop leaves the program as it was.")
+        onNodeWithText("Drop").performClick()
+        waitForText("Start day 2")
+        assertTrue(app.storage.programs.rows.value.isEmpty())
+    }
+
+    @Test
+    fun `Back with the changes undecided asks and Keep saves them as the card stands`() = bellsAppTest(
+        followed(),
+    ) { app ->
+        finishChanged()
+        app.back()
+        waitForText("Keep saves them as the card has them. Drop leaves the program as it was.")
+        onNodeWithText("Keep").performClick()
+        waitForText("Start day 2")
+        val saved = app.storage.programs.rows.value.single()
+        assertEquals("Goblet squat and row (yours)", saved.name)
+        assertTrue(saved.days.contains("\"kg\":28.0"))
+        assertEquals(1, app.storage.following.row.value?.daysBefore)
+    }
+
+    @Test
+    fun `Done after Today only asks nothing`() = bellsAppTest(followed()) { app ->
+        finishChanged()
+        onNodeWithText("Today only").performScrollTo().performClick()
+        onAllNodesWithText("Done").onLast().performClick()
+        waitForText("Start day 2")
+        assertTrue(app.storage.programs.rows.value.isEmpty())
     }
 
     @Test

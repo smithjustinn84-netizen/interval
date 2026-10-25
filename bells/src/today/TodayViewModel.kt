@@ -46,6 +46,8 @@ data class TodayUiState(
     /** When [last] finished: "7:42 AM" today, else its date. */
     val lastWhen: String = "",
     val inProgress: Boolean = false,
+    /** Whether the session in progress has sets logged: with none, Start day N on Lift drops it without asking. */
+    val openHasSets: Boolean = false,
     /** The program followed, if any, and its next day: null once it is over. */
     val following: Program? = null,
     val programDay: ProgramDay? = null,
@@ -107,6 +109,12 @@ class TodayViewModel(
         repository.startSession(program)
     }
 
+    /** Drops the session in progress and starts [program]'s next day in its place. */
+    fun startOver(program: ProgramKey) {
+        repository.discardSession()
+        repository.startSession(program)
+    }
+
     private fun build(
         sessions: List<LiftSession>,
         interval: List<IntervalWorkout>,
@@ -134,6 +142,7 @@ class TodayViewModel(
                 if (timestamps.dayNumber(at) == today) timestamps.time(at) else timestamps.date(at)
             }.orEmpty(),
             inProgress = active != null,
+            openHasSets = !active?.sets.isNullOrEmpty(),
             bells = sessions.setsOldestFirst().let { history ->
                 kettlebellLifts.flatMap {
                     listOf(it to false, it to true)
