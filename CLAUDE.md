@@ -120,6 +120,12 @@ toolchain (`$compose.*`).
   opens on exactly Android's splash and iOS's launch screen, so the hand-off is seamless.
 - **Platform code**: `expect`/`actual` in `src/` + `src@<platform>/`. Prefer an interface injected via Koin
   over `expect class`.
+- **The workout off screen**: `WorkoutViewModel` ticks from `realElapsedTime` (counts through sleep) and
+  `WorkoutEngine.tick` takes a step of any length, so time away is caught up, never capped. Its course is
+  saved as `WorkoutProgress` in the repository at each change and restored by the `Workout` route's id. On
+  Android `BackgroundWorkout` starts `WorkoutService` (`shared/src@android/platform/`, declared in
+  `androidApp`'s manifest as `specialUse`), whose notification's Pause and End drive the ViewModel through
+  `WorkoutControls`. iOS and desktop keep nothing: the iOS actual says why.
 
 ## Testing
 

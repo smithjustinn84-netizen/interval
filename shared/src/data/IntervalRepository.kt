@@ -13,6 +13,7 @@ import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlannedWorkout
+import dev.justinsmith.interval.model.WorkoutProgress
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.storage.SerialWriter
 import dev.justinsmith.interval.storage.orEmptyOnError
@@ -92,6 +93,11 @@ class IntervalRepository(
     /** In the order they were planned. */
     val planned: StateFlow<List<PlannedWorkout>> = _planned.asStateFlow()
 
+    private val _workoutProgress = MutableStateFlow<WorkoutProgress?>(null)
+
+    /** The workout under way or just over, as it last stood, or null when none is: see [WorkoutProgress]. */
+    val workoutProgress: StateFlow<WorkoutProgress?> = _workoutProgress.asStateFlow()
+
     init {
         scope.launch {
             val presetsLoaded = CompletableDeferred<Unit>()
@@ -127,6 +133,7 @@ class IntervalRepository(
             _config.value = stored.toConfig()
             _cueSettings.value = stored.toCueSettings()
             _appSettings.value = stored.toAppSettings()
+            _workoutProgress.value = stored.toWorkoutProgress()
             presetsLoaded.await()
             historyLoaded.await()
             plannedLoaded.await()
@@ -144,6 +151,11 @@ class IntervalRepository(
 
     fun updateAppSettings(transform: (AppSettings) -> AppSettings) {
         updateSetting(_appSettings, transform) { prefs, app -> prefs.write(app) }
+    }
+
+    /** Keeps [progress] as the workout under way, for a restart to pick up; null once there is none. */
+    fun saveWorkoutProgress(progress: WorkoutProgress?) {
+        updateSetting(_workoutProgress, { progress }) { prefs, saved -> prefs.write(saved) }
     }
 
     // In memory at once, so the next read sees it; on disk in the background, the value as it is then.

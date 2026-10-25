@@ -13,12 +13,15 @@ import dev.justinsmith.interval.data.PresetEntity
 import dev.justinsmith.interval.di.StorageScope
 import dev.justinsmith.interval.di.appModules
 import dev.justinsmith.interval.platform.AppInfo
+import dev.justinsmith.interval.platform.BackgroundWorkout
 import dev.justinsmith.interval.platform.Beep
 import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.interval.platform.WorkoutControls
+import dev.justinsmith.interval.platform.WorkoutStatus
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.dateOfEpochDay
@@ -196,6 +199,35 @@ class RecordingCuePlayer : CuePlayer {
     override fun release() = Unit
 }
 
+/**
+ * A [BackgroundWorkout] that keeps nothing and remembers what it was told: the statuses shown since the last
+ * [start], and the controls handed over, through which a test presses the notification's buttons.
+ */
+class RecordingBackgroundWorkout : BackgroundWorkout {
+    /** The controls of the workout being kept, or null while none is. */
+    var controls: WorkoutControls? = null
+    val statuses = mutableListOf<WorkoutStatus>()
+    var starts = 0
+    var stops = 0
+
+    val kept: Boolean get() = controls != null
+
+    override fun start(controls: WorkoutControls) {
+        this.controls = controls
+        statuses.clear()
+        starts++
+    }
+
+    override fun update(status: WorkoutStatus) {
+        statuses += status
+    }
+
+    override fun stop() {
+        controls = null
+        stops++
+    }
+}
+
 /** Room's autoGenerate for a fake DAO: an id of 0 takes the next one, and a given id moves the next past it. */
 private class AutoIds {
     private var next = 1L
@@ -239,10 +271,12 @@ object FixedTimestampFormatter : TimestampFormatter {
 fun fakePlatformModule(
     player: CuePlayer = RecordingCuePlayer(),
     formatter: TimestampFormatter = FixedTimestampFormatter,
+    background: BackgroundWorkout = RecordingBackgroundWorkout(),
 ): Module = module {
     single { player }
     single { formatter }
     single<AppInfo> { FakeAppInfo }
+    single { background }
 }
 
 /** A build that calls itself [version]. */

@@ -45,6 +45,8 @@ test-dependencies@jvm:
 # in release builds too; R8 strips what the app never calls.
 dependencies@android:
   - $compose.uiTooling
+  # rememberLauncherForActivityResult, to ask for the notification permission when a workout starts.
+  - $libs.androidx.activity.compose
 
 settings:
   compose:

@@ -50,8 +50,17 @@ sealed interface Cue {
     data object Finished : Cue
 }
 
-/** The result of an engine call: the new state and the cues it produced, in order. */
-data class Step(val state: WorkoutState, val cues: List<Cue> = emptyList())
+/**
+ * The result of an engine call: the new state and the cues it produced, in order. For a [WorkoutEngine.tick],
+ * also the time it moved the workout on by, [activeMillis], which stops counting at the workout's end, and
+ * the part of that spent in work intervals, [workMillis], for the calorie estimate.
+ */
+data class Step(
+    val state: WorkoutState,
+    val cues: List<Cue> = emptyList(),
+    val activeMillis: Long = 0,
+    val workMillis: Long = 0,
+)
 
 /**
  * The interval timer as pure functions. No clock, no coroutines: callers feed elapsed time into
@@ -66,18 +75,49 @@ object WorkoutEngine {
     /** How far into an interval Back restarts it rather than going to the previous one. */
     const val BACK_RESTART_THRESHOLD_MILLIS = 2_000L
 
-    /**
-     * Longest step [tick] honours. A bigger gap (the app was suspended) advances the clock by this
-     * much only, so a workout never silently skips intervals.
-     */
-    const val MAX_TICK_MILLIS = 1_000L
-
     fun start(config: IntervalConfig): Step =
         started(config, if (config.prepSeconds > 0) Phase.Prep else Phase.Work, round = 1)
 
+    /**
+     * Moves the workout on by [elapsedMillis], however long: the tenth of a second between two ticks, or
+     * the minutes the app spent suspended, through as many intervals as that covers, up to the end of
+     * the workout. Time that runs past the end is not counted ([Step.activeMillis]).
+     *
+     * The cues are what the user needs to hear now, not a replay of everything that would have played
+     * in between: the current interval's own cues (its countdown, its halfway) and, when the step enters
+     * other intervals, the start cue of the last one entered, [Cue.Finished] if that is the end. So a
+     * tick that crosses one interval's end cues exactly as before, while a return from forty seconds away
+     * hears the one phase it is now in.
+     */
     fun tick(state: WorkoutState, elapsedMillis: Long): Step {
         if (state.isDone || elapsedMillis <= 0) return Step(state)
-        val elapsed = elapsedMillis.coerceAtMost(MAX_TICK_MILLIS)
+        var current = state
+        var left = elapsedMillis
+        var activeMillis = 0L
+        var workMillis = 0L
+        val first = mutableListOf<Cue>()
+        // The cues of the latest interval entered, with what has happened in it since; null while still
+        // in the interval the step began in.
+        var latest: List<Cue>? = null
+        while (left > 0 && !current.isDone) {
+            val used = minOf(left, current.remainingMillis)
+            left -= used
+            activeMillis += used
+            if (current.phase == Phase.Work) workMillis += used
+            val step = runDown(current, used)
+            current = step.state
+            if (latest == null) first += step.cues else latest = latest + step.cues
+            if (current.remainingMillis <= 0) {
+                val next = advance(current)
+                current = next.state
+                latest = next.cues
+            }
+        }
+        return Step(current, first + latest.orEmpty(), activeMillis, workMillis)
+    }
+
+    /** [elapsed] of the current interval, no more than is left of it: the clock and its cues. */
+    private fun runDown(state: WorkoutState, elapsed: Long): Step {
         val before = ceilSeconds(state.remainingMillis)
         val left = state.remainingMillis - elapsed
         val after = ceilSeconds(left)
@@ -93,9 +133,7 @@ object WorkoutEngine {
                 halfwayCued = true
             }
         }
-        if (left > 0) return Step(state.copy(remainingMillis = left, halfwayCued = halfwayCued), cues)
-        val next = advance(state)
-        return Step(next.state, cues + next.cues)
+        return Step(state.copy(remainingMillis = left, halfwayCued = halfwayCued), cues)
     }
 
     /** Ends the current interval now and starts the next, as if its time had run out. */

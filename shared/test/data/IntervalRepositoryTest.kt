@@ -13,12 +13,15 @@ import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.ThemeMode
+import dev.justinsmith.interval.model.WorkoutProgress
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.timer.WeightUnit
+import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.estimateCalories
 import dev.justinsmith.interval.timer.stepped
@@ -35,6 +38,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class IntervalRepositoryTest {
@@ -54,6 +58,26 @@ class IntervalRepositoryTest {
         assertEquals(config, reloaded.config.value)
         assertEquals(CueSettings(voice = false), reloaded.cueSettings.value)
         assertEquals("Long", reloaded.customPresets.value.single().name)
+    }
+
+    @Test
+    fun `the workout under way survives a restart and clears`() {
+        val state = WorkoutEngine.tick(WorkoutEngine.start(IntervalConfig(workSeconds = 40)).state, 12_500).state
+        val progress = WorkoutProgress(
+            id = 42,
+            state = state,
+            running = true,
+            ended = false,
+            activeMillis = 12_500,
+            workMillis = 2_500,
+            week = WeekStanding(count = 3, goal = 4, streak = 2),
+            atEpochMillis = 1_700_000_000_000,
+        )
+        repository().saveWorkoutProgress(progress)
+        assertEquals(progress, repository().workoutProgress.value)
+
+        repository().saveWorkoutProgress(null)
+        assertNull(repository().workoutProgress.value)
     }
 
     @Test

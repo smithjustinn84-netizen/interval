@@ -4,6 +4,15 @@
     <!-- Haptic cues on phase changes. A normal permission: granted at install, no prompt. -->
     <uses-permission android:name="android.permission.VIBRATE"/>
 
+    <!-- The running workout's foreground service (WorkoutService, in shared) and its ongoing notification.
+         Special use: a workout outlasts a short service, and the health type wants sensor permissions. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
+    <!-- Android 13+: asked for at runtime when the first workout starts. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Keeps the CPU up while the workout runs with the screen off, so the cues play on time. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+
     <!-- Android 11+ package visibility: lets TextToSpeech find the device's speech engine. -->
     <queries>
         <intent>
@@ -27,6 +36,15 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <service
+                android:exported="false"
+                android:foregroundServiceType="specialUse"
+                android:name="dev.justinsmith.interval.platform.WorkoutService">
+            <property
+                    android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                    android:value="Keeps an interval-training timer the user started counting, and shows its clock, phase and round with Pause and End, while the app is off screen."/>
+        </service>
     </application>
 
 </manifest>

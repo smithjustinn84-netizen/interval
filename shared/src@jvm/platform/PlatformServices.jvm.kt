@@ -17,8 +17,21 @@ actual fun rememberPlatformModule(): Module = remember {
         single<CuePlayer> { DesktopCuePlayer() }
         single<TimestampFormatter> { systemTimestampFormatter() }
         single<AppInfo> { DesktopAppInfo() }
+        single<BackgroundWorkout> { NoBackgroundWorkout }
     }
 }
+
+/** A desktop window stays on screen, and its process keeps running behind other windows: nothing to keep. */
+private object NoBackgroundWorkout : BackgroundWorkout {
+    override fun start(controls: WorkoutControls) = Unit
+
+    override fun update(status: WorkoutStatus) = Unit
+
+    override fun stop() = Unit
+}
+
+@Composable
+actual fun AskToShowWorkoutOffScreen() = Unit
 
 /** jpackage stamps the version into a packaged app; a run from source carries none. */
 private class DesktopAppInfo : AppInfo {

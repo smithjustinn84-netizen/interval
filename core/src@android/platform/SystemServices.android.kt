@@ -3,6 +3,7 @@ package dev.justinsmith.interval.platform
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.os.SystemClock
 import android.provider.Settings
 import android.text.format.DateFormat
 import android.view.View
@@ -19,6 +20,9 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.util.WeakHashMap
+import kotlin.time.AbstractLongTimeSource
+import kotlin.time.DurationUnit
+import kotlin.time.TimeSource
 
 // `keepScreenOn` is one flag per view, so one count per view; weak, so a closed Activity's view can go.
 private val awakeHolds = WeakHashMap<View, AwakeHolds>()
@@ -65,6 +69,13 @@ actual val materialBackPreview: Boolean = true
 actual val platformPageTransitions: Boolean = false
 
 actual fun epochMillisNow(): Long = System.currentTimeMillis()
+
+actual val realElapsedTime: TimeSource.WithComparableMarks get() = ElapsedRealtime
+
+/** `elapsedRealtime`: since boot, deep sleep included, which `uptimeMillis` and `System.nanoTime` leave out. */
+private object ElapsedRealtime : AbstractLongTimeSource(DurationUnit.MILLISECONDS) {
+    override fun read(): Long = SystemClock.elapsedRealtime()
+}
 
 actual fun systemTimestampFormatter(): TimestampFormatter = JavaTimeFormatter()
 

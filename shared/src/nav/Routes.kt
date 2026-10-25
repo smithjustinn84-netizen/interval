@@ -25,9 +25,12 @@ data object HistoryTab : Tab
 @Serializable
 data object Settings : NavKey
 
-/** The running timer, full screen, and its summary when it ends. */
+/**
+ * The running timer, full screen, and its summary when it ends. [id] is the moment it was started, which
+ * tells its saved progress from an older workout's when a killed process comes back to it.
+ */
 @Serializable
-data object Workout : NavKey
+data class Workout(val id: Long) : NavKey
 
 /** The app's mark, version and maker, and the way to its licences. Pushed from Settings. */
 @Serializable

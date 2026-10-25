@@ -12,12 +12,8 @@ import kotlin.test.assertTrue
 class WorkoutUiStateTest {
     private val work = WorkoutEngine.advance(WorkoutEngine.start(IntervalConfig(workSeconds = 20)).state).state
 
-    /** The work interval [elapsedMillis] in, fed to the engine in ticks it accepts whole. */
-    private fun after(elapsedMillis: Long) = generateSequence(0L) { it + WorkoutEngine.MAX_TICK_MILLIS }
-        .takeWhile { it < elapsedMillis }
-        .fold(work) { state, start ->
-            WorkoutEngine.tick(state, minOf(WorkoutEngine.MAX_TICK_MILLIS, elapsedMillis - start)).state
-        }
+    /** The work interval [elapsedMillis] in. */
+    private fun after(elapsedMillis: Long) = WorkoutEngine.tick(work, elapsedMillis).state
 
     @Test
     fun `seconds left round up as the clock shows them`() {

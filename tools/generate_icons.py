@@ -38,6 +38,9 @@ TINTED_ARCS = ["C8C8C8", "FFFFFF", "9A9A9A"]
 
 SUPERSAMPLE = 4
 
+NOTIFICATION_DP = 24  # Android's small-icon size
+NOTIFICATION_MARGIN = 4  # On the 108 canvas: the mark's strokes stay clear of the icon's edge
+
 
 def point(angle, radius):
     a = math.radians(angle)
@@ -107,6 +110,17 @@ def background_vector():
         </aapt:attr>
     </path>"""
     return vector(body, extra_ns='\n        xmlns:aapt="http://schemas.android.com/aapt"')
+
+
+def notification_vector(mark):
+    """The mark alone, grown to fill a notification's small icon, which Android draws as a white alpha mask."""
+    reach = RING_RADIUS + RING_STROKE / 2  # The mark's outer edge, from its centre
+    scale = (CANVAS / 2 - NOTIFICATION_MARGIN) / reach
+    group = (
+        f'    <group android:scaleX="{fmt(scale)}" android:scaleY="{fmt(scale)}"'
+        f' android:pivotX="{fmt(CENTER)}" android:pivotY="{fmt(CENTER)}">\n'
+    )
+    return vector(group + mark + "\n    </group>", size_dp=NOTIFICATION_DP)
 
 
 def desktop_vector(mark):
@@ -205,6 +219,7 @@ def main():
     write(res / "drawable/ic_launcher_foreground.xml", vector(mark_paths(colors, INK)))
     write(res / "drawable/ic_launcher_monochrome.xml", vector(mark_paths([INK] * 3, INK)))
     write(res / "drawable/ic_launcher_background.xml", background_vector())
+    write(res / "drawable/ic_notification.xml", notification_vector(mark_paths(["FFFFFF"] * 3, "FFFFFF")))
 
     write(ROOT / "shared/composeResources/drawable/app_icon.xml", desktop_vector(mark_paths(colors, INK)))
 

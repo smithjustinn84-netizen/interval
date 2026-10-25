@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.platform
 
 import androidx.compose.runtime.Composable
+import kotlin.time.TimeSource
 
 /** Formats past moments for the workout history, in the device's time zone. */
 interface TimestampFormatter {
@@ -89,6 +90,14 @@ expect fun prefersReducedMotion(): Boolean
 
 /** Milliseconds since the Unix epoch. */
 expect fun epochMillisNow(): Long
+
+/**
+ * Time that keeps counting while the device sleeps, for a timer that must be right when the screen comes
+ * back on. Kotlin's own monotonic clock stops with the CPU on Android (`System.nanoTime`), so each platform
+ * names the clock that doesn't: Android's `elapsedRealtime`, Darwin's `CLOCK_MONOTONIC`; the desktop JVM
+ * keeps the monotonic clock, as a desktop asleep is not a workout in progress.
+ */
+expect val realElapsedTime: TimeSource.WithComparableMarks
 
 /** The wall clock, injected so that tests can fix the time. */
 fun interface WallClock {

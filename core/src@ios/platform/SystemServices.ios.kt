@@ -36,9 +36,13 @@ import platform.UIKit.UIViewAutoresizingFlexibleWidth
 import platform.UIKit.UIViewController
 import platform.UIKit.addChildViewController
 import platform.UIKit.didMoveToParentViewController
+import platform.posix.CLOCK_MONOTONIC
+import platform.posix.clock_gettime_nsec_np
+import kotlin.time.AbstractLongTimeSource
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
+import kotlin.time.TimeSource
 
 // The idle timer is one app-wide flag, so one count for the app.
 private val awakeHolds = AwakeHolds()
@@ -91,6 +95,16 @@ actual val materialBackPreview: Boolean = false
 actual val platformPageTransitions: Boolean = true
 
 actual fun epochMillisNow(): Long = NSDate().timeIntervalSince1970.seconds.inWholeMilliseconds
+
+actual val realElapsedTime: TimeSource.WithComparableMarks get() = MonotonicThroughSleep
+
+/**
+ * Darwin's `CLOCK_MONOTONIC` keeps counting while the device sleeps (its `CLOCK_UPTIME_RAW`, behind
+ * `mach_absolute_time`, does not), so a workout that ran on through a locked phone's sleep is right on waking.
+ */
+private object MonotonicThroughSleep : AbstractLongTimeSource(DurationUnit.NANOSECONDS) {
+    override fun read(): Long = clock_gettime_nsec_np(CLOCK_MONOTONIC.toUInt()).toLong()
+}
 
 actual fun systemTimestampFormatter(): TimestampFormatter = FoundationTimestampFormatter()
 

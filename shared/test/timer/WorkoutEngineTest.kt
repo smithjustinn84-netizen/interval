@@ -126,11 +126,47 @@ class WorkoutEngineTest {
     }
 
     @Test
-    fun `a long gap advances at most one second`() {
+    fun `a long gap runs through the intervals it covers and cues only where it lands`() {
         val prep = WorkoutEngine.start(config).state
+        // 10 s of prep, 30 s of work, 15 s of rest, then 5 s into round two's work.
         val step = WorkoutEngine.tick(prep, 60_000)
-        assertEquals(Phase.Prep, step.state.phase)
-        assertEquals(9_000L, step.state.remainingMillis)
+        assertEquals(Phase.Work, step.state.phase)
+        assertEquals(2, step.state.round)
+        assertEquals(25_000L, step.state.remainingMillis)
+        assertEquals(listOf(Cue.PhaseStarted(Phase.Work, lastRound = false)), step.cues)
+        assertEquals(60_000L, step.activeMillis)
+        assertEquals(35_000L, step.workMillis)
+    }
+
+    @Test
+    fun `a gap past the end finishes the workout and counts no time beyond it`() {
+        val prep = WorkoutEngine.start(config).state
+        val step = WorkoutEngine.tick(prep, 200_000)
+        assertTrue(step.state.isDone)
+        assertEquals(listOf(Cue.Finished), step.cues)
+        assertEquals(130_000L, step.activeMillis)
+        assertEquals(90_000L, step.workMillis)
+    }
+
+    @Test
+    fun `a gap landing in an interval's last seconds cues the seconds left`() {
+        val work = WorkoutEngine.advance(WorkoutEngine.start(config).state).state
+        // Through the rest of the work interval and 13.5 s of the 15 s rest.
+        val step = WorkoutEngine.tick(work, 43_500)
+        assertEquals(Phase.Rest, step.state.phase)
+        assertEquals(listOf(Cue.PhaseStarted(Phase.Rest, lastRound = false), Cue.Countdown(2)), step.cues)
+    }
+
+    @Test
+    fun `a tick that crosses an interval's end carries the remainder into the next`() {
+        val work = WorkoutEngine.advance(WorkoutEngine.start(config).state).state
+        val nearEnd = WorkoutEngine.tick(work, 29_950).state
+        val step = WorkoutEngine.tick(nearEnd, 100)
+        assertEquals(Phase.Rest, step.state.phase)
+        assertEquals(14_950L, step.state.remainingMillis)
+        assertEquals(listOf(Cue.PhaseStarted(Phase.Rest, lastRound = false)), step.cues)
+        assertEquals(100L, step.activeMillis)
+        assertEquals(50L, step.workMillis)
     }
 
     @Test

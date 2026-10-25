@@ -26,7 +26,7 @@ class NavKeyRoundTripTest {
             LiftTab,
             HistoryTab,
             Settings,
-            Workout,
+            Workout(1_700_000_000_000),
             About,
             Licenses,
             WorkoutDetail(7),

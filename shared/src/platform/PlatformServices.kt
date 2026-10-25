@@ -3,6 +3,7 @@ package dev.justinsmith.interval.platform
 import androidx.compose.runtime.Composable
 import androidx.room.RoomDatabase
 import dev.justinsmith.interval.data.AppDatabase
+import dev.justinsmith.interval.timer.Phase
 import org.koin.core.module.Module
 
 /** The sounds the app plays. Each platform maps them to tones it has. */
@@ -39,6 +40,51 @@ interface CuePlayer {
     fun release()
 }
 
+/** A running workout as the platform shows it off screen: the words of Android's notification. */
+data class WorkoutStatus(
+    val phase: Phase,
+    val paused: Boolean,
+    /** Time left in the interval, "m:ss". */
+    val clock: String,
+    val round: Int,
+    val rounds: Int,
+)
+
+/** What the platform's own controls of a workout do: the notification's Pause or Resume, and its End. */
+interface WorkoutControls {
+    fun togglePause()
+
+    /**
+     * Ends the workout now, without the screen's question: with a round done it is recorded and its summary
+     * waits in the app; with none it is dropped, as the screen's End drops it.
+     */
+    fun end()
+}
+
+/**
+ * Keeps a workout counting and in view while the app is off screen. Android runs a foreground service
+ * with an ongoing notification: the phase, the clock, the round, and Pause or Resume and End, which act on
+ * the workout through its [WorkoutControls]. iOS and desktop keep nothing: see their actuals for why.
+ */
+interface BackgroundWorkout {
+    /** A workout has begun, or come back after a restart: from now until [stop], keep it going and in view. */
+    fun start(controls: WorkoutControls)
+
+    /** The workout has moved: what it shows now. Called no more often than the clock changes. */
+    fun update(status: WorkoutStatus)
+
+    /** The workout is over, or its screen has gone: nothing to keep going or show. */
+    fun stop()
+}
+
+/**
+ * Asks, when a workout starts, for whatever the platform needs before it can show the workout off screen:
+ * Android 13's permission to post notifications, once, the first time (the system stops asking after two
+ * refusals). iOS and desktop need nothing.
+ */
+@Composable
+expect fun AskToShowWorkoutOffScreen()
+
 /** Where the app keeps its files. Each platform puts them in its usual private app-data location. */
 interface PlatformStorage {
     /** A builder for the database file; the driver and coroutine context are set in common code. */
@@ -55,8 +101,8 @@ internal const val DATABASE_NAME = "interval.db"
 internal const val PREFERENCES_NAME = "interval.preferences_pb"
 
 /**
- * Koin definitions for platform services: [PlatformStorage], a [CuePlayer], a [TimestampFormatter]
- * and [AppInfo]. Built in composition because Android needs a `Context`.
+ * Koin definitions for platform services: [PlatformStorage], a [CuePlayer], a [TimestampFormatter],
+ * [AppInfo] and a [BackgroundWorkout]. Built in composition because Android needs a `Context`.
  */
 @Composable
 expect fun rememberPlatformModule(): Module

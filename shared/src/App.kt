@@ -89,6 +89,7 @@ import dev.justinsmith.interval.nav.Workout
 import dev.justinsmith.interval.nav.WorkoutDetail
 import dev.justinsmith.interval.plan.PlanRoute
 import dev.justinsmith.interval.platform.SystemBarIcons
+import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.materialBackPreview
 import dev.justinsmith.interval.presets.PresetsRoute
 import dev.justinsmith.interval.settings.SettingsRoute
@@ -120,6 +121,7 @@ import kotlinx.serialization.modules.subclass
 import org.jetbrains.compose.reload.DevelopmentEntryPoint
 import org.koin.compose.KoinIsolatedContext
 import org.koin.compose.currentKoinScope
+import org.koin.compose.koinInject
 import org.koin.core.KoinApplication
 
 /**
@@ -198,6 +200,7 @@ internal fun AppContent(koin: KoinApplication, introPlaying: Boolean = false) {
 @Composable
 private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
     val top = backStack.lastOrNull()
+    val clock = koinInject<WallClock>()
     val panes = rememberPanes()
     val twoPane = panes.historyBeside
     val settingsBeside = panes.settingsBeside
@@ -264,7 +267,14 @@ private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
                             defaultPredictivePopTransitionSpec()
                         },
                         modifier = Modifier.fillMaxSize(),
-                        entryProvider = appEntries(backStack, twoPane, settingsBeside, selectTab, sharedScope = this),
+                        entryProvider = appEntries(
+                            backStack,
+                            twoPane,
+                            settingsBeside,
+                            selectTab,
+                            sharedScope = this,
+                            clock,
+                        ),
                     )
                 }
                 NoticeHost(
@@ -326,10 +336,11 @@ private fun appEntries(
     settingsBeside: Boolean,
     selectTab: (Tab) -> Unit,
     sharedScope: SharedTransitionScope,
+    clock: WallClock,
 ): (NavKey) -> NavEntry<NavKey> = entryProvider {
     entry<TimerTab>(metadata = SupportingPaneSceneStrategy.mainPane() + pageKind(PageKind.Tab)) {
         TimerRoute(
-            onStart = { backStack.push(Workout) },
+            onStart = { backStack.startWorkout(clock) },
             // Beside Timer, the gear closes Settings again.
             onOpenSettings = {
                 when {
@@ -348,7 +359,7 @@ private fun appEntries(
         PresetsRoute(
             onBack = { backStack.removeLastOrNull() },
             onShowTimer = { selectTab(TimerTab) },
-            onStartWorkout = { backStack.push(Workout) },
+            onStartWorkout = { backStack.startWorkout(clock) },
         )
     }
     liftEntries(backStack, twoPane)
@@ -365,7 +376,7 @@ private fun appEntries(
             onOpenWorkout = { backStack.openDetail(WorkoutDetail(it)) },
             onOpenLift = { backStack.openDetail(LiftDetail(it, fromHistory = true)) },
             onPlan = { backStack.push(Plan) },
-            onStartWorkout = { backStack.push(Workout) },
+            onStartWorkout = { backStack.startWorkout(clock) },
             onShowTimer = { selectTab(TimerTab) },
             onStartSession = { backStack.push(Lifting) },
         )
@@ -381,12 +392,14 @@ private fun appEntries(
         WorkoutDetailRoute(
             id = key.id,
             onBack = { backStack.removeLastOrNull() },
-            onStartWorkout = { backStack.push(Workout) },
+            onStartWorkout = { backStack.startWorkout(clock) },
             inPane = twoPane,
         )
     }
     entry<Plan> { PlanRoute(onBack = { backStack.removeLastOrNull() }) }
-    entry<Workout>(metadata = pageKind(PageKind.Mode)) { WorkoutRoute(onExit = { backStack.removeLastOrNull() }) }
+    entry<Workout>(metadata = pageKind(PageKind.Mode)) { key ->
+        WorkoutRoute(id = key.id, onExit = { backStack.removeLastOrNull() })
+    }
     entry<About> {
         AboutRoute(
             onBack = { backStack.removeLastOrNull() },
@@ -454,9 +467,14 @@ private fun Modifier.hairlineAtBottom(color: Color): Modifier = drawWithContent 
     drawLine(color, Offset(0f, y), Offset(size.width, y), stroke)
 }
 
-/** Pushes [key] unless it is on top already: a double tap on Start must not stack two workouts. */
+/** Pushes [key] unless it is on top already, so a double tap can't stack two of a page. */
 private fun NavBackStack<NavKey>.push(key: NavKey) {
     if (lastOrNull() != key) add(key)
+}
+
+/** Starts a workout now, by [clock], unless one is on top already: a double tap on Start must not stack two. */
+private fun NavBackStack<NavKey>.startWorkout(clock: WallClock) {
+    if (lastOrNull() !is Workout) add(Workout(clock.nowMillis()))
 }
 
 /** The scene History's log and the workout beside it share, apart from Settings beside the Timer. */

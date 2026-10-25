@@ -35,6 +35,7 @@ actual fun rememberPlatformModule(): Module {
             }
             single<TimestampFormatter> { systemTimestampFormatter() }
             single<AppInfo> { AndroidAppInfo(context) }
+            single<BackgroundWorkout> { AndroidBackgroundWorkout(context) }
         }
     }
 }

@@ -17,6 +17,7 @@ import dev.justinsmith.interval.data.buildAppDatabase
 import dev.justinsmith.interval.platform.PlatformStorage
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.epochMillisNow
+import dev.justinsmith.interval.platform.realElapsedTime
 import dev.justinsmith.interval.platform.rememberPlatformModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +32,7 @@ import org.koin.core.module.dsl.withOptions
 import org.koin.core.qualifier.named
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
+import kotlin.time.TimeSource
 
 /** The scope storage writes run on. It lives as long as the container, which cancels it on close. */
 val StorageScope = named("storage")
@@ -73,6 +75,8 @@ private fun preferencesAt(path: String): DataStore<Preferences> = preferenceStor
 /** One Koin module per domain; add new ones to [appModules]. */
 val dataModule: Module = module {
     single { WallClock(::epochMillisNow) }
+    // The workout ticker's clock: time that counts through the device's sleep.
+    single<TimeSource.WithComparableMarks> { realElapsedTime }
     single {
         IntervalRepository(
             settings = get(),

@@ -4,12 +4,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.interval.data.IntervalRepository
+import dev.justinsmith.interval.model.WorkoutProgress
+import dev.justinsmith.interval.platform.BackgroundWorkout
 import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.interval.platform.WorkoutControls
+import dev.justinsmith.interval.platform.WorkoutStatus
 import dev.justinsmith.interval.timer.Cue
+import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
-import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.Step
 import dev.justinsmith.interval.timer.WeekStanding
@@ -30,17 +34,28 @@ import kotlin.time.TimeSource
 /**
  * Runs one workout from the saved configuration: a coroutine ticker feeds elapsed time into
  * [WorkoutEngine], cues go to the [CuePlayer], and a finished workout is recorded in the history.
+ *
+ * The ticker reads [timeSource], which counts through the device's sleep, and gives the engine every
+ * millisecond since its last tick, so a workout that ran on while the app was off screen is where it should
+ * be when the screen comes back, through as many intervals as that takes ([WorkoutEngine.tick]). Off screen
+ * it is kept going and in view by [background]. Its course is saved in the repository at each change
+ * ([WorkoutProgress]), so a ViewModel built after the process was killed picks the workout up where it had
+ * got to, or shows the summary of what ran, instead of starting again.
  */
-@Suppress("detekt.TooManyFunctions") // Every way a workout moves, side by side.
+// Every way a workout moves, side by side, and everything it reads, plays, keeps and drives, injected.
+@Suppress("detekt.TooManyFunctions", "detekt.LongParameterList")
 class WorkoutViewModel(
+    /** The route's: the saved progress is this workout's only when the two match. */
+    private val id: Long,
     private val repository: IntervalRepository,
     private val player: CuePlayer,
     private val bells: BellsRepository,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
-    private val timeSource: TimeSource.WithComparableMarks = TimeSource.Monotonic,
+    private val background: BackgroundWorkout,
+    private val timeSource: TimeSource.WithComparableMarks,
 ) : ViewModel() {
-    private val config = repository.config.value
+    private val config: IntervalConfig
 
     /** Read once at start, like the configuration: a setting changed mid-workout applies next time. */
     private val keepScreenOn = repository.appSettings.value.keepScreenOn
@@ -48,6 +63,9 @@ class WorkoutViewModel(
     private var engine: WorkoutState
     private var running = false
     private var ended = false
+
+    /** Ended from off screen with nothing to keep: the screen leaves. */
+    private var leaving = false
 
     /** Where the week stands with this workout in it, from the moment it is recorded; for the summary. */
     private var week: WeekStanding? = null
@@ -61,15 +79,30 @@ class WorkoutViewModel(
     private val workSeconds: Int get() = workMillis.roundedSeconds()
     private var ticker: Job? = null
 
+    /** True between [BackgroundWorkout.start] and [BackgroundWorkout.stop]: while there is a workout to keep. */
+    private var kept = false
+
+    /** The status last shown off screen, so [background] hears of a change, not of every tick. */
+    private var shown: WorkoutStatus? = null
+
     // Followed rather than read on each publish: a preset saved from the summary lands later, and the
     // summary must then name it. Matched once per change, not on every tick.
     private var presets = repository.presets.value
-    private var presetName = presets.matching(config)?.name
+    private var presetName: String?
     private val _state: MutableStateFlow<WorkoutUiState>
 
+    private val controls = object : WorkoutControls {
+        override fun togglePause() = this@WorkoutViewModel.togglePause()
+
+        override fun end() = endOffScreen()
+    }
+
     init {
-        engine = WorkoutEngine.start(config).state
-        _state = MutableStateFlow(uiState(running = true))
+        val saved = repository.workoutProgress.value?.takeIf { it.id == id }
+        config = saved?.state?.config ?: repository.config.value
+        presetName = presets.matching(config)?.name
+        engine = saved?.state ?: WorkoutEngine.start(config).state
+        _state = MutableStateFlow(uiState(running = saved?.running ?: true))
         // After _state: viewModelScope runs this at once, and its first value publishes.
         viewModelScope.launch {
             repository.presets.collect { all ->
@@ -78,7 +111,7 @@ class WorkoutViewModel(
                 publish()
             }
         }
-        begin()
+        if (saved != null) restore(saved) else begin()
     }
 
     val state: StateFlow<WorkoutUiState> = _state.asStateFlow()
@@ -88,50 +121,44 @@ class WorkoutViewModel(
     }
 
     fun pause() {
+        if (over || !running) return
         running = false
         stopTicker()
         publish()
+        checkpoint()
     }
 
     fun resume() {
         if (over || ticker?.isActive == true) return
         running = true
+        startTicker()
         publish()
-        ticker = viewModelScope.launch {
-            var last = timeSource.markNow()
-            while (isActive) {
-                delay(TICK_MILLIS)
-                val elapsed = (timeSource.markNow() - last).inWholeMilliseconds
-                last += elapsed.milliseconds
-                // Capped as the engine caps a tick, so a suspended app adds no more than the clock showed.
-                val counted = elapsed.coerceAtMost(WorkoutEngine.MAX_TICK_MILLIS)
-                activeMillis += counted
-                if (engine.phase == Phase.Work) workMillis += counted
-                applyStep(WorkoutEngine.tick(engine, elapsed))
-            }
-        }
+        checkpoint()
     }
 
     /** Jumps to the next interval now. */
     fun skip() {
         if (over) return
         applyStep(WorkoutEngine.advance(engine))
+        checkpoint()
     }
 
     fun back() {
         if (over) return
         engine = WorkoutEngine.back(engine)
         publish()
+        checkpoint()
     }
 
     fun addTime() {
         if (over) return
         engine = WorkoutEngine.addTime(engine)
         publish()
+        checkpoint()
     }
 
-    /** Finished or ended early: the summary shows, and the controls do nothing. */
-    private val over: Boolean get() = engine.isDone || ended
+    /** Finished, ended early or left: the summary shows, or the screen goes, and the controls do nothing. */
+    private val over: Boolean get() = engine.isDone || ended || leaving
 
     /**
      * Stops before the last round: records what was done and shows the summary. Without a finished
@@ -145,6 +172,22 @@ class WorkoutViewModel(
         week = weekWithThis()
         repository.recordWorkout(config, activeSeconds, endedEarly = true, workSeconds = workSeconds)
         publish()
+        checkpoint()
+        release()
+    }
+
+    /** End from the notification: as End on the screen, which keeps a workout only once a round is done. */
+    private fun endOffScreen() {
+        if (over) return
+        if (_state.value.hasProgress) {
+            endEarly()
+        } else {
+            stopTicker()
+            running = false
+            leaving = true
+            publish()
+            release()
+        }
     }
 
     /**
@@ -168,20 +211,65 @@ class WorkoutViewModel(
     private fun begin() {
         val start = WorkoutEngine.start(config)
         engine = start.state
+        running = true
+        keep()
         play(start.cues)
-        resume()
+        startTicker()
+        publish()
+        checkpoint()
+    }
+
+    /**
+     * Picks up where [saved] stood. A workout that was running has run on since: the time away goes through
+     * the engine like one long tick, so it is as far along as it would be, or over, with the one cue for where
+     * it landed. One that was paused, or over, is shown as it was.
+     */
+    private fun restore(saved: WorkoutProgress) {
+        running = saved.running
+        ended = saved.ended
+        week = saved.week
+        activeMillis = saved.activeMillis
+        workMillis = saved.workMillis
+        if (running) applyStep(WorkoutEngine.tick(engine, clock.nowMillis() - saved.atEpochMillis))
+        if (!over) {
+            keep()
+            if (running) startTicker()
+            checkpoint()
+        }
+        publish()
+    }
+
+    /** Hands the engine every millisecond since the last tick, pauses excluded, however many: see the class. */
+    private fun startTicker() {
+        // Marked now, not once the coroutine gets to run: the time until then counts too.
+        var last = timeSource.markNow()
+        ticker = viewModelScope.launch {
+            while (isActive) {
+                delay(TICK_MILLIS)
+                val now = timeSource.markNow()
+                val elapsed = (now - last).inWholeMilliseconds
+                last += elapsed.milliseconds
+                applyStep(WorkoutEngine.tick(engine, elapsed))
+            }
+        }
     }
 
     private fun applyStep(step: Step) {
+        val before = engine
         engine = step.state
+        activeMillis += step.activeMillis
+        workMillis += step.workMillis
         play(step.cues)
         if (engine.isDone) {
             running = false
             stopTicker()
             week = weekWithThis()
             repository.recordWorkout(config, activeSeconds, workSeconds = workSeconds)
+            release()
         }
         publish()
+        // A new interval is a change of course; the clock running down within one is not.
+        if (engine.phase != before.phase || engine.round != before.round) checkpoint()
     }
 
     private fun stopTicker() {
@@ -191,6 +279,47 @@ class WorkoutViewModel(
 
     private fun publish() {
         _state.value = uiState(running)
+        val status = _state.value.status()
+        if (kept && status != shown) {
+            shown = status
+            background.update(status)
+        }
+    }
+
+    private fun keep() {
+        if (kept) return
+        kept = true
+        background.start(controls)
+    }
+
+    private fun release() {
+        if (!kept) return
+        kept = false
+        shown = null
+        background.stop()
+    }
+
+    /** Saves where the workout stands now, for a process killed before the next change to come back to. */
+    private fun checkpoint() {
+        repository.saveWorkoutProgress(
+            WorkoutProgress(
+                id = id,
+                state = engine,
+                running = running,
+                ended = ended,
+                activeMillis = activeMillis,
+                workMillis = workMillis,
+                week = week,
+                atEpochMillis = clock.nowMillis(),
+            ),
+        )
+    }
+
+    /** The screen has gone for good: nothing to keep going, in view or saved. */
+    override fun onCleared() {
+        stopTicker()
+        release()
+        repository.saveWorkoutProgress(null)
     }
 
     private fun uiState(running: Boolean): WorkoutUiState = engine.toUiState(
@@ -202,6 +331,7 @@ class WorkoutViewModel(
         keepScreenOn = keepScreenOn,
         calories = body.calories(workSeconds, activeSeconds - workSeconds, config.activity),
         week = week,
+        leaving = leaving,
     )
 
     /**
@@ -225,5 +355,8 @@ class WorkoutViewModel(
         const val TICK_MILLIS = 100L
     }
 }
+
+/** What the notification shows of [this]: the phase, whether it is paused, the clock and the round. */
+private fun WorkoutUiState.status() = WorkoutStatus(phase, paused, clock, round, rounds)
 
 private fun Long.roundedSeconds(): Int = ((this + MILLIS_PER_SECOND / 2) / MILLIS_PER_SECOND).toInt()

@@ -26,6 +26,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -44,6 +45,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import dev.justinsmith.interval.platform.AskToShowWorkoutOffScreen
 import dev.justinsmith.interval.platform.KeepScreenOn
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.workout_end_confirm
@@ -84,13 +86,21 @@ internal class WorkoutActions(
     val onEnd: () -> Unit,
 )
 
-/** Resolves the screen's ViewModel, scoped to its back-stack entry, and binds it to [WorkoutScreen]. */
+/**
+ * Resolves the screen's ViewModel, scoped to its back-stack entry, and binds it to [WorkoutScreen]. [id] is
+ * the route's, by which the ViewModel knows its own saved progress from an older workout's.
+ */
 @Composable
-fun WorkoutRoute(onExit: () -> Unit, modifier: Modifier = Modifier) {
+fun WorkoutRoute(id: Long, onExit: () -> Unit, modifier: Modifier = Modifier) {
     val scope = currentKoinScope()
-    val viewModel = viewModel { WorkoutViewModel(scope.get(), scope.get(), scope.get(), scope.get(), scope.get()) }
+    val viewModel = viewModel {
+        WorkoutViewModel(id, scope.get(), scope.get(), scope.get(), scope.get(), scope.get(), scope.get(), scope.get())
+    }
     val state by viewModel.state.collectAsStateWithLifecycle()
     if (state.running && state.keepScreenOn) KeepScreenOn()
+    if (!state.isDone) AskToShowWorkoutOffScreen()
+    val exit by rememberUpdatedState(onExit)
+    LaunchedEffect(state.leaving) { if (state.leaving) exit() }
     WorkoutScreen(
         state = state,
         onTogglePause = viewModel::togglePause,

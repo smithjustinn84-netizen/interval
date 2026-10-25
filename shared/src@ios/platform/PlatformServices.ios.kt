@@ -38,8 +38,32 @@ actual fun rememberPlatformModule(): Module = remember {
         }
         single<TimestampFormatter> { systemTimestampFormatter() }
         single<AppInfo> { IosAppInfo() }
+        single<BackgroundWorkout> { IosBackgroundWorkout }
     }
 }
+
+/**
+ * iOS keeps nothing running off screen. The workout is still right on return: its ticker counts the time
+ * away ([realElapsedTime]) and runs the engine on through it, so the clock, the round and, past the end,
+ * the summary are where they would have been, with the one cue for where it landed.
+ *
+ * Not background audio: the Ambient session the cues use stops with the app, and the one way to stay alive is
+ * the `audio` background mode with a Playback session that is always playing, which here would mean silence
+ * between cues. Apple's review guideline 2.5.4 rejects that use of the mode, and the Playback category would
+ * end the mixing with the user's music and the ringer switch's say over the cues that Ambient gives. A Live
+ * Activity, or local notifications scheduled for each phase change on leaving the foreground, would be the
+ * platform's ways to keep the workout in view.
+ */
+private object IosBackgroundWorkout : BackgroundWorkout {
+    override fun start(controls: WorkoutControls) = Unit
+
+    override fun update(status: WorkoutStatus) = Unit
+
+    override fun stop() = Unit
+}
+
+@Composable
+actual fun AskToShowWorkoutOffScreen() = Unit
 
 /** The bundle's short version string: `MARKETING_VERSION` in the Xcode project. */
 private class IosAppInfo : AppInfo {

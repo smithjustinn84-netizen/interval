@@ -8,6 +8,7 @@ import java.time.chrono.IsoChronology
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.util.Locale
+import kotlin.time.TimeSource
 
 /** Desktop displays follow the OS power settings; nothing to hold here. */
 @Composable
@@ -26,6 +27,8 @@ actual val materialBackPreview: Boolean = false
 actual val platformPageTransitions: Boolean = false
 
 actual fun epochMillisNow(): Long = System.currentTimeMillis()
+
+actual val realElapsedTime: TimeSource.WithComparableMarks = TimeSource.Monotonic
 
 actual fun systemTimestampFormatter(): TimestampFormatter = JavaTimeFormatter()
 

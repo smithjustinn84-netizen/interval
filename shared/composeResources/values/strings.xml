@@ -427,6 +427,11 @@
     <string name="workout_end_confirm">End workout</string>
     <string name="workout_done">Done</string>
     <string name="workout_ended">Ended</string>
+    <!-- Android's ongoing notification for a running workout: its channel, as Settings lists it -->
+    <string name="notification_channel_workout">Workout in progress</string>
+    <string name="notification_channel_workout_description">The running timer: its clock, phase and round, with Pause and End.</string>
+    <!-- Under the notification's clock: "Work · Round 3 of 8", or "Paused · Round 3 of 8" -->
+    <string name="notification_workout_text">%1$s · Round %2$d of %3$d</string>
     <!-- Under Done: "8 rounds · 4:40 total" -->
     <plurals name="workout_summary_finished">
         <item quantity="one">%1$d round · %2$s total</item>
