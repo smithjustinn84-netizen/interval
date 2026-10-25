@@ -192,6 +192,23 @@ class SessionFlowTest {
     }
 
     @Test
+    fun `a set logged starts a rest that steps longer and skips back to since last set`() = bellsAppTest { app ->
+        onNodeWithText("Start session").performClick()
+        waitForText("Next set")
+        onNodeWithText("Log set").performClick()
+        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
+        waitForText("Rest")
+        onNodeWithText("1:30").assertExists()
+        onNodeWithText("Since last set").assertDoesNotExist()
+        onNodeWithContentDescription("Rest 15 seconds more").performClick()
+        waitForText("1:45")
+        assertEquals(105, app.storage.bells.rest.value?.seconds)
+        onNodeWithText("Skip").performClick()
+        waitForText("Since last set")
+        onNodeWithText("Rest").assertDoesNotExist()
+    }
+
+    @Test
     fun `a set with two bells has no side and moves twice the weight`() = bellsAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")

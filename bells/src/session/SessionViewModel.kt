@@ -26,6 +26,8 @@ import dev.justinsmith.bells.domain.PlannedSet
 import dev.justinsmith.bells.domain.Program
 import dev.justinsmith.bells.domain.ProgramDay
 import dev.justinsmith.bells.domain.ProgramKey
+import dev.justinsmith.bells.domain.RestClock
+import dev.justinsmith.bells.domain.RestState
 import dev.justinsmith.bells.domain.SaveScope
 import dev.justinsmith.bells.domain.SessionPlan
 import dev.justinsmith.bells.domain.SetLog
@@ -166,6 +168,8 @@ data class SessionUiState(
     val elapsed: String = formatClock(0),
     /** Since the last set, for resting: "0:38"; null before the first. */
     val sinceLast: String? = null,
+    /** The rest counting down after a set; null when none is. */
+    val rest: RestState? = null,
     /** The bells the sheet offers: the user's own, or every standard size until they have said. */
     val bells: List<Double> = standardBells,
     val ownsBells: Boolean = false,
@@ -233,6 +237,9 @@ class SessionViewModel(
 
     /** Times a hold from the sheet, logging it when done. */
     private val holds = HoldTimer(clock, beeper) { set, seconds -> logSet(set, seconds) }
+
+    /** Counts a rest down after each set logged here: an EMOM rests out its own minutes. */
+    private val rest = RestTimer(clock, beeper)
 
     /** The time, once a tick: one clock for the clocks on screen and the cues alike. */
     private val ticks = flow {
@@ -318,7 +325,9 @@ class SessionViewModel(
         }
 
     val state: StateFlow<SessionUiState> =
-        combine(untimed, ticks, detail) { state, now, page -> state.at(now).copy(detail = page) }
+        combine(untimed, ticks, detail, rest.state) { state, now, page, resting ->
+            state.at(now).copy(detail = page, rest = resting?.let { it.clock.at(now - it.startedAtMillis) })
+        }
             .stateIn(viewModelScope, SharingStarted.Eagerly, SessionUiState())
 
     /** This state with its clocks read at [now]. */
@@ -425,6 +434,7 @@ class SessionViewModel(
         )
         // A one-sided lift usually goes on with the other side.
         if (set.exercise.sided(set.doubled)) draft.update { it.copy(side = set.side.other) }
+        rest.start(repository.restSeconds.value)
     }
 
     /** Logs the plan's next set as planned, with its suggested load: a hold for its seconds. */
@@ -440,6 +450,23 @@ class SessionViewModel(
             seconds = set.reps.takeIf { set.held },
             band = next.band,
         )
+        rest.start(repository.restSeconds.value)
+    }
+
+    /**
+     * Makes rests a [step] (−1 or +1) of [RestClock.STEP_SECONDS] shorter or longer: the one running, if one is,
+     * and every one after.
+     */
+    fun stepRest(step: Int) {
+        val seconds = (repository.restSeconds.value + step * RestClock.STEP_SECONDS)
+            .coerceIn(RestClock.MIN_SECONDS, RestClock.MAX_SECONDS)
+        repository.setRestSeconds(seconds)
+        rest.adjust(seconds)
+    }
+
+    /** Ends the rest early. */
+    fun skipRest() {
+        rest.skip()
     }
 
     /**
@@ -538,6 +565,7 @@ class SessionViewModel(
         val next = state.value.upNext ?: return
         val minutes = next.emomMinutes ?: return
         if (next.set.held) return
+        rest.skip()
         emom.start(
             next.set.exercise,
             next.bellKg,
@@ -553,6 +581,7 @@ class SessionViewModel(
     fun startDraftEmom() {
         val d = draft.value
         if (d.held) return
+        rest.skip()
         emom.start(
             d.exercise,
             d.loadKg,
@@ -566,6 +595,7 @@ class SessionViewModel(
 
     /** Starts timing the sheet's hold: the other side of the one just done, if that is on offer. */
     fun startHold() {
+        rest.skip()
         holds.start(draft.value)
     }
 
@@ -661,6 +691,7 @@ class SessionViewModel(
         val session = repository.active.value ?: return false
         emom.stop()
         holds.cancel()
+        rest.skip()
         if (session.sets.isEmpty()) {
             repository.discardSession()
             return false
@@ -702,6 +733,7 @@ class SessionViewModel(
     fun discard() {
         emom.stop()
         holds.cancel()
+        rest.skip()
         repository.discardSession()
     }
 
@@ -715,6 +747,7 @@ class SessionViewModel(
     }
 
     private fun playCues(now: Long) {
+        rest.tick(now)
         holds.tick(now)
         emom.tick(now)
     }

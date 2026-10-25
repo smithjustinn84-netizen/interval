@@ -27,7 +27,8 @@ import kotlinx.coroutines.flow.Flow
  * version 7 sets of any equipment, held or with a band, and the exercises the user adds,
  * [CustomExerciseEntity]; version 8 the user's changes to their bands and the bands they add, [BandEntity];
  * version 9 a session's day as it changed it, and the days done of a program before following it; version 10
- * the user's barbell, [BarEntity]; version 11 which day of its program a session was.
+ * the user's barbell, [BarEntity]; version 11 which day of its program a session was; version 12 how long the
+ * user rests between sets, [RestEntity].
  * Every version adds; none rewrites a row.
  */
 @Database(
@@ -40,8 +41,9 @@ import kotlinx.coroutines.flow.Flow
         CustomExerciseEntity::class,
         BandEntity::class,
         BarEntity::class,
+        RestEntity::class,
     ],
-    version = 11,
+    version = 12,
     // 3 to 4 is MIGRATION_3_4, added in bellsStorageModule.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -53,6 +55,7 @@ import kotlinx.coroutines.flow.Flow
         AutoMigration(from = 8, to = 9),
         AutoMigration(from = 9, to = 10),
         AutoMigration(from = 10, to = 11),
+        AutoMigration(from = 11, to = 12),
     ],
 )
 @ConstructedBy(BellsDatabaseConstructor::class)
@@ -195,7 +198,7 @@ interface CustomExerciseDao {
     suspend fun upsert(exercise: CustomExerciseEntity)
 }
 
-/** The bells the user owns, and their barbell. */
+/** The bells the user owns, their barbell, and how long they rest between sets. */
 @Dao
 interface BellDao {
     @Query("SELECT * FROM bell ORDER BY kg")
@@ -215,6 +218,12 @@ interface BellDao {
 
     @Query("DELETE FROM bar")
     suspend fun clearBar()
+
+    @Query("SELECT * FROM rest WHERE id = 0")
+    fun observeRest(): Flow<RestEntity?>
+
+    @Upsert
+    suspend fun upsertRest(rest: RestEntity)
 }
 
 @Entity(tableName = "session", indices = [Index("started_at")])
@@ -313,6 +322,10 @@ data class BellEntity(@PrimaryKey val kg: Double)
 /** The user's barbell, by what it weighs empty: one row at most, [id] 0. */
 @Entity(tableName = "bar")
 data class BarEntity(@PrimaryKey val id: Int = 0, val kg: Double)
+
+/** How long the user rests between sets: one row at most, [id] 0; none until they change it. */
+@Entity(tableName = "rest")
+data class RestEntity(@PrimaryKey val id: Int = 0, val seconds: Int)
 
 /** A program the user made. [days] is its days' blocks as JSON, in [encodeDays]'s shape. */
 @Entity(tableName = "custom_program")

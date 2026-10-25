@@ -18,6 +18,7 @@ import dev.justinsmith.bells.domain.Program
 import dev.justinsmith.bells.domain.ProgramDay
 import dev.justinsmith.bells.domain.ProgramDraft
 import dev.justinsmith.bells.domain.ProgramKey
+import dev.justinsmith.bells.domain.RestClock
 import dev.justinsmith.bells.domain.SaveScope
 import dev.justinsmith.bells.domain.SessionPlan
 import dev.justinsmith.bells.domain.SetLog
@@ -87,6 +88,11 @@ class BellsRepository(
 
     /** What the user's barbell weighs empty, or null until they say they have one. */
     val bar: StateFlow<Double?> = _bar.asStateFlow()
+
+    private val _restSeconds = MutableStateFlow(RestClock.DEFAULT_SECONDS)
+
+    /** How long a rest between sets lasts, in seconds. */
+    val restSeconds: StateFlow<Int> = _restSeconds.asStateFlow()
 
     private val _customExercises = MutableStateFlow(emptyList<CustomExercise>())
 
@@ -164,6 +170,13 @@ class BellsRepository(
                     barLoaded.complete(Unit)
                 }
             }
+            val restLoaded = CompletableDeferred<Unit>()
+            launch {
+                bellDao.observeRest().orOnError(null, "the rest", log).collect { row ->
+                    _restSeconds.value = row?.seconds ?: RestClock.DEFAULT_SECONDS
+                    restLoaded.complete(Unit)
+                }
+            }
             val customLoaded = CompletableDeferred<Unit>()
             // A program's blocks can name the user's exercises, archived ones too.
             val custom =
@@ -206,6 +219,7 @@ class BellsRepository(
             sessionsLoaded.await()
             bellsLoaded.await()
             barLoaded.await()
+            restLoaded.await()
             _ready.value = true
         }
     }
@@ -479,6 +493,12 @@ class BellsRepository(
     /** Sets the user's barbell to one weighing [kg] empty, or to none. */
     fun setBar(kg: Double?) {
         writer.persist { if (kg != null) bellDao.upsertBar(BarEntity(kg = kg)) else bellDao.clearBar() }
+    }
+
+    /** Sets how long a rest between sets lasts, in seconds. */
+    fun setRestSeconds(seconds: Int) {
+        _restSeconds.value = seconds
+        writer.persist { bellDao.upsertRest(RestEntity(seconds = seconds)) }
     }
 }
 

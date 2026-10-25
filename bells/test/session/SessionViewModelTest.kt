@@ -13,6 +13,8 @@ import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.domain.ProgramKey
+import dev.justinsmith.bells.domain.RestClock
+import dev.justinsmith.bells.domain.RestState
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.domain.program
 import dev.justinsmith.bells.fakes.FakeBellsStorage
@@ -194,6 +196,41 @@ class SessionViewModelTest {
             assertEquals(1, repository.active.value?.sets?.size)
             assertEquals(BuiltInExercise.Press, state.value.draft.exercise)
             assertEquals(Side.Right, state.value.draft.side)
+        }
+    }
+
+    @Test
+    fun `logging a set starts a rest of the length last chosen`() {
+        viewModel().use {
+            assertNull(state.value.rest)
+            logSet()
+            assertEquals(RestState(RestClock.DEFAULT_SECONDS, RestClock.DEFAULT_SECONDS, 0f), state.value.rest)
+            stepRest(1)
+            val longer = RestClock.DEFAULT_SECONDS + RestClock.STEP_SECONDS
+            assertEquals(longer, state.value.rest?.seconds)
+            assertEquals(longer, storage.bells.rest.value?.seconds)
+            skipRest()
+            assertNull(state.value.rest)
+            logSet()
+            assertEquals(longer, state.value.rest?.seconds)
+        }
+    }
+
+    @Test
+    fun `a rest steps no shorter than its least`() {
+        viewModel().use {
+            repeat(RestClock.DEFAULT_SECONDS / RestClock.STEP_SECONDS + 2) { stepRest(-1) }
+            assertEquals(RestClock.MIN_SECONDS, repository.restSeconds.value)
+        }
+    }
+
+    @Test
+    fun `timing a hold ends the rest`() {
+        viewModel().use {
+            logSet()
+            updateDraft { it.copy(exercise = BuiltInExercise.Plank) }
+            startHold()
+            assertNull(state.value.rest)
         }
     }
 

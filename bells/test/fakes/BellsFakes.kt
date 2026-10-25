@@ -13,6 +13,7 @@ import dev.justinsmith.bells.data.FollowingDao
 import dev.justinsmith.bells.data.FollowingEntity
 import dev.justinsmith.bells.data.IntervalActivity
 import dev.justinsmith.bells.data.IntervalWorkout
+import dev.justinsmith.bells.data.RestEntity
 import dev.justinsmith.bells.data.SessionDao
 import dev.justinsmith.bells.data.SessionEntity
 import dev.justinsmith.bells.data.SetEntity
@@ -123,6 +124,14 @@ class FakeBellDao : BellDao {
 
     override suspend fun clearBar() {
         bar.value = null
+    }
+
+    val rest = MutableStateFlow<RestEntity?>(null)
+
+    override fun observeRest(): Flow<RestEntity?> = rest
+
+    override suspend fun upsertRest(rest: RestEntity) {
+        this.rest.value = rest
     }
 }
 

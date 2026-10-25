@@ -194,6 +194,8 @@ private fun sessionActions(
     onSwapBlock = viewModel::swapBlock,
     onSkipBlock = viewModel::skipBlock,
     onUnskipBlock = viewModel::unskipBlock,
+    onStepRest = viewModel::stepRest,
+    onSkipRest = viewModel::skipRest,
     // The screen asks first when nothing is logged; should one slip through, it is thrown away and the page closes.
     onFinish = { if (!viewModel.finish(title)) onExit() },
     onDiscard = {
@@ -282,6 +284,9 @@ data class SessionActions(
     val onSwapBlock: (Int, Exercise) -> Unit = { _, _ -> },
     val onSkipBlock: (Int) -> Unit = {},
     val onUnskipBlock: (Int) -> Unit = {},
+    /** The rest a step shorter (−1) or longer (+1), and every one after; or skipped. */
+    val onStepRest: (Int) -> Unit = {},
+    val onSkipRest: () -> Unit = {},
     val onFinish: () -> Unit = {},
     val onDiscard: () -> Unit = {},
 )
@@ -324,7 +329,7 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
                 },
             )
         },
-        tiles = { wide -> SessionTiles(state, wide) },
+        tiles = { wide -> SessionTiles(state, actions, wide) },
         plan = {
             val opening = actions.copy(
                 onOpenExercise = {
@@ -530,9 +535,12 @@ private fun SessionLayout(parts: SessionParts, modifier: Modifier = Modifier) {
     }
 }
 
-/** The session's time and weight moved, and how long since the last one: in one row when [wide]. */
+/**
+ * The session's time and weight moved, and the rest counting down or else how long since the last set: in one
+ * row when [wide].
+ */
 @Composable
-private fun SessionTiles(state: SessionUiState, wide: Boolean) {
+private fun SessionTiles(state: SessionUiState, actions: SessionActions, wide: Boolean) {
     val moved = state.session?.tonnageKg ?: 0.0
     val time = @Composable { modifier: Modifier ->
         StatTile(stringResource(Res.string.session_time), state.elapsed, modifier)
@@ -546,11 +554,24 @@ private fun SessionTiles(state: SessionUiState, wide: Boolean) {
         )
     }
     val since = state.sinceLast
+    val rest = state.rest
+    val third = when {
+        rest != null -> @Composable { modifier: Modifier ->
+            RestTile(rest, actions.onStepRest, actions.onSkipRest, modifier)
+        }
+
+        since != null -> @Composable { modifier: Modifier ->
+            StatTile(stringResource(Res.string.session_since_last), since, modifier)
+        }
+
+        else -> null
+    }
     if (wide) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             time(Modifier.weight(1f))
             weight(Modifier.weight(1f))
-            if (since != null) StatTile(stringResource(Res.string.session_since_last), since, Modifier.weight(1f))
+            // The rest's buttons need more room than a figure.
+            third?.invoke(Modifier.weight(if (rest != null) 2f else 1f))
         }
     } else {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
@@ -558,7 +579,7 @@ private fun SessionTiles(state: SessionUiState, wide: Boolean) {
                 time(Modifier.weight(1f))
                 weight(Modifier.weight(1f))
             }
-            if (since != null) StatTile(stringResource(Res.string.session_since_last), since, Modifier.fillMaxWidth())
+            third?.invoke(Modifier.fillMaxWidth())
         }
     }
 }
