@@ -183,9 +183,9 @@ internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismi
 }
 
 /**
- * What the Log sheet shows in place of the set while its exercise is being chosen: the library, until one is
- * picked ([onPick]) or Add starts a new one by its name ([onAdd]); then, while [adding], that exercise's
- * form, until it is saved ([onSave]) and comes back picked.
+ * What the Log sheet shows in place of the set, and the Next set card's sheet shows, while the exercise is
+ * being chosen: the library, until one is picked ([onPick]) or Add starts a new one by its name ([onAdd]);
+ * then, while [adding], that exercise's form, until it is saved ([onSave]) and comes back picked.
  */
 @Composable
 internal fun ExerciseChoice(

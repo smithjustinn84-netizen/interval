@@ -56,7 +56,6 @@ import dev.justinsmith.bells.resources.session_discard
 import dev.justinsmith.bells.resources.session_discard_text
 import dev.justinsmith.bells.resources.session_discard_title
 import dev.justinsmith.bells.resources.session_edit_set_cd
-import dev.justinsmith.bells.resources.session_empty
 import dev.justinsmith.bells.resources.session_finish
 import dev.justinsmith.bells.resources.session_leave
 import dev.justinsmith.bells.resources.session_leave_emom_text
@@ -295,8 +294,10 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
     // Finish with nothing logged: the same ask as Back, since there is nothing to save.
     var leaving by rememberSaveable { mutableStateOf(false) }
     var planning by rememberSaveable { mutableStateOf(false) }
-    // The exercise's page open over the session, from Up next.
+    // The exercise's page open over the session, from Up next or the Next set card.
     var reading by rememberSaveable { mutableStateOf(false) }
+    // The library open over a free session, to pick the next set's lift.
+    var picking by rememberSaveable { mutableStateOf(false) }
     // The block of today's plan open to change, -1 for none: a plain number saves on every platform.
     var changing by rememberSaveable { mutableIntStateOf(-1) }
     KeepScreenOn()
@@ -325,17 +326,28 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
         },
         tiles = { wide -> SessionTiles(state, wide) },
         plan = {
-            UpNextCard(
-                state,
-                actions.copy(
-                    onOpenExercise = {
-                        actions.onOpenExercise(it)
-                        reading = true
-                    },
-                ),
-                onChange = { changing = it },
-                onPlan = { planning = true },
+            val opening = actions.copy(
+                onOpenExercise = {
+                    actions.onOpenExercise(it)
+                    reading = true
+                },
             )
+            if (state.free) {
+                // Not while a set logged is being changed: the draft is that set until it is saved or left.
+                if (state.editing == null) {
+                    DraftSetCard(
+                        state,
+                        opening,
+                        onChange = { picking = true },
+                        onTimeIt = {
+                            actions.onTimeHold()
+                            logging = true
+                        },
+                    )
+                }
+            } else {
+                UpNextCard(state, opening, onChange = { changing = it }, onPlan = { planning = true })
+            }
             LoggedSets(state, sets)
         },
         buttons = {
@@ -351,6 +363,7 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
     SessionLayout(parts, modifier)
     if (logging) LogSetSheet(state, actions, onDismiss = { logging = false })
     if (reading) ExercisePageSheet(state, actions, onDismiss = { reading = false })
+    if (picking) ExercisePickerSheet(state, actions, onDismiss = { picking = false })
     PlanSheets(state, actions, planning, changing, onPlanning = { planning = it }, onChanging = { changing = it })
     EndDialogs(
         leaving,
@@ -385,11 +398,7 @@ private fun EndDialogs(
         )
     }
     if (discarding) {
-        ConfirmDialog(
-            title = stringResource(Res.string.session_discard_title),
-            text = stringResource(Res.string.session_discard_text),
-            confirm = stringResource(Res.string.session_discard),
-            dismiss = stringResource(Res.string.common_cancel),
+        DiscardDialog(
             onConfirm = {
                 onDiscarding(false)
                 onDiscard()
@@ -397,6 +406,19 @@ private fun EndDialogs(
             onDismiss = { onDiscarding(false) },
         )
     }
+}
+
+/** Asks before the session, and its sets, are thrown away. */
+@Composable
+private fun DiscardDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    ConfirmDialog(
+        title = stringResource(Res.string.session_discard_title),
+        text = stringResource(Res.string.session_discard_text),
+        confirm = stringResource(Res.string.session_discard),
+        dismiss = stringResource(Res.string.common_cancel),
+        onConfirm = onConfirm,
+        onDismiss = onDismiss,
+    )
 }
 
 /**
@@ -556,18 +578,10 @@ private fun SessionButtons(onFinish: () -> Unit, onLog: () -> Unit) {
 /** What a logged set's row does: × removes it (the row words the notice), a tap opens it to change. */
 private class SetActions(val onRemove: (SetLog, removedText: String) -> Unit, val onEdit: (SetLog) -> Unit)
 
-/** The sets logged so far, by lift; before the first, and with no plan, how to log one. */
+/** The sets logged so far, by lift. */
 @Composable
 private fun LoggedSets(state: SessionUiState, actions: SetActions) {
     val sets = state.session?.sets.orEmpty()
-    if (sets.isEmpty() && state.upNext == null) {
-        Text(
-            stringResource(Res.string.session_empty),
-            style = IntervalTheme.type.body,
-            color = IntervalTheme.palette.textDim,
-            modifier = Modifier.padding(vertical = Spacing.space16),
-        )
-    }
     // The sets on show when the screen opened stand still; one logged since rises into its card.
     val atOpen = remember { sets.map { it.id }.toSet() }
     sets.groupBy { it.exercise to it.double }.forEach { (lift, done) ->

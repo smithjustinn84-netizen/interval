@@ -9,6 +9,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -32,10 +33,13 @@ import kotlin.test.assertTrue
 /** A session from Today to the summary, through the whole app over fakes. */
 @Suppress("detekt.TooManyFunctions") // One way of logging per test, side by side.
 class SessionFlowTest {
-    /** On the Log sheet: Change, then narrow the library by [search] or [equipment], and pick [name]. */
+    /**
+     * On the Log sheet: Change (the sheet's, over the Next set card's), then narrow the library by [search] or
+     * [equipment], and pick [name].
+     */
     private fun DesktopComposeUiTest.pick(name: String, search: String? = null, equipment: String? = null) {
         waitForText("Change")
-        onNodeWithText("Change").performClick()
+        onAllNodesWithText("Change").onLast().performClick()
         waitForText("Search exercises")
         search?.let { onNode(hasSetTextAction()).performTextInput(it) }
         equipment?.let { onNodeWithText(it).performClick() }
@@ -66,9 +70,10 @@ class SessionFlowTest {
         onNodeWithText("Log set").performClick()
         pick("Side plank", search = "side plank")
         waitForText("Held")
-        onNodeWithText("0:30").assertExists()
+        // The card's length and the sheet's: one draft.
+        onAllNodesWithText("0:30").assertCountEquals(2)
         onNodeWithText("An EMOM").assertDoesNotExist()
-        onNodeWithContentDescription("Five seconds more").performScrollTo().performClick()
+        onAllNodesWithContentDescription("Five seconds more").onLast().performScrollTo().performClick()
         waitForText("0:35")
         onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("0:35 · Left")
@@ -102,7 +107,7 @@ class SessionFlowTest {
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
         pick("Side plank", search = "side plank")
-        onNodeWithText("Time it").performScrollTo().performClick()
+        onAllNodesWithText("Time it").onLast().performScrollTo().performClick()
         waitForText("Get ready")
         onNodeWithText("Side plank · Left").assertExists()
         // Three seconds in, then ten of the thirty held.
@@ -139,11 +144,12 @@ class SessionFlowTest {
         pick("Power clean", search = "power clean")
         // A lift never done starts on the empty bar.
         waitForText("On the bar")
-        onNodeWithText("20 kg bar, empty").assertExists()
-        onNodeWithContentDescription("Lighter").assertIsNotEnabled()
-        repeat(17) { onNodeWithContentDescription("Heavier").performClick() }
+        // On the Next set card and on the sheet, which edit one draft.
+        onAllNodesWithText("20 kg bar, empty").assertCountEquals(2)
+        onAllNodesWithContentDescription("Lighter").onLast().assertIsNotEnabled()
+        repeat(17) { onAllNodesWithContentDescription("Heavier").onLast().performClick() }
         waitForText("62.5 kg")
-        onNodeWithText("20 kg bar · 20 + 1.25 a side").assertExists()
+        onAllNodesWithText("20 kg bar · 20 + 1.25 a side").assertCountEquals(2)
         onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("62.5 kg × 10")
         val set = app.storage.sessions.sets.value.single()
@@ -157,12 +163,13 @@ class SessionFlowTest {
         onNodeWithText("Log set").performClick()
         pick("Push-up", search = "pushup")
         waitForText("Added weight")
-        // On the stepper, and its chip.
-        onAllNodesWithText("None").assertCountEquals(2)
+        // On the card's stepper, the sheet's, and its chip.
+        onAllNodesWithText("None").assertCountEquals(3)
         onNodeWithText("8").performScrollTo().performClick()
         onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("+8 kg × 10")
-        onNodeWithText("Push-up").assertExists()
+        // The card, ready for the next, and the set's group.
+        onAllNodesWithText("Push-up").assertCountEquals(2)
         onNodeWithText("80 kg").assertExists()
         assertEquals(8.0, app.storage.sessions.sets.value.single().bellKg)
     }
@@ -170,13 +177,13 @@ class SessionFlowTest {
     @Test
     fun `logging a set adds it to the session`() = bellsAppTest { app ->
         onNodeWithText("Start session").performClick()
-        waitForText("Log your first set: pick the lift, the bell and the reps.")
+        waitForText("Next set")
         onNodeWithText("Log set").performClick()
         onNode(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, "Add to the session")).assertExists()
         // The sheet's own Log set, over the screen's.
         onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("16 kg × 10")
-        onNodeWithText("Two-hand swing").assertExists()
+        onAllNodesWithText("Two-hand swing").assertCountEquals(2)
         onNodeWithText("160 kg").assertExists()
         val set = app.storage.sessions.sets.value.single()
         assertEquals(16.0 to 10, set.bellKg to set.reps)
@@ -190,12 +197,12 @@ class SessionFlowTest {
         // A two-hand swing can't be doubled; a clean can, and then has no side.
         onNodeWithText("Two bells").assertDoesNotExist()
         pick("Clean", search = "clean")
-        onNodeWithText("Left").assertExists()
+        onAllNodesWithText("Left").assertCountEquals(2)
         onNodeWithText("Two bells").performScrollTo().performClick()
         onNodeWithText("Left").assertDoesNotExist()
         onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
         waitForText("2 × 16 kg × 10")
-        onNodeWithText("Clean · Two bells").assertExists()
+        onAllNodesWithText("Clean · Two bells").assertCountEquals(2)
         onNodeWithText("320 kg").assertExists()
         val set = app.storage.sessions.sets.value.single()
         assertTrue(set.doubled)

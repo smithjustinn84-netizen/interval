@@ -93,7 +93,7 @@ class ExerciseEditorTest {
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
-        onNodeWithText("Change").performClick()
+        onAllNodesWithText("Change").onLast().performClick()
         waitForText("Search exercises")
         onNode(hasSetTextAction()).performTextInput("Copenhagen plank")
         onNodeWithText("Add “Copenhagen plank” as an exercise").performScrollTo().performClick()

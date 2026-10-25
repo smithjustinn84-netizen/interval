@@ -192,7 +192,6 @@
     <string name="session_time">Time</string>
     <string name="session_moved">Moved</string>
     <string name="session_since_last">Since last set</string>
-    <string name="session_empty">Log your first set: pick the lift, the bell and the reps.</string>
     <string name="session_log">Log set</string>
     <string name="session_finish">Finish</string>
     <string name="session_discard">Discard</string>
@@ -620,6 +619,8 @@
     <string name="next_how_to_cd">How to do %1$s</string>
     <!-- The last set of the lift in an earlier session: "Last time · 16 kg × 8". -->
     <string name="next_last_time">Last time · %1$s</string>
+    <!-- A free session's card: the set to log next, composed on the spot -->
+    <string name="next_free_title">Next set</string>
     <!-- Leaves the exercise's page on the Log sheet for the set again. -->
     <string name="log_back_to_set">Back to the set</string>
 

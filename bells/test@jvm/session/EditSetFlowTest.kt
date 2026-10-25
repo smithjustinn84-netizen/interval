@@ -5,6 +5,7 @@ package dev.justinsmith.bells.session
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -41,6 +42,7 @@ class EditSetFlowTest {
         onNodeWithText("Log set").performClick()
         onNode(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, "Add to the session")).assertExists()
         onNodeWithText("An EMOM").assertExists()
-        onNodeWithText("Change").assertExists()
+        // The sheet's Change, and the Next set card's behind it.
+        onAllNodesWithText("Change").assertCountEquals(2)
     }
 }
