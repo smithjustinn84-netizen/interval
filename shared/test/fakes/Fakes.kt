@@ -3,6 +3,10 @@ package dev.justinsmith.interval.fakes
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
+import dev.justinsmith.bells.fakes.FakeBellsStorage
+import dev.justinsmith.bells.fakes.RecordingBeeper
+import dev.justinsmith.bells.fakes.fakeBellsPlatformModule
+import dev.justinsmith.bells.fakes.fakeBellsStorageModule
 import dev.justinsmith.interval.data.HistoryDao
 import dev.justinsmith.interval.data.HistoryEntity
 import dev.justinsmith.interval.data.IntervalRepository
@@ -261,7 +265,7 @@ fun testKoin(
     platformModule: Module = fakePlatformModule(),
     storage: FakeStorage = FakeStorage(),
     now: Long = 0L,
-    lift: FakeLiftStorage = FakeLiftStorage(),
+    lift: FakeBellsStorage = FakeBellsStorage(),
     beeper: RecordingBeeper = RecordingBeeper(),
     clock: WallClock = WallClock { now },
 ): KoinApplication = koinApplication {
@@ -269,8 +273,8 @@ fun testKoin(
         appModules(
             platformModule,
             fakeStorageModule(storage),
-            bellsPlatform = fakeLiftPlatformModule(beeper),
-            bellsStorage = fakeLiftStorageModule(lift),
+            bellsPlatform = fakeBellsPlatformModule(beeper),
+            bellsStorage = fakeBellsStorageModule(lift),
         ) + module { single { clock } },
     )
 }

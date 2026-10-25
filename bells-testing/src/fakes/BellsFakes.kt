@@ -5,6 +5,7 @@ import dev.justinsmith.bells.data.BandEntity
 import dev.justinsmith.bells.data.BarEntity
 import dev.justinsmith.bells.data.BellDao
 import dev.justinsmith.bells.data.BellEntity
+import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.data.CustomExerciseDao
 import dev.justinsmith.bells.data.CustomExerciseEntity
 import dev.justinsmith.bells.data.CustomProgramDao
@@ -20,6 +21,7 @@ import dev.justinsmith.bells.data.SetEntity
 import dev.justinsmith.bells.di.BellsStorageScope
 import dev.justinsmith.bells.di.bellsModules
 import dev.justinsmith.bells.domain.EmomCue
+import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.platform.Beeper
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.platform.TimestampFormatter
@@ -42,6 +44,8 @@ import org.koin.dsl.module
 /** [SessionDao] over lists, as the real queries order them. */
 private val loggedOrder = compareBy<SetEntity>({ it.loggedAtEpochMillis }, { it.id })
 
+// One function per query, as the DAO has them.
+@Suppress("detekt.TooManyFunctions")
 class FakeSessionDao : SessionDao {
     val sessions = MutableStateFlow(emptyList<SessionEntity>())
     val sets = MutableStateFlow(emptyList<SetEntity>())
@@ -212,6 +216,47 @@ class FakeBellsStorage {
     val programs = FakeCustomProgramDao()
     val exercises = FakeCustomExerciseDao()
     val bands = FakeBandDao()
+
+    /** A repository over this storage, its writes landed by the time a call returns. */
+    fun repository(now: WallClock = WallClock { 0L }): BellsRepository = BellsRepository(
+        sessions,
+        bells,
+        following,
+        programs,
+        exercises,
+        bands,
+        CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
+        now,
+    )
+
+    /**
+     * Stores a finished session of [sets] (bell and reps of two-hand swings), as if logged in Lift: a day of
+     * [program], or a free one.
+     */
+    fun finished(
+        uid: String,
+        title: String,
+        startedAt: Long,
+        finishedAt: Long,
+        vararg sets: Pair<Double, Int>,
+        program: ProgramKey? = null,
+    ) {
+        sessions.sessions.update {
+            it + SessionEntity(
+                uid,
+                startedAt,
+                finishedAt,
+                title,
+                updatedAtEpochMillis = finishedAt,
+                programId = program?.stored,
+            )
+        }
+        sessions.sets.update { all ->
+            all + sets.mapIndexed { i, (kg, reps) ->
+                SetEntity(0, uid, "TwoHandSwing", kg, reps, side = null, loggedAtEpochMillis = startedAt + i)
+            }
+        }
+    }
 }
 
 /** Stands in for `rememberBellsPlatformModule()`. Tests never load the real one: it writes a database file. */
@@ -219,7 +264,7 @@ fun fakeBellsPlatformModule(beeper: Beeper = RecordingBeeper()): Module = module
     single<Beeper> { beeper }
 }
 
-fun fakeBellsStorageModule(storage: FakeBellsStorage): Module = module {
+fun fakeBellsStorageModule(storage: FakeBellsStorage = FakeBellsStorage()): Module = module {
     single<CoroutineScope>(BellsStorageScope) { CoroutineScope(SupervisorJob() + Dispatchers.Unconfined) }.withOptions {
         onClose { it?.cancel() }
     }

@@ -1,0 +1,33 @@
+# Bells' storage and what it needs from the platform: its Room database (`bells.db`; schemas in `schemas/`),
+# the repository every Lift screen reads, its Koin modules, and the platform's database builder and `Beeper`.
+# Room's KSP runs here and nowhere else on the Lift side.
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/tested-lib.module-template.yaml
+  - //templates/room-lib.module-template.yaml
+
+dependencies:
+  - //bells-domain: exported
+  - //core
+  # The platform module is built in composition, because Android's database builder needs a `Context`.
+  - $compose.runtime
+  - $compose.ui
+  - $libs.koin.core
+  - $libs.kermit
+
+test-dependencies:
+  - //bells-testing
+
+settings:
+  # For the composable platform module; no UI of its own.
+  compose:
+    enabled: true
+  kotlin:
+    ksp:
+      processors:
+        - $libs.androidx.room.compiler
+      processorOptions:
+        room.schemaLocation: ./schemas

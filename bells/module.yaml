@@ -1,5 +1,6 @@
 # Bells, Interval's kettlebell training behind its Lift tab: log sets of reps with a bell, follow a program,
-# time EMOMs, and keep the bells owned and the records set. It owns its database; `shared` wires its screens.
+# time EMOMs, and keep the bells owned and the records set. Its screens, over `bells-data` (its database and
+# repository) and `bells-domain`; `shared` wires its routes.
 product:
   type: kmp/lib
   platforms: [android, iosArm64, iosSimulatorArm64, jvm]
@@ -8,6 +9,8 @@ dependencies:
   - //core: exported
   # Its domain, pure Kotlin, so a change to a screen never recompiles it (and its tests run alone).
   - //bells-domain: exported
+  # Its database, repository and Koin modules; exported so `shared` can wire them.
+  - //bells-data: exported
   - $compose.runtime
   - $compose.ui
   - $compose.components.resources
@@ -22,13 +25,12 @@ dependencies:
   - $libs.koin.core
   - $libs.koin.compose
   - $libs.kermit
-  - $libs.androidx.room.runtime
-  - $libs.androidx.sqlite.bundled
 
 test-dependencies:
   - $libs.kotlinx.coroutines.test
-  # The shared fakes and the UI harness.
+  # The shared fakes and the UI harness, and Bells' own storage fakes.
   - //core-testing
+  - //bells-testing
 
 # Compose UI tests run on the desktop JVM only, as in shared: common `test/` also runs as Android local tests.
 test-dependencies@jvm:
@@ -49,16 +51,7 @@ settings:
       exposedAccessors: true
   kotlin:
     allWarningsAsErrors: true
-    # Room's KSP-generated `actual object BellsDatabaseConstructor`; see shared/module.yaml.
-    freeCompilerArgs: [-Xexpect-actual-classes]
-    serialization: json
-    ksp:
-      processors:
-        - $libs.androidx.room.compiler
-      processorOptions:
-        room.schemaLocation: ./schemas
-    # No module-wide `optIns`: opt in per file (`@file:OptIn`). See shared/module.yaml.
-
+    # No module-wide `optIns`: opt in per file (`@file:OptIn`). See templates/lib.module-template.yaml.
 plugins:
   lint-plugin:
     enabled: true

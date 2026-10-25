@@ -5,8 +5,8 @@ package dev.justinsmith.interval.history
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.domain.ProgramKey
+import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.interval.fakes.DAY_MILLIS
-import dev.justinsmith.interval.fakes.FakeLiftStorage
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.MainDispatcherTest
@@ -44,7 +44,7 @@ private val MONDAY = TODAY - 3
 class HistoryViewModelTest : MainDispatcherTest() {
     private var clock = noonOf(TODAY)
     private val repository = FakeStorage().repository(now = { clock })
-    private val lift = FakeLiftStorage()
+    private val lift = FakeBellsStorage()
     private val bells = lift.repository(now = { clock })
     private val viewModel by lazy { HistoryViewModel(repository, bells, FixedTimestampFormatter, clock = { clock }) }
 

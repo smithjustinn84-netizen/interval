@@ -34,8 +34,8 @@ internal data class StoredBlock(
 
 private val json = Json { ignoreUnknownKeys = true }
 
-/** [days] as [CustomProgramEntity.days] holds them. */
-internal fun encodeDays(days: List<List<Block>>): String = json.encodeToString(
+/** [days] as [CustomProgramEntity.days] holds them; public so a test can store a program as the app does. */
+fun encodeDays(days: List<List<Block>>): String = json.encodeToString(
     days.map { day ->
         day.map { it.toStored() }
     },

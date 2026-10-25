@@ -2,9 +2,9 @@ package dev.justinsmith.interval.data
 
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import dev.justinsmith.bells.fakes.fakeBellsPlatformModule
+import dev.justinsmith.bells.fakes.fakeBellsStorageModule
 import dev.justinsmith.interval.di.appModules
-import dev.justinsmith.interval.fakes.fakeLiftPlatformModule
-import dev.justinsmith.interval.fakes.fakeLiftStorageModule
 import dev.justinsmith.interval.fakes.fakePlatformModule
 import dev.justinsmith.interval.fakes.saveCurrentAsPreset
 import dev.justinsmith.interval.platform.DATABASE_NAME
@@ -57,8 +57,8 @@ class AppKoinStorageTest {
                 modules(
                     appModules(
                         platform,
-                        bellsPlatform = fakeLiftPlatformModule(),
-                        bellsStorage = fakeLiftStorageModule(),
+                        bellsPlatform = fakeBellsPlatformModule(),
+                        bellsStorage = fakeBellsStorageModule(),
                     ),
                 )
             }
