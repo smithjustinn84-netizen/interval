@@ -13,6 +13,7 @@ import androidx.room.Query
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
 import androidx.room.Update
+import androidx.room.migration.AutoMigrationSpec
 import androidx.room.migration.Migration
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
@@ -29,16 +30,19 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * Workout history, the user's own presets and their planned workouts. Settings live in DataStore, not
- * here. Version 2 added [HistoryEntity.workActiveSeconds] and the activity of each workout and preset;
- * version 3 added [PlannedEntity]; version 4 gave each workout a [HistoryEntity.uid], a change time and
- * a deleted flag, and a table of workouts shared by a sibling app, which version 5 dropped when that app
- * became part of this one.
+ * here. Version 2 added [HistoryEntity.workActiveSeconds] and the activity of each workout and preset (the
+ * latter a day later without a new version: [AddActivityIfMissing]); version 3 added [PlannedEntity];
+ * version 4 gave each workout a [HistoryEntity.uid], a change time and a deleted flag, and a table of
+ * workouts shared by a sibling app, which version 5 dropped when that app became part of this one.
  */
 @Database(
     entities = [HistoryEntity::class, PresetEntity::class, PlannedEntity::class],
     version = 5,
     // 3 to 4 and 4 to 5 are MIGRATION_3_4 and MIGRATION_4_5, added by buildAppDatabase.
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
+    autoMigrations = [
+        AutoMigration(from = 1, to = 2),
+        AutoMigration(from = 2, to = 3, spec = AddActivityIfMissing::class),
+    ],
 )
 @ConstructedBy(AppDatabaseConstructor::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -54,6 +58,28 @@ abstract class AppDatabase : RoomDatabase() {
 expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
     override fun initialize(): AppDatabase
 }
+
+/**
+ * Version 2 to 3's extra step. On 18 October 2026 version 2 first had only [HistoryEntity.workActiveSeconds]
+ * (`db61c16`), then gained `activity` on `history` and `preset` without a new version (`0a9d0f9`). A database
+ * written in between is at version 2 with no `activity`, which the schema check after the migrations refuses.
+ * Room's own statements for 2 to 3 only create `planned`; this adds the column where it is missing.
+ */
+internal class AddActivityIfMissing : AutoMigrationSpec {
+    override fun onPostMigrate(connection: SQLiteConnection) {
+        for (table in listOf("history", "preset")) {
+            if (!connection.hasColumn(table, "activity")) {
+                connection.execSQL("ALTER TABLE `$table` ADD COLUMN `activity` TEXT")
+            }
+        }
+    }
+}
+
+/** Whether [table] has a column named [column], by `PRAGMA table_info`. */
+private fun SQLiteConnection.hasColumn(table: String, column: String): Boolean =
+    prepare("PRAGMA table_info(`$table`)").use { statement ->
+        generateSequence { if (statement.step()) statement.getText(1) else null }.any { it == column }
+    }
 
 /**
  * Version 3 to 4, by hand: Room's own [AutoMigration] rebuilds `history` and creates its unique uid index

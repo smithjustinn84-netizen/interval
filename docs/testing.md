@@ -81,8 +81,9 @@ that depends on the data module.
   Never load the real platform or storage module in a test: on the JVM they write to the user's
   app-data directory and play sound.
 - **Real storage** is tested in `interval-data/test@jvm/data/StorageTest.kt`: the repository over a DataStore
-  and a Room database in a temp directory, with writes on `Dispatchers.IO`, including a restart; Lift's in
-  `bells-data/test@jvm/data/` (`BellsRoomTest`, and `BellsMigrationTest` over its `schemas/`).
+  and a Room database in a temp directory, with writes on `Dispatchers.IO`, including a restart, and
+  `AppMigrationTest` opens databases left at an earlier version; Lift's are in `bells-data/test@jvm/data/`
+  (`BellsRoomTest`, and `BellsMigrationTest` over its `schemas/`).
   `AppKoinStorageTest` (`shared/test@jvm/data/`) wires the real `storageModule` and rebuilds the container
   straight after closing it, as Android does when the Activity reopens in the same process. All are
   JVM-only because Room's Android in-memory builder needs a `Context`, and common tests also run as
