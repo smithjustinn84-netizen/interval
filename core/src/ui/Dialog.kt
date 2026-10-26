@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -88,7 +90,11 @@ fun IntervalDialog(
                     verticalArrangement = Arrangement.spacedBy(Spacing.space12),
                 ) {
                     Text(title, style = IntervalTheme.type.value, color = palette.text)
-                    body()
+                    Column(
+                        Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.space12),
+                        content = body,
+                    )
                     Row(
                         Modifier.fillMaxWidth().padding(top = Spacing.space16),
                         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
@@ -115,13 +121,14 @@ fun ConfirmDialog(
     dismiss: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
+    destructive: Boolean = false,
 ) {
     IntervalDialog(
         title = title,
         onDismiss = onDismiss,
         actions = { leave ->
             DialogButton(dismiss, onClick = { leave(onDismiss) }, primary = false)
-            DialogButton(confirm, onClick = { leave(onConfirm) }, primary = true)
+            DialogButton(confirm, onClick = { leave(onConfirm) }, primary = true, destructive = destructive)
         },
     ) {
         Text(text, style = IntervalTheme.type.body, color = IntervalTheme.palette.textDim)

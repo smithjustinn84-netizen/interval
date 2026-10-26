@@ -100,7 +100,7 @@ fun ExerciseDetailSheet(
     var editing by rememberSaveable { mutableStateOf(false) }
     val title = if (editing) stringResource(Res.string.exercise_editor_edit) else exerciseName(exercise)
     IntervalSheet(title, onDismiss = onDismiss) { hide ->
-        val modifier = Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8)
+        val modifier = Modifier.padding(vertical = Spacing.space8)
         // The page and the form take one another's place with a fade through, as a session's faces do.
         AnimatedContent(
             targetState = editing && exercise is CustomExercise,

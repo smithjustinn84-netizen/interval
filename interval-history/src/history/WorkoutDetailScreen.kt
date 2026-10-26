@@ -13,7 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -120,7 +119,7 @@ fun WorkoutDetailScreen(
     inPane: Boolean = false,
 ) {
     val workout = state.workout ?: return
-    var menu by remember { mutableStateOf(false) }
+    var menu by rememberSaveable { mutableStateOf(false) }
     var confirming by rememberSaveable { mutableStateOf(false) }
     var planning by rememberSaveable { mutableStateOf(false) }
     val title = workout.presetName ?: workoutDescription(workout.config)
@@ -134,7 +133,11 @@ fun WorkoutDetailScreen(
                 expanded = menu,
                 onExpandedChange = { menu = it },
                 items = {
-                    IntervalMenuItem(stringResource(Res.string.detail_delete_menu), onClick = { confirming = true })
+                    IntervalMenuItem(
+                        stringResource(Res.string.detail_delete_menu),
+                        onClick = { confirming = true },
+                        destructive = true,
+                    )
                 },
             ) {
                 IconAction(
@@ -172,6 +175,7 @@ fun WorkoutDetailScreen(
                 onDelete()
             },
             onDismiss = { confirming = false },
+            destructive = true,
         )
     }
 }

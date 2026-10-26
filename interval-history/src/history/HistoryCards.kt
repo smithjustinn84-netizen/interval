@@ -1,9 +1,8 @@
 package dev.justinsmith.interval.history
 
-import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,12 +12,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.Role
 import dev.justinsmith.bells.domain.program
 import dev.justinsmith.bells.ui.programDayLifts
 import dev.justinsmith.bells.ui.programDayLine
@@ -45,7 +41,6 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StripeMark
 import dev.justinsmith.interval.ui.WeekdayForm
 import dev.justinsmith.interval.ui.joined
-import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.interval.ui.weekdayText
 import dev.justinsmith.interval.ui.workoutDescription
@@ -69,66 +64,71 @@ internal fun UpNextCard(upNext: List<UpNextItem>, actions: HistoryActions, modif
             Row(verticalAlignment = Alignment.CenterVertically) {
                 GroupLabelText(stringResource(Res.string.history_up_next, dayHeading(next.day)), Modifier.weight(1f))
                 val interaction = remember { MutableInteractionSource() }
-                Text(
-                    stringResource(Res.string.history_edit_plan),
-                    style = IntervalTheme.type.label,
-                    color = palette.accent,
-                    modifier = Modifier
-                        .heightIn(min = Sizes.segment)
-                        .clickable(interaction, LocalIndication.current, role = Role.Button, onClick = actions.onPlan)
-                        .pressScale(interaction)
-                        .padding(vertical = Spacing.space12),
-                )
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
-            ) {
-                when (next) {
-                    is UpNextItem.Planned -> {
-                        StripeMark(palette.workMark, height = Sizes.historyMarkHeight)
-                        UpNextText(
-                            next.name,
-                            stringResource(
-                                Res.string.common_joined,
-                                workoutDescription(next.config),
-                                formatClock(next.config.totalSeconds),
-                            ),
-                            Modifier.weight(1f),
-                        )
-                        StartPill(primary = true, onClick = { actions.onStart(next.name, next.config) })
-                    }
-
-                    is UpNextItem.Lift -> {
-                        // The accent, as Lift and History's rows mark kettlebell sessions.
-                        StripeMark(palette.accent, height = Sizes.historyMarkHeight)
-                        UpNextText(
-                            programName(next.programDay.program),
-                            joined(listOf(programDayLine(next.programDay), programDayLifts(next.programDay))),
-                            Modifier.weight(1f),
-                        )
-                        StartPill(
-                            primary = true,
-                            onClick = { actions.onStartLift(next.programDay.program.key.takeUnless { next.resume }) },
-                            label = stringResource(
-                                if (next.resume) Res.string.history_resume else Res.string.history_start,
-                            ),
-                        )
-                    }
+                Box(
+                    Modifier
+                        .heightIn(min = Sizes.pillHeight)
+                        .surfaceButton(interaction, Corners.radius12, palette.surface, actions.onPlan)
+                        .padding(horizontal = Spacing.space12),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        stringResource(Res.string.history_edit_plan),
+                        style = IntervalTheme.type.label,
+                        color = palette.accent,
+                    )
                 }
             }
+            UpNextLead(next, actions)
             val later = upNext.drop(1).take(2)
             if (later.isNotEmpty()) {
                 val parts = later.map {
                     stringResource(Res.string.common_joined, shortDay(it.day, it.epochDay), upNextName(it))
                 }
                 Text(
-                    stringResource(
-                        Res.string.history_then,
-                        joined(parts),
-                    ),
+                    stringResource(Res.string.history_then, joined(parts)),
                     style = IntervalTheme.type.meta,
                     color = palette.textDim,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun UpNextLead(next: UpNextItem, actions: HistoryActions, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    Row(
+        modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+    ) {
+        when (next) {
+            is UpNextItem.Planned -> {
+                StripeMark(palette.workMark, height = Sizes.historyMarkHeight)
+                UpNextText(
+                    next.name,
+                    stringResource(
+                        Res.string.common_joined,
+                        workoutDescription(next.config),
+                        formatClock(next.config.totalSeconds),
+                    ),
+                    Modifier.weight(1f),
+                )
+                StartPill(primary = true, onClick = { actions.onStart(next.name, next.config) })
+            }
+
+            is UpNextItem.Lift -> {
+                // The accent, as Lift and History's rows mark kettlebell sessions.
+                StripeMark(palette.accent, height = Sizes.historyMarkHeight)
+                UpNextText(
+                    programName(next.programDay.program),
+                    joined(listOf(programDayLine(next.programDay), programDayLifts(next.programDay))),
+                    Modifier.weight(1f),
+                )
+                StartPill(
+                    primary = true,
+                    onClick = { actions.onStartLift(next.programDay.program.key.takeUnless { next.resume }) },
+                    label = stringResource(if (next.resume) Res.string.history_resume else Res.string.history_start),
                 )
             }
         }

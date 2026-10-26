@@ -37,6 +37,9 @@ data class IntervalPalette(
     val line: Color,
     val accent: Color,
     val onAccent: Color,
+    /** Irreversible actions (Delete, Discard, Clear, Stop) and validation errors, >= 4.5:1 on every ground. */
+    val danger: Color,
+    val onDanger: Color,
     /**
      * The phases as Setup draws them: field stripes, values on their tints, History marks. Light
      * mode deepens work and rest so they read on white; dark mode uses the workout's own
@@ -172,6 +175,8 @@ internal val lightPalette = IntervalPalette(
     line = Color(0xFFD5DCE6),
     accent = Color(0xFF2456E6),
     onAccent = Color.White,
+    danger = Color(0xFFBF3019),
+    onDanger = Color.White,
     prepMark = PhaseColors.prep,
     workMark = Color(0xFFD13A26),
     restMark = Color(0xFF0A5E49),
@@ -188,6 +193,8 @@ internal val darkPalette = IntervalPalette(
     line = Color(0xFF2C3541),
     accent = Color(0xFF5B8CFF),
     onAccent = PhaseColors.ink,
+    danger = PhaseColors.work,
+    onDanger = PhaseColors.ink,
     prepMark = PhaseColors.prep,
     workMark = PhaseColors.work,
     restMark = PhaseColors.rest,
@@ -314,6 +321,8 @@ fun IntervalTheme(
             surfaceVariant = palette.surfaceVariant,
             onSurfaceVariant = palette.textDim,
             outline = palette.line,
+            error = palette.danger,
+            onError = palette.onDanger,
         )
     }
     val typography = remember(barlow) {

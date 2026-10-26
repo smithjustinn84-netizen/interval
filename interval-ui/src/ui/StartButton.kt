@@ -6,7 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -37,7 +38,7 @@ fun StartButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     val haptics = LocalHapticFeedback.current
     Row(
         modifier
-            .height(Sizes.start)
+            .heightIn(min = Sizes.start)
             .pressScale(interaction)
             .shadow(elevation = Sizes.startElevation, shape = shape, ambientColor = glow, spotColor = glow)
             .clip(shape)
@@ -45,7 +46,8 @@ fun StartButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
             .clickable(interactionSource = interaction, indication = LocalIndication.current, role = Role.Button) {
                 haptics.performHapticFeedback(HapticFeedbackType.Confirm)
                 onClick()
-            },
+            }
+            .padding(horizontal = Spacing.space20, vertical = Spacing.space8),
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {

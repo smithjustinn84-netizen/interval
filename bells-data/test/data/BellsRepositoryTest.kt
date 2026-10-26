@@ -452,4 +452,20 @@ class BellsRepositoryTest {
         assertEquals(key, repository.following.value?.key)
         assertEquals("Mine", repository.customPrograms.value.single().name)
     }
+
+    @Test
+    fun `a deleted session restored returns to history`() = runTest {
+        repository.startSession()
+        repository.logSet(BuiltInExercise.TwoHandSwing, 24.0, 10, Side.Left)
+        now += 600_000
+        repository.finishSession("Swings")
+        val uid = repository.sessions.value.single().uid
+
+        repository.deleteSession(uid)
+        assertTrue(repository.sessions.value.isEmpty())
+
+        now += 1_000
+        repository.restoreSession(uid)
+        assertEquals(uid, repository.sessions.value.single().uid)
+    }
 }

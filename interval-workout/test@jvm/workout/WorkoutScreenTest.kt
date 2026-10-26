@@ -203,4 +203,11 @@ class WorkoutScreenTest {
         onNodeWithText("Pause").performClick()
         assertEquals(listOf("toggle pause"), calls)
     }
+
+    @Test
+    fun `Escape exits from the workout summary`() = runUiTest {
+        setThemedContent { Screen(done.toUiState(running = false)) }
+        onNode(isFocused()).performKeyInput { pressKey(Key.Escape) }
+        assertEquals(listOf("exit"), calls)
+    }
 }

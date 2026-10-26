@@ -17,6 +17,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import dev.justinsmith.bells.domain.Block
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.ExerciseFilters
@@ -103,7 +104,7 @@ internal fun PlanSheet(state: SessionUiState, onOpen: (Int) -> Unit, onDismiss: 
     val palette = IntervalTheme.palette
     IntervalSheet(stringResource(Res.string.plan_title), onDismiss = onDismiss) {
         Column(
-            Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
+            Modifier.padding(vertical = Spacing.space8),
             verticalArrangement = Arrangement.spacedBy(Spacing.space8),
         ) {
             ListCard {
@@ -113,7 +114,7 @@ internal fun PlanSheet(state: SessionUiState, onOpen: (Int) -> Unit, onDismiss: 
                         Modifier
                             .fillMaxWidth()
                             .heightIn(min = Sizes.listRow)
-                            .then(if (row.open) Modifier.clickable { onOpen(i) } else Modifier)
+                            .then(if (row.open) Modifier.clickable(role = Role.Button) { onOpen(i) } else Modifier)
                             .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
@@ -199,7 +200,7 @@ internal fun PlanBlockSheet(
             ExercisePicker(
                 state.library,
                 onFilters,
-                Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
+                Modifier.padding(vertical = Spacing.space8),
                 selected = row.block.exercise,
                 onPick = { e ->
                     actions.onSwap(e)
@@ -210,7 +211,7 @@ internal fun PlanBlockSheet(
         }
         if (row.entry.skipped) {
             Column(
-                Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
+                Modifier.padding(vertical = Spacing.space8),
                 verticalArrangement = Arrangement.spacedBy(Spacing.space8),
             ) {
                 Text(
@@ -262,7 +263,7 @@ internal fun PlanBlockSheet(
                     Modifier.fillMaxWidth(),
                 )
             },
-            modifier = Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
+            modifier = Modifier.padding(vertical = Spacing.space8),
         )
     }
 }

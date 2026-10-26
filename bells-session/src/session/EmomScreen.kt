@@ -3,6 +3,7 @@ package dev.justinsmith.bells.session
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -23,13 +25,27 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import dev.justinsmith.bells.domain.BuiltInExercise
@@ -38,18 +54,23 @@ import dev.justinsmith.bells.domain.EmomPhase
 import dev.justinsmith.bells.domain.EmomState
 import dev.justinsmith.bells.domain.Side
 import dev.justinsmith.bells.session.resources.Res
+import dev.justinsmith.bells.session.resources.common_cancel
+import dev.justinsmith.bells.session.resources.common_joined
 import dev.justinsmith.bells.session.resources.emom_get_ready
 import dev.justinsmith.bells.session.resources.emom_minute
 import dev.justinsmith.bells.session.resources.emom_next
 import dev.justinsmith.bells.session.resources.emom_rest
 import dev.justinsmith.bells.session.resources.emom_set_done
 import dev.justinsmith.bells.session.resources.emom_stop
+import dev.justinsmith.bells.session.resources.emom_stop_text
+import dev.justinsmith.bells.session.resources.emom_stop_title
 import dev.justinsmith.bells.session.resources.emom_work
 import dev.justinsmith.bells.session.resources.summary_done
 import dev.justinsmith.bells.ui.liftName
 import dev.justinsmith.bells.ui.setLine
 import dev.justinsmith.interval.platform.KeepScreenOn
 import dev.justinsmith.interval.timer.formatClock
+import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.CountdownClock
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -86,6 +107,11 @@ fun EmomScreen(
         EmomPhase.Done -> colors.done
     }
     val color by animateColorAsState(phaseColor, tween(Motion.PHASE_CROSSFADE_MILLIS))
+    var confirmingStop by rememberSaveable { mutableStateOf(false) }
+    val requestStop = { if (state.phase != EmomPhase.Done) confirmingStop = true }
+    val focus = remember { FocusRequester() }
+    var rootFocused by remember { mutableStateOf(false) }
+    LaunchedEffect(confirmingStop) { if (!confirmingStop) focus.requestFocus() }
     val haptics = LocalHapticFeedback.current
     LaunchedEffect(state.phase, state.minute) {
         haptics.performHapticFeedback(
@@ -93,14 +119,67 @@ fun EmomScreen(
         )
     }
     KeepScreenOn()
-    BoxWithConstraints(modifier.fillMaxSize().background(colors.ground), contentAlignment = Alignment.TopCenter) {
+    BoxWithConstraints(
+        modifier
+            .fillMaxSize()
+            .background(colors.ground)
+            .focusRequester(focus)
+            .onFocusChanged { rootFocused = it.isFocused }
+            .focusable()
+            .emomKeys(
+                enabled = !confirmingStop && state.phase != EmomPhase.Done,
+                canFinishSet = rootFocused && state.phase == EmomPhase.Work,
+                onFinishSet = onFinishSet,
+                onStop = requestStop,
+            ),
+        contentAlignment = Alignment.TopCenter,
+    ) {
         // A tablet has the height for the readout inside the ring either way up, and room for a bigger ring.
         val roomy = windowIsRoomy()
         if (isLandscape && !roomy) {
-            LandscapeEmom(run, state, color, onFinishSet, onStop)
+            val sideWidth = minOf(Sizes.setupColumnLandscape, maxWidth * LANDSCAPE_PRIMARY_SHARE)
+            LandscapeEmom(run, state, color, sideWidth, onFinishSet, requestStop)
         } else {
-            PortraitEmom(run, state, color, onFinishSet, onStop, roomy)
+            PortraitEmom(run, state, color, onFinishSet, requestStop, roomy)
         }
+    }
+    if (confirmingStop && state.phase != EmomPhase.Done) {
+        ConfirmDialog(
+            title = stringResource(Res.string.emom_stop_title),
+            text = stringResource(Res.string.emom_stop_text),
+            confirm = stringResource(Res.string.emom_stop),
+            dismiss = stringResource(Res.string.common_cancel),
+            onConfirm = {
+                confirmingStop = false
+                onStop()
+            },
+            onDismiss = { confirmingStop = false },
+            destructive = true,
+        )
+    }
+}
+
+private fun Modifier.emomKeys(
+    enabled: Boolean,
+    canFinishSet: Boolean,
+    onFinishSet: () -> Unit,
+    onStop: () -> Unit,
+): Modifier = onKeyEvent { event ->
+    if (!enabled || event.type != KeyEventType.KeyDown) return@onKeyEvent false
+    when (event.key) {
+        Key.Spacebar, Key.Enter, Key.NumPadEnter -> if (canFinishSet) {
+            onFinishSet()
+            true
+        } else {
+            false
+        }
+
+        Key.Escape -> {
+            onStop()
+            true
+        }
+
+        else -> false
     }
 }
 
@@ -157,7 +236,14 @@ private fun PortraitEmom(
  * too short for the readout inside the ring.
  */
 @Composable
-private fun LandscapeEmom(run: EmomRun, state: EmomState, color: Color, onFinishSet: () -> Unit, onStop: () -> Unit) {
+private fun LandscapeEmom(
+    run: EmomRun,
+    state: EmomState,
+    color: Color,
+    sideWidth: Dp,
+    onFinishSet: () -> Unit,
+    onStop: () -> Unit,
+) {
     Box(Modifier.fillMaxSize()) {
         Box(
             Modifier
@@ -189,7 +275,7 @@ private fun LandscapeEmom(run: EmomRun, state: EmomState, color: Color, onFinish
                 }
             }
             Column(
-                Modifier.width(Sizes.setupColumnLandscape).fillMaxHeight(),
+                Modifier.width(sideWidth).fillMaxHeight(),
                 verticalArrangement = Arrangement.spacedBy(Spacing.space8),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -225,14 +311,15 @@ private fun SetDone(state: EmomState, color: Color, onFinishSet: () -> Unit, mod
     val interaction = remember { MutableInteractionSource() }
     Box(
         modifier
-            .height(Sizes.control)
+            .heightIn(min = Sizes.control)
             .surfaceButton(
                 interaction,
                 Corners.radius18,
                 if (working) color else colors.control,
                 onClick = onFinishSet,
                 enabled = working,
-            ),
+            )
+            .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -262,6 +349,7 @@ private fun PhaseWord(state: EmomState, color: Color) {
         ),
         style = IntervalTheme.type.stat,
         color = color,
+        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
     )
 }
 
@@ -292,7 +380,7 @@ private fun TaskText(run: EmomRun, state: EmomState) {
         if (state.phase == EmomPhase.Rest) {
             stringResource(Res.string.emom_next, task)
         } else {
-            "${liftName(run.exercise, run.double)} · $task"
+            stringResource(Res.string.common_joined, liftName(run.exercise, run.double), task)
         },
         style = IntervalTheme.type.label,
         color = IntervalTheme.workout.onGroundDim,

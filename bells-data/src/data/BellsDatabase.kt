@@ -141,6 +141,10 @@ interface SessionDao {
     @Query("UPDATE session SET deleted = 1, updated_at = :now WHERE uid = :uid")
     suspend fun markDeleted(uid: String, now: Long)
 
+    /** Restores a soft-deleted finished session. */
+    @Query("UPDATE session SET deleted = 0, updated_at = :now WHERE uid = :uid")
+    suspend fun unmarkDeleted(uid: String, now: Long)
+
     /** Drops a session discarded before it finished. */
     @Query("DELETE FROM session WHERE uid = :uid")
     suspend fun discard(uid: String)

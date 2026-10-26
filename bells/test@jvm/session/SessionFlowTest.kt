@@ -18,11 +18,15 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import dev.justinsmith.bells.data.BarEntity
+import dev.justinsmith.bells.data.CustomProgramEntity
 import dev.justinsmith.bells.data.FollowingEntity
 import dev.justinsmith.bells.data.SessionEntity
 import dev.justinsmith.bells.data.SetEntity
+import dev.justinsmith.bells.data.encodeDays
+import dev.justinsmith.bells.domain.Block
 import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.EmomCue
+import dev.justinsmith.bells.domain.HoldClock
 import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.bells.fakes.FakeIntervalActivity
@@ -414,5 +418,42 @@ class SessionFlowTest {
         waitForText("Finish")
         onNodeWithText("Finish").performClick()
         waitForText("Goblet squat and row finished · every day done")
+    }
+
+    @Test
+    fun `a planned hold offers Time it on Up next and skipping a block offers Undo`() = bellsAppTest(
+        FakeBellsStorage().apply {
+            val days = encodeDays(
+                listOf(
+                    listOf(
+                        Block(BuiltInExercise.Plank, rounds = 2, reps = 15),
+                        Block(BuiltInExercise.TwoHandSwing, rounds = 3, reps = 10),
+                    ),
+                ),
+            )
+            programs.rows.value = listOf(CustomProgramEntity("p1", "Core and swings", 3, 4, days, 0))
+            following.row.value = FollowingEntity(programId = "custom:p1", startedAtEpochMillis = 0)
+        },
+    ) { app ->
+        waitForText("Start day 1")
+        onNodeWithText("Start day 1").performClick()
+        waitForText("Up next · 1 of 5 sets")
+        onNodeWithText("Time it").assertExists()
+
+        // Skipping a block shows an Undo notice that brings it straight back.
+        onNodeWithText("Skip").performClick()
+        waitForText("Skipped Plank")
+        onNodeWithText("Two-hand swing").assertExists()
+        onNodeWithText("Undo").performClick()
+        waitForText("Plank")
+
+        // Tapping Time it on Up next opens the hold countdown and logs the planned duration.
+        onNodeWithText("Time it").performClick()
+        waitForText("Get ready")
+        app.clock.set(HoldClock.COUNT_IN_MILLIS)
+        waitForText("Hold")
+        app.clock.set(HoldClock.COUNT_IN_MILLIS + 15_000L)
+        waitForText("Up next · 2 of 5 sets")
+        assertEquals(15, app.storage.sessions.sets.value.single().seconds)
     }
 }

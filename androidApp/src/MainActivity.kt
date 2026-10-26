@@ -1,5 +1,6 @@
 package dev.justinsmith.interval
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -13,6 +14,9 @@ class MainActivity : ComponentActivity() {
         // fading it over the intro.
         installSplashScreen().setOnExitAnimationListener { it.remove() }
         enableEdgeToEdge()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
         super.onCreate(savedInstanceState)
         setContent {
             App()

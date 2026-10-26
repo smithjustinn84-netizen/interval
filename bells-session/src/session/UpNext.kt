@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -11,15 +12,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import dev.justinsmith.bells.session.resources.Res
 import dev.justinsmith.bells.session.resources.common_joined
+import dev.justinsmith.bells.session.resources.hold_time_it
 import dev.justinsmith.bells.session.resources.next_change
 import dev.justinsmith.bells.session.resources.next_day_done
 import dev.justinsmith.bells.session.resources.next_plan
 import dev.justinsmith.bells.session.resources.next_progress
 import dev.justinsmith.bells.session.resources.next_skip
 import dev.justinsmith.bells.session.resources.next_title
+import dev.justinsmith.bells.session.resources.notice_block_skipped
+import dev.justinsmith.bells.session.resources.session_undo
 import dev.justinsmith.bells.ui.countLine
+import dev.justinsmith.bells.ui.liftName
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.LocalNotices
+import dev.justinsmith.interval.ui.NoticeAction
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Spacing
@@ -37,6 +44,7 @@ internal fun UpNextCard(
     actions: SessionActions,
     onChange: (Int) -> Unit,
     onPlan: () -> Unit,
+    onTimeIt: (() -> Unit)? = null,
 ) {
     val palette = IntervalTheme.palette
     // Each set logged fades the card through to the next; the last fades it through to the day's done.
@@ -59,7 +67,7 @@ internal fun UpNextCard(
                 }
             }
         } else {
-            NextSetCard(next, state, actions, onChange, onPlan)
+            NextSetCard(next, state, actions, onChange, onPlan, onTimeIt)
         }
     }
 }
@@ -74,9 +82,13 @@ private fun NextSetCard(
     actions: SessionActions,
     onChange: (Int) -> Unit,
     onPlan: () -> Unit,
+    onTimeIt: (() -> Unit)?,
 ) {
     val palette = IntervalTheme.palette
+    val notices = LocalNotices.current
     val set = next.set
+    val undo = stringResource(Res.string.session_undo)
+    val skipped = stringResource(Res.string.notice_block_skipped, liftName(set.exercise, set.double))
     ListCard(Modifier.padding(top = Spacing.space8)) {
         Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
             Text(
@@ -91,6 +103,13 @@ private fun NextSetCard(
             LiftHeading(set.exercise, set.double, actions.onOpenExercise)
             NextLoad(next, state, actions)
             LastTimeLine(next.lastTime)
+            if (set.held && onTimeIt != null) {
+                SecondaryButton(
+                    stringResource(Res.string.hold_time_it),
+                    onTimeIt,
+                    Modifier.fillMaxWidth().padding(top = Spacing.space4),
+                )
+            }
             Row(
                 Modifier.padding(top = Spacing.space8),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
@@ -98,7 +117,11 @@ private fun NextSetCard(
                 SecondaryButton(stringResource(Res.string.next_change), { onChange(next.block) }, Modifier.weight(1f))
                 SecondaryButton(
                     stringResource(Res.string.next_skip),
-                    { actions.onSkipBlock(next.block) },
+                    {
+                        val blockIndex = next.block
+                        actions.onSkipBlock(blockIndex)
+                        notices.show(skipped, NoticeAction(undo) { actions.onUnskipBlock(blockIndex) })
+                    },
                     Modifier.weight(1f),
                 )
             }

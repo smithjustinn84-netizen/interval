@@ -43,6 +43,10 @@ class LiftDetailViewModel(
         repository.deleteSession(uid)
     }
 
+    fun restore() {
+        repository.restoreSession(uid)
+    }
+
     private fun build(sessions: List<LiftSession>, custom: List<Program>): LiftDetailUiState {
         val session = sessions.firstOrNull { it.uid == uid } ?: return LiftDetailUiState()
         val at = session.finishedAtEpochMillis ?: session.startedAtEpochMillis

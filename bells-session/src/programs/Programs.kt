@@ -316,7 +316,10 @@ private fun ProgramDays(program: Program) {
                 blocks.forEachIndexed { j, block ->
                     if (j > 0) RowDivider()
                     Column(
-                        Modifier.fillMaxWidth().padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+                        Modifier
+                            .fillMaxWidth()
+                            .semantics(mergeDescendants = true) {}
+                            .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
                     ) {
                         Text(
                             liftName(block.exercise, block.double),

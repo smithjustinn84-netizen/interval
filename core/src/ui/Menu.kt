@@ -19,6 +19,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -65,13 +67,22 @@ fun IntervalMenu(
 
 /** A row of an [IntervalMenu]; it closes the menu, then runs [onClick]. */
 @Composable
-fun IntervalMenuItem(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun IntervalMenuItem(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    destructive: Boolean = false,
+) {
     val palette = IntervalTheme.palette
+    val haptics = LocalHapticFeedback.current
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val hovered by interaction.collectIsHoveredAsState()
     UnstyledDropdownMenuItem(
-        onClick = onClick,
+        onClick = {
+            if (destructive) haptics.performHapticFeedback(HapticFeedbackType.Reject)
+            onClick()
+        },
         interactionSource = interaction,
         indication = LocalIndication.current,
         modifier = modifier
@@ -84,7 +95,11 @@ fun IntervalMenuItem(text: String, onClick: () -> Unit, modifier: Modifier = Mod
             Modifier.heightIn(min = Sizes.pillHeight).padding(horizontal = Spacing.space12),
             contentAlignment = Alignment.CenterStart,
         ) {
-            Text(text, style = IntervalTheme.type.label, color = palette.text)
+            Text(
+                text,
+                style = IntervalTheme.type.label,
+                color = if (destructive) palette.danger else palette.text,
+            )
         }
     }
 }

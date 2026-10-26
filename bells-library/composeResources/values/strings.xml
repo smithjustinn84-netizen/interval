@@ -44,6 +44,7 @@
     <string name="exercise_editor_edit">Edit exercise</string>
     <string name="exercise_name">Name</string>
     <string name="exercise_name_placeholder">Exercise name</string>
+    <string name="exercise_name_needed">Enter an exercise name to save.</string>
     <string name="exercise_name_taken">One of yours already has this name.</string>
     <string name="exercise_equipment">Equipment</string>
     <string name="exercise_locked">Sets of it are logged, so its equipment and measure stay as they are.</string>

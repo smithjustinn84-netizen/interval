@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.interval.home.resources.Res
 import dev.justinsmith.interval.home.resources.activity_title
 import dev.justinsmith.interval.home.resources.describe_field_label
@@ -28,6 +29,7 @@ import dev.justinsmith.interval.home.resources.describe_kept_hint
 import dev.justinsmith.interval.home.resources.describe_placeholder
 import dev.justinsmith.interval.home.resources.describe_save_preset
 import dev.justinsmith.interval.home.resources.describe_title
+import dev.justinsmith.interval.home.resources.describe_unrecognized
 import dev.justinsmith.interval.home.resources.describe_use
 import dev.justinsmith.interval.home.resources.preset_editor_total
 import dev.justinsmith.interval.timer.ConfigField
@@ -93,12 +95,15 @@ internal fun DescribeSheet(
         NameField(
             words,
             placeholder = stringResource(Res.string.describe_placeholder),
-            onDone = { use() },
             label = stringResource(Res.string.describe_field_label),
             maxLength = MAX_DESCRIPTION_LENGTH,
+            onDone = { use() },
+            autoCorrectEnabled = false,
         )
         if (described == null) {
-            DescribeHint(stringResource(Res.string.describe_hint))
+            DescribeHint(
+                stringResource(if (text.isBlank()) Res.string.describe_hint else Res.string.describe_unrecognized),
+            )
         } else {
             DescribedPreview(described)
             AccentButton(
@@ -169,6 +174,7 @@ private fun PreviewRow(label: String, value: String, understood: Boolean, color:
         Modifier
             .fillMaxWidth()
             .heightIn(min = Sizes.listRow)
+            .semantics(mergeDescendants = true) {}
             .padding(horizontal = Spacing.space16, vertical = Spacing.space8),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),

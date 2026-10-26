@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextStyle
+import dev.justinsmith.interval.platform.prefersReducedMotion
 
 // The design system's Motion section, in code: its easings and springs, and the few moves every
 // screen makes (a press, an arrival, a value changing in place). Durations are the Motion tokens.
@@ -73,7 +74,12 @@ private const val ROLL_SHARE = 0.4f
 @Composable
 fun Modifier.pressScale(interaction: InteractionSource): Modifier {
     val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) Motion.PRESS_SCALE else 1f, pressSpring(), label = "press")
+    val reducedMotion = prefersReducedMotion()
+    val scale by animateFloatAsState(
+        if (pressed && !reducedMotion) Motion.PRESS_SCALE else 1f,
+        pressSpring(),
+        label = "press",
+    )
     return graphicsLayer {
         scaleX = scale
         scaleY = scale
@@ -98,11 +104,19 @@ fun rememberArrival(isNew: Boolean): MutableTransitionState<Boolean> =
     if (isNew) rememberEntrance() else remember { MutableTransitionState(true) }
 
 /** Something arriving: it fades in as it rises from a little below its place, after [delayMillis]. */
-fun enterRising(delayMillis: Int = 0): EnterTransition {
+fun enterRising(delayMillis: Int = 0, reducedMotion: Boolean = false): EnterTransition {
     val spec = tween<Float>(Motion.ENTER_MILLIS, delayMillis, EnterEasing)
-    return fadeIn(spec) +
-        slideInVertically(tween(Motion.ENTER_MILLIS, delayMillis, EnterEasing)) { (it * RISE_SHARE).toInt() }
+    return if (reducedMotion) {
+        fadeIn(spec)
+    } else {
+        fadeIn(spec) +
+            slideInVertically(tween(Motion.ENTER_MILLIS, delayMillis, EnterEasing)) { (it * RISE_SHARE).toInt() }
+    }
 }
+
+/** [enterRising] following the system's Reduce Motion preference. */
+@Composable
+fun risingEnter(delayMillis: Int = 0): EnterTransition = enterRising(delayMillis, prefersReducedMotion())
 
 /** Something arriving in place, such as a dialog: it fades in as it grows from a touch smaller. */
 fun enterGrowing(): EnterTransition =
@@ -145,20 +159,27 @@ fun RollingText(
     color: Color,
     modifier: Modifier = Modifier,
 ) {
+    val reducedMotion = prefersReducedMotion()
     AnimatedContent(
         targetState = text,
         modifier = modifier,
         transitionSpec = {
-            val direction = if (rising) 1 else -1
-            val enter = fadeIn(tween(Motion.CONTENT_MILLIS)) +
-                slideInVertically(tween(Motion.CONTENT_MILLIS, easing = StandardEasing)) {
-                    (it * ROLL_SHARE).toInt() * direction
-                }
-            val exit = fadeOut(tween(Motion.EXIT_MILLIS)) +
-                slideOutVertically(tween(Motion.EXIT_MILLIS, easing = StandardEasing)) {
-                    -(it * ROLL_SHARE).toInt() * direction
-                }
-            enter.togetherWith(exit).using(SizeTransform(clip = false))
+            if (reducedMotion) {
+                fadeIn(tween(Motion.CONTENT_MILLIS))
+                    .togetherWith(fadeOut(tween(Motion.EXIT_MILLIS)))
+                    .using(SizeTransform(clip = false))
+            } else {
+                val direction = if (rising) 1 else -1
+                val enter = fadeIn(tween(Motion.CONTENT_MILLIS)) +
+                    slideInVertically(tween(Motion.CONTENT_MILLIS, easing = StandardEasing)) {
+                        (it * ROLL_SHARE).toInt() * direction
+                    }
+                val exit = fadeOut(tween(Motion.EXIT_MILLIS)) +
+                    slideOutVertically(tween(Motion.EXIT_MILLIS, easing = ExitEasing)) {
+                        -(it * ROLL_SHARE).toInt() * direction
+                    }
+                enter.togetherWith(exit).using(SizeTransform(clip = false))
+            }
         },
         label = "rollingText",
     ) { value ->

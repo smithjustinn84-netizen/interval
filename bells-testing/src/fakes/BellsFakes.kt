@@ -105,6 +105,10 @@ class FakeSessionDao : SessionDao {
         all.map { if (it.uid == uid) it.copy(deleted = true, updatedAtEpochMillis = now) else it }
     }
 
+    override suspend fun unmarkDeleted(uid: String, now: Long) = sessions.update { all ->
+        all.map { if (it.uid == uid) it.copy(deleted = false, updatedAtEpochMillis = now) else it }
+    }
+
     override suspend fun discard(uid: String) = sessions.update { all -> all.filterNot { it.uid == uid } }
 
     override suspend fun discardSets(uid: String) = sets.update { all -> all.filterNot { it.sessionUid == uid } }

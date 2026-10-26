@@ -3,8 +3,10 @@ package dev.justinsmith.bells.session
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
@@ -14,7 +16,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
@@ -35,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigationevent.NavigationEventInfo
@@ -96,10 +99,11 @@ import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TitleBar
-import dev.justinsmith.interval.ui.enterRising
 import dev.justinsmith.interval.ui.fadeThrough
 import dev.justinsmith.interval.ui.isLandscape
+import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.interval.ui.rememberArrival
+import dev.justinsmith.interval.ui.risingEnter
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
@@ -184,6 +188,7 @@ private fun sessionActions(
     onStepDraftLoad = viewModel::stepDraftLoad,
     onOpenExercise = viewModel::openExercise,
     onStartPlannedEmom = viewModel::startPlannedEmom,
+    onTimePlannedHold = viewModel::startPlannedHold,
     onStartEmom = viewModel::startDraftEmom,
     onTimeHold = viewModel::startHold,
     onStopHold = viewModel::stopHold,
@@ -271,6 +276,7 @@ data class SessionActions(
     /** An exercise's page, by its key, opened; null closes it. */
     val onOpenExercise: (String?) -> Unit = {},
     val onStartPlannedEmom: () -> Unit = {},
+    val onTimePlannedHold: () -> Unit = {},
     val onStartEmom: () -> Unit = {},
     /** Times the sheet's hold; Stop logs the seconds held, Cancel drops it. */
     val onTimeHold: () -> Unit = {},
@@ -342,27 +348,16 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
         },
         tiles = { wide -> SessionTiles(state, actions, wide) },
         plan = {
-            val opening = actions.copy(
-                onOpenExercise = {
-                    actions.onOpenExercise(it)
-                    reading = true
-                },
+            SessionPlanContent(
+                state = state,
+                actions = actions,
+                sets = sets,
+                onRead = { reading = true },
+                onPick = { picking = true },
+                onChange = { changing = it },
+                onPlan = { planning = true },
+                onLog = { logging = true },
             )
-            // Not while a set logged is being changed: the draft is that set until it is saved or left.
-            if (state.free && state.editing == null) {
-                DraftSetCard(
-                    state,
-                    opening,
-                    onChange = { picking = true },
-                    onTimeIt = {
-                        actions.onTimeHold()
-                        logging = true
-                    },
-                )
-            } else if (!state.free) {
-                UpNextCard(state, opening, onChange = { changing = it }, onPlan = { planning = true })
-            }
-            LoggedSets(state, sets)
         },
         buttons = {
             SessionButtons(
@@ -379,6 +374,49 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
     if (picking) ExercisePickerSheet(state, actions, onDismiss = { picking = false })
     PlanSheets(state, actions, planning, changing, onPlanning = { planning = it }, onChanging = { changing = it })
     EndDialogs(leaving, discarding, actions.onDiscard, { leaving = it }, { discarding = it })
+}
+
+@Composable
+private fun SessionPlanContent(
+    state: SessionUiState,
+    actions: SessionActions,
+    sets: SetActions,
+    onRead: () -> Unit,
+    onPick: () -> Unit,
+    onChange: (Int) -> Unit,
+    onPlan: () -> Unit,
+    onLog: () -> Unit,
+) {
+    val opening = actions.copy(
+        onOpenExercise = {
+            actions.onOpenExercise(it)
+            onRead()
+        },
+    )
+    // Not while a set logged is being changed: the draft is that set until it is saved or left.
+    if (state.free && state.editing == null) {
+        DraftSetCard(
+            state,
+            opening,
+            onChange = onPick,
+            onTimeIt = {
+                actions.onTimeHold()
+                onLog()
+            },
+        )
+    } else if (!state.free) {
+        UpNextCard(
+            state,
+            opening,
+            onChange = onChange,
+            onPlan = onPlan,
+            onTimeIt = {
+                actions.onTimePlannedHold()
+                onLog()
+            },
+        )
+    }
+    LoggedSets(state, sets)
 }
 
 /**
@@ -405,27 +443,19 @@ private fun EndDialogs(
         )
     }
     if (discarding) {
-        DiscardDialog(
+        ConfirmDialog(
+            title = stringResource(Res.string.session_discard_title),
+            text = stringResource(Res.string.session_discard_text),
+            confirm = stringResource(Res.string.session_discard),
+            dismiss = stringResource(Res.string.common_cancel),
             onConfirm = {
                 onDiscarding(false)
                 onDiscard()
             },
             onDismiss = { onDiscarding(false) },
+            destructive = true,
         )
     }
-}
-
-/** Asks before the session, and its sets, are thrown away. */
-@Composable
-private fun DiscardDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
-    ConfirmDialog(
-        title = stringResource(Res.string.session_discard_title),
-        text = stringResource(Res.string.session_discard_text),
-        confirm = stringResource(Res.string.session_discard),
-        dismiss = stringResource(Res.string.common_cancel),
-        onConfirm = onConfirm,
-        onDismiss = onDismiss,
-    )
 }
 
 /**
@@ -464,6 +494,9 @@ private fun AnnounceRecord(state: SessionUiState, notices: Notices) {
     }
 }
 
+/** Maximum share of window width the primary column takes on compact landscape phones. */
+internal const val LANDSCAPE_PRIMARY_SHARE = 0.45f
+
 /**
  * Whether a session's screens (the session, its summary) are upright on a window wider than a phone, as a tablet
  * held upright is: they keep one column, the width of the Timer's choices rather than a phone's. Two columns
@@ -494,8 +527,9 @@ private fun SessionLayout(parts: SessionParts, modifier: Modifier = Modifier) {
         contentAlignment = Alignment.TopCenter,
     ) {
         if (isLandscape) {
+            val sideWidth = minOf(Sizes.setupColumnLandscape, maxWidth * LANDSCAPE_PRIMARY_SHARE)
             Row(Modifier.fillMaxSize().safeDrawingPadding(), horizontalArrangement = Arrangement.Center) {
-                Column(Modifier.width(Sizes.setupColumnLandscape).fillMaxHeight()) {
+                Column(Modifier.width(sideWidth).fillMaxHeight()) {
                     parts.bar()
                     Column(
                         Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Spacing.space16),
@@ -635,7 +669,7 @@ private fun LoggedSets(state: SessionUiState, actions: SetActions) {
         ListCard(Modifier.animateContentSize()) {
             done.forEachIndexed { i, set ->
                 key(set.id) {
-                    AnimatedVisibility(rememberArrival(set.id !in atOpen), enter = enterRising()) {
+                    AnimatedVisibility(rememberArrival(set.id !in atOpen), enter = risingEnter()) {
                         Column {
                             if (i > 0) RowDivider()
                             SetRow(
@@ -658,12 +692,14 @@ private fun SetRow(set: SetLog, record: Boolean, onRemove: (removedText: String)
     val line = setLine(set)
     val edit = stringResource(Res.string.session_edit_set_cd, line)
     val removed = stringResource(Res.string.session_set_removed, line)
+    val interaction = remember { MutableInteractionSource() }
     Row(
         Modifier
             .fillMaxWidth()
-            .height(Sizes.listRow)
-            .clickable(onClickLabel = edit, onClick = onEdit)
-            .padding(start = Spacing.space16, end = Spacing.space4),
+            .heightIn(min = Sizes.listRow)
+            .clickable(interaction, LocalIndication.current, onClickLabel = edit, role = Role.Button, onClick = onEdit)
+            .pressScale(interaction)
+            .padding(start = Spacing.space16, end = Spacing.space4, top = Spacing.space8, bottom = Spacing.space8),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(line, style = IntervalTheme.type.label, color = IntervalTheme.palette.text, modifier = Modifier.weight(1f))

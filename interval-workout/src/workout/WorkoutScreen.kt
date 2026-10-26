@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
@@ -34,12 +35,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigationevent.NavigationEventInfo
@@ -153,21 +157,26 @@ fun WorkoutScreen(
     val accent = phaseColor(state, primary = false)
     val primaryFill = phaseColor(state, primary = true)
     val focus = remember { FocusRequester() }
+    var rootFocused by remember { mutableStateOf(false) }
     val anchor = rememberLaneAnchor()
-    // Key events only reach Compose through a focused node; take focus back after the dialog closes.
-    LaunchedEffect(confirmingEnd) { if (!confirmingEnd) focus.requestFocus() }
+    // Key events only reach Compose through a focused node; take focus back after the dialog closes or summary arrives.
+    LaunchedEffect(confirmingEnd, state.isDone) { if (!confirmingEnd) focus.requestFocus() }
     BoxWithConstraints(
         modifier
             .fillMaxSize()
             .background(IntervalTheme.workout.ground)
             .focusRequester(focus)
+            .onFocusChanged { rootFocused = it.isFocused }
             .focusable()
             .workoutKeys(
-                enabled = !state.isDone && !confirmingEnd,
+                enabled = !confirmingEnd,
+                isDone = state.isDone,
+                rootFocused = rootFocused,
                 onTogglePause = onTogglePause,
                 onBack = onBack,
                 onSkip = onSkip,
                 onEnd = requestEnd,
+                onExit = onExit,
             ),
     ) {
         val landscape = isLandscape
@@ -206,6 +215,7 @@ fun WorkoutScreen(
                 confirmingEnd = false
                 if (state.paused) onTogglePause()
             },
+            destructive = true,
         )
     }
 }
@@ -231,21 +241,26 @@ private fun phaseColor(state: WorkoutUiState, primary: Boolean): Color {
 }
 
 /**
- * Space or Enter pauses and resumes, the arrow keys go back and skip, and Escape ends. Handled after
- * the focused control, so a button reached with Tab still answers to Enter and Space itself.
+ * Space or Enter pauses and resumes, the arrow keys go back and skip (only while the root workout surface
+ * itself holds focus, so Tab/arrow navigation across controls stays intact), and Escape ends or exits.
  */
 private fun Modifier.workoutKeys(
     enabled: Boolean,
+    isDone: Boolean,
+    rootFocused: Boolean,
     onTogglePause: () -> Unit,
     onBack: () -> Unit,
     onSkip: () -> Unit,
     onEnd: () -> Unit,
+    onExit: () -> Unit,
 ): Modifier = onKeyEvent { event ->
-    val action = when (event.key) {
-        Key.Spacebar, Key.Enter, Key.NumPadEnter -> onTogglePause
-        Key.DirectionLeft -> onBack
-        Key.DirectionRight -> onSkip
-        Key.Escape -> onEnd
+    val action = when {
+        isDone -> if (event.key == Key.Escape) onExit else null
+        event.key == Key.Escape -> onEnd
+        !rootFocused -> null
+        event.key == Key.Spacebar || event.key == Key.Enter || event.key == Key.NumPadEnter -> onTogglePause
+        event.key == Key.DirectionLeft -> onBack
+        event.key == Key.DirectionRight -> onSkip
         else -> null
     }
     if (!enabled || event.type != KeyEventType.KeyDown || action == null) return@onKeyEvent false
@@ -317,7 +332,7 @@ private fun LandscapeWorkout(
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             EndPill(actions.onEnd, Modifier.fillMaxWidth())
-            BackButton(actions.onBack, Modifier.fillMaxWidth().height(Sizes.control))
+            BackButton(actions.onBack, Modifier.fillMaxWidth().heightIn(min = Sizes.control))
         }
         BoxWithConstraints(
             Modifier
@@ -335,8 +350,13 @@ private fun LandscapeWorkout(
         ) {
             SkipPill(actions.onSkip, Modifier.fillMaxWidth())
             Spacer(Modifier.weight(1f))
-            AddTimeButton(actions.onAddTime, Modifier.fillMaxWidth().height(Sizes.control))
-            PrimaryButton(state, primaryFill, actions.onTogglePause, Modifier.fillMaxWidth().height(Sizes.control))
+            AddTimeButton(actions.onAddTime, Modifier.fillMaxWidth().heightIn(min = Sizes.control))
+            PrimaryButton(
+                state,
+                primaryFill,
+                actions.onTogglePause,
+                Modifier.fillMaxWidth().heightIn(min = Sizes.control),
+            )
         }
     }
 }
@@ -353,15 +373,23 @@ private fun BoxScope.PhaseBand(accent: Color, landscape: Boolean) {
     Box(band.clip(Corners.full).background(accent))
 }
 
-/** The readout area pauses or resumes on tap, with no ripple: the background change is the feedback. */
+/** The readout area pauses or resumes on tap, with no ripple: the background change and toggle haptic answer. */
 @Composable
-private fun Modifier.tapToPause(state: WorkoutUiState, onTogglePause: () -> Unit): Modifier = clickable(
-    interactionSource = remember { MutableInteractionSource() },
-    indication = null,
-    enabled = !state.isDone,
-    onClickLabel = stringResource(if (state.running) Res.string.workout_pause else Res.string.workout_resume),
-    onClick = onTogglePause,
-)
+private fun Modifier.tapToPause(state: WorkoutUiState, onTogglePause: () -> Unit): Modifier {
+    val haptics = LocalHapticFeedback.current
+    return clickable(
+        interactionSource = remember { MutableInteractionSource() },
+        indication = null,
+        enabled = !state.isDone,
+        onClickLabel = stringResource(if (state.running) Res.string.workout_pause else Res.string.workout_resume),
+        onClick = {
+            haptics.performHapticFeedback(
+                if (state.running) HapticFeedbackType.ToggleOff else HapticFeedbackType.ToggleOn,
+            )
+            onTogglePause()
+        },
+    )
+}
 
 @Composable
 private fun TopBar(state: WorkoutUiState, actions: WorkoutActions) {

@@ -62,4 +62,10 @@ class StoredProgramsTest {
         // Without the exercise the block, then its day, then the program goes.
         assertNull(row(encodeDays(days)).toProgram())
     }
+
+    @Test
+    fun `draft days keep an empty day across process recreation`() {
+        val days = listOf(listOf(Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 10)), emptyList())
+        assertEquals(days, decodeDraftDays(encodeDays(days)))
+    }
 }

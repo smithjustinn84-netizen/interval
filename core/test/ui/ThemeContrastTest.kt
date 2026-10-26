@@ -40,13 +40,17 @@ class ThemeContrastTest {
             grounds.forEach { (name, ground) ->
                 assertContrast(4.5, p.text, ground, "$theme text on $name")
                 assertContrast(4.5, p.textDim, ground, "$theme textDim on $name")
+                assertContrast(4.5, p.danger, ground, "$theme danger on $name")
             }
         }
     }
 
     @Test
     fun `labels read on accent`() {
-        palettes.forEach { (theme, p) -> assertContrast(4.5, p.onAccent, p.accent, "$theme onAccent on accent") }
+        palettes.forEach { (theme, p) ->
+            assertContrast(4.5, p.onAccent, p.accent, "$theme onAccent on accent")
+            assertContrast(4.5, p.onDanger, p.danger, "$theme onDanger on danger")
+        }
     }
 
     @Test

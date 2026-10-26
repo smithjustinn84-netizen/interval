@@ -107,19 +107,26 @@ class LiftFlowTest {
     }
 
     @Test
-    fun `a session opens from History and Delete takes it out`() = liftTest(
+    fun `a session opens from History and Delete takes it out with Undo`() = liftTest(
         FakeBellsStorage().apply { finished("b1", "Swings", startedAt = 0, finishedAt = 600_000, 24.0 to 10) },
     ) { app ->
         tab("History").performClick()
         onNode(hasText("Swings") and hasClickAction()).performClick()
         waitForText("Two-hand swing")
         onNodeWithText("24 kg × 10").assertExists()
+        onNodeWithContentDescription("More options").performClick()
         onNodeWithText("Delete").performClick()
         onNodeWithText("Delete session?").assertExists()
         onAllNodesWithText("Delete").onLast().performClick()
-        waitForText("Train to a plan")
+        waitForText("Session deleted")
         onNode(hasText("Swings") and hasClickAction()).assertDoesNotExist()
         assertTrue(app.lift.sessions.sessions.value.single().deleted)
+
+        onNodeWithText("Undo").performClick()
+        waitUntil(timeoutMillis = STATE_TIMEOUT_MILLIS) {
+            onAllNodes(hasText("Swings") and hasClickAction()).fetchSemanticsNodes().isNotEmpty()
+        }
+        assertTrue(!app.lift.sessions.sessions.value.single().deleted)
     }
 
     @Test
@@ -140,7 +147,7 @@ class LiftFlowTest {
         waitForText("Swings")
         onNode(hasText("Swings") and hasClickAction()).performClick()
         waitForText("24 kg × 10")
-        onNodeWithText("Delete").assertExists()
+        onNodeWithContentDescription("More options").assertExists()
         tab("Lift").assertDoesNotExist()
     }
 

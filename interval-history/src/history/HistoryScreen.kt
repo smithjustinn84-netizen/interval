@@ -192,7 +192,7 @@ fun HistoryScreen(
     selectedWorkout: Long? = null,
     selectedLift: String? = null,
 ) {
-    var menu by remember { mutableStateOf(false) }
+    var menu by rememberSaveable { mutableStateOf(false) }
     var confirming by rememberSaveable { mutableStateOf(false) }
     // The day the day sheet's Add workout is planning on, while its add sheet is open.
     var addingOn by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -203,7 +203,11 @@ fun HistoryScreen(
             expanded = menu,
             onExpandedChange = { menu = it },
             items = {
-                IntervalMenuItem(stringResource(Res.string.history_clear_menu), onClick = { confirming = true })
+                IntervalMenuItem(
+                    stringResource(Res.string.history_clear_menu),
+                    onClick = { confirming = true },
+                    destructive = true,
+                )
             },
         ) {
             IconAction(
@@ -262,6 +266,7 @@ fun HistoryScreen(
                 confirming = false
             },
             onDismiss = { confirming = false },
+            destructive = true,
         )
     }
 }

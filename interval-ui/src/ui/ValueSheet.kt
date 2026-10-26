@@ -22,7 +22,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -98,7 +100,10 @@ private fun SheetStepper(field: ConfigField, value: Int, onStep: (Int) -> Unit, 
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             FieldStepButton(field, value, more = false, onStep = onStep, Modifier.size(Sizes.sheetStepper))
-            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            Box(
+                Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
+                contentAlignment = Alignment.Center,
+            ) {
                 RollingText(
                     field.format(value),
                     rising,

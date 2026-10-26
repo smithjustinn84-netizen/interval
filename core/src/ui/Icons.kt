@@ -43,16 +43,19 @@ object IntervalIcons {
 
     /** A kettlebell: its handle and its bell. */
     val Bell: ImageVector = lineIcon("Bell", "M9 9V7a3 3 0 0 1 6 0v2", "M18 15a6 6 0 1 1 -12 0a6 6 0 1 1 12 0")
-    val Back: ImageVector = lineIcon("Back", "M19 12H5M12 19l-7-7 7-7")
+    val Back: ImageVector = lineIcon("Back", "M19 12H5M12 19l-7-7 7-7", autoMirror = true)
     val Close: ImageVector = lineIcon("Close", "M6 6l12 12M18 6L6 18")
-    val Chevron: ImageVector = lineIcon("Chevron", "M9 6l6 6-6 6")
+    val Chevron: ImageVector = lineIcon("Chevron", "M9 6l6 6-6 6", autoMirror = true)
+
+    /** A vertical disclosure chevron (Filters, Licenses), unmirrored so up and down stay up and down in RTL. */
+    val ChevronDown: ImageVector = lineIcon("ChevronDown", "M6 9l6 6 6-6")
     val Check: ImageVector = lineIcon("Check", "M5 12l5 5L20 7")
 
     /** The Timer's way to describe a workout in words: lines of text and a pencil. */
     val Describe: ImageVector = lineIcon("Describe", "M4 6h16M4 11h9M4 16h5", "M14 20v-2.5l5.5-5.5 2.5 2.5-5.5 5.5z")
 
     /** The way back a month on History's calendar: [Chevron] turned round. */
-    val ChevronBack: ImageVector = lineIcon("ChevronBack", "M15 6l-6 6 6 6")
+    val ChevronBack: ImageVector = lineIcon("ChevronBack", "M15 6l-6 6 6 6", autoMirror = true)
 
     /** History's way to the plan: a calendar page with a plus. */
     val Plan: ImageVector = lineIcon(
@@ -83,8 +86,8 @@ object IntervalIcons {
 
 private const val VIEWPORT = 24f
 
-private fun lineIcon(name: String, vararg paths: String): ImageVector =
-    ImageVector.Builder(name, Sizes.icon, Sizes.icon, VIEWPORT, VIEWPORT).apply {
+private fun lineIcon(name: String, vararg paths: String, autoMirror: Boolean = false): ImageVector =
+    ImageVector.Builder(name, Sizes.icon, Sizes.icon, VIEWPORT, VIEWPORT, autoMirror = autoMirror).apply {
         paths.forEach { path ->
             addPath(
                 pathData = addPathNodes(path),

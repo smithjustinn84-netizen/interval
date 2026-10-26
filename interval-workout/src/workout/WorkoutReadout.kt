@@ -28,7 +28,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -115,12 +118,15 @@ internal fun RingReadout(state: WorkoutUiState, accent: Color, diameter: Dp, mod
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             PhaseLabel(state, accent)
             Clock(state, accent, ringClockSize(diameter, state.clock.length, IntervalTheme.type.clock.fontSize))
-            Text(
-                nextUpText(state.next),
-                style = IntervalTheme.type.label,
-                color = IntervalTheme.workout.onGroundDim,
-                textAlign = TextAlign.Center,
-            )
+            val nextText = nextUpText(state.next)
+            if (nextText.isNotEmpty()) {
+                Text(
+                    nextText,
+                    style = IntervalTheme.type.label,
+                    color = IntervalTheme.workout.onGroundDim,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 }
@@ -145,7 +151,10 @@ internal fun LandscapeReadout(
         }
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             PhaseLabel(state, accent)
-            Text(nextUpText(state.next), style = IntervalTheme.type.label, color = IntervalTheme.workout.onGroundDim)
+            val nextText = nextUpText(state.next)
+            if (nextText.isNotEmpty()) {
+                Text(nextText, style = IntervalTheme.type.label, color = IntervalTheme.workout.onGroundDim)
+            }
             RoundStatus(state)
             RoundDots(state, accent, Modifier.padding(top = Spacing.space4))
             TapHint(state)
@@ -156,6 +165,7 @@ internal fun LandscapeReadout(
 /** The phase word, in the phase colour. A new word rises in as the old one slips away above it. */
 @Composable
 private fun PhaseLabel(state: WorkoutUiState, accent: Color) {
+    val reducedMotion = prefersReducedMotion()
     val label: StringResource = when {
         state.paused -> Res.string.workout_paused
 
@@ -168,16 +178,23 @@ private fun PhaseLabel(state: WorkoutUiState, accent: Color) {
     }
     AnimatedContent(
         targetState = label,
+        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
         transitionSpec = {
-            val enter = fadeIn(tween(Motion.CONTENT_MILLIS)) +
-                slideInVertically(tween(Motion.CONTENT_MILLIS, easing = EnterEasing)) {
-                    (it * Motion.PHASE_WORD_RISE_SHARE).toInt()
-                }
-            val exit = fadeOut(tween(Motion.EXIT_MILLIS)) +
-                slideOutVertically(tween(Motion.EXIT_MILLIS, easing = StandardEasing)) {
-                    -(it * Motion.PHASE_WORD_RISE_SHARE).toInt()
-                }
-            enter.togetherWith(exit).using(SizeTransform(clip = false))
+            if (reducedMotion) {
+                fadeIn(tween(Motion.CONTENT_MILLIS))
+                    .togetherWith(fadeOut(tween(Motion.EXIT_MILLIS)))
+                    .using(SizeTransform(clip = false))
+            } else {
+                val enter = fadeIn(tween(Motion.CONTENT_MILLIS)) +
+                    slideInVertically(tween(Motion.CONTENT_MILLIS, easing = EnterEasing)) {
+                        (it * Motion.PHASE_WORD_RISE_SHARE).toInt()
+                    }
+                val exit = fadeOut(tween(Motion.EXIT_MILLIS)) +
+                    slideOutVertically(tween(Motion.EXIT_MILLIS, easing = StandardEasing)) {
+                        -(it * Motion.PHASE_WORD_RISE_SHARE).toInt()
+                    }
+                enter.togetherWith(exit).using(SizeTransform(clip = false))
+            }
         },
         label = "phase",
     ) { res ->

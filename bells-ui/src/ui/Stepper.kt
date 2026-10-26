@@ -7,6 +7,10 @@ import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.em
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.RepeatButton
@@ -28,6 +32,7 @@ fun Stepper(
     compact: Boolean = false,
 ) {
     val largest = if (compact) IntervalTheme.type.stat else IntervalTheme.type.display
+    val smallest = if (compact) IntervalTheme.type.section else IntervalTheme.type.stat
     Row(
         modifier,
         verticalAlignment = Alignment.CenterVertically,
@@ -37,11 +42,12 @@ fun Stepper(
         // at full size. A line height in em, so it shrinks with the font.
         BasicText(
             value,
-            Modifier.weight(1f),
+            Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
             style = largest.copy(color = IntervalTheme.palette.text, lineHeight = 1.em),
+            overflow = TextOverflow.Ellipsis,
             maxLines = 1,
             autoSize = TextAutoSize.StepBased(
-                minFontSize = IntervalTheme.type.stat.fontSize,
+                minFontSize = smallest.fontSize,
                 maxFontSize = largest.fontSize,
             ),
         )

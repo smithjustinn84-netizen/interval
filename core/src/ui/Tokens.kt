@@ -149,7 +149,7 @@ object Sizes {
     val legendSwatch = 10.dp
 
     /** A day on History's month calendar: the cell that takes the tap, and the round mark of its state. */
-    val calendarCell = 44.dp
+    val calendarCell = 48.dp
     val calendarDay = 34.dp
 
     /** The short bar under today on the calendar. */
@@ -166,7 +166,7 @@ object Sizes {
     val historyMarkHeight = 40.dp
 
     /** One choice of a segmented picker, such as the theme's. */
-    val segment = 44.dp
+    val segment = 48.dp
 
     /** The stripe beside a value sheet's title, as tall as the title and its hint. */
     val sheetHeaderStripe = 48.dp

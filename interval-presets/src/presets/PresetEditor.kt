@@ -2,11 +2,12 @@ package dev.justinsmith.interval.presets
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,6 +21,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextAlign
 import dev.justinsmith.interval.presets.resources.Res
 import dev.justinsmith.interval.presets.resources.activity_title
 import dev.justinsmith.interval.presets.resources.common_cancel
@@ -57,6 +61,7 @@ import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.NameField
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
+import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ValueSheet
 import dev.justinsmith.interval.ui.labelRes
@@ -106,14 +111,7 @@ internal fun PresetEditor(
     val name = rememberTextFieldState(draft.name)
     val placeholder = draft.config.defaultPresetName()
     val total = formatClock(draft.config.copy(prepSeconds = prepSeconds).totalSeconds)
-    val title = stringResource(
-        when (draft.mode) {
-            EditorMode.Edit -> Res.string.preset_editor_edit_title
-            EditorMode.New -> Res.string.preset_editor_new_title
-            EditorMode.Copy -> Res.string.preset_editor_copy_title
-            EditorMode.SaveCurrent -> Res.string.preset_save_title
-        },
-    )
+    val title = stringResource(draft.mode.titleRes())
     // The one being edited is not "another" preset: keeping its own name or shape is no clash.
     val others = presets.filterNot { draft.id != null && it.id == draft.id }
     // What the user means, before another preset's name makes it numbered: shown when the two differ.
@@ -139,7 +137,7 @@ internal fun PresetEditor(
                     stringResource(Res.string.preset_name_label),
                     style = IntervalTheme.type.caption,
                     color = palette.textDim,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).clearAndSetSemantics {},
                 )
                 Text(
                     stringResource(Res.string.preset_name_count, name.text.length, Preset.MAX_NAME_LENGTH),
@@ -147,21 +145,17 @@ internal fun PresetEditor(
                     color = palette.textDim,
                 )
             }
-            NameField(name, placeholder, save, stringResource(Res.string.preset_name_label), Preset.MAX_NAME_LENGTH)
+            NameField(
+                name,
+                placeholder,
+                stringResource(Res.string.preset_name_label),
+                Preset.MAX_NAME_LENGTH,
+                onDone = save,
+                capitalization = KeyboardCapitalization.Words,
+            )
             if (storedName != wanted) EditorHint(stringResource(Res.string.preset_editor_saves_as, storedName))
         }
-        Column(Modifier.fillMaxWidth().clip(Corners.radius18).background(palette.surfaceVariant)) {
-            ConfigField.shape.forEachIndexed { index, field ->
-                if (index > 0) RowDivider()
-                FieldRow(field, draft.config.valueOf(field), onClick = { editingName = field.name })
-            }
-            RowDivider()
-            LinkRow(
-                stringResource(Res.string.activity_title),
-                stringResource(draft.config.activity.labelRes),
-                onClick = { choosingActivity = true },
-            )
-        }
+        EditorShapeCard(draft.config, { editingName = it.name }, { choosingActivity = true })
         EditorTotal(total)
         sameShape?.let { EditorHint(stringResource(Res.string.preset_editor_same_shape, it.name)) }
         AccentButton(stringResource(Res.string.common_save), onClick = save, modifier = Modifier.fillMaxWidth())
@@ -185,21 +179,51 @@ internal fun PresetEditor(
     }
 }
 
-/** Cancel at the start and the [title] centred, as a sheet's header. */
+private fun EditorMode.titleRes() = when (this) {
+    EditorMode.Edit -> Res.string.preset_editor_edit_title
+    EditorMode.New -> Res.string.preset_editor_new_title
+    EditorMode.Copy -> Res.string.preset_editor_copy_title
+    EditorMode.SaveCurrent -> Res.string.preset_save_title
+}
+
+@Composable
+private fun EditorShapeCard(
+    config: IntervalConfig,
+    onEditField: (ConfigField) -> Unit,
+    onChooseActivity: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier.fillMaxWidth().clip(Corners.radius18).background(IntervalTheme.palette.surfaceVariant)) {
+        ConfigField.shape.forEachIndexed { index, field ->
+            if (index > 0) RowDivider()
+            FieldRow(field, config.valueOf(field), onClick = { onEditField(field) })
+        }
+        RowDivider()
+        LinkRow(
+            stringResource(Res.string.activity_title),
+            stringResource(config.activity.labelRes),
+            onClick = onChooseActivity,
+        )
+    }
+}
+
+/** Cancel at the start and the [title] centred in a row so large font scales never collide. */
 @Composable
 private fun EditorHeader(title: String, onCancel: () -> Unit, modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxWidth()) {
-        QuietTextButton(
-            stringResource(Res.string.common_cancel),
-            onClick = onCancel,
-            modifier = Modifier.align(Alignment.CenterStart),
-        )
+    Row(
+        modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+    ) {
+        QuietTextButton(stringResource(Res.string.common_cancel), onClick = onCancel)
         Text(
             title,
             style = IntervalTheme.type.value,
             color = IntervalTheme.palette.text,
-            modifier = Modifier.align(Alignment.Center),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.weight(1f),
         )
+        Spacer(Modifier.width(Sizes.pillWidth))
     }
 }
 

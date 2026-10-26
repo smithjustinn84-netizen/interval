@@ -9,9 +9,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,6 +38,7 @@ import dev.justinsmith.interval.history.resources.history_state_planned
 import dev.justinsmith.interval.history.resources.history_state_planned_cd
 import dev.justinsmith.interval.history.resources.history_state_rest_cd
 import dev.justinsmith.interval.history.resources.history_today
+import dev.justinsmith.interval.platform.prefersReducedMotion
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EnterEasing
@@ -98,9 +99,14 @@ private fun DayBar(day: DayCell, share: Float, index: Int) {
     val palette = IntervalTheme.palette
     when (day.state) {
         DayState.Done -> {
-            val grown = remember { Animatable(0f) }
-            LaunchedEffect(share) {
-                grown.animateTo(share, tween(Motion.ENTER_MILLIS, index * Motion.STAGGER_MILLIS, EnterEasing))
+            val reducedMotion = prefersReducedMotion()
+            val grown = remember { Animatable(if (reducedMotion) share else 0f) }
+            LaunchedEffect(share, reducedMotion) {
+                if (reducedMotion) {
+                    grown.snapTo(share)
+                } else {
+                    grown.animateTo(share, tween(Motion.ENTER_MILLIS, index * Motion.STAGGER_MILLIS, EnterEasing))
+                }
             }
             Box(
                 Modifier
@@ -203,7 +209,7 @@ private fun CalendarDay(cell: DayCell, onClick: () -> Unit, modifier: Modifier =
     val description = dayDescription(cell.date, cell)
     Column(
         modifier
-            .heightIn(min = Sizes.calendarCell)
+            .defaultMinSize(minWidth = Sizes.calendarCell, minHeight = Sizes.calendarCell)
             .surfaceButton(interaction, Corners.radius12, Color.Transparent, onClick)
             .clearAndSetSemantics { contentDescription = description },
         horizontalAlignment = Alignment.CenterHorizontally,

@@ -100,13 +100,14 @@ fun RepeatButton(
     }
 }
 
-/** One of a dialog's equal-width actions: the confirming one in accent, the other on a quiet fill. */
+/** One of a dialog's equal-width actions: the confirming one in accent (or danger), the other on a quiet fill. */
 @Composable
 fun RowScope.DialogButton(
     text: String,
     onClick: () -> Unit,
     primary: Boolean,
     modifier: Modifier = Modifier,
+    destructive: Boolean = false,
 ) {
     ModalButton(
         text = text,
@@ -114,14 +115,24 @@ fun RowScope.DialogButton(
         primary = primary,
         style = IntervalTheme.type.control,
         padding = Spacing.space12,
-        haptic = if (primary) HapticFeedbackType.Confirm else null,
+        haptic = when {
+            primary && destructive -> HapticFeedbackType.Reject
+            primary -> HapticFeedbackType.Confirm
+            else -> null
+        },
         modifier = modifier.weight(1f),
+        destructive = primary && destructive,
     )
 }
 
 /** A full-width accent button for a sheet's confirming action. It confirms under the thumb. */
 @Composable
-fun AccentButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun AccentButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
     ModalButton(
         text = text,
         onClick = onClick,
@@ -130,36 +141,53 @@ fun AccentButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifie
         padding = Spacing.space24,
         haptic = HapticFeedbackType.Confirm,
         modifier = modifier,
+        enabled = enabled,
     )
 }
 
 /** A full-width button on a quiet fill for a sheet's second action, under the accent one. */
 @Composable
-fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun SecondaryButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    destructive: Boolean = false,
+) {
     ModalButton(
         text = text,
         onClick = onClick,
         primary = false,
         style = IntervalTheme.type.label,
         padding = Spacing.space24,
-        haptic = null,
+        haptic = if (destructive) HapticFeedbackType.Reject else null,
         modifier = modifier,
+        enabled = enabled,
+        destructive = destructive,
     )
 }
 
 /**
  * A borderless action in the dim ink, for the quiet choices of a sheet: Cancel, Edit, Delete. With [expanded]
- * it opens and closes what sits under it (a library's Filters): a chevron turns down while closed and up while
- * open, and a screen reader hears which.
+ * it opens and closes what sits under it (a library's Filters): a chevron points down while closed and flips up
+ * while open, and a screen reader hears which.
  */
 @Composable
-fun QuietTextButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, expanded: Boolean? = null) {
+fun QuietTextButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    expanded: Boolean? = null,
+    destructive: Boolean = false,
+) {
     val interaction = remember { MutableInteractionSource() }
     val palette = IntervalTheme.palette
+    val ink = if (destructive) palette.danger else palette.textDim
+    val haptic = if (destructive) HapticFeedbackType.Reject else null
     Row(
         modifier
             .heightIn(min = Sizes.pillHeight)
-            .surfaceButton(interaction, Corners.radius12, Color.Transparent, onClick)
+            .surfaceButton(interaction, Corners.radius12, Color.Transparent, onClick, haptic = haptic)
             .then(
                 when (expanded) {
                     null -> Modifier
@@ -181,30 +209,33 @@ fun QuietTextButton(text: String, onClick: () -> Unit, modifier: Modifier = Modi
             )
             .padding(start = Spacing.space16, end = if (expanded == null) Spacing.space16 else Spacing.space8),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.space4),
+        horizontalArrangement = if (expanded == null) {
+            Arrangement.spacedBy(Spacing.space4, Alignment.CenterHorizontally)
+        } else {
+            Arrangement.spacedBy(Spacing.space4)
+        },
     ) {
-        Text(text, style = IntervalTheme.type.label, color = palette.textDim)
+        Text(text, style = IntervalTheme.type.label, color = ink)
         if (expanded != null) {
             val turn by animateFloatAsState(
-                if (expanded) CHEVRON_UP else CHEVRON_DOWN,
+                if (expanded) CHEVRON_FLIPPED else 0f,
                 tween(Motion.STATE_MILLIS, easing = StandardEasing),
                 label = "chevron",
             )
             Icon(
-                IntervalIcons.Chevron,
+                IntervalIcons.ChevronDown,
                 contentDescription = null,
-                tint = palette.textDim,
+                tint = ink,
                 modifier = Modifier.size(Sizes.icon).rotate(turn),
             )
         }
     }
 }
 
-/** How far [QuietTextButton]'s chevron, drawn pointing to the end, turns to point down, or up. */
-private const val CHEVRON_DOWN = 90f
-private const val CHEVRON_UP = -90f
+/** How far [QuietTextButton]'s downward chevron turns to point up when expanded. */
+private const val CHEVRON_FLIPPED = 180f
 
-/** The button recipe dialogs and sheets share: accent when [primary], a quiet fill otherwise. */
+/** The button recipe dialogs and sheets share: accent (or danger) when [primary], a quiet fill otherwise. */
 @Composable
 private fun ModalButton(
     text: String,
@@ -214,18 +245,32 @@ private fun ModalButton(
     padding: Dp,
     haptic: HapticFeedbackType?,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    destructive: Boolean = false,
 ) {
     val palette = IntervalTheme.palette
-    val fill = if (primary) palette.accent else palette.surfaceVariant
+    val baseFill = when {
+        primary && destructive -> palette.danger
+        primary -> palette.accent
+        else -> palette.surfaceVariant
+    }
+    val baseInk = when {
+        primary && destructive -> palette.onDanger
+        primary -> palette.onAccent
+        destructive -> palette.danger
+        else -> palette.text
+    }
+    val fill = if (enabled) baseFill else baseFill.copy(alpha = Opacity.DISABLED)
+    val ink = if (enabled) baseInk else baseInk.copy(alpha = Opacity.DISABLED)
     val interaction = remember { MutableInteractionSource() }
     Box(
         modifier
             .heightIn(min = Sizes.save)
-            .surfaceButton(interaction, Corners.radius18, fill, onClick, haptic = haptic)
-            .padding(horizontal = padding),
+            .surfaceButton(interaction, Corners.radius18, fill, onClick, enabled = enabled, haptic = haptic)
+            .padding(horizontal = padding, vertical = Spacing.space8),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = style, color = if (primary) palette.onAccent else palette.text)
+        Text(text, style = style, color = ink)
     }
 }
 
@@ -233,8 +278,8 @@ private fun ModalButton(
  * What every tappable surface shares: it shrinks while pressed ([pressScale]), is clipped to [shape] on
  * [fill], and takes the tap with the app's indication, as [role]. Size, border and contents are the
  * caller's. A control that commits something passes the [haptic] it answers the tap with: Confirm for
- * a save or a start, a tick for a pick or a step, the toggle pair for a switch; one that only
- * navigates or cancels passes none.
+ * a save or a start, Reject for a destructive action, a tick for a pick or a step, the toggle pair for a
+ * switch; one that only navigates or cancels passes none.
  */
 @Composable
 fun Modifier.surfaceButton(
@@ -248,7 +293,7 @@ fun Modifier.surfaceButton(
     haptic: HapticFeedbackType? = null,
 ): Modifier {
     val haptics = LocalHapticFeedback.current
-    return pressScale(interaction)
+    return (if (enabled) pressScale(interaction) else this)
         .clip(shape)
         .background(fill)
         .clickable(

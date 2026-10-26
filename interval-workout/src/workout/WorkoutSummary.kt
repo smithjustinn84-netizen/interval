@@ -13,12 +13,14 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,7 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import dev.justinsmith.interval.platform.prefersReducedMotion
 import dev.justinsmith.interval.presets.PresetDraft
@@ -48,9 +50,9 @@ import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.ProgressRing
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
-import dev.justinsmith.interval.ui.enterRising
 import dev.justinsmith.interval.ui.presetNameOrCustom
 import dev.justinsmith.interval.ui.rememberEntrance
+import dev.justinsmith.interval.ui.risingEnter
 import dev.justinsmith.interval.ui.workoutDescription
 import dev.justinsmith.interval.workout.resources.Res
 import dev.justinsmith.interval.workout.resources.common_done
@@ -92,7 +94,23 @@ internal fun SummaryLayout(
     val padding = Modifier
         .fillMaxSize()
         .safeDrawingPadding()
-        .padding(horizontal = Spacing.space20, vertical = Spacing.space16)
+        .then(
+            if (landscape) {
+                Modifier.padding(
+                    start = Sizes.phaseBand + Spacing.space20,
+                    end = Spacing.space20,
+                    top = Spacing.space16,
+                    bottom = Spacing.space16,
+                )
+            } else {
+                Modifier.padding(
+                    top = Sizes.phaseBand + Spacing.space16,
+                    bottom = Spacing.space16,
+                    start = Spacing.space20,
+                    end = Spacing.space20,
+                )
+            },
+        )
     Box(Modifier.fillMaxSize()) {
         // The workout that brings the week to its goal gets the intro's ripple, as the ring closes.
         if (state.week?.justMet == true) {
@@ -151,22 +169,26 @@ private fun SummaryActions(
     onExit: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    AnimatedVisibility(entrance, modifier, enter = enterRising(Motion.STAGGER_MILLIS * ACTIONS_STEP)) {
+    AnimatedVisibility(entrance, modifier, enter = risingEnter(Motion.STAGGER_MILLIS * ACTIONS_STEP)) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space12)) {
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space12)) {
-                BigButton(stringResource(Res.string.workout_repeat), onRepeat, Modifier.weight(1f).height(Sizes.save))
+                BigButton(
+                    stringResource(Res.string.workout_repeat),
+                    onRepeat,
+                    Modifier.weight(1f).heightIn(min = Sizes.save),
+                )
                 if (state.canSavePreset) {
                     BigButton(
                         stringResource(Res.string.workout_save_preset),
                         onSave,
-                        Modifier.weight(1f).height(Sizes.save),
+                        Modifier.weight(1f).heightIn(min = Sizes.save),
                     )
                 }
             }
             BigButton(
                 stringResource(Res.string.common_done),
                 onExit,
-                Modifier.fillMaxWidth().height(Sizes.control),
+                Modifier.fillMaxWidth().heightIn(min = Sizes.control),
                 background = IntervalTheme.workout.done,
                 content = IntervalTheme.workout.onFill(IntervalTheme.workout.done),
                 style = IntervalTheme.type.value,
@@ -183,15 +205,15 @@ private fun SummaryReadout(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier,
+        modifier.verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         SummaryTitle(state, entrance, ring)
-        AnimatedVisibility(entrance, enter = enterRising(Motion.STAGGER_MILLIS * LINES_STEP)) {
+        AnimatedVisibility(entrance, enter = risingEnter(Motion.STAGGER_MILLIS * LINES_STEP)) {
             SummaryLines(state)
         }
-        AnimatedVisibility(entrance, enter = enterRising(Motion.STAGGER_MILLIS * STATS_STEP)) {
+        AnimatedVisibility(entrance, enter = risingEnter(Motion.STAGGER_MILLIS * STATS_STEP)) {
             Row(
                 Modifier.padding(top = Spacing.space32).widthIn(max = Sizes.content),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
@@ -215,7 +237,7 @@ private fun SummaryReadout(
                 }
             }
         }
-        AnimatedVisibility(entrance, enter = enterRising(Motion.STAGGER_MILLIS * SAVED_STEP)) {
+        AnimatedVisibility(entrance, enter = risingEnter(Motion.STAGGER_MILLIS * SAVED_STEP)) {
             Row(
                 Modifier.padding(top = Spacing.space20),
                 verticalAlignment = Alignment.CenterVertically,
@@ -235,7 +257,7 @@ private fun SummaryReadout(
             }
         }
         state.week?.let { week ->
-            AnimatedVisibility(entrance, enter = enterRising(Motion.STAGGER_MILLIS * WEEK_STEP)) {
+            AnimatedVisibility(entrance, enter = risingEnter(Motion.STAGGER_MILLIS * WEEK_STEP)) {
                 Text(
                     weekText(week),
                     style = IntervalTheme.type.meta,
@@ -299,19 +321,22 @@ private fun ColumnScope.SummaryTitle(state: WorkoutUiState, entrance: MutableTra
         )
     }
     if (ring) {
-        val sweep = remember { Animatable(0f) }
-        LaunchedEffect(state.completedRounds, state.rounds) {
-            sweep.animateTo(
-                state.completedRounds.toFloat() / state.rounds,
-                tween(Motion.SUMMARY_RING_MILLIS, easing = EnterEasing),
-            )
+        val reduced = prefersReducedMotion()
+        val target = state.completedRounds.toFloat() / state.rounds
+        val sweep = remember { Animatable(if (reduced) target else 0f) }
+        LaunchedEffect(target, reduced) {
+            if (reduced) {
+                sweep.snapTo(target)
+            } else {
+                sweep.animateTo(target, tween(Motion.SUMMARY_RING_MILLIS, easing = EnterEasing))
+            }
         }
         Box(Modifier.size(Sizes.summaryRing), contentAlignment = Alignment.Center) {
             ProgressRing(sweep.value, IntervalTheme.workout.done, Modifier.fillMaxSize(), glide = false)
-            Column { AnimatedVisibility(entrance, enter = enterRising()) { title() } }
+            Column { AnimatedVisibility(entrance, enter = risingEnter()) { title() } }
         }
     } else {
-        AnimatedVisibility(entrance, enter = enterRising()) {
+        AnimatedVisibility(entrance, enter = risingEnter()) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 RoundDots(state, IntervalTheme.workout.done, Modifier.padding(bottom = Spacing.space12))
                 title()
@@ -361,9 +386,10 @@ private const val ACTIONS_STEP = 8
 private fun Stat(value: String, label: String, modifier: Modifier = Modifier) {
     Column(
         modifier
+            .semantics(mergeDescendants = true) {}
             .clip(Corners.radius18)
             .background(IntervalTheme.workout.control)
-            .padding(top = Spacing.space16, bottom = Spacing.space12),
+            .padding(start = Spacing.space8, end = Spacing.space8, top = Spacing.space16, bottom = Spacing.space12),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(value, style = IntervalTheme.type.stat, color = IntervalTheme.workout.onGround)

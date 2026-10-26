@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.presets.resources.Res
@@ -67,10 +68,10 @@ import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
-import dev.justinsmith.interval.ui.enterRising
 import dev.justinsmith.interval.ui.labelRes
 import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.interval.ui.rememberArrival
+import dev.justinsmith.interval.ui.risingEnter
 import dev.justinsmith.interval.ui.selectableCard
 import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.interval.ui.workoutDescription
@@ -190,6 +191,7 @@ fun PresetsScreen(
                 open = null
             },
             onDismiss = { deleting = null },
+            destructive = true,
         )
     }
 }
@@ -247,7 +249,7 @@ private fun PresetsList(
                 CardColumn {
                     state.custom.forEach { item ->
                         key(item.preset.id) {
-                            AnimatedVisibility(rememberArrival(item.preset.id !in atOpen), enter = enterRising()) {
+                            AnimatedVisibility(rememberArrival(item.preset.id !in atOpen), enter = risingEnter()) {
                                 PresetCard(item, onClick = { onOpen(item.preset) })
                             }
                         }
@@ -284,7 +286,7 @@ private fun CurrentCard(
     Column(
         modifier
             .fillMaxWidth()
-            .selectableCard(selected = false)
+            .selectableCard(selected = false, announceSelection = false)
             .padding(start = Spacing.space16, end = Spacing.space16, top = Spacing.space12, bottom = Spacing.space16),
         verticalArrangement = Arrangement.spacedBy(Spacing.space8),
     ) {
@@ -353,7 +355,7 @@ private fun PresetCard(item: PresetRowItem, onClick: () -> Unit, modifier: Modif
         modifier
             .fillMaxWidth()
             .pressScale(interaction)
-            .selectableCard(item.selected)
+            .selectableCard(item.selected, announceSelection = false)
             .clickable(interaction, LocalIndication.current, role = Role.Button, onClick = onClick)
             .padding(start = Spacing.space16, end = Spacing.space16, top = Spacing.space12, bottom = Spacing.space16),
         verticalArrangement = Arrangement.spacedBy(Spacing.space4),
@@ -375,6 +377,7 @@ private fun PresetCard(item: PresetRowItem, onClick: () -> Unit, modifier: Modif
                 style = IntervalTheme.type.label,
                 color = palette.text,
                 maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
             Text(

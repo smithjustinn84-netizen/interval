@@ -7,10 +7,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -97,9 +97,9 @@ internal fun BottomControls(
 ) {
     val height = Sizes.control
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-        BackButton(actions.onBack, Modifier.width(Sizes.controlSide).height(height))
-        PrimaryButton(state, primaryFill, actions.onTogglePause, Modifier.weight(1f).height(height))
-        AddTimeButton(actions.onAddTime, Modifier.width(Sizes.controlSide).height(height))
+        BackButton(actions.onBack, Modifier.widthIn(min = Sizes.controlSide).heightIn(min = height))
+        PrimaryButton(state, primaryFill, actions.onTogglePause, Modifier.weight(1f).heightIn(min = height))
+        AddTimeButton(actions.onAddTime, Modifier.widthIn(min = Sizes.controlSide).heightIn(min = height))
     }
 }
 
@@ -164,7 +164,9 @@ internal fun BigButton(
 ) {
     val interaction = remember { MutableInteractionSource() }
     Box(
-        modifier.surfaceButton(interaction, Corners.radius18, background, onClick, haptic = haptic),
+        modifier
+            .surfaceButton(interaction, Corners.radius18, background, onClick, haptic = haptic)
+            .padding(horizontal = Spacing.space12, vertical = Spacing.space8),
         contentAlignment = Alignment.Center,
     ) {
         content()

@@ -15,6 +15,7 @@
     <string name="describe_field_label">Workout in words</string>
     <string name="describe_placeholder">40/20 x8 on the rower</string>
     <string name="describe_hint">Try “tabata”, “45 on 15 off x10” or “20 min of burpees, short rests”.</string>
+    <string name="describe_unrecognized">Couldn’t spot durations or rounds yet — try “40/20 x8” or “tabata”.</string>
     <string name="describe_kept_hint">Dimmed values stay as they are on the Timer.</string>
     <string name="describe_use">Use</string>
     <string name="describe_save_preset">Save as preset</string>

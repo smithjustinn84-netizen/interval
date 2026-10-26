@@ -5,13 +5,20 @@ package dev.justinsmith.bells.session
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDialog
+import androidx.compose.ui.test.isFocused
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.pressKey
 import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.EmomClock
 import dev.justinsmith.bells.domain.EmomCue
@@ -92,5 +99,45 @@ class EmomScreenTest {
         waitForText("Finish")
         onNodeWithText("16 kg × 10").assertExists()
         assertTrue(EmomCue.Start in app.beeper.cues)
+    }
+
+    @Test
+    fun `Stop asks before ending the EMOM`() = runUiTest {
+        var stops = 0
+        setBellsContent {
+            EmomScreen(
+                swings,
+                EmomState(EmomPhase.Work, 2, 10, 45, 0.25f),
+                onFinishSet = {},
+                onStop = { stops++ },
+            )
+        }
+        onNodeWithText("Stop").performClick()
+        onNodeWithText("Stop EMOM?").assertExists()
+        onNodeWithText("Sets completed so far stay in the session.").assertExists()
+        assertEquals(0, stops)
+
+        onNodeWithText("Cancel").performClick()
+        onNodeWithText("Stop EMOM?").assertDoesNotExist()
+        assertEquals(0, stops)
+
+        onNodeWithText("Stop").performClick()
+        onNode(hasText("Stop") and hasAnyAncestor(isDialog())).performClick()
+        waitForIdle()
+        assertEquals(1, stops)
+    }
+
+    @Test
+    fun `Space marks the minute's set done while working`() = runUiTest {
+        var state by mutableStateOf(EmomState(EmomPhase.GetReady, 1, 10, 7, 0.3f))
+        var setsDone = 0
+        setBellsContent { EmomScreen(swings, state, onFinishSet = { setsDone++ }, onStop = {}) }
+
+        onNode(isFocused()).performKeyInput { pressKey(Key.Spacebar) }
+        assertEquals(0, setsDone)
+
+        state = EmomState(EmomPhase.Work, 1, 10, 50, 0.1f)
+        onNode(isFocused()).performKeyInput { pressKey(Key.Spacebar) }
+        assertEquals(1, setsDone)
     }
 }

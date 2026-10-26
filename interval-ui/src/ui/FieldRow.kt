@@ -20,10 +20,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.format
 import org.jetbrains.compose.resources.stringResource
@@ -96,8 +98,11 @@ fun FieldRow(
  * A field card's phase colour down its start edge. Drawn rather than laid out, so it stays on the card's
  * edge while the content shrinks under a press; the content is padded clear of it by [Sizes.stripe].
  */
-fun Modifier.phaseStripe(color: Color): Modifier =
-    drawBehind { drawRect(color, size = Size(Sizes.stripe.toPx(), size.height)) }
+fun Modifier.phaseStripe(color: Color): Modifier = drawBehind {
+    val stripeWidth = Sizes.stripe.toPx()
+    val x = if (layoutDirection == LayoutDirection.Rtl) size.width - stripeWidth else 0f
+    drawRect(color, topLeft = Offset(x, 0f), size = Size(stripeWidth, size.height))
+}
 
 /** A phase's mark beside a heading or a row: a rounded stripe of [color], [height] tall. */
 @Composable

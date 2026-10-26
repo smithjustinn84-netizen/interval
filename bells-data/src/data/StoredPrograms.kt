@@ -41,6 +41,20 @@ fun encodeDays(days: List<List<Block>>): String = json.encodeToString(
     },
 )
 
+/**
+ * Reads an in-progress draft's days encoded with [encodeDays], keeping empty days intact so an unfinished
+ * editor draft survives process recreation; null if [encoded] cannot be read.
+ */
+fun decodeDraftDays(encoded: String, made: List<CustomExercise> = emptyList()): List<List<Block>>? {
+    val stored = try {
+        json.decodeFromString<List<List<StoredBlock>>>(encoded)
+    } catch (_: IllegalArgumentException) {
+        return null
+    }
+    if (stored.isEmpty()) return null
+    return stored.map { day -> day.mapNotNull { it.toBlock(made) } }
+}
+
 internal fun Block.toStored() =
     StoredBlock(exercise.key, kind.name, rounds, reps, rungs, double, kg, band, range?.bottom, range?.top)
 

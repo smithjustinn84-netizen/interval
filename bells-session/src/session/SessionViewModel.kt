@@ -577,6 +577,15 @@ class SessionViewModel(
         )
     }
 
+    /** Starts timing the plan's next set when it is a hold, putting it on the sheet first. */
+    fun startPlannedHold() {
+        val next = state.value.upNext ?: return
+        if (!next.set.held) return
+        sheetOpenedOn = null
+        openLogSheet()
+        startHold()
+    }
+
     /** Starts an EMOM of the sheet's lift, bell and reps for its minutes. */
     fun startDraftEmom() {
         val d = draft.value

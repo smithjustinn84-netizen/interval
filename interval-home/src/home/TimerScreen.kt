@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,6 +21,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.presets.PresetDraft
@@ -118,13 +122,12 @@ fun TimerScreen(
         } else {
             // Upright: one column, as wide as a tablet's, over lanes that fill the window.
             SetupLanes(Modifier.matchParentSize())
+            val expandRows =
+                maxHeight >= COMPACT_PORTRAIT_HEIGHT && LocalDensity.current.fontScale <= COMPACT_FONT_SCALE
             Box(Modifier.align(Alignment.TopCenter).widthIn(max = Sizes.contentWide).fillMaxSize()) {
                 Column(Modifier.fillMaxSize()) {
                     TimerTitleBar(state.canSavePreset, onSave, onDescribe, onOpenSettings)
-                    Total(state, onEditActivity, Modifier.padding(horizontal = Spacing.space20))
-                    Column(Modifier.weight(1f).padding(horizontal = Spacing.space16, vertical = Spacing.space12)) {
-                        StepperRows(state.config, onStep, onEdit)
-                    }
+                    TimerBody(state, expandRows, onStep, onEdit, onEditActivity, Modifier.weight(1f))
                     StartRow(
                         onStart,
                         onSeeAllPresets,
@@ -164,6 +167,25 @@ fun TimerScreen(
 }
 
 @Composable
+private fun TimerBody(
+    state: TimerUiState,
+    expandRows: Boolean,
+    onStep: (ConfigField, Int) -> Unit,
+    onEdit: (ConfigField) -> Unit,
+    onEditActivity: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val scroll = if (expandRows) Modifier else Modifier.verticalScroll(rememberScrollState())
+    Column(modifier.then(scroll)) {
+        Total(state, onEditActivity, Modifier.padding(horizontal = Spacing.space20))
+        val rowModifier = if (expandRows) Modifier.weight(1f) else Modifier
+        Column(rowModifier.padding(horizontal = Spacing.space16, vertical = Spacing.space12)) {
+            StepperRows(state.config, onStep, onEdit, fillHeight = expandRows)
+        }
+    }
+}
+
+@Composable
 private fun TimerPreview() {
     val config = IntervalConfig(prepSeconds = 10, workSeconds = 20, restSeconds = 10, rounds = 8)
     IntervalTheme {
@@ -188,3 +210,7 @@ private fun TimerPreview() {
 private fun TimerScreenPreview() {
     TimerPreview()
 }
+
+/** Below this portrait height or above [COMPACT_FONT_SCALE], the upper fields scroll above a pinned Start row. */
+private val COMPACT_PORTRAIT_HEIGHT = 640.dp
+private const val COMPACT_FONT_SCALE = 1.35f

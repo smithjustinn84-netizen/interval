@@ -424,6 +424,12 @@ class BellsRepository(
         writer.persist { sessionDao.markDeleted(uid, now) }
     }
 
+    /** Brings back a finished session deleted with [deleteSession]. */
+    fun restoreSession(uid: String) {
+        val now = clock.nowMillis()
+        writer.persist { sessionDao.unmarkDeleted(uid, now) }
+    }
+
     /**
      * Saves [draft] as the exercise [uid], or as a new one with null; returns its uid. Its name is kept as
      * written, trimmed, and an archived one stays archived.

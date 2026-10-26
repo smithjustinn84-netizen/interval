@@ -21,6 +21,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.bells.domain.CustomExercise
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
@@ -33,6 +36,7 @@ import dev.justinsmith.bells.library.ExerciseEditorForm
 import dev.justinsmith.bells.library.ExercisePicker
 import dev.justinsmith.bells.library.rememberExerciseEditor
 import dev.justinsmith.bells.session.resources.Res
+import dev.justinsmith.bells.session.resources.common_joined
 import dev.justinsmith.bells.session.resources.emom_fewer_minutes
 import dev.justinsmith.bells.session.resources.emom_get_ready
 import dev.justinsmith.bells.session.resources.emom_minutes
@@ -177,7 +181,7 @@ internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismi
             sideways,
             first = what,
             second = howMuch,
-            modifier = Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
+            modifier = Modifier.padding(vertical = Spacing.space8),
         )
     }
 }
@@ -196,7 +200,7 @@ internal fun ExerciseChoice(
     onAdd: (name: String) -> Unit,
     onSave: () -> Unit,
 ) {
-    val modifier = Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8)
+    val modifier = Modifier.padding(vertical = Spacing.space8)
     if (adding == null) {
         ExercisePicker(
             state.library,
@@ -249,7 +253,7 @@ private fun ExercisePage(detail: ExerciseDetailUiState, onBack: () -> Unit, acti
         actions.onOpenExercise(null)
     }
     ModalBackHandler(back)
-    Column(Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8)) {
+    Column(Modifier.padding(vertical = Spacing.space8)) {
         ExerciseDetailContent(detail, onEdit = null, onOpenSession = null)
         SecondaryButton(
             stringResource(Res.string.log_back_to_set),
@@ -455,7 +459,7 @@ private fun HoldCountdown(run: HoldRun, state: HoldState, onStop: () -> Unit) {
     val haptics = LocalHapticFeedback.current
     LaunchedEffect(state.phase) { haptics.performHapticFeedback(HapticFeedbackType.Confirm) }
     Column(
-        Modifier.fillMaxWidth().padding(horizontal = Spacing.space20, vertical = Spacing.space16),
+        Modifier.fillMaxWidth().padding(vertical = Spacing.space16),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.space8),
     ) {
@@ -469,6 +473,7 @@ private fun HoldCountdown(run: HoldRun, state: HoldState, onStop: () -> Unit) {
             ),
             style = IntervalTheme.type.stat,
             color = color,
+            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
         )
         RollingText(
             formatClock(state.secondsLeft),
@@ -479,7 +484,7 @@ private fun HoldCountdown(run: HoldRun, state: HoldState, onStop: () -> Unit) {
         val set = run.set
         Text(
             if (set.exercise.sided(set.doubled)) {
-                "${exerciseName(set.exercise)} · ${sideName(set.side)}"
+                stringResource(Res.string.common_joined, exerciseName(set.exercise), sideName(set.side))
             } else {
                 exerciseName(set.exercise)
             },

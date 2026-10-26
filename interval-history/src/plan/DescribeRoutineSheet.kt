@@ -25,6 +25,8 @@ import dev.justinsmith.interval.history.resources.plan_describe_hint
 import dev.justinsmith.interval.history.resources.plan_describe_no_day
 import dev.justinsmith.interval.history.resources.plan_describe_placeholder
 import dev.justinsmith.interval.history.resources.plan_describe_title
+import dev.justinsmith.interval.history.resources.plan_describe_unrecognized
+import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.dateOfEpochDay
 import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.interval.ui.AccentButton
@@ -58,7 +60,9 @@ internal fun DescribeRoutineSheet(state: PlanUiState, onPlan: (DescribedRoutine)
     val text = words.text.toString()
     val described = remember(text, state.choices, state.today) {
         // The choices are the Timer's workout, which fills in what the words leave out, then the presets.
-        val current = state.choices.first { it.onTimer }.preset.config
+        val current = state.choices.firstOrNull { it.onTimer }?.preset?.config
+            ?: state.choices.firstOrNull()?.preset?.config
+            ?: IntervalConfig()
         val presets = state.choices.filterNot { it.onTimer }.map { it.preset }
         describeRoutine(text, current, presets, state.today)
     }
@@ -74,12 +78,17 @@ internal fun DescribeRoutineSheet(state: PlanUiState, onPlan: (DescribedRoutine)
         NameField(
             words,
             placeholder = stringResource(Res.string.plan_describe_placeholder),
-            onDone = { plan() },
             label = stringResource(Res.string.plan_describe_field_label),
             maxLength = MAX_ROUTINE_LENGTH,
+            onDone = { plan() },
+            autoCorrectEnabled = false,
         )
         if (described == null) {
-            DescribeHint(stringResource(Res.string.plan_describe_hint))
+            DescribeHint(
+                stringResource(
+                    if (text.isBlank()) Res.string.plan_describe_hint else Res.string.plan_describe_unrecognized,
+                ),
+            )
         } else {
             DescribedRoutinePreview(described, state.today)
             if (described.addsAnything) {

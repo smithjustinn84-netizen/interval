@@ -4,6 +4,7 @@ package dev.justinsmith.bells.gear
 
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -67,7 +68,8 @@ class GearScreenTest {
         openEquipment()
         onNodeWithText("Add band").performScrollTo().performClick()
         waitForText("Colour")
-        onNodeWithText("Save band").assertDoesNotExist()
+        onNodeWithText("Save band").performScrollTo().assertIsNotEnabled()
+        onNodeWithText("Enter a band name to save.").assertExists()
         onNode(hasSetTextAction()).performTextInput("Travel band")
         onNodeWithText("Orange").performClick()
         onNodeWithText("Save band").performScrollTo().performClick()

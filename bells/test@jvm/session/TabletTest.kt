@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
@@ -117,10 +118,8 @@ class TabletTest {
         setBellsContent { LiftDetailScreen(state, onDelete = {}, onBack = {}) }
         val moved = onNodeWithText("Moved").assertIsDisplayed().getUnclippedBoundsInRoot()
         val swing = onNodeWithText("24 kg × 10").assertIsDisplayed().getUnclippedBoundsInRoot()
-        val delete = onNodeWithText("Delete").assertIsDisplayed().getUnclippedBoundsInRoot()
+        onNodeWithContentDescription("More options").assertIsDisplayed()
         assertTrue(swing.left > moved.right)
-        // Delete is centred under both, not stuck to the first column.
-        assertTrue(delete.left > moved.left + 100.dp)
     }
 
     @Test

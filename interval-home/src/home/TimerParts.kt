@@ -185,12 +185,13 @@ private fun ActivityPill(activity: Activity, onClick: () -> Unit, modifier: Modi
     }
 }
 
-/** Work, Rest and Rounds, sharing the height they're given. */
+/** Work, Rest and Rounds, sharing the height they're given (or stacking naturally when scrolling). */
 @Composable
 internal fun ColumnScope.StepperRows(
     config: IntervalConfig,
     onStep: (ConfigField, Int) -> Unit,
     onEdit: (ConfigField) -> Unit,
+    fillHeight: Boolean = true,
 ) {
     ConfigField.shape.forEachIndexed { index, field ->
         if (index > 0) Spacer(Modifier.size(Spacing.space8))
@@ -199,7 +200,7 @@ internal fun ColumnScope.StepperRows(
             config.valueOf(field),
             onStep = { onStep(field, it) },
             onEdit = { onEdit(field) },
-            modifier = Modifier.weight(1f),
+            modifier = if (fillHeight) Modifier.weight(1f) else Modifier,
         )
     }
 }

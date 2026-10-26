@@ -187,7 +187,7 @@ fun ToggleRow(
 @Composable
 fun EmptyState(icon: ImageVector, title: String, text: String, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
-    AnimatedVisibility(rememberEntrance(), modifier, enter = enterRising()) {
+    AnimatedVisibility(rememberEntrance(), modifier, enter = risingEnter()) {
         Column(
             Modifier.fillMaxWidth().padding(horizontal = Spacing.space24, vertical = Spacing.space32),
             horizontalAlignment = Alignment.CenterHorizontally,

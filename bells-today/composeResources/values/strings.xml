@@ -56,6 +56,7 @@
     <string name="band_lighter">Lighter</string>
     <string name="band_heavier">Heavier</string>
     <string name="band_save">Save band</string>
+    <string name="band_name_needed">Enter a band name to save.</string>
     <string name="band_archive">Archive band</string>
     <string name="band_delete">Delete band</string>
     <string name="band_restore">Restore band</string>

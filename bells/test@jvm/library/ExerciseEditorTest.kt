@@ -6,6 +6,7 @@ import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
@@ -85,7 +86,7 @@ class ExerciseEditorTest {
         waitForText("Equipment")
         onNode(hasSetTextAction() and hasContentDescription("Name")).performTextInput("copenhagen PLANK")
         waitForText("One of yours already has this name.")
-        onNodeWithText("Save exercise").assertDoesNotExist()
+        onNodeWithText("Save exercise").performScrollTo().assertIsNotEnabled()
     }
 
     @Test

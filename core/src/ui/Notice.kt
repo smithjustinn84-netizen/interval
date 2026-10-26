@@ -26,9 +26,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import dev.justinsmith.interval.platform.prefersReducedMotion
 import kotlinx.coroutines.delay
 
 /**
@@ -81,16 +83,25 @@ val LocalNotices = staticCompositionLocalOf { Notices() }
 @Composable
 fun NoticeHost(notices: Notices, modifier: Modifier = Modifier) {
     val current = notices.current
-    LaunchedEffect(current?.id) {
+    val accessibilityManager = LocalAccessibilityManager.current
+    val reducedMotion = prefersReducedMotion()
+    LaunchedEffect(current?.id, accessibilityManager) {
         if (current != null) {
-            delay(if (current.action != null) Motion.UNDO_MILLIS else Motion.NOTICE_MILLIS)
+            val baseMillis = if (current.action != null) Motion.UNDO_MILLIS else Motion.NOTICE_MILLIS
+            val timeoutMillis = accessibilityManager?.calculateRecommendedTimeoutMillis(
+                originalTimeoutMillis = baseMillis,
+                containsIcons = false,
+                containsText = true,
+                containsControls = current.action != null,
+            ) ?: baseMillis
+            delay(timeoutMillis)
             notices.dismiss(current)
         }
     }
     AnimatedContent(
         targetState = current,
         modifier = modifier,
-        transitionSpec = { enterRising() togetherWith fadeOut(tween(Motion.EXIT_MILLIS)) },
+        transitionSpec = { enterRising(reducedMotion = reducedMotion) togetherWith fadeOut(tween(Motion.EXIT_MILLIS)) },
         contentKey = { it?.id },
         contentAlignment = Alignment.BottomCenter,
         label = "notice",

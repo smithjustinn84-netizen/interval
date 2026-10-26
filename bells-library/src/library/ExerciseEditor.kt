@@ -1,6 +1,5 @@
 package dev.justinsmith.bells.library
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -8,15 +7,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.mapSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.ExerciseDraft
@@ -37,6 +39,7 @@ import dev.justinsmith.bells.library.resources.exercise_editor_new
 import dev.justinsmith.bells.library.resources.exercise_equipment
 import dev.justinsmith.bells.library.resources.exercise_locked
 import dev.justinsmith.bells.library.resources.exercise_name
+import dev.justinsmith.bells.library.resources.exercise_name_needed
 import dev.justinsmith.bells.library.resources.exercise_name_placeholder
 import dev.justinsmith.bells.library.resources.exercise_name_taken
 import dev.justinsmith.bells.library.resources.exercise_one_side
@@ -60,8 +63,6 @@ import dev.justinsmith.interval.ui.NameField
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ToggleRow
-import dev.justinsmith.interval.ui.enterExpanding
-import dev.justinsmith.interval.ui.exitShrinking
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
@@ -198,7 +199,7 @@ fun ExerciseEditorSheet(name: String, onDismiss: () -> Unit) {
             editor.state,
             onChange = editor::change,
             onSave = { typed, cues -> if (editor.save(typed, cues)) hide() },
-            modifier = Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
+            modifier = Modifier.padding(vertical = Spacing.space8),
         )
     }
 }
@@ -219,8 +220,18 @@ fun ExerciseEditorForm(
     val palette = IntervalTheme.palette
     val name = rememberTextFieldState(draft.name)
     val cues = rememberTextFieldState(draft.cues)
+    val typed = name.text.toString()
+    val typedCues = cues.text.toString()
+    val currentOnChange by rememberUpdatedState(onChange)
+    val currentDraft by rememberUpdatedState(draft)
+    LaunchedEffect(typed) {
+        if (typed != currentDraft.name) currentOnChange { it.copy(name = typed) }
+    }
+    LaunchedEffect(typedCues) {
+        if (typedCues != currentDraft.cues) currentOnChange { it.copy(cues = typedCues) }
+    }
+    val taken = exerciseNameKey(typed) in state.taken
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-        val typed = name.text.toString()
         if (state.archived) {
             Text(
                 stringResource(Res.string.exercise_archived_note),
@@ -232,12 +243,17 @@ fun ExerciseEditorForm(
         NameField(
             name,
             placeholder = stringResource(Res.string.exercise_name_placeholder),
-            onDone = {},
             label = stringResource(Res.string.exercise_name),
             maxLength = MAX_EXERCISE_NAME,
+            capitalization = KeyboardCapitalization.Words,
+            isError = taken,
         )
-        if (exerciseNameKey(typed) in state.taken) {
-            Text(stringResource(Res.string.exercise_name_taken), style = IntervalTheme.type.meta, color = palette.text)
+        if (taken) {
+            Text(
+                stringResource(Res.string.exercise_name_taken),
+                style = IntervalTheme.type.meta,
+                color = palette.danger,
+            )
         }
         GroupLabel(stringResource(Res.string.exercise_equipment))
         if (state.locked) {
@@ -263,37 +279,53 @@ fun ExerciseEditorForm(
         NameField(
             cues,
             placeholder = stringResource(Res.string.exercise_cues_placeholder),
-            onDone = {},
             label = stringResource(Res.string.exercise_cues),
             maxLength = MAX_EXERCISE_CUES,
+            multiLine = true,
         )
-        SaveAction(draft.canSave(typed, state.taken), typed.trim(), onSave = { onSave(it, cues.text.toString()) })
-        if (state.saved) {
-            SecondaryButton(
-                stringResource(if (state.archived) Res.string.exercise_restore else Res.string.exercise_archive),
-                onArchive,
-                Modifier.fillMaxWidth().padding(top = Spacing.space8),
+        SaveAction(
+            canSave = draft.canSave(typed, state.taken),
+            needsName = typed.isBlank(),
+            name = typed.trim(),
+            onSave = { onSave(it, typedCues) },
+        )
+        if (state.saved) ArchiveControls(state.archived, onArchive)
+    }
+}
+
+@Composable
+private fun ArchiveControls(archived: Boolean, onArchive: () -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+        SecondaryButton(
+            stringResource(if (archived) Res.string.exercise_restore else Res.string.exercise_archive),
+            onArchive,
+            Modifier.fillMaxWidth().padding(top = Spacing.space8),
+        )
+        if (!archived) {
+            Text(
+                stringResource(Res.string.exercise_archive_hint),
+                style = IntervalTheme.type.meta,
+                color = IntervalTheme.palette.textDim,
             )
-            if (!state.archived) {
-                Text(
-                    stringResource(Res.string.exercise_archive_hint),
-                    style = IntervalTheme.type.meta,
-                    color = palette.textDim,
-                )
-            }
         }
     }
 }
 
 /**
- * Save, offered once there is a name of the user's own to save under, opening the room it takes; it
- * says what it saved as it goes.
+ * Save, enabled once there is a unique name to save under, with an inline hint while blank; it says what it
+ * saved as it goes.
  */
 @Composable
-private fun SaveAction(canSave: Boolean, name: String, onSave: (name: String) -> Unit) {
+private fun SaveAction(
+    canSave: Boolean,
+    needsName: Boolean,
+    name: String,
+    onSave: (name: String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val notices = LocalNotices.current
     val saved = stringResource(Res.string.notice_exercise_saved, name)
-    AnimatedVisibility(canSave, enter = enterExpanding(), exit = exitShrinking()) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         AccentButton(
             stringResource(Res.string.exercise_save),
             {
@@ -301,6 +333,14 @@ private fun SaveAction(canSave: Boolean, name: String, onSave: (name: String) ->
                 onSave(name)
             },
             Modifier.fillMaxWidth().padding(top = Spacing.space16),
+            enabled = canSave,
         )
+        if (needsName) {
+            Text(
+                stringResource(Res.string.exercise_name_needed),
+                style = IntervalTheme.type.meta,
+                color = IntervalTheme.palette.textDim,
+            )
+        }
     }
 }

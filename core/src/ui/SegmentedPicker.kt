@@ -30,6 +30,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 
 /**
  * One of a few [options] as a segmented control: the chosen option is a white card on the variant
@@ -56,9 +58,10 @@ fun <T> SegmentedPicker(
             .drawBehind {
                 val gap = Spacing.space4.toPx()
                 val width = (size.width - gap * (options.size - 1)) / options.size
+                val visualSlide = if (layoutDirection == LayoutDirection.Rtl) options.lastIndex - slide else slide
                 drawRoundRect(
                     palette.surface,
-                    topLeft = Offset((width + gap) * slide, 0f),
+                    topLeft = Offset((width + gap) * visualSlide, 0f),
                     size = Size(width, size.height),
                     cornerRadius = CornerRadius(Radius.radius12.toPx()),
                 )
@@ -76,7 +79,8 @@ fun <T> SegmentedPicker(
                     .selectable(selected = isSelected, role = Role.RadioButton) {
                         haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
                         onSelect(option)
-                    },
+                    }
+                    .padding(horizontal = Spacing.space8),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.space8, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -93,7 +97,13 @@ fun <T> SegmentedPicker(
                         modifier = Modifier.size(Sizes.icon),
                     )
                 }
-                Text(label(option), style = IntervalTheme.type.label, color = palette.text, maxLines = 1)
+                Text(
+                    label(option),
+                    style = IntervalTheme.type.label,
+                    color = palette.text,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
     }

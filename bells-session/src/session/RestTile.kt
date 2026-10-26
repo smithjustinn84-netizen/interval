@@ -40,18 +40,26 @@ fun RestTile(rest: RestState, onStep: (Int) -> Unit, onSkip: () -> Unit, modifie
         modifier
             .clip(Corners.radius18)
             .background(palette.surface)
-            .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+            .padding(start = Spacing.space16, end = Spacing.space16, bottom = Spacing.space12),
         verticalArrangement = Arrangement.spacedBy(Spacing.space8),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
+        Row(verticalAlignment = Alignment.Top) {
+            Box(Modifier.weight(1f).padding(top = Spacing.space12)) {
                 Text(
                     stringResource(Res.string.session_rest),
                     style = IntervalTheme.type.caption,
                     color = palette.textDim,
                 )
-                Text(formatClock(rest.secondsLeft), style = IntervalTheme.type.stat, color = palette.text)
             }
+            QuietTextButton(stringResource(Res.string.session_rest_skip), onSkip)
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                formatClock(rest.secondsLeft),
+                style = IntervalTheme.type.stat,
+                color = palette.text,
+                modifier = Modifier.weight(1f),
+            )
             Row(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
                 verticalAlignment = Alignment.CenterVertically,
@@ -68,7 +76,6 @@ fun RestTile(rest: RestState, onStep: (Int) -> Unit, onSkip: () -> Unit, modifie
                     enabled = rest.seconds < RestClock.MAX_SECONDS,
                     onStep = { onStep(1) },
                 )
-                QuietTextButton(stringResource(Res.string.session_rest_skip), onSkip)
             }
         }
         Box(

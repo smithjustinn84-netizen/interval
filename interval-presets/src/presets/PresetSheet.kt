@@ -100,7 +100,12 @@ internal fun PresetSheet(
                     onClick = { onEdit(PresetDraft(EditorMode.Edit, preset.name, preset.config, preset.id)) },
                     modifier = Modifier.weight(1f),
                 )
-                QuietTextButton(stringResource(Res.string.presets_delete), onDelete, Modifier.weight(1f))
+                QuietTextButton(
+                    stringResource(Res.string.presets_delete),
+                    onDelete,
+                    Modifier.weight(1f),
+                    destructive = true,
+                )
             }
         } else {
             QuietTextButton(

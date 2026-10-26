@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -83,7 +84,11 @@ fun Timeline(
  * Also tells screen readers.
  */
 @Composable
-fun Modifier.selectableCard(selected: Boolean, shape: Shape = Corners.radius18): Modifier {
+fun Modifier.selectableCard(
+    selected: Boolean,
+    shape: Shape = Corners.radius18,
+    announceSelection: Boolean = true,
+): Modifier {
     val palette = IntervalTheme.palette
     val spec = tween<Color>(Motion.STATE_MILLIS, easing = StandardEasing)
     val fill by animateColorAsState(if (selected) palette.accentTint else palette.surface, spec, label = "fill")
@@ -91,7 +96,7 @@ fun Modifier.selectableCard(selected: Boolean, shape: Shape = Corners.radius18):
     return clip(shape)
         .background(fill)
         .border(Sizes.border, line, shape)
-        .semantics { this.selected = selected }
+        .then(if (announceSelection) Modifier.semantics { this.selected = selected } else Modifier)
 }
 
 /** A value in a pill of its own colour, on a pale wash of it: "0:20" in work red, "×8" in accent. */
@@ -106,10 +111,10 @@ fun ValuePill(
 ) {
     Box(
         modifier
-            .height(height)
+            .heightIn(min = height)
             .clip(Corners.radius12)
             .background(tint)
-            .padding(horizontal = Spacing.space16),
+            .padding(horizontal = Spacing.space16, vertical = Spacing.space4),
         contentAlignment = Alignment.Center,
     ) {
         Text(text, style = style, color = color)

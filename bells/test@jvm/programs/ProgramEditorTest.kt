@@ -3,6 +3,7 @@
 package dev.justinsmith.bells.programs
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
@@ -27,8 +28,9 @@ class ProgramEditorTest {
         scrollToText("New program")
         onNodeWithText("New program").performClick()
         waitForText("Day 1")
-        // Nothing to save until it has a name and a block on every day.
-        onNodeWithText("Save program").assertDoesNotExist()
+        // Disabled with a hint until it has a name and a block on every day.
+        onNodeWithText("Save program").performScrollTo().assertIsNotEnabled()
+        onNodeWithText("Name your program and add at least one block to each day.").assertExists()
 
         onNodeWithText("Add block").performScrollTo().performClick()
         onNodeWithText("Ladder").performClick()
@@ -121,5 +123,40 @@ class ProgramEditorTest {
         scrollToText("Dan John–inspired")
         onNodeWithText("Swings").assertDoesNotExist()
         assertTrue(app.storage.programs.rows.value.isEmpty())
+    }
+
+    @Test
+    fun `removing a day or block offers Undo and Back asks before discarding edits`() = bellsAppTest {
+        onNodeWithText("Follow a program").performClick()
+        scrollToText("New program")
+        onNodeWithText("New program").performClick()
+        waitForText("Day 1")
+
+        onNodeWithText("Add block").performScrollTo().performClick()
+        onNodeWithText("Done").performScrollTo().performClick()
+        waitForText("5 × 10")
+
+        onNodeWithText("Two-hand swing").performClick()
+        onNodeWithText("Remove block").performScrollTo().performClick()
+        waitForText("Removed Two-hand swing")
+        onNodeWithText("Undo").performClick()
+        waitForText("5 × 10")
+
+        onNodeWithText("Add day").performScrollTo().performClick()
+        waitForText("Day 2")
+        onNodeWithContentDescription("Remove day 2").performScrollTo().performClick()
+        waitForText("Removed day 2")
+        onNodeWithText("Undo").performClick()
+        waitForText("Day 2")
+
+        onNodeWithContentDescription("Back").performClick()
+        waitForText("Discard changes?")
+        onNodeWithText("Keep editing").performClick()
+        onNodeWithText("Day 2").assertExists()
+
+        onNodeWithContentDescription("Back").performClick()
+        waitForText("Discard changes?")
+        onNodeWithText("Discard").performClick()
+        waitForText("New program")
     }
 }

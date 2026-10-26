@@ -18,6 +18,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import dev.justinsmith.interval.timer.Activity
@@ -128,6 +129,10 @@ class TimerScreenTest {
         setThemedContent { Screen() }
         onNodeWithContentDescription("Describe a workout").performClick()
         onNodeWithText("Use").assertDoesNotExist()
+        onNode(hasSetTextAction()).performTextInput("hello")
+        onNodeWithText("Couldn’t spot durations or rounds yet — try “40/20 x8” or “tabata”.").assertExists()
+        onNodeWithText("Use").assertDoesNotExist()
+        onNode(hasSetTextAction()).performTextClearance()
         onNode(hasSetTextAction()).performTextInput("45/15 x12 rower")
         onNodeWithText("Rower").assertExists()
         onNodeWithText("Use").performClick()

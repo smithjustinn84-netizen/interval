@@ -8,9 +8,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import dev.justinsmith.interval.settings.resources.Res
 import dev.justinsmith.interval.settings.resources.common_done
@@ -54,7 +57,7 @@ internal fun WeightSheet(
 ) {
     val palette = IntervalTheme.palette
     val shown = weight ?: unit.default
-    val canClear = remember { weight != null }
+    val canClear = rememberSaveable { weight != null }
     IntervalSheet(title = stringResource(Res.string.settings_weight), onDismiss = onDismiss) { hide ->
         Text(stringResource(Res.string.settings_weight), style = IntervalTheme.type.value, color = palette.text)
         SegmentedPicker(WeightUnit.entries, unit, label = { stringResource(it.labelRes) }, onSelect = onSetUnit)
@@ -101,7 +104,10 @@ private fun WeightStepper(value: Int, unit: WeightUnit, onSetWeight: (Int) -> Un
                 onStep = { onSetWeight(value - 1) },
                 modifier = Modifier.size(Sizes.sheetStepper),
             )
-            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            Box(
+                Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
+                contentAlignment = Alignment.Center,
+            ) {
                 RollingText(
                     value.toString(),
                     rising,

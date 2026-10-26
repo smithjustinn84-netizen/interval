@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,6 +25,8 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.CustomExercise
 import dev.justinsmith.bells.domain.Doubles
@@ -119,8 +122,14 @@ fun Choice(
             .heightIn(min = Sizes.pillHeight)
             .surfaceButton(interaction, Corners.radius12, fill, onClick = onClick, role = role, haptic = haptic)
             .border(Sizes.border, edge, Corners.radius12)
-            .semantics { this.selected = selected }
-            .padding(horizontal = Spacing.space16),
+            .semantics {
+                if (role == Role.Checkbox) {
+                    toggleableState = ToggleableState(selected)
+                } else {
+                    this.selected = selected
+                }
+            }
+            .padding(horizontal = Spacing.space16, vertical = Spacing.space4),
         contentAlignment = Alignment.Center,
     ) {
         Text(text, style = IntervalTheme.type.label, color = palette.text)
@@ -153,7 +162,7 @@ fun <T> ChoiceRow(
     modifier: Modifier = Modifier,
 ) {
     FlowRow(
-        modifier,
+        modifier.selectableGroup(),
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
         verticalArrangement = Arrangement.spacedBy(Spacing.space8),
     ) {
@@ -172,7 +181,8 @@ fun StatTile(label: String, value: String, modifier: Modifier = Modifier, rank: 
         modifier
             .clip(Corners.radius18)
             .background(palette.surface)
-            .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+            .padding(horizontal = Spacing.space16, vertical = Spacing.space12)
+            .semantics(mergeDescendants = true) {},
     ) {
         Text(label, style = IntervalTheme.type.caption, color = palette.textDim)
         if (rank != null) {

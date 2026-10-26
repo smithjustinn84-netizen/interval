@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -57,8 +58,9 @@ class ExerciseDetailTest {
         onNodeWithText("16 kg × 5 · Left").performScrollTo().assertExists()
         onNodeWithText("16 kg × 5 · Right").performClick()
         // The sheet gone, the session's own page.
-        waitForText("Delete")
+        waitForText("Press day")
         onNodeWithText("Press day").assertIsDisplayed()
+        onNodeWithContentDescription("More options").assertIsDisplayed()
     }
 
     @Test

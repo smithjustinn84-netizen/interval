@@ -126,6 +126,7 @@ fun AddToPlanSheet(
             AccentButton(
                 stringResource(Res.string.plan_add_confirm),
                 onClick = {
+                    if (choices.isEmpty()) return@AccentButton
                     val preset = choices[picked.coerceIn(choices.indices)].preset
                     when (mode) {
                         PlanRepeat.Weekly -> onPlanWeekly(
@@ -139,6 +140,7 @@ fun AddToPlanSheet(
                     hide()
                 },
                 modifier = Modifier.fillMaxWidth(),
+                enabled = choices.isNotEmpty(),
             )
         }
     }

@@ -174,6 +174,7 @@ private fun BottomSheet(
             Box(Modifier.fillMaxWidth().withinBarsAndKeyboard(), contentAlignment = Alignment.TopCenter) {
                 Column(
                     Modifier
+                        .holdInitialFocus()
                         .semantics { paneTitle = title }
                         .widthIn(max = Sizes.sheet)
                         .fillMaxWidth()

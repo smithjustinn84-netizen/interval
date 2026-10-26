@@ -27,7 +27,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -158,17 +160,22 @@ fun PlanScreen(
         }
         item(key = "oneOffs") {
             Column(Modifier.padding(horizontal = Spacing.space16)) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     GroupLabel(stringResource(Res.string.plan_one_offs), Modifier.weight(1f))
                     val interaction = remember { MutableInteractionSource() }
-                    Text(
-                        stringResource(Res.string.plan_add_on_date),
-                        style = IntervalTheme.type.label,
-                        color = IntervalTheme.palette.accent,
-                        modifier = Modifier
+                    Box(
+                        Modifier
+                            .heightIn(min = Sizes.pillHeight)
                             .surfaceButton(interaction, Corners.radius12, Color.Transparent, { adding = ADD_ON_DATE })
-                            .padding(Spacing.space8),
-                    )
+                            .padding(horizontal = Spacing.space12),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            stringResource(Res.string.plan_add_on_date),
+                            style = IntervalTheme.type.label,
+                            color = IntervalTheme.palette.accent,
+                        )
+                    }
                 }
                 ListCard {
                     if (state.oneOffs.isEmpty()) {
@@ -237,7 +244,10 @@ private fun GoalCard(state: PlanUiState, onStepGoal: (Int) -> Unit, modifier: Mo
                 onStep = { onStepGoal(-1) },
                 modifier = Modifier.size(Sizes.segment),
             )
-            Box(Modifier.width(Sizes.pillWidth), contentAlignment = Alignment.Center) {
+            Box(
+                Modifier.width(Sizes.pillWidth).semantics { liveRegion = LiveRegionMode.Polite },
+                contentAlignment = Alignment.Center,
+            ) {
                 RollingText(
                     goal?.toString() ?: stringResource(Res.string.plan_goal_off),
                     rising = rememberRising(goal ?: 0),

@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.bells.domain.Equipment
@@ -331,7 +332,10 @@ private fun ProgramCard(
         day?.blocks?.forEach { block ->
             RowDivider()
             Row(
-                Modifier.fillMaxWidth().padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+                Modifier
+                    .fillMaxWidth()
+                    .semantics(mergeDescendants = true) {}
+                    .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {

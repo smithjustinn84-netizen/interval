@@ -50,9 +50,9 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
-import dev.justinsmith.interval.ui.enterRising
 import dev.justinsmith.interval.ui.isLandscape
 import dev.justinsmith.interval.ui.rememberEntrance
+import dev.justinsmith.interval.ui.risingEnter
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -96,13 +96,14 @@ fun SummaryScreen(
     BoxWithConstraints(modifier.fillMaxSize().background(palette.background), contentAlignment = Alignment.TopCenter) {
         burstColors(finished)?.let { Burst(it, Modifier.matchParentSize(), delayMillis = Motion.ENTER_MILLIS) }
         if (isLandscape) {
+            val sideWidth = minOf(Sizes.setupColumnLandscape, maxWidth * LANDSCAPE_PRIMARY_SHARE)
             // Sideways: Done, the title and the way out on the left, the numbers and changes scrolling on the right.
             Row(
                 Modifier.fillMaxSize().safeDrawingPadding().padding(Spacing.space20),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.space20, Alignment.CenterHorizontally),
             ) {
                 Column(
-                    Modifier.width(Sizes.setupColumnLandscape).fillMaxHeight(),
+                    Modifier.width(sideWidth).fillMaxHeight(),
                     verticalArrangement = Arrangement.spacedBy(Spacing.space8),
                 ) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
@@ -172,7 +173,7 @@ private fun burstColors(finished: Finished): List<Color>? = when {
 /** One part of the summary, rising in [step] stagger steps after the first: the finish's small ceremony. */
 @Composable
 private fun Arrival(entrance: MutableTransitionState<Boolean>, step: Int, content: @Composable () -> Unit) {
-    AnimatedVisibility(entrance, enter = enterRising(Motion.STAGGER_MILLIS * step)) { content() }
+    AnimatedVisibility(entrance, enter = risingEnter(Motion.STAGGER_MILLIS * step)) { content() }
 }
 
 /** The summary's parts arrive in this order, each [Motion.STAGGER_MILLIS] steps after the heading. */

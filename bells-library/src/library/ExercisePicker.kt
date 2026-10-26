@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -30,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.input.ImeAction
 import dev.justinsmith.bells.domain.CustomExercise
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
@@ -175,7 +178,13 @@ fun PickerHeader(
     val filters = list.filters
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         val search = stringResource(Res.string.library_search)
-        NameField(picker.query, placeholder = search, onDone = {}, label = search, maxLength = SEARCH_LENGTH)
+        NameField(
+            picker.query,
+            placeholder = search,
+            label = search,
+            maxLength = SEARCH_LENGTH,
+            imeAction = ImeAction.Search,
+        )
         FilterChips(Equipment.entries, filters.equipment, { equipmentName(it) }) { e ->
             onFilters { it.copy(equipment = it.equipment.toggled(e)) }
         }
@@ -277,7 +286,7 @@ internal fun ExerciseList(
     equipment: Boolean = true,
     tagYours: Boolean = true,
 ) {
-    ListCard(modifier) {
+    ListCard(modifier.then(if (!opens && onPick != null) Modifier.selectableGroup() else Modifier)) {
         exercises.forEachIndexed { i, exercise ->
             if (i > 0) RowDivider()
             ExerciseRow(
@@ -309,13 +318,19 @@ private fun ExerciseRow(
 ) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
-    val tap = if (onPick == null) {
-        Modifier
-    } else {
-        Modifier
-            .clickable(interaction, LocalIndication.current, role = Role.Button, onClick = onPick)
-            // After the ripple, so the content shrinks while the ripple keeps the card's full width.
-            .pressScale(interaction)
+    val tap = when {
+        onPick == null -> Modifier
+
+        opens ->
+            Modifier
+                .clickable(interaction, LocalIndication.current, role = Role.Button, onClick = onPick)
+                // After the ripple, so the content shrinks while the ripple keeps the card's full width.
+                .pressScale(interaction)
+
+        else ->
+            Modifier
+                .selectable(selected, interaction, LocalIndication.current, role = Role.RadioButton, onClick = onPick)
+                .pressScale(interaction)
     }
     Row(
         Modifier

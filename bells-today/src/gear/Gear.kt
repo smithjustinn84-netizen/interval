@@ -16,6 +16,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.bells.domain.Band
@@ -36,6 +38,7 @@ import dev.justinsmith.bells.today.resources.band_editor_new
 import dev.justinsmith.bells.today.resources.band_heavier
 import dev.justinsmith.bells.today.resources.band_lighter
 import dev.justinsmith.bells.today.resources.band_name
+import dev.justinsmith.bells.today.resources.band_name_needed
 import dev.justinsmith.bells.today.resources.band_name_placeholder
 import dev.justinsmith.bells.today.resources.band_restore
 import dev.justinsmith.bells.today.resources.band_save
@@ -121,9 +124,12 @@ fun GearScreen(
                         verticalArrangement = Arrangement.spacedBy(Spacing.space8),
                     ) {
                         standardBells.forEach { kg ->
-                            Choice(stringResource(Res.string.kg_value, formatKg(kg)), kg in state.owned, onClick = {
-                                onToggle(kg)
-                            })
+                            Choice(
+                                stringResource(Res.string.kg_value, formatKg(kg)),
+                                kg in state.owned,
+                                onClick = { onToggle(kg) },
+                                role = Role.Checkbox,
+                            )
                         }
                     }
                 }
@@ -254,7 +260,7 @@ private fun BandSheet(
         val name = rememberTextFieldState(band?.name.orEmpty())
         var colour by rememberSaveable { mutableStateOf(band?.colour ?: BandColour.Purple) }
         Column(
-            Modifier.padding(horizontal = Spacing.space20, vertical = Spacing.space8),
+            Modifier.padding(vertical = Spacing.space8),
             verticalArrangement = Arrangement.spacedBy(Spacing.space8),
         ) {
             GroupLabel(stringResource(Res.string.band_name))
@@ -262,9 +268,9 @@ private fun BandSheet(
                 name,
                 placeholder =
                 band?.let { bandName(it.copy(name = "")) } ?: stringResource(Res.string.band_name_placeholder),
-                onDone = {},
                 label = stringResource(Res.string.band_name),
                 maxLength = MAX_BAND_NAME,
+                capitalization = KeyboardCapitalization.Words,
             )
             GroupLabel(stringResource(Res.string.band_colour))
             ChoiceRow(BandColour.entries, colour, { bandColourName(it) }, { colour = it })
@@ -288,38 +294,49 @@ private fun BandSheet(
             }
             val typed = name.text.toString()
             // A band the user adds needs a name; one they started with keeps its words while blank.
-            if (band != null || typed.isNotBlank()) {
-                AccentButton(
-                    stringResource(Res.string.band_save),
-                    {
-                        actions.onSave(band, typed, colour)
-                        hide()
-                    },
-                    Modifier.fillMaxWidth().padding(top = Spacing.space8),
+            val canSave = band != null || typed.isNotBlank()
+            AccentButton(
+                stringResource(Res.string.band_save),
+                {
+                    actions.onSave(band, typed, colour)
+                    hide()
+                },
+                Modifier.fillMaxWidth().padding(top = Spacing.space8),
+                enabled = canSave,
+            )
+            if (!canSave) {
+                Text(
+                    stringResource(Res.string.band_name_needed),
+                    style = IntervalTheme.type.meta,
+                    color = IntervalTheme.palette.textDim,
                 )
             }
-            when {
-                band == null -> Unit
-
-                band.archived -> SecondaryButton(
-                    stringResource(Res.string.band_restore),
-                    {
-                        actions.onRestore(band)
-                        hide()
-                    },
-                    Modifier.fillMaxWidth(),
-                )
-
-                else -> SecondaryButton(
-                    stringResource(if (used) Res.string.band_archive else Res.string.band_delete),
-                    {
-                        actions.onRemove(band)
-                        hide()
-                    },
-                    Modifier.fillMaxWidth(),
-                )
-            }
+            if (band != null) BandRemoveAction(band, used, actions, hide)
         }
+    }
+}
+
+@Composable
+private fun BandRemoveAction(band: Band, used: Boolean, actions: BandActions, hide: () -> Unit) {
+    if (band.archived) {
+        SecondaryButton(
+            stringResource(Res.string.band_restore),
+            {
+                actions.onRestore(band)
+                hide()
+            },
+            Modifier.fillMaxWidth(),
+        )
+    } else {
+        SecondaryButton(
+            stringResource(if (used) Res.string.band_archive else Res.string.band_delete),
+            {
+                actions.onRemove(band)
+                hide()
+            },
+            Modifier.fillMaxWidth(),
+            destructive = !used,
+        )
     }
 }
 

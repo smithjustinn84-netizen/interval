@@ -11,10 +11,10 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope
@@ -32,8 +32,8 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * A pushed page that scrolls as one: Settings, About, Licenses. Its [TitleBar] and [content] share one
- * centred column of [Sizes.content] at most, inside the safe area, with the page's side and bottom
- * margins around the content.
+ * centred column of [Sizes.content] at most, inside the horizontal and top safe area, while scrolling on
+ * under the gesture bar and clearing the keyboard.
  */
 @Composable
 fun ScrollPage(
@@ -44,17 +44,20 @@ fun ScrollPage(
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val safe = WindowInsets.safeDrawing
+    val foot = safe.asPaddingValues().calculateBottomPadding()
     Box(modifier.fillMaxSize().background(IntervalTheme.palette.background), contentAlignment = Alignment.TopCenter) {
         Column(
             Modifier
                 .widthIn(max = Sizes.content)
                 .fillMaxSize()
-                .safeDrawingPadding()
+                .windowInsetsPadding(safe.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top))
+                .imePadding()
                 .verticalScroll(rememberScrollState()),
         ) {
             TitleBar(title, navigation = navigation, actions = actions)
             Column(
-                Modifier.padding(start = Spacing.space16, end = Spacing.space16, bottom = Spacing.space24),
+                Modifier.padding(start = Spacing.space16, end = Spacing.space16, bottom = Spacing.space24 + foot),
                 horizontalAlignment = horizontalAlignment,
                 content = content,
             )

@@ -31,8 +31,8 @@ import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
-import dev.justinsmith.interval.ui.enterRising
 import dev.justinsmith.interval.ui.rememberEntrance
+import dev.justinsmith.interval.ui.risingEnter
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
@@ -57,7 +57,7 @@ fun AboutScreen(version: String?, onBack: () -> Unit, onShowLicenses: () -> Unit
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // The hero rises in once, as the summary's does; the card below is in place already.
-        AnimatedVisibility(rememberEntrance(), enter = enterRising()) { Hero(version) }
+        AnimatedVisibility(rememberEntrance(), enter = risingEnter()) { Hero(version) }
         ListCard(Modifier.padding(top = Spacing.space32)) {
             LinkRow(
                 stringResource(Res.string.about_licenses),

@@ -111,6 +111,7 @@
     <string name="plan_describe_field_label">Routine in words</string>
     <string name="plan_describe_placeholder">Tabata Mon, Wed and Fri</string>
     <string name="plan_describe_hint">Try “tabata mon wed fri”, “40/20 x8 on the rower tomorrow” or “hiit weekdays, 4 a week”.</string>
+    <string name="plan_describe_unrecognized">Couldn’t read a routine yet — try “tabata mon wed fri”, “40/20 x8 tomorrow” or “4 a week”.</string>
     <string name="plan_describe_no_day">No day, so it stays off the plan</string>
     <string name="detail_total">Total</string>
     <string name="detail_work">Work</string>

@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.PersonalRecord
 import dev.justinsmith.bells.domain.formatKg
@@ -34,7 +35,7 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun RecordRow(record: PersonalRecord, modifier: Modifier = Modifier, tagged: Boolean = false, named: Boolean = true) {
     val palette = IntervalTheme.palette
-    Column(modifier.padding(Spacing.space16)) {
+    Column(modifier.semantics(mergeDescendants = true) {}.padding(Spacing.space16)) {
         if (!named) {
             Text(recordLine(record), style = IntervalTheme.type.body, color = palette.text)
             return@Column
