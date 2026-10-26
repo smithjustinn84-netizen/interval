@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.platform
 
 import androidx.compose.runtime.Composable
+import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.UpcomingChange
 import org.koin.core.module.Module
@@ -89,17 +90,38 @@ interface BackgroundWorkout {
 }
 
 /**
- * Asks, when a workout starts, for whatever the platform needs before it can show the workout off screen:
- * Android 13's permission to post notifications, once, the first time (the system stops asking after two
- * refusals); iOS's authorization to show notifications, which the system asks for once and then answers from
- * the user's settings. Desktop needs nothing.
+ * One day's reminder: at [minuteOfDay] (after local midnight) on [epochDay], for [plans], the day's workouts
+ * still to do, in the order they were planned.
+ */
+data class PlanReminder(val epochDay: Long, val minuteOfDay: Int, val plans: List<PlannedWorkout>)
+
+/** How many days ahead the reminders reach. iOS keeps this many of its 64 pending requests for them. */
+const val PLAN_REMINDER_DAYS = 14
+
+/**
+ * The platform's notifications for the plan: Android's alarms, iOS's calendar-triggered local notifications.
+ * Desktop keeps none: a desktop window is not a phone in a pocket.
+ */
+interface PlanReminders {
+    /**
+     * Replaces whatever is pending with [reminders], each a notification at its day and time; empty cancels
+     * them all.
+     */
+    suspend fun schedule(reminders: List<PlanReminder>)
+}
+
+/**
+ * Asks for whatever the platform needs before it can show a notification: Android 13's permission to post
+ * them, once, the first time (the system stops asking after two refusals); iOS's authorization, which the
+ * system asks for once and then answers from the user's settings. Desktop needs nothing. Asked as a workout
+ * starts, for its notification off screen, and as the plan's reminder is turned on.
  */
 @Composable
-expect fun AskToShowWorkoutOffScreen()
+expect fun AskToShowNotifications()
 
 /**
  * Koin definitions for platform services: [PlatformStorage], a [CuePlayer], a [TimestampFormatter],
- * [AppInfo] and a [BackgroundWorkout]. Built in composition because Android needs a `Context`.
+ * [AppInfo], a [BackgroundWorkout] and [PlanReminders]. Built in composition because Android needs a `Context`.
  */
 @Composable
 expect fun rememberPlatformModule(): Module

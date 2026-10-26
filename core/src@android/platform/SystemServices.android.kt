@@ -14,8 +14,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import dev.justinsmith.interval.timer.MINUTES_PER_HOUR
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -92,6 +94,12 @@ private class JavaTimeFormatter : TimestampFormatter {
     override fun dateOfDay(epochDay: Long): String = formats().date.format(LocalDate.ofEpochDay(epochDay))
 
     override fun monthTitle(epochDay: Long): String = formats().month.format(LocalDate.ofEpochDay(epochDay))
+
+    override fun timeOfDay(minuteOfDay: Int): String =
+        formats().time.format(LocalTime.of(minuteOfDay / MINUTES_PER_HOUR, minuteOfDay % MINUTES_PER_HOUR))
+
+    override fun minuteOfDay(epochMillis: Long): Int =
+        zoned(epochMillis).toLocalTime().let { it.hour * MINUTES_PER_HOUR + it.minute }
 
     private fun zoned(epochMillis: Long) = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault())
 

@@ -18,7 +18,13 @@ actual fun rememberPlatformModule(): Module = remember {
         single<TimestampFormatter> { systemTimestampFormatter() }
         single<AppInfo> { DesktopAppInfo() }
         single<BackgroundWorkout> { NoBackgroundWorkout }
+        single<PlanReminders> { NoPlanReminders }
     }
+}
+
+/** A desktop has no notification centre the app could hand a day's reminder to. */
+private object NoPlanReminders : PlanReminders {
+    override suspend fun schedule(reminders: List<PlanReminder>) = Unit
 }
 
 /** A desktop window stays on screen, and its process keeps running behind other windows: nothing to keep. */
@@ -31,7 +37,7 @@ private object NoBackgroundWorkout : BackgroundWorkout {
 }
 
 @Composable
-actual fun AskToShowWorkoutOffScreen() = Unit
+actual fun AskToShowNotifications() = Unit
 
 /** jpackage stamps the version into a packaged app; a run from source carries none. */
 private class DesktopAppInfo : AppInfo {

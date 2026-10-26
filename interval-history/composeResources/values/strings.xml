@@ -91,6 +91,16 @@
     <string name="plan_goal_off">Off</string>
     <string name="plan_goal_less_cd">Lower the goal</string>
     <string name="plan_goal_more_cd">Raise the goal</string>
+    <string name="plan_reminder">Reminder</string>
+    <string name="plan_reminder_off">Off. Set a time to be reminded on days with a workout planned</string>
+    <string name="plan_reminder_on">%1$s on days with a workout planned</string>
+    <string name="plan_reminder_hint">A notification at this time on each day with a workout still to do.</string>
+    <string name="plan_reminder_hint_steps">Steps of %1$d minutes. Hold to change faster.</string>
+    <string name="plan_reminder_less_cd">%1$d minutes earlier</string>
+    <string name="plan_reminder_more_cd">%1$d minutes later</string>
+    <string name="plan_reminder_quick_picks">Quick picks</string>
+    <string name="plan_reminder_turn_off">Turn off reminders</string>
+    <string name="common_done">Done</string>
     <string name="plan_routine">Routine</string>
     <string name="plan_every_week">Every week</string>
     <string name="plan_rest">Rest</string>

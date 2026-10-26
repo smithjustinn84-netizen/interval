@@ -49,7 +49,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
-import dev.justinsmith.interval.platform.AskToShowWorkoutOffScreen
+import dev.justinsmith.interval.platform.AskToShowNotifications
 import dev.justinsmith.interval.platform.KeepScreenOn
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
@@ -102,7 +102,7 @@ fun WorkoutRoute(id: Long, onExit: () -> Unit, modifier: Modifier = Modifier) {
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
     if (state.running && state.keepScreenOn) KeepScreenOn()
-    if (!state.isDone) AskToShowWorkoutOffScreen()
+    if (!state.isDone) AskToShowNotifications()
     val exit by rememberUpdatedState(onExit)
     LaunchedEffect(state.leaving) { if (state.leaving) exit() }
     WorkoutScreen(

@@ -1,8 +1,10 @@
 package dev.justinsmith.interval.platform
 
 import androidx.compose.runtime.Composable
+import dev.justinsmith.interval.timer.MINUTES_PER_HOUR
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.chrono.IsoChronology
 import java.time.format.DateTimeFormatter
@@ -45,6 +47,12 @@ internal class JavaTimeFormatter : TimestampFormatter {
     override fun dateOfDay(epochDay: Long): String = formats().date.format(LocalDate.ofEpochDay(epochDay))
 
     override fun monthTitle(epochDay: Long): String = formats().month.format(LocalDate.ofEpochDay(epochDay))
+
+    override fun timeOfDay(minuteOfDay: Int): String =
+        formats().time.format(LocalTime.of(minuteOfDay / MINUTES_PER_HOUR, minuteOfDay % MINUTES_PER_HOUR))
+
+    override fun minuteOfDay(epochMillis: Long): Int =
+        zoned(epochMillis).toLocalTime().let { it.hour * MINUTES_PER_HOUR + it.minute }
 
     private fun zoned(epochMillis: Long) = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault())
 

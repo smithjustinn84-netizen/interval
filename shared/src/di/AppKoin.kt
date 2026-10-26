@@ -12,8 +12,9 @@ import org.koin.core.module.Module
 import org.koin.dsl.koinApplication
 
 /**
- * [platformModule] supplies storage locations, the cue player and timestamp formatter; [storage] the
- * database and DataStore built from them (tests swap in fakes). [bellsPlatform] and [bellsStorage] do the
+ * [platformModule] supplies storage locations, the cue player, the timestamp formatter and the plan's
+ * reminders; [storage] the database and DataStore built from them (tests swap in fakes); [historyModule]
+ * keeps those reminders in step with the plan. [bellsPlatform] and [bellsStorage] do the
  * same for Lift, whose own database sits beside this one.
  */
 fun appModules(
@@ -21,7 +22,7 @@ fun appModules(
     storage: Module = storageModule,
     bellsPlatform: Module,
     bellsStorage: Module = bellsStorageModule,
-): List<Module> = listOf(platformModule, storage, dataModule) + bellsModules(bellsPlatform, bellsStorage)
+): List<Module> = listOf(platformModule, storage, dataModule, historyModule) + bellsModules(bellsPlatform, bellsStorage)
 
 /**
  * Keeps the Koin container alive across Android configuration changes and closes it when the app

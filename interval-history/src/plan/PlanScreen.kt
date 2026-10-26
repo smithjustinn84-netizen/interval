@@ -51,12 +51,16 @@ import dev.justinsmith.interval.history.resources.plan_goal_off
 import dev.justinsmith.interval.history.resources.plan_goal_text
 import dev.justinsmith.interval.history.resources.plan_one_offs
 import dev.justinsmith.interval.history.resources.plan_one_offs_empty
+import dev.justinsmith.interval.history.resources.plan_reminder
+import dev.justinsmith.interval.history.resources.plan_reminder_off
+import dev.justinsmith.interval.history.resources.plan_reminder_on
 import dev.justinsmith.interval.history.resources.plan_remove_cd
 import dev.justinsmith.interval.history.resources.plan_remove_on_cd
 import dev.justinsmith.interval.history.resources.plan_rest
 import dev.justinsmith.interval.history.resources.plan_routine
 import dev.justinsmith.interval.history.resources.plan_title
 import dev.justinsmith.interval.model.AppSettings
+import dev.justinsmith.interval.platform.AskToShowNotifications
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.Corners
@@ -64,6 +68,7 @@ import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.NoticeAction
@@ -91,6 +96,8 @@ fun PlanRoute(onBack: () -> Unit, modifier: Modifier = Modifier) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val notices = LocalNotices.current
     val undo = stringResource(Res.string.notice_undo)
+    // Asked as the reminder is turned on, and again on opening while it is, if the system still wants asking.
+    if (state.reminder.on) AskToShowNotifications()
     PlanScreen(
         state = state,
         onBack = onBack,
@@ -103,6 +110,7 @@ fun PlanRoute(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 notices.show(removedText, NoticeAction(undo) { viewModel.restorePlanned(plan) })
             }
         },
+        onSetReminder = viewModel::setReminder,
         modifier = modifier,
     )
 }
@@ -112,10 +120,12 @@ private const val ADD_CLOSED = 0
 private const val ADD_ON_DATE = -1
 
 /**
- * The plan: the weekly goal's stepper, the routine as a row per weekday with its workouts and a + to add
- * one, and the one-offs still to come. Each planned workout comes off with its own remove button, which
- * hands [onRemove] its id and the line saying what went ("Removed Tabata from Monday").
+ * The plan: the weekly goal's stepper, the reminder's time (its sheet sets it through [onSetReminder], null
+ * turning it off), the routine as a row per weekday with its workouts and a + to add one, and the one-offs
+ * still to come. Each planned workout comes off with its own remove button, which hands [onRemove] its id and
+ * the line saying what went ("Removed Tabata from Monday").
  */
+@Suppress("detekt.LongParameterList") // One callback per action, as the screen takes them.
 @Composable
 fun PlanScreen(
     state: PlanUiState,
@@ -125,10 +135,12 @@ fun PlanScreen(
     onPlanOnce: (Preset, Long) -> Unit,
     onPlanRoutine: (DescribedRoutine) -> Unit,
     onRemove: (planId: Long, removedText: String) -> Unit,
+    onSetReminder: (Int?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var adding by rememberSaveable { mutableIntStateOf(ADD_CLOSED) }
     var describing by rememberSaveable { mutableStateOf(false) }
+    var editingReminder by rememberSaveable { mutableStateOf(false) }
     // One column on a phone; wider, the routine beside the goal and the one-offs.
     TabGrid(
         stringResource(Res.string.plan_title),
@@ -139,6 +151,9 @@ fun PlanScreen(
         },
     ) {
         item(key = "goal") { GoalCard(state, onStepGoal, Modifier.padding(horizontal = Spacing.space16)) }
+        item(key = "reminder") {
+            ReminderCard(state.reminder, { editingReminder = true }, Modifier.padding(horizontal = Spacing.space16))
+        }
         item(key = "routine") {
             Column(Modifier.padding(horizontal = Spacing.space16)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
@@ -159,39 +174,12 @@ fun PlanScreen(
             }
         }
         item(key = "oneOffs") {
-            Column(Modifier.padding(horizontal = Spacing.space16)) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    GroupLabel(stringResource(Res.string.plan_one_offs), Modifier.weight(1f))
-                    val interaction = remember { MutableInteractionSource() }
-                    Box(
-                        Modifier
-                            .heightIn(min = Sizes.pillHeight)
-                            .surfaceButton(interaction, Corners.radius12, Color.Transparent, { adding = ADD_ON_DATE })
-                            .padding(horizontal = Spacing.space12),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            stringResource(Res.string.plan_add_on_date),
-                            style = IntervalTheme.type.label,
-                            color = IntervalTheme.palette.accent,
-                        )
-                    }
-                }
-                ListCard {
-                    if (state.oneOffs.isEmpty()) {
-                        Text(
-                            stringResource(Res.string.plan_one_offs_empty),
-                            style = IntervalTheme.type.meta,
-                            color = IntervalTheme.palette.textDim,
-                            modifier = Modifier.padding(Spacing.space16),
-                        )
-                    }
-                    state.oneOffs.forEachIndexed { index, oneOff ->
-                        if (index > 0) RowDivider()
-                        OneOffRow(oneOff, onRemove)
-                    }
-                }
-            }
+            OneOffsSection(
+                state.oneOffs,
+                onAdd = { adding = ADD_ON_DATE },
+                onRemove = onRemove,
+                modifier = Modifier.padding(horizontal = Spacing.space16),
+            )
         }
     }
     if (adding != ADD_CLOSED) {
@@ -206,6 +194,66 @@ fun PlanScreen(
         )
     }
     if (describing) DescribeRoutineSheet(state, onPlanRoutine, onDismiss = { describing = false })
+    if (editingReminder) ReminderSheet(state.reminder, onSetReminder, onDismiss = { editingReminder = false })
+}
+
+/** The one-offs still to come under their label and "Add on a date", or a line saying there are none. */
+@Composable
+private fun OneOffsSection(
+    oneOffs: List<OneOff>,
+    onAdd: () -> Unit,
+    onRemove: (Long, String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            GroupLabel(stringResource(Res.string.plan_one_offs), Modifier.weight(1f))
+            val interaction = remember { MutableInteractionSource() }
+            Box(
+                Modifier
+                    .heightIn(min = Sizes.pillHeight)
+                    .surfaceButton(interaction, Corners.radius12, Color.Transparent, onAdd)
+                    .padding(horizontal = Spacing.space12),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    stringResource(Res.string.plan_add_on_date),
+                    style = IntervalTheme.type.label,
+                    color = IntervalTheme.palette.accent,
+                )
+            }
+        }
+        ListCard {
+            if (oneOffs.isEmpty()) {
+                Text(
+                    stringResource(Res.string.plan_one_offs_empty),
+                    style = IntervalTheme.type.meta,
+                    color = IntervalTheme.palette.textDim,
+                    modifier = Modifier.padding(Spacing.space16),
+                )
+            }
+            oneOffs.forEachIndexed { index, oneOff ->
+                if (index > 0) RowDivider()
+                OneOffRow(oneOff, onRemove)
+            }
+        }
+    }
+}
+
+/** The reminder: its time on days with a workout planned, or how to set one; tapping opens its sheet. */
+@Composable
+private fun ReminderCard(reminder: ReminderUi, onEdit: () -> Unit, modifier: Modifier = Modifier) {
+    ListCard(modifier) {
+        LinkRow(
+            stringResource(Res.string.plan_reminder),
+            if (reminder.on) {
+                stringResource(Res.string.plan_reminder_on, reminder.text)
+            } else {
+                stringResource(Res.string.plan_reminder_off)
+            },
+            onClick = onEdit,
+        )
+    }
 }
 
 /** The weekly goal between − and +, "Off" below one; the streak under it while there is one. */

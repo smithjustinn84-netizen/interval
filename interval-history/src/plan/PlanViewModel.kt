@@ -19,6 +19,7 @@ import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.days
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.MINUTES_PER_DAY
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.weekdayOf
 import kotlinx.coroutines.flow.SharingStarted
@@ -35,6 +36,16 @@ data class RoutineDay(val weekday: Int, val plans: List<PlanEntry>)
 /** A one-off still to come, on [epochDay], headed [day]. */
 data class OneOff(val entry: PlanEntry, val epochDay: Long, val day: HistoryDay)
 
+/** A reminder time offered in one tap: [minuteOfDay] after midnight, worded [text] ("7:00 AM"). */
+data class ReminderPick(val minuteOfDay: Int, val text: String)
+
+/**
+ * The reminder as the plan shows it: [on] or off, and the time it stands at either way ([minuteOfDay],
+ * worded [text]), which is the stored one or, while off, where it starts when turned on; [picks] the
+ * times offered in one tap.
+ */
+data class ReminderUi(val on: Boolean, val minuteOfDay: Int, val text: String, val picks: List<ReminderPick>)
+
 data class PlanUiState(
     /** Workouts a week the user aims for; null when there is no goal. */
     val goal: Int?,
@@ -48,6 +59,7 @@ data class PlanUiState(
     val todayWeekday: Int,
     /** Today as an epoch day, which a described routine's "tomorrow" counts from. */
     val today: Long,
+    val reminder: ReminderUi,
 )
 
 /**
@@ -94,6 +106,11 @@ class PlanViewModel(
     /** Raises or lowers the goal by one, as [steppedGoal] does. */
     fun stepGoal(direction: Int) {
         repository.updateAppSettings { it.copy(weeklyGoal = steppedGoal(it.weeklyGoal, direction)) }
+    }
+
+    /** Sets the reminder to [minuteOfDay] after midnight, wrapping past either end of the day; null turns it off. */
+    fun setReminder(minuteOfDay: Int?) {
+        repository.updateAppSettings { it.copy(reminderMinuteOfDay = minuteOfDay?.mod(MINUTES_PER_DAY)) }
     }
 
     fun planWeekly(preset: Preset, weekdays: Set<Int>) {
@@ -157,6 +174,17 @@ class PlanViewModel(
             days = dayChoices(today),
             todayWeekday = weekdayOf(today),
             today = today,
+            reminder = reminder(app.reminderMinuteOfDay),
+        )
+    }
+
+    private fun reminder(minuteOfDay: Int?): ReminderUi {
+        val shown = minuteOfDay ?: AppSettings.DEFAULT_REMINDER
+        return ReminderUi(
+            on = minuteOfDay != null,
+            minuteOfDay = shown,
+            text = timestamps.timeOfDay(shown),
+            picks = REMINDER_PICKS.map { ReminderPick(it, timestamps.timeOfDay(it)) },
         )
     }
 

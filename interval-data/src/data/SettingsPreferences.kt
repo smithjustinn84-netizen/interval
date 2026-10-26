@@ -31,6 +31,7 @@ private val CUE_VIBRATE = booleanPreferencesKey("cue_vibrate")
 private val THEME = stringPreferencesKey("theme")
 private val KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")
 private val WEEKLY_GOAL = intPreferencesKey("weekly_goal")
+private val REMINDER_MINUTE = intPreferencesKey("reminder_minute")
 
 private val BODY_WEIGHT_KG = doublePreferencesKey("body_weight_kg")
 private val BODY_UNIT = stringPreferencesKey("body_unit")
@@ -84,6 +85,7 @@ internal fun Preferences.toAppSettings(): AppSettings {
         body = toBodySettings(),
         // A goal out of range (written by a build with other limits) is clamped rather than dropped.
         weeklyGoal = this[WEEKLY_GOAL]?.coerceIn(AppSettings.WEEKLY_GOAL_RANGE),
+        reminderMinuteOfDay = this[REMINDER_MINUTE]?.coerceIn(AppSettings.REMINDER_RANGE),
     )
 }
 
@@ -92,6 +94,8 @@ internal fun MutablePreferences.write(app: AppSettings) {
     this[KEEP_SCREEN_ON] = app.keepScreenOn
     val goal = app.weeklyGoal
     if (goal == null) remove(WEEKLY_GOAL) else this[WEEKLY_GOAL] = goal
+    val reminder = app.reminderMinuteOfDay
+    if (reminder == null) remove(REMINDER_MINUTE) else this[REMINDER_MINUTE] = reminder
     write(app.body)
 }
 

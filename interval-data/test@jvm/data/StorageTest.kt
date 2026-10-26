@@ -66,7 +66,9 @@ class StorageTest {
         withApp { repository ->
             repository.updateConfig { config }
             repository.updateCueSettings { it.copy(halfway = false) }
-            repository.updateAppSettings { AppSettings(theme = ThemeMode.Light, keepScreenOn = false) }
+            repository.updateAppSettings {
+                AppSettings(theme = ThemeMode.Light, keepScreenOn = false, reminderMinuteOfDay = 450)
+            }
             repository.saveCurrentAsPreset("Long")
             repository.recordWorkout(config, elapsedSeconds = 300, endedEarly = true)
             settled(repository) { it.customPresets.value.size == 1 && it.history.value.size == 1 }
@@ -77,7 +79,10 @@ class StorageTest {
             assertTrue(repository.ready.value)
             assertEquals(config, repository.config.value)
             assertEquals(CueSettings(halfway = false), repository.cueSettings.value)
-            assertEquals(AppSettings(theme = ThemeMode.Light, keepScreenOn = false), repository.appSettings.value)
+            assertEquals(
+                AppSettings(theme = ThemeMode.Light, keepScreenOn = false, reminderMinuteOfDay = 450),
+                repository.appSettings.value,
+            )
             assertEquals(Preset("Long", config, id = 1), repository.customPresets.value.single())
             assertEquals(
                 HistoryEntry(NOW, config, elapsedSeconds = 300, endedEarly = true, id = 1),

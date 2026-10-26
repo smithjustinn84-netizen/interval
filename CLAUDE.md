@@ -68,10 +68,11 @@ interval-domain      shared/timer + model: `IntervalConfig`, `Preset`, `WorkoutE
                      parser, `AppSettings`, `HistoryEntry`, `PlannedWorkout`, `LiftWorkout`, `WorkoutProgress`
 interval-data        `IntervalRepository`, `AppDatabase` (Room, KSP, `schemas/`), the settings DataStore,
                      `PlatformStorage`, `storageModule`/`dataModule` (di/)
-interval-platform    `CuePlayer`, `WorkoutControls`, `BackgroundWorkout`, `SpeechQueue`, `playCue`, and each
-                     platform's `rememberPlatformModule` with its storage, player, `WorkoutService` (android)
+interval-platform    `CuePlayer`, `WorkoutControls`, `BackgroundWorkout`, `PlanReminders` (+ `reminderWords`),
+                     `SpeechQueue`, `playCue`, and each platform's `rememberPlatformModule` with its storage,
+                     player, `WorkoutService` and `PlanReminderReceiver` (android)
 interval-testing     `FakeStorage` and the fake DAOs, `RecordingCuePlayer`, `RecordingBackgroundWorkout`,
-                     `fakePlatformModule`/`fakeStorageModule`, the presets tests lean on
+                     `RecordingPlanReminders`, `fakePlatformModule`/`fakeStorageModule`, the presets tests lean on
 interval-ui          the workout's shared words and widgets (`ConfigText`, `FieldRow`, `ValueSheet`, `Timeline`,
                      `WeekdayForm`, `ActivitySheet`, `StartButton`, `DescribeHint`), `PhaseColorsOf`, the intro
                      (splash/: `WithIntro`, `IntervalMark`)
@@ -80,7 +81,8 @@ interval-home        the Timer tab and its describe sheet
 interval-workout     the running workout, its readout, controls and summary
 interval-settings    Settings and the weight sheet
 interval-history     History (log, calendar, summaries, a finished workout) and Plan: one module, each needs
-                     the other
+                     the other; `PlanReminderScheduler` (`historyModule`, di/) keeps the platform's reminders
+                     in step with the plan
 shared               the app: `App.kt` (the back stack and every entry), `di/AppKoin.kt` (`appModules`,
                      `rememberAppKoin`), `nav/Routes.kt` (the app's own keys), `ui/AppNavigation.kt`, about/,
                      `app_name` and `app_icon`. What `androidApp`, `iosApp` and `desktopApp` depend on
@@ -133,7 +135,8 @@ toolchain (`$compose.*`).
   `rememberViewModelStoreNavEntryDecorator`.
 - **DI is Koin DSL** (no annotations/KSP) in an isolated container assembled in `shared/src/di/AppKoin.kt`
   (`appModules`) from each side's modules: `storageModule`/`dataModule` in `interval-data/src/di/`,
-  `bellsModules` in `bells-data/src/di/`, and the platform modules each platform builds in composition. Add a
+  `historyModule` in `interval-history/src/di/`, `bellsModules` in `bells-data/src/di/`, and the platform
+  modules each platform builds in composition. Add a
   module per domain. Constructor-inject everything; keep platform calls (the clock, cues, storage) behind
   injected interfaces (`WallClock`, `CuePlayer`, `PlatformStorage`) so tests can fake them.
 - **Storage**: `IntervalRepository` (`interval-data/src/data/`) is the only thing that touches it. What it stores
@@ -180,6 +183,14 @@ toolchain (`$compose.*`).
   `WorkoutControls`. iOS schedules a local notification per phase change ahead (`WorkoutEngine.upcomingChanges`,
   pure, through `WorkoutControls.upcomingChanges`) as the app leaves the screen, and drops them on return; its
   actual says why not background audio. Desktop keeps nothing.
+- **Reminders for the plan**: `AppSettings.reminderMinuteOfDay` (set on Plan, null is off). `PlanReminderScheduler`
+  (`interval-history/src/plan/`, an eager single) recomputes `plannedReminders` (the next 14 days with a plan
+  still open, from `TrainingLog.upNext`) on every change and at midnight, and hands the whole set to
+  `PlanReminders.schedule`, which replaces what is pending: Android arms one inexact alarm per day
+  (`PlanAlarms`, recorded in SharedPreferences so `PlanReminderReceiver` can re-arm after a reboot or clock
+  change), iOS one calendar-triggered local notification per day (the workout's notifications remove only their
+  own identifiers, and leave `PLAN_REMINDER_DAYS` of the 64 pending slots free). Words come from
+  `reminderWords`, the same on both. `AskToShowNotifications()` asks for the permission on Plan while it is on.
 
 ## Testing
 

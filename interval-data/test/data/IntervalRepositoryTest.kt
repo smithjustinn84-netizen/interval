@@ -519,6 +519,14 @@ class IntervalRepositoryTest {
         repository().updateAppSettings { it.copy(weeklyGoal = null) }
         assertEquals(null, repository().appSettings.value.weeklyGoal)
     }
+
+    @Test
+    fun `the reminder time survives a restart and clears`() {
+        repository().updateAppSettings { it.copy(reminderMinuteOfDay = 450) }
+        assertEquals(450, repository().appSettings.value.reminderMinuteOfDay)
+        repository().updateAppSettings { it.copy(reminderMinuteOfDay = null) }
+        assertEquals(null, repository().appSettings.value.reminderMinuteOfDay)
+    }
 }
 
 /** Settings whose first read hasn't come back yet: [data] emits only when the test says so. */

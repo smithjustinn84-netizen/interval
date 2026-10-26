@@ -22,6 +22,12 @@ interface TimestampFormatter {
 
     /** The month and year an epoch day falls in: "October 2026". */
     fun monthTitle(epochDay: Long): String
+
+    /** A time of day given in minutes after midnight, as [time] words one: "7:30 AM". */
+    fun timeOfDay(minuteOfDay: Int): String
+
+    /** The moment's minutes after local midnight, the count [timeOfDay] takes. */
+    fun minuteOfDay(epochMillis: Long): Int
 }
 
 /** The platform's [TimestampFormatter], in the device's time zone and locale. */

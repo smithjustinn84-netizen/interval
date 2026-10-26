@@ -3,6 +3,8 @@ package dev.justinsmith.interval.model
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.MINUTES_PER_DAY
+import dev.justinsmith.interval.timer.MINUTES_PER_HOUR
 import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.interval.timer.estimateCalories
 
@@ -47,8 +49,20 @@ data class AppSettings(
     val body: BodySettings = BodySettings(),
     /** Workouts a week the user aims for, within [WEEKLY_GOAL_RANGE]; null until they set one. */
     val weeklyGoal: Int? = null,
+    /**
+     * When a reminder goes out on each day with a workout still to do, in minutes after local midnight,
+     * within [REMINDER_RANGE]; null while reminders are off, as they start.
+     */
+    val reminderMinuteOfDay: Int? = null,
 ) {
     companion object {
         val WEEKLY_GOAL_RANGE = 1..14
+        val REMINDER_RANGE = 0 until MINUTES_PER_DAY
+
+        /** The reminder's finest step: a quarter of an hour. */
+        const val REMINDER_STEP = 15
+
+        /** Where a reminder just turned on stands: 7:00. */
+        const val DEFAULT_REMINDER = 7 * MINUTES_PER_HOUR
     }
 }

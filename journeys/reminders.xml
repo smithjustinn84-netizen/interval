@@ -1,0 +1,27 @@
+<journey name="Plan reminders">
+  <description>
+    Turn on the plan's reminder, pick a time, see it on the Plan page and in the notification settings, then
+    turn it off. Run on a fresh install (adb shell pm clear dev.justinsmith.interval); the notification
+    permission prompt appears the first time the reminder is turned on.
+  </description>
+  <actions>
+    <action>Tap the "History" tab</action>
+    <action>Tap "Plan your week"</action>
+    <action>Verify that a "Reminder" row reads "Off. Set a time to be reminded on days with a workout planned"</action>
+    <action>Tap "Reminder"</action>
+    <action>Verify that a sheet titled "Reminder" shows a time, "Quick picks" and "Done", and no "Turn off reminders"</action>
+    <action>Tap "6:00 PM" under "Quick picks"</action>
+    <action>Verify that the sheet's time reads "6:00 PM"</action>
+    <action>Tap "15 minutes later"</action>
+    <action>Verify that the sheet's time reads "6:15 PM"</action>
+    <action>Tap "Done"</action>
+    <action>If a system prompt asks to allow notifications, tap "Allow"</action>
+    <action>Verify that the "Reminder" row reads "6:15 PM on days with a workout planned"</action>
+    <action>Tap "Back"</action>
+    <action>Tap "Edit plan" or "Plan your week"</action>
+    <action>Verify that the "Reminder" row still reads "6:15 PM on days with a workout planned"</action>
+    <action>Tap "Reminder"</action>
+    <action>Tap "Turn off reminders"</action>
+    <action>Verify that the "Reminder" row reads "Off. Set a time to be reminded on days with a workout planned"</action>
+  </actions>
+</journey>

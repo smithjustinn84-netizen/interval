@@ -16,6 +16,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.TODAY
 import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.fakes.tabataPreset
@@ -47,6 +48,12 @@ private val state = PlanUiState(
     days = (TODAY until TODAY + 14).map { DayChoice(it, weekdayOf(it), (15 + it - TODAY).toInt()) },
     todayWeekday = 4,
     today = TODAY,
+    reminder = ReminderUi(
+        on = false,
+        minuteOfDay = 7 * 60,
+        text = "7:00",
+        picks = REMINDER_PICKS.map { ReminderPick(it, FixedTimestampFormatter.timeOfDay(it)) },
+    ),
 )
 
 /** The sheet's confirming button: the sheet's title says "Add to plan" too, so take the clickable one. */
@@ -70,6 +77,7 @@ class PlanScreenTest {
                 events += "goal ${routine.goal}"
             },
             onRemove = { id, _ -> events += "remove $id" },
+            onSetReminder = { events += "reminder $it" },
         )
     }
 
@@ -97,6 +105,28 @@ class PlanScreenTest {
         setThemedContent { Screen(state.copy(goal = null, streak = 0)) }
         onNodeWithText("Off").assertExists()
         onNodeWithContentDescription("Lower the goal").assertIsNotEnabled()
+    }
+
+    @Test
+    fun `the reminder reads off and its sheet sets a time`() = runUiTest {
+        setThemedContent { Screen(state) }
+        onNodeWithText("Off. Set a time to be reminded on days with a workout planned").assertExists()
+        onNodeWithText("Reminder").performClick()
+        onNodeWithContentDescription("15 minutes later").performClick()
+        onNodeWithText("18:00").performClick()
+        onNodeWithText("Turn off reminders").assertDoesNotExist()
+        onNode(hasText("Done") and hasClickAction()).performClick()
+        assertEquals(listOf("reminder 435", "reminder 1080", "reminder 420"), events)
+    }
+
+    @Test
+    fun `a reminder that is on shows its time and can be turned off`() = runUiTest {
+        val on = state.reminder.copy(on = true, minuteOfDay = 18 * 60, text = "18:00")
+        setThemedContent { Screen(state.copy(reminder = on)) }
+        onNodeWithText("18:00 on days with a workout planned").assertExists()
+        onNodeWithText("Reminder").performClick()
+        onNodeWithText("Turn off reminders").performClick()
+        assertEquals(listOf("reminder null"), events)
     }
 
     @Test

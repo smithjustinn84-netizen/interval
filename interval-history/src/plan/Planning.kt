@@ -2,6 +2,7 @@ package dev.justinsmith.interval.plan
 
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.MINUTES_PER_HOUR
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.dateOfEpochDay
 import dev.justinsmith.interval.timer.defaultPresetName
@@ -33,6 +34,9 @@ const val ONE_OFF_DAYS = 14
 
 /** The weekly goal a step up from none starts at. */
 const val DEFAULT_WEEKLY_GOAL = 3
+
+/** The reminder times offered in one tap, in minutes after midnight: the morning hours, noon and the evening. */
+val REMINDER_PICKS: List<Int> = listOf(6, 7, 8, 12, 17, 18, 19, 20).map { it * MINUTES_PER_HOUR }
 
 /**
  * [goal] raised or lowered by one, within [AppSettings.WEEKLY_GOAL_RANGE]: up from none starts at

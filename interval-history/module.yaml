@@ -10,6 +10,8 @@ apply:
 dependencies:
   - //interval-data: exported
   - //interval-ui: exported
+  # The plan's reminders: the platform's notifications, and the permission to show them.
+  - //interval-platform
   # History shows Lift's sessions and the program's day too.
   - //bells-data
   - //bells-domain

@@ -66,6 +66,7 @@ actual fun rememberPlatformModule(): Module = remember {
         single<TimestampFormatter> { systemTimestampFormatter() }
         single<AppInfo> { IosAppInfo() }
         single<BackgroundWorkout> { IosBackgroundWorkout() }
+        single<PlanReminders> { IosPlanReminders() }
     }
 }
 
@@ -76,10 +77,11 @@ actual fun rememberPlatformModule(): Module = remember {
  * doing: as the app goes to the background with a workout running, this schedules one local notification
  * for each change of phase ahead ([WorkoutControls.upcomingChanges]), the phase as its title ("Work", "Rest",
  * "Done"), the round under it, with the default sound, which follows the ringer switch as the Ambient cues do.
- * iOS keeps 64 pending requests per app, so the furthest changes of a long workout go unscheduled; the user
- * is back long before. Every request is dropped when the app comes back to the screen, which will cue the
- * change itself, and when the workout pauses, ends or leaves. Notifications already shown are cleared then
- * too: back in the app, they are history.
+ * iOS keeps 64 pending requests per app, [PLAN_REMINDER_DAYS] of them the plan's reminders', so the furthest
+ * changes of a long workout go unscheduled; the user is back long before. Every request of the workout's is
+ * dropped (by its own identifiers, leaving the reminders) when the app comes back to the screen, which will
+ * cue the change itself, and when the workout pauses, ends or leaves. Notifications already shown are cleared
+ * then too: back in the app, they are history.
  *
  * Not background audio: the Ambient session the cues use stops with the app, and the one way to stay alive is
  * the `audio` background mode with a Playback session that is always playing, which here would mean silence
@@ -139,9 +141,9 @@ private class IosBackgroundWorkout : BackgroundWorkout {
         val rounds = status?.rounds ?: return
         // Empty while paused or over: nothing to announce.
         val changes = controls?.upcomingChanges()?.takeIf { it.isNotEmpty() } ?: return
-        center.removeAllPendingNotificationRequests()
+        center.removePendingNotificationRequestsWithIdentifiers(identifiers)
         val mine = ++generation
-        scope.launch { schedule(changes.take(MAX_PENDING_REQUESTS), rounds, mine) }
+        scope.launch { schedule(changes.take(WORKOUT_REQUESTS), rounds, mine) }
     }
 
     /** Reading each string suspends, so the app may have come back midway: then the rest are not added. */
@@ -165,8 +167,8 @@ private class IosBackgroundWorkout : BackgroundWorkout {
 
     private fun clear() {
         generation++
-        center.removeAllPendingNotificationRequests()
-        center.removeAllDeliveredNotifications()
+        center.removePendingNotificationRequestsWithIdentifiers(identifiers)
+        center.removeDeliveredNotificationsWithIdentifiers(identifiers)
     }
 
     private fun Phase.title() = when (this) {
@@ -179,18 +181,25 @@ private class IosBackgroundWorkout : BackgroundWorkout {
     private companion object {
         /** iOS keeps this many pending requests per app and drops the rest. */
         const val MAX_PENDING_REQUESTS = 64
+
+        /** The workout's share of them, the plan's reminders keeping the rest. */
+        const val WORKOUT_REQUESTS = MAX_PENDING_REQUESTS - PLAN_REMINDER_DAYS
         const val MIN_TRIGGER_SECONDS = 0.1
         const val REQUEST_PREFIX = "workout-change-"
+
+        /** Every identifier the workout may have scheduled; removing one that was never added does nothing. */
+        val identifiers: List<String> = (0 until WORKOUT_REQUESTS).map { "$REQUEST_PREFIX$it" }
     }
 }
 
 /**
- * iOS: authorization to show notifications, asked for when a workout starts. The system puts the question to
- * the user once, and from then on answers from Settings without asking, so this asks each time rather than
- * keeping count. A refusal costs the notifications off screen only: the workout runs on either way.
+ * iOS: authorization to show notifications, asked for when a workout starts or a reminder is turned on. The
+ * system puts the question to the user once, and from then on answers from Settings without asking, so this
+ * asks each time rather than keeping count. A refusal costs the notifications only: the workout runs on either
+ * way, and the reminders are scheduled into nothing.
  */
 @Composable
-actual fun AskToShowWorkoutOffScreen() {
+actual fun AskToShowNotifications() {
     LaunchedEffect(Unit) {
         UNUserNotificationCenter.currentNotificationCenter().requestAuthorizationWithOptions(
             UNAuthorizationOptionAlert or UNAuthorizationOptionSound,

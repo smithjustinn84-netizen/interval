@@ -158,7 +158,7 @@ class WorkoutService : Service() {
 
     /** What every version of the notification shares: silent, ongoing, on the lock screen, opens the app. */
     private fun NotificationCompat.Builder.common(): NotificationCompat.Builder = this
-        .setSmallIcon(smallIcon())
+        .setSmallIcon(notificationIcon())
         .setOngoing(true)
         .setOnlyAlertOnce(true)
         .setSilent(true)
@@ -166,25 +166,9 @@ class WorkoutService : Service() {
         .setCategory(NotificationCompat.CATEGORY_WORKOUT)
         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
         .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
-        .setContentIntent(openApp())
-
-    /**
-     * The app's own mark (`ic_notification`, generated with the launcher icons into the app's resources, so
-     * found by name from here), or the system's alarm icon in a build without it.
-     */
-    private fun smallIcon(): Int {
-        @Suppress("DiscouragedApi") // Once per notification, for one resource another module owns.
-        val own = resources.getIdentifier(SMALL_ICON_NAME, "drawable", packageName)
-        return if (own != 0) own else android.R.drawable.ic_lock_idle_alarm
-    }
+        .setContentIntent(openAppIntent(REQUEST_OPEN))
 
     private fun appName(): CharSequence = applicationInfo.loadLabel(packageManager)
-
-    /** Brings the app's task forward, as tapping its launcher icon does, rather than opening a second one. */
-    private fun openApp(): PendingIntent? {
-        val launch = packageManager.getLaunchIntentForPackage(packageName) ?: return null
-        return PendingIntent.getActivity(this, REQUEST_OPEN, launch, PendingIntent.FLAG_IMMUTABLE)
-    }
 
     private fun serviceAction(action: String, request: Int): PendingIntent {
         val intent = Intent(this, WorkoutService::class.java).setAction(action)
@@ -200,7 +184,6 @@ class WorkoutService : Service() {
 
         private const val CHANNEL_ID = "workout"
         private const val NOTIFICATION_ID = 1
-        private const val SMALL_ICON_NAME = "ic_notification"
         private const val ACTION_TOGGLE_PAUSE = "dev.justinsmith.interval.TOGGLE_PAUSE"
         private const val ACTION_END = "dev.justinsmith.interval.END"
         private const val REQUEST_OPEN = 0

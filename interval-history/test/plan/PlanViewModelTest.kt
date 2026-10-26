@@ -24,6 +24,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -46,6 +47,32 @@ class PlanViewModelTest : MainDispatcherTest() {
         assertEquals(3, viewModel.state.value.goal)
         repeat(3) { viewModel.stepGoal(-1) }
         assertNull(repository.appSettings.value.weeklyGoal)
+    }
+
+    @Test
+    fun `the reminder is off until a time is set and wraps around the clock`() {
+        val off = viewModel.state.value.reminder
+        assertFalse(off.on)
+        assertEquals("7:00", off.text)
+        assertEquals(
+            listOf("6:00", "7:00", "8:00", "12:00", "17:00", "18:00", "19:00", "20:00"),
+            off.picks.map { it.text },
+        )
+
+        viewModel.setReminder(450)
+        assertEquals(450, repository.appSettings.value.reminderMinuteOfDay)
+        assertEquals(
+            ReminderUi(on = true, minuteOfDay = 450, text = "7:30", picks = off.picks),
+            viewModel.state.value.reminder,
+        )
+
+        viewModel.setReminder(-15)
+        assertEquals("23:45", viewModel.state.value.reminder.text)
+        viewModel.setReminder(24 * 60)
+        assertEquals("0:00", viewModel.state.value.reminder.text)
+
+        viewModel.setReminder(null)
+        assertEquals(off, viewModel.state.value.reminder)
     }
 
     @Test

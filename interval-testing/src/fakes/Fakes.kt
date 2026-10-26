@@ -16,6 +16,8 @@ import dev.justinsmith.interval.platform.BackgroundWorkout
 import dev.justinsmith.interval.platform.Beep
 import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.Haptic
+import dev.justinsmith.interval.platform.PlanReminder
+import dev.justinsmith.interval.platform.PlanReminders
 import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
@@ -223,6 +225,17 @@ class RecordingBackgroundWorkout : BackgroundWorkout {
     }
 }
 
+/** [PlanReminders] that keep nothing and remember every set they were handed; [pending] is the latest. */
+class RecordingPlanReminders : PlanReminders {
+    val schedules = mutableListOf<List<PlanReminder>>()
+
+    val pending: List<PlanReminder> get() = schedules.lastOrNull().orEmpty()
+
+    override suspend fun schedule(reminders: List<PlanReminder>) {
+        schedules += reminders
+    }
+}
+
 /** Room's autoGenerate for a fake DAO: an id of 0 takes the next one, and a given id moves the next past it. */
 private class AutoIds {
     private var next = 1L
@@ -243,9 +256,11 @@ fun fakePlatformModule(
     player: CuePlayer = RecordingCuePlayer(),
     formatter: TimestampFormatter = FixedTimestampFormatter,
     background: BackgroundWorkout = RecordingBackgroundWorkout(),
+    reminders: PlanReminders = RecordingPlanReminders(),
 ): Module = module {
     single { player }
     single { formatter }
     single<AppInfo> { FakeAppInfo }
     single { background }
+    single { reminders }
 }

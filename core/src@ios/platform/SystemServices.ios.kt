@@ -7,12 +7,15 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.uikit.LocalUIViewController
+import dev.justinsmith.interval.timer.MINUTES_PER_HOUR
 import dev.justinsmith.interval.timer.dateOfEpochDay
 import dev.justinsmith.interval.timer.epochDayOf
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSCalendar
 import platform.Foundation.NSCalendarIdentifierGregorian
 import platform.Foundation.NSCalendarUnitDay
+import platform.Foundation.NSCalendarUnitHour
+import platform.Foundation.NSCalendarUnitMinute
 import platform.Foundation.NSCalendarUnitMonth
 import platform.Foundation.NSCalendarUnitYear
 import platform.Foundation.NSDate
@@ -109,6 +112,7 @@ private object MonotonicThroughSleep : AbstractLongTimeSource(DurationUnit.NANOS
 actual fun systemTimestampFormatter(): TimestampFormatter = FoundationTimestampFormatter()
 
 private const val NOON_HOUR = 12L
+private const val TIME_ONLY_YEAR = 2000L
 private class FoundationTimestampFormatter : TimestampFormatter {
     private var formats: Formats? = null
 
@@ -133,6 +137,23 @@ private class FoundationTimestampFormatter : TimestampFormatter {
     override fun dateOfDay(epochDay: Long): String = formats().date.stringFromDate(noonOn(epochDay))
 
     override fun monthTitle(epochDay: Long): String = formats().month.stringFromDate(noonOn(epochDay))
+
+    // Any day will do for the time's words; one with no daylight-saving change, so the minutes are kept.
+    override fun timeOfDay(minuteOfDay: Int): String {
+        val parts = NSDateComponents().apply {
+            year = TIME_ONLY_YEAR
+            month = 1
+            day = 1
+            hour = (minuteOfDay / MINUTES_PER_HOUR).toLong()
+            minute = (minuteOfDay % MINUTES_PER_HOUR).toLong()
+        }
+        return formats().time.stringFromDate(requireNotNull(gregorian.dateFromComponents(parts)))
+    }
+
+    override fun minuteOfDay(epochMillis: Long): Int {
+        val parts = gregorian.components(NSCalendarUnitHour or NSCalendarUnitMinute, fromDate = nsDate(epochMillis))
+        return parts.hour.toInt() * MINUTES_PER_HOUR + parts.minute.toInt()
+    }
 
     // Noon rather than midnight, which a daylight-saving change can skip.
     private fun noonOn(epochDay: Long): NSDate {

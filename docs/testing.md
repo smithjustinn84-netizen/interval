@@ -68,7 +68,8 @@ that depends on the data module.
     whose writes wait for the test's scheduler (`runCurrent()`/`advanceUntilIdle()`). Not
     `backgroundScope`: `advanceUntilIdle` leaves background work waiting.
   - `RecordingCuePlayer`: records beeps, `Speech` lines and haptics. `RecordingBackgroundWorkout`: what the
-    platform was told to keep.
+    platform was told to keep. `RecordingPlanReminders`: every set of reminders the platform was handed,
+    `pending` the latest.
   - `fakePlatformModule(...)` binds the player and formatter for Koin; `fakeStorageModule(...)` binds a
     `FakeStorage` in place of the real `storageModule`.
   - `tabataPreset`, `hiitPreset`, `hangboardPreset`: the built-ins tests lean on, found by name.

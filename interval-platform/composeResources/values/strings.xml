@@ -12,6 +12,17 @@
     <string name="notification_channel_workout_description">The running timer: its clock, phase and round, with Pause and End.</string>
     <string name="notification_workout_text">%1$s · Round %2$d of %3$d</string>
     <string name="notification_round">Round %1$d of %2$d</string>
+    <string name="notification_channel_reminders">Planned workouts</string>
+    <string name="notification_channel_reminders_description">A reminder at the time you chose, on each day with a workout planned.</string>
+    <string name="reminder_body_one">Planned today · %1$s</string>
+    <plurals name="reminder_title_many">
+        <item quantity="one">%1$d workout planned today</item>
+        <item quantity="other">%1$d workouts planned today</item>
+    </plurals>
+    <string name="common_joined">%1$s · %2$s</string>
+    <string name="config_description">%1$s on · %2$s off · ×%3$d</string>
+    <string name="duration_short_seconds">%1$ds</string>
+    <string name="duration_short_minutes">%1$dm</string>
     <string name="cue_get_ready">Get ready</string>
     <string name="cue_work">Work</string>
     <string name="cue_last_round_work">Last round. Work</string>

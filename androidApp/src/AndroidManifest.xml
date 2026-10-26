@@ -12,6 +12,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- Keeps the CPU up while the workout runs with the screen off, so the cues play on time. -->
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <!-- The plan's reminders are alarms, which a reboot drops: PlanReminderReceiver sets them again. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
     <!-- Android 11+ package visibility: lets TextToSpeech find the device's speech engine. -->
     <queries>
@@ -46,6 +48,17 @@
                     android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                     android:value="Keeps an interval-training timer the user started counting, and shows its clock, phase and round with Pause and End, while the app is off screen."/>
         </service>
+
+        <!-- The plan's reminders: each alarm lands here, as do the reboots and clock changes they are set again after. -->
+        <receiver
+                android:exported="false"
+                android:name="dev.justinsmith.interval.platform.PlanReminderReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED"/>
+                <action android:name="android.intent.action.TIME_SET"/>
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>
