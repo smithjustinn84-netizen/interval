@@ -37,8 +37,8 @@ class AppDataExporter(
 
     override suspend fun export(): ShareableFile {
         val now = clock.nowMillis()
-        val bundle = bundle(now)
-        val content = withContext(Dispatchers.Default) { json.encodeToString(bundle) }
+        // Both the mapping and the encoding grow with the history, so neither runs on the caller's main thread.
+        val content = withContext(Dispatchers.Default) { json.encodeToString(bundle(now)) }
         return ShareableFile(ExportBundle.fileName(formatter.dayNumber(now)), ExportBundle.MIME_TYPE, content)
     }
 

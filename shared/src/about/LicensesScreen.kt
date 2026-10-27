@@ -55,6 +55,9 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.settleSpring
 import dev.justinsmith.interval.ui.surfaceButton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.stringResource
 
 /** The licences screen has nothing to resolve; this keeps the route and screen split every screen has. */
@@ -165,11 +168,15 @@ private fun Modifier.creditToggle(expanded: Boolean, onToggle: () -> Unit): Modi
         }
 }
 
-/** The licence as its project wrote it, read from the app's files the first time it is opened and reflowed. */
+/**
+ * The licence as its project wrote it, read from the app's files the first time it is opened and reflowed.
+ * Off the main thread: reading a resource only looks as if it suspends (Android reads the asset on the caller),
+ * and the reflow runs regular expressions over the whole file.
+ */
 @Composable
 private fun LicenseText(file: String, modifier: Modifier = Modifier) {
     val text by produceState<String?>(initialValue = null, file) {
-        value = reflow(Res.readBytes(file).decodeToString())
+        value = withContext(Dispatchers.IO) { reflow(Res.readBytes(file).decodeToString()) }
     }
     Text(
         text.orEmpty(),
