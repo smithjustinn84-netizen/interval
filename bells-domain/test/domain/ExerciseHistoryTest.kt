@@ -73,3 +73,50 @@ class ExerciseHistoryTest {
         assertEquals(20.0, runs.last().set.bellKg)
     }
 }
+
+class ExerciseTrendTest {
+    private var nextId = 1L
+
+    private fun session(startedAt: Long, vararg sets: SetLog) = PastSession("s$startedAt", startedAt, sets.toList())
+
+    private fun set(exercise: Exercise, kg: Double, reps: Int, seconds: Int? = null) =
+        SetLog(nextId++, exercise, kg, reps, null, nextId, seconds = seconds)
+
+    @Test
+    fun `a weighted lift trends by its heaviest set each session oldest first`() {
+        val recent = listOf(
+            session(3_000, set(BuiltInExercise.Press, 20.0, 5), set(BuiltInExercise.Press, 24.0, 3)),
+            session(2_000, set(BuiltInExercise.Press, 16.0, 8)),
+            session(1_000, set(BuiltInExercise.Press, 12.0, 10)),
+        )
+        val trend = exerciseTrend(BuiltInExercise.Press, recent)
+        assertEquals(TrendMeasure.Kg, trend?.measure)
+        assertEquals(listOf(12.0, 16.0, 24.0), trend?.points?.map { it.value })
+        assertEquals(24.0, trend?.latest)
+    }
+
+    @Test
+    fun `bodyweight with nothing added trends by reps and a hold by its length`() {
+        val pushUps = listOf(
+            session(2_000, set(BuiltInExercise.PushUp, 0.0, 15)),
+            session(1_000, set(BuiltInExercise.PushUp, 0.0, 12)),
+        )
+        assertEquals(TrendMeasure.Reps, exerciseTrend(BuiltInExercise.PushUp, pushUps)?.measure)
+        assertEquals(listOf(12.0, 15.0), exerciseTrend(BuiltInExercise.PushUp, pushUps)?.points?.map { it.value })
+        val holds = listOf(
+            session(2_000, set(BuiltInExercise.Plank, 0.0, 0, seconds = 45)),
+            session(
+                1_000,
+                set(BuiltInExercise.Plank, 0.0, 0, seconds = 30),
+                set(BuiltInExercise.Plank, 0.0, 0, seconds = 40),
+            ),
+        )
+        assertEquals(TrendMeasure.Seconds, exerciseTrend(BuiltInExercise.Plank, holds)?.measure)
+        assertEquals(listOf(40.0, 45.0), exerciseTrend(BuiltInExercise.Plank, holds)?.points?.map { it.value })
+    }
+
+    @Test
+    fun `one session is no trend`() {
+        assertNull(exerciseTrend(BuiltInExercise.Press, listOf(session(1_000, set(BuiltInExercise.Press, 16.0, 5)))))
+    }
+}

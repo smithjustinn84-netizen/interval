@@ -23,6 +23,8 @@ import kotlin.test.Test
 import kotlin.test.assertTrue
 
 /** An exercise's page, opened from the library: what it is, and the user's history with it. */
+private const val DAY = 24L * 60 * 60 * 1000
+
 class ExerciseDetailTest {
     private fun pressed() = FakeBellsStorage().apply {
         sessions.sessions.update { it + SessionEntity("s1", 0, 60_000, "Press day", 60_000) }
@@ -46,6 +48,33 @@ class ExerciseDetailTest {
     }
 
     @Test
+    fun `done more than once its best each session is charted`() = bellsAppTest(
+        storage = FakeBellsStorage().apply {
+            sessions.sessions.update {
+                // A day apart, as the fake formatter counts days from the epoch.
+                it + SessionEntity("s1", 0, 60_000, "Day 0", 60_000) +
+                    SessionEntity("s2", DAY, DAY + 60_000, "Day 1", DAY + 60_000) +
+                    SessionEntity("s3", 2 * DAY, 2 * DAY + 60_000, "Day 2", 2 * DAY + 60_000)
+            }
+            sessions.sets.update {
+                it + SetEntity(1, "s1", "Press", 12.0, 8, null, 10) +
+                    SetEntity(2, "s2", "Press", 16.0, 5, null, DAY + 10) +
+                    SetEntity(3, "s3", "Press", 20.0, 5, null, 2 * DAY + 10) +
+                    SetEntity(4, "s3", "Press", 24.0, 3, null, 2 * DAY + 20)
+            }
+        },
+    ) {
+        onNodeWithText("Exercises").performScrollTo().performClick()
+        waitForText("Search exercises")
+        onAllNodesWithText("Press").onFirst().performClick()
+        waitForText("Done 3 times · last day 2")
+        onNodeWithText("Best each session").performScrollTo().assertExists()
+        onNodeWithText("Last 3 sessions").assertExists()
+        onNodeWithText("Latest 24 kg").assertExists()
+        onNodeWithContentDescription("Best each session, oldest first: 12 kg, 16 kg, 24 kg").assertExists()
+    }
+
+    @Test
     fun `a built-in done shows its sessions and opens one`() = bellsAppTest(storage = pressed()) {
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
@@ -55,6 +84,7 @@ class ExerciseDetailTest {
         // One record, told without the name the page already has.
         onNodeWithText("Your best").assertExists()
         onNodeWithText("Heaviest 16 kg × 5").assertExists()
+        onNodeWithText("Best each session").assertDoesNotExist()
         onNodeWithText("16 kg × 5 · Left").performScrollTo().assertExists()
         onNodeWithText("16 kg × 5 · Right").performClick()
         // The sheet gone, the session's own page.

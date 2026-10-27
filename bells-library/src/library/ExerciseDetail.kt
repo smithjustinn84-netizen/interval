@@ -32,6 +32,7 @@ import dev.justinsmith.bells.domain.ExerciseHistory
 import dev.justinsmith.bells.domain.Muscle
 import dev.justinsmith.bells.domain.Muscles
 import dev.justinsmith.bells.domain.PastSession
+import dev.justinsmith.bells.domain.Trend
 import dev.justinsmith.bells.domain.UnknownExercise
 import dev.justinsmith.bells.domain.collapsedSets
 import dev.justinsmith.bells.domain.muscles
@@ -83,11 +84,14 @@ data class ExerciseDetailUiState(
     val history: ExerciseHistory = ExerciseHistory(),
     val lastDone: String = "",
     val recent: List<DatedSession> = emptyList(),
+    /** Its best each session, once there are two to compare. */
+    val trend: Trend? = null,
 )
 
 /**
  * An exercise's page, as a sheet over the library, beside it on a tablet: its name and facts, its cues, then
- * the user's history with it, their best and the sessions it was in, each opening on [onOpenSession] when there
+ * the user's history with it, their best, their best each session, and the sessions it was in, each opening
+ * on [onOpenSession] when there
  * is one. One of the user's own offers Edit while [editable], which turns the sheet into its form until it is
  * saved or archived: not from a session, whose sets and plan hold the exercise as it is.
  */
@@ -263,6 +267,7 @@ private fun ColumnScope.History(state: ExerciseDetailUiState, onOpen: ((uid: Str
             }
         }
     }
+    state.trend?.let { TrendCard(it) }
     state.recent.forEach { dated -> PastSessionCard(dated, onOpen) }
 }
 

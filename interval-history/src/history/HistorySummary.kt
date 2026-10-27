@@ -4,7 +4,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -27,10 +25,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -68,6 +64,8 @@ import dev.justinsmith.interval.timer.SECONDS_PER_HOUR
 import dev.justinsmith.interval.timer.SECONDS_PER_MINUTE
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.Angles
+import dev.justinsmith.interval.ui.Bar
+import dev.justinsmith.interval.ui.Bars
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EnterEasing
 import dev.justinsmith.interval.ui.IconAction
@@ -371,7 +369,6 @@ internal fun longTotal(seconds: Int): String =
 private fun WeekBars(state: HistoryUiState, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val goal = state.goal
-    val max = state.weeksMax
     val description = stringResource(Res.string.history_weeks_cd, state.weeks.joinToString { it.count.toString() })
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         Row(Modifier.fillMaxWidth()) {
@@ -389,39 +386,14 @@ private fun WeekBars(state: HistoryUiState, modifier: Modifier = Modifier) {
                 )
             }
         }
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .height(Sizes.weeksChart)
-                .semantics { contentDescription = description }
-                .drawBehind {
-                    if (goal != null) {
-                        val y = size.height * (1 - goal.toFloat() / max)
-                        drawLine(
-                            palette.line,
-                            Offset(0f, y),
-                            Offset(size.width, y),
-                            strokeWidth = Sizes.border.toPx(),
-                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(DASH, DASH)),
-                        )
-                    }
-                },
-            horizontalArrangement = Arrangement.spacedBy(Spacing.space4),
-            verticalAlignment = Alignment.Bottom,
-        ) {
-            state.weeks.forEach { week ->
-                val height = (Sizes.weeksChart * (week.count.toFloat() / max)).coerceAtLeast(Sizes.weekBarEmpty)
-                val met = goal == null || week.count >= goal
-                val bar = Modifier.weight(1f).height(height).clip(Corners.radius12)
-                Box(
-                    when {
-                        week.current -> bar.border(Sizes.border, palette.accent, Corners.radius12)
-                        met && week.count > 0 -> bar.background(palette.accent)
-                        else -> bar.background(palette.surfaceVariant)
-                    },
-                )
-            }
-        }
+        Bars(
+            bars = state.weeks.map { week ->
+                Bar(week.count.toFloat(), filled = goal == null || week.count >= goal, outlined = week.current)
+            },
+            max = state.weeksMax.toFloat(),
+            description = description,
+            line = goal?.toFloat(),
+        )
         Row(Modifier.fillMaxWidth().clearAndSetSemantics {}) {
             Spacer(Modifier.weight(1f))
             Text(
@@ -432,8 +404,6 @@ private fun WeekBars(state: HistoryUiState, modifier: Modifier = Modifier) {
         }
     }
 }
-
-private const val DASH = 12f
 
 /** A pill-shaped quiet action, such as "Set a weekly goal". */
 @Composable

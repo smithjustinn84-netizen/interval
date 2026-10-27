@@ -32,6 +32,18 @@
     </plurals>
     <string name="detail_never">Not logged yet. Its sets will show here.</string>
     <string name="detail_best">Your best</string>
+    <string name="detail_trend">Best each session</string>
+    <plurals name="detail_trend_span">
+        <item quantity="one">Last session</item>
+        <item quantity="other">Last %1$d sessions</item>
+    </plurals>
+    <string name="detail_trend_latest">Latest %1$s</string>
+    <string name="detail_trend_kg">%1$s kg</string>
+    <plurals name="detail_trend_reps">
+        <item quantity="one">%1$d rep</item>
+        <item quantity="other">%1$d reps</item>
+    </plurals>
+    <string name="detail_trend_cd">Best each session, oldest first: %1$s</string>
     <string name="detail_edit">Edit</string>
     <string name="detail_no_cues">No cues yet. Add some with Edit.</string>
     <plurals name="detail_sets_repeated">

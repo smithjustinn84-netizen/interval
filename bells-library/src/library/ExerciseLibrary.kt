@@ -22,6 +22,7 @@ import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.ExerciseFilters
 import dev.justinsmith.bells.domain.LiftSession
 import dev.justinsmith.bells.domain.exerciseHistory
+import dev.justinsmith.bells.domain.exerciseTrend
 import dev.justinsmith.bells.domain.offeredExercises
 import dev.justinsmith.bells.domain.ownedEquipment
 import dev.justinsmith.bells.domain.recentExercises
@@ -100,6 +101,7 @@ fun exerciseDetail(
         history,
         lastDone = history.lastDoneAtEpochMillis?.let(timestamps::date).orEmpty(),
         recent = history.recent.map { DatedSession(it, timestamps.date(it.startedAtEpochMillis)) },
+        trend = exerciseTrend(exercise, history.recent),
     )
 }
 

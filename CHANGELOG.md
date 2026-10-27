@@ -19,6 +19,8 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   screen readers, so TalkBack and VoiceOver can jump between sections.
 - Lift: a rest between sets is heard with the screen off. Android keeps it counting in a notification and
   beeps as it ends; iOS shows a notification when the rest is over (once notifications are allowed).
+- Lift: an exercise's page charts your best each session, the weight, reps or hold as the exercise counts,
+  once it has been done twice.
 
 ## [0.1.0] — 2026-10-26
 
