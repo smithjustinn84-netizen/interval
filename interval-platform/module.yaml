@@ -23,6 +23,8 @@ dependencies@android:
   - $libs.androidx.activity.compose
   # FileProvider, for the share sheet to read an exported file.
   - $libs.androidx.core.ktx
+  # The plan reminders' alarm record, a DataStore of its own the boot receiver reads.
+  - $libs.androidx.datastore.preferences.core
 
 test-dependencies:
   - //interval-testing
