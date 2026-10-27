@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import dev.justinsmith.interval.history.resources.Res
@@ -290,7 +291,7 @@ internal fun MonthSummary(
                 style = IntervalTheme.type.section,
                 color = palette.text,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).semantics { heading() },
             )
             IconAction(IntervalIcons.Chevron, stringResource(Res.string.history_month_next_cd), { onShiftMonth(1) })
         }

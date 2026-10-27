@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -395,7 +396,12 @@ private fun ProgramHeader(following: Program, day: ProgramDay?, onOpenProgram: (
                 style = IntervalTheme.type.caption,
                 color = palette.textDim,
             )
-            Text(programName(following), style = IntervalTheme.type.section, color = palette.text)
+            Text(
+                programName(following),
+                style = IntervalTheme.type.section,
+                color = palette.text,
+                modifier = Modifier.semantics { heading() },
+            )
         }
         Icon(
             IntervalIcons.Chevron,

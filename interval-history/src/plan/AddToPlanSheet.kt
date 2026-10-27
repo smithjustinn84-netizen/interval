@@ -34,6 +34,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import dev.justinsmith.interval.history.resources.Res
@@ -95,7 +96,12 @@ fun AddToPlanSheet(
     val title = stringResource(Res.string.plan_add_title)
     IntervalSheet(title = title, onDismiss = onDismiss) { hide ->
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space16)) {
-            Text(title, style = IntervalTheme.type.title, color = palette.text)
+            Text(
+                title,
+                style = IntervalTheme.type.title,
+                color = palette.text,
+                modifier = Modifier.semantics { heading() },
+            )
             if (choices.size > 1) {
                 Caption(stringResource(Res.string.plan_workout))
                 ListCard(Modifier.selectableGroup()) {

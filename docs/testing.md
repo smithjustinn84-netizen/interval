@@ -106,6 +106,9 @@ that depends on the data module.
 - Assert the English text literally ("Next: rest 0:15"), not through `getString`: an expectation read
   from the same key can't catch a screen showing the wrong one. This is where the words are tested;
   common ViewModel tests assert typed state and never load a resource (Android local tests can't).
+- Section titles are headings for screen readers: `GroupLabel`, the title bar, a dialog's title, and the
+  titles a sheet, a summary or a page draws itself (`Modifier.semantics { heading() }`). Assert one with
+  `isHeading()` (`interval-ui/test@jvm/ui/HeadingsTest.kt`), so a title that loses its semantics fails a test.
 - Use `androidx.compose.ui.test.v2.*`, because the v1 `runComposeUiTest` is deprecated and
   `allWarningsAsErrors` rejects it. Opt in per file with `@file:OptIn(ExperimentalTestApi::class)`,
   never module-wide.

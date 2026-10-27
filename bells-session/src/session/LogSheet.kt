@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.bells.domain.CustomExercise
@@ -316,7 +317,12 @@ internal fun ExerciseCard(exercise: Exercise, onChange: (() -> Unit)?, onHowTo: 
                     style = IntervalTheme.type.caption,
                     color = palette.textDim,
                 )
-                Text(exerciseName(exercise), style = IntervalTheme.type.section, color = palette.text)
+                Text(
+                    exerciseName(exercise),
+                    style = IntervalTheme.type.section,
+                    color = palette.text,
+                    modifier = Modifier.semantics { heading() },
+                )
                 Text(exerciseFacts(exercise), style = IntervalTheme.type.meta, color = palette.textDim)
                 (exercise as? CustomExercise)?.cues?.takeIf { it.isNotBlank() }?.let { cues ->
                     Text(cues, style = IntervalTheme.type.meta, color = palette.text)

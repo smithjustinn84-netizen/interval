@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import dev.justinsmith.interval.platform.prefersReducedMotion
@@ -331,6 +332,7 @@ private fun ColumnScope.SummaryTitle(state: WorkoutUiState, entrance: MutableTra
             stringResource(if (state.ended) Res.string.workout_ended else Res.string.workout_done),
             style = IntervalTheme.type.display,
             color = IntervalTheme.workout.done,
+            modifier = Modifier.semantics { heading() },
         )
     }
     if (ring) {

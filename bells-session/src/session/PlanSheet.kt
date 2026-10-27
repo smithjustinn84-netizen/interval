@@ -18,6 +18,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.bells.domain.Block
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.ExerciseFilters
@@ -218,6 +220,7 @@ internal fun PlanBlockSheet(
                     liftName(row.block.exercise, row.block.double),
                     style = IntervalTheme.type.section,
                     color = IntervalTheme.palette.text,
+                    modifier = Modifier.semantics { heading() },
                 )
                 Text(
                     stringResource(Res.string.plan_done_of, row.done, row.entry.copy(kept = null).plannedSets().size),

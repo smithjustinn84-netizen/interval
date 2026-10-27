@@ -15,6 +15,8 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   Lift's sessions, programs, exercises and gear (schema 1) to share or save.
 - Share: a finished workout (its summary and its page in History) and a finished Lift session (its summary
   and its page) can be sent in words through the system share sheet.
+- Accessibility: section titles, dialog titles, sheet titles and the summaries' headings are headings for
+  screen readers, so TalkBack and VoiceOver can jump between sections.
 
 ## [0.1.0] — 2026-10-26
 

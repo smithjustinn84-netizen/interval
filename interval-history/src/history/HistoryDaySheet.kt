@@ -11,6 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.history_add_workout
 import dev.justinsmith.interval.history.resources.history_day_nothing
@@ -51,7 +53,12 @@ internal fun DaySheetContent(sheet: DaySheet, actions: HistoryActions, onAddWork
     IntervalSheet(title = title, onDismiss = { actions.onOpenDay(null) }) { hide ->
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space16)) {
             Column {
-                Text(title, style = IntervalTheme.type.title, color = palette.text)
+                Text(
+                    title,
+                    style = IntervalTheme.type.title,
+                    color = palette.text,
+                    modifier = Modifier.semantics { heading() },
+                )
                 if (sheet.plans.isNotEmpty()) {
                     Text(
                         pluralStringResource(Res.plurals.history_day_planned, sheet.plans.size, sheet.plans.size),

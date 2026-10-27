@@ -23,6 +23,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.CustomExercise
 import dev.justinsmith.bells.domain.Exercise
@@ -162,7 +164,12 @@ private fun ColumnScope.ExerciseHead(exercise: Exercise, onEdit: (() -> Unit)?) 
     val palette = IntervalTheme.palette
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text(exerciseName(exercise), style = IntervalTheme.type.section, color = palette.text)
+            Text(
+                exerciseName(exercise),
+                style = IntervalTheme.type.section,
+                color = palette.text,
+                modifier = Modifier.semantics { heading() },
+            )
             Text(exerciseFacts(exercise), style = IntervalTheme.type.meta, color = palette.textDim)
         }
         onEdit?.let { QuietTextButton(stringResource(Res.string.detail_edit), it) }

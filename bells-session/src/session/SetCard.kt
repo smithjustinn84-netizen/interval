@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.bells.domain.Band
 import dev.justinsmith.bells.domain.Equipment
@@ -46,7 +47,7 @@ internal fun LiftHeading(
             name,
             style = IntervalTheme.type.section,
             color = IntervalTheme.palette.text,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).semantics { heading() },
         )
         val howTo = stringResource(Res.string.next_how_to_cd, name)
         QuietTextButton(

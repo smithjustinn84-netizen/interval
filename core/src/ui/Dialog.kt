@@ -27,6 +27,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import com.composeunstyled.DialogPanel
 import com.composeunstyled.Scrim
 import com.composeunstyled.UnstyledDialog
@@ -89,7 +91,12 @@ fun IntervalDialog(
                     ),
                     verticalArrangement = Arrangement.spacedBy(Spacing.space12),
                 ) {
-                    Text(title, style = IntervalTheme.type.value, color = palette.text)
+                    Text(
+                        title,
+                        style = IntervalTheme.type.value,
+                        color = palette.text,
+                        modifier = Modifier.semantics { heading() },
+                    )
                     Column(
                         Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(Spacing.space12),

@@ -9,6 +9,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import dev.justinsmith.interval.platform.AppInfo
 import dev.justinsmith.interval.resources.Res
@@ -90,7 +92,7 @@ private fun Hero(version: String?, modifier: Modifier = Modifier) {
             stringResource(Res.string.app_name),
             style = IntervalTheme.type.title,
             color = palette.text,
-            modifier = Modifier.padding(top = Spacing.space16),
+            modifier = Modifier.padding(top = Spacing.space16).semantics { heading() },
         )
         Text(
             version?.let { stringResource(Res.string.about_version, it) }
