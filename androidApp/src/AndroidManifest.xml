@@ -53,6 +53,17 @@
                     android:value="Keeps an interval-training timer the user started counting, and shows its clock, phase and round with Pause and End, while the app is off screen."/>
         </service>
 
+        <!-- Exported files are offered to the share sheet through this provider (paths in res/xml/file_paths.xml). -->
+        <provider
+                android:authorities="dev.justinsmith.interval.files"
+                android:exported="false"
+                android:grantUriPermissions="true"
+                android:name="androidx.core.content.FileProvider">
+            <meta-data
+                    android:name="android.support.FILE_PROVIDER_PATHS"
+                    android:resource="@xml/file_paths"/>
+        </provider>
+
         <!-- The plan's reminders: each alarm lands here, as do the reboots and clock changes they are set again after. -->
         <receiver
                 android:exported="false"

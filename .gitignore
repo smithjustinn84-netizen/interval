@@ -15,6 +15,7 @@ captures/
 .cxx/
 *.jks
 *.keystore
+keystore.properties
 
 # Xcode: keep the project file, shared schemes and shared workspace settings (scheme autocreation
 # is off there, so Xcode doesn't add a duplicate of the app scheme); ignore per-user state

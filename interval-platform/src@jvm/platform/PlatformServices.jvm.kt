@@ -19,6 +19,7 @@ actual fun rememberPlatformModule(): Module = remember {
         single<AppInfo> { DesktopAppInfo() }
         single<BackgroundWorkout> { NoBackgroundWorkout }
         single<PlanReminders> { NoPlanReminders }
+        single<Sharer> { DesktopSharer() }
     }
 }
 

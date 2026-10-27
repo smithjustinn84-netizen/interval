@@ -11,6 +11,8 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   and pushing a `v*` tag builds and attaches the AAB in CI.
 - This changelog, and a CI check that Android and iOS carry the same version.
 - Backup rules: Android's backup and device-to-device transfer carry all of the app's data.
+- Export: Settings > Your data > Export offers one JSON file of your workouts, presets, plan, settings and
+  Lift's sessions, programs, exercises and gear (schema 1) to share or save.
 
 ## [0.1.0] — 2026-10-26
 

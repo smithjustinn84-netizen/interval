@@ -34,7 +34,10 @@ import dev.justinsmith.interval.settings.resources.settings_calories
 import dev.justinsmith.interval.settings.resources.settings_close_cd
 import dev.justinsmith.interval.settings.resources.settings_cues
 import dev.justinsmith.interval.settings.resources.settings_cues_all_off
+import dev.justinsmith.interval.settings.resources.settings_data
 import dev.justinsmith.interval.settings.resources.settings_effort_hint
+import dev.justinsmith.interval.settings.resources.settings_export
+import dev.justinsmith.interval.settings.resources.settings_export_hint
 import dev.justinsmith.interval.settings.resources.settings_halfway
 import dev.justinsmith.interval.settings.resources.settings_halfway_hint
 import dev.justinsmith.interval.settings.resources.settings_halfway_needs_cue
@@ -90,7 +93,7 @@ fun SettingsRoute(
     inPane: Boolean = false,
 ) {
     val scope = currentKoinScope()
-    val viewModel = viewModel { SettingsViewModel(scope.get(), scope.get()) }
+    val viewModel = viewModel { SettingsViewModel(scope.get(), scope.get(), scope.get(), scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     SettingsScreen(
         state = state,
@@ -107,6 +110,7 @@ fun SettingsRoute(
         onSetWeightUnit = viewModel::setWeightUnit,
         onClearWeight = viewModel::clearWeight,
         onSetEffort = viewModel::setEffort,
+        onExport = viewModel::export,
     )
 }
 
@@ -130,6 +134,7 @@ fun SettingsScreen(
     onSetWeightUnit: (WeightUnit) -> Unit = {},
     onClearWeight: () -> Unit = {},
     onSetEffort: (Effort) -> Unit = {},
+    onExport: () -> Unit = {},
 ) {
     var editingPrep by rememberSaveable { mutableStateOf(false) }
     var editingWeight by rememberSaveable { mutableStateOf(false) }
@@ -141,6 +146,7 @@ fun SettingsScreen(
         onEditWeight = { editingWeight = true },
         onSetEffort,
         onSetTheme,
+        onExport,
         onShowAbout,
     )
     if (inPane) {
@@ -189,7 +195,7 @@ fun SettingsScreen(
 /** One group of settings, its label over its card, keyed for the grid. */
 private class SettingsGroup(val key: String, val content: @Composable () -> Unit)
 
-/** The groups in order: cues, the workout, calories, appearance and About. */
+/** The groups in order: cues, the workout, calories, appearance, your data and About. */
 @Suppress("detekt.LongParameterList") // One callback per setting, as the screen takes them.
 private fun settingsGroups(
     state: SettingsUiState,
@@ -199,6 +205,7 @@ private fun settingsGroups(
     onEditWeight: () -> Unit,
     onSetEffort: (Effort) -> Unit,
     onSetTheme: (ThemeMode) -> Unit,
+    onExport: () -> Unit,
     onShowAbout: () -> Unit,
 ): List<SettingsGroup> = listOf(
     SettingsGroup("cues") {
@@ -225,6 +232,16 @@ private fun settingsGroups(
     SettingsGroup("appearance") {
         GroupLabel(stringResource(Res.string.settings_appearance))
         SegmentedPicker(ThemeMode.entries, state.app.theme, label = { stringResource(it.labelRes) }, onSetTheme)
+    },
+    SettingsGroup("data") {
+        GroupLabel(stringResource(Res.string.settings_data))
+        ListCard {
+            LinkRow(
+                stringResource(Res.string.settings_export),
+                stringResource(Res.string.settings_export_hint),
+                onClick = onExport,
+            )
+        }
     },
     SettingsGroup("about") {
         GroupLabel(stringResource(Res.string.settings_about))

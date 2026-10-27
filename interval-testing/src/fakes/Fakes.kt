@@ -18,6 +18,7 @@ import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.PlanReminder
 import dev.justinsmith.interval.platform.PlanReminders
+import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
@@ -257,10 +258,12 @@ fun fakePlatformModule(
     formatter: TimestampFormatter = FixedTimestampFormatter,
     background: BackgroundWorkout = RecordingBackgroundWorkout(),
     reminders: PlanReminders = RecordingPlanReminders(),
+    sharer: Sharer = RecordingSharer(),
 ): Module = module {
     single { player }
     single { formatter }
     single<AppInfo> { FakeAppInfo }
     single { background }
     single { reminders }
+    single { sharer }
 }

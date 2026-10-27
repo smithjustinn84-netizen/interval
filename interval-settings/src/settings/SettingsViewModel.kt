@@ -10,6 +10,7 @@ import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.Beep
 import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.Haptic
+import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.Cue
@@ -25,6 +26,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 data class SettingsUiState(
     val cues: CueSettings,
@@ -40,10 +42,15 @@ data class SettingsUiState(
 /** Toggles a single [CueSettings] flag. */
 enum class CueToggle { Sound, Voice, Halfway, Vibrate }
 
-/** The set-once preferences. A cue switched on plays a sample through [player], so its volume can be checked. */
+/**
+ * The set-once preferences. A cue switched on plays a sample through [player], so its volume can be checked.
+ * Export builds the file with [exporter] and hands it to [sharer].
+ */
 class SettingsViewModel(
     private val repository: IntervalRepository,
     private val player: CuePlayer,
+    private val exporter: DataExporter,
+    private val sharer: Sharer,
 ) : ViewModel() {
     val state: StateFlow<SettingsUiState> =
         combine(repository.cueSettings, repository.config, repository.appSettings, ::buildState)
@@ -111,6 +118,11 @@ class SettingsViewModel(
 
     fun setEffort(effort: Effort) {
         updateBody { it.copy(effort = effort) }
+    }
+
+    /** Builds the export of everything stored and offers it to share or save. */
+    fun export() {
+        viewModelScope.launch { sharer.shareFile(exporter.export()) }
     }
 
     private fun updateBody(transform: (BodySettings) -> BodySettings) {

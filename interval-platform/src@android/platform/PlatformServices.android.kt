@@ -37,6 +37,7 @@ actual fun rememberPlatformModule(): Module {
             single<AppInfo> { AndroidAppInfo(context) }
             single<BackgroundWorkout> { AndroidBackgroundWorkout(context) }
             single<PlanReminders> { AndroidPlanReminders(context) }
+            single<Sharer> { AndroidSharer(context) }
         }
     }
 }

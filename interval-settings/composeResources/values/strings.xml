@@ -37,6 +37,9 @@
     <string name="weight_more_cd">More weight</string>
     <string name="weight_sheet_privacy">Only used to estimate calories. It stays on this device.</string>
     <string name="weight_sheet_clear">Turn off calorie estimates</string>
+    <string name="settings_data">Your data</string>
+    <string name="settings_export">Export</string>
+    <string name="settings_export_hint">A file of your workouts, presets, plan, settings and lifting, to keep or move</string>
     <string name="settings_about">About</string>
     <string name="settings_about_app">About Interval</string>
     <string name="settings_about_app_hint">Version, credits and licenses</string>

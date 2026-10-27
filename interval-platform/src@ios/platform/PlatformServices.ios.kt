@@ -67,6 +67,7 @@ actual fun rememberPlatformModule(): Module = remember {
         single<AppInfo> { IosAppInfo() }
         single<BackgroundWorkout> { IosBackgroundWorkout() }
         single<PlanReminders> { IosPlanReminders() }
+        single<Sharer> { IosSharer() }
     }
 }
 

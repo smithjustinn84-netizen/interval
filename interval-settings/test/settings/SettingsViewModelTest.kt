@@ -5,9 +5,11 @@ package dev.justinsmith.interval.settings
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.MainDispatcherTest
 import dev.justinsmith.interval.fakes.RecordingCuePlayer
+import dev.justinsmith.interval.fakes.RecordingSharer
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.Beep
 import dev.justinsmith.interval.platform.Haptic
+import dev.justinsmith.interval.platform.ShareableFile
 import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.WeightUnit
@@ -23,7 +25,15 @@ class SettingsViewModelTest : MainDispatcherTest() {
     private val storage = FakeStorage()
     private val repository = storage.repository()
     private val player = RecordingCuePlayer()
-    private val viewModel by lazy { SettingsViewModel(repository, player) }
+    private val export = ShareableFile("interval-2026-10-15.json", "application/json", "{}")
+    private val sharer = RecordingSharer()
+    private val viewModel by lazy { SettingsViewModel(repository, player, { export }, sharer) }
+
+    @Test
+    fun `export offers the exporter's file to share`() {
+        viewModel.export()
+        assertEquals(listOf(export), sharer.files)
+    }
 
     @Test
     fun `toggles flip a single cue setting`() {

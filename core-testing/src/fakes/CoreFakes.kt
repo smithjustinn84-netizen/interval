@@ -1,6 +1,8 @@
 package dev.justinsmith.interval.fakes
 
 import dev.justinsmith.interval.platform.AppInfo
+import dev.justinsmith.interval.platform.ShareableFile
+import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.timer.MINUTES_PER_HOUR
 import dev.justinsmith.interval.timer.dateOfEpochDay
@@ -40,4 +42,18 @@ object FixedTimestampFormatter : TimestampFormatter {
 /** A build that calls itself [version]. */
 object FakeAppInfo : AppInfo {
     override val version: String = "1.2.3"
+}
+
+/** Records what was offered to the system to share. */
+class RecordingSharer : Sharer {
+    val files = mutableListOf<ShareableFile>()
+    val texts = mutableListOf<String>()
+
+    override suspend fun shareFile(file: ShareableFile) {
+        files += file
+    }
+
+    override fun shareText(text: String) {
+        texts += text
+    }
 }

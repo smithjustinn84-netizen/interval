@@ -121,7 +121,8 @@ expect fun AskToShowNotifications()
 
 /**
  * Koin definitions for platform services: [PlatformStorage], a [CuePlayer], a [TimestampFormatter],
- * [AppInfo], a [BackgroundWorkout] and [PlanReminders]. Built in composition because Android needs a `Context`.
+ * [AppInfo], a [BackgroundWorkout], [PlanReminders] and a [Sharer]. Built in composition because Android needs a
+ * `Context`.
  */
 @Composable
 expect fun rememberPlatformModule(): Module

@@ -6,23 +6,32 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.bells.di.bellsModules
 import dev.justinsmith.bells.di.bellsStorageModule
 import dev.justinsmith.bells.platform.rememberBellsPlatformModule
+import dev.justinsmith.interval.export.AppDataExporter
 import dev.justinsmith.interval.platform.rememberPlatformModule
+import dev.justinsmith.interval.settings.DataExporter
 import org.koin.core.KoinApplication
 import org.koin.core.module.Module
 import org.koin.dsl.koinApplication
+import org.koin.dsl.module
 
 /**
  * [platformModule] supplies storage locations, the cue player, the timestamp formatter and the plan's
  * reminders; [storage] the database and DataStore built from them (tests swap in fakes); [historyModule]
  * keeps those reminders in step with the plan. [bellsPlatform] and [bellsStorage] do the
- * same for Lift, whose own database sits beside this one.
+ * same for Lift, whose own database sits beside this one. The app adds the export, which reads both.
  */
 fun appModules(
     platformModule: Module,
     storage: Module = storageModule,
     bellsPlatform: Module,
     bellsStorage: Module = bellsStorageModule,
-): List<Module> = listOf(platformModule, storage, dataModule, historyModule) + bellsModules(bellsPlatform, bellsStorage)
+): List<Module> =
+    listOf(platformModule, storage, dataModule, historyModule) + bellsModules(bellsPlatform, bellsStorage) + appModule
+
+/** What only the app can build: the export, over both sides' storage. */
+private val appModule = module {
+    single<DataExporter> { AppDataExporter(get(), get(), get(), get(), get()) }
+}
 
 /**
  * Keeps the Koin container alive across Android configuration changes and closes it when the app

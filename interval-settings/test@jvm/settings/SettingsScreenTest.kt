@@ -26,6 +26,7 @@ import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
+import dev.justinsmith.interval.ui.scrollToText
 import dev.justinsmith.interval.ui.setThemedContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -59,8 +60,10 @@ class SettingsScreenTest {
             onSetWeightUnit = { calls += it },
             onClearWeight = { calls += "clear weight" },
             onSetEffort = { calls += it },
+            onExport = { calls += "export" },
         )
     }
+
 
     @Test
     fun `full screen on a tablet the groups sit side by side`() = runUiTest(Window.TabletPortrait) {
@@ -80,10 +83,13 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun `the about row opens about`() = runUiTest {
+    fun `the export row asks for the export and the about row opens about`() = runUiTest {
         setThemedContent { Screen() }
-        onNodeWithText("About Interval").performScrollTo().performClick()
-        assertEquals(listOf<Any>("about"), calls)
+        scrollToText("Export")
+        onNodeWithText("Export").performClick()
+        scrollToText("About Interval")
+        onNodeWithText("About Interval").performClick()
+        assertEquals(listOf<Any>("export", "about"), calls)
     }
 
     @Test

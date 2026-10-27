@@ -16,7 +16,6 @@ import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventDispatcher
@@ -29,6 +28,7 @@ import dev.justinsmith.interval.timer.sameShape
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
+import dev.justinsmith.interval.ui.scrollToText
 import org.koin.core.KoinApplication
 import kotlin.math.abs
 import kotlin.test.Test
@@ -253,7 +253,8 @@ class AppNavigationTest {
     @Test
     fun `settings leads to about, about to the licenses, and back again`() = appTest {
         onNodeWithContentDescription("Settings").performClick()
-        onNodeWithText("About Interval").performScrollTo().performClick()
+        scrollToText("About Interval")
+        onNodeWithText("About Interval").performClick()
         onNodeWithText("Version 1.2.3").assertExists()
         onNodeWithText("Cues").assertDoesNotExist()
 

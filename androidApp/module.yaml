@@ -15,8 +15,13 @@ settings:
     compileSdk: 37
     targetSdk: 37
     minSdk: 26
-    versionCode: 1
-    versionName: "0.1.0"
+    # Bump versionCode before every Play upload; versionName is the release in CHANGELOG.md.
+    # tools/check_versions.py keeps both equal to the iOS project's.
+    versionCode: 2
+    versionName: "0.2.0"
+    # Signs the release AAB (`./kotlin package -m androidApp`) with androidApp/keystore.properties
+    # (gitignored: storeFile, storePassword, keyAlias, keyPassword). CI writes it from secrets.
+    signing: enabled
   kotlin:
     allWarningsAsErrors: true
 

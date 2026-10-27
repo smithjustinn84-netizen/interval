@@ -109,3 +109,18 @@ expect val realElapsedTime: TimeSource.WithComparableMarks
 fun interface WallClock {
     fun nowMillis(): Long
 }
+
+/** A text file the app offers the system: its [name] with its extension, its [mimeType], and its [content]. */
+data class ShareableFile(val name: String, val mimeType: String, val content: String)
+
+/**
+ * Hands something of the user's to the system: Android's share sheet, iOS's activity sheet; on desktop a file
+ * goes to a save dialog and text to the clipboard. Injected, so tests record what was offered.
+ */
+interface Sharer {
+    /** Offers [file] to share or save. It is written somewhere temporary first, so this may suspend. */
+    suspend fun shareFile(file: ShareableFile)
+
+    /** Offers [text] to share. */
+    fun shareText(text: String)
+}

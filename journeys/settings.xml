@@ -5,7 +5,10 @@
   </description>
   <actions>
     <action>Tap the "Settings" button on the Timer tab</action>
-    <action>Verify that the Settings screen shows "Cues", "Workout" and "Appearance"</action>
+    <action>Verify that the Settings screen shows "Cues", "Workout", "Appearance" and "Your data"</action>
+    <action>Tap "Export" under "Your data"</action>
+    <action>Verify that the system share sheet opens with a file named like "interval-2026-10-27.json" (today's date)</action>
+    <action>Dismiss the share sheet with Back</action>
     <action>Tap the "Voice" switch</action>
     <action>Verify that the "Voice" switch is off</action>
     <action>Tap "Dark" in the theme picker</action>
