@@ -50,6 +50,15 @@ class WorkoutService : Service() {
     private var wakeLock: PowerManager.WakeLock? = null
     private var showing = false
 
+    // Looked up once, on first use: each is a call into the system (the package manager for the launch
+    // intent, the activity manager for each pending intent, the resource table for the icon), and the
+    // notification is built again on the main thread every second the workout runs.
+    private val notifications by lazy { getSystemService(NotificationManager::class.java) }
+    private val icon by lazy { notificationIcon() }
+    private val openApp by lazy { openAppIntent(REQUEST_OPEN) }
+    private val togglePauseIntent by lazy { serviceAction(ACTION_TOGGLE_PAUSE, REQUEST_TOGGLE_PAUSE) }
+    private val endIntent by lazy { serviceAction(ACTION_END, REQUEST_END) }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
@@ -84,7 +93,7 @@ class WorkoutService : Service() {
         scope.launch {
             status.filterNotNull().collect { current ->
                 keepAwake(!current.paused)
-                getSystemService(NotificationManager::class.java)?.notify(NOTIFICATION_ID, notification(current))
+                notifications?.notify(NOTIFICATION_ID, notification(current))
             }
         }
     }
@@ -119,7 +128,7 @@ class WorkoutService : Service() {
             description = getString(Res.string.notification_channel_workout_description)
             setShowBadge(false)
         }
-        getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)
+        notifications?.createNotificationChannel(channel)
     }
 
     /**
@@ -151,14 +160,14 @@ class WorkoutService : Service() {
             .setContentText(getString(Res.string.notification_workout_text, phase, status.round, status.rounds))
             .setColor(color.toArgb())
             .setColorized(true)
-            .addAction(0, pauseLabel, serviceAction(ACTION_TOGGLE_PAUSE, REQUEST_TOGGLE_PAUSE))
-            .addAction(0, getString(Res.string.workout_end), serviceAction(ACTION_END, REQUEST_END))
+            .addAction(0, pauseLabel, togglePauseIntent)
+            .addAction(0, getString(Res.string.workout_end), endIntent)
             .build()
     }
 
     /** What every version of the notification shares: silent, ongoing, on the lock screen, opens the app. */
     private fun NotificationCompat.Builder.common(): NotificationCompat.Builder = this
-        .setSmallIcon(notificationIcon())
+        .setSmallIcon(icon)
         .setOngoing(true)
         .setOnlyAlertOnce(true)
         .setSilent(true)
@@ -166,7 +175,7 @@ class WorkoutService : Service() {
         .setCategory(NotificationCompat.CATEGORY_WORKOUT)
         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
         .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
-        .setContentIntent(openAppIntent(REQUEST_OPEN))
+        .setContentIntent(openApp)
 
     private fun appName(): CharSequence = applicationInfo.loadLabel(packageManager)
 

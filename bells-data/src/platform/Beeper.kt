@@ -8,4 +8,7 @@ import dev.justinsmith.bells.domain.EmomCue
  */
 fun interface Beeper {
     fun beep(cue: EmomCue)
+
+    /** Lets go of what the platform holds for the tones. The container calls it on close; most hold nothing. */
+    fun release() = Unit
 }
