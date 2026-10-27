@@ -47,6 +47,9 @@
     <string name="log_fewer_reps">Fewer reps</string>
     <string name="log_more_reps">More reps</string>
     <string name="summary_done">Done</string>
+    <string name="summary_share">Share</string>
+    <string name="share_session_figures">%1$s · %2$s moved · %3$d reps</string>
+    <string name="share_session_record">%1$s: %2$s</string>
     <string name="summary_shared">Counts toward your week and your goal</string>
     <string name="summary_program_finished">%1$s finished · every day done</string>
     <string name="summary_week_of_goal">%1$d of %2$d this week</string>
@@ -84,6 +87,7 @@
     <string name="history_delete_title">Delete session?</string>
     <string name="history_delete_text">It leaves your history, your week and your records.</string>
     <string name="history_delete">Delete</string>
+    <string name="history_share">Share session</string>
     <string name="history_more_options_cd">More options</string>
     <string name="history_close_cd">Close session</string>
     <string name="history_program_day">%1$s · day %2$d</string>

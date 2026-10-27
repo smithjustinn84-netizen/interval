@@ -48,6 +48,7 @@ import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.ProgressRing
+import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.presetNameOrCustom
@@ -66,6 +67,7 @@ import dev.justinsmith.interval.workout.resources.workout_ended
 import dev.justinsmith.interval.workout.resources.workout_repeat
 import dev.justinsmith.interval.workout.resources.workout_save_preset
 import dev.justinsmith.interval.workout.resources.workout_saved
+import dev.justinsmith.interval.workout.resources.workout_share
 import dev.justinsmith.interval.workout.resources.workout_stat_calories
 import dev.justinsmith.interval.workout.resources.workout_stat_rounds
 import dev.justinsmith.interval.workout.resources.workout_stat_rounds_value
@@ -87,9 +89,12 @@ internal fun SummaryLayout(
     onRepeat: () -> Unit,
     onSavePreset: (Preset) -> Unit,
     onExit: () -> Unit,
+    onShare: (String) -> Unit,
 ) {
     var draft by rememberPresetDraft()
     val onSave = { draft = PresetDraft.saveCurrent(state.config) }
+    val shareText = workoutShareText(state)
+    val share = { onShare(shareText) }
     val entrance = rememberEntrance()
     val padding = Modifier
         .fillMaxSize()
@@ -134,6 +139,7 @@ internal fun SummaryLayout(
                     onRepeat,
                     onSave = onSave,
                     onExit = onExit,
+                    onShare = share,
                     modifier = Modifier.width(Sizes.setupColumnLandscape),
                 )
             }
@@ -146,6 +152,7 @@ internal fun SummaryLayout(
                     onRepeat,
                     onSave = onSave,
                     onExit = onExit,
+                    onShare = share,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -167,6 +174,7 @@ private fun SummaryActions(
     onRepeat: () -> Unit,
     onSave: () -> Unit,
     onExit: () -> Unit,
+    onShare: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(entrance, modifier, enter = risingEnter(Motion.STAGGER_MILLIS * ACTIONS_STEP)) {
@@ -185,6 +193,11 @@ private fun SummaryActions(
                     )
                 }
             }
+            QuietTextButton(
+                stringResource(Res.string.workout_share),
+                onShare,
+                Modifier.align(Alignment.CenterHorizontally),
+            )
             BigButton(
                 stringResource(Res.string.common_done),
                 onExit,

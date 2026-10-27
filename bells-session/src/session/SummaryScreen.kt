@@ -37,6 +37,7 @@ import dev.justinsmith.bells.session.resources.Res
 import dev.justinsmith.bells.session.resources.common_joined
 import dev.justinsmith.bells.session.resources.summary_done
 import dev.justinsmith.bells.session.resources.summary_program_finished
+import dev.justinsmith.bells.session.resources.summary_share
 import dev.justinsmith.bells.session.resources.summary_shared
 import dev.justinsmith.bells.session.resources.summary_streak
 import dev.justinsmith.bells.session.resources.summary_week_count
@@ -48,6 +49,7 @@ import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.Burst
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
+import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.isLandscape
@@ -66,9 +68,11 @@ fun SummaryScreen(
     onDone: () -> Unit,
     modifier: Modifier = Modifier,
     onKeep: (SaveScope, String, Set<Int>) -> Unit = { _, _, _ -> },
+    onShare: (String) -> Unit = {},
 ) {
     val palette = IntervalTheme.palette
     val session = finished.session
+    val shareText = sessionShareText(session, finished.records)
     val choices = rememberChangesChoices()
     val entrance = rememberEntrance()
     // Done, or Back, with the changes neither saved nor set aside asks once before the choice is lost.
@@ -109,7 +113,7 @@ fun SummaryScreen(
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
                         Arrival(entrance, HEADING_STEP) { SummaryHeading(session.title) }
                     }
-                    Arrival(entrance, FOOTER_STEP) { SummaryFooter(finished, leave) }
+                    Arrival(entrance, FOOTER_STEP) { SummaryFooter(finished, leave, onShare = { onShare(shareText) }) }
                 }
                 Column(
                     Modifier
@@ -143,7 +147,7 @@ fun SummaryScreen(
                     Arrival(entrance, STATS_STEP) { SessionStats(session, finished.records, highlight = true) }
                     Arrival(entrance, CHANGES_STEP) { Column { NextTimeCards(finished, choices, onKeep) } }
                 }
-                Arrival(entrance, FOOTER_STEP) { SummaryFooter(finished, leave) }
+                Arrival(entrance, FOOTER_STEP) { SummaryFooter(finished, leave, onShare = { onShare(shareText) }) }
             }
         }
     }
@@ -203,9 +207,9 @@ private fun SummaryHeading(title: String, modifier: Modifier = Modifier) {
     }
 }
 
-/** Where the week stands with the session in it, the program it finished if it did, where it went, and Done. */
+/** Where the week stands with the session in it, the program it finished if it did, where it went, Share and Done. */
 @Composable
-private fun SummaryFooter(finished: Finished, onDone: () -> Unit) {
+private fun SummaryFooter(finished: Finished, onDone: () -> Unit, onShare: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         finished.week?.let { week ->
             Text(
@@ -232,6 +236,7 @@ private fun SummaryFooter(finished: Finished, onDone: () -> Unit) {
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
         )
+        QuietTextButton(stringResource(Res.string.summary_share), onShare, Modifier.align(Alignment.CenterHorizontally))
         AccentButton(stringResource(Res.string.summary_done), onDone, Modifier.fillMaxWidth())
     }
 }

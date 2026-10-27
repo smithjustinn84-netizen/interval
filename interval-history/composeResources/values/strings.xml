@@ -128,6 +128,10 @@
     <string name="detail_planned_done">Planned · done</string>
     <string name="detail_repeat">Repeat now</string>
     <string name="detail_plan_again">Plan again</string>
+    <string name="detail_share_menu">Share workout</string>
+    <string name="share_detail">%1$s\n%2$s</string>
+    <string name="share_detail_figures">%1$s total · %2$s work</string>
+    <string name="share_detail_calories">%1$s · %2$d kcal</string>
     <string name="detail_delete_menu">Delete workout</string>
     <string name="detail_close_cd">Close workout</string>
     <string name="detail_delete_title">Delete workout?</string>

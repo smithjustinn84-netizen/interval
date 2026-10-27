@@ -29,6 +29,7 @@ import dev.justinsmith.bells.fakes.fakeBellsPlatformModule
 import dev.justinsmith.bells.nav.LiftTab
 import dev.justinsmith.bells.nav.liftEntries
 import dev.justinsmith.bells.nav.liftRoutes
+import dev.justinsmith.interval.fakes.RecordingSharer
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.NoticeHost
@@ -47,13 +48,15 @@ fun DesktopComposeUiTest.setBellsContent(content: @Composable () -> Unit) {
 }
 
 /**
- * What a whole-app test drives: the fake storage under the app, its clock, the beeps it played, and [back],
- * the system back gesture.
+ * What a whole-app test drives: the fake storage under the app, its clock, the beeps it played, what it
+ * offered to share, and [back], the system back gesture.
  */
 class BellsAppFixture(
     val storage: FakeBellsStorage,
     val clock: AtomicLong,
     val beeper: RecordingBeeper,
+    /** What the pages offered to share. */
+    val sharer: RecordingSharer,
     private val backInput: DirectNavigationEventInput,
 ) {
     fun back() {
@@ -103,7 +106,14 @@ fun bellsAppTest(
 ) = runUiTest(window) {
     val clock = AtomicLong(0L)
     val beeper = RecordingBeeper()
-    val koin = bellsTestKoin(storage, fakeBellsPlatformModule(beeper = beeper), now = clock::get, intervals = intervals)
+    val sharer = RecordingSharer()
+    val koin = bellsTestKoin(
+        storage,
+        fakeBellsPlatformModule(beeper = beeper),
+        now = clock::get,
+        intervals = intervals,
+        sharer = sharer,
+    )
     val owner = object : NavigationEventDispatcherOwner {
         override val navigationEventDispatcher = NavigationEventDispatcher()
     }
@@ -111,7 +121,7 @@ fun bellsAppTest(
     owner.navigationEventDispatcher.addInput(input)
     try {
         setContent { BellsHost(koin, owner) }
-        block(BellsAppFixture(storage, clock, beeper, input))
+        block(BellsAppFixture(storage, clock, beeper, sharer, input))
     } finally {
         koin.close()
     }

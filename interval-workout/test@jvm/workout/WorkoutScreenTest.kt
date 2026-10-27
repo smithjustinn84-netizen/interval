@@ -57,7 +57,15 @@ class WorkoutScreenTest {
             onEndEarly = { calls += "end early" },
             onSavePreset = { calls += "save ${it.name}" },
             onExit = { calls += "exit" },
+            onShare = { calls += "share $it" },
         )
+    }
+
+    @Test
+    fun `the summary shares the workout in words`() = runUiTest {
+        setThemedContent { Screen(done.toUiState(running = false).copy(elapsedSeconds = 355, calories = 62)) }
+        onNodeWithText("Share").performClick()
+        assertEquals(listOf("share Custom · 30s on · 15s off · ×8\n8/8 rounds · 5:55 · 62 kcal"), calls)
     }
 
     @Test

@@ -83,6 +83,7 @@ import dev.justinsmith.bells.ui.liftName
 import dev.justinsmith.bells.ui.sessionTitle
 import dev.justinsmith.bells.ui.setLine
 import dev.justinsmith.interval.platform.KeepScreenOn
+import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.GroupLabel
@@ -111,6 +112,7 @@ import org.koin.compose.currentKoinScope
 fun SessionRoute(onExit: () -> Unit) {
     val scope = currentKoinScope()
     val filters = scope.get<ExerciseFilterStore>()
+    val sharer = scope.get<Sharer>()
     val viewModel =
         viewModel { SessionViewModel(scope.get(), scope.get(), scope.get(), filters, scope.get(), scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -146,7 +148,12 @@ fun SessionRoute(onExit: () -> Unit) {
         label = "sessionPage",
     ) { shown ->
         when (shown) {
-            is SessionPage.Summary -> SummaryScreen(shown.finished, onDone = onExit, onKeep = viewModel::keepChanges)
+            is SessionPage.Summary -> SummaryScreen(
+                shown.finished,
+                onDone = onExit,
+                onKeep = viewModel::keepChanges,
+                onShare = sharer::shareText,
+            )
 
             is SessionPage.Emom -> EmomScreen(
                 shown.run,

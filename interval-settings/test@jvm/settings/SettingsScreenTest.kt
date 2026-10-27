@@ -64,7 +64,6 @@ class SettingsScreenTest {
         )
     }
 
-
     @Test
     fun `full screen on a tablet the groups sit side by side`() = runUiTest(Window.TabletPortrait) {
         setThemedContent { Screen() }

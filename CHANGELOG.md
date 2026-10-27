@@ -13,6 +13,8 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 - Backup rules: Android's backup and device-to-device transfer carry all of the app's data.
 - Export: Settings > Your data > Export offers one JSON file of your workouts, presets, plan, settings and
   Lift's sessions, programs, exercises and gear (schema 1) to share or save.
+- Share: a finished workout (its summary and its page in History) and a finished Lift session (its summary
+  and its page) can be sent in words through the system share sheet.
 
 ## [0.1.0] — 2026-10-26
 

@@ -57,5 +57,9 @@
         <item quantity="other">%1$d workouts this week</item>
     </plurals>
     <string name="workout_repeat">Repeat</string>
+    <string name="workout_share">Share</string>
+    <string name="share_workout">%1$s\n%2$s</string>
+    <string name="share_workout_figures">%1$s rounds · %2$s</string>
+    <string name="share_workout_calories">%1$s · %2$d kcal</string>
     <string name="workout_save_preset">Save as preset</string>
 </resources>

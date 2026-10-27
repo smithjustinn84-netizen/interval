@@ -32,6 +32,7 @@ import dev.justinsmith.interval.history.resources.detail_delete_title
 import dev.justinsmith.interval.history.resources.detail_plan_again
 import dev.justinsmith.interval.history.resources.detail_planned_done
 import dev.justinsmith.interval.history.resources.detail_repeat
+import dev.justinsmith.interval.history.resources.detail_share_menu
 import dev.justinsmith.interval.history.resources.detail_total
 import dev.justinsmith.interval.history.resources.detail_work
 import dev.justinsmith.interval.history.resources.history_calories
@@ -40,6 +41,7 @@ import dev.justinsmith.interval.history.resources.history_more_options_cd
 import dev.justinsmith.interval.history.resources.notice_undo
 import dev.justinsmith.interval.history.resources.notice_workout_deleted
 import dev.justinsmith.interval.plan.AddToPlanSheet
+import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.BackAction
@@ -75,6 +77,7 @@ fun WorkoutDetailRoute(
     inPane: Boolean = false,
 ) {
     val scope = currentKoinScope()
+    val sharer = scope.get<Sharer>()
     val viewModel = viewModel(key = "workout-$id") { WorkoutDetailViewModel(id, scope.get(), scope.get(), scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val gone = state.workout == null
@@ -99,12 +102,14 @@ fun WorkoutDetailRoute(
         onPlanOnce = viewModel::planOnce,
         modifier = modifier,
         inPane = inPane,
+        onShare = sharer::shareText,
     )
 }
 
 /**
  * One finished workout: when it was, its shape and timeline, its figures, and the ways to repeat it now,
- * plan it again, or (from the overflow, behind a confirmation) delete it. Beside History's log ([inPane]) it
+ * plan it again, share it in words, or (from the overflow, behind a confirmation) delete it. Beside History's
+ * log ([inPane]) it
  * closes rather than going back, as Settings does beside the Timer.
  */
 @Composable
@@ -117,12 +122,14 @@ fun WorkoutDetailScreen(
     onPlanOnce: (Preset, Long) -> Unit,
     modifier: Modifier = Modifier,
     inPane: Boolean = false,
+    onShare: (String) -> Unit = {},
 ) {
     val workout = state.workout ?: return
     var menu by rememberSaveable { mutableStateOf(false) }
     var confirming by rememberSaveable { mutableStateOf(false) }
     var planning by rememberSaveable { mutableStateOf(false) }
     val title = workout.presetName ?: workoutDescription(workout.config)
+    val shareText = workoutShareText(workout)
     ScrollPage(
         title,
         modifier,
@@ -133,6 +140,13 @@ fun WorkoutDetailScreen(
                 expanded = menu,
                 onExpandedChange = { menu = it },
                 items = {
+                    IntervalMenuItem(
+                        stringResource(Res.string.detail_share_menu),
+                        onClick = {
+                            menu = false
+                            onShare(shareText)
+                        },
+                    )
                     IntervalMenuItem(
                         stringResource(Res.string.detail_delete_menu),
                         onClick = { confirming = true },

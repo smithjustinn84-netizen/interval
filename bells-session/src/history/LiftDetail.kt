@@ -25,11 +25,14 @@ import dev.justinsmith.bells.session.resources.history_delete_text
 import dev.justinsmith.bells.session.resources.history_delete_title
 import dev.justinsmith.bells.session.resources.history_more_options_cd
 import dev.justinsmith.bells.session.resources.history_program_day
+import dev.justinsmith.bells.session.resources.history_share
 import dev.justinsmith.bells.session.resources.notice_session_deleted
 import dev.justinsmith.bells.session.resources.session_undo
+import dev.justinsmith.bells.session.sessionShareText
 import dev.justinsmith.bells.ui.liftName
 import dev.justinsmith.bells.ui.programName
 import dev.justinsmith.bells.ui.setLine
+import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.GroupLabel
@@ -51,6 +54,7 @@ import org.koin.compose.currentKoinScope
 @Composable
 fun LiftDetailRoute(uid: String, onBack: () -> Unit, modifier: Modifier = Modifier, inPane: Boolean = false) {
     val scope = currentKoinScope()
+    val sharer = scope.get<Sharer>()
     val viewModel = viewModel(key = uid) { LiftDetailViewModel(uid, scope.get(), scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val notices = LocalNotices.current
@@ -65,12 +69,14 @@ fun LiftDetailRoute(uid: String, onBack: () -> Unit, modifier: Modifier = Modifi
         onBack = onBack,
         modifier = modifier,
         inPane = inPane,
+        onShare = sharer::shareText,
     )
 }
 
 /**
  * A finished session's page: its title, when and which program day it was, its numbers and records, every
- * set by lift, and Delete (from the overflow, behind a confirmation). On a wider window the lifts sit side by
+ * set by lift, and from the overflow Share, in words, and Delete (behind a confirmation). On a wider window
+ * the lifts sit side by
  * side. Once the session is gone, deleted from here or elsewhere, the page goes back. Beside History's log
  * ([inPane]) it closes rather than going back.
  */
@@ -81,12 +87,15 @@ fun LiftDetailScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     inPane: Boolean = false,
+    onShare: (String) -> Unit = {},
 ) {
     val session = state.session
     val back by rememberUpdatedState(onBack)
     LaunchedEffect(session == null) { if (session == null) back() }
     if (session == null) return
     val palette = IntervalTheme.palette
+    val shareText =
+        sessionShareText(session, state.records, stringResource(Res.string.common_joined, state.date, state.time))
     var menu by rememberSaveable { mutableStateOf(false) }
     var confirming by rememberSaveable { mutableStateOf(false) }
     val gutter = Modifier.padding(horizontal = Spacing.space16)
@@ -101,10 +110,12 @@ fun LiftDetailScreen(
                 expanded = menu,
                 onExpandedChange = { menu = it },
                 items = {
-                    IntervalMenuItem(
-                        stringResource(Res.string.history_delete),
-                        onClick = { confirming = true },
-                        destructive = true,
+                    DetailMenuItems(
+                        onShare = {
+                            menu = false
+                            onShare(shareText)
+                        },
+                        onDelete = { confirming = true },
                     )
                 },
             ) {
@@ -155,6 +166,13 @@ fun LiftDetailScreen(
             destructive = true,
         )
     }
+}
+
+/** The overflow's choices: Share, and Delete in the danger colour. */
+@Composable
+private fun DetailMenuItems(onShare: () -> Unit, onDelete: () -> Unit) {
+    IntervalMenuItem(stringResource(Res.string.history_share), onClick = onShare)
+    IntervalMenuItem(stringResource(Res.string.history_delete), onClick = onDelete, destructive = true)
 }
 
 /** When the session was, and under it the program day it was, if it was one. */

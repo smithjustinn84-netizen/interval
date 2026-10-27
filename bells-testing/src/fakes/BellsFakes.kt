@@ -24,6 +24,8 @@ import dev.justinsmith.bells.domain.EmomCue
 import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.platform.Beeper
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
+import dev.justinsmith.interval.fakes.RecordingSharer
+import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import kotlinx.coroutines.CoroutineScope
@@ -289,11 +291,13 @@ fun bellsTestKoin(
     platformModule: Module = fakeBellsPlatformModule(),
     now: () -> Long = { 0L },
     intervals: IntervalActivity = FakeIntervalActivity(),
+    sharer: Sharer = RecordingSharer(),
 ): KoinApplication = koinApplication {
     val app = module {
         single { WallClock(now) }
         single<TimestampFormatter> { FixedTimestampFormatter }
         single<IntervalActivity> { intervals }
+        single { sharer }
     }
     modules(bellsModules(platformModule, fakeBellsStorageModule(storage)) + app)
 }

@@ -51,7 +51,16 @@ class WorkoutDetailScreenTest {
             onPlanWeekly = { preset, days -> events += "weekly ${preset.name} ${days.sorted()}" },
             onPlanOnce = { preset, day -> events += "once ${preset.name} $day" },
             inPane = inPane,
+            onShare = { events += "share $it" },
         )
+    }
+
+    @Test
+    fun `share from the overflow sends the workout in words`() = runUiTest {
+        setThemedContent { Screen(state) }
+        onNodeWithContentDescription("More options").performClick()
+        onNodeWithText("Share workout").performClick()
+        assertEquals(listOf("share HIIT 30/30 · Wednesday, Oct 14 · 7:05 AM\n9:40 total · 5:00 work · 84 kcal"), events)
     }
 
     @Test

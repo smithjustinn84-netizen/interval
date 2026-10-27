@@ -51,6 +51,7 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import dev.justinsmith.interval.platform.AskToShowNotifications
 import dev.justinsmith.interval.platform.KeepScreenOn
+import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.WorkoutEngine
@@ -97,6 +98,7 @@ internal class WorkoutActions(
 @Composable
 fun WorkoutRoute(id: Long, onExit: () -> Unit, modifier: Modifier = Modifier) {
     val scope = currentKoinScope()
+    val sharer = scope.get<Sharer>()
     val viewModel = viewModel {
         WorkoutViewModel(id, scope.get(), scope.get(), scope.get(), scope.get(), scope.get(), scope.get(), scope.get())
     }
@@ -116,6 +118,7 @@ fun WorkoutRoute(id: Long, onExit: () -> Unit, modifier: Modifier = Modifier) {
         onSavePreset = viewModel::saveAsPreset,
         onExit = onExit,
         modifier = modifier,
+        onShare = sharer::shareText,
     )
 }
 
@@ -143,6 +146,7 @@ fun WorkoutScreen(
     onSavePreset: (Preset) -> Unit,
     onExit: () -> Unit,
     modifier: Modifier = Modifier,
+    onShare: (String) -> Unit = {},
 ) {
     var confirmingEnd by rememberSaveable { mutableStateOf(false) }
     val requestEnd = {
@@ -185,7 +189,7 @@ fun WorkoutScreen(
         // Built afresh each time: requestEnd reads this composition's state.
         val actions = WorkoutActions(onTogglePause, onSkip, onBack, onAddTime, onEnd = requestEnd)
         if (state.isDone) {
-            SummaryLayout(state, landscape, onRestart, onSavePreset, onExit)
+            SummaryLayout(state, landscape, onRestart, onSavePreset, onExit, onShare)
         } else if (landscape) {
             LandscapeWorkout(state, accent, primaryFill, anchor, actions)
         } else {
