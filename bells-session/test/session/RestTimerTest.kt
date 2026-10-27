@@ -2,6 +2,7 @@ package dev.justinsmith.bells.session
 
 import dev.justinsmith.bells.domain.EmomCue
 import dev.justinsmith.bells.fakes.RecordingBeeper
+import dev.justinsmith.bells.fakes.RecordingRestAlerts
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -9,7 +10,8 @@ import kotlin.test.assertNull
 class RestTimerTest {
     private var now = 1_000L
     private val beeper = RecordingBeeper()
-    private val timer = RestTimer({ now }, beeper)
+    private val alerts = RecordingRestAlerts()
+    private val timer = RestTimer({ now }, beeper, alerts)
 
     @Test
     fun `a rest beeps into its end and is over`() {
@@ -45,6 +47,19 @@ class RestTimerTest {
         timer.tick(now)
         assertNull(timer.state.value)
         assertEquals(emptyList(), beeper.cues)
+    }
+
+    @Test
+    fun `the platform keeps the rest to its end and is told when it is over`() {
+        timer.start(30)
+        assertEquals(listOf(31_000L), alerts.ends)
+        timer.adjust(45)
+        assertEquals(listOf(31_000L, 46_000L), alerts.ends)
+        now += 45_000
+        timer.tick(now)
+        assertEquals(1, alerts.stops)
+        timer.skip()
+        assertEquals(1, alerts.stops)
     }
 
     @Test

@@ -59,6 +59,7 @@ import dev.justinsmith.bells.library.ExerciseDetailUiState
 import dev.justinsmith.bells.library.LibraryList
 import dev.justinsmith.bells.library.exerciseDetail
 import dev.justinsmith.bells.platform.Beeper
+import dev.justinsmith.bells.platform.RestAlerts
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.WeekStanding
@@ -219,6 +220,7 @@ class SessionViewModel(
     private val repository: BellsRepository,
     private val clock: WallClock,
     private val beeper: Beeper,
+    private val alerts: RestAlerts,
     private val filters: ExerciseFilterStore,
     private val intervals: IntervalActivity,
     private val timestamps: TimestampFormatter,
@@ -239,7 +241,7 @@ class SessionViewModel(
     private val holds = HoldTimer(clock, beeper) { set, seconds -> logSet(set, seconds) }
 
     /** Counts a rest down after each set logged here: an EMOM rests out its own minutes. */
-    private val rest = RestTimer(clock, beeper)
+    private val rest = RestTimer(clock, beeper, alerts)
 
     /** The time, once a tick: one clock for the clocks on screen and the cues alike. */
     private val ticks = flow {

@@ -114,7 +114,9 @@ fun SessionRoute(onExit: () -> Unit) {
     val filters = scope.get<ExerciseFilterStore>()
     val sharer = scope.get<Sharer>()
     val viewModel =
-        viewModel { SessionViewModel(scope.get(), scope.get(), scope.get(), filters, scope.get(), scope.get()) }
+        viewModel {
+            SessionViewModel(scope.get(), scope.get(), scope.get(), scope.get(), filters, scope.get(), scope.get())
+        }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val finished = state.finished
     val emom = state.emom

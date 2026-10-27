@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The rest between sets, as the platform shows it while the app is off screen. -->
+    <string name="rest_channel">Rests</string>
+    <string name="rest_channel_description">A rest between sets, counting down while the app is off screen</string>
+    <string name="rest_title">Resting</string>
+    <string name="rest_left">%1$s left</string>
+    <string name="rest_over">Rest over</string>
+    <string name="rest_over_text">Next set</string>
+</resources>

@@ -41,5 +41,6 @@ actual fun rememberBellsPlatformModule(): Module = remember {
                 AudioServicesPlaySystemSound(sound)
             }
         }
+        single<RestAlerts> { IosRestAlerts() }
     }
 }

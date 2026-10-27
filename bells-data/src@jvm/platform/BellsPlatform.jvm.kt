@@ -18,7 +18,15 @@ actual fun rememberBellsPlatformModule(): Module = remember {
         }
         // The system alert sound for every cue; desktops have nothing finer to drive.
         single<Beeper> { Beeper { runCatching { Toolkit.getDefaultToolkit().beep() } } }
+        single<RestAlerts> { NoRestAlerts }
     }
+}
+
+/** A desktop window stays on screen and its process keeps running: nothing to keep awake or announce. */
+private object NoRestAlerts : RestAlerts {
+    override fun start(endAtEpochMillis: Long) = Unit
+
+    override fun stop() = Unit
 }
 
 /** The OS's per-user app-data directory for the app, Interval's, created on first use. */

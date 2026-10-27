@@ -137,6 +137,8 @@ adb shell pm clear dev.justinsmith.interval      # Most journeys expect a fresh 
 | `lift-equipment.xml` | A Lift session logging a bell, a band, a hold on one side and bodyweight with weight added, each in its own words, Moved counting only the weighed load, then the summary |
 | `lift-barbell.xml` | A barbell lift: the bar chosen, plates a side, and the set logged with its load |
 | `lift-plan-changes.xml` | A program's day with a change to its plan: kept for the session, for the program, or in a copy |
+| `lift-rest-alert.xml` | A rest between sets keeps counting on the lock screen and beeps as it ends with the screen off |
+| `reminders.xml` | Turn the plan's reminder on, pick a time, see it in the notification settings, turn it off |
 | `exercise-library.xml` | The library from Lift: search, equipment chips, Filters and Clear; Add from a search that finds nothing, edit, a name already taken; pick your own on the Log sheet; equipment locked once logged |
 
 On the `amper-37` image, the first tap into a text field may open Gboard's "Try out your stylus"

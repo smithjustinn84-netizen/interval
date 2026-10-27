@@ -1,0 +1,16 @@
+<journey name="Lift: a rest heard with the screen off">
+  <description>
+    A rest between sets keeps counting on the lock screen and beeps as it ends while the screen is off.
+    Run on a fresh install (adb shell pm clear dev.justinsmith.interval), with the emulator's volume up.
+  </description>
+  <actions>
+    <action>Tap the "Lift" tab, then "Start session"</action>
+    <action>Tap "Log set" and verify that a rest counts down from "1:30" with − and + beside it</action>
+    <action>Tap "−" four times and verify that the rest reads "0:30" or less</action>
+    <action>Turn the screen off (adb shell input keyevent KEYCODE_SLEEP)</action>
+    <action>Verify with adb shell dumpsys notification --noredact that an ongoing notification titled "Resting" with "left" in its text is showing</action>
+    <action>Wait for the rest to end and verify that the beeps 3-2-1 and Start played with the screen off (the emulator's audio, or logcat's AudioTrack lines)</action>
+    <action>Turn the screen on (adb shell input keyevent KEYCODE_WAKEUP) and swipe to unlock</action>
+    <action>Verify that the "Resting" notification is gone and the session shows "Next set"</action>
+  </actions>
+</journey>

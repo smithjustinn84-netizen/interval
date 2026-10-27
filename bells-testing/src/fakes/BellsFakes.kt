@@ -23,6 +23,7 @@ import dev.justinsmith.bells.di.bellsModules
 import dev.justinsmith.bells.domain.EmomCue
 import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.bells.platform.Beeper
+import dev.justinsmith.bells.platform.RestAlerts
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.RecordingSharer
 import dev.justinsmith.interval.platform.Sharer
@@ -265,10 +266,26 @@ class FakeBellsStorage {
     }
 }
 
-/** Stands in for `rememberBellsPlatformModule()`. Tests never load the real one: it writes a database file. */
-fun fakeBellsPlatformModule(beeper: Beeper = RecordingBeeper()): Module = module {
-    single<Beeper> { beeper }
+/** Records the rests the platform was asked to keep: each end it was given, and how many times it was stopped. */
+class RecordingRestAlerts : RestAlerts {
+    val ends = mutableListOf<Long>()
+    var stops = 0
+
+    override fun start(endAtEpochMillis: Long) {
+        ends += endAtEpochMillis
+    }
+
+    override fun stop() {
+        stops++
+    }
 }
+
+/** Stands in for `rememberBellsPlatformModule()`. Tests never load the real one: it writes a database file. */
+fun fakeBellsPlatformModule(beeper: Beeper = RecordingBeeper(), alerts: RestAlerts = RecordingRestAlerts()): Module =
+    module {
+        single<Beeper> { beeper }
+        single<RestAlerts> { alerts }
+    }
 
 fun fakeBellsStorageModule(storage: FakeBellsStorage = FakeBellsStorage()): Module = module {
     single<CoroutineScope>(BellsStorageScope) { CoroutineScope(SupervisorJob() + Dispatchers.Unconfined) }.withOptions {

@@ -1,0 +1,162 @@
+package dev.justinsmith.bells.platform
+
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.Service
+import android.content.Context
+import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.os.Build
+import android.os.IBinder
+import android.os.PowerManager
+import androidx.core.app.NotificationCompat
+import co.touchlab.kermit.Logger
+import dev.justinsmith.bells.data.resources.Res
+import dev.justinsmith.bells.data.resources.rest_channel
+import dev.justinsmith.bells.data.resources.rest_channel_description
+import dev.justinsmith.bells.data.resources.rest_left
+import dev.justinsmith.bells.data.resources.rest_title
+import dev.justinsmith.interval.platform.notificationIcon
+import dev.justinsmith.interval.platform.openAppIntent
+import dev.justinsmith.interval.timer.formatClock
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import org.jetbrains.compose.resources.getString
+
+/** Starts and stops [RestService] for a rest; the service counts it down itself from the end it is given. */
+internal class AndroidRestAlerts(private val context: Context) : RestAlerts {
+    private val log = Logger.withTag("AndroidRestAlerts")
+
+    override fun start(endAtEpochMillis: Long) {
+        val intent = Intent(context, RestService::class.java).putExtra(RestService.EXTRA_END_AT, endAtEpochMillis)
+        // Refused from the background (Android 12+). A set is logged from the session's screen, so that is
+        // not expected; if it happens the rest runs on, without the notification.
+        runCatching { context.startForegroundService(intent) }
+            .onFailure { log.w(it) { "Couldn't start the rest service" } }
+    }
+
+    override fun stop() {
+        context.stopService(Intent(context, RestService::class.java))
+    }
+}
+
+/**
+ * The foreground service behind a rest between sets. It holds the CPU awake so the session's 3-2-1 and Start
+ * play with the screen off, and shows the rest counting down as an ongoing notification. It ends with the
+ * rest, or when the session skips it. Special use, as the workout's is: a rest can run ten minutes, past a
+ * short service's three.
+ */
+class RestService : Service() {
+    private val log = Logger.withTag("RestService")
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var wakeLock: PowerManager.WakeLock? = null
+    private var countdown: Job? = null
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        // The channel must exist before the first notification, which startForeground posts at once.
+        runBlocking { createChannel() }
+        wakeLock = getSystemService(PowerManager::class.java)
+            ?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG)
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val endAt = intent?.getLongExtra(EXTRA_END_AT, 0L) ?: 0L
+        if (endAt <= System.currentTimeMillis()) {
+            stopSelf()
+        } else {
+            show(endAt)
+        }
+        return START_NOT_STICKY
+    }
+
+    private fun show(endAt: Long) {
+        val first = runBlocking { notification(endAt) }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(NOTIFICATION_ID, first, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } else {
+            startForeground(NOTIFICATION_ID, first)
+        }
+        runCatching { wakeLock?.takeUnless { it.isHeld }?.acquire(WAKE_LOCK_TIMEOUT_MILLIS) }
+            .onFailure { log.w(it) { "Couldn't hold the wake lock" } }
+        countdown?.cancel()
+        countdown = scope.launch {
+            while (System.currentTimeMillis() < endAt) {
+                delay(TICK_MILLIS)
+                getSystemService(NotificationManager::class.java)?.notify(NOTIFICATION_ID, notification(endAt))
+            }
+            // The session's clock plays the cue as the rest ends; a moment later this is over too.
+            delay(LINGER_MILLIS)
+            stopSelf()
+        }
+    }
+
+    /** The user swiped the app away: its session's rest went with it. */
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        stopSelf()
+    }
+
+    override fun onDestroy() {
+        scope.cancel()
+        runCatching { wakeLock?.takeIf { it.isHeld }?.release() }
+            .onFailure { log.w(it) { "Couldn't release the wake lock" } }
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        super.onDestroy()
+    }
+
+    private suspend fun createChannel() {
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            getString(Res.string.rest_channel),
+            NotificationManager.IMPORTANCE_LOW,
+        ).apply {
+            description = getString(Res.string.rest_channel_description)
+            setShowBadge(false)
+        }
+        getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)
+    }
+
+    /** "Resting" over the time left, silent and ongoing, on the lock screen; tapping it opens the app. */
+    private suspend fun notification(endAt: Long): Notification {
+        val leftMillis = (endAt - System.currentTimeMillis()).coerceAtLeast(0)
+        val left = ((leftMillis + MILLIS_PER_SECOND - 1) / MILLIS_PER_SECOND).toInt()
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(notificationIcon())
+            .setContentTitle(getString(Res.string.rest_title))
+            .setContentText(getString(Res.string.rest_left, formatClock(left)))
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setSilent(true)
+            .setShowWhen(false)
+            .setCategory(NotificationCompat.CATEGORY_WORKOUT)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+            .setContentIntent(openAppIntent(REQUEST_OPEN))
+            .build()
+    }
+
+    companion object {
+        internal const val EXTRA_END_AT = "dev.justinsmith.bells.REST_END_AT"
+        private const val CHANNEL_ID = "rest"
+
+        /** Beside the workout's, which is 1. */
+        private const val NOTIFICATION_ID = 2
+        private const val REQUEST_OPEN = 10
+        private const val WAKE_LOCK_TAG = "interval:rest"
+        private const val TICK_MILLIS = 1_000L
+        private const val MILLIS_PER_SECOND = 1_000L
+        private const val LINGER_MILLIS = 1_500L
+
+        /** Let go on its own after this long, well past the longest rest, should the stop somehow not come. */
+        private const val WAKE_LOCK_TIMEOUT_MILLIS = 15L * 60 * 1000
+    }
+}

@@ -20,6 +20,7 @@ actual fun rememberBellsPlatformModule(): Module = LocalContext.current.applicat
                 Room.databaseBuilder<BellsDatabase>(context, context.getDatabasePath(BELLS_DATABASE).absolutePath)
             }
             single<Beeper> { ToneBeeper() }
+            single<RestAlerts> { AndroidRestAlerts(context) }
         }
     }
 }

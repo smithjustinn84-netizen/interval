@@ -17,6 +17,8 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   and its page) can be sent in words through the system share sheet.
 - Accessibility: section titles, dialog titles, sheet titles and the summaries' headings are headings for
   screen readers, so TalkBack and VoiceOver can jump between sections.
+- Lift: a rest between sets is heard with the screen off. Android keeps it counting in a notification and
+  beeps as it ends; iOS shows a notification when the rest is over (once notifications are allowed).
 
 ## [0.1.0] — 2026-10-26
 

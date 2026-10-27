@@ -90,7 +90,7 @@ shared               the app: `App.kt` (the back stack and every entry), `di/App
 bells-domain         Lift's pure domain (`dev.justinsmith.bells.domain`): exercises, programs, sets and
                      sessions, records, `EmomClock`/`HoldClock`/`RestClock`, suggestions. No dependencies
 bells-data           `BellsRepository`, `BellsDatabase` (Room, KSP, `schemas/`), `IntervalActivity` (what Lift
-                     reads of the interval side; `shared` binds it), `bellsModules` (di/), `Beeper` and each
+                     reads of the interval side; `shared` binds it), `bellsModules` (di/), `Beeper`, `RestAlerts` (+ Android's `RestService`) and each
                      platform's `rememberBellsPlatformModule`
 bells-testing        `FakeBellsStorage` and the fake DAOs, `FakeIntervalActivity`, `RecordingBeeper`,
                      `bellsTestKoin`
@@ -183,6 +183,10 @@ toolchain (`$compose.*`).
   `WorkoutControls`. iOS schedules a local notification per phase change ahead (`WorkoutEngine.upcomingChanges`,
   pure, through `WorkoutControls.upcomingChanges`) as the app leaves the screen, and drops them on return; its
   actual says why not background audio. Desktop keeps nothing.
+  Lift's rest between sets goes the same way through `RestAlerts` (`bells-data/src/platform/`): Android's
+  `RestService` holds the CPU awake and counts the rest down in a notification while the session's own clock
+  beeps; iOS schedules one notification for the rest's end; desktop nothing. The notification helpers both
+  services share are `core/src@android/platform/Notifications.kt`.
 - **Reminders for the plan**: `AppSettings.reminderMinuteOfDay` (set on Plan, null is off). `PlanReminderScheduler`
   (`interval-history/src/plan/`, an eager single) recomputes `plannedReminders` (the next 14 days with a plan
   still open, from `TrainingLog.upNext`) on every change and at midnight, and hands the whole set to

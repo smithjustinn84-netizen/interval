@@ -20,6 +20,7 @@ import dev.justinsmith.bells.domain.program
 import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.bells.fakes.FakeIntervalActivity
 import dev.justinsmith.bells.fakes.RecordingBeeper
+import dev.justinsmith.bells.fakes.RecordingRestAlerts
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import kotlinx.coroutines.CoroutineScope
@@ -62,10 +63,13 @@ class SessionViewModelTest {
     @AfterTest
     fun resetMainDispatcher() = Dispatchers.resetMain()
 
+    private val alerts = RecordingRestAlerts()
+
     private fun viewModel() = SessionViewModel(
         repository,
         WallClock { now },
         RecordingBeeper(),
+        alerts,
         ExerciseFilterStore(),
         FakeIntervalActivity(),
         FixedTimestampFormatter,
@@ -196,6 +200,21 @@ class SessionViewModelTest {
             assertEquals(1, repository.active.value?.sets?.size)
             assertEquals(BuiltInExercise.Press, state.value.draft.exercise)
             assertEquals(Side.Right, state.value.draft.side)
+        }
+    }
+
+    @Test
+    fun `the platform keeps each rest to its end and lets go of a skipped one`() {
+        viewModel().use {
+            logSet()
+            assertEquals(listOf(now + RestClock.DEFAULT_SECONDS * 1_000L), alerts.ends)
+            stepRest(1)
+            assertEquals(now + (RestClock.DEFAULT_SECONDS + RestClock.STEP_SECONDS) * 1_000L, alerts.ends.last())
+            assertEquals(0, alerts.stops)
+            skipRest()
+            assertEquals(1, alerts.stops)
+            skipRest()
+            assertEquals(1, alerts.stops)
         }
     }
 
