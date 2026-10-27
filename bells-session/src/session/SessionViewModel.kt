@@ -230,6 +230,9 @@ class SessionViewModel(
 
     /** Every set of the sessions before this one: what a set logged now has to beat to be a record. */
     private val setsBefore = repository.sessions.value.flatMap { it.sets }
+
+    // The same sets oldest first, flattened once: the suggestions read them on every change of the draft.
+    private val setsBeforeOldestFirst = repository.sessions.value.setsOldestFirst()
     private val finished = MutableStateFlow<Finished?>(null)
 
     /** Runs an EMOM, logging each minute's set as it is done. */
@@ -316,10 +319,7 @@ class SessionViewModel(
                 latestRecord = active?.sets?.lastOrNull()?.takeIf { it.id in records },
                 library = LibraryList(
                     chosen.exercises,
-                    recentExercises(
-                        repository.sessions.value.setsOldestFirst() + active?.sets.orEmpty(),
-                        chosen.exercises,
-                    ),
+                    recentExercises(setsBeforeOldestFirst + active?.sets.orEmpty(), chosen.exercises),
                     chosen.filters,
                     ownedEquipment(owned, bands, bar),
                 ),
@@ -779,12 +779,12 @@ class SessionViewModel(
     }
 
     /** The last set of [exercise], with two bells or one ([double]), in a session before this one. */
-    private fun lastTime(exercise: Exercise, double: Boolean): SetLog? = repository.sessions.value.setsOldestFirst()
-        .lastOrNull { it.exercise.key == exercise.key && it.double == double }
+    private fun lastTime(exercise: Exercise, double: Boolean): SetLog? =
+        setsBeforeOldestFirst.lastOrNull { it.exercise.key == exercise.key && it.double == double }
 
     /** Every set logged, oldest first: those of the sessions finished, then [logged], by default this one's. */
     private fun history(logged: List<SetLog> = repository.active.value?.sets.orEmpty()): List<SetLog> =
-        repository.sessions.value.setsOldestFirst() + logged
+        setsBeforeOldestFirst + logged
 
     /** What the screen chose, and the exercises it can choose from. */
     private data class View(

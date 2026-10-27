@@ -34,7 +34,9 @@ class PlanViewModelTest : MainDispatcherTest() {
     private val clock = noonOf(TODAY)
     private val repository = FakeStorage().repository(now = { clock })
     private val bells = FakeBellsStorage().repository(now = { clock })
-    private val viewModel by lazy { PlanViewModel(repository, bells, FixedTimestampFormatter, clock = { clock }) }
+    private val viewModel by lazy {
+        PlanViewModel(repository, bells, FixedTimestampFormatter, clock = { clock }, computation = dispatcher)
+    }
     private val tabata = tabataPreset
     private val hiit = hiitPreset
 
@@ -152,10 +154,11 @@ class PlanViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `a one-off's heading moves on at midnight with the screen open`() = runTest {
-        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        val main = UnconfinedTestDispatcher(testScheduler)
+        Dispatchers.setMain(main)
         var now = noonOf(TODAY)
         repository.planOnce(hiit, TODAY + 1)
-        val plan = PlanViewModel(repository, bells, FixedTimestampFormatter, clock = { now })
+        val plan = PlanViewModel(repository, bells, FixedTimestampFormatter, clock = { now }, computation = main)
         assertEquals(listOf(HistoryDay.Tomorrow), plan.state.value.oneOffs.map { it.day })
 
         now = noonOf(TODAY + 1)

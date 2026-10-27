@@ -25,9 +25,12 @@ import dev.justinsmith.interval.platform.days
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.timer.weekStartOf
 import dev.justinsmith.interval.timer.weekdayOf
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 
 /** One day of this week: how many sessions each app logged on it. */
@@ -67,13 +70,18 @@ data class TodayUiState(
     val intervalCount: Int get() = week.sumOf { it.interval }
 }
 
-/** This week's lifts and intervals, the last session, and whether one is in progress. */
+/**
+ * This week's lifts and intervals, the last session, and whether one is in progress. Each state is built on
+ * [computation], off the main thread: the suggested load for every lift scans the whole history, and the state
+ * is built again on each set logged (the session under way changes with it). Only the first is built on the caller.
+ */
 class TodayViewModel(
     private val repository: BellsRepository,
     private val intervals: IntervalActivity,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
     dayCheckMillis: Long = DAY_CHECK_MILLIS,
+    computation: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     // Read again each midnight, so the week strip and its "today" move on with the screen open.
     val state: StateFlow<TodayUiState> =
@@ -88,7 +96,7 @@ class TodayViewModel(
                 combine(repository.following, repository.programDay, intervals.weeklyGoal, ::Triple),
             ) { state, (following, day, goal) ->
                 state.copy(following = following, programDay = day, weeklyGoal = goal)
-            }.stateIn(
+            }.flowOn(computation).stateIn(
                 viewModelScope,
                 SharingStarted.Eagerly,
                 build(

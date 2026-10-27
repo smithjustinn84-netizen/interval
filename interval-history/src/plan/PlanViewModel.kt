@@ -22,9 +22,12 @@ import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.MINUTES_PER_DAY
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.weekdayOf
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 
 /** A planned workout as the plan lists it. */
@@ -65,7 +68,9 @@ data class PlanUiState(
 /**
  * The plan: the weekly goal, the routine for each weekday, and one-offs on dates to come. Adding goes
  * through [planWeekly] or [planOnce] with one of [PlanUiState.choices], or [planDescribed] with a routine
- * read from words.
+ * read from words. Each state is built on [computation], off the main thread: the streak reads the whole
+ * history into a [TrainingLog], and the state is built again on every change of the plan, the history, the
+ * settings or the Timer. Only the first is built on the caller.
  */
 class PlanViewModel(
     private val repository: IntervalRepository,
@@ -73,6 +78,7 @@ class PlanViewModel(
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
     dayCheckMillis: Long = DAY_CHECK_MILLIS,
+    computation: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     // Read again each midnight, so the one-offs and their headings move on with the screen open.
     val state: StateFlow<PlanUiState> =
@@ -90,7 +96,7 @@ class PlanViewModel(
             },
         ) { planned, presets, config, app, (history, lifts) ->
             buildState(planned, presets, config, app, history, lifts)
-        }.stateIn(
+        }.flowOn(computation).stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
             buildState(

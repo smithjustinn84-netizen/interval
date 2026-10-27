@@ -46,7 +46,9 @@ class HistoryViewModelTest : MainDispatcherTest() {
     private val repository = FakeStorage().repository(now = { clock })
     private val lift = FakeBellsStorage()
     private val bells = lift.repository(now = { clock })
-    private val viewModel by lazy { HistoryViewModel(repository, bells, FixedTimestampFormatter, clock = { clock }) }
+    private val viewModel by lazy {
+        HistoryViewModel(repository, bells, FixedTimestampFormatter, clock = { clock }, computation = dispatcher)
+    }
 
     private fun at(day: Long) {
         clock = noonOf(day)
@@ -289,12 +291,14 @@ class HistoryViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `the headings and the week move on at midnight with the screen open`() = runTest {
-        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        val main = UnconfinedTestDispatcher(testScheduler)
+        Dispatchers.setMain(main)
         // Sunday night, then Monday: a new week.
         val sunday = MONDAY + 6
         clock = sunday * DAY_MILLIS + DAY_MILLIS - 1_000
         repository.recordWorkout(tabata, tabata.totalSeconds)
-        val viewModel = HistoryViewModel(repository, bells, FixedTimestampFormatter, clock = { clock })
+        val viewModel =
+            HistoryViewModel(repository, bells, FixedTimestampFormatter, clock = { clock }, computation = main)
         assertEquals(listOf(HistoryDay.Today), viewModel.state.value.sections.map { it.day })
         assertEquals(1, viewModel.state.value.weekCount)
 

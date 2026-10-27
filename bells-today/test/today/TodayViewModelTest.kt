@@ -39,15 +39,20 @@ class TodayViewModelTest {
         ) { 1_000L }
     }
 
+    private val main = UnconfinedTestDispatcher()
+
     @BeforeTest
-    fun setMainDispatcher() = Dispatchers.setMain(UnconfinedTestDispatcher())
+    fun setMainDispatcher() = Dispatchers.setMain(main)
 
     @AfterTest
     fun resetMainDispatcher() = Dispatchers.resetMain()
 
     @Test
     fun `a barbell lift never done suggests the bar the user owns and follows a change of it`() {
-        val today = TodayViewModel(repository, FakeIntervalActivity(), FixedTimestampFormatter, clock = { 1_000L })
+        val today =
+            TodayViewModel(repository, FakeIntervalActivity(), FixedTimestampFormatter, clock = {
+                1_000L
+            }, computation = main)
         val lift = barbellLifts.first() to false
         assertEquals(DEFAULT_BAR_KG, today.state.value.bells[lift])
 
@@ -57,10 +62,14 @@ class TodayViewModelTest {
 
     @Test
     fun `the week and its today move on at midnight with the screen open`() = runTest {
-        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        val main = UnconfinedTestDispatcher(testScheduler)
+        Dispatchers.setMain(main)
         // Sunday night, epoch day 3 (a Sunday), then Monday: a new week.
         var now = 4 * DAY_MILLIS - 1_000
-        val today = TodayViewModel(repository, FakeIntervalActivity(), FixedTimestampFormatter, clock = { now })
+        val today =
+            TodayViewModel(repository, FakeIntervalActivity(), FixedTimestampFormatter, clock = {
+                now
+            }, computation = main)
         assertEquals(3L, today.state.value.week.single { it.today }.epochDay)
 
         now = 4 * DAY_MILLIS

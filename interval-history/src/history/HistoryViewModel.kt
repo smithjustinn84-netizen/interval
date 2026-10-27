@@ -28,10 +28,14 @@ import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.monthStartAfter
 import dev.justinsmith.interval.timer.monthStartOf
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 
@@ -68,6 +72,11 @@ private data class HistoryView(
  * The training log: what has been done by day, what is planned, and how the user is doing against their
  * weekly goal over a week, a month or all time. Today is worked out from [clock], and checked every
  * [dayCheckMillis] so that the headings and the week move on at midnight with the screen open.
+ *
+ * Each state is built on [computation], not the main thread: the build walks the whole history, formats every
+ * row's time and date and reads the calendar for every day since the first workout, and it is built again on
+ * every change, the Timer's steps and each set logged on Lift among them. Only the first, at construction, is
+ * built on the caller.
  */
 class HistoryViewModel(
     private val repository: IntervalRepository,
@@ -75,14 +84,17 @@ class HistoryViewModel(
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
     dayCheckMillis: Long = DAY_CHECK_MILLIS,
+    computation: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     private val days = clock.days(timestamps, dayCheckMillis)
 
     private val view = MutableStateFlow(HistoryView())
 
+    // Distinct, so a set logged on Lift (which changes `active`) rebuilds nothing here: only a session finished,
+    // the program's day or whether one is under way at all count.
     private val lifting = combine(bells.sessions, bells.programDay, bells.active) { sessions, day, active ->
         Lifting(sessions, day, active != null)
-    }
+    }.distinctUntilChanged()
 
     val state: StateFlow<HistoryUiState> =
         combine(
@@ -94,6 +106,7 @@ class HistoryViewModel(
         ) { (history, lifting), planned, presets, app, (view, config) ->
             buildState(history, lifting, planned, presets, app, view, config)
         }
+            .flowOn(computation)
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.Eagerly,

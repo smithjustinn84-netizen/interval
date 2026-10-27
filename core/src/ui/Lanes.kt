@@ -124,18 +124,22 @@ fun SetupLanes(modifier: Modifier = Modifier) {
                         tail = tail / radius,
                         periodMillis = ((arc.endInclusive - arc.start) * radius + tail) / speed,
                         start = SetupCometStarts[index],
-                        color = colors[index].copy(alpha = SETUP_COMET_ALPHA),
+                        brush = cometBrush(
+                            center,
+                            tail / radius / DEGREE,
+                            colors[index].copy(alpha = SETUP_COMET_ALPHA),
+                        ),
                     )
                 }
-                val laneStroke = Sizes.laneStroke.toPx()
-                val cometStroke = Sizes.cometStroke.toPx()
+                val laneStrokes = LaneStrokes(step, Sizes.laneStroke.toPx())
+                val cometStroke = Stroke(Sizes.cometStroke.toPx(), cap = StrokeCap.Round)
                 onDrawBehind {
-                    drawLanes(center, first, step, palette.laneLine, palette.laneFill, laneStroke)
+                    drawLanes(center, first, step, palette.laneLine, palette.laneFill, laneStrokes)
                     val now = clock.longValue
                     comets.forEach { comet ->
                         val progress = (now / comet.periodMillis + comet.start) % 1f
                         val head = cometHead(comet.arc, comet.tail, progress)
-                        drawComet(center, comet.radius, head / DEGREE, comet.tail / DEGREE, comet.color, cometStroke)
+                        drawComet(center, comet.radius, head / DEGREE, comet.tail / DEGREE, comet.brush, cometStroke)
                     }
                 }
             },
@@ -148,7 +152,7 @@ private data class SetupComet(
     val tail: Float,
     val periodMillis: Float,
     val start: Float,
-    val color: Color,
+    val brush: Brush,
 )
 
 /**
@@ -184,7 +188,7 @@ fun WorkoutLanes(anchor: LaneAnchor, accent: Color, modifier: Modifier = Modifie
             .drawWithCache {
                 val gap = Sizes.workoutLaneGap.toPx()
                 val step = Sizes.workoutLaneStep.toPx()
-                val laneStroke = Sizes.laneStroke.toPx()
+                val laneStrokes = LaneStrokes(step, Sizes.laneStroke.toPx())
                 val lead = Comet(LEAD_COMET_LANE, Sizes.cometTail.toPx(), Sizes.cometStroke.toPx())
                 val chase = Comet(CHASE_COMET_LANE, Sizes.chaseTail.toPx(), Sizes.chaseStroke.toPx())
                 onDrawBehind {
@@ -192,7 +196,7 @@ fun WorkoutLanes(anchor: LaneAnchor, accent: Color, modifier: Modifier = Modifie
                     val ring = anchor.ring?.takeIf { it.isAttached } ?: return@onDrawBehind
                     val center = lanes.localPositionOf(ring, Offset(ring.size.width / 2f, ring.size.height / 2f))
                     val first = min(ring.size.width, ring.size.height) / 2f + gap
-                    drawLanes(center, first, step, colors.laneLine, colors.laneFill, laneStroke)
+                    drawLanes(center, first, step, colors.laneLine, colors.laneFill, laneStrokes)
                     val now = clock.longValue
                     val leadHead = Angles.TWELVE_O_CLOCK + now / Motion.LEAD_COMET_TURN_MILLIS * Angles.FULL_TURN
                     val chaseHead = CHASE_COMET_START_DEGREES + now / Motion.CHASE_COMET_TURN_MILLIS * Angles.FULL_TURN
@@ -204,10 +208,35 @@ fun WorkoutLanes(anchor: LaneAnchor, accent: Color, modifier: Modifier = Modifie
     )
 }
 
-/** A workout comet: which lane it runs, in px how long its tail is and how thick. */
-private class Comet(val lane: Int, private val tail: Float, private val stroke: Float) {
-    fun draw(scope: DrawScope, center: Offset, radius: Float, headDegrees: Float, color: Color) =
-        scope.drawComet(center, radius, headDegrees, tail / radius / DEGREE, color, stroke)
+/**
+ * A workout comet: which lane it runs, in px how long its tail is and how thick. Its gradient is a shader,
+ * built once per place and colour rather than on every frame: the ring moves only as the readout lays out, and
+ * the colour only with the phase.
+ */
+private class Comet(val lane: Int, private val tail: Float, stroke: Float) {
+    private val stroke = Stroke(stroke, cap = StrokeCap.Round)
+    private var brush: Brush? = null
+    private var brushCenter: Offset? = null
+    private var brushRadius = 0f
+    private var brushColor: Color? = null
+
+    fun draw(scope: DrawScope, center: Offset, radius: Float, headDegrees: Float, color: Color) {
+        val tailDegrees = tail / radius / DEGREE
+        val brush = brush?.takeIf { center == brushCenter && radius == brushRadius && color == brushColor }
+            ?: cometBrush(center, tailDegrees, color).also {
+                brush = it
+                brushCenter = center
+                brushRadius = radius
+                brushColor = color
+            }
+        scope.drawComet(center, radius, headDegrees, tailDegrees, brush, stroke)
+    }
+}
+
+/** The lanes' two stroke styles, built once per layout rather than per frame: the fill between lanes, and the line. */
+private class LaneStrokes(step: Float, line: Float) {
+    val fill = Stroke(step)
+    val line = Stroke(line)
 }
 
 /**
@@ -230,34 +259,48 @@ private fun rememberLaneClock(): LongState {
 }
 
 /** [LANE_COUNT] lanes round [center], the innermost [first] from it and [step] apart, every other one filled. */
-private fun DrawScope.drawLanes(center: Offset, first: Float, step: Float, line: Color, fill: Color, stroke: Float) {
+private fun DrawScope.drawLanes(
+    center: Offset,
+    first: Float,
+    step: Float,
+    line: Color,
+    fill: Color,
+    strokes: LaneStrokes,
+) {
     for (lane in 0 until LANE_COUNT - 1 step 2) {
-        drawCircle(fill, first + lane * step + step / 2, center, style = Stroke(step))
+        drawCircle(fill, first + lane * step + step / 2, center, style = strokes.fill)
     }
     repeat(LANE_COUNT) { lane ->
-        drawCircle(line, first + lane * step, center, style = Stroke(stroke))
+        drawCircle(line, first + lane * step, center, style = strokes.line)
     }
 }
 
 /**
+ * A comet's gradient: fading in from nothing along a tail [tailDegrees] long to [color] at the head, for a comet
+ * drawn at [COMET_REST_DEGREES] round [center] ([drawComet]). A shader, so built once and kept, not per frame.
+ */
+private fun cometBrush(center: Offset, tailDegrees: Float, color: Color): Brush {
+    val tailStart = COMET_REST_DEGREES - tailDegrees
+    val stops = TailStops.map { (share, alpha) ->
+        (tailStart + tailDegrees * share) / Angles.FULL_TURN to color.copy(alpha = color.alpha * alpha)
+    }
+    return Brush.sweepGradient(*(stops + (1f to color)).toTypedArray(), center = center)
+}
+
+/**
  * A comet on a lane: a round-capped arc [tailDegrees] long ending at [headDegrees] (clockwise from
- * three o'clock), fading in from nothing along its tail to [color] at the head. A sweep gradient's
- * stops run once round from three o'clock and can't wrap, so the comet is drawn at a fixed angle and
- * the frame turned to put it in place.
+ * three o'clock), in [brush] from [cometBrush]. A sweep gradient's stops run once round from three
+ * o'clock and can't wrap, so the comet is drawn at a fixed angle and the frame turned to put it in place.
  */
 private fun DrawScope.drawComet(
     center: Offset,
     radius: Float,
     headDegrees: Float,
     tailDegrees: Float,
-    color: Color,
-    stroke: Float,
+    brush: Brush,
+    stroke: Stroke,
 ) {
     val tailStart = COMET_REST_DEGREES - tailDegrees
-    val stops = TailStops.map { (share, alpha) ->
-        (tailStart + tailDegrees * share) / Angles.FULL_TURN to color.copy(alpha = color.alpha * alpha)
-    }
-    val brush = Brush.sweepGradient(*(stops + (1f to color)).toTypedArray(), center = center)
     rotate(headDegrees - COMET_REST_DEGREES, center) {
         drawArc(
             brush = brush,
@@ -266,7 +309,7 @@ private fun DrawScope.drawComet(
             useCenter = false,
             topLeft = center - Offset(radius, radius),
             size = Size(radius * 2, radius * 2),
-            style = Stroke(stroke, cap = StrokeCap.Round),
+            style = stroke,
         )
     }
 }

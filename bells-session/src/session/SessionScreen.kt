@@ -137,6 +137,9 @@ fun SessionRoute(onExit: () -> Unit) {
         )
     }
     val title = sessionTitle(state.session?.exercises.orEmpty())
+    // One set of actions for as long as nothing they close over changes: the state changes every tick while a
+    // rest or a hold runs, and a child that takes the actions alone can then skip.
+    val actions = remember(viewModel, filters, title, onExit) { sessionActions(viewModel, filters, title, onExit) }
     val page = when {
         finished != null -> SessionPage.Summary(finished)
         emom != null && emomState != null -> SessionPage.Emom(emom, emomState)
@@ -164,10 +167,7 @@ fun SessionRoute(onExit: () -> Unit) {
                 onStop = viewModel::stopEmom,
             )
 
-            SessionPage.Logging -> SessionScreen(
-                state,
-                sessionActions(viewModel, filters, title, onExit),
-            )
+            SessionPage.Logging -> SessionScreen(state, actions)
         }
     }
 }
