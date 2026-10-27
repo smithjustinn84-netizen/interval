@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Auto Backup on Android 11 and earlier (fullBackupContent). Everything the app stores travels:
+     the two Room databases (with their -wal and -shm files, so the include list stays empty and the
+     default of "all of database/, files/ and shared_prefs/" applies) and the DataStore under files/.
+     Only the plan's alarm bookkeeping stays behind: it describes alarms armed on this device, and
+     PlanReminderScheduler re-arms them from the plan on the first launch after a restore. -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="plan_reminders.xml"/>
+</full-backup-content>

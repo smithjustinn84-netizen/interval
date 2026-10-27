@@ -22,8 +22,12 @@
         </intent>
     </queries>
 
+    <!-- Backup and device transfer carry history, presets, the plan, settings and Lift's data: the rules
+         in res/xml name what stays behind. -->
     <application
             android:allowBackup="true"
+            android:dataExtractionRules="@xml/data_extraction_rules"
+            android:fullBackupContent="@xml/backup_rules"
             android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name"
             android:roundIcon="@mipmap/ic_launcher_round"

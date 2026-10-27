@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+: cloud backup and device-to-device transfer. Same rule as backup_rules.xml: all of
+     the app's data, minus the alarm bookkeeping that belongs to the old device. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="plan_reminders.xml"/>
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="plan_reminders.xml"/>
+    </device-transfer>
+</data-extraction-rules>
