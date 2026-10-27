@@ -42,8 +42,8 @@ What the sprint of 2026-10-27 landed is in [CHANGELOG.md](../CHANGELOG.md). This
   The workout's and the rest's notifications must stay silent in the foreground: the app beeps itself.
 - **Android app shortcuts** (Start last workout, Lift session): a static `shortcuts.xml` plus a launch-intent
   hand-off in `shared/src/App.kt`.
-- **iOS: the other session's `main` stack.** Commits made in other workspaces above `main` rebase onto this
-  file's commit with `jj rebase -d main`.
+- **Other workspaces' stacks.** Commits made in another jj workspace above the old `main` rebase onto the
+  new one with `jj rebase -d main`.
 
 ## Left out on purpose
 
