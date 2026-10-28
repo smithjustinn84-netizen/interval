@@ -2,6 +2,7 @@
 
 Compose Multiplatform app for **Android, iOS and desktop (JVM)**, built with the **Kotlin Toolchain**
 (`./kotlin`, Amper-based, version pinned in the `kotlin` wrapper). Docs: https://kotlin-toolchain.org/0.13/
+Full architecture guide: [docs/architecture.md](docs/architecture.md).
 
 > **NO GRADLE.** There is no `gradlew`, `build.gradle.kts` or `settings.gradle.kts`. Never run or suggest
 > Gradle commands. Build configuration lives in `project.yaml` and each module's `module.yaml`.
@@ -20,6 +21,8 @@ Compose Multiplatform app for **Android, iOS and desktop (JVM)**, built with the
 ./kotlin run -m desktopApp --compose-hot-reload   # Desktop window that reloads on every save
 ./kotlin package -m androidApp -f aab   # Release bundle (R8 on; rules in androidApp/proguard-rules.pro).
                                         # Unsigned until a keystore is set up (`./kotlin tool generate-keystore`)
+python3 tools/check_versions.py         # Verify Android and iOS version parity (run in CI)
+uv run --with pillow tools/generate_icons.py  # Regenerate app icons and launch screens from the vector mark
 ./kotlin show modules | settings | dependencies | tasks
 ```
 
@@ -103,6 +106,12 @@ bells-session        the session (log sheet, EMOM, hold and rest timers, plan sh
 bells-today          the Lift tab and the gear (bells, bar, bands, records)
 bells                Lift's entry point: its navigation keys (`nav/LiftRoutes.kt`) and the entry for each
                      (`liftEntries`), which `App` registers and composes; its flow tests drive those entries
+
+androidApp           Android host application: AndroidManifest.xml, res/, launch theme, ProGuard rules, keystore
+desktopApp           Desktop host application: main.kt entry point, Swing integration, window sizing
+iosApp               iOS host application: ViewController.kt, iosApp.swift, Xcode project, Info.plist, Assets
+detekt-plugin        Toolchain task plugin: runs detekt with Compose rules across modules (`./kotlin check detekt`)
+lint-plugin          Toolchain task plugin: runs ktlint checks and auto-formatting (`./kotlin check lint`, `./kotlin do format`)
 ```
 
 Dependencies point down the list: a feature depends on its side's `*-ui`, `*-data` and `*-domain` (through

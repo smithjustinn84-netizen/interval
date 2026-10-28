@@ -1,9 +1,53 @@
-# Releasing 0.2.0
+# Release Guide
 
-What the sprint of 2026-10-27 landed is in [CHANGELOG.md](../CHANGELOG.md). This is what still stands between
-`main` and the first Play upload, in order, and what was left out on purpose.
+This document describes the release procedure for Interval, including version bumping, R8 minification smoke
+tests, keystore setup, CI automation, and the pending follow-ups for 0.2.0. What landed in each version is
+tracked in [CHANGELOG.md](../CHANGELOG.md).
 
-## Before the first upload
+---
+
+## Release Pre-Flight Checklist
+
+| Step | Action | Command / Check |
+|---|---|---|
+| 1 | **Static checks & tests** | `./kotlin check` (ktlint, detekt, JVM/Android unit tests) |
+| 2 | **Version parity** | `python3 tools/check_versions.py` (Android and iOS match) |
+| 3 | **Full build & opt-in check** | `./kotlin build` (compiles all targets including iOS framework) |
+| 4 | **R8 Minification Smoke Test** | Build release APK, install on emulator, run key journeys |
+| 5 | **On-device manual checks** | Share sheet, rest alerts, Android backup/restore, TalkBack |
+| 6 | **Tag & CI release bundle** | `git tag v<version> && git push origin v<version>` |
+
+---
+
+## Version Bumping Procedure
+
+Both Android and iOS versions must be bumped in unison. CI will fail via `tools/check_versions.py` if either
+`versionName`/`MARKETING_VERSION` or `versionCode`/`CURRENT_PROJECT_VERSION` diverge.
+
+1. **Update Android**:
+   In `androidApp/module.yaml`:
+   ```yaml
+   android:
+     versionName: "0.2.0"
+     versionCode: 2
+   ```
+2. **Update iOS**:
+   In `iosApp/module.xcodeproj/project.pbxproj`:
+   Update all occurrences of:
+   ```pbxproj
+   MARKETING_VERSION = 0.2.0;
+   CURRENT_PROJECT_VERSION = 2;
+   ```
+3. **Verify parity**:
+   ```sh
+   python3 tools/check_versions.py
+   ```
+4. **Update Changelog**:
+   In `CHANGELOG.md`, change `[Unreleased]` to `[<version>] — <YYYY-MM-DD>`.
+
+---
+
+## Before the first upload (0.2.0)
 
 1. **Repository secrets for the `release` job** (`.github/workflows/ci.yml`). The job runs on a `v*` tag and
    writes the keystore and `androidApp/keystore.properties` from four secrets:

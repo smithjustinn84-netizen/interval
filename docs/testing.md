@@ -4,6 +4,17 @@ How interval is tested, what runs where, and what the Kotlin Toolchain (0.13) ca
 strategy follows Android's `testing-setup` skill (`android skills add testing-setup`), adapted to a
 Compose Multiplatform project with no Gradle.
 
+```mermaid
+flowchart TD
+    subgraph Pyramid ["Testing Pyramid & Execution Targets"]
+        E2E["Journeys (journeys/*.xml)<br/>• Real Android emulator (amper-37) via android-CLI"]
+        AppFlows["Integration & App Flows (shared/test@jvm, bells/test@jvm)<br/>• AppContent(testKoin), bellsAppTest, full back stack"]
+        ScreenUI["Compose UI Screen Tests (<feature>/test@jvm)<br/>• runUiTest(Window.Phone), setThemedContent, Skiko offscreen"]
+        Storage["Real Storage & Migration Tests (*-data/test@jvm)<br/>• Temp SQLite Room DB, schema migrations (AppMigrationTest, BellsMigrationTest)"]
+        UnitTests["Logic & ViewModels (<module>/test)<br/>• kotlin.test, MainDispatcherTest, fake DAOs / repositories<br/>• Runs on JVM, Android local, and iOS Simulator"]
+    end
+```
+
 ## What runs where
 
 A test lives in the module of what it tests, so `./kotlin test -m <module> -p jvm` runs just that module's.
@@ -115,6 +126,68 @@ that depends on the data module.
 - Use `androidx.compose.ui.test.v2.*`, because the v1 `runComposeUiTest` is deprecated and
   `allWarningsAsErrors` rejects it. Opt in per file with `@file:OptIn(ExperimentalTestApi::class)`,
   never module-wide.
+
+### Screen Test Pattern Example
+
+```kotlin
+@file:OptIn(ExperimentalTestApi::class)
+
+package dev.justinsmith.interval.settings
+
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import dev.justinsmith.interval.ui.Window
+import dev.justinsmith.interval.ui.runUiTest
+import dev.justinsmith.interval.ui.setThemedContent
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
+class SettingsScreenTest {
+    @Test
+    fun togglingCueInvokesCallback() = runUiTest(Window.Phone) {
+        var toggled = false
+        setThemedContent {
+            SettingsScreen(
+                state = SettingsUiState(/* test fixtures */),
+                onToggleCues = { toggled = true },
+            )
+        }
+
+        onNodeWithText("Sound cues").performClick()
+        assertEquals(true, toggled)
+    }
+}
+```
+
+### Visual Debugging (Desktop Screen Capture)
+
+Because UI tests execute off-screen via Skiko on the JVM, you can capture the visual output to inspect a layout
+or diagnose an unexpected state:
+
+```kotlin
+import androidx.compose.ui.graphics.asSkiaBitmap
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.onRoot
+import org.jetbrains.skia.Image
+import java.io.File
+
+// Inside runUiTest:
+val image = onRoot().captureToImage()
+val bytes = Image.makeFromBitmap(image.asSkiaBitmap()).encodeToData()?.bytes
+File("/tmp/screen-test-output.png").writeBytes(bytes!!)
+```
+*(Remove throwaway capture code before committing)*.
+
+### Database & Migration Tests
+
+When Room entities change or migrations are added:
+- Run `interval-data` tests: `./kotlin test -m interval-data -p jvm`
+- Run `bells-data` tests: `./kotlin test -m bells-data -p jvm`
+- Room schema exports are stored in `interval-data/schemas/` and `bells-data/schemas/`.
+- `AppMigrationTest` and `BellsMigrationTest` build databases against legacy schema versions, apply migrations, and
+  verify that data rows and types are preserved without data loss.
 
 ## Journeys (on-device end to end)
 
