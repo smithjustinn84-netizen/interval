@@ -379,6 +379,11 @@ class SessionViewModel(
         awaitingAdd = repository.customExercises.value.map { it.uid }.toSet()
     }
 
+    /** Narrows the log sheet's exercise picker; the library page shares the same filters. */
+    fun updateFilters(transform: (ExerciseFilters) -> ExerciseFilters) {
+        filters.update(transform)
+    }
+
     fun updateDraft(transform: (SetDraft) -> SetDraft) {
         draft.update { before ->
             transform(before).let { changed ->

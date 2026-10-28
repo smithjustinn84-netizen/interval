@@ -30,6 +30,8 @@ test-dependencies:
 
 dependencies@android:
   - $compose.uiTooling
+  # `LifecycleResumeEffect`, for a setting read again as the app comes back.
+  - $libs.androidx.lifecycle.runtime.compose
 
 settings:
   compose:

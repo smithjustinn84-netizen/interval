@@ -43,7 +43,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
-import dev.justinsmith.bells.data.ExerciseFilterStore
 import dev.justinsmith.bells.domain.Block
 import dev.justinsmith.bells.domain.EmomState
 import dev.justinsmith.bells.domain.Exercise
@@ -111,11 +110,10 @@ import org.koin.compose.currentKoinScope
 @Composable
 fun SessionRoute(onExit: () -> Unit) {
     val scope = currentKoinScope()
-    val filters = scope.get<ExerciseFilterStore>()
     val sharer = scope.get<Sharer>()
     val viewModel =
         viewModel {
-            SessionViewModel(scope.get(), scope.get(), scope.get(), scope.get(), filters, scope.get(), scope.get())
+            SessionViewModel(scope.get(), scope.get(), scope.get(), scope.get(), scope.get(), scope.get(), scope.get())
         }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val finished = state.finished
@@ -139,7 +137,7 @@ fun SessionRoute(onExit: () -> Unit) {
     val title = sessionTitle(state.session?.exercises.orEmpty())
     // One set of actions for as long as nothing they close over changes: the state changes every tick while a
     // rest or a hold runs, and a child that takes the actions alone can then skip.
-    val actions = remember(viewModel, filters, title, onExit) { sessionActions(viewModel, filters, title, onExit) }
+    val actions = remember(viewModel, title, onExit) { sessionActions(viewModel, title, onExit) }
     val page = when {
         finished != null -> SessionPage.Summary(finished)
         emom != null && emomState != null -> SessionPage.Emom(emom, emomState)
@@ -183,12 +181,11 @@ private sealed interface SessionPage {
 
 private fun sessionActions(
     viewModel: SessionViewModel,
-    filters: ExerciseFilterStore,
     title: String,
     onExit: () -> Unit,
 ): SessionActions = SessionActions(
     onDraft = viewModel::updateDraft,
-    onFilters = filters::update,
+    onFilters = viewModel::updateFilters,
     onAddExercise = viewModel::expectNewExercise,
     onLog = viewModel::logSet,
     onLogNext = viewModel::logNext,

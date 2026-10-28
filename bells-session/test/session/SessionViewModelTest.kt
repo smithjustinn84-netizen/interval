@@ -10,6 +10,7 @@ import dev.justinsmith.bells.data.SessionEntity
 import dev.justinsmith.bells.data.SetEntity
 import dev.justinsmith.bells.domain.BAR_KG_STEP
 import dev.justinsmith.bells.domain.BuiltInExercise
+import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
 import dev.justinsmith.bells.domain.ProgramId
 import dev.justinsmith.bells.domain.ProgramKey
@@ -106,6 +107,12 @@ class SessionViewModelTest {
                 band = band,
             )
         }
+    }
+
+    @Test
+    fun `the log sheet's filters go through the session and narrow its list`() = viewModel().use {
+        updateFilters { it.copy(equipment = setOf(Equipment.Kettlebell)) }
+        assertEquals(setOf(Equipment.Kettlebell), state.value.library.filters.equipment)
     }
 
     @Test
