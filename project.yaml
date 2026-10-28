@@ -10,6 +10,7 @@ modules:
   - bells-ui
   - core
   - core-testing
+  - core-time
   - desktopApp
   - detekt-plugin
   - interval-data
