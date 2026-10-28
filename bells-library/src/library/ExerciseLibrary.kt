@@ -4,14 +4,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.bells.data.BellsRepository
@@ -41,7 +42,6 @@ import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -49,35 +49,44 @@ import kotlinx.coroutines.flow.stateIn
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
+/** The library's list, and the page of the exercise open over it, if any. */
+data class ExerciseLibraryUiState(
+    val list: LibraryList = LibraryList(offeredExercises(emptyList())),
+    val detail: ExerciseDetailUiState? = null,
+)
+
 /**
  * Every exercise on offer, the ones done lately first, narrowed by the filters the Log sheet shares; and the one
- * [open], if any, with the user's history with it.
+ * open, if any, with the user's history with it. Which one is open is kept in [savedState], so it survives the
+ * process being let go.
  */
 class ExerciseLibraryViewModel(
     repository: BellsRepository,
     private val filters: ExerciseFilterStore,
     private val timestamps: TimestampFormatter,
+    private val savedState: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
-    private val opened = MutableStateFlow<String?>(null)
+    private val opened = savedState.getStateFlow<String?>(KEY_OPENED, null)
 
-    val state: StateFlow<LibraryList> =
-        combine(
-            repository.customExercises,
-            repository.sessions,
-            repository.active,
-            filters.filters,
-            combine(repository.bells, repository.bands, repository.bar, ::ownedEquipment),
-        ) { made, sessions, active, narrowed, owned ->
-            val offered = offeredExercises(made, archived = narrowed.showArchived)
-            val history = sessions.setsOldestFirst() + active?.sets.orEmpty()
-            LibraryList(offered, recentExercises(history, offered), narrowed, owned)
-        }.stateIn(viewModelScope, SharingStarted.Eagerly, LibraryList(offeredExercises(emptyList())))
+    private val list = combine(
+        repository.customExercises,
+        repository.sessions,
+        repository.active,
+        filters.filters,
+        combine(repository.bells, repository.bands, repository.bar, ::ownedEquipment),
+    ) { made, sessions, active, narrowed, owned ->
+        val offered = offeredExercises(made, archived = narrowed.showArchived)
+        val history = sessions.setsOldestFirst() + active?.sets.orEmpty()
+        LibraryList(offered, recentExercises(history, offered), narrowed, owned)
+    }
 
-    /** The exercise open, by its key, and the user's history with it; null while none is, or once it is gone. */
-    val detail: StateFlow<ExerciseDetailUiState?> =
-        combine(opened, repository.sessions, repository.customExercises) { key, sessions, made ->
-            key?.let { Exercise.parse(it, made) }?.let { exerciseDetail(it, sessions, timestamps) }
-        }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    // The exercise open, by its key; null while none is, or once it is gone.
+    private val detail = combine(opened, repository.sessions, repository.customExercises) { key, sessions, made ->
+        key?.let { Exercise.parse(it, made) }?.let { exerciseDetail(it, sessions, timestamps) }
+    }
+
+    val state: StateFlow<ExerciseLibraryUiState> = combine(list, detail, ::ExerciseLibraryUiState)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, ExerciseLibraryUiState())
 
     fun updateFilters(transform: (ExerciseFilters) -> ExerciseFilters) {
         filters.update(transform)
@@ -85,7 +94,11 @@ class ExerciseLibraryViewModel(
 
     /** Opens the exercise [key] names, or closes the one open with null. */
     fun open(key: String?) {
-        opened.value = key
+        savedState[KEY_OPENED] = key
+    }
+
+    private companion object {
+        const val KEY_OPENED = "opened"
     }
 }
 
@@ -109,24 +122,19 @@ fun exerciseDetail(
 @Composable
 fun ExerciseLibraryRoute(onBack: () -> Unit, onOpenSession: (uid: String) -> Unit = {}) {
     val scope = currentKoinScope()
-    val viewModel = viewModel { ExerciseLibraryViewModel(scope.get(), scope.get(), scope.get()) }
+    val viewModel = viewModel {
+        ExerciseLibraryViewModel(scope.get(), scope.get(), scope.get(), createSavedStateHandle())
+    }
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val detail by viewModel.detail.collectAsStateWithLifecycle()
-    // Kept here rather than in the view model, so an exercise open survives the process being let go.
-    var opened by rememberSaveable { mutableStateOf<String?>(null) }
     var adding by rememberSaveable { mutableStateOf<String?>(null) }
-    LaunchedEffect(opened) { viewModel.open(opened) }
     ExerciseLibraryScreen(
-        state,
+        state.list,
         onFilters = viewModel::updateFilters,
         onBack = onBack,
         onNew = { adding = it },
-        onOpen = { opened = it },
+        onOpen = viewModel::open,
     )
-    // Until the view model has caught up with what was opened, there is nothing to show yet.
-    detail?.takeIf { opened != null && it.exercise.key == opened }?.let { shown ->
-        ExerciseDetailSheet(shown, onOpenSession, onDismiss = { opened = null })
-    }
+    state.detail?.let { shown -> ExerciseDetailSheet(shown, onOpenSession, onDismiss = { viewModel.open(null) }) }
     adding?.let { name -> ExerciseEditorSheet(name, onDismiss = { adding = null }) }
 }
 
