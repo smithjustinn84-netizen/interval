@@ -3,10 +3,8 @@ package dev.justinsmith.interval.di
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
-import dev.justinsmith.bells.data.IntervalActivity
 import dev.justinsmith.interval.data.AppDatabase
 import dev.justinsmith.interval.data.IntervalRepository
-import dev.justinsmith.interval.data.RepositoryIntervalActivity
 import dev.justinsmith.interval.data.buildAppDatabase
 import dev.justinsmith.interval.platform.PlatformStorage
 import dev.justinsmith.interval.platform.WallClock
@@ -63,7 +61,7 @@ private fun preferencesAt(path: String): DataStore<Preferences> = preferenceStor
     )
 }
 
-/** The clock, the repository over [storageModule], and what Lift reads of it. */
+/** The clock, and the repository over [storageModule]. */
 val dataModule: Module = module {
     single { WallClock(::epochMillisNow) }
     // The workout ticker's clock: time that counts through the device's sleep.
@@ -78,6 +76,4 @@ val dataModule: Module = module {
             clock = get(),
         )
     }
-    // What Lift reads of the interval side: the workouts for its week, and the goal set on Plan.
-    single<IntervalActivity> { RepositoryIntervalActivity(get(), get(StorageScope)) }
 }

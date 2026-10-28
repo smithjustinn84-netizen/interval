@@ -12,8 +12,6 @@ apply:
 dependencies:
   - //interval-domain: exported
   - //core
-  # `IntervalActivity`: what Lift reads of this side, bound here over the repository.
-  - //bells-data
   - $libs.androidx.datastore.preferences.core
   - $libs.koin.core
   - $libs.kermit
