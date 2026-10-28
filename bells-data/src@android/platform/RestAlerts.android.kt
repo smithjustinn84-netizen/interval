@@ -30,20 +30,36 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.compose.resources.getString
 
-/** Starts and stops [RestService] for a rest; the service counts it down itself from the end it is given. */
+/**
+ * Starts and stops [RestService] for a rest; the service counts it down itself from the end it is given. Both go
+ * to the service as commands, which it takes in order: it has gone to the foreground with a start before it sees
+ * the stop that follows, as the system demands of a service started for the foreground.
+ */
 internal class AndroidRestAlerts(private val context: Context) : RestAlerts {
     private val log = Logger.withTag("AndroidRestAlerts")
+    private var running = false
 
     override fun start(endAtEpochMillis: Long) {
+        // A rest shortened past the time it has run is already over: nothing to count down.
+        if (endAtEpochMillis <= System.currentTimeMillis()) {
+            stop()
+            return
+        }
         val intent = Intent(context, RestService::class.java).putExtra(RestService.EXTRA_END_AT, endAtEpochMillis)
         // Refused from the background (Android 12+). A set is logged from the session's screen, so that is
         // not expected; if it happens the rest runs on, without the notification.
         runCatching { context.startForegroundService(intent) }
+            .onSuccess { running = true }
             .onFailure { log.w(it) { "Couldn't start the rest service" } }
     }
 
     override fun stop() {
-        context.stopService(Intent(context, RestService::class.java))
+        if (!running) return
+        running = false
+        // Refused only once the service has gone on its own, with the app in the background: nothing to stop.
+        val intent = Intent(context, RestService::class.java).setAction(RestService.ACTION_STOP)
+        runCatching { context.startService(intent) }
+            .onFailure { log.d(it) { "The rest service had already gone" } }
     }
 }
 
@@ -69,23 +85,34 @@ class RestService : Service() {
             ?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG)
     }
 
+    // Each stop is for the commands before it: a rest started after it (its start, a later id) keeps the service.
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_STOP) {
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
         val endAt = intent?.getLongExtra(EXTRA_END_AT, 0L) ?: 0L
+        // Started for the foreground, so to the foreground first, whatever follows: stopping short of it
+        // crashes the app.
+        goForeground(endAt)
         if (endAt <= System.currentTimeMillis()) {
-            stopSelf()
+            stopSelf(startId)
         } else {
-            show(endAt)
+            countDown(endAt)
         }
         return START_NOT_STICKY
     }
 
-    private fun show(endAt: Long) {
+    private fun goForeground(endAt: Long) {
         val first = runBlocking { notification(endAt) }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(NOTIFICATION_ID, first, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
         } else {
             startForeground(NOTIFICATION_ID, first)
         }
+    }
+
+    private fun countDown(endAt: Long) {
         runCatching { wakeLock?.takeUnless { it.isHeld }?.acquire(WAKE_LOCK_TIMEOUT_MILLIS) }
             .onFailure { log.w(it) { "Couldn't hold the wake lock" } }
         countdown?.cancel()
@@ -146,6 +173,7 @@ class RestService : Service() {
 
     companion object {
         internal const val EXTRA_END_AT = "dev.justinsmith.bells.REST_END_AT"
+        internal const val ACTION_STOP = "dev.justinsmith.bells.REST_STOP"
         private const val CHANNEL_ID = "rest"
 
         /** Beside the workout's, which is 1. */
