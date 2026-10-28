@@ -25,6 +25,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.bells.domain.CustomExercise
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.Exercise
@@ -219,8 +220,9 @@ internal fun ExerciseChoice(
         )
     } else {
         val editor = rememberExerciseEditor(uid = null, name = adding)
+        val editorState by editor.state.collectAsStateWithLifecycle()
         ExerciseEditorForm(
-            editor.state,
+            editorState,
             onChange = editor::change,
             onSave = { typed, cues -> if (editor.save(typed, cues)) onSave() },
             modifier = modifier,

@@ -8,24 +8,26 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.saveable.mapSaver
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.createSavedStateHandle
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.bells.data.BellsRepository
+import dev.justinsmith.bells.domain.CustomExercise
 import dev.justinsmith.bells.domain.Equipment
 import dev.justinsmith.bells.domain.ExerciseDraft
 import dev.justinsmith.bells.domain.Focus
 import dev.justinsmith.bells.domain.MAX_EXERCISE_CUES
 import dev.justinsmith.bells.domain.MAX_EXERCISE_NAME
 import dev.justinsmith.bells.domain.Measure
+import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.bells.domain.canSave
 import dev.justinsmith.bells.domain.exerciseNameKey
 import dev.justinsmith.bells.domain.takenNames
@@ -63,6 +65,11 @@ import dev.justinsmith.interval.ui.NameField
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ToggleRow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 
@@ -79,111 +86,144 @@ data class ExerciseEditorUiState(
 )
 
 /**
- * The exercise a sheet is adding, named [name] to start (from a search that found nothing), or changing,
- * archiving or restoring: the user's [uid]; one gone meanwhile is added afresh. It lives as long as the sheet,
- * kept by [rememberExerciseEditor] across a configuration change and process death, so a sheet opened again
- * starts from what is saved rather than from a draft left behind.
+ * The exercise a sheet is adding, named [openedName] to start (from a search that found nothing), or changing,
+ * archiving or restoring: the user's [openedUid]; one gone meanwhile is added afresh. It belongs to the screen
+ * (see [rememberExerciseEditor]), so it lives through a configuration change, and its draft through process
+ * death in [savedState]; a sheet opened again calls [reopen], to start from what is saved rather than from a
+ * draft left behind. The names taken and whether sets of it are logged follow the repository while it is open.
  */
-@Stable
-class ExerciseEditor(
+class ExerciseEditorViewModel(
     private val repository: BellsRepository,
+    private val savedState: SavedStateHandle,
     private val openedUid: String?,
     private val openedName: String,
-    restored: ExerciseDraft? = null,
-) {
-    private val existing = openedUid?.let { id -> repository.customExercises.value.firstOrNull { it.uid == id } }
-    private val uid = existing?.uid
+) : ViewModel() {
+    // Read with the draft, which changes whenever this does: [reopen] sets both.
+    private var uid = savedUid()
 
-    var state by mutableStateOf(
-        ExerciseEditorUiState(
-            draft = restored ?: existing?.let {
-                ExerciseDraft(it.name, it.equipment, it.measure, it.perSide, it.focus, it.cues)
-            } ?: ExerciseDraft(name = openedName.trim()),
+    private val draft = MutableStateFlow(savedState.restoredDraft() ?: savedDraft())
+
+    val state: StateFlow<ExerciseEditorUiState> =
+        combine(draft, repository.customExercises, repository.sessions, repository.active) {
+                draft,
+                made,
+                sessions,
+                active,
+            ->
+            editorState(draft, made, sessions.flatMap { it.sets } + active?.sets.orEmpty())
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            editorState(
+                draft.value,
+                repository.customExercises.value,
+                repository.sessions.value.flatMap { it.sets } + repository.active.value?.sets.orEmpty(),
+            ),
+        )
+
+    private fun editorState(
+        draft: ExerciseDraft,
+        made: List<CustomExercise>,
+        sets: List<SetLog>,
+    ): ExerciseEditorUiState {
+        val existing = made.firstOrNull { it.uid == uid }
+        return ExerciseEditorUiState(
+            draft = draft,
             saved = existing != null,
             archived = existing?.archived == true,
-            taken = takenNames(repository.customExercises.value, uid),
-            locked = existing != null &&
-                (repository.sessions.value.flatMap { it.sets } + repository.active.value?.sets.orEmpty())
-                    .any { it.exercise.key == existing.key },
-        ),
-    )
-        private set
+            taken = takenNames(made, uid),
+            locked = existing != null && sets.any { it.exercise.key == existing.key },
+        )
+    }
+
+    /** Starts again from the exercise as saved, or the name it was opened with, leaving any draft behind. */
+    fun reopen() {
+        uid = savedUid()
+        draft.value = savedDraft()
+        savedState.keep(draft.value)
+    }
+
+    private fun savedUid() = openedUid?.let { id -> repository.customExercises.value.firstOrNull { it.uid == id } }?.uid
+
+    private fun savedDraft() = repository.customExercises.value.firstOrNull { it.uid == uid }
+        ?.let { ExerciseDraft(it.name, it.equipment, it.measure, it.perSide, it.focus, it.cues) }
+        ?: ExerciseDraft(name = openedName.trim())
 
     /** Changes the draft; a locked one keeps its equipment and measure. */
     fun change(transform: (ExerciseDraft) -> ExerciseDraft) {
-        val changed = transform(state.draft)
-        state = state.copy(
-            draft = if (state.locked) {
-                changed.copy(equipment = state.draft.equipment, measure = state.draft.measure)
-            } else {
-                changed
-            },
-        )
+        val current = state.value
+        val changed = transform(current.draft)
+        draft.value = if (current.locked) {
+            changed.copy(equipment = current.draft.equipment, measure = current.draft.measure)
+        } else {
+            changed
+        }
+        savedState.keep(draft.value)
     }
 
     /** Saves it as [name] with [cues]; false, and nothing saved, while it can't be. */
     fun save(name: String, cues: String): Boolean {
-        if (!state.draft.canSave(name, state.taken)) return false
-        repository.saveExercise(uid, state.draft.copy(name = name, cues = cues))
+        val current = state.value
+        if (!current.draft.canSave(name, current.taken)) return false
+        repository.saveExercise(uid, current.draft.copy(name = name, cues = cues))
         return true
     }
 
     /** Archives the exercise, or restores an archived one; nothing for one not saved yet. */
     fun toggleArchived() {
         val uid = uid ?: return
-        repository.setArchived(uid, !state.archived)
-    }
-
-    companion object {
-        /** Keeps what was opened and the draft, enums by their names: not every platform saves an enum. */
-        fun saver(repository: BellsRepository): Saver<ExerciseEditor, Any> = mapSaver(
-            save = {
-                val draft = it.state.draft
-                mapOf(
-                    UID to it.openedUid.orEmpty(),
-                    OPENED_NAME to it.openedName,
-                    NAME to draft.name,
-                    EQUIPMENT to draft.equipment.name,
-                    MEASURE to draft.measure.name,
-                    PER_SIDE to draft.perSide,
-                    FOCUS to draft.focus.name,
-                    CUES to draft.cues,
-                )
-            },
-            restore = {
-                ExerciseEditor(
-                    repository,
-                    openedUid = (it.getValue(UID) as String).ifEmpty { null },
-                    openedName = it.getValue(OPENED_NAME) as String,
-                    restored = ExerciseDraft(
-                        name = it.getValue(NAME) as String,
-                        equipment = Equipment.valueOf(it.getValue(EQUIPMENT) as String),
-                        measure = Measure.valueOf(it.getValue(MEASURE) as String),
-                        perSide = it.getValue(PER_SIDE) as Boolean,
-                        focus = Focus.valueOf(it.getValue(FOCUS) as String),
-                        cues = it.getValue(CUES) as String,
-                    ),
-                )
-            },
-        )
-
-        private const val UID = "uid"
-        private const val OPENED_NAME = "openedName"
-        private const val NAME = "name"
-        private const val EQUIPMENT = "equipment"
-        private const val MEASURE = "measure"
-        private const val PER_SIDE = "perSide"
-        private const val FOCUS = "focus"
-        private const val CUES = "cues"
+        repository.setArchived(uid, !state.value.archived)
     }
 }
 
-/** The [ExerciseEditor] for [uid], or a new exercise named [name], for as long as the caller shows it. */
+// The draft as saved state holds it, enums by their names: not every platform saves an enum.
+private fun SavedStateHandle.keep(draft: ExerciseDraft) {
+    this[NAME] = draft.name
+    this[EQUIPMENT] = draft.equipment.name
+    this[MEASURE] = draft.measure.name
+    this[PER_SIDE] = draft.perSide
+    this[FOCUS] = draft.focus.name
+    this[CUES] = draft.cues
+}
+
+// Every field is kept together, so a draft without its name was never kept.
+private fun SavedStateHandle.restoredDraft(): ExerciseDraft? {
+    val name = get<String>(NAME) ?: return null
+    val blank = ExerciseDraft()
+    return ExerciseDraft(
+        name = name,
+        equipment = Equipment.entries.firstOrNull { it.name == get<String>(EQUIPMENT) } ?: blank.equipment,
+        measure = Measure.entries.firstOrNull { it.name == get<String>(MEASURE) } ?: blank.measure,
+        perSide = get<Boolean>(PER_SIDE) ?: blank.perSide,
+        focus = Focus.entries.firstOrNull { it.name == get<String>(FOCUS) } ?: blank.focus,
+        cues = get<String>(CUES) ?: blank.cues,
+    )
+}
+
+private const val NAME = "draft_name"
+private const val EQUIPMENT = "draft_equipment"
+private const val MEASURE = "draft_measure"
+private const val PER_SIDE = "draft_per_side"
+private const val FOCUS = "draft_focus"
+private const val CUES = "draft_cues"
+
+/**
+ * The editor for the user's exercise [uid], or a new one named [name], for as long as the caller shows it. The
+ * screen keeps it, one for each exercise opened, as it keeps its other ViewModels; shown anew (not brought back
+ * after a configuration change or process death), it starts again from what is saved.
+ */
 @Composable
-fun rememberExerciseEditor(uid: String?, name: String): ExerciseEditor {
-    val repository = currentKoinScope().get<BellsRepository>()
-    val saver = remember(repository) { ExerciseEditor.saver(repository) }
-    return rememberSaveable(uid, name, saver = saver) { ExerciseEditor(repository, uid, name) }
+fun rememberExerciseEditor(uid: String?, name: String): ExerciseEditorViewModel {
+    val scope = currentKoinScope()
+    val editor = viewModel(key = "exerciseEditor:${uid.orEmpty()}:$name") {
+        ExerciseEditorViewModel(scope.get(), createSavedStateHandle(), uid, name)
+    }
+    // Runs only when the sheet is shown anew: brought back, the saveable is restored and this is skipped.
+    rememberSaveable(uid, name) {
+        editor.reopen()
+        true
+    }
+    return editor
 }
 
 /**
@@ -194,9 +234,10 @@ fun rememberExerciseEditor(uid: String?, name: String): ExerciseEditor {
 @Composable
 fun ExerciseEditorSheet(name: String, onDismiss: () -> Unit) {
     val editor = rememberExerciseEditor(uid = null, name = name)
+    val state by editor.state.collectAsStateWithLifecycle()
     IntervalSheet(stringResource(Res.string.exercise_editor_new), onDismiss = onDismiss) { hide ->
         ExerciseEditorForm(
-            editor.state,
+            state,
             onChange = editor::change,
             onSave = { typed, cues -> if (editor.save(typed, cues)) hide() },
             modifier = Modifier.padding(vertical = Spacing.space8),

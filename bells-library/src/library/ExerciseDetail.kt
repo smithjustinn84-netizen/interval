@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.bells.domain.BuiltInExercise
 import dev.justinsmith.bells.domain.CustomExercise
 import dev.justinsmith.bells.domain.Exercise
@@ -115,8 +116,9 @@ fun ExerciseDetailSheet(
         ) { form ->
             if (form && exercise is CustomExercise) {
                 val editor = rememberExerciseEditor(exercise.uid, "")
+                val editorState by editor.state.collectAsStateWithLifecycle()
                 ExerciseEditorForm(
-                    editor.state,
+                    editorState,
                     onChange = editor::change,
                     onSave = { typed, cues -> if (editor.save(typed, cues)) hide() },
                     onArchive = {
