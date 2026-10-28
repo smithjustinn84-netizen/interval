@@ -61,14 +61,17 @@ Modules are flat directories with unique names (`-m` takes the name); `project.y
 
 ```
 core                 the theme, tokens, motion, components, lanes, `Tab` and `push` (nav/), the platform hooks
-                     the UI needs (`SystemServices.kt`), calendar/clock maths, and `storage/Storage.kt`
-                     (`SerialWriter`, `orOnError`/`orEmptyOnError`). Packages `dev.justinsmith.interval.ui`,
-                     `.platform`, `.timer`, `.nav`, `.storage`; resources `dev.justinsmith.core.resources`
+                     the UI needs (`SystemServices.kt`), and `storage/Storage.kt` (`SerialWriter`,
+                     `orOnError`/`orEmptyOnError`); exports `core-time`. Packages `dev.justinsmith.interval.ui`,
+                     `.platform`, `.nav`, `.storage`; resources `dev.justinsmith.core.resources`
+core-time            calendar/clock maths (`CalendarDays`, `formatClock`, `WeekStanding`), package `.timer`. No
+                     dependencies, so the domains compile without Compose
 core-testing         `MainDispatcherTest`, `FixedTimestampFormatter`, `FakeAppInfo`, the tests' calendar;
                      src@jvm: the UI harness (`runUiTest`, `setThemedContent`, `StateRestoration`, `waitForText`)
 
 interval-domain      shared/timer + model: `IntervalConfig`, `Preset`, `WorkoutEngine`, calories, the describe
-                     parser, `AppSettings`, `HistoryEntry`, `PlannedWorkout`, `LiftWorkout`, `WorkoutProgress`
+                     parser, `AppSettings`, `HistoryEntry`, `PlannedWorkout`, `LiftWorkout`, `WorkoutProgress`;
+                     over `core-time`, not `core`
 interval-data        `IntervalRepository`, `AppDatabase` (Room, KSP, `schemas/`), the settings DataStore,
                      `PlatformStorage`, `storageModule`/`dataModule` (di/)
 interval-platform    `CuePlayer`, `WorkoutControls`, `BackgroundWorkout`, `PlanReminders` (+ `reminderWords`),
@@ -87,7 +90,8 @@ interval-history     History (log, calendar, summaries, a finished workout) and 
                      the other; `PlanReminderScheduler` (`historyModule`, di/) keeps the platform's reminders
                      in step with the plan
 shared               the app: `App.kt` (the back stack and every entry), `di/AppKoin.kt` (`appModules`,
-                     `rememberAppKoin`), `nav/Routes.kt` (the app's own keys), `ui/AppNavigation.kt`, about/,
+                     `rememberAppKoin`, and the `IntervalActivity` Lift reads, over `IntervalRepository`),
+                     `nav/Routes.kt` (the app's own keys), `ui/AppNavigation.kt`, about/,
                      `app_name` and `app_icon`. What `androidApp`, `iosApp` and `desktopApp` depend on
 
 bells-domain         Lift's pure domain (`dev.justinsmith.bells.domain`): exercises, programs, sets and
@@ -200,7 +204,7 @@ toolchain (`$compose.*`).
   (`interval-history/src/plan/`, an eager single) recomputes `plannedReminders` (the next 14 days with a plan
   still open, from `TrainingLog.upNext`) on every change and at midnight, and hands the whole set to
   `PlanReminders.schedule`, which replaces what is pending: Android arms one inexact alarm per day
-  (`PlanAlarms`, recorded in SharedPreferences so `PlanReminderReceiver` can re-arm after a reboot or clock
+  (`PlanAlarms`, recorded in a DataStore of its own so `PlanReminderReceiver` can re-arm after a reboot or clock
   change), iOS one calendar-triggered local notification per day (the workout's notifications remove only their
   own identifiers, and leave `PLAN_REMINDER_DAYS` of the 64 pending slots free). Words come from
   `reminderWords`, the same on both. `AskToShowNotifications()` asks for the permission on Plan while it is on.

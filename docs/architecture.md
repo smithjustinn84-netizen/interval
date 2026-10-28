@@ -47,6 +47,7 @@ graph TD
     subgraph DomainData ["Domain & Data"]
         IntervalData["interval-data (Room, DataStore)"]
         IntervalDomain["interval-domain (Engine, Models)"]
+        CoreTime["core-time (Calendar & Clock Maths)"]
         BellsData["bells-data (Room, RestAlerts)"]
         BellsDomain["bells-domain (Programs, Models)"]
         IntervalPlatform["interval-platform (Cues, Background Services)"]
@@ -72,6 +73,8 @@ graph TD
 
     IntervalUI --> Core
     BellsUI --> Core
+    Core --> CoreTime
+    IntervalDomain --> CoreTime
 
     Timer --> IntervalData
     Workout --> IntervalData
@@ -121,7 +124,7 @@ Each module applies a reusable template from `templates/`:
 |---|---|---|
 | **App Targets** | `androidApp`, `iosApp`, `desktopApp` | Platform entry points, manifests, splash/launch assets, packaging. |
 | **Container** | `shared` | Application entry (`App.kt`), Navigation 3 routing table, Koin graph assembly, root theme host. |
-| **Core** | `core`, `core-testing` | Design tokens (`Spacing`, `Radius`, `Sizes`, `Motion`), `IntervalTheme`, navigation primitives, storage utilities, UI test harness. |
+| **Core** | `core`, `core-time`, `core-testing` | Design tokens (`Spacing`, `Radius`, `Sizes`, `Motion`), `IntervalTheme`, navigation primitives, storage utilities; calendar and clock maths in `core-time`, which has no dependencies so the domains compile without Compose; UI test harness. |
 | **Interval Domain & Data** | `interval-domain`, `interval-data`, `interval-platform` | Timer calculation engine, Room database, DataStore preferences, audio/speech cues, Android Foreground Service, iOS notifications. |
 | **Interval Features** | `interval-home`, `interval-workout`, `interval-presets`, `interval-history`, `interval-settings`, `interval-ui` | Timer tab, active workout screen, preset management, history calendar & routines plan, settings, shared workout components. |
 | **Bells Domain & Data** | `bells-domain`, `bells-data` | Kettlebell exercises, training programs, EMOM/hold timers, Room database, rest beeper and alert services. |
