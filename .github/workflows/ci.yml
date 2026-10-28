@@ -36,16 +36,17 @@ jobs:
       - uses: actions/checkout@v7
 
       # No setup-java: the ./kotlin wrapper provisions its own JRE and toolchain. This cache holds
-      # the toolchain, the JRE and the Android SDK components the toolchain installs itself.
-      - name: Cache Kotlin toolchain and dependencies
-        uses: actions/cache@v6
+      # the toolchain, the JRE, the Maven dependencies (its `.m2.cache`) and the Android SDK components
+      # it installs itself. Each job keeps its own, since each downloads a different set and the first
+      # to save a key owns it; only `main` saves, as a pull request's cache is visible to that PR alone
+      # and would only crowd main's out of the repository's 10 GB.
+      - name: Restore the Kotlin toolchain and dependencies
+        id: cache
+        uses: actions/cache/restore@v6
         with:
-          path: |
-            ~/.cache/JetBrains/Kotlin
-            ~/.m2/repository
-          key: kotlin-${{ runner.os }}-${{ hashFiles('kotlin', 'project.yaml', '**/module.yaml', 'libs.versions.toml') }}
-          restore-keys: |
-            kotlin-${{ runner.os }}-
+          path: ~/.cache/JetBrains/Kotlin
+          key: kotlin-static-${{ runner.os }}-${{ hashFiles('kotlin', 'project.yaml', '**/module.yaml', 'libs.versions.toml') }}
+          restore-keys: kotlin-static-${{ runner.os }}-
 
       - name: Android and iOS carry the same version
         run: python3 tools/check_versions.py
@@ -65,6 +66,13 @@ jobs:
           path: build/tasks/_*_detekt@detekt-plugin/
           if-no-files-found: ignore
 
+      - name: Save the Kotlin toolchain and dependencies
+        if: github.ref == 'refs/heads/main' && steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ~/.cache/JetBrains/Kotlin
+          key: ${{ steps.cache.outputs.cache-primary-key }}
+
   check:
     name: build, test (linux)
     runs-on: ubuntu-24.04
@@ -72,15 +80,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Cache Kotlin toolchain and dependencies
-        uses: actions/cache@v6
+      - name: Restore the Kotlin toolchain and dependencies
+        id: cache
+        uses: actions/cache/restore@v6
         with:
-          path: |
-            ~/.cache/JetBrains/Kotlin
-            ~/.m2/repository
-          key: kotlin-${{ runner.os }}-${{ hashFiles('kotlin', 'project.yaml', '**/module.yaml', 'libs.versions.toml') }}
-          restore-keys: |
-            kotlin-${{ runner.os }}-
+          path: ~/.cache/JetBrains/Kotlin
+          key: kotlin-check-${{ runner.os }}-${{ hashFiles('kotlin', 'project.yaml', '**/module.yaml', 'libs.versions.toml') }}
+          restore-keys: kotlin-check-${{ runner.os }}-
 
       # Platform-filtered because a bare build would reach for the iOS targets, which need macOS.
       - name: Build
@@ -90,30 +96,44 @@ jobs:
       - name: Test
         run: ./kotlin test -p jvm -p android
 
+      - name: Save the Kotlin toolchain and dependencies
+        if: github.ref == 'refs/heads/main' && steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ~/.cache/JetBrains/Kotlin
+          key: ${{ steps.cache.outputs.cache-primary-key }}
+
   ios:
     name: build, test (macos)
     runs-on: macos-15
-    timeout-minutes: 20
+    # A cold run downloads Kotlin/Native and its LLVM before the first link.
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v7
 
-      - name: Cache Kotlin toolchain and dependencies
-        uses: actions/cache@v6
+      - name: Restore the Kotlin toolchain and dependencies
+        id: cache
+        uses: actions/cache/restore@v6
         with:
-          path: |
-            ~/Library/Caches/JetBrains/Kotlin
-            ~/.m2/repository
-          key: kotlin-${{ runner.os }}-${{ hashFiles('kotlin', 'project.yaml', '**/module.yaml', 'libs.versions.toml') }}
-          restore-keys: |
-            kotlin-${{ runner.os }}-
+          path: ~/Library/Caches/JetBrains/Kotlin
+          key: kotlin-ios-${{ runner.os }}-${{ hashFiles('kotlin', 'project.yaml', '**/module.yaml', 'libs.versions.toml') }}
+          restore-keys: kotlin-ios-${{ runner.os }}-
 
       # The only place the Kotlin/Native link runs in CI, which is where module-wide opt-ins and
-      # expect/actual gaps fail. Built unsigned: the project sets no DEVELOPMENT_TEAM.
+      # expect/actual gaps fail. The simulator's link fails on what the device's would, at half the
+      # cost of building both. Built unsigned: the project sets no DEVELOPMENT_TEAM.
       - name: Build the iOS app
-        run: ./kotlin build -m iosApp
+        run: ./kotlin build -m iosApp -p iosSimulatorArm64
 
       - name: Test on the iOS simulator target
         run: ./kotlin test -p iosSimulatorArm64
+
+      - name: Save the Kotlin toolchain and dependencies
+        if: github.ref == 'refs/heads/main' && steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ~/Library/Caches/JetBrains/Kotlin
+          key: ${{ steps.cache.outputs.cache-primary-key }}
 
   release:
     name: signed bundle (android)
@@ -129,15 +149,13 @@ jobs:
       - name: The tag is the version
         run: python3 tools/check_versions.py --tag "${{ github.ref_name }}"
 
-      - name: Cache Kotlin toolchain and dependencies
-        uses: actions/cache@v6
+      # The Linux build's cache, which holds the Android SDK; restored only, never saved from a tag.
+      - name: Restore the Kotlin toolchain and dependencies
+        uses: actions/cache/restore@v6
         with:
-          path: |
-            ~/.cache/JetBrains/Kotlin
-            ~/.m2/repository
-          key: kotlin-${{ runner.os }}-${{ hashFiles('kotlin', 'project.yaml', '**/module.yaml', 'libs.versions.toml') }}
-          restore-keys: |
-            kotlin-${{ runner.os }}-
+          path: ~/.cache/JetBrains/Kotlin
+          key: kotlin-check-${{ runner.os }}-${{ hashFiles('kotlin', 'project.yaml', '**/module.yaml', 'libs.versions.toml') }}
+          restore-keys: kotlin-check-${{ runner.os }}-
 
       # The keystore and its passwords are repository secrets: ANDROID_KEYSTORE_BASE64 is
       # `base64 < release.keystore`, the other three are the matching keystore.properties values.
