@@ -73,7 +73,7 @@ class PlanReminderReceiver : BroadcastReceiver() {
                 work()
             } catch (e: CancellationException) {
                 throw e
-            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+            } catch (@Suppress("detekt.TooGenericExceptionCaught") e: Exception) {
                 log.w(e) { "Couldn't $what" }
             } finally {
                 pending.finish()

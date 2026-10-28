@@ -484,11 +484,18 @@ class BellsRepository(
      * with sets) is archived, so every set keeps its band.
      */
     fun removeBand(band: Band) {
-        val used = (_sessions.value.flatMap { it.sets } + _active.value?.sets.orEmpty()).any { it.band?.id == band.id }
-        if (band.level == null && !used) {
-            writer.persist { bandDao.delete(band.id) }
-        } else {
+        if (band.level != null) {
             saveBand(band.copy(archived = true))
+            return
+        }
+        val now = clock.nowMillis()
+        // Decided in the write, behind any set still queued: one logged with the band a moment ago counts.
+        writer.persist {
+            if (sessionDao.allSets().any { it.band == band.id }) {
+                bandDao.upsert(listOf(band.copy(archived = true).toEntity(now)))
+            } else {
+                bandDao.delete(band.id)
+            }
         }
     }
 

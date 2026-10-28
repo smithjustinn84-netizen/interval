@@ -3,6 +3,7 @@ package dev.justinsmith.interval.data
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
+import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.model.WorkoutProgress
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -24,7 +25,9 @@ private val json = Json {
 
 /** The saved workout, or null when none is saved or it can't be read: then there is nothing to pick up. */
 internal fun Preferences.toWorkoutProgress(): WorkoutProgress? = this[WORKOUT_PROGRESS]?.let { stored ->
-    runCatching { json.decodeFromString<StoredProgress>(stored).toDomain() }.getOrNull()
+    runCatching { json.decodeFromString<StoredProgress>(stored).toDomain() }
+        .onFailure { Logger.withTag("WorkoutProgress").w(it) { "Couldn't read the saved workout" } }
+        .getOrNull()
 }
 
 internal fun MutablePreferences.write(progress: WorkoutProgress?) {

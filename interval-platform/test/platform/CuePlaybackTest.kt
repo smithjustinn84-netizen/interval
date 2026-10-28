@@ -1,10 +1,7 @@
-package dev.justinsmith.interval.workout
+package dev.justinsmith.interval.platform
 
 import dev.justinsmith.interval.fakes.RecordingCuePlayer
 import dev.justinsmith.interval.model.CueSettings
-import dev.justinsmith.interval.platform.Beep
-import dev.justinsmith.interval.platform.Haptic
-import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.timer.Cue
 import dev.justinsmith.interval.timer.Phase
 import kotlin.test.Test

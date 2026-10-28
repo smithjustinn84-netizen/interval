@@ -12,6 +12,7 @@ import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.platform.Speech
+import dev.justinsmith.interval.platform.playCue
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.Cue
 import dev.justinsmith.interval.timer.Effort
@@ -21,7 +22,6 @@ import dev.justinsmith.interval.timer.fromKg
 import dev.justinsmith.interval.timer.stepped
 import dev.justinsmith.interval.timer.toKg
 import dev.justinsmith.interval.timer.withValue
-import dev.justinsmith.interval.workout.playCue
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine

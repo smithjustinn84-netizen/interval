@@ -10,6 +10,8 @@ import dev.justinsmith.bells.data.BellsDatabase
 import dev.justinsmith.bells.domain.EmomCue
 import kotlinx.cinterop.ExperimentalForeignApi
 import org.koin.core.module.Module
+import org.koin.core.module.dsl.onClose
+import org.koin.core.module.dsl.withOptions
 import org.koin.dsl.module
 import platform.AudioToolbox.AudioServicesPlaySystemSound
 import platform.Foundation.NSApplicationSupportDirectory
@@ -41,6 +43,8 @@ actual fun rememberBellsPlatformModule(): Module = remember {
                 AudioServicesPlaySystemSound(sound)
             }
         }
-        single<RestAlerts> { IosRestAlerts() }
+        single<RestAlerts> { IosRestAlerts() }.withOptions {
+            onClose { (it as? IosRestAlerts)?.release() }
+        }
     }
 }

@@ -11,6 +11,7 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import platform.UserNotifications.UNMutableNotificationContent
@@ -50,6 +51,11 @@ internal class IosRestAlerts : RestAlerts {
                 if (error != null) log.w { "Couldn't schedule the rest's end: $error" }
             }
         }
+    }
+
+    /** The container is closing: drop any scheduling still under way. */
+    fun release() {
+        scope.cancel()
     }
 
     override fun stop() {

@@ -22,6 +22,7 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import org.koin.core.module.Module
@@ -65,7 +66,9 @@ actual fun rememberPlatformModule(): Module = remember {
         }
         single<TimestampFormatter> { systemTimestampFormatter() }
         single<AppInfo> { IosAppInfo() }
-        single<BackgroundWorkout> { IosBackgroundWorkout() }
+        single<BackgroundWorkout> { IosBackgroundWorkout() }.withOptions {
+            onClose { (it as? IosBackgroundWorkout)?.release() }
+        }
         single<PlanReminders> { IosPlanReminders() }
         single<Sharer> { IosSharer() }
     }
@@ -106,19 +109,23 @@ private class IosBackgroundWorkout : BackgroundWorkout {
     /** Bumped by each scheduling and each clear, so a scheduling overtaken by a clear adds nothing after it. */
     private var generation = 0
 
-    init {
-        observe(UIApplicationDidEnterBackgroundNotification) { leftScreen() }
-        observe(UIApplicationWillEnterForegroundNotification) { clear() }
-    }
+    private val observers = listOf(
+        observe(UIApplicationDidEnterBackgroundNotification) { leftScreen() },
+        observe(UIApplicationWillEnterForegroundNotification) { clear() },
+    )
 
-    /** Runs [action] on the main queue each time the app posts [name]; for the life of the process, like this. */
-    private fun observe(name: String?, action: () -> Unit) {
-        NSNotificationCenter.defaultCenter.addObserverForName(
-            name = name,
-            `object` = null,
-            queue = NSOperationQueue.mainQueue,
-            usingBlock = { action() },
-        )
+    /** Runs [action] on the main queue each time the app posts [name], until [release]. */
+    private fun observe(name: String?, action: () -> Unit) = NSNotificationCenter.defaultCenter.addObserverForName(
+        name = name,
+        `object` = null,
+        queue = NSOperationQueue.mainQueue,
+        usingBlock = { action() },
+    )
+
+    /** The container is closing: stop listening, and drop any scheduling still under way. */
+    fun release() {
+        observers.forEach { NSNotificationCenter.defaultCenter.removeObserver(it) }
+        scope.cancel()
     }
 
     override fun start(controls: WorkoutControls) {

@@ -1,5 +1,6 @@
 package dev.justinsmith.bells.data
 
+import co.touchlab.kermit.Logger
 import dev.justinsmith.bells.domain.Block
 import dev.justinsmith.bells.domain.BlockKind
 import dev.justinsmith.bells.domain.CustomExercise
@@ -33,6 +34,7 @@ internal data class StoredBlock(
 )
 
 private val json = Json { ignoreUnknownKeys = true }
+private val log = Logger.withTag("StoredPrograms")
 
 /** [days] as [CustomProgramEntity.days] holds them; public so a test can store a program as the app does. */
 fun encodeDays(days: List<List<Block>>): String = json.encodeToString(
@@ -48,7 +50,8 @@ fun encodeDays(days: List<List<Block>>): String = json.encodeToString(
 fun decodeDraftDays(encoded: String, made: List<CustomExercise> = emptyList()): List<List<Block>>? {
     val stored = try {
         json.decodeFromString<List<List<StoredBlock>>>(encoded)
-    } catch (_: IllegalArgumentException) {
+    } catch (e: IllegalArgumentException) {
+        log.w(e) { "Couldn't read a draft's days" }
         return null
     }
     if (stored.isEmpty()) return null
@@ -66,8 +69,9 @@ internal fun Block.toStored() =
 internal fun CustomProgramEntity.toProgram(made: List<CustomExercise> = emptyList()): Program? {
     val stored = try {
         json.decodeFromString<List<List<StoredBlock>>>(days)
-    } catch (_: IllegalArgumentException) {
+    } catch (e: IllegalArgumentException) {
         // A SerializationException included: JSON this build can't read.
+        log.w(e) { "Couldn't read a stored program's days" }
         return null
     }
     val blocks = stored.map { day -> day.mapNotNull { it.toBlock(made) } }.filter { it.isNotEmpty() }
@@ -121,7 +125,8 @@ internal fun encodePlan(plan: SessionPlan): String = json.encodeToString(
 internal fun decodePlan(stored: String, made: List<CustomExercise>): SessionPlan? {
     val blocks = try {
         json.decodeFromString<List<StoredPlanBlock>>(stored)
-    } catch (_: IllegalArgumentException) {
+    } catch (e: IllegalArgumentException) {
+        log.w(e) { "Couldn't read a stored day's plan" }
         return null
     }
     val plan = blocks.map { entry ->

@@ -11,6 +11,7 @@ import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.WorkoutControls
 import dev.justinsmith.interval.platform.WorkoutStatus
+import dev.justinsmith.interval.platform.playCue
 import dev.justinsmith.interval.timer.Cue
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND

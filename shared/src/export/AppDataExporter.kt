@@ -21,24 +21,26 @@ import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.settings.DataExporter
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 
-/** The export file, from what both repositories hold right now. */
+/** The export file, from what both repositories hold right now, mapped and encoded on [computation]. */
 class AppDataExporter(
     private val intervals: IntervalRepository,
     private val lift: BellsRepository,
     private val appInfo: AppInfo,
     private val clock: WallClock,
     private val formatter: TimestampFormatter,
+    private val computation: CoroutineDispatcher = Dispatchers.Default,
 ) : DataExporter {
     private val json = Json { prettyPrint = true }
 
     override suspend fun export(): ShareableFile {
         val now = clock.nowMillis()
         // Both the mapping and the encoding grow with the history, so neither runs on the caller's main thread.
-        val content = withContext(Dispatchers.Default) { json.encodeToString(bundle(now)) }
+        val content = withContext(computation) { json.encodeToString(bundle(now)) }
         return ShareableFile(ExportBundle.fileName(formatter.dayNumber(now)), ExportBundle.MIME_TYPE, content)
     }
 
