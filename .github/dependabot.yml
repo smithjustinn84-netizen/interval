@@ -1,0 +1,11 @@
+# Keeps the workflow's actions on their current majors. Libraries are not covered: Dependabot has no
+# Kotlin Toolchain (Amper) ecosystem, so libs.versions.toml is bumped by hand.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']

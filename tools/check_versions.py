@@ -4,6 +4,9 @@
 Android's `versionName`/`versionCode` live in androidApp/module.yaml; iOS's `MARKETING_VERSION`/
 `CURRENT_PROJECT_VERSION` in the Xcode project. Nothing in the build keeps them in step, so CI runs
 this first. Standard library only; run from anywhere: `python3 tools/check_versions.py`.
+
+`--tag v0.2.0` also fails unless the tag is `v` + that versionName: the release job passes the tag it
+was pushed for, so a bundle is never built under the wrong name.
 """
 
 import re
@@ -23,6 +26,10 @@ def one(pattern: str, text: str, where: Path) -> str:
 
 
 def main() -> None:
+    args = sys.argv[1:]
+    tag = args[1] if len(args) == 2 and args[0] == "--tag" else None
+    if args and tag is None:
+        sys.exit("usage: check_versions.py [--tag vX.Y.Z]")
     android = MODULE_YAML.read_text()
     ios = PBXPROJ.read_text()
     android_name = one(r'^\s*versionName:\s*"([^"]+)"', android, MODULE_YAML)
@@ -34,6 +41,8 @@ def main() -> None:
         problems.append(f"versionName {android_name} (Android) != MARKETING_VERSION {ios_name} (iOS)")
     if android_code != ios_code:
         problems.append(f"versionCode {android_code} (Android) != CURRENT_PROJECT_VERSION {ios_code} (iOS)")
+    if tag is not None and tag != f"v{android_name}":
+        problems.append(f"tag {tag} != v{android_name}, the versionName")
     if problems:
         sys.exit("Versions differ:\n  " + "\n  ".join(problems))
     print(f"Version {android_name} ({android_code}) on Android and iOS")

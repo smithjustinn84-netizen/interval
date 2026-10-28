@@ -1,18 +1,25 @@
 name: CI
 
-# All branches, not just `main`: jj pushes feature bookmarks as ordinary branches, and those
-# should get a run before they are merged.
+# `main`, version tags and pull requests. A jj bookmark pushed without a PR gets no run of its own:
+# start one from the Actions tab or with `gh workflow run CI --ref <bookmark>`. Pushing every branch
+# as well as its PR ran everything twice.
 on:
   push:
-    branches: ['**']
-    # A version tag also packages the signed Android bundle (the `release` job).
+    branches: [main]
+    # A version tag also packages the signed Android bundle (the `release` job). Path filters are not
+    # evaluated for tags, so a tag always runs.
     tags: ['v*']
+    paths-ignore: ['**.md', 'docs/**', 'journeys/**']
   pull_request:
+    paths-ignore: ['**.md', 'docs/**', 'journeys/**']
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# The repository is public: nothing here may write, and secrets are read only by `release`, which a
+# fork's pull request never reaches. Never switch a trigger to `pull_request_target`.
 permissions:
   contents: read
 
@@ -20,9 +27,11 @@ env:
   KOTLIN_CLI_NO_WELCOME_BANNER: "1"
 
 jobs:
-  check:
-    name: lint, build, test (linux)
-    runs-on: ubuntu-latest
+  static:
+    name: versions, lint, detekt
+    # Pinned rather than `-latest`, so an image migration cannot change the build under us.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
 
@@ -47,6 +56,32 @@ jobs:
       - name: Detekt
         run: ./kotlin check detekt
 
+      # detekt.html and detekt.sarif per module, for a failure the log only summarises.
+      - name: Attach the detekt reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: detekt-reports
+          path: build/tasks/_*_detekt@detekt-plugin/
+          if-no-files-found: ignore
+
+  check:
+    name: build, test (linux)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Cache Kotlin toolchain and dependencies
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cache/JetBrains/Kotlin
+            ~/.m2/repository
+          key: kotlin-${{ runner.os }}-${{ hashFiles('kotlin', 'project.yaml', '**/module.yaml', 'libs.versions.toml') }}
+          restore-keys: |
+            kotlin-${{ runner.os }}-
+
       # Platform-filtered because a bare build would reach for the iOS targets, which need macOS.
       - name: Build
         run: ./kotlin build -p jvm -p android
@@ -57,7 +92,8 @@ jobs:
 
   ios:
     name: build, test (macos)
-    runs-on: macos-latest
+    runs-on: macos-15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
 
@@ -83,10 +119,15 @@ jobs:
     name: signed bundle (android)
     # Only a version tag (`git tag v0.2.0 && git push origin v0.2.0`), and only once the checks pass.
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [check]
-    runs-on: ubuntu-latest
+    needs: [static, check]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
+
+      # Before anything is signed: a bundle named for a tag that is not its versionName is a mistake.
+      - name: The tag is the version
+        run: python3 tools/check_versions.py --tag "${{ github.ref_name }}"
 
       - name: Cache Kotlin toolchain and dependencies
         uses: actions/cache@v6
@@ -120,8 +161,9 @@ jobs:
       - name: Package the signed release bundle
         run: ./kotlin package -m androidApp
 
+      # A workflow artifact, not a GitHub Release: the repository is public and the bundle is for Play.
       - name: Attach the bundle
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: interval-${{ github.ref_name }}.aab
           path: build/tasks/_androidApp_bundleAndroid/*.aab

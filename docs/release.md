@@ -28,7 +28,8 @@ What the sprint of 2026-10-27 landed is in [CHANGELOG.md](../CHANGELOG.md). This
    - Backup: `adb shell bmgr backupnow dev.justinsmith.interval`, then `pm clear` and a restore, brings history
      and presets back.
    - TalkBack's headings navigation reaches every section of Settings, History and the Lift tab.
-4. **Tag and upload.** `git tag v0.2.0 && git push origin v0.2.0` (jj has no tags). CI attaches
+4. **Tag and upload.** `git tag v0.2.0 && git push origin v0.2.0` (jj has no tags). The tag must be `v` +
+   `versionName` (`tools/check_versions.py --tag` fails the job before anything is signed). CI attaches
    `interval-v0.2.0.aab` to the workflow run; upload it to the Play Console's internal testing track. Play
    vitals reports crashes and ANRs for a signed upload, so no crash-reporting SDK is needed.
 
