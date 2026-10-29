@@ -84,6 +84,7 @@ import dev.justinsmith.interval.ui.Notices
 import dev.justinsmith.interval.ui.PageKind
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.WatchForIdle
 import dev.justinsmith.interval.ui.backPreviewCorners
 import dev.justinsmith.interval.ui.backPreviewTransition
 import dev.justinsmith.interval.ui.navigationSuiteType
@@ -162,7 +163,9 @@ internal fun AppContent(koin: KoinApplication, introPlaying: Boolean = false) {
             val notices = rememberNotices()
             // The intro is dark in either theme while it covers the app.
             SystemBarIcons(lightIcons = dark || introPlaying)
-            CompositionLocalProvider(LocalNotices provides notices) { AppShell(backStack, notices) }
+            WatchForIdle {
+                CompositionLocalProvider(LocalNotices provides notices) { AppShell(backStack, notices) }
+            }
         }
     }
 }

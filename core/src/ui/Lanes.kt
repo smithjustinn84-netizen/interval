@@ -97,13 +97,15 @@ internal fun cometHead(arc: ClosedFloatingPointRange<Float>, tail: Float, progre
  * bottom-left, so [LANE_COUNT] lanes sweep in from the start edge and bend down behind the cards,
  * every other one faintly filled. Three comets, in the work, rest and accent colours, run the lanes'
  * visible stretch with fading tails. Decorative only, drawn in its own layer so a frame costs nothing
- * else a redraw; with reduced motion on, the comets rest mid-stretch.
+ * else a redraw; with reduced motion on, the comets rest mid-stretch, and while the app is idle
+ * ([LocalIdle]) they stop where they are.
  */
 @Composable
 fun SetupLanes(modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val colors = listOf(palette.workMark, palette.restMark, palette.accent)
-    val clock = rememberLaneClock()
+    val idle = LocalIdle.current
+    val clock = rememberLaneClock(paused = idle())
     Spacer(
         modifier
             .graphicsLayer { clip = true }
@@ -240,20 +242,21 @@ private class LaneStrokes(step: Float, line: Float) {
 }
 
 /**
- * The time behind the comets, in milliseconds since the artwork appeared, advanced every frame. Read
- * while drawing, never in composition, so a frame redraws the artwork alone. Frames come from an
- * infinite animation, so UI tests (which cancel those) never wait on it. Still at 0 with reduced
- * motion on.
+ * The time behind the comets, in milliseconds the artwork has run, advanced every frame. Read while
+ * drawing, never in composition, so a frame redraws the artwork alone. Frames come from an infinite
+ * animation, so UI tests (which cancel those) never wait on it. Still at 0 with reduced motion on;
+ * held while [paused], asking for no frames, and run on from there after.
  */
 @Composable
-private fun rememberLaneClock(): LongState {
+private fun rememberLaneClock(paused: Boolean = false): LongState {
     val millis = remember { mutableLongStateOf(0L) }
     val still = prefersReducedMotion()
-    LaunchedEffect(still) {
-        millis.longValue = 0L
-        if (still) return@LaunchedEffect
+    LaunchedEffect(still, paused) {
+        if (still) millis.longValue = 0L
+        if (still || paused) return@LaunchedEffect
+        val from = millis.longValue
         val start = withInfiniteAnimationFrameMillis { it }
-        while (true) millis.longValue = withInfiniteAnimationFrameMillis { it } - start
+        while (true) millis.longValue = from + withInfiniteAnimationFrameMillis { it } - start
     }
     return millis
 }

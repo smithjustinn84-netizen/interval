@@ -403,6 +403,9 @@ object Motion {
     const val LEAD_COMET_TURN_MILLIS = 12_000f
     const val CHASE_COMET_TURN_MILLIS = 22_000f
 
+    /** The Setup comets stop where they are after this long without a touch or key, and run on at the next. */
+    const val IDLE_MILLIS = 20_000L
+
     /** A held stepper starts repeating after this long… */
     const val STEPPER_HOLD_MILLIS = 420L
 
