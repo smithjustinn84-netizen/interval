@@ -214,7 +214,7 @@ adb shell pm clear dev.justinsmith.interval      # Most journeys expect a fresh 
 |---|---|
 | `start-workout.xml` | Edit work time via the sheet, start, pause/resume, skip, end with nothing saved |
 | `history.xml` | Set a weekly goal from the first run, end after a round, find it in History and open it, see it on the month, clear History |
-| `presets.xml` | Save the current settings from the Presets tab, put a built-in on the Timer and start one from its sheet, edit and delete the saved one |
+| `presets.xml` | On the Presets page (All presets on the Timer): save the Timer's settings, put a built-in on the Timer and start one from its sheet, edit and delete the saved one, open New preset |
 | `settings.xml` | Toggle a cue, switch to Dark and back, settings persist |
 | `system-back.xml` | System back from a tab returns to Timer; during a workout it pauses and asks |
 | `lift-equipment.xml` | A Lift session logging a bell, a band, a hold on one side and bodyweight with weight added, each in its own words, Moved counting only the weighed load, then the summary |
