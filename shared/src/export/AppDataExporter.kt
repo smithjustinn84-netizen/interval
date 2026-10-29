@@ -35,7 +35,11 @@ class AppDataExporter(
     private val formatter: TimestampFormatter,
     private val computation: CoroutineDispatcher = Dispatchers.Default,
 ) : DataExporter {
-    private val json = Json { prettyPrint = true }
+    // Defaults are written too: a reader must find the schema in the file, not assume it.
+    private val json = Json {
+        prettyPrint = true
+        encodeDefaults = true
+    }
 
     override suspend fun export(): ShareableFile {
         val now = clock.nowMillis()

@@ -12,6 +12,9 @@ import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -51,6 +54,14 @@ class ExportTest {
         assertEquals(listOf("TwoHandSwing"), session.sets.map { it.exercise })
         assertEquals(listOf(16.0), session.sets.map { it.bellKg })
         assertNull(bundle.lift.following)
+    }
+
+    @Test
+    fun `the file names its schema and app`() = runTest {
+        val json = Json.parseToJsonElement(exporter.export().content).jsonObject
+
+        assertEquals(ExportBundle.SCHEMA, json.getValue("schema").jsonPrimitive.int)
+        assertEquals(ExportBundle.APP, json.getValue("app").jsonPrimitive.content)
     }
 
     @Test

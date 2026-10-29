@@ -32,7 +32,7 @@
     <action>Tap "Log set" at the bottom of the sheet</action>
     <action>Verify that the session shows "Side plank" with a set "0:45 · Left", and "Moved" still reads "160 kg"</action>
     <action>Tap "Add set or EMOM" in the title bar and verify that "Side" now has "Right" selected</action>
-    <action>Tap "Change", tap "Clear", type "pushup" into "Search exercises"</action>
+    <action>Tap "Change", then type "pushup" into "Search exercises"</action>
     <action>Verify that "3 exercises" is shown: "Push-up", "Incline push-up" and "Pike push-up"</action>
     <action>Tap "Push-up"</action>
     <action>Verify that "Added weight" offers "None" selected, then tap "8"</action>

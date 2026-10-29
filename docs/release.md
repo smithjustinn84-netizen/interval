@@ -66,6 +66,11 @@ Both Android and iOS versions must be bumped in unison. CI will fail via `tools/
    ```
    then `journeys/start-workout.xml` and `journeys/lift-equipment.xml`. A crash here wants a rule in
    `androidApp/proguard-rules.pro`.
+   **Done 2026-10-29, no rules needed.** On amper-37 (phone) the release APK passed start-workout,
+   lift-equipment, settings (the exported JSON read back whole), system-back and history, a saved preset, and
+   a process killed while backgrounded (`kill -9` as root, after the task's state was saved) brought back a
+   running workout and the Presets page. `journeys/presets.xml` is stale: it expects a Presets tab, where the
+   presets are now a page under All presets on the Timer.
 3. **On-device checks CI cannot run.**
    - `journeys/settings.xml`: Export opens the share sheet with `interval-<date>.json`.
    - `journeys/lift-rest-alert.xml`: a rest keeps counting on the lock screen and beeps as it ends.
