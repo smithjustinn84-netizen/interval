@@ -125,8 +125,14 @@ jobs:
       - name: Build the iOS app
         run: ./kotlin build -m iosApp -p iosSimulatorArm64
 
+      # Each module's tests link a Kotlin/Native binary in a JVM of its own, up to 1.7 GB, and one
+      # `test -p iosSimulatorArm64` links all sixteen at once: 16 GB, which swaps the 7 GB runner until
+      # the job times out. Two modules at a time peak under 4 GB. xargs runs every pair and fails the
+      # step if any failed.
       - name: Test on the iOS simulator target
-        run: ./kotlin test -p iosSimulatorArm64
+        run: |
+          ls -d */test | cut -d/ -f1 |
+            xargs -n 2 sh -c './kotlin test -p iosSimulatorArm64 $(printf -- "-m %s " "$@")' _
 
       - name: Save the Kotlin toolchain and dependencies
         if: github.ref == 'refs/heads/main' && steps.cache.outputs.cache-hit != 'true'

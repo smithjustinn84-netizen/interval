@@ -48,7 +48,9 @@ the same common UI code.
 CI (`.github/workflows/ci.yml`) runs the JVM and Android tests on Linux and the iOS tests on macOS, with
 lint and detekt in a job of their own. It runs on pushes to `main`, `v*` tags and pull requests, skipping
 changes that touch only Markdown, `docs/` or `journeys/`. Run it on any bookmark with
-`gh workflow run CI --ref <bookmark>`. A detekt failure attaches each module's HTML and SARIF report to the run.
+`gh workflow run CI --ref <bookmark>`. The iOS tests run two modules at a time there: one
+`test -p iosSimulatorArm64` links every module's test binary at once (about 16 GB), more than the runner's 7 GB.
+A detekt failure attaches each module's HTML and SARIF report to the run.
 The UI tests render offscreen with Skiko and need no display, including on the Linux runner.
 
 ## Test infrastructure
