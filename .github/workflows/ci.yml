@@ -133,29 +133,27 @@ jobs:
           key: ${{ steps.cache.outputs.cache-primary-key }}
 
   ios-test:
-    name: test (ios ${{ matrix.shard }}/3)
+    name: test (ios ${{ matrix.shard }}/4)
     # Each module's tests link a Kotlin/Native binary, minutes apiece on this runner's three cores,
-    # so one job running all sixteen outlasts any sensible timeout. Three shards run side by side
-    # (a public repository gets five macOS runners at once), beside the app's build.
+    # so one job running all sixteen outlasts any sensible timeout: four or five modules took 27
+    # minutes, six ran out of 40. Four shards of four run side by side, beside the app's build: the
+    # five macOS runners a public repository gets at once.
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4]
     runs-on: macos-15
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v7
 
-      # One cache for the three shards, saved by the first; the others download what it lacks.
+      # The app build's cache, restored only: what the tests need beyond it is a few small klibs.
       - name: Restore the Kotlin toolchain and dependencies
-        id: cache
         uses: actions/cache/restore@v6
         with:
           path: ~/Library/Caches/JetBrains/Kotlin
-          key: kotlin-iostest-${{ runner.os }}-${{ hashFiles('kotlin', 'project.yaml', '**/module.yaml', 'libs.versions.toml') }}
-          restore-keys: |
-            kotlin-iostest-${{ runner.os }}-
-            kotlin-ios-${{ runner.os }}-
+          key: kotlin-ios-${{ runner.os }}-${{ hashFiles('kotlin', 'project.yaml', '**/module.yaml', 'libs.versions.toml') }}
+          restore-keys: kotlin-ios-${{ runner.os }}-
 
       # Every module with common tests, dealt round the shards. Each one's test binary links in a
       # JVM of its own, up to 1.7 GB, and one `test -p iosSimulatorArm64` links all of them at once,
@@ -163,15 +161,8 @@ jobs:
       # runs every pair and fails the step if any failed.
       - name: Test on the iOS simulator target
         run: |
-          ls -d */test | cut -d/ -f1 | awk 'NR % 3 == ${{ matrix.shard }} % 3' |
+          ls -d */test | cut -d/ -f1 | awk 'NR % 4 == ${{ matrix.shard }} % 4' |
             xargs -n 2 sh -c './kotlin test -p iosSimulatorArm64 $(printf -- "-m %s " "$@")' _
-
-      - name: Save the Kotlin toolchain and dependencies
-        if: matrix.shard == 1 && github.ref == 'refs/heads/main' && steps.cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v6
-        with:
-          path: ~/Library/Caches/JetBrains/Kotlin
-          key: ${{ steps.cache.outputs.cache-primary-key }}
 
   release:
     name: signed bundle (android)
