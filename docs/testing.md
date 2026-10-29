@@ -52,8 +52,9 @@ changes that touch only Markdown, `docs/` or `journeys/`. Run it on any bookmark
 build, two modules at a time in each: one `test -p iosSimulatorArm64` links every module's test binary at once
 (about 16 GB), more than the runner's 7 GB, and one after another they take longer than a job's timeout.
 Each shard is a line of `tools/ios-test-shards.txt`, grouped by the part of the tree its modules compile: a new
-module with tests goes on one of its lines, or `tools/check_ios_shards.py` fails the run. Require the `CI` job
-in branch protection: it passes only when every other job did. A failure attaches the detekt reports, the
+module with tests goes on one of its lines, or `tools/check_ios_shards.py` fails the run. `main` requires the `CI`
+job (the ruleset "main: CI must pass"), which passes only when every other job did; admins bypass it, so a
+direct push still lands. A failure attaches the detekt reports, the
 Linux JUnit XML or the iOS shard's toolchain logs to the run.
 The UI tests render offscreen with Skiko and need no display, including on the Linux runner.
 
