@@ -23,6 +23,7 @@ Full architecture guide: [docs/architecture.md](docs/architecture.md).
                                         # Unsigned until a keystore is set up (`./kotlin tool generate-keystore`)
 python3 tools/check_versions.py         # Verify Android and iOS version parity (run in CI)
 python3 tools/check_ios_shards.py       # Every module with common tests is on one line of ios-test-shards.txt (run in CI)
+python3 tools/check_module_rules.py     # Every module dependency keeps the layering below (run in CI)
 uv run --with pillow tools/generate_icons.py  # Regenerate app icons and launch screens from the vector mark
 ./kotlin show modules | settings | dependencies | tasks
 ```
@@ -139,7 +140,12 @@ tooling/
 Dependencies point toward `core/`: a feature depends on its side's `*-ui`, `*-data` and `*-domain` (through
 `exported`), `app` on every feature and `lift-nav`, the interval side on `lift-data`/`lift-domain`/`lift-ui`
 where History and the workout count Lift's sessions (their ViewModels take `LiftActivity`, never the whole
-`BellsRepository`), and `lift-nav` never on anything of the interval side. The
+`BellsRepository`), and `lift-nav` never on anything of the interval side. `tools/check_module_rules.py`
+enforces this in CI: `lift/` never sees `interval/`, the pure layers (`core-time`, `core-platform`, the domains
+and data modules) take no Compose, the data modules depend on `core-platform` rather than `core`, the
+`*-testing` modules appear only under `test-dependencies`, and a feature depends on another only where its
+`FEATURE_EDGES` lists the pair (`interval-timer` and `interval-workout` on `interval-presets`, `lift-session` on
+`lift-library`). The
 `*-testing` modules are ordinary libraries listed under `test-dependencies` (the toolchain shares no test
 sources between modules); a data module's tests may depend on its side's `*-testing` even though that depends
 back on it.

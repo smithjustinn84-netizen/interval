@@ -103,7 +103,9 @@ graph TD
 ## Architectural Principles
 
 1. **Strict Dependency Rule**: Dependencies flow strictly downward from Application Targets → Shared Container →
-   Features → Shared UI → Data → Domain. Lower layers have no knowledge of higher layers.
+   Features → Shared UI → Data → Domain. Lower layers have no knowledge of higher layers. CI enforces it with
+   `tools/check_module_rules.py`, which reads every `module.yaml` (templates expanded) against a table of what
+   each kind of module may depend on.
 2. **Domain Decoupling**: The kettlebell domain (`lift-*`) has zero dependencies on the interval domain (`interval-*`).
    Where cross-domain interaction is needed (e.g. History counting Lift sessions or Today showing workout recaps),
    it is mediated via minimal interfaces in `lift-data`: `IntervalActivity` (what Lift reads of the interval side,
