@@ -15,7 +15,7 @@ import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performScrollToNode
-import androidx.compose.ui.test.v2.runDesktopComposeUiTest
+import kotlinx.coroutines.test.runTest
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
@@ -39,12 +39,24 @@ val UI_TEST_TIMEOUT: Duration = 1.minutes
  */
 val JOURNEY_TIMEOUT: Duration = 3.minutes
 
-/** Runs [block] in a desktop window of [window]'s size, failing it after [timeout]. */
+/**
+ * Runs [block] in a desktop window of [window]'s size, failing it after [timeout]. It is the v2
+ * `runDesktopComposeUiTest` written out, because that wraps the test in a `runTest` of its own with the
+ * coroutines default of a minute, which ends any test before a longer `testTimeout` can matter.
+ */
 fun runUiTest(
     window: Window = Window.Phone,
     timeout: Duration = UI_TEST_TIMEOUT,
     block: suspend DesktopComposeUiTest.() -> Unit,
-) = runDesktopComposeUiTest(width = window.width, height = window.height, testTimeout = timeout, block = block)
+) = runTest(timeout = timeout) {
+    val test = DesktopComposeUiTest(
+        width = window.width,
+        height = window.height,
+        testTimeout = timeout,
+        useStandardTestDispatcherForComposition = true,
+    )
+    test.runTest { test.block() }
+}
 
 /** Sets [content] inside the app theme, light unless [dark], so tests don't depend on the machine's appearance. */
 fun DesktopComposeUiTest.setThemedContent(dark: Boolean = false, content: @Composable () -> Unit) {
