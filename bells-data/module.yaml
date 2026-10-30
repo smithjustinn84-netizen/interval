@@ -12,7 +12,7 @@ apply:
 
 dependencies:
   - //bells-domain: exported
-  - //core
+  - //core-platform
   # The platform module is built in composition, because Android's database builder needs a `Context`.
   - $compose.runtime
   - $compose.ui

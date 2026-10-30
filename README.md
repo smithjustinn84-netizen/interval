@@ -93,7 +93,8 @@ interval/
 ├── shared/              # Application container, Navigation 3 backstack, AppKoin
 │
 ├── core/                # Design tokens, IntervalTheme, NavigationArea, utilities
-├── core-time/           # Pure calendar maths, formatters & clocks (zero Compose dependencies)
+├── core-platform/       # Clocks, timestamp formatter, storage plumbing (zero Compose dependencies)
+├── core-time/           # Pure calendar maths (zero dependencies)
 ├── core-testing/        # MainDispatcherTest, UI test harness, fake platform services
 │
 ├── interval-domain/     # Timer engine, workout state machine, calorie math, parsers

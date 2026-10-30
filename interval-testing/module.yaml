@@ -11,6 +11,6 @@ apply:
 dependencies:
   - //interval-platform: exported
   - //core-testing: exported
-  - //core
+  - //core-platform
   - $libs.androidx.datastore.preferences.core
   - $libs.koin.core

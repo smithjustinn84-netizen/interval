@@ -10,6 +10,6 @@ apply:
 dependencies:
   - //bells-data: exported
   # `WallClock` and `TimestampFormatter`, which the container is given.
-  - //core
+  - //core-platform
   - //core-testing: exported
   - $libs.koin.core

@@ -55,7 +55,7 @@ with `gh workflow run CI --ref <bookmark>`.
 Linking an iOS test binary takes minutes on a CI runner, so the iOS tests are tiered. Each line of
 `tools/ios-test-shards.txt` is a shard, one job, two modules linked at a time: one `test -p iosSimulatorArm64`
 links every module's test binary at once (about 16 GB), more than the runner's 7 GB.
-- **Every push** runs the first line, the quick shard: `core-time`, `interval-domain` and `bells-domain`,
+- **Every push** runs the first line, the quick shard: `core-time`, `core-platform`, `interval-domain` and `bells-domain`,
   which link without Compose. The JVM and Android jobs run every module's common tests anyway.
 - **Every shard** runs nightly, on `v*` tags, on a manual run, and on a push that changes iOS code
   (`src@ios/`), the build (`module.yaml`, `project.yaml`, `templates/`, `libs.versions.toml`, the `kotlin`

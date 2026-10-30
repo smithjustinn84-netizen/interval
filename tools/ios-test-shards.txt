@@ -1,4 +1,4 @@
-core-time interval-domain bells-domain
+core-time core-platform interval-domain bells-domain
 bells-data bells-library bells-today bells-session
 core interval-data interval-platform
 interval-presets interval-settings interval-home

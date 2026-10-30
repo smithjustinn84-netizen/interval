@@ -60,10 +60,16 @@ Koin, and `settings.compose`; `room-lib`: + Room, the bundled driver, `-Xexpect-
 Modules are flat directories with unique names (`-m` takes the name); `project.yaml` lists them.
 
 ```
-core                 the theme, tokens, motion, components, lanes, `Tab` and `push` (nav/), the platform hooks
-                     the UI needs (`SystemServices.kt`), and `storage/Storage.kt` (`SerialWriter`,
-                     `orOnError`/`orEmptyOnError`); exports `core-time`. Packages `dev.justinsmith.interval.ui`,
-                     `.platform`, `.nav`, `.storage`; resources `dev.justinsmith.core.resources`
+core                 the theme, tokens, motion, components, lanes, `Tab` and `push` (nav/), and the Composable
+                     platform hooks the UI needs (`SystemServices.kt`); exports `core-platform` and `core-time`.
+                     Packages `dev.justinsmith.interval.ui`, `.platform`, `.nav`; resources
+                     `dev.justinsmith.core.resources`
+core-platform        what the platform gives that isn't drawing, with no Compose: the clocks (`WallClock`,
+                     `epochMillisNow`, `realElapsedTime`, `days`), `TimestampFormatter`, `AppInfo`, `Sharer`,
+                     Android's notification helpers, and `storage/Storage.kt` (`SerialWriter`, `storageScope`,
+                     `orOnError`/`orEmptyOnError`); packages `.platform`, `.storage`; exports `core-time`. The
+                     data modules depend on this, not `core`, so a theme edit neither recompiles them nor reruns
+                     their Room KSP (interval-data's test KSP still does, through `interval-testing`)
 core-time            calendar/clock maths (`CalendarDays`, `formatClock`, `WeekStanding`), package `.timer`. No
                      dependencies, so the domains compile without Compose
 core-testing         `MainDispatcherTest`, `FixedTimestampFormatter`, `FakeAppInfo`, the tests' calendar;
@@ -199,7 +205,7 @@ toolchain (`$compose.*`).
   Lift's rest between sets goes the same way through `RestAlerts` (`bells-data/src/platform/`): Android's
   `RestService` holds the CPU awake and counts the rest down in a notification while the session's own clock
   beeps; iOS schedules one notification for the rest's end; desktop nothing. The notification helpers both
-  services share are `core/src@android/platform/Notifications.kt`.
+  services share are `core-platform/src@android/platform/Notifications.kt`.
 - **Reminders for the plan**: `AppSettings.reminderMinuteOfDay` (set on Plan, null is off). `PlanReminderScheduler`
   (`interval-history/src/plan/`, an eager single) recomputes `plannedReminders` (the next 14 days with a plan
   still open, from `TrainingLog.upNext`) on every change and at midnight, and hands the whole set to

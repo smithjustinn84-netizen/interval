@@ -47,6 +47,7 @@ graph TD
     subgraph DomainData ["Domain & Data"]
         IntervalData["interval-data (Room, DataStore)"]
         IntervalDomain["interval-domain (Engine, Models)"]
+        CorePlatform["core-platform (Clocks, Formatter, Storage Plumbing)"]
         CoreTime["core-time (Calendar & Clock Maths)"]
         BellsData["bells-data (Room, RestAlerts)"]
         BellsDomain["bells-domain (Programs, Models)"]
@@ -73,8 +74,11 @@ graph TD
 
     IntervalUI --> Core
     BellsUI --> Core
-    Core --> CoreTime
+    Core --> CorePlatform
+    CorePlatform --> CoreTime
     IntervalDomain --> CoreTime
+    IntervalData --> CorePlatform
+    BellsData --> CorePlatform
 
     Timer --> IntervalData
     Workout --> IntervalData
@@ -88,7 +92,7 @@ graph TD
 
     IntervalData --> IntervalDomain
     BellsData --> BellsDomain
-    IntervalData --> IntervalPlatform
+    IntervalPlatform --> IntervalData
 ```
 
 ---
@@ -124,7 +128,7 @@ Each module applies a reusable template from `templates/`:
 |---|---|---|
 | **App Targets** | `androidApp`, `iosApp`, `desktopApp` | Platform entry points, manifests, splash/launch assets, packaging. |
 | **Container** | `shared` | Application entry (`App.kt`), Navigation 3 routing table, Koin graph assembly, root theme host. |
-| **Core** | `core`, `core-time`, `core-testing` | Design tokens (`Spacing`, `Radius`, `Sizes`, `Motion`), `IntervalTheme`, navigation primitives, storage utilities; calendar and clock maths in `core-time`, which has no dependencies so the domains compile without Compose; UI test harness. |
+| **Core** | `core`, `core-platform`, `core-time`, `core-testing` | Design tokens (`Spacing`, `Radius`, `Sizes`, `Motion`), `IntervalTheme`, navigation primitives; the clocks, timestamp formatter and storage utilities in `core-platform`, which has no Compose so the data modules (and their Room KSP) don't rebuild on a UI change; calendar and clock maths in `core-time`, which has no dependencies so the domains compile without Compose; UI test harness. |
 | **Interval Domain & Data** | `interval-domain`, `interval-data`, `interval-platform` | Timer calculation engine, Room database, DataStore preferences, audio/speech cues, Android Foreground Service, iOS notifications. |
 | **Interval Features** | `interval-home`, `interval-workout`, `interval-presets`, `interval-history`, `interval-settings`, `interval-ui` | Timer tab, active workout screen, preset management, history calendar & routines plan, settings, shared workout components. |
 | **Bells Domain & Data** | `bells-domain`, `bells-data` | Kettlebell exercises, training programs, EMOM/hold timers, Room database, rest beeper and alert services. |
@@ -207,7 +211,7 @@ All disk I/O is encapsulated behind repositories.
 
 ### 2. Preferences Storage (DataStore)
 - App configuration (theme mode, cue sounds, speech options, countdown times, body weight) is stored in DataStore Preferences.
-- Held in memory for instant read access and serialized in the background via `SerialWriter` (`core/src/storage/Storage.kt`),
+- Held in memory for instant read access and serialized in the background via `SerialWriter` (`core-platform/src/storage/Storage.kt`),
   preventing UI stalls and race conditions.
 
 ### 3. Backup & JSON Data Portability

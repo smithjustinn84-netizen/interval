@@ -9,6 +9,7 @@ modules:
   - bells-today
   - bells-ui
   - core
+  - core-platform
   - core-testing
   - core-time
   - desktopApp

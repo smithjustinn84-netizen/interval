@@ -1,12 +1,13 @@
 # What Interval and its sibling apps share: the theme and tokens, motion, the page, sheet, dialog and
-# button components, the lanes artwork, the platform hooks the UI needs, calendar and clock maths (from
-# `core-time`, exported), and the plumbing a repository runs on (its write queue, its rule for a failed
-# read). Nothing here knows about workouts' storage or an app's screens.
+# button components, the lanes artwork, the platform hooks the UI needs, and (from `core-platform`, exported)
+# the clocks, the timestamp formatter, a repository's plumbing and calendar and clock maths. Nothing here
+# knows about workouts' storage or an app's screens.
 product:
   type: kmp/lib
   platforms: [android, iosArm64, iosSimulatorArm64, jvm]
 
 dependencies:
+  - //core-platform: exported
   - //core-time: exported
   - $compose.runtime
   - $compose.foundation: exported

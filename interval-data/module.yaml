@@ -11,7 +11,7 @@ apply:
 
 dependencies:
   - //interval-domain: exported
-  - //core
+  - //core-platform
   - $libs.androidx.datastore.preferences.core
   - $libs.koin.core
   - $libs.kermit
