@@ -103,8 +103,9 @@ shared               the app: `App.kt` (the back stack and every entry), `di/App
 bells-domain         Lift's pure domain (`dev.justinsmith.bells.domain`): exercises, programs, sets and
                      sessions, records, `EmomClock`/`HoldClock`/`RestClock`, suggestions. No dependencies
 bells-data           `BellsRepository`, `BellsDatabase` (Room, KSP, `schemas/`), `IntervalActivity` (what Lift
-                     reads of the interval side; `shared` binds it), `bellsModules` (di/), `Beeper`, `RestAlerts` (+ Android's `RestService`) and each
-                     platform's `rememberBellsPlatformModule`
+                     reads of the interval side; `shared` binds it), `bellsModules` (di/). No Compose
+bells-platform       `Beeper`, `RestAlerts` (+ Android's `RestService`), the rest notification's words, and each
+                     platform's `rememberBellsPlatformModule` (the database builder too); Lift's `interval-platform`
 bells-testing        `FakeBellsStorage` and the fake DAOs, `FakeIntervalActivity`, `RecordingBeeper`,
                      `bellsTestKoin`
 bells-ui             Lift's words and widgets (`exerciseName`, `setLine`, `programName`, `LoadPicker`, `Stepper`,
@@ -155,7 +156,7 @@ toolchain (`$compose.*`).
 - **DI is Koin DSL** (no annotations/KSP) in an isolated container assembled in `shared/src/di/AppKoin.kt`
   (`appModules`) from each side's modules: `storageModule`/`dataModule` in `interval-data/src/di/`,
   `historyModule` in `interval-history/src/di/`, `bellsModules` in `bells-data/src/di/`, and the platform
-  modules each platform builds in composition. Add a
+  modules each platform builds in composition (`interval-platform`, `bells-platform`). Add a
   module per domain. Constructor-inject everything; keep platform calls (the clock, cues, storage) behind
   injected interfaces (`WallClock`, `CuePlayer`, `PlatformStorage`) so tests can fake them.
 - **Storage**: `IntervalRepository` (`interval-data/src/data/`) is the only thing that touches it. What it stores
@@ -202,7 +203,7 @@ toolchain (`$compose.*`).
   `WorkoutControls`. iOS schedules a local notification per phase change ahead (`WorkoutEngine.upcomingChanges`,
   pure, through `WorkoutControls.upcomingChanges`) as the app leaves the screen, and drops them on return; its
   actual says why not background audio. Desktop keeps nothing.
-  Lift's rest between sets goes the same way through `RestAlerts` (`bells-data/src/platform/`): Android's
+  Lift's rest between sets goes the same way through `RestAlerts` (`bells-platform/src/platform/`): Android's
   `RestService` holds the CPU awake and counts the rest down in a notification while the session's own clock
   beeps; iOS schedules one notification for the rest's end; desktop nothing. The notification helpers both
   services share are `core-platform/src@android/platform/Notifications.kt`.

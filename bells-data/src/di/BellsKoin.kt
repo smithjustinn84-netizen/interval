@@ -51,9 +51,9 @@ val bellsDataModule: Module = module {
 }
 
 /**
- * Bells' part of the app's container. [platformModule] supplies the database builder and the
- * [dev.justinsmith.bells.platform.Beeper]; [storage] what is built from them. The app's own modules supply
- * the [dev.justinsmith.interval.platform.WallClock], the
+ * Bells' part of the app's container. [platformModule] supplies the database builder, the `Beeper` and the
+ * `RestAlerts` (`bells-platform`'s `rememberBellsPlatformModule`); [storage] what is built from them. The
+ * app's own modules supply the [dev.justinsmith.interval.platform.WallClock], the
  * [dev.justinsmith.interval.platform.TimestampFormatter] and the [dev.justinsmith.bells.data.IntervalActivity].
  */
 fun bellsModules(platformModule: Module, storage: Module = bellsStorageModule): List<Module> =

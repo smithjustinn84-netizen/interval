@@ -8,7 +8,7 @@ apply:
   - //templates/lib.module-template.yaml
 
 dependencies:
-  - //bells-data: exported
+  - //bells-platform: exported
   # `WallClock` and `TimestampFormatter`, which the container is given.
   - //core-platform
   - //core-testing: exported

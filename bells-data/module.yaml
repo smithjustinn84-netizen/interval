@@ -1,6 +1,6 @@
-# Bells' storage and what it needs from the platform: its Room database (`bells.db`; schemas in `schemas/`),
-# the repository every Lift screen reads, its Koin modules, and the platform's database builder, `Beeper` and
-# `RestAlerts` (Android's `RestService`).
+# Bells' storage: its Room database (`bells.db`; schemas in `schemas/`), the repository every Lift screen
+# reads, `IntervalActivity` (what Lift reads of the interval side), and its Koin modules. No Compose: what it
+# needs from the platform (the database builder, `Beeper`, `RestAlerts`) is in `bells-platform`.
 # Room's KSP runs here and nowhere else on the Lift side.
 product:
   type: kmp/lib
@@ -13,27 +13,13 @@ apply:
 dependencies:
   - //bells-domain: exported
   - //core-platform
-  # The platform module is built in composition, because Android's database builder needs a `Context`.
-  - $compose.runtime
-  - $compose.ui
-  # The rest notification's words.
-  - $compose.components.resources
   - $libs.koin.core
   - $libs.kermit
-
-dependencies@android:
-  # NotificationCompat, for the rest's foreground service.
-  - $libs.androidx.core.ktx
 
 test-dependencies:
   - //bells-testing
 
 settings:
-  # For the composable platform module and the rest notification's strings; no UI of its own.
-  compose:
-    enabled: true
-    resources:
-      packageName: dev.justinsmith.bells.data.resources
   kotlin:
     ksp:
       processors:

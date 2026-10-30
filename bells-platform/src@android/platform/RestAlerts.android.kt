@@ -12,11 +12,11 @@ import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import co.touchlab.kermit.Logger
-import dev.justinsmith.bells.data.resources.Res
-import dev.justinsmith.bells.data.resources.rest_channel
-import dev.justinsmith.bells.data.resources.rest_channel_description
-import dev.justinsmith.bells.data.resources.rest_left
-import dev.justinsmith.bells.data.resources.rest_title
+import dev.justinsmith.bells.platform.resources.Res
+import dev.justinsmith.bells.platform.resources.rest_channel
+import dev.justinsmith.bells.platform.resources.rest_channel_description
+import dev.justinsmith.bells.platform.resources.rest_left
+import dev.justinsmith.bells.platform.resources.rest_title
 import dev.justinsmith.interval.platform.notificationIcon
 import dev.justinsmith.interval.platform.openAppIntent
 import dev.justinsmith.interval.timer.formatClock

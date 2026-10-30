@@ -53,7 +53,7 @@
                     android:value="Keeps an interval-training timer the user started counting, and shows its clock, phase and round with Pause and End, while the app is off screen."/>
         </service>
 
-        <!-- Lift's rest between sets, kept counting with the screen off (RestService, in bells-data). -->
+        <!-- Lift's rest between sets, kept counting with the screen off (RestService, in bells-platform). -->
         <service
                 android:exported="false"
                 android:foregroundServiceType="specialUse"

@@ -49,7 +49,8 @@ graph TD
         IntervalDomain["interval-domain (Engine, Models)"]
         CorePlatform["core-platform (Clocks, Formatter, Storage Plumbing)"]
         CoreTime["core-time (Calendar & Clock Maths)"]
-        BellsData["bells-data (Room, RestAlerts)"]
+        BellsData["bells-data (Room)"]
+        BellsPlatform["bells-platform (Beeper, RestAlerts)"]
         BellsDomain["bells-domain (Programs, Models)"]
         IntervalPlatform["interval-platform (Cues, Background Services)"]
     end
@@ -92,6 +93,8 @@ graph TD
 
     IntervalData --> IntervalDomain
     BellsData --> BellsDomain
+    LiftSession --> BellsPlatform
+    BellsPlatform --> BellsData
     IntervalPlatform --> IntervalData
 ```
 
@@ -131,7 +134,7 @@ Each module applies a reusable template from `templates/`:
 | **Core** | `core`, `core-platform`, `core-time`, `core-testing` | Design tokens (`Spacing`, `Radius`, `Sizes`, `Motion`), `IntervalTheme`, navigation primitives; the clocks, timestamp formatter and storage utilities in `core-platform`, which has no Compose so the data modules (and their Room KSP) don't rebuild on a UI change; calendar and clock maths in `core-time`, which has no dependencies so the domains compile without Compose; UI test harness. |
 | **Interval Domain & Data** | `interval-domain`, `interval-data`, `interval-platform` | Timer calculation engine, Room database, DataStore preferences, audio/speech cues, Android Foreground Service, iOS notifications. |
 | **Interval Features** | `interval-home`, `interval-workout`, `interval-presets`, `interval-history`, `interval-settings`, `interval-ui` | Timer tab, active workout screen, preset management, history calendar & routines plan, settings, shared workout components. |
-| **Bells Domain & Data** | `bells-domain`, `bells-data` | Kettlebell exercises, training programs, EMOM/hold timers, Room database, rest beeper and alert services. |
+| **Bells Domain & Data** | `bells-domain`, `bells-data`, `bells-platform` | Kettlebell exercises, training programs, EMOM/hold timers, Room database; the EMOM beeper and rest alert services in `bells-platform`. |
 | **Bells Features** | `bells`, `bells-today`, `bells-session`, `bells-library`, `bells-ui` | Lift navigation registry, Lift tab & gear, active session logger & timers, exercise library & editor, shared Lift UI. |
 | **Test Fakes** | `interval-testing`, `bells-testing` | In-memory storage, recording cue players, fake DAOs, and mock platform services for tests. |
 | **Toolchain Plugins** | `lint-plugin`, `detekt-plugin` | Kotlin Toolchain task plugins for ktlint formatting and Detekt static analysis. |

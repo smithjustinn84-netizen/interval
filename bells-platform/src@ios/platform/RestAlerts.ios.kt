@@ -3,9 +3,9 @@
 package dev.justinsmith.bells.platform
 
 import co.touchlab.kermit.Logger
-import dev.justinsmith.bells.data.resources.Res
-import dev.justinsmith.bells.data.resources.rest_over
-import dev.justinsmith.bells.data.resources.rest_over_text
+import dev.justinsmith.bells.platform.resources.Res
+import dev.justinsmith.bells.platform.resources.rest_over
+import dev.justinsmith.bells.platform.resources.rest_over_text
 import dev.justinsmith.interval.platform.epochMillisNow
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineScope

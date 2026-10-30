@@ -9,6 +9,8 @@ apply:
 
 dependencies:
   - //bells-library: exported
+  # The EMOM's `Beeper` and the rest's `RestAlerts`.
+  - //bells-platform: exported
 
 test-dependencies:
   - //bells-testing

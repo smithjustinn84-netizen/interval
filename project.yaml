@@ -4,6 +4,7 @@ modules:
   - bells-data
   - bells-domain
   - bells-library
+  - bells-platform
   - bells-session
   - bells-testing
   - bells-today

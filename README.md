@@ -109,7 +109,8 @@ interval/
 ├── interval-testing/    # FakeStorage, RecordingCuePlayer, fake DAOs
 │
 ├── bells-domain/        # Lift domain: exercises, programs, EMOM/hold clocks, PRs
-├── bells-data/          # Lift Room database (BellsDatabase), rest alert service
+├── bells-data/          # Lift Room database (BellsDatabase), repository
+├── bells-platform/      # Lift's beeper, rest alert service, platform Koin module
 ├── bells-ui/            # Lift widgets, exercise formatters, cues mapping
 ├── bells-library/       # Exercise library, search, filters, exercise editor
 ├── bells-session/       # Active session logger, rest clocks, program progress
