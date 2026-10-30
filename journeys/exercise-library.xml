@@ -33,7 +33,7 @@
     <action>Verify that the same sheet shows "Equipment" and "Measured by" chips, and "Archive exercise"</action>
     <action>Tap "Back" to close the sheet</action>
     <action>Tap "New exercise" in the title bar, type "copenhagen PLANK" into the "Name" field</action>
-    <action>Verify that "One of yours already has this name." is shown and there is no "Save exercise"</action>
+    <action>Verify that "One of yours already has this name." is shown and "Save exercise" is disabled</action>
     <action>Tap "Back" to close the sheet, then "Back" to return to the Lift tab</action>
     <action>Tap "Start session", then "Add set or EMOM" in the title bar, then "Change" on the exercise card</action>
     <action>Type "copen" into "Search exercises" and tap "Copenhagen plank"</action>

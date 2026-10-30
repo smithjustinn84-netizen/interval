@@ -24,9 +24,9 @@
     <action>Tap "+" once more</action>
     <action>Verify that it reads "62.5 kg" and "20 kg bar · 20 + 1.25 a side"</action>
     <action>Tap "Log set" at the bottom of the sheet</action>
-    <action>Verify that the session shows "Power clean" with a set "62.5 kg × 10", and "Moved" reads "725 kg"</action>
+    <action>Verify that the session shows "Power clean" with a set "62.5 kg × 5" (the reps carry over from the plan's set), and "Moved" reads "412.5 kg"</action>
     <action>Tap "Finish"</action>
-    <action>Verify that the summary lists "Back squat" with "Heaviest 20 kg × 5" and "Power clean" with "Heaviest 62.5 kg × 10" under "New records"</action>
+    <action>Verify that the summary lists "Back squat" with "Heaviest 20 kg × 5" and "Power clean" with "Heaviest 62.5 kg × 5" under "New records"</action>
     <action>Tap "Done"</action>
     <action>Verify that Lift shows "Day 2 of 36 · week 1" with "Back squat", "Overhead press" and "Barbell deadlift"</action>
   </actions>

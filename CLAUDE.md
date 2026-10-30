@@ -218,11 +218,13 @@ Strategy, commands and limits: [docs/testing.md](docs/testing.md).
   `./kotlin build` compiles the iOS tests, so keep commas out of common test names.
 - **Compose UI tests go in `test@jvm/` only.** Common tests also run as Android local tests,
   where `runComposeUiTest` fails (no Robolectric). A screen test drives its stateless `XScreen` in the
-  feature's module; Lift's flows (`bellsAppTest`) live in `bells/test@jvm/`, the app's (`AppContent(testKoin())`)
-  in `shared/test@jvm/`.
-- **Acceptance Tests (ATDD)** live in `shared/test@jvm/acceptance/` using `IntervalAcceptanceDriver` and
-  `acceptanceScenario`. When asking an AI agent to build or change user-facing behavior, write an executable
-  acceptance test first (outer loop) and drive domain logic with inner unit TDD.
+  feature's module; Lift's flows (`bellsAppTest`) live in `bells/test@jvm/`, the app's (`appTest`, over
+  `AppContent(testKoin())`) in `shared/test@jvm/`.
+- **Acceptance tests (ATDD)**: every journey that needs no device has a spec, the interval side's in
+  `shared/test@jvm/acceptance/` (`acceptanceScenario`, `IntervalAcceptanceDriver`), Lift's in
+  `bells/test@jvm/acceptance/` (`liftScenario`, `LiftAcceptanceDriver`). A user-facing change starts with
+  a failing spec or step (outer loop), then unit tests drive the logic (inner loop); a change to a
+  journey's behavior updates its spec and its `.xml` together. Driver rules: docs/testing.md.
 - Use `androidx.compose.ui.test.v2.*` and the harness in `core-testing/src@jvm/ui/UiTestHarness.kt`:
   `runUiTest(Window.X)`, `setThemedContent`, `waitForText`, and `StateRestoration`. Desktop's
   `StateRestorationTester` is not implemented.

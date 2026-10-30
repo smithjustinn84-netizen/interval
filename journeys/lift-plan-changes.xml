@@ -23,10 +23,10 @@
     <action>Verify that the sheet lists "Goblet squat" "3 × 10 · 24 kg" "1 of 3 done" with "Changed", and "Row" "3 × 10 a side" "0 of 6 done"</action>
     <action>Tap "Row"</action>
     <action>Tap "Skip this block"</action>
-    <action>Verify that Up next reads "Goblet squat" and "2 of 3 sets"</action>
+    <action>Verify that Up next reads "Goblet squat" and "Up next · 2 of 3 sets"</action>
     <action>Tap "Finish"</action>
     <action>Scroll down the summary</action>
-    <action>Verify that "Keep today's changes?" shows "Goblet squat" with "3 × 10 → 3 × 10 · 24 kg", "This day" and "Every day", and "Save as Goblet squat and row (yours)"</action>
+    <action>Verify that "Keep today's changes?" shows "Goblet squat" with "3 × 10 (10–15) → 3 × 10 (10–15) · 24 kg", "This day" and "Every day", and "Save as Goblet squat and row (yours)"</action>
     <action>Tap "Every day", then "Save as Goblet squat and row (yours)"</action>
     <action>Verify that "Saved as Goblet squat and row (yours). You follow it from day 2." is shown</action>
     <action>Tap "Done"</action>

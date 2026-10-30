@@ -4,173 +4,284 @@ package dev.justinsmith.interval.acceptance
 
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.onAllNodesWithContentDescription
-import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import dev.justinsmith.interval.AppContent
-import dev.justinsmith.interval.data.IntervalRepository
-import dev.justinsmith.interval.fakes.testKoin
+import androidx.compose.ui.test.performTextReplacement
+import dev.justinsmith.interval.AppFixture
+import dev.justinsmith.interval.appTest
+import dev.justinsmith.interval.fakes.FakeStorage
+import dev.justinsmith.interval.tab
+import dev.justinsmith.interval.ui.AcceptanceSteps
 import dev.justinsmith.interval.ui.Window
-import dev.justinsmith.interval.ui.runUiTest
-import org.koin.core.KoinApplication
+import kotlin.test.assertEquals
+import kotlin.time.Duration
 
 /**
- * Acceptance Test Driver implementing Dave Farley's ATDD pattern for the Interval app.
+ * The interval side's acceptance tests in the words of its journeys (the files in `journeys/`): each operation is
+ * something a person does or sees, and the English it matches lives here, not in the specs.
  *
- * Encapsulates the UI semantics tree behind a ubiquitous domain language, keeping acceptance
- * tests focused on business intent ("What the system does") rather than widget selectors.
+ * The rules: one selector per control, every check waits for the state to arrive (the view models emit on
+ * Swing's thread), outcomes are checked in the repository as well as on screen, and time moves only through
+ * [AppFixture.advance].
  */
 @Suppress("detekt.TooManyFunctions")
-class IntervalAcceptanceDriver(
-    private val ui: DesktopComposeUiTest,
-    val koin: KoinApplication,
-) {
-    val repository: IntervalRepository
-        get() = koin.koin.get()
+class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : AcceptanceSteps(ui) {
 
-    /** Waits for text to appear in the Compose hierarchy within [timeoutMillis]. */
-    fun waitForText(text: String, timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS) {
-        ui.waitUntil(timeoutMillis = timeoutMillis) {
-            ui.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
-        }
+    // Navigation
+
+    fun openTab(name: String) = ui.tab(name).performClick()
+
+    fun pressSystemBack() {
+        app.back()
+        ui.waitForIdle()
     }
 
-    /** Navigates to a top-level tab by its domain name ("Timer", "History", "Lift"). */
-    fun navigateToTab(tabName: String) {
-        ui.onNode(hasText(tabName) and hasClickAction()).performClick()
+    fun goBack() = tapDescribed("Back")
+
+    fun seeTimer() {
+        see("Start workout")
+        ui.tab("Timer").assertIsSelected()
     }
 
-    /** Asserts that the specified tab is currently selected in the navigation bar/rail. */
-    fun verifyTabSelected(tabName: String) {
-        ui.onNode(hasText(tabName) and hasClickAction()).assertIsSelected()
+    // The Timer
+
+    fun setWorkTime(value: String) {
+        tap("Work")
+        see("Quick picks")
+        tap(value)
+        tap("Done")
+        see(hasText("Work") and hasText(value))
     }
 
-    /** Verifies that the Timer home screen is displayed with its start button. */
-    fun verifyTimerScreenShown() {
-        verifyTabSelected("Timer")
-        ui.onNodeWithText("Start workout").assertExists()
+    fun startWorkout() = tap("Start workout")
+
+    // A running workout
+
+    fun seePhase(name: String) = see(name)
+
+    /** Lets a running workout count on by [duration], which its next tick catches up in one step. */
+    fun letTimePass(duration: Duration) = app.advance(duration)
+
+    fun seeRound(round: String) = see(hasText(round, substring = true))
+
+    fun pause() = tap("Pause")
+
+    fun seePaused() {
+        see("Paused")
+        see(hasText("Resume") and hasClickAction())
     }
 
-    /** Taps an interval row under Intervals (e.g. "Work", "Rest", "Rounds") to open its editor. */
-    fun tapIntervalRow(fieldName: String) {
-        ui.onNode(hasText(fieldName) and hasClickAction()).performClick()
+    fun resume() = tap("Resume")
+
+    fun seeRunning() = see(hasText("Pause") and hasClickAction())
+
+    fun skipPhase() = tapDescribed("Skip to next interval")
+
+    /** Ends the workout from its End control, which asks first. */
+    fun askToEnd() = tapDescribed("End workout")
+
+    fun seeEndDialogSaying(words: String) {
+        see("End workout?")
+        see(hasText(words, substring = true) and hasAnyAncestor(isDialog()))
     }
 
-    /** Asserts that the ValueSheet for [title] is displayed with quick picks. */
-    fun verifyValueSheetShown(title: String) {
-        waitForText(title)
-        ui.onNodeWithText("Quick picks").assertExists()
+    fun confirmEnd() = tap(hasText("End workout") and hasAnyAncestor(isDialog()))
+
+    fun resumeFromDialog() = tap(hasText("Resume") and hasAnyAncestor(isDialog()))
+
+    /** Starts the workout on the Timer and ends it once its first round is done: Get ready, Work, then Rest. */
+    fun endWorkoutAfterFirstRound() {
+        startWorkout()
+        skipPhase()
+        seePhase("Work")
+        skipPhase()
+        seePhase("Rest")
+        askToEnd()
+        seeEndDialogSaying("1 of 8 rounds done")
+        confirmEnd()
     }
 
-    /** Taps a quick-pick preset value within an active value sheet (e.g. "1:00"). */
-    fun selectQuickPick(value: String) {
-        ui.onNode(hasText(value) and hasClickAction()).performClick()
+    fun seeSummarySaved() {
+        see("Ended")
+        see("Saved to history")
     }
 
-    /** Dismisses a sheet via the Done button. */
-    fun tapDone() {
-        ui.onNodeWithText("Done").performClick()
+    fun closeSummary() = tap("Done")
+
+    // History and Plan
+
+    fun seeHistoryEmpty() = see("Train to a plan")
+
+    fun openPlanFromEmptyHistory() {
+        tap("Plan your week")
+        see("Weekly goal")
     }
 
-    /** Verifies that an interval row displays the expected formatted value (e.g. "1:00"). */
-    fun verifyIntervalValue(fieldName: String, expectedValue: String) {
-        ui.onNode(hasText(fieldName) and hasText(expectedValue)).assertExists()
+    fun raiseWeeklyGoal() = tapDescribed("Raise the goal")
+
+    fun seeWeeklyGoal(goal: Int) {
+        waitFor("a weekly goal of $goal") { app.repository.appSettings.value.weeklyGoal == goal }
+        see(goal.toString())
     }
 
-    /** Starts the configured workout from the Timer screen. */
-    fun startWorkout() {
-        ui.onNodeWithText("Start workout").performClick()
+    /** This week's words and its ring, which reads as "1 of 3 workouts this week". */
+    fun seeThisWeek(done: Int, goal: Int) {
+        see("${goal - done} more to hit $goal")
+        see(hasContentDescription("$done of $goal workouts this week"))
     }
 
-    /** Verifies the currently active workout phase readout (e.g. "Get ready", "Work", "Rest"). */
-    fun verifyWorkoutPhase(phaseName: String) {
-        waitForText(phaseName)
-        ui.onNodeWithText(phaseName).assertExists()
+    fun openWorkoutUnderToday(name: String) {
+        see("Today")
+        tap(name)
+        see("Repeat now")
     }
 
-    /** Pauses an active workout using the Pause control. */
-    fun pauseWorkout() {
-        ui.onNode(hasText("Pause") and hasClickAction()).performClick()
+    fun seeEndedEarly() {
+        see(hasText("ended early", substring = true))
+        see("Plan again")
     }
 
-    /** Asserts that the workout is paused, showing the Paused label and Resume button. */
-    fun verifyWorkoutPaused() {
-        waitForText("Paused")
-        ui.onNode(hasText("Resume") and hasClickAction()).assertExists()
+    fun showMonth() = tap("Month")
+
+    /** The month's calendar with one day marked done. The tests' formatter names a day "day N", not its date. */
+    fun seeOneDayDoneOnMonth() = waitFor("one day marked done on the month") {
+        ui.onAllNodes(hasContentDescription(", done", substring = true)).fetchSemanticsNodes().size == 1 &&
+            ui.onAllNodes(hasText("Previous month") or hasContentDescription("Previous month"))
+                .fetchSemanticsNodes().isNotEmpty()
     }
 
-    /** Resumes a paused workout using the Resume control. */
-    fun resumeWorkout() {
-        ui.onNode(hasText("Resume") and hasClickAction()).performClick()
+    fun clearHistory() {
+        tapDescribed("More options")
+        tap("Clear history")
+        see("Clear history?")
+        tap(hasText("Clear") and hasAnyAncestor(isDialog()))
     }
 
-    /** Asserts that the workout is running and can be paused. */
-    fun verifyWorkoutRunning() {
-        ui.onNode(hasText("Pause") and hasClickAction()).assertExists()
+    // Presets
+
+    fun seeTimerTotalFor(name: String) = see("$name · Total")
+
+    fun openAllPresets() {
+        tapDescribed("All presets")
+        see("Built-in")
     }
 
-    /** Skips the current interval phase ahead to the next one. */
-    fun skipPhase() {
-        val skipNode = ui.onAllNodesWithContentDescription("Skip to next interval")
-        if (skipNode.fetchSemanticsNodes().isNotEmpty()) {
-            skipNode.onLast().performClick()
-        } else {
-            ui.onNode(hasText("Skip") and hasClickAction()).performClick()
-        }
+    fun seeUnsavedTimerCard(reading: String) {
+        see("On the Timer · not saved")
+        see(hasText(reading, substring = true))
     }
 
-    /** Verifies the workout status readout contains [statusSubstring] (e.g. "Round 1 of 8"). */
-    fun verifyWorkoutStatus(statusSubstring: String) {
-        ui.onNode(hasText(statusSubstring, substring = true)).assertExists()
+    fun seeNoUnsavedTimerCard() = seeNo("On the Timer · not saved")
+
+    fun seeNothingSavedYet() = see("Nothing saved yet")
+
+    /** Opens Save as preset from the unsaved card at the top of Presets. */
+    fun startSavingTimerSettings() {
+        tap("Save")
+        see("Save as preset")
     }
 
-    /** Initiates ending the workout from the workout controls. */
-    fun endWorkout() {
-        val endNode = ui.onAllNodesWithContentDescription("End workout")
-        if (endNode.fetchSemanticsNodes().isNotEmpty()) {
-            endNode.onLast().performClick()
-        } else {
-            ui.onNode(hasText("End") and hasClickAction()).performClick()
-        }
+    fun namePreset(name: String) = ui.onNode(hasSetTextAction()).performTextReplacement(name)
+
+    fun seeSavesAs(name: String) = see("Saves as $name")
+
+    fun seeNameCount(count: String) = see(count)
+
+    /** Saves the preset sheet: its Save is drawn last, over the card's own. */
+    fun savePresetSheet() = tap("Save")
+
+    fun seePresetOnTimer(name: String) = see(hasText(name) and hasText("On the Timer"))
+
+    fun seePresetReading(name: String, reading: String) = see(hasText(name) and hasText(reading, substring = true))
+
+    fun openPreset(name: String) {
+        tap(name)
+        see("Start workout")
     }
 
-    /** Verifies that the confirmation dialog for ending the workout is shown with [messageSubstring]. */
-    fun verifyEndWorkoutDialog(messageSubstring: String) {
-        waitForText("End workout?")
-        ui.onNodeWithText("End workout?").assertExists()
-        ui.onNode(hasText(messageSubstring, substring = true)).assertExists()
+    fun putOnTimer() = tap("Put on Timer")
+
+    fun seeNoPutOnTimer() = seeNo("Put on Timer")
+
+    fun dismissSheet() = pressSystemBack()
+
+    fun editPresetRounds(rounds: Int) {
+        tap("Edit")
+        see("Edit preset")
+        tap("Rounds")
+        tap("$rounds")
+        tap("Done")
+        see("×$rounds")
+        savePresetSheet()
     }
 
-    /** Confirms ending the workout in the confirmation dialog. */
-    fun confirmEndWorkout() {
-        ui.onAllNodesWithText("End workout").onLast().performClick()
+    fun askToDeletePreset(name: String) {
+        tap("Delete")
+        see("Delete $name?")
+        see("History keeps the workouts you did with it. The Timer keeps its settings.")
     }
 
-    companion object {
-        private const val DEFAULT_TIMEOUT_MILLIS = 5_000L
+    fun cancelDialog() = tap(hasText("Cancel") and hasAnyAncestor(isDialog()))
+
+    fun confirmDelete() = tap(hasText("Delete") and hasAnyAncestor(isDialog()))
+
+    fun openNewPreset(placeholder: String) {
+        tapDescribed("New preset")
+        see("New preset")
+        see(placeholder)
     }
+
+    fun cancelSheet() = tap("Cancel")
+
+    fun seeSaveAsPresetOnTimer() = see(hasContentDescription("Save as preset"))
+
+    fun savedPresets(vararg names: String) =
+        assertEquals(names.toList(), app.repository.customPresets.value.map { it.name })
+
+    // Settings
+
+    fun openSettings() {
+        tapDescribed("Settings")
+        see("Cues")
+    }
+
+    fun toggleVoice() = tap("Voice")
+
+    fun seeVoice(on: Boolean) {
+        waitFor("voice cues ${if (on) "on" else "off"}") { app.repository.cueSettings.value.voice == on }
+        if (on) ui.onNodeWithText("Voice").assertIsOn() else ui.onNodeWithText("Voice").assertIsOff()
+    }
+
+    /** Picks [name] ("System", "Light" or "Dark") in the theme picker. */
+    fun pickTheme(name: String) = tap(name)
+
+    fun seeTheme(name: String) {
+        waitFor("the $name theme") { app.repository.appSettings.value.theme.name == name }
+        ui.onNode(hasText(name) and hasClickAction()).assertIsSelected()
+    }
+
+    // Outcomes
+
+    fun nothingIsSaved() = savedWorkouts(0)
+
+    fun savedWorkouts(count: Int) = assertEquals(count, app.repository.history.value.size)
 }
 
 /**
- * Executes an acceptance test scenario in [window] over an isolated in-memory Koin container.
- *
- * Provides a clean [IntervalAcceptanceDriver] DSL to author ATDD specifications.
+ * An acceptance test: the whole app over fakes in [window], driven through [IntervalAcceptanceDriver]. Two
+ * scenarios over one [storage] are the app before and after a restart.
  */
 fun acceptanceScenario(
     window: Window = Window.Phone,
+    storage: FakeStorage = FakeStorage(),
     scenario: suspend IntervalAcceptanceDriver.() -> Unit,
-) = runUiTest(window) {
-    val koin = testKoin()
-    try {
-        setContent { AppContent(koin) }
-        val driver = IntervalAcceptanceDriver(this, koin)
-        driver.scenario()
-    } finally {
-        koin.close()
-    }
-}
+) = appTest(window, storage) { app -> IntervalAcceptanceDriver(this, app).scenario() }

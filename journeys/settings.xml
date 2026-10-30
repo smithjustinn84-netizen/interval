@@ -11,13 +11,14 @@
     <action>Dismiss the share sheet with Back</action>
     <action>Tap the "Voice" switch</action>
     <action>Verify that the "Voice" switch is off</action>
-    <action>Tap "Dark" in the theme picker</action>
-    <action>Verify that "Dark" is selected and the screen has a dark background</action>
+    <action>Verify that "Dark" is selected in the theme picker, the theme a fresh install starts on</action>
+    <action>Tap "Light" in the theme picker</action>
+    <action>Verify that "Light" is selected and the screen has a light background</action>
     <action>Tap "Back"</action>
-    <action>Verify that the Timer tab is shown with a dark background</action>
+    <action>Verify that the Timer tab is shown with a light background</action>
     <action>Tap the "Settings" button on the Timer tab</action>
     <action>Verify that the "Voice" switch is still off</action>
-    <action>Tap "Voice" and tap "System" in the theme picker</action>
+    <action>Tap "Voice" and tap "Dark" in the theme picker</action>
     <action>Tap "Back"</action>
     <action>Verify that the Timer tab is shown</action>
   </actions>

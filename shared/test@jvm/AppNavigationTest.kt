@@ -2,7 +2,6 @@
 
 package dev.justinsmith.interval
 
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -16,42 +15,18 @@ import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.NavigationEvent
-import androidx.navigationevent.NavigationEventDispatcher
-import androidx.navigationevent.NavigationEventDispatcherOwner
-import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
-import dev.justinsmith.interval.data.IntervalRepository
-import dev.justinsmith.interval.fakes.testKoin
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.sameShape
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.Window
-import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.scrollToText
-import org.koin.core.KoinApplication
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-/** The whole app, real ViewModels and repository, over fake platform services. */
-private fun appTest(window: Window = Window.Phone, block: suspend DesktopComposeUiTest.(KoinApplication) -> Unit) =
-    runUiTest(window) {
-        val koin = testKoin()
-        try {
-            setContent { AppContent(koin) }
-            block(koin)
-        } finally {
-            koin.close()
-        }
-    }
-
 /** How far, in dp, a moving node may be from its resting place and still count as not moving that way. */
 private const val SETTLED_SLACK = 12f
-
-/** A navigation bar or rail item; "History" alone would also match the History screen title. */
-private fun DesktopComposeUiTest.tab(label: String): SemanticsNodeInteraction =
-    onNode(hasText(label) and hasClickAction())
 
 /** A page's title: the one node with that text and nothing to tap, apart from the bar's item. */
 private fun DesktopComposeUiTest.pageTitle(title: String): SemanticsNodeInteraction =
@@ -140,39 +115,27 @@ class AppNavigationTest {
     }
 
     @Test
-    fun `a back swipe toward Lift brings the bar in with the finger and lets it go again`() = runUiTest(Window.Phone) {
-        val koin = testKoin()
-        val owner = object : NavigationEventDispatcherOwner {
-            override val navigationEventDispatcher = NavigationEventDispatcher()
-        }
-        val input = DirectNavigationEventInput()
-        owner.navigationEventDispatcher.addInput(input)
-        try {
-            setContent {
-                CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides owner) { AppContent(koin) }
-            }
-            tab("Lift").performClick()
-            val before = tab("Lift").fetchSemanticsNode().boundsInRoot
-            onNodeWithContentDescription(EQUIPMENT).performClick()
-            waitForIdle()
-            tab("Lift").assertDoesNotExist()
-            input.backStarted(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT))
-            input.backProgressed(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT, progress = 0.5f))
-            waitForIdle()
-            val halfway = tab("Lift").fetchSemanticsNode().boundsInRoot
-            assertTrue(halfway.top > before.top + SETTLED_SLACK, "on its way in, not in place: $halfway vs $before")
-            input.backCancelled()
-            waitForIdle()
-            tab("Lift").assertDoesNotExist()
-            input.backStarted(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT))
-            input.backProgressed(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT, progress = 0.5f))
-            input.backCompleted()
-            waitForIdle()
-            val settled = tab("Lift").fetchSemanticsNode().boundsInRoot
-            assertTrue(abs(settled.top - before.top) < SETTLED_SLACK, "back in its place: $settled vs $before")
-        } finally {
-            koin.close()
-        }
+    fun `a back swipe toward Lift brings the bar in with the finger and lets it go again`() = appTest { app ->
+        val input = app.backInput
+        tab("Lift").performClick()
+        val before = tab("Lift").fetchSemanticsNode().boundsInRoot
+        onNodeWithContentDescription(EQUIPMENT).performClick()
+        waitForIdle()
+        tab("Lift").assertDoesNotExist()
+        input.backStarted(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT))
+        input.backProgressed(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT, progress = 0.5f))
+        waitForIdle()
+        val halfway = tab("Lift").fetchSemanticsNode().boundsInRoot
+        assertTrue(halfway.top > before.top + SETTLED_SLACK, "on its way in, not in place: $halfway vs $before")
+        input.backCancelled()
+        waitForIdle()
+        tab("Lift").assertDoesNotExist()
+        input.backStarted(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT))
+        input.backProgressed(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT, progress = 0.5f))
+        input.backCompleted()
+        waitForIdle()
+        val settled = tab("Lift").fetchSemanticsNode().boundsInRoot
+        assertTrue(abs(settled.top - before.top) < SETTLED_SLACK, "back in its place: $settled vs $before")
     }
 
     @Test
@@ -189,23 +152,23 @@ class AppNavigationTest {
     }
 
     @Test
-    fun `a preset put on the Timer from All presets becomes the next workout`() = appTest { koin ->
+    fun `a preset put on the Timer from All presets becomes the next workout`() = appTest { app ->
         onNodeWithContentDescription("All presets").performClick()
         onNodeWithText("Hangboard").performClick()
         onNodeWithText("Put on Timer").performClick()
         onNodeWithText("Start workout").assertExists()
         tab("Timer").assertIsSelected()
-        val config = koin.koin.get<IntervalRepository>().config.value
+        val config = app.repository.config.value
         assertTrue(config.sameShape(builtInPresets.single { it.name == "Hangboard" }.config))
     }
 
     @Test
-    fun `a preset started from its sheet opens the workout and ends back on Presets`() = appTest { koin ->
+    fun `a preset started from its sheet opens the workout and ends back on Presets`() = appTest { app ->
         onNodeWithContentDescription("All presets").performClick()
         onNodeWithText("Tabata").performClick()
         onNodeWithText("Start workout").performClick()
         onNodeWithContentDescription("End workout").assertExists()
-        assertTrue(koin.koin.get<IntervalRepository>().config.value.sameShape(builtInPresets.first().config))
+        assertTrue(app.repository.config.value.sameShape(builtInPresets.first().config))
 
         onNodeWithContentDescription("End workout").performClick()
         onNodeWithText("End workout").performClick()
@@ -279,8 +242,8 @@ class AppNavigationTest {
 
     @Test
     fun `on a tablet a finished workout opens beside History and closing it leaves the prompt`() =
-        appTest(Window.Tablet) { koin ->
-            koin.koin.get<IntervalRepository>().recordWorkout(builtInPresets.first().config, elapsedSeconds = 240)
+        appTest(Window.Tablet) { app ->
+            app.repository.recordWorkout(builtInPresets.first().config, elapsedSeconds = 240)
             tab("History").performClick()
             onNodeWithText("Pick a workout").assertExists()
 
@@ -298,9 +261,9 @@ class AppNavigationTest {
         }
 
     @Test
-    fun `on a tablet another workout takes the open one's place`() = appTest(Window.Tablet) { koin ->
+    fun `on a tablet another workout takes the open one's place`() = appTest(Window.Tablet) { app ->
         val (tabata, hiit) = builtInPresets
-        val repository = koin.koin.get<IntervalRepository>()
+        val repository = app.repository
         repository.recordWorkout(tabata.config, elapsedSeconds = 240)
         repository.recordWorkout(hiit.config, elapsedSeconds = 600)
         tab("History").performClick()
@@ -317,8 +280,8 @@ class AppNavigationTest {
     }
 
     @Test
-    fun `on a tablet deleting the workout beside History leaves the prompt`() = appTest(Window.Tablet) { koin ->
-        koin.koin.get<IntervalRepository>().recordWorkout(builtInPresets.first().config, elapsedSeconds = 240)
+    fun `on a tablet deleting the workout beside History leaves the prompt`() = appTest(Window.Tablet) { app ->
+        app.repository.recordWorkout(builtInPresets.first().config, elapsedSeconds = 240)
         tab("History").performClick()
         onNode(hasText("Tabata") and hasClickAction()).performClick()
         // History's own menu, then the workout's beside it.
@@ -366,9 +329,9 @@ class AppNavigationTest {
     }
 
     @Test
-    fun `a finished workout opens from History and deleting it goes back`() = appTest { koin ->
+    fun `a finished workout opens from History and deleting it goes back`() = appTest { app ->
         val tabata = builtInPresets.first()
-        koin.koin.get<IntervalRepository>().recordWorkout(tabata.config, elapsedSeconds = 240)
+        app.repository.recordWorkout(tabata.config, elapsedSeconds = 240)
         tab("History").performClick()
         onNodeWithText("Tabata").performClick()
         onNodeWithText("Repeat now").assertExists()
@@ -383,8 +346,8 @@ class AppNavigationTest {
     }
 
     @Test
-    fun `deleting a workout says so and Undo brings it back`() = appTest { koin ->
-        koin.koin.get<IntervalRepository>().recordWorkout(builtInPresets.first().config, elapsedSeconds = 240)
+    fun `deleting a workout says so and Undo brings it back`() = appTest { app ->
+        app.repository.recordWorkout(builtInPresets.first().config, elapsedSeconds = 240)
         tab("History").performClick()
         onNodeWithText("Tabata").performClick()
         onNodeWithContentDescription("More options").performClick()
@@ -413,8 +376,8 @@ class AppNavigationTest {
     }
 
     @Test
-    fun `a plan taken off a day comes back with Undo`() = appTest { koin ->
-        koin.koin.get<IntervalRepository>().planWeekly(builtInPresets.first(), setOf(1))
+    fun `a plan taken off a day comes back with Undo`() = appTest { app ->
+        app.repository.planWeekly(builtInPresets.first(), setOf(1))
         tab("History").performClick()
         onNodeWithContentDescription("Plan").performClick()
         onNodeWithContentDescription("Remove Tabata from Monday").performClick()

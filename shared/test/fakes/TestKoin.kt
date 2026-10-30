@@ -10,10 +10,12 @@ import org.koin.core.KoinApplication
 import org.koin.core.module.Module
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
+import kotlin.time.TimeSource
 
 /**
  * The app's real container over fake platform services and storage, for `AppContent`, Lift's included.
- * Time stands at [now], or follows [clock] when a test moves it.
+ * The wall clock stands at [now], or follows [clock] when a test moves it. A running workout counts
+ * [timeSource]: real time unless a test passes a `TestTimeSource` to move it by hand.
  */
 fun testKoin(
     platformModule: Module = fakePlatformModule(),
@@ -22,6 +24,7 @@ fun testKoin(
     lift: FakeBellsStorage = FakeBellsStorage(),
     beeper: RecordingBeeper = RecordingBeeper(),
     clock: WallClock = WallClock { now },
+    timeSource: TimeSource.WithComparableMarks = TimeSource.Monotonic,
 ): KoinApplication = koinApplication {
     modules(
         appModules(
@@ -29,6 +32,9 @@ fun testKoin(
             fakeStorageModule(storage),
             bellsPlatform = fakeBellsPlatformModule(beeper),
             bellsStorage = fakeBellsStorageModule(lift),
-        ) + module { single { clock } },
+        ) + module {
+            single { clock }
+            single<TimeSource.WithComparableMarks> { timeSource }
+        },
     )
 }

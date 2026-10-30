@@ -1,72 +1,46 @@
 package dev.justinsmith.interval.acceptance
 
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.seconds
 
-/**
- * ATDD Executable Specification: Start a workout journey.
- *
- * Directly mirrors the acceptance criteria defined in journeys/start-workout.xml:
- * "Edit the next workout's work time, start it, pause and resume, skip ahead, then end it before
- * any round is finished."
- */
+/** `journeys/start-workout.xml`: edit the work time, start, pause and resume, skip ahead, end before a round. */
 class StartWorkoutAcceptanceTest {
+    @Test
+    fun `a workout ended before its first round saves nothing`() = acceptanceScenario {
+        seeTimer()
+        setWorkTime("1:00")
+
+        startWorkout()
+        seePhase("Get ready")
+        pause()
+        seePaused()
+        resume()
+        seeRunning()
+
+        skipPhase()
+        seePhase("Work")
+        seeRound("Round 1 of 8")
+
+        askToEnd()
+        seeEndDialogSaying("nothing is saved")
+        confirmEnd()
+
+        seeTimer()
+        nothingIsSaved()
+    }
 
     @Test
-    fun `user can configure work time, start, pause, resume, skip, and discard workout before completion`() =
-        acceptanceScenario {
-            // 1. Verify that the Timer tab is shown with a "Start workout" button
-            verifyTimerScreenShown()
-
-            // 2. Tap the "Work" row under "Intervals"
-            tapIntervalRow("Work")
-
-            // 3. Verify that a sheet titled "Work" is shown with "Quick picks"
-            verifyValueSheetShown("Work")
-
-            // 4. Tap the "1:00" quick pick
-            selectQuickPick("1:00")
-
-            // 5. Tap "Done"
-            tapDone()
-
-            // 6. Verify that the "Work" row shows 1:00
-            verifyIntervalValue("Work", "1:00")
-
-            // 7. Tap "Start workout"
-            startWorkout()
-
-            // 8. Verify that the workout screen shows "Get ready" and a countdown clock
-            verifyWorkoutPhase("Get ready")
-
-            // 9. Tap "Pause"
-            pauseWorkout()
-
-            // 10. Verify that the screen shows "Paused" and a "Resume" button
-            verifyWorkoutPaused()
-
-            // 11. Tap "Resume"
-            resumeWorkout()
-
-            // 12. Verify that the screen shows a "Pause" button
-            verifyWorkoutRunning()
-
-            // 13. Tap "Skip"
-            skipPhase()
-
-            // 14. Verify that the screen shows "Work" and "Round 1 of 8"
-            verifyWorkoutPhase("Work")
-            verifyWorkoutStatus("Round 1 of 8")
-
-            // 15. Tap "End"
-            endWorkout()
-
-            // 16. Verify that a dialog titled "End workout?" says nothing is saved
-            verifyEndWorkoutDialog("nothing is saved")
-
-            // 17. Tap "End workout" in the dialog
-            confirmEndWorkout()
-
-            // 18. Verify that the Timer tab is shown with a "Start workout" button
-            verifyTimerScreenShown()
-        }
+    fun `a workout left to run to its end is saved whole`() = acceptanceScenario {
+        startWorkout()
+        seePhase("Get ready")
+        // 10 s to get ready, then eight rounds of 30 s on and seven rests of 15 s between them.
+        letTimePass(9.seconds)
+        seePhase("Get ready")
+        letTimePass(2.seconds)
+        seePhase("Work")
+        seeRound("Round 1 of 8")
+        letTimePass((10 + 8 * 30 + 7 * 15).seconds)
+        see("Saved to history")
+        savedWorkouts(1)
+    }
 }

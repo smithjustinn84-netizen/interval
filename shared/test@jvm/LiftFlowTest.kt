@@ -2,9 +2,7 @@
 
 package dev.justinsmith.interval
 
-import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
@@ -16,49 +14,17 @@ import androidx.compose.ui.test.performClick
 import dev.justinsmith.bells.data.FollowingEntity
 import dev.justinsmith.bells.data.SessionEntity
 import dev.justinsmith.bells.fakes.FakeBellsStorage
-import dev.justinsmith.interval.data.IntervalRepository
-import dev.justinsmith.interval.fakes.testKoin
-import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.ui.Window
-import dev.justinsmith.interval.ui.runUiTest
-import org.koin.core.KoinApplication
-import java.util.concurrent.atomic.AtomicLong
+import dev.justinsmith.interval.ui.waitForText
 import kotlin.test.Test
 import kotlin.test.assertTrue
-
-/** What a Lift test drives: the container, Lift's storage under it, and the clock. */
-private class LiftApp(val koin: KoinApplication, val lift: FakeBellsStorage, val clock: AtomicLong)
-
-/** The whole app over fakes in a [window], Lift's storage and the clock in the test's hands. */
-private fun liftTest(
-    lift: FakeBellsStorage = FakeBellsStorage(),
-    window: Window = Window.Phone,
-    block: suspend DesktopComposeUiTest.(LiftApp) -> Unit,
-) = runUiTest(window) {
-    val clock = AtomicLong(0L)
-    val koin = testKoin(lift = lift, clock = WallClock { clock.get() })
-    try {
-        setContent { AppContent(koin) }
-        block(LiftApp(koin, lift, clock))
-    } finally {
-        koin.close()
-    }
-}
-
-/** A navigation bar or rail item, rather than a page title of the same word. */
-private fun DesktopComposeUiTest.tab(label: String): SemanticsNodeInteraction =
-    onNode(hasText(label) and hasClickAction())
 
 /** How long Lift's view models, ticking on Swing's thread, may take to show what the test did. */
 private const val STATE_TIMEOUT_MILLIS = 5_000L
 
-/** Waits for [text]: the session's view models emit on `Dispatchers.Main`, which the test doesn't track. */
-private fun DesktopComposeUiTest.waitForText(text: String) =
-    waitUntil(timeoutMillis = STATE_TIMEOUT_MILLIS) { onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
-
 class LiftFlowTest {
     @Test
-    fun `a session logged on Lift lands in History and the week`() = liftTest { app ->
+    fun `a session logged on Lift lands in History and the week`() = appTest { app ->
         tab("Lift").performClick()
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
@@ -79,16 +45,16 @@ class LiftFlowTest {
     }
 
     @Test
-    fun `the goal set on Plan shows on Lift`() = liftTest { app ->
-        app.koin.koin.get<IntervalRepository>().updateAppSettings { it.copy(weeklyGoal = 3) }
+    fun `the goal set on Plan shows on Lift`() = appTest { app ->
+        app.repository.updateAppSettings { it.copy(weeklyGoal = 3) }
         tab("Lift").performClick()
         waitForText("3 more to hit 3")
     }
 
     @Test
-    fun `on a tablet a session opens beside History but on a page of its own from Lift`() = liftTest(
-        FakeBellsStorage().apply { finished("b1", "Swings", startedAt = 0, finishedAt = 600_000, 24.0 to 10) },
+    fun `on a tablet a session opens beside History but on a page of its own from Lift`() = appTest(
         Window.Tablet,
+        lift = FakeBellsStorage().apply { finished("b1", "Swings", startedAt = 0, finishedAt = 600_000, 24.0 to 10) },
     ) {
         tab("History").performClick()
         onNode(hasText("Swings") and hasClickAction()).performClick()
@@ -107,8 +73,8 @@ class LiftFlowTest {
     }
 
     @Test
-    fun `a session opens from History and Delete takes it out with Undo`() = liftTest(
-        FakeBellsStorage().apply { finished("b1", "Swings", startedAt = 0, finishedAt = 600_000, 24.0 to 10) },
+    fun `a session opens from History and Delete takes it out with Undo`() = appTest(
+        lift = FakeBellsStorage().apply { finished("b1", "Swings", startedAt = 0, finishedAt = 600_000, 24.0 to 10) },
     ) { app ->
         tab("History").performClick()
         onNode(hasText("Swings") and hasClickAction()).performClick()
@@ -130,7 +96,7 @@ class LiftFlowTest {
     }
 
     @Test
-    fun `Lift opens the bells owned and Back returns`() = liftTest {
+    fun `Lift opens the bells owned and Back returns`() = appTest {
         tab("Lift").performClick()
         onNodeWithContentDescription("Your equipment and records").performClick()
         onNodeWithText("Your bells").assertExists()
@@ -140,8 +106,8 @@ class LiftFlowTest {
     }
 
     @Test
-    fun `the last session on Lift opens its page`() = liftTest(
-        FakeBellsStorage().apply { finished("b1", "Swings", startedAt = 0, finishedAt = 600_000, 24.0 to 10) },
+    fun `the last session on Lift opens its page`() = appTest(
+        lift = FakeBellsStorage().apply { finished("b1", "Swings", startedAt = 0, finishedAt = 600_000, 24.0 to 10) },
     ) {
         tab("Lift").performClick()
         waitForText("Swings")
@@ -152,8 +118,8 @@ class LiftFlowTest {
     }
 
     @Test
-    fun `the program followed opens from Lift and a day opens its session`() = liftTest(
-        FakeBellsStorage().apply {
+    fun `the program followed opens from Lift and a day opens its session`() = appTest(
+        lift = FakeBellsStorage().apply {
             val goblets = "GobletSquatRow"
             following.row.value = FollowingEntity(programId = goblets, startedAtEpochMillis = 0)
             sessions.sessions.value = listOf(
