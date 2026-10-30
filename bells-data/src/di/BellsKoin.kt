@@ -6,10 +6,10 @@ import dev.justinsmith.bells.data.BellsDatabase
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.data.ExerciseFilterStore
 import dev.justinsmith.bells.data.MIGRATION_3_4
+import dev.justinsmith.interval.storage.storageScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.onClose
@@ -17,12 +17,15 @@ import org.koin.core.module.dsl.withOptions
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
-/** The scope storage writes run on. It lives as long as the container, which cancels it on close. */
+/**
+ * The scope storage writes run on. It lives as long as the container, which cancels it on close: drain the
+ * repository's writes first ([BellsRepository.close]).
+ */
 val BellsStorageScope = named("bellsStorage")
 
 /** The database and its DAOs, from the platform's builder. Closing the container closes the database. */
 val bellsStorageModule: Module = module {
-    single<CoroutineScope>(BellsStorageScope) { CoroutineScope(SupervisorJob() + Dispatchers.IO) }.withOptions {
+    single<CoroutineScope>(BellsStorageScope) { storageScope(Dispatchers.IO, "BellsStorageScope") }.withOptions {
         onClose { it?.cancel() }
     }
     single<BellsDatabase> {

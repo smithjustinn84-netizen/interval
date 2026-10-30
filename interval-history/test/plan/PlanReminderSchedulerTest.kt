@@ -9,6 +9,8 @@ import dev.justinsmith.interval.fakes.TODAY
 import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.fakes.tabataPreset
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
+import dev.justinsmith.interval.platform.PlanReminder
+import dev.justinsmith.interval.platform.PlanReminders
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -58,6 +60,29 @@ class PlanReminderSchedulerTest {
         repository.updateAppSettings { it.copy(reminderMinuteOfDay = null) }
         runCurrent()
         assertTrue(reminders.pending.isEmpty())
+        scope.cancel()
+    }
+
+    @Test
+    fun `a set the platform can't take is skipped and the next change is scheduled`() = runTest {
+        val now = noonOf(TODAY)
+        val repository = FakeStorage().repository(now = { now })
+        var failing = true
+        val recorded = RecordingPlanReminders()
+        val reminders = object : PlanReminders {
+            override suspend fun schedule(reminders: List<PlanReminder>) {
+                if (failing) error("disk full") else recorded.schedule(reminders)
+            }
+        }
+        val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
+        PlanReminderScheduler(repository, reminders, FixedTimestampFormatter, { now }, scope)
+        runCurrent()
+
+        failing = false
+        repository.planWeekly(tabataPreset, setOf(4))
+        repository.updateAppSettings { it.copy(reminderMinuteOfDay = EVENING) }
+        runCurrent()
+        assertEquals(listOf(TODAY, TODAY + 7), recorded.pending.map { it.epochDay })
         scope.cancel()
     }
 

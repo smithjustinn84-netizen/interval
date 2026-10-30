@@ -2,7 +2,10 @@ package dev.justinsmith.interval.storage
 
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -11,20 +14,36 @@ import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.launch
 
 /**
+ * A scope for a repository's reads and writes, on [dispatcher], for as long as the container that owns it. A
+ * failure that gets past the repository's own handling is logged here rather than handed to the platform,
+ * which would end the app: a storage problem must not crash a workout.
+ */
+fun storageScope(dispatcher: CoroutineDispatcher, name: String): CoroutineScope {
+    val log = Logger.withTag(name)
+    return CoroutineScope(SupervisorJob() + dispatcher + CoroutineExceptionHandler { _, e -> log.e(e) { "Failed" } })
+}
+
+/**
  * A repository's writes, queued in call order and run one at a time in [scope], so a save can't overtake an
  * earlier one (a clear landing before the insert it followed). A failed write is logged, never thrown:
  * losing one save must not crash a workout.
  */
 class SerialWriter(scope: CoroutineScope, private val log: Logger) {
     private val writes = Channel<suspend () -> Unit>(Channel.UNLIMITED)
+    private val consumer = scope.launch { for (write in writes) runLogged(write) }
 
-    init {
-        scope.launch { for (write in writes) runLogged(write) }
+    /** Queues [write] behind every write before it. After [close], it is dropped. */
+    fun persist(write: suspend () -> Unit) {
+        if (writes.trySend(write).isClosed) log.w { "A save came after the writer closed and was dropped" }
     }
 
-    /** Queues [write] behind every write before it. */
-    fun persist(write: suspend () -> Unit) {
-        writes.trySend(write)
+    /**
+     * Takes no more writes and returns once every write queued before has run, so the storage under them can
+     * close without losing the last ones. Returns at once if [scope] has already been cancelled.
+     */
+    suspend fun close() {
+        writes.close()
+        consumer.join()
     }
 
     @Suppress("detekt.TooGenericExceptionCaught")

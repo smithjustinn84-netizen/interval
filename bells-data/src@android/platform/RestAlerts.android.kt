@@ -27,7 +27,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.jetbrains.compose.resources.getString
 
 /**
@@ -74,13 +73,18 @@ class RestService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var wakeLock: PowerManager.WakeLock? = null
     private var countdown: Job? = null
+    private val notifications by lazy { getSystemService(NotificationManager::class.java) }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
         super.onCreate()
-        // The channel must exist before the first notification, which startForeground posts at once.
-        runBlocking { createChannel() }
+        // The channel must exist before the first notification, which startForeground posts at once. As for the
+        // workout's: the app's name holds the place on the very first run, and the words follow.
+        if (notifications?.getNotificationChannel(CHANNEL_ID) == null) createChannel(appName(), null)
+        scope.launch {
+            createChannel(getString(Res.string.rest_channel), getString(Res.string.rest_channel_description))
+        }
         wakeLock = getSystemService(PowerManager::class.java)
             ?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG)
     }
@@ -103,8 +107,9 @@ class RestService : Service() {
         return START_NOT_STICKY
     }
 
+    // At once, on the main thread, so without the words, which suspend: the countdown's first tick adds them.
     private fun goForeground(endAt: Long) {
-        val first = runBlocking { notification(endAt) }
+        val first = builder().setContentTitle(appName()).setContentText(formatClock(secondsLeft(endAt))).build()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(NOTIFICATION_ID, first, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
         } else {
@@ -118,8 +123,8 @@ class RestService : Service() {
         countdown?.cancel()
         countdown = scope.launch {
             while (System.currentTimeMillis() < endAt) {
+                notifications?.notify(NOTIFICATION_ID, notification(endAt))
                 delay(TICK_MILLIS)
-                getSystemService(NotificationManager::class.java)?.notify(NOTIFICATION_ID, notification(endAt))
             }
             // The session's clock plays the cue as the rest ends; a moment later this is over too.
             delay(LINGER_MILLIS)
@@ -140,26 +145,31 @@ class RestService : Service() {
         super.onDestroy()
     }
 
-    private suspend fun createChannel() {
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            getString(Res.string.rest_channel),
-            NotificationManager.IMPORTANCE_LOW,
-        ).apply {
-            description = getString(Res.string.rest_channel_description)
+    private fun createChannel(name: CharSequence, description: String?) {
+        val channel = NotificationChannel(CHANNEL_ID, name, NotificationManager.IMPORTANCE_LOW).apply {
+            this.description = description
             setShowBadge(false)
         }
-        getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)
+        notifications?.createNotificationChannel(channel)
     }
 
     /** "Resting" over the time left, silent and ongoing, on the lock screen; tapping it opens the app. */
-    private suspend fun notification(endAt: Long): Notification {
+    private suspend fun notification(endAt: Long): Notification = builder()
+        .setContentTitle(getString(Res.string.rest_title))
+        .setContentText(getString(Res.string.rest_left, formatClock(secondsLeft(endAt))))
+        .build()
+
+    private fun secondsLeft(endAt: Long): Int {
         val leftMillis = (endAt - System.currentTimeMillis()).coerceAtLeast(0)
-        val left = ((leftMillis + MILLIS_PER_SECOND - 1) / MILLIS_PER_SECOND).toInt()
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        return ((leftMillis + MILLIS_PER_SECOND - 1) / MILLIS_PER_SECOND).toInt()
+    }
+
+    private fun appName(): CharSequence = applicationInfo.loadLabel(packageManager)
+
+    /** What every version of the notification shares. */
+    private fun builder(): NotificationCompat.Builder =
+        NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(notificationIcon())
-            .setContentTitle(getString(Res.string.rest_title))
-            .setContentText(getString(Res.string.rest_left, formatClock(left)))
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSilent(true)
@@ -168,8 +178,6 @@ class RestService : Service() {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .setContentIntent(openAppIntent(REQUEST_OPEN))
-            .build()
-    }
 
     companion object {
         internal const val EXTRA_END_AT = "dev.justinsmith.bells.REST_END_AT"

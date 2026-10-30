@@ -225,6 +225,14 @@ class BellsRepository(
     }
 
     /**
+     * Takes no more writes and returns once those already made have landed: the container's last step before it
+     * closes the database and cancels the scope, which would otherwise drop them.
+     */
+    suspend fun close() {
+        writer.close()
+    }
+
+    /**
      * Starts a session, a day of [program] or a free one, unless one is in progress already. A day of the
      * program followed is logged as the day it is.
      */

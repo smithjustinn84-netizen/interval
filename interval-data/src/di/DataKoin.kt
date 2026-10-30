@@ -10,6 +10,7 @@ import dev.justinsmith.interval.platform.PlatformStorage
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.epochMillisNow
 import dev.justinsmith.interval.platform.realElapsedTime
+import dev.justinsmith.interval.storage.storageScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -23,7 +24,10 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import kotlin.time.TimeSource
 
-/** The scope storage writes run on. It lives as long as the container, which cancels it on close. */
+/**
+ * The scope storage writes run on. It lives as long as the container, which cancels it on close: drain the
+ * repository's writes first ([IntervalRepository.close]).
+ */
 val StorageScope = named("storage")
 
 /**
@@ -32,7 +36,7 @@ val StorageScope = named("storage")
  * outlives the container: see [preferencesAt].
  */
 val storageModule: Module = module {
-    single<CoroutineScope>(StorageScope) { CoroutineScope(SupervisorJob() + Dispatchers.IO) }.withOptions {
+    single<CoroutineScope>(StorageScope) { storageScope(Dispatchers.IO, "StorageScope") }.withOptions {
         onClose { it?.cancel() }
     }
     single<AppDatabase> {

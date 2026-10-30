@@ -14,6 +14,7 @@ import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.interval.timer.fromKg
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -32,6 +33,27 @@ class SettingsViewModelTest : MainDispatcherTest() {
     @Test
     fun `export offers the exporter's file to share`() {
         viewModel.export()
+        assertEquals(listOf(export), sharer.files)
+    }
+
+    @Test
+    fun `an export that fails is dropped and the next one goes`() {
+        var failing = true
+        val viewModel = SettingsViewModel(repository, player, { if (failing) error("disk full") else export }, sharer)
+        viewModel.export()
+        assertTrue(sharer.files.isEmpty())
+        failing = false
+        viewModel.export()
+        assertEquals(listOf(export), sharer.files)
+    }
+
+    @Test
+    fun `a second tap while an export is under way exports nothing more`() {
+        val built = CompletableDeferred<ShareableFile>()
+        val viewModel = SettingsViewModel(repository, player, { built.await() }, sharer)
+        viewModel.export()
+        viewModel.export()
+        built.complete(export)
         assertEquals(listOf(export), sharer.files)
     }
 

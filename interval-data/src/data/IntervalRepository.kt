@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.uuid.ExperimentalUuidApi
@@ -99,29 +100,38 @@ class IntervalRepository(
     val workoutProgress: StateFlow<WorkoutProgress?> = _workoutProgress.asStateFlow()
 
     init {
+        // Each list is mapped upstream of its fallback, so a row that fails to map counts as a failed read.
         scope.launch {
             val presetsLoaded = CompletableDeferred<Unit>()
             val historyLoaded = CompletableDeferred<Unit>()
             val plannedLoaded = CompletableDeferred<Unit>()
             launch {
-                presetDao.observeAll().orEmptyOnError("presets", log).collect { rows ->
-                    val custom = rows.map { it.toDomain() }
-                    _customPresets.value = custom
-                    _presets.value = builtInPresets + custom
-                    presetsLoaded.complete(Unit)
-                }
+                presetDao.observeAll()
+                    .map { rows -> rows.map { it.toDomain() } }
+                    .orEmptyOnError("presets", log)
+                    .collect { custom ->
+                        _customPresets.value = custom
+                        _presets.value = builtInPresets + custom
+                        presetsLoaded.complete(Unit)
+                    }
             }
             launch {
-                historyDao.observeAll().orEmptyOnError("history", log).collect { rows ->
-                    _history.value = rows.map { it.toDomain() }
-                    historyLoaded.complete(Unit)
-                }
+                historyDao.observeAll()
+                    .map { rows -> rows.map { it.toDomain() } }
+                    .orEmptyOnError("history", log)
+                    .collect { entries ->
+                        _history.value = entries
+                        historyLoaded.complete(Unit)
+                    }
             }
             launch {
-                plannedDao.observeAll().orEmptyOnError("plans", log).collect { rows ->
-                    _planned.value = rows.mapNotNull { it.toDomain() }
-                    plannedLoaded.complete(Unit)
-                }
+                plannedDao.observeAll()
+                    .map { rows -> rows.mapNotNull { it.toDomain() } }
+                    .orEmptyOnError("plans", log)
+                    .collect { plans ->
+                        _planned.value = plans
+                        plannedLoaded.complete(Unit)
+                    }
             }
             // An unreadable settings file falls back to the defaults rather than keeping the app from starting.
             val stored = settings.data
@@ -139,6 +149,14 @@ class IntervalRepository(
             plannedLoaded.await()
             _ready.value = true
         }
+    }
+
+    /**
+     * Takes no more writes and returns once those already made have landed: the container's last step before it
+     * closes the database and cancels the scope, which would otherwise drop them.
+     */
+    suspend fun close() {
+        writer.close()
     }
 
     fun updateConfig(transform: (IntervalConfig) -> IntervalConfig) {

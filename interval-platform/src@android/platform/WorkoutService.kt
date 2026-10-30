@@ -34,7 +34,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.jetbrains.compose.resources.getString
 
 /**
@@ -63,9 +62,17 @@ class WorkoutService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        // The channel must exist before the first notification, which startForeground posts at once.
-        // Reading two short strings from the app's resources is the one wait.
-        runBlocking { createChannel() }
+        // The channel must exist before the first notification, which startForeground posts at once. Its
+        // words suspend, and blocking the main thread for them would eat into startForeground's few seconds;
+        // so the app's name holds the place on the very first run, and the words follow (a channel created
+        // again is renamed, nothing else).
+        if (notifications?.getNotificationChannel(CHANNEL_ID) == null) createChannel(appName(), null)
+        scope.launch {
+            createChannel(
+                getString(Res.string.notification_channel_workout),
+                getString(Res.string.notification_channel_workout_description),
+            )
+        }
         wakeLock = getSystemService(PowerManager::class.java)
             ?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG)
     }
@@ -119,13 +126,9 @@ class WorkoutService : Service() {
         }.onFailure { log.w(it) { "Couldn't change the wake lock" } }
     }
 
-    private suspend fun createChannel() {
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            getString(Res.string.notification_channel_workout),
-            NotificationManager.IMPORTANCE_LOW,
-        ).apply {
-            description = getString(Res.string.notification_channel_workout_description)
+    private fun createChannel(name: CharSequence, description: String?) {
+        val channel = NotificationChannel(CHANNEL_ID, name, NotificationManager.IMPORTANCE_LOW).apply {
+            this.description = description
             setShowBadge(false)
         }
         notifications?.createNotificationChannel(channel)

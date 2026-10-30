@@ -20,6 +20,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.io.File
 import java.time.LocalDate
 import java.time.ZoneId
@@ -57,10 +59,16 @@ internal object PlanAlarms {
     @Volatile
     private var store: DataStore<Preferences>? = null
 
+    /**
+     * Held across each replace and re-arm, record and alarms together: otherwise a re-arm reading the record
+     * just before a replace rewrites it could set the old alarms after the new ones, untracked and never
+     * cancelled.
+     */
+    private val changing = Mutex()
+
     /** Cancels every alarm set before and sets one per [alarms], recording them for [rearm]. */
-    suspend fun replace(context: Context, alarms: List<PlanAlarm>) {
+    suspend fun replace(context: Context, alarms: List<PlanAlarm>) = changing.withLock {
         val manager = context.getSystemService(AlarmManager::class.java)
-        // Cancelling inside the update keeps two replaces from crossing; a cancel is safe to repeat.
         context.store().updateData { record ->
             for (alarm in record.alarms()) manager?.cancel(context.showIntent(alarm.epochDay))
             alarms.asRecord()
@@ -69,7 +77,7 @@ internal object PlanAlarms {
     }
 
     /** Sets the recorded alarms again, at their day and time on the clock as it now stands. */
-    suspend fun rearm(context: Context) {
+    suspend fun rearm(context: Context) = changing.withLock {
         val alarms = context.store().data.first().alarms()
         arm(context, context.getSystemService(AlarmManager::class.java), alarms)
     }

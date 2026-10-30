@@ -2,6 +2,7 @@ package dev.justinsmith.interval.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.BodySettings
@@ -22,6 +23,8 @@ import dev.justinsmith.interval.timer.fromKg
 import dev.justinsmith.interval.timer.stepped
 import dev.justinsmith.interval.timer.toKg
 import dev.justinsmith.interval.timer.withValue
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -120,9 +123,25 @@ class SettingsViewModel(
         updateBody { it.copy(effort = effort) }
     }
 
-    /** Builds the export of everything stored and offers it to share or save. */
+    private val log = Logger.withTag("SettingsViewModel")
+    private var exporting: Job? = null
+
+    /**
+     * Builds the export of everything stored and offers it to share or save; a second tap while one is under
+     * way does nothing. A file that can't be written is logged, and the share sheet just doesn't open.
+     */
+    @Suppress("detekt.TooGenericExceptionCaught")
     fun export() {
-        viewModelScope.launch { sharer.shareFile(exporter.export()) }
+        if (exporting?.isActive == true) return
+        exporting = viewModelScope.launch {
+            try {
+                sharer.shareFile(exporter.export())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                log.e(e) { "Couldn't export" }
+            }
+        }
     }
 
     private fun updateBody(transform: (BodySettings) -> BodySettings) {
