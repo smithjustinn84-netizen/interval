@@ -8,6 +8,7 @@ Compose Multiplatform project with no Gradle.
 flowchart TD
     subgraph Pyramid ["Testing Pyramid & Execution Targets"]
         E2E["Journeys (journeys/*.xml)<br/>• Real Android emulator (amper-37) via android-CLI"]
+        Acceptance["Acceptance Tests (shared/test@jvm/acceptance)<br/>• ATDD DSL & Driver over AppContent(testKoin), fast JVM loop"]
         AppFlows["Integration & App Flows (shared/test@jvm, bells/test@jvm)<br/>• AppContent(testKoin), bellsAppTest, full back stack"]
         ScreenUI["Compose UI Screen Tests (<feature>/test@jvm)<br/>• runUiTest(Window.Phone), setThemedContent, Skiko offscreen"]
         Storage["Real Storage & Migration Tests (*-data/test@jvm)<br/>• Temp SQLite Room DB, schema migrations (AppMigrationTest, BellsMigrationTest)"]
@@ -25,6 +26,7 @@ A test lives in the module of what it tests, so `./kotlin test -m <module> -p jv
 | Compose behavior (one screen) | `<feature>/test@jvm/<feature>/XScreenTest.kt` | Desktop JVM | `runDesktopComposeUiTest` |
 | Lift's flows (its pages end to end) | `bells/test@jvm/` (`bellsAppTest`) | Desktop JVM | Lift's real entries over fake DI |
 | Navigation (whole app) | `shared/test@jvm/AppNavigationTest.kt`, `LiftFlowTest.kt` | Desktop JVM | `AppContent` over fake DI |
+| Acceptance Tests (ATDD) | `shared/test@jvm/acceptance/*AcceptanceTest.kt` | Desktop JVM | `IntervalAcceptanceDriver`, `AppContent` |
 | End to end, on a device | `journeys/*.xml` | Android emulator, run by an agent | `android` CLI journeys |
 
 **Compose UI tests go in `test@jvm/`, never `test/`.** Common `test/` also runs as Android local
@@ -195,6 +197,73 @@ When Room entities change or migrations are added:
 - Room schema exports are stored in `interval-data/schemas/` and `bells-data/schemas/`.
 - `AppMigrationTest` and `BellsMigrationTest` build databases against legacy schema versions, apply migrations, and
   verify that data rows and types are preserved without data loss.
+
+## Acceptance Test-Driven Development (ATDD)
+
+For user-facing journeys and feature development (especially when collaborating with AI agents),
+the codebase applies **Acceptance Test-Driven Development (ATDD)** as articulated by Dave Farley
+(*The Industry Is Catching Up: The Only Way to Generate AI Code That Works*).
+
+### Why ATDD for AI-Assisted Development
+1. **Verification is the Bottleneck**: Generating code with AI is instantaneous, but verifying
+   unstructured code manually is unsustainable. Automated acceptance tests provide an unambiguous,
+   machine-executable specification ("Definition of Done").
+2. **Prompts Drift, Tests Do Not**: Natural language prompts are ambiguous wishes. An executable
+   acceptance test serves as a deterministic contract that constrains the AI agent.
+3. **Double-Loop TDD**:
+   - **Outer Loop (Acceptance Test)**: Written first in ubiquitous domain language, testing the
+     system from the boundary (`shared/test@jvm/acceptance/`). Initially fails (**RED**).
+   - **Inner Loop (Unit TDD)**: Drives domain models, state machines, and calculations in pure Kotlin
+     multiplatform (`<module>/test/`) with micro-tests.
+   - **Green**: Once internal logic and UI wiring satisfy the outer specification, the acceptance
+     test passes (**GREEN**).
+   - **Refactor**: Clean up and optimize while both loops verify safety.
+
+### The Acceptance Driver Pattern
+
+Acceptance tests must not be fragile scripts bound to exact widget selectors, coordinates, or timing.
+`IntervalAcceptanceDriver` (`shared/test@jvm/acceptance/IntervalAcceptanceDriver.kt`) encapsulates the
+Compose semantics tree behind ubiquitous domain operations:
+
+```kotlin
+class StartWorkoutAcceptanceTest {
+    @Test
+    fun `user can configure work time, start, pause, resume, skip, and discard workout before completion`() =
+        acceptanceScenario {
+            verifyTimerScreenShown()
+
+            tapIntervalRow("Work")
+            verifyValueSheetShown("Work")
+            selectQuickPick("1:00")
+            tapDone()
+            verifyIntervalValue("Work", "1:00")
+
+            startWorkout()
+            verifyWorkoutPhase("Get ready")
+
+            pauseWorkout()
+            verifyWorkoutPaused()
+            resumeWorkout()
+            verifyWorkoutRunning()
+
+            skipPhase()
+            verifyWorkoutPhase("Work")
+            verifyWorkoutStatus("Round 1 of 8")
+
+            endWorkout()
+            verifyEndWorkoutDialog("nothing is saved")
+            confirmEndWorkout()
+
+            verifyTimerScreenShown()
+        }
+}
+```
+
+### Fast JVM Execution vs Device Journeys
+While `journeys/*.xml` remain valuable for full-system Android emulator validation, acceptance tests
+under `shared/test@jvm/acceptance/` run offscreen in seconds via Skiko on the JVM. This enables running
+them continuously in CI (`./kotlin test -m shared -p jvm`) and using them as the primary inner/outer
+feedback loop for AI development.
 
 ## Journeys (on-device end to end)
 

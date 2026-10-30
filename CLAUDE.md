@@ -220,6 +220,9 @@ Strategy, commands and limits: [docs/testing.md](docs/testing.md).
   where `runComposeUiTest` fails (no Robolectric). A screen test drives its stateless `XScreen` in the
   feature's module; Lift's flows (`bellsAppTest`) live in `bells/test@jvm/`, the app's (`AppContent(testKoin())`)
   in `shared/test@jvm/`.
+- **Acceptance Tests (ATDD)** live in `shared/test@jvm/acceptance/` using `IntervalAcceptanceDriver` and
+  `acceptanceScenario`. When asking an AI agent to build or change user-facing behavior, write an executable
+  acceptance test first (outer loop) and drive domain logic with inner unit TDD.
 - Use `androidx.compose.ui.test.v2.*` and the harness in `core-testing/src@jvm/ui/UiTestHarness.kt`:
   `runUiTest(Window.X)`, `setThemedContent`, `waitForText`, and `StateRestoration`. Desktop's
   `StateRestorationTester` is not implemented.
