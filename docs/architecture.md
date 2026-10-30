@@ -106,7 +106,9 @@ graph TD
    Features → Shared UI → Data → Domain. Lower layers have no knowledge of higher layers.
 2. **Domain Decoupling**: The kettlebell domain (`bells-*`) has zero dependencies on the interval domain (`interval-*`).
    Where cross-domain interaction is needed (e.g. History counting Lift sessions or Today showing workout recaps),
-   it is mediated via minimal, read-only interfaces such as `IntervalActivity` implemented in `shared`.
+   it is mediated via minimal interfaces in `bells-data`: `IntervalActivity` (what Lift reads of the interval side,
+   implemented in `shared`) and `LiftActivity` (what History, Plan and the workout read of Lift, implemented by
+   `BellsRepository`).
 3. **Pure Domains**: `interval-domain` and `bells-domain` contain only pure Kotlin models and calculation engines.
    They have no dependencies on Compose, Android, or third-party persistence libraries.
 4. **Offline-First & Local-Only**: All user data resides on device. There is no remote backend, telemetry, or user

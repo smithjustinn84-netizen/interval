@@ -5,6 +5,7 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import dev.justinsmith.bells.data.BellsDatabase
 import dev.justinsmith.bells.data.BellsRepository
 import dev.justinsmith.bells.data.ExerciseFilterStore
+import dev.justinsmith.bells.data.LiftActivity
 import dev.justinsmith.bells.data.MIGRATION_3_4
 import dev.justinsmith.interval.storage.storageScope
 import kotlinx.coroutines.CoroutineScope
@@ -15,6 +16,7 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.onClose
 import org.koin.core.module.dsl.withOptions
 import org.koin.core.qualifier.named
+import org.koin.dsl.bind
 import org.koin.dsl.module
 
 /**
@@ -47,6 +49,7 @@ val bellsStorageModule: Module = module {
 
 val bellsDataModule: Module = module {
     single { BellsRepository(get(), get(), get(), get(), get(), get(), scope = get(BellsStorageScope), clock = get()) }
+        .bind<LiftActivity>()
     single { ExerciseFilterStore() }
 }
 

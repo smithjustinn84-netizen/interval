@@ -2,7 +2,7 @@ package dev.justinsmith.interval.history
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.bells.data.BellsRepository
+import dev.justinsmith.bells.data.LiftActivity
 import dev.justinsmith.bells.domain.LiftSession
 import dev.justinsmith.bells.domain.ProgramDay
 import dev.justinsmith.bells.domain.ProgramKey
@@ -80,7 +80,7 @@ private data class HistoryView(
  */
 class HistoryViewModel(
     private val repository: IntervalRepository,
-    private val bells: BellsRepository,
+    private val bells: LiftActivity,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
     dayCheckMillis: Long = DAY_CHECK_MILLIS,

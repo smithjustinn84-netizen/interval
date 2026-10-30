@@ -78,7 +78,7 @@ core-testing         `MainDispatcherTest`, `FixedTimestampFormatter`, `FakeAppIn
 
 interval-domain      shared/timer + model: `IntervalConfig`, `Preset`, `WorkoutEngine`, calories, the describe
                      parser, `AppSettings`, `HistoryEntry`, `PlannedWorkout`, `LiftWorkout`, `WorkoutProgress`;
-                     over `core-time`, not `core`
+                     over `core-time` and `bells-domain` (for `asLiftWorkouts`), not `core`
 interval-data        `IntervalRepository`, `AppDatabase` (Room, KSP, `schemas/`), the settings DataStore,
                      `PlatformStorage`, `storageModule`/`dataModule` (di/)
 interval-platform    `CuePlayer`, `WorkoutControls`, `BackgroundWorkout`, `PlanReminders` (+ `reminderWords`),
@@ -104,7 +104,8 @@ shared               the app: `App.kt` (the back stack and every entry), `di/App
 bells-domain         Lift's pure domain (`dev.justinsmith.bells.domain`): exercises, programs, sets and
                      sessions, records, `EmomClock`/`HoldClock`/`RestClock`, suggestions. No dependencies
 bells-data           `BellsRepository`, `BellsDatabase` (Room, KSP, `schemas/`), `IntervalActivity` (what Lift
-                     reads of the interval side; `shared` binds it), `bellsModules` (di/). No Compose
+                     reads of the interval side; `shared` binds it), `LiftActivity` (what the interval side reads
+                     of Lift; `BellsRepository` is it), `bellsModules` (di/). No Compose
 bells-platform       `Beeper`, `RestAlerts` (+ Android's `RestService`), the rest notification's words, and each
                      platform's `rememberBellsPlatformModule` (the database builder too); Lift's `interval-platform`
 bells-testing        `FakeBellsStorage` and the fake DAOs, `FakeIntervalActivity`, `RecordingBeeper`,
@@ -128,7 +129,8 @@ lint-plugin          Toolchain task plugin: runs ktlint checks and auto-formatti
 
 Dependencies point down the list: a feature depends on its side's `*-ui`, `*-data` and `*-domain` (through
 `exported`), `shared` on every feature and `bells`, the interval side on `bells-data`/`bells-domain`/`bells-ui`
-where History and the workout count Lift's sessions, and `bells` never on anything of the interval side. The
+where History and the workout count Lift's sessions (their ViewModels take `LiftActivity`, never the whole
+`BellsRepository`), and `bells` never on anything of the interval side. The
 `*-testing` modules are ordinary libraries listed under `test-dependencies` (the toolchain shares no test
 sources between modules); a data module's tests may depend on its side's `*-testing` even though that depends
 back on it.

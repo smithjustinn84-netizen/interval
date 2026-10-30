@@ -62,7 +62,7 @@ class BellsRepository(
     private val bandDao: BandDao,
     private val scope: CoroutineScope,
     private val clock: WallClock,
-) {
+) : LiftActivity {
     private val log = Logger.withTag("BellsRepository")
     private val writer = SerialWriter(scope, log)
 
@@ -72,12 +72,12 @@ class BellsRepository(
     private val _sessions = MutableStateFlow(emptyList<LiftSession>())
 
     /** Finished sessions, newest first. */
-    val sessions: StateFlow<List<LiftSession>> = _sessions.asStateFlow()
+    override val sessions: StateFlow<List<LiftSession>> = _sessions.asStateFlow()
 
     private val _active = MutableStateFlow<LiftSession?>(null)
 
     /** The session in progress, if one is. */
-    val active: StateFlow<LiftSession?> = _active.asStateFlow()
+    override val active: StateFlow<LiftSession?> = _active.asStateFlow()
 
     private val _bells = MutableStateFlow(emptyList<Double>())
 
@@ -123,7 +123,7 @@ class BellsRepository(
      * The day of [following] to do next: the one after the last day done, as its sessions were logged (see
      * [lastDayDone]); null when none is followed or it is over.
      */
-    val programDay: StateFlow<ProgramDay?> = _programDay.asStateFlow()
+    override val programDay: StateFlow<ProgramDay?> = _programDay.asStateFlow()
 
     init {
         scope.launch {
@@ -237,7 +237,7 @@ class BellsRepository(
      * program followed is logged as the day it is.
      */
     @OptIn(ExperimentalUuidApi::class)
-    fun startSession(program: ProgramKey? = null) {
+    override fun startSession(program: ProgramKey?) {
         val day = _programDay.value?.takeIf { program != null && it.program.key == program }?.number
         writer.persist {
             if (sessionDao.active() == null) {

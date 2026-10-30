@@ -2,7 +2,7 @@ package dev.justinsmith.interval.workout
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.bells.data.BellsRepository
+import dev.justinsmith.bells.data.LiftActivity
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.model.WorkoutProgress
 import dev.justinsmith.interval.platform.BackgroundWorkout
@@ -51,7 +51,7 @@ class WorkoutViewModel(
     private val id: Long,
     private val repository: IntervalRepository,
     private val player: CuePlayer,
-    private val bells: BellsRepository,
+    private val bells: LiftActivity,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
     private val background: BackgroundWorkout,
