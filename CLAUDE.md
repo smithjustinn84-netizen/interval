@@ -22,6 +22,7 @@ Full architecture guide: [docs/architecture.md](docs/architecture.md).
 ./kotlin package -m androidApp -f aab   # Release bundle (R8 on; rules in androidApp/proguard-rules.pro).
                                         # Unsigned until a keystore is set up (`./kotlin tool generate-keystore`)
 python3 tools/check_versions.py         # Verify Android and iOS version parity (run in CI)
+python3 tools/check_ios_shards.py       # Every module with common tests is on one line of ios-test-shards.txt (run in CI)
 uv run --with pillow tools/generate_icons.py  # Regenerate app icons and launch screens from the vector mark
 ./kotlin show modules | settings | dependencies | tasks
 ```
