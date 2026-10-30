@@ -1,0 +1,19 @@
+# The Timer tab: the current workout's shape as steppers, Start, the describe sheet, and the way to the presets.
+description: "Timer tab and its describe sheet"
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/compose-lib.module-template.yaml
+
+dependencies:
+  - //interval/interval-presets: exported
+
+test-dependencies:
+  - //interval/interval-testing
+
+settings:
+  compose:
+    resources:
+      packageName: dev.justinsmith.interval.home.resources

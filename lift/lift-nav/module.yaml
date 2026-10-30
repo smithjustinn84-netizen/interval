@@ -1,0 +1,35 @@
+# Bells, Interval's kettlebell training behind its Lift tab: log sets of reps with a bell, follow a program,
+# time EMOMs, and keep the bells owned and the records set. This module is Lift's entry point, its keys and
+# the entry for each, over its features (`lift-today`, `lift-session`, `lift-library`, `lift-ui`), its
+# storage (`lift-data`) and its domain (`lift-domain`); `app` wires it into the app. Its tests drive
+# Lift's flows end to end.
+description: "Lift's route keys and nav entries, registered by the app"
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/compose-lib.module-template.yaml
+
+dependencies:
+  - //lift/lift-today: exported
+  - //lift/lift-session: exported
+  - //lift/lift-library: exported
+  - //lift/lift-ui: exported
+  - //lift/lift-data: exported
+  - //lift/lift-domain: exported
+  - $libs.compose.material3.adaptive.navigation3
+  - $libs.androidx.navigation3.runtime
+  - $libs.androidx.navigation3.ui
+
+test-dependencies:
+  - //lift/lift-testing
+
+# The flow tests host Lift's pages on a NavDisplay of their own, with entry-scoped ViewModels as the app has.
+test-dependencies@jvm:
+  - $libs.androidx.lifecycle.viewmodel.navigation3
+
+settings:
+  kotlin:
+    # The keys are @Serializable, for the app's saved back stack.
+    serialization: json

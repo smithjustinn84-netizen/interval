@@ -283,15 +283,15 @@ jobs:
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           test -n "$KEYSTORE_BASE64" || { echo "ANDROID_KEYSTORE_BASE64 is not set"; exit 1; }
-          echo "$KEYSTORE_BASE64" | base64 --decode > androidApp/release.keystore
+          echo "$KEYSTORE_BASE64" | base64 --decode > apps/androidApp/release.keystore
           {
             echo "storeFile=release.keystore"
             echo "storePassword=$STORE_PASSWORD"
             echo "keyAlias=$KEY_ALIAS"
             echo "keyPassword=$KEY_PASSWORD"
-          } > androidApp/keystore.properties
+          } > apps/androidApp/keystore.properties
 
-      # R8 runs here (release variant, minified and shrunk); androidApp/proguard-rules.pro is read if present.
+      # R8 runs here (release variant, minified and shrunk); apps/androidApp/proguard-rules.pro is read if present.
       - name: Package the signed release bundle
         run: ./kotlin package -m androidApp
 

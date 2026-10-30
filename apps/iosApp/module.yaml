@@ -1,0 +1,17 @@
+description: "iOS host: Xcode project, launch assets"
+product: ios/app
+
+dependencies:
+  - //apps/app
+  - $compose.ui
+
+settings:
+  compose: enabled
+  kotlin:
+    allWarningsAsErrors: true
+
+plugins:
+  lint-plugin:
+    enabled: true
+  detekt-plugin:
+    enabled: true

@@ -83,43 +83,49 @@ Built with **Compose Multiplatform** for **Android**, **iOS**, and **Desktop (JV
 
 ## 🏗️ Architecture & Tech Stack
 
-Interval is designed around modern multiplatform architecture principles, cleanly separated into 25 modular packages:
+Interval is designed around modern multiplatform architecture principles, cleanly separated into 29 modules in five folders:
 
 ```
 interval/
-├── androidApp/          # Android application host & manifest
-├── desktopApp/          # Desktop JVM application host (Compose Hot Reload ready)
-├── iosApp/              # iOS Swift host & Xcode wrapper
-├── shared/              # Application container, Navigation 3 backstack, AppKoin
+├── apps/                # The app and its hosts
+│   ├── app/             # Composition root: Navigation 3 back stack, AppKoin, About, export
+│   ├── androidApp/      # Android host & manifest
+│   ├── desktopApp/      # Desktop JVM host (Compose Hot Reload ready)
+│   └── iosApp/          # iOS Swift host & Xcode wrapper
 │
-├── core/                # Design tokens, IntervalTheme, NavigationArea, utilities
-├── core-platform/       # Clocks, timestamp formatter, storage plumbing (zero Compose dependencies)
-├── core-time/           # Pure calendar maths (zero dependencies)
-├── core-testing/        # MainDispatcherTest, UI test harness, fake platform services
+├── core/                # What both sides build on
+│   ├── core/            # Design tokens, IntervalTheme, NavigationArea, components
+│   ├── core-platform/   # Clocks, timestamp formatter, storage plumbing (zero Compose dependencies)
+│   ├── core-time/       # Pure calendar maths (zero dependencies)
+│   └── core-testing/    # MainDispatcherTest, UI test harness, fake platform services
 │
-├── interval-domain/     # Timer engine, workout state machine, calorie math, parsers
-├── interval-data/       # Room database (AppDatabase), DataStore settings, repositories
-├── interval-platform/   # Audio/speech cues, Android Foreground Service, iOS notifications
-├── interval-ui/         # Shared workout widgets, Timeline, PhaseColors, Splash
-├── interval-home/       # Timer tab and natural language describe sheet
-├── interval-workout/    # Live workout screen, circular countdown readout, summaries
-├── interval-presets/    # Preset editor, built-ins, custom preset cards
-├── interval-history/    # History calendar, training log, routine planner & reminders
-├── interval-settings/   # Settings sheet, cues toggle, theme selector, data export
-├── interval-testing/    # FakeStorage, RecordingCuePlayer, fake DAOs
+├── interval/            # The interval timer
+│   ├── interval-domain/   # Timer engine, workout state machine, calorie math, parsers
+│   ├── interval-data/     # Room database (AppDatabase), DataStore settings, repository
+│   ├── interval-platform/ # Audio/speech cues, Android Foreground Service, iOS notifications
+│   ├── interval-ui/       # Shared workout widgets, Timeline, PhaseColors, Splash
+│   ├── interval-testing/  # FakeStorage, RecordingCuePlayer, fake DAOs
+│   ├── interval-timer/    # Timer tab and natural language describe sheet
+│   ├── interval-workout/  # Live workout screen, circular countdown readout, summaries
+│   ├── interval-presets/  # Preset editor, built-ins, custom preset cards
+│   ├── interval-history/  # History calendar, training log, routine planner & reminders
+│   └── interval-settings/ # Settings sheet, cues toggle, theme selector, data export
 │
-├── bells-domain/        # Lift domain: exercises, programs, EMOM/hold clocks, PRs
-├── bells-data/          # Lift Room database (BellsDatabase), repository
-├── bells-platform/      # Lift's beeper, rest alert service, platform Koin module
-├── bells-ui/            # Lift widgets, exercise formatters, cues mapping
-├── bells-library/       # Exercise library, search, filters, exercise editor
-├── bells-session/       # Active session logger, rest clocks, program progress
-├── bells-today/         # Lift tab, gear inventory (bells, bar, bands, records)
-├── bells/               # Lift navigation entry point & route definitions
-├── bells-testing/       # FakeBellsStorage, RecordingBeeper, fake DAOs
+├── lift/                # Lift, the strength side (code in dev.justinsmith.bells)
+│   ├── lift-domain/     # Exercises, programs, EMOM/hold clocks, PRs
+│   ├── lift-data/       # Room database (BellsDatabase), repository, the ports to the interval side
+│   ├── lift-platform/   # Beeper, rest alert service, platform Koin module
+│   ├── lift-ui/         # Lift widgets, exercise formatters, cues mapping
+│   ├── lift-testing/    # FakeBellsStorage, RecordingBeeper, fake DAOs
+│   ├── lift-today/      # Lift tab, gear inventory (bells, bar, bands, records)
+│   ├── lift-session/    # Active session logger, rest clocks, programs & progress
+│   ├── lift-library/    # Exercise library, search, filters, exercise editor
+│   └── lift-nav/        # Lift's route keys and nav entries
 │
-├── detekt-plugin/       # Custom toolchain plugin for Detekt analysis
-├── lint-plugin/         # Custom toolchain plugin for ktlint checks & formatting
+├── tooling/             # Build plugins
+│   ├── detekt-plugin/   # Detekt with Compose rules
+│   └── lint-plugin/     # ktlint checks & formatting
+│
 ├── journeys/            # End-to-end on-device user flows (android CLI)
 └── tools/               # Icon generators & version parity validation scripts
 ```
@@ -204,8 +210,8 @@ Interval follows a strict testing pyramid designed for fast local iteration and 
 
 # Run tests for a specific module
 ./kotlin test -m interval-history -p jvm
-./kotlin test -m bells-domain -p jvm
-./kotlin test -m bells -p jvm
+./kotlin test -m lift-domain -p jvm
+./kotlin test -m lift-nav -p jvm
 
 # Run common tests against Android local JVM environment
 ./kotlin test -p android
@@ -216,7 +222,7 @@ Interval follows a strict testing pyramid designed for fast local iteration and 
 
 - **Logic & ViewModels**: Tested in `<module>/test/` across JVM, Android, and iOS simulator.
 - **Compose UI Tests**: Located in `<module>/test@jvm/` to render off-screen with Skiko via the `core-testing` harness.
-- **Acceptance Specs**: End-to-end user flows validated on the JVM (`shared/test@jvm/acceptance/`).
+- **Acceptance Specs**: End-to-end user flows validated on the JVM (`apps/app/test@jvm/acceptance/`).
 - **On-Device Journeys**: XML-driven end-to-end flows in `journeys/*.xml` executed via the `android` CLI.
 
 For testing architecture, harnesses, and test fakes, see [docs/testing.md](./docs/testing.md).

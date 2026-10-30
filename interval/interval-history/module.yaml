@@ -1,0 +1,28 @@
+# History: the training log, calendar and summaries, a finished workout's page, and the plan (the weekly
+# goal, the routine by weekday and one-offs), which the log shows and the plan page edits.
+description: "History and Plan, with plan reminders"
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/compose-lib.module-template.yaml
+
+dependencies:
+  - //interval/interval-data: exported
+  - //interval/interval-ui: exported
+  # The plan's reminders: the platform's notifications, and the permission to show them.
+  - //interval/interval-platform
+  # History shows Lift's sessions and the program's day too.
+  - //lift/lift-data
+  - //lift/lift-domain
+  - //lift/lift-ui
+
+test-dependencies:
+  - //interval/interval-testing
+  - //lift/lift-testing
+
+settings:
+  compose:
+    resources:
+      packageName: dev.justinsmith.interval.history.resources

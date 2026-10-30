@@ -27,20 +27,20 @@ graph TD
     end
 
     subgraph Features ["Feature Modules"]
-        Timer["interval-home"]
+        Timer["interval-timer"]
         Workout["interval-workout"]
         Presets["interval-presets"]
         History["interval-history"]
         Settings["interval-settings"]
         LiftEntry["bells"]
-        LiftToday["bells-today"]
-        LiftSession["bells-session"]
-        LiftLib["bells-library"]
+        LiftToday["lift-today"]
+        LiftSession["lift-session"]
+        LiftLib["lift-library"]
     end
 
     subgraph UI ["Shared UI & Components"]
         IntervalUI["interval-ui"]
-        BellsUI["bells-ui"]
+        BellsUI["lift-ui"]
         Core["core (Theme, Tokens, NavigationArea, Components)"]
     end
 
@@ -49,9 +49,9 @@ graph TD
         IntervalDomain["interval-domain (Engine, Models)"]
         CorePlatform["core-platform (Clocks, Formatter, Storage Plumbing)"]
         CoreTime["core-time (Calendar & Clock Maths)"]
-        BellsData["bells-data (Room)"]
-        BellsPlatform["bells-platform (Beeper, RestAlerts)"]
-        BellsDomain["bells-domain (Programs, Models)"]
+        BellsData["lift-data (Room)"]
+        BellsPlatform["lift-platform (Beeper, RestAlerts)"]
+        BellsDomain["lift-domain (Programs, Models)"]
         IntervalPlatform["interval-platform (Cues, Background Services)"]
     end
 
@@ -104,12 +104,12 @@ graph TD
 
 1. **Strict Dependency Rule**: Dependencies flow strictly downward from Application Targets → Shared Container →
    Features → Shared UI → Data → Domain. Lower layers have no knowledge of higher layers.
-2. **Domain Decoupling**: The kettlebell domain (`bells-*`) has zero dependencies on the interval domain (`interval-*`).
+2. **Domain Decoupling**: The kettlebell domain (`lift-*`) has zero dependencies on the interval domain (`interval-*`).
    Where cross-domain interaction is needed (e.g. History counting Lift sessions or Today showing workout recaps),
-   it is mediated via minimal interfaces in `bells-data`: `IntervalActivity` (what Lift reads of the interval side,
-   implemented in `shared`) and `LiftActivity` (what History, Plan and the workout read of Lift, implemented by
+   it is mediated via minimal interfaces in `lift-data`: `IntervalActivity` (what Lift reads of the interval side,
+   implemented in `app`) and `LiftActivity` (what History, Plan and the workout read of Lift, implemented by
    `BellsRepository`).
-3. **Pure Domains**: `interval-domain` and `bells-domain` contain only pure Kotlin models and calculation engines.
+3. **Pure Domains**: `interval-domain` and `lift-domain` contain only pure Kotlin models and calculation engines.
    They have no dependencies on Compose, Android, or third-party persistence libraries.
 4. **Offline-First & Local-Only**: All user data resides on device. There is no remote backend, telemetry, or user
    account requirement. Complete user state can be backed up natively or exported to JSON (schema 1).
@@ -120,7 +120,8 @@ graph TD
 
 ## Module Architecture
 
-The project contains 25 modules configured via [project.yaml](../project.yaml) and individual `module.yaml` files.
+The project contains 29 modules in five folders (`apps/`, `core/`, `interval/`, `lift/`, `tooling/`), configured via
+[project.yaml](../project.yaml) and each module's `module.yaml`; `./kotlin show modules` describes each.
 Each module applies a reusable template from `templates/`:
 - `lib`: Standard Kotlin Multiplatform library with warnings-as-errors, ktlint, and detekt.
 - `tested-lib`: Adds test dependencies and `core-testing`.
@@ -132,35 +133,35 @@ Each module applies a reusable template from `templates/`:
 | Layer | Modules | Responsibilities |
 |---|---|---|
 | **App Targets** | `androidApp`, `iosApp`, `desktopApp` | Platform entry points, manifests, splash/launch assets, packaging. |
-| **Container** | `shared` | Application entry (`App.kt`), Navigation 3 routing table, Koin graph assembly, root theme host. |
+| **Container** | `app` | Application entry (`App.kt`), Navigation 3 routing table, Koin graph assembly, root theme host. |
 | **Core** | `core`, `core-platform`, `core-time`, `core-testing` | Design tokens (`Spacing`, `Radius`, `Sizes`, `Motion`), `IntervalTheme`, navigation primitives; the clocks, timestamp formatter and storage utilities in `core-platform`, which has no Compose so the data modules (and their Room KSP) don't rebuild on a UI change; calendar and clock maths in `core-time`, which has no dependencies so the domains compile without Compose; UI test harness. |
 | **Interval Domain & Data** | `interval-domain`, `interval-data`, `interval-platform` | Timer calculation engine, Room database, DataStore preferences, audio/speech cues, Android Foreground Service, iOS notifications. |
-| **Interval Features** | `interval-home`, `interval-workout`, `interval-presets`, `interval-history`, `interval-settings`, `interval-ui` | Timer tab, active workout screen, preset management, history calendar & routines plan, settings, shared workout components. |
-| **Bells Domain & Data** | `bells-domain`, `bells-data`, `bells-platform` | Kettlebell exercises, training programs, EMOM/hold timers, Room database; the EMOM beeper and rest alert services in `bells-platform`. |
-| **Bells Features** | `bells`, `bells-today`, `bells-session`, `bells-library`, `bells-ui` | Lift navigation registry, Lift tab & gear, active session logger & timers, exercise library & editor, shared Lift UI. |
-| **Test Fakes** | `interval-testing`, `bells-testing` | In-memory storage, recording cue players, fake DAOs, and mock platform services for tests. |
+| **Interval Features** | `interval-timer`, `interval-workout`, `interval-presets`, `interval-history`, `interval-settings`, `interval-ui` | Timer tab, active workout screen, preset management, history calendar & routines plan, settings, shared workout components. |
+| **Lift Domain & Data** | `lift-domain`, `lift-data`, `lift-platform` | Kettlebell exercises, training programs, EMOM/hold timers, Room database; the EMOM beeper and rest alert services in `lift-platform`. |
+| **Lift Features** | `lift-nav`, `lift-today`, `lift-session`, `lift-library`, `lift-ui` | Lift navigation registry, Lift tab & gear, active session logger & timers, exercise library & editor, shared Lift UI. |
+| **Test Fakes** | `interval-testing`, `lift-testing` | In-memory storage, recording cue players, fake DAOs, and mock platform services for tests. |
 | **Toolchain Plugins** | `lint-plugin`, `detekt-plugin` | Kotlin Toolchain task plugins for ktlint formatting and Detekt static analysis. |
 
 ---
 
 ## Navigation Architecture (Navigation 3)
 
-The application uses Jetpack Navigation 3 with a single, unified back stack hosted in `shared/src/App.kt`.
+The application uses Jetpack Navigation 3 with a single, unified back stack hosted in `apps/app/src/App.kt`.
 
 ### Key Elements:
 
 1. **Type-Safe Keys (`NavKey`)**:
    - Every destination is a `@Serializable` class or object implementing `NavKey` (e.g. `TimerTab`, `Settings`, `Workout(id)`).
-   - Lift keys live in `bells/src/nav/LiftRoutes.kt` (e.g. `LiftTodayTab`, `ExerciseDetail(id)`).
-   - Tabs implement the `Tab` interface (`core/src/nav/Tab.kt`), which provides the `push` helper.
+   - Lift keys live in `lift/lift-nav/src/nav/LiftRoutes.kt` (e.g. `LiftTodayTab`, `ExerciseDetail(id)`).
+   - Tabs implement the `Tab` interface (`core/core/src/nav/Tab.kt`), which provides the `push` helper.
 2. **Polymorphic Serialization**:
    - Because the back stack is saved across configuration changes and process recreations, all keys must be registered in
      `navConfiguration` in `App.kt` using `subclass(X::class)` or `liftRoutes()`.
 3. **Entry Provider (`entryProvider`)**:
    - Binds each `NavKey` to its composable route (`entry<X> { XRoute() }`).
-   - Lift destinations are registered in modular fashion via `liftEntries` (`bells/src/nav/LiftEntries.kt`).
+   - Lift destinations are registered in modular fashion via `liftEntries` (`lift/lift-nav/src/nav/LiftEntries.kt`).
 4. **Adaptive Shell & Predictive Back**:
-   - `NavigationAreaBar` (`core/src/ui/NavigationArea.kt`) renders a bottom navigation bar on mobile phones and shifts to a
+   - `NavigationAreaBar` (`core/core/src/ui/NavigationArea.kt`) renders a bottom navigation bar on mobile phones and shifts to a
      navigation rail on tablets and wide desktop windows.
    - Pushed pages render with predictive back gestures (`backPreviewTransition`, `backPreviewCorners`), sliding the
      underlying tab smoothly into view.
@@ -207,16 +208,16 @@ All disk I/O is encapsulated behind repositories.
 - **`AppDatabase`** (`interval-data`):
   - Stores workout history (`HistoryEntity`), custom presets (`PresetEntity`), and planned routines (`PlannedEntity`).
   - Uses bundled SQLite (`sqlite-bundled`) and Room KSP generation for common code.
-- **`BellsDatabase`** (`bells-data`):
+- **`BellsDatabase`** (`lift-data`):
   - Stores logged lifting sessions, set details, personal records, custom exercises, followed programs, and gear inventory.
 - **Migration & Schemas**:
   - Every schema version bumps `@Database(version = N)` and adds a strictly validated migration.
-  - Exported schema JSON files reside in `interval-data/schemas/` and `bells-data/schemas/`.
+  - Exported schema JSON files reside in `interval/interval-data/schemas/` and `lift/lift-data/schemas/`.
   - Migration tests (`AppMigrationTest`, `BellsMigrationTest`) verify that earlier database versions migrate losslessly.
 
 ### 2. Preferences Storage (DataStore)
 - App configuration (theme mode, cue sounds, speech options, countdown times, body weight) is stored in DataStore Preferences.
-- Held in memory for instant read access and serialized in the background via `SerialWriter` (`core-platform/src/storage/Storage.kt`),
+- Held in memory for instant read access and serialized in the background via `SerialWriter` (`core/core-platform/src/storage/Storage.kt`),
   preventing UI stalls and race conditions.
 
 ### 3. Backup & JSON Data Portability
@@ -275,7 +276,7 @@ flowchart TD
 
 ## Design System & Theming
 
-The visual identity is defined in `core/src/ui/`:
+The visual identity is defined in `core/core/src/ui/`:
 - **Fixed Tokens** (`Tokens.kt`):
   - `Spacing`: 4dp grid (`space4`, `space8`, `space12`, `space16`, `space20`, `space24`, `space32`).
   - `Radius` & `Corners`: `radius12` (controls), `radius18` (cards), `radius24` (sheets), `full` (progress caps).

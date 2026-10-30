@@ -49,10 +49,10 @@ def shard_count() -> int:
 def self_test() -> None:
     push = ("push", "refs/heads/main")
     cases = [
-        (push, ["interval-domain/src/timer/WorkoutEngine.kt"], False),
-        (push, ["docs/testing.md", "shared/test@jvm/AppHarness.kt"], False),
-        (push, ["core/src@ios/platform/SystemServices.ios.kt"], True),
-        (push, ["bells-data/module.yaml"], True),
+        (push, ["interval/interval-domain/src/timer/WorkoutEngine.kt"], False),
+        (push, ["docs/testing.md", "apps/app/test@jvm/AppHarness.kt"], False),
+        (push, ["core/core/src@ios/platform/SystemServices.ios.kt"], True),
+        (push, ["lift/lift-data/module.yaml"], True),
         (push, ["libs.versions.toml"], True),
         (push, ["kotlin"], True),
         (push, ["kotlinx/whatever.kt"], False),
@@ -60,7 +60,7 @@ def self_test() -> None:
         (("schedule", "refs/heads/main"), ["README.md"], True),
         (("workflow_dispatch", "refs/heads/feature"), ["README.md"], True),
         (("push", "refs/tags/v0.3.0"), ["README.md"], True),
-        (("pull_request", "refs/pull/7/merge"), ["interval-home/src/home/TimerScreen.kt"], False),
+        (("pull_request", "refs/pull/7/merge"), ["interval/interval-timer/src/home/TimerScreen.kt"], False),
     ]
     for (event, ref), changed, expected in cases:
         actual = needs_every_shard(event, ref, changed)

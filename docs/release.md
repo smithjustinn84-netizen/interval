@@ -25,14 +25,14 @@ Both Android and iOS versions must be bumped in unison. CI will fail via `tools/
 `versionName`/`MARKETING_VERSION` or `versionCode`/`CURRENT_PROJECT_VERSION` diverge.
 
 1. **Update Android**:
-   In `androidApp/module.yaml`:
+   In `apps/androidApp/module.yaml`:
    ```yaml
    android:
      versionName: "0.2.0"
      versionCode: 2
    ```
 2. **Update iOS**:
-   In `iosApp/module.xcodeproj/project.pbxproj`:
+   In `apps/iosApp/module.xcodeproj/project.pbxproj`:
    Update all occurrences of:
    ```pbxproj
    MARKETING_VERSION = 0.2.0;
@@ -50,7 +50,7 @@ Both Android and iOS versions must be bumped in unison. CI will fail via `tools/
 ## Before the first upload (0.2.0)
 
 1. **Repository secrets for the `release` job** (`.github/workflows/ci.yml`). The job runs on a `v*` tag and
-   writes the keystore and `androidApp/keystore.properties` from four secrets:
+   writes the keystore and `apps/androidApp/keystore.properties` from four secrets:
    `ANDROID_KEYSTORE_BASE64` (`base64 < ~/.keystores/interval-release.keystore`), `ANDROID_STORE_PASSWORD`,
    `ANDROID_KEY_ALIAS` (`interval`) and `ANDROID_KEY_PASSWORD`. The values are in
    `~/.keystores/interval.properties` on the development Mac. Never commit either file: the keystore cannot be
@@ -65,7 +65,7 @@ Both Android and iOS versions must be bumped in unison. CI will fail via `tools/
    adb -s emulator-5554 install build/tasks/_androidApp_buildAndroidRelease/gradle-project-release.apk
    ```
    then `journeys/start-workout.xml` and `journeys/lift-equipment.xml`. A crash here wants a rule in
-   `androidApp/proguard-rules.pro`.
+   `apps/androidApp/proguard-rules.pro`.
    **Done 2026-10-29, no rules needed.** On amper-37 (phone) the release APK passed start-workout,
    lift-equipment, settings (the exported JSON read back whole), system-back, history and presets, and a
    process killed while backgrounded (`kill -9` as root, after the task's state was saved) brought back a
@@ -87,10 +87,10 @@ Both Android and iOS versions must be bumped in unison. CI will fail via `tools/
   only `AskToShowNotifications()` (interval-platform) asks for, on a workout's start and on Plan. A user who
   only lifts is never asked. Moving the hook to `core` would let the session ask too.
 - **iOS: a plan reminder due while the app is open is not shown.** A `UNUserNotificationCenterDelegate` in
-  `iosApp/src/iosApp.swift` whose `willPresent` presents only the `plan-reminder-` identifiers would show it.
+  `apps/iosApp/src/iosApp.swift` whose `willPresent` presents only the `plan-reminder-` identifiers would show it.
   The workout's and the rest's notifications must stay silent in the foreground: the app beeps itself.
 - **Android app shortcuts** (Start last workout, Lift session): a static `shortcuts.xml` plus a launch-intent
-  hand-off in `shared/src/App.kt`.
+  hand-off in `apps/app/src/App.kt`.
 - **Other workspaces' stacks.** Commits made in another jj workspace above the old `main` rebase onto the
   new one with `jj rebase -d main`.
 

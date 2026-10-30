@@ -1,0 +1,20 @@
+# Lift's words and widgets: what an exercise, a set, a program and a record are called, the load picker and
+# stepper, the cues of every built-in exercise. Most of Lift's strings live here.
+description: "Lift's shared widgets and words"
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/compose-lib.module-template.yaml
+
+dependencies:
+  - //lift/lift-domain: exported
+
+test-dependencies:
+  - //lift/lift-testing
+
+settings:
+  compose:
+    resources:
+      packageName: dev.justinsmith.bells.ui.resources

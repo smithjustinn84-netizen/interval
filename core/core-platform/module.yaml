@@ -1,0 +1,21 @@
+# What the app needs of the platform that isn't drawing: the clocks (`WallClock`, `epochMillisNow`,
+# `realElapsedTime`), the timestamp formatter, `AppInfo` and `Sharer`, Android's notification helpers, and the
+# plumbing a repository runs on (`storage/`: its write queue, its rule for a failed read). No Compose, so the
+# data modules build on this instead of `core`, and a theme edit leaves their main sources and Room's KSP over
+# them alone (interval-data's test KSP still reruns, through `interval-testing`). `core` exports it.
+description: "Non-UI platform services: clocks, formatter, sharing, storage plumbing"
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/lib.module-template.yaml
+
+dependencies:
+  - //core/core-time: exported
+  # Exported: the storage plumbing takes and returns these (`Flow`, `CoroutineScope`, kermit's `Logger`).
+  - $libs.kotlinx.coroutines.core: exported
+  - $libs.kermit: exported
+
+test-dependencies:
+  - $libs.kotlinx.coroutines.test

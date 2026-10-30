@@ -1,0 +1,35 @@
+# What Lift needs from the platform: the EMOM's `Beeper`, `RestAlerts` for a rest with the app off screen
+# (Android's `RestService` and its notification, iOS's scheduled notification), and the Koin module each
+# platform builds them in, with the database file's location. Lift's counterpart of `interval-platform`, so
+# `lift-data` stays free of Compose and its Room KSP reruns only when storage changes.
+description: "Lift platform services: EMOM beeper, rest alerts"
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/lib.module-template.yaml
+
+dependencies:
+  # Exported: the platform module supplies `RoomDatabase.Builder<BellsDatabase>`.
+  - //lift/lift-data: exported
+  # `epochMillisNow`, `formatClock`, and Android's notification helpers.
+  - //core/core-platform
+  # The platform module is built in composition, because Android's database builder needs a `Context`.
+  - $compose.runtime
+  - $compose.ui
+  # The rest notification's words.
+  - $compose.components.resources
+  - $libs.koin.core
+  - $libs.kermit
+
+dependencies@android:
+  # NotificationCompat, for the rest's foreground service.
+  - $libs.androidx.core.ktx
+
+settings:
+  # For the composable platform module and the rest notification's strings; no UI of its own.
+  compose:
+    enabled: true
+    resources:
+      packageName: dev.justinsmith.bells.platform.resources

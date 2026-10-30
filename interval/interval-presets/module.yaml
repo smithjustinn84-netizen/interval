@@ -1,0 +1,21 @@
+# Presets: the built-in and saved shapes of a workout, the sheet that starts one, and the editor the Timer
+# and a workout's summary open to save the current settings.
+description: "Presets page, sheet and editor"
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/compose-lib.module-template.yaml
+
+dependencies:
+  - //interval/interval-data: exported
+  - //interval/interval-ui: exported
+
+test-dependencies:
+  - //interval/interval-testing
+
+settings:
+  compose:
+    resources:
+      packageName: dev.justinsmith.interval.presets.resources

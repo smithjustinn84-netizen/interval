@@ -1,9 +1,0 @@
-# Calendar and clock maths: calendar days and weeks, `formatClock` and its kin, the week's standing against a
-# goal. Plain Kotlin with no dependencies, kept out of `core` so the pure domains compile without Compose.
-# `core` exports it, so every module that sees `core` sees this too.
-product:
-  type: kmp/lib
-  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
-
-apply:
-  - //templates/lib.module-template.yaml

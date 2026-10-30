@@ -1,0 +1,22 @@
+# A session: logging sets, the EMOM, hold and rest timers, the plan sheets and the summary; the programs,
+# their editor and the one followed's progress (the two share the block editor); and a finished session's page.
+description: "A Lift session, programs and their editor"
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/compose-lib.module-template.yaml
+
+dependencies:
+  - //lift/lift-library: exported
+  # The EMOM's `Beeper` and the rest's `RestAlerts`.
+  - //lift/lift-platform: exported
+
+test-dependencies:
+  - //lift/lift-testing
+
+settings:
+  compose:
+    resources:
+      packageName: dev.justinsmith.bells.session.resources

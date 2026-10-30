@@ -4,7 +4,7 @@
 
 The mark is the workout's phase ring: three round-capped arcs in the phase colours (Get ready, Work,
 Rest), with a clock hand pointing up through the gap at the top. Its geometry lives here and in
-`shared/src/splash/IntervalMark.kt`, which draws the same mark for the animated intro; keep the two
+`interval/interval-ui/src/splash/IntervalMark.kt`, which draws the same mark for the animated intro; keep the two
 in step. Everything is laid out on Android's 108-unit adaptive-icon canvas.
 """
 
@@ -215,22 +215,22 @@ def save(path, img):
 
 def main():
     colors = [c for _, _, c in ARCS]
-    res = ROOT / "androidApp/res"
+    res = ROOT / "apps/androidApp/res"
     write(res / "drawable/ic_launcher_foreground.xml", vector(mark_paths(colors, INK)))
     write(res / "drawable/ic_launcher_monochrome.xml", vector(mark_paths([INK] * 3, INK)))
     write(res / "drawable/ic_launcher_background.xml", background_vector())
     write(res / "drawable/ic_notification.xml", notification_vector(mark_paths(["FFFFFF"] * 3, "FFFFFF")))
 
-    write(ROOT / "shared/composeResources/drawable/app_icon.xml", desktop_vector(mark_paths(colors, INK)))
+    write(ROOT / "apps/app/composeResources/drawable/app_icon.xml", desktop_vector(mark_paths(colors, INK)))
 
     # iOS draws icons full bleed and rounds the corners itself, so the mark can sit larger than on
     # Android, whose launchers crop the 108 canvas to its middle 72.
     ios_scale = 1.3
-    ios_icons(ROOT / "iosApp/src/Assets.xcassets", ios_scale, draw_mark)
+    ios_icons(ROOT / "apps/iosApp/src/Assets.xcassets", ios_scale, draw_mark)
 
     # The launch screen's mark, matching the first frame of the intro: the 108 canvas at 288 pt,
     # as Android's splash screen draws its icon.
-    launch = ROOT / "iosApp/src/Assets.xcassets/LaunchMark.imageset"
+    launch = ROOT / "apps/iosApp/src/Assets.xcassets/LaunchMark.imageset"
     for factor in (1, 2, 3):
         suffix = "" if factor == 1 else f"@{factor}x"
         save(launch / f"launch-mark{suffix}.png", render(288 * factor, 1.0, background=False))

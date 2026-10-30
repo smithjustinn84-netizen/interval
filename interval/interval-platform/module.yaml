@@ -1,0 +1,37 @@
+# What a workout needs from the platform: the cue player (beeps, speech, haptics) and the words it speaks,
+# the workout kept off screen (Android's foreground service and notification, iOS's scheduled
+# notifications), and the Koin module each platform builds them in, with its storage locations.
+description: "Interval platform services: cues, background workout, plan reminders"
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/tested-lib.module-template.yaml
+
+dependencies:
+  - //interval/interval-data: exported
+  - //core/core
+  # The platform module is built in composition, because Android needs a `Context`.
+  - $compose.runtime
+  - $compose.ui
+  - $compose.components.resources
+  - $libs.koin.core
+  - $libs.kermit
+
+dependencies@android:
+  # rememberLauncherForActivityResult, to ask for the notification permission when a workout starts.
+  - $libs.androidx.activity.compose
+  # FileProvider, for the share sheet to read an exported file.
+  - $libs.androidx.core.ktx
+  # The plan reminders' alarm record, a DataStore of its own the boot receiver reads.
+  - $libs.androidx.datastore.preferences.core
+
+test-dependencies:
+  - //interval/interval-testing
+
+settings:
+  compose:
+    enabled: true
+    resources:
+      packageName: dev.justinsmith.interval.platform.resources

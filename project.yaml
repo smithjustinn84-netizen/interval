@@ -1,34 +1,45 @@
+# Modules sit in group folders by side; each one's name is its folder's (`-m lift-data`), and `./kotlin show
+# modules` describes each. Sorted within each group, as the toolchain asks.
 modules:
-  - androidApp
-  - bells
-  - bells-data
-  - bells-domain
-  - bells-library
-  - bells-platform
-  - bells-session
-  - bells-testing
-  - bells-today
-  - bells-ui
-  - core
-  - core-platform
-  - core-testing
-  - core-time
-  - desktopApp
-  - detekt-plugin
-  - interval-data
-  - interval-domain
-  - interval-history
-  - interval-home
-  - interval-platform
-  - interval-presets
-  - interval-settings
-  - interval-testing
-  - interval-ui
-  - interval-workout
-  - iosApp
-  - lint-plugin
-  - shared
+  # The app: its composition root, and the host each platform runs it in.
+  - apps/androidApp
+  - apps/app
+  - apps/desktopApp
+  - apps/iosApp
+
+  # What both sides build on: the design system, platform services, calendar maths, test helpers.
+  - core/core
+  - core/core-platform
+  - core/core-testing
+  - core/core-time
+
+  # The interval timer: its foundation (domain, data, platform, ui, testing) and a module per feature.
+  - interval/interval-data
+  - interval/interval-domain
+  - interval/interval-history
+  - interval/interval-platform
+  - interval/interval-presets
+  - interval/interval-settings
+  - interval/interval-testing
+  - interval/interval-timer
+  - interval/interval-ui
+  - interval/interval-workout
+
+  # Lift, the strength side (packages `dev.justinsmith.bells.*`): its foundation, features and navigation.
+  - lift/lift-data
+  - lift/lift-domain
+  - lift/lift-library
+  - lift/lift-nav
+  - lift/lift-platform
+  - lift/lift-session
+  - lift/lift-testing
+  - lift/lift-today
+  - lift/lift-ui
+
+  # Build plugins: `./kotlin check lint`, `./kotlin do format`, `./kotlin check detekt`.
+  - tooling/detekt-plugin
+  - tooling/lint-plugin
 
 plugins:
-  - ./detekt-plugin
-  - ./lint-plugin
+  - ./tooling/detekt-plugin
+  - ./tooling/lint-plugin

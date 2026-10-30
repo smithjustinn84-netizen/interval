@@ -5,7 +5,7 @@ apply:
   - //templates/tested-lib.module-template.yaml
 
 dependencies:
-  - //core
+  - //core/core
   - $compose.runtime
   - $compose.foundation
   - $compose.material3

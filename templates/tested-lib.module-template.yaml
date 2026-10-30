@@ -4,4 +4,4 @@ apply:
 
 test-dependencies:
   - $libs.kotlinx.coroutines.test
-  - //core-testing
+  - //core/core-testing

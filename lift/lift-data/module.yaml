@@ -1,0 +1,29 @@
+# Bells' storage: its Room database (`bells.db`; schemas in `schemas/`), the repository every Lift screen
+# reads, `IntervalActivity` (what Lift reads of the interval side), and its Koin modules. No Compose: what it
+# needs from the platform (the database builder, `Beeper`, `RestAlerts`) is in `lift-platform`.
+# Room's KSP runs here and nowhere else on the Lift side.
+description: "Lift storage: BellsRepository over Room, and the ports to the interval side"
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/tested-lib.module-template.yaml
+  - //templates/room-lib.module-template.yaml
+
+dependencies:
+  - //lift/lift-domain: exported
+  - //core/core-platform
+  - $libs.koin.core
+  - $libs.kermit
+
+test-dependencies:
+  - //lift/lift-testing
+
+settings:
+  kotlin:
+    ksp:
+      processors:
+        - $libs.androidx.room.compiler
+      processorOptions:
+        room.schemaLocation: ./schemas

@@ -5,13 +5,13 @@
 # is already there. Both files are gitignored.
 set -eu
 cd "$(dirname "$0")/.."
-properties=androidApp/keystore.properties
+properties=apps/androidApp/keystore.properties
 if [ -e "$properties" ]; then
   echo "$properties exists; leaving it alone"
   exit 0
 fi
 printf 'storeFile=ci.keystore\nstorePassword=throwaway\nkeyAlias=ci\nkeyPassword=throwaway\n' > "$properties"
-# The build reads storeFile against androidApp/ and the generator against the working directory (its
+# The build reads storeFile against apps/androidApp/ and the generator against the working directory (its
 # --keystore-file gives way to storeFile), so it runs from there.
-cd androidApp
-../kotlin tool generate-keystore --properties-file keystore.properties
+cd apps/androidApp
+../../kotlin tool generate-keystore --properties-file keystore.properties

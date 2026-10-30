@@ -1,0 +1,21 @@
+# The Lift tab: this week, the last session, the program followed and Start session; and the gear owned,
+# bells, bar and bands, with the records set.
+description: "Lift tab and the gear"
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/compose-lib.module-template.yaml
+
+dependencies:
+  - //lift/lift-data: exported
+  - //lift/lift-ui: exported
+
+test-dependencies:
+  - //lift/lift-testing
+
+settings:
+  compose:
+    resources:
+      packageName: dev.justinsmith.bells.today.resources

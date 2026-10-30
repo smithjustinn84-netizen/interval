@@ -1,0 +1,34 @@
+# The fakes and harness every module's tests share. The toolchain has no test fixtures (a module's tests can't
+# see another's `test/`), so this is an ordinary library that modules list under `test-dependencies`.
+# Common: `MainDispatcherTest`, `FixedTimestampFormatter`, `FakeAppInfo`, the tests' calendar. JVM: the
+# Compose UI harness (`runUiTest`, `setThemedContent`, `StateRestoration`, `waitForText`).
+description: "Test helpers: dispatcher, fixed clock and formatter, Compose UI harness"
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/lib.module-template.yaml
+
+dependencies:
+  - //core/core
+  - $kotlin.test: exported
+  - $libs.kotlinx.coroutines.test: exported
+
+# `kotlin.test.BeforeTest` on the JVM and Android is JUnit's annotation, which only the JUnit flavour carries.
+dependencies@android:
+  - $kotlin.test.junit5: exported
+
+# Compose UI tests run on the desktop JVM only: common `test/` also runs as Android local tests, which have
+# no Robolectric here.
+dependencies@jvm:
+  - $kotlin.test.junit5: exported
+  - $compose.uiTest: exported
+  # Skiko's native renderer; without it `runComposeUiTest` fails with LibraryLoadException.
+  - $compose.desktop.currentOs
+  # Dispatchers.Main for viewModelScope: whole-app tests compose the real routes.
+  - $libs.kotlinx.coroutines.swing
+
+settings:
+  compose:
+    enabled: true

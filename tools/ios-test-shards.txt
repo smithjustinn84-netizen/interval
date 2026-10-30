@@ -1,5 +1,5 @@
-core-time core-platform interval-domain bells-domain
-bells-data bells-library bells-today bells-session
+core-time core-platform interval-domain lift-domain
+lift-data lift-library lift-today lift-session
 core interval-data interval-platform
-interval-presets interval-settings interval-home
-interval-workout interval-history shared
+interval-presets interval-settings interval-timer
+interval-workout interval-history app

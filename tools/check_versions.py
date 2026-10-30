@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Fails when Android and iOS do not carry the same version.
 
-Android's `versionName`/`versionCode` live in androidApp/module.yaml; iOS's `MARKETING_VERSION`/
+Android's `versionName`/`versionCode` live in apps/androidApp/module.yaml; iOS's `MARKETING_VERSION`/
 `CURRENT_PROJECT_VERSION` in the Xcode project. Nothing in the build keeps them in step, so CI runs
 this first. Standard library only; run from anywhere: `python3 tools/check_versions.py`.
 
@@ -14,8 +14,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-MODULE_YAML = ROOT / "androidApp" / "module.yaml"
-PBXPROJ = ROOT / "iosApp" / "module.xcodeproj" / "project.pbxproj"
+MODULE_YAML = ROOT / "apps" / "androidApp" / "module.yaml"
+PBXPROJ = ROOT / "apps" / "iosApp" / "module.xcodeproj" / "project.pbxproj"
 
 
 def one(pattern: str, text: str, where: Path) -> str:

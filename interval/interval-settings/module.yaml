@@ -1,0 +1,20 @@
+# Settings: cues, the get-ready countdown, keep screen on, theme, body and units.
+description: "Settings and the weight sheet"
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/compose-lib.module-template.yaml
+
+dependencies:
+  - //interval/interval-platform: exported
+  - //interval/interval-ui: exported
+
+test-dependencies:
+  - //interval/interval-testing
+
+settings:
+  compose:
+    resources:
+      packageName: dev.justinsmith.interval.settings.resources

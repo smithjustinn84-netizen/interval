@@ -1,0 +1,21 @@
+# The exercise library: every exercise to search and narrow, each one's page and cues, the editor for the
+# user's own, and the picker the session and the program editor open.
+description: "Exercise library, exercise pages, editor and picker"
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/compose-lib.module-template.yaml
+
+dependencies:
+  - //lift/lift-data: exported
+  - //lift/lift-ui: exported
+
+test-dependencies:
+  - //lift/lift-testing
+
+settings:
+  compose:
+    resources:
+      packageName: dev.justinsmith.bells.library.resources
