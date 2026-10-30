@@ -21,6 +21,7 @@ import dev.justinsmith.interval.appTest
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.tab
 import dev.justinsmith.interval.ui.AcceptanceSteps
+import dev.justinsmith.interval.ui.JOURNEY_TIMEOUT
 import dev.justinsmith.interval.ui.Window
 import kotlin.test.assertEquals
 import kotlin.time.Duration
@@ -284,4 +285,4 @@ fun acceptanceScenario(
     window: Window = Window.Phone,
     storage: FakeStorage = FakeStorage(),
     scenario: suspend IntervalAcceptanceDriver.() -> Unit,
-) = appTest(window, storage) { app -> IntervalAcceptanceDriver(this, app).scenario() }
+) = appTest(window, storage, timeout = JOURNEY_TIMEOUT) { app -> IntervalAcceptanceDriver(this, app).scenario() }

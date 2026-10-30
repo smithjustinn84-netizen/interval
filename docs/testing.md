@@ -242,8 +242,10 @@ fun `a workout ended before its first round saves nothing`() = acceptanceScenari
 
 **The drivers.** `IntervalAcceptanceDriver` (over `appTest`, the whole app) and `LiftAcceptanceDriver`
 (over `bellsAppTest`) turn each step into Compose semantics. Both build on `AcceptanceSteps`
-(`core/core-testing/src@jvm/ui/`): `see`, `seeNo`, `tap`, `tapDescribed` and `scrollTo`. The specs hold no
-selectors, and the drivers keep these rules:
+(`core/core-testing/src@jvm/ui/`): `see`, `seeNo`, `tap`, `tapDescribed` and `scrollTo`. `acceptanceScenario` and
+`liftScenario` give a journey `JOURNEY_TIMEOUT` (3 minutes) rather than the 1 minute other UI tests get
+(`UI_TEST_TIMEOUT`): a long journey takes seconds locally but once ran past a minute on a busy CI runner.
+The specs hold no selectors, and the drivers keep these rules:
 
 1. **One selector per control.** Match the control that is there, never "this, else that". Where a sheet
    or dialog covers a control of the same name, `tap` takes the last one drawn, or the matcher says

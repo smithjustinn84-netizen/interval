@@ -18,6 +18,7 @@ import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.testKoin
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.interval.ui.UI_TEST_TIMEOUT
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
 import org.koin.core.KoinApplication
@@ -65,8 +66,9 @@ fun appTest(
     storage: FakeStorage = FakeStorage(),
     lift: FakeBellsStorage = FakeBellsStorage(),
     now: Long = 0L,
+    timeout: Duration = UI_TEST_TIMEOUT,
     block: suspend DesktopComposeUiTest.(AppFixture) -> Unit,
-) = runUiTest(window) {
+) = runUiTest(window, timeout) {
     val clock = AtomicLong(now)
     val elapsed = TestTimeSource()
     val koin = testKoin(storage = storage, lift = lift, clock = WallClock { clock.get() }, timeSource = elapsed)

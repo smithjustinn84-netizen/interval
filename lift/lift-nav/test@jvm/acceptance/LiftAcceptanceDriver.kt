@@ -17,6 +17,7 @@ import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.bells.ui.BellsAppFixture
 import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.interval.ui.AcceptanceSteps
+import dev.justinsmith.interval.ui.JOURNEY_TIMEOUT
 import dev.justinsmith.interval.ui.Window
 import kotlin.test.assertEquals
 
@@ -217,4 +218,6 @@ fun liftScenario(
     storage: FakeBellsStorage = FakeBellsStorage(),
     window: Window = Window.Phone,
     scenario: suspend LiftAcceptanceDriver.() -> Unit,
-) = bellsAppTest(storage, window = window) { app -> LiftAcceptanceDriver(this, app).scenario() }
+) = bellsAppTest(storage, window = window, timeout = JOURNEY_TIMEOUT) { app ->
+    LiftAcceptanceDriver(this, app).scenario()
+}

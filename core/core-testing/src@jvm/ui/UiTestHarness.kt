@@ -16,6 +16,8 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.v2.runDesktopComposeUiTest
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 
 /** The window sizes the previews use (`PreviewFormFactors`), at density 1 so pixels are dp. */
 enum class Window(val width: Int, val height: Int) {
@@ -28,9 +30,21 @@ enum class Window(val width: Int, val height: Int) {
     Desktop(width = 1024, height = 720),
 }
 
-/** Runs [block] in a desktop window of [window]'s size. */
-fun runUiTest(window: Window = Window.Phone, block: suspend DesktopComposeUiTest.() -> Unit) =
-    runDesktopComposeUiTest(width = window.width, height = window.height, block = block)
+/** How long a UI test may run before it fails: Compose's own default, a minute. */
+val UI_TEST_TIMEOUT: Duration = 1.minutes
+
+/**
+ * How long an acceptance journey may run. A journey is dozens of steps in one test, each waiting on the real
+ * view models; it takes seconds on a laptop but has run past [UI_TEST_TIMEOUT] on a busy CI runner.
+ */
+val JOURNEY_TIMEOUT: Duration = 3.minutes
+
+/** Runs [block] in a desktop window of [window]'s size, failing it after [timeout]. */
+fun runUiTest(
+    window: Window = Window.Phone,
+    timeout: Duration = UI_TEST_TIMEOUT,
+    block: suspend DesktopComposeUiTest.() -> Unit,
+) = runDesktopComposeUiTest(width = window.width, height = window.height, testTimeout = timeout, block = block)
 
 /** Sets [content] inside the app theme, light unless [dark], so tests don't depend on the machine's appearance. */
 fun DesktopComposeUiTest.setThemedContent(dark: Boolean = false, content: @Composable () -> Unit) {

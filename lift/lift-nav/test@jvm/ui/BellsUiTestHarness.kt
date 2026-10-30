@@ -33,6 +33,7 @@ import dev.justinsmith.interval.fakes.RecordingSharer
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.NoticeHost
+import dev.justinsmith.interval.ui.UI_TEST_TIMEOUT
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.rememberNotices
 import dev.justinsmith.interval.ui.runUiTest
@@ -41,6 +42,7 @@ import kotlinx.serialization.modules.polymorphic
 import org.koin.compose.KoinIsolatedContext
 import org.koin.core.KoinApplication
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.time.Duration
 
 /** Sets [content] inside the dark theme. */
 fun DesktopComposeUiTest.setBellsContent(content: @Composable () -> Unit) {
@@ -102,8 +104,9 @@ fun bellsAppTest(
     storage: FakeBellsStorage = FakeBellsStorage(),
     intervals: FakeIntervalActivity = FakeIntervalActivity(),
     window: Window = Window.Phone,
+    timeout: Duration = UI_TEST_TIMEOUT,
     block: suspend DesktopComposeUiTest.(BellsAppFixture) -> Unit,
-) = runUiTest(window) {
+) = runUiTest(window, timeout) {
     val clock = AtomicLong(0L)
     val beeper = RecordingBeeper()
     val sharer = RecordingSharer()
