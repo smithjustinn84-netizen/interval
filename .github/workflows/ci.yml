@@ -1,8 +1,8 @@
 name: CI
 
-# `main`, version tags and pull requests. A jj bookmark pushed without a PR gets no run of its own:
-# start one from the Actions tab or with `gh workflow run CI --ref <bookmark>`. Pushing every branch
-# as well as its PR ran everything twice.
+# `main`, version tags and pull requests, and every night. A jj bookmark pushed without a PR gets no run
+# of its own: start one from the Actions tab or with `gh workflow run CI --ref <bookmark>`, which runs every
+# iOS test. Pushing every branch as well as its PR ran everything twice.
 on:
   push:
     branches: [main]
@@ -13,9 +13,13 @@ on:
   pull_request:
     paths-ignore: ['**.md', 'docs/**', 'journeys/**']
   workflow_dispatch:
+  # Every iOS test, nightly on `main`: a push runs only the quick shard (see the `plan` job).
+  schedule:
+    - cron: '30 6 * * *'
 
+# The nightly run has a group of its own, so a push to `main` doesn't cancel it.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event_name == 'schedule' && 'nightly' || github.ref }}
   cancel-in-progress: true
 
 # The repository is public: nothing here may write, and secrets are read only by `release`, which a
@@ -57,6 +61,9 @@ jobs:
 
       - name: Every module with tests has an iOS test shard
         run: python3 tools/check_ios_shards.py
+
+      - name: The rules for which iOS shards run
+        run: python3 tools/ios_test_plan.py --self-test
 
       - name: Lint
         run: ./kotlin check lint
@@ -158,18 +165,45 @@ jobs:
           path: ~/Library/Caches/JetBrains/Kotlin
           key: ${{ steps.cache.outputs.cache-primary-key }}
 
+  # Which iOS test shards this run needs. Linking a test binary takes minutes on a macOS runner, so a
+  # push runs only the quick shard (the pure domains) unless it changes iOS code or the build;
+  # tools/ios_test_plan.py has the rules. The JVM and Android tests run every module's common tests anyway.
+  plan:
+    name: plan (ios tests)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      shards: ${{ steps.plan.outputs.shards }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The whole history: a push's `before` may be far behind, and a shallow clone can't diff it.
+          fetch-depth: 0
+
+      # A failed diff (a new branch, a force push past `before`) prints nothing, which runs every shard.
+      - name: Pick the shards
+        id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          { git diff --name-only "$BASE" "$GITHUB_SHA" 2>/dev/null || true; } |
+            python3 tools/ios_test_plan.py "$EVENT" "$GITHUB_REF" | tee -a "$GITHUB_OUTPUT"
+
   ios-test:
-    name: test (ios ${{ matrix.shard }}/4)
+    name: test (ios ${{ matrix.shard }})
+    needs: plan
     # Each module's tests link a Kotlin/Native binary, minutes apiece on this runner's three cores,
-    # so one job running all sixteen outlasts any sensible timeout. Four shards run side by side,
-    # beside the app's build: the five macOS runners a public repository gets at once. Each takes a
-    # line of tools/ios-test-shards.txt, which groups modules by the part of the tree they compile,
-    # as most of a shard's time is its first, cold compile; check_ios_shards.py keeps the file and
-    # this matrix covering every module with tests.
+    # so one job running all sixteen outlasts any sensible timeout. Each shard is a line of
+    # tools/ios-test-shards.txt: the first, the quick shard, runs on every push; the rest group modules
+    # by the part of the tree they compile, as most of a shard's time is its first, cold compile. A full
+    # run is five shards beside the app's build, one more than the five macOS runners a public repository
+    # gets at once, so one shard waits for the quick shard or the build to finish; three full shards time
+    # out. check_ios_shards.py keeps the file covering every module with tests.
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: ${{ fromJSON(needs.plan.outputs.shards) }}
     runs-on: macos-15
     timeout-minutes: 40
     steps:
@@ -210,7 +244,7 @@ jobs:
   ci:
     name: CI
     if: always()
-    needs: [static, check, ios, ios-test]
+    needs: [static, check, plan, ios, ios-test]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:

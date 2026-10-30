@@ -231,6 +231,10 @@ Strategy, commands and limits: [docs/testing.md](docs/testing.md).
   the real platform module in tests.
 - On-device end-to-end flows are android-CLI journeys in `journeys/*.xml`, run by an agent on
   `amper-37`, not in CI.
+- **CI's iOS tests are tiered**: a push links only the quick shard (line 1 of `tools/ios-test-shards.txt`,
+  the pure domains); every shard runs nightly, on tags, on `gh workflow run CI --ref <bookmark>`, and on a
+  push touching `src@ios/` or the build (`tools/ios_test_plan.py`). So a native-only failure in a feature
+  module's common tests can surface a night late: run `./kotlin build` before calling work done.
 
 ## Gotchas
 

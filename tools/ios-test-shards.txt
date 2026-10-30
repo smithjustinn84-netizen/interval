@@ -1,4 +1,5 @@
-bells-domain bells-data bells-library bells-today bells-session
-core-time core interval-domain interval-data
-interval-platform interval-presets interval-settings interval-home
+core-time interval-domain bells-domain
+bells-data bells-library bells-today bells-session
+core interval-data interval-platform
+interval-presets interval-settings interval-home
 interval-workout interval-history shared

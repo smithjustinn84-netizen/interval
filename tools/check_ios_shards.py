@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
 """Fails when the iOS test shards do not cover every module with common tests exactly once.
 
-CI runs the iOS simulator tests in parallel jobs, one per line of tools/ios-test-shards.txt. The
-lines group modules by the part of the tree they compile (Lift, the interval side's low layers, its
+CI runs the iOS simulator tests in parallel jobs, one per line of tools/ios-test-shards.txt. The first
+line is the quick shard, which every push runs (tools/ios_test_plan.py says when the rest run too); the
+others group modules by the part of the tree they compile (Lift, the interval side's low layers, its
 features), since a shard's cost is mostly its first, cold compile. Nothing else notices a module left
-out, so CI runs this first: a new module with a `test/` directory fails here until it is given a line,
-and the line count must match the `shard: [...]` matrix in .github/workflows/ci.yml. Standard library
-only; run from anywhere: `python3 tools/check_ios_shards.py`.
+out, so CI runs this first: a new module with a `test/` directory fails here until it is given a line.
+Standard library only; run from anywhere: `python3 tools/check_ios_shards.py`.
 """
 
-import re
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SHARDS = ROOT / "tools" / "ios-test-shards.txt"
-WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
 
 
 def main() -> None:
@@ -31,10 +29,6 @@ def main() -> None:
     for module in tested:
         if module not in listed:
             problems.append(f"{module} has tests but no shard: add it to a line of {SHARDS.name}")
-    matrix = re.search(r"^\s*shard:\s*\[([^\]]*)\]", WORKFLOW.read_text(), re.MULTILINE)
-    count = len(matrix.group(1).split(",")) if matrix else 0
-    if count != len(lines):
-        problems.append(f"{SHARDS.name} has {len(lines)} shards but the ci.yml matrix has {count}")
     if problems:
         sys.exit("\n".join(problems))
     print(f"{len(listed)} modules in {len(lines)} iOS test shards")

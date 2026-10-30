@@ -49,15 +49,23 @@ the same common UI code.
 
 CI (`.github/workflows/ci.yml`) runs the JVM and Android tests on Linux and the iOS tests on macOS, with
 lint and detekt in a job of their own. It runs on pushes to `main`, `v*` tags and pull requests, skipping
-changes that touch only Markdown, `docs/` or `journeys/`. Run it on any bookmark with
-`gh workflow run CI --ref <bookmark>`. The iOS tests run in four shards beside the app's
-build, two modules at a time in each: one `test -p iosSimulatorArm64` links every module's test binary at once
-(about 16 GB), more than the runner's 7 GB, and one after another they take longer than a job's timeout.
-Each shard is a line of `tools/ios-test-shards.txt`, grouped by the part of the tree its modules compile: a new
-module with tests goes on one of its lines, or `tools/check_ios_shards.py` fails the run. `main` requires the `CI`
-job (the ruleset "main: CI must pass"), which passes only when every other job did; admins bypass it, so a
-direct push still lands. A failure attaches the detekt reports, the
-Linux JUnit XML or the iOS shard's toolchain logs to the run.
+changes that touch only Markdown, `docs/` or `journeys/`, and every night on `main`. Run it on any bookmark
+with `gh workflow run CI --ref <bookmark>`.
+
+Linking an iOS test binary takes minutes on a CI runner, so the iOS tests are tiered. Each line of
+`tools/ios-test-shards.txt` is a shard, one job, two modules linked at a time: one `test -p iosSimulatorArm64`
+links every module's test binary at once (about 16 GB), more than the runner's 7 GB.
+- **Every push** runs the first line, the quick shard: `core-time`, `interval-domain` and `bells-domain`,
+  which link without Compose. The JVM and Android jobs run every module's common tests anyway.
+- **Every shard** runs nightly, on `v*` tags, on a manual run, and on a push that changes iOS code
+  (`src@ios/`), the build (`module.yaml`, `project.yaml`, `templates/`, `libs.versions.toml`, the `kotlin`
+  wrapper), the shard file or the workflow. The `plan` job decides with `tools/ios_test_plan.py`
+  (`--self-test` checks its rules).
+
+A new module with tests goes on one of the shard lines, grouped by the part of the tree its modules
+compile, or `tools/check_ios_shards.py` fails the run. `main` requires the `CI` job (the ruleset "main: CI
+must pass"), which passes only when every other job did; admins bypass it, so a direct push still lands.
+A failure attaches the detekt reports, the Linux JUnit XML or the iOS shard's toolchain logs to the run.
 The UI tests render offscreen with Skiko and need no display, including on the Linux runner.
 
 ## Test infrastructure
