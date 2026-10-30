@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalTestApi::class)
 
-package dev.justinsmith.bells.session
+package dev.justinsmith.lift.session
 
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.DesktopComposeUiTest
@@ -17,21 +17,21 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
-import dev.justinsmith.bells.data.BarEntity
-import dev.justinsmith.bells.data.CustomProgramEntity
-import dev.justinsmith.bells.data.FollowingEntity
-import dev.justinsmith.bells.data.SessionEntity
-import dev.justinsmith.bells.data.SetEntity
-import dev.justinsmith.bells.data.encodeDays
-import dev.justinsmith.bells.domain.Block
-import dev.justinsmith.bells.domain.BuiltInExercise
-import dev.justinsmith.bells.domain.EmomCue
-import dev.justinsmith.bells.domain.HoldClock
-import dev.justinsmith.bells.domain.ProgramId
-import dev.justinsmith.bells.fakes.FakeBellsStorage
-import dev.justinsmith.bells.fakes.FakeIntervalActivity
-import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.interval.ui.waitForText
+import dev.justinsmith.lift.data.BarEntity
+import dev.justinsmith.lift.data.CustomProgramEntity
+import dev.justinsmith.lift.data.FollowingEntity
+import dev.justinsmith.lift.data.SessionEntity
+import dev.justinsmith.lift.data.SetEntity
+import dev.justinsmith.lift.data.encodeDays
+import dev.justinsmith.lift.domain.Block
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.EmomCue
+import dev.justinsmith.lift.domain.HoldClock
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.fakes.FakeIntervalActivity
+import dev.justinsmith.lift.fakes.FakeLiftStorage
+import dev.justinsmith.lift.ui.liftAppTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -55,7 +55,7 @@ class SessionFlowTest {
     }
 
     @Test
-    fun `a band set logs its band and moves no weight`() = bellsAppTest { app ->
+    fun `a band set logs its band and moves no weight`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithContentDescription("Add set or EMOM").performClick()
@@ -70,7 +70,7 @@ class SessionFlowTest {
     }
 
     @Test
-    fun `a hold logs how long it lasted on its side and is never an EMOM`() = bellsAppTest { app ->
+    fun `a hold logs how long it lasted on its side and is never an EMOM`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithContentDescription("Add set or EMOM").performClick()
@@ -88,7 +88,7 @@ class SessionFlowTest {
     }
 
     @Test
-    fun `a band set and a hold are records on the summary in their own words`() = bellsAppTest {
+    fun `a band set and a hold are records on the summary in their own words`() = liftAppTest {
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithContentDescription("Add set or EMOM").performClick()
@@ -108,7 +108,7 @@ class SessionFlowTest {
     }
 
     @Test
-    fun `a timed plank counts itself down then logs and offers the other side`() = bellsAppTest { app ->
+    fun `a timed plank counts itself down then logs and offers the other side`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithContentDescription("Add set or EMOM").performClick()
@@ -141,8 +141,8 @@ class SessionFlowTest {
     }
 
     @Test
-    fun `a barbell set steps the total on the bar and shows the plates a side`() = bellsAppTest(
-        FakeBellsStorage().apply { bells.bar.value = BarEntity(kg = 20.0) },
+    fun `a barbell set steps the total on the bar and shows the plates a side`() = liftAppTest(
+        FakeLiftStorage().apply { bells.bar.value = BarEntity(kg = 20.0) },
     ) { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
@@ -163,7 +163,7 @@ class SessionFlowTest {
     }
 
     @Test
-    fun `weight added to bodyweight counts toward moved`() = bellsAppTest { app ->
+    fun `weight added to bodyweight counts toward moved`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithContentDescription("Add set or EMOM").performClick()
@@ -181,7 +181,7 @@ class SessionFlowTest {
     }
 
     @Test
-    fun `logging a set adds it to the session`() = bellsAppTest { app ->
+    fun `logging a set adds it to the session`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Next set")
         onNodeWithText("Log set").performClick()
@@ -193,7 +193,7 @@ class SessionFlowTest {
     }
 
     @Test
-    fun `a set logged starts a rest that steps longer and skips back to since last set`() = bellsAppTest { app ->
+    fun `a set logged starts a rest that steps longer and skips back to since last set`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Next set")
         onNodeWithText("Log set").performClick()
@@ -209,7 +209,7 @@ class SessionFlowTest {
     }
 
     @Test
-    fun `a set with two bells has no side and moves twice the weight`() = bellsAppTest { app ->
+    fun `a set with two bells has no side and moves twice the weight`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithContentDescription("Add set or EMOM").performClick()
@@ -229,7 +229,7 @@ class SessionFlowTest {
     }
 
     @Test
-    fun `finishing a session shows its summary then Today`() = bellsAppTest { app ->
+    fun `finishing a session shows its summary then Today`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
@@ -248,8 +248,8 @@ class SessionFlowTest {
     }
 
     @Test
-    fun `a set heavier than any before is tagged a record and announced`() = bellsAppTest(
-        storage = FakeBellsStorage().apply {
+    fun `a set heavier than any before is tagged a record and announced`() = liftAppTest(
+        storage = FakeLiftStorage().apply {
             sessions.sessions.value = listOf(SessionEntity("old", 0, 60_000, "Two-hand swing", 60_000))
             sessions.sets.value = listOf(SetEntity(1, "old", BuiltInExercise.TwoHandSwing.key, 16.0, 10, null, 30_000))
         },
@@ -270,7 +270,7 @@ class SessionFlowTest {
     }
 
     @Test
-    fun `a lift's first set ever is not a record`() = bellsAppTest {
+    fun `a lift's first set ever is not a record`() = liftAppTest {
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
@@ -279,7 +279,7 @@ class SessionFlowTest {
     }
 
     @Test
-    fun `the summary says where the week stands against the goal`() = bellsAppTest(
+    fun `the summary says where the week stands against the goal`() = liftAppTest(
         intervals = FakeIntervalActivity().apply { weeklyGoal.value = 3 },
     ) {
         onNodeWithText("Start session").performClick()
@@ -291,7 +291,7 @@ class SessionFlowTest {
     }
 
     @Test
-    fun `finishing with no sets asks as Back does and Leave drops the session`() = bellsAppTest { app ->
+    fun `finishing with no sets asks as Back does and Leave drops the session`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Finish")
         onNodeWithText("Finish").performClick()
@@ -309,7 +309,7 @@ class SessionFlowTest {
     }
 
     @Test
-    fun `a set removed comes back with Undo`() = bellsAppTest { app ->
+    fun `a set removed comes back with Undo`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
@@ -325,7 +325,7 @@ class SessionFlowTest {
     }
 
     @Test
-    fun `back with sets logged asks and leaving keeps them`() = bellsAppTest { app ->
+    fun `back with sets logged asks and leaving keeps them`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
@@ -343,7 +343,7 @@ class SessionFlowTest {
     }
 
     @Test
-    fun `back with nothing logged asks and Leave drops the session`() = bellsAppTest { app ->
+    fun `back with nothing logged asks and Leave drops the session`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Finish")
         app.back()
@@ -362,7 +362,7 @@ class SessionFlowTest {
     }
 
     @Test
-    fun `the sheet's EMOM side starts an EMOM of the lift picked`() = bellsAppTest {
+    fun `the sheet's EMOM side starts an EMOM of the lift picked`() = liftAppTest {
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithContentDescription("Add set or EMOM").performClick()
@@ -387,7 +387,7 @@ class SessionFlowTest {
     }
 
     @Test
-    fun `back over the log sheet closes the sheet before asking to leave`() = bellsAppTest { app ->
+    fun `back over the log sheet closes the sheet before asking to leave`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
@@ -402,8 +402,8 @@ class SessionFlowTest {
     }
 
     @Test
-    fun `the summary of a program's last day says it finished`() = bellsAppTest(
-        FakeBellsStorage().apply {
+    fun `the summary of a program's last day says it finished`() = liftAppTest(
+        FakeLiftStorage().apply {
             val goblets = ProgramId.GobletSquatRow.name
             following.row.value = FollowingEntity(programId = goblets, startedAtEpochMillis = 0)
             sessions.sessions.value = (1..7).map { day ->
@@ -421,8 +421,8 @@ class SessionFlowTest {
     }
 
     @Test
-    fun `a planned hold offers Time it on Up next and skipping a block offers Undo`() = bellsAppTest(
-        FakeBellsStorage().apply {
+    fun `a planned hold offers Time it on Up next and skipping a block offers Undo`() = liftAppTest(
+        FakeLiftStorage().apply {
             val days = encodeDays(
                 listOf(
                     listOf(

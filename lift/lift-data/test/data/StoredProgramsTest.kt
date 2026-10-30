@@ -1,13 +1,13 @@
-package dev.justinsmith.bells.data
+package dev.justinsmith.lift.data
 
-import dev.justinsmith.bells.domain.Block
-import dev.justinsmith.bells.domain.BlockKind
-import dev.justinsmith.bells.domain.BuiltInExercise
-import dev.justinsmith.bells.domain.CustomExercise
-import dev.justinsmith.bells.domain.Equipment
-import dev.justinsmith.bells.domain.Focus
-import dev.justinsmith.bells.domain.Measure
-import dev.justinsmith.bells.domain.RepRange
+import dev.justinsmith.lift.domain.Block
+import dev.justinsmith.lift.domain.BlockKind
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.CustomExercise
+import dev.justinsmith.lift.domain.Equipment
+import dev.justinsmith.lift.domain.Focus
+import dev.justinsmith.lift.domain.Measure
+import dev.justinsmith.lift.domain.RepRange
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

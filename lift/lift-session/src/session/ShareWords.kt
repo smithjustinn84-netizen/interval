@@ -1,17 +1,17 @@
-package dev.justinsmith.bells.session
+package dev.justinsmith.lift.session
 
 import androidx.compose.runtime.Composable
-import dev.justinsmith.bells.domain.LiftSession
-import dev.justinsmith.bells.domain.PersonalRecord
-import dev.justinsmith.bells.domain.formatKg
-import dev.justinsmith.bells.session.resources.Res
-import dev.justinsmith.bells.session.resources.common_joined
-import dev.justinsmith.bells.session.resources.kg_value
-import dev.justinsmith.bells.session.resources.share_session_figures
-import dev.justinsmith.bells.session.resources.share_session_record
-import dev.justinsmith.bells.ui.exerciseName
-import dev.justinsmith.bells.ui.recordLine
 import dev.justinsmith.interval.timer.formatClock
+import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.PersonalRecord
+import dev.justinsmith.lift.domain.formatKg
+import dev.justinsmith.lift.session.resources.Res
+import dev.justinsmith.lift.session.resources.common_joined
+import dev.justinsmith.lift.session.resources.kg_value
+import dev.justinsmith.lift.session.resources.share_session_figures
+import dev.justinsmith.lift.session.resources.share_session_record
+import dev.justinsmith.lift.ui.exerciseName
+import dev.justinsmith.lift.ui.recordLine
 import org.jetbrains.compose.resources.stringResource
 
 /**

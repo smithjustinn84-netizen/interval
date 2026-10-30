@@ -1,15 +1,15 @@
 @file:OptIn(ExperimentalCoroutinesApi::class)
 
-package dev.justinsmith.bells.today
+package dev.justinsmith.lift.today
 
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.bells.data.BellsRepository
-import dev.justinsmith.bells.domain.DEFAULT_BAR_KG
-import dev.justinsmith.bells.domain.barbellLifts
-import dev.justinsmith.bells.fakes.FakeBellsStorage
-import dev.justinsmith.bells.fakes.FakeIntervalActivity
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
+import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.domain.DEFAULT_BAR_KG
+import dev.justinsmith.lift.domain.barbellLifts
+import dev.justinsmith.lift.fakes.FakeIntervalActivity
+import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -26,9 +26,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class TodayViewModelTest {
-    private val storage = FakeBellsStorage()
+    private val storage = FakeLiftStorage()
     private val repository = with(storage) {
-        BellsRepository(
+        LiftRepository(
             sessions,
             bells,
             following,

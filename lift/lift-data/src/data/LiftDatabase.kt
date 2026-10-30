@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.data
+package dev.justinsmith.lift.data
 
 import androidx.room.AutoMigration
 import androidx.room.ColumnInfo
@@ -20,9 +20,9 @@ import androidx.sqlite.execSQL
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Bells' sessions and their sets, the user's bells and the program they follow. Version 2 added
+ * Lift's sessions and their sets, the user's bells and the program they follow. Version 2 added
  * [FollowingEntity] and the program day a session was; version 3 settings shared with Interval, then a
- * sibling app; version 4 dropped them, and the copy of Interval's workouts, once Bells became part of it;
+ * sibling app; version 4 dropped them, and the copy of Interval's workouts, once Bells (now Lift) became part of it;
  * version 5 added the programs the user makes, [CustomProgramEntity]; version 6 sets done with two bells;
  * version 7 sets of any equipment, held or with a band, and the exercises the user adds,
  * [CustomExerciseEntity]; version 8 the user's changes to their bands and the bands they add, [BandEntity];
@@ -44,7 +44,7 @@ import kotlinx.coroutines.flow.Flow
         RestEntity::class,
     ],
     version = 12,
-    // 3 to 4 is MIGRATION_3_4, added in bellsStorageModule.
+    // 3 to 4 is MIGRATION_3_4, added in liftStorageModule.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
@@ -58,8 +58,8 @@ import kotlinx.coroutines.flow.Flow
         AutoMigration(from = 11, to = 12),
     ],
 )
-@ConstructedBy(BellsDatabaseConstructor::class)
-abstract class BellsDatabase : RoomDatabase() {
+@ConstructedBy(LiftDatabaseConstructor::class)
+abstract class LiftDatabase : RoomDatabase() {
     abstract fun sessionDao(): SessionDao
 
     abstract fun bellDao(): BellDao
@@ -75,8 +75,8 @@ abstract class BellsDatabase : RoomDatabase() {
 
 /** Room generates the `actual` for each platform. */
 @Suppress("KotlinNoActualForExpect")
-expect object BellsDatabaseConstructor : RoomDatabaseConstructor<BellsDatabase> {
-    override fun initialize(): BellsDatabase
+expect object LiftDatabaseConstructor : RoomDatabaseConstructor<LiftDatabase> {
+    override fun initialize(): LiftDatabase
 }
 
 /** Version 3 to 4: Interval's workouts and the shared settings, which Interval itself now holds, go. */
@@ -240,7 +240,7 @@ data class SessionEntity(
     val title: String,
     @ColumnInfo(name = "updated_at") val updatedAtEpochMillis: Long,
     val deleted: Boolean = false,
-    /** The program it was a day of, a [dev.justinsmith.bells.domain.ProgramKey] as stored; null for a free session. */
+    /** The program it was a day of, a [dev.justinsmith.lift.domain.ProgramKey] as stored; null for a free session. */
     @ColumnInfo(name = "program_id") val programId: String? = null,
     /** The day as the session changed it, in [encodePlan]'s shape; null while it is as programmed. */
     val plan: String? = null,
@@ -252,17 +252,17 @@ data class SessionEntity(
 data class SetEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "session_uid") val sessionUid: String,
-    /** An [dev.justinsmith.bells.domain.Exercise] by its key. */
+    /** An [dev.justinsmith.lift.domain.Exercise] by its key. */
     val exercise: String,
     @ColumnInfo(name = "bell_kg") val bellKg: Double,
     val reps: Int,
-    /** A [dev.justinsmith.bells.domain.Side] by name, or null for a two-sided lift. */
+    /** A [dev.justinsmith.lift.domain.Side] by name, or null for a two-sided lift. */
     val side: String?,
     @ColumnInfo(name = "logged_at") val loggedAtEpochMillis: Long,
     /** Done with a bell in each hand, both of [bellKg]. */
     @ColumnInfo(defaultValue = "0") val doubled: Boolean = false,
     /**
-     * What it was done with, a [dev.justinsmith.bells.domain.Equipment] by name; null for a set logged
+     * What it was done with, a [dev.justinsmith.lift.domain.Equipment] by name; null for a set logged
      * before version 7, all kettlebell.
      */
     val equipment: String? = null,
@@ -291,7 +291,7 @@ data class CustomExerciseEntity(
 )
 
 /**
- * The program the user follows, a [dev.justinsmith.bells.domain.ProgramKey] as stored, from
+ * The program the user follows, a [dev.justinsmith.lift.domain.ProgramKey] as stored, from
  * [startedAtEpochMillis]: one row at most.
  */
 @Entity(tableName = "following")
@@ -305,8 +305,8 @@ data class FollowingEntity(
 
 /**
  * A band of the user's as they left it: one of the five every user starts with once changed (its [id] a
- * [dev.justinsmith.bells.domain.BandLevel] by name, [name] blank while unnamed), or one they added (32 hex
- * digits). [colour] is a [dev.justinsmith.bells.domain.BandColour] by name; [position] orders them, lightest
+ * [dev.justinsmith.lift.domain.BandLevel] by name, [name] blank while unnamed), or one they added (32 hex
+ * digits). [colour] is a [dev.justinsmith.lift.domain.BandColour] by name; [position] orders them, lightest
  * first. Sets name their band by [id], so a band with sets is archived, never deleted.
  */
 @Entity(tableName = "band")

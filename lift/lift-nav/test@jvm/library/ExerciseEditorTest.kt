@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalTestApi::class)
 
-package dev.justinsmith.bells.library
+package dev.justinsmith.lift.library
 
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -19,13 +19,13 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
-import dev.justinsmith.bells.data.CustomExerciseEntity
-import dev.justinsmith.bells.data.SessionEntity
-import dev.justinsmith.bells.data.SetEntity
-import dev.justinsmith.bells.fakes.FakeBellsStorage
-import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.waitForText
+import dev.justinsmith.lift.data.CustomExerciseEntity
+import dev.justinsmith.lift.data.SessionEntity
+import dev.justinsmith.lift.data.SetEntity
+import dev.justinsmith.lift.fakes.FakeLiftStorage
+import dev.justinsmith.lift.ui.liftAppTest
 import kotlinx.coroutines.flow.update
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -41,7 +41,7 @@ class ExerciseEditorTest {
     private val plank = CustomExerciseEntity("e1", "Copenhagen plank", "Bodyweight", "Time", true, "Core", "", false, 0)
 
     @Test
-    fun `an exercise made from the library is saved and listed as yours`() = bellsAppTest { app ->
+    fun `an exercise made from the library is saved and listed as yours`() = liftAppTest { app ->
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
         onNodeWithContentDescription("New exercise").performClick()
@@ -62,7 +62,7 @@ class ExerciseEditorTest {
     }
 
     @Test
-    fun `a search that finds nothing offers to add it by that name`() = bellsAppTest { app ->
+    fun `a search that finds nothing offers to add it by that name`() = liftAppTest { app ->
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
         onNode(hasSetTextAction()).performTextInput("Turkish sit-up")
@@ -77,8 +77,8 @@ class ExerciseEditorTest {
     }
 
     @Test
-    fun `a name another of yours has cannot be saved`() = bellsAppTest(
-        storage = FakeBellsStorage().apply { exercises.rows.value = listOf(plank) },
+    fun `a name another of yours has cannot be saved`() = liftAppTest(
+        storage = FakeLiftStorage().apply { exercises.rows.value = listOf(plank) },
     ) {
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
@@ -90,7 +90,7 @@ class ExerciseEditorTest {
     }
 
     @Test
-    fun `an exercise added from the Log sheet comes back picked`() = bellsAppTest { app ->
+    fun `an exercise added from the Log sheet comes back picked`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithContentDescription("Add set or EMOM").performClick()
@@ -114,8 +114,8 @@ class ExerciseEditorTest {
     }
 
     @Test
-    fun `an exercise with sets logged keeps its equipment and takes a new name`() = bellsAppTest(
-        storage = FakeBellsStorage().apply {
+    fun `an exercise with sets logged keeps its equipment and takes a new name`() = liftAppTest(
+        storage = FakeLiftStorage().apply {
             exercises.rows.value = listOf(plank)
             sessions.sessions.update { it + SessionEntity("s1", 0, 60_000, "Plank", 60_000) }
             sessions.sets.update { it + SetEntity(1, "s1", "custom:e1", 0.0, 0, "Left", 10, seconds = 40) }
@@ -140,8 +140,8 @@ class ExerciseEditorTest {
     }
 
     @Test
-    fun `an archived exercise leaves the Log sheet and Show archived brings it back to restore`() = bellsAppTest(
-        storage = FakeBellsStorage().apply { exercises.rows.value = listOf(plank) },
+    fun `an archived exercise leaves the Log sheet and Show archived brings it back to restore`() = liftAppTest(
+        storage = FakeLiftStorage().apply { exercises.rows.value = listOf(plank) },
     ) { app ->
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
@@ -168,8 +168,8 @@ class ExerciseEditorTest {
     }
 
     @Test
-    fun `on a tablet the editor opens beside the library and Back closes it`() = bellsAppTest(
-        storage = FakeBellsStorage().apply { exercises.rows.value = listOf(plank) },
+    fun `on a tablet the editor opens beside the library and Back closes it`() = liftAppTest(
+        storage = FakeLiftStorage().apply { exercises.rows.value = listOf(plank) },
         window = Window.Tablet,
     ) { app ->
         onNodeWithText("Exercises").performScrollTo().performClick()

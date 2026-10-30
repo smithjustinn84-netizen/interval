@@ -2,7 +2,6 @@ package dev.justinsmith.interval.workout
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.bells.data.LiftActivity
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.model.WorkoutProgress
 import dev.justinsmith.interval.platform.BackgroundWorkout
@@ -23,6 +22,7 @@ import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.timer.WorkoutState
 import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.weekStanding
+import dev.justinsmith.lift.data.LiftActivity
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow

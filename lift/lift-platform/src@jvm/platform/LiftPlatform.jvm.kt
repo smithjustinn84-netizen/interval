@@ -1,20 +1,20 @@
-package dev.justinsmith.bells.platform
+package dev.justinsmith.lift.platform
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import dev.justinsmith.bells.data.BellsDatabase
+import dev.justinsmith.lift.data.LiftDatabase
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import java.awt.Toolkit
 import java.io.File
 
 @Composable
-actual fun rememberBellsPlatformModule(): Module = remember {
+actual fun rememberLiftPlatformModule(): Module = remember {
     module {
-        single<RoomDatabase.Builder<BellsDatabase>> {
-            Room.databaseBuilder<BellsDatabase>(name = appDataDirectory().resolve(BELLS_DATABASE).absolutePath)
+        single<RoomDatabase.Builder<LiftDatabase>> {
+            Room.databaseBuilder<LiftDatabase>(name = appDataDirectory().resolve(LIFT_DATABASE).absolutePath)
         }
         // The system alert sound for every cue; desktops have nothing finer to drive.
         single<Beeper> { Beeper { runCatching { Toolkit.getDefaultToolkit().beep() } } }

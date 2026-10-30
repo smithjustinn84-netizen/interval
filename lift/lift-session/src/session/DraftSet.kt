@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.session
+package dev.justinsmith.lift.session
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -14,29 +14,29 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
-import dev.justinsmith.bells.domain.Doubles
-import dev.justinsmith.bells.domain.Equipment
-import dev.justinsmith.bells.domain.Side
-import dev.justinsmith.bells.session.resources.Res
-import dev.justinsmith.bells.session.resources.exercise_editor_new
-import dev.justinsmith.bells.session.resources.hold_time_it
-import dev.justinsmith.bells.session.resources.library_title
-import dev.justinsmith.bells.session.resources.lift_double
-import dev.justinsmith.bells.session.resources.log_fewer_reps
-import dev.justinsmith.bells.session.resources.log_less_time
-import dev.justinsmith.bells.session.resources.log_more_reps
-import dev.justinsmith.bells.session.resources.log_more_time
-import dev.justinsmith.bells.session.resources.next_free_title
-import dev.justinsmith.bells.ui.Choice
-import dev.justinsmith.bells.ui.Stepper
-import dev.justinsmith.bells.ui.countLine
-import dev.justinsmith.bells.ui.sideName
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.lift.domain.Doubles
+import dev.justinsmith.lift.domain.Equipment
+import dev.justinsmith.lift.domain.Side
+import dev.justinsmith.lift.session.resources.Res
+import dev.justinsmith.lift.session.resources.exercise_editor_new
+import dev.justinsmith.lift.session.resources.hold_time_it
+import dev.justinsmith.lift.session.resources.library_title
+import dev.justinsmith.lift.session.resources.lift_double
+import dev.justinsmith.lift.session.resources.log_fewer_reps
+import dev.justinsmith.lift.session.resources.log_less_time
+import dev.justinsmith.lift.session.resources.log_more_reps
+import dev.justinsmith.lift.session.resources.log_more_time
+import dev.justinsmith.lift.session.resources.next_free_title
+import dev.justinsmith.lift.ui.Choice
+import dev.justinsmith.lift.ui.Stepper
+import dev.justinsmith.lift.ui.countLine
+import dev.justinsmith.lift.ui.sideName
 import org.jetbrains.compose.resources.stringResource
 
 /**

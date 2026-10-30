@@ -1,12 +1,12 @@
 @file:OptIn(ExperimentalCoroutinesApi::class)
 
-package dev.justinsmith.bells.gear
+package dev.justinsmith.lift.gear
 
-import dev.justinsmith.bells.domain.BandColour
-import dev.justinsmith.bells.domain.BandLevel
-import dev.justinsmith.bells.domain.PersonalRecord
-import dev.justinsmith.bells.domain.offeredBands
-import dev.justinsmith.bells.fakes.FakeBellsStorage
+import dev.justinsmith.lift.domain.BandColour
+import dev.justinsmith.lift.domain.BandLevel
+import dev.justinsmith.lift.domain.PersonalRecord
+import dev.justinsmith.lift.domain.offeredBands
+import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -22,7 +22,7 @@ import kotlin.test.assertTrue
 
 /** Your equipment: the bells owned, the bar, the bands in their order, and the records across every session. */
 class GearViewModelTest {
-    private val storage = FakeBellsStorage()
+    private val storage = FakeLiftStorage()
     private val repository = storage.repository()
 
     @BeforeTest

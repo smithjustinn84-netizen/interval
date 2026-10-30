@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.domain
+package dev.justinsmith.lift.domain
 
 /**
  * The day of its program each session of it was, from [days], the day each finished session was logged as,

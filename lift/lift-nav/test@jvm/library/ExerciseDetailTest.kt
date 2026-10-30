@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalTestApi::class)
 
-package dev.justinsmith.bells.library
+package dev.justinsmith.lift.library
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
@@ -11,13 +11,13 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import dev.justinsmith.bells.data.CustomExerciseEntity
-import dev.justinsmith.bells.data.SessionEntity
-import dev.justinsmith.bells.data.SetEntity
-import dev.justinsmith.bells.fakes.FakeBellsStorage
-import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.waitForText
+import dev.justinsmith.lift.data.CustomExerciseEntity
+import dev.justinsmith.lift.data.SessionEntity
+import dev.justinsmith.lift.data.SetEntity
+import dev.justinsmith.lift.fakes.FakeLiftStorage
+import dev.justinsmith.lift.ui.liftAppTest
 import kotlinx.coroutines.flow.update
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -26,7 +26,7 @@ import kotlin.test.assertTrue
 private const val DAY = 24L * 60 * 60 * 1000
 
 class ExerciseDetailTest {
-    private fun pressed() = FakeBellsStorage().apply {
+    private fun pressed() = FakeLiftStorage().apply {
         sessions.sessions.update { it + SessionEntity("s1", 0, 60_000, "Press day", 60_000) }
         sessions.sets.update {
             it + SetEntity(1, "s1", "Press", 16.0, 5, "Left", 10) + SetEntity(2, "s1", "Press", 16.0, 5, "Right", 20)
@@ -34,7 +34,7 @@ class ExerciseDetailTest {
     }
 
     @Test
-    fun `a built-in never done shows how to do it and what it works`() = bellsAppTest {
+    fun `a built-in never done shows how to do it and what it works`() = liftAppTest {
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
         onNodeWithText("Goblet squat").performScrollTo().performClick()
@@ -48,8 +48,8 @@ class ExerciseDetailTest {
     }
 
     @Test
-    fun `done more than once its best each session is charted`() = bellsAppTest(
-        storage = FakeBellsStorage().apply {
+    fun `done more than once its best each session is charted`() = liftAppTest(
+        storage = FakeLiftStorage().apply {
             sessions.sessions.update {
                 // A day apart, as the fake formatter counts days from the epoch.
                 it + SessionEntity("s1", 0, 60_000, "Day 0", 60_000) +
@@ -75,7 +75,7 @@ class ExerciseDetailTest {
     }
 
     @Test
-    fun `a built-in done shows its sessions and opens one`() = bellsAppTest(storage = pressed()) {
+    fun `a built-in done shows its sessions and opens one`() = liftAppTest(storage = pressed()) {
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
         // In the recent card, as well as the kettlebell one.
@@ -94,8 +94,8 @@ class ExerciseDetailTest {
     }
 
     @Test
-    fun `one of yours shows its cues and opens its form with Edit`() = bellsAppTest(
-        storage = FakeBellsStorage().apply {
+    fun `one of yours shows its cues and opens its form with Edit`() = liftAppTest(
+        storage = FakeLiftStorage().apply {
             exercises.rows.value = listOf(
                 CustomExerciseEntity(
                     "e1",
@@ -121,7 +121,7 @@ class ExerciseDetailTest {
     }
 
     @Test
-    fun `on a tablet it opens beside the library`() = bellsAppTest(window = Window.Tablet) {
+    fun `on a tablet it opens beside the library`() = liftAppTest(window = Window.Tablet) {
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
         onNodeWithText("Goblet squat").performClick()
@@ -132,8 +132,8 @@ class ExerciseDetailTest {
     }
 
     @Test
-    fun `one of yours with no cues says how to add some`() = bellsAppTest(
-        storage = FakeBellsStorage().apply {
+    fun `one of yours with no cues says how to add some`() = liftAppTest(
+        storage = FakeLiftStorage().apply {
             exercises.rows.value = listOf(
                 CustomExerciseEntity("e1", "Turkish sit-up", "Kettlebell", "Reps", false, "Core", "", false, 0),
             )

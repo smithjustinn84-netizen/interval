@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalTestApi::class)
 
-package dev.justinsmith.bells.programs
+package dev.justinsmith.lift.programs
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
@@ -10,25 +10,25 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import dev.justinsmith.bells.data.FollowingEntity
-import dev.justinsmith.bells.data.SessionEntity
-import dev.justinsmith.bells.domain.BuiltInExercise
-import dev.justinsmith.bells.domain.Followed
-import dev.justinsmith.bells.domain.LiftSession
-import dev.justinsmith.bells.domain.Program
-import dev.justinsmith.bells.domain.ProgramId
-import dev.justinsmith.bells.domain.ProgramKey
-import dev.justinsmith.bells.domain.SetLog
-import dev.justinsmith.bells.domain.Side
-import dev.justinsmith.bells.domain.program
-import dev.justinsmith.bells.domain.programProgress
-import dev.justinsmith.bells.fakes.FakeBellsStorage
-import dev.justinsmith.bells.ui.bellsAppTest
-import dev.justinsmith.bells.ui.setBellsContent
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.scrollToText
 import dev.justinsmith.interval.ui.waitForText
+import dev.justinsmith.lift.data.FollowingEntity
+import dev.justinsmith.lift.data.SessionEntity
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.Followed
+import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.Program
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.SetLog
+import dev.justinsmith.lift.domain.Side
+import dev.justinsmith.lift.domain.program
+import dev.justinsmith.lift.domain.programProgress
+import dev.justinsmith.lift.fakes.FakeLiftStorage
+import dev.justinsmith.lift.ui.liftAppTest
+import dev.justinsmith.lift.ui.setLiftContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -67,7 +67,7 @@ class ProgramProgressScreenTest {
 
     @Test
     fun `in progress the page maps the days done and next and lists each day done`() = runUiTest {
-        setBellsContent { ProgramProgressScreen(state(1, 2), ProgramProgressActions()) }
+        setLiftContent { ProgramProgressScreen(state(1, 2), ProgramProgressActions()) }
         onNodeWithText("Day 3 of 8 · week 2").assertIsDisplayed()
         onNodeWithText("2").assertIsDisplayed()
         onNodeWithText("6").assertIsDisplayed()
@@ -82,7 +82,7 @@ class ProgramProgressScreenTest {
     @Test
     fun `a done day opens its session and a deleted one reads as not logged`() = runUiTest {
         val opened = mutableListOf<String>()
-        setBellsContent {
+        setLiftContent {
             ProgramProgressScreen(state(1, 3), ProgramProgressActions(onOpenSession = { opened += it }))
         }
         onNodeWithContentDescription("Day 2: not logged").assertIsDisplayed()
@@ -93,7 +93,7 @@ class ProgramProgressScreenTest {
     @Test
     fun `a copy's days before show done with nothing to open`() = runUiTest {
         val copy = goblets.copy(key = ProgramKey.Custom("c"), name = "Goblet squat and row (yours)")
-        setBellsContent {
+        setLiftContent {
             ProgramProgressScreen(state(3, followed = Followed(copy, 0, daysBefore = 2)), ProgramProgressActions())
         }
         onNodeWithText("Days 1 to 2").assertIsDisplayed()
@@ -105,7 +105,7 @@ class ProgramProgressScreenTest {
 
     @Test
     fun `before the first day the list says so`() = runUiTest {
-        setBellsContent { ProgramProgressScreen(state(), ProgramProgressActions()) }
+        setLiftContent { ProgramProgressScreen(state(), ProgramProgressActions()) }
         onNodeWithText("Day 1 of 8 · week 1").assertIsDisplayed()
         onNodeWithText("No days done yet. Start day 1 from Lift.").assertIsDisplayed()
     }
@@ -113,7 +113,7 @@ class ProgramProgressScreenTest {
     @Test
     fun `finished the page sums the program and offers Follow again`() = runUiTest {
         val chosen = mutableListOf<String>()
-        setBellsContent {
+        setLiftContent {
             ProgramProgressScreen(
                 state(1, 2, 3, 4, 5, 6, 7, 8),
                 ProgramProgressActions(onFollowAgain = { chosen += "again" }, onPickAnother = { chosen += "another" }),
@@ -134,15 +134,15 @@ class ProgramProgressScreenTest {
 
     @Test
     fun `on a tablet the days done sit beside the map`() = runUiTest(Window.Tablet) {
-        setBellsContent { ProgramProgressScreen(state(1), ProgramProgressActions()) }
+        setLiftContent { ProgramProgressScreen(state(1), ProgramProgressActions()) }
         val week = onNodeWithText("Week 1").getBoundsInRoot()
         val day = onNodeWithText("Day 1").getBoundsInRoot()
         assertTrue(day.left >= week.right || day.right <= week.left, "the days done should sit beside the map")
     }
 
     @Test
-    fun `Follow again starts the program at day 1 and keeps the run in History`() = bellsAppTest(
-        FakeBellsStorage().apply {
+    fun `Follow again starts the program at day 1 and keeps the run in History`() = liftAppTest(
+        FakeLiftStorage().apply {
             following.row.value = FollowingEntity(programId = goblets.key.stored, startedAtEpochMillis = 0)
             sessions.sessions.value = (1..8).map { day ->
                 val at = day * DAY_MILLIS

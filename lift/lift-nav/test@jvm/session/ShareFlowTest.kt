@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalTestApi::class)
 
-package dev.justinsmith.bells.session
+package dev.justinsmith.lift.session
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onAllNodesWithText
@@ -8,8 +8,8 @@ import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.interval.ui.waitForText
+import dev.justinsmith.lift.ui.liftAppTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -19,7 +19,7 @@ class ShareFlowTest {
     private val figures = "1:30 · 160 kg moved · 10 reps\nTwo-hand swing: Heaviest 16 kg × 10"
 
     @Test
-    fun `the summary shares the session in words`() = bellsAppTest { app ->
+    fun `the summary shares the session in words`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
@@ -34,7 +34,7 @@ class ShareFlowTest {
     }
 
     @Test
-    fun `a past session shares from its page with when it was`() = bellsAppTest { app ->
+    fun `a past session shares from its page with when it was`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()

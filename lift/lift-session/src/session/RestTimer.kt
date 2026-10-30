@@ -1,9 +1,9 @@
-package dev.justinsmith.bells.session
+package dev.justinsmith.lift.session
 
-import dev.justinsmith.bells.domain.RestClock
-import dev.justinsmith.bells.platform.Beeper
-import dev.justinsmith.bells.platform.RestAlerts
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.lift.domain.RestClock
+import dev.justinsmith.lift.platform.Beeper
+import dev.justinsmith.lift.platform.RestAlerts
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.session
+package dev.justinsmith.lift.session
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -6,22 +6,22 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import dev.justinsmith.bells.domain.LiftSession
-import dev.justinsmith.bells.domain.PersonalRecord
-import dev.justinsmith.bells.domain.formatKg
-import dev.justinsmith.bells.ui.RecordRow
-import dev.justinsmith.bells.ui.StatTile
-import dev.justinsmith.bells.ui.resources.Res
-import dev.justinsmith.bells.ui.resources.kg_value
-import dev.justinsmith.bells.ui.resources.session_moved
-import dev.justinsmith.bells.ui.resources.session_time
-import dev.justinsmith.bells.ui.resources.summary_records
-import dev.justinsmith.bells.ui.resources.summary_reps
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.PersonalRecord
+import dev.justinsmith.lift.domain.formatKg
+import dev.justinsmith.lift.ui.RecordRow
+import dev.justinsmith.lift.ui.StatTile
+import dev.justinsmith.lift.ui.resources.Res
+import dev.justinsmith.lift.ui.resources.kg_value
+import dev.justinsmith.lift.ui.resources.session_moved
+import dev.justinsmith.lift.ui.resources.session_time
+import dev.justinsmith.lift.ui.resources.summary_records
+import dev.justinsmith.lift.ui.resources.summary_reps
 import org.jetbrains.compose.resources.stringResource
 
 /**

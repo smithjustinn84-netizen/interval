@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.session
+package dev.justinsmith.lift.session
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Arrangement
@@ -10,19 +10,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import dev.justinsmith.bells.session.resources.Res
-import dev.justinsmith.bells.session.resources.common_joined
-import dev.justinsmith.bells.session.resources.hold_time_it
-import dev.justinsmith.bells.session.resources.next_change
-import dev.justinsmith.bells.session.resources.next_day_done
-import dev.justinsmith.bells.session.resources.next_plan
-import dev.justinsmith.bells.session.resources.next_progress
-import dev.justinsmith.bells.session.resources.next_skip
-import dev.justinsmith.bells.session.resources.next_title
-import dev.justinsmith.bells.session.resources.notice_block_skipped
-import dev.justinsmith.bells.session.resources.session_undo
-import dev.justinsmith.bells.ui.countLine
-import dev.justinsmith.bells.ui.liftName
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
@@ -31,6 +18,19 @@ import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.fadeThroughContent
+import dev.justinsmith.lift.session.resources.Res
+import dev.justinsmith.lift.session.resources.common_joined
+import dev.justinsmith.lift.session.resources.hold_time_it
+import dev.justinsmith.lift.session.resources.next_change
+import dev.justinsmith.lift.session.resources.next_day_done
+import dev.justinsmith.lift.session.resources.next_plan
+import dev.justinsmith.lift.session.resources.next_progress
+import dev.justinsmith.lift.session.resources.next_skip
+import dev.justinsmith.lift.session.resources.next_title
+import dev.justinsmith.lift.session.resources.notice_block_skipped
+import dev.justinsmith.lift.session.resources.session_undo
+import dev.justinsmith.lift.ui.countLine
+import dev.justinsmith.lift.ui.liftName
 import org.jetbrains.compose.resources.stringResource
 
 /**

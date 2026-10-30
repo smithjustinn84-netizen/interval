@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.domain
+package dev.justinsmith.lift.domain
 
 /** Block [index] of a program day, as programmed ([from]) and as the session left it ([to]). */
 data class BlockChange(val index: Int, val from: Block, val to: Block) {

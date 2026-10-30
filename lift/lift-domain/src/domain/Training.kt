@@ -1,9 +1,9 @@
-package dev.justinsmith.bells.domain
+package dev.justinsmith.lift.domain
 
 import kotlin.math.roundToLong
 
 /**
- * An exercise Bells logs: one of the [BuiltInExercise]s, one the user added ([CustomExercise]), or one a set
+ * An exercise Lift logs: one of the [BuiltInExercise]s, one the user added ([CustomExercise]), or one a set
  * names that this build can't ([UnknownExercise]). [perSide] ones are logged one side at a time, unless done
  * with two bells; [doubles] says whether they can be. Sets and programs store it by [key].
  */
@@ -332,12 +332,12 @@ data class LiftSession(
  */
 fun List<LiftSession>.setsOldestFirst(): List<SetLog> = asReversed().flatMap { it.sets }
 
-/** The bell sizes Bells offers, in kilograms: the common competition and cast-iron steps. */
+/** The bell sizes Lift offers, in kilograms: the common competition and cast-iron steps. */
 val standardBells: List<Double> =
     listOf(4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 20.0, 24.0, 28.0, 32.0, 36.0, 40.0, 44.0, 48.0)
 
 /**
- * A weight as Bells writes it, to the hundredth and no further than it needs: "24", "1.5", or a change plate's
+ * A weight as Lift writes it, to the hundredth and no further than it needs: "24", "1.5", or a change plate's
  * "1.25".
  */
 fun formatKg(kg: Double): String {

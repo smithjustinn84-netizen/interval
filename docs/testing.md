@@ -9,9 +9,9 @@ flowchart TD
     subgraph Pyramid ["Testing Pyramid & Execution Targets"]
         E2E["Journeys (journeys/*.xml)<br/>• Real Android emulator (amper-37) via android-CLI"]
         Acceptance["Acceptance specs (apps/app/ and lift/lift-nav/ test@jvm/acceptance)<br/>• A journey per spec, through the drivers, on the JVM in CI"]
-        AppFlows["Integration & App Flows (apps/app/test@jvm, lift/lift-nav/test@jvm)<br/>• AppContent(testKoin), bellsAppTest, full back stack"]
+        AppFlows["Integration & App Flows (apps/app/test@jvm, lift/lift-nav/test@jvm)<br/>• AppContent(testKoin), liftAppTest, full back stack"]
         ScreenUI["Compose UI Screen Tests (<feature>/test@jvm)<br/>• runUiTest(Window.Phone), setThemedContent, Skiko offscreen"]
-        Storage["Real Storage & Migration Tests (*-data/test@jvm)<br/>• Temp SQLite Room DB, schema migrations (AppMigrationTest, BellsMigrationTest)"]
+        Storage["Real Storage & Migration Tests (*-data/test@jvm)<br/>• Temp SQLite Room DB, schema migrations (AppMigrationTest, LiftMigrationTest)"]
         UnitTests["Logic & ViewModels (<module>/test)<br/>• kotlin.test, MainDispatcherTest, fake DAOs / repositories<br/>• Runs on JVM, Android local, and iOS Simulator"]
     end
 ```
@@ -24,7 +24,7 @@ A test lives in the module of what it tests, so `./kotlin test -m <module> -p jv
 |---|---|---|---|
 | Logic and ViewModels | `<module>/test/` (`interval-domain`, `lift-domain`, a feature's) | JVM, Android (local JVM), iOS simulator | `kotlin.test`, `kotlinx-coroutines-test` |
 | Compose behavior (one screen) | `<feature>/test@jvm/<feature>/XScreenTest.kt` | Desktop JVM | `runDesktopComposeUiTest` |
-| Lift's flows (its pages end to end) | `lift/lift-nav/test@jvm/` (`bellsAppTest`) | Desktop JVM | Lift's real entries over fake DI |
+| Lift's flows (its pages end to end) | `lift/lift-nav/test@jvm/` (`liftAppTest`) | Desktop JVM | Lift's real entries over fake DI |
 | Navigation (whole app) | `apps/app/test@jvm/AppNavigationTest.kt`, `LiftFlowTest.kt` | Desktop JVM | `AppContent` over fake DI |
 | Acceptance (a journey's spec) | `apps/app/test@jvm/acceptance/`, `lift/lift-nav/test@jvm/acceptance/` | Desktop JVM | `IntervalAcceptanceDriver`, `LiftAcceptanceDriver` |
 | End to end, on a device | `journeys/*.xml` | Android emulator, run by an agent | `android` CLI journeys |
@@ -104,9 +104,9 @@ that depends on the data module.
   - `fakePlatformModule(...)` binds the player and formatter for Koin; `fakeStorageModule(...)` binds a
     `FakeStorage` in place of the real `storageModule`.
   - `tabataPreset`, `hiitPreset`, `hangboardPreset`: the built-ins tests lean on, found by name.
-- **`lift-testing`** (`dev.justinsmith.bells.fakes`): `FakeBellsStorage` over the six fake DAOs, with
-  `repository()` and `finished(...)`; `FakeIntervalActivity`; `RecordingBeeper`; `fakeBellsPlatformModule`,
-  `fakeBellsStorageModule`; `bellsTestKoin(...)`, Lift's part of the container over them.
+- **`lift-testing`** (`dev.justinsmith.lift.fakes`): `FakeLiftStorage` over the six fake DAOs, with
+  `repository()` and `finished(...)`; `FakeIntervalActivity`; `RecordingBeeper`; `fakeLiftPlatformModule`,
+  `fakeLiftStorageModule`; `liftTestKoin(...)`, Lift's part of the container over them.
 - **`testKoin(...)`** (`apps/app/test/fakes/TestKoin.kt`): the app's real container over the fakes of both
   sides, with the `WallClock` fixed at `now` (or following `clock`), and a workout counting `timeSource`
   (real time, unless a test passes a `TestTimeSource`).
@@ -116,7 +116,7 @@ that depends on the data module.
 - **Real storage** is tested in `interval/interval-data/test@jvm/data/StorageTest.kt`: the repository over a DataStore
   and a Room database in a temp directory, with writes on `Dispatchers.IO`, including a restart, and
   `AppMigrationTest` opens databases left at an earlier version; Lift's are in `lift/lift-data/test@jvm/data/`
-  (`BellsRoomTest`, and `BellsMigrationTest` over its `schemas/`).
+  (`LiftRoomTest`, and `LiftMigrationTest` over its `schemas/`).
   `AppKoinStorageTest` (`apps/app/test@jvm/data/`) wires the real `storageModule` and rebuilds the container
   straight after closing it, as Android does when the Activity reopens in the same process. All are
   JVM-only because Room's Android in-memory builder needs a `Context`, and common tests also run as
@@ -130,14 +130,14 @@ that depends on the data module.
   `advance(duration)` for a running workout's time (which otherwise stands still), and `back()` (or
   `backInput`, for a gesture step by step), the system back gesture. Two runs over one `storage` are the
   app before and after a restart.
-- **`bellsAppTest(...)`** (`lift/lift-nav/test@jvm/ui/BellsUiTestHarness.kt`) hosts Lift's pages on a back stack of
-  their own through the same `liftEntries` the app composes, over `bellsTestKoin`; its fixture holds the
+- **`liftAppTest(...)`** (`lift/lift-nav/test@jvm/ui/LiftUiTestHarness.kt`) hosts Lift's pages on a back stack of
+  their own through the same `liftEntries` the app composes, over `liftTestKoin`; its fixture holds the
   storage, the clock, the beeps and `back()`, the system back gesture.
 
 ## Writing UI tests
 
 - Drive the stateless `XScreen(state, callbacks)` with a fixed state and callbacks that record
-  calls, in the feature's `test@jvm/`. Use `bellsAppTest` or `AppContent` only for flows and navigation.
+  calls, in the feature's `test@jvm/`. Use `liftAppTest` or `AppContent` only for flows and navigation.
 - Match on semantics first: text, `contentDescription`, `hasClickAction()`, `isDialog()`. Add a
   `testTag` only when an element would otherwise take more than three matchers. App code needs none so
   far; a test may still tag the boxes it draws itself.
@@ -210,7 +210,7 @@ When Room entities change or migrations are added:
 - Run `interval-data` tests: `./kotlin test -m interval-data -p jvm`
 - Run `lift-data` tests: `./kotlin test -m lift-data -p jvm`
 - Room schema exports are stored in `interval/interval-data/schemas/` and `lift/lift-data/schemas/`.
-- `AppMigrationTest` and `BellsMigrationTest` build databases against legacy schema versions, apply migrations, and
+- `AppMigrationTest` and `LiftMigrationTest` build databases against legacy schema versions, apply migrations, and
   verify that data rows and types are preserved without data loss.
 
 ## Acceptance tests (ATDD)
@@ -241,7 +241,7 @@ fun `a workout ended before its first round saves nothing`() = acceptanceScenari
 ```
 
 **The drivers.** `IntervalAcceptanceDriver` (over `appTest`, the whole app) and `LiftAcceptanceDriver`
-(over `bellsAppTest`) turn each step into Compose semantics. Both build on `AcceptanceSteps`
+(over `liftAppTest`) turn each step into Compose semantics. Both build on `AcceptanceSteps`
 (`core/core-testing/src@jvm/ui/`): `see`, `seeNo`, `tap`, `tapDescribed` and `scrollTo`. `acceptanceScenario` and
 `liftScenario` give a journey `JOURNEY_TIMEOUT` (3 minutes) rather than the 1 minute other UI tests get
 (`UI_TEST_TIMEOUT`): a long journey takes seconds locally but once ran past a minute on a busy CI runner.

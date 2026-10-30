@@ -1,14 +1,14 @@
-package dev.justinsmith.bells.history
+package dev.justinsmith.lift.history
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.bells.data.BellsRepository
-import dev.justinsmith.bells.domain.LiftSession
-import dev.justinsmith.bells.domain.PersonalRecord
-import dev.justinsmith.bells.domain.Program
-import dev.justinsmith.bells.domain.builtInPrograms
-import dev.justinsmith.bells.domain.newRecords
 import dev.justinsmith.interval.platform.TimestampFormatter
+import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.PersonalRecord
+import dev.justinsmith.lift.domain.Program
+import dev.justinsmith.lift.domain.builtInPrograms
+import dev.justinsmith.lift.domain.newRecords
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -29,7 +29,7 @@ data class LiftDetailUiState(
 /** The session stored under [uid], as History opens it, with what it set and a way to delete it. */
 class LiftDetailViewModel(
     private val uid: String,
-    private val repository: BellsRepository,
+    private val repository: LiftRepository,
     private val timestamps: TimestampFormatter,
 ) : ViewModel() {
     val state: StateFlow<LiftDetailUiState> = combine(repository.sessions, repository.customPrograms, ::build)

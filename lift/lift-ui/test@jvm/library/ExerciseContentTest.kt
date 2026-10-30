@@ -1,8 +1,8 @@
-package dev.justinsmith.bells.library
+package dev.justinsmith.lift.library
 
-import dev.justinsmith.bells.domain.BuiltInExercise
-import dev.justinsmith.bells.domain.muscles
-import dev.justinsmith.bells.ui.cues
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.muscles
+import dev.justinsmith.lift.ui.cues
 import kotlinx.coroutines.test.runTest
 import org.jetbrains.compose.resources.getStringArray
 import kotlin.test.Test

@@ -1,9 +1,9 @@
 package dev.justinsmith.interval.data
 
-import dev.justinsmith.bells.data.IntervalWorkout
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.lift.data.IntervalWorkout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlin.test.Test

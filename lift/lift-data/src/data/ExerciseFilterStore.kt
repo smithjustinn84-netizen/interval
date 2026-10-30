@@ -1,6 +1,6 @@
-package dev.justinsmith.bells.data
+package dev.justinsmith.lift.data
 
-import dev.justinsmith.bells.domain.ExerciseFilters
+import dev.justinsmith.lift.domain.ExerciseFilters
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

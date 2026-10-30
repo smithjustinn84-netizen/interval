@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.session
+package dev.justinsmith.lift.session
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -48,26 +48,6 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
-import dev.justinsmith.bells.domain.BuiltInExercise
-import dev.justinsmith.bells.domain.EmomClock
-import dev.justinsmith.bells.domain.EmomPhase
-import dev.justinsmith.bells.domain.EmomState
-import dev.justinsmith.bells.domain.Side
-import dev.justinsmith.bells.session.resources.Res
-import dev.justinsmith.bells.session.resources.common_cancel
-import dev.justinsmith.bells.session.resources.common_joined
-import dev.justinsmith.bells.session.resources.emom_get_ready
-import dev.justinsmith.bells.session.resources.emom_minute
-import dev.justinsmith.bells.session.resources.emom_next
-import dev.justinsmith.bells.session.resources.emom_rest
-import dev.justinsmith.bells.session.resources.emom_set_done
-import dev.justinsmith.bells.session.resources.emom_stop
-import dev.justinsmith.bells.session.resources.emom_stop_text
-import dev.justinsmith.bells.session.resources.emom_stop_title
-import dev.justinsmith.bells.session.resources.emom_work
-import dev.justinsmith.bells.session.resources.summary_done
-import dev.justinsmith.bells.ui.liftName
-import dev.justinsmith.bells.ui.setLine
 import dev.justinsmith.interval.platform.KeepScreenOn
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.ConfirmDialog
@@ -84,6 +64,26 @@ import dev.justinsmith.interval.ui.isLandscape
 import dev.justinsmith.interval.ui.ringClockSize
 import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.interval.ui.windowIsRoomy
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.EmomClock
+import dev.justinsmith.lift.domain.EmomPhase
+import dev.justinsmith.lift.domain.EmomState
+import dev.justinsmith.lift.domain.Side
+import dev.justinsmith.lift.session.resources.Res
+import dev.justinsmith.lift.session.resources.common_cancel
+import dev.justinsmith.lift.session.resources.common_joined
+import dev.justinsmith.lift.session.resources.emom_get_ready
+import dev.justinsmith.lift.session.resources.emom_minute
+import dev.justinsmith.lift.session.resources.emom_next
+import dev.justinsmith.lift.session.resources.emom_rest
+import dev.justinsmith.lift.session.resources.emom_set_done
+import dev.justinsmith.lift.session.resources.emom_stop
+import dev.justinsmith.lift.session.resources.emom_stop_text
+import dev.justinsmith.lift.session.resources.emom_stop_title
+import dev.justinsmith.lift.session.resources.emom_work
+import dev.justinsmith.lift.session.resources.summary_done
+import dev.justinsmith.lift.ui.liftName
+import dev.justinsmith.lift.ui.setLine
 import org.jetbrains.compose.resources.stringResource
 
 /**

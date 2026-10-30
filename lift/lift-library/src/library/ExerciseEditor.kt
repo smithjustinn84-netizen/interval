@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.library
+package dev.justinsmith.lift.library
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,42 +19,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.justinsmith.bells.data.BellsRepository
-import dev.justinsmith.bells.domain.CustomExercise
-import dev.justinsmith.bells.domain.Equipment
-import dev.justinsmith.bells.domain.ExerciseDraft
-import dev.justinsmith.bells.domain.Focus
-import dev.justinsmith.bells.domain.MAX_EXERCISE_CUES
-import dev.justinsmith.bells.domain.MAX_EXERCISE_NAME
-import dev.justinsmith.bells.domain.Measure
-import dev.justinsmith.bells.domain.SetLog
-import dev.justinsmith.bells.domain.canSave
-import dev.justinsmith.bells.domain.exerciseNameKey
-import dev.justinsmith.bells.domain.takenNames
-import dev.justinsmith.bells.library.resources.Res
-import dev.justinsmith.bells.library.resources.exercise_archive
-import dev.justinsmith.bells.library.resources.exercise_archive_hint
-import dev.justinsmith.bells.library.resources.exercise_archived_note
-import dev.justinsmith.bells.library.resources.exercise_cues
-import dev.justinsmith.bells.library.resources.exercise_cues_placeholder
-import dev.justinsmith.bells.library.resources.exercise_editor_new
-import dev.justinsmith.bells.library.resources.exercise_equipment
-import dev.justinsmith.bells.library.resources.exercise_locked
-import dev.justinsmith.bells.library.resources.exercise_name
-import dev.justinsmith.bells.library.resources.exercise_name_needed
-import dev.justinsmith.bells.library.resources.exercise_name_placeholder
-import dev.justinsmith.bells.library.resources.exercise_name_taken
-import dev.justinsmith.bells.library.resources.exercise_one_side
-import dev.justinsmith.bells.library.resources.exercise_one_side_hint
-import dev.justinsmith.bells.library.resources.exercise_restore
-import dev.justinsmith.bells.library.resources.exercise_save
-import dev.justinsmith.bells.library.resources.library_focus
-import dev.justinsmith.bells.library.resources.library_measured
-import dev.justinsmith.bells.library.resources.notice_exercise_saved
-import dev.justinsmith.bells.ui.ChoiceRow
-import dev.justinsmith.bells.ui.equipmentName
-import dev.justinsmith.bells.ui.focusName
-import dev.justinsmith.bells.ui.measureName
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalSheet
@@ -65,6 +29,42 @@ import dev.justinsmith.interval.ui.NameField
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ToggleRow
+import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.domain.CustomExercise
+import dev.justinsmith.lift.domain.Equipment
+import dev.justinsmith.lift.domain.ExerciseDraft
+import dev.justinsmith.lift.domain.Focus
+import dev.justinsmith.lift.domain.MAX_EXERCISE_CUES
+import dev.justinsmith.lift.domain.MAX_EXERCISE_NAME
+import dev.justinsmith.lift.domain.Measure
+import dev.justinsmith.lift.domain.SetLog
+import dev.justinsmith.lift.domain.canSave
+import dev.justinsmith.lift.domain.exerciseNameKey
+import dev.justinsmith.lift.domain.takenNames
+import dev.justinsmith.lift.library.resources.Res
+import dev.justinsmith.lift.library.resources.exercise_archive
+import dev.justinsmith.lift.library.resources.exercise_archive_hint
+import dev.justinsmith.lift.library.resources.exercise_archived_note
+import dev.justinsmith.lift.library.resources.exercise_cues
+import dev.justinsmith.lift.library.resources.exercise_cues_placeholder
+import dev.justinsmith.lift.library.resources.exercise_editor_new
+import dev.justinsmith.lift.library.resources.exercise_equipment
+import dev.justinsmith.lift.library.resources.exercise_locked
+import dev.justinsmith.lift.library.resources.exercise_name
+import dev.justinsmith.lift.library.resources.exercise_name_needed
+import dev.justinsmith.lift.library.resources.exercise_name_placeholder
+import dev.justinsmith.lift.library.resources.exercise_name_taken
+import dev.justinsmith.lift.library.resources.exercise_one_side
+import dev.justinsmith.lift.library.resources.exercise_one_side_hint
+import dev.justinsmith.lift.library.resources.exercise_restore
+import dev.justinsmith.lift.library.resources.exercise_save
+import dev.justinsmith.lift.library.resources.library_focus
+import dev.justinsmith.lift.library.resources.library_measured
+import dev.justinsmith.lift.library.resources.notice_exercise_saved
+import dev.justinsmith.lift.ui.ChoiceRow
+import dev.justinsmith.lift.ui.equipmentName
+import dev.justinsmith.lift.ui.focusName
+import dev.justinsmith.lift.ui.measureName
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -93,7 +93,7 @@ data class ExerciseEditorUiState(
  * draft left behind. The names taken and whether sets of it are logged follow the repository while it is open.
  */
 class ExerciseEditorViewModel(
-    private val repository: BellsRepository,
+    private val repository: LiftRepository,
     private val savedState: SavedStateHandle,
     private val openedUid: String?,
     private val openedName: String,

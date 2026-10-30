@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalTestApi::class)
 
-package dev.justinsmith.bells.programs
+package dev.justinsmith.lift.programs
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -12,9 +12,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
-import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.interval.ui.scrollToText
 import dev.justinsmith.interval.ui.waitForText
+import dev.justinsmith.lift.ui.liftAppTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -22,7 +22,7 @@ import kotlin.test.assertTrue
 /** Making a program, from Today through Programs and the editor, and following it. */
 class ProgramEditorTest {
     @Test
-    fun `a program made on the editor is saved and followed from Today`() = bellsAppTest { app ->
+    fun `a program made on the editor is saved and followed from Today`() = liftAppTest { app ->
         onNodeWithText("Follow a program").performClick()
         scrollToText("Dan John–inspired")
         scrollToText("New program")
@@ -58,7 +58,7 @@ class ProgramEditorTest {
     }
 
     @Test
-    fun `a block of a lift that can be doubled offers two bells`() = bellsAppTest { app ->
+    fun `a block of a lift that can be doubled offers two bells`() = liftAppTest { app ->
         onNodeWithText("Follow a program").performClick()
         scrollToText("New program")
         onNodeWithText("New program").performClick()
@@ -78,7 +78,7 @@ class ProgramEditorTest {
     }
 
     @Test
-    fun `a block can be of any exercise with the load it names`() = bellsAppTest { app ->
+    fun `a block can be of any exercise with the load it names`() = liftAppTest { app ->
         onNodeWithText("Follow a program").performClick()
         scrollToText("New program")
         onNodeWithText("New program").performClick()
@@ -105,7 +105,7 @@ class ProgramEditorTest {
     }
 
     @Test
-    fun `a program made can be changed and deleted`() = bellsAppTest { app ->
+    fun `a program made can be changed and deleted`() = liftAppTest { app ->
         onNodeWithText("Follow a program").performClick()
         scrollToText("New program")
         onNodeWithText("New program").performClick()
@@ -126,7 +126,7 @@ class ProgramEditorTest {
     }
 
     @Test
-    fun `removing a day or block offers Undo and Back asks before discarding edits`() = bellsAppTest {
+    fun `removing a day or block offers Undo and Back asks before discarding edits`() = liftAppTest {
         onNodeWithText("Follow a program").performClick()
         scrollToText("New program")
         onNodeWithText("New program").performClick()

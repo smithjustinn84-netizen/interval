@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.domain
+package dev.justinsmith.lift.domain
 
 /** Where a timed hold stands: counting in, holding, or over. */
 enum class HoldPhase { GetReady, Hold, Done }

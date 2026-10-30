@@ -1,12 +1,12 @@
-package dev.justinsmith.bells.session
+package dev.justinsmith.lift.session
 
-import dev.justinsmith.bells.domain.Exercise
-import dev.justinsmith.bells.domain.HoldClock
-import dev.justinsmith.bells.domain.HoldPhase
-import dev.justinsmith.bells.domain.Side
-import dev.justinsmith.bells.domain.other
-import dev.justinsmith.bells.platform.Beeper
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.lift.domain.Exercise
+import dev.justinsmith.lift.domain.HoldClock
+import dev.justinsmith.lift.domain.HoldPhase
+import dev.justinsmith.lift.domain.Side
+import dev.justinsmith.lift.domain.other
+import dev.justinsmith.lift.platform.Beeper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

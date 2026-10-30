@@ -1,7 +1,7 @@
 package dev.justinsmith.interval.model
 
-import dev.justinsmith.bells.domain.LiftSession
 import dev.justinsmith.interval.timer.Activity
+import dev.justinsmith.lift.domain.LiftSession
 
 /**
  * A finished kettlebell session from Lift, as History, the week, the streak and the goal count it. [title]

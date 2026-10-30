@@ -11,7 +11,7 @@ separation, compile-time modularity, unidirectional data flow, and offline-first
 The system is structured around two distinct workout domains unified within a shared application container:
 1. **Interval**: Cardio and interval timer engine (work/rest/rounds, natural language parser, sound/speech cues,
    routine planning, and foreground execution).
-2. **Bells**: Kettlebell and strength training engine (exercises, sets, EMOMs, hold clocks, rest alerts, built-in
+2. **Lift**: Kettlebell and strength training engine (exercises, sets, EMOMs, hold clocks, rest alerts, built-in
    programs, progression, and PR records).
 
 ```mermaid
@@ -40,7 +40,7 @@ graph TD
 
     subgraph UI ["Shared UI & Components"]
         IntervalUI["interval-ui"]
-        BellsUI["lift-ui"]
+        LiftUI["lift-ui"]
         Core["core (Theme, Tokens, NavigationArea, Components)"]
     end
 
@@ -49,9 +49,9 @@ graph TD
         IntervalDomain["interval-domain (Engine, Models)"]
         CorePlatform["core-platform (Clocks, Formatter, Storage Plumbing)"]
         CoreTime["core-time (Calendar & Clock Maths)"]
-        BellsData["lift-data (Room)"]
-        BellsPlatform["lift-platform (Beeper, RestAlerts)"]
-        BellsDomain["lift-domain (Programs, Models)"]
+        LiftData["lift-data (Room)"]
+        LiftPlatform["lift-platform (Beeper, RestAlerts)"]
+        LiftDomain["lift-domain (Programs, Models)"]
         IntervalPlatform["interval-platform (Cues, Background Services)"]
     end
 
@@ -68,18 +68,18 @@ graph TD
     History --> IntervalUI
     Settings --> IntervalUI
 
-    LiftEntry --> BellsUI
-    LiftToday --> BellsUI
-    LiftSession --> BellsUI
-    LiftLib --> BellsUI
+    LiftEntry --> LiftUI
+    LiftToday --> LiftUI
+    LiftSession --> LiftUI
+    LiftLib --> LiftUI
 
     IntervalUI --> Core
-    BellsUI --> Core
+    LiftUI --> Core
     Core --> CorePlatform
     CorePlatform --> CoreTime
     IntervalDomain --> CoreTime
     IntervalData --> CorePlatform
-    BellsData --> CorePlatform
+    LiftData --> CorePlatform
 
     Timer --> IntervalData
     Workout --> IntervalData
@@ -87,14 +87,14 @@ graph TD
     History --> IntervalData
     Settings --> IntervalData
 
-    LiftToday --> BellsData
-    LiftSession --> BellsData
-    LiftLib --> BellsData
+    LiftToday --> LiftData
+    LiftSession --> LiftData
+    LiftLib --> LiftData
 
     IntervalData --> IntervalDomain
-    BellsData --> BellsDomain
-    LiftSession --> BellsPlatform
-    BellsPlatform --> BellsData
+    LiftData --> LiftDomain
+    LiftSession --> LiftPlatform
+    LiftPlatform --> LiftData
     IntervalPlatform --> IntervalData
 ```
 
@@ -110,7 +110,7 @@ graph TD
    Where cross-domain interaction is needed (e.g. History counting Lift sessions or Today showing workout recaps),
    it is mediated via minimal interfaces in `lift-data`: `IntervalActivity` (what Lift reads of the interval side,
    implemented in `app`) and `LiftActivity` (what History, Plan and the workout read of Lift, implemented by
-   `BellsRepository`).
+   `LiftRepository`).
 3. **Pure Domains**: `interval-domain` and `lift-domain` contain only pure Kotlin models and calculation engines.
    They have no dependencies on Compose, Android, or third-party persistence libraries.
 4. **Offline-First & Local-Only**: All user data resides on device. There is no remote backend, telemetry, or user
@@ -210,12 +210,12 @@ All disk I/O is encapsulated behind repositories.
 - **`AppDatabase`** (`interval-data`):
   - Stores workout history (`HistoryEntity`), custom presets (`PresetEntity`), and planned routines (`PlannedEntity`).
   - Uses bundled SQLite (`sqlite-bundled`) and Room KSP generation for common code.
-- **`BellsDatabase`** (`lift-data`):
+- **`LiftDatabase`** (`lift-data`):
   - Stores logged lifting sessions, set details, personal records, custom exercises, followed programs, and gear inventory.
 - **Migration & Schemas**:
   - Every schema version bumps `@Database(version = N)` and adds a strictly validated migration.
   - Exported schema JSON files reside in `interval/interval-data/schemas/` and `lift/lift-data/schemas/`.
-  - Migration tests (`AppMigrationTest`, `BellsMigrationTest`) verify that earlier database versions migrate losslessly.
+  - Migration tests (`AppMigrationTest`, `LiftMigrationTest`) verify that earlier database versions migrate losslessly.
 
 ### 2. Preferences Storage (DataStore)
 - App configuration (theme mode, cue sounds, speech options, countdown times, body weight) is stored in DataStore Preferences.

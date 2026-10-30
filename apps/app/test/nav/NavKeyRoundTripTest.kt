@@ -1,16 +1,16 @@
 package dev.justinsmith.interval.nav
 
 import androidx.navigation3.runtime.NavKey
-import dev.justinsmith.bells.nav.ExerciseLibrary
-import dev.justinsmith.bells.nav.LiftDetail
-import dev.justinsmith.bells.nav.LiftTab
-import dev.justinsmith.bells.nav.Lifting
-import dev.justinsmith.bells.nav.OwnedBells
-import dev.justinsmith.bells.nav.ProgramEditor
-import dev.justinsmith.bells.nav.Programs
 import dev.justinsmith.interval.nav.About
 import dev.justinsmith.interval.nav.Licenses
 import dev.justinsmith.interval.navConfiguration
+import dev.justinsmith.lift.nav.ExerciseLibrary
+import dev.justinsmith.lift.nav.LiftDetail
+import dev.justinsmith.lift.nav.LiftTab
+import dev.justinsmith.lift.nav.Lifting
+import dev.justinsmith.lift.nav.OwnedBells
+import dev.justinsmith.lift.nav.ProgramEditor
+import dev.justinsmith.lift.nav.Programs
 import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
@@ -51,5 +51,13 @@ class NavKeyRoundTripTest {
         for (route in routes) {
             assertEquals(route, json.decodeFromString(serializer, json.encodeToString(serializer, route)))
         }
+    }
+
+    @Test
+    fun `a back stack saved before Lift's package was renamed still restores`() {
+        val saved = """{"type":"dev.justinsmith.bells.nav.LiftDetail","uid":"b1","fromHistory":true}"""
+        assertEquals<NavKey>(LiftDetail("b1", fromHistory = true), json.decodeFromString(serializer, saved))
+        val tab = """{"type":"dev.justinsmith.bells.nav.LiftTab"}"""
+        assertEquals<NavKey>(LiftTab, json.decodeFromString(serializer, tab))
     }
 }

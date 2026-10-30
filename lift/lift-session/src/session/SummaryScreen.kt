@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.session
+package dev.justinsmith.lift.session
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
@@ -34,18 +34,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
-import dev.justinsmith.bells.domain.SaveScope
-import dev.justinsmith.bells.session.resources.Res
-import dev.justinsmith.bells.session.resources.common_joined
-import dev.justinsmith.bells.session.resources.summary_done
-import dev.justinsmith.bells.session.resources.summary_program_finished
-import dev.justinsmith.bells.session.resources.summary_share
-import dev.justinsmith.bells.session.resources.summary_shared
-import dev.justinsmith.bells.session.resources.summary_streak
-import dev.justinsmith.bells.session.resources.summary_week_count
-import dev.justinsmith.bells.session.resources.summary_week_of_goal
-import dev.justinsmith.bells.session.resources.today_goal_met
-import dev.justinsmith.bells.ui.programName
 import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.Burst
@@ -57,6 +45,18 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.isLandscape
 import dev.justinsmith.interval.ui.rememberEntrance
 import dev.justinsmith.interval.ui.risingEnter
+import dev.justinsmith.lift.domain.SaveScope
+import dev.justinsmith.lift.session.resources.Res
+import dev.justinsmith.lift.session.resources.common_joined
+import dev.justinsmith.lift.session.resources.summary_done
+import dev.justinsmith.lift.session.resources.summary_program_finished
+import dev.justinsmith.lift.session.resources.summary_share
+import dev.justinsmith.lift.session.resources.summary_shared
+import dev.justinsmith.lift.session.resources.summary_streak
+import dev.justinsmith.lift.session.resources.summary_week_count
+import dev.justinsmith.lift.session.resources.summary_week_of_goal
+import dev.justinsmith.lift.session.resources.today_goal_met
+import dev.justinsmith.lift.ui.programName
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 

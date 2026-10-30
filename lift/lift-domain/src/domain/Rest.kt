@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.domain
+package dev.justinsmith.lift.domain
 
 /** A rest between sets at one moment: [secondsLeft] of its [seconds], rounded up, and how far through it is. */
 data class RestState(val seconds: Int, val secondsLeft: Int, val progress: Float)

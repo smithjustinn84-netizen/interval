@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.session
+package dev.justinsmith.lift.session
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Text
@@ -8,24 +8,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import dev.justinsmith.bells.domain.Band
-import dev.justinsmith.bells.domain.Equipment
-import dev.justinsmith.bells.domain.Exercise
-import dev.justinsmith.bells.domain.SetLog
-import dev.justinsmith.bells.domain.steppedBand
-import dev.justinsmith.bells.domain.steppedKg
-import dev.justinsmith.bells.session.resources.Res
-import dev.justinsmith.bells.session.resources.next_change
-import dev.justinsmith.bells.session.resources.next_how_to
-import dev.justinsmith.bells.session.resources.next_how_to_cd
-import dev.justinsmith.bells.session.resources.next_last_time
-import dev.justinsmith.bells.ui.LoadStepper
-import dev.justinsmith.bells.ui.liftName
-import dev.justinsmith.bells.ui.loadLine
-import dev.justinsmith.bells.ui.platesLine
-import dev.justinsmith.bells.ui.setLine
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.QuietTextButton
+import dev.justinsmith.lift.domain.Band
+import dev.justinsmith.lift.domain.Equipment
+import dev.justinsmith.lift.domain.Exercise
+import dev.justinsmith.lift.domain.SetLog
+import dev.justinsmith.lift.domain.steppedBand
+import dev.justinsmith.lift.domain.steppedKg
+import dev.justinsmith.lift.session.resources.Res
+import dev.justinsmith.lift.session.resources.next_change
+import dev.justinsmith.lift.session.resources.next_how_to
+import dev.justinsmith.lift.session.resources.next_how_to_cd
+import dev.justinsmith.lift.session.resources.next_last_time
+import dev.justinsmith.lift.ui.LoadStepper
+import dev.justinsmith.lift.ui.liftName
+import dev.justinsmith.lift.ui.loadLine
+import dev.justinsmith.lift.ui.platesLine
+import dev.justinsmith.lift.ui.setLine
 import org.jetbrains.compose.resources.stringResource
 
 // The pieces a card about one set shares: Up next on a program day, and Next set in a free session.

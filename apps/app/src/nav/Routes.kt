@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 
 // Every destination is a NavKey. A new one must also be registered in `navConfiguration`
 // (App.kt) and given an `entry<…>` in the entry provider, or it cannot be saved or shown. Lift's keys
-// live in `lift-nav` (`dev.justinsmith.bells.nav`); `Tab` in core.
+// live in `lift-nav` (`dev.justinsmith.lift.nav`); `Tab` in core.
 
 /** Home: the current workout's shape as three steppers, Start, and the way to the presets. */
 @Serializable

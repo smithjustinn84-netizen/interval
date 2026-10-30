@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.ui
+package dev.justinsmith.lift.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row

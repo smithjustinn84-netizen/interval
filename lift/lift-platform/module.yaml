@@ -11,7 +11,7 @@ apply:
   - //templates/lib.module-template.yaml
 
 dependencies:
-  # Exported: the platform module supplies `RoomDatabase.Builder<BellsDatabase>`.
+  # Exported: the platform module supplies `RoomDatabase.Builder<LiftDatabase>`.
   - //lift/lift-data: exported
   # `epochMillisNow`, `formatClock`, and Android's notification helpers.
   - //core/core-platform
@@ -32,4 +32,4 @@ settings:
   compose:
     enabled: true
     resources:
-      packageName: dev.justinsmith.bells.platform.resources
+      packageName: dev.justinsmith.lift.platform.resources

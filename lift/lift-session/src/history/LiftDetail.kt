@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.history
+package dev.justinsmith.lift.history
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,23 +15,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.justinsmith.bells.session.SessionStats
-import dev.justinsmith.bells.session.resources.Res
-import dev.justinsmith.bells.session.resources.common_cancel
-import dev.justinsmith.bells.session.resources.common_joined
-import dev.justinsmith.bells.session.resources.history_close_cd
-import dev.justinsmith.bells.session.resources.history_delete
-import dev.justinsmith.bells.session.resources.history_delete_text
-import dev.justinsmith.bells.session.resources.history_delete_title
-import dev.justinsmith.bells.session.resources.history_more_options_cd
-import dev.justinsmith.bells.session.resources.history_program_day
-import dev.justinsmith.bells.session.resources.history_share
-import dev.justinsmith.bells.session.resources.notice_session_deleted
-import dev.justinsmith.bells.session.resources.session_undo
-import dev.justinsmith.bells.session.sessionShareText
-import dev.justinsmith.bells.ui.liftName
-import dev.justinsmith.bells.ui.programName
-import dev.justinsmith.bells.ui.setLine
 import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.ConfirmDialog
@@ -47,6 +30,23 @@ import dev.justinsmith.interval.ui.NoticeAction
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
+import dev.justinsmith.lift.session.SessionStats
+import dev.justinsmith.lift.session.resources.Res
+import dev.justinsmith.lift.session.resources.common_cancel
+import dev.justinsmith.lift.session.resources.common_joined
+import dev.justinsmith.lift.session.resources.history_close_cd
+import dev.justinsmith.lift.session.resources.history_delete
+import dev.justinsmith.lift.session.resources.history_delete_text
+import dev.justinsmith.lift.session.resources.history_delete_title
+import dev.justinsmith.lift.session.resources.history_more_options_cd
+import dev.justinsmith.lift.session.resources.history_program_day
+import dev.justinsmith.lift.session.resources.history_share
+import dev.justinsmith.lift.session.resources.notice_session_deleted
+import dev.justinsmith.lift.session.resources.session_undo
+import dev.justinsmith.lift.session.sessionShareText
+import dev.justinsmith.lift.ui.liftName
+import dev.justinsmith.lift.ui.programName
+import dev.justinsmith.lift.ui.setLine
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 

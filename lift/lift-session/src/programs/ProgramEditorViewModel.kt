@@ -1,21 +1,21 @@
-package dev.justinsmith.bells.programs
+package dev.justinsmith.lift.programs
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.bells.data.BellsRepository
-import dev.justinsmith.bells.data.ExerciseFilterStore
-import dev.justinsmith.bells.data.decodeDraftDays
-import dev.justinsmith.bells.data.encodeDays
-import dev.justinsmith.bells.domain.CustomExercise
-import dev.justinsmith.bells.domain.ExerciseFilters
-import dev.justinsmith.bells.domain.ProgramDraft
-import dev.justinsmith.bells.domain.ProgramKey
-import dev.justinsmith.bells.domain.bands
-import dev.justinsmith.bells.domain.offeredBands
-import dev.justinsmith.bells.domain.setsOldestFirst
-import dev.justinsmith.bells.domain.standardBells
-import dev.justinsmith.bells.library.LibraryList
+import dev.justinsmith.lift.data.ExerciseFilterStore
+import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.data.decodeDraftDays
+import dev.justinsmith.lift.data.encodeDays
+import dev.justinsmith.lift.domain.CustomExercise
+import dev.justinsmith.lift.domain.ExerciseFilters
+import dev.justinsmith.lift.domain.ProgramDraft
+import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.bands
+import dev.justinsmith.lift.domain.offeredBands
+import dev.justinsmith.lift.domain.setsOldestFirst
+import dev.justinsmith.lift.domain.standardBells
+import dev.justinsmith.lift.library.LibraryList
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -36,7 +36,7 @@ data class ProgramEditorUiState(
 
 /** Makes a program, or changes the one the user made under [uid], until it is saved or deleted. */
 class ProgramEditorViewModel(
-    private val repository: BellsRepository,
+    private val repository: LiftRepository,
     private val filters: ExerciseFilterStore,
     uid: String?,
     private val savedState: SavedStateHandle = SavedStateHandle(),

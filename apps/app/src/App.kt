@@ -42,12 +42,6 @@ import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.ui.NavDisplay
 import androidx.navigation3.ui.defaultPredictivePopTransitionSpec
 import androidx.savedstate.serialization.SavedStateConfiguration
-import dev.justinsmith.bells.data.BellsRepository
-import dev.justinsmith.bells.nav.LiftDetail
-import dev.justinsmith.bells.nav.LiftTab
-import dev.justinsmith.bells.nav.Lifting
-import dev.justinsmith.bells.nav.liftEntries
-import dev.justinsmith.bells.nav.liftRoutes
 import dev.justinsmith.interval.about.AboutRoute
 import dev.justinsmith.interval.about.LicensesRoute
 import dev.justinsmith.interval.data.IntervalRepository
@@ -96,6 +90,12 @@ import dev.justinsmith.interval.ui.rememberNavigationArea
 import dev.justinsmith.interval.ui.rememberNotices
 import dev.justinsmith.interval.ui.tabScenes
 import dev.justinsmith.interval.workout.WorkoutRoute
+import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.nav.LiftDetail
+import dev.justinsmith.lift.nav.LiftTab
+import dev.justinsmith.lift.nav.Lifting
+import dev.justinsmith.lift.nav.liftEntries
+import dev.justinsmith.lift.nav.liftRoutes
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.serialization.modules.SerializersModule
@@ -393,7 +393,7 @@ private fun appEntries(
  * True once both stores are read: the interval side's and Lift's. Until then the app draws nothing, so
  * no screen starts from defaults.
  */
-private fun storageReady(interval: IntervalRepository, lift: BellsRepository): Flow<Boolean> =
+private fun storageReady(interval: IntervalRepository, lift: LiftRepository): Flow<Boolean> =
     combine(interval.ready, lift.ready) { intervalReady, liftReady -> intervalReady && liftReady }
 
 /** Starts a workout now, by [clock], unless one is on top already: a double tap on Start must not stack two. */

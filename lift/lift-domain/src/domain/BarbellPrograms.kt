@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.domain
+package dev.justinsmith.lift.domain
 
 /**
  * The built-in barbell programs. None names a load: the first session starts on the empty bar (or what was

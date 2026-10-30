@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalTestApi::class)
 
-package dev.justinsmith.bells.library
+package dev.justinsmith.lift.library
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
@@ -13,16 +13,16 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
-import dev.justinsmith.bells.data.CustomExerciseEntity
-import dev.justinsmith.bells.fakes.FakeBellsStorage
-import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.interval.ui.waitForText
+import dev.justinsmith.lift.data.CustomExerciseEntity
+import dev.justinsmith.lift.fakes.FakeLiftStorage
+import dev.justinsmith.lift.ui.liftAppTest
 import kotlin.test.Test
 
 /** The library from Lift: searching, narrowing and clearing, over the whole app on fakes. */
 class ExerciseLibraryTest {
     @Test
-    fun `the library opens from Lift and finds an exercise however it is typed`() = bellsAppTest {
+    fun `the library opens from Lift and finds an exercise however it is typed`() = liftAppTest {
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
         onNodeWithText("94 exercises").assertExists()
@@ -38,7 +38,7 @@ class ExerciseLibraryTest {
     }
 
     @Test
-    fun `filters narrow within a facet by any and across facets by all`() = bellsAppTest {
+    fun `filters narrow within a facet by any and across facets by all`() = liftAppTest {
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
         onNodeWithText("Mat").performClick()
@@ -52,7 +52,7 @@ class ExerciseLibraryTest {
     }
 
     @Test
-    fun `nothing matching says so with the search`() = bellsAppTest {
+    fun `nothing matching says so with the search`() = liftAppTest {
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
         onNode(hasSetTextAction()).performTextInput("zercher carry")
@@ -62,7 +62,7 @@ class ExerciseLibraryTest {
     }
 
     @Test
-    fun `the filters set on the library narrow the Log sheet's picker too`() = bellsAppTest { app ->
+    fun `the filters set on the library narrow the Log sheet's picker too`() = liftAppTest { app ->
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
         onNodeWithText("Band").performClick()
@@ -77,8 +77,8 @@ class ExerciseLibraryTest {
     }
 
     @Test
-    fun `show archived on the library leaves the Log sheet without them`() = bellsAppTest(
-        storage = FakeBellsStorage().apply {
+    fun `show archived on the library leaves the Log sheet without them`() = liftAppTest(
+        storage = FakeLiftStorage().apply {
             exercises.rows.value = listOf(
                 CustomExerciseEntity("e1", "Copenhagen plank", "Bodyweight", "Time", true, "Core", "", true, 0),
             )

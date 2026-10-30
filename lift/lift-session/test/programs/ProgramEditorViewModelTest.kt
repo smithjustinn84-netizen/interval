@@ -1,12 +1,12 @@
 @file:OptIn(ExperimentalCoroutinesApi::class)
 
-package dev.justinsmith.bells.programs
+package dev.justinsmith.lift.programs
 
 import androidx.lifecycle.SavedStateHandle
-import dev.justinsmith.bells.data.ExerciseFilterStore
-import dev.justinsmith.bells.domain.ProgramDraft
-import dev.justinsmith.bells.domain.ProgramKey
-import dev.justinsmith.bells.fakes.FakeBellsStorage
+import dev.justinsmith.lift.data.ExerciseFilterStore
+import dev.justinsmith.lift.domain.ProgramDraft
+import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -21,7 +21,7 @@ import kotlin.test.assertTrue
 
 /** The program editor: a new program's draft, saving, changing one already saved, deleting it, and the saved state. */
 class ProgramEditorViewModelTest {
-    private val storage = FakeBellsStorage()
+    private val storage = FakeLiftStorage()
     private val repository = storage.repository()
     private val filters = ExerciseFilterStore()
 

@@ -1,15 +1,15 @@
 @file:OptIn(ExperimentalCoroutinesApi::class)
 
-package dev.justinsmith.bells.programs
+package dev.justinsmith.lift.programs
 
-import dev.justinsmith.bells.data.BellsRepository
-import dev.justinsmith.bells.data.FollowingEntity
-import dev.justinsmith.bells.data.SessionEntity
-import dev.justinsmith.bells.data.SetEntity
-import dev.justinsmith.bells.domain.BuiltInExercise
-import dev.justinsmith.bells.domain.ProgramId
-import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
+import dev.justinsmith.lift.data.FollowingEntity
+import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.data.SessionEntity
+import dev.justinsmith.lift.data.SetEntity
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,7 +25,7 @@ import kotlin.test.assertTrue
 
 class ProgramProgressViewModelTest {
     private val program = ProgramId.GobletSquatRow.name
-    private val storage = FakeBellsStorage().apply {
+    private val storage = FakeLiftStorage().apply {
         following.row.value = FollowingEntity(programId = program, startedAtEpochMillis = 0)
         sessions.sessions.value = listOf(
             SessionEntity("d1", 0, 600_000, "Goblet squat", 600_000, programId = program, programDay = 1),
@@ -35,7 +35,7 @@ class ProgramProgressViewModelTest {
         }
     }
     private val repository = with(storage) {
-        BellsRepository(
+        LiftRepository(
             sessions,
             bells,
             following,

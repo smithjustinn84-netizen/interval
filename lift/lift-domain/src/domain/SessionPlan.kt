@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.domain
+package dev.justinsmith.lift.domain
 
 /**
  * Today's take on one of a program day's blocks, as the session changed it. [block] is the block as it now

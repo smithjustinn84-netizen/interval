@@ -111,12 +111,12 @@ interval/
 │   ├── interval-history/  # History calendar, training log, routine planner & reminders
 │   └── interval-settings/ # Settings sheet, cues toggle, theme selector, data export
 │
-├── lift/                # Lift, the strength side (code in dev.justinsmith.bells)
+├── lift/                # Lift, the strength side (code in dev.justinsmith.lift)
 │   ├── lift-domain/     # Exercises, programs, EMOM/hold clocks, PRs
-│   ├── lift-data/       # Room database (BellsDatabase), repository, the ports to the interval side
+│   ├── lift-data/       # Room database (LiftDatabase), repository, the ports to the interval side
 │   ├── lift-platform/   # Beeper, rest alert service, platform Koin module
 │   ├── lift-ui/         # Lift widgets, exercise formatters, cues mapping
-│   ├── lift-testing/    # FakeBellsStorage, RecordingBeeper, fake DAOs
+│   ├── lift-testing/    # FakeLiftStorage, RecordingBeeper, fake DAOs
 │   ├── lift-today/      # Lift tab, gear inventory (bells, bar, bands, records)
 │   ├── lift-session/    # Active session logger, rest clocks, programs & progress
 │   ├── lift-library/    # Exercise library, search, filters, exercise editor

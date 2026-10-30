@@ -62,8 +62,10 @@ Koin, and `settings.compose`; `room-lib`: + Room, the bundled driver, `-Xexpect-
 Modules sit in a folder per side, one level deep: `core/`, `interval/`, `lift/`, `apps/` and `tooling/`. A
 module's name is its own folder's, unique across the project, so `-m` takes it (`-m lift-data`). A dependency is
 its path from the root (`//lift/lift-data`), and `project.yaml` lists every path. `./kotlin show modules` gives
-each one's `description:`. Lift's modules are `lift-*` while its code keeps the `dev.justinsmith.bells`
-packages (and `Bells*` class names).
+each one's `description:`. Lift's code is in the `dev.justinsmith.lift` packages (`LiftRepository`,
+`LiftDatabase`, `liftAppTest`). It was called Bells, which still shows in three places, each kept on purpose:
+the database file (`bells.db`), the serial names that its route keys are saved under (`@SerialName`, in
+`LiftRoutes.kt`) and the schema history in `LiftDatabase`.
 
 ```
 core/
@@ -104,19 +106,19 @@ interval/            the interval timer
                      the other; `PlanReminderScheduler` (`historyModule`, di/) keeps the platform's reminders
                      in step with the plan
 
-lift/                Lift, the strength side (packages `dev.justinsmith.bells.*`)
-  lift-domain        Lift's pure domain (`dev.justinsmith.bells.domain`): exercises, programs, sets and
+lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
+  lift-domain        Lift's pure domain (`dev.justinsmith.lift.domain`): exercises, programs, sets and
                      sessions, records, `EmomClock`/`HoldClock`/`RestClock`, suggestions. No dependencies
-  lift-data          `BellsRepository`, `BellsDatabase` (Room, KSP, `schemas/`), `IntervalActivity` (what Lift
+  lift-data          `LiftRepository`, `LiftDatabase` (Room, KSP, `schemas/`), `IntervalActivity` (what Lift
                      reads of the interval side; `app` binds it), `LiftActivity` (what the interval side reads
-                     of Lift; `BellsRepository` is it), `bellsModules` (di/). No Compose
+                     of Lift; `LiftRepository` is it), `liftModules` (di/). No Compose
   lift-platform      `Beeper`, `RestAlerts` (+ Android's `RestService`), the rest notification's words, and each
-                     platform's `rememberBellsPlatformModule` (the database builder too); Lift's `interval-platform`
+                     platform's `rememberLiftPlatformModule` (the database builder too); Lift's `interval-platform`
   lift-ui            Lift's words and widgets (`exerciseName`, `setLine`, `programName`, `LoadPicker`, `Stepper`,
                      `SessionStats`), the built-ins' cues (`cues.xml`, mapped in `ExerciseCues.kt`); most of
                      Lift's strings
-  lift-testing       `FakeBellsStorage` and the fake DAOs, `FakeIntervalActivity`, `RecordingBeeper`,
-                     `bellsTestKoin`
+  lift-testing       `FakeLiftStorage` and the fake DAOs, `FakeIntervalActivity`, `RecordingBeeper`,
+                     `liftTestKoin`
   lift-today         the Lift tab and the gear (bells, bar, bands, records)
   lift-session       the session (log sheet, EMOM, hold and rest timers, plan sheets, summary), the programs
                      and their editor and progress (they share the block editor), a finished session's page
@@ -140,7 +142,7 @@ tooling/
 Dependencies point toward `core/`: a feature depends on its side's `*-ui`, `*-data` and `*-domain` (through
 `exported`), `app` on every feature and `lift-nav`, the interval side on `lift-data`/`lift-domain`/`lift-ui`
 where History and the workout count Lift's sessions (their ViewModels take `LiftActivity`, never the whole
-`BellsRepository`), and `lift-nav` never on anything of the interval side. `tools/check_module_rules.py`
+`LiftRepository`), and `lift-nav` never on anything of the interval side. `tools/check_module_rules.py`
 enforces this in CI: `lift/` never sees `interval/`, the pure layers (`core-time`, `core-platform`, the domains
 and data modules) take no Compose, the data modules depend on `core-platform` rather than `core`, the
 `*-testing` modules appear only under `test-dependencies`, and a feature depends on another only where its
@@ -173,7 +175,7 @@ toolchain (`$compose.*`).
   `rememberViewModelStoreNavEntryDecorator`.
 - **DI is Koin DSL** (no annotations/KSP) in an isolated container assembled in `apps/app/src/di/AppKoin.kt`
   (`appModules`) from each side's modules: `storageModule`/`dataModule` in `interval/interval-data/src/di/`,
-  `historyModule` in `interval/interval-history/src/di/`, `bellsModules` in `lift/lift-data/src/di/`, and the platform
+  `historyModule` in `interval/interval-history/src/di/`, `liftModules` in `lift/lift-data/src/di/`, and the platform
   modules each platform builds in composition (`interval-platform`, `lift-platform`). Add a
   module per domain. Constructor-inject everything; keep platform calls (the clock, cues, storage) behind
   injected interfaces (`WallClock`, `CuePlayer`, `PlatformStorage`) so tests can fake them.
@@ -189,7 +191,7 @@ toolchain (`$compose.*`).
 - **Text**: every user-facing string lives in the `composeResources/values/strings.xml` of the module whose
   screens say it, under its own `Res` (`settings.compose.resources.packageName` is
   `<the module's code package>.resources`, such as `dev.justinsmith.interval.history.resources` and, for
-  `lift-session`, `dev.justinsmith.bells.session.resources`; `exposedAccessors` only where another module reads it).
+  `lift-session`, `dev.justinsmith.lift.session.resources`; `exposedAccessors` only where another module reads it).
   A key two modules say is in both files. ViewModels and
   domain code expose typed data (enums, sealed types like `NextUp`/`HistoryDay`, numbers, clock strings
   like `"0:30"`); screens put it into words with `stringResource`/`pluralStringResource`. Spoken cues are
@@ -244,7 +246,7 @@ Strategy, commands and limits: [docs/testing.md](docs/testing.md).
   `./kotlin build` compiles the iOS tests, so keep commas out of common test names.
 - **Compose UI tests go in `test@jvm/` only.** Common tests also run as Android local tests,
   where `runComposeUiTest` fails (no Robolectric). A screen test drives its stateless `XScreen` in the
-  feature's module; Lift's flows (`bellsAppTest`) live in `lift/lift-nav/test@jvm/`, the app's (`appTest`, over
+  feature's module; Lift's flows (`liftAppTest`) live in `lift/lift-nav/test@jvm/`, the app's (`appTest`, over
   `AppContent(testKoin())`) in `apps/app/test@jvm/`.
 - **Acceptance tests (ATDD)**: every journey that needs no device has a spec, the interval side's in
   `apps/app/test@jvm/acceptance/` (`acceptanceScenario`, `IntervalAcceptanceDriver`), Lift's in
@@ -286,7 +288,7 @@ Strategy, commands and limits: [docs/testing.md](docs/testing.md).
   the two together. `detekt.yml` holds only overrides of detekt's defaults and is validated, so an unknown
   key fails the check. Rules run without type resolution (`--analysis-mode light`). Suppress with
   `@Suppress("detekt.RuleName")`. HTML/SARIF reports land in `build/tasks/_<module>_detekt@detekt-plugin/`.
-  Its package rule takes `dev.justinsmith.interval` as the root and excludes `lift-*` (Lift keeps `dev.justinsmith.bells`).
+  Its package rule takes `dev.justinsmith.interval` as the root and excludes `lift-*` (Lift's root is `dev.justinsmith.lift`).
 - **The lint plugin needs `slf4j-nop`**: ktlint's rules bind kotlin-logging to slf4j at class-init time.
 - `./kotlin clean` deletes the tracked `apps/iosApp/module.xcodeproj/xcshareddata/xcschemes/app.xcscheme`; the next
   iOS build fails once, regenerates it unchanged, then passes.

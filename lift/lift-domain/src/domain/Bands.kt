@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.domain
+package dev.justinsmith.lift.domain
 
 /** The colours bands come in, as the packets mark them. */
 enum class BandColour { Yellow, Red, Green, Blue, Black, Purple, Orange, Grey }

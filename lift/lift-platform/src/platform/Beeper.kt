@@ -1,6 +1,6 @@
-package dev.justinsmith.bells.platform
+package dev.justinsmith.lift.platform
 
-import dev.justinsmith.bells.domain.EmomCue
+import dev.justinsmith.lift.domain.EmomCue
 
 /**
  * Plays an EMOM's cues as short tones, mixed over the user's music. Implementations swallow platform

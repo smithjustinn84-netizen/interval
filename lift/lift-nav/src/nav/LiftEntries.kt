@@ -1,23 +1,23 @@
 @file:OptIn(ExperimentalMaterial3AdaptiveApi::class)
 
-package dev.justinsmith.bells.nav
+package dev.justinsmith.lift.nav
 
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
-import dev.justinsmith.bells.gear.GearRoute
-import dev.justinsmith.bells.history.LiftDetailRoute
-import dev.justinsmith.bells.library.ExerciseLibraryRoute
-import dev.justinsmith.bells.programs.ProgramEditorRoute
-import dev.justinsmith.bells.programs.ProgramProgressRoute
-import dev.justinsmith.bells.programs.ProgramsRoute
-import dev.justinsmith.bells.session.SessionRoute
-import dev.justinsmith.bells.today.TodayRoute
 import dev.justinsmith.interval.nav.push
 import dev.justinsmith.interval.ui.PageKind
 import dev.justinsmith.interval.ui.pageKind
+import dev.justinsmith.lift.gear.GearRoute
+import dev.justinsmith.lift.history.LiftDetailRoute
+import dev.justinsmith.lift.library.ExerciseLibraryRoute
+import dev.justinsmith.lift.programs.ProgramEditorRoute
+import dev.justinsmith.lift.programs.ProgramProgressRoute
+import dev.justinsmith.lift.programs.ProgramsRoute
+import dev.justinsmith.lift.session.SessionRoute
+import dev.justinsmith.lift.today.TodayRoute
 
 /**
  * The screen for each Lift key, and what each screen's actions do to the [backStack]. A finished session

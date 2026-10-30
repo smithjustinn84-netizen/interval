@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalTestApi::class)
 
-package dev.justinsmith.bells.ui
+package dev.justinsmith.lift.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
@@ -21,14 +21,6 @@ import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventDispatcherOwner
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import androidx.savedstate.serialization.SavedStateConfiguration
-import dev.justinsmith.bells.fakes.FakeBellsStorage
-import dev.justinsmith.bells.fakes.FakeIntervalActivity
-import dev.justinsmith.bells.fakes.RecordingBeeper
-import dev.justinsmith.bells.fakes.bellsTestKoin
-import dev.justinsmith.bells.fakes.fakeBellsPlatformModule
-import dev.justinsmith.bells.nav.LiftTab
-import dev.justinsmith.bells.nav.liftEntries
-import dev.justinsmith.bells.nav.liftRoutes
 import dev.justinsmith.interval.fakes.RecordingSharer
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LocalNotices
@@ -37,6 +29,14 @@ import dev.justinsmith.interval.ui.UI_TEST_TIMEOUT
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.rememberNotices
 import dev.justinsmith.interval.ui.runUiTest
+import dev.justinsmith.lift.fakes.FakeIntervalActivity
+import dev.justinsmith.lift.fakes.FakeLiftStorage
+import dev.justinsmith.lift.fakes.RecordingBeeper
+import dev.justinsmith.lift.fakes.fakeLiftPlatformModule
+import dev.justinsmith.lift.fakes.liftTestKoin
+import dev.justinsmith.lift.nav.LiftTab
+import dev.justinsmith.lift.nav.liftEntries
+import dev.justinsmith.lift.nav.liftRoutes
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import org.koin.compose.KoinIsolatedContext
@@ -45,7 +45,7 @@ import java.util.concurrent.atomic.AtomicLong
 import kotlin.time.Duration
 
 /** Sets [content] inside the dark theme. */
-fun DesktopComposeUiTest.setBellsContent(content: @Composable () -> Unit) {
+fun DesktopComposeUiTest.setLiftContent(content: @Composable () -> Unit) {
     setContent { IntervalTheme(darkTheme = true, content = content) }
 }
 
@@ -53,8 +53,8 @@ fun DesktopComposeUiTest.setBellsContent(content: @Composable () -> Unit) {
  * What a whole-app test drives: the fake storage under the app, its clock, the beeps it played, what it
  * offered to share, and [back], the system back gesture.
  */
-class BellsAppFixture(
-    val storage: FakeBellsStorage,
+class LiftAppFixture(
+    val storage: FakeLiftStorage,
     val clock: AtomicLong,
     val beeper: RecordingBeeper,
     /** What the pages offered to share. */
@@ -67,14 +67,14 @@ class BellsAppFixture(
     }
 }
 
-/** Lift's keys alone: the app's own live in `app`, which Bells can't see. */
+/** Lift's keys alone: the app's own live in `app`, which Lift can't see. */
 private val liftNavConfiguration = SavedStateConfiguration {
     serializersModule = SerializersModule { polymorphic(NavKey::class) { liftRoutes() } }
 }
 
-/** Bells' pages as the app wires them ([liftEntries]), on a back stack of their own, so tests drive them end to end. */
+/** Lift's pages as the app wires them ([liftEntries]), on a back stack of their own, so tests drive them end to end. */
 @Composable
-private fun BellsHost(koin: KoinApplication, back: NavigationEventDispatcherOwner) {
+private fun LiftHost(koin: KoinApplication, back: NavigationEventDispatcherOwner) {
     KoinIsolatedContext(context = koin) {
         val backStack = rememberNavBackStack(liftNavConfiguration, LiftTab)
         val notices = rememberNotices()
@@ -99,20 +99,20 @@ private fun BellsHost(koin: KoinApplication, back: NavigationEventDispatcherOwne
     }
 }
 
-/** Bells' pages, real ViewModels and repository, over fake storage and platform services. */
-fun bellsAppTest(
-    storage: FakeBellsStorage = FakeBellsStorage(),
+/** Lift's pages, real ViewModels and repository, over fake storage and platform services. */
+fun liftAppTest(
+    storage: FakeLiftStorage = FakeLiftStorage(),
     intervals: FakeIntervalActivity = FakeIntervalActivity(),
     window: Window = Window.Phone,
     timeout: Duration = UI_TEST_TIMEOUT,
-    block: suspend DesktopComposeUiTest.(BellsAppFixture) -> Unit,
+    block: suspend DesktopComposeUiTest.(LiftAppFixture) -> Unit,
 ) = runUiTest(window, timeout) {
     val clock = AtomicLong(0L)
     val beeper = RecordingBeeper()
     val sharer = RecordingSharer()
-    val koin = bellsTestKoin(
+    val koin = liftTestKoin(
         storage,
-        fakeBellsPlatformModule(beeper = beeper),
+        fakeLiftPlatformModule(beeper = beeper),
         now = clock::get,
         intervals = intervals,
         sharer = sharer,
@@ -123,8 +123,8 @@ fun bellsAppTest(
     val input = DirectNavigationEventInput()
     owner.navigationEventDispatcher.addInput(input)
     try {
-        setContent { BellsHost(koin, owner) }
-        block(BellsAppFixture(storage, clock, beeper, sharer, input))
+        setContent { LiftHost(koin, owner) }
+        block(LiftAppFixture(storage, clock, beeper, sharer, input))
     } finally {
         koin.close()
     }

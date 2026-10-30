@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.acceptance
+package dev.justinsmith.lift.acceptance
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

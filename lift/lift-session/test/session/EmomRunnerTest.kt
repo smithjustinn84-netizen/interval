@@ -1,10 +1,10 @@
-package dev.justinsmith.bells.session
+package dev.justinsmith.lift.session
 
-import dev.justinsmith.bells.domain.BuiltInExercise
-import dev.justinsmith.bells.domain.EmomClock
-import dev.justinsmith.bells.domain.EmomCue
-import dev.justinsmith.bells.domain.Side
-import dev.justinsmith.bells.fakes.RecordingBeeper
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.EmomClock
+import dev.justinsmith.lift.domain.EmomCue
+import dev.justinsmith.lift.domain.Side
+import dev.justinsmith.lift.fakes.RecordingBeeper
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

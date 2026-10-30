@@ -15,10 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import dev.justinsmith.bells.domain.program
-import dev.justinsmith.bells.ui.programDayLifts
-import dev.justinsmith.bells.ui.programDayLine
-import dev.justinsmith.bells.ui.programName
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.common_joined
 import dev.justinsmith.interval.history.resources.history_edit_plan
@@ -44,6 +40,10 @@ import dev.justinsmith.interval.ui.joined
 import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.interval.ui.weekdayText
 import dev.justinsmith.interval.ui.workoutDescription
+import dev.justinsmith.lift.domain.program
+import dev.justinsmith.lift.ui.programDayLifts
+import dev.justinsmith.lift.ui.programDayLine
+import dev.justinsmith.lift.ui.programName
 import org.jetbrains.compose.resources.stringResource
 
 /** The next plan with a way to start it, the two after it in a line, and the way to the plan. */

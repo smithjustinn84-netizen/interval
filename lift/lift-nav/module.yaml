@@ -1,4 +1,4 @@
-# Bells, Interval's kettlebell training behind its Lift tab: log sets of reps with a bell, follow a program,
+# Lift, Interval's kettlebell training behind its Lift tab: log sets of reps with a bell, follow a program,
 # time EMOMs, and keep the bells owned and the records set. This module is Lift's entry point, its keys and
 # the entry for each, over its features (`lift-today`, `lift-session`, `lift-library`, `lift-ui`), its
 # storage (`lift-data`) and its domain (`lift-domain`); `app` wires it into the app. Its tests drive

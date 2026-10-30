@@ -1,13 +1,13 @@
 @file:OptIn(ExperimentalForeignApi::class)
 
-package dev.justinsmith.bells.platform
+package dev.justinsmith.lift.platform
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import dev.justinsmith.bells.data.BellsDatabase
-import dev.justinsmith.bells.domain.EmomCue
+import dev.justinsmith.lift.data.LiftDatabase
+import dev.justinsmith.lift.domain.EmomCue
 import kotlinx.cinterop.ExperimentalForeignApi
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.onClose
@@ -19,10 +19,10 @@ import platform.Foundation.NSFileManager
 import platform.Foundation.NSUserDomainMask
 
 @Composable
-actual fun rememberBellsPlatformModule(): Module = remember {
+actual fun rememberLiftPlatformModule(): Module = remember {
     module {
         // Application Support rather than Documents, which the user can see when file sharing is on.
-        single<RoomDatabase.Builder<BellsDatabase>> {
+        single<RoomDatabase.Builder<LiftDatabase>> {
             val directory = NSFileManager.defaultManager.URLForDirectory(
                 directory = NSApplicationSupportDirectory,
                 inDomain = NSUserDomainMask,
@@ -30,7 +30,7 @@ actual fun rememberBellsPlatformModule(): Module = remember {
                 create = true,
                 error = null,
             )?.path
-            Room.databaseBuilder<BellsDatabase>(name = "${requireNotNull(directory)}/$BELLS_DATABASE")
+            Room.databaseBuilder<LiftDatabase>(name = "${requireNotNull(directory)}/$LIFT_DATABASE")
         }
         // System sounds, as Interval's cues use.
         single<Beeper> {

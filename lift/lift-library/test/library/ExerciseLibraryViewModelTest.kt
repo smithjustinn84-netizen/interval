@@ -1,14 +1,14 @@
-package dev.justinsmith.bells.library
+package dev.justinsmith.lift.library
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.bells.data.ExerciseFilterStore
-import dev.justinsmith.bells.domain.BuiltInExercise
-import dev.justinsmith.bells.domain.Equipment
-import dev.justinsmith.bells.domain.ExerciseDraft
-import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.MainDispatcherTest
+import dev.justinsmith.lift.data.ExerciseFilterStore
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.Equipment
+import dev.justinsmith.lift.domain.ExerciseDraft
+import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlinx.coroutines.cancel
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -16,7 +16,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ExerciseLibraryViewModelTest : MainDispatcherTest() {
-    private val repository = FakeBellsStorage().repository()
+    private val repository = FakeLiftStorage().repository()
     private val filters = ExerciseFilterStore()
 
     private fun library(saved: SavedStateHandle = SavedStateHandle()) =

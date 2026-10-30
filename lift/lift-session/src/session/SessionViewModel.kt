@@ -1,70 +1,70 @@
-package dev.justinsmith.bells.session
+package dev.justinsmith.lift.session
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.bells.data.BellsRepository
-import dev.justinsmith.bells.data.ExerciseFilterStore
-import dev.justinsmith.bells.data.IntervalActivity
-import dev.justinsmith.bells.domain.Band
-import dev.justinsmith.bells.domain.Block
-import dev.justinsmith.bells.domain.BuiltInExercise
-import dev.justinsmith.bells.domain.DEFAULT_BAR_KG
-import dev.justinsmith.bells.domain.DEFAULT_BELL_KG
-import dev.justinsmith.bells.domain.EmomClock
-import dev.justinsmith.bells.domain.EmomState
-import dev.justinsmith.bells.domain.Equipment
-import dev.justinsmith.bells.domain.Exercise
-import dev.justinsmith.bells.domain.ExerciseFilters
-import dev.justinsmith.bells.domain.HoldState
-import dev.justinsmith.bells.domain.LiftSession
-import dev.justinsmith.bells.domain.MAX_BAR_KG
-import dev.justinsmith.bells.domain.Measure
-import dev.justinsmith.bells.domain.PersonalRecord
-import dev.justinsmith.bells.domain.PlanChanges
-import dev.justinsmith.bells.domain.PlanRow
-import dev.justinsmith.bells.domain.PlannedSet
-import dev.justinsmith.bells.domain.Program
-import dev.justinsmith.bells.domain.ProgramDay
-import dev.justinsmith.bells.domain.ProgramKey
-import dev.justinsmith.bells.domain.RestClock
-import dev.justinsmith.bells.domain.RestState
-import dev.justinsmith.bells.domain.SaveScope
-import dev.justinsmith.bells.domain.SessionPlan
-import dev.justinsmith.bells.domain.SetLog
-import dev.justinsmith.bells.domain.Side
-import dev.justinsmith.bells.domain.bands
-import dev.justinsmith.bells.domain.newRecords
-import dev.justinsmith.bells.domain.nextPlanned
-import dev.justinsmith.bells.domain.nextSet
-import dev.justinsmith.bells.domain.offeredBands
-import dev.justinsmith.bells.domain.offeredExercises
-import dev.justinsmith.bells.domain.other
-import dev.justinsmith.bells.domain.ownedEquipment
-import dev.justinsmith.bells.domain.planChanges
-import dev.justinsmith.bells.domain.planRows
-import dev.justinsmith.bells.domain.plannedBand
-import dev.justinsmith.bells.domain.progressions
-import dev.justinsmith.bells.domain.recentExercises
-import dev.justinsmith.bells.domain.recordSetIds
-import dev.justinsmith.bells.domain.setsOldestFirst
-import dev.justinsmith.bells.domain.standardBells
-import dev.justinsmith.bells.domain.steppedBand
-import dev.justinsmith.bells.domain.steppedKg
-import dev.justinsmith.bells.domain.suggestedBand
-import dev.justinsmith.bells.domain.suggestedBar
-import dev.justinsmith.bells.domain.suggestedBell
-import dev.justinsmith.bells.domain.suggestedLoad
-import dev.justinsmith.bells.domain.toppedOut
-import dev.justinsmith.bells.library.ExerciseDetailUiState
-import dev.justinsmith.bells.library.LibraryList
-import dev.justinsmith.bells.library.exerciseDetail
-import dev.justinsmith.bells.platform.Beeper
-import dev.justinsmith.bells.platform.RestAlerts
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.weekStanding
+import dev.justinsmith.lift.data.ExerciseFilterStore
+import dev.justinsmith.lift.data.IntervalActivity
+import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.domain.Band
+import dev.justinsmith.lift.domain.Block
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.DEFAULT_BAR_KG
+import dev.justinsmith.lift.domain.DEFAULT_BELL_KG
+import dev.justinsmith.lift.domain.EmomClock
+import dev.justinsmith.lift.domain.EmomState
+import dev.justinsmith.lift.domain.Equipment
+import dev.justinsmith.lift.domain.Exercise
+import dev.justinsmith.lift.domain.ExerciseFilters
+import dev.justinsmith.lift.domain.HoldState
+import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.MAX_BAR_KG
+import dev.justinsmith.lift.domain.Measure
+import dev.justinsmith.lift.domain.PersonalRecord
+import dev.justinsmith.lift.domain.PlanChanges
+import dev.justinsmith.lift.domain.PlanRow
+import dev.justinsmith.lift.domain.PlannedSet
+import dev.justinsmith.lift.domain.Program
+import dev.justinsmith.lift.domain.ProgramDay
+import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.RestClock
+import dev.justinsmith.lift.domain.RestState
+import dev.justinsmith.lift.domain.SaveScope
+import dev.justinsmith.lift.domain.SessionPlan
+import dev.justinsmith.lift.domain.SetLog
+import dev.justinsmith.lift.domain.Side
+import dev.justinsmith.lift.domain.bands
+import dev.justinsmith.lift.domain.newRecords
+import dev.justinsmith.lift.domain.nextPlanned
+import dev.justinsmith.lift.domain.nextSet
+import dev.justinsmith.lift.domain.offeredBands
+import dev.justinsmith.lift.domain.offeredExercises
+import dev.justinsmith.lift.domain.other
+import dev.justinsmith.lift.domain.ownedEquipment
+import dev.justinsmith.lift.domain.planChanges
+import dev.justinsmith.lift.domain.planRows
+import dev.justinsmith.lift.domain.plannedBand
+import dev.justinsmith.lift.domain.progressions
+import dev.justinsmith.lift.domain.recentExercises
+import dev.justinsmith.lift.domain.recordSetIds
+import dev.justinsmith.lift.domain.setsOldestFirst
+import dev.justinsmith.lift.domain.standardBells
+import dev.justinsmith.lift.domain.steppedBand
+import dev.justinsmith.lift.domain.steppedKg
+import dev.justinsmith.lift.domain.suggestedBand
+import dev.justinsmith.lift.domain.suggestedBar
+import dev.justinsmith.lift.domain.suggestedBell
+import dev.justinsmith.lift.domain.suggestedLoad
+import dev.justinsmith.lift.domain.toppedOut
+import dev.justinsmith.lift.library.ExerciseDetailUiState
+import dev.justinsmith.lift.library.LibraryList
+import dev.justinsmith.lift.library.exerciseDetail
+import dev.justinsmith.lift.platform.Beeper
+import dev.justinsmith.lift.platform.RestAlerts
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -217,7 +217,7 @@ data class SessionUiState(
  */
 @Suppress("detekt.TooManyFunctions") // Every way a session changes, side by side.
 class SessionViewModel(
-    private val repository: BellsRepository,
+    private val repository: LiftRepository,
     private val clock: WallClock,
     private val beeper: Beeper,
     private val alerts: RestAlerts,
@@ -737,7 +737,7 @@ class SessionViewModel(
 
     /**
      * Keeps the finished session's changes, and the steps up at [nudges], in their program, as far as [scope]
-     * reaches, or in a copy named [copyName]: see [BellsRepository.saveChanges].
+     * reaches, or in a copy named [copyName]: see [LiftRepository.saveChanges].
      */
     fun keepChanges(scope: SaveScope, copyName: String, nudges: Set<Int> = emptySet()) {
         val done = finished.value ?: return

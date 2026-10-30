@@ -101,7 +101,7 @@ Both Android and iOS versions must be bumped in unison. CI will fail via `tools/
 - **Health Connect / HealthKit, widgets, Wear OS**: each a platform project.
 - **Localisation**: the built-in presets' names are stored data by design, and both text parsers are
   English-keyword; a second locale is a sprint, not a ticket.
-- **Splitting the `TooManyFunctions` classes** (`WorkoutViewModel`, `IntervalRepository`, `BellsRepository`,
-  `BellsDatabase`): real debt, blocking nothing.
+- **Splitting the `TooManyFunctions` classes** (`WorkoutViewModel`, `IntervalRepository`, `LiftRepository`,
+  `LiftDatabase`): real debt, blocking nothing.
 - **iOS signing and an Apple team**, screenshot tests, coverage: out of the Android-only goal or blocked by
   the toolchain (see [testing.md](testing.md)).

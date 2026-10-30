@@ -19,4 +19,4 @@ test-dependencies:
 settings:
   compose:
     resources:
-      packageName: dev.justinsmith.bells.session.resources
+      packageName: dev.justinsmith.lift.session.resources

@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalTestApi::class)
 
-package dev.justinsmith.bells.gear
+package dev.justinsmith.lift.gear
 
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -11,8 +11,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
-import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.interval.ui.waitForText
+import dev.justinsmith.lift.ui.liftAppTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -24,7 +24,7 @@ class GearScreenTest {
     }
 
     @Test
-    fun `the bar chosen is stored and none clears it`() = bellsAppTest { app ->
+    fun `the bar chosen is stored and none clears it`() = liftAppTest { app ->
         openEquipment()
         onNodeWithText("Your bar").performScrollTo()
         onNodeWithText("15 kg").performScrollTo().performClick()
@@ -34,7 +34,7 @@ class GearScreenTest {
     }
 
     @Test
-    fun `a band renamed keeps its place and is stored by its starting id`() = bellsAppTest { app ->
+    fun `a band renamed keeps its place and is stored by its starting id`() = liftAppTest { app ->
         openEquipment()
         onNodeWithText("Heavy").performScrollTo().performClick()
         waitForText("Colour")
@@ -47,7 +47,7 @@ class GearScreenTest {
 
     @Test
     fun `a band moved heavier swaps with the next and one started with is archived not deleted`() =
-        bellsAppTest { app ->
+        liftAppTest { app ->
             openEquipment()
             onNodeWithText("Medium").performScrollTo().performClick()
             waitForText("Heavier")
@@ -64,7 +64,7 @@ class GearScreenTest {
         }
 
     @Test
-    fun `a band added needs a name and is heaviest`() = bellsAppTest { app ->
+    fun `a band added needs a name and is heaviest`() = liftAppTest { app ->
         openEquipment()
         onNodeWithText("Add band").performScrollTo().performClick()
         waitForText("Colour")

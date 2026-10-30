@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.domain
+package dev.justinsmith.lift.domain
 
 /** A finished session that had sets of one exercise: when it started, and just those [sets]. */
 data class PastSession(val uid: String, val startedAtEpochMillis: Long, val sets: List<SetLog>)

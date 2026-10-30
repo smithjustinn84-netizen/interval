@@ -1,4 +1,4 @@
-# Bells' domain: exercises, programs and their days, sets and sessions, records, the pure clocks (EMOM, hold,
+# Lift's domain: exercises, programs and their days, sets and sessions, records, the pure clocks (EMOM, hold,
 # rest), what to load next. Plain Kotlin with no dependencies, so it compiles and tests in seconds.
 description: "Lift domain: exercises, programs, sessions, records, clocks"
 product:

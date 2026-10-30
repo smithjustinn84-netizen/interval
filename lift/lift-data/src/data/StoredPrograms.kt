@@ -1,17 +1,17 @@
-package dev.justinsmith.bells.data
+package dev.justinsmith.lift.data
 
 import co.touchlab.kermit.Logger
-import dev.justinsmith.bells.domain.Block
-import dev.justinsmith.bells.domain.BlockKind
-import dev.justinsmith.bells.domain.CustomExercise
-import dev.justinsmith.bells.domain.Equipment
-import dev.justinsmith.bells.domain.Exercise
-import dev.justinsmith.bells.domain.PlanBlock
-import dev.justinsmith.bells.domain.Program
-import dev.justinsmith.bells.domain.ProgramKey
-import dev.justinsmith.bells.domain.RepRange
-import dev.justinsmith.bells.domain.SessionPlan
-import dev.justinsmith.bells.domain.takesKg
+import dev.justinsmith.lift.domain.Block
+import dev.justinsmith.lift.domain.BlockKind
+import dev.justinsmith.lift.domain.CustomExercise
+import dev.justinsmith.lift.domain.Equipment
+import dev.justinsmith.lift.domain.Exercise
+import dev.justinsmith.lift.domain.PlanBlock
+import dev.justinsmith.lift.domain.Program
+import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.RepRange
+import dev.justinsmith.lift.domain.SessionPlan
+import dev.justinsmith.lift.domain.takesKg
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 

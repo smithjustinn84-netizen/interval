@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalTestApi::class)
 
-package dev.justinsmith.bells.session
+package dev.justinsmith.lift.session
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
@@ -11,28 +11,28 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
-import dev.justinsmith.bells.domain.BuiltInExercise
-import dev.justinsmith.bells.domain.EmomPhase
-import dev.justinsmith.bells.domain.EmomState
-import dev.justinsmith.bells.domain.LiftSession
-import dev.justinsmith.bells.domain.ProgramId
-import dev.justinsmith.bells.domain.SetLog
-import dev.justinsmith.bells.domain.Side
-import dev.justinsmith.bells.domain.offeredExercises
-import dev.justinsmith.bells.domain.program
-import dev.justinsmith.bells.gear.GearScreen
-import dev.justinsmith.bells.gear.GearUiState
-import dev.justinsmith.bells.history.LiftDetailScreen
-import dev.justinsmith.bells.history.LiftDetailUiState
-import dev.justinsmith.bells.library.ExerciseLibraryScreen
-import dev.justinsmith.bells.library.LibraryList
-import dev.justinsmith.bells.today.TodayScreen
-import dev.justinsmith.bells.today.TodayUiState
-import dev.justinsmith.bells.ui.bellsAppTest
-import dev.justinsmith.bells.ui.setBellsContent
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.waitForText
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.EmomPhase
+import dev.justinsmith.lift.domain.EmomState
+import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.domain.SetLog
+import dev.justinsmith.lift.domain.Side
+import dev.justinsmith.lift.domain.offeredExercises
+import dev.justinsmith.lift.domain.program
+import dev.justinsmith.lift.gear.GearScreen
+import dev.justinsmith.lift.gear.GearUiState
+import dev.justinsmith.lift.history.LiftDetailScreen
+import dev.justinsmith.lift.history.LiftDetailUiState
+import dev.justinsmith.lift.library.ExerciseLibraryScreen
+import dev.justinsmith.lift.library.LibraryList
+import dev.justinsmith.lift.today.TodayScreen
+import dev.justinsmith.lift.today.TodayUiState
+import dev.justinsmith.lift.ui.liftAppTest
+import dev.justinsmith.lift.ui.setLiftContent
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -44,7 +44,7 @@ class TabletTest {
     @Test
     fun `Today puts the last session beside the program`() = runUiTest(Window.Tablet) {
         val state = TodayUiState(following = program(ProgramId.GobletSquatRow))
-        setBellsContent { TodayScreen(state, onStartSession = {}, onChooseProgram = {}) }
+        setLiftContent { TodayScreen(state, onStartSession = {}, onChooseProgram = {}) }
         val last = onNodeWithText("No sessions yet").assertIsDisplayed().getUnclippedBoundsInRoot()
         val following = onNodeWithText("Goblet squat and row").assertIsDisplayed().getUnclippedBoundsInRoot()
         assertTrue(following.left >= last.right)
@@ -54,7 +54,7 @@ class TabletTest {
     fun `Today puts the week beside the program's day`() = runUiTest(Window.Tablet) {
         val goblet = program(ProgramId.GobletSquatRow)
         val state = TodayUiState(following = goblet, programDay = goblet.dayAfter(0))
-        setBellsContent { TodayScreen(state, onStartSession = {}, onChooseProgram = {}) }
+        setLiftContent { TodayScreen(state, onStartSession = {}, onChooseProgram = {}) }
         val week = onNodeWithText("This week").assertIsDisplayed().getUnclippedBoundsInRoot()
         val day = onNodeWithText("Day 1 of 8 · week 1").assertIsDisplayed().getUnclippedBoundsInRoot()
         assertTrue(day.left >= week.right)
@@ -63,7 +63,7 @@ class TabletTest {
 
     @Test
     fun `Your equipment puts the bar beside the bells`() = runUiTest(Window.Tablet) {
-        setBellsContent { GearScreen(GearUiState(), onToggle = {}, onBack = {}) }
+        setLiftContent { GearScreen(GearUiState(), onToggle = {}, onBack = {}) }
         val bells = onNodeWithText("Your bells").assertIsDisplayed().getUnclippedBoundsInRoot()
         val bar = onNodeWithText("Your bar").assertIsDisplayed().getUnclippedBoundsInRoot()
         assertTrue(bar.left >= bells.right)
@@ -72,7 +72,7 @@ class TabletTest {
 
     @Test
     fun `the exercise library lays its cards side by side`() = runUiTest(Window.Tablet) {
-        setBellsContent {
+        setLiftContent {
             ExerciseLibraryScreen(LibraryList(offeredExercises(emptyList())), onFilters = {}, onBack = {})
         }
         val bells = onNodeWithText("Kettlebell · 19").assertIsDisplayed().getUnclippedBoundsInRoot()
@@ -82,7 +82,7 @@ class TabletTest {
     }
 
     @Test
-    fun `Programs lays its families side by side`() = bellsAppTest(window = Window.Tablet) {
+    fun `Programs lays its families side by side`() = liftAppTest(window = Window.Tablet) {
         waitForText("Follow a program")
         onNodeWithText("Follow a program").performClick()
         waitForText("Getting started")
@@ -93,7 +93,7 @@ class TabletTest {
     }
 
     @Test
-    fun `a session on an upright tablet keeps one wider column`() = bellsAppTest(window = Window.TabletPortrait) {
+    fun `a session on an upright tablet keeps one wider column`() = liftAppTest(window = Window.TabletPortrait) {
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
@@ -115,7 +115,7 @@ class TabletTest {
             SetLog(2, BuiltInExercise.GobletSquat, 20.0, 8, null, 0),
         )
         val state = LiftDetailUiState(LiftSession("s", 0, 600_000, "Swings and squats", sets), "Saturday", "1:21 PM")
-        setBellsContent { LiftDetailScreen(state, onDelete = {}, onBack = {}) }
+        setLiftContent { LiftDetailScreen(state, onDelete = {}, onBack = {}) }
         val moved = onNodeWithText("Moved").assertIsDisplayed().getUnclippedBoundsInRoot()
         val swing = onNodeWithText("24 kg × 10").assertIsDisplayed().getUnclippedBoundsInRoot()
         onNodeWithContentDescription("More options").assertIsDisplayed()
@@ -125,7 +125,7 @@ class TabletTest {
     @Test
     fun `an EMOM on a tablet keeps its readout inside a bigger ring`() = runUiTest(Window.Tablet) {
         val run = EmomRun(BuiltInExercise.TwoHandSwing, 24.0, 10, 10, firstSide = Side.Left, startedAtMillis = 0)
-        setBellsContent { EmomScreen(run, EmomState(EmomPhase.Work, 3, 10, 45, 0.25f), onFinishSet = {}, onStop = {}) }
+        setLiftContent { EmomScreen(run, EmomState(EmomPhase.Work, 3, 10, 45, 0.25f), onFinishSet = {}, onStop = {}) }
         val clock = onNodeWithText("0:45").assertIsDisplayed().getUnclippedBoundsInRoot()
         val phase = onNodeWithText("Work").assertIsDisplayed().getUnclippedBoundsInRoot()
         val task = onNodeWithText("Two-hand swing · 24 kg × 10").assertIsDisplayed().getUnclippedBoundsInRoot()
@@ -141,7 +141,7 @@ class TabletTest {
         val finished = Finished(LiftSession("s", 0, 60_000, "Day 1", emptyList()), emptyList())
         for (window in listOf(Window.Tablet, Window.TabletPortrait)) {
             runUiTest(window) {
-                setBellsContent { SummaryScreen(finished, onDone = {}) }
+                setLiftContent { SummaryScreen(finished, onDone = {}) }
                 onAllNodesWithText("Done").onLast().assertIsDisplayed()
                 onNodeWithText("Day 1").assertIsDisplayed()
             }

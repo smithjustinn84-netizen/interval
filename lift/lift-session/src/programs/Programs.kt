@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.programs
+package dev.justinsmith.lift.programs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,40 +28,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.justinsmith.bells.data.BellsRepository
-import dev.justinsmith.bells.domain.Program
-import dev.justinsmith.bells.domain.ProgramDay
-import dev.justinsmith.bells.domain.ProgramFamily
-import dev.justinsmith.bells.domain.ProgramKey
-import dev.justinsmith.bells.domain.builtInPrograms
-import dev.justinsmith.bells.session.resources.Res
-import dev.justinsmith.bells.session.resources.notice_program_followed
-import dev.justinsmith.bells.session.resources.notice_program_stopped
-import dev.justinsmith.bells.session.resources.program_follow
-import dev.justinsmith.bells.session.resources.program_following
-import dev.justinsmith.bells.session.resources.program_keep
-import dev.justinsmith.bells.session.resources.program_preview_day
-import dev.justinsmith.bells.session.resources.program_replaces
-import dev.justinsmith.bells.session.resources.program_see_progress
-import dev.justinsmith.bells.session.resources.program_stop
-import dev.justinsmith.bells.session.resources.program_switch
-import dev.justinsmith.bells.session.resources.program_switch_text
-import dev.justinsmith.bells.session.resources.program_switch_title
-import dev.justinsmith.bells.session.resources.programs_barbell
-import dev.justinsmith.bells.session.resources.programs_beginner
-import dev.justinsmith.bells.session.resources.programs_classics
-import dev.justinsmith.bells.session.resources.programs_dan_john
-import dev.justinsmith.bells.session.resources.programs_edit_cd
-import dev.justinsmith.bells.session.resources.programs_grappling
-import dev.justinsmith.bells.session.resources.programs_mixed
-import dev.justinsmith.bells.session.resources.programs_new
-import dev.justinsmith.bells.session.resources.programs_new_hint
-import dev.justinsmith.bells.session.resources.programs_title
-import dev.justinsmith.bells.session.resources.programs_yours
-import dev.justinsmith.bells.ui.blockLine
-import dev.justinsmith.bells.ui.liftName
-import dev.justinsmith.bells.ui.programName
-import dev.justinsmith.bells.ui.programSummary
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.ConfirmDialog
@@ -82,6 +48,40 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.interval.ui.sheetIsSideways
+import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.domain.Program
+import dev.justinsmith.lift.domain.ProgramDay
+import dev.justinsmith.lift.domain.ProgramFamily
+import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.builtInPrograms
+import dev.justinsmith.lift.session.resources.Res
+import dev.justinsmith.lift.session.resources.notice_program_followed
+import dev.justinsmith.lift.session.resources.notice_program_stopped
+import dev.justinsmith.lift.session.resources.program_follow
+import dev.justinsmith.lift.session.resources.program_following
+import dev.justinsmith.lift.session.resources.program_keep
+import dev.justinsmith.lift.session.resources.program_preview_day
+import dev.justinsmith.lift.session.resources.program_replaces
+import dev.justinsmith.lift.session.resources.program_see_progress
+import dev.justinsmith.lift.session.resources.program_stop
+import dev.justinsmith.lift.session.resources.program_switch
+import dev.justinsmith.lift.session.resources.program_switch_text
+import dev.justinsmith.lift.session.resources.program_switch_title
+import dev.justinsmith.lift.session.resources.programs_barbell
+import dev.justinsmith.lift.session.resources.programs_beginner
+import dev.justinsmith.lift.session.resources.programs_classics
+import dev.justinsmith.lift.session.resources.programs_dan_john
+import dev.justinsmith.lift.session.resources.programs_edit_cd
+import dev.justinsmith.lift.session.resources.programs_grappling
+import dev.justinsmith.lift.session.resources.programs_mixed
+import dev.justinsmith.lift.session.resources.programs_new
+import dev.justinsmith.lift.session.resources.programs_new_hint
+import dev.justinsmith.lift.session.resources.programs_title
+import dev.justinsmith.lift.session.resources.programs_yours
+import dev.justinsmith.lift.ui.blockLine
+import dev.justinsmith.lift.ui.liftName
+import dev.justinsmith.lift.ui.programName
+import dev.justinsmith.lift.ui.programSummary
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -97,7 +97,7 @@ data class ProgramsUiState(
 )
 
 /** The built-in programs, the ones the user made, which one is followed and its next day. */
-class ProgramsViewModel(private val repository: BellsRepository) : ViewModel() {
+class ProgramsViewModel(private val repository: LiftRepository) : ViewModel() {
     val state: StateFlow<ProgramsUiState> =
         combine(repository.following, repository.programDay, repository.customPrograms, ::ProgramsUiState)
             .stateIn(

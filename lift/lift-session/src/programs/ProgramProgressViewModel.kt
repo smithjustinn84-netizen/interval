@@ -1,14 +1,14 @@
-package dev.justinsmith.bells.programs
+package dev.justinsmith.lift.programs
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.bells.data.BellsRepository
-import dev.justinsmith.bells.domain.DayDone
-import dev.justinsmith.bells.domain.Followed
-import dev.justinsmith.bells.domain.LiftSession
-import dev.justinsmith.bells.domain.ProgramProgress
-import dev.justinsmith.bells.domain.programProgress
 import dev.justinsmith.interval.platform.TimestampFormatter
+import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.domain.DayDone
+import dev.justinsmith.lift.domain.Followed
+import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.ProgramProgress
+import dev.justinsmith.lift.domain.programProgress
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -28,7 +28,7 @@ data class ProgramProgressUiState(val progress: ProgramProgress? = null, val row
 
 /** The program followed: its days done and left, and once it is over what it came to. */
 class ProgramProgressViewModel(
-    private val repository: BellsRepository,
+    private val repository: LiftRepository,
     private val timestamps: TimestampFormatter,
 ) : ViewModel() {
     val state: StateFlow<ProgramProgressUiState> =

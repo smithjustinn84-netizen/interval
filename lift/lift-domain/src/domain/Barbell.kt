@@ -1,9 +1,9 @@
-package dev.justinsmith.bells.domain
+package dev.justinsmith.lift.domain
 
 import kotlin.math.abs
 import kotlin.math.round
 
-/** The bars Bells offers, in kilograms: a technique bar, a women's bar and a men's. */
+/** The bars Lift offers, in kilograms: a technique bar, a women's bar and a men's. */
 val bars: List<Double> = listOf(10.0, 15.0, 20.0)
 
 /** The bar a set of a barbell lift starts on when the user hasn't said which they have. */

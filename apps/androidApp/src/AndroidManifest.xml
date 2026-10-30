@@ -57,7 +57,7 @@
         <service
                 android:exported="false"
                 android:foregroundServiceType="specialUse"
-                android:name="dev.justinsmith.bells.platform.RestService">
+                android:name="dev.justinsmith.lift.platform.RestService">
             <property
                     android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                     android:value="Keeps a rest between sets the user started counting, and shows the time left, while the app is off screen, so its end is heard."/>

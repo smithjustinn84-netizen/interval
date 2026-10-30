@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.domain
+package dev.justinsmith.lift.domain
 
 /**
  * Of [planned], the set [logged] did each, or null for one not done: the n-th planned set of a lift (and side)

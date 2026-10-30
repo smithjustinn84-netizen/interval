@@ -18,4 +18,4 @@ test-dependencies:
 settings:
   compose:
     resources:
-      packageName: dev.justinsmith.bells.today.resources
+      packageName: dev.justinsmith.lift.today.resources

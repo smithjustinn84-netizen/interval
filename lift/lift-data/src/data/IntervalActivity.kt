@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.data
+package dev.justinsmith.lift.data
 
 import kotlinx.coroutines.flow.StateFlow
 
@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.StateFlow
 data class IntervalWorkout(val uid: String, val finishedAtEpochMillis: Long, val elapsedSeconds: Int)
 
 /**
- * What Bells reads of the rest of the app, which it can't see: the interval workouts, newest first, and
+ * What Lift reads of the rest of the app, which it can't see: the interval workouts, newest first, and
  * the weekly goal, set on the Plan page, null for none. The app binds it over its own repository.
  */
 interface IntervalActivity {

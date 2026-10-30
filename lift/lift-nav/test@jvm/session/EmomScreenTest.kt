@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalTestApi::class)
 
-package dev.justinsmith.bells.session
+package dev.justinsmith.lift.session
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,16 +19,16 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.pressKey
-import dev.justinsmith.bells.domain.BuiltInExercise
-import dev.justinsmith.bells.domain.EmomClock
-import dev.justinsmith.bells.domain.EmomCue
-import dev.justinsmith.bells.domain.EmomPhase
-import dev.justinsmith.bells.domain.EmomState
-import dev.justinsmith.bells.domain.Side
-import dev.justinsmith.bells.ui.bellsAppTest
-import dev.justinsmith.bells.ui.setBellsContent
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.waitForText
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.EmomClock
+import dev.justinsmith.lift.domain.EmomCue
+import dev.justinsmith.lift.domain.EmomPhase
+import dev.justinsmith.lift.domain.EmomState
+import dev.justinsmith.lift.domain.Side
+import dev.justinsmith.lift.ui.liftAppTest
+import dev.justinsmith.lift.ui.setLiftContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -41,7 +41,7 @@ class EmomScreenTest {
     fun `each phase shows its word and only work takes Set done`() = runUiTest {
         var state by mutableStateOf(EmomState(EmomPhase.GetReady, 1, 10, 7, 0.3f))
         var setsDone = 0
-        setBellsContent { EmomScreen(swings, state, onFinishSet = { setsDone++ }, onStop = {}) }
+        setLiftContent { EmomScreen(swings, state, onFinishSet = { setsDone++ }, onStop = {}) }
 
         onNodeWithText("Get ready").assertExists()
         onNodeWithText("0:07").assertExists()
@@ -68,14 +68,14 @@ class EmomScreenTest {
     fun `a one-sided lift alternates sides minute by minute`() = runUiTest {
         val presses = swings.copy(exercise = BuiltInExercise.Press, bellKg = 16.0, reps = 5)
         var state by mutableStateOf(EmomState(EmomPhase.Work, 1, 10, 50, 0.1f))
-        setBellsContent { EmomScreen(presses, state, onFinishSet = {}, onStop = {}) }
+        setLiftContent { EmomScreen(presses, state, onFinishSet = {}, onStop = {}) }
         onNodeWithText("Press · 16 kg × 5 · Left").assertExists()
         state = EmomState(EmomPhase.Work, 2, 10, 50, 0.1f)
         onNodeWithText("Press · 16 kg × 5 · Right").assertExists()
     }
 
     @Test
-    fun `an EMOM counts in, works the minute and rests it out`() = bellsAppTest { app ->
+    fun `an EMOM counts in, works the minute and rests it out`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithContentDescription("Add set or EMOM").performClick()
@@ -104,7 +104,7 @@ class EmomScreenTest {
     @Test
     fun `Stop asks before ending the EMOM`() = runUiTest {
         var stops = 0
-        setBellsContent {
+        setLiftContent {
             EmomScreen(
                 swings,
                 EmomState(EmomPhase.Work, 2, 10, 45, 0.25f),
@@ -131,7 +131,7 @@ class EmomScreenTest {
     fun `Space marks the minute's set done while working`() = runUiTest {
         var state by mutableStateOf(EmomState(EmomPhase.GetReady, 1, 10, 7, 0.3f))
         var setsDone = 0
-        setBellsContent { EmomScreen(swings, state, onFinishSet = { setsDone++ }, onStop = {}) }
+        setLiftContent { EmomScreen(swings, state, onFinishSet = { setsDone++ }, onStop = {}) }
 
         onNode(isFocused()).performKeyInput { pressKey(Key.Spacebar) }
         assertEquals(0, setsDone)

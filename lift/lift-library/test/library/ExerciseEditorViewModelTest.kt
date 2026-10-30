@@ -1,12 +1,12 @@
-package dev.justinsmith.bells.library
+package dev.justinsmith.lift.library
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.bells.domain.Equipment
-import dev.justinsmith.bells.domain.ExerciseDraft
-import dev.justinsmith.bells.domain.Measure
-import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.interval.fakes.MainDispatcherTest
+import dev.justinsmith.lift.domain.Equipment
+import dev.justinsmith.lift.domain.ExerciseDraft
+import dev.justinsmith.lift.domain.Measure
+import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlinx.coroutines.cancel
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -14,7 +14,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class ExerciseEditorViewModelTest : MainDispatcherTest() {
-    private val repository = FakeBellsStorage().repository()
+    private val repository = FakeLiftStorage().repository()
 
     private fun editor(uid: String? = null, name: String = "", saved: SavedStateHandle = SavedStateHandle()) =
         ExerciseEditorViewModel(repository, saved, uid, name)

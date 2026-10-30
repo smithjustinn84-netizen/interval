@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.domain
+package dev.justinsmith.lift.domain
 
 /** The best an [exercise] has been done, with one bell or two ([double]), in the terms its sets are counted. */
 sealed interface PersonalRecord {

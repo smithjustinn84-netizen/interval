@@ -13,7 +13,6 @@ import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventDispatcherOwner
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
-import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.testKoin
@@ -21,6 +20,7 @@ import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.ui.UI_TEST_TIMEOUT
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
+import dev.justinsmith.lift.fakes.FakeLiftStorage
 import org.koin.core.KoinApplication
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.time.Duration
@@ -33,7 +33,7 @@ import kotlin.time.TestTimeSource
 class AppFixture(
     val koin: KoinApplication,
     val storage: FakeStorage,
-    val lift: FakeBellsStorage,
+    val lift: FakeLiftStorage,
     /** The wall clock in epoch millis: what History dates a workout by and Lift times a session with. */
     val clock: AtomicLong,
     /** The time a running workout counts, which moves only through [advance]. */
@@ -64,7 +64,7 @@ class AppFixture(
 fun appTest(
     window: Window = Window.Phone,
     storage: FakeStorage = FakeStorage(),
-    lift: FakeBellsStorage = FakeBellsStorage(),
+    lift: FakeLiftStorage = FakeLiftStorage(),
     now: Long = 0L,
     timeout: Duration = UI_TEST_TIMEOUT,
     block: suspend DesktopComposeUiTest.(AppFixture) -> Unit,

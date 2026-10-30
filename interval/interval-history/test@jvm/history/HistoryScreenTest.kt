@@ -13,8 +13,6 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import dev.justinsmith.bells.domain.ProgramId
-import dev.justinsmith.bells.domain.program
 import dev.justinsmith.interval.fakes.hangboardPreset
 import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.fakes.tabataPreset
@@ -24,6 +22,8 @@ import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.domain.program
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

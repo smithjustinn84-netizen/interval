@@ -1,13 +1,13 @@
-package dev.justinsmith.bells.programs
+package dev.justinsmith.lift.programs
 
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.bells.domain.Block
-import dev.justinsmith.bells.domain.BuiltInExercise
-import dev.justinsmith.bells.domain.ProgramDraft
-import dev.justinsmith.bells.domain.ProgramId
-import dev.justinsmith.bells.domain.ProgramKey
-import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.interval.fakes.MainDispatcherTest
+import dev.justinsmith.lift.domain.Block
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.ProgramDraft
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlinx.coroutines.cancel
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -15,7 +15,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class ProgramsViewModelTest : MainDispatcherTest() {
-    private val repository = FakeBellsStorage().repository()
+    private val repository = FakeLiftStorage().repository()
     private val ladders = ProgramKey.BuiltIn(ProgramId.PressLadders)
 
     private inline fun programs(block: ProgramsViewModel.() -> Unit) = ProgramsViewModel(repository).run {

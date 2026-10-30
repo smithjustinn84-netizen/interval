@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.ui
+package dev.justinsmith.lift.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,23 +9,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
-import dev.justinsmith.bells.domain.Equipment
-import dev.justinsmith.bells.domain.PersonalRecord
-import dev.justinsmith.bells.domain.formatKg
-import dev.justinsmith.bells.ui.resources.Res
-import dev.justinsmith.bells.ui.resources.common_joined
-import dev.justinsmith.bells.ui.resources.kg_value
-import dev.justinsmith.bells.ui.resources.record_added_kg
-import dev.justinsmith.bells.ui.resources.record_heaviest
-import dev.justinsmith.bells.ui.resources.record_longest
-import dev.justinsmith.bells.ui.resources.record_most_added
-import dev.justinsmith.bells.ui.resources.record_most_reps
-import dev.justinsmith.bells.ui.resources.record_most_reps_at
-import dev.justinsmith.bells.ui.resources.record_most_reps_none_added
-import dev.justinsmith.bells.ui.resources.record_most_reps_with
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.lift.domain.Equipment
+import dev.justinsmith.lift.domain.PersonalRecord
+import dev.justinsmith.lift.domain.formatKg
+import dev.justinsmith.lift.ui.resources.Res
+import dev.justinsmith.lift.ui.resources.common_joined
+import dev.justinsmith.lift.ui.resources.kg_value
+import dev.justinsmith.lift.ui.resources.record_added_kg
+import dev.justinsmith.lift.ui.resources.record_heaviest
+import dev.justinsmith.lift.ui.resources.record_longest
+import dev.justinsmith.lift.ui.resources.record_most_added
+import dev.justinsmith.lift.ui.resources.record_most_reps
+import dev.justinsmith.lift.ui.resources.record_most_reps_at
+import dev.justinsmith.lift.ui.resources.record_most_reps_none_added
+import dev.justinsmith.lift.ui.resources.record_most_reps_with
 import org.jetbrains.compose.resources.stringResource
 
 /**

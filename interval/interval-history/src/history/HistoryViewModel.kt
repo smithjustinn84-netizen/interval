@@ -2,10 +2,6 @@ package dev.justinsmith.interval.history
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.bells.data.LiftActivity
-import dev.justinsmith.bells.domain.LiftSession
-import dev.justinsmith.bells.domain.ProgramDay
-import dev.justinsmith.bells.domain.ProgramKey
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.BodySettings
@@ -28,6 +24,10 @@ import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.monthStartAfter
 import dev.justinsmith.interval.timer.monthStartOf
+import dev.justinsmith.lift.data.LiftActivity
+import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.ProgramDay
+import dev.justinsmith.lift.domain.ProgramKey
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.domain
+package dev.justinsmith.lift.domain
 
 /** The kind of program a built-in is, which groups it on the Programs page. */
 enum class ProgramFamily {

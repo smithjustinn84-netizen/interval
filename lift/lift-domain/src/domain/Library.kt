@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.domain
+package dev.justinsmith.lift.domain
 
 /**
  * What the exercise library narrows to: any of the choices within a facet, and every facet together. An

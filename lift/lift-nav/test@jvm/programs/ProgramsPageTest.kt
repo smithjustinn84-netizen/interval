@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalTestApi::class)
 
-package dev.justinsmith.bells.programs
+package dev.justinsmith.lift.programs
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
@@ -10,14 +10,14 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
-import dev.justinsmith.bells.data.FollowingEntity
-import dev.justinsmith.bells.data.SessionEntity
-import dev.justinsmith.bells.domain.ProgramId
-import dev.justinsmith.bells.fakes.FakeBellsStorage
-import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.scrollToText
 import dev.justinsmith.interval.ui.waitForText
+import dev.justinsmith.lift.data.FollowingEntity
+import dev.justinsmith.lift.data.SessionEntity
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.fakes.FakeLiftStorage
+import dev.justinsmith.lift.ui.liftAppTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -25,7 +25,7 @@ import kotlin.test.assertTrue
 /** Programs, from Today: a program's sheet before following it, and the question before switching. */
 class ProgramsPageTest {
     /** Following Goblet squat and row with its first day done, so day 2 is next. */
-    private fun dayTwoOfGobletSquatRow() = FakeBellsStorage().apply {
+    private fun dayTwoOfGobletSquatRow() = FakeLiftStorage().apply {
         val program = ProgramId.GobletSquatRow.name
         following.row.value = FollowingEntity(programId = program, startedAtEpochMillis = 0)
         sessions.sessions.value = listOf(
@@ -34,7 +34,7 @@ class ProgramsPageTest {
     }
 
     @Test
-    fun `a program opens its days and is followed from its sheet`() = bellsAppTest { app ->
+    fun `a program opens its days and is followed from its sheet`() = liftAppTest { app ->
         onNodeWithText("Follow a program").performClick()
         scrollToText("Goblet squat and row")
         onNodeWithText("Goblet squat and row").performClick()
@@ -48,7 +48,7 @@ class ProgramsPageTest {
     }
 
     @Test
-    fun `on a phone on its side Follow shows beside the days`() = bellsAppTest(window = Window.PhoneSideways) {
+    fun `on a phone on its side Follow shows beside the days`() = liftAppTest(window = Window.PhoneSideways) {
         // Today's grid composes only what is in view, so it scrolls to the card first.
         waitForText("Start session")
         onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Follow a program"))
@@ -61,7 +61,7 @@ class ProgramsPageTest {
     }
 
     @Test
-    fun `switching part way through a program asks first`() = bellsAppTest(dayTwoOfGobletSquatRow()) { app ->
+    fun `switching part way through a program asks first`() = liftAppTest(dayTwoOfGobletSquatRow()) { app ->
         waitForText("Day 2 of 8 · week 1")
         onNodeWithText("Change program").performScrollTo().performClick()
         scrollToText("Easy Strength")
@@ -83,7 +83,7 @@ class ProgramsPageTest {
     }
 
     @Test
-    fun `the program followed shows as Following on its sheet`() = bellsAppTest(dayTwoOfGobletSquatRow()) {
+    fun `the program followed shows as Following on its sheet`() = liftAppTest(dayTwoOfGobletSquatRow()) {
         waitForText("Change program")
         onNodeWithText("Change program").performScrollTo().performClick()
         scrollToText("Goblet squat and row")
@@ -93,7 +93,7 @@ class ProgramsPageTest {
     }
 
     @Test
-    fun `a program for grapplers is followed from its own group`() = bellsAppTest { app ->
+    fun `a program for grapplers is followed from its own group`() = liftAppTest { app ->
         onNodeWithText("Follow a program").performClick()
         scrollToText("For grapplers")
         scrollToText("Round conditioning")
@@ -105,7 +105,7 @@ class ProgramsPageTest {
     }
 
     @Test
-    fun `getting started comes first and its programs are followed from it`() = bellsAppTest { app ->
+    fun `getting started comes first and its programs are followed from it`() = liftAppTest { app ->
         onNodeWithText("Follow a program").performClick()
         waitForText("Getting started")
         val top = { text: String -> onNodeWithText(text).fetchSemanticsNode().boundsInRoot.top }
@@ -119,7 +119,7 @@ class ProgramsPageTest {
     }
 
     @Test
-    fun `a bodyweight program shows its holds in seconds`() = bellsAppTest {
+    fun `a bodyweight program shows its holds in seconds`() = liftAppTest {
         onNodeWithText("Follow a program").performClick()
         scrollToText("Bodyweight basics")
         onNodeWithText("Bodyweight basics").performClick()
@@ -129,7 +129,7 @@ class ProgramsPageTest {
     }
 
     @Test
-    fun `the program followed opens its days done from its sheet`() = bellsAppTest(dayTwoOfGobletSquatRow()) {
+    fun `the program followed opens its days done from its sheet`() = liftAppTest(dayTwoOfGobletSquatRow()) {
         waitForText("Change program")
         onNodeWithText("Change program").performScrollTo().performClick()
         scrollToText("Goblet squat and row")

@@ -1,8 +1,8 @@
-package dev.justinsmith.bells.data
+package dev.justinsmith.lift.data
 
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import dev.justinsmith.bells.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.BuiltInExercise
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -15,13 +15,13 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /** The repository over a real Room database, where a fake can't say what SQLite would refuse. */
-class BellsRoomTest {
-    private val database = Room.inMemoryDatabaseBuilder<BellsDatabase>()
+class LiftRoomTest {
+    private val database = Room.inMemoryDatabaseBuilder<LiftDatabase>()
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)
         .build()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val repository = BellsRepository(
+    private val repository = LiftRepository(
         database.sessionDao(),
         database.bellDao(),
         database.followingDao(),

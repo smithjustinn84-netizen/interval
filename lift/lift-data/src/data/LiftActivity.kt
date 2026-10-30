@@ -1,14 +1,14 @@
-package dev.justinsmith.bells.data
+package dev.justinsmith.lift.data
 
-import dev.justinsmith.bells.domain.LiftSession
-import dev.justinsmith.bells.domain.ProgramDay
-import dev.justinsmith.bells.domain.ProgramKey
+import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.ProgramDay
+import dev.justinsmith.lift.domain.ProgramKey
 import kotlinx.coroutines.flow.StateFlow
 
 /**
  * What the rest of the app reads of Lift, the mirror of [IntervalActivity]: History and Plan count its sessions
  * in the week, History shows the program's next day and starts it, and the workout's summary counts the days
- * lifted. [BellsRepository] is it; screens outside Lift take this rather than the whole repository.
+ * lifted. [LiftRepository] is it; screens outside Lift take this rather than the whole repository.
  */
 interface LiftActivity {
     /** Finished sessions, newest first. */

@@ -1,15 +1,15 @@
-package dev.justinsmith.bells.gear
+package dev.justinsmith.lift.gear
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.bells.data.BellsRepository
-import dev.justinsmith.bells.domain.Band
-import dev.justinsmith.bells.domain.BandColour
-import dev.justinsmith.bells.domain.PersonalRecord
-import dev.justinsmith.bells.domain.bands
-import dev.justinsmith.bells.domain.moved
-import dev.justinsmith.bells.domain.offeredBands
-import dev.justinsmith.bells.domain.personalRecords
+import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.domain.Band
+import dev.justinsmith.lift.domain.BandColour
+import dev.justinsmith.lift.domain.PersonalRecord
+import dev.justinsmith.lift.domain.bands
+import dev.justinsmith.lift.domain.moved
+import dev.justinsmith.lift.domain.offeredBands
+import dev.justinsmith.lift.domain.personalRecords
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -28,7 +28,7 @@ data class GearUiState(
 )
 
 /** The bells, bar and bands the user has, and their records. */
-class GearViewModel(private val repository: BellsRepository) : ViewModel() {
+class GearViewModel(private val repository: LiftRepository) : ViewModel() {
     val state: StateFlow<GearUiState> =
         combine(repository.bells, repository.bar, repository.bands, repository.sessions) {
                 bells,

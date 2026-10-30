@@ -37,9 +37,6 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.intl.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.justinsmith.bells.domain.ProgramId
-import dev.justinsmith.bells.domain.ProgramKey
-import dev.justinsmith.bells.domain.program
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.common_cancel
 import dev.justinsmith.interval.history.resources.history_clear_confirm
@@ -81,6 +78,9 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.interval.ui.TitleBar
 import dev.justinsmith.interval.ui.fadeThroughContent
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.program
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.currentKoinScope
 

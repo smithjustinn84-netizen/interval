@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.library
+package dev.justinsmith.lift.library
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -15,26 +15,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.justinsmith.bells.data.BellsRepository
-import dev.justinsmith.bells.data.ExerciseFilterStore
-import dev.justinsmith.bells.domain.CustomExercise
-import dev.justinsmith.bells.domain.Equipment
-import dev.justinsmith.bells.domain.Exercise
-import dev.justinsmith.bells.domain.ExerciseFilters
-import dev.justinsmith.bells.domain.LiftSession
-import dev.justinsmith.bells.domain.exerciseHistory
-import dev.justinsmith.bells.domain.exerciseTrend
-import dev.justinsmith.bells.domain.offeredExercises
-import dev.justinsmith.bells.domain.ownedEquipment
-import dev.justinsmith.bells.domain.recentExercises
-import dev.justinsmith.bells.domain.setsOldestFirst
-import dev.justinsmith.bells.library.resources.Res
-import dev.justinsmith.bells.library.resources.library_group
-import dev.justinsmith.bells.library.resources.library_new
-import dev.justinsmith.bells.library.resources.library_recent
-import dev.justinsmith.bells.library.resources.library_title
-import dev.justinsmith.bells.library.resources.library_yours
-import dev.justinsmith.bells.ui.equipmentName
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.GroupLabel
@@ -42,6 +22,26 @@ import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
+import dev.justinsmith.lift.data.ExerciseFilterStore
+import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.domain.CustomExercise
+import dev.justinsmith.lift.domain.Equipment
+import dev.justinsmith.lift.domain.Exercise
+import dev.justinsmith.lift.domain.ExerciseFilters
+import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.exerciseHistory
+import dev.justinsmith.lift.domain.exerciseTrend
+import dev.justinsmith.lift.domain.offeredExercises
+import dev.justinsmith.lift.domain.ownedEquipment
+import dev.justinsmith.lift.domain.recentExercises
+import dev.justinsmith.lift.domain.setsOldestFirst
+import dev.justinsmith.lift.library.resources.Res
+import dev.justinsmith.lift.library.resources.library_group
+import dev.justinsmith.lift.library.resources.library_new
+import dev.justinsmith.lift.library.resources.library_recent
+import dev.justinsmith.lift.library.resources.library_title
+import dev.justinsmith.lift.library.resources.library_yours
+import dev.justinsmith.lift.ui.equipmentName
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -61,7 +61,7 @@ data class ExerciseLibraryUiState(
  * process being let go.
  */
 class ExerciseLibraryViewModel(
-    repository: BellsRepository,
+    repository: LiftRepository,
     private val filters: ExerciseFilterStore,
     private val timestamps: TimestampFormatter,
     private val savedState: SavedStateHandle = SavedStateHandle(),

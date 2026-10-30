@@ -3,9 +3,6 @@
 package dev.justinsmith.interval.history
 
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.bells.domain.ProgramId
-import dev.justinsmith.bells.domain.ProgramKey
-import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.interval.fakes.DAY_MILLIS
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
@@ -21,6 +18,9 @@ import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.epochDayOf
 import dev.justinsmith.interval.timer.estimateCalories
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -44,7 +44,7 @@ private val MONDAY = TODAY - 3
 class HistoryViewModelTest : MainDispatcherTest() {
     private var clock = noonOf(TODAY)
     private val repository = FakeStorage().repository(now = { clock })
-    private val lift = FakeBellsStorage()
+    private val lift = FakeLiftStorage()
     private val bells = lift.repository(now = { clock })
     private val viewModel by lazy {
         HistoryViewModel(repository, bells, FixedTimestampFormatter, clock = { clock }, computation = dispatcher)

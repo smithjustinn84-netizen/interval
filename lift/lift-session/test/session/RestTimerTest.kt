@@ -1,8 +1,8 @@
-package dev.justinsmith.bells.session
+package dev.justinsmith.lift.session
 
-import dev.justinsmith.bells.domain.EmomCue
-import dev.justinsmith.bells.fakes.RecordingBeeper
-import dev.justinsmith.bells.fakes.RecordingRestAlerts
+import dev.justinsmith.lift.domain.EmomCue
+import dev.justinsmith.lift.fakes.RecordingBeeper
+import dev.justinsmith.lift.fakes.RecordingRestAlerts
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

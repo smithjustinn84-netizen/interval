@@ -1,11 +1,11 @@
 package dev.justinsmith.interval.fakes
 
-import dev.justinsmith.bells.fakes.FakeBellsStorage
-import dev.justinsmith.bells.fakes.RecordingBeeper
-import dev.justinsmith.bells.fakes.fakeBellsPlatformModule
-import dev.justinsmith.bells.fakes.fakeBellsStorageModule
 import dev.justinsmith.interval.di.appModules
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.lift.fakes.FakeLiftStorage
+import dev.justinsmith.lift.fakes.RecordingBeeper
+import dev.justinsmith.lift.fakes.fakeLiftPlatformModule
+import dev.justinsmith.lift.fakes.fakeLiftStorageModule
 import org.koin.core.KoinApplication
 import org.koin.core.module.Module
 import org.koin.dsl.koinApplication
@@ -21,7 +21,7 @@ fun testKoin(
     platformModule: Module = fakePlatformModule(),
     storage: FakeStorage = FakeStorage(),
     now: Long = 0L,
-    lift: FakeBellsStorage = FakeBellsStorage(),
+    lift: FakeLiftStorage = FakeLiftStorage(),
     beeper: RecordingBeeper = RecordingBeeper(),
     clock: WallClock = WallClock { now },
     timeSource: TimeSource.WithComparableMarks = TimeSource.Monotonic,
@@ -30,8 +30,8 @@ fun testKoin(
         appModules(
             platformModule,
             fakeStorageModule(storage),
-            bellsPlatform = fakeBellsPlatformModule(beeper),
-            bellsStorage = fakeBellsStorageModule(lift),
+            liftPlatform = fakeLiftPlatformModule(beeper),
+            liftStorage = fakeLiftStorageModule(lift),
         ) + module {
             single { clock }
             single<TimeSource.WithComparableMarks> { timeSource }

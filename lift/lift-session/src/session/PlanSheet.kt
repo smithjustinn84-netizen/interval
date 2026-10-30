@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.session
+package dev.justinsmith.lift.session
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,28 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import dev.justinsmith.bells.domain.Block
-import dev.justinsmith.bells.domain.Exercise
-import dev.justinsmith.bells.domain.ExerciseFilters
-import dev.justinsmith.bells.domain.PlanRow
-import dev.justinsmith.bells.domain.SessionPlan
-import dev.justinsmith.bells.library.ExercisePicker
-import dev.justinsmith.bells.programs.BlockChoices
-import dev.justinsmith.bells.programs.BlockCounts
-import dev.justinsmith.bells.programs.BlockLoad
-import dev.justinsmith.bells.session.resources.Res
-import dev.justinsmith.bells.session.resources.block_done
-import dev.justinsmith.bells.session.resources.plan_block_title
-import dev.justinsmith.bells.session.resources.plan_changed
-import dev.justinsmith.bells.session.resources.plan_done_of
-import dev.justinsmith.bells.session.resources.plan_hint
-import dev.justinsmith.bells.session.resources.plan_skip_block
-import dev.justinsmith.bells.session.resources.plan_skip_rest
-import dev.justinsmith.bells.session.resources.plan_skipped
-import dev.justinsmith.bells.session.resources.plan_title
-import dev.justinsmith.bells.session.resources.plan_unskip
-import dev.justinsmith.bells.ui.blockLine
-import dev.justinsmith.bells.ui.liftName
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSheet
@@ -53,6 +31,28 @@ import dev.justinsmith.interval.ui.SheetColumns
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.sheetIsSideways
+import dev.justinsmith.lift.domain.Block
+import dev.justinsmith.lift.domain.Exercise
+import dev.justinsmith.lift.domain.ExerciseFilters
+import dev.justinsmith.lift.domain.PlanRow
+import dev.justinsmith.lift.domain.SessionPlan
+import dev.justinsmith.lift.library.ExercisePicker
+import dev.justinsmith.lift.programs.BlockChoices
+import dev.justinsmith.lift.programs.BlockCounts
+import dev.justinsmith.lift.programs.BlockLoad
+import dev.justinsmith.lift.session.resources.Res
+import dev.justinsmith.lift.session.resources.block_done
+import dev.justinsmith.lift.session.resources.plan_block_title
+import dev.justinsmith.lift.session.resources.plan_changed
+import dev.justinsmith.lift.session.resources.plan_done_of
+import dev.justinsmith.lift.session.resources.plan_hint
+import dev.justinsmith.lift.session.resources.plan_skip_block
+import dev.justinsmith.lift.session.resources.plan_skip_rest
+import dev.justinsmith.lift.session.resources.plan_skipped
+import dev.justinsmith.lift.session.resources.plan_title
+import dev.justinsmith.lift.session.resources.plan_unskip
+import dev.justinsmith.lift.ui.blockLine
+import dev.justinsmith.lift.ui.liftName
 import org.jetbrains.compose.resources.stringResource
 
 /**

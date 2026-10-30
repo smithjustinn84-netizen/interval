@@ -1,23 +1,23 @@
-package dev.justinsmith.bells.domain
+package dev.justinsmith.lift.domain
 
-import dev.justinsmith.bells.domain.Muscle.Abs
-import dev.justinsmith.bells.domain.Muscle.Adductors
-import dev.justinsmith.bells.domain.Muscle.Biceps
-import dev.justinsmith.bells.domain.Muscle.Calves
-import dev.justinsmith.bells.domain.Muscle.Chest
-import dev.justinsmith.bells.domain.Muscle.Forearms
-import dev.justinsmith.bells.domain.Muscle.Glutes
-import dev.justinsmith.bells.domain.Muscle.Hamstrings
-import dev.justinsmith.bells.domain.Muscle.HipFlexors
-import dev.justinsmith.bells.domain.Muscle.Lats
-import dev.justinsmith.bells.domain.Muscle.LowerBack
-import dev.justinsmith.bells.domain.Muscle.Obliques
-import dev.justinsmith.bells.domain.Muscle.Quads
-import dev.justinsmith.bells.domain.Muscle.RearDelts
-import dev.justinsmith.bells.domain.Muscle.Shoulders
-import dev.justinsmith.bells.domain.Muscle.Traps
-import dev.justinsmith.bells.domain.Muscle.Triceps
-import dev.justinsmith.bells.domain.Muscle.UpperBack
+import dev.justinsmith.lift.domain.Muscle.Abs
+import dev.justinsmith.lift.domain.Muscle.Adductors
+import dev.justinsmith.lift.domain.Muscle.Biceps
+import dev.justinsmith.lift.domain.Muscle.Calves
+import dev.justinsmith.lift.domain.Muscle.Chest
+import dev.justinsmith.lift.domain.Muscle.Forearms
+import dev.justinsmith.lift.domain.Muscle.Glutes
+import dev.justinsmith.lift.domain.Muscle.Hamstrings
+import dev.justinsmith.lift.domain.Muscle.HipFlexors
+import dev.justinsmith.lift.domain.Muscle.Lats
+import dev.justinsmith.lift.domain.Muscle.LowerBack
+import dev.justinsmith.lift.domain.Muscle.Obliques
+import dev.justinsmith.lift.domain.Muscle.Quads
+import dev.justinsmith.lift.domain.Muscle.RearDelts
+import dev.justinsmith.lift.domain.Muscle.Shoulders
+import dev.justinsmith.lift.domain.Muscle.Traps
+import dev.justinsmith.lift.domain.Muscle.Triceps
+import dev.justinsmith.lift.domain.Muscle.UpperBack
 
 /** A muscle, or a group of them, as an exercise's page names what it works. */
 enum class Muscle {

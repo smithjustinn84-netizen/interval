@@ -2,8 +2,6 @@ package dev.justinsmith.interval.data
 
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import dev.justinsmith.bells.fakes.fakeBellsPlatformModule
-import dev.justinsmith.bells.fakes.fakeBellsStorageModule
 import dev.justinsmith.interval.di.appModules
 import dev.justinsmith.interval.fakes.fakePlatformModule
 import dev.justinsmith.interval.fakes.saveCurrentAsPreset
@@ -11,6 +9,8 @@ import dev.justinsmith.interval.platform.DATABASE_NAME
 import dev.justinsmith.interval.platform.PREFERENCES_NAME
 import dev.justinsmith.interval.platform.PlatformStorage
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.lift.fakes.fakeLiftPlatformModule
+import dev.justinsmith.lift.fakes.fakeLiftStorageModule
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -57,8 +57,8 @@ class AppKoinStorageTest {
                 modules(
                     appModules(
                         platform,
-                        bellsPlatform = fakeBellsPlatformModule(),
-                        bellsStorage = fakeBellsStorageModule(),
+                        liftPlatform = fakeLiftPlatformModule(),
+                        liftStorage = fakeLiftStorageModule(),
                     ),
                 )
             }

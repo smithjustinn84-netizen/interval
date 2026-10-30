@@ -1,9 +1,9 @@
 package dev.justinsmith.interval.history
 
-import dev.justinsmith.bells.domain.ProgramDay
 import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.formatClock
+import dev.justinsmith.lift.domain.ProgramDay
 
 data class HistoryItem(
     /** The matching preset's name, or null for a workout no preset has; the row then leads with its shape. */

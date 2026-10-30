@@ -1,13 +1,5 @@
 package dev.justinsmith.interval.export
 
-import dev.justinsmith.bells.data.BellsRepository
-import dev.justinsmith.bells.domain.Band
-import dev.justinsmith.bells.domain.Block
-import dev.justinsmith.bells.domain.CustomExercise
-import dev.justinsmith.bells.domain.Followed
-import dev.justinsmith.bells.domain.LiftSession
-import dev.justinsmith.bells.domain.Program
-import dev.justinsmith.bells.domain.SetLog
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.CueSettings
@@ -21,6 +13,14 @@ import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.settings.DataExporter
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.domain.Band
+import dev.justinsmith.lift.domain.Block
+import dev.justinsmith.lift.domain.CustomExercise
+import dev.justinsmith.lift.domain.Followed
+import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.Program
+import dev.justinsmith.lift.domain.SetLog
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -29,7 +29,7 @@ import kotlinx.serialization.json.Json
 /** The export file, from what both repositories hold right now, mapped and encoded on [computation]. */
 class AppDataExporter(
     private val intervals: IntervalRepository,
-    private val lift: BellsRepository,
+    private val lift: LiftRepository,
     private val appInfo: AppInfo,
     private val clock: WallClock,
     private val formatter: TimestampFormatter,

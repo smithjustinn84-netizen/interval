@@ -1,38 +1,38 @@
 @file:OptIn(ExperimentalCoroutinesApi::class)
 
-package dev.justinsmith.bells.data
+package dev.justinsmith.lift.data
 
 import co.touchlab.kermit.Logger
-import dev.justinsmith.bells.domain.Band
-import dev.justinsmith.bells.domain.BandColour
-import dev.justinsmith.bells.domain.CustomExercise
-import dev.justinsmith.bells.domain.Equipment
-import dev.justinsmith.bells.domain.Exercise
-import dev.justinsmith.bells.domain.ExerciseDraft
-import dev.justinsmith.bells.domain.Focus
-import dev.justinsmith.bells.domain.Followed
-import dev.justinsmith.bells.domain.LiftSession
-import dev.justinsmith.bells.domain.Measure
-import dev.justinsmith.bells.domain.PlanChanges
-import dev.justinsmith.bells.domain.Program
-import dev.justinsmith.bells.domain.ProgramDay
-import dev.justinsmith.bells.domain.ProgramDraft
-import dev.justinsmith.bells.domain.ProgramKey
-import dev.justinsmith.bells.domain.RestClock
-import dev.justinsmith.bells.domain.SaveScope
-import dev.justinsmith.bells.domain.SessionPlan
-import dev.justinsmith.bells.domain.SetLog
-import dev.justinsmith.bells.domain.Side
-import dev.justinsmith.bells.domain.UnknownExercise
-import dev.justinsmith.bells.domain.bandOf
-import dev.justinsmith.bells.domain.bands
-import dev.justinsmith.bells.domain.builtInPrograms
-import dev.justinsmith.bells.domain.lastDayDone
-import dev.justinsmith.bells.domain.nextBandPosition
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.storage.SerialWriter
 import dev.justinsmith.interval.storage.orEmptyOnError
 import dev.justinsmith.interval.storage.orOnError
+import dev.justinsmith.lift.domain.Band
+import dev.justinsmith.lift.domain.BandColour
+import dev.justinsmith.lift.domain.CustomExercise
+import dev.justinsmith.lift.domain.Equipment
+import dev.justinsmith.lift.domain.Exercise
+import dev.justinsmith.lift.domain.ExerciseDraft
+import dev.justinsmith.lift.domain.Focus
+import dev.justinsmith.lift.domain.Followed
+import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.Measure
+import dev.justinsmith.lift.domain.PlanChanges
+import dev.justinsmith.lift.domain.Program
+import dev.justinsmith.lift.domain.ProgramDay
+import dev.justinsmith.lift.domain.ProgramDraft
+import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.RestClock
+import dev.justinsmith.lift.domain.SaveScope
+import dev.justinsmith.lift.domain.SessionPlan
+import dev.justinsmith.lift.domain.SetLog
+import dev.justinsmith.lift.domain.Side
+import dev.justinsmith.lift.domain.UnknownExercise
+import dev.justinsmith.lift.domain.bandOf
+import dev.justinsmith.lift.domain.bands
+import dev.justinsmith.lift.domain.builtInPrograms
+import dev.justinsmith.lift.domain.lastDayDone
+import dev.justinsmith.lift.domain.nextBandPosition
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -48,12 +48,12 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 /**
- * Bells' saved state: its sessions and their sets, the bells the user owns, the programs they made and the
+ * Lift's saved state: its sessions and their sets, the bells the user owns, the programs they made and the
  * one followed. The one way into storage. Everything is read into memory before [ready] turns true; writes
  * run one at a time on [scope], in the order they were made.
  */
 @Suppress("detekt.TooManyFunctions") // The one way into storage, every write side by side.
-class BellsRepository(
+class LiftRepository(
     private val sessionDao: SessionDao,
     private val bellDao: BellDao,
     private val followingDao: FollowingDao,
@@ -63,7 +63,7 @@ class BellsRepository(
     private val scope: CoroutineScope,
     private val clock: WallClock,
 ) : LiftActivity {
-    private val log = Logger.withTag("BellsRepository")
+    private val log = Logger.withTag("LiftRepository")
     private val writer = SerialWriter(scope, log)
 
     private val _ready = MutableStateFlow(false)

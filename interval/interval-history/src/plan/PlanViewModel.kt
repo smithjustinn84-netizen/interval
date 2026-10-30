@@ -2,7 +2,6 @@ package dev.justinsmith.interval.plan
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.bells.data.LiftActivity
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.history.TrainingLog
@@ -22,6 +21,7 @@ import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.MINUTES_PER_DAY
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.weekdayOf
+import dev.justinsmith.lift.data.LiftActivity
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted

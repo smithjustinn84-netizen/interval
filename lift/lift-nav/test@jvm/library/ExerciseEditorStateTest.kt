@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalTestApi::class)
 
-package dev.justinsmith.bells.library
+package dev.justinsmith.lift.library
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -11,10 +11,10 @@ import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDe
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import dev.justinsmith.bells.domain.Measure
-import dev.justinsmith.bells.fakes.bellsTestKoin
 import dev.justinsmith.interval.ui.StateRestoration
 import dev.justinsmith.interval.ui.runUiTest
+import dev.justinsmith.lift.domain.Measure
+import dev.justinsmith.lift.fakes.liftTestKoin
 import org.koin.compose.KoinIsolatedContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -32,7 +32,7 @@ class ExerciseEditorStateTest {
     private var editor: ExerciseEditorViewModel? = null
 
     private fun editorTest(block: DesktopComposeUiTest.(StateRestoration) -> Unit) = runUiTest {
-        val koin = bellsTestKoin()
+        val koin = liftTestKoin()
         try {
             val restoration = StateRestoration(this)
             restoration.setContent {

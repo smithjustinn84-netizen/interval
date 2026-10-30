@@ -1,34 +1,34 @@
-package dev.justinsmith.bells.fakes
+package dev.justinsmith.lift.fakes
 
-import dev.justinsmith.bells.data.BandDao
-import dev.justinsmith.bells.data.BandEntity
-import dev.justinsmith.bells.data.BarEntity
-import dev.justinsmith.bells.data.BellDao
-import dev.justinsmith.bells.data.BellEntity
-import dev.justinsmith.bells.data.BellsRepository
-import dev.justinsmith.bells.data.CustomExerciseDao
-import dev.justinsmith.bells.data.CustomExerciseEntity
-import dev.justinsmith.bells.data.CustomProgramDao
-import dev.justinsmith.bells.data.CustomProgramEntity
-import dev.justinsmith.bells.data.FollowingDao
-import dev.justinsmith.bells.data.FollowingEntity
-import dev.justinsmith.bells.data.IntervalActivity
-import dev.justinsmith.bells.data.IntervalWorkout
-import dev.justinsmith.bells.data.RestEntity
-import dev.justinsmith.bells.data.SessionDao
-import dev.justinsmith.bells.data.SessionEntity
-import dev.justinsmith.bells.data.SetEntity
-import dev.justinsmith.bells.di.BellsStorageScope
-import dev.justinsmith.bells.di.bellsModules
-import dev.justinsmith.bells.domain.EmomCue
-import dev.justinsmith.bells.domain.ProgramKey
-import dev.justinsmith.bells.platform.Beeper
-import dev.justinsmith.bells.platform.RestAlerts
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.RecordingSharer
 import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.lift.data.BandDao
+import dev.justinsmith.lift.data.BandEntity
+import dev.justinsmith.lift.data.BarEntity
+import dev.justinsmith.lift.data.BellDao
+import dev.justinsmith.lift.data.BellEntity
+import dev.justinsmith.lift.data.CustomExerciseDao
+import dev.justinsmith.lift.data.CustomExerciseEntity
+import dev.justinsmith.lift.data.CustomProgramDao
+import dev.justinsmith.lift.data.CustomProgramEntity
+import dev.justinsmith.lift.data.FollowingDao
+import dev.justinsmith.lift.data.FollowingEntity
+import dev.justinsmith.lift.data.IntervalActivity
+import dev.justinsmith.lift.data.IntervalWorkout
+import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.data.RestEntity
+import dev.justinsmith.lift.data.SessionDao
+import dev.justinsmith.lift.data.SessionEntity
+import dev.justinsmith.lift.data.SetEntity
+import dev.justinsmith.lift.di.LiftStorageScope
+import dev.justinsmith.lift.di.liftModules
+import dev.justinsmith.lift.domain.EmomCue
+import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.platform.Beeper
+import dev.justinsmith.lift.platform.RestAlerts
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -200,7 +200,7 @@ class FakeBandDao : BandDao {
     override suspend fun delete(id: String) = rows.update { all -> all.filterNot { it.id == id } }
 }
 
-/** The rest of the app as Bells sees it: interval workouts and a weekly goal a test sets. */
+/** The rest of the app as Lift sees it: interval workouts and a weekly goal a test sets. */
 class FakeIntervalActivity : IntervalActivity {
     override val workouts = MutableStateFlow(emptyList<IntervalWorkout>())
     override val weeklyGoal = MutableStateFlow<Int?>(null)
@@ -215,8 +215,8 @@ class RecordingBeeper : Beeper {
     }
 }
 
-/** Bells' storage over the fakes: no database, and writes run at once on the caller's thread. */
-class FakeBellsStorage {
+/** Lift's storage over the fakes: no database, and writes run at once on the caller's thread. */
+class FakeLiftStorage {
     val sessions = FakeSessionDao()
     val bells = FakeBellDao()
     val following = FakeFollowingDao()
@@ -225,7 +225,7 @@ class FakeBellsStorage {
     val bands = FakeBandDao()
 
     /** A repository over this storage, its writes landed by the time a call returns. */
-    fun repository(now: WallClock = WallClock { 0L }): BellsRepository = BellsRepository(
+    fun repository(now: WallClock = WallClock { 0L }): LiftRepository = LiftRepository(
         sessions,
         bells,
         following,
@@ -280,15 +280,15 @@ class RecordingRestAlerts : RestAlerts {
     }
 }
 
-/** Stands in for `rememberBellsPlatformModule()`. Tests never load the real one: it writes a database file. */
-fun fakeBellsPlatformModule(beeper: Beeper = RecordingBeeper(), alerts: RestAlerts = RecordingRestAlerts()): Module =
+/** Stands in for `rememberLiftPlatformModule()`. Tests never load the real one: it writes a database file. */
+fun fakeLiftPlatformModule(beeper: Beeper = RecordingBeeper(), alerts: RestAlerts = RecordingRestAlerts()): Module =
     module {
         single<Beeper> { beeper }
         single<RestAlerts> { alerts }
     }
 
-fun fakeBellsStorageModule(storage: FakeBellsStorage = FakeBellsStorage()): Module = module {
-    single<CoroutineScope>(BellsStorageScope) { CoroutineScope(SupervisorJob() + Dispatchers.Unconfined) }.withOptions {
+fun fakeLiftStorageModule(storage: FakeLiftStorage = FakeLiftStorage()): Module = module {
+    single<CoroutineScope>(LiftStorageScope) { CoroutineScope(SupervisorJob() + Dispatchers.Unconfined) }.withOptions {
         onClose { it?.cancel() }
     }
     single<SessionDao> { storage.sessions }
@@ -300,12 +300,12 @@ fun fakeBellsStorageModule(storage: FakeBellsStorage = FakeBellsStorage()): Modu
 }
 
 /**
- * Bells' part of the container over fakes, with what the app would supply: a clock reading [now], the
+ * Lift's part of the container over fakes, with what the app would supply: a clock reading [now], the
  * [FixedTimestampFormatter] and [intervals].
  */
-fun bellsTestKoin(
-    storage: FakeBellsStorage = FakeBellsStorage(),
-    platformModule: Module = fakeBellsPlatformModule(),
+fun liftTestKoin(
+    storage: FakeLiftStorage = FakeLiftStorage(),
+    platformModule: Module = fakeLiftPlatformModule(),
     now: () -> Long = { 0L },
     intervals: IntervalActivity = FakeIntervalActivity(),
     sharer: Sharer = RecordingSharer(),
@@ -316,5 +316,5 @@ fun bellsTestKoin(
         single<IntervalActivity> { intervals }
         single { sharer }
     }
-    modules(bellsModules(platformModule, fakeBellsStorageModule(storage)) + app)
+    modules(liftModules(platformModule, fakeLiftStorageModule(storage)) + app)
 }

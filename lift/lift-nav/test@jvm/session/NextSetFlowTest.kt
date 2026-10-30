@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalTestApi::class)
 
-package dev.justinsmith.bells.session
+package dev.justinsmith.lift.session
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
@@ -16,15 +16,15 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
-import dev.justinsmith.bells.data.SessionEntity
-import dev.justinsmith.bells.data.SetEntity
-import dev.justinsmith.bells.domain.BuiltInExercise
-import dev.justinsmith.bells.domain.Exercise
-import dev.justinsmith.bells.domain.Side
-import dev.justinsmith.bells.fakes.FakeBellsStorage
-import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.waitForText
+import dev.justinsmith.lift.data.SessionEntity
+import dev.justinsmith.lift.data.SetEntity
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.Exercise
+import dev.justinsmith.lift.domain.Side
+import dev.justinsmith.lift.fakes.FakeLiftStorage
+import dev.justinsmith.lift.ui.liftAppTest
 import kotlinx.coroutines.flow.update
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -34,7 +34,7 @@ import kotlin.test.assertTrue
 class NextSetFlowTest {
     /** Storage with one session of [exercise], [kg] × [reps] on [side], [finished] earlier or still open. */
     private fun storageWith(exercise: Exercise, kg: Double, reps: Int, side: Side?, finished: Boolean) =
-        FakeBellsStorage().apply {
+        FakeLiftStorage().apply {
             sessions.sessions.update {
                 it + SessionEntity("s1", 0, if (finished) 60_000 else null, "Earlier", 60_000)
             }
@@ -44,7 +44,7 @@ class NextSetFlowTest {
         }
 
     @Test
-    fun `a free session logs the card's set in one tap and keeps it for the next`() = bellsAppTest { app ->
+    fun `a free session logs the card's set in one tap and keeps it for the next`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Next set")
         onNodeWithText("Log set").performClick()
@@ -58,7 +58,7 @@ class NextSetFlowTest {
     }
 
     @Test
-    fun `Heavier and More reps on the card change the set logged`() = bellsAppTest { app ->
+    fun `Heavier and More reps on the card change the set logged`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Next set")
         onNodeWithContentDescription("Heavier").performClick()
@@ -71,7 +71,7 @@ class NextSetFlowTest {
     }
 
     @Test
-    fun `Change on the card picks a lift and the card suggests its last bell`() = bellsAppTest(
+    fun `Change on the card picks a lift and the card suggests its last bell`() = liftAppTest(
         storageWith(BuiltInExercise.Press, 12.0, 8, Side.Left, finished = true),
     ) { app ->
         onNodeWithText("Start session").performClick()
@@ -96,7 +96,7 @@ class NextSetFlowTest {
     }
 
     @Test
-    fun `Two bells on the card doubles the load and drops the side`() = bellsAppTest { app ->
+    fun `Two bells on the card doubles the load and drops the side`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Next set")
         onNodeWithText("Two bells").assertDoesNotExist()
@@ -120,7 +120,7 @@ class NextSetFlowTest {
     }
 
     @Test
-    fun `a hold on the card is timed through the sheet`() = bellsAppTest { app ->
+    fun `a hold on the card is timed through the sheet`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Next set")
         onNodeWithText("Change").performClick()
@@ -140,7 +140,7 @@ class NextSetFlowTest {
     }
 
     @Test
-    fun `the card and the sheet edit one draft`() = bellsAppTest { app ->
+    fun `the card and the sheet edit one draft`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Next set")
         onNodeWithContentDescription("Heavier").performClick()
@@ -156,7 +156,7 @@ class NextSetFlowTest {
     }
 
     @Test
-    fun `an exercise added from the card comes back picked`() = bellsAppTest {
+    fun `an exercise added from the card comes back picked`() = liftAppTest {
         onNodeWithText("Start session").performClick()
         waitForText("Next set")
         onNodeWithText("Change").performClick()
@@ -171,7 +171,7 @@ class NextSetFlowTest {
     }
 
     @Test
-    fun `a resumed session's card starts from its last set on the other side`() = bellsAppTest(
+    fun `a resumed session's card starts from its last set on the other side`() = liftAppTest(
         storageWith(BuiltInExercise.Press, 24.0, 5, Side.Left, finished = false),
     ) { app ->
         onNodeWithText("Resume session").performClick()
@@ -186,7 +186,7 @@ class NextSetFlowTest {
     }
 
     @Test
-    fun `on a tablet the next set sits beside the session's numbers`() = bellsAppTest(window = Window.Tablet) {
+    fun `on a tablet the next set sits beside the session's numbers`() = liftAppTest(window = Window.Tablet) {
         onNodeWithText("Start session").performClick()
         waitForText("Next set")
         val time = onNodeWithText("Time").assertIsDisplayed().getUnclippedBoundsInRoot()

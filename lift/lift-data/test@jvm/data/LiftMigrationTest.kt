@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.data
+package dev.justinsmith.lift.data
 
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
@@ -16,7 +16,7 @@ import kotlin.test.assertEquals
  * A database left at an earlier version opens at the current one with its rows intact. The old schema is
  * written out here as its `schemas/` JSON has it, so the test keeps working as later versions come.
  */
-class BellsMigrationTest {
+class LiftMigrationTest {
     private val file = File.createTempFile("bells-migration", ".db").also { it.delete() }
 
     @AfterTest
@@ -41,7 +41,7 @@ class BellsMigrationTest {
     @Test
     fun `version 6 opens at version 7 with its sets as they were`() = runBlocking {
         writeVersion6()
-        val database = Room.databaseBuilder<BellsDatabase>(name = file.absolutePath)
+        val database = Room.databaseBuilder<LiftDatabase>(name = file.absolutePath)
             .setDriver(BundledSQLiteDriver())
             .setQueryCoroutineContext(Dispatchers.IO)
             .build()
@@ -70,7 +70,7 @@ class BellsMigrationTest {
             execSQL("PRAGMA user_version = 7")
             close()
         }
-        val database = Room.databaseBuilder<BellsDatabase>(name = file.absolutePath)
+        val database = Room.databaseBuilder<LiftDatabase>(name = file.absolutePath)
             .setDriver(BundledSQLiteDriver())
             .setQueryCoroutineContext(Dispatchers.IO)
             .build()
@@ -95,7 +95,7 @@ class BellsMigrationTest {
             execSQL("PRAGMA user_version = 8")
             close()
         }
-        val database = Room.databaseBuilder<BellsDatabase>(name = file.absolutePath)
+        val database = Room.databaseBuilder<LiftDatabase>(name = file.absolutePath)
             .setDriver(BundledSQLiteDriver())
             .setQueryCoroutineContext(Dispatchers.IO)
             .build()
@@ -121,7 +121,7 @@ class BellsMigrationTest {
             execSQL("PRAGMA user_version = 10")
             close()
         }
-        val database = Room.databaseBuilder<BellsDatabase>(name = file.absolutePath)
+        val database = Room.databaseBuilder<LiftDatabase>(name = file.absolutePath)
             .setDriver(BundledSQLiteDriver())
             .setQueryCoroutineContext(Dispatchers.IO)
             .build()

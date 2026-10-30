@@ -17,4 +17,4 @@ test-dependencies:
 settings:
   compose:
     resources:
-      packageName: dev.justinsmith.bells.ui.resources
+      packageName: dev.justinsmith.lift.ui.resources

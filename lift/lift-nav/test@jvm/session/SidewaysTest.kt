@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalTestApi::class)
 
-package dev.justinsmith.bells.session
+package dev.justinsmith.lift.session
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredSize
@@ -20,26 +20,26 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import dev.justinsmith.bells.domain.BlockChange
-import dev.justinsmith.bells.domain.BuiltInExercise
-import dev.justinsmith.bells.domain.EmomPhase
-import dev.justinsmith.bells.domain.EmomState
-import dev.justinsmith.bells.domain.LiftSession
-import dev.justinsmith.bells.domain.PlanChanges
-import dev.justinsmith.bells.domain.Side
-import dev.justinsmith.bells.domain.builtInPrograms
-import dev.justinsmith.bells.ui.bellsAppTest
-import dev.justinsmith.bells.ui.setBellsContent
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.waitForText
+import dev.justinsmith.lift.domain.BlockChange
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.EmomPhase
+import dev.justinsmith.lift.domain.EmomState
+import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.PlanChanges
+import dev.justinsmith.lift.domain.Side
+import dev.justinsmith.lift.domain.builtInPrograms
+import dev.justinsmith.lift.ui.liftAppTest
+import dev.justinsmith.lift.ui.setLiftContent
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
 /** A session on a phone on its side: what it needs next is in view, with nothing to scroll, and turning keeps it. */
 class SidewaysTest {
     @Test
-    fun `Log set and the summary's Done show without scrolling`() = bellsAppTest(window = Window.PhoneSideways) { app ->
+    fun `Log set and the summary's Done show without scrolling`() = liftAppTest(window = Window.PhoneSideways) { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Finish").assertIsDisplayed()
@@ -58,7 +58,7 @@ class SidewaysTest {
     @Test
     fun `an EMOM shows its clock and Set done`() = runUiTest(Window.PhoneSideways) {
         val run = EmomRun(BuiltInExercise.TwoHandSwing, 24.0, 10, 10, firstSide = Side.Left, startedAtMillis = 0)
-        setBellsContent { EmomScreen(run, EmomState(EmomPhase.Work, 3, 10, 45, 0.25f), onFinishSet = {}, onStop = {}) }
+        setLiftContent { EmomScreen(run, EmomState(EmomPhase.Work, 3, 10, 45, 0.25f), onFinishSet = {}, onStop = {}) }
         onNodeWithText("0:45").assertIsDisplayed()
         onNodeWithText("Work").assertIsDisplayed()
         onNodeWithText("Two-hand swing · 24 kg × 10").assertIsDisplayed()
@@ -79,7 +79,7 @@ class SidewaysTest {
             changes = PlanChanges(program, 1, 0, listOf(BlockChange(0, block, block.copy(rounds = block.rounds + 1)))),
         )
         var sideways by mutableStateOf(false)
-        setBellsContent {
+        setLiftContent {
             val size = if (sideways) DpSize(891.dp, 411.dp) else DpSize(411.dp, 891.dp)
             Box(Modifier.requiredSize(size)) { SummaryScreen(finished, onDone = {}) }
         }

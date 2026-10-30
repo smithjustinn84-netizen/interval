@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.ui
+package dev.justinsmith.lift.ui
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -27,21 +27,6 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
-import dev.justinsmith.bells.domain.BuiltInExercise
-import dev.justinsmith.bells.domain.CustomExercise
-import dev.justinsmith.bells.domain.Doubles
-import dev.justinsmith.bells.domain.Exercise
-import dev.justinsmith.bells.domain.Side
-import dev.justinsmith.bells.domain.UnknownExercise
-import dev.justinsmith.bells.ui.resources.Res
-import dev.justinsmith.bells.ui.resources.common_joined
-import dev.justinsmith.bells.ui.resources.exercise_unknown
-import dev.justinsmith.bells.ui.resources.lift_double
-import dev.justinsmith.bells.ui.resources.record_tag
-import dev.justinsmith.bells.ui.resources.session_title_more
-import dev.justinsmith.bells.ui.resources.session_title_two
-import dev.justinsmith.bells.ui.resources.side_left
-import dev.justinsmith.bells.ui.resources.side_right
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
@@ -51,6 +36,21 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StandardEasing
 import dev.justinsmith.interval.ui.rememberRising
 import dev.justinsmith.interval.ui.surfaceButton
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.CustomExercise
+import dev.justinsmith.lift.domain.Doubles
+import dev.justinsmith.lift.domain.Exercise
+import dev.justinsmith.lift.domain.Side
+import dev.justinsmith.lift.domain.UnknownExercise
+import dev.justinsmith.lift.ui.resources.Res
+import dev.justinsmith.lift.ui.resources.common_joined
+import dev.justinsmith.lift.ui.resources.exercise_unknown
+import dev.justinsmith.lift.ui.resources.lift_double
+import dev.justinsmith.lift.ui.resources.record_tag
+import dev.justinsmith.lift.ui.resources.session_title_more
+import dev.justinsmith.lift.ui.resources.session_title_two
+import dev.justinsmith.lift.ui.resources.side_left
+import dev.justinsmith.lift.ui.resources.side_right
 import org.jetbrains.compose.resources.stringResource
 
 /** An exercise's name: "Two-hand swing". */

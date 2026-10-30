@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.library
+package dev.justinsmith.lift.library
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -7,22 +7,22 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import dev.justinsmith.bells.domain.Trend
-import dev.justinsmith.bells.domain.TrendMeasure
-import dev.justinsmith.bells.domain.formatKg
-import dev.justinsmith.bells.library.resources.Res
-import dev.justinsmith.bells.library.resources.detail_trend
-import dev.justinsmith.bells.library.resources.detail_trend_cd
-import dev.justinsmith.bells.library.resources.detail_trend_kg
-import dev.justinsmith.bells.library.resources.detail_trend_latest
-import dev.justinsmith.bells.library.resources.detail_trend_reps
-import dev.justinsmith.bells.library.resources.detail_trend_span
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.Bar
 import dev.justinsmith.interval.ui.Bars
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.lift.domain.Trend
+import dev.justinsmith.lift.domain.TrendMeasure
+import dev.justinsmith.lift.domain.formatKg
+import dev.justinsmith.lift.library.resources.Res
+import dev.justinsmith.lift.library.resources.detail_trend
+import dev.justinsmith.lift.library.resources.detail_trend_cd
+import dev.justinsmith.lift.library.resources.detail_trend_kg
+import dev.justinsmith.lift.library.resources.detail_trend_latest
+import dev.justinsmith.lift.library.resources.detail_trend_reps
+import dev.justinsmith.lift.library.resources.detail_trend_span
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 

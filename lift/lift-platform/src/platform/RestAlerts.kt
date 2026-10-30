@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.platform
+package dev.justinsmith.lift.platform
 
 /**
  * What the platform does for a rest between sets, so its end is heard with the app off screen. Android keeps

@@ -25,7 +25,7 @@ modules:
   - interval/interval-ui
   - interval/interval-workout
 
-  # Lift, the strength side (packages `dev.justinsmith.bells.*`): its foundation, features and navigation.
+  # Lift, the strength side (packages `dev.justinsmith.lift.*`): its foundation, features and navigation.
   - lift/lift-data
   - lift/lift-domain
   - lift/lift-library

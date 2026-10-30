@@ -1,12 +1,12 @@
 @file:OptIn(ExperimentalCoroutinesApi::class)
 
-package dev.justinsmith.bells.history
+package dev.justinsmith.lift.history
 
-import dev.justinsmith.bells.domain.PersonalRecord
-import dev.justinsmith.bells.domain.ProgramId
-import dev.justinsmith.bells.domain.ProgramKey
-import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
+import dev.justinsmith.lift.domain.PersonalRecord
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -22,7 +22,7 @@ private const val DAY = 24L * 60 * 60 * 1000
 
 /** A finished session's page: the session, when it was, what it set, and its deletion with undo. */
 class LiftDetailViewModelTest {
-    private val storage = FakeBellsStorage()
+    private val storage = FakeLiftStorage()
     private val repository = storage.repository()
 
     @BeforeTest

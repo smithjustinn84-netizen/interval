@@ -1,29 +1,29 @@
 @file:OptIn(ExperimentalCoroutinesApi::class)
 
-package dev.justinsmith.bells.session
+package dev.justinsmith.lift.session
 
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.bells.data.BellsRepository
-import dev.justinsmith.bells.data.ExerciseFilterStore
-import dev.justinsmith.bells.data.FollowingEntity
-import dev.justinsmith.bells.data.SessionEntity
-import dev.justinsmith.bells.data.SetEntity
-import dev.justinsmith.bells.domain.BAR_KG_STEP
-import dev.justinsmith.bells.domain.BuiltInExercise
-import dev.justinsmith.bells.domain.Equipment
-import dev.justinsmith.bells.domain.Exercise
-import dev.justinsmith.bells.domain.ProgramId
-import dev.justinsmith.bells.domain.ProgramKey
-import dev.justinsmith.bells.domain.RestClock
-import dev.justinsmith.bells.domain.RestState
-import dev.justinsmith.bells.domain.Side
-import dev.justinsmith.bells.domain.program
-import dev.justinsmith.bells.fakes.FakeBellsStorage
-import dev.justinsmith.bells.fakes.FakeIntervalActivity
-import dev.justinsmith.bells.fakes.RecordingBeeper
-import dev.justinsmith.bells.fakes.RecordingRestAlerts
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.lift.data.ExerciseFilterStore
+import dev.justinsmith.lift.data.FollowingEntity
+import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.data.SessionEntity
+import dev.justinsmith.lift.data.SetEntity
+import dev.justinsmith.lift.domain.BAR_KG_STEP
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.Equipment
+import dev.justinsmith.lift.domain.Exercise
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.RestClock
+import dev.justinsmith.lift.domain.RestState
+import dev.justinsmith.lift.domain.Side
+import dev.justinsmith.lift.domain.program
+import dev.justinsmith.lift.fakes.FakeIntervalActivity
+import dev.justinsmith.lift.fakes.FakeLiftStorage
+import dev.justinsmith.lift.fakes.RecordingBeeper
+import dev.justinsmith.lift.fakes.RecordingRestAlerts
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -44,10 +44,10 @@ import kotlin.test.assertTrue
 
 /** The sheet's draft, which the Next set card composes: what a lift picked starts from, and how it steps. */
 class SessionViewModelTest {
-    private val storage = FakeBellsStorage()
+    private val storage = FakeLiftStorage()
     private var now = 100_000L
     private val repository = with(storage) {
-        BellsRepository(
+        LiftRepository(
             sessions,
             bells,
             following,

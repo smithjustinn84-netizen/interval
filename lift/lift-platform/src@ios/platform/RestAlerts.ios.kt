@@ -1,12 +1,12 @@
 @file:OptIn(ExperimentalForeignApi::class)
 
-package dev.justinsmith.bells.platform
+package dev.justinsmith.lift.platform
 
 import co.touchlab.kermit.Logger
-import dev.justinsmith.bells.platform.resources.Res
-import dev.justinsmith.bells.platform.resources.rest_over
-import dev.justinsmith.bells.platform.resources.rest_over_text
 import dev.justinsmith.interval.platform.epochMillisNow
+import dev.justinsmith.lift.platform.resources.Res
+import dev.justinsmith.lift.platform.resources.rest_over
+import dev.justinsmith.lift.platform.resources.rest_over_text
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

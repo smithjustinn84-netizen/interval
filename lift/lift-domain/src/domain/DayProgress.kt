@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.domain
+package dev.justinsmith.lift.domain
 
 /**
  * The next set of a program day: the [index]-th (from 0) of its [total], in its [block]-th block (from 0),

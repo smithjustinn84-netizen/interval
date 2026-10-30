@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.session
+package dev.justinsmith.lift.session
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -13,13 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import dev.justinsmith.bells.domain.RestClock
-import dev.justinsmith.bells.domain.RestState
-import dev.justinsmith.bells.session.resources.Res
-import dev.justinsmith.bells.session.resources.session_rest
-import dev.justinsmith.bells.session.resources.session_rest_less_cd
-import dev.justinsmith.bells.session.resources.session_rest_more_cd
-import dev.justinsmith.bells.session.resources.session_rest_skip
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -27,6 +20,13 @@ import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RepeatButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.lift.domain.RestClock
+import dev.justinsmith.lift.domain.RestState
+import dev.justinsmith.lift.session.resources.Res
+import dev.justinsmith.lift.session.resources.session_rest
+import dev.justinsmith.lift.session.resources.session_rest_less_cd
+import dev.justinsmith.lift.session.resources.session_rest_more_cd
+import dev.justinsmith.lift.session.resources.session_rest_skip
 import org.jetbrains.compose.resources.stringResource
 
 /**

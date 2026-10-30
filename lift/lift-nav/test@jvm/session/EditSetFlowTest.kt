@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalTestApi::class)
 
-package dev.justinsmith.bells.session
+package dev.justinsmith.lift.session
 
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -11,15 +11,15 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.interval.ui.waitForText
+import dev.justinsmith.lift.ui.liftAppTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /** Changing a set already logged, from its row in the session. */
 class EditSetFlowTest {
     @Test
-    fun `a set logged opens on a tap to change its bell and reps`() = bellsAppTest { app ->
+    fun `a set logged opens on a tap to change its bell and reps`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()

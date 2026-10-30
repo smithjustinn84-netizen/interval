@@ -11,11 +11,11 @@ import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import dev.justinsmith.bells.data.FollowingEntity
-import dev.justinsmith.bells.data.SessionEntity
-import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.waitForText
+import dev.justinsmith.lift.data.FollowingEntity
+import dev.justinsmith.lift.data.SessionEntity
+import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -54,7 +54,7 @@ class LiftFlowTest {
     @Test
     fun `on a tablet a session opens beside History but on a page of its own from Lift`() = appTest(
         Window.Tablet,
-        lift = FakeBellsStorage().apply { finished("b1", "Swings", startedAt = 0, finishedAt = 600_000, 24.0 to 10) },
+        lift = FakeLiftStorage().apply { finished("b1", "Swings", startedAt = 0, finishedAt = 600_000, 24.0 to 10) },
     ) {
         tab("History").performClick()
         onNode(hasText("Swings") and hasClickAction()).performClick()
@@ -74,7 +74,7 @@ class LiftFlowTest {
 
     @Test
     fun `a session opens from History and Delete takes it out with Undo`() = appTest(
-        lift = FakeBellsStorage().apply { finished("b1", "Swings", startedAt = 0, finishedAt = 600_000, 24.0 to 10) },
+        lift = FakeLiftStorage().apply { finished("b1", "Swings", startedAt = 0, finishedAt = 600_000, 24.0 to 10) },
     ) { app ->
         tab("History").performClick()
         onNode(hasText("Swings") and hasClickAction()).performClick()
@@ -107,7 +107,7 @@ class LiftFlowTest {
 
     @Test
     fun `the last session on Lift opens its page`() = appTest(
-        lift = FakeBellsStorage().apply { finished("b1", "Swings", startedAt = 0, finishedAt = 600_000, 24.0 to 10) },
+        lift = FakeLiftStorage().apply { finished("b1", "Swings", startedAt = 0, finishedAt = 600_000, 24.0 to 10) },
     ) {
         tab("Lift").performClick()
         waitForText("Swings")
@@ -119,7 +119,7 @@ class LiftFlowTest {
 
     @Test
     fun `the program followed opens from Lift and a day opens its session`() = appTest(
-        lift = FakeBellsStorage().apply {
+        lift = FakeLiftStorage().apply {
             val goblets = "GobletSquatRow"
             following.row.value = FollowingEntity(programId = goblets, startedAtEpochMillis = 0)
             sessions.sessions.value = listOf(

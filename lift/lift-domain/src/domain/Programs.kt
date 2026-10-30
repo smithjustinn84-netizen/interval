@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.domain
+package dev.justinsmith.lift.domain
 
 /** How a block's sets run: one after another, every minute on the minute, or in ladders of rising reps. */
 enum class BlockKind { Sets, Emom, Ladder }

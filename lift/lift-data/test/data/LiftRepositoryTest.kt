@@ -1,30 +1,30 @@
-package dev.justinsmith.bells.data
+package dev.justinsmith.lift.data
 
-import dev.justinsmith.bells.domain.Band
-import dev.justinsmith.bells.domain.BandColour
-import dev.justinsmith.bells.domain.BandLevel
-import dev.justinsmith.bells.domain.Block
-import dev.justinsmith.bells.domain.BlockKind
-import dev.justinsmith.bells.domain.BuiltInExercise
-import dev.justinsmith.bells.domain.Equipment
-import dev.justinsmith.bells.domain.ExerciseDraft
-import dev.justinsmith.bells.domain.Focus
-import dev.justinsmith.bells.domain.Followed
-import dev.justinsmith.bells.domain.Measure
-import dev.justinsmith.bells.domain.ProgramDraft
-import dev.justinsmith.bells.domain.ProgramId
-import dev.justinsmith.bells.domain.ProgramKey
-import dev.justinsmith.bells.domain.SaveScope
-import dev.justinsmith.bells.domain.Side
-import dev.justinsmith.bells.domain.UnknownExercise
-import dev.justinsmith.bells.domain.planChanges
-import dev.justinsmith.bells.domain.program
-import dev.justinsmith.bells.fakes.FakeBandDao
-import dev.justinsmith.bells.fakes.FakeBellDao
-import dev.justinsmith.bells.fakes.FakeCustomExerciseDao
-import dev.justinsmith.bells.fakes.FakeCustomProgramDao
-import dev.justinsmith.bells.fakes.FakeFollowingDao
-import dev.justinsmith.bells.fakes.FakeSessionDao
+import dev.justinsmith.lift.domain.Band
+import dev.justinsmith.lift.domain.BandColour
+import dev.justinsmith.lift.domain.BandLevel
+import dev.justinsmith.lift.domain.Block
+import dev.justinsmith.lift.domain.BlockKind
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.Equipment
+import dev.justinsmith.lift.domain.ExerciseDraft
+import dev.justinsmith.lift.domain.Focus
+import dev.justinsmith.lift.domain.Followed
+import dev.justinsmith.lift.domain.Measure
+import dev.justinsmith.lift.domain.ProgramDraft
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.SaveScope
+import dev.justinsmith.lift.domain.Side
+import dev.justinsmith.lift.domain.UnknownExercise
+import dev.justinsmith.lift.domain.planChanges
+import dev.justinsmith.lift.domain.program
+import dev.justinsmith.lift.fakes.FakeBandDao
+import dev.justinsmith.lift.fakes.FakeBellDao
+import dev.justinsmith.lift.fakes.FakeCustomExerciseDao
+import dev.justinsmith.lift.fakes.FakeCustomProgramDao
+import dev.justinsmith.lift.fakes.FakeFollowingDao
+import dev.justinsmith.lift.fakes.FakeSessionDao
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -36,7 +36,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class BellsRepositoryTest {
+class LiftRepositoryTest {
     private var now = 1_000L
     private val sessionDao = FakeSessionDao()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
@@ -45,7 +45,7 @@ class BellsRepositoryTest {
     private val exerciseDao = FakeCustomExerciseDao()
     private val bandDao = FakeBandDao()
     private val repository =
-        BellsRepository(sessionDao, FakeBellDao(), followingDao, programDao, exerciseDao, bandDao, scope) { now }
+        LiftRepository(sessionDao, FakeBellDao(), followingDao, programDao, exerciseDao, bandDao, scope) { now }
 
     private val pressAndSwings = ProgramDraft(
         name = "Press and swings",

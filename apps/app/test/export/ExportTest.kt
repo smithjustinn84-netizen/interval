@@ -1,7 +1,5 @@
 package dev.justinsmith.interval.export
 
-import dev.justinsmith.bells.domain.BuiltInExercise
-import dev.justinsmith.bells.fakes.FakeBellsStorage
 import dev.justinsmith.interval.fakes.FakeAppInfo
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
@@ -10,6 +8,8 @@ import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.int
@@ -22,7 +22,7 @@ import kotlin.test.assertNull
 class ExportTest {
     private val now = noonOf(TODAY)
     private val storage = FakeStorage()
-    private val lift = FakeBellsStorage()
+    private val lift = FakeLiftStorage()
     private val intervals = storage.repository(now = { now })
     private val bells = lift.repository(now = { now })
     private val exporter = AppDataExporter(intervals, bells, FakeAppInfo, { now }, FixedTimestampFormatter)

@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.domain
+package dev.justinsmith.lift.domain
 
 /**
  * The load one [step] (−1 lighter, +1 heavier) from [kg] takes a lift done with [equipment] to, among what the

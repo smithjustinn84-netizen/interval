@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.domain
+package dev.justinsmith.lift.domain
 
 /** A program the user is making or changing: what the editor holds until it is saved. */
 data class ProgramDraft(

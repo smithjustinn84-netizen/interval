@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalTestApi::class)
 
-package dev.justinsmith.bells.session
+package dev.justinsmith.lift.session
 
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -14,20 +14,20 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
-import dev.justinsmith.bells.data.BellEntity
-import dev.justinsmith.bells.data.CustomProgramEntity
-import dev.justinsmith.bells.data.FollowingEntity
-import dev.justinsmith.bells.data.SessionEntity
-import dev.justinsmith.bells.data.SetEntity
-import dev.justinsmith.bells.data.encodeDays
-import dev.justinsmith.bells.domain.Block
-import dev.justinsmith.bells.domain.BlockKind
-import dev.justinsmith.bells.domain.BuiltInExercise
-import dev.justinsmith.bells.domain.ProgramId
-import dev.justinsmith.bells.domain.RepRange
-import dev.justinsmith.bells.fakes.FakeBellsStorage
-import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.interval.ui.waitForText
+import dev.justinsmith.lift.data.BellEntity
+import dev.justinsmith.lift.data.CustomProgramEntity
+import dev.justinsmith.lift.data.FollowingEntity
+import dev.justinsmith.lift.data.SessionEntity
+import dev.justinsmith.lift.data.SetEntity
+import dev.justinsmith.lift.data.encodeDays
+import dev.justinsmith.lift.domain.Block
+import dev.justinsmith.lift.domain.BlockKind
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.domain.RepRange
+import dev.justinsmith.lift.fakes.FakeLiftStorage
+import dev.justinsmith.lift.ui.liftAppTest
 import kotlinx.coroutines.flow.update
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,7 +37,7 @@ import kotlin.test.assertTrue
 @Suppress("detekt.TooManyFunctions") // One change, and one way of keeping it, per test, side by side.
 class PlanFlowTest {
     /** Goblet squat and row: 3 × 10 goblet squats, then 3 × 10 rows a side, each building to 15. */
-    private fun followed() = FakeBellsStorage().apply {
+    private fun followed() = FakeLiftStorage().apply {
         following.row.value = FollowingEntity(programId = ProgramId.GobletSquatRow.name, startedAtEpochMillis = 0)
     }
 
@@ -47,7 +47,7 @@ class PlanFlowTest {
     }
 
     @Test
-    fun `a block given another bell is up next and logged with it`() = bellsAppTest(followed()) { app ->
+    fun `a block given another bell is up next and logged with it`() = liftAppTest(followed()) { app ->
         startDay()
         onNodeWithText("16 kg").assertExists()
         onAllNodesWithText("Change").onFirst().performScrollTo().performClick()
@@ -62,8 +62,8 @@ class PlanFlowTest {
     }
 
     @Test
-    fun `the top of a range on the heaviest bell owned says a heavier bell is next`() = bellsAppTest(
-        FakeBellsStorage().apply {
+    fun `the top of a range on the heaviest bell owned says a heavier bell is next`() = liftAppTest(
+        FakeLiftStorage().apply {
             val squats = Block(BuiltInExercise.GobletSquat, rounds = 2, reps = 12, kg = 24.0, range = RepRange(10, 12))
             programs.rows.value = listOf(CustomProgramEntity("p1", "Mine", 3, 4, encodeDays(listOf(listOf(squats))), 0))
             following.row.value = FollowingEntity(programId = "custom:p1", startedAtEpochMillis = 0)
@@ -84,7 +84,7 @@ class PlanFlowTest {
     }
 
     @Test
-    fun `skipping a block moves on to the next`() = bellsAppTest(followed()) {
+    fun `skipping a block moves on to the next`() = liftAppTest(followed()) {
         startDay()
         onNodeWithText("Skip").performScrollTo().performClick()
         waitForText("Up next · 1 of 6 sets")
@@ -95,7 +95,7 @@ class PlanFlowTest {
     }
 
     @Test
-    fun `swapping part way keeps the sets done`() = bellsAppTest(followed()) { app ->
+    fun `swapping part way keeps the sets done`() = liftAppTest(followed()) { app ->
         startDay()
         onNodeWithText("Log set").performClick()
         waitForText("Up next · 2 of 9 sets")
@@ -123,7 +123,7 @@ class PlanFlowTest {
     }
 
     @Test
-    fun `a change kept on finishing goes in a copy followed from the next day`() = bellsAppTest(followed()) { app ->
+    fun `a change kept on finishing goes in a copy followed from the next day`() = liftAppTest(followed()) { app ->
         startDay()
         onAllNodesWithText("Change").onFirst().performScrollTo().performClick()
         waitForText("Exercise")
@@ -162,7 +162,7 @@ class PlanFlowTest {
     }
 
     @Test
-    fun `Done with the changes undecided asks and Drop leaves the program as it was`() = bellsAppTest(
+    fun `Done with the changes undecided asks and Drop leaves the program as it was`() = liftAppTest(
         followed(),
     ) { app ->
         finishChanged()
@@ -174,7 +174,7 @@ class PlanFlowTest {
     }
 
     @Test
-    fun `Back with the changes undecided asks and Keep saves them as the card stands`() = bellsAppTest(
+    fun `Back with the changes undecided asks and Keep saves them as the card stands`() = liftAppTest(
         followed(),
     ) { app ->
         finishChanged()
@@ -189,7 +189,7 @@ class PlanFlowTest {
     }
 
     @Test
-    fun `Done after Today only asks nothing`() = bellsAppTest(followed()) { app ->
+    fun `Done after Today only asks nothing`() = liftAppTest(followed()) { app ->
         finishChanged()
         onNodeWithText("Today only").performScrollTo().performClick()
         onAllNodesWithText("Done").onLast().performClick()
@@ -198,7 +198,7 @@ class PlanFlowTest {
     }
 
     @Test
-    fun `today only keeps the program as it was`() = bellsAppTest(followed()) { app ->
+    fun `today only keeps the program as it was`() = liftAppTest(followed()) { app ->
         startDay()
         onNodeWithText("Skip").performScrollTo().performClick()
         waitForText("Up next · 1 of 6 sets")
@@ -212,7 +212,7 @@ class PlanFlowTest {
     }
 
     @Test
-    fun `a day done in full offers a step up for next time`() = bellsAppTest(followed()) { app ->
+    fun `a day done in full offers a step up for next time`() = liftAppTest(followed()) { app ->
         startDay()
         repeat(9) { n ->
             onNodeWithText("Log set").performClick()
@@ -243,7 +243,7 @@ class PlanFlowTest {
     }
 
     @Test
-    fun `Heavier on Up next takes the rest of the block up a bell`() = bellsAppTest(followed()) { app ->
+    fun `Heavier on Up next takes the rest of the block up a bell`() = liftAppTest(followed()) { app ->
         startDay()
         onNodeWithText("16 kg").assertExists()
         onNodeWithContentDescription("Heavier").performScrollTo().performClick()
@@ -259,7 +259,7 @@ class PlanFlowTest {
     }
 
     @Test
-    fun `the Log sheet starts on the set up next`() = bellsAppTest(followed()) { app ->
+    fun `the Log sheet starts on the set up next`() = liftAppTest(followed()) { app ->
         startDay()
         onNodeWithContentDescription("Add set or EMOM").performClick()
         waitForText("Exercise")
@@ -271,8 +271,8 @@ class PlanFlowTest {
     }
 
     @Test
-    fun `an EMOM block up next puts Start EMOM at the foot`() = bellsAppTest(
-        FakeBellsStorage().apply {
+    fun `an EMOM block up next puts Start EMOM at the foot`() = liftAppTest(
+        FakeLiftStorage().apply {
             val swings = Block(BuiltInExercise.TwoHandSwing, kind = BlockKind.Emom, rounds = 5, reps = 10)
             programs.rows.value =
                 listOf(CustomProgramEntity("p1", "Swings", 3, 4, encodeDays(listOf(listOf(swings))), 0))
@@ -287,8 +287,8 @@ class PlanFlowTest {
     }
 
     @Test
-    fun `Extra set after a day is done opens the Log sheet for one more`() = bellsAppTest(
-        FakeBellsStorage().apply {
+    fun `Extra set after a day is done opens the Log sheet for one more`() = liftAppTest(
+        FakeLiftStorage().apply {
             val squats = Block(BuiltInExercise.GobletSquat, rounds = 1, reps = 10)
             programs.rows.value = listOf(CustomProgramEntity("p1", "One", 3, 4, encodeDays(listOf(listOf(squats))), 0))
             following.row.value = FollowingEntity(programId = "custom:p1", startedAtEpochMillis = 0)
@@ -305,7 +305,7 @@ class PlanFlowTest {
     }
 
     @Test
-    fun `How to on Up next opens the exercise's page with no Edit`() = bellsAppTest(followed()) {
+    fun `How to on Up next opens the exercise's page with no Edit`() = liftAppTest(followed()) {
         startDay()
         onNodeWithText("How to").performScrollTo().performClick()
         waitForText("Sit between your heels with the chest up")
@@ -314,7 +314,7 @@ class PlanFlowTest {
     }
 
     @Test
-    fun `How to on the Log sheet shows the page in place and goes back to the set`() = bellsAppTest(followed()) {
+    fun `How to on the Log sheet shows the page in place and goes back to the set`() = liftAppTest(followed()) {
         startDay()
         onNodeWithContentDescription("Add set or EMOM").performClick()
         waitForText("Exercise")
@@ -327,7 +327,7 @@ class PlanFlowTest {
     }
 
     @Test
-    fun `Last time is the lift's last set before today and never one just logged`() = bellsAppTest(
+    fun `Last time is the lift's last set before today and never one just logged`() = liftAppTest(
         followed().apply {
             sessions.sessions.update { it + SessionEntity("s0", 0, 60_000, "Squats", 60_000) }
             sessions.sets.update { it + SetEntity(1, "s0", "GobletSquat", 16.0, 8, null, 10) }
@@ -341,7 +341,7 @@ class PlanFlowTest {
     }
 
     @Test
-    fun `a lift never done has no Last time`() = bellsAppTest(followed()) {
+    fun `a lift never done has no Last time`() = liftAppTest(followed()) {
         startDay()
         onNodeWithText("Last time", substring = true).assertDoesNotExist()
     }

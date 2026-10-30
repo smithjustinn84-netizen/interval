@@ -1,23 +1,7 @@
-package dev.justinsmith.bells.today
+package dev.justinsmith.lift.today
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.bells.data.BellsRepository
-import dev.justinsmith.bells.data.IntervalActivity
-import dev.justinsmith.bells.data.IntervalWorkout
-import dev.justinsmith.bells.domain.Block
-import dev.justinsmith.bells.domain.DEFAULT_BELL_KG
-import dev.justinsmith.bells.domain.Exercise
-import dev.justinsmith.bells.domain.LiftSession
-import dev.justinsmith.bells.domain.Program
-import dev.justinsmith.bells.domain.ProgramDay
-import dev.justinsmith.bells.domain.ProgramKey
-import dev.justinsmith.bells.domain.barbellLifts
-import dev.justinsmith.bells.domain.kettlebellLifts
-import dev.justinsmith.bells.domain.setsOldestFirst
-import dev.justinsmith.bells.domain.startingLoadKg
-import dev.justinsmith.bells.domain.suggestedBar
-import dev.justinsmith.bells.domain.suggestedBell
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
@@ -25,6 +9,22 @@ import dev.justinsmith.interval.platform.days
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.timer.weekStartOf
 import dev.justinsmith.interval.timer.weekdayOf
+import dev.justinsmith.lift.data.IntervalActivity
+import dev.justinsmith.lift.data.IntervalWorkout
+import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.domain.Block
+import dev.justinsmith.lift.domain.DEFAULT_BELL_KG
+import dev.justinsmith.lift.domain.Exercise
+import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.Program
+import dev.justinsmith.lift.domain.ProgramDay
+import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.barbellLifts
+import dev.justinsmith.lift.domain.kettlebellLifts
+import dev.justinsmith.lift.domain.setsOldestFirst
+import dev.justinsmith.lift.domain.startingLoadKg
+import dev.justinsmith.lift.domain.suggestedBar
+import dev.justinsmith.lift.domain.suggestedBell
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
@@ -76,7 +76,7 @@ data class TodayUiState(
  * is built again on each set logged (the session under way changes with it). Only the first is built on the caller.
  */
 class TodayViewModel(
-    private val repository: BellsRepository,
+    private val repository: LiftRepository,
     private val intervals: IntervalActivity,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,

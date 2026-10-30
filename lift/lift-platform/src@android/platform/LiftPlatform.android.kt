@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.platform
+package dev.justinsmith.lift.platform
 
 import android.media.AudioManager
 import android.media.ToneGenerator
@@ -7,19 +7,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import dev.justinsmith.bells.data.BellsDatabase
-import dev.justinsmith.bells.domain.EmomCue
+import dev.justinsmith.lift.data.LiftDatabase
+import dev.justinsmith.lift.domain.EmomCue
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.onClose
 import org.koin.core.module.dsl.withOptions
 import org.koin.dsl.module
 
 @Composable
-actual fun rememberBellsPlatformModule(): Module = LocalContext.current.applicationContext.let { context ->
+actual fun rememberLiftPlatformModule(): Module = LocalContext.current.applicationContext.let { context ->
     remember(context) {
         module {
-            single<RoomDatabase.Builder<BellsDatabase>> {
-                Room.databaseBuilder<BellsDatabase>(context, context.getDatabasePath(BELLS_DATABASE).absolutePath)
+            single<RoomDatabase.Builder<LiftDatabase>> {
+                Room.databaseBuilder<LiftDatabase>(context, context.getDatabasePath(LIFT_DATABASE).absolutePath)
             }
             single<Beeper> { ToneBeeper() }.withOptions {
                 onClose { it?.release() }

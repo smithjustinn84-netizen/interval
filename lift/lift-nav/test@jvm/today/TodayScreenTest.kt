@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalTestApi::class)
 
-package dev.justinsmith.bells.today
+package dev.justinsmith.lift.today
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -13,24 +13,24 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import dev.justinsmith.bells.data.FollowingEntity
-import dev.justinsmith.bells.data.SessionEntity
-import dev.justinsmith.bells.data.SetEntity
-import dev.justinsmith.bells.domain.Block
-import dev.justinsmith.bells.domain.BuiltInExercise
-import dev.justinsmith.bells.domain.LiftSession
-import dev.justinsmith.bells.domain.Program
-import dev.justinsmith.bells.domain.ProgramId
-import dev.justinsmith.bells.domain.ProgramKey
-import dev.justinsmith.bells.domain.SetLog
-import dev.justinsmith.bells.domain.kettlebellLifts
-import dev.justinsmith.bells.domain.program
-import dev.justinsmith.bells.fakes.FakeBellsStorage
-import dev.justinsmith.bells.fakes.FakeIntervalActivity
-import dev.justinsmith.bells.ui.bellsAppTest
-import dev.justinsmith.bells.ui.setBellsContent
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.waitForText
+import dev.justinsmith.lift.data.FollowingEntity
+import dev.justinsmith.lift.data.SessionEntity
+import dev.justinsmith.lift.data.SetEntity
+import dev.justinsmith.lift.domain.Block
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.Program
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.SetLog
+import dev.justinsmith.lift.domain.kettlebellLifts
+import dev.justinsmith.lift.domain.program
+import dev.justinsmith.lift.fakes.FakeIntervalActivity
+import dev.justinsmith.lift.fakes.FakeLiftStorage
+import dev.justinsmith.lift.ui.liftAppTest
+import dev.justinsmith.lift.ui.setLiftContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -40,7 +40,7 @@ class TodayScreenTest {
     fun `without a program Today offers one and a free session`() = runUiTest {
         val started = mutableListOf<ProgramKey?>()
         var choosing = false
-        setBellsContent {
+        setLiftContent {
             TodayScreen(TodayUiState(), onStartSession = { started += it }, onChooseProgram = {
                 choosing =
                     true
@@ -61,7 +61,7 @@ class TodayScreenTest {
             following = program(ProgramId.GobletSquatRow),
             programDay = program(ProgramId.GobletSquatRow).dayAfter(0),
         )
-        setBellsContent { TodayScreen(state, onStartSession = { started += it }, onChooseProgram = {}) }
+        setLiftContent { TodayScreen(state, onStartSession = { started += it }, onChooseProgram = {}) }
         onNodeWithText("Goblet squat and row").assertExists()
         onNodeWithText("Day 1 of 8 · week 1").assertExists()
         onNodeWithText("Goblet squat").assertExists()
@@ -81,7 +81,7 @@ class TodayScreenTest {
                 programDay = program(ProgramId.GobletSquatRow).dayAfter(0),
             ),
         )
-        setBellsContent { TodayScreen(state, onStartSession = { started += it }, onChooseProgram = {}) }
+        setLiftContent { TodayScreen(state, onStartSession = { started += it }, onChooseProgram = {}) }
         onNodeWithText("Resume session").assertExists()
         onNodeWithText("Free session").assertDoesNotExist()
         // Nothing logged: the day starts without a word.
@@ -106,8 +106,8 @@ class TodayScreenTest {
     }
 
     @Test
-    fun `starting the day over a session with sets asks then takes its place`() = bellsAppTest(
-        FakeBellsStorage().apply {
+    fun `starting the day over a session with sets asks then takes its place`() = liftAppTest(
+        FakeLiftStorage().apply {
             following.row.value = FollowingEntity(programId = ProgramId.GobletSquatRow.name, startedAtEpochMillis = 0)
             sessions.sessions.value = listOf(SessionEntity("open", 0, null, "", 0))
             sessions.sets.value = listOf(SetEntity(1, "open", BuiltInExercise.TwoHandSwing.key, 16.0, 10, null, 0))
@@ -129,8 +129,8 @@ class TodayScreenTest {
     }
 
     @Test
-    fun `starting the day over a session with no sets drops it without asking`() = bellsAppTest(
-        FakeBellsStorage().apply {
+    fun `starting the day over a session with no sets drops it without asking`() = liftAppTest(
+        FakeLiftStorage().apply {
             following.row.value = FollowingEntity(programId = ProgramId.GobletSquatRow.name, startedAtEpochMillis = 0)
             sessions.sessions.value = listOf(SessionEntity("open", 0, null, "", 0))
         },
@@ -149,7 +149,7 @@ class TodayScreenTest {
             WeekDay(it, it.toInt() + 1, bells = 0, interval = 0, today = it == 0L, date = "day $it")
         }
         var state by mutableStateOf(TodayUiState(week = week))
-        setBellsContent { TodayScreen(state, onStartSession = {}, onChooseProgram = {}) }
+        setLiftContent { TodayScreen(state, onStartSession = {}, onChooseProgram = {}) }
         onNodeWithText("Goal met this week").assertDoesNotExist()
         state = state.copy(
             week = week.mapIndexed { i, day -> if (i == 0) day.copy(bells = 1, interval = 1) else day },
@@ -166,7 +166,7 @@ class TodayScreenTest {
             WeekDay(it, it.toInt() + 1, bells = 0, interval = 0, today = it == 0L, date = "day $it")
         }
         var state by mutableStateOf(TodayUiState(week = week))
-        setBellsContent { TodayScreen(state, onStartSession = {}, onChooseProgram = {}) }
+        setLiftContent { TodayScreen(state, onStartSession = {}, onChooseProgram = {}) }
         onNodeWithText("0 workouts").assertExists()
         onNodeWithText("Lifts").assertDoesNotExist()
         state = state.copy(week = week.mapIndexed { i, day -> if (i == 0) day.copy(interval = 1) else day })
@@ -175,15 +175,15 @@ class TodayScreenTest {
     }
 
     @Test
-    fun `the goal set on Plan reaches Today`() = bellsAppTest(
+    fun `the goal set on Plan reaches Today`() = liftAppTest(
         intervals = FakeIntervalActivity().apply { weeklyGoal.value = 4 },
     ) {
         waitForText("4 more to hit 4")
     }
 
     @Test
-    fun `a program's bodyweight sets log with no bell and its plank for its seconds`() = bellsAppTest(
-        FakeBellsStorage().apply {
+    fun `a program's bodyweight sets log with no bell and its plank for its seconds`() = liftAppTest(
+        FakeLiftStorage().apply {
             following.row.value = FollowingEntity(programId = ProgramId.BodyweightBasics.name, startedAtEpochMillis = 0)
         },
     ) { app ->
@@ -205,8 +205,8 @@ class TodayScreenTest {
     }
 
     @Test
-    fun `a program's day opens a session with its plan up next`() = bellsAppTest(
-        FakeBellsStorage().apply {
+    fun `a program's day opens a session with its plan up next`() = liftAppTest(
+        FakeLiftStorage().apply {
             following.row.value = FollowingEntity(programId = ProgramId.GobletSquatRow.name, startedAtEpochMillis = 0)
         },
     ) { app ->
@@ -222,7 +222,7 @@ class TodayScreenTest {
         val opened = mutableListOf<String>()
         val last =
             LiftSession("s1", 0, 600_000, "Swings", listOf(SetLog(1, BuiltInExercise.TwoHandSwing, 24.0, 10, null, 0)))
-        setBellsContent {
+        setLiftContent {
             TodayScreen(
                 TodayUiState(last = last),
                 onStartSession = {},
@@ -247,7 +247,7 @@ class TodayScreenTest {
             weeks = 4,
             name = "Long day",
         )
-        setBellsContent {
+        setLiftContent {
             TodayScreen(
                 TodayUiState(following = long, programDay = long.dayAfter(0)),
                 onStartSession = {},
@@ -262,7 +262,7 @@ class TodayScreenTest {
     fun `a finished program's card says so and opens the program`() = runUiTest {
         var opened = 0
         val state = TodayUiState(following = program(ProgramId.GobletSquatRow), programDay = null)
-        setBellsContent {
+        setLiftContent {
             TodayScreen(state, onStartSession = {}, onChooseProgram = {}, onOpenProgram = { opened++ })
         }
         onNodeWithText("Finished").assertIsDisplayed()
@@ -272,8 +272,8 @@ class TodayScreenTest {
     }
 
     @Test
-    fun `the program's header opens its days done and left`() = bellsAppTest(
-        FakeBellsStorage().apply {
+    fun `the program's header opens its days done and left`() = liftAppTest(
+        FakeLiftStorage().apply {
             val goblets = ProgramId.GobletSquatRow.name
             following.row.value = FollowingEntity(programId = goblets, startedAtEpochMillis = 0)
             sessions.sessions.value = listOf(
@@ -289,8 +289,8 @@ class TodayScreenTest {
     }
 
     @Test
-    fun `a program day's page names its program and day`() = bellsAppTest(
-        FakeBellsStorage().apply {
+    fun `a program day's page names its program and day`() = liftAppTest(
+        FakeLiftStorage().apply {
             val goblets = ProgramId.GobletSquatRow.name
             following.row.value = FollowingEntity(programId = goblets, startedAtEpochMillis = 0)
             sessions.sessions.value = listOf(

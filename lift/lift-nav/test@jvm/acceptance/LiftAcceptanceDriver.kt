@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalTestApi::class)
 
-package dev.justinsmith.bells.acceptance
+package dev.justinsmith.lift.acceptance
 
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -13,22 +13,22 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.performTextReplacement
-import dev.justinsmith.bells.fakes.FakeBellsStorage
-import dev.justinsmith.bells.ui.BellsAppFixture
-import dev.justinsmith.bells.ui.bellsAppTest
 import dev.justinsmith.interval.ui.AcceptanceSteps
 import dev.justinsmith.interval.ui.JOURNEY_TIMEOUT
 import dev.justinsmith.interval.ui.Window
+import dev.justinsmith.lift.fakes.FakeLiftStorage
+import dev.justinsmith.lift.ui.LiftAppFixture
+import dev.justinsmith.lift.ui.liftAppTest
 import kotlin.test.assertEquals
 
 /**
  * Lift's acceptance tests in the words of its journeys (the `lift-*` and `exercise-library` files in
  * `journeys/`), over Lift's own pages and fake storage. The rules are the interval side's
  * (`IntervalAcceptanceDriver`): one selector per control, every check waits, outcomes are checked in
- * [BellsAppFixture.storage] too, and time moves only through [BellsAppFixture.clock].
+ * [LiftAppFixture.storage] too, and time moves only through [LiftAppFixture.clock].
  */
 @Suppress("detekt.TooManyFunctions")
-class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: BellsAppFixture) : AcceptanceSteps(ui) {
+class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : AcceptanceSteps(ui) {
 
     // Today
 
@@ -215,9 +215,9 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: BellsAppFixture) :
 
 /** A Lift acceptance test: Lift's pages over [storage], in [window], driven through [LiftAcceptanceDriver]. */
 fun liftScenario(
-    storage: FakeBellsStorage = FakeBellsStorage(),
+    storage: FakeLiftStorage = FakeLiftStorage(),
     window: Window = Window.Phone,
     scenario: suspend LiftAcceptanceDriver.() -> Unit,
-) = bellsAppTest(storage, window = window, timeout = JOURNEY_TIMEOUT) { app ->
+) = liftAppTest(storage, window = window, timeout = JOURNEY_TIMEOUT) { app ->
     LiftAcceptanceDriver(this, app).scenario()
 }

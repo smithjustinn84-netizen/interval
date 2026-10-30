@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.domain
+package dev.justinsmith.lift.domain
 
 /** Where an EMOM stands: counting in, working the minute's reps, resting out the minute, or over. */
 enum class EmomPhase { GetReady, Work, Rest, Done }

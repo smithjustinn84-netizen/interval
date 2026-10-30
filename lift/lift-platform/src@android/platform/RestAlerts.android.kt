@@ -1,4 +1,4 @@
-package dev.justinsmith.bells.platform
+package dev.justinsmith.lift.platform
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -12,14 +12,14 @@ import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import co.touchlab.kermit.Logger
-import dev.justinsmith.bells.platform.resources.Res
-import dev.justinsmith.bells.platform.resources.rest_channel
-import dev.justinsmith.bells.platform.resources.rest_channel_description
-import dev.justinsmith.bells.platform.resources.rest_left
-import dev.justinsmith.bells.platform.resources.rest_title
 import dev.justinsmith.interval.platform.notificationIcon
 import dev.justinsmith.interval.platform.openAppIntent
 import dev.justinsmith.interval.timer.formatClock
+import dev.justinsmith.lift.platform.resources.Res
+import dev.justinsmith.lift.platform.resources.rest_channel
+import dev.justinsmith.lift.platform.resources.rest_channel_description
+import dev.justinsmith.lift.platform.resources.rest_left
+import dev.justinsmith.lift.platform.resources.rest_title
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -180,8 +180,8 @@ class RestService : Service() {
             .setContentIntent(openAppIntent(REQUEST_OPEN))
 
     companion object {
-        internal const val EXTRA_END_AT = "dev.justinsmith.bells.REST_END_AT"
-        internal const val ACTION_STOP = "dev.justinsmith.bells.REST_STOP"
+        internal const val EXTRA_END_AT = "dev.justinsmith.lift.REST_END_AT"
+        internal const val ACTION_STOP = "dev.justinsmith.lift.REST_STOP"
         private const val CHANNEL_ID = "rest"
 
         /** Beside the workout's, which is 1. */
