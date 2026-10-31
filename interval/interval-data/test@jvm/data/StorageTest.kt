@@ -13,7 +13,9 @@ import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.PlanSchedule
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.ThemeMode
+import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.platform.DATABASE_NAME
 import dev.justinsmith.interval.platform.PREFERENCES_NAME
 import dev.justinsmith.interval.timer.Activity
@@ -201,6 +203,24 @@ class StorageTest {
     }
 
     @Test
+    fun `a version 5 database keeps its plans as interval workouts`() {
+        BundledSQLiteDriver().open(directory.resolve(DATABASE_NAME).absolutePath).use { connection ->
+            V4_SCHEMA.forEach(connection::execSQL)
+            connection.execSQL("DROP TABLE sibling_session")
+            connection.execSQL(
+                "INSERT INTO planned (weekday, epoch_day, name, prep_seconds, work_seconds, rest_seconds, rounds, " +
+                    "activity, preset_id, created_at) VALUES (2, NULL, 'Tabata', 10, 20, 10, 8, 'General', NULL, $NOW)",
+            )
+            connection.execSQL("PRAGMA user_version = 5")
+        }
+        withApp { repository ->
+            val plan = repository.planned.value.single()
+            assertEquals(PlanSchedule.Weekly(2), plan.schedule)
+            assertEquals(PlanWorkout.Interval("Tabata", IntervalConfig(10, 20, 10, rounds = 8)), plan.workout)
+        }
+    }
+
+    @Test
     fun `deleted workouts stay on disk as tombstones`() {
         withApp { repository ->
             repeat(3) { repository.recordWorkout(IntervalConfig(), elapsedSeconds = it + 1) }
@@ -244,19 +264,24 @@ class StorageTest {
     fun `plans and a deleted workout survive a restart`() {
         val tabata = Preset("Tabata", IntervalConfig(10, 20, 10, rounds = 8))
         withApp { repository ->
-            repository.planWeekly(tabata, setOf(1, 3))
-            repository.planOnce(tabata, epochDay = 20_744)
+            repository.planWeekly(tabata.asPlan(), setOf(1, 3))
+            repository.planOnce(tabata.asPlan(), epochDay = 20_744)
+            repository.planWeekly(PlanWorkout.Lift.ProgramDay, setOf(5))
             repository.recordWorkout(tabata.config, elapsedSeconds = 240)
             repository.recordWorkout(tabata.config, elapsedSeconds = 120)
-            settled(repository) { it.planned.value.size == 3 && it.history.value.size == 2 }
+            settled(repository) { it.planned.value.size == 4 && it.history.value.size == 2 }
             repository.deleteWorkout(requireNotNull(repository.history.value.last().id))
             repository.removePlanned(repository.planned.value.first().id)
-            settled(repository) { it.planned.value.size == 2 && it.history.value.size == 1 }
+            settled(repository) { it.planned.value.size == 3 && it.history.value.size == 1 }
         }
         withApp { repository ->
             assertEquals(
-                listOf(PlanSchedule.Weekly(3), PlanSchedule.Once(20_744)),
+                listOf(PlanSchedule.Weekly(3), PlanSchedule.Once(20_744), PlanSchedule.Weekly(5)),
                 repository.planned.value.map { it.schedule },
+            )
+            assertEquals(
+                listOf(tabata.asPlan(), tabata.asPlan(), PlanWorkout.Lift.ProgramDay),
+                repository.planned.value.map { it.workout },
             )
             assertEquals(120, repository.history.value.single().elapsedSeconds)
         }

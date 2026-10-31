@@ -26,6 +26,7 @@ import dev.justinsmith.interval.history.resources.plan_describe_no_day
 import dev.justinsmith.interval.history.resources.plan_describe_placeholder
 import dev.justinsmith.interval.history.resources.plan_describe_title
 import dev.justinsmith.interval.history.resources.plan_describe_unrecognized
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.dateOfEpochDay
 import dev.justinsmith.interval.timer.weekdayOf
@@ -122,28 +123,23 @@ private fun DescribedRoutinePreview(routine: DescribedRoutine, today: Long) {
                 horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
             ) {
                 StripeMark(
-                    if (plan.scheduled) palette.workMark else palette.textDim,
+                    if (plan.scheduled) planMark(plan.workout) else palette.textDim,
                     height = IntervalSizes.historyMarkHeight,
                 )
                 Column(Modifier.weight(1f)) {
                     Text(
-                        plan.workout.name,
+                        planName(plan.workout),
                         style = IntervalTheme.type.label,
                         color = if (plan.scheduled) palette.text else palette.textDim,
                     )
+                    val days = if (plan.scheduled) {
+                        daysText(plan, today)
+                    } else {
+                        stringResource(Res.string.plan_describe_no_day)
+                    }
+                    val shape = (plan.workout as? PlanWorkout.Interval)?.let { workoutDescription(it.config) }
                     Text(
-                        stringResource(
-                            Res.string.common_joined,
-                            if (plan.scheduled) {
-                                daysText(
-                                    plan,
-                                    today,
-                                )
-                            } else {
-                                stringResource(Res.string.plan_describe_no_day)
-                            },
-                            workoutDescription(plan.workout.config),
-                        ),
+                        joined(listOfNotNull(days, shape)),
                         style = IntervalTheme.type.meta,
                         color = palette.textDim,
                     )

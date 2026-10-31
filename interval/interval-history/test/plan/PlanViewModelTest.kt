@@ -11,9 +11,13 @@ import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.fakes.tabataPreset
 import dev.justinsmith.interval.history.HistoryDay
+import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -85,8 +89,8 @@ class PlanViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `the routine lists each weekday's plans`() {
-        viewModel.planWeekly(tabata, setOf(1, 3))
-        viewModel.planWeekly(hiit, setOf(3))
+        viewModel.planWeekly(tabata.asPlan(), setOf(1, 3))
+        viewModel.planWeekly(hiit.asPlan(), setOf(3))
         val routine = viewModel.state.value.routine
         assertEquals((1..7).toList(), routine.map { it.weekday })
         assertEquals(listOf("Tabata"), routine[0].plans.map { it.name })
@@ -95,10 +99,27 @@ class PlanViewModelTest : MainDispatcherTest() {
     }
 
     @Test
+    fun `plans of the program's next day take its days in turn and count against its pace`() {
+        bells.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
+        viewModel.planWeekly(PlanWorkout.Lift.ProgramDay, setOf(1, 4, 5))
+        viewModel.planWeekly(tabata.asPlan(), setOf(2))
+        val state = viewModel.state.value
+        assertEquals(1, state.programDay?.number)
+        assertEquals(3, state.programWeekdays)
+        assertEquals(3, state.routineLifts)
+        assertEquals(1, state.routineIntervals)
+        // Today, Thursday, is day 1; Friday day 2; next Monday day 3.
+        assertEquals(listOf(3), state.routine[0].plans.map { it.programDay })
+        assertEquals(listOf(1), state.routine[3].plans.map { it.programDay })
+        assertEquals(listOf(2), state.routine[4].plans.map { it.programDay })
+        assertEquals(listOf(null), state.routine[1].plans.map { it.programDay })
+    }
+
+    @Test
     fun `one-offs still to come are listed by day and can be removed`() {
-        viewModel.planOnce(hiit, TODAY + 3)
-        viewModel.planOnce(tabata, TODAY)
-        viewModel.planOnce(tabata, TODAY - 1)
+        viewModel.planOnce(hiit.asPlan(), TODAY + 3)
+        viewModel.planOnce(tabata.asPlan(), TODAY)
+        viewModel.planOnce(tabata.asPlan(), TODAY - 1)
         val oneOffs = viewModel.state.value.oneOffs
         assertEquals(listOf(TODAY, TODAY + 3), oneOffs.map { it.epochDay })
         assertEquals(listOf(HistoryDay.Today, HistoryDay.On("day ${TODAY + 3}")), oneOffs.map { it.day })
@@ -157,7 +178,7 @@ class PlanViewModelTest : MainDispatcherTest() {
         val main = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(main)
         var now = noonOf(TODAY)
-        repository.planOnce(hiit, TODAY + 1)
+        repository.planOnce(hiit.asPlan(), TODAY + 1)
         val plan = PlanViewModel(repository, bells, FixedTimestampFormatter, clock = { now }, computation = main)
         assertEquals(listOf(HistoryDay.Tomorrow), plan.state.value.oneOffs.map { it.day })
 
@@ -168,3 +189,6 @@ class PlanViewModelTest : MainDispatcherTest() {
         plan.viewModelScope.cancel()
     }
 }
+
+/** An interval plan's name, as the routine lists it. */
+private val PlanEntry.name: String get() = (workout as PlanWorkout.Interval).name

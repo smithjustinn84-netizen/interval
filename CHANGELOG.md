@@ -12,7 +12,7 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 - This changelog, and a CI check that Android and iOS carry the same version.
 - Backup rules: Android's backup and device-to-device transfer carry all of the app's data.
 - Export: Settings > Your data > Export offers one JSON file of your workouts, presets, plan, settings and
-  Lift's sessions, programs, exercises and gear (schema 1) to share or save.
+  Lift's sessions, programs, exercises and gear (schema 2) to share or save.
 - Share: a finished workout (its summary and its page in History) and a finished Lift session (its summary
   and its page) can be sent in words through the system share sheet.
 - Accessibility: section titles, dialog titles, sheet titles and the summaries' headings are headings for
@@ -21,6 +21,12 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   beeps as it ends; iOS shows a notification when the rest is over (once notifications are allowed).
 - Lift: an exercise's page charts your best each session, the weight, reps or hold as the exercise counts,
   once it has been done twice.
+- Plan: a day can hold a Lift session, the next day of the program followed or any session, beside interval
+  workouts. A session finished on Lift that day does it, so it counts in "Planned done", in reminders and in
+  Up next, which starts the program's day it comes to. The Plan page shows the program, how many of its days
+  a week the routine covers, and each lift day's program day; the add sheet offers a one-tap spread of the
+  program's days. History's week splits each day's bar by kind, and "kettlebells mon wed fri" describes a
+  routine of lifts.
 
 ## [0.1.0] — 2026-10-26
 

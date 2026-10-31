@@ -20,6 +20,7 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.execSQL
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.PlanSchedule
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -33,15 +34,17 @@ import kotlinx.coroutines.flow.Flow
  * here. Version 2 added [HistoryEntity.workActiveSeconds] and the activity of each workout and preset (the
  * latter a day later without a new version: [AddActivityIfMissing]); version 3 added [PlannedEntity];
  * version 4 gave each workout a [HistoryEntity.uid], a change time and a deleted flag, and a table of
- * workouts shared by a sibling app, which version 5 dropped when that app became part of this one.
+ * workouts shared by a sibling app, which version 5 dropped when that app became part of this one;
+ * version 6 let a plan be a session on Lift ([PlannedEntity.lift]).
  */
 @Database(
     entities = [HistoryEntity::class, PresetEntity::class, PlannedEntity::class],
-    version = 5,
+    version = 6,
     // 3 to 4 and 4 to 5 are MIGRATION_3_4 and MIGRATION_4_5, added by buildAppDatabase.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3, spec = AddActivityIfMissing::class),
+        AutoMigration(from = 5, to = 6),
     ],
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -216,7 +219,11 @@ data class PresetEntity(
     val activity: String? = null,
 )
 
-/** A [PlannedWorkout]: exactly one of [weekday] (every week) and [epochDay] (once) is set. */
+/**
+ * A [PlannedWorkout]: exactly one of [weekday] (every week) and [epochDay] (once) is set. [lift] names a session
+ * on Lift ([LIFT_PROGRAM_DAY] or [LIFT_ANY_SESSION]), whose row leaves the name and the shape empty; null is an
+ * interval workout.
+ */
 @Entity(tableName = "planned")
 data class PlannedEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -231,7 +238,11 @@ data class PlannedEntity(
     val activity: String?,
     @ColumnInfo(name = "preset_id") val presetId: Long?,
     @ColumnInfo(name = "created_at") val createdAtEpochMillis: Long,
+    val lift: String? = null,
 )
+
+internal const val LIFT_PROGRAM_DAY = "program_day"
+internal const val LIFT_ANY_SESSION = "any_session"
 
 internal fun HistoryEntity.toDomain() = HistoryEntry(
     finishedAtEpochMillis = finishedAtEpochMillis,
@@ -270,27 +281,51 @@ internal fun Preset.toEntity() = PresetEntity(
     activity = config.activity.name,
 )
 
-/** A row with neither a weekday nor a day is unreadable: null, and left out. */
+/**
+ * A row with neither a weekday nor a day, or a kind of Lift session this build doesn't know, is unreadable: null,
+ * and left out.
+ */
 internal fun PlannedEntity.toDomain(): PlannedWorkout? {
     val schedule = when {
         weekday != null -> PlanSchedule.Weekly(weekday)
         epochDay != null -> PlanSchedule.Once(epochDay)
         else -> return null
     }
-    val config = IntervalConfig(prepSeconds, workSeconds, restSeconds, rounds, Activity.named(activity))
-    return PlannedWorkout(id, name, config, schedule, presetId, createdAtEpochMillis)
+    val workout = when (lift) {
+        null -> PlanWorkout.Interval(
+            name,
+            IntervalConfig(prepSeconds, workSeconds, restSeconds, rounds, Activity.named(activity)),
+            presetId,
+        )
+
+        LIFT_PROGRAM_DAY -> PlanWorkout.Lift.ProgramDay
+
+        LIFT_ANY_SESSION -> PlanWorkout.Lift.AnySession
+
+        else -> return null
+    }
+    return PlannedWorkout(id, workout, schedule, createdAtEpochMillis)
 }
 
-internal fun PlannedWorkout.toEntity() = PlannedEntity(
-    id = id,
-    weekday = (schedule as? PlanSchedule.Weekly)?.weekday,
-    epochDay = (schedule as? PlanSchedule.Once)?.epochDay,
-    name = name,
-    prepSeconds = config.prepSeconds,
-    workSeconds = config.workSeconds,
-    restSeconds = config.restSeconds,
-    rounds = config.rounds,
-    activity = config.activity.name,
-    presetId = presetId,
-    createdAtEpochMillis = createdAtEpochMillis,
-)
+internal fun PlannedWorkout.toEntity(): PlannedEntity {
+    val interval = workout as? PlanWorkout.Interval
+    val config = interval?.config
+    return PlannedEntity(
+        id = id,
+        weekday = (schedule as? PlanSchedule.Weekly)?.weekday,
+        epochDay = (schedule as? PlanSchedule.Once)?.epochDay,
+        name = interval?.name.orEmpty(),
+        prepSeconds = config?.prepSeconds ?: 0,
+        workSeconds = config?.workSeconds ?: 0,
+        restSeconds = config?.restSeconds ?: 0,
+        rounds = config?.rounds ?: 0,
+        activity = config?.activity?.name,
+        presetId = interval?.presetId,
+        createdAtEpochMillis = createdAtEpochMillis,
+        lift = when (workout) {
+            is PlanWorkout.Interval -> null
+            PlanWorkout.Lift.ProgramDay -> LIFT_PROGRAM_DAY
+            PlanWorkout.Lift.AnySession -> LIFT_ANY_SESSION
+        },
+    )
+}

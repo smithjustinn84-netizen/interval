@@ -3,12 +3,14 @@ package dev.justinsmith.interval.plan
 import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.history.TrainingLog
+import dev.justinsmith.interval.history.asLiftWorkouts
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.platform.PlanReminder
 import dev.justinsmith.interval.platform.PlanReminders
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.days
+import dev.justinsmith.lift.data.LiftActivity
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
@@ -17,16 +19,17 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
- * Keeps the platform's reminders ([PlanReminders]) in step with the plan for as long as [scope] runs: each
- * change of the plan, the history or the reminder setting, and each midnight ([WallClock.days]), hands the
- * platform the reminders the plan now calls for ([plannedReminders]), the whole set at once, so the platform
- * replaces rather than adds, and the same set twice over (a theme change, say) is not sent again. Nothing is
- * sent until the repository has read what is stored, which spares the platform a cancel from the defaults.
- * With the reminder off, the set is empty, which cancels whatever was pending. A set the platform fails to
- * take is logged and skipped; the next change sends the whole set again.
+ * Keeps the platform's reminders ([PlanReminders]) in step with the plan for as long as [scope] runs: each change
+ * of the plan, the history (Lift's sessions too, which do its plans) or the reminder setting, and each midnight
+ * ([WallClock.days]), hands the platform the reminders the plan now calls for ([plannedReminders]), the whole set
+ * at once, so the platform replaces rather than adds, and the same set twice over (a theme change, say) is not sent
+ * again. Nothing is sent until the repository has read what is stored, which spares the platform a cancel from the
+ * defaults. With the reminder off, the set is empty, which cancels whatever was pending. A set the platform fails
+ * to take is logged and skipped; the next change sends the whole set again.
  */
 class PlanReminderScheduler(
     private val repository: IntervalRepository,
+    private val lift: LiftActivity,
     private val reminders: PlanReminders,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
@@ -41,11 +44,12 @@ class PlanReminderScheduler(
             combine(
                 repository.planned,
                 repository.history,
+                lift.sessions,
                 repository.appSettings,
                 clock.days(timestamps, dayCheckMillis),
-            ) { planned, history, app, today ->
+            ) { planned, history, sessions, app, today ->
                 app.reminderMinuteOfDay?.let { minute ->
-                    val log = TrainingLog(history, planned, today, dayOf = timestamps::dayNumber)
+                    val log = TrainingLog(history, planned, today, sessions.asLiftWorkouts(), timestamps::dayNumber)
                     plannedReminders(log, minute, today, timestamps.minuteOfDay(clock.nowMillis()))
                 }.orEmpty()
             }.distinctUntilChanged().collect { scheduleLogged(it) }

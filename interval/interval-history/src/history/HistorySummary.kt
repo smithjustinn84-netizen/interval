@@ -35,6 +35,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import dev.justinsmith.interval.history.resources.Res
+import dev.justinsmith.interval.history.resources.common_joined
 import dev.justinsmith.interval.history.resources.history_best_streak
 import dev.justinsmith.interval.history.resources.history_calories
 import dev.justinsmith.interval.history.resources.history_goal_cd
@@ -57,6 +58,8 @@ import dev.justinsmith.interval.history.resources.history_streak
 import dev.justinsmith.interval.history.resources.history_this_week
 import dev.justinsmith.interval.history.resources.history_time
 import dev.justinsmith.interval.history.resources.history_week_count
+import dev.justinsmith.interval.history.resources.history_week_intervals
+import dev.justinsmith.interval.history.resources.history_week_lifts
 import dev.justinsmith.interval.history.resources.history_weeks
 import dev.justinsmith.interval.history.resources.history_weeks_cd
 import dev.justinsmith.interval.history.resources.history_workouts
@@ -158,6 +161,7 @@ private fun GoalRow(state: HistoryUiState, onSetGoal: () -> Unit) {
                     style = IntervalTheme.type.title,
                     color = palette.text,
                 )
+                WeekSplit(state)
             }
             ChipButton(
                 stringResource(Res.string.history_goal_set),
@@ -185,6 +189,7 @@ private fun GoalRow(state: HistoryUiState, onSetGoal: () -> Unit) {
                 style = IntervalTheme.type.title,
                 color = palette.text,
             )
+            WeekSplit(state)
             state.streak?.current?.takeIf { it > 0 }?.let { weeks ->
                 Row(
                     Modifier
@@ -204,6 +209,27 @@ private fun GoalRow(state: HistoryUiState, onSetGoal: () -> Unit) {
             }
         }
     }
+}
+
+/** This week's workouts by kind, "1 lift · 2 intervals", once a session on Lift is among them. */
+@Composable
+private fun WeekSplit(state: HistoryUiState) {
+    if (state.weekLifts == 0) return
+    val intervals = state.weekCount - state.weekLifts
+    val lifts = pluralStringResource(Res.plurals.history_week_lifts, state.weekLifts, state.weekLifts)
+    Text(
+        if (intervals > 0) {
+            stringResource(
+                Res.string.common_joined,
+                lifts,
+                pluralStringResource(Res.plurals.history_week_intervals, intervals, intervals),
+            )
+        } else {
+            lifts
+        },
+        style = IntervalTheme.type.meta,
+        color = IntervalTheme.palette.textDim,
+    )
 }
 
 /** This week's workouts as a share of [goal], drawn closing as it fills; the figure inside reads "3/4". */

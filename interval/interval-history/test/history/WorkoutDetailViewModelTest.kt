@@ -10,6 +10,8 @@ import dev.justinsmith.interval.fakes.TODAY
 import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.model.BodySettings
+import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.timer.IntervalConfig
 import kotlinx.coroutines.Dispatchers
@@ -35,7 +37,7 @@ class WorkoutDetailViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `a workout shows its figures and whether it did a plan`() {
-        repository.planOnce(hiit, TODAY)
+        repository.planOnce(hiit.asPlan(), TODAY)
         repository.recordWorkout(hiit.config, elapsedSeconds = 580, workSeconds = 300)
         val workout = requireNotNull(viewModel().state.value.workout)
         assertEquals("HIIT 30/30", workout.presetName)
@@ -72,8 +74,8 @@ class WorkoutDetailViewModelTest : MainDispatcherTest() {
         val viewModel = viewModel()
         viewModel.putOnTimer()
         assertEquals(hiit.config.workSeconds, repository.config.value.workSeconds)
-        viewModel.planOnce(viewModel.state.value.choices.single().preset, TODAY + 2)
-        assertEquals("HIIT 30/30", repository.planned.value.single().name)
+        viewModel.planOnce(viewModel.state.value.choices.single().preset.asPlan(), TODAY + 2)
+        assertEquals("HIIT 30/30", (repository.planned.value.single().workout as PlanWorkout.Interval).name)
     }
 
     @Test

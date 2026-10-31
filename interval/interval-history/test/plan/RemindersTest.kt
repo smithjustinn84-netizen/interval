@@ -5,6 +5,7 @@ import dev.justinsmith.interval.fakes.TODAY
 import dev.justinsmith.interval.history.TrainingLog
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.PlanSchedule
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.timer.IntervalConfig
 import kotlin.test.Test
@@ -19,10 +20,10 @@ class RemindersTest {
     private var nextId = 1L
 
     private fun weekly(weekday: Int, name: String = "Tabata", config: IntervalConfig = tabata) =
-        PlannedWorkout(nextId++, name, config, PlanSchedule.Weekly(weekday))
+        PlannedWorkout(nextId++, PlanWorkout.Interval(name, config), PlanSchedule.Weekly(weekday))
 
     private fun once(day: Long, name: String = "HIIT", config: IntervalConfig = hiit) =
-        PlannedWorkout(nextId++, name, config, PlanSchedule.Once(day))
+        PlannedWorkout(nextId++, PlanWorkout.Interval(name, config), PlanSchedule.Once(day))
 
     private fun workout(day: Long, config: IntervalConfig = tabata) =
         HistoryEntry(day * DAY_MILLIS + NINE_HOURS, config, elapsedSeconds = 240, endedEarly = false, id = nextId++)

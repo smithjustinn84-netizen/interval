@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.HistoryEntry
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.plan.DayChoice
 import dev.justinsmith.interval.plan.PlanChoice
@@ -106,12 +107,12 @@ class WorkoutDetailViewModel(
         repository.deleteWorkout(id)
     }
 
-    fun planWeekly(preset: Preset, weekdays: Set<Int>) {
-        repository.planWeekly(preset, weekdays)
+    fun planWeekly(workout: PlanWorkout, weekdays: Set<Int>) {
+        repository.planWeekly(workout, weekdays)
     }
 
-    fun planOnce(preset: Preset, epochDay: Long) {
-        repository.planOnce(preset, epochDay)
+    fun planOnce(workout: PlanWorkout, epochDay: Long) {
+        repository.planOnce(workout, epochDay)
     }
 
     private fun buildState(

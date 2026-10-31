@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.history
 
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.formatClock
@@ -17,7 +18,7 @@ data class HistoryItem(
     val calories: Int? = null,
     /** The id it is stored under, to open or delete it; null for one not stored yet. */
     val id: Long? = null,
-    /** Whether it did one of the day's plans. */
+    /** Whether it did one of the day's plans, of either kind. */
     val planned: Boolean = false,
     /**
      * The kettlebell session it is, by uid, or null for an interval workout. A session is named by
@@ -29,7 +30,10 @@ data class HistoryItem(
 /** One day's workouts. [dayNumber] is its epoch day. */
 data class HistorySection(val day: HistoryDay, val dayNumber: Long, val items: List<HistoryItem>)
 
-/** One day of the week strip or the calendar. [dayOfMonth] is its number on the calendar. */
+/**
+ * One day of the week strip or the calendar. [dayOfMonth] is its number on the calendar; of its [seconds],
+ * [liftSeconds] were spent on Lift's sessions and the rest on interval workouts.
+ */
 data class DayCell(
     val epochDay: Long,
     val weekday: Int,
@@ -41,9 +45,10 @@ data class DayCell(
     val inMonth: Boolean = true,
     /** The day's date, for screen readers: "Wednesday, Oct 14". */
     val date: String = "",
+    val liftSeconds: Int = 0,
 )
 
-/** Something still to do on [day]: an interval plan, or the next day of the lift program followed. */
+/** Something still to do on [day]: an interval plan, or a session on Lift. */
 sealed interface UpNextItem {
     val epochDay: Long
     val day: HistoryDay
@@ -58,14 +63,17 @@ sealed interface UpNextItem {
     ) : UpNextItem
 
     /**
-     * The program's next day: today, or tomorrow once a day of it is done today. [resume] when a session is
-     * in progress already, which Lift picks up before starting another.
+     * A session on Lift: a day of the program followed ([programDay]), or a free one when it is null. Planned,
+     * by [planId], or with no plan of a session on Lift, the program's next day: today, or tomorrow once a day
+     * of it is done today. [resume] when a session is in progress already, which Lift picks up before starting
+     * another.
      */
     data class Lift(
         override val epochDay: Long,
         override val day: HistoryDay,
-        val programDay: ProgramDay,
+        val programDay: ProgramDay?,
         val resume: Boolean = false,
+        val planId: Long? = null,
     ) : UpNextItem
 }
 
@@ -87,11 +95,10 @@ data class MonthView(val title: String, val cells: List<DayCell>, val current: B
 /** A shape and how often it has been done, named by its preset when one matches. */
 data class ShapeRow(val name: String?, val config: IntervalConfig, val count: Int, val totalSeconds: Int)
 
-/** A plan on the open day: whether it repeats every week, and how it stands. */
+/** A plan on the open day: what it asks for, whether it repeats every week, and how it stands. */
 data class SheetPlan(
     val planId: Long,
-    val name: String,
-    val config: IntervalConfig,
+    val workout: PlanWorkout,
     val weekly: Boolean,
     val state: PlanState,
 )
@@ -110,8 +117,9 @@ data class HistoryUiState(
     val sections: List<HistorySection>,
     val range: TrainingRange = TrainingRange.Week,
     val summary: RangeSummary = RangeSummary(0, formatClock(0), 0, null, 0, 0),
-    /** This week's workouts against the weekly goal; [goal] is null until the user sets one. */
+    /** This week's workouts against the weekly goal, [weekLifts] of them Lift's; [goal] is null until set. */
     val weekCount: Int = 0,
+    val weekLifts: Int = 0,
     val goal: Int? = null,
     val streak: Streak? = null,
     /** Monday to Sunday of this week. */
@@ -123,8 +131,10 @@ data class HistoryUiState(
     val upNext: List<UpNextItem> = emptyList(),
     val hasPlans: Boolean = false,
     val daySheet: DaySheet? = null,
-    /** What the day sheet's Add workout can plan: the Timer's workout, then every preset. */
+    /** What the day sheet's Add workout can plan: the Timer's workout, then every preset, or a session on Lift. */
     val choices: List<PlanChoice> = emptyList(),
+    /** The day of the program followed to do next, which a plan of the program's next day starts. */
+    val programDay: ProgramDay? = null,
 ) {
     /** Nothing done and nothing planned: the first run. */
     val isEmpty: Boolean get() = sections.isEmpty() && !hasPlans

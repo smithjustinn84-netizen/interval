@@ -16,6 +16,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.navigationevent.NavigationEvent
+import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.sameShape
 import dev.justinsmith.interval.ui.Motion
@@ -377,7 +378,7 @@ class AppNavigationTest {
 
     @Test
     fun `a plan taken off a day comes back with Undo`() = appTest { app ->
-        app.repository.planWeekly(builtInPresets.first(), setOf(1))
+        app.repository.planWeekly(builtInPresets.first().asPlan(), setOf(1))
         tab("History").performClick()
         onNodeWithContentDescription("Plan").performClick()
         onNodeWithContentDescription("Remove Tabata from Monday").performClick()

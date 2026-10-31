@@ -12,8 +12,10 @@ import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.PlanSchedule
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.model.WorkoutProgress
+import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.Effort
@@ -248,7 +250,7 @@ class IntervalRepositoryTest {
     fun `a removed plan restored keeps its id and the day it was made`() {
         val repository = repository()
         val tabata = builtInPresets.first()
-        repository.planWeekly(tabata, setOf(1, 3))
+        repository.planWeekly(tabata.asPlan(), setOf(1, 3))
         clock += 500
         val monday = repository.planned.value.first()
         repository.removePlanned(monday.id)
@@ -479,10 +481,10 @@ class IntervalRepositoryTest {
     @Test
     fun `a weekly plan is one plan per weekday and survives a restart`() {
         val tabata = builtInPresets.first()
-        repository().planWeekly(tabata, setOf(4, 1, 9))
+        repository().planWeekly(tabata.asPlan(), setOf(4, 1, 9))
         val planned = repository().planned.value
         assertEquals(listOf(PlanSchedule.Weekly(1), PlanSchedule.Weekly(4)), planned.map { it.schedule })
-        assertTrue(planned.all { it.name == tabata.name && it.config == tabata.config && it.presetId == null })
+        assertTrue(planned.all { it.workout == PlanWorkout.Interval(tabata.name, tabata.config, presetId = null) })
         assertTrue(planned.all { it.createdAtEpochMillis == clock })
     }
 
@@ -491,10 +493,10 @@ class IntervalRepositoryTest {
         val repository = repository()
         repository.saveCurrentAsPreset("Mine")
         val mine = repository.customPresets.value.single()
-        repository.planOnce(mine, epochDay = 20_744)
+        repository.planOnce(mine.asPlan(), epochDay = 20_744)
         val planned = repository().planned.value.single()
         assertEquals(PlanSchedule.Once(20_744), planned.schedule)
-        assertEquals(mine.id, planned.presetId)
+        assertEquals(mine.id, (planned.workout as PlanWorkout.Interval).presetId)
         assertTrue(planned.fallsOn(20_744))
         assertFalse(planned.fallsOn(20_745))
     }
@@ -504,12 +506,24 @@ class IntervalRepositoryTest {
         val repository = repository()
         repository.saveCurrentAsPreset("Mine")
         val mine = repository.customPresets.value.single()
-        repository.planWeekly(mine, setOf(2))
+        repository.planWeekly(mine.asPlan(), setOf(2))
         repository.deletePreset(mine)
         val planned = repository.planned.value.single()
-        assertEquals("Mine", planned.name)
+        assertEquals("Mine", (planned.workout as PlanWorkout.Interval).name)
         repository.removePlanned(planned.id)
         assertEquals(emptyList(), repository().planned.value)
+    }
+
+    @Test
+    fun `a session on Lift is planned and read back as one`() {
+        repository().planWeekly(PlanWorkout.Lift.ProgramDay, setOf(1, 3))
+        repository().planOnce(PlanWorkout.Lift.AnySession, epochDay = 20_744)
+        val planned = repository().planned.value
+        assertEquals(
+            listOf(PlanWorkout.Lift.ProgramDay, PlanWorkout.Lift.ProgramDay, PlanWorkout.Lift.AnySession),
+            planned.map { it.workout },
+        )
+        assertEquals(PlanSchedule.Once(20_744), planned.last().schedule)
     }
 
     @Test

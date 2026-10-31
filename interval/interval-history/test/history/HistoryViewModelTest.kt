@@ -13,6 +13,8 @@ import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.fakes.tabataPreset
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.PlanSchedule
+import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -142,7 +144,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
     @Test
     fun `a weekly plan is up next and its workout reads as planned once done`() {
         at(MONDAY)
-        repository.planWeekly(hiit, setOf(4, 5))
+        repository.planWeekly(hiit.asPlan(), setOf(4, 5))
         at(TODAY)
         val before = viewModel.state.value
         assertEquals(listOf(TODAY, TODAY + 1), before.upNext.map { it.epochDay })
@@ -166,7 +168,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
         val next = assertIs<UpNextItem.Lift>(state.upNext.single())
         assertEquals(TODAY, next.epochDay)
         assertEquals(HistoryDay.Today, next.day)
-        assertEquals(1, next.programDay.number)
+        assertEquals(1, next.programDay?.number)
         assertFalse(next.resume)
         assertTrue(state.hasPlans)
         assertFalse(state.isEmpty)
@@ -185,12 +187,36 @@ class HistoryViewModelTest : MainDispatcherTest() {
         val next = assertIs<UpNextItem.Lift>(viewModel.state.value.upNext.single())
         assertEquals(TODAY + 1, next.epochDay)
         assertEquals(HistoryDay.Tomorrow, next.day)
-        assertEquals(2, next.programDay.number)
+        assertEquals(2, next.programDay?.number)
+    }
+
+    @Test
+    fun `plans of the program's next day are up next with the days the program comes to`() {
+        bells.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
+        repository.planWeekly(PlanWorkout.Lift.ProgramDay, setOf(4, 5))
+
+        val upNext = viewModel.state.value.upNext
+        assertEquals(listOf(TODAY, TODAY + 1), upNext.map { it.epochDay })
+        assertEquals(listOf(1, 2), upNext.map { assertIs<UpNextItem.Lift>(it).programDay?.number })
+    }
+
+    @Test
+    fun `a session on Lift does the day's plan of one`() {
+        repository.planOnce(PlanWorkout.Lift.AnySession, TODAY)
+        assertNull(assertIs<UpNextItem.Lift>(viewModel.state.value.upNext.single()).programDay)
+
+        lift.finished("b1", "Swings", noonOf(TODAY) - 600_000, noonOf(TODAY), 24.0 to 10)
+        val after = viewModel.state.value
+        assertTrue(after.upNext.isEmpty())
+        assertTrue(after.sections.single().items.single().planned)
+        assertEquals(1, after.summary.plannedDone)
+        assertEquals(1, after.weekLifts)
+        assertEquals(600, after.week[3].liftSeconds)
     }
 
     @Test
     fun `the program day comes before an interval plan on the same day`() {
-        repository.planOnce(hiit, TODAY)
+        repository.planOnce(hiit.asPlan(), TODAY)
         bells.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
 
         val upNext = viewModel.state.value.upNext
@@ -260,7 +286,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `a day opens with its plans and a one-off can be removed`() {
-        repository.planOnce(hiit, TODAY + 2)
+        repository.planOnce(hiit.asPlan(), TODAY + 2)
         viewModel.openDay(TODAY + 2)
         val sheet = requireNotNull(viewModel.state.value.daySheet)
         assertEquals(HistoryDay.On("day ${TODAY + 2}"), sheet.day)

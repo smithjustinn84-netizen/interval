@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import dev.justinsmith.interval.fakes.hiitPreset
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.plan.DayChoice
 import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.interval.ui.runUiTest
@@ -48,8 +49,11 @@ class WorkoutDetailScreenTest {
             onBack = { events += "back" },
             onRepeat = { events += "repeat" },
             onDelete = { events += "delete" },
-            onPlanWeekly = { preset, days -> events += "weekly ${preset.name} ${days.sorted()}" },
-            onPlanOnce = { preset, day -> events += "once ${preset.name} $day" },
+            onPlanWeekly = { workout, days ->
+                events +=
+                    "weekly ${(workout as PlanWorkout.Interval).name} ${days.sorted()}"
+            },
+            onPlanOnce = { workout, day -> events += "once ${(workout as PlanWorkout.Interval).name} $day" },
             inPane = inPane,
             onShare = { events += "share $it" },
         )

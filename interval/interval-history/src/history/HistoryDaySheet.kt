@@ -25,6 +25,9 @@ import dev.justinsmith.interval.history.resources.history_routine_note
 import dev.justinsmith.interval.history.resources.history_state_done
 import dev.justinsmith.interval.history.resources.history_state_missed
 import dev.justinsmith.interval.history.resources.notice_plan_removed
+import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.plan.planMark
+import dev.justinsmith.interval.plan.planName
 import dev.justinsmith.interval.ui.DialogButton
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
@@ -39,16 +42,23 @@ import dev.justinsmith.interval.ui.StripeMark
 import dev.justinsmith.interval.ui.joined
 import dev.justinsmith.interval.ui.weekdayText
 import dev.justinsmith.interval.ui.workoutDescription
+import dev.justinsmith.lift.domain.ProgramDay
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
  * One day, opened from the week strip or the calendar: its plans, each startable and a one-off removable,
  * and the workouts done on it. A day still to come can have a workout added on it ([onAddWorkout]). A
- * weekly plan is changed in Plan, for every week, as the sheet says.
+ * weekly plan is changed in Plan, for every week, as the sheet says. A plan of the program's next day starts
+ * [programDay]'s program.
  */
 @Composable
-internal fun DaySheetContent(sheet: DaySheet, actions: HistoryActions, onAddWorkout: () -> Unit) {
+internal fun DaySheetContent(
+    sheet: DaySheet,
+    actions: HistoryActions,
+    onAddWorkout: () -> Unit,
+    programDay: ProgramDay? = null,
+) {
     val palette = IntervalTheme.palette
     val title = dayHeading(sheet.day)
     IntervalSheet(title = title, onDismiss = { actions.onOpenDay(null) }) { hide ->
@@ -79,7 +89,7 @@ internal fun DaySheetContent(sheet: DaySheet, actions: HistoryActions, onAddWork
                 ListCard {
                     sheet.plans.forEachIndexed { index, plan ->
                         if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
-                        PlanRow(plan, sheet, actions)
+                        PlanRow(plan, sheet, programDay, actions)
                     }
                 }
                 if (sheet.plans.any { it.weekly }) {
@@ -124,8 +134,10 @@ internal fun DaySheetContent(sheet: DaySheet, actions: HistoryActions, onAddWork
 }
 
 @Composable
-private fun PlanRow(plan: SheetPlan, sheet: DaySheet, actions: HistoryActions) {
+private fun PlanRow(plan: SheetPlan, sheet: DaySheet, programDay: ProgramDay?, actions: HistoryActions) {
     val palette = IntervalTheme.palette
+    val workout = plan.workout
+    val name = planName(workout)
     Row(
         Modifier
             .fillMaxWidth()
@@ -134,9 +146,9 @@ private fun PlanRow(plan: SheetPlan, sheet: DaySheet, actions: HistoryActions) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
-        StripeMark(palette.workMark, height = IntervalSizes.historyMarkHeight)
+        StripeMark(planMark(workout), height = IntervalSizes.historyMarkHeight)
         Column(Modifier.weight(1f)) {
-            Text(plan.name, style = IntervalTheme.type.label, color = palette.text)
+            Text(name, style = IntervalTheme.type.label, color = palette.text)
             val repeat = if (plan.weekly) {
                 stringResource(Res.string.history_every, weekdayText(sheet.weekday))
             } else {
@@ -147,21 +159,30 @@ private fun PlanRow(plan: SheetPlan, sheet: DaySheet, actions: HistoryActions) {
                 PlanState.Missed -> stringResource(Res.string.history_state_missed)
                 PlanState.Open -> null
             }
-            val detail = listOfNotNull(state, repeat, workoutDescription(plan.config))
+            val shape = (workout as? PlanWorkout.Interval)?.let { workoutDescription(it.config) }
             Text(
-                joined(detail),
+                joined(listOfNotNull(state, repeat, shape)),
                 style = IntervalTheme.type.meta,
                 color = palette.textDim,
             )
         }
         if (plan.state == PlanState.Open) {
-            StartPill(primary = false, onClick = { actions.onStart(plan.name, plan.config) })
+            StartPill(
+                primary = false,
+                onClick = {
+                    when (workout) {
+                        is PlanWorkout.Interval -> actions.onStart(workout.name, workout.config)
+                        PlanWorkout.Lift.ProgramDay -> actions.onStartLift(programDay?.program?.key)
+                        PlanWorkout.Lift.AnySession -> actions.onStartLift(null)
+                    }
+                },
+            )
         }
         if (!plan.weekly && plan.state != PlanState.Done) {
-            val removed = stringResource(Res.string.notice_plan_removed, plan.name)
+            val removed = stringResource(Res.string.notice_plan_removed, name)
             IconAction(
                 IntervalIcons.Close,
-                stringResource(Res.string.history_remove_cd, plan.name),
+                stringResource(Res.string.history_remove_cd, name),
                 { actions.onRemovePlanned(plan.planId, removed) },
                 haptic = HapticFeedbackType.SegmentTick,
             )

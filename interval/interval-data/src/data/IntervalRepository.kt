@@ -12,6 +12,7 @@ import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.PlanSchedule
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.WorkoutProgress
 import dev.justinsmith.interval.platform.WallClock
@@ -276,16 +277,16 @@ class IntervalRepository(
         writer.persist { historyDao.clear(now) }
     }
 
-    /** Plans [preset] for every week on each of [weekdays] (1 for Monday through 7): one plan per day. */
-    fun planWeekly(preset: Preset, weekdays: Set<Int>) {
+    /** Plans [workout] for every week on each of [weekdays] (1 for Monday through 7): one plan per day. */
+    fun planWeekly(workout: PlanWorkout, weekdays: Set<Int>) {
         val days = weekdays.filter { it in 1..DAYS_PER_WEEK }.sorted()
         if (days.isEmpty()) return
-        writer.persist { plannedDao.insert(days.map { preset.planned(PlanSchedule.Weekly(it)).toEntity() }) }
+        writer.persist { plannedDao.insert(days.map { workout.planned(PlanSchedule.Weekly(it)).toEntity() }) }
     }
 
-    /** Plans [preset] once, on [epochDay]. */
-    fun planOnce(preset: Preset, epochDay: Long) {
-        writer.persist { plannedDao.insert(listOf(preset.planned(PlanSchedule.Once(epochDay)).toEntity())) }
+    /** Plans [workout] once, on [epochDay]. */
+    fun planOnce(workout: PlanWorkout, epochDay: Long) {
+        writer.persist { plannedDao.insert(listOf(workout.planned(PlanSchedule.Once(epochDay)).toEntity())) }
     }
 
     fun removePlanned(id: Long) {
@@ -297,12 +298,10 @@ class IntervalRepository(
         writer.persist { plannedDao.insert(listOf(plan.toEntity())) }
     }
 
-    private fun Preset.planned(schedule: PlanSchedule) = PlannedWorkout(
+    private fun PlanWorkout.planned(schedule: PlanSchedule) = PlannedWorkout(
         id = 0,
-        name = name,
-        config = config,
+        workout = this,
         schedule = schedule,
-        presetId = id,
         createdAtEpochMillis = clock.nowMillis(),
     )
 }

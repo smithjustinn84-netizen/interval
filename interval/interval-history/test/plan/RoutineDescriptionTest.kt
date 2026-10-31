@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.plan
 
 import dev.justinsmith.interval.fakes.TODAY
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
@@ -18,9 +19,10 @@ class RoutineDescriptionTest {
     private fun read(text: String, presets: List<Preset> = builtInPresets): DescribedRoutine? =
         describeRoutine(text, current, presets, TODAY)
 
-    /** Each plan as "name weekdays days", the days counted from today. */
+    /** Each plan as "name weekdays days", the days counted from today; a session on Lift is "Lift". */
     private fun plans(text: String): List<String> = read(text)!!.plans.map { plan ->
-        "${plan.workout.name} ${plan.weekdays.sorted()} ${plan.days.map { it - TODAY }.sorted()}"
+        val name = (plan.workout as? PlanWorkout.Interval)?.name ?: "Lift"
+        "$name ${plan.weekdays.sorted()} ${plan.days.map { it - TODAY }.sorted()}"
     }
 
     @Test
@@ -38,11 +40,25 @@ class RoutineDescriptionTest {
     fun `each workout keeps its own days`() {
         val routine = read("tabata mon and thu, 20 min bike saturday")!!
         assertEquals(listOf(setOf(1, 4), setOf(6)), routine.plans.map { it.weekdays })
-        assertEquals("Tabata", routine.plans[0].workout.name)
-        val bike = routine.plans[1].workout
+        assertEquals("Tabata", routine.plans[0].workout.interval.name)
+        val bike = routine.plans[1].workout.interval
         assertEquals(Activity.Bike, bike.config.activity)
-        assertNull(bike.id)
+        assertNull(bike.presetId)
         assertEquals("30/15 ×27", bike.name)
+    }
+
+    @Test
+    fun `words for Lift with no shape plan a session on Lift`() {
+        assertEquals(listOf("Lift [1, 3, 5] []", "Tabata [2] []"), plans("kettlebells mon wed fri, tabata tue"))
+        assertEquals(listOf("Lift [] [1]"), plans("lift tomorrow"))
+        assertEquals(PlanWorkout.Lift.ProgramDay, read("strength weekends")!!.plans.single().workout)
+    }
+
+    @Test
+    fun `a kettlebell workout with a shape stays an interval workout`() {
+        val swings = read("kettlebell 30/30 x10 monday")!!.plans.single().workout.interval
+        assertEquals(Activity.Kettlebell, swings.config.activity)
+        assertEquals(10, swings.config.rounds)
     }
 
     @Test
@@ -53,7 +69,7 @@ class RoutineDescriptionTest {
     @Test
     fun `the user's own preset keeps its id`() {
         val mine = Preset("Hills", IntervalConfig(workSeconds = 60, restSeconds = 60, rounds = 6), id = 7)
-        assertEquals(7, read("hills on sunday", builtInPresets + mine)!!.plans.single().workout.id)
+        assertEquals(7, read("hills on sunday", builtInPresets + mine)!!.plans.single().workout.interval.presetId)
     }
 
     @Test
@@ -86,15 +102,15 @@ class RoutineDescriptionTest {
     @Test
     fun `times a week is no count of rounds`() {
         val tabata = read("tabata 3 times a week")!!.plans.single()
-        assertEquals(8, tabata.workout.config.rounds)
+        assertEquals(8, tabata.workout.interval.config.rounds)
         assertFalse(tabata.scheduled)
     }
 
     @Test
     fun `on before a day is not work`() {
         val plan = read("40 on 20 off on mondays")!!.plans.single()
-        assertEquals(40, plan.workout.config.workSeconds)
-        assertEquals(20, plan.workout.config.restSeconds)
+        assertEquals(40, plan.workout.interval.config.workSeconds)
+        assertEquals(20, plan.workout.interval.config.restSeconds)
         assertEquals(setOf(1), plan.weekdays)
     }
 
@@ -114,3 +130,5 @@ class RoutineDescriptionTest {
         assertNull(read("whenever I feel like it"))
     }
 }
+
+private val PlanWorkout.interval: PlanWorkout.Interval get() = this as PlanWorkout.Interval

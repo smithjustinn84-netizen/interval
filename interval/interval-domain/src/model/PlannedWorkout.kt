@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.model
 
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.weekdayOf
 
 /** When a planned workout falls: every week on one weekday, or once on one day. */
@@ -12,18 +13,33 @@ sealed interface PlanSchedule {
     data class Once(val epochDay: Long) : PlanSchedule
 }
 
+/** What a plan asks for: an interval workout of one shape, or a session on Lift. */
+sealed interface PlanWorkout {
+    /**
+     * [name] in [config]'s shape, its own copy of the preset's, so editing or deleting that preset later leaves
+     * the plan as it was made; [presetId] names the user's own preset it came from, and is null for a built-in
+     * or the Timer's settings.
+     */
+    data class Interval(val name: String, val config: IntervalConfig, val presetId: Long? = null) : PlanWorkout
+
+    /** A session on Lift, which any session finished on its day does. */
+    sealed interface Lift : PlanWorkout {
+        /** The next day of the program followed, whichever it is when the day comes; a free session without one. */
+        data object ProgramDay : Lift
+
+        /** Any session at all. */
+        data object AnySession : Lift
+    }
+}
+
 /**
- * A workout the user means to do. It keeps its own copy of the preset's [name] and shape, so editing or
- * deleting that preset later leaves the plan as it was made; [presetId] names the user's own preset it
- * came from, and is null for a built-in or the Timer's settings. A weekly plan counts from the day it was
- * made, [createdAtEpochMillis]: the weeks before it hold nothing it could have missed.
+ * A [workout] the user means to do on its [schedule]. A weekly plan counts from the day it was made,
+ * [createdAtEpochMillis]: the weeks before it hold nothing it could have missed.
  */
 data class PlannedWorkout(
     val id: Long,
-    val name: String,
-    val config: IntervalConfig,
+    val workout: PlanWorkout,
     val schedule: PlanSchedule,
-    val presetId: Long? = null,
     val createdAtEpochMillis: Long = 0,
 ) {
     /** Whether its schedule falls on [epochDay]. When it was made is the caller's to weigh. */
@@ -32,3 +48,6 @@ data class PlannedWorkout(
         is PlanSchedule.Once -> schedule.epochDay == epochDay
     }
 }
+
+/** This preset as a plan asks for it. */
+fun Preset.asPlan(): PlanWorkout.Interval = PlanWorkout.Interval(name, config, id)

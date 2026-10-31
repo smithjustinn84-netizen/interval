@@ -8,8 +8,10 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -30,7 +32,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.history_day_cd
-import dev.justinsmith.interval.history.resources.history_state_done
+import dev.justinsmith.interval.history.resources.history_kind_interval
+import dev.justinsmith.interval.history.resources.history_kind_lift
 import dev.justinsmith.interval.history.resources.history_state_done_cd
 import dev.justinsmith.interval.history.resources.history_state_missed
 import dev.justinsmith.interval.history.resources.history_state_missed_cd
@@ -54,8 +57,9 @@ import dev.justinsmith.interval.ui.weekdayText
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * Monday to Sunday: a bar for each day worked, as tall as its time against the longest; an outlined block
- * for a day still planned, a filled one for a missed day, and a short bar for a rest day. The bars grow
+ * Monday to Sunday: a bar for each day worked, as tall as its time against the longest and split by kind, Lift's
+ * sessions in the accent under the interval workouts in the work mark; an outlined block for a day still
+ * planned, a filled one for a missed day, and a short bar for a rest day. The bars grow
  * up from the baseline as the tab opens, one after another. Each day is a button that opens it.
  */
 @Composable
@@ -112,13 +116,18 @@ private fun DayBar(day: DayCell, share: Float, index: Int) {
                     grown.animateTo(share, tween(Motion.ENTER_MILLIS, index * Motion.STAGGER_MILLIS, EnterEasing))
                 }
             }
-            Box(
+            // A day with no time to share out (a session that took none) shows as Lift's if it held one.
+            val liftShare = if (day.seconds > 0) day.liftSeconds.toFloat() / day.seconds else 0f
+            Column(
                 Modifier
                     .fillMaxWidth()
                     .height((IntervalSizes.weekBar * grown.value).coerceAtLeast(Sizes.weekBarEmpty))
                     .clip(Corners.radius12)
-                    .background(palette.accent),
-            )
+                    .background(if (day.seconds > 0) palette.workMark else palette.accent),
+                verticalArrangement = Arrangement.Bottom,
+            ) {
+                if (liftShare > 0f) Box(Modifier.fillMaxWidth().fillMaxHeight(liftShare).background(palette.accent))
+            }
         }
 
         DayState.Planned -> Box(
@@ -161,8 +170,16 @@ private fun DayBar(day: DayCell, share: Float, index: Int) {
 @Composable
 internal fun Legend(modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
-    Row(modifier.clearAndSetSemantics {}, horizontalArrangement = Arrangement.spacedBy(Spacing.space16)) {
-        LegendItem(stringResource(Res.string.history_state_done)) {
+    // Four keys: on a narrow column they wrap rather than run off the card.
+    FlowRow(
+        modifier.clearAndSetSemantics {},
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space16),
+        verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+    ) {
+        LegendItem(stringResource(Res.string.history_kind_interval)) {
+            Box(Modifier.size(Sizes.legendSwatch).clip(Corners.radius12).background(palette.workMark))
+        }
+        LegendItem(stringResource(Res.string.history_kind_lift)) {
             Box(Modifier.size(Sizes.legendSwatch).clip(Corners.radius12).background(palette.accent))
         }
         LegendItem(stringResource(Res.string.history_state_planned)) {

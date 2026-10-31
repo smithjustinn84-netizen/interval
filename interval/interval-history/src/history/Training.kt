@@ -4,6 +4,7 @@ import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.LiftWorkout
 import dev.justinsmith.interval.model.PlanSchedule
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -15,7 +16,7 @@ import dev.justinsmith.interval.timer.weeksMeetingGoal
 
 /** How one planned workout stands on one day. */
 enum class PlanState {
-    /** A workout of its shape finished that day. */
+    /** A workout of its shape finished that day, or for a session on Lift, any session. */
     Done,
 
     /** Its day has gone by without one. */
@@ -25,8 +26,16 @@ enum class PlanState {
     Open,
 }
 
-/** A planned workout on one day and how it stands; [workoutId] is the workout that did it, if any. */
-data class DayPlan(val plan: PlannedWorkout, val state: PlanState, val workoutId: Long? = null)
+/**
+ * A planned workout on one day and how it stands: [workoutId] is the interval workout that did it, [liftUid] the
+ * Lift session, if any.
+ */
+data class DayPlan(
+    val plan: PlannedWorkout,
+    val state: PlanState,
+    val workoutId: Long? = null,
+    val liftUid: String? = null,
+)
 
 /** What a day comes to, for the week strip and the calendar. */
 enum class DayState {
@@ -45,8 +54,8 @@ enum class DayState {
 
 /**
  * One day of training: its plans as they stand and its workouts, oldest first, the interval workouts and
- * then the kettlebell sessions ([liftWorkouts]). Both count toward the day; only an interval workout can
- * do a plan.
+ * then the kettlebell sessions ([liftWorkouts]). Both count toward the day, and each does the plans of its
+ * own kind.
  */
 data class TrainingDay(
     val epochDay: Long,
@@ -111,11 +120,12 @@ data class MonthCell(val day: TrainingDay, val inMonth: Boolean)
  * gives their finish (the device's local epoch day), as do the days weekly plans were made: a weekly plan
  * covers its weekday from the day it was made on, a one-off its one day.
  *
- * A plan is done by a workout of the same shape that day. Each workout does at most one plan, the earliest
- * workout going to the earliest plan, and a workout that matches none is logged all the same.
+ * An interval plan is done by a workout of the same shape that day, a plan of a session on Lift by any
+ * session that day. Each workout does at most one plan, the earliest workout going to the earliest plan, and
+ * a workout that matches none is logged all the same.
  *
  * [lifts], the kettlebell sessions, count as workouts everywhere (the days, the totals, the weekly
- * counts and the streak) but have no shape, so they do no plan and are not among the shapes done most.
+ * counts and the streak) but have no shape, so they are not among the shapes done most.
  */
 class TrainingLog(
     history: List<HistoryEntry>,
@@ -143,13 +153,8 @@ class TrainingLog(
 
     fun day(epochDay: Long): TrainingDay {
         val workouts = byDay[epochDay].orEmpty()
-        return TrainingDay(
-            epochDay,
-            epochDay == today,
-            matchPlans(epochDay, workouts),
-            workouts,
-            liftsByDay[epochDay].orEmpty(),
-        )
+        val lifts = liftsByDay[epochDay].orEmpty()
+        return TrainingDay(epochDay, epochDay == today, matchPlans(epochDay, workouts, lifts), workouts, lifts)
     }
 
     /** Monday to Sunday of this week. */
@@ -249,18 +254,24 @@ class TrainingLog(
         return (planDays + listOfNotNull(firstWorkoutDay, today)).min()
     }
 
-    private fun matchPlans(epochDay: Long, workouts: List<HistoryEntry>): List<DayPlan> {
+    private fun matchPlans(epochDay: Long, workouts: List<HistoryEntry>, lifts: List<LiftWorkout>): List<DayPlan> {
         val unused = workouts.toMutableList()
+        val unusedLifts = lifts.toMutableList()
         return plansOn(epochDay).map { plan ->
-            val match = unused.firstOrNull { it.config.sameShape(plan.config) }
-            when {
-                match != null -> {
+            val done = when (val workout = plan.workout) {
+                is PlanWorkout.Interval -> unused.firstOrNull { it.config.sameShape(workout.config) }?.let { match ->
                     unused.remove(match)
-                    DayPlan(plan, PlanState.Done, match.id)
+                    DayPlan(plan, PlanState.Done, workoutId = match.id)
                 }
 
+                is PlanWorkout.Lift -> unusedLifts.firstOrNull()?.let { match ->
+                    unusedLifts.remove(match)
+                    DayPlan(plan, PlanState.Done, liftUid = match.uid)
+                }
+            }
+            when {
+                done != null -> done
                 epochDay < today -> DayPlan(plan, PlanState.Missed)
-
                 else -> DayPlan(plan, PlanState.Open)
             }
         }

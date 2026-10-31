@@ -1,6 +1,8 @@
 package dev.justinsmith.interval.plan
 
 import dev.justinsmith.interval.model.AppSettings
+import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
@@ -13,11 +15,11 @@ import dev.justinsmith.interval.timer.weekdayOf
 data class DescribedRoutine(val plans: List<DescribedPlan>, val goal: Int?)
 
 /**
- * One workout of a [DescribedRoutine]: [workout] under its preset's name or its shape's, planned every
- * week on [weekdays] (1 for Monday) and once on each of [days] (epoch days). Neither means the words gave
- * it no day, and it is not planned.
+ * One workout of a [DescribedRoutine]: [workout], an interval workout under its preset's name or its shape's or
+ * a session on Lift, planned every week on [weekdays] (1 for Monday) and once on each of [days] (epoch days).
+ * Neither means the words gave it no day, and it is not planned.
  */
-data class DescribedPlan(val workout: Preset, val weekdays: Set<Int>, val days: Set<Long>) {
+data class DescribedPlan(val workout: PlanWorkout, val weekdays: Set<Int>, val days: Set<Long>) {
     val scheduled: Boolean get() = weekdays.isNotEmpty() || days.isNotEmpty()
 }
 
@@ -27,7 +29,9 @@ data class DescribedPlan(val workout: Preset, val weekdays: Set<Int>, val days: 
  * with it: a weekday ("mondays", "on tue"), a run of them ("mon-fri", "weekdays", "weekends", "every
  * day") every week, or once on "today", "tomorrow" or "this"/"next" friday, counted from [today].
  * Days said before a workout ("mon wed fri: tabata") or after it in their own clause ("tabata mon, wed")
- * are that workout's. "N a week" is the goal. Null when the words give neither a workout nor a goal.
+ * are that workout's. A clause that names Lift ("lift", "kettlebells", "strength") and no interval shape is a
+ * session on Lift, the next day of the program followed. "N a week" is the goal. Null when the words give
+ * neither a workout nor a goal.
  *
  * The keywords are English, as [describeWorkout]'s are, and live here rather than in strings.xml.
  */
@@ -54,17 +58,28 @@ fun describeRoutine(text: String, current: IntervalConfig, presets: List<Preset>
 /** The [group]'s workout, read from all its words at once, on all the days they name. */
 private fun plan(group: List<Clause>, today: Long, current: IntervalConfig, presets: List<Preset>): DescribedPlan? {
     val schedule = Schedule(group.joinToString(" ") { it.text }, today)
-    val described = describeWorkout(schedule.rest, current, presets) ?: return null
+    val workout = readWorkout(schedule.rest, current, presets) ?: return null
+    return DescribedPlan(workout, schedule.weekdays, schedule.days)
+}
+
+/**
+ * The workout [text] names: a session on Lift when it names one and no interval shape ("kettlebells", but not
+ * "kettlebell 30/30 x10"), else the interval workout [describeWorkout] reads, under its preset's name when its
+ * shape is that preset's.
+ */
+private fun readWorkout(text: String, current: IntervalConfig, presets: List<Preset>): PlanWorkout? {
+    val described = describeWorkout(text, current, presets)
+    if (LIFT_WORDS.containsMatchIn(text) && described?.understood.isNullOrEmpty()) return PlanWorkout.Lift.ProgramDay
+    described ?: return null
     val config = described.config
     val preset = described.preset?.takeIf { it.config.sameShape(config) }
-    val workout = preset?.let { Preset(it.name, config, it.id) } ?: Preset(config.defaultPresetName(), config)
-    return DescribedPlan(workout, schedule.weekdays, schedule.days)
+    return (preset?.let { Preset(it.name, config, it.id) } ?: Preset(config.defaultPresetName(), config)).asPlan()
 }
 
 /** A clause of the text, what it says of a workout once its days are out, and its days. */
 private class Clause(val text: String, today: Long, current: IntervalConfig, presets: List<Preset>) {
     val schedule = Schedule(text, today)
-    val workout = describeWorkout(schedule.rest, current, presets)
+    val workout = readWorkout(schedule.rest, current, presets)
 }
 
 /** Commas, semicolons, new lines, a full stop ending a sentence, and the words that chain clauses. */
@@ -106,6 +121,9 @@ private class Schedule(text: String, today: Long) {
 
 /** The weekday, 1 for Monday, a name [ONE_DAY] matched is. */
 private fun weekdayNamed(name: String): Int = WEEKDAY_NAMES.indexOfFirst { it.matches(name) } + 1
+
+// What names a session on Lift rather than an interval workout, when no shape comes with it.
+private val LIFT_WORDS = Regex("""\b(?:lift(?:s|ing)?|strength|kettlebells?|kbs?|bells?)\b""")
 
 private val CLAUSE_BREAK = Regex("""[,;\n&+]|\.(?=\s|$)|\b(?:and|then|plus|also)\b""")
 

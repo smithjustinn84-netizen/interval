@@ -16,6 +16,7 @@ import androidx.compose.ui.test.performClick
 import dev.justinsmith.interval.fakes.hangboardPreset
 import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.fakes.tabataPreset
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
@@ -76,7 +77,7 @@ class HistoryScreenTest {
         onOpenDay = { events += "day $it" },
         onStart = { name, _ -> events += "start $name" },
         onRemovePlanned = { id, _ -> events += "remove $id" },
-        onPlanOnce = { preset, day -> events += "once ${preset.name} $day" },
+        onPlanOnce = { workout, day -> events += "once ${(workout as? PlanWorkout.Interval)?.name ?: workout} $day" },
         onOpenWorkout = { events += "open $it" },
         onPlan = { events += "plan" },
         onShowTimer = { events += "timer" },
@@ -276,14 +277,50 @@ class HistoryScreenTest {
     }
 
     @Test
+    fun `a day sheet's session on Lift starts a free session or the program's day`() = runUiTest {
+        val sheet = DaySheet(
+            epochDay = 20_742,
+            day = HistoryDay.Tomorrow,
+            weekday = 5,
+            plans = listOf(
+                SheetPlan(1, PlanWorkout.Lift.AnySession, weekly = false, state = PlanState.Open),
+                SheetPlan(2, PlanWorkout.Lift.ProgramDay, weekly = true, state = PlanState.Missed),
+            ),
+            workouts = emptyList(),
+            past = false,
+        )
+        setThemedContent { HistoryScreen(oneWorkout.copy(daySheet = sheet), actions) }
+        onNodeWithText("Any lift session").assertExists()
+        onNodeWithText("Next program day").assertExists()
+        onNodeWithText("Missed · Every Friday").assertExists()
+        onNodeWithText("Start").performClick()
+        assertEquals(listOf("lift null"), events)
+    }
+
+    @Test
+    fun `a free session on Lift up next starts one`() = runUiTest {
+        val upNext = listOf(UpNextItem.Lift(20_742, HistoryDay.Today, programDay = null, planId = 1))
+        setThemedContent { HistoryScreen(oneWorkout.copy(upNext = upNext, hasPlans = true), actions) }
+        onNodeWithText("Lift session").assertExists()
+        onNodeWithText("Any session on Lift").assertExists()
+        onNodeWithText("Start").performClick()
+        assertEquals(listOf("lift null"), events)
+    }
+
+    @Test
     fun `a day sheet lists its plans and removes a one-off`() = runUiTest {
         val sheet = DaySheet(
             epochDay = 20_742,
             day = HistoryDay.Tomorrow,
             weekday = 5,
             plans = listOf(
-                SheetPlan(1, hiit.name, hiit.config, weekly = true, state = PlanState.Open),
-                SheetPlan(2, "Hangboard", hangboardPreset.config, weekly = false, state = PlanState.Open),
+                SheetPlan(1, PlanWorkout.Interval(hiit.name, hiit.config), weekly = true, state = PlanState.Open),
+                SheetPlan(
+                    2,
+                    PlanWorkout.Interval("Hangboard", hangboardPreset.config),
+                    weekly = false,
+                    state = PlanState.Open,
+                ),
             ),
             workouts = emptyList(),
             past = false,

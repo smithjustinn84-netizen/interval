@@ -85,9 +85,21 @@
         <item quantity="one">%1$d workout</item>
         <item quantity="other">%1$d workouts</item>
     </plurals>
+    <plurals name="history_week_lifts">
+        <item quantity="one">%1$d lift</item>
+        <item quantity="other">%1$d lifts</item>
+    </plurals>
+    <plurals name="history_week_intervals">
+        <item quantity="one">%1$d interval</item>
+        <item quantity="other">%1$d intervals</item>
+    </plurals>
+    <string name="history_kind_interval">Interval</string>
+    <string name="history_kind_lift">Lift</string>
+    <string name="history_lift_session">Lift session</string>
+    <string name="history_lift_any">Any session on Lift</string>
     <string name="plan_title">Plan</string>
     <string name="plan_goal">Weekly goal</string>
-    <string name="plan_goal_text">Workouts a week</string>
+    <string name="plan_goal_text">Workouts a week, lifts and intervals alike</string>
     <string name="plan_goal_off">Off</string>
     <string name="plan_goal_less_cd">Lower the goal</string>
     <string name="plan_goal_more_cd">Raise the goal</string>
@@ -116,6 +128,26 @@
     <string name="plan_when">When</string>
     <string name="plan_once">Once</string>
     <string name="plan_add_confirm">Add to plan</string>
+    <string name="plan_lift_program_day">Next program day</string>
+    <string name="plan_lift_any">Any lift session</string>
+    <string name="plan_lift_day">day %1$d</string>
+    <string name="plan_lift_program_caption">Next day of the program</string>
+    <string name="plan_lift_program_next">Next: %1$s. Each lift day takes the day after.</string>
+    <string name="plan_lift_any_text">Done by any session logged on Lift that day</string>
+    <string name="plan_lift_none_title">No program followed</string>
+    <string name="plan_lift_none_text">Follow a program on Lift, and each day planned here takes its next day in turn.</string>
+    <plurals name="plan_lift_days_hint">
+        <item quantity="one">The program asks for %1$d day a week</item>
+        <item quantity="other">The program asks for %1$d days a week</item>
+    </plurals>
+    <string name="plan_lift_days_use">Use %1$s</string>
+    <string name="plan_program_caption">Lift program</string>
+    <plurals name="plan_program_pace">
+        <item quantity="one">%1$d day a week</item>
+        <item quantity="other">%1$d days a week</item>
+    </plurals>
+    <string name="plan_program_cover">%1$d of %2$d days on the week</string>
+    <string name="plan_program_cover_none">No day on the week yet. Add a lift to a day.</string>
     <string name="plan_describe_cd">Describe a routine</string>
     <string name="plan_describe_title">Describe a routine</string>
     <string name="plan_describe_field_label">Routine in words</string>

@@ -40,9 +40,9 @@ import dev.justinsmith.interval.history.resources.history_ended_early
 import dev.justinsmith.interval.history.resources.history_more_options_cd
 import dev.justinsmith.interval.history.resources.notice_undo
 import dev.justinsmith.interval.history.resources.notice_workout_deleted
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.plan.AddToPlanSheet
 import dev.justinsmith.interval.platform.Sharer
-import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.ConfirmDialog
@@ -118,8 +118,8 @@ fun WorkoutDetailScreen(
     onBack: () -> Unit,
     onRepeat: () -> Unit,
     onDelete: () -> Unit,
-    onPlanWeekly: (Preset, Set<Int>) -> Unit,
-    onPlanOnce: (Preset, Long) -> Unit,
+    onPlanWeekly: (PlanWorkout, Set<Int>) -> Unit,
+    onPlanOnce: (PlanWorkout, Long) -> Unit,
     modifier: Modifier = Modifier,
     inPane: Boolean = false,
     onShare: (String) -> Unit = {},

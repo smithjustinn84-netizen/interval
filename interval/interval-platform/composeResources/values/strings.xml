@@ -15,6 +15,9 @@
     <string name="notification_channel_reminders">Planned workouts</string>
     <string name="notification_channel_reminders_description">A reminder at the time you chose, on each day with a workout planned.</string>
     <string name="reminder_body_one">Planned today · %1$s</string>
+    <string name="reminder_lift_title">Lift session</string>
+    <string name="reminder_lift_program_day">the program’s next day</string>
+    <string name="reminder_lift_any">any session on Lift</string>
     <plurals name="reminder_title_many">
         <item quantity="one">%1$d workout planned today</item>
         <item quantity="other">%1$d workouts planned today</item>

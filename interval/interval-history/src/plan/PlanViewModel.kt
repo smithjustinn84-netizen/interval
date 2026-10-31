@@ -11,6 +11,7 @@ import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.LiftWorkout
 import dev.justinsmith.interval.model.PlanSchedule
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.platform.TimestampFormatter
@@ -22,6 +23,7 @@ import dev.justinsmith.interval.timer.MINUTES_PER_DAY
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.lift.data.LiftActivity
+import dev.justinsmith.lift.domain.ProgramDay
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
@@ -30,8 +32,11 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 
-/** A planned workout as the plan lists it. */
-data class PlanEntry(val planId: Long, val name: String, val config: IntervalConfig)
+/**
+ * A planned workout as the plan lists it. [programDay] is the day of the program a plan of its next day comes to
+ * next, from where the program stands now; null for any other plan, or past the next two weeks.
+ */
+data class PlanEntry(val planId: Long, val workout: PlanWorkout, val programDay: Int? = null)
 
 /** One weekday of the routine, 1 for Monday, and what is planned on it every week. */
 data class RoutineDay(val weekday: Int, val plans: List<PlanEntry>)
@@ -63,6 +68,13 @@ data class PlanUiState(
     /** Today as an epoch day, which a described routine's "tomorrow" counts from. */
     val today: Long,
     val reminder: ReminderUi,
+    /** The day of the program followed to do next, or null when none is followed. */
+    val programDay: ProgramDay? = null,
+    /** Of the routine's weekdays, how many hold a plan of the program's next day. */
+    val programWeekdays: Int = 0,
+    /** The routine's sessions on Lift a week, and its interval workouts. */
+    val routineLifts: Int = 0,
+    val routineIntervals: Int = 0,
 )
 
 /**
@@ -87,15 +99,16 @@ class PlanViewModel(
             repository.presets,
             repository.config,
             repository.appSettings,
-            combine(repository.history, bells.sessions, clock.days(timestamps, dayCheckMillis)) {
-                    history,
-                    sessions,
-                    _,
-                ->
-                history to sessions.asLiftWorkouts()
+            combine(
+                repository.history,
+                bells.sessions,
+                bells.programDay,
+                clock.days(timestamps, dayCheckMillis),
+            ) { history, sessions, programDay, _ ->
+                Triple(history, sessions.asLiftWorkouts(), programDay)
             },
-        ) { planned, presets, config, app, (history, lifts) ->
-            buildState(planned, presets, config, app, history, lifts)
+        ) { planned, presets, config, app, (history, lifts, programDay) ->
+            buildState(planned, presets, config, app, history, lifts, programDay)
         }.flowOn(computation).stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
@@ -106,6 +119,7 @@ class PlanViewModel(
                 repository.appSettings.value,
                 repository.history.value,
                 bells.sessions.value.asLiftWorkouts(),
+                bells.programDay.value,
             ),
         )
 
@@ -119,12 +133,12 @@ class PlanViewModel(
         repository.updateAppSettings { it.copy(reminderMinuteOfDay = minuteOfDay?.mod(MINUTES_PER_DAY)) }
     }
 
-    fun planWeekly(preset: Preset, weekdays: Set<Int>) {
-        repository.planWeekly(preset, weekdays)
+    fun planWeekly(workout: PlanWorkout, weekdays: Set<Int>) {
+        repository.planWeekly(workout, weekdays)
     }
 
-    fun planOnce(preset: Preset, epochDay: Long) {
-        repository.planOnce(preset, epochDay)
+    fun planOnce(workout: PlanWorkout, epochDay: Long) {
+        repository.planOnce(workout, epochDay)
     }
 
     /** Plans each of [routine]'s workouts on its days, and sets its goal if it has one. */
@@ -154,14 +168,16 @@ class PlanViewModel(
         app: AppSettings,
         history: List<HistoryEntry>,
         lifts: List<LiftWorkout>,
+        programDay: ProgramDay?,
     ): PlanUiState {
         val today = timestamps.dayNumber(clock.nowMillis())
-        val entries = planned.associateWith { PlanEntry(it.id, it.name, it.config) }
+        val log = TrainingLog(history, planned, today, lifts, timestamps::dayNumber)
+        val days = programDays(log, programDay)
+        val entries = planned.associateWith { PlanEntry(it.id, it.workout, days[it.id]) }
+        val weekly = planned.filter { it.schedule is PlanSchedule.Weekly }
         return PlanUiState(
             goal = app.weeklyGoal,
-            streak = app.weeklyGoal
-                ?.let { TrainingLog(history, planned, today, lifts, timestamps::dayNumber).streak(it).current }
-                ?: 0,
+            streak = app.weeklyGoal?.let { log.streak(it).current } ?: 0,
             routine = (1..DAYS_PER_WEEK).map { weekday ->
                 RoutineDay(
                     weekday,
@@ -181,7 +197,32 @@ class PlanViewModel(
             todayWeekday = weekdayOf(today),
             today = today,
             reminder = reminder(app.reminderMinuteOfDay),
+            programDay = programDay,
+            programWeekdays = weekly
+                .filter { it.workout == PlanWorkout.Lift.ProgramDay }
+                .mapNotNull { (it.schedule as? PlanSchedule.Weekly)?.weekday }
+                .distinct()
+                .size,
+            routineLifts = weekly.count { it.workout is PlanWorkout.Lift },
+            routineIntervals = weekly.count { it.workout is PlanWorkout.Interval },
         )
+    }
+
+    /**
+     * The day of the program each plan of its next day comes to next, by plan: the open ones over the next two
+     * weeks, in order, take the program's days from [next] on, a weekly plan at its first. None past the end.
+     */
+    private fun programDays(log: TrainingLog, next: ProgramDay?): Map<Long, Int> {
+        next ?: return emptyMap()
+        val days = mutableMapOf<Long, Int>()
+        var number = next.number
+        log.upNext(ONE_OFF_DAYS)
+            .filter { it.plan.workout == PlanWorkout.Lift.ProgramDay }
+            .forEach { upcoming ->
+                if (number <= next.program.totalDays && upcoming.plan.id !in days) days[upcoming.plan.id] = number
+                number++
+            }
+        return days
     }
 
     private fun reminder(minuteOfDay: Int?): ReminderUi {

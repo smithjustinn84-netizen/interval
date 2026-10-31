@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.plan
 
 import dev.justinsmith.interval.model.AppSettings
+import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.MINUTES_PER_HOUR
 import dev.justinsmith.interval.timer.Preset
@@ -28,6 +29,15 @@ fun planChoices(presets: List<Preset>, config: IntervalConfig): List<PlanChoice>
 /** The days a one-off can go on: [first] (today, as a rule) and the [count] − 1 after it. */
 fun dayChoices(first: Long, count: Int = ONE_OFF_DAYS): List<DayChoice> =
     (first until first + count).map { DayChoice(it, weekdayOf(it), dateOfEpochDay(it).day) }
+
+/**
+ * [count] weekdays spread over the week as evenly as whole days allow, from [first] (1 for Monday) on: three
+ * from Monday are Monday, Wednesday and Friday.
+ */
+fun spreadWeekdays(first: Int, count: Int): Set<Int> {
+    val days = count.coerceIn(1, DAYS_PER_WEEK)
+    return (0 until days).map { (first - 1 + it * DAYS_PER_WEEK / days) % DAYS_PER_WEEK + 1 }.toSet()
+}
 
 /** Two weeks of days to pick a one-off from. */
 const val ONE_OFF_DAYS = 14

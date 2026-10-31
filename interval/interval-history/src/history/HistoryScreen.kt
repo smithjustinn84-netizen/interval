@@ -54,11 +54,12 @@ import dev.justinsmith.interval.history.resources.history_today
 import dev.justinsmith.interval.history.resources.history_tomorrow
 import dev.justinsmith.interval.history.resources.history_yesterday
 import dev.justinsmith.interval.history.resources.notice_undo
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.plan.AddToPlanSheet
+import dev.justinsmith.interval.plan.LiftChoices
 import dev.justinsmith.interval.plan.PlanRepeat
 import dev.justinsmith.interval.plan.dayChoices
 import dev.justinsmith.interval.timer.IntervalConfig
-import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.interval.ui.AccentButton
@@ -143,7 +144,8 @@ fun HistoryRoute(
             onShowTimer = { showTimer() },
             onOpenLift = { leavingSheet { openLift(it) } },
             onStartLift = { program ->
-                program?.let(viewModel::startLift)
+                // Lift starts nothing while a session is in progress, so with one under way this resumes it.
+                viewModel.startLift(program)
                 leavingSheet(startSession)
             },
         )
@@ -163,14 +165,14 @@ class HistoryActions(
     val onStart: (String, IntervalConfig) -> Unit = { _, _ -> },
     /** Takes a one-off off the plan, with the line saying so ("Removed Tabata"). */
     val onRemovePlanned: (planId: Long, removedText: String) -> Unit = { _, _ -> },
-    val onPlanWeekly: (Preset, Set<Int>) -> Unit = { _, _ -> },
-    val onPlanOnce: (Preset, Long) -> Unit = { _, _ -> },
+    val onPlanWeekly: (PlanWorkout, Set<Int>) -> Unit = { _, _ -> },
+    val onPlanOnce: (PlanWorkout, Long) -> Unit = { _, _ -> },
     val onOpenWorkout: (Long) -> Unit = {},
     val onPlan: () -> Unit = {},
     val onShowTimer: () -> Unit = {},
     /** Opens a kettlebell session's page, by its uid. */
     val onOpenLift: (String) -> Unit = {},
-    /** Opens Lifting: on a new day of this program, or with null on the session in progress. */
+    /** Opens Lifting: on a new day of this program, or with null a free session; either way, on one in progress. */
     val onStartLift: (ProgramKey?) -> Unit = {},
 )
 
@@ -242,7 +244,9 @@ fun HistoryScreen(
             }
         }
     }
-    state.daySheet?.let { sheet -> DaySheetContent(sheet, actions, onAddWorkout = { addingOn = sheet.epochDay }) }
+    state.daySheet?.let { sheet ->
+        DaySheetContent(sheet, actions, onAddWorkout = { addingOn = sheet.epochDay }, programDay = state.programDay)
+    }
     addingOn?.let { day ->
         AddToPlanSheet(
             choices = state.choices,
@@ -253,6 +257,7 @@ fun HistoryScreen(
             repeat = PlanRepeat.Once,
             weekday = weekdayOf(day),
             epochDay = day,
+            lift = LiftChoices(state.programDay),
         )
     }
     if (confirming) {

@@ -5,6 +5,7 @@ import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.PlanSchedule
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.platform.AppInfo
 import dev.justinsmith.interval.platform.ShareableFile
@@ -88,15 +89,23 @@ private fun Preset.export() = PresetExport(id, name, config.export())
 private fun HistoryEntry.export() =
     WorkoutExport(id, finishedAtEpochMillis, config.export(), elapsedSeconds, endedEarly, workActiveSeconds)
 
-private fun PlannedWorkout.export() = PlannedExport(
-    id = id,
-    name = name,
-    config = config.export(),
-    weekday = (schedule as? PlanSchedule.Weekly)?.weekday,
-    epochDay = (schedule as? PlanSchedule.Once)?.epochDay,
-    presetId = presetId,
-    createdAtEpochMillis = createdAtEpochMillis,
-)
+private fun PlannedWorkout.export(): PlannedExport {
+    val interval = workout as? PlanWorkout.Interval
+    return PlannedExport(
+        id = id,
+        name = interval?.name,
+        config = interval?.config?.export(),
+        weekday = (schedule as? PlanSchedule.Weekly)?.weekday,
+        epochDay = (schedule as? PlanSchedule.Once)?.epochDay,
+        presetId = interval?.presetId,
+        createdAtEpochMillis = createdAtEpochMillis,
+        lift = when (workout) {
+            is PlanWorkout.Interval -> null
+            PlanWorkout.Lift.ProgramDay -> "ProgramDay"
+            PlanWorkout.Lift.AnySession -> "AnySession"
+        },
+    )
+}
 
 private fun Band.export() = BandExport(id, name, colour.name, position, archived)
 

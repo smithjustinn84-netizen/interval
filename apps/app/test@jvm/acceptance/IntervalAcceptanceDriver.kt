@@ -13,12 +13,14 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
 import dev.justinsmith.interval.AppFixture
 import dev.justinsmith.interval.appTest
 import dev.justinsmith.interval.fakes.FakeStorage
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.tab
 import dev.justinsmith.interval.ui.AcceptanceSteps
 import dev.justinsmith.interval.ui.JOURNEY_TIMEOUT
@@ -159,6 +161,41 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
             ui.onAllNodes(hasText("Previous month") or hasContentDescription("Previous month"))
                 .fetchSemanticsNodes().isNotEmpty()
     }
+
+    /** On Plan: a weekday's + and the add sheet's Lift side, with no program followed, then Add to plan. */
+    fun planAnyLiftSessionEvery(weekday: String) {
+        tapDescribed("Add a workout every $weekday")
+        tap(hasText("Lift") and isSelectable())
+        see("No program followed")
+        tap(hasText("Add to plan") and hasClickAction())
+        waitFor("a session on Lift planned") {
+            app.repository.planned.value.singleOrNull()?.workout == PlanWorkout.Lift.AnySession
+        }
+    }
+
+    fun seeLiftSessionPlannedOn(weekday: String) = see(hasContentDescription("Remove Any lift session from $weekday"))
+
+    fun seeUpNext(name: String) {
+        see(hasText("Up next", substring = true))
+        see(name)
+    }
+
+    fun startUpNext() = tap("Start")
+
+    /** On Lifting: one set logged a minute and a half in, then Finish and the summary's Done. */
+    fun logASetAndFinish() {
+        tap("Log set")
+        app.clock.set(90_000)
+        tap("Finish")
+        see("Counts toward your week and your goal")
+        tap("Done")
+        waitFor("the session finished") { app.lift.sessions.sessions.value.any { it.finishedAtEpochMillis != null } }
+    }
+
+    /** Today on the week strip, which opens its day sheet. */
+    fun openToday() = tap(hasContentDescription("Today, done"))
+
+    fun seeTodaysPlanDone(repeat: String) = see("Done · $repeat")
 
     fun clearHistory() {
         tapDescribed("More options")

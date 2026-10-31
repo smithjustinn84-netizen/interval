@@ -10,5 +10,5 @@ import org.koin.dsl.module
  * which closing the container cancels.
  */
 val historyModule: Module = module {
-    single(createdAtStart = true) { PlanReminderScheduler(get(), get(), get(), get(), get(StorageScope)) }
+    single(createdAtStart = true) { PlanReminderScheduler(get(), get(), get(), get(), get(), get(StorageScope)) }
 }

@@ -5,6 +5,7 @@ import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.LiftWorkout
 import dev.justinsmith.interval.model.PlanSchedule
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.epochDayOf
@@ -29,15 +30,16 @@ class TrainingTest {
     private fun weekly(weekday: Int, config: IntervalConfig = tabata, madeOn: Long = 0) =
         PlannedWorkout(
             nextId++,
-            "Plan",
-            config,
+            PlanWorkout.Interval("Plan", config),
             PlanSchedule.Weekly(weekday),
-            createdAtEpochMillis =
-            madeOn * DAY_MILLIS,
+            createdAtEpochMillis = madeOn * DAY_MILLIS,
         )
 
     private fun once(day: Long, config: IntervalConfig = tabata) =
-        PlannedWorkout(nextId++, "Once", config, PlanSchedule.Once(day))
+        PlannedWorkout(nextId++, PlanWorkout.Interval("Once", config), PlanSchedule.Once(day))
+
+    private fun liftOnce(day: Long, workout: PlanWorkout.Lift = PlanWorkout.Lift.ProgramDay) =
+        PlannedWorkout(nextId++, workout, PlanSchedule.Once(day))
 
     private fun log(history: List<HistoryEntry>, planned: List<PlannedWorkout> = emptyList(), on: Long = today) =
         TrainingLog(history, planned, on) { it.floorDiv(DAY_MILLIS) }
@@ -219,7 +221,7 @@ class TrainingTest {
     }
 
     @Test
-    fun `a kettlebell session counts toward the streak but does no plan`() {
+    fun `a kettlebell session counts toward the streak but does no interval plan`() {
         val plan = once(monday)
         val log = TrainingLog(emptyList(), listOf(plan), today, listOf(bells(monday), bells(monday - 7))) {
             it.floorDiv(DAY_MILLIS)
@@ -227,6 +229,34 @@ class TrainingTest {
         assertEquals(PlanState.Missed, log.day(monday).plans.single().state)
         assertEquals(DayState.Done, log.day(monday).state)
         assertEquals(Streak(current = 2, best = 2), log.streak(goal = 1))
+    }
+
+    @Test
+    fun `a session on Lift does a plan of either kind of Lift session that day`() {
+        val programDay = liftOnce(monday)
+        val anySession = liftOnce(today, PlanWorkout.Lift.AnySession)
+        val session = bells(monday)
+        val log = TrainingLog(emptyList(), listOf(programDay, anySession), today, listOf(session, bells(today))) {
+            it.floorDiv(DAY_MILLIS)
+        }
+        assertEquals(DayPlan(programDay, PlanState.Done, liftUid = session.uid), log.day(monday).plans.single())
+        assertEquals(PlanState.Done, log.day(today).plans.single().state)
+        assertEquals(2, log.stats(TrainingRange.Week, BodySettings()).plannedDone)
+    }
+
+    @Test
+    fun `an interval workout does no plan of a session on Lift`() {
+        val log = log(listOf(workout(monday)), listOf(liftOnce(monday), liftOnce(today)))
+        assertEquals(PlanState.Missed, log.day(monday).plans.single().state)
+        assertEquals(PlanState.Open, log.day(today).plans.single().state)
+        assertEquals(listOf(today), log.upNext().map { it.epochDay })
+    }
+
+    @Test
+    fun `each session on Lift does one plan of a session on Lift`() {
+        val plans = listOf(liftOnce(monday), liftOnce(monday, PlanWorkout.Lift.AnySession))
+        val log = TrainingLog(emptyList(), plans, today, listOf(bells(monday))) { it.floorDiv(DAY_MILLIS) }
+        assertEquals(listOf(PlanState.Done, PlanState.Missed), log.day(monday).plans.map { it.state })
     }
 
     private companion object {

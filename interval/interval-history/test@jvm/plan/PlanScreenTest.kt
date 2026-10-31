@@ -21,12 +21,17 @@ import dev.justinsmith.interval.fakes.TODAY
 import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.fakes.tabataPreset
 import dev.justinsmith.interval.history.HistoryDay
+import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.builtInPrograms
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -40,9 +45,9 @@ private val state = PlanUiState(
     goal = 4,
     streak = 5,
     routine = (1..7).map { weekday ->
-        RoutineDay(weekday, if (weekday == 1) listOf(PlanEntry(1, tabata.name, tabata.config)) else emptyList())
+        RoutineDay(weekday, if (weekday == 1) listOf(PlanEntry(1, tabata.asPlan())) else emptyList())
     },
-    oneOffs = listOf(OneOff(PlanEntry(2, hiit.name, hiit.config), TODAY + 1, HistoryDay.Tomorrow)),
+    oneOffs = listOf(OneOff(PlanEntry(2, hiit.asPlan()), TODAY + 1, HistoryDay.Tomorrow)),
     choices = listOf(PlanChoice(Preset("40/20 ×6", tabata.config.copy(workSeconds = 40)), onTimer = true)) +
         builtInPresets.map { PlanChoice(it) },
     days = (TODAY until TODAY + 14).map { DayChoice(it, weekdayOf(it), (15 + it - TODAY).toInt()) },
@@ -70,10 +75,10 @@ class PlanScreenTest {
             state = state,
             onBack = { events += "back" },
             onStepGoal = { events += "goal $it" },
-            onPlanWeekly = { preset, days -> events += "weekly ${preset.name} ${days.sorted()}" },
-            onPlanOnce = { preset, day -> events += "once ${preset.name} $day" },
+            onPlanWeekly = { workout, days -> events += "weekly ${workout.text()} ${days.sorted()}" },
+            onPlanOnce = { workout, day -> events += "once ${workout.text()} $day" },
             onPlanRoutine = { routine ->
-                routine.plans.forEach { events += "described ${it.workout.name} ${it.weekdays.sorted()} ${it.days}" }
+                routine.plans.forEach { events += "described ${it.workout.text()} ${it.weekdays.sorted()} ${it.days}" }
                 events += "goal ${routine.goal}"
             },
             onRemove = { id, _ -> events += "remove $id" },
@@ -84,7 +89,9 @@ class PlanScreenTest {
     @Test
     fun `on a tablet the routine sits beside the goal and the one-offs`() = runUiTest(Window.TabletPortrait) {
         setThemedContent { Screen(state) }
-        val goal = onNodeWithText("Workouts a week · 5-week streak").fetchSemanticsNode().boundsInRoot
+        val goal = onNodeWithText(
+            "Workouts a week, lifts and intervals alike · 5-week streak",
+        ).fetchSemanticsNode().boundsInRoot
         val routine = onNodeWithText("Routine").fetchSemanticsNode().boundsInRoot
         val oneOffs = onNodeWithText("One-offs").fetchSemanticsNode().boundsInRoot
         assertTrue(routine.left > goal.right, "Routine beside the goal: $goal, $routine")
@@ -94,7 +101,7 @@ class PlanScreenTest {
     @Test
     fun `the goal steps either way and shows the streak`() = runUiTest {
         setThemedContent { Screen(state) }
-        onNodeWithText("Workouts a week · 5-week streak").assertExists()
+        onNodeWithText("Workouts a week, lifts and intervals alike · 5-week streak").assertExists()
         onNodeWithContentDescription("Raise the goal").performClick()
         onNodeWithContentDescription("Lower the goal").performClick()
         assertEquals(listOf("goal 1", "goal -1"), events)
@@ -150,6 +157,41 @@ class PlanScreenTest {
     }
 
     @Test
+    fun `the program followed shows its days and a weekday's plus plans its next day`() = runUiTest {
+        val ladders = builtInPrograms.first { it.key == ProgramKey.BuiltIn(ProgramId.PressLadders) }
+        val lifting = state.copy(
+            routine = state.routine.map { day ->
+                if (day.weekday == 1) day.copy(plans = listOf(PlanEntry(3, PlanWorkout.Lift.ProgramDay, 3))) else day
+            },
+            programDay = ladders.day(1),
+            programWeekdays = 1,
+        )
+        setThemedContent { Screen(lifting) }
+        onNodeWithText("Press ladders 1-2-3").assertExists()
+        onNodeWithText("1 of 3 days on the week").assertExists()
+        onNodeWithContentDescription("Remove Next program day from Monday").assertExists()
+        onNodeWithText("day 3", useUnmergedTree = true).assertExists()
+
+        onNodeWithContentDescription("Add a workout every Wednesday").performClick()
+        onNode(hasText("Lift") and isSelectable()).performClick()
+        onNodeWithText("The program asks for 3 days a week").assertExists()
+        onNodeWithText("Use Wed · Fri · Sun").performClick()
+        clickAdd()
+        assertEquals(listOf("weekly ProgramDay [3, 5, 7]"), events)
+    }
+
+    @Test
+    fun `with no program followed Lift offers any session`() = runUiTest {
+        setThemedContent { Screen(state) }
+        onNodeWithText("Add on a date").performClick()
+        onNode(hasText("Lift") and isSelectable()).performClick()
+        onNodeWithText("No program followed").assertExists()
+        onNodeWithContentDescription("Saturday · 17").performClick()
+        clickAdd()
+        assertEquals(listOf("once AnySession ${TODAY + 2}"), events)
+    }
+
+    @Test
     fun `adding on a date plans one day`() = runUiTest {
         setThemedContent { Screen(state) }
         onNodeWithText("Add on a date").performClick()
@@ -183,3 +225,6 @@ class PlanScreenTest {
         onNode(hasText("Add to plan") and hasClickAction()).assertDoesNotExist()
     }
 }
+
+/** An interval plan by name, a session on Lift by its kind. */
+private fun PlanWorkout.text(): String = (this as? PlanWorkout.Interval)?.name ?: toString()

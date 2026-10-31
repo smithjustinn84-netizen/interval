@@ -8,6 +8,7 @@ import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.LoggedWorkout
 import dev.justinsmith.interval.model.PlanSchedule
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.loggedWorkouts
 import dev.justinsmith.interval.plan.planChoices
@@ -39,21 +40,46 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 
 /**
- * The plans still to do from [today], with the next day of the program followed on Lift among them, by day: it
- * falls today, unless a day of it was finished today already, and leads the plans of its day.
+ * The plans still to do from [today], by day. A plan of the program's next day takes the day the program will be
+ * at by then: the first of them the next day, each after it the day after. With no plan of a session on Lift at
+ * all, the program's next day falls today, unless a day of it was finished today already, and leads the plans of
+ * its day.
  */
-private fun TimestampFormatter.upNext(log: TrainingLog, lifting: Lifting, today: Long): List<UpNextItem> {
-    val lift = lifting.programDay?.let { day ->
+private fun TimestampFormatter.upNext(
+    log: TrainingLog,
+    planned: List<PlannedWorkout>,
+    lifting: Lifting,
+    today: Long,
+): List<UpNextItem> {
+    val unplanned = lifting.programDay?.takeIf { planned.none { it.workout is PlanWorkout.Lift } }?.let { day ->
         val doneToday = lifting.sessions.any { session ->
             session.program == day.program.key && session.finishedAtEpochMillis?.let(::dayNumber) == today
         }
         val epochDay = if (doneToday) today + 1 else today
         UpNextItem.Lift(epochDay, heading(epochDay, today), day, resume = lifting.inProgress)
     }
-    val plans = log.upNext().map {
-        UpNextItem.Planned(it.plan.id, it.epochDay, heading(it.epochDay, today), it.plan.name, it.plan.config)
+    var programDay = lifting.programDay
+    var resume = lifting.inProgress
+    val plans = log.upNext().map { next ->
+        val day = heading(next.epochDay, today)
+        when (val workout = next.plan.workout) {
+            is PlanWorkout.Interval -> UpNextItem.Planned(
+                next.plan.id,
+                next.epochDay,
+                day,
+                workout.name,
+                workout.config,
+            )
+
+            is PlanWorkout.Lift -> {
+                val ofProgram = programDay?.takeIf { workout == PlanWorkout.Lift.ProgramDay }
+                if (ofProgram != null) programDay = ofProgram.program.dayAfter(ofProgram.number)
+                UpNextItem.Lift(next.epochDay, day, ofProgram, resume = resume, planId = next.plan.id)
+                    .also { resume = false }
+            }
+        }
     }
-    return (listOfNotNull(lift) + plans).sortedBy { it.epochDay }
+    return (listOfNotNull(unplanned) + plans).sortedBy { it.epochDay }
 }
 
 /** Lift's side: its finished sessions, the followed program's next day, and whether one is in progress. */
@@ -139,16 +165,16 @@ class HistoryViewModel(
         repository.applyPreset(Preset(name, config))
     }
 
-    fun planWeekly(preset: Preset, weekdays: Set<Int>) {
-        repository.planWeekly(preset, weekdays)
+    fun planWeekly(workout: PlanWorkout, weekdays: Set<Int>) {
+        repository.planWeekly(workout, weekdays)
     }
 
-    fun planOnce(preset: Preset, epochDay: Long) {
-        repository.planOnce(preset, epochDay)
+    fun planOnce(workout: PlanWorkout, epochDay: Long) {
+        repository.planOnce(workout, epochDay)
     }
 
-    /** Starts the next day of [program], for the Lifting page about to open. */
-    fun startLift(program: ProgramKey) {
+    /** Starts the next day of [program], or a free session with none, for the Lifting page about to open. */
+    fun startLift(program: ProgramKey?) {
         bells.startSession(program)
     }
 
@@ -194,12 +220,12 @@ class HistoryViewModel(
         val sections = loggedWorkouts(history, lifts)
             .groupBy { timestamps.dayNumber(it.finishedAtEpochMillis) }
             .map { (dayNumber, workouts) ->
-                val done = log.day(dayNumber).plans.mapNotNull { it.workoutId }.toSet()
+                val plans = log.day(dayNumber).plans
                 HistorySection(
                     timestamps.heading(dayNumber, today),
                     dayNumber,
                     workouts.map {
-                        item(it, presets, body, done)
+                        item(it, presets, body, plans)
                     },
                 )
             }
@@ -220,6 +246,7 @@ class HistoryViewModel(
                 since = stats.firstDay?.let(timestamps::dateOfDay),
             ),
             weekCount = week.sumOf { it.count },
+            weekLifts = week.sumOf { it.liftWorkouts.size },
             goal = goal,
             streak = goal?.let(log::streak),
             week = week.map { cell(it, inMonth = true) },
@@ -232,12 +259,12 @@ class HistoryViewModel(
             mostDone = log.mostDone(MOST_DONE_SHOWN).map { tally ->
                 ShapeRow(presets.matching(tally.config)?.name, tally.config, tally.count, tally.seconds)
             },
-            upNext = timestamps.upNext(log, lifting, today),
+            upNext = timestamps.upNext(log, planned, lifting, today),
             hasPlans = planned.isNotEmpty() || lifting.programDay != null,
             choices = planChoices(presets, config),
+            programDay = lifting.programDay,
             daySheet = view.openDay?.let { day ->
                 val training = log.day(day)
-                val done = training.plans.mapNotNull { it.workoutId }.toSet()
                 DaySheet(
                     epochDay = day,
                     day = timestamps.heading(day, today),
@@ -245,14 +272,13 @@ class HistoryViewModel(
                     plans = training.plans.map { plan ->
                         SheetPlan(
                             plan.plan.id,
-                            plan.plan.name,
-                            plan.plan.config,
+                            plan.plan.workout,
                             weekly = plan.plan.schedule is PlanSchedule.Weekly,
                             state = plan.state,
                         )
                     },
                     workouts = loggedWorkouts(training.workouts, training.liftWorkouts).map {
-                        item(it, presets, body, done)
+                        item(it, presets, body, training.plans)
                     },
                     past = day < today,
                 )
@@ -260,8 +286,8 @@ class HistoryViewModel(
         )
     }
 
-    /** [workout]'s row; an interval workout is [planned] when its id is among those the day's plans were done by. */
-    private fun item(workout: LoggedWorkout, presets: List<Preset>, body: BodySettings, planned: Set<Long>) =
+    /** [workout]'s row, [HistoryItem.planned] when it did one of its day's [plans]. */
+    private fun item(workout: LoggedWorkout, presets: List<Preset>, body: BodySettings, plans: List<DayPlan>) =
         when (workout) {
             is LoggedWorkout.Interval -> workout.entry.let { entry ->
                 HistoryItem(
@@ -272,7 +298,7 @@ class HistoryViewModel(
                     total = formatClock(entry.elapsedSeconds),
                     calories = entry.calories(body),
                     id = entry.id,
-                    planned = entry.id in planned,
+                    planned = plans.any { it.workoutId != null && it.workoutId == entry.id },
                 )
             }
 
@@ -284,6 +310,7 @@ class HistoryViewModel(
                     time = timestamps.time(lift.finishedAtEpochMillis),
                     total = formatClock(lift.elapsedSeconds),
                     calories = lift.calories(body),
+                    planned = plans.any { it.liftUid == lift.uid },
                     liftUid = lift.uid,
                 )
             }
@@ -298,6 +325,7 @@ class HistoryViewModel(
         today = day.isToday,
         inMonth = inMonth,
         date = timestamps.dateOfDay(day.epochDay),
+        liftSeconds = day.liftWorkouts.sumOf { it.elapsedSeconds },
     )
 
     private companion object {

@@ -8,9 +8,12 @@ import dev.justinsmith.interval.fakes.RecordingPlanReminders
 import dev.justinsmith.interval.fakes.TODAY
 import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.fakes.tabataPreset
+import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.platform.PlanReminder
 import dev.justinsmith.interval.platform.PlanReminders
+import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -29,14 +32,24 @@ class PlanReminderSchedulerTest {
     fun `the platform is handed the plan's reminders as they change`() = runTest {
         var now = noonOf(TODAY)
         val repository = FakeStorage().repository(now = { now })
+        val lift = FakeLiftStorage()
         val reminders = RecordingPlanReminders()
         val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
-        PlanReminderScheduler(repository, reminders, FixedTimestampFormatter, { now }, scope)
+        PlanReminderScheduler(
+            repository,
+            lift.repository(now = {
+                now
+            }),
+            reminders,
+            FixedTimestampFormatter,
+            { now },
+            scope,
+        )
         runCurrent()
 
         // Off: nothing pending, and a plan changes nothing.
         assertEquals(listOf(emptyList()), reminders.schedules)
-        repository.planWeekly(tabataPreset, setOf(4, 5))
+        repository.planWeekly(tabataPreset.asPlan(), setOf(4, 5))
         runCurrent()
         assertEquals(1, reminders.schedules.size)
 
@@ -44,10 +57,23 @@ class PlanReminderSchedulerTest {
         repository.updateAppSettings { it.copy(reminderMinuteOfDay = EVENING) }
         runCurrent()
         assertEquals(listOf(TODAY, TODAY + 1, TODAY + 7, TODAY + 8), reminders.pending.map { it.epochDay })
-        assertTrue(reminders.pending.all { it.minuteOfDay == EVENING && it.plans.single().name == "Tabata" })
+        assertTrue(
+            reminders.pending.all {
+                it.minuteOfDay == EVENING &&
+                    it.plans.single().workout == tabataPreset.asPlan()
+            },
+        )
 
         // Today's workout done: today's reminder goes.
         repository.recordWorkout(tabataPreset.config, elapsedSeconds = 240)
+        runCurrent()
+        assertEquals(listOf(TODAY + 1, TODAY + 7, TODAY + 8), reminders.pending.map { it.epochDay })
+
+        // A session on Lift planned on Saturday is reminded of, and goes once a session is logged that day.
+        repository.planOnce(PlanWorkout.Lift.AnySession, TODAY + 2)
+        runCurrent()
+        assertEquals(listOf(TODAY + 1, TODAY + 2, TODAY + 7, TODAY + 8), reminders.pending.map { it.epochDay })
+        lift.finished("b1", "Swings", noonOf(TODAY + 2), noonOf(TODAY + 2) + 600_000, 24.0 to 10)
         runCurrent()
         assertEquals(listOf(TODAY + 1, TODAY + 7, TODAY + 8), reminders.pending.map { it.epochDay })
 
@@ -75,11 +101,12 @@ class PlanReminderSchedulerTest {
             }
         }
         val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
-        PlanReminderScheduler(repository, reminders, FixedTimestampFormatter, { now }, scope)
+        val lift = FakeLiftStorage().repository(now = { now })
+        PlanReminderScheduler(repository, lift, reminders, FixedTimestampFormatter, { now }, scope)
         runCurrent()
 
         failing = false
-        repository.planWeekly(tabataPreset, setOf(4))
+        repository.planWeekly(tabataPreset.asPlan(), setOf(4))
         repository.updateAppSettings { it.copy(reminderMinuteOfDay = EVENING) }
         runCurrent()
         assertEquals(listOf(TODAY, TODAY + 7), recorded.pending.map { it.epochDay })

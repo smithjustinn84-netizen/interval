@@ -6,7 +6,8 @@ import kotlinx.serialization.Serializable
 /**
  * Everything the app stores, as the export file holds it: primitives and names only, so the domain types
  * can change shape while an old file still reads. [schema] counts the file's own shape; a reader refuses a
- * newer one. Lift's sessions carry their sets but not how a day's plan was changed: the sets are the record.
+ * newer one (schema 2 let a plan be a session on Lift). Lift's sessions carry their sets but not how a day's plan
+ * was changed: the sets are the record.
  */
 @Serializable
 data class ExportBundle(
@@ -24,7 +25,7 @@ data class ExportBundle(
     val lift: LiftExport,
 ) {
     companion object {
-        const val SCHEMA = 1
+        const val SCHEMA = 2
         const val APP = "interval"
         const val MIME_TYPE = "application/json"
 
@@ -79,12 +80,15 @@ data class WorkoutExport(
 @Serializable
 data class PlannedExport(
     val id: Long,
-    val name: String,
-    val config: ConfigExport,
+    /** An interval workout's name and shape; null for a session on Lift. */
+    val name: String?,
+    val config: ConfigExport?,
     val weekday: Int?,
     val epochDay: Long?,
     val presetId: Long?,
     val createdAtEpochMillis: Long,
+    /** A session on Lift: `ProgramDay`, the program's next day, or `AnySession`; null for an interval workout. */
+    val lift: String? = null,
 )
 
 @Serializable

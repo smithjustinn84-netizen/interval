@@ -18,6 +18,8 @@ import androidx.compose.ui.Modifier
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.common_joined
 import dev.justinsmith.interval.history.resources.history_edit_plan
+import dev.justinsmith.interval.history.resources.history_lift_any
+import dev.justinsmith.interval.history.resources.history_lift_session
 import dev.justinsmith.interval.history.resources.history_most_done
 import dev.justinsmith.interval.history.resources.history_resume
 import dev.justinsmith.interval.history.resources.history_start
@@ -121,14 +123,23 @@ private fun UpNextLead(next: UpNextItem, actions: HistoryActions, modifier: Modi
             is UpNextItem.Lift -> {
                 // The accent, as Lift and History's rows mark kettlebell sessions.
                 StripeMark(palette.accent, height = IntervalSizes.historyMarkHeight)
-                UpNextText(
-                    programName(next.programDay.program),
-                    joined(listOf(programDayLine(next.programDay), programDayLifts(next.programDay))),
-                    Modifier.weight(1f),
-                )
+                val day = next.programDay
+                if (day != null) {
+                    UpNextText(
+                        programName(day.program),
+                        joined(listOf(programDayLine(day), programDayLifts(day))),
+                        Modifier.weight(1f),
+                    )
+                } else {
+                    UpNextText(
+                        stringResource(Res.string.history_lift_session),
+                        stringResource(Res.string.history_lift_any),
+                        Modifier.weight(1f),
+                    )
+                }
                 StartPill(
                     primary = true,
-                    onClick = { actions.onStartLift(next.programDay.program.key.takeUnless { next.resume }) },
+                    onClick = { actions.onStartLift(day?.program?.key.takeUnless { next.resume }) },
                     label = stringResource(if (next.resume) Res.string.history_resume else Res.string.history_start),
                 )
             }
@@ -145,11 +156,13 @@ private fun UpNextText(name: String, detail: String, modifier: Modifier = Modifi
     }
 }
 
-/** What a later item in Up next is called: the plan's name, or the program's. */
+/** What a later item in Up next is called: the plan's name, the program's, or a session on Lift. */
 @Composable
 private fun upNextName(item: UpNextItem): String = when (item) {
     is UpNextItem.Planned -> item.name
-    is UpNextItem.Lift -> programName(item.programDay.program)
+
+    is UpNextItem.Lift -> item.programDay?.let { programName(it.program) }
+        ?: stringResource(Res.string.history_lift_session)
 }
 
 /** A group heading's look, inside a card. */
