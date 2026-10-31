@@ -7,15 +7,21 @@ core-testing, domain, data, platform, ui, testing, feature, entry, app, host). T
   apps sees the rest; tooling sees nothing. Test dependencies follow this rule too.
 - kinds: each kind may depend on the kinds below it (`ALLOWED`). A feature depends on another feature only
   where `FEATURE_EDGES` lists the pair; interval may use only Lift's domain, data and ui.
-- the `*-testing` modules and `core-testing` are for `test-dependencies`, outside the testing modules.
-- the pure layers (time, core-platform, domain, data) take no Compose: no `$compose.*` and no `compose-lib`.
+- the `*-testing` modules and `core-testing` are for `test-dependencies`, outside the testing modules. Any other
+  test dependency is one the module's `dependencies` could take.
+- the pure layers (time, core-platform, domain, data) take no Compose: no `$compose.*`, `$libs.compose.*` or
+  `$libs.koin.compose`, no `compose-lib`, and no `settings: compose: enabled`.
+- every library (all but the hosts and the tooling plugins) applies a template from `templates/`.
+- no source under `interval/*/src*` names `LiftRepository`: the interval side reads Lift through `LiftActivity`.
 
 Dependencies are read from every module's `dependencies`, `dependencies@<platform>` and `test-dependencies`
 sections, after the templates under `apply:` are expanded. Standard library only:
 `python3 tools/check_module_rules.py`, or `--self-test` to see each rule catch a breach.
 """
 
+import re
 import sys
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -62,6 +68,12 @@ CROSS_SIDE_KINDS = {"domain", "data", "ui"}
 
 TEST_ONLY = {"testing", "core-testing"}
 NO_COMPOSE = {"time", "core-platform", "domain", "data"}
+# What brings Compose in under `dependencies`.
+COMPOSE_PREFIXES = ("$compose.", "$libs.compose.", "$libs.koin.compose")
+# The kinds that apply no template: the hosts are applications, the tooling plugins build plugins.
+UNTEMPLATED = {"host", "tooling"}
+# The interval side reads Lift through `LiftActivity`, never the whole repository.
+LIFT_REPOSITORY = re.compile(r"\bLiftRepository\b")
 
 CORE_KINDS = {"core-time": "time", "core-platform": "core-platform", "core": "core", "core-testing": "core-testing"}
 SUFFIX_KINDS = {"domain", "data", "platform", "ui", "testing"}
@@ -74,6 +86,7 @@ class Module:
     deps: set[str] = field(default_factory=set)  # module names under `dependencies*`
     test_deps: set[str] = field(default_factory=set)  # module names under `test-dependencies*`
     compose: list[str] = field(default_factory=list)  # what brings Compose in, if anything
+    templates: list[str] = field(default_factory=list)  # its own `apply:` entries
 
 
 def kind_of(name: str, side: str) -> str:
@@ -117,6 +130,26 @@ def sections(path: Path) -> dict[str, list[str]]:
     return found
 
 
+def compose_enabled(path: Path) -> bool:
+    """Whether a module or template file turns Compose on: `settings: compose: enabled`, or `enabled: true` under it."""
+    in_settings = in_compose = False
+    for line in path.read_text().splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip())
+        key, _, value = line.strip().partition(":")
+        value = value.strip()
+        if indent == 0:
+            in_settings, in_compose = key == "settings", False
+        elif in_settings and indent == 2:
+            in_compose = key == "compose"
+            if in_compose and value == "enabled":
+                return True
+        elif in_compose and indent == 4 and key == "enabled" and value == "true":
+            return True
+    return False
+
+
 def expanded(path: Path, seen: frozenset = frozenset()) -> dict[str, list[str]]:
     """[sections] with every template under `apply:` merged in, recursively."""
     own = sections(path)
@@ -129,6 +162,8 @@ def expanded(path: Path, seen: frozenset = frozenset()) -> dict[str, list[str]]:
             merged.setdefault(key, []).extend(items)
         if "compose-lib" in template:
             merged.setdefault("compose-lib", []).append(template)
+    if compose_enabled(path):
+        merged.setdefault("compose-lib", []).append(f"settings.compose in {path.relative_to(ROOT)}")
     for key, items in own.items():
         merged.setdefault(key, []).extend(items)
     return merged
@@ -140,13 +175,14 @@ def load() -> dict[str, Module]:
     for path, name in by_path.items():
         found = expanded(ROOT / path / "module.yaml")
         module = Module(name, path.split("/", 1)[0] if "/" in path else "apps")
+        module.templates = sections(ROOT / path / "module.yaml").get("apply", [])
         for key, items in found.items():
             refs = {by_path.get(item[2:], item[2:]) for item in items if item.startswith("//") and "templates/" not in item}
             if key.startswith("test-dependencies"):
                 module.test_deps |= refs
             elif key.startswith("dependencies"):
                 module.deps |= refs
-                module.compose += [item for item in items if item.startswith("$compose.")]
+                module.compose += [item for item in items if item.startswith(COMPOSE_PREFIXES)]
         module.compose += found.get("compose-lib", [])
         modules[name] = module
     return modules
@@ -167,6 +203,8 @@ def check(modules: dict[str, Module]) -> list[str]:
                 problems.append(f"{where}: {module.side}/ never depends on {dep.side}/")
                 continue
             if test:
+                if dep_kind not in TEST_ONLY and dep_kind not in ALLOWED[kind]:
+                    problems.append(f"{where}: a {kind} module's tests don't depend on a {dep_kind} module")
                 continue
             if dep_kind in TEST_ONLY and kind not in {"testing", "core-testing"}:
                 problems.append(f"{where}: a testing module belongs under test-dependencies")
@@ -178,12 +216,23 @@ def check(modules: dict[str, Module]) -> list[str]:
                 problems.append(f"{where}: features don't depend on each other (add it to FEATURE_EDGES if it must)")
         if kind in NO_COMPOSE and module.compose:
             problems.append(f"{module.name}: a {kind} module takes no Compose ({', '.join(sorted(set(module.compose)))})")
+        if kind not in UNTEMPLATED and not module.templates:
+            problems.append(f"{module.name}: a library applies a template from templates/")
     return problems
 
 
+def lift_repository_uses(root: Path) -> list[str]:
+    """The interval side's main sources under [root] that name `LiftRepository`."""
+    return [
+        f"{source.relative_to(root)}: the interval side reads Lift through LiftActivity, not LiftRepository"
+        for source in sorted(root.glob("interval/*/src*/**/*.kt"))
+        if LIFT_REPOSITORY.search(source.read_text())
+    ]
+
+
 def self_test() -> None:
-    def fake(name: str, side: str, deps=(), test_deps=(), compose=()) -> Module:
-        return Module(name, side, set(deps), set(test_deps), list(compose))
+    def fake(name: str, side: str, deps=(), test_deps=(), compose=(), templates=("lib",)) -> Module:
+        return Module(name, side, set(deps), set(test_deps), list(compose), list(templates))
 
     base = {
         m.name: m
@@ -219,6 +268,7 @@ def self_test() -> None:
         "no Lift features on interval": ("interval-timer", "deps", "lift-library", "uses only Lift's domain, data and ui"),
         "nothing depends on a host": ("app", "deps", "androidApp", "doesn't depend on a host module"),
         "every dependency is a module": ("app", "deps", "nowhere", "no such module"),
+        "tests take what the module could": ("lift-ui", "test_deps", "lift-library", "tests don't depend on a feature"),
     }
     for rule, (name, attr, dep, expected) in breaches.items():
         graph = {k: fake(v.name, v.side, v.deps, v.test_deps, v.compose) for k, v in base.items()}
@@ -229,7 +279,28 @@ def self_test() -> None:
     graph = {k: fake(v.name, v.side, v.deps, v.test_deps, v.compose) for k, v in base.items()}
     graph["lift-data"].compose.append("$compose.runtime")
     assert any("takes no Compose" in p for p in check(graph)), "pure layers take no Compose"
-    print(f"{len(breaches) + 2} cases pass")
+
+    graph = {k: fake(v.name, v.side, v.deps, v.test_deps, v.compose) for k, v in base.items()}
+    graph["lift-ui"].templates.clear()
+    assert any("applies a template" in p for p in check(graph)), "every library applies a template"
+
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        module = root / "module.yaml"
+        module.write_text("settings:\n  kotlin:\n    serialization: json\n")
+        assert not compose_enabled(module), "no compose settings, no Compose"
+        module.write_text("settings:\n  compose:\n    enabled: true\n")
+        assert compose_enabled(module), "settings: compose: enabled: true brings Compose"
+        module.write_text("settings:\n  compose: enabled\n")
+        assert compose_enabled(module), "settings: compose: enabled brings Compose"
+
+        source = root / "interval/interval-history/src/history/HistoryViewModel.kt"
+        source.parent.mkdir(parents=True)
+        source.write_text("class HistoryViewModel(private val lift: LiftActivity)\n")
+        assert lift_repository_uses(root) == [], "LiftActivity is fine"
+        source.write_text("class HistoryViewModel(private val lift: LiftRepository)\n")
+        assert lift_repository_uses(root), "the interval side never names LiftRepository"
+    print(f"{len(breaches) + 5} cases pass")
 
 
 def main() -> None:
@@ -237,7 +308,7 @@ def main() -> None:
         self_test()
         return
     modules = load()
-    problems = check(modules)
+    problems = check(modules) + lift_repository_uses(ROOT)
     if problems:
         sys.exit("\n".join(problems))
     edges = sum(len(m.deps) + len(m.test_deps) for m in modules.values())

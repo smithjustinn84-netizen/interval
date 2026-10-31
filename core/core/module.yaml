@@ -7,6 +7,10 @@ product:
   type: kmp/lib
   platforms: [android, iosArm64, iosSimulatorArm64, jvm]
 
+# `lib`, not `compose-lib` or `tested-lib`: those depend on core and core-testing, which depend on this.
+apply:
+  - //templates/lib.module-template.yaml
+
 dependencies:
   - //core/core-platform: exported
   - //core/core-time: exported
@@ -45,12 +49,3 @@ settings:
     resources:
       packageName: dev.justinsmith.core.resources
       exposedAccessors: true
-  kotlin:
-    allWarningsAsErrors: true
-    # No module-wide `optIns`: opt in per file (`@file:OptIn`). See apps/app/module.yaml.
-
-plugins:
-  lint-plugin:
-    enabled: true
-  detekt-plugin:
-    enabled: true

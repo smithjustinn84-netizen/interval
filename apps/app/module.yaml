@@ -5,6 +5,9 @@ product:
   type: kmp/lib
   platforms: [android, iosArm64, iosSimulatorArm64, jvm]
 
+apply:
+  - //templates/tested-lib.module-template.yaml
+
 dependencies:
   # The theme, components and platform hooks every app shares; exported so the app shells see them too.
   - //core/core: exported
@@ -42,9 +45,7 @@ dependencies:
   - $libs.kermit
 
 test-dependencies:
-  - $libs.kotlinx.coroutines.test
-  # The shared fakes and the UI harness, and each side's storage fakes.
-  - //core/core-testing
+  # Each side's storage fakes (`tested-lib` adds the shared fakes and the UI harness in `core-testing`).
   - //interval/interval-testing
   - //lift/lift-testing
 
@@ -70,13 +71,5 @@ settings:
       # Generate public accessors so other modules (and previews) can use Res.*
       exposedAccessors: true
   kotlin:
-    allWarningsAsErrors: true
     # The navigation keys are @Serializable, for the saved back stack.
     serialization: json
-    # No module-wide `optIns`: opt in per file (`@file:OptIn`). See templates/lib.module-template.yaml.
-
-plugins:
-  lint-plugin:
-    enabled: true
-  detekt-plugin:
-    enabled: true
