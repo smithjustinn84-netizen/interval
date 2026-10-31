@@ -17,6 +17,8 @@ import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.about_licenses
 import dev.justinsmith.interval.resources.about_licenses_hint
 import dev.justinsmith.interval.resources.about_made_by
+import dev.justinsmith.interval.resources.about_privacy
+import dev.justinsmith.interval.resources.about_privacy_hint
 import dev.justinsmith.interval.resources.about_tagline
 import dev.justinsmith.interval.resources.about_title
 import dev.justinsmith.interval.resources.about_version
@@ -31,6 +33,7 @@ import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.PreviewFormFactors
+import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.rememberEntrance
@@ -40,17 +43,34 @@ import org.koin.compose.currentKoinScope
 
 /** Reads the build's version and binds it to [AboutScreen]. */
 @Composable
-fun AboutRoute(onBack: () -> Unit, onShowLicenses: () -> Unit, modifier: Modifier = Modifier) {
+fun AboutRoute(
+    onBack: () -> Unit,
+    onShowLicenses: () -> Unit,
+    onShowPrivacy: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val info = currentKoinScope().get<AppInfo>()
-    AboutScreen(version = info.version, onBack = onBack, onShowLicenses = onShowLicenses, modifier = modifier)
+    AboutScreen(
+        version = info.version,
+        onBack = onBack,
+        onShowLicenses = onShowLicenses,
+        onShowPrivacy = onShowPrivacy,
+        modifier = modifier,
+    )
 }
 
 /**
- * The app's mark, name and [version] over a short line on what it is, the way to its licences, and
- * who made it. [version] is null for a build that carries none, which says so instead.
+ * The app's mark, name and [version] over a short line on what it is, the way to its privacy policy and
+ * its licences, and who made it. [version] is null for a build that carries none, which says so instead.
  */
 @Composable
-fun AboutScreen(version: String?, onBack: () -> Unit, onShowLicenses: () -> Unit, modifier: Modifier = Modifier) {
+fun AboutScreen(
+    version: String?,
+    onBack: () -> Unit,
+    onShowLicenses: () -> Unit,
+    modifier: Modifier = Modifier,
+    onShowPrivacy: () -> Unit = {},
+) {
     val palette = IntervalTheme.palette
     ScrollPage(
         stringResource(Res.string.about_title),
@@ -61,6 +81,12 @@ fun AboutScreen(version: String?, onBack: () -> Unit, onShowLicenses: () -> Unit
         // The hero rises in once, as the summary's does; the card below is in place already.
         AnimatedVisibility(rememberEntrance(), enter = risingEnter()) { Hero(version) }
         ListCard(Modifier.padding(top = Spacing.space32)) {
+            LinkRow(
+                stringResource(Res.string.about_privacy),
+                stringResource(Res.string.about_privacy_hint),
+                onClick = onShowPrivacy,
+            )
+            RowDivider()
             LinkRow(
                 stringResource(Res.string.about_licenses),
                 stringResource(Res.string.about_licenses_hint),

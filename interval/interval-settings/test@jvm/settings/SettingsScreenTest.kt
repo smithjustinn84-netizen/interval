@@ -22,6 +22,7 @@ import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.ThemeMode
+import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.interval.ui.Window
@@ -41,6 +42,7 @@ private val defaults = SettingsUiState(
 /** Calorie estimates turned off: no weight. */
 private val caloriesOff = defaults.copy(app = defaults.app.copy(body = BodySettings(weightKg = null)))
 
+@Suppress("detekt.TooManyFunctions") // One test per setting, as the screen lists them.
 class SettingsScreenTest {
     private val calls = mutableListOf<Any>()
 
@@ -61,7 +63,32 @@ class SettingsScreenTest {
             onClearWeight = { calls += "clear weight" },
             onSetEffort = { calls += it },
             onExport = { calls += "export" },
+            onConnectHealth = { calls += "connect health" },
+            onDisconnectHealth = { calls += "disconnect health" },
+            onInstallHealth = { calls += "install health" },
         )
+    }
+
+    @Test
+    fun `the health row shows only where there is a store and connects or disconnects it`() = runUiTest {
+        var state by mutableStateOf(defaults)
+        setThemedContent { Screen(state) }
+        scrollToText("Export")
+        onNodeWithText("Health Connect").assertDoesNotExist()
+
+        state = defaults.copy(health = HealthStatus.Disconnected)
+        scrollToText("Health Connect")
+        onNodeWithText("Health Connect").assertIsOff()
+        onNodeWithText("Health Connect").performClick()
+
+        state = defaults.copy(health = HealthStatus.Connected)
+        onNodeWithText("Health Connect").assertIsOn()
+        onNodeWithText("Finished workouts and Lift sessions are saved there").assertExists()
+        onNodeWithText("Health Connect").performClick()
+
+        state = defaults.copy(health = HealthStatus.NotInstalled)
+        onNodeWithText("Health Connect").performClick()
+        assertEquals(listOf<Any>("connect health", "disconnect health", "install health"), calls)
     }
 
     @Test

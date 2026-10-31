@@ -53,3 +53,25 @@ expect val platformPageTransitions: Boolean
  */
 @Composable
 expect fun prefersReducedMotion(): Boolean
+
+/**
+ * The way from a screen into the platform's [HealthStore]: [connect] opens the permission sheet, which the
+ * store hears the answer to through [HealthStore.refresh], and [install] takes the user to where the store
+ * is got from while it is [HealthStatus.NotInstalled]. On a platform with no store both do nothing.
+ */
+interface HealthConnector {
+    fun connect()
+
+    fun install()
+}
+
+/** The [HealthConnector] for [store], remembered for the screen that asks. Android's opens Health Connect's sheet. */
+@Composable
+expect fun rememberHealthConnector(store: HealthStore): HealthConnector
+
+/** Where there is no store to connect: iOS until HealthKit is wired, and desktop. */
+internal object NoHealthConnector : HealthConnector {
+    override fun connect() = Unit
+
+    override fun install() = Unit
+}

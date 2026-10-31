@@ -14,12 +14,19 @@
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <!-- The plan's reminders are alarms, which a reboot drops: PlanReminderReceiver sets them again. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- Health Connect (HealthConnectStore, in core-platform): finished workouts and Lift sessions written there
+         as exercise sessions with their calories, once the user connects it in Settings. Write only, never read.
+         Health Connect asks the user through its own sheet; Play's Health apps declaration must list both. -->
+    <uses-permission android:name="android.permission.health.WRITE_EXERCISE"/>
+    <uses-permission android:name="android.permission.health.WRITE_TOTAL_CALORIES_BURNED"/>
 
-    <!-- Android 11+ package visibility: lets TextToSpeech find the device's speech engine. -->
+    <!-- Android 11+ package visibility: lets TextToSpeech find the device's speech engine, and the Health Connect
+         client find its app on Android 13 and before (on 14 and up it is part of the system). -->
     <queries>
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE"/>
         </intent>
+        <package android:name="com.google.android.apps.healthdata"/>
     </queries>
 
     <!-- Backup and device transfer carry history, presets, the plan, settings and Lift's data: the rules
@@ -43,6 +50,28 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <!-- The privacy policy, which Health Connect opens on its own: from its permission sheet on Android 13
+             and before, and from the app's entry in its settings on 14 and up (the alias, which only the
+             system may start). -->
+        <activity
+                android:exported="true"
+                android:name=".PrivacyActivity"
+                android:theme="@style/Theme.Interval">
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/>
+            </intent-filter>
+        </activity>
+        <activity-alias
+                android:exported="true"
+                android:name="ViewPermissionUsageActivity"
+                android:permission="android.permission.START_VIEW_PERMISSION_USAGE"
+                android:targetActivity=".PrivacyActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE"/>
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS"/>
+            </intent-filter>
+        </activity-alias>
 
         <service
                 android:exported="false"

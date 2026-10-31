@@ -68,3 +68,6 @@ actual fun prefersReducedMotion(): Boolean = remember { UIAccessibilityIsReduceM
 actual val materialBackPreview: Boolean = false
 
 actual val platformPageTransitions: Boolean = true
+
+@Composable
+actual fun rememberHealthConnector(store: HealthStore): HealthConnector = NoHealthConnector

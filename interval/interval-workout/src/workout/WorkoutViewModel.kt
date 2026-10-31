@@ -3,9 +3,11 @@ package dev.justinsmith.interval.workout
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.data.IntervalRepository
+import dev.justinsmith.interval.model.CourseSpan
 import dev.justinsmith.interval.model.WorkoutProgress
 import dev.justinsmith.interval.platform.BackgroundWorkout
 import dev.justinsmith.interval.platform.CuePlayer
+import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.WorkoutControls
@@ -14,6 +16,7 @@ import dev.justinsmith.interval.platform.playCue
 import dev.justinsmith.interval.timer.Cue
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
+import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.Step
 import dev.justinsmith.interval.timer.UpcomingChange
@@ -35,7 +38,8 @@ import kotlin.time.TimeSource
 
 /**
  * Runs one workout from the saved configuration: a coroutine ticker feeds elapsed time into
- * [WorkoutEngine], cues go to the [CuePlayer], and a finished workout is recorded in the history.
+ * [WorkoutEngine], cues go to the [CuePlayer], and a finished workout is recorded in the history and
+ * handed to the [HealthStore] with its course, each interval, rest and pause on the wall clock.
  *
  * The ticker reads [timeSource], which counts through the device's sleep, and gives the engine every
  * millisecond since its last tick, so a workout that ran on while the app was off screen is where it should
@@ -55,6 +59,7 @@ class WorkoutViewModel(
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
     private val background: BackgroundWorkout,
+    private val health: HealthStore,
     private val timeSource: TimeSource.WithComparableMarks,
 ) : ViewModel() {
     private val config: IntervalConfig
@@ -80,6 +85,12 @@ class WorkoutViewModel(
     private var workMillis = 0L
     private val workSeconds: Int get() = workMillis.roundedSeconds()
     private var ticker: Job? = null
+
+    /** When the workout began, and its course since on the wall clock: the stretches closed, and the open one. */
+    private var startedAt = 0L
+    private var spans = mutableListOf<CourseSpan>()
+    private var openSince = 0L
+    private var openPhase: Phase? = null
 
     /** True between [BackgroundWorkout.start] and [BackgroundWorkout.stop]: while there is a workout to keep. */
     private var kept = false
@@ -130,6 +141,7 @@ class WorkoutViewModel(
         if (over || !running) return
         running = false
         stopTicker()
+        turn(phase = null)
         publish()
         checkpoint()
     }
@@ -138,6 +150,7 @@ class WorkoutViewModel(
         if (over || ticker?.isActive == true) return
         running = true
         startTicker()
+        turn(engine.phase)
         publish()
         checkpoint()
     }
@@ -152,6 +165,7 @@ class WorkoutViewModel(
     fun back() {
         if (over) return
         engine = WorkoutEngine.back(engine)
+        if (running) turn(engine.phase)
         publish()
         checkpoint()
     }
@@ -177,6 +191,7 @@ class WorkoutViewModel(
         ended = true
         week = weekWithThis()
         repository.recordWorkout(config, activeSeconds, endedEarly = true, workSeconds = workSeconds)
+        finishCourse()
         publish()
         checkpoint()
         release()
@@ -218,6 +233,10 @@ class WorkoutViewModel(
         val start = WorkoutEngine.start(config)
         engine = start.state
         running = true
+        startedAt = clock.nowMillis()
+        spans = mutableListOf()
+        openSince = startedAt
+        openPhase = engine.phase
         keep()
         play(start.cues)
         startTicker()
@@ -236,6 +255,10 @@ class WorkoutViewModel(
         week = saved.week
         activeMillis = saved.activeMillis
         workMillis = saved.workMillis
+        startedAt = saved.startedAtEpochMillis
+        spans = saved.spans.toMutableList()
+        openSince = spans.lastOrNull()?.endEpochMillis ?: startedAt
+        openPhase = if (running) engine.phase else null
         if (running) applyStep(WorkoutEngine.tick(engine, clock.nowMillis() - saved.atEpochMillis))
         if (!over) {
             keep()
@@ -266,16 +289,38 @@ class WorkoutViewModel(
         activeMillis += step.activeMillis
         workMillis += step.workMillis
         play(step.cues)
+        val turned = engine.phase != before.phase || engine.round != before.round
+        if (turned && !engine.isDone) turn(engine.phase)
         if (engine.isDone) {
             running = false
             stopTicker()
             week = weekWithThis()
             repository.recordWorkout(config, activeSeconds, workSeconds = workSeconds)
+            finishCourse()
             release()
         }
         publish()
         // A new interval is a change of course; the clock running down within one is not.
-        if (engine.phase != before.phase || engine.round != before.round) checkpoint()
+        if (turned) checkpoint()
+    }
+
+    /**
+     * Closes the stretch of the course under way at this moment and opens one of [phase], or a pause for
+     * null. A tick that crossed several intervals while the app was away closes one stretch for them all.
+     */
+    private fun turn(phase: Phase?) {
+        val now = clock.nowMillis()
+        if (now > openSince) spans += CourseSpan(openPhase, openSince, now)
+        openSince = now
+        openPhase = phase
+    }
+
+    /** The course is over: closes it and hands the workout, as it ran, to the health store. */
+    private fun finishCourse() {
+        turn(phase = null)
+        val endedAt = openSince
+        val calories = body.calories(workSeconds, activeSeconds - workSeconds, config.activity)
+        health.record(healthWorkout(config.activity, presetName, startedAt, endedAt, spans, calories))
     }
 
     private fun stopTicker() {
@@ -317,6 +362,9 @@ class WorkoutViewModel(
                 workMillis = workMillis,
                 week = week,
                 atEpochMillis = clock.nowMillis(),
+                startedAtEpochMillis = startedAt,
+                // A copy: the list goes on growing, and the snapshot is what stood at this moment.
+                spans = spans.toList(),
             ),
         )
     }

@@ -11,6 +11,8 @@ import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.Beep
 import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.Haptic
+import dev.justinsmith.interval.platform.HealthStatus
+import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.platform.playCue
@@ -35,6 +37,8 @@ data class SettingsUiState(
     val cues: CueSettings,
     val prepSeconds: Int,
     val app: AppSettings,
+    /** How the platform's health store stands; [HealthStatus.Unavailable] where there is none, and no row for it. */
+    val health: HealthStatus = HealthStatus.Unavailable,
 ) {
     val body: BodySettings get() = app.body
 
@@ -47,16 +51,18 @@ enum class CueToggle { Sound, Voice, Halfway, Vibrate }
 
 /**
  * The set-once preferences. A cue switched on plays a sample through [player], so its volume can be checked.
- * Export builds the file with [exporter] and hands it to [sharer].
+ * Export builds the file with [exporter] and hands it to [sharer]. The [health] store is shown as it stands
+ * and disconnected from here; connecting takes the platform's sheet, which the screen opens.
  */
 class SettingsViewModel(
     private val repository: IntervalRepository,
     private val player: CuePlayer,
     private val exporter: DataExporter,
     private val sharer: Sharer,
+    private val health: HealthStore,
 ) : ViewModel() {
     val state: StateFlow<SettingsUiState> =
-        combine(repository.cueSettings, repository.config, repository.appSettings, ::buildState)
+        combine(repository.cueSettings, repository.config, repository.appSettings, health.status, ::buildState)
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.Eagerly,
@@ -64,8 +70,15 @@ class SettingsViewModel(
                     repository.cueSettings.value,
                     repository.config.value,
                     repository.appSettings.value,
+                    health.status.value,
                 ),
             )
+
+    /** Reads the health store's state again: as the screen opens, and as its permission sheet closes. */
+    fun refreshHealth() = health.refresh()
+
+    /** Stops writing workouts to the health store, giving its permissions back. */
+    fun disconnectHealth() = health.disconnect()
 
     fun toggle(toggle: CueToggle) {
         repository.updateCueSettings { cues ->
@@ -148,6 +161,6 @@ class SettingsViewModel(
         repository.updateAppSettings { it.copy(body = transform(it.body)) }
     }
 
-    private fun buildState(cues: CueSettings, config: IntervalConfig, app: AppSettings) =
-        SettingsUiState(cues, config.prepSeconds, app)
+    private fun buildState(cues: CueSettings, config: IntervalConfig, app: AppSettings, health: HealthStatus) =
+        SettingsUiState(cues, config.prepSeconds, app, health)
 }

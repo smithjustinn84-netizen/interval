@@ -16,15 +16,21 @@ class AboutScreenTest {
     private val calls = mutableListOf<String>()
 
     @Test
-    fun `shows the name and version, and leads to the licenses`() = runUiTest {
+    fun `shows the name and version, and leads to privacy and the licenses`() = runUiTest {
         setThemedContent {
-            AboutScreen(version = "0.1.0", onBack = { calls += "back" }, onShowLicenses = { calls += "licenses" })
+            AboutScreen(
+                version = "0.1.0",
+                onBack = { calls += "back" },
+                onShowLicenses = { calls += "licenses" },
+                onShowPrivacy = { calls += "privacy" },
+            )
         }
         onNodeWithText("Interval").assertIsDisplayed()
         onNodeWithText("Version 0.1.0").assertIsDisplayed()
+        onNodeWithText("Privacy").performClick()
         onNodeWithText("Open-source licenses").performClick()
         onNodeWithContentDescription("Back").performClick()
-        assertEquals(listOf("licenses", "back"), calls)
+        assertEquals(listOf("privacy", "licenses", "back"), calls)
     }
 
     @Test

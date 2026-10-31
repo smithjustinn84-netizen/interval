@@ -71,12 +71,15 @@ the database file (`bells.db`), the serial names that its route keys are saved u
 core/
   core               the theme, tokens, motion, components, lanes, `Tab` and `push` (nav/), the Composable
                      platform hooks the UI needs (`SystemServices.kt`), and `rememberCorePlatformModule`
-                     (`CorePlatform.kt`: the `WallClock`, `TimestampFormatter`, `AppInfo` and `Sharer` both sides'
-                     containers take, with each platform's `Sharer`); exports `core-platform` and `core-time`.
+                     (`CorePlatform.kt`: the `WallClock`, `TimestampFormatter`, `AppInfo`, `Sharer` and `HealthStore`
+                     both sides' containers take, with each platform's `Sharer`) and `rememberHealthConnector`
+                     (the store's permission sheet, for Settings); exports `core-platform` and `core-time`.
                      Packages `dev.justinsmith.interval.ui`, `.platform`, `.nav`; resources
                      `dev.justinsmith.core.resources`
   core-platform      what the platform gives that isn't drawing, with no Compose: the clocks (`WallClock`,
                      `epochMillisNow`, `realElapsedTime`, `days`), `TimestampFormatter`, `AppInfo`, `Sharer`,
+                     `HealthStore` (`Health.kt`: the workout both sides hand it as they finish; Android's is
+                     `HealthConnectStore`, write only, in src@android; elsewhere `NoHealthStore`),
                      Android's notification helpers, and `storage/Storage.kt` (`SerialWriter`, `storageScope`,
                      `orOnError`/`orEmptyOnError`); packages `.platform`, `.storage`; exports `core-time`. The
                      data modules depend on this, not `core`, so a theme edit neither recompiles them nor reruns
@@ -84,7 +87,7 @@ core/
   core-time          calendar/clock maths (`CalendarDays`, `formatClock`, `WeekStanding`), package `.timer`. No
                      dependencies, so the domains compile without Compose
   core-testing       `MainDispatcherTest`, `FixedTimestampFormatter`, `FakeAppInfo`, `RecordingSharer`,
-                     `fakeCorePlatformModule`, the tests' calendar;
+                     `RecordingHealthStore`, `fakeCorePlatformModule`, the tests' calendar;
                      src@jvm: the UI harness (`runUiTest`, `setThemedContent`, `StateRestoration`, `waitForText`)
 
 interval/            the interval timer
@@ -235,6 +238,14 @@ toolchain (`$compose.*`).
   `RestService` holds the CPU awake and counts the rest down in a notification while the session's own clock
   beeps; iOS schedules one notification for the rest's end; desktop nothing. The notification helpers both
   services share are `core/core-platform/src@android/platform/Notifications.kt`.
+- **Health Connect**: `HealthStore.record` takes a `HealthWorkout` (core-platform's `Health.kt`): `WorkoutViewModel`
+  builds one from the course it keeps (`CourseSpan`s in `WorkoutProgress`, so a restart loses none) as the workout
+  ends, `SessionViewModel` from the session's sets (`HealthWorkouts.kt` in each). Android's `HealthConnectStore`
+  writes an exercise session with segments and a total-calories record, keyed by the workout's id, and checks its
+  permissions before every write. Settings' row connects through `rememberHealthConnector` (the sheet is Health
+  Connect's) and disconnects by revoking. The manifest declares the two write permissions and `PrivacyActivity`
+  (the policy, `about/PrivacyScreen.kt`, also under About), which Health Connect opens for its rationale. Play's
+  Health apps declaration must list the same two data types.
 - **Reminders for the plan**: `AppSettings.reminderMinuteOfDay` (set on Plan, null is off). `PlanReminderScheduler`
   (`interval/interval-history/src/plan/`, an eager single) recomputes `plannedReminders` (the next 14 days with a plan
   still open, from `TrainingLog.upNext`) on every change and at midnight, and hands the whole set to

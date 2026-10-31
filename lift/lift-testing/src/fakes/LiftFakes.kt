@@ -204,6 +204,11 @@ class FakeBandDao : BandDao {
 class FakeIntervalActivity : IntervalActivity {
     override val workouts = MutableStateFlow(emptyList<IntervalWorkout>())
     override val weeklyGoal = MutableStateFlow<Int?>(null)
+
+    /** The estimate the app would make, or null as with no body weight set; a test sets it. */
+    var caloriesPerSecond: Double? = null
+
+    override fun sessionCalories(elapsedSeconds: Int): Int? = caloriesPerSecond?.let { (it * elapsedSeconds).toInt() }
 }
 
 /** The beeps an EMOM played, in order. */

@@ -9,6 +9,7 @@ import dev.justinsmith.interval.fakes.deferredStorageScope
 import dev.justinsmith.interval.fakes.saveCurrentAsPreset
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.BodySettings
+import dev.justinsmith.interval.model.CourseSpan
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.PlanSchedule
@@ -20,6 +21,7 @@ import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.timer.WeightUnit
@@ -74,6 +76,12 @@ class IntervalRepositoryTest {
             workMillis = 2_500,
             week = WeekStanding(count = 3, goal = 4, streak = 2),
             atEpochMillis = 1_700_000_000_000,
+            startedAtEpochMillis = 1_699_999_980_000,
+            spans = listOf(
+                CourseSpan(Phase.Prep, 1_699_999_980_000, 1_699_999_990_000),
+                CourseSpan(null, 1_699_999_990_000, 1_699_999_995_000),
+                CourseSpan(Phase.Work, 1_699_999_995_000, 1_700_000_000_000),
+            ),
         )
         repository().saveWorkoutProgress(progress)
         assertEquals(progress, repository().workoutProgress.value)

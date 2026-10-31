@@ -2,6 +2,7 @@ package dev.justinsmith.lift.session
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.WeekStanding
@@ -224,6 +225,7 @@ class SessionViewModel(
     private val filters: ExerciseFilterStore,
     private val intervals: IntervalActivity,
     private val timestamps: TimestampFormatter,
+    private val health: HealthStore,
     tickMillis: Long = TICK_MILLIS,
 ) : ViewModel() {
     private val draft = MutableStateFlow(SetDraft())
@@ -732,6 +734,8 @@ class SessionViewModel(
             toppedOut = asDone?.let { toppedOut(it, session.sets, bells, bands) }.orEmpty(),
         )
         repository.finishSession(title)
+        val now = done.finishedAtEpochMillis ?: clock.nowMillis()
+        health.record(done.healthWorkout(now, intervals.sessionCalories(done.elapsedSeconds(now))))
         return true
     }
 

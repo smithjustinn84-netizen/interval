@@ -44,6 +44,7 @@ import androidx.navigation3.ui.defaultPredictivePopTransitionSpec
 import androidx.savedstate.serialization.SavedStateConfiguration
 import dev.justinsmith.interval.about.AboutRoute
 import dev.justinsmith.interval.about.LicensesRoute
+import dev.justinsmith.interval.about.PrivacyScreen
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.di.rememberAppKoin
 import dev.justinsmith.interval.history.HistoryPlaceholder
@@ -56,6 +57,7 @@ import dev.justinsmith.interval.nav.HistoryTab
 import dev.justinsmith.interval.nav.Licenses
 import dev.justinsmith.interval.nav.Plan
 import dev.justinsmith.interval.nav.Presets
+import dev.justinsmith.interval.nav.Privacy
 import dev.justinsmith.interval.nav.Settings
 import dev.justinsmith.interval.nav.Tab
 import dev.justinsmith.interval.nav.TimerTab
@@ -122,6 +124,7 @@ internal val navConfiguration = SavedStateConfiguration {
             subclass(Workout::class)
             subclass(About::class)
             subclass(Licenses::class)
+            subclass(Privacy::class)
             subclass(WorkoutDetail::class)
             subclass(Plan::class)
             subclass(Presets::class)
@@ -384,9 +387,11 @@ private fun appEntries(
         AboutRoute(
             onBack = { backStack.removeLastOrNull() },
             onShowLicenses = { backStack.push(Licenses) },
+            onShowPrivacy = { backStack.push(Privacy) },
         )
     }
     entry<Licenses> { LicensesRoute(onBack = { backStack.removeLastOrNull() }) }
+    entry<Privacy> { PrivacyScreen(onBack = { backStack.removeLastOrNull() }) }
 }
 
 /**

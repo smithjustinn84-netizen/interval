@@ -23,8 +23,20 @@
     <string name="about_version_unknown">Development build</string>
     <string name="about_tagline">A timer for work and rest intervals, with cues loud enough for the gym.</string>
     <string name="about_made_by">Made by Justin Smith</string>
+    <string name="about_privacy">Privacy</string>
+    <string name="about_privacy_hint">What stays on this phone, and what Health Connect gets</string>
     <string name="about_licenses">Open-source licenses</string>
     <string name="about_licenses_hint">The fonts and libraries Interval is built with</string>
+
+    <!-- Privacy: the policy, also shown on its own when Health Connect asks why the app wants its permissions -->
+    <string name="privacy_title">Privacy</string>
+    <string name="privacy_summary">Interval keeps everything on this device. There are no accounts, no analytics and no ads, and nothing leaves the phone unless you send it.</string>
+    <string name="privacy_stored_title">What it keeps</string>
+    <string name="privacy_stored">Your workouts, presets, plan, settings, body weight and Lift sessions, in the app\'s own storage. Export, in Settings, puts the lot in one file for you to keep; Android\'s backup carries it to a new phone with your other apps\' data.</string>
+    <string name="privacy_sharing_title">Sharing</string>
+    <string name="privacy_sharing">A finished workout, a session or your export goes nowhere until you choose an app to share it with. What that app does with it is up to that app.</string>
+    <string name="privacy_health_title">Health Connect</string>
+    <string name="privacy_health">If you connect Health Connect in Settings, each workout and Lift session you finish is written there as an exercise session, with its intervals or sets and, when you have set a body weight, its calorie estimate. Interval reads nothing from Health Connect. Turn it off in Settings, or take the permission back in Health Connect, and nothing more is written; what was written stays there for you to keep or delete.</string>
 
     <!-- Licenses -->
     <string name="licenses_title">Licenses</string>

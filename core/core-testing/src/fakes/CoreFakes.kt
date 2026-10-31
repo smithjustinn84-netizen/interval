@@ -1,6 +1,9 @@
 package dev.justinsmith.interval.fakes
 
 import dev.justinsmith.interval.platform.AppInfo
+import dev.justinsmith.interval.platform.HealthStatus
+import dev.justinsmith.interval.platform.HealthStore
+import dev.justinsmith.interval.platform.HealthWorkout
 import dev.justinsmith.interval.platform.ShareableFile
 import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.platform.TimestampFormatter
@@ -8,6 +11,7 @@ import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.MINUTES_PER_HOUR
 import dev.justinsmith.interval.timer.dateOfEpochDay
 import dev.justinsmith.interval.timer.epochDayOf
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -62,16 +66,44 @@ class RecordingSharer : Sharer {
 }
 
 /**
+ * A health store that records what was written to it, and stands as a test sets [status]: disconnected to
+ * start with, as a fresh install is. [disconnects] counts the user's disconnections; [refreshes] the
+ * times the screen asked for the status again.
+ */
+class RecordingHealthStore(initial: HealthStatus = HealthStatus.Disconnected) : HealthStore {
+    override val status = MutableStateFlow(initial)
+    val workouts = mutableListOf<HealthWorkout>()
+    var refreshes = 0
+    var disconnects = 0
+
+    override fun refresh() {
+        refreshes++
+    }
+
+    override fun disconnect() {
+        disconnects++
+        status.value = HealthStatus.Disconnected
+    }
+
+    /** Keeps [workout] only while connected, as the real store writes nothing without its permissions. */
+    override fun record(workout: HealthWorkout) {
+        if (status.value == HealthStatus.Connected) workouts += workout
+    }
+}
+
+/**
  * Stands in for core's `rememberCorePlatformModule()`: a [clock] standing at 0 unless a test moves it, the
- * [FixedTimestampFormatter], [FakeAppInfo] and a [sharer] that records.
+ * [FixedTimestampFormatter], [FakeAppInfo], a [sharer] that records and a [health] store that does too.
  */
 fun fakeCorePlatformModule(
     clock: WallClock = WallClock { 0L },
     formatter: TimestampFormatter = FixedTimestampFormatter,
     sharer: Sharer = RecordingSharer(),
+    health: HealthStore = RecordingHealthStore(),
 ): Module = module {
     single { clock }
     single { formatter }
     single<AppInfo> { FakeAppInfo }
     single { sharer }
+    single { health }
 }

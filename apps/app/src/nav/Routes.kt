@@ -34,6 +34,10 @@ data object About : NavKey
 @Serializable
 data object Licenses : NavKey
 
+/** The privacy policy. Pushed from About; Android also opens it on its own for Health Connect. */
+@Serializable
+data object Privacy : NavKey
+
 /** One finished workout, by the id it is stored under: repeat it, plan it again, or delete it. Pushed from History. */
 @Serializable
 data class WorkoutDetail(val id: Long) : NavKey

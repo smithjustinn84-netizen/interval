@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.model
 
+import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.timer.WorkoutState
 
@@ -27,4 +28,15 @@ data class WorkoutProgress(
     val week: WeekStanding?,
     /** The wall-clock moment this stood, in epoch milliseconds. */
     val atEpochMillis: Long,
+    /** When the workout began, in epoch milliseconds: the first moment of its course. */
+    val startedAtEpochMillis: Long = atEpochMillis,
+    /** Its course so far, each stretch closed at a change; the one under way runs from the last one's end. */
+    val spans: List<CourseSpan> = emptyList(),
 )
+
+/**
+ * One stretch of a workout's course on the wall clock: [phase] from [startEpochMillis] to
+ * [endEpochMillis], or a pause when [phase] is null. The health store takes a finished workout's spans as
+ * its segments.
+ */
+data class CourseSpan(val phase: Phase?, val startEpochMillis: Long, val endEpochMillis: Long)

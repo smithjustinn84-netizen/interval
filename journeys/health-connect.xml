@@ -1,0 +1,25 @@
+<journey name="Health Connect">
+  <description>
+    Connect Health Connect in Settings, finish a workout and find it in Health Connect, then disconnect.
+    Run on a phone in portrait on Android 14 or later, where Health Connect is part of the system; the
+    emulator's Health Connect must be open once before (Settings > Security and privacy > Health Connect).
+    Where a step cannot be verified without the Health Connect app, note it as not checked.
+  </description>
+  <actions>
+    <action>Tap the "Settings" button on the Timer tab</action>
+    <action>Scroll to "Your data" and verify that it shows a "Health Connect" switch, off, saying "Save finished workouts and Lift sessions there too"</action>
+    <action>Tap the "Health Connect" switch</action>
+    <action>Verify that Health Connect's permission sheet opens, asking to write exercise and total calories burned, with Interval's privacy policy linked</action>
+    <action>Tap the privacy policy link and verify that Interval's "Privacy" page opens, with a "Health Connect" section; go back to the sheet</action>
+    <action>Allow all</action>
+    <action>Verify that the "Health Connect" switch is on and says "Finished workouts and Lift sessions are saved there"</action>
+    <action>Tap "Back"</action>
+    <action>Tap "Start workout", skip to the first rest with "Skip to next interval" twice, tap "End workout" and confirm</action>
+    <action>Verify that the summary says "Ended"</action>
+    <action>Open Health Connect (Settings > Security and privacy > Health Connect > Data and access > Exercise) and verify that an Interval entry of high intensity interval training is listed for today, with segments</action>
+    <action>Return to Interval, tap "Done", then the "Settings" button</action>
+    <action>Tap the "Health Connect" switch and verify that it is off</action>
+    <action>Open Health Connect's app permissions and verify that Interval has no permissions left</action>
+    <action>Tap the "Settings" button on the Timer tab, then "About Interval" under "About", then "Privacy", and verify that the policy page shows</action>
+  </actions>
+</journey>

@@ -5,10 +5,12 @@ package dev.justinsmith.interval.settings
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.MainDispatcherTest
 import dev.justinsmith.interval.fakes.RecordingCuePlayer
+import dev.justinsmith.interval.fakes.RecordingHealthStore
 import dev.justinsmith.interval.fakes.RecordingSharer
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.Beep
 import dev.justinsmith.interval.platform.Haptic
+import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.ShareableFile
 import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.timer.Effort
@@ -28,7 +30,8 @@ class SettingsViewModelTest : MainDispatcherTest() {
     private val player = RecordingCuePlayer()
     private val export = ShareableFile("interval-2026-10-15.json", "application/json", "{}")
     private val sharer = RecordingSharer()
-    private val viewModel by lazy { SettingsViewModel(repository, player, { export }, sharer) }
+    private val health = RecordingHealthStore()
+    private val viewModel by lazy { SettingsViewModel(repository, player, { export }, sharer, health) }
 
     @Test
     fun `export offers the exporter's file to share`() {
@@ -39,7 +42,8 @@ class SettingsViewModelTest : MainDispatcherTest() {
     @Test
     fun `an export that fails is dropped and the next one goes`() {
         var failing = true
-        val viewModel = SettingsViewModel(repository, player, { if (failing) error("disk full") else export }, sharer)
+        val exporter = DataExporter { if (failing) error("disk full") else export }
+        val viewModel = SettingsViewModel(repository, player, exporter, sharer, health)
         viewModel.export()
         assertTrue(sharer.files.isEmpty())
         failing = false
@@ -50,7 +54,7 @@ class SettingsViewModelTest : MainDispatcherTest() {
     @Test
     fun `a second tap while an export is under way exports nothing more`() {
         val built = CompletableDeferred<ShareableFile>()
-        val viewModel = SettingsViewModel(repository, player, { built.await() }, sharer)
+        val viewModel = SettingsViewModel(repository, player, { built.await() }, sharer, health)
         viewModel.export()
         viewModel.export()
         built.complete(export)
@@ -143,5 +147,19 @@ class SettingsViewModelTest : MainDispatcherTest() {
         assertEquals(WeightUnit.Lb, reloaded.unit)
         assertEquals(Effort.Easy, reloaded.effort)
         assertEquals(150, WeightUnit.Lb.fromKg(reloaded.weightKg!!))
+    }
+
+    @Test
+    fun `the health store's standing is shown and can be given back`() {
+        assertEquals(HealthStatus.Disconnected, viewModel.state.value.health)
+        health.status.value = HealthStatus.Connected
+        assertEquals(HealthStatus.Connected, viewModel.state.value.health)
+
+        viewModel.refreshHealth()
+        assertEquals(1, health.refreshes)
+
+        viewModel.disconnectHealth()
+        assertEquals(1, health.disconnects)
+        assertEquals(HealthStatus.Disconnected, viewModel.state.value.health)
     }
 }

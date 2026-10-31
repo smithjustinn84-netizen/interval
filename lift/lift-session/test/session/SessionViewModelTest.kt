@@ -4,6 +4,11 @@ package dev.justinsmith.lift.session
 
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
+import dev.justinsmith.interval.fakes.RecordingHealthStore
+import dev.justinsmith.interval.platform.HealthMove
+import dev.justinsmith.interval.platform.HealthSegment
+import dev.justinsmith.interval.platform.HealthStatus
+import dev.justinsmith.interval.platform.HealthWorkoutKind
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.lift.data.ExerciseFilterStore
 import dev.justinsmith.lift.data.FollowingEntity
@@ -65,6 +70,8 @@ class SessionViewModelTest {
     fun resetMainDispatcher() = Dispatchers.resetMain()
 
     private val alerts = RecordingRestAlerts()
+    private val intervals = FakeIntervalActivity()
+    private val health = RecordingHealthStore(HealthStatus.Connected)
 
     private fun viewModel() = SessionViewModel(
         repository,
@@ -72,8 +79,9 @@ class SessionViewModelTest {
         RecordingBeeper(),
         alerts,
         ExerciseFilterStore(),
-        FakeIntervalActivity(),
+        intervals,
         FixedTimestampFormatter,
+        health,
     )
 
     private inline fun <T> SessionViewModel.use(block: SessionViewModel.() -> T): T = try {
@@ -330,5 +338,33 @@ class SessionViewModelTest {
             assertTrue(finish("Day 1"))
             assertNull(state.value.finished?.lastDayOf)
         }
+    }
+
+    @Test
+    fun `a finished session goes to the health store with its sets and the app's calorie estimate`() {
+        intervals.caloriesPerSecond = 0.1
+        now = 100_000
+        repository.startSession(null)
+        now = 130_000
+        repository.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
+        val uid = repository.active.value!!.uid
+        now = 160_000
+        viewModel().use { assertTrue(finish("Squats")) }
+
+        val workout = health.workouts.single()
+        assertEquals("lift-$uid", workout.id)
+        assertEquals(HealthWorkoutKind.Strength, workout.kind)
+        assertEquals("Squats", workout.title)
+        assertEquals(100_000, workout.startedAtEpochMillis)
+        assertEquals(160_000, workout.endedAtEpochMillis)
+        assertEquals(6, workout.calories)
+        assertEquals(listOf(HealthSegment(100_000, 130_000, HealthMove.Squat, repetitions = 10)), workout.segments)
+    }
+
+    @Test
+    fun `a session with no sets is discarded and goes nowhere`() {
+        repository.startSession(null)
+        viewModel().use { assertFalse(finish("Nothing")) }
+        assertTrue(health.workouts.isEmpty())
     }
 }

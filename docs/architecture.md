@@ -274,6 +274,14 @@ flowchart TD
 - **Audio & Cues**:
   - Audio cues are managed by `CuePlayer` (interval) and `Beeper` (bells).
   - Voice cues use system text-to-speech queues (`SpeechQueue`) with localized strings.
+- **Health store** (`HealthStore`, `core-platform`):
+  - As a workout or a Lift session finishes, its ViewModel hands the store a `HealthWorkout`: when it ran, a segment
+    per interval, rest, pause or set (the workout's course is kept as `CourseSpan`s in `WorkoutProgress`, so a
+    process killed mid-workout loses none of it), and the calorie estimate.
+  - Android's `HealthConnectStore` writes it to Health Connect as an exercise session and a total-calories record,
+    keyed by the workout's id so a repeated write replaces rather than doubles, and only while the user has
+    connected it in Settings (the permission sheet is Health Connect's, opened through `rememberHealthConnector`).
+    The app reads nothing back. iOS and desktop have `NoHealthStore`, and Settings shows no row.
 
 ---
 

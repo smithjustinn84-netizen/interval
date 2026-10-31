@@ -17,3 +17,6 @@ actual fun prefersReducedMotion(): Boolean = false
 actual val materialBackPreview: Boolean = false
 
 actual val platformPageTransitions: Boolean = false
+
+@Composable
+actual fun rememberHealthConnector(store: HealthStore): HealthConnector = NoHealthConnector

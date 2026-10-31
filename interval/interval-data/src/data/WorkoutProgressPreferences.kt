@@ -4,6 +4,7 @@ import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import co.touchlab.kermit.Logger
+import dev.justinsmith.interval.model.CourseSpan
 import dev.justinsmith.interval.model.WorkoutProgress
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -56,6 +57,8 @@ private class StoredProgress(
     val weekGoal: Int? = null,
     val weekStreak: Int? = null,
     val atEpochMillis: Long,
+    val startedAtEpochMillis: Long? = null,
+    val spans: List<StoredSpan> = emptyList(),
 ) {
     fun toDomain(): WorkoutProgress? {
         val phase = Phase.entries.firstOrNull { it.name == phase } ?: return null
@@ -69,8 +72,17 @@ private class StoredProgress(
             workMillis = workMillis,
             week = weekCount?.let { WeekStanding(it, weekGoal, weekStreak ?: 0) },
             atEpochMillis = atEpochMillis,
+            startedAtEpochMillis = startedAtEpochMillis ?: atEpochMillis,
+            spans = spans.map { it.toDomain() },
         )
     }
+}
+
+/** A [CourseSpan] as stored: the phase by name, null for a pause. */
+@Serializable
+private class StoredSpan(val phase: String?, val start: Long, val end: Long) {
+    /** A phase this build doesn't know reads as a pause: time in the workout, spent on nothing it can name. */
+    fun toDomain() = CourseSpan(Phase.entries.firstOrNull { it.name == phase }, start, end)
 }
 
 private fun WorkoutProgress.stored() = StoredProgress(
@@ -93,4 +105,6 @@ private fun WorkoutProgress.stored() = StoredProgress(
     weekGoal = week?.goal,
     weekStreak = week?.streak,
     atEpochMillis = atEpochMillis,
+    startedAtEpochMillis = startedAtEpochMillis,
+    spans = spans.map { StoredSpan(it.phase?.name, it.startEpochMillis, it.endEpochMillis) },
 )

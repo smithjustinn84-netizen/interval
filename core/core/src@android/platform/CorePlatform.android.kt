@@ -12,7 +12,11 @@ import org.koin.core.module.Module
 actual fun rememberCorePlatformModule(): Module {
     val context = LocalContext.current.applicationContext
     return remember(context) {
-        corePlatformModule(appInfo = { AndroidAppInfo(context) }, sharer = { AndroidSharer(context) })
+        corePlatformModule(
+            appInfo = { AndroidAppInfo(context) },
+            sharer = { AndroidSharer(context) },
+            health = { HealthConnectStore(context) },
+        )
     }
 }
 

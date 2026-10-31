@@ -21,6 +21,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   beeps as it ends; iOS shows a notification when the rest is over (once notifications are allowed).
 - Lift: an exercise's page charts your best each session, the weight, reps or hold as the exercise counts,
   once it has been done twice.
+- Health Connect (Android): connect it under Settings > Your data, and each workout and Lift session you
+  finish is written there as an exercise session, with its intervals, rests, pauses or sets and its calorie
+  estimate. The app writes only, and reads nothing. The privacy policy is under About, and is what Health
+  Connect opens when asked.
 - Plan: a day can hold a Lift session, the next day of the program followed or any session, beside interval
   workouts. A session finished on Lift that day does it, so it counts in "Planned done", in reminders and in
   Up next, which starts the program's day it comes to. The Plan page shows the program, how many of its days

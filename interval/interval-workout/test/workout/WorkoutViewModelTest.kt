@@ -10,10 +10,15 @@ import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.MainDispatcherTest
 import dev.justinsmith.interval.fakes.RecordingBackgroundWorkout
 import dev.justinsmith.interval.fakes.RecordingCuePlayer
+import dev.justinsmith.interval.fakes.RecordingHealthStore
 import dev.justinsmith.interval.fakes.deferredStorageScope
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.platform.Haptic
+import dev.justinsmith.interval.platform.HealthMove
+import dev.justinsmith.interval.platform.HealthSegment
+import dev.justinsmith.interval.platform.HealthStatus
+import dev.justinsmith.interval.platform.HealthWorkoutKind
 import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.platform.WorkoutStatus
 import dev.justinsmith.interval.timer.Effort
@@ -49,6 +54,7 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
     private val lifts = FakeLiftStorage().repository()
     private val player = RecordingCuePlayer()
     private val background = RecordingBackgroundWorkout()
+    private val health = RecordingHealthStore(HealthStatus.Connected)
 
     /** The wall clock the ViewModel saves its progress by. Tests move it to stand for time the process was gone. */
     private var now = 7L
@@ -71,8 +77,17 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
         repository: IntervalRepository = this@WorkoutViewModelTest.repository,
         id: Long = WORKOUT_ID,
         timeSource: TimeSource.WithComparableMarks = testScheduler.timeSource,
-    ) = WorkoutViewModel(id, repository, player, lifts, FixedTimestampFormatter, { now }, background, timeSource)
-        .also { viewModels += it }
+    ) = WorkoutViewModel(
+        id,
+        repository,
+        player,
+        lifts,
+        FixedTimestampFormatter,
+        { now },
+        background,
+        health,
+        timeSource,
+    ).also { viewModels += it }
 
     /** Runs the ticker for [millis] of the scheduler's time. */
     private fun TestScope.run(millis: Long) {
@@ -123,6 +138,97 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
         assertEquals(7L, entry.finishedAtEpochMillis)
         assertEquals(15, entry.elapsedSeconds)
         assertFalse(entry.endedEarly)
+    }
+
+    @Test
+    fun `a finished workout goes to the health store with its course`() = runTest(dispatcher) {
+        repository.updateAppSettings { it.copy(body = BodySettings(weightKg = 80.0, effort = Effort.Hard)) }
+        now = 1_000
+        val viewModel = workoutViewModel()
+        now = 6_000
+        run(5_000)
+        now = 11_000
+        run(5_000)
+        now = 16_000
+        run(5_000)
+        assertTrue(viewModel.state.value.isDone)
+
+        val workout = health.workouts.single()
+        assertEquals("interval-1000", workout.id)
+        assertEquals(HealthWorkoutKind.Intervals, workout.kind)
+        assertNull(workout.title)
+        assertEquals(1_000, workout.startedAtEpochMillis)
+        assertEquals(16_000, workout.endedAtEpochMillis)
+        assertEquals(estimateCalories(10, 5, 80.0, Effort.Hard), workout.calories)
+        assertEquals(
+            listOf(
+                HealthSegment(1_000, 6_000, HealthMove.Work),
+                HealthSegment(6_000, 11_000, HealthMove.Rest),
+                HealthSegment(11_000, 16_000, HealthMove.Work),
+            ),
+            workout.segments,
+        )
+    }
+
+    @Test
+    fun `a pause is a stretch of the course and ending early closes it`() = runTest(dispatcher) {
+        now = 1_000
+        val viewModel = workoutViewModel()
+        now = 3_000
+        viewModel.pause()
+        now = 4_000
+        viewModel.resume()
+        now = 7_000
+        run(5_000)
+        now = 9_000
+        viewModel.endEarly()
+
+        val workout = health.workouts.single()
+        assertEquals(9_000, workout.endedAtEpochMillis)
+        assertEquals(
+            listOf(
+                HealthSegment(1_000, 3_000, HealthMove.Work),
+                HealthSegment(3_000, 4_000, HealthMove.Pause),
+                HealthSegment(4_000, 7_000, HealthMove.Work),
+                HealthSegment(7_000, 9_000, HealthMove.Rest),
+            ),
+            workout.segments,
+        )
+    }
+
+    @Test
+    fun `the course survives the process dying and is whole when the workout finishes`() = runTest(dispatcher) {
+        now = 1_000
+        val first = workoutViewModel()
+        now = 6_000
+        run(5_000)
+        killProcess(first)
+
+        now = 11_000
+        val restored = workoutViewModel()
+        now = 16_000
+        run(5_000)
+        assertTrue(restored.state.value.isDone)
+
+        val workout = health.workouts.single()
+        assertEquals("interval-1000", workout.id)
+        assertEquals(
+            listOf(
+                HealthSegment(1_000, 6_000, HealthMove.Work),
+                HealthSegment(6_000, 11_000, HealthMove.Rest),
+                HealthSegment(11_000, 16_000, HealthMove.Work),
+            ),
+            workout.segments,
+        )
+    }
+
+    @Test
+    fun `nothing goes to the health store while it is not connected`() = runTest(dispatcher) {
+        health.status.value = HealthStatus.Disconnected
+        workoutViewModel()
+        run(15_000)
+        assertEquals(1, repository.history.value.size)
+        assertTrue(health.workouts.isEmpty())
     }
 
     @Test

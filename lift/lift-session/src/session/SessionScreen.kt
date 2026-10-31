@@ -113,7 +113,16 @@ fun SessionRoute(onExit: () -> Unit) {
     val sharer = scope.get<Sharer>()
     val viewModel =
         viewModel {
-            SessionViewModel(scope.get(), scope.get(), scope.get(), scope.get(), scope.get(), scope.get(), scope.get())
+            SessionViewModel(
+                scope.get(),
+                scope.get(),
+                scope.get(),
+                scope.get(),
+                scope.get(),
+                scope.get(),
+                scope.get(),
+                scope.get(),
+            )
         }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val finished = state.finished

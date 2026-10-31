@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -21,6 +22,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.ThemeMode
+import dev.justinsmith.interval.platform.HealthStatus
+import dev.justinsmith.interval.platform.HealthStore
+import dev.justinsmith.interval.platform.rememberHealthConnector
 import dev.justinsmith.interval.settings.resources.Res
 import dev.justinsmith.interval.settings.resources.effort_easy
 import dev.justinsmith.interval.settings.resources.effort_hard
@@ -41,6 +45,10 @@ import dev.justinsmith.interval.settings.resources.settings_export_hint
 import dev.justinsmith.interval.settings.resources.settings_halfway
 import dev.justinsmith.interval.settings.resources.settings_halfway_hint
 import dev.justinsmith.interval.settings.resources.settings_halfway_needs_cue
+import dev.justinsmith.interval.settings.resources.settings_health
+import dev.justinsmith.interval.settings.resources.settings_health_install_hint
+import dev.justinsmith.interval.settings.resources.settings_health_off_hint
+import dev.justinsmith.interval.settings.resources.settings_health_on_hint
 import dev.justinsmith.interval.settings.resources.settings_keep_screen_on
 import dev.justinsmith.interval.settings.resources.settings_keep_screen_on_hint
 import dev.justinsmith.interval.settings.resources.settings_sound
@@ -93,8 +101,11 @@ fun SettingsRoute(
     inPane: Boolean = false,
 ) {
     val scope = currentKoinScope()
-    val viewModel = viewModel { SettingsViewModel(scope.get(), scope.get(), scope.get(), scope.get()) }
+    val viewModel = viewModel { SettingsViewModel(scope.get(), scope.get(), scope.get(), scope.get(), scope.get()) }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val health = rememberHealthConnector(scope.get<HealthStore>())
+    // Read again on each opening: the permission may have been taken back in the store's own settings.
+    LaunchedEffect(Unit) { viewModel.refreshHealth() }
     SettingsScreen(
         state = state,
         onBack = onBack,
@@ -111,6 +122,9 @@ fun SettingsRoute(
         onClearWeight = viewModel::clearWeight,
         onSetEffort = viewModel::setEffort,
         onExport = viewModel::export,
+        onConnectHealth = health::connect,
+        onDisconnectHealth = viewModel::disconnectHealth,
+        onInstallHealth = health::install,
     )
 }
 
@@ -135,6 +149,9 @@ fun SettingsScreen(
     onClearWeight: () -> Unit = {},
     onSetEffort: (Effort) -> Unit = {},
     onExport: () -> Unit = {},
+    onConnectHealth: () -> Unit = {},
+    onDisconnectHealth: () -> Unit = {},
+    onInstallHealth: () -> Unit = {},
 ) {
     var editingPrep by rememberSaveable { mutableStateOf(false) }
     var editingWeight by rememberSaveable { mutableStateOf(false) }
@@ -147,6 +164,7 @@ fun SettingsScreen(
         onSetEffort,
         onSetTheme,
         onExport,
+        HealthActions(onConnectHealth, onDisconnectHealth, onInstallHealth),
         onShowAbout,
     )
     if (inPane) {
@@ -195,6 +213,9 @@ fun SettingsScreen(
 /** One group of settings, its label over its card, keyed for the grid. */
 private class SettingsGroup(val key: String, val content: @Composable () -> Unit)
 
+/** What the health store's row does: connect, disconnect, or fetch the store where it is missing. */
+private class HealthActions(val onConnect: () -> Unit, val onDisconnect: () -> Unit, val onInstall: () -> Unit)
+
 /** The groups in order: cues, the workout, calories, appearance, your data and About. */
 @Suppress("detekt.LongParameterList") // One callback per setting, as the screen takes them.
 private fun settingsGroups(
@@ -206,6 +227,7 @@ private fun settingsGroups(
     onSetEffort: (Effort) -> Unit,
     onSetTheme: (ThemeMode) -> Unit,
     onExport: () -> Unit,
+    health: HealthActions,
     onShowAbout: () -> Unit,
 ): List<SettingsGroup> = listOf(
     SettingsGroup("cues") {
@@ -241,6 +263,10 @@ private fun settingsGroups(
                 stringResource(Res.string.settings_export_hint),
                 onClick = onExport,
             )
+            if (state.health != HealthStatus.Unavailable) {
+                RowDivider()
+                HealthRow(state.health, health)
+            }
         }
     },
     SettingsGroup("about") {
@@ -254,6 +280,34 @@ private fun settingsGroups(
         }
     },
 )
+
+/**
+ * The health store's row under Your data: a switch while the store is there, which opens its permission
+ * sheet or gives the permissions back; a link to fetch it while it is missing.
+ */
+@Composable
+private fun HealthRow(status: HealthStatus, actions: HealthActions, modifier: Modifier = Modifier) {
+    when (status) {
+        HealthStatus.NotInstalled -> LinkRow(
+            stringResource(Res.string.settings_health),
+            stringResource(Res.string.settings_health_install_hint),
+            onClick = actions.onInstall,
+            modifier = modifier,
+        )
+
+        else -> {
+            val connected = status == HealthStatus.Connected
+            val hint = if (connected) Res.string.settings_health_on_hint else Res.string.settings_health_off_hint
+            ToggleRow(
+                stringResource(Res.string.settings_health),
+                stringResource(hint),
+                checked = connected,
+                onToggle = if (connected) actions.onDisconnect else actions.onConnect,
+                modifier = modifier,
+            )
+        }
+    }
+}
 
 /** A line along the start edge, drawn over the content: where a pane meets the one beside it. */
 private fun Modifier.hairlineAtStart(color: Color): Modifier = drawWithContent {

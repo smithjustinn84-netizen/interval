@@ -20,8 +20,14 @@ import androidx.compose.ui.test.performTextReplacement
 import dev.justinsmith.interval.AppFixture
 import dev.justinsmith.interval.appTest
 import dev.justinsmith.interval.fakes.FakeStorage
+import dev.justinsmith.interval.fakes.RecordingHealthStore
 import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.platform.HealthSegment
+import dev.justinsmith.interval.platform.HealthStatus
+import dev.justinsmith.interval.platform.HealthStore
+import dev.justinsmith.interval.platform.HealthWorkoutKind
 import dev.justinsmith.interval.tab
+import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
 import dev.justinsmith.interval.ui.AcceptanceSteps
 import dev.justinsmith.interval.ui.JOURNEY_TIMEOUT
 import dev.justinsmith.interval.ui.Window
@@ -302,6 +308,38 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     /** Picks [name] ("System", "Light" or "Dark") in the theme picker. */
     fun pickTheme(name: String) = tap(name)
 
+    // Health Connect
+
+    private val healthStore: RecordingHealthStore get() = app.koin.koin.get<HealthStore>() as RecordingHealthStore
+
+    /** Allows the writes on Health Connect's sheet, which only the platform can open: the store stands connected. */
+    fun allowHealthConnect() {
+        healthStore.status.value = HealthStatus.Connected
+    }
+
+    fun toggleHealthConnect() {
+        scrollTo("Health Connect")
+        tap("Health Connect")
+    }
+
+    fun seeHealthConnect(on: Boolean) {
+        waitFor("Health Connect ${if (on) "on" else "off"}") {
+            healthStore.status.value == if (on) HealthStatus.Connected else HealthStatus.Disconnected
+        }
+        scrollTo("Health Connect")
+        if (on) ui.onNodeWithText("Health Connect").assertIsOn() else ui.onNodeWithText("Health Connect").assertIsOff()
+    }
+
+    /** The workout just finished is in Health Connect as one interval session, its course as segments. */
+    fun seeWorkoutInHealthConnect() {
+        waitFor("a workout in Health Connect") { healthStore.workouts.size == 1 }
+        val workout = healthStore.workouts.single()
+        assertEquals(HealthWorkoutKind.Intervals, workout.kind)
+        assertEquals(app.repository.history.value.single().elapsedSeconds, workout.segments.sumOf { it.lengthSeconds })
+    }
+
+    fun seeNothingMoreInHealthConnect() = assertEquals(1, healthStore.workouts.size)
+
     fun seeTheme(name: String) {
         waitFor("the $name theme") { app.repository.appSettings.value.theme.name == name }
         ui.onNode(hasText(name) and hasClickAction()).assertIsSelected()
@@ -313,6 +351,10 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     fun savedWorkouts(count: Int) = assertEquals(count, app.repository.history.value.size)
 }
+
+/** A segment's length in whole seconds, as the summary counts time. */
+private val HealthSegment.lengthSeconds: Int
+    get() = ((endEpochMillis - startEpochMillis) / MILLIS_PER_SECOND).toInt()
 
 /**
  * An acceptance test: the whole app over fakes in [window], driven through [IntervalAcceptanceDriver]. Two

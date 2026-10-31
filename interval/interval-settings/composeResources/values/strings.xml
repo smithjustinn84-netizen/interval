@@ -40,6 +40,11 @@
     <string name="settings_data">Your data</string>
     <string name="settings_export">Export</string>
     <string name="settings_export_hint">A file of your workouts, presets, plan, settings and lifting, to keep or move</string>
+    <!-- The platform's health store, by its name: Android's. The row shows only where there is one. -->
+    <string name="settings_health">Health Connect</string>
+    <string name="settings_health_off_hint">Save finished workouts and Lift sessions there too</string>
+    <string name="settings_health_on_hint">Finished workouts and Lift sessions are saved there</string>
+    <string name="settings_health_install_hint">Get it from Google Play to save workouts there</string>
     <string name="settings_about">About</string>
     <string name="settings_about_app">About Interval</string>
     <string name="settings_about_app_hint">Version, credits and licenses</string>

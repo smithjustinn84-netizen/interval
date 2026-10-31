@@ -101,7 +101,17 @@ fun WorkoutRoute(id: Long, onExit: () -> Unit, modifier: Modifier = Modifier) {
     val scope = currentKoinScope()
     val sharer = scope.get<Sharer>()
     val viewModel = viewModel {
-        WorkoutViewModel(id, scope.get(), scope.get(), scope.get(), scope.get(), scope.get(), scope.get(), scope.get())
+        WorkoutViewModel(
+            id,
+            scope.get(),
+            scope.get(),
+            scope.get(),
+            scope.get(),
+            scope.get(),
+            scope.get(),
+            scope.get(),
+            scope.get(),
+        )
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
     if (state.running && state.keepScreenOn) KeepScreenOn()
