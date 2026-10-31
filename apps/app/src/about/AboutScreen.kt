@@ -24,6 +24,7 @@ import dev.justinsmith.interval.resources.about_version_unknown
 import dev.justinsmith.interval.resources.app_name
 import dev.justinsmith.interval.splash.Mark
 import dev.justinsmith.interval.splash.drawIntervalMark
+import dev.justinsmith.interval.ui.AppSizes
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
@@ -31,7 +32,6 @@ import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.ScrollPage
-import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.rememberEntrance
 import dev.justinsmith.interval.ui.risingEnter
@@ -84,7 +84,7 @@ private fun Hero(version: String?, modifier: Modifier = Modifier) {
     Column(modifier.padding(top = Spacing.space32), horizontalAlignment = Alignment.CenterHorizontally) {
         // Always the icon's ground, in both themes: in the dark one it melts into the page and the
         // mark floats, as it does on the intro; in the light one it is the coin the launcher shows.
-        Canvas(Modifier.size(Sizes.aboutMark)) {
+        Canvas(Modifier.size(AppSizes.aboutMark)) {
             drawCircle(PhaseColors.ground)
             drawIntervalMark(center, unit = size.minDimension / ICON_VISIBLE_UNITS)
         }

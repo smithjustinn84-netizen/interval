@@ -29,6 +29,7 @@ import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalIcons
+import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.RowDivider
@@ -104,7 +105,7 @@ private fun UpNextLead(next: UpNextItem, actions: HistoryActions, modifier: Modi
     ) {
         when (next) {
             is UpNextItem.Planned -> {
-                StripeMark(palette.workMark, height = Sizes.historyMarkHeight)
+                StripeMark(palette.workMark, height = IntervalSizes.historyMarkHeight)
                 UpNextText(
                     next.name,
                     stringResource(
@@ -119,7 +120,7 @@ private fun UpNextLead(next: UpNextItem, actions: HistoryActions, modifier: Modi
 
             is UpNextItem.Lift -> {
                 // The accent, as Lift and History's rows mark kettlebell sessions.
-                StripeMark(palette.accent, height = Sizes.historyMarkHeight)
+                StripeMark(palette.accent, height = IntervalSizes.historyMarkHeight)
                 UpNextText(
                     programName(next.programDay.program),
                     joined(listOf(programDayLine(next.programDay), programDayLifts(next.programDay))),
@@ -198,7 +199,7 @@ internal fun MostDone(rows: List<ShapeRow>, modifier: Modifier = Modifier) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
                 ) {
-                    StripeMark(palette.workMark, height = Sizes.historyMarkHeight)
+                    StripeMark(palette.workMark, height = IntervalSizes.historyMarkHeight)
                     Column(Modifier.weight(1f)) {
                         val shape = workoutDescription(row.config)
                         Text(row.name ?: shape, style = IntervalTheme.type.label, color = palette.text)

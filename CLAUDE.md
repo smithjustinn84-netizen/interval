@@ -205,7 +205,9 @@ toolchain (`$compose.*`).
   names are stored data, not labels: the built-ins' names live in `builtInPresets`. Never load a resource
   from a common `test/`: common tests also run as Android local tests.
 - **Theme**: `IntervalTheme` in `core/core/src/ui/Theme.kt` (`PhaseColors.of(phase)` in `interval/interval-ui/src/ui/PhaseColorsOf.kt`). Fixed tokens (`Spacing`, `Radius`, `Sizes`, `Opacity`,
-  `Motion`) in `Tokens.kt`; never write a raw dp, duration or scale in a screen. The one exception is the
+  `Motion`) in `Tokens.kt`, where `Sizes` holds what both sides draw; a size only one side uses is in its
+  `IntervalSizes` (interval-ui) or `LiftSizes` (lift-ui), the app shell's in `AppSizes`. Never write a raw dp,
+  duration or scale in a screen. The one exception is the
   intro's sizes in `splash/Splash.kt`, which follow the platform launch screens.
 - **Motion**: durations are `Motion.*` tokens, easings and springs live in `core/core/src/ui/Motion.kt` with the
   shared moves: `pressScale` on anything tappable (`surfaceButton` adds the clip, fill and tap),

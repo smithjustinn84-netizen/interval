@@ -42,6 +42,7 @@ import dev.justinsmith.interval.platform.prefersReducedMotion
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EnterEasing
+import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.Opacity
@@ -80,7 +81,10 @@ internal fun WeekStrip(week: List<DayCell>, onDay: (Long) -> Unit, modifier: Mod
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(Spacing.space8),
                 ) {
-                    Box(Modifier.fillMaxWidth().height(Sizes.weekBar), contentAlignment = Alignment.BottomCenter) {
+                    Box(
+                        Modifier.fillMaxWidth().height(IntervalSizes.weekBar),
+                        contentAlignment = Alignment.BottomCenter,
+                    ) {
                         DayBar(day, if (max > 0) day.seconds.toFloat() / max else 0f, index)
                     }
                     Text(
@@ -111,7 +115,7 @@ private fun DayBar(day: DayCell, share: Float, index: Int) {
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .height((Sizes.weekBar * grown.value).coerceAtLeast(Sizes.weekBarEmpty))
+                    .height((IntervalSizes.weekBar * grown.value).coerceAtLeast(Sizes.weekBarEmpty))
                     .clip(Corners.radius12)
                     .background(palette.accent),
             )
@@ -209,13 +213,13 @@ private fun CalendarDay(cell: DayCell, onClick: () -> Unit, modifier: Modifier =
     val description = dayDescription(cell.date, cell)
     Column(
         modifier
-            .defaultMinSize(minWidth = Sizes.calendarCell, minHeight = Sizes.calendarCell)
+            .defaultMinSize(minWidth = IntervalSizes.calendarCell, minHeight = IntervalSizes.calendarCell)
             .surfaceButton(interaction, Corners.radius12, Color.Transparent, onClick)
             .clearAndSetSemantics { contentDescription = description },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.space4, Alignment.CenterVertically),
     ) {
-        val mark = Modifier.size(Sizes.calendarDay).clip(Corners.full)
+        val mark = Modifier.size(IntervalSizes.calendarDay).clip(Corners.full)
         val (shape, ink) = when {
             !cell.inMonth -> mark to palette.textDim.copy(alpha = Opacity.OUTSIDE_MONTH)
             cell.state == DayState.Done -> mark.background(palette.accent) to palette.onAccent
@@ -228,7 +232,7 @@ private fun CalendarDay(cell: DayCell, onClick: () -> Unit, modifier: Modifier =
         }
         Box(
             Modifier
-                .size(Sizes.todayMarkWidth, Sizes.todayMarkHeight)
+                .size(IntervalSizes.todayMarkWidth, IntervalSizes.todayMarkHeight)
                 .clip(Corners.full)
                 .background(if (cell.today) palette.accent else Color.Transparent),
         )

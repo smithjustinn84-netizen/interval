@@ -44,8 +44,8 @@ const val MAX_ROUND_MARKS = 12
 fun Timeline(
     config: IntervalConfig,
     modifier: Modifier = Modifier,
-    height: Dp = Sizes.timeline,
-    gap: Dp = Sizes.timelineGap,
+    height: Dp = IntervalSizes.timeline,
+    gap: Dp = IntervalSizes.timelineGap,
     showPrep: Boolean = true,
 ) {
     val palette = IntervalTheme.palette
@@ -106,7 +106,7 @@ fun ValuePill(
     color: Color,
     tint: Color,
     modifier: Modifier = Modifier,
-    height: Dp = Sizes.valuePill,
+    height: Dp = IntervalSizes.valuePill,
     style: TextStyle = IntervalTheme.type.stat,
 ) {
     Box(

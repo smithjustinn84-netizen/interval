@@ -41,11 +41,11 @@ import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.CountdownClock
 import dev.justinsmith.interval.ui.EnterEasing
+import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.MAX_ROUND_MARKS
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.ProgressRing
-import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StandardEasing
 import dev.justinsmith.interval.ui.ringClockSize
@@ -103,7 +103,7 @@ internal fun RoundDots(state: WorkoutUiState, accent: Color, modifier: Modifier 
             Box(
                 Modifier
                     .weight(1f, fill = false)
-                    .size(Sizes.roundMarkWidth, Sizes.roundMarkHeight)
+                    .size(IntervalSizes.roundMarkWidth, IntervalSizes.roundMarkHeight)
                     .background(color, Corners.full),
             )
         }

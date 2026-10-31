@@ -38,9 +38,9 @@ fun StartButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     val haptics = LocalHapticFeedback.current
     Row(
         modifier
-            .heightIn(min = Sizes.start)
+            .heightIn(min = IntervalSizes.start)
             .pressScale(interaction)
-            .shadow(elevation = Sizes.startElevation, shape = shape, ambientColor = glow, spotColor = glow)
+            .shadow(elevation = IntervalSizes.startElevation, shape = shape, ambientColor = glow, spotColor = glow)
             .clip(shape)
             .background(palette.accent)
             .clickable(interactionSource = interaction, indication = LocalIndication.current, role = Role.Button) {
@@ -55,7 +55,7 @@ fun StartButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
             IntervalIcons.Play,
             contentDescription = null,
             tint = palette.onAccent,
-            modifier = Modifier.size(Sizes.playIcon),
+            modifier = Modifier.size(IntervalSizes.playIcon),
         )
         Text(
             stringResource(Res.string.common_start_workout),

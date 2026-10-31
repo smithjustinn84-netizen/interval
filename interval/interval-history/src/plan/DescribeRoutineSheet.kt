@@ -32,6 +32,7 @@ import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.DescribeHint
 import dev.justinsmith.interval.ui.IntervalSheet
+import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.NameField
@@ -122,7 +123,7 @@ private fun DescribedRoutinePreview(routine: DescribedRoutine, today: Long) {
             ) {
                 StripeMark(
                     if (plan.scheduled) palette.workMark else palette.textDim,
-                    height = Sizes.historyMarkHeight,
+                    height = IntervalSizes.historyMarkHeight,
                 )
                 Column(Modifier.weight(1f)) {
                     Text(

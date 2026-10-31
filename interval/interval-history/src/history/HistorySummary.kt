@@ -70,6 +70,7 @@ import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EnterEasing
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
+import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.RollingText
@@ -215,11 +216,11 @@ private fun GoalRing(count: Int, goal: Int, modifier: Modifier = Modifier) {
     }
     val description = stringResource(Res.string.history_goal_cd, count, goal)
     Box(
-        modifier.size(Sizes.goalRing).clearAndSetSemantics { contentDescription = description },
+        modifier.size(IntervalSizes.goalRing).clearAndSetSemantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
-        Canvas(Modifier.size(Sizes.goalRing)) {
-            val stroke = Sizes.goalRingStroke.toPx()
+        Canvas(Modifier.size(IntervalSizes.goalRing)) {
+            val stroke = IntervalSizes.goalRingStroke.toPx()
             val inset = stroke / 2
             val arcSize = Size(size.width - stroke, size.height - stroke)
             drawArc(

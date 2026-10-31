@@ -29,6 +29,7 @@ import dev.justinsmith.interval.ui.DialogButton
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSheet
+import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.RowDivider
@@ -133,7 +134,7 @@ private fun PlanRow(plan: SheetPlan, sheet: DaySheet, actions: HistoryActions) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
-        StripeMark(palette.workMark, height = Sizes.historyMarkHeight)
+        StripeMark(palette.workMark, height = IntervalSizes.historyMarkHeight)
         Column(Modifier.weight(1f)) {
             Text(plan.name, style = IntervalTheme.type.label, color = palette.text)
             val repeat = if (plan.weekly) {

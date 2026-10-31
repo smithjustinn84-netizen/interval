@@ -31,6 +31,7 @@ import dev.justinsmith.interval.history.resources.history_ended_early
 import dev.justinsmith.interval.history.resources.history_planned
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalIcons
+import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.Motion
@@ -115,7 +116,7 @@ internal fun HistoryRow(
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
         // Kettlebell sessions take the accent, as Lift draws them; interval workouts, the work mark.
-        StripeMark(if (lift == null) palette.workMark else palette.accent, height = Sizes.historyMarkHeight)
+        StripeMark(if (lift == null) palette.workMark else palette.accent, height = IntervalSizes.historyMarkHeight)
         Column(Modifier.weight(1f)) {
             val shape = workoutDescription(item.config)
             val detail = listOfNotNull(

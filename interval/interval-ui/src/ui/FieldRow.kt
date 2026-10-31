@@ -51,7 +51,7 @@ fun FieldRow(
     Row(
         modifier
             .fillMaxWidth()
-            .heightIn(min = if (compact) Sizes.listRow else Sizes.intervalRow)
+            .heightIn(min = if (compact) Sizes.listRow else IntervalSizes.intervalRow)
             .phaseStripe(stripe)
             .clickable(
                 interaction,
@@ -62,7 +62,7 @@ fun FieldRow(
             )
             // After the ripple, so the content shrinks while the ripple keeps the card's full width.
             .pressScale(interaction)
-            .padding(start = Sizes.stripe + gap),
+            .padding(start = IntervalSizes.stripe + gap),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(gap),
     ) {
@@ -75,7 +75,7 @@ fun FieldRow(
                 text,
                 color = field.valueColor(),
                 tint = field.tint(),
-                height = Sizes.valuePillSmall,
+                height = IntervalSizes.valuePillSmall,
                 style = IntervalTheme.type.value,
             )
         } else {
@@ -96,10 +96,10 @@ fun FieldRow(
 
 /**
  * A field card's phase colour down its start edge. Drawn rather than laid out, so it stays on the card's
- * edge while the content shrinks under a press; the content is padded clear of it by [Sizes.stripe].
+ * edge while the content shrinks under a press; the content is padded clear of it by [IntervalSizes.stripe].
  */
 fun Modifier.phaseStripe(color: Color): Modifier = drawBehind {
-    val stripeWidth = Sizes.stripe.toPx()
+    val stripeWidth = IntervalSizes.stripe.toPx()
     val x = if (layoutDirection == LayoutDirection.Rtl) size.width - stripeWidth else 0f
     drawRect(color, topLeft = Offset(x, 0f), size = Size(stripeWidth, size.height))
 }
@@ -107,5 +107,5 @@ fun Modifier.phaseStripe(color: Color): Modifier = drawBehind {
 /** A phase's mark beside a heading or a row: a rounded stripe of [color], [height] tall. */
 @Composable
 fun StripeMark(color: Color, height: Dp, modifier: Modifier = Modifier) {
-    Box(modifier.size(Sizes.stripe, height).clip(Corners.full).background(color))
+    Box(modifier.size(IntervalSizes.stripe, height).clip(Corners.full).background(color))
 }

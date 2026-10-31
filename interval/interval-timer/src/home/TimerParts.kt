@@ -55,6 +55,7 @@ import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.FieldStepButton
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
+import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.RollingText
@@ -225,7 +226,7 @@ private fun StepperRow(
     Row(
         modifier
             .fillMaxWidth()
-            .heightIn(min = Sizes.intervalRow)
+            .heightIn(min = IntervalSizes.intervalRow)
             .surfaceButton(
                 interaction,
                 Corners.radius18,
@@ -234,7 +235,7 @@ private fun StepperRow(
                 onClickLabel = stringResource(field.editRes),
             )
             .phaseStripe(stripe)
-            .padding(start = Sizes.stripe + Spacing.space16, end = Spacing.space12),
+            .padding(start = IntervalSizes.stripe + Spacing.space16, end = Spacing.space12),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
     ) {
@@ -253,7 +254,7 @@ private fun StepperRow(
                 maxLines = 1,
                 autoSize = TextAutoSize.StepBased(
                     minFontSize = IntervalTheme.type.stat.fontSize,
-                    maxFontSize = Sizes.stepperValueMax,
+                    maxFontSize = IntervalSizes.stepperValueMax,
                 ),
             )
         }
@@ -272,7 +273,7 @@ internal fun StartRow(onStart: () -> Unit, onSeeAllPresets: () -> Unit, modifier
         StartButton(onStart, Modifier.weight(1f))
         Box(
             Modifier
-                .size(Sizes.start)
+                .size(IntervalSizes.start)
                 .surfaceButton(interaction, Corners.radius18, palette.surface, onSeeAllPresets)
                 .semantics { contentDescription = description },
             contentAlignment = Alignment.Center,

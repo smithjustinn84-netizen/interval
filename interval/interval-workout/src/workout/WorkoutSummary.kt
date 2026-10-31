@@ -46,6 +46,7 @@ import dev.justinsmith.interval.ui.Burst
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EnterEasing
 import dev.justinsmith.interval.ui.IntervalIcons
+import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.ProgressRing
@@ -346,7 +347,7 @@ private fun ColumnScope.SummaryTitle(state: WorkoutUiState, entrance: MutableTra
                 sweep.animateTo(target, tween(Motion.SUMMARY_RING_MILLIS, easing = EnterEasing))
             }
         }
-        Box(Modifier.size(Sizes.summaryRing), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(IntervalSizes.summaryRing), contentAlignment = Alignment.Center) {
             ProgressRing(sweep.value, IntervalTheme.workout.done, Modifier.fillMaxSize(), glide = false)
             Column { AnimatedVisibility(entrance, enter = risingEnter()) { title() } }
         }

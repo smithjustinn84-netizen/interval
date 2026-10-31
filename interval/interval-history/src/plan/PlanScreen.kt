@@ -67,6 +67,7 @@ import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
+import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
@@ -390,7 +391,7 @@ private fun OneOffRow(oneOff: OneOff, onRemove: (Long, String) -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
-        StripeMark(palette.workMark, height = Sizes.historyMarkHeight)
+        StripeMark(palette.workMark, height = IntervalSizes.historyMarkHeight)
         Column(Modifier.weight(1f)) {
             Text(oneOff.entry.name, style = IntervalTheme.type.label, color = palette.text)
             Text(

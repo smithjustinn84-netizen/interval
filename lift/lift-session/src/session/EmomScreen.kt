@@ -82,6 +82,7 @@ import dev.justinsmith.lift.session.resources.emom_stop_text
 import dev.justinsmith.lift.session.resources.emom_stop_title
 import dev.justinsmith.lift.session.resources.emom_work
 import dev.justinsmith.lift.session.resources.summary_done
+import dev.justinsmith.lift.ui.LiftSizes
 import dev.justinsmith.lift.ui.liftName
 import dev.justinsmith.lift.ui.setLine
 import org.jetbrains.compose.resources.stringResource
@@ -212,7 +213,7 @@ private fun PortraitEmom(
             MinuteText(state, Modifier.weight(1f).padding(horizontal = Spacing.space8))
         }
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-            val diameter = minOf(maxWidth, maxHeight, if (roomy) Sizes.ringMaxRoomy else Sizes.ringMax)
+            val diameter = minOf(maxWidth, maxHeight, if (roomy) LiftSizes.ringMaxRoomy else Sizes.ringMax)
             ProgressRing(
                 state.minuteProgress,
                 color,

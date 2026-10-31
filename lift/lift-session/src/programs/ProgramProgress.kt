@@ -85,6 +85,7 @@ import dev.justinsmith.lift.session.resources.program_sets_done
 import dev.justinsmith.lift.session.resources.program_week
 import dev.justinsmith.lift.session.resources.session_moved
 import dev.justinsmith.lift.session.resources.summary_reps
+import dev.justinsmith.lift.ui.LiftSizes
 import dev.justinsmith.lift.ui.RecordRow
 import dev.justinsmith.lift.ui.StatTile
 import dev.justinsmith.lift.ui.programDayLine
@@ -264,7 +265,7 @@ private fun DayMark(number: Int, standing: DayStanding) {
     val dot by animateColorAsState(fill, tween(Motion.STATE_MILLIS, easing = StandardEasing), label = "day")
     Box(
         Modifier
-            .size(Sizes.programDayMark)
+            .size(LiftSizes.programDayMark)
             .clip(Corners.full)
             .background(dot)
             .then(if (ring != null) Modifier.border(Sizes.border, ring, Corners.full) else Modifier)

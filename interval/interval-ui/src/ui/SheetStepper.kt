@@ -46,7 +46,7 @@ fun SheetStepper(
                 lessDescription,
                 enabled = canLower,
                 onStep = { onStep(-1) },
-                modifier = Modifier.size(Sizes.sheetStepper),
+                modifier = Modifier.size(IntervalSizes.sheetStepper),
             )
             Box(
                 Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
@@ -59,7 +59,7 @@ fun SheetStepper(
                 moreDescription,
                 enabled = canRaise,
                 onStep = { onStep(1) },
-                modifier = Modifier.size(Sizes.sheetStepper),
+                modifier = Modifier.size(IntervalSizes.sheetStepper),
             )
         }
         label?.let { Text(it, style = IntervalTheme.type.section, color = palette.textDim) }

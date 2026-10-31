@@ -57,6 +57,7 @@ import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
+import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LaneAnchor
 import dev.justinsmith.interval.ui.Motion
@@ -295,7 +296,7 @@ private fun PortraitWorkout(
                 .tapToPause(state, actions.onTogglePause),
             contentAlignment = Alignment.Center,
         ) {
-            val diameter = minOf(maxWidth, maxHeight - Sizes.tapHint, Sizes.ringMax)
+            val diameter = minOf(maxWidth, maxHeight - IntervalSizes.tapHint, Sizes.ringMax)
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 RingReadout(state, accent, diameter, Modifier.laneRing(anchor))
                 TapHint(state, Modifier.padding(top = Spacing.space12))
@@ -332,7 +333,7 @@ private fun LandscapeWorkout(
         horizontalArrangement = Arrangement.spacedBy(Spacing.space16),
     ) {
         Column(
-            Modifier.width(Sizes.rail).fillMaxHeight(),
+            Modifier.width(IntervalSizes.rail).fillMaxHeight(),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             EndPill(actions.onEnd, Modifier.fillMaxWidth())
@@ -349,7 +350,7 @@ private fun LandscapeWorkout(
             LandscapeReadout(state, accent, diameter, Modifier.fillMaxWidth(), ringModifier = Modifier.laneRing(anchor))
         }
         Column(
-            Modifier.width(Sizes.rail).fillMaxHeight(),
+            Modifier.width(IntervalSizes.rail).fillMaxHeight(),
             verticalArrangement = Arrangement.spacedBy(Spacing.space8),
         ) {
             SkipPill(actions.onSkip, Modifier.fillMaxWidth())

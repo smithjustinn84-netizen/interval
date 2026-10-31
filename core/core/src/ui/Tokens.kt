@@ -2,7 +2,6 @@ package dev.justinsmith.interval.ui
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 // Fixed design tokens: the same in light and dark. Names mirror the Interval design system
 // (`space-16` → Spacing.space16, `radius-18` → Radius.radius18, `size-stepper` → Sizes.stepper).
@@ -59,21 +58,6 @@ object Sizes {
     /** Maximum width of the Presets and History grids: two columns at most, so rows stay readable. */
     val listMax = 960.dp
 
-    /**
-     * Width of a list beside its detail on a wide window (History beside a workout): a phone's, so the list
-     * lays out as it does on a phone.
-     */
-    val listPane = 412.dp
-
-    /** Width of Settings when it opens beside the Timer. */
-    val settingsPane = 400.dp
-
-    /**
-     * Narrowest window that opens Settings beside the Timer rather than over it: room for the rail,
-     * [settingsPane] and a Timer still as wide as a phone's.
-     */
-    val twoPaneMinWidth = 1000.dp
-
     /** Narrowest window that gets a navigation rail instead of a bottom bar, as Material's medium width. */
     val railMinWidth = 600.dp
 
@@ -86,18 +70,6 @@ object Sizes {
      */
     val setupColumnLandscape = 380.dp
 
-    /** Width of each side rail of workout controls in landscape. */
-    val rail = 120.dp
-
-    /** Start workout's height, and the Timer tab's square start button. */
-    val start = 72.dp
-
-    /** Elevation of Start workout, the only raised element (`shadow-start`). */
-    val startElevation = 8.dp
-
-    /** The play glyph inside Start workout. */
-    val playIcon = 26.dp
-
     /** A workout control (Pause, End, Skip), and the wider Back and +10s beside them. */
     val control = 76.dp
     val controlSide = 84.dp
@@ -109,25 +81,9 @@ object Sizes {
     val pillWidth = 72.dp
     val pillHeight = 48.dp
 
-    /** The largest a Timer tab stepper value grows to when the row has room; it never shrinks below a stat. */
-    val stepperValueMax = 72.sp
-
-    /** A value in its phase-tinted pill on the Timer tab. */
-    val valuePill = 48.dp
-
-    /** The smaller value pill on a Settings row. */
-    val valuePillSmall = 40.dp
-
-    /** The hero card's workout timeline, and the gap between its segments. */
-    val timeline = 12.dp
-    val timelineGap = 2.dp
-
     /** The timeline on a preset chip or card, and the gap between its segments. */
     val timelineMini = 6.dp
     val timelineMiniGap = 1.dp
-
-    /** The tallest bar of the History tab's week chart. */
-    val weekBar = 56.dp
 
     /** A day with no workout in the week chart. */
     val weekBarEmpty = 6.dp
@@ -135,26 +91,8 @@ object Sizes {
     /** A planned or missed day in the week chart: an outlined or filled block this tall. */
     val weekBarMark = 32.dp
 
-    /**
-     * A day on a program's map: a round mark, smaller than the week strip's so seven and their week's label fit
-     * a phone's card.
-     */
-    val programDayMark = 20.dp
-
-    /** The ring of this week's workouts against the weekly goal, and its stroke. */
-    val goalRing = 76.dp
-    val goalRingStroke = 8.dp
-
     /** A swatch in the week chart's key. */
     val legendSwatch = 10.dp
-
-    /** A day on History's month calendar: the cell that takes the tap, and the round mark of its state. */
-    val calendarCell = 48.dp
-    val calendarDay = 34.dp
-
-    /** The short bar under today on the calendar. */
-    val todayMarkWidth = 14.dp
-    val todayMarkHeight = 3.dp
 
     /** The tallest bar of All time's weekly chart. */
     val weeksChart = 96.dp
@@ -162,14 +100,8 @@ object Sizes {
     /** The small glyph inside a chip, such as the streak's flame. */
     val chipIcon = 16.dp
 
-    /** The pill of phase colour at the start of a History row. */
-    val historyMarkHeight = 40.dp
-
     /** One choice of a segmented picker, such as the theme's. */
     val segment = 48.dp
-
-    /** The stripe beside a value sheet's title, as tall as the title and its hint. */
-    val sheetHeaderStripe = 48.dp
 
     /** A bottom sheet's drag handle: the area that takes the drag, round the small bar drawn in it. */
     val dragHandleWidth = 48.dp
@@ -181,9 +113,6 @@ object Sizes {
 
     /** The narrowest a text field in a dialog or sheet gets. */
     val fieldMin = 230.dp
-
-    /** Room the workout leaves under its ring for the "Tap anywhere to pause" line. */
-    val tapHint = 48.dp
 
     /** A [ToggleRow]'s switch: the track, and the thumb inset inside it. */
     val switchWidth = 46.dp
@@ -199,22 +128,9 @@ object Sizes {
     /** A text field, such as a preset's name. */
     val field = 52.dp
 
-    /** A phase's colour stripe at the start of a field row, and a history mark's width. */
-    val stripe = 6.dp
-
-    /** A round's mark on the workout screen: a short bar, narrowing when many share a row. */
-    val roundMarkWidth = 24.dp
-    val roundMarkHeight = 6.dp
-
-    /** The ring around Done on the summary. */
-    val summaryRing = 260.dp
-
     /** The workout's progress ring: its stroke, and its widest on a big window. */
     val ring = 22.dp
     val ringMax = 420.dp
-
-    /** An EMOM's ring at its widest on a tablet or a desktop, where the readout sits inside it at any turn. */
-    val ringMaxRoomy = 560.dp
 
     /**
      * The lanes behind the Setup tabs: a track whose centre sits this far past the column's start
@@ -265,17 +181,8 @@ object Sizes {
     /** The empty-state icon drawn inside it, a size up from [icon]. */
     val emptyIcon = 28.dp
 
-    /** The app's mark on the About screen: the launcher icon's coin, at a size that reads as a logo. */
-    val aboutMark = 112.dp
-
     /** Minimum height of a list row (presets, history, settings). */
     val listRow = 64.dp
-
-    /** Minimum height of a Timer tab interval row. */
-    val intervalRow = 72.dp
-
-    /** The edit sheet's − / + buttons, a size up from [stepper]. */
-    val sheetStepper = 68.dp
 
     /**
      * The widest the bottom sheet grows. Only short windows (a phone on its side) are wider and

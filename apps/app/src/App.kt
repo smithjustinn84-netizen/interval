@@ -69,6 +69,7 @@ import dev.justinsmith.interval.platform.materialBackPreview
 import dev.justinsmith.interval.presets.PresetsRoute
 import dev.justinsmith.interval.settings.SettingsRoute
 import dev.justinsmith.interval.splash.WithIntro
+import dev.justinsmith.interval.ui.AppSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.NavigationAreaBar
@@ -76,7 +77,6 @@ import dev.justinsmith.interval.ui.NavigationItems
 import dev.justinsmith.interval.ui.NoticeHost
 import dev.justinsmith.interval.ui.Notices
 import dev.justinsmith.interval.ui.PageKind
-import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.WatchForIdle
 import dev.justinsmith.interval.ui.backPreviewCorners
@@ -174,7 +174,7 @@ internal fun AppContent(koin: KoinApplication, introPlaying: Boolean = false) {
  * One back stack: the Timer tab at the root, at most one other tab above it, then whatever was
  * pushed (Settings, Presets, Workout, a session). Back from Lift or History returns to Timer, as both
  * platforms expect. The navigation bar or rail shows only while a tab is on top, or while a page sits beside
- * its tab: windows of [Sizes.twoPaneMinWidth] and up open Settings as a supporting pane beside Timer, and
+ * its tab: windows of [AppSizes.twoPaneMinWidth] and up open Settings as a supporting pane beside Timer, and
  * windows of Material's expanded width and up a finished workout or session beside History's log, a pane
  * waiting for one until it is picked. The bar or rail lies over the pages and slides away as a page is pushed
  * over its tab ([NavigationAreaBar]).
@@ -287,10 +287,10 @@ private fun rememberPanes(): Panes {
     // Settings pairs only with room for a phone-wide Timer beside it: from Material's 840dp the Timer would be
     // left narrower than a phone.
     val windowWidth = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp() }
-    val settingsBeside = windowWidth >= Sizes.twoPaneMinWidth
+    val settingsBeside = windowWidth >= AppSizes.twoPaneMinWidth
     val settingsDirective = historyDirective.copy(
         maxHorizontalPartitions = if (settingsBeside) 2 else 1,
-        defaultPanePreferredWidth = Sizes.settingsPane,
+        defaultPanePreferredWidth = AppSizes.settingsPane,
     )
     val supportingPane = rememberSupportingPaneSceneStrategy<NavKey>(directive = settingsDirective)
     // The placeholder beside History counts as a pane, so the default behaviour would pop History along with
@@ -345,7 +345,7 @@ private fun appEntries(
     liftEntries(backStack, twoPane, HISTORY_SCENE)
     entry<HistoryTab>(
         metadata = ListDetailSceneStrategy.listPane(HISTORY_SCENE, detailPlaceholder = { HistoryPlaceholder() }) +
-            ListDetailSceneStrategy.preferredPaneSize(width = Sizes.listPane) +
+            ListDetailSceneStrategy.preferredPaneSize(width = AppSizes.listPane) +
             pageKind(PageKind.Tab),
     ) {
         // Beside the log, the row whose workout is open shows it.

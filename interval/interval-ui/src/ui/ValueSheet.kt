@@ -94,7 +94,7 @@ private fun SheetHeader(field: ConfigField, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
-        StripeMark(field.stripe(), height = Sizes.sheetHeaderStripe)
+        StripeMark(field.stripe(), height = IntervalSizes.sheetHeaderStripe)
         Column {
             Text(stringResource(field.labelRes), style = IntervalTheme.type.value, color = palette.text)
             Text(stringResource(field.hintRes), style = IntervalTheme.type.meta, color = palette.textDim)
