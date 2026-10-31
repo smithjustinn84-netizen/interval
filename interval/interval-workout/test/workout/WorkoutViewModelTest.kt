@@ -23,9 +23,11 @@ import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.platform.WorkoutStatus
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.OutlinedInterval
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.UpcomingChange
+import dev.justinsmith.interval.timer.WorkoutOutline
 import dev.justinsmith.interval.timer.estimateCalories
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -498,7 +500,7 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
         assertEquals("0:02", state.elapsed)
         assertTrue(player.spoken.isEmpty())
         assertEquals(
-            WorkoutStatus(Phase.Work, paused = true, clock = "0:03", round = 1, rounds = 2),
+            WorkoutStatus(Phase.Work, paused = true, clock = "0:03", round = 1, rounds = 2, outline(elapsed = 2)),
             background.statuses.last(),
         )
 
@@ -579,12 +581,13 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
         val viewModel = workoutViewModel()
         assertEquals(1, background.starts)
         assertEquals(
-            listOf(WorkoutStatus(Phase.Work, paused = false, clock = "0:05", round = 1, rounds = 2)),
+            listOf(WorkoutStatus(Phase.Work, paused = false, clock = "0:05", round = 1, rounds = 2, outline(0))),
             background.statuses,
         )
 
         run(1_000)
         assertEquals(listOf("0:05", "0:04"), background.statuses.map { it.clock })
+        assertEquals(listOf(0, 1), background.statuses.map { it.outline.elapsedSeconds })
 
         viewModel.pause()
         assertTrue(background.statuses.last().paused)
@@ -663,6 +666,16 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
         assertTrue(repository.history.value.isEmpty())
         assertFalse(background.kept)
     }
+
+    /** The workout these tests run, 5 s of work, 5 of rest and 5 of work, [elapsed] seconds in. */
+    private fun outline(elapsed: Int) = WorkoutOutline(
+        listOf(
+            OutlinedInterval(Phase.Work, round = 1, seconds = 5),
+            OutlinedInterval(Phase.Rest, round = 1, seconds = 5),
+            OutlinedInterval(Phase.Work, round = 2, seconds = 5),
+        ),
+        elapsed,
+    )
 }
 
 private const val WORKOUT_ID = 1_700_000_000_000L

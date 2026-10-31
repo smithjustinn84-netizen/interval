@@ -7,6 +7,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.3.0] — Unreleased
 
 ### Added
+- Live Updates (Android 16 and later): a running workout and a rest between sets show as a chip with their
+  clock in the status bar, and as a bar on the lock screen and in the shade. A workout of up to ten intervals
+  shows each in its phase's colour with a mark where each round begins; a longer one, one bar in the phase's
+  colour. Pause, Resume and End still work from the notification.
 
 ## [0.2.0] — Unreleased
 

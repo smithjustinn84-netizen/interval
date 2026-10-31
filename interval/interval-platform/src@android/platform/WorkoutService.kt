@@ -10,6 +10,7 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.app.NotificationCompat
 import co.touchlab.kermit.Logger
@@ -40,8 +41,10 @@ import org.jetbrains.compose.resources.getString
  * The foreground service behind a running workout. It keeps the process out of the cached state the system
  * freezes, holds the CPU awake so the cues play with the screen off, and shows the workout as an ongoing
  * notification: the clock, the phase and round under it, the phase colour, and Pause or Resume and End,
- * which act on the workout through [controls]. Its type is special use: a workout runs longer than a short
- * service's three minutes, and the health type wants sensor permissions the app has no use for.
+ * which act on the workout through [controls]. On Android 16 and later it is a Live Update: the clock in a
+ * chip in the status bar, and the whole workout as a bar on the lock screen and in the shade. Its type is
+ * special use: a workout runs longer than a short service's three minutes, and the health type wants sensor
+ * permissions the app has no use for.
  */
 class WorkoutService : Service() {
     private val log = Logger.withTag("WorkoutService")
@@ -135,9 +138,11 @@ class WorkoutService : Service() {
     }
 
     /**
-     * The clock as the title, the phase and round under it, and the phase colour over the whole notification,
-     * as it is over the screen's ring and band: the phase reads from across the room there, and from the lock
-     * screen here.
+     * The clock as the title, the phase and round under it, and the phase colour, as it is over the screen's
+     * ring and band: the phase reads from across the room there, and from the lock screen here. Before Android
+     * 16 the colour fills the whole notification; from 16 the system promotes only a notification that is not
+     * colourised, so the colour is the bar's ([progressStyle]) and the clock is the status bar's chip. Below 16
+     * the builder drops the style, the chip and the request, and the notification is as it was.
      */
     private suspend fun notification(status: WorkoutStatus): Notification {
         val phase = getString(
@@ -149,24 +154,36 @@ class WorkoutService : Service() {
                 else -> Res.string.phase_done
             },
         )
-        val color = when {
-            status.paused -> PhaseColors.paused
-            status.phase == Phase.Prep -> PhaseColors.prep
-            status.phase == Phase.Work -> PhaseColors.work
-            status.phase == Phase.Rest -> PhaseColors.rest
-            else -> PhaseColors.done
-        }
+        val color = if (status.paused) PhaseColors.paused else phaseColor(status.phase)
         val pauseLabel = getString(if (status.paused) Res.string.workout_resume else Res.string.workout_pause)
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .common()
             .setContentTitle(status.clock)
             .setContentText(getString(Res.string.notification_workout_text, phase, status.round, status.rounds))
             .setColor(color.toArgb())
-            .setColorized(true)
+            .setColorized(Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA)
+            .setShortCriticalText(status.clock)
+            .setRequestPromotedOngoing(true)
+            .apply { StatusBar.of(status.outline)?.let { setStyle(progressStyle(it, color)) } }
             .addAction(0, pauseLabel, togglePauseIntent)
             .addAction(0, getString(Res.string.workout_end), endIntent)
             .build()
     }
+
+    /**
+     * The workout end to end, each interval in its phase's colour (or, past what the system draws apart, one
+     * segment in [color]), a point where each round begins, and the tracker at the time gone.
+     */
+    private fun progressStyle(bar: StatusBar, color: Color): NotificationCompat.ProgressStyle =
+        NotificationCompat.ProgressStyle()
+            .setProgressSegments(
+                bar.segments.map { segment ->
+                    NotificationCompat.ProgressStyle.Segment(segment.length)
+                        .setColor((segment.phase?.let(::phaseColor) ?: color).toArgb())
+                },
+            )
+            .setProgressPoints(bar.points.map { NotificationCompat.ProgressStyle.Point(it) })
+            .setProgress(bar.progress)
 
     /** What every version of the notification shares: silent, ongoing, on the lock screen, opens the app. */
     private fun NotificationCompat.Builder.common(): NotificationCompat.Builder = this
@@ -179,6 +196,13 @@ class WorkoutService : Service() {
         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
         .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
         .setContentIntent(openApp)
+
+    private fun phaseColor(phase: Phase): Color = when (phase) {
+        Phase.Prep -> PhaseColors.prep
+        Phase.Work -> PhaseColors.work
+        Phase.Rest -> PhaseColors.rest
+        Phase.Done -> PhaseColors.done
+    }
 
     private fun appName(): CharSequence = applicationInfo.loadLabel(packageManager)
 

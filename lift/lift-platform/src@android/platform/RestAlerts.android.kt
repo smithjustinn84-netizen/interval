@@ -38,13 +38,15 @@ internal class AndroidRestAlerts(private val context: Context) : RestAlerts {
     private val log = Logger.withTag("AndroidRestAlerts")
     private var running = false
 
-    override fun start(endAtEpochMillis: Long) {
+    override fun start(startedAtEpochMillis: Long, endAtEpochMillis: Long) {
         // A rest shortened past the time it has run is already over: nothing to count down.
         if (endAtEpochMillis <= System.currentTimeMillis()) {
             stop()
             return
         }
-        val intent = Intent(context, RestService::class.java).putExtra(RestService.EXTRA_END_AT, endAtEpochMillis)
+        val intent = Intent(context, RestService::class.java)
+            .putExtra(RestService.EXTRA_STARTED_AT, startedAtEpochMillis)
+            .putExtra(RestService.EXTRA_END_AT, endAtEpochMillis)
         // Refused from the background (Android 12+). A set is logged from the session's screen, so that is
         // not expected; if it happens the rest runs on, without the notification.
         runCatching { context.startForegroundService(intent) }
@@ -65,8 +67,9 @@ internal class AndroidRestAlerts(private val context: Context) : RestAlerts {
 /**
  * The foreground service behind a rest between sets. It holds the CPU awake so the session's 3-2-1 and Start
  * play with the screen off, and shows the rest counting down as an ongoing notification. It ends with the
- * rest, or when the session skips it. Special use, as the workout's is: a rest can run ten minutes, past a
- * short service's three.
+ * rest, or when the session skips it. On Android 16 and later it is a Live Update, as the workout's is: the time
+ * left in a chip in the status bar, and the rest's run as a bar on the lock screen. Special use, as the
+ * workout's is: a rest can run ten minutes, past a short service's three.
  */
 class RestService : Service() {
     private val log = Logger.withTag("RestService")
@@ -96,13 +99,14 @@ class RestService : Service() {
             return START_NOT_STICKY
         }
         val endAt = intent?.getLongExtra(EXTRA_END_AT, 0L) ?: 0L
+        val startedAt = intent?.getLongExtra(EXTRA_STARTED_AT, endAt) ?: endAt
         // Started for the foreground, so to the foreground first, whatever follows: stopping short of it
         // crashes the app.
         goForeground(endAt)
         if (endAt <= System.currentTimeMillis()) {
             stopSelf(startId)
         } else {
-            countDown(endAt)
+            countDown(startedAt, endAt)
         }
         return START_NOT_STICKY
     }
@@ -117,13 +121,13 @@ class RestService : Service() {
         }
     }
 
-    private fun countDown(endAt: Long) {
+    private fun countDown(startedAt: Long, endAt: Long) {
         runCatching { wakeLock?.takeUnless { it.isHeld }?.acquire(WAKE_LOCK_TIMEOUT_MILLIS) }
             .onFailure { log.w(it) { "Couldn't hold the wake lock" } }
         countdown?.cancel()
         countdown = scope.launch {
             while (System.currentTimeMillis() < endAt) {
-                notifications?.notify(NOTIFICATION_ID, notification(endAt))
+                notifications?.notify(NOTIFICATION_ID, notification(startedAt, endAt))
                 delay(TICK_MILLIS)
             }
             // The session's clock plays the cue as the rest ends; a moment later this is over too.
@@ -153,16 +157,30 @@ class RestService : Service() {
         notifications?.createNotificationChannel(channel)
     }
 
-    /** "Resting" over the time left, silent and ongoing, on the lock screen; tapping it opens the app. */
-    private suspend fun notification(endAt: Long): Notification = builder()
-        .setContentTitle(getString(Res.string.rest_title))
-        .setContentText(getString(Res.string.rest_left, formatClock(secondsLeft(endAt))))
-        .build()
-
-    private fun secondsLeft(endAt: Long): Int {
-        val leftMillis = (endAt - System.currentTimeMillis()).coerceAtLeast(0)
-        return ((leftMillis + MILLIS_PER_SECOND - 1) / MILLIS_PER_SECOND).toInt()
+    /**
+     * "Resting" over the time left, silent and ongoing, on the lock screen; tapping it opens the app. From
+     * Android 16 the time left is the status bar's chip, and the rest one segment the tracker crosses as it runs;
+     * below 16 the builder drops both, and the request to promote it.
+     */
+    private suspend fun notification(startedAt: Long, endAt: Long): Notification {
+        val left = formatClock(secondsLeft(endAt))
+        val length = ceilSeconds(endAt - startedAt).coerceAtLeast(1)
+        val run = NotificationCompat.ProgressStyle()
+            .setProgressSegments(listOf(NotificationCompat.ProgressStyle.Segment(length)))
+            .setProgress((length - secondsLeft(endAt)).coerceIn(0, length))
+        return builder()
+            .setContentTitle(getString(Res.string.rest_title))
+            .setContentText(getString(Res.string.rest_left, left))
+            .setShortCriticalText(left)
+            .setRequestPromotedOngoing(true)
+            .setStyle(run)
+            .build()
     }
+
+    private fun secondsLeft(endAt: Long): Int = ceilSeconds(endAt - System.currentTimeMillis())
+
+    private fun ceilSeconds(millis: Long): Int =
+        ((millis.coerceAtLeast(0) + MILLIS_PER_SECOND - 1) / MILLIS_PER_SECOND).toInt()
 
     private fun appName(): CharSequence = applicationInfo.loadLabel(packageManager)
 
@@ -180,6 +198,7 @@ class RestService : Service() {
             .setContentIntent(openAppIntent(REQUEST_OPEN))
 
     companion object {
+        internal const val EXTRA_STARTED_AT = "dev.justinsmith.lift.REST_STARTED_AT"
         internal const val EXTRA_END_AT = "dev.justinsmith.lift.REST_END_AT"
         internal const val ACTION_STOP = "dev.justinsmith.lift.REST_STOP"
         private const val CHANNEL_ID = "rest"

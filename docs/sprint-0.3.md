@@ -53,6 +53,12 @@ Sizes: XS ≤ half a day, S ≈ 1 day, M ≈ 2 days, L ≈ 3 days. The cut line 
   a `ProgressStyle` whose segments are the workout's phases in `PhaseColors`, with the tracker at the
   elapsed point and a point per round; the chip text is `status.clock`. Below 16 the builder ignores the
   style's extras and the notification is what it is today, so one code path.
+- As built: the system draws at most 10 segments (past that it merges them into one in its default colour)
+  and 4 points, and promotes no colourised notification. So `StatusBar` (`interval-platform`, tested) draws a
+  segment per interval only up to 10 and one segment in the phase's colour past that (the default Tabata's
+  16), marks rounds only when 4 or fewer follow the first, and `setColorized` is kept below 16 only. The
+  outline is `WorkoutOutline.of(state)` in `interval-domain`, in whole seconds so the notification still
+  changes once a second. `RestAlerts.start` takes the rest's start too.
 - `RestService` in `lift/lift-platform/src@android/platform/RestAlerts.android.kt`: the same for the
   rest, one segment counting down. The `WorkoutStatus` the service receives already carries everything needed; if the rest needs
   its length, add it to what `RestAlerts` passes, never read the clock in the service.

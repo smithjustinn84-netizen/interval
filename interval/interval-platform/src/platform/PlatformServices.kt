@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.UpcomingChange
+import dev.justinsmith.interval.timer.WorkoutOutline
 import org.koin.core.module.Module
 
 /** The sounds the app plays. Each platform maps them to tones it has. */
@@ -48,6 +49,8 @@ data class WorkoutStatus(
     val clock: String,
     val round: Int,
     val rounds: Int,
+    /** The whole workout end to end, for Android's progress bar ([StatusBar]). */
+    val outline: WorkoutOutline = WorkoutOutline.Empty,
 )
 
 /**

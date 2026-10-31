@@ -53,8 +53,11 @@ class RestTimerTest {
     fun `the platform keeps the rest to its end and is told when it is over`() {
         timer.start(30)
         assertEquals(listOf(31_000L), alerts.ends)
+        now += 5_000
         timer.adjust(45)
         assertEquals(listOf(31_000L, 46_000L), alerts.ends)
+        // Adjusted from when it started, not from now.
+        assertEquals(listOf(1_000L, 1_000L), alerts.starts)
         now += 45_000
         timer.tick(now)
         assertEquals(1, alerts.stops)

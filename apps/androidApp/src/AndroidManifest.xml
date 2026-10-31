@@ -10,6 +10,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
     <!-- Android 13+: asked for at runtime when the first workout starts. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Android 16+: the workout's and the rest's notifications are Live Updates, a chip in the status bar and a
+         bar on the lock screen. A normal permission: granted at install, no prompt; the user can turn it off. -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS"/>
     <!-- Keeps the CPU up while the workout runs with the screen off, so the cues play on time. -->
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <!-- The plan's reminders are alarms, which a reboot drops: PlanReminderReceiver sets them again. -->

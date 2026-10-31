@@ -12,7 +12,11 @@
     <action>Verify that the "Work" row shows 1:00</action>
     <action>Tap "Start workout"</action>
     <action>Verify that the workout screen shows "Get ready" and a countdown clock</action>
-    <action>Tap "Pause"</action>
+    <action>Press Home and verify that the status bar shows a chip with the workout's clock (Android 16+)</action>
+    <action>Verify with adb shell dumpsys notification --noredact that the workout's notification has PROMOTED_ONGOING among its flags and android.progressMax is the workout's length in seconds</action>
+    <action>Pull down the shade and verify that the notification shows a bar under "Get ready" or "Work" and the round, with "Pause" and "End"</action>
+    <action>Tap "Pause" in the notification and verify that it reads "Paused"</action>
+    <action>Tap the notification to return to the workout</action>
     <action>Verify that the screen shows "Paused" and a "Resume" button</action>
     <action>Tap "Resume"</action>
     <action>Verify that the screen shows a "Pause" button</action>

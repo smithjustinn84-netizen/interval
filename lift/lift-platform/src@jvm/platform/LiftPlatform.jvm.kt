@@ -24,7 +24,7 @@ actual fun rememberLiftPlatformModule(): Module = remember {
 
 /** A desktop window stays on screen and its process keeps running: nothing to keep awake or announce. */
 private object NoRestAlerts : RestAlerts {
-    override fun start(endAtEpochMillis: Long) = Unit
+    override fun start(startedAtEpochMillis: Long, endAtEpochMillis: Long) = Unit
 
     override fun stop() = Unit
 }

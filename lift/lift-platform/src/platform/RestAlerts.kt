@@ -8,8 +8,11 @@ package dev.justinsmith.lift.platform
  * allowed). Desktop does nothing: its window never sleeps.
  */
 interface RestAlerts {
-    /** A rest started, to end at [endAtEpochMillis] on the wall clock; a rest already kept is replaced. */
-    fun start(endAtEpochMillis: Long)
+    /**
+     * A rest started at [startedAtEpochMillis], to end at [endAtEpochMillis], on the wall clock; a rest already
+     * kept is replaced. Android draws the rest's run from the two, iOS needs the end alone.
+     */
+    fun start(startedAtEpochMillis: Long, endAtEpochMillis: Long)
 
     /** The rest ended, or was skipped: nothing more to show or play. */
     fun stop()

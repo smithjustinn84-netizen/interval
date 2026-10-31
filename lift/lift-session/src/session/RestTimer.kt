@@ -28,14 +28,14 @@ class RestTimer(private val clock: WallClock, private val beeper: Beeper, privat
         lastCueMillis = 0L
         val startedAt = clock.nowMillis()
         run.value = RestRun(startedAt, seconds)
-        alerts.start(startedAt + seconds * MILLIS_PER_SECOND)
+        alerts.start(startedAt, startedAt + seconds * MILLIS_PER_SECOND)
     }
 
     /** Makes the rest running [seconds] long, from when it started: over at once if that is already past. */
     fun adjust(seconds: Int) {
         val rest = run.value ?: return
         run.value = rest.copy(seconds = seconds)
-        alerts.start(rest.startedAtMillis + seconds * MILLIS_PER_SECOND)
+        alerts.start(rest.startedAtMillis, rest.startedAtMillis + seconds * MILLIS_PER_SECOND)
     }
 
     /** Ends the rest early, without a cue. */

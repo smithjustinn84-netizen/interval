@@ -22,6 +22,7 @@ import dev.justinsmith.interval.timer.Step
 import dev.justinsmith.interval.timer.UpcomingChange
 import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.timer.WorkoutEngine
+import dev.justinsmith.interval.timer.WorkoutOutline
 import dev.justinsmith.interval.timer.WorkoutState
 import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.weekStanding
@@ -330,7 +331,7 @@ class WorkoutViewModel(
 
     private fun publish() {
         _state.value = uiState(running)
-        val status = _state.value.status()
+        val status = _state.value.status(WorkoutOutline.of(engine))
         if (kept && status != shown) {
             shown = status
             background.update(status)
@@ -410,7 +411,8 @@ class WorkoutViewModel(
     }
 }
 
-/** What the notification shows of [this]: the phase, whether it is paused, the clock and the round. */
-private fun WorkoutUiState.status() = WorkoutStatus(phase, paused, clock, round, rounds)
+/** What the notification shows of [this]: the phase, whether it is paused, the clock, the round and the bar. */
+private fun WorkoutUiState.status(outline: WorkoutOutline) =
+    WorkoutStatus(phase, paused, clock, round, rounds, outline)
 
 private fun Long.roundedSeconds(): Int = ((this + MILLIS_PER_SECOND / 2) / MILLIS_PER_SECOND).toInt()

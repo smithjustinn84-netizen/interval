@@ -271,12 +271,14 @@ class FakeLiftStorage {
     }
 }
 
-/** Records the rests the platform was asked to keep: each end it was given, and how many times it was stopped. */
+/** Records the rests the platform was asked to keep: each start and end it was given, and how many stops. */
 class RecordingRestAlerts : RestAlerts {
+    val starts = mutableListOf<Long>()
     val ends = mutableListOf<Long>()
     var stops = 0
 
-    override fun start(endAtEpochMillis: Long) {
+    override fun start(startedAtEpochMillis: Long, endAtEpochMillis: Long) {
+        starts += startedAtEpochMillis
         ends += endAtEpochMillis
     }
 

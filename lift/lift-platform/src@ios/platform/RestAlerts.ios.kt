@@ -33,7 +33,7 @@ internal class IosRestAlerts : RestAlerts {
     /** Bumped by each start and each stop, so a scheduling overtaken by a stop adds nothing after it. */
     private var generation = 0
 
-    override fun start(endAtEpochMillis: Long) {
+    override fun start(startedAtEpochMillis: Long, endAtEpochMillis: Long) {
         stop()
         val mine = generation
         scope.launch {
