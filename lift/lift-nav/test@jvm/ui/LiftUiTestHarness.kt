@@ -44,11 +44,6 @@ import org.koin.core.KoinApplication
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.time.Duration
 
-/** Sets [content] inside the dark theme. */
-fun DesktopComposeUiTest.setLiftContent(content: @Composable () -> Unit) {
-    setContent { IntervalTheme(darkTheme = true, content = content) }
-}
-
 /**
  * What a whole-app test drives: the fake storage under the app, its clock, the beeps it played, what it
  * offered to share, and [back], the system back gesture.
