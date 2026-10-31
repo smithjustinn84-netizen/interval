@@ -79,7 +79,10 @@ that depends on the data module.
   - `MainDispatcherTest`: the base class for a ViewModel's test, which stands in a test dispatcher
     for `Dispatchers.Main` (unconfined unless the test passes another).
   - `FixedTimestampFormatter`: time-zone free; `date()` is `"day N"`, `monthTitle()` `"M/YYYY"`.
-  - `FakeAppInfo`, and the tests' calendar: `TODAY` (Thursday 15 October 2026), `noonOf`, `DAY_MILLIS`.
+  - `FakeAppInfo`, `RecordingSharer`, and the tests' calendar: `TODAY` (Thursday 15 October 2026), `noonOf`,
+    `DAY_MILLIS`.
+  - `fakeCorePlatformModule(...)` stands in for core's `rememberCorePlatformModule`: a wall clock, the fixed
+    formatter, `FakeAppInfo` and a sharer, for `testKoin` and `liftTestKoin` alike.
 - **`core/core-testing/src@jvm/ui/UiTestHarness.kt`**:
   - `runUiTest(Window.Phone | PhoneSideways | Tablet | TabletPortrait | Desktop)`: sized windows that match the previews. The
     window size drives the same layout decisions as on a device (bar vs rail, Settings as a
@@ -101,8 +104,8 @@ that depends on the data module.
   - `RecordingCuePlayer`: records beeps, `Speech` lines and haptics. `RecordingBackgroundWorkout`: what the
     platform was told to keep. `RecordingPlanReminders`: every set of reminders the platform was handed,
     `pending` the latest.
-  - `fakePlatformModule(...)` binds the player and formatter for Koin; `fakeStorageModule(...)` binds a
-    `FakeStorage` in place of the real `storageModule`.
+  - `fakePlatformModule(...)` binds the player, background workout and reminders for Koin;
+    `fakeStorageModule(...)` binds a `FakeStorage` in place of the real `storageModule`.
   - `tabataPreset`, `hiitPreset`, `hangboardPreset`: the built-ins tests lean on, found by name.
 - **`lift-testing`** (`dev.justinsmith.lift.fakes`): `FakeLiftStorage` over the six fake DAOs, with
   `repository()` and `finished(...)`; `FakeIntervalActivity`; `RecordingBeeper`; `fakeLiftPlatformModule`,

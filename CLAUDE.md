@@ -69,8 +69,10 @@ the database file (`bells.db`), the serial names that its route keys are saved u
 
 ```
 core/
-  core               the theme, tokens, motion, components, lanes, `Tab` and `push` (nav/), and the Composable
-                     platform hooks the UI needs (`SystemServices.kt`); exports `core-platform` and `core-time`.
+  core               the theme, tokens, motion, components, lanes, `Tab` and `push` (nav/), the Composable
+                     platform hooks the UI needs (`SystemServices.kt`), and `rememberCorePlatformModule`
+                     (`CorePlatform.kt`: the `WallClock`, `TimestampFormatter`, `AppInfo` and `Sharer` both sides'
+                     containers take, with each platform's `Sharer`); exports `core-platform` and `core-time`.
                      Packages `dev.justinsmith.interval.ui`, `.platform`, `.nav`; resources
                      `dev.justinsmith.core.resources`
   core-platform      what the platform gives that isn't drawing, with no Compose: the clocks (`WallClock`,
@@ -81,7 +83,8 @@ core/
                      their Room KSP (interval-data's test KSP still does, through `interval-testing`)
   core-time          calendar/clock maths (`CalendarDays`, `formatClock`, `WeekStanding`), package `.timer`. No
                      dependencies, so the domains compile without Compose
-  core-testing       `MainDispatcherTest`, `FixedTimestampFormatter`, `FakeAppInfo`, the tests' calendar;
+  core-testing       `MainDispatcherTest`, `FixedTimestampFormatter`, `FakeAppInfo`, `RecordingSharer`,
+                     `fakeCorePlatformModule`, the tests' calendar;
                      src@jvm: the UI harness (`runUiTest`, `setThemedContent`, `StateRestoration`, `waitForText`)
 
 interval/            the interval timer
@@ -145,9 +148,9 @@ where History and the workout count Lift's sessions (their ViewModels take `Lift
 `LiftRepository`), and `lift-nav` never on anything of the interval side. `tools/check_module_rules.py`
 enforces this in CI: `lift/` never sees `interval/`, the pure layers (`core-time`, `core-platform`, the domains
 and data modules) take no Compose, the data modules depend on `core-platform` rather than `core`, the
-`*-testing` modules appear only under `test-dependencies`, and a feature depends on another only where its
+`*-testing` modules appear only under `test-dependencies`, a feature depends on another only where its
 `FEATURE_EDGES` lists the pair (`interval-timer` and `interval-workout` on `interval-presets`, `lift-session` on
-`lift-library`). The
+`lift-library`), every library applies a template, and no source under `interval/` names `LiftRepository`. The
 `*-testing` modules are ordinary libraries listed under `test-dependencies` (the toolchain shares no test
 sources between modules); a data module's tests may depend on its side's `*-testing` even though that depends
 back on it.
@@ -176,8 +179,9 @@ toolchain (`$compose.*`).
 - **DI is Koin DSL** (no annotations/KSP) in an isolated container assembled in `apps/app/src/di/AppKoin.kt`
   (`appModules`) from each side's modules: `storageModule`/`dataModule` in `interval/interval-data/src/di/`,
   `historyModule` in `interval/interval-history/src/di/`, `liftModules` in `lift/lift-data/src/di/`, and the platform
-  modules each platform builds in composition (`interval-platform`, `lift-platform`). Add a
-  module per domain. Constructor-inject everything; keep platform calls (the clock, cues, storage) behind
+  modules each platform builds in composition: core's `rememberCorePlatformModule` (what both sides take: the
+  clock, formatter, `AppInfo`, `Sharer`), `interval-platform`'s and `lift-platform`'s. Neither side's modules
+  bind anything the other needs. Add a module per domain. Constructor-inject everything; keep platform calls (the clock, cues, storage) behind
   injected interfaces (`WallClock`, `CuePlayer`, `PlatformStorage`) so tests can fake them.
 - **Storage**: `IntervalRepository` (`interval/interval-data/src/data/`) is the only thing that touches it. What it stores
   is described by plain models in `interval/interval-domain/src/model/` (`AppSettings`, `HistoryEntry`, `PlannedWorkout`,
