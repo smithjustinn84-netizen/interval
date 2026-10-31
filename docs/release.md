@@ -87,6 +87,8 @@ Both Android and iOS versions must be bumped in unison. CI will fail via `tools/
 
 ## Follow-ups found during the sprint
 
+The next sprint's tickets, which take most of these up, are in [sprint-0.3.md](sprint-0.3.md).
+
 - **iOS: notification permission for Lift-only users.** The rest-over notification needs authorization, which
   only `AskToShowNotifications()` (interval-platform) asks for, on a workout's start and on Plan. A user who
   only lifts is never asked. Moving the hook to `core` would let the session ask too.
