@@ -3,6 +3,7 @@
 package dev.justinsmith.interval.storage
 
 import co.touchlab.kermit.Logger
+import co.touchlab.kermit.StaticConfig
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -20,7 +21,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class StorageTest {
-    private val log = Logger.withTag("StorageTest")
+    // Writes nowhere: the failures these tests cause on purpose would each print a stack trace, and on
+    // Kotlin/Native a trace takes seconds to symbolicate, enough to push a test past runTest's minute in CI.
+    private val log = Logger(StaticConfig(logWriterList = emptyList()), "StorageTest")
 
     @Test
     fun `writes run in the order queued and one failing doesn't stop the rest`() = runTest {

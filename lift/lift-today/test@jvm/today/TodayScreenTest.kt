@@ -90,13 +90,15 @@ class TodayScreenTest {
         onNodeWithText("Leave the session?").assertExists()
         onNodeWithText("Its sets are not saved: the day starts fresh.").assertExists()
         onNodeWithText("Cancel").performClick()
-        waitUntil { onAllNodesWithText("Leave the session?").fetchSemanticsNodes().isEmpty() }
+        waitUntil(timeoutMillis = DIALOG_TIMEOUT_MILLIS) {
+            onAllNodesWithText("Leave the session?").fetchSemanticsNodes().isEmpty()
+        }
         assertEquals(1, started.size)
         onNodeWithText("Start day 1").performClick()
         onAllNodesWithText("Start day 1").assertCountEquals(2)
         onAllNodesWithText("Start day 1").onLast().performClick()
         // The dialog's action runs once its exit has played.
-        waitUntil { started.size == 2 }
+        waitUntil(timeoutMillis = DIALOG_TIMEOUT_MILLIS) { started.size == 2 }
         assertEquals(ProgramKey.BuiltIn(ProgramId.GobletSquatRow), started.last())
         onNodeWithText("Resume session").performClick()
         assertEquals(null, started.last())
@@ -187,3 +189,9 @@ class TodayScreenTest {
         assertEquals(1, opened)
     }
 }
+
+/**
+ * How long a dialog's exit may take before its action runs. Compose's default second is wall-clock time, too
+ * short for a cold JVM on a CI runner busy with every module's tests.
+ */
+private const val DIALOG_TIMEOUT_MILLIS = 5_000L
