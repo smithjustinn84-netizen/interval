@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,12 +21,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextAlign
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.format
 import dev.justinsmith.interval.ui.resources.Res
@@ -55,7 +51,21 @@ fun ValueSheet(
     // Screen readers announce the sheet by its field as it opens.
     IntervalSheet(title = stringResource(field.labelRes), onDismiss = onDismiss) { hide ->
         SheetHeader(field)
-        SheetStepper(field, value, onStep)
+        SheetStepper(
+            value,
+            field.format(value),
+            stringResource(field.lessRes),
+            stringResource(field.moreRes),
+            canLower = value > field.range.first,
+            canRaise = value < field.range.last,
+            onStep = onStep,
+            hint = if (field == ConfigField.Rounds) {
+                stringResource(Res.string.value_sheet_hint_hold)
+            } else {
+                stringResource(Res.string.value_sheet_hint_steps, field.step)
+            },
+            color = field.valueColor(),
+        )
         QuickPicks(field, value, onPick)
         if (total != null) {
             Row(Modifier.fillMaxWidth().padding(horizontal = Spacing.space4)) {
@@ -89,41 +99,6 @@ private fun SheetHeader(field: ConfigField, modifier: Modifier = Modifier) {
             Text(stringResource(field.labelRes), style = IntervalTheme.type.value, color = palette.text)
             Text(stringResource(field.hintRes), style = IntervalTheme.type.meta, color = palette.textDim)
         }
-    }
-}
-
-/** The big value between − and +; it rolls up or down with each step. */
-@Composable
-private fun SheetStepper(field: ConfigField, value: Int, onStep: (Int) -> Unit, modifier: Modifier = Modifier) {
-    val palette = IntervalTheme.palette
-    val rising = rememberRising(value)
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            FieldStepButton(field, value, more = false, onStep = onStep, Modifier.size(Sizes.sheetStepper))
-            Box(
-                Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
-                contentAlignment = Alignment.Center,
-            ) {
-                RollingText(
-                    field.format(value),
-                    rising,
-                    style = IntervalTheme.type.display.copy(textAlign = TextAlign.Center),
-                    color = field.valueColor(),
-                )
-            }
-            FieldStepButton(field, value, more = true, onStep = onStep, Modifier.size(Sizes.sheetStepper))
-        }
-        val hint = if (field == ConfigField.Rounds) {
-            stringResource(Res.string.value_sheet_hint_hold)
-        } else {
-            stringResource(Res.string.value_sheet_hint_steps, field.step)
-        }
-        Text(
-            hint,
-            style = IntervalTheme.type.meta,
-            color = palette.textDim,
-            modifier = Modifier.padding(top = Spacing.space8),
-        )
     }
 }
 

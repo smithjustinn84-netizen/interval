@@ -1,19 +1,10 @@
 package dev.justinsmith.interval.settings
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import dev.justinsmith.interval.settings.resources.Res
 import dev.justinsmith.interval.settings.resources.common_done
@@ -30,12 +21,8 @@ import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.QuietTextButton
-import dev.justinsmith.interval.ui.RepeatButton
-import dev.justinsmith.interval.ui.RollingText
 import dev.justinsmith.interval.ui.SegmentedPicker
-import dev.justinsmith.interval.ui.Sizes
-import dev.justinsmith.interval.ui.Spacing
-import dev.justinsmith.interval.ui.rememberRising
+import dev.justinsmith.interval.ui.SheetStepper
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -61,7 +48,17 @@ internal fun WeightSheet(
     IntervalSheet(title = stringResource(Res.string.settings_weight), onDismiss = onDismiss) { hide ->
         Text(stringResource(Res.string.settings_weight), style = IntervalTheme.type.value, color = palette.text)
         SegmentedPicker(WeightUnit.entries, unit, label = { stringResource(it.labelRes) }, onSelect = onSetUnit)
-        WeightStepper(shown, unit, onSetWeight)
+        SheetStepper(
+            shown,
+            shown.toString(),
+            stringResource(Res.string.weight_less_cd),
+            stringResource(Res.string.weight_more_cd),
+            canLower = shown > unit.range.first,
+            canRaise = shown < unit.range.last,
+            onStep = { onSetWeight(shown + it) },
+            hint = stringResource(Res.string.value_sheet_hint_hold),
+            label = stringResource(unit.labelRes),
+        )
         Text(
             stringResource(Res.string.weight_sheet_privacy),
             style = IntervalTheme.type.meta,
@@ -87,49 +84,6 @@ internal fun WeightSheet(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-    }
-}
-
-/** The weight between − and +, with its unit under it; it rolls up or down with each step. */
-@Composable
-private fun WeightStepper(value: Int, unit: WeightUnit, onSetWeight: (Int) -> Unit, modifier: Modifier = Modifier) {
-    val palette = IntervalTheme.palette
-    val rising = rememberRising(value)
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            RepeatButton(
-                "−",
-                stringResource(Res.string.weight_less_cd),
-                enabled = value > unit.range.first,
-                onStep = { onSetWeight(value - 1) },
-                modifier = Modifier.size(Sizes.sheetStepper),
-            )
-            Box(
-                Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
-                contentAlignment = Alignment.Center,
-            ) {
-                RollingText(
-                    value.toString(),
-                    rising,
-                    style = IntervalTheme.type.display.copy(textAlign = TextAlign.Center),
-                    color = palette.text,
-                )
-            }
-            RepeatButton(
-                "+",
-                stringResource(Res.string.weight_more_cd),
-                enabled = value < unit.range.last,
-                onStep = { onSetWeight(value + 1) },
-                modifier = Modifier.size(Sizes.sheetStepper),
-            )
-        }
-        Text(stringResource(unit.labelRes), style = IntervalTheme.type.section, color = palette.textDim)
-        Text(
-            stringResource(Res.string.value_sheet_hint_hold),
-            style = IntervalTheme.type.meta,
-            color = palette.textDim,
-            modifier = Modifier.padding(top = Spacing.space8),
-        )
     }
 }
 
