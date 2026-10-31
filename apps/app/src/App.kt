@@ -22,8 +22,10 @@ import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneSt
 import androidx.compose.material3.adaptive.navigation3.rememberSupportingPaneSceneStrategy
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -59,6 +61,7 @@ import dev.justinsmith.interval.nav.Plan
 import dev.justinsmith.interval.nav.Presets
 import dev.justinsmith.interval.nav.Privacy
 import dev.justinsmith.interval.nav.Settings
+import dev.justinsmith.interval.nav.Shortcut
 import dev.justinsmith.interval.nav.Tab
 import dev.justinsmith.interval.nav.TimerTab
 import dev.justinsmith.interval.nav.Workout
@@ -133,13 +136,17 @@ internal val navConfiguration = SavedStateConfiguration {
     }
 }
 
-/** The root composable every platform entry point hosts: the app, with the intro over it at launch. */
+/**
+ * The root composable every platform entry point hosts: the app, with the intro over it at launch. [shortcut] is
+ * a launcher shortcut to open (Android's); the app opens it once it is ready and then calls [onShortcutOpen],
+ * whose caller lets it go, so the same shortcut handed again opens again.
+ */
 @Composable
 @DevelopmentEntryPoint
-fun App() {
+fun App(shortcut: Shortcut? = null, onShortcutOpen: () -> Unit = {}) {
     val koin = rememberAppKoin()
     val ready by remember(koin) { storageReady(koin.koin.get(), koin.koin.get()) }.collectAsStateWithLifecycle(false)
-    WithIntro(ready) { introPlaying -> AppContent(koin, introPlaying) }
+    WithIntro(ready) { introPlaying -> AppContent(koin, introPlaying, shortcut, onShortcutOpen) }
 }
 
 /**
@@ -147,7 +154,12 @@ fun App() {
  * While [introPlaying], the system bar icons suit the intro over it rather than the app.
  */
 @Composable
-internal fun AppContent(koin: KoinApplication, introPlaying: Boolean = false) {
+internal fun AppContent(
+    koin: KoinApplication,
+    introPlaying: Boolean = false,
+    shortcut: Shortcut? = null,
+    onShortcutOpen: () -> Unit = {},
+) {
     KoinIsolatedContext(context = koin) {
         val scope = currentKoinScope()
         val repository = scope.get<IntervalRepository>()
@@ -163,6 +175,13 @@ internal fun AppContent(koin: KoinApplication, introPlaying: Boolean = false) {
         }
         IntervalTheme(darkTheme = dark) {
             val backStack = rememberNavBackStack(navConfiguration, TimerTab)
+            val clock = scope.get<WallClock>()
+            val opened by rememberUpdatedState(onShortcutOpen)
+            LaunchedEffect(shortcut) {
+                if (shortcut == null) return@LaunchedEffect
+                backStack.open(shortcut, clock)
+                opened()
+            }
             val notices = rememberNotices()
             // The intro is dark in either theme while it covers the app.
             SystemBarIcons(lightIcons = dark || introPlaying)
@@ -400,6 +419,28 @@ private fun appEntries(
  */
 private fun storageReady(interval: IntervalRepository, lift: LiftRepository): Flow<Boolean> =
     combine(interval.ready, lift.ready) { intervalReady, liftReady -> intervalReady && liftReady }
+
+/**
+ * Opens [shortcut] over its tab. A workout already running is kept rather than replaced or popped (leaving its
+ * page ends it): every shortcut returns to it. A Lift session is not lost by popping it, it resumes.
+ */
+private fun NavBackStack<NavKey>.open(shortcut: Shortcut, clock: WallClock) {
+    if (any { it is Workout }) {
+        while (lastOrNull() !is Workout) removeLastOrNull()
+        return
+    }
+    when (shortcut) {
+        Shortcut.StartWorkout -> {
+            selectTab(TimerTab)
+            startWorkout(clock)
+        }
+
+        Shortcut.LiftSession -> {
+            selectTab(LiftTab)
+            push(Lifting)
+        }
+    }
+}
 
 /** Starts a workout now, by [clock], unless one is on top already: a double tap on Start must not stack two. */
 private fun NavBackStack<NavKey>.startWorkout(clock: WallClock) {

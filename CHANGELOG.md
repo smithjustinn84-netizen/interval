@@ -11,6 +11,9 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   clock in the status bar, and as a bar on the lock screen and in the shade. A workout of up to ten intervals
   shows each in its phase's colour with a mark where each round begins; a longer one, one bar in the phase's
   colour. Pause, Resume and End still work from the notification.
+- App shortcuts (Android): a long-press on the icon offers "Start a workout", the Timer's workout, and "Start a
+  Lift session", which starts or resumes one. Each opens over its tab, so Back lands there, and a workout
+  already running is kept: either shortcut returns to it.
 
 ## [0.2.0] — Unreleased
 

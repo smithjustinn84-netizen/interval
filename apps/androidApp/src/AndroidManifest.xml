@@ -52,7 +52,18 @@
 
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts"/>
         </activity>
+
+        <!-- The launcher shortcuts' target: invisible, in a task of its own, it hands the shortcut to MainActivity
+             without the task clear a static shortcut always asks for, which would end a running workout. -->
+        <activity
+                android:excludeFromRecents="true"
+                android:exported="false"
+                android:name=".ShortcutActivity"
+                android:noHistory="true"
+                android:taskAffinity=""
+                android:theme="@android:style/Theme.NoDisplay"/>
 
         <!-- The privacy policy, which Health Connect opens on its own: from its permission sheet on Android 13
              and before, and from the app's entry in its settings on 14 and up (the alias, which only the

@@ -3,6 +3,7 @@
 package dev.justinsmith.interval
 
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -16,6 +17,7 @@ import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.testKoin
+import dev.justinsmith.interval.nav.Shortcut
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.ui.UI_TEST_TIMEOUT
 import dev.justinsmith.interval.ui.Window
@@ -41,6 +43,9 @@ class AppFixture(
     /** The system back input, for a test that drives a gesture step by step. */
     val backInput: DirectNavigationEventInput,
 ) {
+    /** The launcher shortcut the app is handed, as Android's activity hands it on; null once taken. */
+    val shortcut = mutableStateOf<Shortcut?>(null)
+
     val repository: IntervalRepository
         get() = koin.koin.get()
 
@@ -78,10 +83,13 @@ fun appTest(
     val input = DirectNavigationEventInput()
     owner.navigationEventDispatcher.addInput(input)
     try {
+        val fixture = AppFixture(koin, storage, lift, clock, elapsed, input)
         setContent {
-            CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides owner) { AppContent(koin) }
+            CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides owner) {
+                AppContent(koin, shortcut = fixture.shortcut.value, onShortcutOpen = { fixture.shortcut.value = null })
+            }
         }
-        block(AppFixture(koin, storage, lift, clock, elapsed, input))
+        block(fixture)
     } finally {
         koin.close()
     }

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A kettlebell in the work colour, inside the adaptive icon's safe zone: a handle as wide as the round body,
+     its horns running down into the body's sides, and the body's foot flat. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+        android:width="108dp" android:height="108dp"
+        android:viewportWidth="108" android:viewportHeight="108">
+    <path android:strokeColor="#FFF2A81D" android:strokeWidth="6" android:strokeLineCap="round"
+          android:pathData="M37,60 V42 a9,9 0 0,1 9,-9 H62 a9,9 0 0,1 9,9 V60"/>
+    <path android:fillColor="#FFF2A81D" android:pathData="M42.5,76 a17,17 0 1,1 23,0 Z"/>
+</vector>

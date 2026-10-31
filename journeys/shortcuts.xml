@@ -1,0 +1,21 @@
+<journey name="App shortcuts">
+  <description>
+    The launcher's shortcuts: Start a workout starts the Timer's workout, Start a Lift session starts one, each
+    over its tab, and a workout already running is kept. Run on a fresh install (adb shell pm clear
+    dev.justinsmith.interval), from the home screen with the app's icon on it.
+  </description>
+  <actions>
+    <action>Long-press the app's icon on the home screen</action>
+    <action>Verify that the menu offers "Start a workout" and "Start a Lift session"</action>
+    <action>Tap "Start a workout"</action>
+    <action>Verify that the workout screen shows "Get ready" and "Round 1 of 8"</action>
+    <action>Press Home, long-press the app's icon and tap "Start a Lift session"</action>
+    <action>Verify that the same workout is shown, still counting, and that adb shell dumpsys activity activities lists one MainActivity</action>
+    <action>Press the system back button and tap "End workout" in the dialog</action>
+    <action>Verify that the Timer tab is shown with a "Start workout" button</action>
+    <action>Press Home, long-press the app's icon and tap "Start a Lift session"</action>
+    <action>Verify that the session shows "Log set"</action>
+    <action>Press the system back button and tap "Leave" in the dialog</action>
+    <action>Verify that the Lift tab is shown with "Start session"</action>
+  </actions>
+</journey>

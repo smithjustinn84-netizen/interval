@@ -95,8 +95,9 @@ The next sprint's tickets, which take most of these up, are in [sprint-0.3.md](s
 - **iOS: a plan reminder due while the app is open is not shown.** A `UNUserNotificationCenterDelegate` in
   `apps/iosApp/src/iosApp.swift` whose `willPresent` presents only the `plan-reminder-` identifiers would show it.
   The workout's and the rest's notifications must stay silent in the foreground: the app beeps itself.
-- **Android app shortcuts** (Start last workout, Lift session): a static `shortcuts.xml` plus a launch-intent
-  hand-off in `apps/app/src/App.kt`.
+- **iOS: the launcher shortcuts.** Android's two (0.3) open the app through `App(shortcut = …)`; iOS would need
+  `UIApplicationShortcutItem`s in `Info.plist` and a scene delegate's `performActionFor` handing the item's type
+  (a `Shortcut.id`) to `ViewController()` the same way.
 - **Other workspaces' stacks.** Commits made in another jj workspace above the old `main` rebase onto the
   new one with `jj rebase -d main`.
 

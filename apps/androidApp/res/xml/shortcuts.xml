@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The launcher's shortcuts (a long-press on the icon, or pinned). Each starts ShortcutActivity, which hands its
+     extra, a Shortcut's id (apps/app/src/nav/Shortcut.kt), to MainActivity without clearing the app's task. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+            android:enabled="true"
+            android:icon="@drawable/ic_shortcut_workout"
+            android:shortcutId="start-workout"
+            android:shortcutLongLabel="@string/shortcut_start_workout_long"
+            android:shortcutShortLabel="@string/shortcut_start_workout">
+        <intent
+                android:action="android.intent.action.VIEW"
+                android:targetClass="dev.justinsmith.interval.ShortcutActivity"
+                android:targetPackage="dev.justinsmith.interval">
+            <extra android:name="dev.justinsmith.interval.SHORTCUT" android:value="start-workout"/>
+        </intent>
+    </shortcut>
+    <shortcut
+            android:enabled="true"
+            android:icon="@drawable/ic_shortcut_kettlebell"
+            android:shortcutId="lift-session"
+            android:shortcutLongLabel="@string/shortcut_lift_session_long"
+            android:shortcutShortLabel="@string/shortcut_lift_session">
+        <intent
+                android:action="android.intent.action.VIEW"
+                android:targetClass="dev.justinsmith.interval.ShortcutActivity"
+                android:targetPackage="dev.justinsmith.interval">
+            <extra android:name="dev.justinsmith.interval.SHORTCUT" android:value="lift-session"/>
+        </intent>
+    </shortcut>
+</shortcuts>

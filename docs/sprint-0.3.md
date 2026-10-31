@@ -75,6 +75,11 @@ Sizes: XS ≤ half a day, S ≈ 1 day, M ≈ 2 days, L ≈ 3 days. The cut line 
   `onNewIntent` too, so a warm app also jumps. "Start last workout" pushes `Workout` with the Timer's
   current config (what the Timer tab holds, `IntervalRepository`'s saved settings); "Lift session" pushes
   Lift's session route, which starts or resumes as the Lift tab's button does.
+- As built: `App(shortcut: Shortcut?, onShortcutTaken)` with a `Shortcut` enum (`apps/app/src/nav/`) rather
+  than a `NavKey`, since each names its tab and the workout's key needs the clock. A static shortcut always
+  starts its activity with `CLEAR_TASK`, which would end a running workout, so the shortcuts target an
+  invisible `ShortcutActivity` (its own task affinity) that hands the extra to `MainActivity` with
+  `SINGLE_TOP | CLEAR_TOP` (`onNewIntent`). A workout already on the back stack wins over either shortcut.
 - iOS gets the matching `UIApplicationShortcutItem`s for free only if someone wires the scene delegate;
   not this sprint, note it in `docs/release.md`'s follow-ups.
 - Done when: `appTest` asserts each start key lands on its screen over the right tab and system Back

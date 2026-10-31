@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Interval</string>
+    <!-- The launcher shortcuts (res/xml/shortcuts.xml): short labels fit about ten characters. -->
+    <string name="shortcut_start_workout">Workout</string>
+    <string name="shortcut_start_workout_long">Start a workout</string>
+    <string name="shortcut_lift_session">Lift</string>
+    <string name="shortcut_lift_session_long">Start a Lift session</string>
 </resources>

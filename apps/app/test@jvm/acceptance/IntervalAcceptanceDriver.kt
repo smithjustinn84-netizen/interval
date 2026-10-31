@@ -22,6 +22,7 @@ import dev.justinsmith.interval.appTest
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.RecordingHealthStore
 import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.nav.Shortcut
 import dev.justinsmith.interval.platform.HealthSegment
 import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.HealthStore
@@ -55,6 +56,23 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     }
 
     fun goBack() = tapDescribed("Back")
+
+    /** Opens the app from a launcher shortcut, as a long-press on its icon does, cold or already running. */
+    fun launchFrom(shortcut: Shortcut) {
+        app.shortcut.value = shortcut
+        ui.waitForIdle()
+    }
+
+    fun seeLiftTab() {
+        see("Start session")
+        ui.tab("Lift").assertIsSelected()
+    }
+
+    /** Leaves a Lift session from the dialog Back asks. */
+    fun leaveSession() {
+        see("Leave the session?")
+        tap(hasText("Leave") and hasAnyAncestor(isDialog()))
+    }
 
     fun seeTimer() {
         see("Start workout")
