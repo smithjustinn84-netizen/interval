@@ -26,6 +26,8 @@ dependencies:
   - $libs.androidx.navigation3.runtime
   - $libs.androidx.navigation3.ui: exported
   - $libs.kermit
+  # `rememberCorePlatformModule`: the clock, formatter, app info and sharer both sides' containers take.
+  - $libs.koin.core
 
 test-dependencies:
   - $libs.kotlinx.coroutines.test
@@ -34,6 +36,8 @@ dependencies@android:
   - $compose.uiTooling
   # `LifecycleResumeEffect`, for a setting read again as the app comes back.
   - $libs.androidx.lifecycle.runtime.compose
+  # FileProvider, for the share sheet to read an exported file.
+  - $libs.androidx.core.ktx
 
 settings:
   compose:

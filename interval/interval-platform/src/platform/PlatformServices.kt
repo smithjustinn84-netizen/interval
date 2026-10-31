@@ -120,9 +120,9 @@ interface PlanReminders {
 expect fun AskToShowNotifications()
 
 /**
- * Koin definitions for platform services: [PlatformStorage], a [CuePlayer], a [TimestampFormatter],
- * [AppInfo], a [BackgroundWorkout], [PlanReminders] and a [Sharer]. Built in composition because Android needs a
- * `Context`.
+ * Koin definitions for the interval side's platform services: [PlatformStorage], a [CuePlayer], a
+ * [BackgroundWorkout] and [PlanReminders]. What both sides take (the clock, the formatter, [AppInfo] and the
+ * sharer) is core's `rememberCorePlatformModule`. Built in composition because Android needs a `Context`.
  */
 @Composable
 expect fun rememberPlatformModule(): Module

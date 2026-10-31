@@ -7,8 +7,6 @@ import dev.justinsmith.interval.data.AppDatabase
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.data.buildAppDatabase
 import dev.justinsmith.interval.platform.PlatformStorage
-import dev.justinsmith.interval.platform.WallClock
-import dev.justinsmith.interval.platform.epochMillisNow
 import dev.justinsmith.interval.platform.realElapsedTime
 import dev.justinsmith.interval.storage.storageScope
 import kotlinx.coroutines.CoroutineScope
@@ -65,9 +63,11 @@ private fun preferencesAt(path: String): DataStore<Preferences> = preferenceStor
     )
 }
 
-/** The clock, and the repository over [storageModule]. */
+/**
+ * The workout's clock, and the repository over [storageModule]. The wall clock it takes is core's
+ * (`rememberCorePlatformModule`).
+ */
 val dataModule: Module = module {
-    single { WallClock(::epochMillisNow) }
     // The workout ticker's clock: time that counts through the device's sleep.
     single<TimeSource.WithComparableMarks> { realElapsedTime }
     single {

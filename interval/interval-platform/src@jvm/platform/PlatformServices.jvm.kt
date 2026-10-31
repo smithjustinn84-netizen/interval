@@ -15,11 +15,8 @@ actual fun rememberPlatformModule(): Module = remember {
     module {
         single<PlatformStorage> { DesktopStorage() }
         single<CuePlayer> { DesktopCuePlayer() }
-        single<TimestampFormatter> { systemTimestampFormatter() }
-        single<AppInfo> { DesktopAppInfo() }
         single<BackgroundWorkout> { NoBackgroundWorkout }
         single<PlanReminders> { NoPlanReminders }
-        single<Sharer> { DesktopSharer() }
     }
 }
 
@@ -39,11 +36,6 @@ private object NoBackgroundWorkout : BackgroundWorkout {
 
 @Composable
 actual fun AskToShowNotifications() = Unit
-
-/** jpackage stamps the version into a packaged app; a run from source carries none. */
-private class DesktopAppInfo : AppInfo {
-    override val version: String? = System.getProperty("jpackage.app-version")
-}
 
 /** The OS's per-user app-data directory, created on first use. */
 private class DesktopStorage : PlatformStorage {

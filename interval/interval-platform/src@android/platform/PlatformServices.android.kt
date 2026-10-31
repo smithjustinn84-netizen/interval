@@ -1,7 +1,6 @@
 package dev.justinsmith.interval.platform
 
 import android.content.Context
-import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Build
@@ -33,11 +32,8 @@ actual fun rememberPlatformModule(): Module {
             single<CuePlayer>(createdAtStart = true) { AndroidCuePlayer(context) }.withOptions {
                 onClose { it?.release() }
             }
-            single<TimestampFormatter> { systemTimestampFormatter() }
-            single<AppInfo> { AndroidAppInfo(context) }
             single<BackgroundWorkout> { AndroidBackgroundWorkout(context) }
             single<PlanReminders> { AndroidPlanReminders(context) }
-            single<Sharer> { AndroidSharer(context) }
         }
     }
 }
@@ -48,20 +44,6 @@ private class AndroidStorage(private val context: Context) : PlatformStorage {
 
     override val preferencesPath: String =
         context.filesDir.resolve("datastore/$PREFERENCES_NAME").absolutePath
-}
-
-/** The `versionName` of the installed package: `versionName` in `apps/androidApp/module.yaml`. */
-private class AndroidAppInfo(context: Context) : AppInfo {
-    override val version: String? = runCatching {
-        val manager = context.packageManager
-        val name = context.packageName
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            manager.getPackageInfo(name, PackageManager.PackageInfoFlags.of(0))
-        } else {
-            @Suppress("DEPRECATION")
-            manager.getPackageInfo(name, 0)
-        }.versionName
-    }.getOrNull()
 }
 
 private class AndroidCuePlayer(context: Context) : CuePlayer {

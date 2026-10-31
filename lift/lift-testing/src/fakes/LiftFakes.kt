@@ -2,8 +2,8 @@ package dev.justinsmith.lift.fakes
 
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.RecordingSharer
+import dev.justinsmith.interval.fakes.fakeCorePlatformModule
 import dev.justinsmith.interval.platform.Sharer
-import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.lift.data.BandDao
 import dev.justinsmith.lift.data.BandEntity
@@ -300,8 +300,8 @@ fun fakeLiftStorageModule(storage: FakeLiftStorage = FakeLiftStorage()): Module 
 }
 
 /**
- * Lift's part of the container over fakes, with what the app would supply: a clock reading [now], the
- * [FixedTimestampFormatter] and [intervals].
+ * Lift's part of the container over fakes, with what core and the app would supply: a clock reading [now], the
+ * [FixedTimestampFormatter], [sharer] and [intervals].
  */
 fun liftTestKoin(
     storage: FakeLiftStorage = FakeLiftStorage(),
@@ -311,10 +311,11 @@ fun liftTestKoin(
     sharer: Sharer = RecordingSharer(),
 ): KoinApplication = koinApplication {
     val app = module {
-        single { WallClock(now) }
-        single<TimestampFormatter> { FixedTimestampFormatter }
         single<IntervalActivity> { intervals }
-        single { sharer }
     }
-    modules(liftModules(platformModule, fakeLiftStorageModule(storage)) + app)
+    modules(
+        listOf(fakeCorePlatformModule(WallClock(now), sharer = sharer)) +
+            liftModules(platformModule, fakeLiftStorageModule(storage)) +
+            app,
+    )
 }

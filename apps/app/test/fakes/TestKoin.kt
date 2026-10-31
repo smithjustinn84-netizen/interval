@@ -28,12 +28,12 @@ fun testKoin(
 ): KoinApplication = koinApplication {
     modules(
         appModules(
+            fakeCorePlatformModule(clock),
             platformModule,
             fakeStorageModule(storage),
             liftPlatform = fakeLiftPlatformModule(beeper),
             liftStorage = fakeLiftStorageModule(lift),
         ) + module {
-            single { clock }
             single<TimeSource.WithComparableMarks> { timeSource }
         },
     )

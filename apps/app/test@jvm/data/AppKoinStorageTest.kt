@@ -3,6 +3,7 @@ package dev.justinsmith.interval.data
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import dev.justinsmith.interval.di.appModules
+import dev.justinsmith.interval.fakes.fakeCorePlatformModule
 import dev.justinsmith.interval.fakes.fakePlatformModule
 import dev.justinsmith.interval.fakes.saveCurrentAsPreset
 import dev.justinsmith.interval.platform.DATABASE_NAME
@@ -56,6 +57,7 @@ class AppKoinStorageTest {
                 // Lift's storage is faked: this is about the interval side's files.
                 modules(
                     appModules(
+                        fakeCorePlatformModule(),
                         platform,
                         liftPlatform = fakeLiftPlatformModule(),
                         liftStorage = fakeLiftStorageModule(),

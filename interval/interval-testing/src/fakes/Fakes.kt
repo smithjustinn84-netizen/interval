@@ -11,16 +11,13 @@ import dev.justinsmith.interval.data.PlannedEntity
 import dev.justinsmith.interval.data.PresetDao
 import dev.justinsmith.interval.data.PresetEntity
 import dev.justinsmith.interval.di.StorageScope
-import dev.justinsmith.interval.platform.AppInfo
 import dev.justinsmith.interval.platform.BackgroundWorkout
 import dev.justinsmith.interval.platform.Beep
 import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.PlanReminder
 import dev.justinsmith.interval.platform.PlanReminders
-import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.platform.Speech
-import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.WorkoutControls
 import dev.justinsmith.interval.platform.WorkoutStatus
@@ -251,19 +248,15 @@ val hangboardPreset: Preset = builtInPresets.single { it.name == "Hangboard" }
 
 /**
  * Stands in for `rememberPlatformModule()`. Tests must never load the real one: on the JVM it writes
- * to the user's app-data directory and plays sound.
+ * to the user's app-data directory and plays sound. What both sides take is core-testing's
+ * [fakeCorePlatformModule].
  */
 fun fakePlatformModule(
     player: CuePlayer = RecordingCuePlayer(),
-    formatter: TimestampFormatter = FixedTimestampFormatter,
     background: BackgroundWorkout = RecordingBackgroundWorkout(),
     reminders: PlanReminders = RecordingPlanReminders(),
-    sharer: Sharer = RecordingSharer(),
 ): Module = module {
     single { player }
-    single { formatter }
-    single<AppInfo> { FakeAppInfo }
     single { background }
     single { reminders }
-    single { sharer }
 }

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.data.RepositoryIntervalActivity
 import dev.justinsmith.interval.export.AppDataExporter
+import dev.justinsmith.interval.platform.rememberCorePlatformModule
 import dev.justinsmith.interval.platform.rememberPlatformModule
 import dev.justinsmith.interval.settings.DataExporter
 import dev.justinsmith.lift.data.IntervalActivity
@@ -22,18 +23,22 @@ import org.koin.dsl.module
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * [platformModule] supplies storage locations, the cue player, the timestamp formatter and the plan's
- * reminders; [storage] the database and DataStore built from them (tests swap in fakes); [historyModule]
- * keeps those reminders in step with the plan. [liftPlatform] and [liftStorage] do the
- * same for Lift, whose own database sits beside this one. The app adds the export, which reads both.
+ * [corePlatform] supplies what both sides take: the wall clock, the timestamp formatter, the app's version and
+ * the sharer. [platformModule] supplies storage locations, the cue player, the background workout and the
+ * plan's reminders; [storage] the database and DataStore built from them (tests swap in fakes);
+ * [historyModule] keeps those reminders in step with the plan. [liftPlatform] and [liftStorage] do the same
+ * for Lift, whose own database sits beside this one. The app adds the export, which reads both.
  */
 fun appModules(
+    corePlatform: Module,
     platformModule: Module,
     storage: Module = storageModule,
     liftPlatform: Module,
     liftStorage: Module = liftStorageModule,
 ): List<Module> =
-    listOf(platformModule, storage, dataModule, historyModule) + liftModules(liftPlatform, liftStorage) + appModule
+    listOf(corePlatform, platformModule, storage, dataModule, historyModule) +
+        liftModules(liftPlatform, liftStorage) +
+        appModule
 
 /**
  * What only the app can build, seeing both sides: the export, over both sides' storage, and what Lift reads of
@@ -75,9 +80,10 @@ private val DRAIN_TIMEOUT = 2.seconds
  */
 @Composable
 fun rememberAppKoin(): KoinApplication {
+    val corePlatform = rememberCorePlatformModule()
     val platformModule = rememberPlatformModule()
     val liftPlatform = rememberLiftPlatformModule()
     return viewModel {
-        KoinHolder(koinApplication { modules(appModules(platformModule, liftPlatform = liftPlatform)) })
+        KoinHolder(koinApplication { modules(appModules(corePlatform, platformModule, liftPlatform = liftPlatform)) })
     }.app
 }

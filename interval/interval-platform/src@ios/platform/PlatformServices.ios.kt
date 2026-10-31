@@ -37,7 +37,6 @@ import platform.AVFAudio.AVSpeechUtterance
 import platform.AVFAudio.setActive
 import platform.AudioToolbox.AudioServicesPlaySystemSound
 import platform.Foundation.NSApplicationSupportDirectory
-import platform.Foundation.NSBundle
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
@@ -64,13 +63,10 @@ actual fun rememberPlatformModule(): Module = remember {
         single<CuePlayer> { IosCuePlayer() }.withOptions {
             onClose { it?.release() }
         }
-        single<TimestampFormatter> { systemTimestampFormatter() }
-        single<AppInfo> { IosAppInfo() }
         single<BackgroundWorkout> { IosBackgroundWorkout() }.withOptions {
             onClose { (it as? IosBackgroundWorkout)?.release() }
         }
         single<PlanReminders> { IosPlanReminders() }
-        single<Sharer> { IosSharer() }
     }
 }
 
@@ -213,12 +209,6 @@ actual fun AskToShowNotifications() {
             UNAuthorizationOptionAlert or UNAuthorizationOptionSound,
         ) { _, _ -> }
     }
-}
-
-/** The bundle's short version string: `MARKETING_VERSION` in the Xcode project. */
-private class IosAppInfo : AppInfo {
-    override val version: String? =
-        NSBundle.mainBundle.objectForInfoDictionaryKey("CFBundleShortVersionString") as? String
 }
 
 /** Application Support rather than Documents, which the user can see when file sharing is on. */

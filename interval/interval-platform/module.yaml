@@ -22,7 +22,7 @@ dependencies:
 dependencies@android:
   # rememberLauncherForActivityResult, to ask for the notification permission when a workout starts.
   - $libs.androidx.activity.compose
-  # FileProvider, for the share sheet to read an exported file.
+  # NotificationCompat and ContextCompat, for the workout's and the plan's notifications.
   - $libs.androidx.core.ktx
   # The plan reminders' alarm record, a DataStore of its own the boot receiver reads.
   - $libs.androidx.datastore.preferences.core

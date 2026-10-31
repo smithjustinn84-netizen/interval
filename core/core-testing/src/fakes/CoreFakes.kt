@@ -4,9 +4,12 @@ import dev.justinsmith.interval.platform.AppInfo
 import dev.justinsmith.interval.platform.ShareableFile
 import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.platform.TimestampFormatter
+import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.MINUTES_PER_HOUR
 import dev.justinsmith.interval.timer.dateOfEpochDay
 import dev.justinsmith.interval.timer.epochDayOf
+import org.koin.core.module.Module
+import org.koin.dsl.module
 
 const val DAY_MILLIS = 24L * 60 * 60 * 1000
 private const val MINUTE_MILLIS = 60L * 1000
@@ -56,4 +59,19 @@ class RecordingSharer : Sharer {
     override fun shareText(text: String) {
         texts += text
     }
+}
+
+/**
+ * Stands in for core's `rememberCorePlatformModule()`: a [clock] standing at 0 unless a test moves it, the
+ * [FixedTimestampFormatter], [FakeAppInfo] and a [sharer] that records.
+ */
+fun fakeCorePlatformModule(
+    clock: WallClock = WallClock { 0L },
+    formatter: TimestampFormatter = FixedTimestampFormatter,
+    sharer: Sharer = RecordingSharer(),
+): Module = module {
+    single { clock }
+    single { formatter }
+    single<AppInfo> { FakeAppInfo }
+    single { sharer }
 }
