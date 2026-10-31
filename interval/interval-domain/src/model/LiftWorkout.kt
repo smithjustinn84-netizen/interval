@@ -1,11 +1,11 @@
 package dev.justinsmith.interval.model
 
 import dev.justinsmith.interval.timer.Activity
-import dev.justinsmith.lift.domain.LiftSession
 
 /**
  * A finished kettlebell session from Lift, as History, the week, the streak and the goal count it. [title]
- * is the session's own, in the user's words or the lifts it did.
+ * is the session's own, in the user's words or the lifts it did. interval-history makes them from Lift's
+ * sessions (`asLiftWorkouts`), so this domain needs nothing of Lift's.
  */
 data class LiftWorkout(
     val uid: String,
@@ -18,9 +18,4 @@ data class LiftWorkout(
      * it counts as work.
      */
     fun calories(body: BodySettings): Int? = body.calories(elapsedSeconds, 0, Activity.Kettlebell)
-}
-
-/** The finished sessions among these, newest first as they came. */
-fun List<LiftSession>.asLiftWorkouts(): List<LiftWorkout> = mapNotNull { session ->
-    session.finishedAtEpochMillis?.let { LiftWorkout(session.uid, it, session.elapsedSeconds(it), session.title) }
 }

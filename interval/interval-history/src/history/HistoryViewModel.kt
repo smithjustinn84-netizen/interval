@@ -9,7 +9,6 @@ import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.LoggedWorkout
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlannedWorkout
-import dev.justinsmith.interval.model.asLiftWorkouts
 import dev.justinsmith.interval.model.loggedWorkouts
 import dev.justinsmith.interval.plan.planChoices
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS

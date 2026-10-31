@@ -106,7 +106,8 @@ graph TD
    Features → Shared UI → Data → Domain. Lower layers have no knowledge of higher layers. CI enforces it with
    `tools/check_module_rules.py`, which reads every `module.yaml` (templates expanded) against a table of what
    each kind of module may depend on.
-2. **Domain Decoupling**: The kettlebell domain (`lift-*`) has zero dependencies on the interval domain (`interval-*`).
+2. **Domain Decoupling**: The kettlebell domain (`lift-*`) has zero dependencies on the interval domain (`interval-*`),
+   and the two domain modules know nothing of each other: History turns a Lift session into interval's `LiftWorkout`.
    Where cross-domain interaction is needed (e.g. History counting Lift sessions or Today showing workout recaps),
    it is mediated via minimal interfaces in `lift-data`: `IntervalActivity` (what Lift reads of the interval side,
    implemented in `app`) and `LiftActivity` (what History, Plan and the workout read of Lift, implemented by

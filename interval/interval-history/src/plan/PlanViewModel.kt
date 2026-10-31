@@ -5,13 +5,13 @@ import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.history.TrainingLog
+import dev.justinsmith.interval.history.asLiftWorkouts
 import dev.justinsmith.interval.history.heading
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.LiftWorkout
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlannedWorkout
-import dev.justinsmith.interval.model.asLiftWorkouts
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock

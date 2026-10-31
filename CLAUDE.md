@@ -90,7 +90,8 @@ core/
 interval/            the interval timer
   interval-domain    packages `.timer` and `.model`: `IntervalConfig`, `Preset`, `WorkoutEngine`, calories, the
                      describe parser, `AppSettings`, `HistoryEntry`, `PlannedWorkout`, `LiftWorkout`,
-                     `WorkoutProgress`; over `core-time` and `lift-domain` (for `asLiftWorkouts`), not `core`
+                     `WorkoutProgress`; over `core-time` alone, neither `core` nor anything of Lift's (History
+                     makes a `LiftWorkout` from a Lift session, `asLiftWorkouts` in interval-history)
   interval-data      `IntervalRepository`, `AppDatabase` (Room, KSP, `schemas/`), the settings DataStore,
                      `PlatformStorage`, `storageModule`/`dataModule` (di/)
   interval-platform  `CuePlayer`, `WorkoutControls`, `BackgroundWorkout`, `PlanReminders` (+ `reminderWords`),
