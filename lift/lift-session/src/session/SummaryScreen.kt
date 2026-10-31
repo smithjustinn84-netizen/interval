@@ -1,7 +1,5 @@
 package dev.justinsmith.lift.session
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -36,6 +34,7 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.ui.AccentButton
+import dev.justinsmith.interval.ui.Arrival
 import dev.justinsmith.interval.ui.Burst
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
@@ -44,7 +43,6 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.isLandscape
 import dev.justinsmith.interval.ui.rememberEntrance
-import dev.justinsmith.interval.ui.risingEnter
 import dev.justinsmith.lift.domain.SaveScope
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_joined
@@ -174,12 +172,6 @@ private fun burstColors(finished: Finished): List<Color>? = when {
     finished.records.isNotEmpty() -> listOf(IntervalTheme.palette.accent)
 
     else -> null
-}
-
-/** One part of the summary, rising in [step] stagger steps after the first: the finish's small ceremony. */
-@Composable
-private fun Arrival(entrance: MutableTransitionState<Boolean>, step: Int, content: @Composable () -> Unit) {
-    AnimatedVisibility(entrance, enter = risingEnter(Motion.STAGGER_MILLIS * step)) { content() }
 }
 
 /** The summary's parts arrive in this order, each [Motion.STAGGER_MILLIS] steps after the heading. */

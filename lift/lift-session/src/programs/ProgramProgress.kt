@@ -1,8 +1,6 @@
 package dev.justinsmith.lift.programs
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -35,6 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.ui.AccentButton
+import dev.justinsmith.interval.ui.Arrival
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.GroupLabel
@@ -51,7 +50,6 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StandardEasing
 import dev.justinsmith.interval.ui.TabGrid
-import dev.justinsmith.interval.ui.enterRising
 import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.interval.ui.rememberEntrance
 import dev.justinsmith.lift.domain.DayStanding
@@ -168,12 +166,6 @@ fun ProgramProgressScreen(
         }
         item(key = "done") { Arrival(entrance, DONE_STEP) { DaysDone(state, actions.onOpenSession, card) } }
     }
-}
-
-/** One part of the page, rising in [step] stagger steps after the first. */
-@Composable
-private fun Arrival(entrance: MutableTransitionState<Boolean>, step: Int, content: @Composable () -> Unit) {
-    AnimatedVisibility(entrance, enter = enterRising(Motion.STAGGER_MILLIS * step)) { content() }
 }
 
 private const val STANDING_STEP = 0

@@ -11,9 +11,6 @@ apply:
 dependencies:
   - //lift/lift-domain: exported
 
-test-dependencies:
-  - //lift/lift-testing
-
 settings:
   compose:
     resources:

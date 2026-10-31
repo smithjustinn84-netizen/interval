@@ -7,7 +7,6 @@ import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.animateFloatAsState
@@ -85,23 +84,6 @@ fun Modifier.pressScale(interaction: InteractionSource): Modifier {
         scaleY = scale
     }
 }
-
-/**
- * Hidden on its first frame, then shown: `AnimatedVisibility(visibleState = rememberEntrance())`
- * plays its enter transition once, as the content first appears, and never exits.
- */
-@Composable
-fun rememberEntrance(): MutableTransitionState<Boolean> =
-    remember { MutableTransitionState(false).apply { targetState = true } }
-
-/**
- * For a row in a list that grows while it is on screen: a row the screen opened with is simply there
- * (not [isNew]), while one logged or saved since rises in once, as [rememberEntrance] does. Callers
- * remember the ids on show at open and pass `id !in atOpen`.
- */
-@Composable
-fun rememberArrival(isNew: Boolean): MutableTransitionState<Boolean> =
-    if (isNew) rememberEntrance() else remember { MutableTransitionState(true) }
 
 /** Something arriving: it fades in as it rises from a little below its place, after [delayMillis]. */
 fun enterRising(delayMillis: Int = 0, reducedMotion: Boolean = false): EnterTransition {

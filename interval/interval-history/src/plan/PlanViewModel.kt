@@ -193,10 +193,4 @@ class PlanViewModel(
             picks = REMINDER_PICKS.map { ReminderPick(it, timestamps.timeOfDay(it)) },
         )
     }
-
-    private fun heading(day: Long, today: Long): HistoryDay = when (day) {
-        today -> HistoryDay.Today
-        today + 1 -> HistoryDay.Tomorrow
-        else -> HistoryDay.On(timestamps.dateOfDay(day))
-    }
 }
