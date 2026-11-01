@@ -15,7 +15,7 @@ tracked in [CHANGELOG.md](../CHANGELOG.md).
 | 3 | **Full build & opt-in check** | `./kotlin build` (compiles all targets including iOS framework) |
 | 4 | **R8 Minification Smoke Test** | Build release APK, install on emulator, run key journeys |
 | 5 | **On-device manual checks** | Share sheet, rest alerts, Android backup/restore, TalkBack |
-| 6 | **Tag & CI release bundle** | `git tag v<version> && git push origin v<version>` |
+| 6 | **Tag & CI release bundle** | The [signing secrets](#adding-the-signing-secrets) are set, then `git tag v<version> && git push origin v<version>` |
 
 ---
 
@@ -47,14 +47,59 @@ Both Android and iOS versions must be bumped in unison. CI will fail via `tools/
 
 ---
 
+## Adding the signing secrets
+
+The `release` job (`.github/workflows/ci.yml`) signs the bundle on a `v*` tag. It has no keystore of its own: it
+rebuilds `apps/androidApp/release.keystore` and `keystore.properties` from four repository secrets, and fails at
+"Install the signing key" while any is missing. Set them once; they stay until changed.
+
+| Secret | Value | From |
+|---|---|---|
+| `ANDROID_KEYSTORE_BASE64` | the keystore file, base64 | `~/.keystores/interval-release.keystore` |
+| `ANDROID_STORE_PASSWORD` | the keystore's password | `storePassword` in `~/.keystores/interval.properties` |
+| `ANDROID_KEY_ALIAS` | the key's name, `interval` | `keyAlias` in the same file |
+| `ANDROID_KEY_PASSWORD` | the key's password | `keyPassword` in the same file |
+
+Both files live only on the development Mac, outside the repository. Never commit them, paste them into an issue
+or chat, or print them in a CI log: the keystore cannot be replaced once a build signed with it is on Play, and
+anyone holding it and its passwords can publish as the app.
+
+**From Terminal (recommended).** Each command reads its value from the file and hands it to `gh` on standard
+input, so nothing is printed or kept in the shell's history. `gh` needs to be signed in to an account that
+administers the repository (`gh auth status`).
+
+```sh
+REPO=smithjustinn84-netizen/interval
+PROPS=~/.keystores/interval.properties
+base64 < ~/.keystores/interval-release.keystore | gh secret set ANDROID_KEYSTORE_BASE64 --repo $REPO
+printf %s "$(sed -n 's/^storePassword=//p' $PROPS)" | gh secret set ANDROID_STORE_PASSWORD --repo $REPO
+printf %s "$(sed -n 's/^keyAlias=//p' $PROPS)" | gh secret set ANDROID_KEY_ALIAS --repo $REPO
+printf %s "$(sed -n 's/^keyPassword=//p' $PROPS)" | gh secret set ANDROID_KEY_PASSWORD --repo $REPO
+```
+
+`printf %s` drops the line's newline, which would otherwise become part of the password.
+
+**From the website instead.** The repository's Settings > Secrets and variables > Actions > New repository
+secret, once per row of the table, the name exactly as written. For `ANDROID_KEYSTORE_BASE64`, copy the
+encoded keystore with `base64 < ~/.keystores/interval-release.keystore | pbcopy` and paste it; open
+`interval.properties` in an editor for the other three, and copy each value without the `name=` before it or a
+trailing space.
+
+**Check them.**
+1. `gh secret list --repo smithjustinn84-netizen/interval` names all four, with today's date. GitHub never
+   shows a secret's value again, so this is as far as the list goes.
+2. The values are right only if they open the key: `keytool -list -keystore
+   ~/.keystores/interval-release.keystore -alias interval` asks for the store password and prints the key's
+   SHA-256 fingerprint. An error there means the file or the password differs from what was set.
+3. The first tag is the real test. If its run fails at "Install the signing key" or "Package the signed release
+   bundle", set the wrong secret again and rerun the failed job (`gh run rerun <run id> --failed`): there is no
+   need to delete and push the tag again.
+
+To change one later (a new password, say), run its command again: `gh secret set` replaces the value.
+
 ## Before the first upload (0.2.0)
 
-1. **Repository secrets for the `release` job** (`.github/workflows/ci.yml`). The job runs on a `v*` tag and
-   writes the keystore and `apps/androidApp/keystore.properties` from four secrets:
-   `ANDROID_KEYSTORE_BASE64` (`base64 < ~/.keystores/interval-release.keystore`), `ANDROID_STORE_PASSWORD`,
-   `ANDROID_KEY_ALIAS` (`interval`) and `ANDROID_KEY_PASSWORD`. The values are in
-   `~/.keystores/interval.properties` on the development Mac. Never commit either file: the keystore cannot be
-   regenerated once a build signed with it is on Play.
+1. **Repository secrets for the `release` job.** The four in [Adding the signing secrets](#adding-the-signing-secrets).
 2. **The R8 smoke test.** A release build is minified, which is where Room, Koin and kotlinx.serialization
    break silently. Build it, replace the debug build on the emulator (a different signature cannot update it),
    and run the two journeys:
