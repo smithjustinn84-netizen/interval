@@ -6,6 +6,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -45,6 +46,17 @@ class ProgramsPageTest {
         onNodeWithText("Follow this program").performScrollTo().performClick()
         waitForText("Day 1 of 8 · week 1")
         assertEquals(ProgramId.GobletSquatRow.name, app.storage.following.row.value?.programId)
+    }
+
+    @Test
+    fun `a program's sheet shows what a week of it works`() = liftAppTest {
+        onNodeWithText("Follow a program").performClick()
+        scrollToText("Goblet squat and row")
+        onNodeWithText("Goblet squat and row").performClick()
+        waitForText("Sets in a week")
+        // Squats and rows: nothing for the chest or the shoulders.
+        onNodeWithText("Nothing in a week for: Chest, Shoulders").assertExists()
+        onNodeWithContentDescription("Quads and calves: 6 sets worked it most, 0 assisted").assertExists()
     }
 
     @Test

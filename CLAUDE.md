@@ -126,7 +126,7 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
   lift-platform      `Beeper`, `RestAlerts` (+ Android's `RestService`), the rest notification's words, and each
                      platform's `liftPlatformModule` (the database builder too); Lift's `interval-platform`
   lift-ui            Lift's words and widgets (`exerciseName`, `setLine`, `programName`, `LoadPicker`, `Stepper`,
-                     `SessionStats`), the built-ins' cues (`cues.xml`, mapped in `ExerciseCues.kt`); most of
+                     `SessionStats`, `BalanceBars`), the built-ins' cues (`cues.xml`, mapped in `ExerciseCues.kt`); most of
                      Lift's strings
   lift-testing       `FakeLiftStorage` and the fake DAOs, `FakeIntervalActivity`, `RecordingBeeper`,
                      `liftTestKoin`

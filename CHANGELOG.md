@@ -16,6 +16,8 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   change made just before leaving is no longer at risk: what the app keeps now lives as long as its process.
 
 ### Added
+- A program's sheet shows what a week of it works: the Lift tab's balance of sets per muscle group, counted from
+  the days it plans, with the groups it leaves out named under the bars.
 - Live Updates (Android 16 and later): a running workout and a rest between sets show as a chip with their
   clock in the status bar, and as a bar on the lock screen and in the shade. A workout of up to ten intervals
   shows each in its phase's colour with a mark where each round begins; a longer one, one bar in the phase's

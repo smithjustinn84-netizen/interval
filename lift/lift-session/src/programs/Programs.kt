@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -53,9 +54,12 @@ import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.ProgramFamily
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.builtInPrograms
+import dev.justinsmith.lift.domain.weekBalance
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.notice_program_followed
 import dev.justinsmith.lift.session.resources.notice_program_stopped
+import dev.justinsmith.lift.session.resources.program_balance_span
+import dev.justinsmith.lift.session.resources.program_balance_untrained
 import dev.justinsmith.lift.session.resources.program_follow
 import dev.justinsmith.lift.session.resources.program_following
 import dev.justinsmith.lift.session.resources.program_keep
@@ -77,6 +81,7 @@ import dev.justinsmith.lift.session.resources.programs_new
 import dev.justinsmith.lift.session.resources.programs_new_hint
 import dev.justinsmith.lift.session.resources.programs_title
 import dev.justinsmith.lift.session.resources.programs_yours
+import dev.justinsmith.lift.ui.BalanceBars
 import dev.justinsmith.lift.ui.blockLine
 import dev.justinsmith.lift.ui.liftName
 import dev.justinsmith.lift.ui.programName
@@ -265,9 +270,9 @@ private fun familyName(family: ProgramFamily): String = stringResource(
 )
 
 /**
- * A program before it is followed: what it is, each of its days block by block, and Follow this program,
- * over a line naming the program and day it replaces when one is followed. The program followed shows
- * Following instead, and the way to its days done and left.
+ * A program before it is followed: what it is, what a week of it works, each of its days block by block, and
+ * Follow this program, over a line naming the program and day it replaces when one is followed. The program
+ * followed shows Following instead, and the way to its days done and left.
  */
 @Composable
 private fun ProgramSheet(
@@ -294,12 +299,24 @@ private fun ProgramSheet(
                 if (sideways) FollowFooter(current, replacing, onFollow, onOpenProgress)
             },
             second = {
+                // On its side the days come first, beside the name, and the balance under them.
+                if (!sideways) WeekBalance(program)
                 ProgramDays(program)
-                if (!sideways) FollowFooter(current, replacing, onFollow, onOpenProgress)
+                if (sideways) WeekBalance(program) else FollowFooter(current, replacing, onFollow, onOpenProgress)
             },
             spacing = Spacing.space20,
         )
     }
+}
+
+/** The sets a week of [program] plans, by muscle group, naming any group it leaves out. */
+@Composable
+private fun WeekBalance(program: Program) {
+    BalanceBars(
+        remember(program) { program.weekBalance() },
+        span = Res.string.program_balance_span,
+        untrained = Res.string.program_balance_untrained,
+    )
 }
 
 /** Each day of [program], its blocks in a card. */

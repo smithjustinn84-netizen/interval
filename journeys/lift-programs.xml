@@ -1,0 +1,13 @@
+<journey name="Lift: what a program works">
+  <description>
+    A built-in program's sheet before following it: a week of it as a balance of sets per muscle group, and the
+    groups it leaves out named under the bars. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
+  </description>
+  <actions>
+    <action>Tap the "Lift" tab</action>
+    <action>Tap "Follow a program", scroll to "Full body for beginners" and tap it</action>
+    <action>Verify that the sheet shows "Full body for beginners", its summary, and under it "Balance" with "Sets in a week"</action>
+    <action>Verify that the bars read "Chest", "Shoulders", "Back", "Arms", "Core", "Glutes and hamstrings" and "Quads and calves", the chest's empty, with "Worked most" and "Assisted" under them</action>
+    <action>Verify that "Nothing in a week for: Chest" is shown under the bars, and "Day 1" and "Day 2" follow</action>
+  </actions>
+</journey>

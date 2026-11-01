@@ -102,6 +102,7 @@ import dev.justinsmith.lift.today.resources.weekday_initial_5
 import dev.justinsmith.lift.today.resources.weekday_initial_6
 import dev.justinsmith.lift.today.resources.weekday_initial_7
 import dev.justinsmith.lift.today.resources.weekday_rest
+import dev.justinsmith.lift.ui.Legend
 import dev.justinsmith.lift.ui.blockLine
 import dev.justinsmith.lift.ui.liftName
 import dev.justinsmith.lift.ui.programDayLine
@@ -282,14 +283,6 @@ private fun DayMark(day: WeekDay) {
             style = IntervalTheme.type.caption,
             color = if (day.today) palette.text else palette.textDim,
         )
-    }
-}
-
-@Composable
-internal fun Legend(color: Color, text: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.space4)) {
-        Box(Modifier.size(Sizes.legendSwatch).clip(Corners.full).background(color))
-        Text(text, style = IntervalTheme.type.caption, color = IntervalTheme.palette.textDim)
     }
 }
 

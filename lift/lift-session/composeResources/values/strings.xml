@@ -115,6 +115,8 @@
     <string name="program_following">Following</string>
     <string name="program_stop">Stop following</string>
     <string name="program_preview_day">Day %1$d</string>
+    <string name="program_balance_span">Sets in a week</string>
+    <string name="program_balance_untrained">Nothing in a week for: %1$s</string>
     <string name="program_follow">Follow this program</string>
     <string name="program_replaces">Replaces %1$s · day %2$d of %3$d</string>
     <string name="program_switch_title">Switch to %1$s?</string>

@@ -77,21 +77,6 @@
     <string name="program_finished">Finished</string>
     <string name="session_leave_title">Leave the session?</string>
     <string name="today_goal_met">Goal met this week</string>
-    <string name="today_balance">Balance</string>
     <string name="today_balance_span">Sets, last 4 weeks</string>
-    <string name="today_balance_worked">Worked most</string>
-    <string name="today_balance_assisted">Assisted</string>
-    <plurals name="today_balance_row_cd">
-        <item quantity="one">%1$s: %2$d set worked it most, %3$d assisted</item>
-        <item quantity="other">%1$s: %2$d sets worked it most, %3$d assisted</item>
-    </plurals>
     <string name="today_balance_untrained">Not trained in four weeks: %1$s</string>
-    <string name="today_balance_joined">%1$s, %2$s</string>
-    <string name="muscle_group_chest">Chest</string>
-    <string name="muscle_group_shoulders">Shoulders</string>
-    <string name="muscle_group_back">Back</string>
-    <string name="muscle_group_arms">Arms</string>
-    <string name="muscle_group_core">Core</string>
-    <string name="muscle_group_hips">Glutes and hamstrings</string>
-    <string name="muscle_group_legs">Quads and calves</string>
 </resources>

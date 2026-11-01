@@ -356,7 +356,9 @@ flowchart TD
   - `MuscleBalance` (`lift-domain`) analyzes logged lifting sessions across a rolling 28-day window, aggregating sets
     into seven major muscle groups (chest, shoulders, back, arms, core, glutes & hamstrings, quads & calves).
   - Differentiates primary working sets from assisting sets (`Opacity.LIGHT_SHARE`) and identifies unworked muscle groups
-    in `BalanceCard` (`lift-today`).
+    in `BalanceBars` (`lift-ui`), which the Lift tab's `BalanceCard` (`lift-today`) and a program's sheet draw.
+  - `MuscleBalance.ofSets` folds any sets, so `Program.weekBalance()` counts what a week of a program plans the same
+    way; `ProgramCoverageTest` holds what each built-in leaves untrained.
 - **Audio & Cues**:
   - Audio cues are managed by `CuePlayer` (interval) and `Beeper` (bells).
   - Voice cues use system text-to-speech queues (`SpeechQueue`) with localized strings.

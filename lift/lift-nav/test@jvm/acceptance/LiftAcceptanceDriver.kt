@@ -75,6 +75,24 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
         tap("Follow this program")
     }
 
+    /** From Today: Follow a program, find [name] on the list, and open its sheet. */
+    fun openProgram(name: String) {
+        tap("Follow a program")
+        scrollTo(name)
+        tap(name)
+        see("Day 1")
+    }
+
+    /**
+     * The sheet's balance of a week of the program: each of [rows] a group's line as a screen reader says it, and
+     * the line naming what it leaves [untrained].
+     */
+    fun seeWeekBalance(untrained: String, vararg rows: String) {
+        see("Sets in a week")
+        rows.forEach { see(hasContentDescription(it, substring = true)) }
+        see("Nothing in a week for: $untrained")
+    }
+
     fun seeProgramDay(day: String, vararg exercises: String) {
         see(day)
         exercises.forEach { see(it) }

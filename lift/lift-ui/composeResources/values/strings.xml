@@ -268,4 +268,19 @@
     <string name="load_added">+%1$s kg</string>
     <string name="load_last_time">Last time</string>
     <string name="load_set_weight">Set weight</string>
+    <string name="balance_title">Balance</string>
+    <string name="balance_worked">Worked most</string>
+    <string name="balance_assisted">Assisted</string>
+    <plurals name="balance_row_cd">
+        <item quantity="one">%1$s: %2$d set worked it most, %3$d assisted</item>
+        <item quantity="other">%1$s: %2$d sets worked it most, %3$d assisted</item>
+    </plurals>
+    <string name="balance_joined">%1$s, %2$s</string>
+    <string name="muscle_group_chest">Chest</string>
+    <string name="muscle_group_shoulders">Shoulders</string>
+    <string name="muscle_group_back">Back</string>
+    <string name="muscle_group_arms">Arms</string>
+    <string name="muscle_group_core">Core</string>
+    <string name="muscle_group_hips">Glutes and hamstrings</string>
+    <string name="muscle_group_legs">Quads and calves</string>
 </resources>
