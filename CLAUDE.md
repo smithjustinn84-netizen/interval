@@ -101,7 +101,7 @@ interval/            the interval timer
                      makes a `LiftWorkout` from a Lift session, `asLiftWorkouts` in interval-history)
   interval-data      `IntervalRepository`, `AppDatabase` (Room, KSP, `schemas/`), the settings DataStore,
                      `PlatformStorage`, `storageModule`/`dataModule` (di/)
-  interval-platform  `CuePlayer`, `WorkoutControls`, `BackgroundWorkout`, `PlanReminders` (+ `reminderWords`),
+  interval-platform  `CuePlayer`, `ActiveWorkout`, `BackgroundWorkout`, `PlanReminders` (+ `reminderWords`),
                      `SpeechQueue`, `playCue`, and each platform's `platformModule` with its storage,
                      player, `WorkoutService` and `PlanReminderReceiver` (android)
   interval-ui        the workout's shared words and widgets (`ConfigText`, `FieldRow`, `ValueSheet`, `Timeline`,
@@ -244,14 +244,18 @@ toolchain (`$compose.*`).
   opens on exactly Android's splash and iOS's launch screen, so the hand-off is seamless.
 - **Platform code**: `expect`/`actual` in `src/` + `src@<platform>/`. Prefer an interface injected via Koin
   over `expect class`.
-- **The workout off screen**: `WorkoutViewModel` ticks from `realElapsedTime` (counts through sleep) and
-  `WorkoutEngine.tick` takes a step of any length, so time away is caught up, never capped. Its course is
-  saved as `WorkoutProgress` in the repository at each change and restored by the `Workout` route's id. On
+- **The workout off screen**: the running workout is `WorkoutSession` (`interval-workout`, a Koin single), not
+  its ViewModel, which only maps `WorkoutSession.state` (a `WorkoutRun`, pure, its changes worked out there) to
+  `WorkoutUiState`. Its `WorkoutTicker` ticks from `realElapsedTime` (counts through sleep) and
+  `WorkoutEngine.tick` takes a step of any length, so time away is caught up, never capped; `WorkoutRecorder`
+  keeps a finished one in History and the health store. Its course is saved as `WorkoutProgress` in the repository
+  at each change and restored by the `Workout` route's id (`WorkoutSession.open`). It ends when the `Workout` key
+  leaves the back stack (`App.kt` calls `leave()`), or the task is swiped away, not when the screen is destroyed. On
   Android `BackgroundWorkout` starts `WorkoutService` (`interval/interval-platform/src@android/platform/`, declared in
-  `androidApp`'s manifest as `specialUse`), whose notification's Pause and End drive the ViewModel through
-  `WorkoutControls`. iOS schedules a local notification per phase change ahead (`WorkoutEngine.upcomingChanges`,
-  pure, through `WorkoutControls.upcomingChanges`) as the app leaves the screen, and drops them on return; its
-  actual says why not background audio. Desktop keeps nothing.
+  `androidApp`'s manifest as `specialUse`), which reaches the session as the `ActiveWorkout` port (`KoinComponent`):
+  it shows its `status` and its Pause and End act on it. iOS schedules a local notification per phase change ahead
+  (`WorkoutEngine.upcomingChanges`, pure, through `ActiveWorkout.upcomingChanges`) as the app leaves the screen,
+  and drops them on return; its actual says why not background audio. Desktop keeps nothing.
   Lift's rest between sets goes the same way through `RestAlerts` (`lift/lift-platform/src/platform/`): Android's
   `RestService` holds the CPU awake and counts the rest down in a notification while the session's own clock
   beeps; iOS schedules one notification for the rest's end; desktop nothing. The notification helpers both

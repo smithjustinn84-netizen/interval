@@ -57,6 +57,8 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 - Plan reminders (Android) keep coming without the app being opened: each one shown sets the next two weeks', where
   before they stopped two weeks after the app was last used. A reminder now says what the plan holds as it shows,
   in the app's current language, and none comes for a day whose workout was already done.
+- A workout (Android) keeps running when the system closes the app's screen in the background, and is there to come
+  back to from its notification; before, it ended with the screen.
 
 ## [0.2.0] — Unreleased
 

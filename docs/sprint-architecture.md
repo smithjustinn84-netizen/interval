@@ -200,6 +200,21 @@ The cut line is after ticket 5.
   - `WorkoutViewModel` drops its `@Suppress`
   - the `CLAUDE.md` paragraph "The workout off screen" is rewritten.
 
+- As built: the run itself is `WorkoutRun`, an immutable value whose changes (`turned`, `stepped`, `restored`,
+  `toProgress`, `status`) are pure, and `WorkoutSession.state` is a `StateFlow<WorkoutRun?>` rather than a type of its
+  own. `open(id)` takes the place of `start`/`restore`: the workout held if it is this one, else the one saved under
+  the id, else a new one (ending any held before). The ticker is `WorkoutTicker`, a single the container closes;
+  `WorkoutRecorder` keeps the finished workout and rewrites it for Health with the summary's words. `ActiveWorkout`
+  gained `leave()`, and `BackgroundWorkout` lost `update`: Android's service and iOS's keeper (which takes the port
+  lazily, as the session takes it) both follow `status`. One behaviour did change: the workout no longer ends with its
+  ViewModel, which Android clears when it destroys the activity in the background, the service still running. It ends
+  when the `Workout` key leaves the back stack (`App.kt` calls `leave()` once none is on it, whichever way the page
+  went), when the task is swiped away (`onTaskRemoved`), or when a new workout opens. The screen's End and the
+  notification's are one (`end()`). On `amper-37`: Pause from the shade, the chip, End's summary, and a swipe from
+  Recents ending the workout and its notification with the process still alive. "Don't keep activities" and the lock
+  screen weren't run there (Developer options off, no screen lock); `WorkoutLifetimeTest` rebuilds the app from saved
+  state over the same container instead.
+
 **5. `SessionTimers`: Lift's rest, EMOM and hold kept alive** · M · B2, B5, D1 (timers)
 - **New `SessionTimers`** in `lift/lift-session/src/session/`, a Koin `single`, owns the three runs.
   `RestTimer`, `EmomRunner` and `HoldTimer` move under it, built with injected dependencies rather than with

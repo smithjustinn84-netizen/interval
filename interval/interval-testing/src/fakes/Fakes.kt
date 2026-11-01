@@ -20,8 +20,6 @@ import dev.justinsmith.interval.platform.PlanReminder
 import dev.justinsmith.interval.platform.PlanReminders
 import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.platform.WallClock
-import dev.justinsmith.interval.platform.WorkoutControls
-import dev.justinsmith.interval.platform.WorkoutStatus
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
 import kotlinx.coroutines.CoroutineScope
@@ -217,30 +215,21 @@ class RecordingCuePlayer : CuePlayer {
 }
 
 /**
- * A [BackgroundWorkout] that keeps nothing and remembers what it was told: the statuses shown since the last
- * [start], and the controls handed over, through which a test presses the notification's buttons.
+ * A [BackgroundWorkout] that keeps nothing and counts what it was told. What it would show, and the notification's
+ * buttons, are the session's own (`ActiveWorkout`), which tests read and press there.
  */
 class RecordingBackgroundWorkout : BackgroundWorkout {
-    /** The controls of the workout being kept, or null while none is. */
-    var controls: WorkoutControls? = null
-    val statuses = mutableListOf<WorkoutStatus>()
     var starts = 0
     var stops = 0
 
-    val kept: Boolean get() = controls != null
+    /** Between a [start] and its [stop]: a workout is being kept. */
+    val kept: Boolean get() = starts > stops
 
-    override fun start(controls: WorkoutControls) {
-        this.controls = controls
-        statuses.clear()
+    override fun start() {
         starts++
     }
 
-    override fun update(status: WorkoutStatus) {
-        statuses += status
-    }
-
     override fun stop() {
-        controls = null
         stops++
     }
 }

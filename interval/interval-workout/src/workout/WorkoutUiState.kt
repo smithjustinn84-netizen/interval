@@ -115,12 +115,7 @@ fun WorkoutState.toUiState(
         running = running,
         config = config,
         round = round,
-        completedRounds = when (phase) {
-            Phase.Prep, Phase.WarmUp -> 0
-            Phase.Work -> round - 1
-            Phase.Rest -> round
-            Phase.CoolDown, Phase.Done -> rounds
-        },
+        completedRounds = completedRounds,
         activeRound = round.takeIf { phase == Phase.Work },
         clock = formatClock(secondsLeft),
         secondsLeft = secondsLeft,
@@ -160,3 +155,12 @@ fun WorkoutState.toUiState(
         note = note,
     )
 }
+
+/** Rounds whose work interval is behind it: ending now keeps a workout only once there is one. */
+val WorkoutState.completedRounds: Int
+    get() = when (phase) {
+        Phase.Prep, Phase.WarmUp -> 0
+        Phase.Work -> round - 1
+        Phase.Rest -> round
+        Phase.CoolDown, Phase.Done -> config.rounds
+    }

@@ -1,0 +1,71 @@
+package dev.justinsmith.interval.workout
+
+import dev.justinsmith.interval.model.BodySettings
+import dev.justinsmith.interval.model.CourseSpan
+import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.Phase
+import dev.justinsmith.interval.timer.WorkoutEngine
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+class WorkoutRunTest {
+    private val config = IntervalConfig(prepSeconds = 0, workSeconds = 5, restSeconds = 5, rounds = 2)
+    private val begun =
+        WorkoutRun(id = 1, engine = WorkoutEngine.start(config).state, running = true, startedAt = 1_000)
+
+    @Test
+    fun `a pause closes the stretch under way and opens one of its own`() {
+        val paused = begun.copy(running = false).turned(phase = null, now = 3_000)
+        val resumed = paused.copy(running = true).turned(Phase.Work, now = 4_000)
+
+        assertEquals(
+            listOf(CourseSpan(Phase.Work, 1_000, 3_000), CourseSpan(null, 3_000, 4_000)),
+            resumed.spans,
+        )
+        assertEquals(4_000, resumed.openSince)
+        assertEquals(Phase.Work, resumed.openPhase)
+    }
+
+    @Test
+    fun `a turn at the moment the stretch opened adds none`() {
+        assertTrue(begun.turned(phase = null, now = 1_000).spans.isEmpty())
+    }
+
+    @Test
+    fun `a step into the next interval counts its time and turns the course`() {
+        val stepped = begun.stepped(WorkoutEngine.tick(begun.engine, 5_000), now = 6_000)
+
+        assertEquals(Phase.Rest, stepped.engine.phase)
+        assertEquals(5_000, stepped.activeMillis)
+        assertEquals(5_000, stepped.workMillis)
+        assertTrue(stepped.turnedFrom(begun.engine))
+        assertEquals(listOf(CourseSpan(Phase.Work, 1_000, 6_000)), stepped.spans)
+    }
+
+    @Test
+    fun `a step to the end stops the timer and leaves the course for the finish to close`() {
+        val done = begun.stepped(WorkoutEngine.tick(begun.engine, 60_000), now = 61_000)
+
+        assertTrue(done.over)
+        assertFalse(done.running)
+        assertEquals(15, done.activeSeconds)
+        assertEquals(1_000, done.openSince)
+    }
+
+    @Test
+    fun `a run saved and restored is the same run`() {
+        val body = BodySettings(weightKg = 70.0)
+        val paused = begun.stepped(WorkoutEngine.tick(begun.engine, 5_000), now = 6_000)
+            .copy(running = false)
+            .turned(phase = null, now = 7_000)
+            .copy(body = body)
+
+        val restored = WorkoutRun.restored(paused.toProgress(now = 9_000), keepScreenOn = false, body = body)
+
+        assertEquals(paused, restored)
+        assertNull(restored.openPhase)
+    }
+}

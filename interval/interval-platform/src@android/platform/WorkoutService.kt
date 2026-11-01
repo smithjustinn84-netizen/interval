@@ -34,21 +34,25 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 /**
  * The foreground service behind a running workout. It keeps the process out of the cached state the system
  * freezes, holds the CPU awake so the cues play with the screen off, and shows the workout as an ongoing
  * notification: the clock, the phase and round under it, the phase colour, and Pause or Resume and End,
- * which act on the workout through [controls]. On Android 16 and later it is a Live Update: the clock in a
- * chip in the status bar, and the whole workout as a bar on the lock screen and in the shade. Its type is
- * special use: a workout runs longer than a short service's three minutes, and the health type wants sensor
- * permissions the app has no use for.
+ * which act on the workout (the process's one [ActiveWorkout], from the container). On Android 16 and later it
+ * is a Live Update: the clock in a chip in the status bar, and the whole workout as a bar on the lock screen and
+ * in the shade. Its type is special use: a workout runs longer than a short service's three minutes, and the
+ * health type wants sensor permissions the app has no use for.
  */
-class WorkoutService : Service() {
+class WorkoutService :
+    Service(),
+    KoinComponent {
+    private val workout: ActiveWorkout by inject()
     private val log = Logger.withTag("WorkoutService")
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var wakeLock: PowerManager.WakeLock? = null
@@ -84,12 +88,13 @@ class WorkoutService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_TOGGLE_PAUSE -> controls?.togglePause()
-            ACTION_END -> controls?.end()
+            ACTION_TOGGLE_PAUSE -> workout.togglePause()
+            ACTION_END -> workout.end()
             else -> if (!showing) show()
         }
-        // A button pressed after the workout went: nothing to drive, nothing to show.
-        if (controls == null) stopSelf()
+        // A button pressed after the workout went, or after the process that ran it died: nothing to drive,
+        // nothing to show.
+        if (workout.status.value == null) stopSelf()
         return START_NOT_STICKY
     }
 
@@ -103,15 +108,16 @@ class WorkoutService : Service() {
         }
         // StateFlow hands over distinct values only, and the status changes once a second with the clock.
         scope.launch {
-            status.filterNotNull().collect { current ->
+            workout.status.filterNotNull().collect { current ->
                 keepAwake(!current.paused)
                 notifications?.notify(NOTIFICATION_ID, notification(current))
             }
         }
     }
 
-    /** The user swiped the app away: its workout went with it. */
+    /** The user swiped the app away: its workout goes with it, which stops this service. */
     override fun onTaskRemoved(rootIntent: Intent?) {
+        workout.leave()
         stopSelf()
     }
 
@@ -231,12 +237,6 @@ class WorkoutService : Service() {
     }
 
     companion object {
-        /** What the running workout shows, from the ViewModel; null while there is no workout. */
-        internal val status = MutableStateFlow<WorkoutStatus?>(null)
-
-        /** The running workout's controls, from the ViewModel; null while there is no workout. */
-        internal var controls: WorkoutControls? = null
-
         private const val CHANNEL_ID = "workout"
         private const val NOTIFICATION_ID = 1
         private const val ACTION_TOGGLE_PAUSE = "dev.justinsmith.interval.TOGGLE_PAUSE"

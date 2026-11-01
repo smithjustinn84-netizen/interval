@@ -23,9 +23,7 @@ private object NoPlanReminders : PlanReminders {
 
 /** A desktop window stays on screen, and its process keeps running behind other windows: nothing to keep. */
 private object NoBackgroundWorkout : BackgroundWorkout {
-    override fun start(controls: WorkoutControls) = Unit
-
-    override fun update(status: WorkoutStatus) = Unit
+    override fun start() = Unit
 
     override fun stop() = Unit
 }

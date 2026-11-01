@@ -149,14 +149,14 @@ The 2026-10-31 review ([architecture-review.md](architecture-review.md)) found f
 short of these principles. [sprint-architecture.md](sprint-architecture.md) plans the work. Until those tickets
 land, this document describes the code as it is, debt included. The first, a container that lived only as long as
 the Activity, is resolved: `initAppKoin` starts one per process, from Android's `IntervalApplication`, desktop's
-`main` and iOS's first frame.
+`main` and iOS's first frame. So is the running workout's half of the second: `WorkoutSession`, a Koin single, runs
+it, `WorkoutService` and iOS's keeper reach it as the `ActiveWorkout` port, and `WorkoutViewModel` only maps its state.
 
-- **ViewModels own long-running work.** `WorkoutViewModel` runs the workout's ticker; `SessionViewModel` runs
-  Lift's rest, EMOM and hold. `WorkoutService` reaches the workout through static fields in its companion, and
-  only a rest keeps the process awake on Lift.
+- **A ViewModel owns long-running work.** `SessionViewModel` runs Lift's rest, EMOM and hold, and only a rest keeps
+  the process awake on Lift.
 - **The repositories are concrete and wide.** `IntervalRepository` and `LiftRepository` have no interfaces, and
   every ViewModel takes the whole of one. `LiftActivity`/`IntervalActivity` are the pattern to follow.
-- **Two ViewModels do too much.** `SessionViewModel` and `WorkoutViewModel` (`@Suppress(TooManyFunctions)`).
+- **A ViewModel does too much.** `SessionViewModel` (`@Suppress(TooManyFunctions)`).
 
 New code should not add to these: inject a narrow interface rather than a repository, and keep new long-running
 work out of `viewModelScope`.
@@ -279,7 +279,7 @@ Interval keeps timing accurate even when the app is placed in the background, su
 
 ```mermaid
 flowchart TD
-    VM["WorkoutViewModel / RestClock"]
+    VM["WorkoutSession / RestClock"]
     Clock["WallClock (monotonic elapsed time)"]
     Clock -->|Catches up elapsed time on resume| VM
 
@@ -304,11 +304,12 @@ flowchart TD
     VM --> DesktopExecution
 ```
 
-- **Monotonic Time Accounting**: `WorkoutViewModel` and `RestClock` calculate time steps against real elapsed time
+- **Monotonic Time Accounting**: `WorkoutSession` (through `WorkoutTicker`) and `RestClock` calculate time steps against real elapsed time
   (`realElapsedTime`). Even if the process sleeps or is delayed, resuming ticks forward precisely without lost seconds.
 - **Android**:
   - `WorkoutService` runs as a foreground service with a persistent notification (`specialUse` type) allowing the user
-    to view current intervals and tap Pause or End directly from the lock screen.
+    to view current intervals and tap Pause or End directly from the lock screen. It injects the process's
+    `ActiveWorkout` (the `WorkoutSession`), shows its `status` and acts on it; nothing is shared through statics.
   - `RestService` maintains countdown awareness during Lift rest periods, beeping via the device audio subsystem when
     the rest concludes.
 - **iOS**:

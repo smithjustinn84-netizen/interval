@@ -4,6 +4,7 @@ import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.UpcomingChange
 import dev.justinsmith.interval.timer.WorkoutOutline
+import kotlinx.coroutines.flow.StateFlow
 
 /** The sounds the app plays. Each platform maps them to tones it has. */
 enum class Beep { Countdown, Halfway, Start, Work, Rest, Finished }
@@ -56,10 +57,15 @@ data class WorkoutStatus(
 )
 
 /**
- * The platform's hold on a running workout: what its own controls do (the notification's Pause or Resume,
- * and its End), and what it can ask of the workout to stand in for it while the app is suspended.
+ * The workout being kept, as the platform sees it from outside the app's screens: what it shows off screen, what its
+ * own controls do (the notification's Pause or Resume, and its End), and what it can ask of the workout to stand in
+ * for it while the app is suspended. The process's one `WorkoutSession` is it, so Android's service, which the
+ * system builds, reaches it through the container.
  */
-interface WorkoutControls {
+interface ActiveWorkout {
+    /** What it shows off screen, changing no more often than the clock does; null while no workout is kept. */
+    val status: StateFlow<WorkoutStatus?>
+
     fun togglePause()
 
     /**
@@ -74,21 +80,24 @@ interface WorkoutControls {
      * while it is paused or over: nothing is coming.
      */
     fun upcomingChanges(): List<UpcomingChange>
+
+    /** The app has gone for good (Android's task swiped away): nothing to keep going, in view or saved. */
+    fun leave()
 }
 
 /**
- * Keeps a workout counting and in view while the app is off screen. Android runs a foreground service
- * with an ongoing notification: the phase, the clock, the round, and Pause or Resume and End, which act on
- * the workout through its [WorkoutControls]. iOS, which suspends the app, schedules a local notification for
- * each change of phase ahead ([WorkoutControls.upcomingChanges]) as the app leaves the screen, and drops them
- * when it comes back. Desktop keeps nothing: see its actual for why.
+ * Keeps a workout counting and in view while the app is off screen, showing [ActiveWorkout.status]. Android runs
+ * a foreground service with an ongoing notification: the phase, the clock, the round, and Pause or Resume and
+ * End, which act on the [ActiveWorkout]. iOS, which suspends the app, schedules a local notification for each
+ * change of phase ahead ([ActiveWorkout.upcomingChanges]) as the app leaves the screen, and drops them when it
+ * comes back. Desktop keeps nothing: see its actual for why.
  */
 interface BackgroundWorkout {
-    /** A workout has begun, or come back after a restart: from now until [stop], keep it going and in view. */
-    fun start(controls: WorkoutControls)
-
-    /** The workout has moved: what it shows now. Called no more often than the clock changes. */
-    fun update(status: WorkoutStatus)
+    /**
+     * A workout has begun, or come back after a restart: from now until [stop], keep it going and in view. Its
+     * [ActiveWorkout.status] is set by then.
+     */
+    fun start()
 
     /** The workout is over, or its screen has gone: nothing to keep going or show. */
     fun stop()
@@ -135,6 +144,7 @@ interface PlanReminderSource {
 /*
  * Each platform's `platformModule` (Android's of a `Context`, iOS's and the desktop's of nothing) gives the Koin
  * definitions for the interval side's platform services: [PlatformStorage], a [CuePlayer], a [BackgroundWorkout]
- * and [PlanReminders]. What both sides take (the clock, the formatter, [AppInfo] and the sharer) is core's
- * `corePlatformModule`. The app's entry point builds it once per process.
+ * and [PlanReminders]; the [ActiveWorkout] a [BackgroundWorkout] shows is the workout feature's. What both sides
+ * take (the clock, the formatter, [AppInfo] and the sharer) is core's `corePlatformModule`. The app's entry point
+ * builds it once per process.
  */

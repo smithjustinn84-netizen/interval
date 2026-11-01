@@ -1,7 +1,9 @@
 <journey name="Start a workout">
   <description>
     Edit the next workout's work time, start it, pause and resume, skip ahead, then end it before
-    any round is finished. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
+    any round is finished. Then start one again and leave it running while Android destroys the app's
+    screen ("Don't keep activities"), pause it from the lock screen, and swipe the app away. Run on a
+    fresh install (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
     <action>Verify that the Timer tab is shown with a "Start workout" button</action>
@@ -26,5 +28,14 @@
     <action>Verify that a dialog titled "End workout?" says nothing is saved</action>
     <action>Tap "End workout" in the dialog</action>
     <action>Verify that the Timer tab is shown with a "Start workout" button</action>
+    <action>In Developer options, turn on "Don't keep activities" (adb shell settings put global always_finish_activities 1 alone doesn't reach the activity manager on API 37)</action>
+    <action>Tap "Start workout" and verify that the workout screen shows "Get ready"</action>
+    <action>Press Home, wait 15 seconds, and verify with adb shell dumpsys activity activities that no dev.justinsmith.interval activity is left, while the workout's notification still counts down</action>
+    <action>Tap the notification and verify that the workout screen shows the same workout, past "Get ready" and still counting</action>
+    <action>Turn "Don't keep activities" off again</action>
+    <action>With a screen lock set, lock the screen (adb shell input keyevent KEYCODE_SLEEP, then KEYCODE_WAKEUP) and verify that the lock screen shows the workout's notification</action>
+    <action>Tap "Pause" in the notification on the lock screen and verify that it reads "Paused"</action>
+    <action>Unlock, open Recents and swipe the app away</action>
+    <action>Verify with adb shell dumpsys notification --noredact that no workout notification is left, and that opening the app shows the Timer</action>
   </actions>
 </journey>

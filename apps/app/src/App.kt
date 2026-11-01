@@ -68,6 +68,7 @@ import dev.justinsmith.interval.nav.Workout
 import dev.justinsmith.interval.nav.WorkoutDetail
 import dev.justinsmith.interval.nav.push
 import dev.justinsmith.interval.plan.PlanRoute
+import dev.justinsmith.interval.platform.ActiveWorkout
 import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.SystemBarIcons
 import dev.justinsmith.interval.platform.WallClock
@@ -185,6 +186,11 @@ internal fun AppContent(
                 backStack.open(shortcut, clock)
                 opened()
             }
+            // The workout lives as long as its page is on the back stack, which outlives the screen when Android
+            // destroys it in the background: once the page has gone, whichever way it left, so has the workout.
+            val workout = koinInject<ActiveWorkout>()
+            val workoutOnStack = backStack.any { it is Workout }
+            LaunchedEffect(workoutOnStack) { if (!workoutOnStack) workout.leave() }
             val notices = rememberNotices()
             // The intro is dark in either theme while it covers the app.
             SystemBarIcons(lightIcons = dark || introPlaying)

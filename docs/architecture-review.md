@@ -117,6 +117,12 @@ words the notification at delivery.
 ## B. Long-running work
 
 ### B1 · High · Service and ViewModel talk through static mutable state
+
+**Resolved** in change `wozvuwrm` ("Workout: the running workout owned by the process, not its screen"):
+`WorkoutSession`, a Koin single, runs the workout, and `WorkoutService` injects it as the `ActiveWorkout` port
+(`KoinComponent`), shows its `status` and acts on it. The companion's `status` and `controls` are gone, and so is the
+ViewModel's part in it: the workout runs on when the screen is destroyed, and ends when its page leaves the back stack.
+
 - `WorkoutService`'s companion holds `internal val status = MutableStateFlow<WorkoutStatus?>` and
   `internal var controls: WorkoutControls?`. `controls` is not `@Volatile` and holds an object owned by the
   ViewModel ([WorkoutService.kt](../interval/interval-platform/src@android/platform/WorkoutService.kt),
@@ -241,6 +247,13 @@ in the Route.
 `TodayPlanEditor`.
 
 ### D2 · High · `WorkoutViewModel` is the session engine as well as the screen's state
+
+**Resolved** in change `wozvuwrm` ("Workout: the running workout owned by the process, not its screen"): the run is a
+pure `WorkoutRun`, `WorkoutSession` does what each change asks (the ticker through `WorkoutTicker`, cues, checkpoint,
+the platform's hold), `WorkoutRecorder` keeps History and Health, and `WorkoutViewModel` takes the session and the
+repository and maps one to `WorkoutUiState`, with no `var`s and no `@Suppress`. The reflection's second Health write
+runs as the session leaves, not in `onCleared` (A1e's last writes there).
+
 [WorkoutViewModel.kt](../interval/interval-workout/src/workout/WorkoutViewModel.kt) has 9 dependencies and about
 15 mutable `var`s. The order `turn()` → `publish()` → `checkpoint()` matters. It mixes the ticker, cues, Health's
 course spans, checkpointing, the service lifecycle and the week standing.

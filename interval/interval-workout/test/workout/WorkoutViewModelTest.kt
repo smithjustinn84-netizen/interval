@@ -12,27 +12,16 @@ import dev.justinsmith.interval.fakes.RecordingBackgroundWorkout
 import dev.justinsmith.interval.fakes.RecordingCuePlayer
 import dev.justinsmith.interval.fakes.RecordingHealthStore
 import dev.justinsmith.interval.fakes.deferredStorageScope
-import dev.justinsmith.interval.model.BodySettings
-import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.PerceivedEffort
-import dev.justinsmith.interval.platform.Haptic
-import dev.justinsmith.interval.platform.HealthMove
-import dev.justinsmith.interval.platform.HealthSegment
 import dev.justinsmith.interval.platform.HealthStatus
-import dev.justinsmith.interval.platform.HealthWorkoutKind
-import dev.justinsmith.interval.platform.Speech
-import dev.justinsmith.interval.platform.WorkoutStatus
-import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
-import dev.justinsmith.interval.timer.OutlinedInterval
-import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.Preset
-import dev.justinsmith.interval.timer.UpcomingChange
-import dev.justinsmith.interval.timer.WorkoutOutline
-import dev.justinsmith.interval.timer.estimateCalories
 import dev.justinsmith.lift.fakes.FakeLiftStorage
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.job
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -45,22 +34,14 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.TestTimeSource
-import kotlin.time.TimeSource
 
+/** The page's view of the session: what it maps and hands on. How a workout runs is [WorkoutSessionTest]'s. */
 class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
     private val repository = FakeStorage().repository(now = { 7L })
     private val lifts = FakeLiftStorage().repository()
-    private val player = RecordingCuePlayer()
     private val background = RecordingBackgroundWorkout()
-    private val health = RecordingHealthStore(HealthStatus.Connected)
-
-    /** The wall clock the ViewModel saves its progress by. Tests move it to stand for time the process was gone. */
-    private var now = 7L
+    private val tickers = mutableListOf<WorkoutTicker>()
     private val viewModels = mutableListOf<WorkoutViewModel>()
 
     @BeforeTest
@@ -68,311 +49,52 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
         repository.updateConfig { IntervalConfig(prepSeconds = 0, workSeconds = 5, restSeconds = 5, rounds = 2) }
     }
 
-    // Stops every ticker, so none outlives its test on the shared scheduler.
     @AfterTest
-    fun clearViewModels() = viewModels.forEach { it.viewModelScope.cancel() }
+    fun stop() {
+        viewModels.forEach { it.viewModelScope.cancel() }
+        tickers.forEach(WorkoutTicker::close)
+    }
+
+    /** The process's session over [repository]; a new one stands for the process started again. */
+    private fun TestScope.workoutSession(repository: IntervalRepository = this@WorkoutViewModelTest.repository) =
+        WorkoutSession(
+            repository,
+            RecordingCuePlayer(),
+            { 7L },
+            background,
+            WorkoutRecorder(repository, lifts, FixedTimestampFormatter, {
+                7L
+            }, RecordingHealthStore(HealthStatus.Connected)),
+            WorkoutTicker(testScheduler.timeSource, tickerScope()).also { tickers += it },
+        )
+
+    private fun workoutViewModel(
+        session: WorkoutSession,
+        repository: IntervalRepository = this.repository,
+        id: Long = WORKOUT_ID,
+    ) = WorkoutViewModel(id, session, repository).also { viewModels += it }
 
     /**
-     * A workout over [repository], timed by the test's clock unless [timeSource] says otherwise, stopped once the
-     * test ends. Two with the same [id] are one workout before and after the process was killed.
+     * Where a ticker ticks: on the test's scheduler, under its background scope, so a workout still running as the
+     * test ends stops with it rather than ticking on through the test's last wait.
      */
-    private fun TestScope.workoutViewModel(
-        repository: IntervalRepository = this@WorkoutViewModelTest.repository,
-        id: Long = WORKOUT_ID,
-        timeSource: TimeSource.WithComparableMarks = testScheduler.timeSource,
-    ) = WorkoutViewModel(
-        id,
-        repository,
-        player,
-        lifts,
-        FixedTimestampFormatter,
-        { now },
-        background,
-        health,
-        timeSource,
-    ).also { viewModels += it }
+    private fun TestScope.tickerScope() =
+        CoroutineScope(backgroundScope.coroutineContext + SupervisorJob(backgroundScope.coroutineContext.job))
 
     /** Runs the ticker for [millis] of the scheduler's time. */
     private fun TestScope.run(millis: Long) {
-        advanceTimeBy(millis + WorkoutViewModel.TICK_MILLIS)
+        advanceTimeBy(millis + WorkoutTicker.TICK_MILLIS)
         runCurrent()
-    }
-
-    /** One tick after [away] has passed on [time] while the scheduler slept: the app suspended, then back. */
-    private fun TestScope.returnAfter(time: TestTimeSource, away: Duration) {
-        time += away
-        advanceTimeBy(WorkoutViewModel.TICK_MILLIS)
-        runCurrent()
-    }
-
-    /** The process dies with [viewModel] in it: its coroutines stop, and nothing is cleared. */
-    private fun killProcess(viewModel: WorkoutViewModel) {
-        viewModel.viewModelScope.cancel()
-        player.spoken.clear()
-    }
-
-    /** The screen leaves for good: the ViewModel is cleared, as its back-stack entry's store clears it. */
-    private fun leave(viewModel: WorkoutViewModel) {
-        ViewModelStore().apply { put("workout", viewModel) }.clear()
-    }
-
-    @Test
-    fun `a workout runs to done cues each phase and is recorded`() = runTest(dispatcher) {
-        val viewModel = workoutViewModel(repository)
-        assertEquals(Phase.Work, viewModel.state.value.phase)
-
-        advanceTimeBy(15_000 + WorkoutViewModel.TICK_MILLIS)
-        runCurrent()
-
-        val state = viewModel.state.value
-        assertTrue(state.isDone)
-        assertFalse(state.running)
-        assertEquals(2, state.rounds)
-        assertEquals("0:15", state.total)
-        val countdown = listOf(Speech.Countdown(3), Speech.Countdown(2), Speech.Countdown(1))
-        assertEquals(
-            listOf(Speech.Work(lastRound = false)) + countdown + Speech.Rest + countdown +
-                Speech.Work(lastRound = true) + countdown + Speech.Finished,
-            player.spoken,
-        )
-        assertEquals(listOf(Haptic.Work, Haptic.Rest, Haptic.Work, Haptic.Finished), player.haptics)
-        assertEquals("0:15", state.elapsed)
-        val entry = repository.history.value.single()
-        assertEquals(7L, entry.finishedAtEpochMillis)
-        assertEquals(15, entry.elapsedSeconds)
-        assertFalse(entry.endedEarly)
-    }
-
-    @Test
-    fun `a finished workout goes to the health store with its course`() = runTest(dispatcher) {
-        repository.updateAppSettings { it.copy(body = BodySettings(weightKg = 80.0, effort = Effort.Hard)) }
-        now = 1_000
-        val viewModel = workoutViewModel()
-        now = 6_000
-        run(5_000)
-        now = 11_000
-        run(5_000)
-        now = 16_000
-        run(5_000)
-        assertTrue(viewModel.state.value.isDone)
-
-        val workout = health.workouts.single()
-        assertEquals("interval-1000", workout.id)
-        assertEquals(HealthWorkoutKind.Intervals, workout.kind)
-        assertNull(workout.title)
-        assertEquals(1_000, workout.startedAtEpochMillis)
-        assertEquals(16_000, workout.endedAtEpochMillis)
-        assertEquals(estimateCalories(10, 5, 80.0, Effort.Hard), workout.calories)
-        assertEquals(
-            listOf(
-                HealthSegment(1_000, 6_000, HealthMove.Work),
-                HealthSegment(6_000, 11_000, HealthMove.Rest),
-                HealthSegment(11_000, 16_000, HealthMove.Work),
-            ),
-            workout.segments,
-        )
-    }
-
-    @Test
-    fun `a pause is a stretch of the course and ending early closes it`() = runTest(dispatcher) {
-        now = 1_000
-        val viewModel = workoutViewModel()
-        now = 3_000
-        viewModel.pause()
-        now = 4_000
-        viewModel.resume()
-        now = 7_000
-        run(5_000)
-        now = 9_000
-        viewModel.endEarly()
-
-        val workout = health.workouts.single()
-        assertEquals(9_000, workout.endedAtEpochMillis)
-        assertEquals(
-            listOf(
-                HealthSegment(1_000, 3_000, HealthMove.Work),
-                HealthSegment(3_000, 4_000, HealthMove.Pause),
-                HealthSegment(4_000, 7_000, HealthMove.Work),
-                HealthSegment(7_000, 9_000, HealthMove.Rest),
-            ),
-            workout.segments,
-        )
-    }
-
-    @Test
-    fun `the course survives the process dying and is whole when the workout finishes`() = runTest(dispatcher) {
-        now = 1_000
-        val first = workoutViewModel()
-        now = 6_000
-        run(5_000)
-        killProcess(first)
-
-        now = 11_000
-        val restored = workoutViewModel()
-        now = 16_000
-        run(5_000)
-        assertTrue(restored.state.value.isDone)
-
-        val workout = health.workouts.single()
-        assertEquals("interval-1000", workout.id)
-        assertEquals(
-            listOf(
-                HealthSegment(1_000, 6_000, HealthMove.Work),
-                HealthSegment(6_000, 11_000, HealthMove.Rest),
-                HealthSegment(11_000, 16_000, HealthMove.Work),
-            ),
-            workout.segments,
-        )
-    }
-
-    @Test
-    fun `nothing goes to the health store while it is not connected`() = runTest(dispatcher) {
-        health.status.value = HealthStatus.Disconnected
-        workoutViewModel()
-        run(15_000)
-        assertEquals(1, repository.history.value.size)
-        assertTrue(health.workouts.isEmpty())
-    }
-
-    @Test
-    fun `time spent counts only the time the timer ran`() = runTest(dispatcher) {
-        val viewModel = workoutViewModel(repository)
-        advanceTimeBy(2_000 + WorkoutViewModel.TICK_MILLIS)
-        runCurrent()
-        viewModel.pause()
-        advanceTimeBy(10_000)
-        viewModel.resume()
-        // Skipping the rest of the work interval adds nothing.
-        viewModel.skip()
-
-        viewModel.endEarly()
-        assertEquals("0:02", viewModel.state.value.elapsed)
-        assertEquals(1, viewModel.state.value.completedRounds)
-        val entry = repository.history.value.single()
-        assertEquals(2, entry.elapsedSeconds)
-        assertTrue(entry.endedEarly)
-    }
-
-    @Test
-    fun `back returns to the interval before and add time extends this one without cues`() = runTest(dispatcher) {
-        val viewModel = workoutViewModel(repository)
-        viewModel.pause()
-        viewModel.skip()
-        assertEquals(Phase.Rest, viewModel.state.value.phase)
-        val cuesBefore = player.spoken.size
-
-        viewModel.back()
-        assertEquals(Phase.Work, viewModel.state.value.phase)
-        assertEquals("0:05", viewModel.state.value.clock)
-
-        viewModel.addTime()
-        assertEquals("0:15", viewModel.state.value.clock)
-        assertEquals(cuesBefore, player.spoken.size)
-    }
-
-    @Test
-    fun `pausing freezes the clock`() = runTest(dispatcher) {
-        val viewModel = workoutViewModel(repository)
-        advanceTimeBy(2_000 + WorkoutViewModel.TICK_MILLIS)
-        runCurrent()
-        viewModel.pause()
-        val paused = viewModel.state.value
-        assertTrue(paused.paused)
-
-        advanceTimeBy(10_000)
-        assertEquals(paused.clock, viewModel.state.value.clock)
-
-        viewModel.resume()
-        assertTrue(viewModel.state.value.running)
-        viewModel.pause()
-    }
-
-    @Test
-    fun `cues respect the user's toggles`() = runTest(dispatcher) {
-        repository.updateCueSettings { CueSettings(sound = false, voice = false, vibrate = false) }
-        val viewModel = workoutViewModel(repository)
-        viewModel.skip()
-        viewModel.skip()
-        viewModel.skip()
-        assertTrue(viewModel.state.value.isDone)
-        assertTrue(player.beeps.isEmpty() && player.spoken.isEmpty() && player.haptics.isEmpty())
-    }
-
-    @Test
-    fun `restart begins again from the first interval`() = runTest(dispatcher) {
-        val viewModel = workoutViewModel(repository)
-        viewModel.skip()
-        viewModel.skip()
-        viewModel.restart()
-        val state = viewModel.state.value
-        assertEquals(Phase.Work, state.phase)
-        assertEquals(1, state.round)
-        assertEquals("0:15", state.sessionLeft)
-        assertEquals(NextUp.Rest("0:05"), state.next)
-        viewModel.pause()
-    }
-
-    @Test
-    fun `ending early records the time spent and shows the summary`() = runTest(dispatcher) {
-        val viewModel = workoutViewModel(repository)
-        advanceTimeBy(6_000 + WorkoutViewModel.TICK_MILLIS)
-        runCurrent()
-        assertTrue(viewModel.state.value.hasProgress)
-
-        viewModel.endEarly()
-        val state = viewModel.state.value
-        assertTrue(state.isDone && state.ended)
-        assertFalse(state.running)
-        assertEquals(1, state.completedRounds)
-        assertEquals("0:06", state.elapsed)
-        assertEquals(6, repository.history.value.single().elapsedSeconds)
-        assertTrue(repository.history.value.single().endedEarly)
-
-        viewModel.resume()
-        assertFalse(viewModel.state.value.running)
-    }
-
-    @Test
-    fun `work time counts only work intervals and gives the summary its calories`() = runTest(dispatcher) {
-        repository.updateAppSettings { it.copy(body = BodySettings(weightKg = 80.0, effort = Effort.Hard)) }
-        val viewModel = workoutViewModel(repository)
-        advanceTimeBy(15_000 + WorkoutViewModel.TICK_MILLIS)
-        runCurrent()
-
-        val entry = repository.history.value.single()
-        assertEquals(10, entry.workActiveSeconds)
-        assertEquals(estimateCalories(10, 5, 80.0, Effort.Hard), viewModel.state.value.calories)
-    }
-
-    @Test
-    fun `a skipped work interval adds no work time`() = runTest(dispatcher) {
-        val viewModel = workoutViewModel(repository)
-        viewModel.skip()
-        advanceTimeBy(10_000 + WorkoutViewModel.TICK_MILLIS)
-        runCurrent()
-
-        val entry = repository.history.value.single()
-        assertEquals(10, entry.elapsedSeconds)
-        assertEquals(5, entry.workActiveSeconds)
-    }
-
-    @Test
-    fun `the summary has no calories without a weight`() = runTest(dispatcher) {
-        repository.updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
-        val viewModel = workoutViewModel(repository)
-        advanceTimeBy(15_000 + WorkoutViewModel.TICK_MILLIS)
-        runCurrent()
-        assertNull(viewModel.state.value.calories)
     }
 
     @Test
     fun `a summary offers saving only a shape no preset has`() = runTest(dispatcher) {
-        val viewModel = workoutViewModel(repository)
+        val viewModel = workoutViewModel(workoutSession())
         repeat(3) { viewModel.skip() }
+        runCurrent()
         assertEquals("0:00", viewModel.state.value.elapsed)
-        assertEquals(0, repository.history.value.single().elapsedSeconds)
         assertTrue(viewModel.state.value.canSavePreset)
-        assertNull(viewModel.state.value.presetName)
+        assertEquals(null, viewModel.state.value.presetName)
         viewModel.saveAsPreset(Preset("Short", viewModel.state.value.config))
         runCurrent()
         assertFalse(viewModel.state.value.canSavePreset)
@@ -384,8 +106,9 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
         val repository = FakeStorage().repository(scope = deferredStorageScope())
         runCurrent()
         repository.updateConfig { IntervalConfig(prepSeconds = 0, workSeconds = 5, restSeconds = 5, rounds = 2) }
-        val viewModel = workoutViewModel(repository)
+        val viewModel = workoutViewModel(workoutSession(repository), repository)
         repeat(3) { viewModel.skip() }
+        runCurrent()
         assertTrue(viewModel.state.value.canSavePreset)
 
         viewModel.saveAsPreset(Preset("Short", viewModel.state.value.config))
@@ -397,280 +120,17 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
 
     @Test
     fun `a preset saved from the summary goes on the Timer too`() = runTest(dispatcher) {
-        val viewModel = workoutViewModel(repository)
+        val viewModel = workoutViewModel(workoutSession())
         repeat(3) { viewModel.skip() }
+        runCurrent()
         val reshaped = viewModel.state.value.config.copy(workSeconds = 50)
         viewModel.saveAsPreset(Preset("Longer", reshaped))
         assertEquals(50, repository.config.value.workSeconds)
     }
 
     @Test
-    fun `the controls do nothing once the workout has ended early`() = runTest(dispatcher) {
-        val viewModel = workoutViewModel(repository)
-        advanceTimeBy(6_000 + WorkoutViewModel.TICK_MILLIS)
-        runCurrent()
-        viewModel.endEarly()
-        val ended = viewModel.state.value
-
-        repeat(5) { viewModel.skip() }
-        viewModel.back()
-        viewModel.addTime()
-
-        assertEquals(ended, viewModel.state.value)
-        assertEquals(1, repository.history.value.size)
-    }
-
-    @Test
-    fun `time away counts in full and the workout is as far on as the clock says`() = runTest(dispatcher) {
-        val time = TestTimeSource()
-        val viewModel = workoutViewModel(timeSource = time)
-        returnAfter(time, 2.seconds)
-        assertEquals("0:03", viewModel.state.value.clock)
-
-        // Seven seconds away: the work interval's last three, then four of the five-second rest.
-        returnAfter(time, 7.seconds)
-        val state = viewModel.state.value
-        assertEquals(Phase.Rest, state.phase)
-        assertEquals("0:01", state.clock)
-        assertEquals(1, state.round)
-        assertTrue(state.running)
-        assertEquals("0:09", state.elapsed)
-        // Heard: where it landed and that interval's seconds left, not every cue the time away covered.
-        assertEquals(
-            listOf(Speech.Work(lastRound = false), Speech.Countdown(3), Speech.Rest, Speech.Countdown(1)),
-            player.spoken,
-        )
-        viewModel.pause()
-    }
-
-    @Test
-    fun `time away past the end finishes the workout with one cue and records it`() = runTest(dispatcher) {
-        val time = TestTimeSource()
-        val viewModel = workoutViewModel(timeSource = time)
-        returnAfter(time, 40.seconds)
-
-        val state = viewModel.state.value
-        assertTrue(state.isDone)
-        assertEquals("0:15", state.elapsed)
-        assertEquals(listOf(Speech.Work(lastRound = false), Speech.Finished), player.spoken)
-        val entry = repository.history.value.single()
-        assertEquals(15, entry.elapsedSeconds)
-        assertEquals(10, entry.workActiveSeconds)
-        assertFalse(background.kept)
-    }
-
-    @Test
-    fun `after the process died a running workout picks up where it has got to`() = runTest(dispatcher) {
-        now = 1_000
-        val first = workoutViewModel()
-        run(2_000)
-        killProcess(first)
-
-        now += 7_000
-        val restored = workoutViewModel()
-        val state = restored.state.value
-        assertEquals(Phase.Rest, state.phase)
-        assertEquals("0:03", state.clock)
-        assertEquals(1, state.round)
-        assertTrue(state.running)
-        assertEquals("0:07", state.elapsed)
-        // Heard: the phase it landed in and the seconds left in it, nothing from the time in between.
-        assertEquals(listOf(Speech.Rest, Speech.Countdown(3)), player.spoken)
-        assertTrue(background.kept)
-
-        run(3_000)
-        assertEquals(Phase.Work, restored.state.value.phase)
-        assertEquals(2, restored.state.value.round)
-        restored.pause()
-    }
-
-    @Test
-    fun `after the process died a paused workout stays where it was paused`() = runTest(dispatcher) {
-        val first = workoutViewModel()
-        run(2_000)
-        first.pause()
-        killProcess(first)
-
-        now += 60_000
-        val restored = workoutViewModel()
-        advanceTimeBy(10_000)
-        val state = restored.state.value
-        assertEquals(Phase.Work, state.phase)
-        assertEquals("0:03", state.clock)
-        assertTrue(state.paused)
-        assertEquals("0:02", state.elapsed)
-        assertTrue(player.spoken.isEmpty())
-        assertEquals(
-            WorkoutStatus(Phase.Work, paused = true, clock = "0:03", round = 1, rounds = 2, outline(elapsed = 2)),
-            background.statuses.last(),
-        )
-
-        restored.resume()
-        run(1_000)
-        assertEquals("0:02", restored.state.value.clock)
-        restored.pause()
-    }
-
-    @Test
-    fun `after the process died a finished workout shows its summary and is not recorded again`() = runTest(
-        dispatcher,
-    ) {
-        val first = workoutViewModel()
-        run(15_000)
-        assertTrue(first.state.value.isDone)
-        killProcess(first)
-        val starts = background.starts
-
-        now += 60_000
-        val restored = workoutViewModel()
-        val state = restored.state.value
-        assertTrue(state.isDone)
-        assertFalse(state.ended)
-        assertEquals("0:15", state.elapsed)
-        assertEquals(first.state.value.week, state.week)
-        assertEquals(1, repository.history.value.size)
-        assertTrue(player.spoken.isEmpty())
-        assertEquals(starts, background.starts)
-    }
-
-    @Test
-    fun `after the process died a workout ended early shows that summary`() = runTest(dispatcher) {
-        val first = workoutViewModel()
-        run(6_000)
-        first.endEarly()
-        killProcess(first)
-
-        val restored = workoutViewModel()
-        val state = restored.state.value
-        assertTrue(state.isDone && state.ended)
-        assertEquals(1, state.completedRounds)
-        assertEquals("0:06", state.elapsed)
-        assertEquals(first.state.value.week, state.week)
-        assertEquals(1, repository.history.value.size)
-    }
-
-    @Test
-    fun `a workout started afresh ignores the progress an older one left behind`() = runTest(dispatcher) {
-        val first = workoutViewModel()
-        run(6_000)
-        killProcess(first)
-
-        now += 60_000
-        val fresh = workoutViewModel(id = WORKOUT_ID + 1)
-        val state = fresh.state.value
-        assertEquals(Phase.Work, state.phase)
-        assertEquals(1, state.round)
-        assertEquals("0:05", state.clock)
-        assertEquals("0:00", state.elapsed)
-        fresh.pause()
-    }
-
-    @Test
-    fun `leaving the screen clears the saved progress and the notification`() = runTest(dispatcher) {
-        val viewModel = workoutViewModel()
-        run(2_000)
-        assertEquals(WORKOUT_ID, repository.workoutProgress.value?.id)
-        assertTrue(background.kept)
-
-        leave(viewModel)
-        assertNull(repository.workoutProgress.value)
-        assertFalse(background.kept)
-    }
-
-    @Test
-    fun `the notification follows the workout and hears of each change once`() = runTest(dispatcher) {
-        val viewModel = workoutViewModel()
-        assertEquals(1, background.starts)
-        assertEquals(
-            listOf(WorkoutStatus(Phase.Work, paused = false, clock = "0:05", round = 1, rounds = 2, outline(0))),
-            background.statuses,
-        )
-
-        run(1_000)
-        assertEquals(listOf("0:05", "0:04"), background.statuses.map { it.clock })
-        assertEquals(listOf(0, 1), background.statuses.map { it.outline.elapsedSeconds })
-
-        viewModel.pause()
-        assertTrue(background.statuses.last().paused)
-        viewModel.resume()
-        assertFalse(background.statuses.last().paused)
-
-        run(15_000)
-        assertTrue(viewModel.state.value.isDone)
-        assertFalse(background.kept)
-        assertEquals(1, background.stops)
-
-        viewModel.restart()
-        assertEquals(2, background.starts)
-        assertTrue(background.kept)
-        viewModel.pause()
-    }
-
-    @Test
-    fun `the notification's buttons pause and resume the workout`() = runTest(dispatcher) {
-        val viewModel = workoutViewModel()
-        val controls = assertNotNull(background.controls)
-        controls.togglePause()
-        assertTrue(viewModel.state.value.paused)
-        controls.togglePause()
-        assertTrue(viewModel.state.value.running)
-        viewModel.pause()
-    }
-
-    @Test
-    fun `the changes ahead are read from where the workout stands and stop with it`() = runTest(dispatcher) {
-        val viewModel = workoutViewModel()
-        val controls = assertNotNull(background.controls)
-        // run() ticks once past the time asked for: 2.1 s of the first 5 s work interval are gone.
-        run(2_000)
-        assertEquals(
-            listOf(
-                UpcomingChange(Phase.Rest, round = 1, offsetMillis = 2_900),
-                UpcomingChange(Phase.Work, round = 2, offsetMillis = 7_900),
-                UpcomingChange(Phase.Done, round = 2, offsetMillis = 12_900),
-            ),
-            controls.upcomingChanges(),
-        )
-
-        viewModel.pause()
-        assertTrue(controls.upcomingChanges().isEmpty())
-        viewModel.resume()
-        assertEquals(3, controls.upcomingChanges().size)
-
-        run(15_000)
-        assertTrue(viewModel.state.value.isDone)
-        assertTrue(controls.upcomingChanges().isEmpty())
-    }
-
-    @Test
-    fun `End from the notification with a round done records and shows the summary`() = runTest(dispatcher) {
-        val viewModel = workoutViewModel()
-        run(6_000)
-        assertNotNull(background.controls).end()
-
-        val state = viewModel.state.value
-        assertTrue(state.isDone && state.ended)
-        assertFalse(state.leaving)
-        assertEquals(1, repository.history.value.size)
-        assertFalse(background.kept)
-    }
-
-    @Test
-    fun `End from the notification with no round done leaves with nothing kept`() = runTest(dispatcher) {
-        val viewModel = workoutViewModel()
-        run(2_000)
-        assertNotNull(background.controls).end()
-
-        val state = viewModel.state.value
-        assertTrue(state.leaving)
-        assertFalse(state.running)
-        assertTrue(repository.history.value.isEmpty())
-        assertFalse(background.kept)
-    }
-
-    @Test
     fun `the summary's effort and note are kept with the workout in History`() = runTest(dispatcher) {
-        val viewModel = workoutViewModel()
+        val viewModel = workoutViewModel(workoutSession())
         run(15_000)
         assertTrue(viewModel.state.value.isDone)
 
@@ -687,14 +147,15 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
 
     @Test
     fun `an effort and a note survive a restore of the summary`() = runTest(dispatcher) {
-        val first = workoutViewModel()
+        val first = workoutViewModel(workoutSession())
         run(15_000)
         first.setEffort(PerceivedEffort.Steady)
         first.setNote("Legs heavy")
         runCurrent()
-        killProcess(first)
+        // The process dies: its ticker with it, and nothing is cleared.
+        tickers.forEach(WorkoutTicker::close)
 
-        val restored = workoutViewModel()
+        val restored = workoutViewModel(workoutSession())
         runCurrent()
         assertTrue(restored.state.value.isDone)
         assertEquals(PerceivedEffort.Steady, restored.state.value.effort)
@@ -707,41 +168,28 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
     }
 
     @Test
-    fun `the health store is written again with the summary's words as it goes`() = runTest(dispatcher) {
-        val viewModel = workoutViewModel()
-        run(15_000)
-        assertEquals(1, health.workouts.size)
+    fun `a ViewModel built again for the workout running shows it as it stands`() = runTest(dispatcher) {
+        val session = workoutSession()
+        workoutViewModel(session)
+        run(2_000)
 
-        viewModel.setEffort(PerceivedEffort.Hard)
-        viewModel.describeForHealth("Hard · Felt strong")
-        now = 99L
-        leave(viewModel)
-
-        assertEquals(2, health.workouts.size)
-        val again = health.workouts.last()
-        assertEquals(health.workouts.first().id, again.id)
-        assertEquals("Hard · Felt strong", again.notes)
-        assertEquals(99L, again.version)
-        assertEquals(health.workouts.first().segments, again.segments)
+        val again = workoutViewModel(session)
+        assertEquals("0:02", again.state.value.elapsed)
+        assertTrue(again.state.value.running)
+        assertEquals(1, background.starts)
     }
 
     @Test
-    fun `with nothing said of it the health store is not written again`() = runTest(dispatcher) {
-        val viewModel = workoutViewModel()
-        run(15_000)
-        leave(viewModel)
-        assertEquals(1, health.workouts.size)
+    fun `the workout runs on when its ViewModel is cleared with the screen`() = runTest(dispatcher) {
+        val session = workoutSession()
+        val viewModel = workoutViewModel(session)
+        run(2_000)
+
+        ViewModelStore().apply { put("workout", viewModel) }.clear()
+        run(1_000)
+
+        assertTrue(background.kept)
+        assertEquals("0:03", assertNotNull(session.state.value).toUiState(emptyList()).elapsed)
+        assertEquals(WORKOUT_ID, repository.workoutProgress.value?.id)
     }
-
-    /** The workout these tests run, 5 s of work, 5 of rest and 5 of work, [elapsed] seconds in. */
-    private fun outline(elapsed: Int) = WorkoutOutline(
-        listOf(
-            OutlinedInterval(Phase.Work, round = 1, seconds = 5),
-            OutlinedInterval(Phase.Rest, round = 1, seconds = 5),
-            OutlinedInterval(Phase.Work, round = 2, seconds = 5),
-        ),
-        elapsed,
-    )
 }
-
-private const val WORKOUT_ID = 1_700_000_000_000L

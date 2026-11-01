@@ -19,9 +19,12 @@ import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.UpcomingChange
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import org.koin.core.module.Module
@@ -59,7 +62,8 @@ fun platformModule(): Module = module {
     single<CuePlayer> { IosCuePlayer() }.withOptions {
         onClose { it?.release() }
     }
-    single<BackgroundWorkout> { IosBackgroundWorkout() }.withOptions {
+    // Lazily: the workout it reads is the workout feature's session, which takes this keeper in turn.
+    single<BackgroundWorkout> { IosBackgroundWorkout(lazy { get<ActiveWorkout>() }) }.withOptions {
         onClose { (it as? IosBackgroundWorkout)?.release() }
     }
     single<PlanReminders> { IosPlanReminders() }
@@ -70,7 +74,7 @@ fun platformModule(): Module = module {
  * stops, and on return it counts the time away in one step ([realElapsedTime], [WorkoutEngine.tick]) and is
  * where it should be, with the one cue for where it landed. What the user hears in between is the system's
  * doing: as the app goes to the background with a workout running, this schedules one local notification
- * for each change of phase ahead ([WorkoutControls.upcomingChanges]), the phase as its title ("Work", "Rest",
+ * for each change of phase ahead ([ActiveWorkout.upcomingChanges]), the phase as its title ("Work", "Rest",
  * "Done"), the round under it, with the default sound, which follows the ringer switch as the Ambient cues do.
  * iOS keeps 64 pending requests per app, [PLAN_REMINDER_DAYS] of them the plan's reminders', so the furthest
  * changes of a long workout go unscheduled; the user is back long before. Every request of the workout's is
@@ -86,15 +90,15 @@ fun platformModule(): Module = module {
  * Observes `UIApplication`'s own notifications rather than a scene's: the app has one scene, and these say
  * when the whole app is away.
  */
-private class IosBackgroundWorkout : BackgroundWorkout {
+private class IosBackgroundWorkout(private val active: Lazy<ActiveWorkout>) : BackgroundWorkout {
     private val log = Logger.withTag("IosBackgroundWorkout")
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val center: UNUserNotificationCenter get() = UNUserNotificationCenter.currentNotificationCenter()
 
-    /** The workout being kept, or null while there is none. */
-    private var controls: WorkoutControls? = null
+    /** Follows the kept workout's status from [start] to [stop]. */
+    private var following: Job? = null
 
-    /** What it last showed, for the round count and whether it is paused; null until the first update. */
+    /** What it last showed, for the round count and whether it is paused; null while no workout is kept. */
     private var status: WorkoutStatus? = null
 
     /** Bumped by each scheduling and each clear, so a scheduling overtaken by a clear adds nothing after it. */
@@ -119,18 +123,20 @@ private class IosBackgroundWorkout : BackgroundWorkout {
         scope.cancel()
     }
 
-    override fun start(controls: WorkoutControls) {
-        this.controls = controls
+    override fun start() {
+        following?.cancel()
         status = null
-    }
-
-    override fun update(status: WorkoutStatus) {
-        if (status.paused && this.status?.paused == false) clear()
-        this.status = status
+        following = scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            active.value.status.filterNotNull().collect { now ->
+                if (now.paused && status?.paused == false) clear()
+                status = now
+            }
+        }
     }
 
     override fun stop() {
-        controls = null
+        following?.cancel()
+        following = null
         status = null
         clear()
     }
@@ -139,7 +145,7 @@ private class IosBackgroundWorkout : BackgroundWorkout {
     private fun leftScreen() {
         val rounds = status?.rounds ?: return
         // Empty while paused or over: nothing to announce.
-        val changes = controls?.upcomingChanges()?.takeIf { it.isNotEmpty() } ?: return
+        val changes = active.value.upcomingChanges().takeIf { it.isNotEmpty() } ?: return
         center.removePendingNotificationRequestsWithIdentifiers(identifiers)
         val mine = ++generation
         scope.launch { schedule(changes.take(WORKOUT_REQUESTS), rounds, mine) }
