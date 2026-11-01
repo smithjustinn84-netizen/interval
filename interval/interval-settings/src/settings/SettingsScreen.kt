@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -24,12 +25,14 @@ import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.HealthStore
+import dev.justinsmith.interval.platform.rememberFileOpener
 import dev.justinsmith.interval.platform.rememberHealthConnector
 import dev.justinsmith.interval.settings.resources.Res
 import dev.justinsmith.interval.settings.resources.effort_easy
 import dev.justinsmith.interval.settings.resources.effort_hard
 import dev.justinsmith.interval.settings.resources.effort_max
 import dev.justinsmith.interval.settings.resources.effort_steady
+import dev.justinsmith.interval.settings.resources.import_failed
 import dev.justinsmith.interval.settings.resources.settings_about
 import dev.justinsmith.interval.settings.resources.settings_about_app
 import dev.justinsmith.interval.settings.resources.settings_about_app_hint
@@ -49,6 +52,8 @@ import dev.justinsmith.interval.settings.resources.settings_health
 import dev.justinsmith.interval.settings.resources.settings_health_install_hint
 import dev.justinsmith.interval.settings.resources.settings_health_off_hint
 import dev.justinsmith.interval.settings.resources.settings_health_on_hint
+import dev.justinsmith.interval.settings.resources.settings_import
+import dev.justinsmith.interval.settings.resources.settings_import_hint
 import dev.justinsmith.interval.settings.resources.settings_keep_screen_on
 import dev.justinsmith.interval.settings.resources.settings_keep_screen_on_hint
 import dev.justinsmith.interval.settings.resources.settings_sound
@@ -77,6 +82,7 @@ import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.ScrollPage
@@ -101,8 +107,12 @@ fun SettingsRoute(
     inPane: Boolean = false,
 ) {
     val scope = currentKoinScope()
-    val viewModel = viewModel { SettingsViewModel(scope.get(), scope.get(), scope.get(), scope.get(), scope.get()) }
+    val viewModel = viewModel {
+        SettingsViewModel(scope.get(), scope.get(), scope.get(), scope.get(), scope.get(), scope.get(), scope.get())
+    }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val importing by viewModel.import.collectAsStateWithLifecycle()
+    val pickFile = rememberFileOpener(viewModel::reviewImport)
     val health = rememberHealthConnector(scope.get<HealthStore>())
     // Read again on each opening: the permission may have been taken back in the store's own settings.
     LaunchedEffect(Unit) { viewModel.refreshHealth() }
@@ -125,6 +135,13 @@ fun SettingsRoute(
         onConnectHealth = health::connect,
         onDisconnectHealth = viewModel::disconnectHealth,
         onInstallHealth = health::install,
+        importStep = importing,
+        imports = ImportActions(
+            // Providers label a .json file in more ways than one; what is in it decides, not its type.
+            onPick = { pickFile(listOf("application/json", "application/octet-stream", "text/*")) },
+            onConfirm = viewModel::confirmImport,
+            onDismiss = viewModel::dismissImport,
+        ),
     )
 }
 
@@ -152,6 +169,8 @@ fun SettingsScreen(
     onConnectHealth: () -> Unit = {},
     onDisconnectHealth: () -> Unit = {},
     onInstallHealth: () -> Unit = {},
+    importStep: ImportStep? = null,
+    imports: ImportActions = ImportActions(),
 ) {
     var editingPrep by rememberSaveable { mutableStateOf(false) }
     var editingWeight by rememberSaveable { mutableStateOf(false) }
@@ -164,6 +183,7 @@ fun SettingsScreen(
         onSetEffort,
         onSetTheme,
         onExport,
+        imports.onPick,
         HealthActions(onConnectHealth, onDisconnectHealth, onInstallHealth),
         onShowAbout,
     )
@@ -198,6 +218,7 @@ fun SettingsScreen(
             onDismiss = { editingPrep = false },
         )
     }
+    ImportProgress(importStep, imports)
     if (editingWeight) {
         WeightSheet(
             weight = state.weight,
@@ -207,6 +228,25 @@ fun SettingsScreen(
             onClear = onClearWeight,
             onDismiss = { editingWeight = false },
         )
+    }
+}
+
+/** The import under way: its review sheet, then a notice of what came in, or that it couldn't finish. */
+@Composable
+private fun ImportProgress(step: ImportStep?, actions: ImportActions) {
+    if (step is ImportStep.Review) ImportSheet(step, actions)
+    val notices = LocalNotices.current
+    val said = when (step) {
+        is ImportStep.Done -> importedText(step.added)
+        ImportStep.Failed -> stringResource(Res.string.import_failed)
+        else -> null
+    }
+    val dismiss by rememberUpdatedState(actions.onDismiss)
+    LaunchedEffect(said) {
+        if (said != null) {
+            notices.show(said)
+            dismiss()
+        }
     }
 }
 
@@ -227,6 +267,7 @@ private fun settingsGroups(
     onSetEffort: (Effort) -> Unit,
     onSetTheme: (ThemeMode) -> Unit,
     onExport: () -> Unit,
+    onImport: () -> Unit,
     health: HealthActions,
     onShowAbout: () -> Unit,
 ): List<SettingsGroup> = listOf(
@@ -262,6 +303,12 @@ private fun settingsGroups(
                 stringResource(Res.string.settings_export),
                 stringResource(Res.string.settings_export_hint),
                 onClick = onExport,
+            )
+            RowDivider()
+            LinkRow(
+                stringResource(Res.string.settings_import),
+                stringResource(Res.string.settings_import_hint),
+                onClick = onImport,
             )
             if (state.health != HealthStatus.Unavailable) {
                 RowDivider()

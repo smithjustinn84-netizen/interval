@@ -40,6 +40,52 @@
     <string name="settings_data">Your data</string>
     <string name="settings_export">Export</string>
     <string name="settings_export_hint">A file of your workouts, presets, plan, settings and lifting, to keep or move</string>
+    <string name="settings_import">Import</string>
+    <string name="settings_import_hint">Bring back what an export holds, adding to what is here</string>
+    <string name="import_title">Import</string>
+    <string name="import_counts_joined">%1$s, %2$s</string>
+    <string name="import_from">Exported on %1$s</string>
+    <string name="import_from_version">Exported on %1$s by Interval %2$s</string>
+    <string name="import_new">New: %1$s</string>
+    <string name="import_nothing_new">Everything in it is already here.</string>
+    <plurals name="import_already">
+        <item quantity="one">%1$d thing in it is already here, and stays as it is.</item>
+        <item quantity="other">%1$d things in it are already here, and stay as they are.</item>
+    </plurals>
+    <string name="import_also_settings">Also settings</string>
+    <string name="import_also_settings_hint">Theme, cues, body weight, goal, reminders and the Timer, as the file has them</string>
+    <string name="import_action">Import</string>
+    <string name="import_cancel">Cancel</string>
+    <string name="import_too_new">This file is from a newer Interval, %1$s. Update the app, then import it.</string>
+    <string name="import_too_new_unnamed">This file is from a newer Interval. Update the app, then import it.</string>
+    <string name="import_unreadable">This isn't an Interval export, or it's damaged. Nothing was changed.</string>
+    <string name="import_done">Imported %1$s</string>
+    <string name="import_done_nothing">Nothing new to import</string>
+    <string name="import_failed">Couldn't finish the import. Import the file again to add what's missing.</string>
+    <plurals name="import_workouts">
+        <item quantity="one">%1$d workout</item>
+        <item quantity="other">%1$d workouts</item>
+    </plurals>
+    <plurals name="import_presets">
+        <item quantity="one">%1$d preset</item>
+        <item quantity="other">%1$d presets</item>
+    </plurals>
+    <plurals name="import_plans">
+        <item quantity="one">%1$d plan</item>
+        <item quantity="other">%1$d plans</item>
+    </plurals>
+    <plurals name="import_sessions">
+        <item quantity="one">%1$d Lift session</item>
+        <item quantity="other">%1$d Lift sessions</item>
+    </plurals>
+    <plurals name="import_exercises">
+        <item quantity="one">%1$d exercise</item>
+        <item quantity="other">%1$d exercises</item>
+    </plurals>
+    <plurals name="import_programs">
+        <item quantity="one">%1$d program</item>
+        <item quantity="other">%1$d programs</item>
+    </plurals>
     <!-- The platform's health store, by its name: Android's. The row shows only where there is one. -->
     <string name="settings_health">Health Connect</string>
     <string name="settings_health_off_hint">Save finished workouts and Lift sessions there too</string>

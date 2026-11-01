@@ -12,6 +12,7 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
+import androidx.room.Transaction
 import androidx.room.Update
 import androidx.room.Upsert
 import androidx.room.migration.Migration
@@ -72,6 +73,8 @@ abstract class LiftDatabase : RoomDatabase() {
     abstract fun customExerciseDao(): CustomExerciseDao
 
     abstract fun bandDao(): BandDao
+
+    abstract fun importDao(): LiftImportDao
 }
 
 /** Room generates the `actual` for each platform. */
@@ -157,6 +160,64 @@ interface SessionDao {
     @Query("DELETE FROM lift_set WHERE session_uid = :uid")
     suspend fun discardSets(uid: String)
 }
+
+/** What an import adds, all of it or none: one transaction over every table it touches. */
+@Dao
+interface LiftImportDao {
+    @Insert
+    suspend fun insertSessions(rows: List<SessionEntity>)
+
+    @Insert
+    suspend fun insertSets(rows: List<SetEntity>)
+
+    @Insert
+    suspend fun insertExercises(rows: List<CustomExerciseEntity>)
+
+    @Insert
+    suspend fun insertPrograms(rows: List<CustomProgramEntity>)
+
+    @Upsert
+    suspend fun upsertBands(rows: List<BandEntity>)
+
+    @Upsert
+    suspend fun upsertBells(rows: List<BellEntity>)
+
+    @Upsert
+    suspend fun upsertBar(bar: BarEntity)
+
+    @Upsert
+    suspend fun upsertFollowing(following: FollowingEntity)
+
+    @Upsert
+    suspend fun upsertRest(rest: RestEntity)
+
+    /** Adds the rows of [rows] together; a [LiftImportRows.bar], following or rest that is null is left as it is. */
+    @Transaction
+    suspend fun importAll(rows: LiftImportRows) {
+        insertExercises(rows.exercises)
+        upsertBands(rows.bands)
+        upsertBells(rows.bells)
+        insertPrograms(rows.programs)
+        insertSessions(rows.sessions)
+        insertSets(rows.sets)
+        rows.bar?.let { upsertBar(it) }
+        rows.following?.let { upsertFollowing(it) }
+        rows.rest?.let { upsertRest(it) }
+    }
+}
+
+/** The rows an import writes, as [LiftImportDao.importAll] takes them. */
+data class LiftImportRows(
+    val sessions: List<SessionEntity> = emptyList(),
+    val sets: List<SetEntity> = emptyList(),
+    val exercises: List<CustomExerciseEntity> = emptyList(),
+    val programs: List<CustomProgramEntity> = emptyList(),
+    val bands: List<BandEntity> = emptyList(),
+    val bells: List<BellEntity> = emptyList(),
+    val bar: BarEntity? = null,
+    val following: FollowingEntity? = null,
+    val rest: RestEntity? = null,
+)
 
 @Dao
 interface FollowingDao {

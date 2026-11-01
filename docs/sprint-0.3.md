@@ -127,6 +127,20 @@ Sizes: XS ≤ half a day, S ≈ 1 day, M ≈ 2 days, L ≈ 3 days. The cut line 
   (`suspend fun open(mimeTypes): ShareableFile?`), with `rememberFileOpener()` in `core`'s
   `SystemServices.kt` like `rememberHealthConnector`: Android's `ActivityResultContracts.OpenDocument`,
   iOS's `UIDocumentPickerViewController`, desktop's `FileDialog`. `RecordingFileOpener` in `core-testing`.
+- As built: `readImport` (`apps/app/src/export/ImportPlanner.kt`) is pure and plans everything before a write:
+  the schema is read first (newer: "update the app"; not `app: interval` or damaged: refused), every value goes
+  through the domain's ranges (one out of them refuses the file), and the file's ids are never stored (they are
+  the other phone's): workouts match by when and what they were and get fresh uids, presets by name (a
+  built-in's name counts as here), plans by day and what they hold and link to a preset by name, Lift's
+  sessions, exercises and programs by uid, bands by id, bells by weight. The bar and the program followed
+  come in only where this phone has none; Lift's rest comes with "Also settings". A set of an exercise neither
+  here nor in the file keeps its key, as a set of one deleted does. Each side writes in one Room transaction
+  (an `ImportDao` per database, `SerialWriter.await` so the notice follows the commit); the two databases
+  can't share one, so a failure between them leaves the first side in, and importing again finishes the job.
+  `FileOpener` is a callback (`rememberFileOpener(onOpen)` in `core`), not a suspend call, so Android's answer
+  reaches a screen recreated behind the picker (checked by rotating with the picker open); the picker accepts
+  `application/json`, `application/octet-stream` and `text/*`, and the contents decide. iOS's picker is built
+  but not run on the simulator. The file names no device, so the sheet says the date and the version only.
 - Settings > Your data > Import: pick a file, a review sheet with the counts and the date it was exported
   ("From this phone on 14 Oct: 12 workouts and 3 presets are new, 40 are already here"), Import, a notice
   with what came in. A corrupt or foreign file says so and changes nothing.

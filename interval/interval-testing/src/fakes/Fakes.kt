@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
 import dev.justinsmith.interval.data.HistoryDao
 import dev.justinsmith.interval.data.HistoryEntity
+import dev.justinsmith.interval.data.ImportDao
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.data.PlannedDao
 import dev.justinsmith.interval.data.PlannedEntity
@@ -134,6 +135,19 @@ class FakePresetDao : PresetDao {
     }
 }
 
+/** An [ImportDao] over the other fakes: its transaction is [ImportDao.importAll]'s own, without the rollback. */
+class FakeImportDao(
+    private val history: FakeHistoryDao,
+    private val presets: FakePresetDao,
+    private val planned: FakePlannedDao,
+) : ImportDao {
+    override suspend fun insertHistory(rows: List<HistoryEntity>) = rows.forEach { history.insert(it) }
+
+    override suspend fun insertPresets(rows: List<PresetEntity>): List<Long> = rows.map { presets.insert(it) }
+
+    override suspend fun insertPlanned(rows: List<PlannedEntity>) = planned.insert(rows)
+}
+
 /**
  * Everything the repository stores, in memory. Two repositories over one [FakeStorage] are the app
  * before and after a restart.
@@ -143,6 +157,7 @@ class FakeStorage {
     val history = FakeHistoryDao()
     val presets = FakePresetDao()
     val planned = FakePlannedDao()
+    val imports = FakeImportDao(history, presets, planned)
 
     /**
      * A repository over this storage. By default its writes run unconfined and the fakes never suspend, so
@@ -153,7 +168,7 @@ class FakeStorage {
     fun repository(
         now: WallClock = WallClock { 0L },
         scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
-    ): IntervalRepository = IntervalRepository(settings, history, presets, planned, scope, now)
+    ): IntervalRepository = IntervalRepository(settings, history, presets, planned, imports, scope, now)
 }
 
 /**
@@ -177,6 +192,7 @@ fun fakeStorageModule(storage: FakeStorage = FakeStorage()): Module = module {
     single<HistoryDao> { storage.history }
     single<PresetDao> { storage.presets }
     single<PlannedDao> { storage.planned }
+    single<ImportDao> { storage.imports }
 }
 
 /** A [CuePlayer] that plays nothing and remembers every cue it was asked for. */

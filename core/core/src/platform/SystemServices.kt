@@ -1,6 +1,12 @@
 package dev.justinsmith.interval.platform
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.staticCompositionLocalOf
+import kotlinx.coroutines.launch
 
 /**
  * Keeps the display awake while this is in the composition. Several callers may hold it at once (a page on
@@ -75,3 +81,34 @@ internal object NoHealthConnector : HealthConnector {
 
     override fun install() = Unit
 }
+
+/** A [FileOpener] standing in for the platform's picker, as tests provide one; null, as in the app, for theirs. */
+val LocalFileOpener = staticCompositionLocalOf<FileOpener?> { null }
+
+/**
+ * The way from a screen to a file of the user's: the function returned asks for one of the mime types it is
+ * given, and the file picked comes to [onOpen], read and in hand; nothing does when the user backs out. Android's
+ * is the system's document picker, whose answer reaches the screen as it then stands, even one recreated behind
+ * the picker; iOS's the document picker; desktop's a file dialog.
+ */
+@Composable
+fun rememberFileOpener(onOpen: (ShareableFile) -> Unit): (List<String>) -> Unit {
+    val standIn = LocalFileOpener.current
+    val opened by rememberUpdatedState(onOpen)
+    val platform = rememberPlatformFileOpener { opened(it) }
+    val scope = rememberCoroutineScope()
+    return remember(standIn, platform) {
+        if (standIn == null) {
+            platform
+        } else {
+            { types: List<String> ->
+                scope.launch { standIn.open(types)?.let(opened) }
+                Unit
+            }
+        }
+    }
+}
+
+/** The platform's side of [rememberFileOpener]. */
+@Composable
+internal expect fun rememberPlatformFileOpener(onOpen: (ShareableFile) -> Unit): (List<String>) -> Unit

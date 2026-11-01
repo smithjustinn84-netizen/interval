@@ -9,6 +9,11 @@
     <action>Tap "Export" under "Your data"</action>
     <action>Verify that the system share sheet opens with a file named like "interval-2026-10-27.json" (today's date)</action>
     <action>Dismiss the share sheet with Back</action>
+    <action>Before the next step, put an export from another phone in Downloads: adb push an `interval-*.json` (the schema-1 file in `apps/app/test/fixtures/ExportFixtures.kt` will do) to /sdcard/Download/</action>
+    <action>Tap "Import" under "Your data" and verify that the system's file picker opens</action>
+    <action>Tap the export in Downloads (or Recent) and verify that a sheet says "Exported on" its date, lists what is "New:" and offers "Also settings" off and "Import"</action>
+    <action>Tap "Import" in the sheet and verify that a notice says "Imported" with the same counts</action>
+    <action>Tap "Import" under "Your data" again, pick the same file, and verify that the sheet says "Everything in it is already here."; tap "Cancel"</action>
     <action>Tap the "Voice" switch</action>
     <action>Verify that the "Voice" switch is off</action>
     <action>Verify that "Dark" is selected in the theme picker, the theme a fresh install starts on</action>

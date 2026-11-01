@@ -24,6 +24,7 @@ import dev.justinsmith.lift.fakes.FakeBellDao
 import dev.justinsmith.lift.fakes.FakeCustomExerciseDao
 import dev.justinsmith.lift.fakes.FakeCustomProgramDao
 import dev.justinsmith.lift.fakes.FakeFollowingDao
+import dev.justinsmith.lift.fakes.FakeLiftImportDao
 import dev.justinsmith.lift.fakes.FakeSessionDao
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,8 +45,17 @@ class LiftRepositoryTest {
     private val programDao = FakeCustomProgramDao()
     private val exerciseDao = FakeCustomExerciseDao()
     private val bandDao = FakeBandDao()
-    private val repository =
-        LiftRepository(sessionDao, FakeBellDao(), followingDao, programDao, exerciseDao, bandDao, scope) { now }
+    private val bellDao = FakeBellDao()
+    private val repository = LiftRepository(
+        sessionDao,
+        bellDao,
+        followingDao,
+        programDao,
+        exerciseDao,
+        bandDao,
+        FakeLiftImportDao(sessionDao, bellDao, followingDao, programDao, exerciseDao, bandDao),
+        scope,
+    ) { now }
 
     private val pressAndSwings = ProgramDraft(
         name = "Press and swings",

@@ -18,6 +18,7 @@ import dev.justinsmith.lift.data.FollowingDao
 import dev.justinsmith.lift.data.FollowingEntity
 import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.data.IntervalWorkout
+import dev.justinsmith.lift.data.LiftImportDao
 import dev.justinsmith.lift.data.LiftRepository
 import dev.justinsmith.lift.data.RestEntity
 import dev.justinsmith.lift.data.SessionDao
@@ -224,6 +225,34 @@ class RecordingBeeper : Beeper {
     }
 }
 
+/** A [LiftImportDao] over the other fakes: its transaction is [LiftImportDao.importAll]'s own, with no rollback. */
+class FakeLiftImportDao(
+    private val sessions: FakeSessionDao,
+    private val bells: FakeBellDao,
+    private val following: FakeFollowingDao,
+    private val programs: FakeCustomProgramDao,
+    private val exercises: FakeCustomExerciseDao,
+    private val bands: FakeBandDao,
+) : LiftImportDao {
+    override suspend fun insertSessions(rows: List<SessionEntity>) = rows.forEach { sessions.insert(it) }
+
+    override suspend fun insertSets(rows: List<SetEntity>) = rows.forEach { sessions.insert(it) }
+
+    override suspend fun insertExercises(rows: List<CustomExerciseEntity>) = rows.forEach { exercises.upsert(it) }
+
+    override suspend fun insertPrograms(rows: List<CustomProgramEntity>) = rows.forEach { programs.upsert(it) }
+
+    override suspend fun upsertBands(rows: List<BandEntity>) = bands.upsert(rows)
+
+    override suspend fun upsertBells(rows: List<BellEntity>) = rows.forEach { bells.upsert(it) }
+
+    override suspend fun upsertBar(bar: BarEntity) = bells.upsertBar(bar)
+
+    override suspend fun upsertFollowing(following: FollowingEntity) = this.following.upsert(following)
+
+    override suspend fun upsertRest(rest: RestEntity) = bells.upsertRest(rest)
+}
+
 /** Lift's storage over the fakes: no database, and writes run at once on the caller's thread. */
 class FakeLiftStorage {
     val sessions = FakeSessionDao()
@@ -232,6 +261,7 @@ class FakeLiftStorage {
     val programs = FakeCustomProgramDao()
     val exercises = FakeCustomExerciseDao()
     val bands = FakeBandDao()
+    val imports = FakeLiftImportDao(sessions, bells, following, programs, exercises, bands)
 
     /** A repository over this storage, its writes landed by the time a call returns. */
     fun repository(now: WallClock = WallClock { 0L }): LiftRepository = LiftRepository(
@@ -241,6 +271,7 @@ class FakeLiftStorage {
         programs,
         exercises,
         bands,
+        imports,
         CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
         now,
     )
@@ -308,6 +339,7 @@ fun fakeLiftStorageModule(storage: FakeLiftStorage = FakeLiftStorage()): Module 
     single<CustomProgramDao> { storage.programs }
     single<CustomExerciseDao> { storage.exercises }
     single<BandDao> { storage.bands }
+    single<LiftImportDao> { storage.imports }
 }
 
 /**

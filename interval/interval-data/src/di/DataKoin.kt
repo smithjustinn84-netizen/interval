@@ -45,6 +45,7 @@ val storageModule: Module = module {
     single { get<AppDatabase>().historyDao() }
     single { get<AppDatabase>().presetDao() }
     single { get<AppDatabase>().plannedDao() }
+    single { get<AppDatabase>().importDao() }
     single<DataStore<Preferences>> { preferencesAt(get<PlatformStorage>().preferencesPath) }
 }
 
@@ -76,6 +77,7 @@ val dataModule: Module = module {
             historyDao = get(),
             presetDao = get(),
             plannedDao = get(),
+            importDao = get(),
             scope = get(StorageScope),
             clock = get(),
         )

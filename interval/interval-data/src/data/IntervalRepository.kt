@@ -56,6 +56,7 @@ class IntervalRepository(
     private val historyDao: HistoryDao,
     private val presetDao: PresetDao,
     private val plannedDao: PlannedDao,
+    private val importDao: ImportDao,
     private val scope: CoroutineScope,
     private val clock: WallClock,
 ) {
@@ -286,6 +287,20 @@ class IntervalRepository(
     fun clearHistory() {
         val now = clock.nowMillis()
         writer.persist { historyDao.clear(now) }
+    }
+
+    /**
+     * Adds what an import brings, all of it or none (one transaction), behind every write before it, and returns
+     * once it has landed; a failure is thrown, nothing having been written. Each workout gets a uid of its own;
+     * a plan naming a preset by [PlanWorkout.Interval.name] of one added here, or already here, links to it.
+     */
+    suspend fun importAll(history: List<HistoryEntry>, presets: List<Preset>, planned: List<PlannedWorkout>) {
+        val now = clock.nowMillis()
+        val rows = history.map { it.copy(id = null).toEntity(uid = Uuid.random().toHexString(), now) }
+        val presetRows = presets.map { it.copy(id = null).toEntity() }
+        val planRows = planned.map { it.copy(id = 0).toEntity() }
+        val names = planned.map { (it.workout as? PlanWorkout.Interval)?.takeIf { w -> w.presetId == null }?.name }
+        writer.await { importDao.importAll(rows, presetRows, planRows, names) }
     }
 
     /** Plans [workout] for every week on each of [weekdays] (1 for Monday through 7): one plan per day. */

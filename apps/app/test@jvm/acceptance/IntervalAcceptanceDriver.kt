@@ -29,6 +29,7 @@ import dev.justinsmith.interval.platform.HealthSegment
 import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.HealthWorkoutKind
+import dev.justinsmith.interval.platform.ShareableFile
 import dev.justinsmith.interval.tab
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
 import dev.justinsmith.interval.ui.AcceptanceSteps
@@ -317,6 +318,38 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         tapDescribed("Settings")
         see("Cues")
     }
+
+    /** Under Your data: Import, picking a file that holds [content] in the system's picker. */
+    fun importFile(content: String) {
+        app.files.next = ShareableFile("interval.json", "application/json", content)
+        scrollTo("Import")
+        tap(hasText("Import") and hasClickAction())
+    }
+
+    /** The review sheet says when the file was exported and what in it is [new], or that nothing is. */
+    fun seeImportReview(exported: String, new: String) {
+        see(hasText(exported, substring = true))
+        see(new)
+    }
+
+    fun seeAlreadyHere(count: Int) = see(hasText("$count things in it are already here", substring = true))
+
+    fun alsoSettings() = tap("Also settings")
+
+    /** Imports the file under review, from the sheet's button: drawn over the row of the same name, so the last. */
+    fun confirmImport() = tap(hasText("Import") and hasClickAction())
+
+    fun seeImported(text: String) = see(text)
+
+    fun seeImportRefused(why: String) {
+        see(hasText(why, substring = true))
+        tap("Done")
+    }
+
+    fun cancelImport() = tap("Cancel")
+
+    fun savedPresetsNamed(vararg names: String) =
+        assertEquals(names.toList(), app.repository.customPresets.value.map { it.name })
 
     fun toggleVoice() = tap("Voice")
 

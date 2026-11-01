@@ -228,7 +228,8 @@ class AppNavigationTest {
         onNodeWithContentDescription("Back").performClick()
         onNodeWithText("Version 1.2.3").assertExists()
         onNodeWithContentDescription("Back").performClick()
-        onNodeWithText("Cues").assertExists()
+        // Back on Settings where it was left, scrolled down to About.
+        onNodeWithText("About Interval").assertExists()
     }
 
     @Test

@@ -2,6 +2,7 @@ package dev.justinsmith.interval.storage
 
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -35,6 +36,27 @@ class SerialWriter(scope: CoroutineScope, private val log: Logger) {
     /** Queues [write] behind every write before it. After [close], it is dropped. */
     fun persist(write: suspend () -> Unit) {
         if (writes.trySend(write).isClosed) log.w { "A save came after the writer closed and was dropped" }
+    }
+
+    /**
+     * Queues [write] as [persist] does, then waits for it and hands back what it returns: for a write the caller
+     * must see land, or fail. Its failure is thrown here, not logged. After [close] it throws at once.
+     */
+    @Suppress("detekt.TooGenericExceptionCaught")
+    suspend fun <T> await(write: suspend () -> T): T {
+        val done = CompletableDeferred<T>()
+        val queued = writes.trySend {
+            try {
+                done.complete(write())
+            } catch (e: CancellationException) {
+                done.cancel(e)
+                throw e
+            } catch (e: Exception) {
+                done.completeExceptionally(e)
+            }
+        }
+        check(!queued.isClosed) { "The writer is closed" }
+        return done.await()
     }
 
     /**

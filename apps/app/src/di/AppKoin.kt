@@ -6,9 +6,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.data.RepositoryIntervalActivity
 import dev.justinsmith.interval.export.AppDataExporter
+import dev.justinsmith.interval.export.AppDataImporter
 import dev.justinsmith.interval.platform.rememberCorePlatformModule
 import dev.justinsmith.interval.platform.rememberPlatformModule
 import dev.justinsmith.interval.settings.DataExporter
+import dev.justinsmith.interval.settings.DataImporter
 import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.data.LiftRepository
 import dev.justinsmith.lift.di.liftModules
@@ -41,11 +43,12 @@ fun appModules(
         appModule
 
 /**
- * What only the app can build, seeing both sides: the export, over both sides' storage, and what Lift reads of
- * the interval side (the workouts for its week, and the goal set on Plan).
+ * What only the app can build, seeing both sides: the export and the import, over both sides' storage, and what
+ * Lift reads of the interval side (the workouts for its week, and the goal set on Plan).
  */
 private val appModule = module {
     single<DataExporter> { AppDataExporter(get(), get(), get(), get(), get()) }
+    single<DataImporter> { AppDataImporter(get(), get()) }
     single<IntervalActivity> { RepositoryIntervalActivity(get(), get(StorageScope)) }
 }
 

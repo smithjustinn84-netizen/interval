@@ -330,6 +330,7 @@ class StorageTest {
                 database.historyDao(),
                 database.presetDao(),
                 database.plannedDao(),
+                database.importDao(),
                 scope,
                 clock = { clock },
             )

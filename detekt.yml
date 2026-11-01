@@ -59,8 +59,9 @@ Compose:
     active: true
   CompositionLocalAllowlist:
     active: true
-    # The theme's own locals, read through IntervalTheme like MaterialTheme's.
-    allowedCompositionLocals: ['LocalIntervalPalette', 'LocalWorkoutColors', 'LocalIntervalType', 'LocalNotices', 'LocalIdle']
+    # The theme's own locals, read through IntervalTheme like MaterialTheme's; and LocalFileOpener, a test's
+    # stand-in for the system's file picker, null in the app.
+    allowedCompositionLocals: ['LocalIntervalPalette', 'LocalWorkoutColors', 'LocalIntervalType', 'LocalNotices', 'LocalIdle', 'LocalFileOpener']
   CompositionLocalNaming:
     active: true
   ConditionHoist:

@@ -61,6 +61,7 @@ class SessionViewModelTest {
             programs,
             exercises,
             bands,
+            imports,
             CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
         ) { now }
     }

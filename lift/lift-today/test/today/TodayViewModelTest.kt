@@ -35,6 +35,7 @@ class TodayViewModelTest {
             programs,
             exercises,
             bands,
+            imports,
             CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
         ) { 1_000L }
     }

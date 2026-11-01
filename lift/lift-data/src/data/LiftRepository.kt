@@ -61,6 +61,7 @@ class LiftRepository(
     private val customProgramDao: CustomProgramDao,
     private val customExerciseDao: CustomExerciseDao,
     private val bandDao: BandDao,
+    private val importDao: LiftImportDao,
     private val scope: CoroutineScope,
     private val clock: WallClock,
 ) : LiftActivity {
@@ -428,6 +429,33 @@ class LiftRepository(
         writer.persist { sessionDao.reflect(uid, effort?.level, kept, now) }
     }
 
+    /**
+     * Adds what an import brings, all of it or none (one transaction), behind every write before it, and returns
+     * once it has landed; a failure is thrown, nothing having been written. Sessions keep their uids, exercises
+     * and programs theirs; sets are stored afresh under their session.
+     */
+    suspend fun importAll(import: LiftImport) {
+        val now = clock.nowMillis()
+        val rows = LiftImportRows(
+            sessions = import.sessions.map { it.importRow(now) },
+            sets = import.sessions.flatMap { session -> session.sets.map { it.importRow(session.uid) } },
+            exercises = import.exercises.map { it.toEntity(now) },
+            programs = import.programs.mapNotNull { it.importRow(now) },
+            bands = import.bands.map { it.toEntity(now) },
+            bells = import.bellsKg.map(::BellEntity),
+            bar = import.barKg?.let { BarEntity(kg = it) },
+            following = import.following?.let {
+                FollowingEntity(
+                    programId = it.program.key.stored,
+                    startedAtEpochMillis = it.startedAtEpochMillis,
+                    daysBefore = it.daysBefore,
+                )
+            },
+            rest = import.restSeconds?.let { RestEntity(seconds = it) },
+        )
+        writer.await { importDao.importAll(rows) }
+    }
+
     /** Drops the session in progress and its sets. */
     fun discardSession() {
         writer.persist {
@@ -571,6 +599,39 @@ private fun CustomExerciseEntity.toDomain(): CustomExercise? = CustomExercise(
 
 private fun BandEntity.toDomain() =
     Band(id, name, BandColour.entries.firstOrNull { it.name == colour } ?: BandColour.Grey, position, archived)
+
+/** A finished session as an import stores it: as it was, but changed now. */
+private fun LiftSession.importRow(now: Long) = SessionEntity(
+    uid = uid,
+    startedAtEpochMillis = startedAtEpochMillis,
+    finishedAtEpochMillis = finishedAtEpochMillis,
+    title = title,
+    updatedAtEpochMillis = now,
+    programId = program?.stored,
+    programDay = day,
+    effort = effort?.level,
+    note = note,
+)
+
+private fun SetLog.importRow(sessionUid: String) = SetEntity(
+    0,
+    sessionUid,
+    exercise.key,
+    bellKg,
+    reps,
+    side?.name,
+    loggedAtEpochMillis,
+    double,
+    equipment = equipment.name,
+    seconds = seconds,
+    band = band?.id,
+)
+
+/** A program of the user's own as stored; a built-in has no row, so null. */
+private fun Program.importRow(now: Long): CustomProgramEntity? {
+    val custom = key as? ProgramKey.Custom ?: return null
+    return CustomProgramEntity(custom.uid, name.orEmpty(), daysPerWeek, weeks, encodeDays(days), now)
+}
 
 private fun Band.toEntity(updatedAtEpochMillis: Long) =
     BandEntity(id, name, colour.name, position, archived, updatedAtEpochMillis)

@@ -103,9 +103,15 @@ class IntervalRepositoryTest {
         val slow = SlowDataStore()
         val scope = CoroutineScope(backgroundScope.coroutineContext + UnconfinedTestDispatcher(testScheduler))
         val repository =
-            IntervalRepository(slow, storage.history, storage.presets, storage.planned, scope, clock = {
-                clock
-            })
+            IntervalRepository(
+                slow,
+                storage.history,
+                storage.presets,
+                storage.planned,
+                storage.imports,
+                scope,
+                clock = { clock },
+            )
         assertFalse(repository.ready.value)
         assertEquals(IntervalConfig(), repository.config.value)
 
@@ -126,9 +132,15 @@ class IntervalRepositoryTest {
         }
         val scope = CoroutineScope(Dispatchers.Unconfined)
         val repository =
-            IntervalRepository(storage.settings, broken, storage.presets, storage.planned, scope, clock = {
-                clock
-            })
+            IntervalRepository(
+                storage.settings,
+                broken,
+                storage.presets,
+                storage.planned,
+                storage.imports,
+                scope,
+                clock = { clock },
+            )
         assertTrue(repository.ready.value)
         assertEquals(emptyList(), repository.history.value)
     }
@@ -146,9 +158,15 @@ class IntervalRepositoryTest {
         }
         val scope = deferredStorageScope()
         val repository =
-            IntervalRepository(storage.settings, flaky, storage.presets, storage.planned, scope, clock = {
-                clock
-            })
+            IntervalRepository(
+                storage.settings,
+                flaky,
+                storage.presets,
+                storage.planned,
+                storage.imports,
+                scope,
+                clock = { clock },
+            )
         testScheduler.runCurrent()
         assertTrue(repository.ready.value)
         assertEquals(emptyList(), repository.history.value)
@@ -415,6 +433,7 @@ class IntervalRepositoryTest {
                 flaky,
                 storage.presets,
                 storage.planned,
+                storage.imports,
                 CoroutineScope(
                     Dispatchers.Unconfined,
                 ),

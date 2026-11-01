@@ -13,6 +13,15 @@ interface AppInfo {
 data class ShareableFile(val name: String, val mimeType: String, val content: String)
 
 /**
+ * Reads a text file the user picks, one of [open]'s mime types; null when they back out or it can't be read.
+ * A screen asks through core's `rememberFileOpener`, which tests hand one of these in place of the system's
+ * picker.
+ */
+fun interface FileOpener {
+    suspend fun open(mimeTypes: List<String>): ShareableFile?
+}
+
+/**
  * Hands something of the user's to the system: Android's share sheet, iOS's activity sheet; on desktop a file
  * goes to a save dialog and text to the clipboard. Injected, so tests record what was offered.
  */

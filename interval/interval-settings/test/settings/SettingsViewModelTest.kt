@@ -3,6 +3,7 @@
 package dev.justinsmith.interval.settings
 
 import dev.justinsmith.interval.fakes.FakeStorage
+import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.MainDispatcherTest
 import dev.justinsmith.interval.fakes.RecordingCuePlayer
 import dev.justinsmith.interval.fakes.RecordingHealthStore
@@ -31,7 +32,10 @@ class SettingsViewModelTest : MainDispatcherTest() {
     private val export = ShareableFile("interval-2026-10-15.json", "application/json", "{}")
     private val sharer = RecordingSharer()
     private val health = RecordingHealthStore()
-    private val viewModel by lazy { SettingsViewModel(repository, player, { export }, sharer, health) }
+    private val importer = FakeImporter()
+    private val viewModel by lazy {
+        SettingsViewModel(repository, player, { export }, sharer, health, importer, FixedTimestampFormatter)
+    }
 
     @Test
     fun `export offers the exporter's file to share`() {
@@ -43,7 +47,8 @@ class SettingsViewModelTest : MainDispatcherTest() {
     fun `an export that fails is dropped and the next one goes`() {
         var failing = true
         val exporter = DataExporter { if (failing) error("disk full") else export }
-        val viewModel = SettingsViewModel(repository, player, exporter, sharer, health)
+        val viewModel =
+            SettingsViewModel(repository, player, exporter, sharer, health, importer, FixedTimestampFormatter)
         viewModel.export()
         assertTrue(sharer.files.isEmpty())
         failing = false
@@ -54,11 +59,47 @@ class SettingsViewModelTest : MainDispatcherTest() {
     @Test
     fun `a second tap while an export is under way exports nothing more`() {
         val built = CompletableDeferred<ShareableFile>()
-        val viewModel = SettingsViewModel(repository, player, { built.await() }, sharer, health)
+        val viewModel =
+            SettingsViewModel(repository, player, { built.await() }, sharer, health, importer, FixedTimestampFormatter)
         viewModel.export()
         viewModel.export()
         built.complete(export)
         assertEquals(listOf(export), sharer.files)
+    }
+
+    @Test
+    fun `an import is reviewed first and imported once confirmed`() {
+        val file = ShareableFile("interval.json", "application/json", "{}")
+        importer.review = ImportReview.Ready(0, "0.2.0", ImportCounts(workouts = 2), alreadyHere = 5)
+        viewModel.reviewImport(file)
+
+        val step = viewModel.import.value as ImportStep.Review
+        assertEquals(importer.review, step.review)
+        assertEquals("day 0", step.exportedOn)
+        assertTrue(importer.imported.isEmpty())
+
+        viewModel.confirmImport(withSettings = true)
+        assertEquals(listOf(file to true), importer.imported)
+        assertEquals(ImportStep.Done(ImportCounts(workouts = 2)), viewModel.import.value)
+        viewModel.dismissImport()
+        assertNull(viewModel.import.value)
+    }
+
+    @Test
+    fun `a file that can't be imported is never imported`() {
+        importer.review = ImportReview.Unreadable
+        viewModel.reviewImport(ShareableFile("x.json", "application/json", "nope"))
+        viewModel.confirmImport(withSettings = false)
+        assertTrue(importer.imported.isEmpty())
+        assertEquals(ImportReview.Unreadable, (viewModel.import.value as ImportStep.Review).review)
+    }
+
+    @Test
+    fun `an import that fails says so`() {
+        importer.failing = true
+        viewModel.reviewImport(ShareableFile("interval.json", "application/json", "{}"))
+        viewModel.confirmImport(withSettings = false)
+        assertEquals(ImportStep.Failed, viewModel.import.value)
     }
 
     @Test
@@ -161,5 +202,20 @@ class SettingsViewModelTest : MainDispatcherTest() {
         viewModel.disconnectHealth()
         assertEquals(1, health.disconnects)
         assertEquals(HealthStatus.Disconnected, viewModel.state.value.health)
+    }
+}
+
+/** Reviews every file as [review] says, and records what it was asked to import. */
+private class FakeImporter : DataImporter {
+    var review: ImportReview = ImportReview.Ready(0, null, ImportCounts(workouts = 2), alreadyHere = 0)
+    var failing = false
+    val imported = mutableListOf<Pair<ShareableFile, Boolean>>()
+
+    override suspend fun review(file: ShareableFile): ImportReview = review
+
+    override suspend fun import(file: ShareableFile, withSettings: Boolean): ImportCounts {
+        check(!failing) { "disk full" }
+        imported += file to withSettings
+        return (review as ImportReview.Ready).new
     }
 }

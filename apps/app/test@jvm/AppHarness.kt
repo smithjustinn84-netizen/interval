@@ -16,8 +16,10 @@ import androidx.navigationevent.NavigationEventDispatcherOwner
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.fakes.FakeStorage
+import dev.justinsmith.interval.fakes.RecordingFileOpener
 import dev.justinsmith.interval.fakes.testKoin
 import dev.justinsmith.interval.nav.Shortcut
+import dev.justinsmith.interval.platform.LocalFileOpener
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.ui.UI_TEST_TIMEOUT
 import dev.justinsmith.interval.ui.Window
@@ -43,6 +45,9 @@ class AppFixture(
     /** The system back input, for a test that drives a gesture step by step. */
     val backInput: DirectNavigationEventInput,
 ) {
+    /** The system's file picker, as Import opens it: what it hands over is a test's to set. */
+    val files = RecordingFileOpener()
+
     /** The launcher shortcut the app is handed, as Android's activity hands it on; null once taken. */
     val shortcut = mutableStateOf<Shortcut?>(null)
 
@@ -85,7 +90,10 @@ fun appTest(
     try {
         val fixture = AppFixture(koin, storage, lift, clock, elapsed, input)
         setContent {
-            CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides owner) {
+            CompositionLocalProvider(
+                LocalNavigationEventDispatcherOwner provides owner,
+                LocalFileOpener provides fixture.files,
+            ) {
                 AppContent(koin, shortcut = fixture.shortcut.value, onShortcutOpen = { fixture.shortcut.value = null })
             }
         }

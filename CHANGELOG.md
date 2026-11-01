@@ -14,6 +14,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 - App shortcuts (Android): a long-press on the icon offers "Start a workout", the Timer's workout, and "Start a
   Lift session", which starts or resumes one. Each opens over its tab, so Back lands there, and a workout
   already running is kept: either shortcut returns to it.
+- Import: Settings > Your data > Import reads back a file Export wrote, on this phone or another, from 0.2 on. A
+  sheet says when it was exported and what in it is new, and imports only that: nothing here is changed or
+  removed, and importing the same file again adds nothing. Settings come too only with "Also settings" on. A
+  damaged file, another app's, or one from a newer Interval is refused and changes nothing.
 - How was it: a finished workout's and a Lift session's summary ask how hard it felt (Easy, Steady, Hard, Very
   hard, All out) and take a one-line note, kept as you choose and type. History's log and a workout's page,
   and a session's page on Lift, show them; sharing adds the note; the export carries both (schema 3); and

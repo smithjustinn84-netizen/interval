@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.fakes
 
 import dev.justinsmith.interval.platform.AppInfo
+import dev.justinsmith.interval.platform.FileOpener
 import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.HealthWorkout
@@ -49,6 +50,16 @@ object FixedTimestampFormatter : TimestampFormatter {
 /** A build that calls itself [version]. */
 object FakeAppInfo : AppInfo {
     override val version: String = "1.2.3"
+}
+
+/** Stands in for the system's file picker: hands over [next] when asked (null backs out), and records each ask. */
+class RecordingFileOpener(var next: ShareableFile? = null) : FileOpener {
+    val asked = mutableListOf<List<String>>()
+
+    override suspend fun open(mimeTypes: List<String>): ShareableFile? {
+        asked += mimeTypes
+        return next
+    }
 }
 
 /** Records what was offered to the system to share. */

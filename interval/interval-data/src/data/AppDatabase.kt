@@ -12,6 +12,7 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
+import androidx.room.Transaction
 import androidx.room.Update
 import androidx.room.migration.AutoMigrationSpec
 import androidx.room.migration.Migration
@@ -57,6 +58,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun presetDao(): PresetDao
 
     abstract fun plannedDao(): PlannedDao
+
+    abstract fun importDao(): ImportDao
 }
 
 /** Room generates the `actual` for each platform. */
@@ -154,6 +157,40 @@ interface HistoryDao {
     /** Marks every workout not yet deleted as deleted at [now]. */
     @Query("UPDATE history SET deleted = 1, updated_at = :now WHERE deleted = 0")
     suspend fun clear(now: Long)
+}
+
+/** What an import adds, all of it or none: one transaction over the three tables. */
+@Dao
+interface ImportDao {
+    @Insert
+    suspend fun insertHistory(rows: List<HistoryEntity>)
+
+    @Insert
+    suspend fun insertPresets(rows: List<PresetEntity>): List<Long>
+
+    @Insert
+    suspend fun insertPlanned(rows: List<PlannedEntity>)
+
+    /**
+     * Adds [history], [presets] and [planned] together. A plan naming a preset added here by [presetNames] (in
+     * step with [planned]) takes the id it was just stored under.
+     */
+    @Transaction
+    suspend fun importAll(
+        history: List<HistoryEntity>,
+        presets: List<PresetEntity>,
+        planned: List<PlannedEntity>,
+        presetNames: List<String?>,
+    ) {
+        insertHistory(history)
+        val ids = presets.map { it.name }.zip(insertPresets(presets)).toMap()
+        insertPlanned(
+            planned.zip(presetNames) { row, name ->
+                name?.let(ids::get)?.let { row.copy(presetId = it) }
+                    ?: row
+            },
+        )
+    }
 }
 
 @Dao

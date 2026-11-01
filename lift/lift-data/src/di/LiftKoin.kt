@@ -45,10 +45,13 @@ val liftStorageModule: Module = module {
     single { get<LiftDatabase>().customProgramDao() }
     single { get<LiftDatabase>().customExerciseDao() }
     single { get<LiftDatabase>().bandDao() }
+    single { get<LiftDatabase>().importDao() }
 }
 
 val liftDataModule: Module = module {
-    single { LiftRepository(get(), get(), get(), get(), get(), get(), scope = get(LiftStorageScope), clock = get()) }
+    single {
+        LiftRepository(get(), get(), get(), get(), get(), get(), get(), scope = get(LiftStorageScope), clock = get())
+    }
         .bind<LiftActivity>()
     single { ExerciseFilterStore() }
 }

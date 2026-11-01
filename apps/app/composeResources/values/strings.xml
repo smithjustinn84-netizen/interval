@@ -32,7 +32,7 @@
     <string name="privacy_title">Privacy</string>
     <string name="privacy_summary">Interval keeps everything on this device. There are no accounts, no analytics and no ads, and nothing leaves the phone unless you send it.</string>
     <string name="privacy_stored_title">What it keeps</string>
-    <string name="privacy_stored">Your workouts, presets, plan, settings, body weight and Lift sessions, in the app\'s own storage. Export, in Settings, puts the lot in one file for you to keep; Android\'s backup carries it to a new phone with your other apps\' data.</string>
+    <string name="privacy_stored">Your workouts, presets, plan, settings, body weight and Lift sessions, in the app's own storage. Export, in Settings, puts the lot in one file for you to keep; Android's backup carries it to a new phone with your other apps' data.</string>
     <string name="privacy_sharing_title">Sharing</string>
     <string name="privacy_sharing">A finished workout, a session or your export goes nowhere until you choose an app to share it with. What that app does with it is up to that app.</string>
     <string name="privacy_health_title">Health Connect</string>
