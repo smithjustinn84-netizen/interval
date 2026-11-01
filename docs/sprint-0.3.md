@@ -204,9 +204,18 @@ Sizes: XS ≤ half a day, S ≈ 1 day, M ≈ 2 days, L ≈ 3 days. The cut line 
   so it can be checked without a device; Play's declaration has no Apple counterpart until an App
   Store listing exists.
 
+**10. Warm-up and cool-down** · M (pulled forward from 0.4's richer shapes, on request)
+- `IntervalConfig.warmUpSeconds`/`coolDownSeconds` (0 is off) and `Phase.WarmUp`/`Phase.CoolDown`, run as Get
+  ready → Warm-up → the rounds → Cool-down. Part of the shape (`sameShape`), so presets, History, Plan and the
+  export (schema 3) carry them; Room version 8. The Timer and the preset editor offer them under the rows; the
+  describe parser reads "5 min warm-up"; cues, notifications and Health Connect (as the activity's move) know
+  both. Ending in the cool-down finishes the workout. With both off, nothing looks or behaves differently.
+- Done when: `WarmUpCoolDownAcceptanceTest` and `journeys/warm-up-cool-down.xml` run a workout through both.
+
 ## Explicitly not this sprint (0.4's candidates)
 
-- **Richer interval shapes**: sets of rounds with a longer rest between, and ladders. The most-asked
+- **Richer interval shapes**: sets of rounds with a longer rest between, and ladders (warm-up and cool-down
+  came forward as ticket 10). The most-asked
   feature of an interval timer, and it touches `IntervalConfig`, `WorkoutEngine`, the Timeline, the
   describe parser ("4 x (8 x 20/10), 1:00 between"), presets, export, History's estimate and Health
   Connect's segments. The headline of 0.4, a sprint of its own, not a ticket beside import.

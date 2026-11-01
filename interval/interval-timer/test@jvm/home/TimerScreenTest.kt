@@ -11,7 +11,9 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -113,6 +115,19 @@ class TimerScreenTest {
     }
 
     @Test
+    fun `the warm-up and cool-down read Off until set and open their sheets`() = runUiTest {
+        setThemedContent { Screen(state(custom.copy(coolDownSeconds = 300))) }
+        onNode(hasText("Warm-up") and hasText("Off") and hasClickAction()).performClick()
+        onNodeWithText("Easy minutes before the first round").assertExists()
+        onNodeWithText("2:00").performClick()
+        onNodeWithText("Done").performClick()
+        onNode(hasText("Cool-down") and hasText("5:00") and hasClickAction()).performClick()
+        onAllNodesWithContentDescription("Less cool-down time").onLast().performClick()
+        assertEquals(listOf(ConfigField.WarmUp to 120), sets)
+        assertEquals(listOf(ConfigField.CoolDown to -1), steps)
+    }
+
+    @Test
     fun `a custom shape is called so and saves through the preset editor`() = runUiTest {
         setThemedContent { Screen() }
         onNodeWithText("Custom · Total").assertExists()
@@ -185,6 +200,8 @@ class TimerScreenTest {
         setThemedContent { Screen(state(custom.copy(activity = Activity.Bodyweight)).copy(calories = 139)) }
         onNodeWithText("Start workout").assertIsDisplayed()
         onNodeWithContentDescription("More rounds").assertIsDisplayed()
+        onNode(hasText("Warm-up") and hasClickAction()).assertIsDisplayed()
+        onNode(hasText("Cool-down") and hasClickAction()).assertIsDisplayed()
         onNodeWithContentDescription("Activity: Bodyweight. Change").assertIsDisplayed()
         onNodeWithText("≈ 139 kcal").assertIsDisplayed()
     }

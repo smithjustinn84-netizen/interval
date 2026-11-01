@@ -92,6 +92,21 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         see(hasText("Work") and hasText(value))
     }
 
+    fun setWarmUp(value: String) = setBookend("Warm-up", value)
+
+    fun setCoolDown(value: String) = setBookend("Cool-down", value)
+
+    /** Under the Timer's three rows, the warm-up's or cool-down's chip, then a quick pick on its sheet. */
+    private fun setBookend(name: String, value: String) {
+        tap(name)
+        see("Quick picks")
+        tap(value)
+        tap("Done")
+        see(hasText(name) and hasText(value) and hasClickAction())
+    }
+
+    fun seeTimerTotal(total: String) = see(total)
+
     fun startWorkout() = tap("Start workout")
 
     // A running workout
@@ -413,6 +428,17 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     fun workoutKeptAs(level: Int, note: String) = waitFor("the workout kept as $level, \"$note\"") {
         app.repository.history.value.any { it.effort?.level == level && it.note == note }
     }
+
+    /** The workout History holds was kept with its warm-up and cool-down, as part of its shape. */
+    fun workoutKeptWithBookends(warmUpSeconds: Int, coolDownSeconds: Int) =
+        waitFor("a workout kept with a $warmUpSeconds s warm-up and a $coolDownSeconds s cool-down") {
+            app.repository.history.value.any {
+                it.config.warmUpSeconds == warmUpSeconds && it.config.coolDownSeconds == coolDownSeconds
+            }
+        }
+
+    /** The one workout History holds ran to its end: every round, not ended early. */
+    fun workoutKeptFinished() = assertEquals(false, app.repository.history.value.single().endedEarly)
 
     fun savedWorkouts(count: Int) = assertEquals(count, app.repository.history.value.size)
 }

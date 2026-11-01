@@ -50,27 +50,37 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StandardEasing
 import dev.justinsmith.interval.ui.ringClockSize
 import dev.justinsmith.interval.workout.resources.Res
+import dev.justinsmith.interval.workout.resources.next_cool_down
 import dev.justinsmith.interval.workout.resources.next_last_round
 import dev.justinsmith.interval.workout.resources.next_rest
 import dev.justinsmith.interval.workout.resources.next_round
+import dev.justinsmith.interval.workout.resources.next_warm_up
 import dev.justinsmith.interval.workout.resources.next_work
+import dev.justinsmith.interval.workout.resources.phase_cool_down
 import dev.justinsmith.interval.workout.resources.phase_done
 import dev.justinsmith.interval.workout.resources.phase_get_ready
 import dev.justinsmith.interval.workout.resources.phase_rest
+import dev.justinsmith.interval.workout.resources.phase_warm_up
 import dev.justinsmith.interval.workout.resources.phase_work
 import dev.justinsmith.interval.workout.resources.workout_paused
 import dev.justinsmith.interval.workout.resources.workout_status
+import dev.justinsmith.interval.workout.resources.workout_status_left
 import dev.justinsmith.interval.workout.resources.workout_tap_pause
 import dev.justinsmith.interval.workout.resources.workout_tap_resume
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
-/** "Round 3 of 8 · 4:03 left". */
+/** "Round 3 of 8 · 4:03 left"; in the warm-up and cool-down, outside the rounds, "12:03 left". */
 @Composable
 internal fun RoundStatus(state: WorkoutUiState, modifier: Modifier = Modifier) {
     if (state.isDone) return
+    val bookend = state.phase == Phase.WarmUp || state.phase == Phase.CoolDown
     Text(
-        stringResource(Res.string.workout_status, state.round, state.rounds, state.sessionLeft),
+        if (bookend) {
+            stringResource(Res.string.workout_status_left, state.sessionLeft)
+        } else {
+            stringResource(Res.string.workout_status, state.round, state.rounds, state.sessionLeft)
+        },
         style = IntervalTheme.type.label,
         color = IntervalTheme.workout.onGround,
         textAlign = TextAlign.Center,
@@ -171,8 +181,10 @@ private fun PhaseLabel(state: WorkoutUiState, accent: Color) {
 
         else -> when (state.phase) {
             Phase.Prep -> Res.string.phase_get_ready
+            Phase.WarmUp -> Res.string.phase_warm_up
             Phase.Work -> Res.string.phase_work
             Phase.Rest -> Res.string.phase_rest
+            Phase.CoolDown -> Res.string.phase_cool_down
             Phase.Done -> Res.string.phase_done
         }
     }
@@ -210,6 +222,8 @@ private fun PhaseLabel(state: WorkoutUiState, accent: Color) {
 @Composable
 private fun nextUpText(next: NextUp?): String = when (next) {
     is NextUp.Work -> stringResource(Res.string.next_work, next.clock)
+    is NextUp.WarmUp -> stringResource(Res.string.next_warm_up, next.clock)
+    is NextUp.CoolDown -> stringResource(Res.string.next_cool_down, next.clock)
     is NextUp.Rest -> stringResource(Res.string.next_rest, next.clock)
     is NextUp.Round -> stringResource(Res.string.next_round, next.round, next.of)
     NextUp.LastRound -> stringResource(Res.string.next_last_round)

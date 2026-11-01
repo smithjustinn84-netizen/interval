@@ -176,10 +176,14 @@ class PresetEditorTest {
         onNodeWithText("×6").performClick()
         onNodeWithContentDescription("More rounds").performClick()
         onNodeWithText("Done").performClick()
+        onNodeWithText("Warm-up").performScrollTo().performClick()
+        onNodeWithText("5:00").performClick()
+        onNodeWithText("Done").performClick()
         restoration.emulateSaveAndRestore()
         onNodeWithText("New preset").assertExists()
         onNode(hasSetTextAction()).assertTextContains("Sprints")
         onNodeWithText("×7").assertExists()
+        onNodeWithText("5:00").assertExists()
     }
 
     @Test

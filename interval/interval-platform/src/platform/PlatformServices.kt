@@ -24,6 +24,10 @@ sealed interface Speech {
 
     data object Rest : Speech
 
+    data object WarmUp : Speech
+
+    data object CoolDown : Speech
+
     data object Halfway : Speech
 
     data object Finished : Speech

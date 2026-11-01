@@ -18,9 +18,11 @@ import dev.justinsmith.interval.platform.resources.Res
 import dev.justinsmith.interval.platform.resources.notification_channel_workout
 import dev.justinsmith.interval.platform.resources.notification_channel_workout_description
 import dev.justinsmith.interval.platform.resources.notification_workout_text
+import dev.justinsmith.interval.platform.resources.phase_cool_down
 import dev.justinsmith.interval.platform.resources.phase_done
 import dev.justinsmith.interval.platform.resources.phase_get_ready
 import dev.justinsmith.interval.platform.resources.phase_rest
+import dev.justinsmith.interval.platform.resources.phase_warm_up
 import dev.justinsmith.interval.platform.resources.phase_work
 import dev.justinsmith.interval.platform.resources.workout_end
 import dev.justinsmith.interval.platform.resources.workout_pause
@@ -146,20 +148,37 @@ class WorkoutService : Service() {
      */
     private suspend fun notification(status: WorkoutStatus): Notification {
         val phase = getString(
-            when {
-                status.paused -> Res.string.workout_paused
-                status.phase == Phase.Prep -> Res.string.phase_get_ready
-                status.phase == Phase.Work -> Res.string.phase_work
-                status.phase == Phase.Rest -> Res.string.phase_rest
-                else -> Res.string.phase_done
+            if (status.paused) {
+                Res.string.workout_paused
+            } else {
+                when (status.phase) {
+                    Phase.Prep -> Res.string.phase_get_ready
+                    Phase.WarmUp -> Res.string.phase_warm_up
+                    Phase.Work -> Res.string.phase_work
+                    Phase.Rest -> Res.string.phase_rest
+                    Phase.CoolDown -> Res.string.phase_cool_down
+                    Phase.Done -> Res.string.phase_done
+                }
             },
         )
+        // The warm-up and cool-down are outside the rounds: no "Round 1 of 8" under them.
+        val bookend = status.phase == Phase.WarmUp || status.phase == Phase.CoolDown
+        val text = if (bookend) {
+            phase
+        } else {
+            getString(
+                Res.string.notification_workout_text,
+                phase,
+                status.round,
+                status.rounds,
+            )
+        }
         val color = if (status.paused) PhaseColors.paused else phaseColor(status.phase)
         val pauseLabel = getString(if (status.paused) Res.string.workout_resume else Res.string.workout_pause)
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .common()
             .setContentTitle(status.clock)
-            .setContentText(getString(Res.string.notification_workout_text, phase, status.round, status.rounds))
+            .setContentText(text)
             .setColor(color.toArgb())
             .setColorized(Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA)
             .setShortCriticalText(status.clock)
@@ -198,9 +217,9 @@ class WorkoutService : Service() {
         .setContentIntent(openApp)
 
     private fun phaseColor(phase: Phase): Color = when (phase) {
-        Phase.Prep -> PhaseColors.prep
+        Phase.Prep, Phase.WarmUp -> PhaseColors.prep
         Phase.Work -> PhaseColors.work
-        Phase.Rest -> PhaseColors.rest
+        Phase.Rest, Phase.CoolDown -> PhaseColors.rest
         Phase.Done -> PhaseColors.done
     }
 

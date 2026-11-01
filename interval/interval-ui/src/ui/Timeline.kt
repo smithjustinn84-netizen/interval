@@ -35,7 +35,8 @@ const val MAX_ROUND_MARKS = 12
 
 /**
  * The workout's shape as a bar in one hue: get ready in the surface variant, then each round's work
- * in the accent and its rest in a pale wash of it, each as wide as it is long. Work and rest differ
+ * in the accent and its rest in a pale wash of it, each as wide as it is long; a warm-up and a cool-down
+ * either side of the rounds are washes too, in rest's. Work and rest differ
  * in lightness, not hue; phase colours stay on the workout screen and the field stripes. Past
  * [MAX_ROUND_MARKS] rounds the bar shows only the work and rest shares. Decorative: the text
  * beside it says the same thing.
@@ -53,6 +54,7 @@ fun Timeline(
     val rest = palette.timelineRest
     val segments = buildList {
         if (showPrep && config.prepSeconds > 0) add(palette.surfaceVariant to config.prepSeconds)
+        if (config.warmUpSeconds > 0) add(rest to config.warmUpSeconds)
         if (config.rounds <= MAX_ROUND_MARKS) {
             repeat(config.rounds) { round ->
                 add(work to config.workSeconds)
@@ -63,6 +65,7 @@ fun Timeline(
             val restTotal = (config.rounds - 1) * config.restSeconds
             if (restTotal > 0) add(rest to restTotal)
         }
+        if (config.coolDownSeconds > 0) add(rest to config.coolDownSeconds)
     }
     Row(
         modifier

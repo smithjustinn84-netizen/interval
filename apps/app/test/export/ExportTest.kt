@@ -31,7 +31,9 @@ class ExportTest {
 
     @Test
     fun `the file is named for the day and holds both sides`() = runTest {
-        intervals.savePreset(Preset("Hills", IntervalConfig(workSeconds = 45)))
+        intervals.savePreset(
+            Preset("Hills", IntervalConfig(workSeconds = 45, warmUpSeconds = 300, coolDownSeconds = 120)),
+        )
         val workout = intervals.recordWorkout(IntervalConfig(rounds = 4), elapsedSeconds = 200)
         intervals.reflectOnWorkout(workout, PerceivedEffort.Hard, "Felt strong")
         intervals.updateAppSettings { it.copy(theme = ThemeMode.Light, weeklyGoal = 3) }
@@ -52,6 +54,8 @@ class ExportTest {
         assertEquals(3, bundle.settings.weeklyGoal)
         assertEquals(listOf("Hills"), bundle.presets.map { it.name })
         assertEquals(45, bundle.presets.single().config.workSeconds)
+        assertEquals(300, bundle.presets.single().config.warmUpSeconds)
+        assertEquals(120, bundle.presets.single().config.coolDownSeconds)
         assertEquals(listOf(4), bundle.history.map { it.config.rounds })
         assertEquals(3, bundle.history.single().effort)
         assertEquals("Felt strong", bundle.history.single().note)

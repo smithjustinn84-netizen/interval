@@ -7,7 +7,8 @@ import kotlinx.serialization.Serializable
  * Everything the app stores, as the export file holds it: primitives and names only, so the domain types
  * can change shape while an old file still reads. [schema] counts the file's own shape; a reader refuses a
  * newer one (schema 2 let a plan be a session on Lift; schema 3 added how a workout or a session felt, its
- * `effort` 1 to 5 and its `note`, both absent from older files). Lift's sessions carry their sets but not how a
+ * `effort` 1 to 5 and its `note`, and every shape's `warmUpSeconds` and `coolDownSeconds`, all absent from older
+ * files). Lift's sessions carry their sets but not how a
  * day's plan was changed: the sets are the record.
  */
 @Serializable
@@ -62,6 +63,9 @@ data class ConfigExport(
     val restSeconds: Int,
     val rounds: Int,
     val activity: String,
+    /** 0 for none, and in schema 1 and 2. */
+    val warmUpSeconds: Int = 0,
+    val coolDownSeconds: Int = 0,
 )
 
 @Serializable

@@ -12,8 +12,14 @@ import dev.justinsmith.interval.timer.formatClock
 
 /** What the line under the clock says comes next. */
 sealed interface NextUp {
-    /** Work of this length, after get ready. */
+    /** Work of this length, after get ready or the warm-up. */
     data class Work(val clock: String) : NextUp
+
+    /** A warm-up of this length, after get ready. */
+    data class WarmUp(val clock: String) : NextUp
+
+    /** A cool-down of this length, after the last work. */
+    data class CoolDown(val clock: String) : NextUp
 
     /** A rest of this length. */
     data class Rest(val clock: String) : NextUp
@@ -29,7 +35,10 @@ data class WorkoutUiState(
     val phase: Phase,
     val running: Boolean,
     val config: IntervalConfig,
-    /** 1-based: the round being worked or rested after, or about to start during get ready. */
+    /**
+     * 1-based: the round being worked or rested after, or about to start during get ready and the warm-up;
+     * the last during the cool-down.
+     */
     val round: Int,
     /** Rounds whose work interval is behind us. */
     val completedRounds: Int,
@@ -107,19 +116,26 @@ fun WorkoutState.toUiState(
         config = config,
         round = round,
         completedRounds = when (phase) {
-            Phase.Prep -> 0
+            Phase.Prep, Phase.WarmUp -> 0
             Phase.Work -> round - 1
             Phase.Rest -> round
-            Phase.Done -> rounds
+            Phase.CoolDown, Phase.Done -> rounds
         },
         activeRound = round.takeIf { phase == Phase.Work },
         clock = formatClock(secondsLeft),
         secondsLeft = secondsLeft,
         progress = if (isDone) 0f else progress,
         next = when (phase) {
-            Phase.Prep -> NextUp.Work(formatClock(config.workSeconds))
+            Phase.Prep -> if (config.warmUpSeconds > 0) {
+                NextUp.WarmUp(formatClock(config.warmUpSeconds))
+            } else {
+                NextUp.Work(formatClock(config.workSeconds))
+            }
+
+            Phase.WarmUp -> NextUp.Work(formatClock(config.workSeconds))
 
             Phase.Work -> when {
+                isLastRound && config.coolDownSeconds > 0 -> NextUp.CoolDown(formatClock(config.coolDownSeconds))
                 isLastRound -> NextUp.LastRound
                 config.restSeconds == 0 -> NextUp.Round(round + 1, rounds)
                 else -> NextUp.Rest(formatClock(config.restSeconds))
@@ -127,7 +143,7 @@ fun WorkoutState.toUiState(
 
             Phase.Rest -> NextUp.Round(round + 1, rounds)
 
-            Phase.Done -> null
+            Phase.CoolDown, Phase.Done -> null
         },
         sessionLeft = formatClock(ceilSeconds(sessionRemainingMillis)),
         total = formatClock(config.totalSeconds),

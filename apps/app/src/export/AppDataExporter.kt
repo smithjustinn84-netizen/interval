@@ -82,7 +82,15 @@ private fun AppSettings.export(cues: CueSettings) = SettingsExport(
     cues = CuesExport(cues.sound, cues.voice, cues.halfway, cues.vibrate),
 )
 
-private fun IntervalConfig.export() = ConfigExport(prepSeconds, workSeconds, restSeconds, rounds, activity.name)
+private fun IntervalConfig.export() = ConfigExport(
+    prepSeconds = prepSeconds,
+    workSeconds = workSeconds,
+    restSeconds = restSeconds,
+    rounds = rounds,
+    activity = activity.name,
+    warmUpSeconds = warmUpSeconds,
+    coolDownSeconds = coolDownSeconds,
+)
 
 private fun Preset.export() = PresetExport(id, name, config.export())
 

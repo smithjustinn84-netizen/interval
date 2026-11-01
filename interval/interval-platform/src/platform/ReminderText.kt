@@ -3,7 +3,9 @@ package dev.justinsmith.interval.platform
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.platform.resources.Res
 import dev.justinsmith.interval.platform.resources.common_joined
+import dev.justinsmith.interval.platform.resources.config_cool_down
 import dev.justinsmith.interval.platform.resources.config_description
+import dev.justinsmith.interval.platform.resources.config_warm_up
 import dev.justinsmith.interval.platform.resources.duration_short_minutes
 import dev.justinsmith.interval.platform.resources.duration_short_seconds
 import dev.justinsmith.interval.platform.resources.reminder_body_one
@@ -51,13 +53,20 @@ private suspend fun PlanWorkout.reminderName(): String = when (this) {
     is PlanWorkout.Lift -> getString(Res.string.reminder_lift_title)
 }
 
-/** The shape as the Presets page words it: "20s on · 10s off · ×8". */
-private suspend fun IntervalConfig.description(): String = getString(
-    Res.string.config_description,
-    shortDuration(workSeconds).text(),
-    shortDuration(restSeconds).text(),
-    rounds,
-)
+/** The shape as the Presets page words it: "20s on · 10s off · ×8", with any warm-up and cool-down either side. */
+private suspend fun IntervalConfig.description(): String {
+    val shape = getString(
+        Res.string.config_description,
+        shortDuration(workSeconds).text(),
+        shortDuration(restSeconds).text(),
+        rounds,
+    )
+    return listOfNotNull(
+        warmUpSeconds.takeIf { it > 0 }?.let { getString(Res.string.config_warm_up, shortDuration(it).text()) },
+        shape,
+        coolDownSeconds.takeIf { it > 0 }?.let { getString(Res.string.config_cool_down, shortDuration(it).text()) },
+    ).joined()
+}
 
 private suspend fun ShortDuration.text(): String = when (this) {
     is ShortDuration.Seconds -> getString(Res.string.duration_short_seconds, seconds)

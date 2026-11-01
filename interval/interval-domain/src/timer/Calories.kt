@@ -90,7 +90,8 @@ fun WeightUnit.toKg(value: Int): Double = when (this) {
 
 /**
  * The calories a workout burned, by the ACSM equation (kcal a minute = MET × 3.5 × kg / 200): [workSeconds]
- * of [activity] at [effort], and [otherSeconds] (get ready and rest) at [RECOVERY_MET]. An estimate, rounded.
+ * of [activity] at [effort], and [otherSeconds] (get ready, rest, the warm-up and cool-down) at [RECOVERY_MET].
+ * An estimate, rounded.
  */
 fun estimateCalories(
     workSeconds: Int,
@@ -111,7 +112,7 @@ fun estimateCalories(
 fun IntervalConfig.plannedWorkSeconds(elapsedSeconds: Int, endedEarly: Boolean): Int {
     val all = rounds * workSeconds
     if (!endedEarly) return all
-    val intoRounds = (elapsedSeconds - prepSeconds).coerceAtLeast(0)
+    val intoRounds = (elapsedSeconds - prepSeconds - warmUpSeconds).coerceAtLeast(0)
     val cycle = workSeconds + restSeconds
     val work = intoRounds / cycle * workSeconds + minOf(intoRounds % cycle, workSeconds)
     return work.coerceAtMost(all)

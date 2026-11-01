@@ -25,7 +25,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.interval.timer.ConfigField
-import dev.justinsmith.interval.timer.format
 import dev.justinsmith.interval.ui.resources.Res
 import dev.justinsmith.interval.ui.resources.common_done
 import dev.justinsmith.interval.ui.resources.value_sheet_hint_hold
@@ -53,7 +52,7 @@ fun ValueSheet(
         SheetHeader(field)
         SheetStepper(
             value,
-            field.format(value),
+            field.valueText(value),
             stringResource(field.lessRes),
             stringResource(field.moreRes),
             canLower = value > field.range.first,
@@ -115,7 +114,7 @@ private fun QuickPicks(field: ConfigField, value: Int, onPick: (Int) -> Unit, mo
                 row.forEach { pick ->
                     QuickPick(
                         field,
-                        field.format(pick),
+                        field.valueText(pick),
                         selected = pick == value,
                         onClick = { onPick(pick) },
                         modifier = Modifier.weight(1f),

@@ -71,9 +71,10 @@ fun TimerRoute(
 
 /**
  * Home: the session total, then Work, Rest and Rounds as three tall rows, each with its own − and +
- * (hold to run), and Start within thumb reach beside the way to the presets, all over the lanes.
- * Tapping a value opens its edit sheet for the quick picks. The title bar opens [DescribeSheet], whose
- * workout goes to [onUseDescription] or, through the preset editor, [onSavePreset].
+ * (hold to run), the warm-up and cool-down under them, and Start within thumb reach beside the way to
+ * the presets, all over the lanes. Tapping a value opens its edit sheet for the quick picks. The title
+ * bar opens [DescribeSheet], whose workout goes to [onUseDescription] or, through the preset editor,
+ * [onSavePreset].
  */
 @Composable
 fun TimerScreen(

@@ -21,6 +21,8 @@ private val PREP = intPreferencesKey("prep")
 private val WORK = intPreferencesKey("work")
 private val REST = intPreferencesKey("rest")
 private val ROUNDS = intPreferencesKey("rounds")
+private val WARM_UP = intPreferencesKey("warm_up")
+private val COOL_DOWN = intPreferencesKey("cool_down")
 private val ACTIVITY = stringPreferencesKey("activity")
 
 private val CUE_SOUND = booleanPreferencesKey("cue_sound")
@@ -47,6 +49,8 @@ internal fun Preferences.toConfig(): IntervalConfig {
         workSeconds = this[WORK] ?: defaults.workSeconds,
         restSeconds = this[REST] ?: defaults.restSeconds,
         rounds = this[ROUNDS] ?: defaults.rounds,
+        warmUpSeconds = this[WARM_UP] ?: defaults.warmUpSeconds,
+        coolDownSeconds = this[COOL_DOWN] ?: defaults.coolDownSeconds,
         activity = Activity.named(this[ACTIVITY]),
     )
 }
@@ -56,6 +60,8 @@ internal fun MutablePreferences.write(config: IntervalConfig) {
     this[WORK] = config.workSeconds
     this[REST] = config.restSeconds
     this[ROUNDS] = config.rounds
+    this[WARM_UP] = config.warmUpSeconds
+    this[COOL_DOWN] = config.coolDownSeconds
     this[ACTIVITY] = config.activity.name
 }
 

@@ -1,0 +1,23 @@
+<journey name="Warm-up and cool-down">
+  <description>
+    Set a warm-up and a cool-down on the Timer, run the workout through both, and save its shape as a preset.
+    Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
+  </description>
+  <actions>
+    <action>Verify that the Timer tab is shown with a "Start workout" button and a "Warm-up" and a "Cool-down" chip reading "Off"</action>
+    <action>Tap the "Warm-up" chip</action>
+    <action>Verify that a sheet titled "Warm-up" is shown with "Quick picks"</action>
+    <action>Tap the "1:00" quick pick, then "Done"</action>
+    <action>Tap the "Cool-down" chip, tap the "2:00" quick pick, then "Done"</action>
+    <action>Verify that the chips read "Warm-up 1:00" and "Cool-down 2:00" and the total reads 8:55</action>
+    <action>Tap "Start workout"</action>
+    <action>Verify that the workout screen shows "Get ready", then "Warm-up" with "Next: work"</action>
+    <action>Press Home and verify that the notification reads "Warm-up" without a round</action>
+    <action>Return to the workout and tap "Skip" until the screen shows "Work" and "Round 8 of 8"</action>
+    <action>Verify that the screen shows "Next: cool-down"</action>
+    <action>Tap "Skip" and verify that the screen shows "Cool-down"</action>
+    <action>Tap "End", then "End workout" in the dialog</action>
+    <action>Verify that the summary says "Saved to history" and shows 8/8 rounds</action>
+    <action>Tap "Done", open "All presets" and verify that the unsaved card reads "1m warm-up · 30s on · 15s off · ×8 · 2m cool-down"</action>
+  </actions>
+</journey>

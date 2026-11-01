@@ -38,17 +38,19 @@ import kotlinx.coroutines.flow.Flow
  * version 4 gave each workout a [HistoryEntity.uid], a change time and a deleted flag, and a table of
  * workouts shared by a sibling app, which version 5 dropped when that app became part of this one;
  * version 6 let a plan be a session on Lift ([PlannedEntity.lift]); version 7 kept how a workout felt
- * ([HistoryEntity.effort], [HistoryEntity.note]).
+ * ([HistoryEntity.effort], [HistoryEntity.note]); version 8 gave every workout, preset and plan a warm-up and a
+ * cool-down ([HistoryEntity.warmUpSeconds], [HistoryEntity.coolDownSeconds]), 0 in rows from before.
  */
 @Database(
     entities = [HistoryEntity::class, PresetEntity::class, PlannedEntity::class],
-    version = 7,
+    version = 8,
     // 3 to 4 and 4 to 5 are MIGRATION_3_4 and MIGRATION_4_5, added by buildAppDatabase.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3, spec = AddActivityIfMissing::class),
         AutoMigration(from = 5, to = 6),
         AutoMigration(from = 6, to = 7),
+        AutoMigration(from = 7, to = 8),
     ],
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -253,6 +255,9 @@ data class HistoryEntity(
     val effort: Int? = null,
     /** A line on how it went; null for none. */
     val note: String? = null,
+    /** 0 for none, and in rows from before version 8. */
+    @ColumnInfo(name = "warm_up_seconds", defaultValue = "0") val warmUpSeconds: Int = 0,
+    @ColumnInfo(name = "cool_down_seconds", defaultValue = "0") val coolDownSeconds: Int = 0,
 )
 
 @Entity(tableName = "preset")
@@ -265,6 +270,9 @@ data class PresetEntity(
     val rounds: Int,
     /** As [HistoryEntity.activity]. */
     val activity: String? = null,
+    /** As [HistoryEntity.warmUpSeconds]. */
+    @ColumnInfo(name = "warm_up_seconds", defaultValue = "0") val warmUpSeconds: Int = 0,
+    @ColumnInfo(name = "cool_down_seconds", defaultValue = "0") val coolDownSeconds: Int = 0,
 )
 
 /**
@@ -287,6 +295,29 @@ data class PlannedEntity(
     @ColumnInfo(name = "preset_id") val presetId: Long?,
     @ColumnInfo(name = "created_at") val createdAtEpochMillis: Long,
     val lift: String? = null,
+    /** As [HistoryEntity.warmUpSeconds]. */
+    @ColumnInfo(name = "warm_up_seconds", defaultValue = "0") val warmUpSeconds: Int = 0,
+    @ColumnInfo(name = "cool_down_seconds", defaultValue = "0") val coolDownSeconds: Int = 0,
+)
+
+/** The [IntervalConfig] a row's columns hold, the same in every table. */
+@Suppress("detekt.LongParameterList")
+private fun intervalConfig(
+    prepSeconds: Int,
+    workSeconds: Int,
+    restSeconds: Int,
+    rounds: Int,
+    warmUpSeconds: Int,
+    coolDownSeconds: Int,
+    activity: String?,
+) = IntervalConfig(
+    prepSeconds = prepSeconds,
+    workSeconds = workSeconds,
+    restSeconds = restSeconds,
+    rounds = rounds,
+    warmUpSeconds = warmUpSeconds,
+    coolDownSeconds = coolDownSeconds,
+    activity = Activity.named(activity),
 )
 
 internal const val LIFT_PROGRAM_DAY = "program_day"
@@ -294,7 +325,7 @@ internal const val LIFT_ANY_SESSION = "any_session"
 
 internal fun HistoryEntity.toDomain() = HistoryEntry(
     finishedAtEpochMillis = finishedAtEpochMillis,
-    config = IntervalConfig(prepSeconds, workSeconds, restSeconds, rounds, Activity.named(activity)),
+    config = intervalConfig(prepSeconds, workSeconds, restSeconds, rounds, warmUpSeconds, coolDownSeconds, activity),
     elapsedSeconds = elapsedSeconds,
     endedEarly = endedEarly,
     workActiveSeconds = workActiveSeconds,
@@ -310,6 +341,8 @@ internal fun HistoryEntry.toEntity(uid: String, updatedAtEpochMillis: Long) = Hi
     workSeconds = config.workSeconds,
     restSeconds = config.restSeconds,
     rounds = config.rounds,
+    warmUpSeconds = config.warmUpSeconds,
+    coolDownSeconds = config.coolDownSeconds,
     elapsedSeconds = elapsedSeconds,
     endedEarly = endedEarly,
     workActiveSeconds = workActiveSeconds,
@@ -321,7 +354,11 @@ internal fun HistoryEntry.toEntity(uid: String, updatedAtEpochMillis: Long) = Hi
 )
 
 internal fun PresetEntity.toDomain() =
-    Preset(name, IntervalConfig(prepSeconds, workSeconds, restSeconds, rounds, Activity.named(activity)), id = id)
+    Preset(
+        name,
+        intervalConfig(prepSeconds, workSeconds, restSeconds, rounds, warmUpSeconds, coolDownSeconds, activity),
+        id = id,
+    )
 
 internal fun Preset.toEntity() = PresetEntity(
     id = id ?: 0,
@@ -330,6 +367,8 @@ internal fun Preset.toEntity() = PresetEntity(
     workSeconds = config.workSeconds,
     restSeconds = config.restSeconds,
     rounds = config.rounds,
+    warmUpSeconds = config.warmUpSeconds,
+    coolDownSeconds = config.coolDownSeconds,
     activity = config.activity.name,
 )
 
@@ -346,7 +385,7 @@ internal fun PlannedEntity.toDomain(): PlannedWorkout? {
     val workout = when (lift) {
         null -> PlanWorkout.Interval(
             name,
-            IntervalConfig(prepSeconds, workSeconds, restSeconds, rounds, Activity.named(activity)),
+            intervalConfig(prepSeconds, workSeconds, restSeconds, rounds, warmUpSeconds, coolDownSeconds, activity),
             presetId,
         )
 
@@ -371,6 +410,8 @@ internal fun PlannedWorkout.toEntity(): PlannedEntity {
         workSeconds = config?.workSeconds ?: 0,
         restSeconds = config?.restSeconds ?: 0,
         rounds = config?.rounds ?: 0,
+        warmUpSeconds = config?.warmUpSeconds ?: 0,
+        coolDownSeconds = config?.coolDownSeconds ?: 0,
         activity = config?.activity?.name,
         presetId = interval?.presetId,
         createdAtEpochMillis = createdAtEpochMillis,

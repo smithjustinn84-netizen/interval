@@ -91,9 +91,9 @@ data class PresetDraft(
 }
 
 /**
- * Names and shapes a preset in a sheet: the name with its count, Work, Rest and Rounds as rows that
- * open the edit sheet, the total it comes to with the user's get-ready countdown, and Save. A blank
- * name saves as the shape's own ("40/20 ×6"), which the empty field shows. Before Save it says what
+ * Names and shapes a preset in a sheet: the name with its count, Work, Rest and Rounds, the warm-up and
+ * cool-down as rows that open the edit sheet, the total it comes to with the user's get-ready countdown,
+ * and Save. A blank name saves as the shape's own ("40/20 ×6"), which the empty field shows. Before Save it says what
  * the repository will do with a name another of [presets] has ("Saves as Tabata 2") and which one
  * already has this shape. Each change to the shape goes back through [onChangeShape], so the [draft]
  * lives with its caller.
@@ -194,7 +194,7 @@ private fun EditorShapeCard(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.fillMaxWidth().clip(Corners.radius18).background(IntervalTheme.palette.surfaceVariant)) {
-        ConfigField.shape.forEachIndexed { index, field ->
+        (ConfigField.shape + ConfigField.bookends).forEachIndexed { index, field ->
             if (index > 0) RowDivider()
             FieldRow(field, config.valueOf(field), onClick = { onEditField(field) })
         }
@@ -313,8 +313,15 @@ private val PresetDraftSaver: Saver<PresetDraft?, Any> = mapSaver(
     },
 )
 
-private fun IntervalConfig.saved(): Map<String, Any?> =
-    mapOf(PREP to prepSeconds, WORK to workSeconds, REST to restSeconds, ROUNDS to rounds, ACTIVITY to activity.name)
+private fun IntervalConfig.saved(): Map<String, Any?> = mapOf(
+    PREP to prepSeconds,
+    WORK to workSeconds,
+    REST to restSeconds,
+    ROUNDS to rounds,
+    WARM_UP to warmUpSeconds,
+    COOL_DOWN to coolDownSeconds,
+    ACTIVITY to activity.name,
+)
 
 private fun Map<String, Any?>.restoredConfig(): IntervalConfig =
     IntervalConfig(
@@ -322,6 +329,8 @@ private fun Map<String, Any?>.restoredConfig(): IntervalConfig =
         workSeconds = this[WORK] as Int,
         restSeconds = this[REST] as Int,
         rounds = this[ROUNDS] as Int,
+        warmUpSeconds = this[WARM_UP] as Int? ?: 0,
+        coolDownSeconds = this[COOL_DOWN] as Int? ?: 0,
         activity = Activity.named(this[ACTIVITY] as String?),
     )
 
@@ -332,4 +341,6 @@ private const val PREP = "prep"
 private const val WORK = "work"
 private const val REST = "rest"
 private const val ROUNDS = "rounds"
+private const val WARM_UP = "warm_up"
+private const val COOL_DOWN = "cool_down"
 private const val ACTIVITY = "activity"

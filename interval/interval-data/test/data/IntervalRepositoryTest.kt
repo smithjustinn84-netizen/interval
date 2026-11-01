@@ -66,7 +66,8 @@ class IntervalRepositoryTest {
 
     @Test
     fun `the workout under way survives a restart and clears`() {
-        val state = WorkoutEngine.tick(WorkoutEngine.start(IntervalConfig(workSeconds = 40)).state, 12_500).state
+        val config = IntervalConfig(workSeconds = 40, warmUpSeconds = 60, coolDownSeconds = 30)
+        val state = WorkoutEngine.tick(WorkoutEngine.start(config).state, 12_500).state
         val progress = WorkoutProgress(
             id = 42,
             state = state,
@@ -80,7 +81,7 @@ class IntervalRepositoryTest {
             spans = listOf(
                 CourseSpan(Phase.Prep, 1_699_999_980_000, 1_699_999_990_000),
                 CourseSpan(null, 1_699_999_990_000, 1_699_999_995_000),
-                CourseSpan(Phase.Work, 1_699_999_995_000, 1_700_000_000_000),
+                CourseSpan(Phase.WarmUp, 1_699_999_995_000, 1_700_000_000_000),
             ),
         )
         repository().saveWorkoutProgress(progress)

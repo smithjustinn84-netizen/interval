@@ -11,9 +11,11 @@ import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.data.AppDatabase
 import dev.justinsmith.interval.platform.resources.Res
 import dev.justinsmith.interval.platform.resources.notification_round
+import dev.justinsmith.interval.platform.resources.phase_cool_down
 import dev.justinsmith.interval.platform.resources.phase_done
 import dev.justinsmith.interval.platform.resources.phase_get_ready
 import dev.justinsmith.interval.platform.resources.phase_rest
+import dev.justinsmith.interval.platform.resources.phase_warm_up
 import dev.justinsmith.interval.platform.resources.phase_work
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
 import dev.justinsmith.interval.timer.Phase
@@ -156,7 +158,10 @@ private class IosBackgroundWorkout : BackgroundWorkout {
             if (mine != generation) return
             val content = UNMutableNotificationContent().apply {
                 setTitle(getString(change.phase.title()))
-                setBody(getString(Res.string.notification_round, change.round, rounds))
+                // The warm-up and cool-down are outside the rounds: no round under them.
+                if (change.phase != Phase.WarmUp && change.phase != Phase.CoolDown) {
+                    setBody(getString(Res.string.notification_round, change.round, rounds))
+                }
                 setSound(UNNotificationSound.defaultSound)
             }
             // A trigger wants a positive interval; a change due this instant is announced at once.
@@ -177,8 +182,10 @@ private class IosBackgroundWorkout : BackgroundWorkout {
 
     private fun Phase.title() = when (this) {
         Phase.Prep -> Res.string.phase_get_ready
+        Phase.WarmUp -> Res.string.phase_warm_up
         Phase.Work -> Res.string.phase_work
         Phase.Rest -> Res.string.phase_rest
+        Phase.CoolDown -> Res.string.phase_cool_down
         Phase.Done -> Res.string.phase_done
     }
 

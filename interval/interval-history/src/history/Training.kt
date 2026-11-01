@@ -6,6 +6,7 @@ import dev.justinsmith.interval.model.LiftWorkout
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.monthDaysOf
@@ -226,7 +227,8 @@ class TrainingLog(
 
     /** The [limit] shapes done most often, then for longest. */
     fun mostDone(limit: Int): List<ShapeTally> = byDay.values.flatten()
-        .groupBy { Triple(it.config.workSeconds, it.config.restSeconds, it.config.rounds) }
+        // The shape alone, as [sameShape] has it: neither the get-ready countdown nor the activity.
+        .groupBy { it.config.copy(prepSeconds = 0, activity = Activity.General) }
         .values
         .map { runs ->
             ShapeTally(

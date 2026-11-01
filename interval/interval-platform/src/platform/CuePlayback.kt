@@ -35,6 +35,18 @@ fun playCue(cue: Cue, settings: CueSettings, player: CuePlayer) {
                     say(Speech.Rest)
                 }
 
+                // Easier stretches, cued as the moves into them: the warm-up like get ready, the cool-down like rest.
+                Phase.WarmUp -> {
+                    beep(Beep.Start)
+                    say(Speech.WarmUp)
+                }
+
+                Phase.CoolDown -> {
+                    beep(Beep.Rest)
+                    buzz(Haptic.Rest)
+                    say(Speech.CoolDown)
+                }
+
                 Phase.Done -> Unit
             }
 

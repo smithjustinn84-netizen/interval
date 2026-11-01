@@ -193,10 +193,15 @@ class WorkoutViewModel(
 
     /**
      * Stops before the last round: records what was done and shows the summary. Without a finished
-     * round there is nothing worth keeping, so the screen just leaves instead of calling this.
+     * round there is nothing worth keeping, so the screen just leaves instead of calling this. In the
+     * cool-down every round is done: ending there finishes the workout, as its end would.
      */
     fun endEarly() {
         if (over) return
+        if (engine.phase == Phase.CoolDown) {
+            skip()
+            return
+        }
         stopTicker()
         running = false
         ended = true

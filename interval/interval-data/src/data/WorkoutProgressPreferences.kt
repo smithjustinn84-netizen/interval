@@ -44,6 +44,8 @@ private class StoredProgress(
     val workSeconds: Int,
     val restSeconds: Int,
     val rounds: Int,
+    val warmUpSeconds: Int = 0,
+    val coolDownSeconds: Int = 0,
     val activity: String,
     val phase: String,
     val round: Int,
@@ -66,7 +68,15 @@ private class StoredProgress(
 ) {
     fun toDomain(): WorkoutProgress? {
         val phase = Phase.entries.firstOrNull { it.name == phase } ?: return null
-        val config = IntervalConfig(prepSeconds, workSeconds, restSeconds, rounds, Activity.named(activity))
+        val config = IntervalConfig(
+            prepSeconds = prepSeconds,
+            workSeconds = workSeconds,
+            restSeconds = restSeconds,
+            rounds = rounds,
+            warmUpSeconds = warmUpSeconds,
+            coolDownSeconds = coolDownSeconds,
+            activity = Activity.named(activity),
+        )
         return WorkoutProgress(
             id = id,
             state = WorkoutState(config, phase, round, remainingMillis, phaseMillis, halfwayCued),
@@ -98,6 +108,8 @@ private fun WorkoutProgress.stored() = StoredProgress(
     workSeconds = state.config.workSeconds,
     restSeconds = state.config.restSeconds,
     rounds = state.config.rounds,
+    warmUpSeconds = state.config.warmUpSeconds,
+    coolDownSeconds = state.config.coolDownSeconds,
     activity = state.config.activity.name,
     phase = state.phase.name,
     round = state.round,

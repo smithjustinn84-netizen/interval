@@ -52,6 +52,8 @@ class AppMigrationTest {
             assertEquals(1000L, workout.finishedAtEpochMillis)
             assertEquals(240, workout.workActiveSeconds)
             assertNull(workout.activity)
+            assertEquals(0, workout.warmUpSeconds)
+            assertEquals(0, workout.coolDownSeconds)
             val added = PresetEntity(0, "Rowing", 5, 60, 30, 4, activity = "Rowing")
             val id = database.presetDao().insert(added)
             assertEquals(added.copy(id = id), database.presetDao().all().last())

@@ -16,7 +16,8 @@ data class DescribedWorkout(
 
 /**
  * Reads a workout from how someone would say it: "tabata", "40/20 x8", "45 on 15 off, 12 rounds",
- * "work 1:30 rest 0:30", "10 rounds of 30 seconds", "20 min of burpees, short rests". A preset's name
+ * "work 1:30 rest 0:30", "10 rounds of 30 seconds", "20 min of burpees, short rests", "5 min warm-up,
+ * then 40/20 x8, 3 min cool down". A preset's name
  * starts from that preset; a total length with no rounds gives as many rounds as fit. What the words
  * leave out keeps [current]'s value, and the get-ready countdown is always [current]'s, as it is when
  * a preset goes onto the Timer. Values are clamped to their ranges. Null when nothing is understood.
@@ -87,6 +88,11 @@ private class Reading(var text: String) {
     }
 
     fun readShape() {
+        // First, so that "5 min warm-up" is neither the work nor the whole workout's length.
+        for ((regex, field) in BOOKENDS) {
+            if (field in values) continue
+            take(regex)?.secondsAt(1)?.let { values[field] = it }
+        }
         take(SLASH_PAIR)?.let { match ->
             match.secondsAt(1)?.let { values[ConfigField.Work] = it }
             match.secondsAt(DURATION_GROUPS + 1)?.let { values[ConfigField.Rest] = it }
@@ -199,6 +205,17 @@ private val LABEL_BEFORE = listOf(
 )
 
 private val ANY_DURATION = Regex("""\b$DURATION""")
+
+private const val WARM_UP_WORDS = """warm\s*-?\s*ups?"""
+private const val COOL_DOWN_WORDS = """cool\s*-?\s*downs?"""
+
+// "5 min warm-up", "5 min of warm up", "warm up 5 min", "warm-up: 5:00", "warmup for 5 minutes".
+private val BOOKENDS = listOf(
+    Regex("""\b$DURATION\s*(?:of\s+)?$WARM_UP_WORDS\b""") to ConfigField.WarmUp,
+    Regex("""\b$WARM_UP_WORDS\s*(?:of\s+|for\s+)?:?\s*$DURATION""") to ConfigField.WarmUp,
+    Regex("""\b$DURATION\s*(?:of\s+)?$COOL_DOWN_WORDS\b""") to ConfigField.CoolDown,
+    Regex("""\b$COOL_DOWN_WORDS\s*(?:of\s+|for\s+)?:?\s*$DURATION""") to ConfigField.CoolDown,
+)
 
 private const val SHORT_REST_SECONDS = 15
 private const val LONG_REST_SECONDS = 60

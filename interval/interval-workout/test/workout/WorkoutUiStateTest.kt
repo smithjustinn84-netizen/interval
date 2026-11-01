@@ -38,4 +38,38 @@ class WorkoutUiStateTest {
         assertEquals(0, state.secondsLeft)
         assertFalse(state.countingDown)
     }
+
+    @Test
+    fun `the warm-up and cool-down sit outside the rounds and say what follows`() {
+        val config =
+            IntervalConfig(
+                prepSeconds = 10,
+                workSeconds = 20,
+                restSeconds = 10,
+                rounds = 2,
+                warmUpSeconds = 60,
+                coolDownSeconds = 90,
+            )
+        val states = generateSequence(WorkoutEngine.start(config).state) { WorkoutEngine.advance(it).state }
+            .takeWhile { !it.isDone }
+            .map { it.toUiState(running = true) }
+            .toList()
+        assertEquals(
+            listOf(Phase.Prep, Phase.WarmUp, Phase.Work, Phase.Rest, Phase.Work, Phase.CoolDown),
+            states.map { it.phase },
+        )
+        assertEquals(listOf(0, 0, 0, 1, 1, 2), states.map { it.completedRounds })
+        assertEquals(
+            listOf(
+                NextUp.WarmUp("1:00"),
+                NextUp.Work("0:20"),
+                NextUp.Rest("0:10"),
+                NextUp.Round(2, 2),
+                NextUp.CoolDown("1:30"),
+                null,
+            ),
+            states.map { it.next },
+        )
+        assertTrue(states.last().hasProgress)
+    }
 }

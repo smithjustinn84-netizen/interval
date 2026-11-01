@@ -18,6 +18,8 @@ class SpeechTextTest {
             Speech.Work(lastRound = false) to "Work",
             Speech.Work(lastRound = true) to "Last round. Work",
             Speech.Rest to "Rest",
+            Speech.WarmUp to "Warm up",
+            Speech.CoolDown to "Cool down",
             Speech.Halfway to "Halfway",
             Speech.Finished to "Done. Nice work",
         )

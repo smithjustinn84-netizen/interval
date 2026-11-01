@@ -51,6 +51,7 @@ import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.valueOf
+import dev.justinsmith.interval.ui.BookendRow
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.FieldStepButton
 import dev.justinsmith.interval.ui.IconAction
@@ -186,7 +187,10 @@ private fun ActivityPill(activity: Activity, onClick: () -> Unit, modifier: Modi
     }
 }
 
-/** Work, Rest and Rounds, sharing the height they're given (or stacking naturally when scrolling). */
+/**
+ * Work, Rest and Rounds, sharing the height they're given (or stacking naturally when scrolling), then the
+ * warm-up and cool-down as a short row under them.
+ */
 @Composable
 internal fun ColumnScope.StepperRows(
     config: IntervalConfig,
@@ -204,6 +208,8 @@ internal fun ColumnScope.StepperRows(
             modifier = if (fillHeight) Modifier.weight(1f) else Modifier,
         )
     }
+    Spacer(Modifier.size(Spacing.space8))
+    BookendRow(config, onEdit)
 }
 
 /**

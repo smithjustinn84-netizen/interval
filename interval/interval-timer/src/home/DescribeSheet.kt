@@ -36,7 +36,6 @@ import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.DescribedWorkout
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.describeWorkout
-import dev.justinsmith.interval.timer.format
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.valueOf
 import dev.justinsmith.interval.ui.AccentButton
@@ -53,6 +52,7 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StandardEasing
 import dev.justinsmith.interval.ui.labelRes
 import dev.justinsmith.interval.ui.valueColor
+import dev.justinsmith.interval.ui.valueText
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -123,16 +123,21 @@ internal fun DescribeSheet(
     }
 }
 
-/** What the words come to: one row per value, then the total, and a note when some values are kept. */
+/**
+ * What the words come to: one row per value (a warm-up or cool-down only when there is one), then the total,
+ * and a note when some values are kept.
+ */
 @Composable
 private fun DescribedPreview(described: DescribedWorkout) {
     val config = described.config
+    val bookends = ConfigField.bookends.filter { it in described.understood || config.valueOf(it) > 0 }
+    val fields = ConfigField.shape + bookends
     ListCard {
-        ConfigField.shape.forEachIndexed { index, field ->
+        fields.forEachIndexed { index, field ->
             if (index > 0) RowDivider()
             PreviewRow(
                 stringResource(field.labelRes),
-                field.format(config.valueOf(field)),
+                field.valueText(config.valueOf(field)),
                 understood = field in described.understood,
                 color = field.valueColor(),
             )
@@ -152,7 +157,7 @@ private fun DescribedPreview(described: DescribedWorkout) {
             color = IntervalTheme.palette.text,
         )
     }
-    val keptAny = described.understood.size < ConfigField.shape.size || !described.activityFound
+    val keptAny = fields.any { it !in described.understood } || !described.activityFound
     if (keptAny) DescribeHint(stringResource(Res.string.describe_kept_hint))
 }
 

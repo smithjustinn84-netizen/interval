@@ -67,10 +67,14 @@ class AppDataImporterTest {
     private suspend fun stocked(): Phone = Phone(now).apply {
         intervals.savePreset(Preset("Hills", IntervalConfig(workSeconds = 45, activity = Activity.Running)))
         intervals.updateConfig { IntervalConfig(rounds = 4) }
-        val workout = intervals.recordWorkout(IntervalConfig(rounds = 4), elapsedSeconds = 200, workSeconds = 120)
+        val bookended = IntervalConfig(rounds = 4, warmUpSeconds = 60, coolDownSeconds = 30)
+        val workout = intervals.recordWorkout(bookended, elapsedSeconds = 200, workSeconds = 120)
         intervals.reflectOnWorkout(workout, PerceivedEffort.Hard, "Felt strong")
         intervals.planWeekly(
-            PlanWorkout.Interval("Hills", IntervalConfig(workSeconds = 45, activity = Activity.Running)),
+            PlanWorkout.Interval(
+                "Hills",
+                IntervalConfig(workSeconds = 45, warmUpSeconds = 300, activity = Activity.Running),
+            ),
             setOf(2),
         )
         intervals.planOnce(PlanWorkout.Lift.AnySession, TODAY + 1)

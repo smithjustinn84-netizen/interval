@@ -45,10 +45,13 @@ internal fun healthWorkout(
     )
 }
 
-/** The move a span of [this] phase is, spent on [activity]; null for get ready, which is no segment. */
+/**
+ * The move a span of [this] phase is, spent on [activity]; null for get ready, which is no segment. Health
+ * Connect has no warm-up or cool-down segment, and both are the activity done easier, so they are its move.
+ */
 private fun Phase?.healthMove(activity: Activity): HealthMove? = when (this) {
     null -> HealthMove.Pause
-    Phase.Work -> activity.healthMove
+    Phase.Work, Phase.WarmUp, Phase.CoolDown -> activity.healthMove
     Phase.Rest -> HealthMove.Rest
     Phase.Prep, Phase.Done -> null
 }

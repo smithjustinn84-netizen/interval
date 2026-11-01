@@ -22,6 +22,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   hard, All out) and take a one-line note, kept as you choose and type. History's log and a workout's page,
   and a session's page on Lift, show them; sharing adds the note; the export carries both (schema 3); and
   Health Connect gets them as the session's notes when the summary closes.
+- Warm-up and cool-down: an easier stretch before the first round and after the last, set under the Timer's
+  rows or in the preset editor (off by default), or said in words ("5 min warm-up, 40/20 x8, 3 min cool
+  down"). They are part of a preset's shape, so presets, History, Plan and the export keep them, and they count
+  in the total, the timeline, the calories (as recovery) and Health Connect. The workout says each, cues and
+  notifies it, and ending in the cool-down keeps the workout as finished.
 
 ## [0.2.0] — Unreleased
 

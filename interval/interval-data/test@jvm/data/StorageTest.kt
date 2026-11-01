@@ -64,16 +64,27 @@ class StorageTest {
 
     @Test
     fun `everything survives a restart`() {
-        val config = IntervalConfig(5, 45, 15, rounds = 12, activity = Activity.Kettlebell)
+        val config = IntervalConfig(
+            5,
+            45,
+            15,
+            rounds = 12,
+            warmUpSeconds = 300,
+            coolDownSeconds = 120,
+            activity = Activity.Kettlebell,
+        )
         withApp { repository ->
             repository.updateConfig { config }
+            repository.planOnce(Preset("Long", config).asPlan(), epochDay = 20_744)
             repository.updateCueSettings { it.copy(halfway = false) }
             repository.updateAppSettings {
                 AppSettings(theme = ThemeMode.Light, keepScreenOn = false, reminderMinuteOfDay = 450)
             }
             repository.saveCurrentAsPreset("Long")
             repository.recordWorkout(config, elapsedSeconds = 300, endedEarly = true)
-            settled(repository) { it.customPresets.value.size == 1 && it.history.value.size == 1 }
+            settled(repository) {
+                it.customPresets.value.size == 1 && it.history.value.size == 1 && it.planned.value.size == 1
+            }
             settledOnDisk { it.toConfig() == config && !it.toCueSettings().halfway && !it.toAppSettings().keepScreenOn }
         }
         withApp { repository ->
@@ -90,6 +101,7 @@ class StorageTest {
                 HistoryEntry(NOW, config, elapsedSeconds = 300, endedEarly = true, id = 1),
                 repository.history.value.single(),
             )
+            assertEquals(Preset("Long", config).asPlan(), repository.planned.value.single().workout)
         }
     }
 

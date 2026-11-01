@@ -8,19 +8,38 @@ import dev.justinsmith.interval.timer.shortDuration
 import dev.justinsmith.interval.ui.resources.Res
 import dev.justinsmith.interval.ui.resources.common_custom
 import dev.justinsmith.interval.ui.resources.common_joined
+import dev.justinsmith.interval.ui.resources.config_cool_down
 import dev.justinsmith.interval.ui.resources.config_description
+import dev.justinsmith.interval.ui.resources.config_warm_up
 import dev.justinsmith.interval.ui.resources.duration_short_minutes
 import dev.justinsmith.interval.ui.resources.duration_short_seconds
 import org.jetbrains.compose.resources.stringResource
 
-/** A workout's shape in one line: "20s on · 10s off · ×8". */
+/**
+ * A workout's shape in one line: "20s on · 10s off · ×8", with a warm-up and cool-down either side when it has
+ * them: "5m warm-up · 20s on · 10s off · ×8 · 3m cool-down".
+ */
 @Composable
-fun configDescription(config: IntervalConfig): String = stringResource(
-    Res.string.config_description,
-    shortDurationText(config.workSeconds),
-    shortDurationText(config.restSeconds),
-    config.rounds,
-)
+fun configDescription(config: IntervalConfig): String {
+    val rounds = stringResource(
+        Res.string.config_description,
+        shortDurationText(config.workSeconds),
+        shortDurationText(config.restSeconds),
+        config.rounds,
+    )
+    if (config.warmUpSeconds == 0 && config.coolDownSeconds == 0) return rounds
+    return joined(
+        listOfNotNull(
+            config.warmUpSeconds.takeIf { it > 0 }?.let {
+                stringResource(Res.string.config_warm_up, shortDurationText(it))
+            },
+            rounds,
+            config.coolDownSeconds.takeIf { it > 0 }?.let {
+                stringResource(Res.string.config_cool_down, shortDurationText(it))
+            },
+        ),
+    )
+}
 
 /** The shape, then the activity unless it is General: "20s on · 10s off · ×8 · Bike". */
 @Composable
