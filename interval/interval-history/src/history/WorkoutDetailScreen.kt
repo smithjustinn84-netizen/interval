@@ -29,6 +29,7 @@ import dev.justinsmith.interval.history.resources.detail_delete_confirm
 import dev.justinsmith.interval.history.resources.detail_delete_menu
 import dev.justinsmith.interval.history.resources.detail_delete_text
 import dev.justinsmith.interval.history.resources.detail_delete_title
+import dev.justinsmith.interval.history.resources.detail_how_it_went
 import dev.justinsmith.interval.history.resources.detail_plan_again
 import dev.justinsmith.interval.history.resources.detail_planned_done
 import dev.justinsmith.interval.history.resources.detail_repeat
@@ -229,6 +230,17 @@ private fun DetailFigures(workout: FinishedWorkout) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             Stat(stringResource(Res.string.detail_work), workout.work, accent = true)
             workout.calories?.let { Stat(stringResource(Res.string.history_calories), it.toString()) }
+        }
+    }
+    if (workout.effort != null || workout.note != null) {
+        SummaryCard {
+            Text(
+                stringResource(Res.string.detail_how_it_went),
+                style = IntervalTheme.type.caption,
+                color = palette.textDim,
+            )
+            workout.effort?.let { Text(effortWord(it), style = IntervalTheme.type.value, color = palette.text) }
+            workout.note?.let { Text(it, style = IntervalTheme.type.body, color = palette.text) }
         }
     }
 }

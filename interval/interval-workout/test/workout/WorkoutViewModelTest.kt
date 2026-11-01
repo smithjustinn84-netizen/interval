@@ -14,6 +14,7 @@ import dev.justinsmith.interval.fakes.RecordingHealthStore
 import dev.justinsmith.interval.fakes.deferredStorageScope
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.CueSettings
+import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.HealthMove
 import dev.justinsmith.interval.platform.HealthSegment
@@ -665,6 +666,71 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
         assertFalse(state.running)
         assertTrue(repository.history.value.isEmpty())
         assertFalse(background.kept)
+    }
+
+    @Test
+    fun `the summary's effort and note are kept with the workout in History`() = runTest(dispatcher) {
+        val viewModel = workoutViewModel()
+        run(15_000)
+        assertTrue(viewModel.state.value.isDone)
+
+        viewModel.setEffort(PerceivedEffort.Hard)
+        viewModel.setNote("  Felt strong ")
+        runCurrent()
+
+        assertEquals(PerceivedEffort.Hard, viewModel.state.value.effort)
+        assertEquals("  Felt strong ", viewModel.state.value.note)
+        val entry = repository.history.value.single()
+        assertEquals(PerceivedEffort.Hard, entry.effort)
+        assertEquals("Felt strong", entry.note)
+    }
+
+    @Test
+    fun `an effort and a note survive a restore of the summary`() = runTest(dispatcher) {
+        val first = workoutViewModel()
+        run(15_000)
+        first.setEffort(PerceivedEffort.Steady)
+        first.setNote("Legs heavy")
+        runCurrent()
+        killProcess(first)
+
+        val restored = workoutViewModel()
+        runCurrent()
+        assertTrue(restored.state.value.isDone)
+        assertEquals(PerceivedEffort.Steady, restored.state.value.effort)
+        assertEquals("Legs heavy", restored.state.value.note)
+
+        // Still the same entry: what changes now lands on it, not on a new one.
+        restored.setEffort(PerceivedEffort.AllOut)
+        runCurrent()
+        assertEquals(PerceivedEffort.AllOut, repository.history.value.single().effort)
+    }
+
+    @Test
+    fun `the health store is written again with the summary's words as it goes`() = runTest(dispatcher) {
+        val viewModel = workoutViewModel()
+        run(15_000)
+        assertEquals(1, health.workouts.size)
+
+        viewModel.setEffort(PerceivedEffort.Hard)
+        viewModel.describeForHealth("Hard · Felt strong")
+        now = 99L
+        leave(viewModel)
+
+        assertEquals(2, health.workouts.size)
+        val again = health.workouts.last()
+        assertEquals(health.workouts.first().id, again.id)
+        assertEquals("Hard · Felt strong", again.notes)
+        assertEquals(99L, again.version)
+        assertEquals(health.workouts.first().segments, again.segments)
+    }
+
+    @Test
+    fun `with nothing said of it the health store is not written again`() = runTest(dispatcher) {
+        val viewModel = workoutViewModel()
+        run(15_000)
+        leave(viewModel)
+        assertEquals(1, health.workouts.size)
     }
 
     /** The workout these tests run, 5 s of work, 5 of rest and 5 of work, [elapsed] seconds in. */

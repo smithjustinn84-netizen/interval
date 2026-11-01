@@ -80,6 +80,12 @@ class FakeHistoryDao : HistoryDao {
         rows.update { all -> all.map { if (it.id == id) it.copy(deleted = false, updatedAtEpochMillis = now) else it } }
     }
 
+    override suspend fun reflect(uid: String, effort: Int?, note: String?, now: Long) {
+        rows.update { all ->
+            all.map { if (it.uid == uid) it.copy(effort = effort, note = note, updatedAtEpochMillis = now) else it }
+        }
+    }
+
     override suspend fun clear(now: Long) {
         rows.update { all -> all.map { if (it.deleted) it else it.copy(deleted = true, updatedAtEpochMillis = now) } }
     }

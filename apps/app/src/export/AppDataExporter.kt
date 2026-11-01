@@ -87,7 +87,16 @@ private fun IntervalConfig.export() = ConfigExport(prepSeconds, workSeconds, res
 private fun Preset.export() = PresetExport(id, name, config.export())
 
 private fun HistoryEntry.export() =
-    WorkoutExport(id, finishedAtEpochMillis, config.export(), elapsedSeconds, endedEarly, workActiveSeconds)
+    WorkoutExport(
+        id,
+        finishedAtEpochMillis,
+        config.export(),
+        elapsedSeconds,
+        endedEarly,
+        workActiveSeconds,
+        effort?.level,
+        note,
+    )
 
 private fun PlannedWorkout.export(): PlannedExport {
     val interval = workout as? PlanWorkout.Interval
@@ -123,7 +132,17 @@ private fun Followed.export() = FollowedExport(program.key.stored, startedAtEpoc
 /** A finished session; one still in progress is not a record yet. */
 private fun LiftSession.export(): SessionExport? {
     val finishedAt = finishedAtEpochMillis ?: return null
-    return SessionExport(uid, startedAtEpochMillis, finishedAt, title, program?.stored, day, sets.map { it.export() })
+    return SessionExport(
+        uid,
+        startedAtEpochMillis,
+        finishedAt,
+        title,
+        program?.stored,
+        day,
+        sets.map { it.export() },
+        effort?.level,
+        note,
+    )
 }
 
 private fun SetLog.export() = SetExport(

@@ -10,8 +10,11 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import dev.justinsmith.interval.ui.AcceptanceSteps
 import dev.justinsmith.interval.ui.JOURNEY_TIMEOUT
@@ -162,6 +165,18 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
     }
 
     fun closeSummary() = tap("Done")
+
+    /** On the summary, under "How was it?": how hard the session felt, then a note on it. */
+    fun sayHowItWas(effort: String, note: String) {
+        see("How was it?")
+        tap(hasText(effort) and isSelectable())
+        ui.onNode(hasSetTextAction()).performScrollTo().performTextInput(note)
+    }
+
+    /** The finished session is kept with how it felt: an effort of [level], 1 to 5, and its [note]. */
+    fun sessionKeptAs(level: Int, note: String) = waitFor("the session kept as $level, \"$note\"") {
+        app.storage.sessions.sessions.value.any { it.effort == level && it.note == note }
+    }
 
     // The exercise library
 

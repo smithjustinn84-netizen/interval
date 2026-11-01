@@ -14,6 +14,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 - App shortcuts (Android): a long-press on the icon offers "Start a workout", the Timer's workout, and "Start a
   Lift session", which starts or resumes one. Each opens over its tab, so Back lands there, and a workout
   already running is kept: either shortcut returns to it.
+- How was it: a finished workout's and a Lift session's summary ask how hard it felt (Easy, Steady, Hard, Very
+  hard, All out) and take a one-line note, kept as you choose and type. History's log and a workout's page,
+  and a session's page on Lift, show them; sharing adds the note; the export carries both (schema 3); and
+  Health Connect gets them as the session's notes when the summary closes.
 
 ## [0.2.0] — Unreleased
 

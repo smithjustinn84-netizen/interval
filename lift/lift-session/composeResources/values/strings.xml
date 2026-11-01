@@ -47,6 +47,14 @@
     <string name="log_fewer_reps">Fewer reps</string>
     <string name="log_more_reps">More reps</string>
     <string name="summary_done">Done</string>
+    <string name="summary_how_was_it">How was it?</string>
+    <string name="summary_note_placeholder">A note on it</string>
+    <string name="detail_how_it_went">How it went</string>
+    <string name="effort_easy">Easy</string>
+    <string name="effort_steady">Steady</string>
+    <string name="effort_hard">Hard</string>
+    <string name="effort_very_hard">Very hard</string>
+    <string name="effort_all_out">All out</string>
     <string name="summary_share">Share</string>
     <string name="share_session_figures">%1$s · %2$s moved · %3$d reps</string>
     <string name="share_session_record">%1$s: %2$s</string>

@@ -165,6 +165,7 @@ fun SessionRoute(onExit: () -> Unit) {
                 onDone = onExit,
                 onKeep = viewModel::keepChanges,
                 onShare = sharer::shareText,
+                reflection = SummaryReflection(viewModel::setEffort, viewModel::setNote, viewModel::describeForHealth),
             )
 
             is SessionPage.Emom -> EmomScreen(

@@ -30,10 +30,13 @@ import dev.justinsmith.interval.ui.NoticeAction
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
+import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.session.SessionStats
+import dev.justinsmith.lift.session.effortWord
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_cancel
 import dev.justinsmith.lift.session.resources.common_joined
+import dev.justinsmith.lift.session.resources.detail_how_it_went
 import dev.justinsmith.lift.session.resources.history_close_cd
 import dev.justinsmith.lift.session.resources.history_delete
 import dev.justinsmith.lift.session.resources.history_delete_text
@@ -132,6 +135,9 @@ fun LiftDetailScreen(
         }
         // A cell of its own, so on a wide window the numbers keep a column's width and the lifts sit beside them.
         item(key = "numbers") { SessionStats(session, state.records, gutter.padding(bottom = Spacing.space16)) }
+        if (session.effort != null || session.note != null) {
+            item(key = "how") { HowItWent(session, gutter.padding(bottom = Spacing.space16)) }
+        }
         session.sets.groupBy { it.exercise to it.double }.forEach { (lift, sets) ->
             item(key = "lift-${lift.first.key}-${lift.second}") {
                 // Spaced below rather than above, so beside the numbers a lift's label lines up with their top.
@@ -173,6 +179,21 @@ fun LiftDetailScreen(
 private fun DetailMenuItems(onShare: () -> Unit, onDelete: () -> Unit) {
     IntervalMenuItem(stringResource(Res.string.history_share), onClick = onShare)
     IntervalMenuItem(stringResource(Res.string.history_delete), onClick = onDelete, destructive = true)
+}
+
+/** How hard it felt and the note on it, as said on its summary. */
+@Composable
+private fun HowItWent(session: LiftSession, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    Column(modifier) {
+        GroupLabel(stringResource(Res.string.detail_how_it_went))
+        ListCard {
+            Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+                session.effort?.let { Text(effortWord(it), style = IntervalTheme.type.value, color = palette.text) }
+                session.note?.let { Text(it, style = IntervalTheme.type.body, color = palette.text) }
+            }
+        }
+    }
 }
 
 /** When the session was, and under it the program day it was, if it was one. */

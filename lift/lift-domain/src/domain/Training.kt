@@ -309,6 +309,9 @@ data class LiftSession(
     val plan: SessionPlan? = null,
     /** Which day of [program] it was, from 1; null for a free session, or one logged before sessions kept it. */
     val day: Int? = null,
+    /** How hard it felt and a note on it, as said on its summary; null until said. */
+    val effort: PerceivedEffort? = null,
+    val note: String? = null,
 ) {
     val tonnageKg: Double get() = sets.sumOf { it.tonnageKg }
 

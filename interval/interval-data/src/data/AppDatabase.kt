@@ -19,6 +19,7 @@ import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.execSQL
 import dev.justinsmith.interval.model.HistoryEntry
+import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
@@ -35,16 +36,18 @@ import kotlinx.coroutines.flow.Flow
  * latter a day later without a new version: [AddActivityIfMissing]); version 3 added [PlannedEntity];
  * version 4 gave each workout a [HistoryEntity.uid], a change time and a deleted flag, and a table of
  * workouts shared by a sibling app, which version 5 dropped when that app became part of this one;
- * version 6 let a plan be a session on Lift ([PlannedEntity.lift]).
+ * version 6 let a plan be a session on Lift ([PlannedEntity.lift]); version 7 kept how a workout felt
+ * ([HistoryEntity.effort], [HistoryEntity.note]).
  */
 @Database(
     entities = [HistoryEntity::class, PresetEntity::class, PlannedEntity::class],
-    version = 6,
+    version = 7,
     // 3 to 4 and 4 to 5 are MIGRATION_3_4 and MIGRATION_4_5, added by buildAppDatabase.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3, spec = AddActivityIfMissing::class),
         AutoMigration(from = 5, to = 6),
+        AutoMigration(from = 6, to = 7),
     ],
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -144,6 +147,10 @@ interface HistoryDao {
     @Query("UPDATE history SET deleted = 0, updated_at = :now WHERE id = :id")
     suspend fun restore(id: Long, now: Long)
 
+    /** Sets how the workout [uid] felt, at [now]: an effort level, 1 to 5, and a note, either null for none. */
+    @Query("UPDATE history SET effort = :effort, note = :note, updated_at = :now WHERE uid = :uid")
+    suspend fun reflect(uid: String, effort: Int?, note: String?, now: Long)
+
     /** Marks every workout not yet deleted as deleted at [now]. */
     @Query("UPDATE history SET deleted = 1, updated_at = :now WHERE deleted = 0")
     suspend fun clear(now: Long)
@@ -205,6 +212,10 @@ data class HistoryEntity(
     @ColumnInfo(name = "updated_at", defaultValue = "0") val updatedAtEpochMillis: Long,
     /** A deleted workout stays as a tombstone, its row kept with when it went. */
     @ColumnInfo(defaultValue = "0") val deleted: Boolean = false,
+    /** How hard it felt, a [PerceivedEffort.level]; null until the user says, and in rows from before version 7. */
+    val effort: Int? = null,
+    /** A line on how it went; null for none. */
+    val note: String? = null,
 )
 
 @Entity(tableName = "preset")
@@ -251,6 +262,8 @@ internal fun HistoryEntity.toDomain() = HistoryEntry(
     endedEarly = endedEarly,
     workActiveSeconds = workActiveSeconds,
     id = id,
+    effort = PerceivedEffort.of(effort),
+    note = note,
 )
 
 internal fun HistoryEntry.toEntity(uid: String, updatedAtEpochMillis: Long) = HistoryEntity(
@@ -266,6 +279,8 @@ internal fun HistoryEntry.toEntity(uid: String, updatedAtEpochMillis: Long) = Hi
     activity = config.activity.name,
     uid = uid,
     updatedAtEpochMillis = updatedAtEpochMillis,
+    effort = effort?.level,
+    note = note,
 )
 
 internal fun PresetEntity.toDomain() =

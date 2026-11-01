@@ -40,7 +40,9 @@ class LiftBarbellAcceptanceTest {
         finish()
         seeRecord("Back squat", "Heaviest 20 kg × 5")
         seeRecord("Power clean", "Heaviest 62.5 kg × 5")
+        sayHowItWas("Hard", "Grip went")
         closeSummary()
+        sessionKeptAs(3, "Grip went")
         seeProgramDay("Day 2 of 36 · week 1", "Back squat", "Overhead press", "Barbell deadlift")
     }
 }

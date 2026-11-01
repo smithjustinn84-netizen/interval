@@ -28,7 +28,7 @@ import kotlinx.coroutines.flow.Flow
  * [CustomExerciseEntity]; version 8 the user's changes to their bands and the bands they add, [BandEntity];
  * version 9 a session's day as it changed it, and the days done of a program before following it; version 10
  * the user's barbell, [BarEntity]; version 11 which day of its program a session was; version 12 how long the
- * user rests between sets, [RestEntity].
+ * user rests between sets, [RestEntity]; version 13 how a session felt ([SessionEntity.effort], [SessionEntity.note]).
  * Every version adds; none rewrites a row.
  */
 @Database(
@@ -43,7 +43,7 @@ import kotlinx.coroutines.flow.Flow
         BarEntity::class,
         RestEntity::class,
     ],
-    version = 12,
+    version = 13,
     // 3 to 4 is MIGRATION_3_4, added in liftStorageModule.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -56,6 +56,7 @@ import kotlinx.coroutines.flow.Flow
         AutoMigration(from = 9, to = 10),
         AutoMigration(from = 10, to = 11),
         AutoMigration(from = 11, to = 12),
+        AutoMigration(from = 12, to = 13),
     ],
 )
 @ConstructedBy(LiftDatabaseConstructor::class)
@@ -136,6 +137,10 @@ interface SessionDao {
 
     @Query("UPDATE session SET finished_at = :at, title = :title, updated_at = :at WHERE uid = :uid")
     suspend fun finish(uid: String, title: String, at: Long)
+
+    /** Sets how the session [uid] felt, at [now]: an effort level, 1 to 5, and a note, either null for none. */
+    @Query("UPDATE session SET effort = :effort, note = :note, updated_at = :now WHERE uid = :uid")
+    suspend fun reflect(uid: String, effort: Int?, note: String?, now: Long)
 
     /** Marks a finished session deleted, keeping the row as a tombstone. */
     @Query("UPDATE session SET deleted = 1, updated_at = :now WHERE uid = :uid")
@@ -246,6 +251,10 @@ data class SessionEntity(
     val plan: String? = null,
     /** Which day of its program it was, from 1; null for a free session, or one logged before sessions kept it. */
     @ColumnInfo(name = "program_day") val programDay: Int? = null,
+    /** How hard it felt, a [dev.justinsmith.lift.domain.PerceivedEffort.level]; null until said. */
+    val effort: Int? = null,
+    /** A line on how it went; null for none. */
+    val note: String? = null,
 )
 
 @Entity(tableName = "lift_set", indices = [Index("session_uid")])

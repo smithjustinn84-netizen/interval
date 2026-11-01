@@ -16,6 +16,8 @@ import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import dev.justinsmith.interval.AppFixture
 import dev.justinsmith.interval.appTest
@@ -366,6 +368,18 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     // Outcomes
 
     fun nothingIsSaved() = savedWorkouts(0)
+
+    /** On the summary, under "How was it?": how hard the workout felt, then a note on it. */
+    fun sayHowItWas(effort: String, note: String) {
+        see("How was it?")
+        tap(hasText(effort) and isSelectable())
+        ui.onNode(hasSetTextAction()).performScrollTo().performTextInput(note)
+    }
+
+    /** The workout History holds was kept with how it felt: an effort of [level], 1 to 5, and its [note]. */
+    fun workoutKeptAs(level: Int, note: String) = waitFor("the workout kept as $level, \"$note\"") {
+        app.repository.history.value.any { it.effort?.level == level && it.note == note }
+    }
 
     fun savedWorkouts(count: Int) = assertEquals(count, app.repository.history.value.size)
 }

@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.workout
 
+import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.Preset
@@ -62,6 +63,10 @@ data class WorkoutUiState(
     val week: WeekStanding? = null,
     /** Ended from off screen (the notification's End) with no round done: nothing to keep, so the screen leaves. */
     val leaving: Boolean = false,
+    /** How hard it felt, as said on the summary; null until said. */
+    val effort: PerceivedEffort? = null,
+    /** The summary's note as typed. */
+    val note: String = "",
 ) {
     /** Offer "Save as preset" on the summary: no preset has this shape yet. */
     val canSavePreset: Boolean get() = presetName == null
@@ -91,6 +96,8 @@ fun WorkoutState.toUiState(
     calories: Int? = null,
     week: WeekStanding? = null,
     leaving: Boolean = false,
+    effort: PerceivedEffort? = null,
+    note: String = "",
 ): WorkoutUiState {
     val rounds = config.rounds
     val secondsLeft = ceilSeconds(remainingMillis)
@@ -133,5 +140,7 @@ fun WorkoutState.toUiState(
         keepScreenOn = keepScreenOn,
         calories = calories,
         leaving = leaving,
+        effort = effort,
+        note = note,
     )
 }

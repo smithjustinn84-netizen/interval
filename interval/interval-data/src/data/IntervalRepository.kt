@@ -11,6 +11,7 @@ import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.HistoryEntry
+import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
@@ -241,19 +242,29 @@ class IntervalRepository(
 
     /**
      * Records a workout that ran for [elapsedSeconds], [workSeconds] of them working; [endedEarly] when it
-     * stopped before the last round.
+     * stopped before the last round. Returns the uid it is stored under, for [reflectOnWorkout].
      */
     fun recordWorkout(
         config: IntervalConfig,
         elapsedSeconds: Int,
         endedEarly: Boolean = false,
         workSeconds: Int? = null,
-    ) {
+    ): String {
         val now = clock.nowMillis()
+        val uid = Uuid.random().toHexString()
         val entry = HistoryEntry(now, config, elapsedSeconds, endedEarly, workSeconds)
-        writer.persist {
-            historyDao.insert(entry.toEntity(uid = Uuid.random().toHexString(), updatedAtEpochMillis = now))
-        }
+        writer.persist { historyDao.insert(entry.toEntity(uid = uid, updatedAtEpochMillis = now)) }
+        return uid
+    }
+
+    /**
+     * Keeps how the workout [uid] felt, as said on its summary: [effort] and a [note], blank for none. In order
+     * after the write that recorded it, so it never lands first.
+     */
+    fun reflectOnWorkout(uid: String, effort: PerceivedEffort?, note: String) {
+        val now = clock.nowMillis()
+        val kept = note.trim().take(PerceivedEffort.NOTE_MAX_LENGTH).ifEmpty { null }
+        writer.persist { historyDao.reflect(uid, effort?.level, kept, now) }
     }
 
     /**

@@ -35,6 +35,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.platform.prefersReducedMotion
 import dev.justinsmith.interval.presets.PresetDraft
 import dev.justinsmith.interval.presets.PresetEditorHost
@@ -45,6 +46,7 @@ import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.Burst
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EnterEasing
+import dev.justinsmith.interval.ui.HowWasIt
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -60,8 +62,15 @@ import dev.justinsmith.interval.ui.workoutDescription
 import dev.justinsmith.interval.workout.resources.Res
 import dev.justinsmith.interval.workout.resources.common_done
 import dev.justinsmith.interval.workout.resources.common_joined
+import dev.justinsmith.interval.workout.resources.effort_all_out
+import dev.justinsmith.interval.workout.resources.effort_easy
+import dev.justinsmith.interval.workout.resources.effort_hard
+import dev.justinsmith.interval.workout.resources.effort_steady
+import dev.justinsmith.interval.workout.resources.effort_very_hard
 import dev.justinsmith.interval.workout.resources.history_goal_met
 import dev.justinsmith.interval.workout.resources.history_streak
+import dev.justinsmith.interval.workout.resources.summary_how_was_it
+import dev.justinsmith.interval.workout.resources.summary_note_placeholder
 import dev.justinsmith.interval.workout.resources.summary_week_count
 import dev.justinsmith.interval.workout.resources.summary_week_of_goal
 import dev.justinsmith.interval.workout.resources.workout_done
@@ -92,8 +101,11 @@ internal fun SummaryLayout(
     onSavePreset: (Preset) -> Unit,
     onExit: () -> Unit,
     onShare: (String) -> Unit,
+    reflection: SummaryReflection,
 ) {
     var draft by rememberPresetDraft()
+    val healthNotes = healthNotes(state)
+    LaunchedEffect(healthNotes) { reflection.onDescribeForHealth(healthNotes) }
     val onSave = { draft = PresetDraft.saveCurrent(state.config) }
     val shareText = workoutShareText(state)
     val share = { onShare(shareText) }
@@ -134,7 +146,7 @@ internal fun SummaryLayout(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.space32),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                SummaryReadout(state, entrance, ring = false, Modifier.weight(1f))
+                SummaryReadout(state, entrance, ring = false, reflection, Modifier.weight(1f))
                 SummaryActions(
                     state,
                     entrance,
@@ -147,7 +159,7 @@ internal fun SummaryLayout(
             }
         } else {
             Column(padding) {
-                SummaryReadout(state, entrance, ring = true, Modifier.weight(1f).fillMaxWidth())
+                SummaryReadout(state, entrance, ring = true, reflection, Modifier.weight(1f).fillMaxWidth())
                 SummaryActions(
                     state,
                     entrance,
@@ -217,6 +229,7 @@ private fun SummaryReadout(
     state: WorkoutUiState,
     entrance: MutableTransitionState<Boolean>,
     ring: Boolean,
+    reflection: SummaryReflection,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -282,6 +295,51 @@ private fun SummaryReadout(
                 )
             }
         }
+        AnimatedVisibility(entrance, enter = risingEnter(Motion.STAGGER_MILLIS * HOW_STEP)) {
+            HowWasIt(
+                title = stringResource(Res.string.summary_how_was_it),
+                efforts = PerceivedEffort.entries,
+                effort = state.effort,
+                effortLabel = { effortWord(it) },
+                onEffortChange = reflection.onEffortChange,
+                note = state.note,
+                onNoteChange = reflection.onNoteChange,
+                notePlaceholder = stringResource(Res.string.summary_note_placeholder),
+                noteMaxLength = PerceivedEffort.NOTE_MAX_LENGTH,
+                modifier = Modifier.padding(top = Spacing.space24).widthIn(max = Sizes.content),
+            )
+        }
+    }
+}
+
+/** What the summary's "How was it?" does: keeps the effort and the note, and hands on their words. */
+class SummaryReflection(
+    val onEffortChange: (PerceivedEffort) -> Unit = {},
+    val onNoteChange: (String) -> Unit = {},
+    /** The effort and note in words for the health store's note, null with neither said. */
+    val onDescribeForHealth: (String?) -> Unit = {},
+)
+
+/** The word for [effort]: "Easy" through "All out". */
+@Composable
+internal fun effortWord(effort: PerceivedEffort): String = stringResource(
+    when (effort) {
+        PerceivedEffort.Easy -> Res.string.effort_easy
+        PerceivedEffort.Steady -> Res.string.effort_steady
+        PerceivedEffort.Hard -> Res.string.effort_hard
+        PerceivedEffort.VeryHard -> Res.string.effort_very_hard
+        PerceivedEffort.AllOut -> Res.string.effort_all_out
+    },
+)
+
+/** The effort and the note as one line, "Hard · Felt strong", either alone, or null with neither. */
+@Composable
+internal fun healthNotes(state: WorkoutUiState): String? {
+    val word = state.effort?.let { effortWord(it) }
+    val note = state.note.trim().ifEmpty { null }
+    return when {
+        word != null && note != null -> stringResource(Res.string.common_joined, word, note)
+        else -> word ?: note
     }
 }
 
@@ -396,7 +454,8 @@ private const val LINES_STEP = 2
 private const val STATS_STEP = 4
 private const val SAVED_STEP = 6
 private const val WEEK_STEP = 7
-private const val ACTIONS_STEP = 8
+private const val HOW_STEP = 8
+private const val ACTIONS_STEP = 9
 
 @Composable
 private fun Stat(value: String, label: String, modifier: Modifier = Modifier) {

@@ -5,6 +5,7 @@ import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.TODAY
 import dev.justinsmith.interval.fakes.noonOf
+import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
@@ -18,6 +19,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import dev.justinsmith.lift.domain.PerceivedEffort as LiftEffort
 
 class ExportTest {
     private val now = noonOf(TODAY)
@@ -30,11 +32,13 @@ class ExportTest {
     @Test
     fun `the file is named for the day and holds both sides`() = runTest {
         intervals.savePreset(Preset("Hills", IntervalConfig(workSeconds = 45)))
-        intervals.recordWorkout(IntervalConfig(rounds = 4), elapsedSeconds = 200)
+        val workout = intervals.recordWorkout(IntervalConfig(rounds = 4), elapsedSeconds = 200)
+        intervals.reflectOnWorkout(workout, PerceivedEffort.Hard, "Felt strong")
         intervals.updateAppSettings { it.copy(theme = ThemeMode.Light, weeklyGoal = 3) }
         bells.startSession()
         bells.logSet(BuiltInExercise.TwoHandSwing, bellKg = 16.0, reps = 10, side = null)
         bells.finishSession("Swings")
+        bells.reflectOnSession(bells.sessions.value.single().uid, LiftEffort.Steady, "")
 
         val file = exporter.export()
 
@@ -49,10 +53,14 @@ class ExportTest {
         assertEquals(listOf("Hills"), bundle.presets.map { it.name })
         assertEquals(45, bundle.presets.single().config.workSeconds)
         assertEquals(listOf(4), bundle.history.map { it.config.rounds })
+        assertEquals(3, bundle.history.single().effort)
+        assertEquals("Felt strong", bundle.history.single().note)
         val session = bundle.lift.sessions.single()
         assertEquals("Swings", session.title)
         assertEquals(listOf("TwoHandSwing"), session.sets.map { it.exercise })
         assertEquals(listOf(16.0), session.sets.map { it.bellKg })
+        assertEquals(2, session.effort)
+        assertNull(session.note)
         assertNull(bundle.lift.following)
     }
 

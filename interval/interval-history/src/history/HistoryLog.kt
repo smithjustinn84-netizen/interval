@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.activity_kettlebell
 import dev.justinsmith.interval.history.resources.history_calories_value
@@ -129,6 +130,7 @@ internal fun HistoryRow(
                     stringResource(Res.string.activity_kettlebell)
                 },
                 stringResource(Res.string.history_ended_early).takeIf { item.endedEarly },
+                item.effort?.let { effortWord(it) },
                 item.calories?.let { stringResource(Res.string.history_calories_value, it) },
                 item.time,
             )
@@ -138,6 +140,15 @@ internal fun HistoryRow(
                 style = IntervalTheme.type.meta,
                 color = palette.textDim,
             )
+            item.note?.let { note ->
+                Text(
+                    note,
+                    style = IntervalTheme.type.meta,
+                    color = palette.textDim,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
         Text(item.total, style = IntervalTheme.type.value, color = palette.text)
         if (click != null) {

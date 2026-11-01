@@ -4,10 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.model.CourseSpan
+import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.WorkoutProgress
 import dev.justinsmith.interval.platform.BackgroundWorkout
 import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.HealthStore
+import dev.justinsmith.interval.platform.HealthWorkout
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.WorkoutControls
@@ -95,6 +97,14 @@ class WorkoutViewModel(
 
     /** True between [BackgroundWorkout.start] and [BackgroundWorkout.stop]: while there is a workout to keep. */
     private var kept = false
+
+    /** The uid the finished workout was recorded under, and how it felt as the summary says: see [setEffort]. */
+    private var entryUid: String? = null
+    private var effort: PerceivedEffort? = null
+    private var note = ""
+
+    /** The summary's words for the health store's note, from [describeForHealth]. */
+    private var healthNotes: String? = null
 
     /** The status last shown off screen, so [background] hears of a change, not of every tick. */
     private var shown: WorkoutStatus? = null
@@ -191,7 +201,7 @@ class WorkoutViewModel(
         running = false
         ended = true
         week = weekWithThis()
-        repository.recordWorkout(config, activeSeconds, endedEarly = true, workSeconds = workSeconds)
+        entryUid = repository.recordWorkout(config, activeSeconds, endedEarly = true, workSeconds = workSeconds)
         finishCourse()
         publish()
         checkpoint()
@@ -221,7 +231,50 @@ class WorkoutViewModel(
         repository.saveAndApplyPreset(preset)
     }
 
+    /** How hard the finished workout felt, from the summary; kept in History with it at once. */
+    fun setEffort(effort: PerceivedEffort?) {
+        this.effort = effort
+        reflect()
+    }
+
+    /** The summary's note as typed; kept in History with the workout at once, trimmed. */
+    fun setNote(note: String) {
+        this.note = note.take(PerceivedEffort.NOTE_MAX_LENGTH)
+        reflect()
+    }
+
+    /**
+     * The summary's effort and note in words, for the health store's note: the screen words them, as it words
+     * everything. Written to the store as the summary goes ([onCleared], [restart]), not at every keystroke.
+     */
+    fun describeForHealth(notes: String?) {
+        healthNotes = notes
+    }
+
+    private fun reflect() {
+        val uid = entryUid ?: return
+        repository.reflectOnWorkout(uid, effort, note)
+        publish()
+        checkpoint()
+    }
+
+    /**
+     * Writes the finished workout to the health store again with the summary's words, as a newer version of the
+     * record written as it ended. Nothing when there is no finished workout, or nothing was said of it.
+     */
+    private fun recordReflection() {
+        if (entryUid == null || (effort == null && note.isBlank())) return
+        val endedAt = spans.lastOrNull()?.endEpochMillis ?: startedAt
+        val workout = courseWorkout(endedAt)
+        health.record(workout.copy(notes = healthNotes, version = clock.nowMillis()))
+    }
+
     fun restart() {
+        recordReflection()
+        entryUid = null
+        effort = null
+        note = ""
+        healthNotes = null
         stopTicker()
         ended = false
         week = null
@@ -258,6 +311,9 @@ class WorkoutViewModel(
         workMillis = saved.workMillis
         startedAt = saved.startedAtEpochMillis
         spans = saved.spans.toMutableList()
+        entryUid = saved.entryUid
+        effort = saved.effort
+        note = saved.note
         openSince = spans.lastOrNull()?.endEpochMillis ?: startedAt
         openPhase = if (running) engine.phase else null
         if (running) applyStep(WorkoutEngine.tick(engine, clock.nowMillis() - saved.atEpochMillis))
@@ -296,7 +352,7 @@ class WorkoutViewModel(
             running = false
             stopTicker()
             week = weekWithThis()
-            repository.recordWorkout(config, activeSeconds, workSeconds = workSeconds)
+            entryUid = repository.recordWorkout(config, activeSeconds, workSeconds = workSeconds)
             finishCourse()
             release()
         }
@@ -319,9 +375,13 @@ class WorkoutViewModel(
     /** The course is over: closes it and hands the workout, as it ran, to the health store. */
     private fun finishCourse() {
         turn(phase = null)
-        val endedAt = openSince
+        health.record(courseWorkout(endedAt = openSince))
+    }
+
+    /** The workout as it ran, to [endedAt], as the health store takes it. */
+    private fun courseWorkout(endedAt: Long): HealthWorkout {
         val calories = body.calories(workSeconds, activeSeconds - workSeconds, config.activity)
-        health.record(healthWorkout(config.activity, presetName, startedAt, endedAt, spans, calories))
+        return healthWorkout(config.activity, presetName, startedAt, endedAt, spans, calories)
     }
 
     private fun stopTicker() {
@@ -366,12 +426,16 @@ class WorkoutViewModel(
                 startedAtEpochMillis = startedAt,
                 // A copy: the list goes on growing, and the snapshot is what stood at this moment.
                 spans = spans.toList(),
+                entryUid = entryUid,
+                effort = effort,
+                note = note,
             ),
         )
     }
 
     /** The screen has gone for good: nothing to keep going, in view or saved. */
     override fun onCleared() {
+        recordReflection()
         stopTicker()
         release()
         repository.saveWorkoutProgress(null)
@@ -387,6 +451,8 @@ class WorkoutViewModel(
         calories = body.calories(workSeconds, activeSeconds - workSeconds, config.activity),
         week = week,
         leaving = leaving,
+        effort = effort,
+        note = note,
     )
 
     /**

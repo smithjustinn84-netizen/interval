@@ -3,6 +3,7 @@ package dev.justinsmith.lift.session
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.platform.HealthStore
+import dev.justinsmith.interval.platform.HealthWorkout
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.WeekStanding
@@ -25,6 +26,7 @@ import dev.justinsmith.lift.domain.HoldState
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.MAX_BAR_KG
 import dev.justinsmith.lift.domain.Measure
+import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.PersonalRecord
 import dev.justinsmith.lift.domain.PlanChanges
 import dev.justinsmith.lift.domain.PlanRow
@@ -145,6 +147,8 @@ data class Finished(
     val lastDayOf: Program? = null,
     /** Its blocks done in full at the top of their range, with no heavier load to go to. */
     val toppedOut: List<Block> = emptyList(),
+    /** The summary's note as typed; [session] holds it as kept, trimmed. */
+    val note: String = "",
 )
 
 /**
@@ -236,6 +240,10 @@ class SessionViewModel(
     // The same sets oldest first, flattened once: the suggestions read them on every change of the draft.
     private val setsBeforeOldestFirst = repository.sessions.value.setsOldestFirst()
     private val finished = MutableStateFlow<Finished?>(null)
+
+    /** The finished session as the health store took it, and the summary's words for its note. */
+    private var recorded: HealthWorkout? = null
+    private var healthNotes: String? = null
 
     /** Runs an EMOM, logging each minute's set as it is done. */
     private val emom = EmomRunner(clock, beeper) { run, minute ->
@@ -735,8 +743,43 @@ class SessionViewModel(
         )
         repository.finishSession(title)
         val now = done.finishedAtEpochMillis ?: clock.nowMillis()
-        health.record(done.healthWorkout(now, intervals.sessionCalories(done.elapsedSeconds(now))))
+        val workout = done.healthWorkout(now, intervals.sessionCalories(done.elapsedSeconds(now)))
+        recorded = workout
+        health.record(workout)
         return true
+    }
+
+    /** How hard the finished session felt, from the summary; kept with it at once. */
+    fun setEffort(effort: PerceivedEffort?) {
+        reflect { it.copy(session = it.session.copy(effort = effort)) }
+    }
+
+    /** The summary's note as typed; kept with the session at once, trimmed. */
+    fun setNote(note: String) {
+        val typed = note.take(PerceivedEffort.NOTE_MAX_LENGTH)
+        reflect { it.copy(note = typed, session = it.session.copy(note = typed.trim().ifEmpty { null })) }
+    }
+
+    /**
+     * The summary's effort and note in words, for the health store's note: the screen words them. Written to the
+     * store as the summary goes ([onCleared]), not at every keystroke.
+     */
+    fun describeForHealth(notes: String?) {
+        healthNotes = notes
+    }
+
+    private fun reflect(change: (Finished) -> Finished) {
+        val done = finished.value?.let(change) ?: return
+        finished.value = done
+        repository.reflectOnSession(done.session.uid, done.session.effort, done.note)
+    }
+
+    /** The summary goes: the session is written to the health store again with its words, if any were said. */
+    override fun onCleared() {
+        val session = finished.value?.session ?: return
+        val workout = recorded ?: return
+        if (session.effort == null && session.note == null) return
+        health.record(workout.copy(notes = healthNotes, version = clock.nowMillis()))
     }
 
     /**

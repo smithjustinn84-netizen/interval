@@ -14,12 +14,14 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.isFocused
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.pressKey
+import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.WeekStanding
@@ -42,8 +44,12 @@ private val firstWork = states.first { it.phase == Phase.Work }
 private val firstRest = states.first { it.phase == Phase.Rest }
 private val done = states.last()
 
+@Suppress("detekt.TooManyFunctions") // One behaviour per test, side by side.
 class WorkoutScreenTest {
     private val calls = mutableListOf<String>()
+
+    /** The words the summary handed on for the health store, each time they changed. */
+    private val healthNotes = mutableListOf<String?>()
 
     @Composable
     private fun Screen(state: WorkoutUiState) {
@@ -58,7 +64,29 @@ class WorkoutScreenTest {
             onSavePreset = { calls += "save ${it.name}" },
             onExit = { calls += "exit" },
             onShare = { calls += "share $it" },
+            reflection = SummaryReflection(
+                onEffortChange = { calls += "effort $it" },
+                onNoteChange = { calls += "note $it" },
+                onDescribeForHealth = { healthNotes += it },
+            ),
         )
+    }
+
+    @Test
+    fun `the summary asks how it was and hands on the effort and the note`() = runUiTest {
+        var state by mutableStateOf(done.toUiState(running = false))
+        setThemedContent { Screen(state) }
+        onNodeWithText("How was it?").assertExists()
+        onNodeWithText("Hard").performClick()
+        onNode(hasSetTextAction()).performTextInput("Felt strong")
+        waitForIdle()
+        assertEquals(listOf("effort Hard", "note Felt strong"), calls)
+
+        // The words for the health store follow what the summary holds.
+        assertEquals(null, healthNotes.last())
+        state = state.copy(effort = PerceivedEffort.Hard, note = "Felt strong")
+        waitForIdle()
+        assertEquals("Hard · Felt strong", healthNotes.last())
     }
 
     @Test
@@ -169,7 +197,8 @@ class WorkoutScreenTest {
         onNodeWithText("Repeat").performClick()
         onNode(hasText("Done") and hasClickAction()).performClick()
         onNodeWithText("Save as preset").performClick()
-        onNode(hasSetTextAction()).performTextInput("Classic")
+        // The editor's name field, over the summary's note.
+        onAllNodes(hasSetTextAction()).onLast().performTextInput("Classic")
         onNodeWithText("Save").performClick()
         assertEquals(listOf("restart", "exit", "save Classic"), calls)
     }

@@ -94,6 +94,14 @@ Sizes: XS ≤ half a day, S ≈ 1 day, M ≈ 2 days, L ≈ 3 days. The cut line 
   gain a "How was it?" row: a `SegmentedPicker` of the five words and a one-line note field
   (`NameField`), saved as they change, so leaving the summary loses nothing. History's day log and
   workout page, and Lift's session page, show the word and the note; the share words append the note.
+- As built: `HowWasIt` in `core` is the row on both sides (`SegmentedPicker` takes no selection, and drops its
+  check and wraps a label on this one, so "Very hard" fits five across a phone). `PerceivedEffort` is in both
+  domains, as the sides share none. The summary hands the screen-worded note to its ViewModel, which writes
+  the workout to Health Connect again as the summary goes, with `clientRecordVersion` the time it is written:
+  Health Connect keeps the stored record unless the version is higher. The workout's summary keeps the
+  effort and note across a process restart (in `WorkoutProgress`, with the History entry's uid); Lift's
+  summary is not restored after a kill (as before), but what was said is already in the session's row. History's
+  log shows the word and note on interval rows only; Lift's rows there stay as they were.
 - Export: `WorkoutExport` and Lift's session export carry both, `SCHEMA` becomes 3 (ticket 4's reader
   takes 1–3 from the start). Health Connect: `HealthWorkout` gains `notes`, which
   `ExerciseSessionRecord(notes = …)` already takes; the effort word goes in the note text, there is no

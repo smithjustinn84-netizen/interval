@@ -30,25 +30,31 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 
 /**
  * One of a few [options] as a segmented control: the chosen option is a white card on the variant
  * ground. The card slides to a newly chosen option, its check growing in once it has settled under it.
+ * With [selected] null, or not among them, none is chosen and no card shows. Many options on a narrow row
+ * ([check] off, two [maxLines]) leave the check out and let a label wrap, rather than lose its words.
  */
 @Composable
 fun <T> SegmentedPicker(
     options: List<T>,
-    selected: T,
+    selected: T?,
     label: @Composable (T) -> String,
     onSelect: (T) -> Unit,
     modifier: Modifier = Modifier,
+    check: Boolean = true,
+    maxLines: Int = 1,
 ) {
     val palette = IntervalTheme.palette
     val haptics = LocalHapticFeedback.current
     // The card is drawn, not laid out, at the option's index along the row: it needs no size of its own.
-    val slide by animateFloatAsState(options.indexOf(selected).toFloat(), settleSpring(), label = "indicator")
+    val index = options.indexOf(selected)
+    val slide by animateFloatAsState(index.coerceAtLeast(0).toFloat(), settleSpring(), label = "indicator")
     Row(
         modifier
             .fillMaxWidth()
@@ -56,6 +62,7 @@ fun <T> SegmentedPicker(
             .background(palette.surfaceVariant)
             .padding(Spacing.space4)
             .drawBehind {
+                if (index < 0) return@drawBehind
                 val gap = Spacing.space4.toPx()
                 val width = (size.width - gap * (options.size - 1)) / options.size
                 val visualSlide = if (layoutDirection == LayoutDirection.Rtl) options.lastIndex - slide else slide
@@ -85,7 +92,7 @@ fun <T> SegmentedPicker(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 AnimatedVisibility(
-                    isSelected,
+                    check && isSelected,
                     enter = fadeIn(tween(Motion.STATE_MILLIS, Motion.STATE_MILLIS)) +
                         expandHorizontally(tween(Motion.STATE_MILLIS, Motion.STATE_MILLIS)),
                     exit = fadeOut(tween(Motion.STATE_MILLIS)) + shrinkHorizontally(tween(Motion.STATE_MILLIS)),
@@ -101,7 +108,8 @@ fun <T> SegmentedPicker(
                     label(option),
                     style = IntervalTheme.type.label,
                     color = palette.text,
-                    maxLines = 1,
+                    textAlign = TextAlign.Center,
+                    maxLines = maxLines,
                     overflow = TextOverflow.Ellipsis,
                 )
             }

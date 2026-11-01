@@ -17,6 +17,7 @@ import dev.justinsmith.lift.domain.Focus
 import dev.justinsmith.lift.domain.Followed
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.Measure
+import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.PlanChanges
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
@@ -417,6 +418,16 @@ class LiftRepository(
         }
     }
 
+    /**
+     * Keeps how the finished session [uid] felt, as said on its summary: [effort] and a [note], blank for none. In
+     * order after the write that finished it, so it never lands first.
+     */
+    fun reflectOnSession(uid: String, effort: PerceivedEffort?, note: String) {
+        val now = clock.nowMillis()
+        val kept = note.trim().take(PerceivedEffort.NOTE_MAX_LENGTH).ifEmpty { null }
+        writer.persist { sessionDao.reflect(uid, effort?.level, kept, now) }
+    }
+
     /** Drops the session in progress and its sets. */
     fun discardSession() {
         writer.persist {
@@ -585,6 +596,8 @@ private fun SessionEntity.toDomain(sets: List<SetLog>, made: List<CustomExercise
     programId?.let(ProgramKey::parse),
     plan?.let { decodePlan(it, made) },
     programDay,
+    PerceivedEffort.of(effort),
+    note,
 )
 
 /** The program [stored] names: a built-in, or one of [made]; null for one gone or unknown. */

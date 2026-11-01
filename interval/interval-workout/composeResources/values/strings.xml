@@ -51,6 +51,13 @@
     <string name="workout_stat_calories">kcal</string>
     <string name="workout_stat_rounds_value">%1$d/%2$d</string>
     <string name="workout_saved">Saved to history</string>
+    <string name="summary_how_was_it">How was it?</string>
+    <string name="summary_note_placeholder">A note on it</string>
+    <string name="effort_easy">Easy</string>
+    <string name="effort_steady">Steady</string>
+    <string name="effort_hard">Hard</string>
+    <string name="effort_very_hard">Very hard</string>
+    <string name="effort_all_out">All out</string>
     <string name="summary_week_of_goal">%1$d of %2$d this week</string>
     <plurals name="summary_week_count">
         <item quantity="one">%1$d workout this week</item>

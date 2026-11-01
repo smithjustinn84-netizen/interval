@@ -32,6 +32,12 @@ data class WorkoutProgress(
     val startedAtEpochMillis: Long = atEpochMillis,
     /** Its course so far, each stretch closed at a change; the one under way runs from the last one's end. */
     val spans: List<CourseSpan> = emptyList(),
+    /** The uid it was recorded in History under, once it was; what the summary's effort and note update. */
+    val entryUid: String? = null,
+    /** How hard it felt, as said on the summary so far. */
+    val effort: PerceivedEffort? = null,
+    /** The summary's note as typed so far, kept as it stands. */
+    val note: String = "",
 )
 
 /**

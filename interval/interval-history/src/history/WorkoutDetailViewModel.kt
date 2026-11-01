@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.HistoryEntry
+import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.plan.DayChoice
@@ -41,6 +42,9 @@ data class FinishedWorkout(
     val endedEarly: Boolean,
     /** Whether it did one of that day's plans. */
     val planned: Boolean,
+    /** How hard it felt and a note on it, as said on its summary; null for none. */
+    val effort: PerceivedEffort? = null,
+    val note: String? = null,
 ) {
     /** What it is planned or repeated as: its preset's name, or its shape's. */
     val name: String get() = presetName ?: config.defaultPresetName()
@@ -136,6 +140,8 @@ class WorkoutDetailViewModel(
                 calories = entry.calories(app.body),
                 endedEarly = entry.endedEarly,
                 planned = log.day(day).plans.any { it.workoutId == id },
+                effort = entry.effort,
+                note = entry.note,
             )
         }
         return WorkoutDetailUiState(workout, dayChoices(today), weekdayOf(today))

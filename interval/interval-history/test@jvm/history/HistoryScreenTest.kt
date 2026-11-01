@@ -16,6 +16,7 @@ import androidx.compose.ui.test.performClick
 import dev.justinsmith.interval.fakes.hangboardPreset
 import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.fakes.tabataPreset
+import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -267,6 +268,25 @@ class HistoryScreenTest {
         onNodeWithText("Calories").assertExists()
         onNodeWithText("48").assertExists()
         onNodeWithText("48 kcal", substring = true).assertExists()
+    }
+
+    @Test
+    fun `a row says how hard it felt and its note`() = runUiTest {
+        val item = HistoryItem(
+            "Tabata",
+            tabata.config,
+            false,
+            "7:42 PM",
+            "4:00",
+            effort = PerceivedEffort.AllOut,
+            note = "New best",
+        )
+        val state = oneWorkout.copy(
+            sections = listOf(HistorySection(HistoryDay.Today, dayNumber = 20_741, listOf(item))),
+        )
+        setThemedContent { HistoryScreen(state, actions) }
+        onNodeWithText("20s on · 10s off · ×8 · All out · 7:42 PM").assertExists()
+        onNodeWithText("New best").assertExists()
     }
 
     @Test

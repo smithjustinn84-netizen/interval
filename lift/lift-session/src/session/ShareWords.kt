@@ -31,5 +31,5 @@ internal fun sessionShareText(session: LiftSession, records: List<PersonalRecord
     val lines = records.map { record ->
         stringResource(Res.string.share_session_record, exerciseName(record.exercise), recordLine(record))
     }
-    return (listOf(title, figures) + lines).joinToString("\n")
+    return (listOf(title, figures) + lines + listOfNotNull(session.note)).joinToString("\n")
 }

@@ -14,8 +14,10 @@ enum class HealthStatus { Unavailable, NotInstalled, Disconnected, Connected }
  * A finished workout as the health store takes it: its [kind], its [title] in the user's words or null
  * for the store's own name for the kind, when it ran, what each stretch of it was spent on
  * ([segments], in order, none overlapping, all within the workout), and the [calories] it is estimated
- * to have burned, null without a body weight. [id] is the same each time the same workout is written,
- * so a write repeated after a failure replaces the record rather than adding a second.
+ * to have burned, null without a body weight. [notes] are the user's words on it, null for none. [id] is the
+ * same each time the same workout is written, and a write replaces the record only with a higher [version]:
+ * one repeated after a failure keeps 0 and replaces it, as nothing was stored; one adding the summary's
+ * [notes] later passes the time it is written.
  */
 data class HealthWorkout(
     val id: String,
@@ -25,6 +27,8 @@ data class HealthWorkout(
     val endedAtEpochMillis: Long,
     val segments: List<HealthSegment> = emptyList(),
     val calories: Int? = null,
+    val notes: String? = null,
+    val version: Long = 0,
 )
 
 /** An interval workout, or a Lift session. */

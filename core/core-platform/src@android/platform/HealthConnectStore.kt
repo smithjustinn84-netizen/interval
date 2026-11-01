@@ -122,9 +122,10 @@ private fun HealthWorkout.records(): List<Record> {
         startZoneOffset = offset,
         endTime = end,
         endZoneOffset = offset,
-        metadata = metadataFor(id),
+        metadata = metadataFor(id, version),
         exerciseType = kind.exerciseType,
         title = title,
+        notes = notes,
         segments = segments.map { it.toSegment() },
     )
     val calories = calories?.let {
@@ -134,7 +135,7 @@ private fun HealthWorkout.records(): List<Record> {
             endTime = end,
             endZoneOffset = offset,
             energy = Energy.kilocalories(it.toDouble()),
-            metadata = metadataFor("$id-calories"),
+            metadata = metadataFor("$id-calories", version),
         )
     }
     return listOfNotNull<Record>(session, calories)
@@ -183,8 +184,11 @@ private val HealthMove.segmentType: Int
     }
 
 /**
- * Recorded by the app as it ran, on this phone, under [clientRecordId]: a second write of a workout replaces
- * the first.
+ * Recorded by the app as it ran, on this phone, under [clientRecordId]: a later write of a workout replaces the
+ * first when its [version] is higher (Health Connect keeps the stored record otherwise).
  */
-private fun metadataFor(clientRecordId: String): Metadata =
-    Metadata.activelyRecorded(clientRecordId = clientRecordId, device = Device(type = Device.TYPE_PHONE))
+private fun metadataFor(clientRecordId: String, version: Long): Metadata = Metadata.activelyRecorded(
+    clientRecordId = clientRecordId,
+    clientRecordVersion = version,
+    device = Device(type = Device.TYPE_PHONE),
+)

@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.model.CourseSpan
+import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.WorkoutProgress
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -59,6 +60,9 @@ private class StoredProgress(
     val atEpochMillis: Long,
     val startedAtEpochMillis: Long? = null,
     val spans: List<StoredSpan> = emptyList(),
+    val entryUid: String? = null,
+    val effort: Int? = null,
+    val note: String = "",
 ) {
     fun toDomain(): WorkoutProgress? {
         val phase = Phase.entries.firstOrNull { it.name == phase } ?: return null
@@ -74,6 +78,9 @@ private class StoredProgress(
             atEpochMillis = atEpochMillis,
             startedAtEpochMillis = startedAtEpochMillis ?: atEpochMillis,
             spans = spans.map { it.toDomain() },
+            entryUid = entryUid,
+            effort = PerceivedEffort.of(effort),
+            note = note,
         )
     }
 }
@@ -107,4 +114,7 @@ private fun WorkoutProgress.stored() = StoredProgress(
     atEpochMillis = atEpochMillis,
     startedAtEpochMillis = startedAtEpochMillis,
     spans = spans.map { StoredSpan(it.phase?.name, it.startEpochMillis, it.endEpochMillis) },
+    entryUid = entryUid,
+    effort = effort?.level,
+    note = note,
 )

@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.history
 
+import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -25,6 +26,9 @@ data class HistoryItem(
      * [presetName], its own title, of [config] only the activity means anything, and it opens its own page.
      */
     val liftUid: String? = null,
+    /** How hard it felt and a note on it, as said on its summary; null for none. */
+    val effort: PerceivedEffort? = null,
+    val note: String? = null,
 )
 
 /** One day's workouts. [dayNumber] is its epoch day. */

@@ -2,6 +2,7 @@
 
 package dev.justinsmith.lift.session
 
+import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.RecordingHealthStore
@@ -19,6 +20,7 @@ import dev.justinsmith.lift.domain.BAR_KG_STEP
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.Exercise
+import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.RestClock
@@ -359,6 +361,52 @@ class SessionViewModelTest {
         assertEquals(160_000, workout.endedAtEpochMillis)
         assertEquals(6, workout.calories)
         assertEquals(listOf(HealthSegment(100_000, 130_000, HealthMove.Squat, repetitions = 10)), workout.segments)
+    }
+
+    @Test
+    fun `the summary's effort and note are kept with the session and shown on it`() {
+        repository.startSession(null)
+        repository.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
+        viewModel().use {
+            assertTrue(finish("Squats"))
+            setEffort(PerceivedEffort.Hard)
+            setNote("  Felt strong ")
+
+            val finished = assertNotNull(state.value.finished)
+            assertEquals(PerceivedEffort.Hard, finished.session.effort)
+            assertEquals("Felt strong", finished.session.note)
+            assertEquals("  Felt strong ", finished.note)
+        }
+        val kept = repository.sessions.value.single()
+        assertEquals(PerceivedEffort.Hard, kept.effort)
+        assertEquals("Felt strong", kept.note)
+    }
+
+    @Test
+    fun `the health store is written again with the summary's words as the summary goes`() {
+        repository.startSession(null)
+        repository.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
+        val viewModel = viewModel()
+        viewModel.finish("Squats")
+        viewModel.setEffort(PerceivedEffort.AllOut)
+        viewModel.describeForHealth("All out")
+        now = 999_000
+        ViewModelStore().apply { put("session", viewModel) }.clear()
+
+        assertEquals(2, health.workouts.size)
+        assertEquals(health.workouts.first().id, health.workouts.last().id)
+        assertEquals("All out", health.workouts.last().notes)
+        assertEquals(999_000, health.workouts.last().version)
+    }
+
+    @Test
+    fun `with nothing said of the session the health store is not written again`() {
+        repository.startSession(null)
+        repository.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
+        val viewModel = viewModel()
+        viewModel.finish("Squats")
+        ViewModelStore().apply { put("session", viewModel) }.clear()
+        assertEquals(1, health.workouts.size)
     }
 
     @Test

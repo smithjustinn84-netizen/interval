@@ -3,6 +3,9 @@
 package dev.justinsmith.interval.history
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
@@ -10,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import dev.justinsmith.interval.fakes.hiitPreset
+import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.plan.DayChoice
 import dev.justinsmith.interval.timer.weekdayOf
@@ -84,6 +88,24 @@ class WorkoutDetailScreenTest {
         onNodeWithText("5:00").assertExists()
         onNodeWithText("84").assertExists()
         onNodeWithText("Planned · done").assertExists()
+    }
+
+    @Test
+    fun `how it went shows only once something was said and its note is shared`() = runUiTest {
+        var shown by mutableStateOf(state)
+        setThemedContent { Screen(shown) }
+        onNodeWithText("How it went").assertDoesNotExist()
+
+        shown = state.copy(workout = workout.copy(effort = PerceivedEffort.VeryHard, note = "Legs heavy"))
+        onNodeWithText("How it went").assertExists()
+        onNodeWithText("Very hard").assertExists()
+        onNodeWithText("Legs heavy").assertExists()
+        onNodeWithContentDescription("More options").performClick()
+        onNodeWithText("Share workout").performClick()
+        assertEquals(
+            listOf("share HIIT 30/30 · Wednesday, Oct 14 · 7:05 AM\n9:40 total · 5:00 work · 84 kcal\nLegs heavy"),
+            events,
+        )
     }
 
     @Test

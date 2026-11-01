@@ -16,8 +16,9 @@
     <action>Tap "Back"</action>
     <action>Tap "Start workout", skip to the first rest with "Skip to next interval" twice, tap "End workout" and confirm</action>
     <action>Verify that the summary says "Ended"</action>
-    <action>Open Health Connect (Settings > Security and privacy > Health Connect > Data and access > Exercise) and verify that an Interval entry of high intensity interval training is listed for today, with segments</action>
-    <action>Return to Interval, tap "Done", then the "Settings" button</action>
+    <action>Under "How was it?" tap "Hard" and type "Felt strong" in the note field</action>
+    <action>Tap "Done", then open Health Connect (Settings > Security and privacy > Health Connect > Data and access > Exercise) and verify that an Interval entry of high intensity interval training is listed for today, with segments and the notes "Hard · Felt strong"</action>
+    <action>Return to Interval, tap the "History" tab and verify that today's workout reads "Hard" and "Felt strong"; then tap the "Timer" tab and its "Settings" button</action>
     <action>Tap the "Health Connect" switch and verify that it is off</action>
     <action>Open Health Connect's app permissions and verify that Interval has no permissions left</action>
     <action>Tap the "Settings" button on the Timer tab, then "About Interval" under "About", then "Privacy", and verify that the policy page shows</action>

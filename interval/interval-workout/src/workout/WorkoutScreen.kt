@@ -130,6 +130,7 @@ fun WorkoutRoute(id: Long, onExit: () -> Unit, modifier: Modifier = Modifier) {
         onExit = onExit,
         modifier = modifier,
         onShare = sharer::shareText,
+        reflection = SummaryReflection(viewModel::setEffort, viewModel::setNote, viewModel::describeForHealth),
     )
 }
 
@@ -158,6 +159,7 @@ fun WorkoutScreen(
     onExit: () -> Unit,
     modifier: Modifier = Modifier,
     onShare: (String) -> Unit = {},
+    reflection: SummaryReflection = SummaryReflection(),
 ) {
     var confirmingEnd by rememberSaveable { mutableStateOf(false) }
     val requestEnd = {
@@ -200,7 +202,7 @@ fun WorkoutScreen(
         // Built afresh each time: requestEnd reads this composition's state.
         val actions = WorkoutActions(onTogglePause, onSkip, onBack, onAddTime, onEnd = requestEnd)
         if (state.isDone) {
-            SummaryLayout(state, landscape, onRestart, onSavePreset, onExit, onShare)
+            SummaryLayout(state, landscape, onRestart, onSavePreset, onExit, onShare, reflection)
         } else if (landscape) {
             LandscapeWorkout(state, accent, primaryFill, anchor, actions)
         } else {

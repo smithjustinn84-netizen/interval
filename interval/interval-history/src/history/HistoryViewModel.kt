@@ -299,6 +299,8 @@ class HistoryViewModel(
                     calories = entry.calories(body),
                     id = entry.id,
                     planned = plans.any { it.workoutId != null && it.workoutId == entry.id },
+                    effort = entry.effort,
+                    note = entry.note,
                 )
             }
 

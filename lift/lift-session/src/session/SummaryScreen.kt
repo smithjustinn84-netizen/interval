@@ -36,6 +36,7 @@ import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.Arrival
 import dev.justinsmith.interval.ui.Burst
+import dev.justinsmith.interval.ui.HowWasIt
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.QuietTextButton
@@ -43,10 +44,13 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.isLandscape
 import dev.justinsmith.interval.ui.rememberEntrance
+import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.SaveScope
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_joined
 import dev.justinsmith.lift.session.resources.summary_done
+import dev.justinsmith.lift.session.resources.summary_how_was_it
+import dev.justinsmith.lift.session.resources.summary_note_placeholder
 import dev.justinsmith.lift.session.resources.summary_program_finished
 import dev.justinsmith.lift.session.resources.summary_share
 import dev.justinsmith.lift.session.resources.summary_shared
@@ -69,9 +73,12 @@ fun SummaryScreen(
     modifier: Modifier = Modifier,
     onKeep: (SaveScope, String, Set<Int>) -> Unit = { _, _, _ -> },
     onShare: (String) -> Unit = {},
+    reflection: SummaryReflection = SummaryReflection(),
 ) {
     val palette = IntervalTheme.palette
     val session = finished.session
+    val healthNotes = healthNotes(finished)
+    LaunchedEffect(healthNotes) { reflection.onDescribeForHealth(healthNotes) }
     val shareText = sessionShareText(session, finished.records)
     val choices = rememberChangesChoices()
     val entrance = rememberEntrance()
@@ -90,13 +97,7 @@ fun SummaryScreen(
             onDone()
         })
     }
-    // The finish lands under the thumb: firmer when a record fell.
-    val haptics = LocalHapticFeedback.current
-    LaunchedEffect(Unit) {
-        haptics.performHapticFeedback(
-            if (finished.records.isEmpty()) HapticFeedbackType.Confirm else HapticFeedbackType.LongPress,
-        )
-    }
+    FinishHaptic(finished)
     BoxWithConstraints(modifier.fillMaxSize().background(palette.background), contentAlignment = Alignment.TopCenter) {
         burstColors(finished)?.let { Burst(it, Modifier.matchParentSize(), delayMillis = Motion.ENTER_MILLIS) }
         if (isLandscape) {
@@ -125,6 +126,7 @@ fun SummaryScreen(
                 ) {
                     Arrival(entrance, STATS_STEP) { SessionStats(session, finished.records, highlight = true) }
                     Arrival(entrance, CHANGES_STEP) { Column { NextTimeCards(finished, choices, onKeep) } }
+                    Arrival(entrance, HOW_STEP) { SummaryHowWasIt(finished, reflection) }
                 }
             }
         } else {
@@ -146,10 +148,22 @@ fun SummaryScreen(
                     }
                     Arrival(entrance, STATS_STEP) { SessionStats(session, finished.records, highlight = true) }
                     Arrival(entrance, CHANGES_STEP) { Column { NextTimeCards(finished, choices, onKeep) } }
+                    Arrival(entrance, HOW_STEP) { SummaryHowWasIt(finished, reflection) }
                 }
                 Arrival(entrance, FOOTER_STEP) { SummaryFooter(finished, leave, onShare = { onShare(shareText) }) }
             }
         }
+    }
+}
+
+/** The finish lands under the thumb: firmer when a record fell. */
+@Composable
+private fun FinishHaptic(finished: Finished) {
+    val haptics = LocalHapticFeedback.current
+    LaunchedEffect(Unit) {
+        haptics.performHapticFeedback(
+            if (finished.records.isEmpty()) HapticFeedbackType.Confirm else HapticFeedbackType.LongPress,
+        )
     }
 }
 
@@ -178,7 +192,43 @@ private fun burstColors(finished: Finished): List<Color>? = when {
 private const val HEADING_STEP = 0
 private const val STATS_STEP = 2
 private const val CHANGES_STEP = 4
+private const val HOW_STEP = 5
 private const val FOOTER_STEP = 6
+
+/** What the summary's "How was it?" does: keeps the effort and the note, and hands on their words. */
+class SummaryReflection(
+    val onEffortChange: (PerceivedEffort) -> Unit = {},
+    val onNoteChange: (String) -> Unit = {},
+    /** The effort and note in words for the health store's note, null with neither said. */
+    val onDescribeForHealth: (String?) -> Unit = {},
+)
+
+@Composable
+private fun SummaryHowWasIt(finished: Finished, reflection: SummaryReflection) {
+    HowWasIt(
+        title = stringResource(Res.string.summary_how_was_it),
+        efforts = PerceivedEffort.entries,
+        effort = finished.session.effort,
+        effortLabel = { effortWord(it) },
+        onEffortChange = reflection.onEffortChange,
+        note = finished.note,
+        onNoteChange = reflection.onNoteChange,
+        notePlaceholder = stringResource(Res.string.summary_note_placeholder),
+        noteMaxLength = PerceivedEffort.NOTE_MAX_LENGTH,
+        modifier = Modifier.padding(top = Spacing.space16),
+    )
+}
+
+/** The effort and the note as one line, "Hard · Felt strong", either alone, or null with neither. */
+@Composable
+private fun healthNotes(finished: Finished): String? {
+    val word = finished.session.effort?.let { effortWord(it) }
+    val note = finished.session.note
+    return when {
+        word != null && note != null -> stringResource(Res.string.common_joined, word, note)
+        else -> word ?: note
+    }
+}
 
 /** Done in the done colour over the session's title. */
 @Composable

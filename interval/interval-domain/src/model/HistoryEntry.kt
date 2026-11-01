@@ -6,7 +6,8 @@ import dev.justinsmith.interval.timer.plannedWorkSeconds
 /**
  * A finished workout that ran for [elapsedSeconds], pauses excluded, to the end or [endedEarly]. Of that,
  * [workActiveSeconds] were work; null for one recorded before work time was kept. [id] is the one it is
- * stored under, null until it has been.
+ * stored under, null until it has been. [effort] and [note] are how it felt, as the user said on its summary;
+ * null until they say.
  */
 data class HistoryEntry(
     val finishedAtEpochMillis: Long,
@@ -15,6 +16,8 @@ data class HistoryEntry(
     val endedEarly: Boolean,
     val workActiveSeconds: Int? = null,
     val id: Long? = null,
+    val effort: PerceivedEffort? = null,
+    val note: String? = null,
 ) {
     /** How much of [elapsedSeconds] was work. An older entry's is estimated from its plan. */
     val workDoneSeconds: Int

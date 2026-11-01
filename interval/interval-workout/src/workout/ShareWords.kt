@@ -14,7 +14,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * The finished workout in words to send: its name and shape, then its rounds, time and calories:
- * "Tabata · 20s on · 10s off · ×8" over "8/8 rounds · 4:00 · 62 kcal".
+ * "Tabata · 20s on · 10s off · ×8" over "8/8 rounds · 4:00 · 62 kcal", and under them the summary's note.
  */
 @Composable
 internal fun workoutShareText(state: WorkoutUiState): String {
@@ -26,5 +26,7 @@ internal fun workoutShareText(state: WorkoutUiState): String {
     val rounds = stringResource(Res.string.workout_stat_rounds_value, state.completedRounds, state.rounds)
     val figures = stringResource(Res.string.share_workout_figures, rounds, formatClock(state.elapsedSeconds))
     val line = state.calories?.let { stringResource(Res.string.share_workout_calories, figures, it) } ?: figures
-    return stringResource(Res.string.share_workout, shape, line)
+    val text = stringResource(Res.string.share_workout, shape, line)
+    val note = state.note.trim()
+    return if (note.isEmpty()) text else stringResource(Res.string.share_workout, text, note)
 }
