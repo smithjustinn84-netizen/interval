@@ -50,6 +50,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   all, so a crash part way leaves nothing half done.
 - Lift (Android): rests one after another keep the phone awake to the end of each, however long the session; the
   beeps no longer stop with the screen off fifteen minutes in.
+- Import: a file that can't be read now says so, rather than leaving Import stuck on "Reading" until the app is
+  restarted.
+- A workout's setting or a saved preset, workout or plan damaged on disk now reads as the nearest valid value,
+  rather than showing a negative length or leaving the rest of its list empty.
 
 ## [0.2.0] — Unreleased
 

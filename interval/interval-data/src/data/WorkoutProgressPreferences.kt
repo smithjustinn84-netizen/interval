@@ -68,7 +68,7 @@ private class StoredProgress(
 ) {
     fun toDomain(): WorkoutProgress? {
         val phase = Phase.entries.firstOrNull { it.name == phase } ?: return null
-        val config = IntervalConfig(
+        val config = IntervalConfig.sanitized(
             prepSeconds = prepSeconds,
             workSeconds = workSeconds,
             restSeconds = restSeconds,

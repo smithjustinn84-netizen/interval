@@ -300,7 +300,7 @@ data class PlannedEntity(
     @ColumnInfo(name = "cool_down_seconds", defaultValue = "0") val coolDownSeconds: Int = 0,
 )
 
-/** The [IntervalConfig] a row's columns hold, the same in every table. */
+/** The [IntervalConfig] a row's columns hold, the same in every table, each value read into its range. */
 @Suppress("detekt.LongParameterList")
 private fun intervalConfig(
     prepSeconds: Int,
@@ -310,7 +310,7 @@ private fun intervalConfig(
     warmUpSeconds: Int,
     coolDownSeconds: Int,
     activity: String?,
-) = IntervalConfig(
+) = IntervalConfig.sanitized(
     prepSeconds = prepSeconds,
     workSeconds = workSeconds,
     restSeconds = restSeconds,

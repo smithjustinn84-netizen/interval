@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.updateAndGet
 
 /**
  * The program being made or changed, what it started as (so unsaved edits can ask before leaving), whether it is
@@ -73,11 +73,9 @@ class ProgramEditorViewModel(
     }
 
     fun change(transform: (ProgramDraft) -> ProgramDraft) {
-        _state.update { current ->
-            val next = transform(current.draft)
-            persistDraft(savedState, next)
-            current.copy(draft = next)
-        }
+        // Kept once the change is in, outside the update, whose lambda can run more than once.
+        val next = _state.updateAndGet { it.copy(draft = transform(it.draft)) }.draft
+        persistDraft(savedState, next)
     }
 
     /** Saves the draft under [name]; false, and nothing saved, while it can't be. */

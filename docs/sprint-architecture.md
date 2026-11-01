@@ -102,6 +102,12 @@ The cut line is after ticket 5.
   - `StorageTest` shows a corrupt stored config read back in range
   - `SettingsViewModelTest` covers a review that throws.
 
+- As built: `sanitized(...)` is a companion factory over raw values (a config out of range can't be made to
+  sanitize afterwards), every parameter defaulted as the constructor's are, so `LongParameterList` doesn't apply.
+  `ImportPlanner` is unchanged: it refuses a value out of range rather than coercing it. E6 runs the other way from
+  the plan above: `presets` is the one list kept and `customPresets` is derived from it, so the list every screen
+  reads is never behind `ready`; only `customPresets`, read by Export, can trail it for a moment.
+
 **2. One container per process** · M · A1 (a to e)
 - **Decision.** Production starts Koin once per process with `startKoin` from a shared `initAppKoin(platform)`
   in `apps/app/src/di/AppKoin.kt`. Tests keep their isolated containers: `AppContent(koin)` still takes a

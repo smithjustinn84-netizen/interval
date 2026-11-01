@@ -29,11 +29,13 @@ import dev.justinsmith.interval.timer.withPreset
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.uuid.ExperimentalUuidApi
@@ -77,15 +79,17 @@ class IntervalRepository(
     private val _appSettings = MutableStateFlow(AppSettings())
     val appSettings: StateFlow<AppSettings> = _appSettings.asStateFlow()
 
-    private val _customPresets = MutableStateFlow(emptyList<Preset>())
-
-    /** In the order they were saved. */
-    val customPresets: StateFlow<List<Preset>> = _customPresets.asStateFlow()
-
     private val _presets = MutableStateFlow(builtInPresets)
 
-    /** Every preset the lists show: the built-ins, then [customPresets]. Updated with it, never behind. */
+    /** Every preset the lists show: the built-ins, then the user's. Read before [ready] turns true. */
     val presets: StateFlow<List<Preset>> = _presets.asStateFlow()
+
+    /**
+     * The user's presets, in the order they were saved: [presets] without the built-ins, worked out from it, so
+     * the two never disagree. It can trail [presets] for a moment after a change, never the other way.
+     */
+    val customPresets: StateFlow<List<Preset>> =
+        presets.map { all -> all.filter { it.custom } }.stateIn(scope, SharingStarted.Eagerly, emptyList())
 
     private val _history = MutableStateFlow(emptyList<HistoryEntry>())
 
@@ -113,7 +117,6 @@ class IntervalRepository(
                     .map { rows -> rows.map { it.toDomain() } }
                     .orEmptyOnError("presets", log)
                     .collect { custom ->
-                        _customPresets.value = custom
                         _presets.value = builtInPresets + custom
                         presetsLoaded.complete(Unit)
                     }

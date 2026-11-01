@@ -225,14 +225,25 @@ class SettingsViewModel(
     /** Where an import stands; null while none is under way. */
     val import: StateFlow<ImportStep?> = importStep.asStateFlow()
 
-    /** Reads [file], picked to import, and has the review sheet say what it comes to. Nothing is written yet. */
+    /**
+     * Reads [file], picked to import, and has the review sheet say what it comes to. Nothing is written yet. A
+     * read that fails says so, as an import that fails does, and leaves the way open for another file.
+     */
+    @Suppress("detekt.TooGenericExceptionCaught")
     fun reviewImport(file: ShareableFile) {
         if (importStep.value == ImportStep.Reading || importStep.value == ImportStep.Importing) return
         importStep.value = ImportStep.Reading
         viewModelScope.launch {
-            val review = importer.review(file)
-            val day = (review as? ImportReview.Ready)?.let { timestamps.date(it.exportedAtEpochMillis) }
-            importStep.value = ImportStep.Review(file, review, day)
+            importStep.value = try {
+                val review = importer.review(file)
+                val day = (review as? ImportReview.Ready)?.let { timestamps.date(it.exportedAtEpochMillis) }
+                ImportStep.Review(file, review, day)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                log.e(e) { "Couldn't read the import" }
+                ImportStep.Failed
+            }
         }
     }
 

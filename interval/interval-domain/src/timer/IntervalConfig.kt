@@ -1,6 +1,9 @@
 package dev.justinsmith.interval.timer
 
-/** One workout's shape. Every duration is in whole seconds. */
+/**
+ * One workout's shape. Every duration is in whole seconds, and each value is in its range (`PREP_RANGE` and so
+ * on), or it can't be made: one built from what was stored is made with [sanitized].
+ */
 data class IntervalConfig(
     val prepSeconds: Int = 10,
     val workSeconds: Int = 30,
@@ -13,6 +16,15 @@ data class IntervalConfig(
     /** What the work intervals are spent doing, for the calorie estimate. Not part of the [sameShape]. */
     val activity: Activity = Activity.General,
 ) {
+    init {
+        require(prepSeconds in PREP_RANGE) { "Get ready of $prepSeconds s" }
+        require(workSeconds in WORK_RANGE) { "Work of $workSeconds s" }
+        require(restSeconds in REST_RANGE) { "Rest of $restSeconds s" }
+        require(rounds in ROUNDS_RANGE) { "$rounds rounds" }
+        require(warmUpSeconds in WARM_UP_RANGE) { "Warm-up of $warmUpSeconds s" }
+        require(coolDownSeconds in COOL_DOWN_RANGE) { "Cool-down of $coolDownSeconds s" }
+    }
+
     /**
      * Wall-clock length of the whole session: prep, the warm-up, every work interval and the rests between
      * them, and the cool-down.
@@ -27,6 +39,28 @@ data class IntervalConfig(
         val ROUNDS_RANGE = 1..99
         val WARM_UP_RANGE = 0..3600
         val COOL_DOWN_RANGE = 0..3600
+
+        /**
+         * A config of these values, each taken to the nearest in its range: for one read back from storage,
+         * which a damaged file or an older build could have left out of range, and which must still read.
+         */
+        fun sanitized(
+            prepSeconds: Int = 10,
+            workSeconds: Int = 30,
+            restSeconds: Int = 15,
+            rounds: Int = 8,
+            warmUpSeconds: Int = 0,
+            coolDownSeconds: Int = 0,
+            activity: Activity = Activity.General,
+        ) = IntervalConfig(
+            prepSeconds = prepSeconds.coerceIn(PREP_RANGE),
+            workSeconds = workSeconds.coerceIn(WORK_RANGE),
+            restSeconds = restSeconds.coerceIn(REST_RANGE),
+            rounds = rounds.coerceIn(ROUNDS_RANGE),
+            warmUpSeconds = warmUpSeconds.coerceIn(WARM_UP_RANGE),
+            coolDownSeconds = coolDownSeconds.coerceIn(COOL_DOWN_RANGE),
+            activity = activity,
+        )
 
         // The one-tap values the edit sheet offers for each field.
         val PREP_PICKS = listOf(0, 5, 10, 15, 20, 30, 45, 60)

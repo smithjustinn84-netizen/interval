@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
@@ -140,10 +141,41 @@ class StorageTest {
             val entry = repository.history.value.single()
             assertEquals(IntervalConfig(10, 20, 10, rounds = 8), entry.config)
             assertEquals(null, entry.workActiveSeconds)
+            settled(repository) { it.customPresets.value.isNotEmpty() }
             assertEquals(
                 Preset("Mine", IntervalConfig(10, 40, 20, rounds = 6), id = 1),
                 repository.customPresets.value.single(),
             )
+        }
+    }
+
+    @Test
+    fun `a stored value out of range reads as the nearest in range and loses nothing beside it`() {
+        BundledSQLiteDriver().open(directory.resolve(DATABASE_NAME).absolutePath).use { connection ->
+            V1_SCHEMA.forEach(connection::execSQL)
+            connection.execSQL(
+                "INSERT INTO history (finished_at, prep_seconds, work_seconds, rest_seconds, rounds, " +
+                    "elapsed_seconds, ended_early) VALUES ($NOW, 10, 20, 10, 0, 250, 0), " +
+                    "(${NOW + 1}, 10, 20, 10, 8, 250, 0)",
+            )
+            connection.execSQL(
+                "INSERT INTO preset (name, prep_seconds, work_seconds, rest_seconds, rounds) " +
+                    "VALUES ('Broken', 10, 1, 20, 0)",
+            )
+            connection.execSQL("PRAGMA user_version = 1")
+        }
+        withApp { _ ->
+            settings.edit {
+                it[intPreferencesKey("rounds")] = 0
+                it[intPreferencesKey("work")] = 1
+            }
+        }
+        withApp { repository ->
+            assertEquals(1, repository.config.value.rounds)
+            assertEquals(5, repository.config.value.workSeconds)
+            assertEquals(listOf(8, 1), repository.history.value.map { it.config.rounds })
+            settled(repository) { it.customPresets.value.isNotEmpty() }
+            assertEquals(IntervalConfig(10, 5, 20, rounds = 1), repository.customPresets.value.single().config)
         }
     }
 

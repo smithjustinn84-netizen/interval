@@ -252,6 +252,8 @@ state to `WorkoutUiState`.
 `onCleared` loses the note.
 
 ### D5 · Low · A side effect inside `update {}`
+
+**Resolved** in change `vowprrrt` ("Guards: a config in range wherever it comes from, an import review that fails ends"): `change` takes the draft from `updateAndGet` and persists it after.
 `ProgramEditorViewModel` encodes JSON and writes `SavedStateHandle` inside `_state.update {}` (L75-80). The
 lambda can run more than once.
 
@@ -287,6 +289,11 @@ in one step (`SessionDao.finishActive` and `discardActive`, `CustomProgramDao.de
 migration.
 
 ### E3 · Medium · `IntervalConfig` has no invariants
+
+**Resolved** in change `vowprrrt` ("Guards: a config in range wherever it comes from, an import review that fails ends"): the constructor (and so every `copy`) requires each value in its range,
+and `IntervalConfig.sanitized(...)` takes raw values to the nearest in range. Every mapper from storage uses it: the
+Room rows (`intervalConfig`), the DataStore (`toConfig`), the saved workout (`StoredProgress.toDomain`) and the preset
+editor's saved state. `ImportPlanner` still refuses a file out of range, field by field, before the constructor.
 The ranges are enforced only in `withValue`
 ([IntervalConfig.kt](../interval/interval-domain/src/timer/IntervalConfig.kt)). The DataStore, Room, progress
 and import mappers build configs unchecked, so `rounds = 0` gives a negative `totalSeconds`.
@@ -305,7 +312,15 @@ and the repository APIs return `Unit`. A failed `logSet` or `recordWorkout` is i
 - `SettingsViewModel.reviewImport` (L191-199) has no error handling, so an exception leaves the step at `Reading`
   and blocks further imports.
 
+**Resolved for `reviewImport`** in change `vowprrrt` ("Guards: a config in range wherever it comes from, an import review that fails ends"): a review that throws ends at `Failed`, as an import
+does, and another file can be chosen. The import across the two stores stays the documented trade-off.
+
 ### E6 · Low · Two StateFlows published separately
+
+**Resolved** in change `vowprrrt` ("Guards: a config in range wherever it comes from, an import review that fails ends"): `presets` is the one list kept, and `customPresets` is derived from it
+(`stateIn` on the storage scope). Derived the other way round, `presets` would trail `ready` by a dispatch, and
+`WorkoutViewModel` and every tab read it; this way only `customPresets` can trail, for a moment, and only Export
+reads it.
 `_customPresets` and `_presets` are set in two writes on IO (IntervalRepository L115-118).
 
 **Recommendation.** Derive one flow from the other.

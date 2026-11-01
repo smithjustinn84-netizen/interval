@@ -324,7 +324,7 @@ private fun IntervalConfig.saved(): Map<String, Any?> = mapOf(
 )
 
 private fun Map<String, Any?>.restoredConfig(): IntervalConfig =
-    IntervalConfig(
+    IntervalConfig.sanitized(
         prepSeconds = this[PREP] as Int,
         workSeconds = this[WORK] as Int,
         restSeconds = this[REST] as Int,

@@ -44,7 +44,7 @@ private val CALORIES_OFF = booleanPreferencesKey("calories_off")
 
 internal fun Preferences.toConfig(): IntervalConfig {
     val defaults = IntervalConfig()
-    return IntervalConfig(
+    return IntervalConfig.sanitized(
         prepSeconds = this[PREP] ?: defaults.prepSeconds,
         workSeconds = this[WORK] ?: defaults.workSeconds,
         restSeconds = this[REST] ?: defaults.restSeconds,

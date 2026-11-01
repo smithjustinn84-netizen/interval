@@ -305,6 +305,9 @@ class IntervalRepositoryTest {
         val presets = repository.presets.value
         assertEquals(builtInPresets + repository.customPresets.value, presets)
         assertEquals(listOf("Mine"), presets.filter { it.custom }.map { it.name })
+        repository.deletePreset(repository.customPresets.value.single())
+        assertEquals(builtInPresets, repository.presets.value)
+        assertEquals(emptyList(), repository.customPresets.value)
     }
 
     @Test

@@ -103,6 +103,19 @@ class SettingsViewModelTest : MainDispatcherTest() {
     }
 
     @Test
+    fun `a review that fails says so and another file can be chosen after`() {
+        val file = ShareableFile("interval.json", "application/json", "{}")
+        importer.reviewFailing = true
+        viewModel.reviewImport(file)
+        assertEquals(ImportStep.Failed, viewModel.import.value)
+
+        viewModel.dismissImport()
+        importer.reviewFailing = false
+        viewModel.reviewImport(file)
+        assertTrue(viewModel.import.value is ImportStep.Review)
+    }
+
+    @Test
     fun `toggles flip a single cue setting`() {
         viewModel.toggle(CueToggle.Halfway)
         val cues = viewModel.state.value.cues
@@ -243,9 +256,13 @@ class SettingsViewModelTest : MainDispatcherTest() {
 private class FakeImporter : DataImporter {
     var review: ImportReview = ImportReview.Ready(0, null, ImportCounts(workouts = 2), alreadyHere = 0)
     var failing = false
+    var reviewFailing = false
     val imported = mutableListOf<Pair<ShareableFile, Boolean>>()
 
-    override suspend fun review(file: ShareableFile): ImportReview = review
+    override suspend fun review(file: ShareableFile): ImportReview {
+        check(!reviewFailing) { "can't read the file" }
+        return review
+    }
 
     override suspend fun import(file: ShareableFile, withSettings: Boolean): ImportCounts {
         check(!failing) { "disk full" }
