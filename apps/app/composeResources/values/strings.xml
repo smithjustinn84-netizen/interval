@@ -28,7 +28,8 @@
     <string name="about_licenses">Open-source licenses</string>
     <string name="about_licenses_hint">The fonts and libraries Interval is built with</string>
 
-    <!-- Privacy: the policy, also shown on its own when Health Connect asks why the app wants its permissions -->
+    <!-- Privacy: the policy, also shown on its own when Health Connect asks why the app wants its permissions.
+         PRIVACY.md, at the repository's root, is the same words for Play's listing: change both together. -->
     <string name="privacy_title">Privacy</string>
     <string name="privacy_summary">Interval keeps everything on this device. There are no accounts, no analytics and no ads, and nothing leaves the phone unless you send it.</string>
     <string name="privacy_stored_title">What it keeps</string>

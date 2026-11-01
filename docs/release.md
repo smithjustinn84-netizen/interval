@@ -77,7 +77,8 @@ Both Android and iOS versions must be bumped in unison. CI will fail via `tools/
      and presets back.
    - TalkBack's headings navigation reaches every section of Settings, History and the Lift tab.
 4. **Health Connect on Play.** The listing needs a privacy policy URL whose words match the app's Privacy page
-   (`apps/app/src/about/PrivacyScreen.kt`; host the same text, for example as a page of the repository), and
+   (`apps/app/src/about/PrivacyScreen.kt`): `PRIVACY.md`, at the repository's root, is that text, and its GitHub
+   page (https://github.com/smithjustinn84-netizen/interval/blob/main/PRIVACY.md) is the URL to give Play. And
    the Play Console's Health apps declaration must name the data types in the manifest: exercise and total
    calories burned (write) and, from 0.3, body weight (read). Without the declaration Play blocks the release's
    review.
