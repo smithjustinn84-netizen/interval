@@ -79,7 +79,10 @@ Sizes: XS ≤ half a day, S ≈ 1 day, M ≈ 2 days, L ≈ 3 days. The cut line 
   than a `NavKey`, since each names its tab and the workout's key needs the clock. A static shortcut always
   starts its activity with `CLEAR_TASK`, which would end a running workout, so the shortcuts target an
   invisible `ShortcutActivity` (its own task affinity) that hands the extra to `MainActivity` with
-  `SINGLE_TOP | CLEAR_TOP` (`onNewIntent`). A workout already on the back stack wins over either shortcut.
+  `SINGLE_TOP | CLEAR_TOP` (`onNewIntent`). A workout already on the back stack wins over either shortcut. The
+  hand-off sends the launcher's own intent (MAIN, LAUNCHER), so a task it starts has the root the notifications'
+  `openAppIntent` brings forward, which is single top besides: the release smoke test found a cold shortcut start
+  followed by a tap on the workout's notification opening a second app over the first.
 - iOS gets the matching `UIApplicationShortcutItem`s for free only if someone wires the scene delegate;
   not this sprint, note it in `docs/release.md`'s follow-ups.
 - Done when: `appTest` asserts each start key lands on its screen over the right tab and system Back
@@ -95,7 +98,9 @@ Sizes: XS ≤ half a day, S ≈ 1 day, M ≈ 2 days, L ≈ 3 days. The cut line 
   (`NameField`), saved as they change, so leaving the summary loses nothing. History's day log and
   workout page, and Lift's session page, show the word and the note; the share words append the note.
 - As built: `HowWasIt` in `core` is the row on both sides (`SegmentedPicker` takes no selection, and drops its
-  check and wraps a label on this one, so "Very hard" fits five across a phone). `PerceivedEffort` is in both
+  check and wraps a label on this one, so "Very hard" fits five across a phone). The workout summary's ring
+  gives way to it: it takes the height the details leave (`RingOverDetails`, scaled whole in layout), down to
+  `IntervalSizes.summaryRingLeast`, after the release smoke test found the row clipped under Repeat on a phone. `PerceivedEffort` is in both
   domains, as the sides share none. The summary hands the screen-worded note to its ViewModel, which writes
   the workout to Health Connect again as the summary goes, with `clientRecordVersion` the time it is written:
   Health Connect keeps the stored record unless the version is higher. The workout's summary keeps the

@@ -67,6 +67,9 @@ object IntervalSizes {
     /** The ring around Done on the summary. */
     val summaryRing = 260.dp
 
+    /** The least the summary's ring shrinks to, on a phone too short for it and "How was it?" both. */
+    val summaryRingLeast = 160.dp
+
     /** Minimum height of a Timer tab interval row. */
     val intervalRow = 72.dp
 

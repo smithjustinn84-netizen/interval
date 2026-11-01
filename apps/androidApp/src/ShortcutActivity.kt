@@ -13,8 +13,13 @@ class ShortcutActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val shortcut = intent.getStringExtra(EXTRA_SHORTCUT)
+        // The launcher's own intent, so a task this starts has the root the launcher icon and the notifications
+        // ([openAppIntent][dev.justinsmith.interval.platform.openAppIntent]) bring forward, not a second app.
         startActivity(
-            Intent(this, MainActivity::class.java)
+            Intent(Intent.ACTION_MAIN)
+                .addCategory(Intent.CATEGORY_LAUNCHER)
+                .setPackage(packageName)
+                .setClass(this, MainActivity::class.java)
                 .putExtra(EXTRA_SHORTCUT, shortcut)
                 .addFlags(
                     Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or

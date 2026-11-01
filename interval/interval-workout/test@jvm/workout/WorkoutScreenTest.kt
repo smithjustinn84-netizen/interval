@@ -204,6 +204,19 @@ class WorkoutScreenTest {
     }
 
     @Test
+    fun `on a phone the summary's how was it fits above its actions`() = runUiTest(Window.Phone) {
+        // The fullest summary: calories and the week's line under the stats.
+        setThemedContent {
+            Screen(done.toUiState(running = false, calories = 64, week = WeekStanding(3, goal = 4, streak = 2)))
+        }
+        waitForIdle()
+        // Where each is laid out, not the part of it on show: a field scrolled under the actions is clipped to nothing.
+        val note = onNode(hasSetTextAction()).fetchSemanticsNode().let { it.positionInRoot.y + it.size.height }
+        val repeat = onNodeWithText("Repeat").fetchSemanticsNode().positionInRoot.y
+        assertTrue(note <= repeat, "the note field ends at $note px, under Repeat at $repeat px")
+    }
+
+    @Test
     fun `the summary shows calories only when there is an estimate`() = runUiTest {
         var state by mutableStateOf(done.toUiState(running = false))
         setThemedContent { Screen(state) }

@@ -8,6 +8,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -32,9 +33,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Constraints
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.platform.prefersReducedMotion
 import dev.justinsmith.interval.presets.PresetDraft
@@ -224,6 +228,10 @@ private fun SummaryActions(
     }
 }
 
+/**
+ * The title, then the lines, stats and "How was it?" under it, in a column that scrolls when they don't fit. In
+ * the [ring], the ring gives way first: it takes the height the rest leaves, down to its least.
+ */
 @Composable
 private fun SummaryReadout(
     state: WorkoutUiState,
@@ -232,12 +240,62 @@ private fun SummaryReadout(
     reflection: SummaryReflection,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier.verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        SummaryTitle(state, entrance, ring)
+    BoxWithConstraints(modifier) {
+        val viewport = constraints.maxHeight
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            if (ring) {
+                RingOverDetails(
+                    viewport,
+                    ring = { Column { SummaryTitle(state, entrance, ring = true) } },
+                    details = { SummaryDetails(state, entrance, reflection) },
+                )
+            } else {
+                SummaryTitle(state, entrance, ring = false)
+                SummaryDetails(state, entrance, reflection)
+            }
+        }
+    }
+}
+
+/**
+ * The [ring] over the [details], as large as the [viewport]'s height leaves it: at most its full size, at least
+ * [IntervalSizes.summaryRingLeast]. It is drawn whole and scaled, so Done shrinks with it; it is measured after
+ * the details and in layout alone, so it never shows at one size and then another. Short of its least, the
+ * readout scrolls.
+ */
+@Composable
+private fun RingOverDetails(viewport: Int, ring: @Composable () -> Unit, details: @Composable () -> Unit) {
+    Layout(contents = listOf(ring, details)) { (ringMeasurables, detailMeasurables), constraints ->
+        val below = detailMeasurables.single().measure(constraints.copy(minHeight = 0))
+        val full = IntervalSizes.summaryRing.roundToPx()
+        // The actions' own gap stays clear under the details, so the note field never meets Repeat.
+        val room = viewport - below.height - Spacing.space12.roundToPx()
+        val size = room.coerceIn(IntervalSizes.summaryRingLeast.roundToPx(), full)
+        val drawn = ringMeasurables.single().measure(Constraints.fixed(full, full))
+        val width = maxOf(below.width, size)
+        layout(width, size + below.height) {
+            drawn.placeWithLayer((width - full) / 2, 0) {
+                scaleX = size.toFloat() / full
+                scaleY = size.toFloat() / full
+                transformOrigin = TransformOrigin(pivotFractionX = 0.5f, pivotFractionY = 0f)
+            }
+            below.place((width - below.width) / 2, size)
+        }
+    }
+}
+
+/** Under the title: the shape, the stats, that it was saved, the week, and "How was it?", rising in turn. */
+@Composable
+private fun SummaryDetails(
+    state: WorkoutUiState,
+    entrance: MutableTransitionState<Boolean>,
+    reflection: SummaryReflection,
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
         AnimatedVisibility(entrance, enter = risingEnter(Motion.STAGGER_MILLIS * LINES_STEP)) {
             SummaryLines(state)
         }

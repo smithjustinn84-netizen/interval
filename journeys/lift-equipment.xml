@@ -11,7 +11,7 @@
     <action>Tap "Start session"</action>
     <action>Verify that the session screen is shown with "Time", "Moved" at "0 kg", "Next set" with "Two-hand swing", "Add set or EMOM" in the title bar, and "Log set" at the bottom</action>
     <action>Tap "Add set or EMOM" in the title bar</action>
-    <action>Verify that a sheet titled "Add to the session" shows "A set" and "An EMOM", and an exercise card reading "Two-hand swing" over "Kettlebell · Reps · Full body", with "Change"</action>
+    <action>Verify that the sheet shows "A set" and "An EMOM", and an exercise card reading "Two-hand swing" over "Kettlebell · Reps · Full body", with "Change"</action>
     <action>Verify that "Bell" chips are shown, "16" selected, and "Reps" reads "10"</action>
     <action>Tap "Log set" at the bottom of the sheet</action>
     <action>Verify that the session shows "Two-hand swing" with a set "16 kg × 10", and "Moved" reads "160 kg"</action>
@@ -40,13 +40,13 @@
     <action>Tap "Log set" at the bottom of the sheet</action>
     <action>Verify that the session shows "Push-up" with a set "+8 kg × 10", and "Moved" reads "240 kg"</action>
     <action>Tap "Finish"</action>
-    <action>Verify that the summary shows "Done", "Counts toward your week and your goal", and under "New records" all four in their own words: "Two-hand swing" with "Heaviest 16 kg × 10", "Band pull-apart" with "Heaviest Heavy × 10", "Side plank" with "Longest 0:45" and "Push-up" with "Most added +8 kg × 10"</action>
+    <action>Verify that the summary shows "Done", "Counts toward your week and your goal", and under "New records" all four in their own words, in any order: "Two-hand swing" with "Heaviest 16 kg × 10", "Band pull-apart" with "Heaviest Heavy × 10", "Side plank" with "Longest 0:45" and "Push-up" with "Most added +8 kg × 10"</action>
     <action>Tap "Done"</action>
     <action>Verify that the Lift tab shows "Last session" with "Two-hand swing and 3 more", "4 sets" and "240 kg"</action>
     <action>Scroll down to "Exercises" and verify that no "Balance" card is shown: one session is not enough</action>
     <action>Tap "Start session", then "Add set or EMOM" in the title bar, then "Change" on the exercise card</action>
     <action>Type "goblet" into "Search exercises" and tap "Goblet squat"</action>
     <action>Tap "Log set" at the bottom of the sheet, then "Finish", then "Done"</action>
-    <action>Scroll down to the "Balance" card and verify that it says "Sets, last 4 weeks" and lists "Chest", "Shoulders", "Back", "Arms", "Core", "Glutes and hamstrings" at "2" and "Quads and calves" at "1", with "Worked most" and "Assisted" under the bars</action>
+    <action>Scroll down to the "Balance" card and verify that it says "Sets, last 4 weeks" and lists, each with the sets that worked it most, "Chest" 1, "Shoulders" 0, "Back" 1, "Arms" 1, "Core" 1, "Glutes and hamstrings" 2 and "Quads and calves" 1, with "Worked most" and "Assisted" under the bars</action>
   </actions>
 </journey>

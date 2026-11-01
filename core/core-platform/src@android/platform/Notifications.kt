@@ -2,6 +2,7 @@ package dev.justinsmith.interval.platform
 
 import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 
 // What the workout's notification, the plan's reminders and Lift's rest share.
 
@@ -15,9 +16,14 @@ fun Context.notificationIcon(): Int {
     return if (own != 0) own else android.R.drawable.ic_lock_idle_alarm
 }
 
-/** Brings the app's task forward, as tapping its launcher icon does, rather than opening a second one. */
+/**
+ * Brings the app's task forward, as tapping its launcher icon does, rather than opening a second one. The
+ * launcher's intent finds a task the launcher started; single top covers one started otherwise (a launcher
+ * shortcut's, or `am start`), whose root intent differs, where it would put a second app over the first.
+ */
 fun Context.openAppIntent(requestCode: Int): PendingIntent? {
-    val launch = packageManager.getLaunchIntentForPackage(packageName) ?: return null
+    val launch = packageManager.getLaunchIntentForPackage(packageName)
+        ?.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP) ?: return null
     return PendingIntent.getActivity(this, requestCode, launch, PendingIntent.FLAG_IMMUTABLE)
 }
 

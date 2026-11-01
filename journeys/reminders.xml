@@ -2,7 +2,7 @@
   <description>
     Turn on the plan's reminder, pick a time, see it on the Plan page and in the notification settings, then
     turn it off. Run on a fresh install (adb shell pm clear dev.justinsmith.interval); the notification
-    permission prompt appears the first time the reminder is turned on.
+    permission prompt appears as the reminder is first turned on, at the first time picked.
   </description>
   <actions>
     <action>Tap the "History" tab</action>
@@ -11,11 +11,11 @@
     <action>Tap "Reminder"</action>
     <action>Verify that a sheet titled "Reminder" shows a time, "Quick picks" and "Done", and no "Turn off reminders"</action>
     <action>Tap "6:00 PM" under "Quick picks"</action>
+    <action>If a system prompt asks to allow notifications (it comes as the reminder turns on), tap "Allow"</action>
     <action>Verify that the sheet's time reads "6:00 PM"</action>
     <action>Tap "15 minutes later"</action>
     <action>Verify that the sheet's time reads "6:15 PM"</action>
     <action>Tap "Done"</action>
-    <action>If a system prompt asks to allow notifications, tap "Allow"</action>
     <action>Verify that the "Reminder" row reads "6:15 PM on days with a workout planned"</action>
     <action>Tap "Back"</action>
     <action>Tap "Edit plan" or "Plan your week"</action>

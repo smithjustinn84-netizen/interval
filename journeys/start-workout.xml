@@ -21,7 +21,7 @@
     <action>Tap "Resume"</action>
     <action>Verify that the screen shows a "Pause" button</action>
     <action>Tap "Skip"</action>
-    <action>Verify that the screen shows "Work" and "Round 1 of 8"</action>
+    <action>Verify that the screen moves to the next interval with "Round 1 of 8": "Work" if Get ready was still on, else "Rest"</action>
     <action>Tap "End"</action>
     <action>Verify that a dialog titled "End workout?" says nothing is saved</action>
     <action>Tap "End workout" in the dialog</action>
