@@ -88,7 +88,7 @@ that depends on the data module.
   - `FixedTimestampFormatter`: time-zone free; `date()` is `"day N"`, `monthTitle()` `"M/YYYY"`.
   - `FakeAppInfo`, `RecordingSharer`, and the tests' calendar: `TODAY` (Thursday 15 October 2026), `noonOf`,
     `DAY_MILLIS`.
-  - `fakeCorePlatformModule(...)` stands in for core's `rememberCorePlatformModule`: a wall clock, the fixed
+  - `fakeCorePlatformModule(...)` stands in for core's `corePlatformModule`: a wall clock, the fixed
     formatter, `FakeAppInfo` and a sharer, for `testKoin` and `liftTestKoin` alike.
 - **`core/core-testing/src@jvm/ui/UiTestHarness.kt`**:
   - `runUiTest(Window.Phone | PhoneSideways | Tablet | TabletPortrait | Desktop)`: sized windows that match the previews. The

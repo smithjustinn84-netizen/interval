@@ -74,8 +74,8 @@ the database file (`bells.db`), the serial names that its route keys are saved u
 ```
 core/
   core               the theme, tokens, motion, components, lanes, `Tab` and `push` (nav/), the Composable
-                     platform hooks the UI needs (`SystemServices.kt`), and `rememberCorePlatformModule`
-                     (`CorePlatform.kt`: the `WallClock`, `TimestampFormatter`, `AppInfo`, `Sharer` and `HealthStore`
+                     platform hooks the UI needs (`SystemServices.kt`), and each platform's `corePlatformModule`
+                     (`CorePlatform*.kt`: the `WallClock`, `TimestampFormatter`, `AppInfo`, `Sharer` and `HealthStore`
                      both sides' containers take, with each platform's `Sharer`) and `rememberHealthConnector`
                      (the store's permission sheet, for Settings); exports `core-platform` and `core-time`.
                      Packages `dev.justinsmith.interval.ui`, `.platform`, `.nav`; resources
@@ -102,7 +102,7 @@ interval/            the interval timer
   interval-data      `IntervalRepository`, `AppDatabase` (Room, KSP, `schemas/`), the settings DataStore,
                      `PlatformStorage`, `storageModule`/`dataModule` (di/)
   interval-platform  `CuePlayer`, `WorkoutControls`, `BackgroundWorkout`, `PlanReminders` (+ `reminderWords`),
-                     `SpeechQueue`, `playCue`, and each platform's `rememberPlatformModule` with its storage,
+                     `SpeechQueue`, `playCue`, and each platform's `platformModule` with its storage,
                      player, `WorkoutService` and `PlanReminderReceiver` (android)
   interval-ui        the workout's shared words and widgets (`ConfigText`, `FieldRow`, `ValueSheet`, `Timeline`,
                      `WeekdayForm`, `ActivitySheet`, `StartButton`, `DescribeHint`), `PhaseColorsOf`, the intro
@@ -124,7 +124,7 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      reads of the interval side; `app` binds it), `LiftActivity` (what the interval side reads
                      of Lift; `LiftRepository` is it), `liftModules` (di/). No Compose
   lift-platform      `Beeper`, `RestAlerts` (+ Android's `RestService`), the rest notification's words, and each
-                     platform's `rememberLiftPlatformModule` (the database builder too); Lift's `interval-platform`
+                     platform's `liftPlatformModule` (the database builder too); Lift's `interval-platform`
   lift-ui            Lift's words and widgets (`exerciseName`, `setLine`, `programName`, `LoadPicker`, `Stepper`,
                      `SessionStats`), the built-ins' cues (`cues.xml`, mapped in `ExerciseCues.kt`); most of
                      Lift's strings
@@ -139,10 +139,11 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
 
 apps/
   app                the app: `App.kt` (the back stack and every entry), `di/AppKoin.kt` (`appModules`,
-                     `rememberAppKoin`, and the `IntervalActivity` Lift reads, over `IntervalRepository`),
+                     `initAppKoin`, and the `IntervalActivity` Lift reads, over `IntervalRepository`),
                      `nav/Routes.kt` (the app's own keys), `ui/AppNavigation.kt`, about/, export/,
                      `app_name` and `app_icon`. What `androidApp`, `iosApp` and `desktopApp` depend on
-  androidApp         Android host application: AndroidManifest.xml, res/, launch theme, ProGuard rules, keystore
+  androidApp         Android host application: `IntervalApplication` (starts the container), AndroidManifest.xml,
+                     res/, launch theme, ProGuard rules, keystore
   desktopApp         Desktop host application: main.kt entry point, Swing integration, window sizing
   iosApp             iOS host application: ViewController.kt, iosApp.swift, Xcode project, Info.plist, Assets
 
@@ -184,11 +185,16 @@ toolchain (`$compose.*`).
   tab screen pads nothing itself and a pushed page pads `safeDrawing`.
 - **ViewModels** expose `StateFlow<UiState>` from a private `MutableStateFlow`. They are entry-scoped by
   `rememberViewModelStoreNavEntryDecorator`.
-- **DI is Koin DSL** (no annotations/KSP) in an isolated container assembled in `apps/app/src/di/AppKoin.kt`
+- **DI is Koin DSL** (no annotations/KSP), **one container per process**, assembled in `apps/app/src/di/AppKoin.kt`
   (`appModules`) from each side's modules: `storageModule`/`dataModule` in `interval/interval-data/src/di/`,
-  `historyModule` in `interval/interval-history/src/di/`, `liftModules` in `lift/lift-data/src/di/`, and the platform
-  modules each platform builds in composition: core's `rememberCorePlatformModule` (what both sides take: the
-  clock, formatter, `AppInfo`, `Sharer`), `interval-platform`'s and `lift-platform`'s. Neither side's modules
+  `historyModule` in `interval/interval-history/src/di/`, `liftModules` in `lift/lift-data/src/di/`, and the three
+  platform modules: core's `corePlatformModule` (what both sides take: the clock, formatter, `AppInfo`, `Sharer`),
+  `interval-platform`'s `platformModule` and `lift-platform`'s `liftPlatformModule`, plain functions (Android's of a
+  `Context`). `initAppKoin` starts it (`startKoin`, once): Android's `IntervalApplication.onCreate`, desktop's
+  `main` (which drains both repositories and stops it as the window closes), iOS's first `App()`. It is never
+  closed on Android or iOS, so services and receivers can reach it. Only `apps/` may import `startKoin`,
+  `stopKoin` or `GlobalContext` (detekt's `ForbiddenImport`); tests build their own with `testKoin()` and pass it to
+  `AppContent`. Neither side's modules
   bind anything the other needs. Add a module per domain. Constructor-inject everything; keep platform calls (the clock, cues, storage) behind
   injected interfaces (`WallClock`, `CuePlayer`, `PlatformStorage`) so tests can fake them.
 - **Storage**: `IntervalRepository` (`interval/interval-data/src/data/`) is the only thing that touches it. What it stores
@@ -197,8 +203,8 @@ toolchain (`$compose.*`).
   in DataStore Preferences (`SettingsPreferences.kt`); history and custom presets in Room
   (`AppDatabase.kt`, bundled SQLite, generated by KSP for every platform). Settings are held in memory and
   written through in the background, so change them with `updateX { transform }`. `AppContent` draws
-  nothing until `repository.ready`. The DataStore lives for the process (one per file, DataStore's rule),
-  not the Koin container, which Android rebuilds whenever the Activity reopens. A schema change bumps the `@Database` version, adds a migration, and
+  nothing until `repository.ready`. The DataStore is a `single` on a scope of its own (`PreferencesScope`): one
+  per file is DataStore's rule, which a container per process keeps. A schema change bumps the `@Database` version, adds a migration, and
   commits the new `interval/interval-data/schemas/` (or `lift/lift-data/schemas/`) JSON.
 - **Text**: every user-facing string lives in the `composeResources/values/strings.xml` of the module whose
   screens say it, under its own `Res` (`settings.compose.resources.packageName` is

@@ -1,15 +1,11 @@
 package dev.justinsmith.lift.platform
 
-import androidx.compose.runtime.Composable
-import org.koin.core.module.Module
-
-/**
+/*
+ * Each platform's `liftPlatformModule` (Android's of a `Context`, iOS's and the desktop's of nothing) gives the
  * Koin definitions for what Lift needs from the platform: a builder for its database file
- * (`RoomDatabase.Builder<LiftDatabase>`), a [Beeper] and [RestAlerts]. Built in composition because Android
- * needs a `Context`.
+ * (`RoomDatabase.Builder<LiftDatabase>`), a [Beeper] and [RestAlerts]. The app's entry point builds it once per
+ * process.
  */
-@Composable
-expect fun rememberLiftPlatformModule(): Module
 
 /**
  * The database's file name, inside the platform's app-data directory. It keeps the name from when Lift was called

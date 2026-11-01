@@ -60,6 +60,12 @@ flowchart LR
 ## A. Lifecycle and DI scope
 
 ### A1 · High · The container is Activity-scoped
+
+**Resolved** in change `uzpqsrpn` ("DI: one container per process"): `initAppKoin` starts it once per process
+from Android's `IntervalApplication`, desktop's `main` and iOS's first frame. `KoinHolder`, its `runBlocking` and
+`preferenceStores` are gone (A1a, A1b), the databases open once (A1c), and the container is never closed on
+Android, so no write arrives after it (A1e). Services and receivers can now reach it (A1d); using that is
+ticket 3's and 4's.
 `rememberAppKoin()` ([AppKoin.kt:84-92](../apps/app/src/di/AppKoin.kt)) builds the container inside
 `viewModel { KoinHolder(...) }`. It survives a rotation and dies with the Activity. The platform modules are
 `@Composable` because they need `LocalContext`

@@ -322,7 +322,7 @@ class RecordingRestAlerts : RestAlerts {
     }
 }
 
-/** Stands in for `rememberLiftPlatformModule()`. Tests never load the real one: it writes a database file. */
+/** Stands in for `liftPlatformModule`. Tests never load the real one: it writes a database file. */
 fun fakeLiftPlatformModule(beeper: Beeper = RecordingBeeper(), alerts: RestAlerts = RecordingRestAlerts()): Module =
     module {
         single<Beeper> { beeper }

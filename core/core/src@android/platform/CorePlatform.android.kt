@@ -3,21 +3,15 @@ package dev.justinsmith.interval.platform
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import org.koin.core.module.Module
 
-@Composable
-actual fun rememberCorePlatformModule(): Module {
-    val context = LocalContext.current.applicationContext
-    return remember(context) {
-        corePlatformModule(
-            appInfo = { AndroidAppInfo(context) },
-            sharer = { AndroidSharer(context) },
-            health = { HealthConnectStore(context) },
-        )
-    }
+/** What both sides take from Android, over the application's [context] (any context is narrowed to it). */
+fun corePlatformModule(context: Context): Module = context.applicationContext.let { app ->
+    sharedCorePlatformModule(
+        appInfo = { AndroidAppInfo(app) },
+        sharer = { AndroidSharer(app) },
+        health = { HealthConnectStore(app) },
+    )
 }
 
 /** The `versionName` of the installed package: `versionName` in `apps/androidApp/module.yaml`. */

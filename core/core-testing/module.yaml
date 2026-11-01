@@ -14,7 +14,7 @@ dependencies:
   - //core/core
   - $kotlin.test: exported
   - $libs.kotlinx.coroutines.test: exported
-  # `fakeCorePlatformModule`, which stands in for core's `rememberCorePlatformModule`.
+  # `fakeCorePlatformModule`, which stands in for core's `corePlatformModule`.
   - $libs.koin.core
 
 # `kotlin.test.BeforeTest` on the JVM and Android is JUnit's annotation, which only the JUnit flavour carries.

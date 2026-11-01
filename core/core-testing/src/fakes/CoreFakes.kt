@@ -103,7 +103,7 @@ class RecordingHealthStore(initial: HealthStatus = HealthStatus.Disconnected) : 
 }
 
 /**
- * Stands in for core's `rememberCorePlatformModule()`: a [clock] standing at 0 unless a test moves it, the
+ * Stands in for core's `corePlatformModule`: a [clock] standing at 0 unless a test moves it, the
  * [FixedTimestampFormatter], [FakeAppInfo], a [sharer] that records and a [health] store that does too.
  */
 fun fakeCorePlatformModule(

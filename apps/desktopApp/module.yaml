@@ -3,6 +3,8 @@ product: jvm/app
 
 dependencies:
   - //apps/app
+  # `initAppKoin` hands back the container, which `main` closes as the window does.
+  - $libs.koin.core
   - $compose.desktop.currentOs
   - $compose.preview
   # Supplies Dispatchers.Main (the Swing EDT) on the JVM. Without it every `viewModelScope.launch`

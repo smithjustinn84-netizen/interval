@@ -48,7 +48,7 @@ import dev.justinsmith.interval.about.AboutRoute
 import dev.justinsmith.interval.about.LicensesRoute
 import dev.justinsmith.interval.about.PrivacyScreen
 import dev.justinsmith.interval.data.IntervalRepository
-import dev.justinsmith.interval.di.rememberAppKoin
+import dev.justinsmith.interval.di.processKoin
 import dev.justinsmith.interval.history.HistoryPlaceholder
 import dev.justinsmith.interval.history.HistoryRoute
 import dev.justinsmith.interval.history.WorkoutDetailRoute
@@ -68,6 +68,7 @@ import dev.justinsmith.interval.nav.Workout
 import dev.justinsmith.interval.nav.WorkoutDetail
 import dev.justinsmith.interval.nav.push
 import dev.justinsmith.interval.plan.PlanRoute
+import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.SystemBarIcons
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.materialBackPreview
@@ -144,7 +145,7 @@ internal val navConfiguration = SavedStateConfiguration {
 @Composable
 @DevelopmentEntryPoint
 fun App(shortcut: Shortcut? = null, onShortcutOpen: () -> Unit = {}) {
-    val koin = rememberAppKoin()
+    val koin = remember { processKoin() }
     val ready by remember(koin) { storageReady(koin.koin.get(), koin.koin.get()) }.collectAsStateWithLifecycle(false)
     WithIntro(ready) { introPlaying -> AppContent(koin, introPlaying, shortcut, onShortcutOpen) }
 }
@@ -164,6 +165,9 @@ internal fun AppContent(
         val scope = currentKoinScope()
         val repository = scope.get<IntervalRepository>()
         val ready by remember(scope) { storageReady(repository, scope.get()) }.collectAsStateWithLifecycle(false)
+        // The cue player is built on first use, and Android's speech engine takes a moment to start: starting it
+        // with the app, while storage reads, means the first workout cue is never the one it misses.
+        LaunchedEffect(scope) { scope.get<CuePlayer>() }
         // Saved settings take milliseconds to read. Until then the window background shows, rather than
         // screens built from defaults or a flash of the wrong theme.
         if (!ready) return@KoinIsolatedContext

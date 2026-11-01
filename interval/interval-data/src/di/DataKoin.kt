@@ -29,9 +29,16 @@ import kotlin.time.TimeSource
 val StorageScope = named("storage")
 
 /**
- * The database, its DAOs and the settings DataStore, in the files [PlatformStorage] names. Closing the
- * container closes the database and cancels [StorageScope], dropping any write still queued. The DataStore
- * outlives the container: see [preferencesAt].
+ * The settings DataStore's own scope. DataStore wants one active instance per file, which a container that lives
+ * as long as the process gives it; closing the container (desktop's exit, a test) cancels the scope, and the file
+ * is free once the scope has finished.
+ */
+val PreferencesScope = named("preferences")
+
+/**
+ * The database, its DAOs and the settings DataStore, in the files [PlatformStorage] names. The container lives
+ * as long as the process; closing it closes the database and cancels [StorageScope], dropping any write still
+ * queued, and lets go of the DataStore's file.
  */
 val storageModule: Module = module {
     single<CoroutineScope>(StorageScope) { storageScope(Dispatchers.IO, "StorageScope") }.withOptions {
@@ -46,27 +53,18 @@ val storageModule: Module = module {
     single { get<AppDatabase>().presetDao() }
     single { get<AppDatabase>().plannedDao() }
     single { get<AppDatabase>().importDao() }
-    single<DataStore<Preferences>> { preferencesAt(get<PlatformStorage>().preferencesPath) }
-}
-
-private val preferenceStores = mutableMapOf<String, DataStore<Preferences>>()
-
-/**
- * The process's one DataStore for [path]. DataStore allows a single active instance per file, and only
- * releases the file once its scope has finished cancelling, which a new container can beat: on Android the
- * container is rebuilt as soon as the Activity reopens in the same process. So each store lives as long
- * as the process. Containers are built in composition, on the main thread, so the map needs no lock.
- */
-private fun preferencesAt(path: String): DataStore<Preferences> = preferenceStores.getOrPut(path) {
-    PreferenceDataStoreFactory.createWithPath(
-        scope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
-        produceFile = { path.toPath() },
-    )
+    single<CoroutineScope>(PreferencesScope) { CoroutineScope(SupervisorJob() + Dispatchers.IO) }.withOptions {
+        onClose { it?.cancel() }
+    }
+    single<DataStore<Preferences>> {
+        val path = get<PlatformStorage>().preferencesPath
+        PreferenceDataStoreFactory.createWithPath(scope = get(PreferencesScope), produceFile = { path.toPath() })
+    }
 }
 
 /**
  * The workout's clock, and the repository over [storageModule]. The wall clock it takes is core's
- * (`rememberCorePlatformModule`).
+ * (`corePlatformModule`).
  */
 val dataModule: Module = module {
     // The workout ticker's clock: time that counts through the device's sleep.

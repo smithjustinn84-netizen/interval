@@ -1,30 +1,25 @@
 package dev.justinsmith.interval.di
 
-import androidx.compose.runtime.Composable
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.data.RepositoryIntervalActivity
 import dev.justinsmith.interval.export.AppDataExporter
 import dev.justinsmith.interval.export.AppDataImporter
-import dev.justinsmith.interval.platform.rememberCorePlatformModule
-import dev.justinsmith.interval.platform.rememberPlatformModule
 import dev.justinsmith.interval.settings.DataExporter
 import dev.justinsmith.interval.settings.DataImporter
 import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.data.LiftRepository
 import dev.justinsmith.lift.di.liftModules
 import dev.justinsmith.lift.di.liftStorageModule
-import dev.justinsmith.lift.platform.rememberLiftPlatformModule
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.core.KoinApplication
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
 import org.koin.core.module.Module
-import org.koin.dsl.koinApplication
 import org.koin.dsl.module
 import kotlin.time.Duration.Companion.seconds
 
 /**
+ * The definitions of the app's container: [initAppKoin]'s in production, `testKoin()`'s over fakes in tests.
  * [corePlatform] supplies what both sides take: the wall clock, the timestamp formatter, the app's version and
  * the sharer. [platformModule] supplies storage locations, the cue player, the background workout and the
  * plan's reminders; [storage] the database and DataStore built from them (tests swap in fakes);
@@ -53,40 +48,48 @@ private val appModule = module {
 }
 
 /**
- * Keeps the Koin container alive across Android configuration changes and closes it when the app
- * goes away: the Activity finishing, or the desktop window closing. `setContent` re-runs on rotation, so a
- * plain `remember` would build a fresh container while entry-scoped ViewModels still held the old one's
- * instances.
+ * The process's one container. Each entry point starts it before its first frame (Android's
+ * `IntervalApplication`, desktop's `main`; iOS on first use, through [processKoin]), always on the main thread,
+ * which is what makes the plain field safe. It is never closed on Android or iOS, whose processes end without
+ * notice; desktop closes it with the window ([stopAppKoin]), after [drainStorage].
  */
-private class KoinHolder(val app: KoinApplication) : ViewModel() {
-    override fun onCleared() {
-        // Closing cancels the storage scopes, which drops any write still queued: a workout recorded or a
-        // setting changed a moment ago. So both repositories land theirs first. This blocks the main thread,
-        // but only on the storage dispatcher (never on Main), only as the app goes, and for a bounded time.
-        runBlocking {
-            withTimeoutOrNull(DRAIN_TIMEOUT) {
-                app.koin.get<IntervalRepository>().close()
-                app.koin.get<LiftRepository>().close()
-            }
-        }
-        app.close()
+private var started: KoinApplication? = null
+
+/**
+ * Starts the app's container, once per process, from the platform's three modules: [corePlatform] (what both
+ * sides take), [platform] (the interval side's) and [liftPlatform]. A second call returns the first container.
+ * Tests build their own with `testKoin()` and never call this.
+ */
+fun initAppKoin(corePlatform: Module, platform: Module, liftPlatform: Module): KoinApplication =
+    started ?: startKoin { modules(appModules(corePlatform, platform, liftPlatform = liftPlatform)) }
+        .also { started = it }
+
+/**
+ * The container [App] composes with when it is given none: the one the entry point started, or on iOS and
+ * the desktop one started now (so Hot Reload's entry point, which runs no `main`, still has one).
+ */
+internal expect fun processKoin(): KoinApplication
+
+/** The container [initAppKoin] started, or null before it ran. */
+internal fun startedKoin(): KoinApplication? = started
+
+/**
+ * Lands both repositories' queued writes before the container closes, which cancels their storage scopes:
+ * a workout recorded or a setting changed a moment ago. For desktop's window closing, the one place the
+ * process ends on the app's own terms. Bounded: a write stuck past [DRAIN_TIMEOUT] is lost.
+ */
+suspend fun KoinApplication.drainStorage() {
+    withTimeoutOrNull(DRAIN_TIMEOUT) {
+        koin.get<IntervalRepository>().close()
+        koin.get<LiftRepository>().close()
     }
 }
 
-/** Longer than any write takes; a write stuck past it is lost, as it was before writes were drained. */
-private val DRAIN_TIMEOUT = 2.seconds
-
-/**
- * The app's container, isolated rather than started globally: `startKoin` would need an Android
- * `Application` class and initialization in each entry point, and this way `App()` stays
- * parameterless on every platform.
- */
-@Composable
-fun rememberAppKoin(): KoinApplication {
-    val corePlatform = rememberCorePlatformModule()
-    val platformModule = rememberPlatformModule()
-    val liftPlatform = rememberLiftPlatformModule()
-    return viewModel {
-        KoinHolder(koinApplication { modules(appModules(corePlatform, platformModule, liftPlatform = liftPlatform)) })
-    }.app
+/** Closes the container [initAppKoin] started: desktop's, as its window closes, after [drainStorage]. */
+fun stopAppKoin() {
+    stopKoin()
+    started = null
 }
+
+/** Longer than any write takes. */
+private val DRAIN_TIMEOUT = 2.seconds

@@ -1,7 +1,6 @@
 package dev.justinsmith.interval.platform
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import dev.justinsmith.interval.data.AppDatabase
@@ -10,14 +9,12 @@ import org.koin.dsl.module
 import java.awt.Toolkit
 import java.io.File
 
-@Composable
-actual fun rememberPlatformModule(): Module = remember {
-    module {
-        single<PlatformStorage> { DesktopStorage() }
-        single<CuePlayer> { DesktopCuePlayer() }
-        single<BackgroundWorkout> { NoBackgroundWorkout }
-        single<PlanReminders> { NoPlanReminders }
-    }
+/** The interval side's services on the desktop. */
+fun platformModule(): Module = module {
+    single<PlatformStorage> { DesktopStorage() }
+    single<CuePlayer> { DesktopCuePlayer() }
+    single<BackgroundWorkout> { NoBackgroundWorkout }
+    single<PlanReminders> { NoPlanReminders }
 }
 
 /** A desktop has no notification centre the app could hand a day's reminder to. */

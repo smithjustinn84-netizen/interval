@@ -5,7 +5,6 @@ import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.UpcomingChange
 import dev.justinsmith.interval.timer.WorkoutOutline
-import org.koin.core.module.Module
 
 /** The sounds the app plays. Each platform maps them to tones it has. */
 enum class Beep { Countdown, Halfway, Start, Work, Rest, Finished }
@@ -126,10 +125,9 @@ interface PlanReminders {
 @Composable
 expect fun AskToShowNotifications()
 
-/**
- * Koin definitions for the interval side's platform services: [PlatformStorage], a [CuePlayer], a
- * [BackgroundWorkout] and [PlanReminders]. What both sides take (the clock, the formatter, [AppInfo] and the
- * sharer) is core's `rememberCorePlatformModule`. Built in composition because Android needs a `Context`.
+/*
+ * Each platform's `platformModule` (Android's of a `Context`, iOS's and the desktop's of nothing) gives the Koin
+ * definitions for the interval side's platform services: [PlatformStorage], a [CuePlayer], a [BackgroundWorkout]
+ * and [PlanReminders]. What both sides take (the clock, the formatter, [AppInfo] and the sharer) is core's
+ * `corePlatformModule`. The app's entry point builds it once per process.
  */
-@Composable
-expect fun rememberPlatformModule(): Module

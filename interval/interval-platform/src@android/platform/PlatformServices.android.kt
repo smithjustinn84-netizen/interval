@@ -10,9 +10,6 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.speech.tts.TextToSpeech
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import co.touchlab.kermit.Logger
@@ -22,19 +19,19 @@ import org.koin.core.module.dsl.onClose
 import org.koin.core.module.dsl.withOptions
 import org.koin.dsl.module
 
-@Composable
-actual fun rememberPlatformModule(): Module {
-    val context = LocalContext.current.applicationContext
-    return remember(context) {
-        module {
-            single<PlatformStorage> { AndroidStorage(context) }
-            // Eager, so the speech engine has finished starting before the first workout cue.
-            single<CuePlayer>(createdAtStart = true) { AndroidCuePlayer(context) }.withOptions {
-                onClose { it?.release() }
-            }
-            single<BackgroundWorkout> { AndroidBackgroundWorkout(context) }
-            single<PlanReminders> { AndroidPlanReminders(context) }
+/**
+ * The interval side's services on Android, over the application's [context]. The [CuePlayer] is built on first
+ * use rather than with the container, which also starts for a reminder's alarm with no screen to cue: the app
+ * asks for it as its UI opens, so the speech engine has started before the first workout cue.
+ */
+fun platformModule(context: Context): Module = context.applicationContext.let { app ->
+    module {
+        single<PlatformStorage> { AndroidStorage(app) }
+        single<CuePlayer> { AndroidCuePlayer(app) }.withOptions {
+            onClose { it?.release() }
         }
+        single<BackgroundWorkout> { AndroidBackgroundWorkout(app) }
+        single<PlanReminders> { AndroidPlanReminders(app) }
     }
 }
 

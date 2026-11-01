@@ -36,6 +36,19 @@ complexity:
     allowedFunctionsPerClass: 15
 
 style:
+  ForbiddenImport:
+    # One container per process, started by the app's entry points (`initAppKoin`) and nowhere else: a library
+    # or a test that started or stopped the global one would leak it between tests. Tests build their own.
+    active: true
+    forbiddenImports:
+      - value: 'org.koin.core.context.startKoin'
+        reason: 'Only the app starts the container: initAppKoin.'
+      - value: 'org.koin.core.context.stopKoin'
+        reason: 'Only the app stops the container: stopAppKoin.'
+      - value: 'org.koin.core.context.GlobalContext'
+        reason: 'Take what you need by constructor: only the app reaches the container itself.'
+    # The app module (paths are relative to a module's group folder) and its hosts.
+    excludes: ['**/app/src/**', '**/desktopApp/**', '**/androidApp/**', '**/iosApp/**']
   MagicNumber:
     # As FunctionNaming: cover Amper's test@<platform>/ dirs too.
     excludes: ['**/test/**', '**/test@*/**']

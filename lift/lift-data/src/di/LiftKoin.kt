@@ -58,8 +58,8 @@ val liftDataModule: Module = module {
 
 /**
  * Lift's part of the app's container. [platformModule] supplies the database builder, the `Beeper` and the
- * `RestAlerts` (`lift-platform`'s `rememberLiftPlatformModule`); [storage] what is built from them. Core's
- * `rememberCorePlatformModule` supplies the [dev.justinsmith.interval.platform.WallClock], the
+ * `RestAlerts` (`lift-platform`'s `liftPlatformModule`); [storage] what is built from them. Core's
+ * `corePlatformModule` supplies the [dev.justinsmith.interval.platform.WallClock], the
  * [dev.justinsmith.interval.platform.TimestampFormatter] and the [dev.justinsmith.interval.platform.Sharer];
  * the app, the [dev.justinsmith.lift.data.IntervalActivity].
  */

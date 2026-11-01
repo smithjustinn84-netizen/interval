@@ -269,7 +269,7 @@ val hiitPreset: Preset = builtInPresets.single { it.name == "HIIT 30/30" }
 val hangboardPreset: Preset = builtInPresets.single { it.name == "Hangboard" }
 
 /**
- * Stands in for `rememberPlatformModule()`. Tests must never load the real one: on the JVM it writes
+ * Stands in for `platformModule`. Tests must never load the real one: on the JVM it writes
  * to the user's app-data directory and plays sound. What both sides take is core-testing's
  * [fakeCorePlatformModule].
  */

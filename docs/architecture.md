@@ -147,10 +147,10 @@ container; those edges are left out for legibility. `tools/check_module_rules.py
 
 The 2026-10-31 review ([architecture-review.md](architecture-review.md)) found four places where the code falls
 short of these principles. [sprint-architecture.md](sprint-architecture.md) plans the work. Until those tickets
-land, this document describes the code as it is, debt included:
+land, this document describes the code as it is, debt included. The first, a container that lived only as long as
+the Activity, is resolved: `initAppKoin` starts one per process, from Android's `IntervalApplication`, desktop's
+`main` and iOS's first frame.
 
-- **The Koin container lives as long as the Activity.** It is built in composition and held by a ViewModel
-  (`KoinHolder`), not built once per process. Services and receivers can't reach it.
 - **ViewModels own long-running work.** `WorkoutViewModel` runs the workout's ticker; `SessionViewModel` runs
   Lift's rest, EMOM and hold. `WorkoutService` reaches the workout through static fields in its companion, and
   only a rest keeps the process awake on Lift.

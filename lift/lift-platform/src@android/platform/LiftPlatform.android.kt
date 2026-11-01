@@ -1,10 +1,8 @@
 package dev.justinsmith.lift.platform
 
+import android.content.Context
 import android.media.AudioManager
 import android.media.ToneGenerator
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import dev.justinsmith.lift.data.LiftDatabase
@@ -14,26 +12,24 @@ import org.koin.core.module.dsl.onClose
 import org.koin.core.module.dsl.withOptions
 import org.koin.dsl.module
 
-@Composable
-actual fun rememberLiftPlatformModule(): Module = LocalContext.current.applicationContext.let { context ->
-    remember(context) {
-        module {
-            single<RoomDatabase.Builder<LiftDatabase>> {
-                Room.databaseBuilder<LiftDatabase>(context, context.getDatabasePath(LIFT_DATABASE).absolutePath)
-            }
-            single<Beeper> { ToneBeeper() }.withOptions {
-                onClose { it?.release() }
-            }
-            single<RestAlerts> { AndroidRestAlerts(context) }
+/** What Lift needs from Android, over the application's [context]. */
+fun liftPlatformModule(context: Context): Module = context.applicationContext.let { app ->
+    module {
+        single<RoomDatabase.Builder<LiftDatabase>> {
+            Room.databaseBuilder<LiftDatabase>(app, app.getDatabasePath(LIFT_DATABASE).absolutePath)
         }
+        single<Beeper> { ToneBeeper() }.withOptions {
+            onClose { it?.release() }
+        }
+        single<RestAlerts> { AndroidRestAlerts(app) }
     }
 }
 
 /**
  * Tones on STREAM_MUSIC, so beeps follow the media volume and mix over music, as Interval's do. The generator
  * holds an audio track, one of a few the system has and native memory the GC never weighs, so it is let go
- * with the container ([release]) rather than left to a finaliser: the container is built again with each
- * Activity, and each would otherwise leave a track behind.
+ * with the container ([release]) rather than left to a finaliser. The container lives as long as the process,
+ * so there is one generator, built on the first beep.
  */
 private class ToneBeeper : Beeper {
     private val tones: ToneGenerator? = runCatching {

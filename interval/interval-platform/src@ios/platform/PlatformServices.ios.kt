@@ -4,7 +4,6 @@ package dev.justinsmith.interval.platform
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import co.touchlab.kermit.Logger
@@ -58,18 +57,16 @@ import platform.UserNotifications.UNNotificationSound
 import platform.UserNotifications.UNTimeIntervalNotificationTrigger
 import platform.UserNotifications.UNUserNotificationCenter
 
-@Composable
-actual fun rememberPlatformModule(): Module = remember {
-    module {
-        single<PlatformStorage> { IosStorage() }
-        single<CuePlayer> { IosCuePlayer() }.withOptions {
-            onClose { it?.release() }
-        }
-        single<BackgroundWorkout> { IosBackgroundWorkout() }.withOptions {
-            onClose { (it as? IosBackgroundWorkout)?.release() }
-        }
-        single<PlanReminders> { IosPlanReminders() }
+/** The interval side's services on iOS. */
+fun platformModule(): Module = module {
+    single<PlatformStorage> { IosStorage() }
+    single<CuePlayer> { IosCuePlayer() }.withOptions {
+        onClose { it?.release() }
     }
+    single<BackgroundWorkout> { IosBackgroundWorkout() }.withOptions {
+        onClose { (it as? IosBackgroundWorkout)?.release() }
+    }
+    single<PlanReminders> { IosPlanReminders() }
 }
 
 /**

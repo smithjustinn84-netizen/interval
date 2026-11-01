@@ -6,6 +6,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 
 ## [0.3.0] — Unreleased
 
+### Changed
+- Opening the app again after backing out of it (Android) no longer reopens its databases and settings, and a
+  change made just before leaving is no longer at risk: what the app keeps now lives as long as its process.
+
 ### Added
 - Live Updates (Android 16 and later): a running workout and a rest between sets show as a chip with their
   clock in the status bar, and as a bar on the lock screen and in the shade. A workout of up to ten intervals
