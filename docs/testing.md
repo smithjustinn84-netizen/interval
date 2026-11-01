@@ -26,6 +26,7 @@ A test lives in the module of what it tests, so `./kotlin test -m <module> -p jv
 | Compose behavior (one screen) | `<feature>/test@jvm/<feature>/XScreenTest.kt` | Desktop JVM | `runDesktopComposeUiTest` |
 | Lift's flows (its pages end to end) | `lift/lift-nav/test@jvm/` (`liftAppTest`) | Desktop JVM | Lift's real entries over fake DI |
 | Navigation (whole app) | `apps/app/test@jvm/AppNavigationTest.kt`, `LiftFlowTest.kt` | Desktop JVM | `AppContent` over fake DI |
+| DI graph verification | `apps/app/test@jvm/di/VerifyAppModulesTest.kt` | Desktop JVM | Koin `verify()` |
 | Acceptance (a journey's spec) | `apps/app/test@jvm/acceptance/`, `lift/lift-nav/test@jvm/acceptance/` | Desktop JVM | `IntervalAcceptanceDriver`, `LiftAcceptanceDriver` |
 | End to end, on a device | `journeys/*.xml` | Android emulator, run by an agent | `android` CLI journeys |
 

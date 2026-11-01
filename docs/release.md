@@ -28,15 +28,15 @@ Both Android and iOS versions must be bumped in unison. CI will fail via `tools/
    In `apps/androidApp/module.yaml`:
    ```yaml
    android:
-     versionName: "0.2.0"
-     versionCode: 2
+     versionName: "0.3.0"
+     versionCode: 3
    ```
 2. **Update iOS**:
    In `apps/iosApp/module.xcodeproj/project.pbxproj`:
    Update all occurrences of:
    ```pbxproj
-   MARKETING_VERSION = 0.2.0;
-   CURRENT_PROJECT_VERSION = 2;
+   MARKETING_VERSION = 0.3.0;
+   CURRENT_PROJECT_VERSION = 3;
    ```
 3. **Verify parity**:
    ```sh
@@ -134,7 +134,8 @@ To change one later (a new password, say), run its command again: `gh secret set
 
 ## Follow-ups found during the sprint
 
-The next sprint's tickets, which take most of these up, are in [sprint-0.3.md](sprint-0.3.md).
+The next sprint's tickets, which take most of these up, are in [sprint-0.3.md](sprint-0.3.md) and
+[sprint-architecture.md](sprint-architecture.md).
 
 - **iOS: the launcher shortcuts.** Android's two (0.3) open the app through `App(shortcut = …)`; iOS would need
   `UIApplicationShortcutItem`s in `Info.plist` and a scene delegate's `performActionFor` handing the item's type
@@ -142,16 +143,23 @@ The next sprint's tickets, which take most of these up, are in [sprint-0.3.md](s
 - **Other workspaces' stacks.** Commits made in another jj workspace above the old `main` rebase onto the
   new one with `jj rebase -d main`.
 
+## Shipped in 0.3.0
+
+- **Import of the export**: Shipped in 0.3.0 (schema 1–3 support, range validation, duplicate handling, and atomic Room transactions).
+- **Health Connect weight read**: Read-only integration fetching latest 30-day weight on demand to refine calorie calculations.
+- **Live Updates**: Android 16+ status bar chips and lock-screen progress bar for ongoing workouts and rests.
+- **Warm-up & Cool-down**: Phase configuration on the timer, in presets, and supported by cues and Health Connect.
+- **Summary Reflection ("How was it?")**: 5-level perceived effort scale and notes across workouts and sessions.
+- **Muscle Balance**: 4-week sets aggregation across 7 muscle groups on the Lift tab.
+
 ## Left out on purpose
 
-- **Import** of the export: the file carries `"schema": 1` so a reader can be added without a format change;
-  merge rules and validation are a sprint of their own.
 - **HealthKit, widgets, Wear OS**: each a platform project. Health Connect's write side landed (the `HealthStore`
   in core-platform), and in 0.3 the body weight's read; HealthKit would be its iOS actual, and a watch's heart
   rate a layer on top.
 - **Localisation**: the built-in presets' names are stored data by design, and both text parsers are
   English-keyword; a second locale is a sprint, not a ticket.
 - **Splitting the `TooManyFunctions` classes** (`WorkoutViewModel`, `IntervalRepository`, `LiftRepository`,
-  `LiftDatabase`): real debt, blocking nothing.
+  `LiftDatabase`): planned in [sprint-architecture.md](sprint-architecture.md).
 - **iOS signing and an Apple team**, screenshot tests, coverage: out of the Android-only goal or blocked by
   the toolchain (see [testing.md](testing.md)).

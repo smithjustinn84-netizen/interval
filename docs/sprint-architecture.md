@@ -140,6 +140,12 @@ The cut line is after ticket 5.
   - rotation and "Don't keep activities" keep the back stack and the workout
   - `CLAUDE.md` (Conventions: DI) and `architecture.md` describe the process-scoped container.
 
+- As built: `initAppKoin` starts the container once per process from `IntervalApplication` (Android), `main()`
+  (Desktop), and iOS's first frame. Platform modules are plain functions (`androidPlatformModules(this)`).
+  `KoinHolder`, `preferenceStores`, and main-thread `runBlocking` are removed; databases remain open for the life
+  of the process. Desktop drains both repositories off the UI thread on exit. Detekt `ForbiddenImport` ensures
+  `startKoin`, `stopKoin`, and `GlobalContext` stay confined to `apps/`.
+
 **3. Reminders that keep themselves going** · S · A2, A1d
 - `PlanAlarms` stops being an `object` with its own DataStore and becomes a class in the container.
   `PlanReminderReceiver` gets it, and `PlanReminderScheduler`, through `KoinComponent` (now possible after
@@ -270,6 +276,12 @@ The cut line is after ticket 5.
   - `verifyAppModules` passes
   - at least `GearViewModelTest` and `TimerViewModelTest` run over a narrow in-memory fake
   - `CLAUDE.md`'s Screens and DI conventions say `koinViewModel`.
+
+- As built (Koin half): Each feature declares its ViewModels in a Koin module (`timerModule`, `presetsModule`,
+  `workoutModule`, `settingsModule`, `historyModule`, `liftTodayModule`, `liftSessionModule`, `liftLibraryModule`).
+  Routes resolve them via `koinViewModel`, passing keys with `parametersOf`. Positional `scope.get()` calls are
+  removed. `VerifyAppModulesTest` validates the entire DI graph using Koin's `verify()`. Role interfaces (C3)
+  remain to be completed.
 
 **8. `SessionViewModel`, split** · M · D1, D3, D4, F2
 - `SetDraftEditor`: a pure state holder for the draft, its clamping and suggestions.

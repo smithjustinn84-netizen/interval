@@ -34,21 +34,21 @@ Built with **Compose Multiplatform** for **Android**, **iOS**, and **Desktop (JV
 | 1. Precision Timer Setup | 2. Natural Language Input | 3. Active Workout Ring | 4. Workout Summary |
 |:---:|:---:|:---:|:---:|
 | <img src="docs/screenshots/01_timer_setup.png" width="220" alt="Timer Setup"/> | <img src="docs/screenshots/10_describe_workout.png" width="220" alt="Describe in Words"/> | <img src="docs/screenshots/02_active_workout.png" width="220" alt="Active Workout"/> | <img src="docs/screenshots/03_workout_summary.png" width="220" alt="Workout Summary"/> |
-| *Work, rest, rounds steppers with calorie burn estimate* | *Type "45/15 x10 on rower" for instant parsing* | *Vibrant circular ring, phase countdown & controls* | *Detailed statistics, calories burned & weekly streaks* |
+| *Work, rest, rounds, optional warm-up & cool-down with calorie estimate* | *Type "5 min warm-up, 40/20 x8 on rower" for instant parsing* | *Vibrant circular ring, phase countdown & controls* | *Detailed statistics, calories burned, "How was it?" effort & notes* |
 
 ### 🏋️ Strength & Kettlebell Tracking (Lift)
 
 | 1. Lift Dashboard | 2. Active Session & Rest Clock | 3. Exercise Library | 4. Interval Presets |
 |:---:|:---:|:---:|:---:|
 | <img src="docs/screenshots/05_lift_today.png" width="220" alt="Lift Dashboard"/> | <img src="docs/screenshots/06_lift_session.png" width="220" alt="Active Session"/> | <img src="docs/screenshots/07_exercise_library.png" width="220" alt="Exercise Library"/> | <img src="docs/screenshots/04_presets_library.png" width="220" alt="Preset Library"/> |
-| *Weekly goal ring, current program & quick start* | *Sets, weight × reps logging & automatic rest clock* | *100+ movements with muscle filters & form cues* | *Tabata, HIIT, EMOM, Hangboard & custom cards* |
+| *Weekly goal ring, 4-week muscle balance & quick start* | *Sets, weight × reps logging & automatic rest clock* | *100+ movements with muscle filters & form cues* | *Tabata, HIIT, EMOM, Hangboard & custom cards* |
 
 ### 📅 Unified Training Log & Adaptive Layouts
 
 | Unified Training Log & Calendar | Adaptive Tablet & Desktop Experience |
 |:---:|:---:|
 | <img src="docs/screenshots/08_history_calendar.png" width="320" alt="Training Log & Calendar"/> | <img src="docs/screenshots/09_tablet_adaptive.png" width="520" alt="Tablet & Desktop Multi-pane Layout"/> |
-| *Unified history uniting cardio intervals and strength sessions with weekly volume charts and goal tracking* | *Adaptive two-pane layout built with Navigation 3 and Compose Adaptive Scaffold that scales seamlessly from phones to tablets and desktop* |
+| *Unified history uniting cardio intervals and strength sessions with workout-kind bars, perceived effort ratings, notes, and 12-week volume charts* | *Adaptive two-pane layout built with Navigation 3 and Compose Adaptive Scaffold that scales seamlessly from phones to tablets and desktop* |
 
 ---
 
@@ -56,27 +56,33 @@ Built with **Compose Multiplatform** for **Android**, **iOS**, and **Desktop (JV
 
 ### ⏱️ Precision Interval Timer
 - **Customizable Intervals**: Precise configuration for work, rest, and round durations with rapid steppers and quick-pick sheets.
-- **Natural Language Parsing**: Describe workouts in plain English (e.g., `"40/20 x8 on the rower"`, `"tabata"`, `"hangboard 7/3 x6"`), automatically parsed into timer configurations.
+- **Warm-Up & Cool-Down**: Optional warm-up before interval rounds and cool-down stretch after, configured on the timer, in presets, or described in plain text.
+- **Natural Language Parsing**: Describe workouts in plain English (e.g., `"5 min warm-up, 40/20 x8 on rower, 3 min cool down"`, `"tabata"`, `"hangboard 7/3 x6"`), automatically parsed into timer configurations.
 - **Audio & Haptic Cues**: High-contrast audible beeps, spoken phase cues via system text-to-speech, halfway warnings, and vibration pulses.
 - **Visual Timelines**: Scaled phase rings and progress timelines that dynamically adjust to any aspect ratio.
+- **Android 16 Live Updates**: Running workouts and rest timers show as interactive status-bar chips with real-time countdown, phase-colored progress on the lock screen, and notification controls.
 - **Background Persistence**: Accurately tracks when backgrounded or locked — Android uses a foreground service with lock-screen controls; iOS schedules local notifications ahead per phase transition.
+- **App Shortcuts**: Long-press launcher shortcuts on Android to quickly "Start a workout" or "Start a Lift session" without interrupting any active workout.
 
 ### 🏋️ Strength & Kettlebell Training (Lift)
 - **Built-in & Custom Programs**: 29 built-in programs across 6 training families (Simple & Sinister, Rite of Passage, Quick & the Dead, etc.), with an interactive block and rep-range editor.
 - **100+ Exercise Library**: Extensive movement catalog categorized by muscle groups (kettlebell, barbell, bodyweight, bands) complete with form cues and custom movement creation.
 - **Session Tracking**: Sets, weights, reps, EMOM timers, hold clocks, and automatic rest intervals.
-- **Screen-Off Rest Alerts**: Android counts rest on the lock screen and beeps when finished; iOS fires local notifications.
+- **Muscle Balance**: 4-week balance card tracking sets across 7 key muscle groups (chest, shoulders, back, arms, core, glutes & hamstrings, quads & calves), separating primary and assisting volume and highlighting unworked areas.
+- **Screen-Off Rest Alerts**: Android counts rest on the lock screen with Live Update chips and beeps when finished; iOS displays in-app banners when open and local notifications when locked.
 - **Personal Records (PRs)**: Automatic PR detection and volume load progression tracking.
 
 ### 📅 Unified History, Planning & Streaks
-- **Integrated Training Log**: Daily calendar view, 12-week volume charts, weekly goals, and streak tracking that unifies cardio and strength workouts.
+- **Integrated Training Log**: Daily calendar view, 12-week volume charts, weekly goals, workout kind breakdowns, and streak tracking that unifies cardio and strength workouts.
+- **Post-Workout Reflection ("How was it?")**: Log perceived exertion (Easy, Steady, Hard, Very hard, All out) and a custom note upon completing any interval or Lift workout; reflected in history, exports, summaries, and Health Connect notes.
 - **Routines & Reminders**: Schedule recurring workouts by weekday with reboot-resilient notification reminders.
-- **Calorie Estimation**: Dynamic calorie expenditure calculations based on exercise type, duration, and body weight.
+- **Calorie Estimation & Health Connect**: Dynamic calorie expenditure calculations based on exercise type, duration, and body weight. Syncs completed interval workouts and Lift sessions to Health Connect as exercise sessions with notes and calories, and provides one-tap reading of latest weight without unwanted background syncing.
 
 ### 🔒 Privacy-First & Offline
 - **Zero Tracking**: No accounts, no sign-ups, no ads, and zero analytics or telemetry.
-- **Local SQLite Storage**: Encapsulated Room multiplatform database running locally on device storage.
-- **Full Data Ownership**: Export entire workout histories to standard JSON (schema 1) with seamless restore and Android system backup support.
+- **Local SQLite Storage**: Encapsulated Room multiplatform database running locally on device storage with atomic transactions.
+- **Full Data Ownership & Portability**: Export your entire workout histories, presets, routines, settings, programs, and gear to standard JSON (schema 3), and import files back safely with duplicate prevention and domain range validation.
+- **Android Backup Support**: Native integration with Android system backup and device-to-device migration.
 - **Accessibility**: Semantic headings, full TalkBack and VoiceOver navigation, and reduced-motion mode.
 
 ---
@@ -133,8 +139,9 @@ interval/
 ### Key Libraries & Tools
 - **UI Framework**: [Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform) (Desktop, Android, iOS)
 - **Navigation**: [Jetpack Navigation 3](https://developer.android.com/guide/navigation) with adaptive multi-pane layouts
-- **Dependency Injection**: [Koin](https://insert-koin.io/) & `koin-compose`
+- **Dependency Injection**: [Koin](https://insert-koin.io/) & `koin-compose` with process-scoped initialization, feature modules, and compile-time verification (`VerifyAppModulesTest`)
 - **Database & Persistence**: [Room KMP](https://developer.android.com/kotlin/multiplatform/room) with SQLite driver + AndroidX DataStore
+- **Health Platform**: [Health Connect](https://developer.android.com/health-and-fitness/guides/health-connect) on Android for exercise sessions, calorie logs, and weight reads
 - **Build Toolchain**: [Kotlin Toolchain (Amper)](https://kotlin-toolchain.org/latest/) — **No Gradle daemon, zero `build.gradle.kts` files**
 - **Architecture Guide**: For in-depth rules and layer boundaries, see [docs/architecture.md](./docs/architecture.md).
 

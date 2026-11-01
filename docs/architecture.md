@@ -143,15 +143,28 @@ container; those edges are left out for legibility. `tools/check_module_rules.py
 5. **Multiplatform-First**: All feature code and screens are written in Compose Multiplatform. Platform-specific code
    (`expect`/`actual` or platform-specific interfaces) is kept behind injected abstractions.
 
-### Known architectural debt
+### Known architectural debt & resolutions
 
-The 2026-10-31 review ([architecture-review.md](architecture-review.md)) found four places where the code falls
-short of these principles. [sprint-architecture.md](sprint-architecture.md) plans the work. Until those tickets
-land, this document describes the code as it is, debt included. The first, a container that lived only as long as
-the Activity, is resolved: `initAppKoin` starts one per process, from Android's `IntervalApplication`, desktop's
-`main` and iOS's first frame. So is the running workout's half of the second: `WorkoutSession`, a Koin single, runs
-it, `WorkoutService` and iOS's keeper reach it as the `ActiveWorkout` port, and `WorkoutViewModel` only maps its state.
+The 2026-10-31 review ([architecture-review.md](architecture-review.md)) audited the architecture against lifecycle,
+modularity, and data-correctness guidelines. [sprint-architecture.md](sprint-architecture.md) and sprint 0.3 resolved
+several core issues:
 
+- **Resolved — Container lifetime (A1)**: `initAppKoin` starts one Koin container per process from Android's `IntervalApplication`,
+  desktop's `main`, and iOS's first frame. `KoinHolder`, main-thread `runBlocking`, and global DataStore maps have been eliminated;
+  databases stay open across Activity restarts.
+- **Resolved — ViewModels in Koin (C4)**: ViewModels are declared in their respective feature Koin modules (`<feature>/src/di/`)
+  and resolved with `koinViewModel { parametersOf(id) }`. Positional `scope.get()` calls are removed, and `VerifyAppModulesTest`
+  verifies the entire graph in CI.
+- **Resolved — Atomic transactions & plan updates (E1, E2)**: `changeSessionPlan` applies plan edits atomically inside the writer,
+  and multi-statement DAO operations (`finishActive`, `discardActive`, `deleteProgram`, `removeOrArchive`) run in `@Transaction` methods.
+- **Resolved — Domain invariants & edge guards (E3, E5, E6, D5)**: `IntervalConfig` enforces ranges at construction and provides
+  `sanitized()` factories for storage mappers. `reviewImport` fails gracefully on corrupted files, and preset flows are derived safely.
+- **Resolved — Rest wake lock renewal (B4)**: `RestService` renews the device wake lock on every rest countdown.
+- **Resolved — The running workout owned by the process (B1, D2)**: `WorkoutSession`, a Koin single, runs the workout
+  (the ticker, cues, course, checkpoint and the service's lifetime); `WorkoutService` and iOS's keeper reach it as
+  the `ActiveWorkout` port, and `WorkoutViewModel` only maps its state. It ends when its page leaves the back stack.
+
+**Remaining open debt:**
 - **A ViewModel owns long-running work.** `SessionViewModel` runs Lift's rest, EMOM and hold, and only a rest keeps
   the process awake on Lift.
 - **The repositories are concrete and wide.** `IntervalRepository` and `LiftRepository` have no interfaces, and
@@ -210,6 +223,11 @@ The application uses Jetpack Navigation 3 with a single, unified back stack host
      navigation rail on tablets and wide desktop windows.
    - Pushed pages render with predictive back gestures (`backPreviewTransition`, `backPreviewCorners`), sliding the
      underlying tab smoothly into view.
+5. **App Shortcuts & Launcher Intent Routing**:
+   - Android launcher shortcuts ("Start a workout" and "Start a Lift session", declared in `shortcuts.xml`) route through
+     a dedicated `ShortcutActivity` that passes a `Shortcut` enum into `MainActivity` with `SINGLE_TOP | CLEAR_TOP`.
+   - `App(shortcut: Shortcut?, onShortcutTaken: () -> Unit)` inspects the shortcut: if a workout is already in progress,
+     it preserves it; otherwise it navigates directly to the target tab and pushes the requested action.
 
 ---
 
@@ -268,8 +286,13 @@ All disk I/O is encapsulated behind repositories.
 
 ### 3. Backup & JSON Data Portability
 - **Android System Backup**: Full cloud backup and device-to-device migration configured via Android Backup rules.
-- **JSON Export and Import (versioned, `ExportBundle.SCHEMA`)**: Settings > Your data > Export bundles the entire user history, presets, settings, and Lift
-  database into a single validated JSON document sharable via the system share sheet.
+- **JSON Export & Import (`ExportBundle.SCHEMA = 3`)**:
+  - **Export**: Settings > Your data > Export bundles the entire database (workouts, presets, routines, settings,
+    Lift sessions, programs, exercises, and gear) into a single validated JSON document sharable via system share.
+  - **Import**: Settings > Your data > Import parses exported files across schema versions 1 to 3 via `AppDataImporter`
+    and `ImportPlanner`. It inspects the file, checks schema compatibility, rejects corrupted or newer versions,
+    strictly validates all domain ranges, prevents duplicates, assigns clean local IDs, and commits changes in atomic
+    Room transactions (`ImportDao`, `SerialWriter.await`). Settings are imported optionally on user confirmation.
 
 ---
 
@@ -285,7 +308,7 @@ flowchart TD
 
     subgraph AndroidExecution ["Android"]
         Service["Foreground Service (WorkoutService / RestService)"]
-        Notif["Notification with Pause/End & Live Countdown"]
+        Notif["Notification with Live Updates & Controls"]
         Service --> Notif
     end
 
@@ -310,11 +333,30 @@ flowchart TD
   - `WorkoutService` runs as a foreground service with a persistent notification (`specialUse` type) allowing the user
     to view current intervals and tap Pause or End directly from the lock screen. It injects the process's
     `ActiveWorkout` (the `WorkoutSession`), shows its `status` and acts on it; nothing is shared through statics.
-  - `RestService` maintains countdown awareness during Lift rest periods, beeping via the device audio subsystem when
-    the rest concludes.
+  - **Live Updates (Android 16+)**: Built with `NotificationCompat.ProgressStyle` and `setRequestPromotedOngoing(true)`.
+    Promotes an active workout to a compact chip with clock countdown in the status bar, and displays a phase-colored
+    progress bar on the lock screen and notification shade.
+  - `RestService` maintains countdown awareness during Lift rest periods, renewing wake locks per rest and beeping via
+    the device audio subsystem when the rest concludes.
 - **iOS**:
   - Rather than maintaining power-draining background audio sessions, iOS schedules local notifications (`UNUserNotificationCenter`)
     in advance for each upcoming interval or rest expiration. Returning to the app cancels remaining scheduled alerts.
+  - Plan reminders display in-app banner alerts if due while the app is foregrounded (`UNUserNotificationCenterDelegate` in `iosApp.swift`).
+- **Warm-Up & Cool-Down Phases**:
+  - `IntervalConfig` supports optional `warmUpSeconds` and `coolDownSeconds`. The workout engine runs them in sequence
+    (`GetReady` → `WarmUp` → rounds → `CoolDown`).
+  - Both phases are visually distinguished in the timeline, announced by spoken/audio cues, tracked in Live Updates,
+    and written as distinct exercise activity spans to Health Connect.
+- **Finish Reflection ("How was it?")**:
+  - Finished interval workouts and Lift sessions prompt a lightweight reflection row (`HowWasIt` in `core`): a 5-level
+    perceived effort scale (`PerceivedEffort`: Easy, Steady, Hard, Very hard, All out) and an optional note.
+  - Saved immediately to database records, preserved in JSON exports, and updated in Health Connect session notes
+    using versioned updates (`clientRecordVersion`).
+- **Muscle Balance Tracking (Lift)**:
+  - `MuscleBalance` (`lift-domain`) analyzes logged lifting sessions across a rolling 28-day window, aggregating sets
+    into seven major muscle groups (chest, shoulders, back, arms, core, glutes & hamstrings, quads & calves).
+  - Differentiates primary working sets from assisting sets (`Opacity.LIGHT_SHARE`) and identifies unworked muscle groups
+    in `BalanceCard` (`lift-today`).
 - **Audio & Cues**:
   - Audio cues are managed by `CuePlayer` (interval) and `Beeper` (bells).
   - Voice cues use system text-to-speech queues (`SpeechQueue`) with localized strings.
