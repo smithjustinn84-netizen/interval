@@ -53,11 +53,19 @@ data class MuscleBalance(val loads: List<MuscleLoad>) {
          */
         fun of(sessions: List<LiftSession>): MuscleBalance? {
             if (sessions.size < MIN_SESSIONS) return null
+            return ofSets(sessions.flatMap { it.sets }.map { it.exercise to it.side })
+        }
+
+        /**
+         * The balance of [sets], each an exercise and the side it was done on (null for both, or none), counted as
+         * [of] counts a logged set: what a program plans as well as what was done.
+         */
+        fun ofSets(sets: List<Pair<Exercise, Side?>>): MuscleBalance {
             val worked = MuscleGroup.entries.associateWith { 0.0 }.toMutableMap()
             val assisted = MuscleGroup.entries.associateWith { 0.0 }.toMutableMap()
-            sessions.flatMap { it.sets }.forEach { set ->
-                val weight = if (set.side == null) 1.0 else HALF
-                val (most, also) = groupsOf(set.exercise)
+            sets.forEach { (exercise, side) ->
+                val weight = if (side == null) 1.0 else HALF
+                val (most, also) = groupsOf(exercise)
                 most.forEach { worked[it] = worked.getValue(it) + weight }
                 (also - most).forEach { assisted[it] = assisted.getValue(it) + weight }
             }
@@ -84,6 +92,13 @@ data class MuscleBalance(val loads: List<MuscleLoad>) {
         private const val HALF = 0.5
     }
 }
+
+/**
+ * What a week of this program plans, by muscle group: its days taken in turn for a week's [Program.daysPerWeek],
+ * each of their planned sets counted as [MuscleBalance.of] counts a set done.
+ */
+fun Program.weekBalance(): MuscleBalance =
+    MuscleBalance.ofSets((1..daysPerWeek).flatMap { day(it).plannedSets() }.map { it.exercise to it.side })
 
 /** How many days back the Lift tab's balance looks, today among them. */
 const val BALANCE_DAYS = 28
