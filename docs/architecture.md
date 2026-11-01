@@ -16,87 +16,110 @@ The system is structured around two distinct workout domains unified within a sh
 
 ```mermaid
 graph TD
-    subgraph Applications ["Application Targets"]
-        AndroidApp["androidApp (Android)"]
-        IOSApp["iosApp (iOS Swift / ViewController)"]
-        DesktopApp["desktopApp (Desktop JVM)"]
+    subgraph Applications ["Application targets"]
+        AndroidApp["androidApp"]
+        IOSApp["iosApp"]
+        DesktopApp["desktopApp"]
     end
 
-    subgraph Container ["Shared Container"]
-        Shared["shared (App.kt, Navigation 3, AppKoin)"]
-    end
+    App["app (App.kt, Navigation 3, AppKoin, export and import)"]
 
-    subgraph Features ["Feature Modules"]
+    subgraph IntervalFeatures ["Interval features"]
         Timer["interval-timer"]
         Workout["interval-workout"]
         Presets["interval-presets"]
-        History["interval-history"]
+        History["interval-history (History and Plan)"]
         Settings["interval-settings"]
-        LiftEntry["bells"]
+    end
+
+    subgraph LiftFeatures ["Lift features"]
+        LiftNav["lift-nav (routes and entries)"]
         LiftToday["lift-today"]
         LiftSession["lift-session"]
         LiftLib["lift-library"]
     end
 
-    subgraph UI ["Shared UI & Components"]
+    subgraph SharedUI ["Shared UI"]
         IntervalUI["interval-ui"]
         LiftUI["lift-ui"]
-        Core["core (Theme, Tokens, NavigationArea, Components)"]
+        Core["core (theme, tokens, components, nav)"]
     end
 
-    subgraph DomainData ["Domain & Data"]
-        IntervalData["interval-data (Room, DataStore)"]
-        IntervalDomain["interval-domain (Engine, Models)"]
-        CorePlatform["core-platform (Clocks, Formatter, Storage Plumbing)"]
-        CoreTime["core-time (Calendar & Clock Maths)"]
-        LiftData["lift-data (Room)"]
+    subgraph Platform ["Platform services"]
+        IntervalPlatform["interval-platform (cues, WorkoutService, reminders)"]
         LiftPlatform["lift-platform (Beeper, RestAlerts)"]
-        LiftDomain["lift-domain (Programs, Models)"]
-        IntervalPlatform["interval-platform (Cues, Background Services)"]
     end
 
-    AndroidApp --> Shared
-    IOSApp --> Shared
-    DesktopApp --> Shared
+    subgraph Data ["Data"]
+        IntervalData["interval-data (Room, DataStore)"]
+        LiftData["lift-data (Room, LiftActivity, IntervalActivity)"]
+    end
 
-    Shared --> Features
-    Shared --> Core
+    subgraph Pure ["Pure layers"]
+        IntervalDomain["interval-domain"]
+        LiftDomain["lift-domain"]
+        CorePlatform["core-platform (clocks, Health, storage plumbing)"]
+        CoreTime["core-time"]
+    end
 
-    Timer --> IntervalUI
-    Workout --> IntervalUI
+    AndroidApp --> App
+    IOSApp --> App
+    DesktopApp --> App
+
+    App --> Timer
+    App --> Workout
+    App --> Settings
+    App --> History
+    App --> LiftNav
+    App --> IntervalPlatform
+    App --> LiftPlatform
+
+    Timer --> Presets
+    Workout --> Presets
+    Workout --> IntervalPlatform
+    Workout --> LiftData
+    Presets --> IntervalData
     Presets --> IntervalUI
-    History --> IntervalUI
+    Settings --> IntervalPlatform
     Settings --> IntervalUI
+    History --> IntervalData
+    History --> IntervalUI
+    History --> IntervalPlatform
+    History --> LiftData
+    History --> LiftUI
 
-    LiftEntry --> LiftUI
+    LiftNav --> LiftToday
+    LiftNav --> LiftSession
+    LiftNav --> LiftLib
+    LiftSession --> LiftLib
+    LiftSession --> LiftPlatform
+    LiftToday --> LiftData
     LiftToday --> LiftUI
-    LiftSession --> LiftUI
+    LiftLib --> LiftData
     LiftLib --> LiftUI
 
     IntervalUI --> Core
+    IntervalUI --> IntervalDomain
     LiftUI --> Core
+    LiftUI --> LiftDomain
     Core --> CorePlatform
-    CorePlatform --> CoreTime
-    IntervalDomain --> CoreTime
-    IntervalData --> CorePlatform
-    LiftData --> CorePlatform
 
-    Timer --> IntervalData
-    Workout --> IntervalData
-    Presets --> IntervalData
-    History --> IntervalData
-    Settings --> IntervalData
-
-    LiftToday --> LiftData
-    LiftSession --> LiftData
-    LiftLib --> LiftData
+    IntervalPlatform --> IntervalData
+    IntervalPlatform --> Core
+    LiftPlatform --> LiftData
+    LiftPlatform --> CorePlatform
 
     IntervalData --> IntervalDomain
+    IntervalData --> CorePlatform
     LiftData --> LiftDomain
-    LiftSession --> LiftPlatform
-    LiftPlatform --> LiftData
-    IntervalPlatform --> IntervalData
+    LiftData --> CorePlatform
+    IntervalDomain --> CoreTime
+    CorePlatform --> CoreTime
 ```
+
+Direct dependencies only, as each `module.yaml` lists them; every Compose feature module also takes `core` through
+the `compose-lib` template. `app` also lists each side's domain, data and `interval-ui` to assemble the
+container; those edges are left out for legibility. `tools/check_module_rules.py` is the authority.
 
 ---
 
@@ -115,9 +138,28 @@ graph TD
 3. **Pure Domains**: `interval-domain` and `lift-domain` contain only pure Kotlin models and calculation engines.
    They have no dependencies on Compose, Android, or third-party persistence libraries.
 4. **Offline-First & Local-Only**: All user data resides on device. There is no remote backend, telemetry, or user
-   account requirement. Complete user state can be backed up natively or exported to JSON (schema 1).
+   account requirement. Complete user state can be backed up natively, or exported to versioned JSON and imported
+   back (`ExportBundle.SCHEMA`).
 5. **Multiplatform-First**: All feature code and screens are written in Compose Multiplatform. Platform-specific code
    (`expect`/`actual` or platform-specific interfaces) is kept behind injected abstractions.
+
+### Known architectural debt
+
+The 2026-10-31 review ([architecture-review.md](architecture-review.md)) found four places where the code falls
+short of these principles. [sprint-architecture.md](sprint-architecture.md) plans the work. Until those tickets
+land, this document describes the code as it is, debt included:
+
+- **The Koin container lives as long as the Activity.** It is built in composition and held by a ViewModel
+  (`KoinHolder`), not built once per process. Services and receivers can't reach it.
+- **ViewModels own long-running work.** `WorkoutViewModel` runs the workout's ticker; `SessionViewModel` runs
+  Lift's rest, EMOM and hold. `WorkoutService` reaches the workout through static fields in its companion, and
+  only a rest keeps the process awake on Lift.
+- **The repositories are concrete and wide.** `IntervalRepository` and `LiftRepository` have no interfaces, and
+  every ViewModel takes the whole of one. `LiftActivity`/`IntervalActivity` are the pattern to follow.
+- **Two ViewModels do too much.** `SessionViewModel` and `WorkoutViewModel` (`@Suppress(TooManyFunctions)`).
+
+New code should not add to these: inject a narrow interface rather than a repository, and keep new long-running
+work out of `viewModelScope`.
 
 ---
 
@@ -225,7 +267,7 @@ All disk I/O is encapsulated behind repositories.
 
 ### 3. Backup & JSON Data Portability
 - **Android System Backup**: Full cloud backup and device-to-device migration configured via Android Backup rules.
-- **JSON Export (Schema 1)**: Settings > Your data > Export bundles the entire user history, presets, settings, and Lift
+- **JSON Export and Import (versioned, `ExportBundle.SCHEMA`)**: Settings > Your data > Export bundles the entire user history, presets, settings, and Lift
   database into a single validated JSON document sharable via the system share sheet.
 
 ---
