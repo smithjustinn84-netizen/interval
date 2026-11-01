@@ -12,10 +12,12 @@ import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.data.IntervalWorkout
 import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.domain.BALANCE_DAYS
 import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.DEFAULT_BELL_KG
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.MuscleBalance
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.ProgramKey
@@ -61,6 +63,8 @@ data class TodayUiState(
     val bells: Map<Pair<Exercise, Boolean>, Double> = emptyMap(),
     /** Workouts a week the user aims for, lifts and intervals alike, as set on Plan; null for none. */
     val weeklyGoal: Int? = null,
+    /** Sets per muscle group over the last [BALANCE_DAYS] days; null until two sessions finished in them. */
+    val balance: MuscleBalance? = null,
 ) {
     val weekCount: Int get() = week.sumOf { it.bells + it.interval }
 
@@ -131,6 +135,7 @@ class TodayViewModel(
     ): TodayUiState {
         val today = timestamps.dayNumber(clock.nowMillis())
         val bellsDays = sessions.mapNotNull { it.finishedAtEpochMillis?.let(timestamps::dayNumber) }
+        val balanceFrom = today - BALANCE_DAYS + 1
         val intervalDays = interval.map { timestamps.dayNumber(it.finishedAtEpochMillis) }
         val start = weekStartOf(today)
         val last = sessions.firstOrNull()
@@ -151,6 +156,12 @@ class TodayViewModel(
             }.orEmpty(),
             inProgress = active != null,
             openHasSets = !active?.sets.isNullOrEmpty(),
+            // The session in progress is not among [sessions]: its sets count once it finishes.
+            balance = MuscleBalance.of(
+                sessions.filter { session ->
+                    session.finishedAtEpochMillis?.let(timestamps::dayNumber)?.let { it in balanceFrom..today } == true
+                },
+            ),
             bells = sessions.setsOldestFirst().let { history ->
                 kettlebellLifts.flatMap {
                     listOf(it to false, it to true)

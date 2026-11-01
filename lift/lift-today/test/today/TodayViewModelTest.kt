@@ -6,7 +6,11 @@ import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.data.SessionEntity
+import dev.justinsmith.lift.data.SetEntity
+import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.DEFAULT_BAR_KG
+import dev.justinsmith.lift.domain.MuscleGroup
 import dev.justinsmith.lift.domain.barbellLifts
 import dev.justinsmith.lift.fakes.FakeIntervalActivity
 import dev.justinsmith.lift.fakes.FakeLiftStorage
@@ -24,6 +28,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class TodayViewModelTest {
     private val storage = FakeLiftStorage()
@@ -79,6 +84,34 @@ class TodayViewModelTest {
         assertEquals(4L, today.state.value.week.single { it.today }.epochDay)
         assertEquals(4L, today.state.value.week.first().epochDay)
         today.viewModelScope.cancel()
+    }
+
+    @Test
+    fun `the balance counts the sessions finished in the last four weeks once two are`() {
+        // Today is epoch day 100: day 73 is the window's first, day 72 just outside it.
+        val now = 100 * DAY_MILLIS + 1_000
+        finished("old", day = 72, BuiltInExercise.BarbellBenchPress)
+        finished("first", day = 73, BuiltInExercise.GobletSquat)
+        val today =
+            TodayViewModel(repository, FakeIntervalActivity(), FixedTimestampFormatter, clock = {
+                now
+            }, computation = main)
+        assertNull(today.state.value.balance)
+
+        finished("second", day = 100, BuiltInExercise.GobletSquat)
+        // An open session's sets wait until it finishes.
+        repository.startSession(null)
+        repository.logSet(BuiltInExercise.BarbellBenchPress, 60.0, 5, null)
+
+        val balance = today.state.value.balance!!
+        assertEquals(2.0, balance.loads.single { it.group == MuscleGroup.Legs }.worked)
+        assertEquals(0.0, balance.loads.single { it.group == MuscleGroup.Chest }.total)
+    }
+
+    private fun finished(uid: String, day: Long, exercise: BuiltInExercise) {
+        val at = day * DAY_MILLIS + 1_000
+        storage.sessions.sets.value += SetEntity(0, uid, exercise.key, 24.0, 10, null, at)
+        storage.sessions.sessions.value += SessionEntity(uid, at, at + 60_000, "", at)
     }
 }
 

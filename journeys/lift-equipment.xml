@@ -2,7 +2,8 @@
   <description>
     One free session logging a kettlebell set, a band set, a timed hold on one side and a bodyweight set
     with weight added. Each set is checked in its own words, Moved is checked to count only the weighed
-    load, and the session is finished. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
+    load, and the session is finished. A second session of one goblet squat then makes two, and the Lift tab's
+    balance counts their sets per muscle group. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
     <action>Tap the "Lift" tab</action>
@@ -42,5 +43,10 @@
     <action>Verify that the summary shows "Done", "Counts toward your week and your goal", and under "New records" all four in their own words: "Two-hand swing" with "Heaviest 16 kg × 10", "Band pull-apart" with "Heaviest Heavy × 10", "Side plank" with "Longest 0:45" and "Push-up" with "Most added +8 kg × 10"</action>
     <action>Tap "Done"</action>
     <action>Verify that the Lift tab shows "Last session" with "Two-hand swing and 3 more", "4 sets" and "240 kg"</action>
+    <action>Scroll down to "Exercises" and verify that no "Balance" card is shown: one session is not enough</action>
+    <action>Tap "Start session", then "Add set or EMOM" in the title bar, then "Change" on the exercise card</action>
+    <action>Type "goblet" into "Search exercises" and tap "Goblet squat"</action>
+    <action>Tap "Log set" at the bottom of the sheet, then "Finish", then "Done"</action>
+    <action>Scroll down to the "Balance" card and verify that it says "Sets, last 4 weeks" and lists "Chest", "Shoulders", "Back", "Arms", "Core", "Glutes and hamstrings" at "2" and "Quads and calves" at "1", with "Worked most" and "Assisted" under the bars</action>
   </actions>
 </journey>

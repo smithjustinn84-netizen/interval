@@ -50,6 +50,18 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
         lines.forEach { see(hasText(it, substring = true)) }
     }
 
+    /** The balance waits for two sessions: with Today's last card in view, there is none. */
+    fun seeNoBalanceYet() {
+        scrollTo("Exercises")
+        seeNo("Balance")
+    }
+
+    /** Today's balance, each of [rows] a group's line as a screen reader says it ("Back: 2 sets worked it most"). */
+    fun seeBalance(vararg rows: String) {
+        scrollTo("Balance")
+        rows.forEach { see(hasContentDescription(it, substring = true)) }
+    }
+
     fun openEquipment() {
         tapDescribed("Your equipment and records")
         see("Your bar")

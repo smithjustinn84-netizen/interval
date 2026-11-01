@@ -213,6 +213,9 @@ object Opacity {
 
     /** A calendar day outside the month on show. */
     const val OUTSIDE_MONTH = 0.4f
+
+    /** The lighter share of a bar: on the Lift tab's balance, the sets that only assisted a muscle. */
+    const val LIGHT_SHARE = 0.4f
 }
 
 /**

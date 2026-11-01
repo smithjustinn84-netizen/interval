@@ -36,6 +36,9 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   your unit. It is taken only when you tap it, never on its own, and the sheet then says where it came from.
   Health Connect's sheet now also asks to read your weight; if you connected before this version, turn Health
   Connect off and on in Settings to be asked.
+- Balance on the Lift tab: once two sessions are in the last four weeks, a card counts their sets per muscle
+  group (chest, shoulders, back, arms, core, glutes and hamstrings, quads and calves), what worked each most and,
+  lighter, what only assisted it, and names any group nothing trained.
 
 ## [0.2.0] — Unreleased
 

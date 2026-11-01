@@ -9,19 +9,25 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
 import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.MuscleBalance
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.SetLog
+import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.domain.kettlebellLifts
 import dev.justinsmith.lift.domain.program
 import kotlin.test.Test
@@ -150,6 +156,33 @@ class TodayScreenTest {
         }
         onNodeWithText("Swings").performClick()
         assertEquals(listOf("s1"), opened)
+    }
+
+    @Test
+    fun `the balance shows once there is one and names what went untrained`() = runUiTest {
+        fun session(uid: String, vararg sets: SetLog) = LiftSession(uid, 0, 600_000, "Day", sets.toList())
+        val swings = session(
+            "a",
+            SetLog(1, BuiltInExercise.TwoHandSwing, 24.0, 10, null, 0),
+            SetLog(2, BuiltInExercise.TwoHandSwing, 24.0, 10, null, 0),
+        )
+        val presses = session(
+            "b",
+            SetLog(3, BuiltInExercise.Press, 16.0, 5, Side.Left, 0),
+            SetLog(4, BuiltInExercise.Press, 16.0, 5, Side.Right, 0),
+        )
+        var state by mutableStateOf(TodayUiState(last = presses))
+        setThemedContent(dark = true) { TodayScreen(state, onStartSession = {}, onChooseProgram = {}) }
+        onNodeWithText("Balance").assertDoesNotExist()
+
+        state = state.copy(balance = MuscleBalance.of(listOf(presses, swings)))
+        onNode(hasScrollAction()).performScrollToNode(hasText("Balance"))
+        onNodeWithText("Sets, last 4 weeks").assertExists()
+        onNodeWithContentDescription("Glutes and hamstrings: 2 sets worked it most, 0 assisted").assertExists()
+        // A left and a right make one set.
+        onNodeWithContentDescription("Shoulders: 1 set worked it most, 0 assisted").assertExists()
+        onNode(hasScrollAction()).performScrollToNode(hasText("Not trained", substring = true))
+        onNodeWithText("Not trained in four weeks: Chest, Quads and calves").assertExists()
     }
 
     @Test

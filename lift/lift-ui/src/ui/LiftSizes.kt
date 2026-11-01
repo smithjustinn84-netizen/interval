@@ -12,4 +12,7 @@ object LiftSizes {
 
     /** An EMOM's ring at its widest on a tablet or a desktop, where the readout sits inside it at any turn. */
     val ringMaxRoomy = 560.dp
+
+    /** A muscle group's bar on the Lift tab's balance: thin, so seven of them and their names fit a phone's card. */
+    val balanceBar = 8.dp
 }

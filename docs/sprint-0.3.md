@@ -185,6 +185,18 @@ Sizes: XS ≤ half a day, S ≈ 1 day, M ≈ 2 days, L ≈ 3 days. The cut line 
   until two sessions exist, as the trend does.
 - Done when: `MuscleBalanceTest` covers the four cases; a screen test in `lift-today`'s `test@jvm/`
   finds the card with sessions and not without; `journeys/lift-equipment.xml` scrolls to it.
+- As built: a bar per muscle group, not per muscle. Eighteen unlabelled bars say nothing on a phone, and a
+  custom exercise's `focus` names a region rather than a muscle, so `MuscleGroup` (lift-domain) folds the
+  `Muscle`s into seven: chest, shoulders, back, arms, core, glutes and hamstrings, quads and calves. `Bars.kt`
+  draws unlabelled columns, so the card (`BalanceCard`, lift-today) draws a labelled row each instead, in a
+  fixed order so a gap is always in the same place: the sets that worked a group most in the accent, those that
+  only assisted it lighter after (`Opacity.LIGHT_SHARE`), the number the worked ones. A set counts once in a
+  group; a one-sided set counts half, so a left and a right weigh as one two-handed set. A custom exercise's
+  sets count as assisted in every group of its focus (all seven for full body); an exercise this build doesn't
+  know counts nowhere. The window is the 28 days to today by finish day, the open session's sets wait for it to
+  finish, and the card shows once two sessions are in the window (not two ever: two sessions long ago would
+  draw empty bars). The line under the bars names the groups no set worked or assisted. It sits after the last
+  session rather than under the week: the tab's order is what's next before what's past.
 
 **7. iOS follow-ups from 0.2** · S (two XS, no Android risk)
 - Notification permission for a user who only lifts: `AskToShowNotifications()` moves from

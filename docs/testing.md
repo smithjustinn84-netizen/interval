@@ -297,7 +297,7 @@ adb shell pm clear dev.justinsmith.interval      # Most journeys expect a fresh 
 | `settings.xml` | Toggle a cue, switch to Light and back, settings persist | `SettingsAcceptanceTest` (not Export's share sheet) |
 | `health-connect.xml` | Connect Health Connect from Settings, take its weight, finish a workout and find it there, disconnect; the policy from the sheet and from About | `HealthConnectAcceptanceTest` (the store stands connected: the sheet is Health Connect's) |
 | `system-back.xml` | System back from a tab returns to Timer; during a workout it pauses and asks | `SystemBackAcceptanceTest` |
-| `lift-equipment.xml` | A Lift session logging a bell, a band, a hold on one side and bodyweight with weight added, each in its own words, Moved counting only the weighed load, then the summary | `LiftEquipmentAcceptanceTest` |
+| `lift-equipment.xml` | A Lift session logging a bell, a band, a hold on one side and bodyweight with weight added, each in its own words, Moved counting only the weighed load, then the summary; a second session, and the Lift tab's balance of the two | `LiftEquipmentAcceptanceTest` |
 | `lift-barbell.xml` | A barbell lift: the bar chosen, plates a side, and the set logged with its load | `LiftBarbellAcceptanceTest` |
 | `lift-plan-changes.xml` | A program's day with a change to its plan: kept for the session, for the program, or in a copy | `LiftPlanChangesAcceptanceTest` |
 | `lift-rest-alert.xml` | A rest between sets keeps counting on the lock screen and beeps as it ends with the screen off | Device only (the in-app rest: `SessionFlowTest`) |

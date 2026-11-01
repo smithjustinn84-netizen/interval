@@ -130,7 +130,8 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      Lift's strings
   lift-testing       `FakeLiftStorage` and the fake DAOs, `FakeIntervalActivity`, `RecordingBeeper`,
                      `liftTestKoin`
-  lift-today         the Lift tab and the gear (bells, bar, bands, records)
+  lift-today         the Lift tab (with the balance, `MuscleBalance` in lift-domain) and the gear (bells, bar,
+                     bands, records)
   lift-session       the session (log sheet, EMOM, hold and rest timers, plan sheets, summary), the programs
                      and their editor and progress (they share the block editor), a finished session's page
   lift-library       the exercise library, each exercise's page and editor, the picker

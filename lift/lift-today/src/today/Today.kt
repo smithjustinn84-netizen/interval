@@ -168,6 +168,7 @@ fun TodayScreen(
         item(key = "week") { WeekCard(state, card) }
         item(key = "program") { ProgramCard(state, onChooseProgram, onOpenProgram, card) }
         item(key = "last") { LastCard(state, onOpenSession, card) }
+        state.balance?.let { balance -> item(key = "balance") { BalanceCard(balance, card) } }
         item(key = "exercises") {
             ListCard(card) {
                 LinkRow(
@@ -285,7 +286,7 @@ private fun DayMark(day: WeekDay) {
 }
 
 @Composable
-private fun Legend(color: Color, text: String) {
+internal fun Legend(color: Color, text: String) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.space4)) {
         Box(Modifier.size(Sizes.legendSwatch).clip(Corners.full).background(color))
         Text(text, style = IntervalTheme.type.caption, color = IntervalTheme.palette.textDim)

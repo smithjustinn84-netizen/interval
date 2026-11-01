@@ -4,11 +4,12 @@ import kotlin.test.Test
 
 /**
  * `journeys/lift-equipment.xml`: one session logging a bell, a band, a hold on one side and a bodyweight set
- * with weight added, each in its own words, Moved counting only the weighed load.
+ * with weight added, each in its own words, Moved counting only the weighed load; then a second, and the
+ * balance of the two on the Lift tab.
  */
 class LiftEquipmentAcceptanceTest {
     @Test
-    fun `each kind of equipment is logged in its own words and only weight is moved`() = liftScenario {
+    fun `each kind of equipment is logged in its words and two sessions show a balance`() = liftScenario {
         seeNoSessionsYet()
         startSession()
         seeMoved("0 kg")
@@ -61,5 +62,19 @@ class LiftEquipmentAcceptanceTest {
         seeRecord("Push-up", "Most added +8 kg × 10")
         closeSummary()
         seeLastSession("Two-hand swing and 3 more", "4 sets", "240 kg")
+        seeNoBalanceYet()
+
+        startSession()
+        openLogSheet()
+        pickExercise("Goblet squat", search = "goblet")
+        logFromSheet()
+        finish()
+        closeSummary()
+        seeBalance(
+            "Glutes and hamstrings: 2 sets worked it most",
+            "Quads and calves: 1 set worked it most",
+            "Chest: 1 set worked it most",
+            "Shoulders: 0 sets worked it most",
+        )
     }
 }
