@@ -16,6 +16,15 @@ import kotlinx.coroutines.launch
 expect fun KeepScreenOn()
 
 /**
+ * Asks for whatever the platform needs before it can show a notification: Android 13's permission to post
+ * them (the system stops asking after two refusals); iOS's authorization, which the system asks for once and
+ * then answers from the user's settings. Desktop needs nothing. Asked as a workout starts, for its notification
+ * off screen, as a Lift session's first rest starts, for the rest's, and as the plan's reminder is turned on.
+ */
+@Composable
+expect fun AskToShowNotifications()
+
+/**
  * Counts the [KeepScreenOn]s holding one display awake, so one caller leaving doesn't let the screen sleep
  * under another. Main thread only, as composition effects are.
  */

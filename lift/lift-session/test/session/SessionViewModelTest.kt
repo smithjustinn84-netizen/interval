@@ -254,6 +254,20 @@ class SessionViewModelTest {
     }
 
     @Test
+    fun `the session asks to show notifications from its first rest on and once`() {
+        viewModel().use {
+            assertFalse(state.value.asksToShowNotifications)
+            logSet()
+            assertTrue(state.value.asksToShowNotifications)
+            // It stays asked as the rest ends and another starts, so the screen asks once, not each rest.
+            skipRest()
+            assertTrue(state.value.asksToShowNotifications)
+            logSet()
+            assertTrue(state.value.asksToShowNotifications)
+        }
+    }
+
+    @Test
     fun `a rest steps no shorter than its least`() {
         viewModel().use {
             repeat(RestClock.DEFAULT_SECONDS / RestClock.STEP_SECONDS + 2) { stepRest(-1) }

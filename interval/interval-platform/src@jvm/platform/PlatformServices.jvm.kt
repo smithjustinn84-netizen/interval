@@ -1,6 +1,5 @@
 package dev.justinsmith.interval.platform
 
-import androidx.compose.runtime.Composable
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import dev.justinsmith.interval.data.AppDatabase
@@ -30,9 +29,6 @@ private object NoBackgroundWorkout : BackgroundWorkout {
 
     override fun stop() = Unit
 }
-
-@Composable
-actual fun AskToShowNotifications() = Unit
 
 /** The OS's per-user app-data directory, created on first use. */
 private class DesktopStorage : PlatformStorage {

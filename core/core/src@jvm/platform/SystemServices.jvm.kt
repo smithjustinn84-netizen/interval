@@ -19,4 +19,7 @@ actual val materialBackPreview: Boolean = false
 actual val platformPageTransitions: Boolean = false
 
 @Composable
+actual fun AskToShowNotifications() = Unit
+
+@Composable
 actual fun rememberHealthConnector(store: HealthStore): HealthConnector = NoHealthConnector

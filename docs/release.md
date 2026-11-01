@@ -90,12 +90,6 @@ Both Android and iOS versions must be bumped in unison. CI will fail via `tools/
 
 The next sprint's tickets, which take most of these up, are in [sprint-0.3.md](sprint-0.3.md).
 
-- **iOS: notification permission for Lift-only users.** The rest-over notification needs authorization, which
-  only `AskToShowNotifications()` (interval-platform) asks for, on a workout's start and on Plan. A user who
-  only lifts is never asked. Moving the hook to `core` would let the session ask too.
-- **iOS: a plan reminder due while the app is open is not shown.** A `UNUserNotificationCenterDelegate` in
-  `apps/iosApp/src/iosApp.swift` whose `willPresent` presents only the `plan-reminder-` identifiers would show it.
-  The workout's and the rest's notifications must stay silent in the foreground: the app beeps itself.
 - **iOS: the launcher shortcuts.** Android's two (0.3) open the app through `App(shortcut = …)`; iOS would need
   `UIApplicationShortcutItem`s in `Info.plist` and a scene delegate's `performActionFor` handing the item's type
   (a `Shortcut.id`) to `ViewController()` the same way.

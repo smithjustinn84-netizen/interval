@@ -36,6 +36,9 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   your unit. It is taken only when you tap it, never on its own, and the sheet then says where it came from.
   Health Connect's sheet now also asks to read your weight; if you connected before this version, turn Health
   Connect off and on in Settings to be asked.
+- A Lift session asks to show notifications as its first rest starts, so a rest's end reaches you with the
+  screen off even if you have never started a timed workout or a reminder. On iOS a plan reminder due while
+  the app is open now shows as a banner; the workout's and the rest's stay silent there, as the app beeps.
 - Balance on the Lift tab: once two sessions are in the last four weeks, a card counts their sets per muscle
   group (chest, shoulders, back, arms, core, glutes and hamstrings, quads and calves), what worked each most and,
   lighter, what only assisted it, and names any group nothing trained.

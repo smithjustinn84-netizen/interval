@@ -4,6 +4,7 @@ package dev.justinsmith.interval.platform
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.uikit.LocalUIViewController
@@ -18,6 +19,9 @@ import platform.UIKit.UIViewAutoresizingFlexibleWidth
 import platform.UIKit.UIViewController
 import platform.UIKit.addChildViewController
 import platform.UIKit.didMoveToParentViewController
+import platform.UserNotifications.UNAuthorizationOptionAlert
+import platform.UserNotifications.UNAuthorizationOptionSound
+import platform.UserNotifications.UNUserNotificationCenter
 
 // The idle timer is one app-wide flag, so one count for the app.
 private val awakeHolds = AwakeHolds()
@@ -27,6 +31,21 @@ actual fun KeepScreenOn() {
     DisposableEffect(Unit) {
         if (awakeHolds.acquire()) UIApplication.sharedApplication.idleTimerDisabled = true
         onDispose { if (awakeHolds.release()) UIApplication.sharedApplication.idleTimerDisabled = false }
+    }
+}
+
+/**
+ * iOS: authorization to show notifications, asked for when a workout starts, a Lift session first rests or a
+ * reminder is turned on. The system puts the question to the user once, and from then on answers from Settings
+ * without asking, so this asks each time rather than keeping count. A refusal costs the notifications only: the
+ * workout and the rest run on either way, and the reminders are scheduled into nothing.
+ */
+@Composable
+actual fun AskToShowNotifications() {
+    LaunchedEffect(Unit) {
+        UNUserNotificationCenter.currentNotificationCenter().requestAuthorizationWithOptions(
+            UNAuthorizationOptionAlert or UNAuthorizationOptionSound,
+        ) { _, _ -> }
     }
 }
 

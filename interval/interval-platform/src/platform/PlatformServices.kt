@@ -1,6 +1,5 @@
 package dev.justinsmith.interval.platform
 
-import androidx.compose.runtime.Composable
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.UpcomingChange
@@ -115,15 +114,6 @@ interface PlanReminders {
      */
     suspend fun schedule(reminders: List<PlanReminder>)
 }
-
-/**
- * Asks for whatever the platform needs before it can show a notification: Android 13's permission to post
- * them, once, the first time (the system stops asking after two refusals); iOS's authorization, which the
- * system asks for once and then answers from the user's settings. Desktop needs nothing. Asked as a workout
- * starts, for its notification off screen, and as the plan's reminder is turned on.
- */
-@Composable
-expect fun AskToShowNotifications()
 
 /*
  * Each platform's `platformModule` (Android's of a `Context`, iOS's and the desktop's of nothing) gives the Koin

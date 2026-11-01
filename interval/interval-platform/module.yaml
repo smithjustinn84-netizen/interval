@@ -20,8 +20,6 @@ dependencies:
   - $libs.kermit
 
 dependencies@android:
-  # rememberLauncherForActivityResult, to ask for the notification permission when a workout starts.
-  - $libs.androidx.activity.compose
   # NotificationCompat and ContextCompat, for the workout's and the plan's notifications.
   - $libs.androidx.core.ktx
   # The plan reminders' alarm record, a DataStore of its own the boot receiver reads.

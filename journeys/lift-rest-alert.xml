@@ -6,6 +6,7 @@
   <actions>
     <action>Tap the "Lift" tab, then "Start session"</action>
     <action>Tap "Log set" and verify that a rest counts down from "1:30" with − and + beside it</action>
+    <action>Verify that the system asks to allow notifications (Android 13+, the first rest only), and tap "Allow"</action>
     <action>Tap "−" four times and verify that the rest reads "0:30" or less</action>
     <action>Press Home and verify that the status bar shows a chip with the rest's time left (Android 16+)</action>
     <action>Verify with adb shell dumpsys notification --noredact that the "Resting" notification has PROMOTED_ONGOING among its flags and an android.progress below its android.progressMax</action>

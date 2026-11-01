@@ -11,10 +11,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 
 /**
- * Android 13 and up: the permission to post notifications, asked for when a workout starts or a reminder is
- * turned on and it is not yet granted. The system shows the prompt twice at most and refuses silently after
- * that, so this asks each time rather than keeping count. A refusal costs the notifications only: the workout
- * runs on either way, and the reminder's alarms fire into nothing.
+ * Android 13 and up: the permission to post notifications, asked for when a workout starts, a Lift session first
+ * rests or a reminder is turned on, and it is not yet granted. The system shows the prompt twice at most and
+ * refuses silently after that, so this asks each time rather than keeping count. A refusal costs the
+ * notifications only: the workout and the rest run on either way, and the reminder's alarms fire into nothing.
  */
 @Composable
 actual fun AskToShowNotifications() {

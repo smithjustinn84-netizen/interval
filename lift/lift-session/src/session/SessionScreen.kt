@@ -42,6 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import dev.justinsmith.interval.platform.AskToShowNotifications
 import dev.justinsmith.interval.platform.KeepScreenOn
 import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.ui.AccentButton
@@ -321,6 +322,8 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
     // The block of today's plan open to change, -1 for none: a plain number saves on every platform.
     var changing by rememberSaveable { mutableIntStateOf(-1) }
     KeepScreenOn()
+    // The rest's notification off screen needs the platform's leave, asked as the first rest starts.
+    if (state.asksToShowNotifications) AskToShowNotifications()
     val notices = LocalNotices.current
     val undo = stringResource(Res.string.session_undo)
     AnnounceRecord(state, notices)

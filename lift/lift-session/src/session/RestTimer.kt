@@ -21,6 +21,11 @@ class RestTimer(private val clock: WallClock, private val beeper: Beeper, privat
     private val run = MutableStateFlow<RestRun?>(null)
     val state: StateFlow<RestRun?> = run.asStateFlow()
 
+    private val started = MutableStateFlow(false)
+
+    /** Whether a rest has started since this timer was made: the session's first rest, and every one after. */
+    val rested: StateFlow<Boolean> = started.asStateFlow()
+
     private var lastCueMillis = 0L
 
     /** Starts a rest of [seconds] from now, in place of any already running. */
@@ -28,6 +33,7 @@ class RestTimer(private val clock: WallClock, private val beeper: Beeper, privat
         lastCueMillis = 0L
         val startedAt = clock.nowMillis()
         run.value = RestRun(startedAt, seconds)
+        started.value = true
         alerts.start(startedAt, startedAt + seconds * MILLIS_PER_SECOND)
     }
 

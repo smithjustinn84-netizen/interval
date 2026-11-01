@@ -2,8 +2,6 @@
 
 package dev.justinsmith.interval.platform
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import co.touchlab.kermit.Logger
@@ -49,8 +47,6 @@ import platform.UIKit.UIImpactFeedbackGenerator
 import platform.UIKit.UIImpactFeedbackStyle
 import platform.UIKit.UINotificationFeedbackGenerator
 import platform.UIKit.UINotificationFeedbackType
-import platform.UserNotifications.UNAuthorizationOptionAlert
-import platform.UserNotifications.UNAuthorizationOptionSound
 import platform.UserNotifications.UNMutableNotificationContent
 import platform.UserNotifications.UNNotificationRequest
 import platform.UserNotifications.UNNotificationSound
@@ -197,21 +193,6 @@ private class IosBackgroundWorkout : BackgroundWorkout {
 
         /** Every identifier the workout may have scheduled; removing one that was never added does nothing. */
         val identifiers: List<String> = (0 until WORKOUT_REQUESTS).map { "$REQUEST_PREFIX$it" }
-    }
-}
-
-/**
- * iOS: authorization to show notifications, asked for when a workout starts or a reminder is turned on. The
- * system puts the question to the user once, and from then on answers from Settings without asking, so this
- * asks each time rather than keeping count. A refusal costs the notifications only: the workout runs on either
- * way, and the reminders are scheduled into nothing.
- */
-@Composable
-actual fun AskToShowNotifications() {
-    LaunchedEffect(Unit) {
-        UNUserNotificationCenter.currentNotificationCenter().requestAuthorizationWithOptions(
-            UNAuthorizationOptionAlert or UNAuthorizationOptionSound,
-        ) { _, _ -> }
     }
 }
 

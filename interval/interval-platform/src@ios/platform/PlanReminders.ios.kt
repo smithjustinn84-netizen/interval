@@ -64,6 +64,7 @@ internal class IosPlanReminders : PlanReminders {
     private fun identifier(epochDay: Long) = "$REQUEST_PREFIX$epochDay"
 
     private companion object {
+        // apps/iosApp/src/iosApp.swift shows a notification with it while the app is open: keep the two in step.
         const val REQUEST_PREFIX = "plan-reminder-"
         const val DAY_MILLIS = 24L * 60 * 60 * 1000
     }

@@ -176,6 +176,11 @@ data class SessionUiState(
     val sinceLast: String? = null,
     /** The rest counting down after a set; null when none is. */
     val rest: RestState? = null,
+    /**
+     * Whether the screen asks to show notifications, for the rest's off screen: from the session's first rest on,
+     * and staying so, so it asks once rather than at each rest.
+     */
+    val asksToShowNotifications: Boolean = false,
     /** The bells the sheet offers: the user's own, or every standard size until they have said. */
     val bells: List<Double> = standardBells,
     val ownsBells: Boolean = false,
@@ -337,8 +342,12 @@ class SessionViewModel(
         }
 
     val state: StateFlow<SessionUiState> =
-        combine(untimed, ticks, detail, rest.state) { state, now, page, resting ->
-            state.at(now).copy(detail = page, rest = resting?.let { it.clock.at(now - it.startedAtMillis) })
+        combine(untimed, ticks, detail, rest.state, rest.rested) { state, now, page, resting, rested ->
+            state.at(now).copy(
+                detail = page,
+                rest = resting?.let { it.clock.at(now - it.startedAtMillis) },
+                asksToShowNotifications = rested,
+            )
         }
             .stateIn(viewModelScope, SharingStarted.Eagerly, SessionUiState())
 

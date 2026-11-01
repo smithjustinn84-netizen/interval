@@ -274,7 +274,9 @@ toolchain (`$compose.*`).
   (`PlanAlarms`, recorded in a DataStore of its own so `PlanReminderReceiver` can re-arm after a reboot or clock
   change), iOS one calendar-triggered local notification per day (the workout's notifications remove only their
   own identifiers, and leave `PLAN_REMINDER_DAYS` of the 64 pending slots free). Words come from
-  `reminderWords`, the same on both. `AskToShowNotifications()` asks for the permission on Plan while it is on.
+  `reminderWords`, the same on both. `AskToShowNotifications()` (core's `SystemServices.kt`) asks for the
+  permission on Plan while it is on, as a workout starts and at a Lift session's first rest. iOS shows a reminder
+  due with the app open (`willPresent` in `iosApp.swift`, by its `plan-reminder-` prefix) and nothing else then.
 
 ## Testing
 

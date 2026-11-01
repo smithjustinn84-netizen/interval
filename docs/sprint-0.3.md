@@ -209,6 +209,14 @@ Sizes: XS ≤ half a day, S ≈ 1 day, M ≈ 2 days, L ≈ 3 days. The cut line 
   app beeps itself.
 - Done when: `SessionViewModelTest` asks once per session; both checked on the iOS simulator
   (`run-on-device`), and `docs/release.md`'s follow-ups drop the two entries.
+- As built: `SessionUiState.asksToShowNotifications` turns on as the session's first rest starts (`RestTimer.rested`)
+  and stays on, so `SessionScreen` composes `AskToShowNotifications()` once rather than at each rest. Android asks
+  there too now (`POST_NOTIFICATIONS`, for `RestService`'s notification), so `journeys/lift-rest-alert.xml` allows
+  it. `interval-platform` drops `androidx.activity.compose` with the hook. `AppDelegate` (`iosApp.swift`) is the
+  notification centre's delegate from launch; `willPresent` matches `PlanReminders.ios.kt`'s `REQUEST_PREFIX`,
+  each side's comment naming the other. On the simulator: a fresh install was asked on the first rest and not on
+  the next; a reminder set for the next quarter hour showed as a banner over Plan; a rest ending with the app
+  open showed nothing.
 
 --- cut line ---
 
