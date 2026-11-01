@@ -127,6 +127,7 @@ fun SettingsRoute(
         onSetWeight = viewModel::setWeight,
         onSetWeightUnit = viewModel::setWeightUnit,
         onClearWeight = viewModel::clearWeight,
+        onUseHealthWeight = viewModel::useHealthWeight,
         onSetEffort = viewModel::setEffort,
         onExport = viewModel::export,
         onConnectHealth = health::connect,
@@ -161,6 +162,7 @@ fun SettingsScreen(
     onSetWeight: (Int) -> Unit = {},
     onSetWeightUnit: (WeightUnit) -> Unit = {},
     onClearWeight: () -> Unit = {},
+    onUseHealthWeight: () -> Unit = {},
     onSetEffort: (Effort) -> Unit = {},
     onExport: () -> Unit = {},
     onConnectHealth: () -> Unit = {},
@@ -224,6 +226,8 @@ fun SettingsScreen(
             onSetUnit = onSetWeightUnit,
             onClear = onClearWeight,
             onDismiss = { editingWeight = false },
+            healthWeight = state.healthWeight,
+            onUseHealthWeight = onUseHealthWeight,
         )
     }
 }

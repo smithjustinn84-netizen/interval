@@ -78,8 +78,9 @@ Both Android and iOS versions must be bumped in unison. CI will fail via `tools/
    - TalkBack's headings navigation reaches every section of Settings, History and the Lift tab.
 4. **Health Connect on Play.** The listing needs a privacy policy URL whose words match the app's Privacy page
    (`apps/app/src/about/PrivacyScreen.kt`; host the same text, for example as a page of the repository), and
-   the Play Console's Health apps declaration must name the two data types the manifest writes: exercise and
-   total calories burned. Without the declaration Play blocks the release's review.
+   the Play Console's Health apps declaration must name the data types in the manifest: exercise and total
+   calories burned (write) and, from 0.3, body weight (read). Without the declaration Play blocks the release's
+   review.
 5. **Tag and upload.** `git tag v0.2.0 && git push origin v0.2.0` (jj has no tags). The tag must be `v` +
    `versionName` (`tools/check_versions.py --tag` fails the job before anything is signed). CI attaches
    `interval-v0.2.0.aab` to the workflow run; upload it to the Play Console's internal testing track. Play
@@ -106,8 +107,8 @@ The next sprint's tickets, which take most of these up, are in [sprint-0.3.md](s
 - **Import** of the export: the file carries `"schema": 1` so a reader can be added without a format change;
   merge rules and validation are a sprint of their own.
 - **HealthKit, widgets, Wear OS**: each a platform project. Health Connect's write side landed (the `HealthStore`
-  in core-platform); HealthKit would be its iOS actual, and reading (body weight, a watch's heart rate) a layer
-  on top.
+  in core-platform), and in 0.3 the body weight's read; HealthKit would be its iOS actual, and a watch's heart
+  rate a layer on top.
 - **Localisation**: the built-in presets' names are stored data by design, and both text parsers are
   English-keyword; a second locale is a sprint, not a ticket.
 - **Splitting the `TooManyFunctions` classes** (`WorkoutViewModel`, `IntervalRepository`, `LiftRepository`,

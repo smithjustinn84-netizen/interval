@@ -324,7 +324,11 @@ flowchart TD
   - Android's `HealthConnectStore` writes it to Health Connect as an exercise session and a total-calories record,
     keyed by the workout's id so a repeated write replaces rather than doubles, and only while the user has
     connected it in Settings (the permission sheet is Health Connect's, opened through `rememberHealthConnector`).
-    The app reads nothing back. iOS and desktop have `NoHealthStore`, and Settings shows no row.
+    iOS and desktop have `NoHealthStore`, and Settings shows no row.
+  - It reads one thing back: `latestWeightKg`, the last weight weighed in the past 30 days by any app. Settings'
+    weight sheet offers it as a button ("Use Health Connect's: 82 kg") and never takes it on its own. Being
+    connected means the write permissions; the weight's read is asked on the same sheet but checked on its own,
+    so a user who refuses it, or connected before the app asked, still has their workouts written.
 
 ---
 

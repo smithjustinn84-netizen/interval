@@ -1,6 +1,7 @@
 <journey name="Health Connect">
   <description>
-    Connect Health Connect in Settings, finish a workout and find it in Health Connect, then disconnect.
+    Connect Health Connect in Settings, take the weight it holds into the weight sheet, finish a workout and find
+    it in Health Connect, then disconnect.
     Run on a phone in portrait on Android 14 or later, where Health Connect is part of the system; the
     emulator's Health Connect must be open once before (Settings > Security and privacy > Health Connect).
     Where a step cannot be verified without the Health Connect app, note it as not checked.
@@ -9,10 +10,15 @@
     <action>Tap the "Settings" button on the Timer tab</action>
     <action>Scroll to "Your data" and verify that it shows a "Health Connect" switch, off, saying "Save finished workouts and Lift sessions there too"</action>
     <action>Tap the "Health Connect" switch</action>
-    <action>Verify that Health Connect's permission sheet opens, asking to write exercise and total calories burned, with Interval's privacy policy linked</action>
+    <action>Verify that Health Connect's permission sheet opens, asking to write exercise and total calories burned and to read weight, with Interval's privacy policy linked</action>
     <action>Tap the privacy policy link and verify that Interval's "Privacy" page opens, with a "Health Connect" section; go back to the sheet</action>
     <action>Allow all</action>
     <action>Verify that the "Health Connect" switch is on and says "Finished workouts and Lift sessions are saved there"</action>
+    <action>Open Health Connect (Settings > Security and privacy > Health Connect > Data and access > Weight), add a weight entry of 82 kg for today, and return to Interval's Settings</action>
+    <action>Tap "Back", then the Timer tab's "Settings" button again, so Settings reads Health Connect afresh</action>
+    <action>Scroll to "Calories", tap "Body weight", and verify that the sheet offers "Use Health Connect's: 82 kg"</action>
+    <action>Tap "Use Health Connect's: 82 kg" and verify that the weight reads 82, the button turns into a disabled "From Health Connect: 82 kg" without the sheet moving, and that "More weight" makes it 83 and offers "Use Health Connect's: 82 kg" again; tap that once more</action>
+    <action>Tap "Done" and verify that "Body weight" reads "82 kg"</action>
     <action>Tap "Back"</action>
     <action>Tap "Start workout", skip to the first rest with "Skip to next interval" twice, tap "End workout" and confirm</action>
     <action>Verify that the summary says "Ended"</action>

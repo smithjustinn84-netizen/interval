@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package dev.justinsmith.interval.settings
 
 import androidx.lifecycle.ViewModel
@@ -28,12 +30,17 @@ import dev.justinsmith.interval.timer.stepped
 import dev.justinsmith.interval.timer.toKg
 import dev.justinsmith.interval.timer.withValue
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -43,11 +50,19 @@ data class SettingsUiState(
     val app: AppSettings,
     /** How the platform's health store stands; [HealthStatus.Unavailable] where there is none, and no row for it. */
     val health: HealthStatus = HealthStatus.Unavailable,
+    /** The latest weight in the health store, in kilograms, or null for none or none the app may read. */
+    val healthWeightKg: Double? = null,
 ) {
     val body: BodySettings get() = app.body
 
     /** The body weight in whole units of [BodySettings.unit], or null when calorie estimates are off. */
     val weight: Int? get() = body.weightKg?.let { body.unit.fromKg(it) }
+
+    /**
+     * The health store's weight in whole units of [BodySettings.unit], for the weight sheet to offer; null for
+     * none, and for one outside the unit's range, which taking it would not keep.
+     */
+    val healthWeight: Int? get() = healthWeightKg?.let { body.unit.fromKg(it) }?.takeIf { it in body.unit.range }
 }
 
 /** Where an import stands, from the file picked to what came in; null while there is none. */
@@ -74,7 +89,9 @@ enum class CueToggle { Sound, Voice, Halfway, Vibrate }
  * The set-once preferences. A cue switched on plays a sample through [player], so its volume can be checked.
  * Export builds the file with [exporter] and hands it to [sharer]; Import reads a file back with [importer], one
  * [ImportStep] after another ([import]). The [health] store is shown as it stands
- * and disconnected from here; connecting takes the platform's sheet, which the screen opens.
+ * and disconnected from here; connecting takes the platform's sheet, which the screen opens. Its latest
+ * weight is read each time it connects, and taken only when the user asks ([useHealthWeight]): a weigh-in
+ * nobody chose to take would change every estimate silently.
  */
 @Suppress("detekt.TooManyFunctions") // One function per setting, and export and import beside them.
 class SettingsViewModel(
@@ -86,18 +103,30 @@ class SettingsViewModel(
     private val importer: DataImporter,
     private val timestamps: TimestampFormatter,
 ) : ViewModel() {
+    /** The health store's latest weight, read again each time it connects; null while it isn't. */
+    private val healthWeightKg: Flow<Double?> = health.status.flatMapLatest { status ->
+        if (status == HealthStatus.Connected) flow { emit(health.latestWeightKg()) } else flowOf(null)
+    }
+
     val state: StateFlow<SettingsUiState> =
-        combine(repository.cueSettings, repository.config, repository.appSettings, health.status, ::buildState)
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.Eagerly,
-                initialValue = buildState(
-                    repository.cueSettings.value,
-                    repository.config.value,
-                    repository.appSettings.value,
-                    health.status.value,
-                ),
-            )
+        combine(
+            repository.cueSettings,
+            repository.config,
+            repository.appSettings,
+            health.status,
+            healthWeightKg,
+            ::buildState,
+        ).stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = buildState(
+                repository.cueSettings.value,
+                repository.config.value,
+                repository.appSettings.value,
+                health.status.value,
+                healthWeightKg = null,
+            ),
+        )
 
     /** Reads the health store's state again: as the screen opens, and as its permission sheet closes. */
     fun refreshHealth() = health.refresh()
@@ -146,6 +175,15 @@ class SettingsViewModel(
     /** Sets the body weight to [value] whole units of the current unit, clamped to its range. */
     fun setWeight(value: Int) {
         updateBody { it.copy(weightKg = it.unit.toKg(value.coerceIn(it.unit.range))) }
+    }
+
+    /**
+     * Takes the health store's latest weight as the body weight; nothing without one offered. The reading is kept
+     * as weighed, not rounded to the unit, so either unit shows it as the store's.
+     */
+    fun useHealthWeight() {
+        val offered = state.value.takeIf { it.healthWeight != null } ?: return
+        updateBody { it.copy(weightKg = offered.healthWeightKg) }
     }
 
     /** Turns the calorie estimates off by forgetting the body weight; setting one turns them on again. */
@@ -225,6 +263,11 @@ class SettingsViewModel(
         repository.updateAppSettings { it.copy(body = transform(it.body)) }
     }
 
-    private fun buildState(cues: CueSettings, config: IntervalConfig, app: AppSettings, health: HealthStatus) =
-        SettingsUiState(cues, config.prepSeconds, app, health)
+    private fun buildState(
+        cues: CueSettings,
+        config: IntervalConfig,
+        app: AppSettings,
+        health: HealthStatus,
+        healthWeightKg: Double?,
+    ) = SettingsUiState(cues, config.prepSeconds, app, health, healthWeightKg)
 }

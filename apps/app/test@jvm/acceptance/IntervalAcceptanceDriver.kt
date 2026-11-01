@@ -408,6 +408,26 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     fun seeNothingMoreInHealthConnect() = assertEquals(1, healthStore.workouts.size)
 
+    /** A scale or another app records a weight of [kg] in Health Connect. */
+    fun weighInHealthConnect(kg: Double) {
+        healthStore.weightKg = kg
+    }
+
+    /** Opens the body weight's sheet, takes Health Connect's [weight] from its button, and closes it with Done. */
+    fun takeHealthConnectWeight(weight: String) {
+        scrollTo("Body weight")
+        tap("Body weight")
+        tap("Use Health Connect's: $weight")
+        see("From Health Connect: $weight")
+        tap("Done")
+    }
+
+    /** Settings' body weight reads [kg] kilograms, and that is what is kept. */
+    fun seeBodyWeight(kg: Int) {
+        waitFor("a body weight of $kg kg") { app.repository.appSettings.value.body.weightKg == kg.toDouble() }
+        scrollTo("$kg kg")
+    }
+
     fun seeTheme(name: String) {
         waitFor("the $name theme") { app.repository.appSettings.value.theme.name == name }
         ui.onNode(hasText(name) and hasClickAction()).assertIsSelected()

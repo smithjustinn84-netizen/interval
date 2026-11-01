@@ -61,6 +61,7 @@ class SettingsScreenTest {
             onSetWeight = { calls += "weight $it" },
             onSetWeightUnit = { calls += it },
             onClearWeight = { calls += "clear weight" },
+            onUseHealthWeight = { calls += "use health weight" },
             onSetEffort = { calls += it },
             onExport = { calls += "export" },
             onConnectHealth = { calls += "connect health" },
@@ -210,6 +211,23 @@ class SettingsScreenTest {
         onNodeWithText("lb").performClick()
         onNodeWithText("Turn off calorie estimates").performClick()
         assertEquals(listOf<Any>("weight 81", WeightUnit.Lb, "clear weight"), calls)
+    }
+
+    @Test
+    fun `the weight sheet offers Health Connect's weight and says when it is the one set`() = runUiTest {
+        val body = BodySettings(weightKg = 80.0)
+        var state by mutableStateOf(defaults.copy(app = defaults.app.copy(body = body)))
+        setThemedContent { Screen(state) }
+        onNodeWithText("80 kg").performScrollTo().performClick()
+        onNodeWithText("Use Health Connect's", substring = true).assertDoesNotExist()
+
+        state = state.copy(healthWeightKg = 82.0)
+        onNodeWithText("Use Health Connect's: 82 kg").performClick()
+        assertEquals(listOf<Any>("use health weight"), calls)
+
+        state = state.copy(app = state.app.copy(body = BodySettings(weightKg = 82.0)))
+        onNodeWithText("Use Health Connect's", substring = true).assertDoesNotExist()
+        onNodeWithText("From Health Connect: 82 kg").assertIsNotEnabled()
     }
 
     @Test

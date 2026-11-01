@@ -12,9 +12,9 @@ import androidx.health.connect.client.PermissionController
 import co.touchlab.kermit.Logger
 
 /**
- * Health Connect's permission sheet, for the write permissions the app asks for, and Play's page for the
- * Health Connect app on a phone before Android 14 that lacks it. The sheet's answer reaches [store]
- * through [HealthStore.refresh], granted or not.
+ * Health Connect's permission sheet, for what the app asks (to write workouts, to read the weight), and
+ * Play's page for the Health Connect app on a phone before Android 14 that lacks it. The sheet's answer
+ * reaches [store] through [HealthStore.refresh], granted or not.
  */
 @Composable
 actual fun rememberHealthConnector(store: HealthStore): HealthConnector {

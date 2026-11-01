@@ -31,6 +31,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   down"). They are part of a preset's shape, so presets, History, Plan and the export keep them, and they count
   in the total, the timeline, the calories (as recovery) and Health Connect. The workout says each, cues and
   notifies it, and ending in the cool-down keeps the workout as finished.
+- Your weight from Health Connect (Android): with Health Connect connected, Settings' weight sheet offers the
+  latest weight a scale or another app recorded there in the last 30 days ("Use Health Connect's: 82 kg"), in
+  your unit. It is taken only when you tap it, never on its own, and the sheet then says where it came from.
+  Health Connect's sheet now also asks to read your weight; if you connected before this version, turn Health
+  Connect off and on in Settings to be asked.
 
 ## [0.2.0] — Unreleased
 

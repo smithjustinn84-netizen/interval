@@ -84,6 +84,9 @@ class RecordingSharer : Sharer {
 class RecordingHealthStore(initial: HealthStatus = HealthStatus.Disconnected) : HealthStore {
     override val status = MutableStateFlow(initial)
     val workouts = mutableListOf<HealthWorkout>()
+
+    /** The body weight weighed in the store, in kilograms, or null for none. */
+    var weightKg: Double? = null
     var refreshes = 0
     var disconnects = 0
 
@@ -100,6 +103,9 @@ class RecordingHealthStore(initial: HealthStatus = HealthStatus.Disconnected) : 
     override fun record(workout: HealthWorkout) {
         if (status.value == HealthStatus.Connected) workouts += workout
     }
+
+    /** Gives [weightKg] only while connected, as the real store reads nothing without its permissions. */
+    override suspend fun latestWeightKg(): Double? = weightKg.takeIf { status.value == HealthStatus.Connected }
 }
 
 /**

@@ -7,8 +7,11 @@ import androidx.health.connect.client.records.ExerciseSegment
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.Record
 import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
+import androidx.health.connect.client.records.WeightRecord
 import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
+import androidx.health.connect.client.request.ReadRecordsRequest
+import androidx.health.connect.client.time.TimeRangeFilter
 import androidx.health.connect.client.units.Energy
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.CancellationException
@@ -19,14 +22,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 
 /**
  * Health Connect as the app's [HealthStore]. Built into Android 14 and up; before that it is an app of its
- * own, which [HealthStatus.NotInstalled] says is missing. The app asks only to write exercise sessions and
- * their calories, never to read, so the permission sheet is short. The permissions can be taken back in
- * Health Connect's own settings at any time, so they are checked before every write, not just once.
+ * own, which [HealthStatus.NotInstalled] says is missing. The app asks to write exercise sessions and their
+ * calories and to read the body weight, nothing more, so the permission sheet is short. Writing is what
+ * connects: the weight is a leave of its own, which a user connected before the app read it hasn't given, or
+ * may refuse on the sheet. The permissions can be taken back in Health Connect's own settings at any time, so
+ * they are checked before every write and read, not just once.
  *
  * Each workout goes in as one exercise session, with a segment per interval, rest, pause or set, and
  * one total-calories record over the same time when there is an estimate. Both carry the workout's id as
@@ -73,6 +79,19 @@ class HealthConnectStore(
         }
     }
 
+    override suspend fun latestWeightKg(): Double? {
+        val client = client ?: return null
+        if (!granted(READ_WEIGHT)) return null
+        val request = ReadRecordsRequest(
+            recordType = WeightRecord::class,
+            timeRangeFilter = TimeRangeFilter.after(Instant.now() - WEIGHT_WINDOW),
+            ascendingOrder = false,
+            pageSize = 1,
+        )
+        return attempt("Couldn't read the weight") { client.readRecords(request) }
+            ?.records?.firstOrNull()?.weight?.inKilograms
+    }
+
     /** Installed or not, and if so whether the app may write: the status as it stands this moment. */
     private suspend fun currentStatus(): HealthStatus = when (val sdk = statusOfSdk()) {
         HealthStatus.Disconnected -> if (granted()) HealthStatus.Connected else HealthStatus.Disconnected
@@ -86,10 +105,11 @@ class HealthConnectStore(
         else -> HealthStatus.Disconnected
     }
 
-    private suspend fun granted(): Boolean {
+    /** Whether the app holds every one of [permissions]: by default, the leave to write, which is to be connected. */
+    private suspend fun granted(permissions: Set<String> = WRITE): Boolean {
         val controller = client?.permissionController ?: return false
         return attempt("Couldn't read the permissions") { controller.getGrantedPermissions() }
-            ?.containsAll(PERMISSIONS) ?: false
+            ?.containsAll(permissions) ?: false
     }
 
     /** Runs [block] against the store, which may be missing or refuse: a failure is logged as [what]. */
@@ -104,11 +124,23 @@ class HealthConnectStore(
     }
 
     companion object {
-        /** What the app asks for: to write exercise sessions and total calories, nothing to read. */
-        val PERMISSIONS: Set<String> = setOf(
+        /** The leave to write exercise sessions and total calories: holding it is being connected. */
+        private val WRITE: Set<String> = setOf(
             HealthPermission.getWritePermission(ExerciseSessionRecord::class),
             HealthPermission.getWritePermission(TotalCaloriesBurnedRecord::class),
         )
+
+        /** The leave to read the body weight, for Settings' weight sheet. */
+        private val READ_WEIGHT: Set<String> = setOf(HealthPermission.getReadPermission(WeightRecord::class))
+
+        /** What the permission sheet asks for: to write, and to read the weight. */
+        val PERMISSIONS: Set<String> = WRITE + READ_WEIGHT
+
+        /**
+         * How far back a weight is looked for: an older one says little of today's, and Health Connect keeps
+         * what came before the first grant behind a history permission the app doesn't ask for.
+         */
+        private val WEIGHT_WINDOW: Duration = Duration.ofDays(30)
     }
 }
 

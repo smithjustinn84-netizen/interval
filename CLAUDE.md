@@ -83,7 +83,7 @@ core/
   core-platform      what the platform gives that isn't drawing, with no Compose: the clocks (`WallClock`,
                      `epochMillisNow`, `realElapsedTime`, `days`), `TimestampFormatter`, `AppInfo`, `Sharer`,
                      `HealthStore` (`Health.kt`: the workout both sides hand it as they finish; Android's is
-                     `HealthConnectStore`, write only, in src@android; elsewhere `NoHealthStore`),
+                     `HealthConnectStore`, in src@android, writes workouts and reads the weight; elsewhere `NoHealthStore`),
                      Android's notification helpers, and `storage/Storage.kt` (`SerialWriter`, `storageScope`,
                      `orOnError`/`orEmptyOnError`); packages `.platform`, `.storage`; exports `core-time`. The
                      data modules depend on this, not `core`, so a theme edit neither recompiles them nor reruns
@@ -259,10 +259,13 @@ toolchain (`$compose.*`).
   builds one from the course it keeps (`CourseSpan`s in `WorkoutProgress`, so a restart loses none) as the workout
   ends, `SessionViewModel` from the session's sets (`HealthWorkouts.kt` in each). Android's `HealthConnectStore`
   writes an exercise session with segments and a total-calories record, keyed by the workout's id, and checks its
-  permissions before every write. Settings' row connects through `rememberHealthConnector` (the sheet is Health
-  Connect's) and disconnects by revoking. The manifest declares the two write permissions and `PrivacyActivity`
-  (the policy, `about/PrivacyScreen.kt`, also under About), which Health Connect opens for its rationale. Play's
-  Health apps declaration must list the same two data types.
+  permissions before every write. It reads one thing, `latestWeightKg` (the last 30 days), which Settings' weight
+  sheet offers as a button and never takes on its own. Connected means the two write permissions; the weight's
+  read is asked on the same sheet but is a leave of its own, so refusing it (or having connected before it was
+  asked) keeps the writes and offers no weight. Settings' row connects through `rememberHealthConnector` (the
+  sheet is Health Connect's) and disconnects by revoking. The manifest declares the three permissions and
+  `PrivacyActivity` (the policy, `about/PrivacyScreen.kt`, also under About), which Health Connect opens for its
+  rationale. Play's Health apps declaration must list the same three data types.
 - **Reminders for the plan**: `AppSettings.reminderMinuteOfDay` (set on Plan, null is off). `PlanReminderScheduler`
   (`interval/interval-history/src/plan/`, an eager single) recomputes `plannedReminders` (the next 14 days with a plan
   still open, from `TrainingLog.upNext`) on every change and at midnight, and hands the whole set to

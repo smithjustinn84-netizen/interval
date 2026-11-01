@@ -6,7 +6,8 @@ import kotlinx.coroutines.flow.StateFlow
 /**
  * How the platform's health store stands: there is none on this platform (desktop), it is yet to be
  * installed (Android before 14 without the Health Connect app), it is there but the app may not write
- * to it, or the user has let the app write workouts to it.
+ * to it, or the user has let the app write workouts to it. Reading the body weight is a leave of its own,
+ * asked with the rest, and doesn't change the status: see [HealthStore.latestWeightKg].
  */
 enum class HealthStatus { Unavailable, NotInstalled, Disconnected, Connected }
 
@@ -73,9 +74,10 @@ enum class HealthMove {
 
 /**
  * The platform's health store, which keeps the user's workouts beside every other app's: Health Connect on
- * Android. The app writes to it and never reads. Connecting takes a permission sheet, which only a screen
- * can open (core's `rememberHealthConnector`); the store hears of the answer through [refresh]. Injected,
- * so tests record what was written.
+ * Android. The app writes its workouts to it and reads one thing back, the latest body weight, which
+ * Settings offers to take. Connecting takes a permission sheet, which only a screen can open (core's
+ * `rememberHealthConnector`); the store hears of the answer through [refresh]. Injected, so tests record
+ * what was written.
  */
 interface HealthStore {
     /** How the store stands now, as last read: see [refresh]. */
@@ -92,6 +94,13 @@ interface HealthStore {
      * is written while the store is not [HealthStatus.Connected]; a write that fails is logged and dropped.
      */
     fun record(workout: HealthWorkout)
+
+    /**
+     * The body weight last weighed in the store, by any app, in kilograms: null when the app may not read it,
+     * or none was weighed in the last 30 days (an older weight says little of today's), or the store can't
+     * be read.
+     */
+    suspend fun latestWeightKg(): Double?
 }
 
 /** The platform has no health store: desktop, and iOS until HealthKit is wired. */
@@ -103,4 +112,6 @@ object NoHealthStore : HealthStore {
     override fun disconnect() = Unit
 
     override fun record(workout: HealthWorkout) = Unit
+
+    override suspend fun latestWeightKg(): Double? = null
 }

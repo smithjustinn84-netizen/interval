@@ -203,6 +203,40 @@ class SettingsViewModelTest : MainDispatcherTest() {
         assertEquals(1, health.disconnects)
         assertEquals(HealthStatus.Disconnected, viewModel.state.value.health)
     }
+
+    @Test
+    fun `the health store's weight is offered in the unit and taken only when asked`() {
+        health.weightKg = 82.4
+        health.status.value = HealthStatus.Connected
+        assertEquals(82, viewModel.state.value.healthWeight)
+        assertEquals(WeightUnit.Kg.default, viewModel.state.value.weight)
+
+        viewModel.setWeightUnit(WeightUnit.Lb)
+        assertEquals(182, viewModel.state.value.healthWeight)
+        viewModel.useHealthWeight()
+        assertEquals(182, viewModel.state.value.weight)
+        assertEquals(182, WeightUnit.Lb.fromKg(storage.repository().appSettings.value.body.weightKg!!))
+
+        viewModel.setWeightUnit(WeightUnit.Kg)
+        assertEquals(viewModel.state.value.healthWeight, viewModel.state.value.weight)
+    }
+
+    @Test
+    fun `no weight is offered while disconnected or out of range`() {
+        health.weightKg = 82.0
+        assertNull(viewModel.state.value.healthWeight)
+        viewModel.useHealthWeight()
+        assertEquals(WeightUnit.Kg.default, viewModel.state.value.weight)
+
+        health.status.value = HealthStatus.Connected
+        assertEquals(82, viewModel.state.value.healthWeight)
+        viewModel.disconnectHealth()
+        assertNull(viewModel.state.value.healthWeight)
+
+        health.weightKg = 400.0
+        health.status.value = HealthStatus.Connected
+        assertNull(viewModel.state.value.healthWeight)
+    }
 }
 
 /** Reviews every file as [review] says, and records what it was asked to import. */

@@ -164,6 +164,15 @@ Sizes: XS ≤ half a day, S ≈ 1 day, M ≈ 2 days, L ≈ 3 days. The cut line 
 - Done when: `SettingsViewModelTest` takes the reading into the weight and shows none when
   disconnected; `SettingsScreenTest` finds the chip; `journeys/health-connect.xml` writes a weight in
   Health Connect's own app and takes it in Settings.
+- As built: connected still means the two write permissions alone. `READ_WEIGHT` is asked on the same sheet
+  (`PERMISSIONS` is the union) but checked on its own before each read, so adding it doesn't drop a user
+  connected in 0.2 to disconnected and stop their writes; such a user turns the switch off and on to be asked.
+  `SettingsViewModel` reads the weight each time the status becomes connected (`flatMapLatest`), keeps it in
+  kilograms, and offers it in the current unit, none outside the unit's range. The sheet's "chip" is a
+  `SecondaryButton`; once the weight set is Health Connect's it stays, disabled, as "From Health Connect: 82 kg"
+  (one button either way, so the sheet doesn't shift under the finger), worked out from the two values rather
+  than stored, so nothing new is persisted or exported. `useHealthWeight` keeps the reading as weighed, not
+  rounded to the unit, so switching units still shows it as Health Connect's.
 
 **6. Lift balance: sets per muscle over the last four weeks** · M
 - A "Balance" card on the Lift tab (`lift/lift-today/src/today/Today.kt`) under the week: a bar per muscle
