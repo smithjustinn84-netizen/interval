@@ -7,10 +7,10 @@
   </description>
   <actions>
     <action>Tap the "Lift" tab</action>
-    <action>Tap "Follow a program", scroll to "Full body for beginners" and tap it</action>
-    <action>Verify that the sheet shows "Full body for beginners", its summary, and under it "Balance" with "Sets in a week"</action>
-    <action>Verify that the bars read "Chest", "Shoulders", "Back", "Arms", "Core", "Glutes and hamstrings" and "Quads and calves", the chest's empty, with "Worked most" and "Assisted" under them</action>
-    <action>Verify that "Nothing in a week for: Chest" is shown under the bars, and "Day 1" and "Day 2" follow</action>
+    <action>Tap "Follow a program", scroll to "Simple &amp; Sinister" and tap it</action>
+    <action>Verify that the sheet shows "Simple &amp; Sinister", its summary, and under it "Balance" with "Sets in a week"</action>
+    <action>Verify that the bars read "Chest", "Shoulders", "Back", "Arms", "Core", "Glutes and hamstrings" and "Quads and calves", "Glutes and hamstrings" and "Shoulders" at 25, the chest's empty, with "Worked most" and "Assisted" under them</action>
+    <action>Verify that "Nothing in a week for: Chest, Quads and calves" is shown under the bars, and "Day 1" follows</action>
     <action>Swipe the sheet away, scroll to "Goblet squat and row", tap it, then tap "Follow this program"</action>
     <action>Verify that the Lift tab shows "Day 1 of 8 · week 1"; tap "Start day 1", log one set, tap "Finish" and then "Done"</action>
     <action>Verify that the Lift tab shows "Day 2 of 8 · week 1"; tap "Change program", scroll to "Goblet squat and row" and tap it</action>

@@ -190,12 +190,15 @@ class ProgramsTest {
     }
 
     @Test
-    fun `only the mixed and barbell programs leave the bells and the grapplers have their own family`() {
+    fun `only the mixed and barbell programs go past bells and bodyweight and the grapplers have their own family`() {
+        // Nothing to buy beyond a bell: bodyweight is allowed, bands, the mat and a bar are not.
         builtInPrograms.filter {
             (it.key as ProgramKey.BuiltIn).id.family !in setOf(ProgramFamily.Mixed, ProgramFamily.Barbell)
         }
             .flatMap { it.days.flatten() }
-            .forEach { assertTrue(it.exercise in kettlebellLifts) }
+            .forEach {
+                assertTrue(it.exercise.equipment in setOf(Equipment.Kettlebell, Equipment.Bodyweight), "${it.exercise}")
+            }
         assertEquals(
             listOf(
                 ProgramId.GrapplerStrength,

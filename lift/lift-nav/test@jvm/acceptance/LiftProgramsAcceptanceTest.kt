@@ -13,11 +13,12 @@ import kotlin.test.Test
 class LiftProgramsAcceptanceTest {
     @Test
     fun `a program's sheet shows what a week of it works and what it leaves out`() = liftScenario {
-        openProgram("Full body for beginners")
+        // 100 one-arm swings and 10 get-ups a day, five days a week, a side counting half.
+        openProgram("Simple & Sinister")
         seeWeekBalance(
-            untrained = "Chest",
-            "Glutes and hamstrings: ",
-            "Back: ",
+            untrained = "Chest, Quads and calves",
+            "Glutes and hamstrings: 25 sets worked it most",
+            "Shoulders: 25 sets worked it most",
             "Chest: 0 sets worked it most, 0 assisted",
         )
     }

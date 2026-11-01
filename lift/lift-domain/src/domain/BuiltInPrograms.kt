@@ -343,6 +343,7 @@ val builtInPrograms: List<Program> = listOf(
             ),
             listOf(
                 Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 10).upTo(15),
+                Block(BuiltInExercise.PushUp, rounds = 2, reps = 8),
                 Block(BuiltInExercise.GetUp, rounds = 3, reps = 1),
             ),
         ),
@@ -362,6 +363,7 @@ val builtInPrograms: List<Program> = listOf(
             listOf(
                 Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 8).upTo(12),
                 Block(BuiltInExercise.Press, rounds = 3, reps = 5).upTo(8),
+                Block(BuiltInExercise.PushUp, rounds = 3, reps = 8),
                 Block(BuiltInExercise.Row, rounds = 3, reps = 8).upTo(12),
             ),
             listOf(
@@ -414,6 +416,7 @@ val builtInPrograms: List<Program> = listOf(
             listOf(
                 Block(BuiltInExercise.PushUp, rounds = 10, reps = 8, kind = BlockKind.Emom),
                 Block(BuiltInExercise.MountainClimber, rounds = 10, reps = 20, kind = BlockKind.Emom),
+                Block(BuiltInExercise.InvertedRow, rounds = 10, reps = 5, kind = BlockKind.Emom),
             ),
         ),
         daysPerWeek = 3,
@@ -443,6 +446,7 @@ val builtInPrograms: List<Program> = listOf(
         days = listOf(
             listOf(
                 Block(BuiltInExercise.Press, rounds = 3, reps = 5).upTo(8),
+                Block(BuiltInExercise.BandChestPress, rounds = 3, reps = 15).upTo(20),
                 Block(BuiltInExercise.BandPullApart, rounds = 3, reps = 15).upTo(20),
                 Block(BuiltInExercise.Row, rounds = 3, reps = 8).upTo(12),
                 Block(BuiltInExercise.BandFacePull, rounds = 3, reps = 15).upTo(20),
