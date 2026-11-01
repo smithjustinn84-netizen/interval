@@ -17,6 +17,10 @@ dependencies:
   - $libs.androidx.lifecycle.runtime.compose
   - $libs.koin.core
   - $libs.koin.compose
+  # Each feature declares its ViewModels in its Koin module (`viewModel {}`) and its Routes resolve them
+  # (`koinViewModel`).
+  - $libs.koin.core.viewmodel
+  - $libs.koin.compose.viewmodel
   - $libs.kermit
 
 # Renders the @Preview functions in the IDE. Amper has no debug-only dependency scope, so it ships in release

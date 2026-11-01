@@ -36,7 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.intl.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.common_cancel
 import dev.justinsmith.interval.history.resources.history_clear_confirm
@@ -83,7 +82,7 @@ import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.program
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.currentKoinScope
+import org.koin.compose.viewmodel.koinViewModel
 
 /**
  * Resolves the tab's ViewModel and binds it to [HistoryScreen]. Starting a workout puts it on the Timer,
@@ -103,8 +102,7 @@ fun HistoryRoute(
     selectedWorkout: Long? = null,
     selectedLift: String? = null,
 ) {
-    val scope = currentKoinScope()
-    val viewModel = viewModel { HistoryViewModel(scope.get(), scope.get(), scope.get(), scope.get()) }
+    val viewModel = koinViewModel<HistoryViewModel>()
     val locale = Locale.current.toLanguageTag()
     LaunchedEffect(locale) { viewModel.setLocale(locale) }
     val state by viewModel.state.collectAsStateWithLifecycle()

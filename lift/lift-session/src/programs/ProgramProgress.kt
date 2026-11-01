@@ -31,7 +31,6 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.Arrival
 import dev.justinsmith.interval.ui.BackAction
@@ -91,7 +90,7 @@ import dev.justinsmith.lift.ui.StatTile
 import dev.justinsmith.lift.ui.programDayLine
 import dev.justinsmith.lift.ui.programName
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.currentKoinScope
+import org.koin.compose.viewmodel.koinViewModel
 
 /** What the Program page does: open a day's session, follow the program again or pick another, and go back. */
 data class ProgramProgressActions(
@@ -103,8 +102,7 @@ data class ProgramProgressActions(
 
 @Composable
 fun ProgramProgressRoute(onOpenSession: (uid: String) -> Unit, onPickAnother: () -> Unit, onBack: () -> Unit) {
-    val scope = currentKoinScope()
-    val viewModel = viewModel { ProgramProgressViewModel(scope.get(), scope.get()) }
+    val viewModel = koinViewModel<ProgramProgressViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val notices = LocalNotices.current
     val followedText = stringResource(

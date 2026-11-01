@@ -110,7 +110,6 @@ import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 import org.jetbrains.compose.reload.DevelopmentEntryPoint
 import org.koin.compose.KoinIsolatedContext
-import org.koin.compose.currentKoinScope
 import org.koin.compose.koinInject
 import org.koin.core.KoinApplication
 
@@ -162,12 +161,12 @@ internal fun AppContent(
     onShortcutOpen: () -> Unit = {},
 ) {
     KoinIsolatedContext(context = koin) {
-        val scope = currentKoinScope()
-        val repository = scope.get<IntervalRepository>()
-        val ready by remember(scope) { storageReady(repository, scope.get()) }.collectAsStateWithLifecycle(false)
+        val repository = koinInject<IntervalRepository>()
+        val lift = koinInject<LiftRepository>()
+        val ready by remember(repository, lift) { storageReady(repository, lift) }.collectAsStateWithLifecycle(false)
         // The cue player is built on first use, and Android's speech engine takes a moment to start: starting it
         // with the app, while storage reads, means the first workout cue is never the one it misses.
-        LaunchedEffect(scope) { scope.get<CuePlayer>() }
+        koinInject<CuePlayer>()
         // Saved settings take milliseconds to read. Until then the window background shows, rather than
         // screens built from defaults or a flash of the wrong theme.
         if (!ready) return@KoinIsolatedContext
@@ -179,7 +178,7 @@ internal fun AppContent(
         }
         IntervalTheme(darkTheme = dark) {
             val backStack = rememberNavBackStack(navConfiguration, TimerTab)
-            val clock = scope.get<WallClock>()
+            val clock = koinInject<WallClock>()
             val opened by rememberUpdatedState(onShortcutOpen)
             LaunchedEffect(shortcut) {
                 if (shortcut == null) return@LaunchedEffect

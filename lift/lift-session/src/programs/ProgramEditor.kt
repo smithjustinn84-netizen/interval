@@ -30,8 +30,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.createSavedStateHandle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
@@ -97,7 +95,8 @@ import dev.justinsmith.lift.session.resources.session_undo
 import dev.justinsmith.lift.ui.blockLine
 import dev.justinsmith.lift.ui.liftName
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.currentKoinScope
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 /** What the editor does: change the draft or narrow its exercises, save it under a name, delete it, or go back. */
 data class ProgramEditorActions(
@@ -110,8 +109,7 @@ data class ProgramEditorActions(
 
 @Composable
 fun ProgramEditorRoute(uid: String?, onBack: () -> Unit) {
-    val scope = currentKoinScope()
-    val viewModel = viewModel { ProgramEditorViewModel(scope.get(), scope.get(), uid, createSavedStateHandle()) }
+    val viewModel = koinViewModel<ProgramEditorViewModel> { parametersOf(uid) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     ProgramEditorScreen(
         state,

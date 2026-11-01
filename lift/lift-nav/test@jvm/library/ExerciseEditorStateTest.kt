@@ -13,6 +13,7 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import dev.justinsmith.interval.ui.StateRestoration
 import dev.justinsmith.interval.ui.runUiTest
+import dev.justinsmith.lift.di.liftFeatureModules
 import dev.justinsmith.lift.domain.Measure
 import dev.justinsmith.lift.fakes.liftTestKoin
 import org.koin.compose.KoinIsolatedContext
@@ -32,7 +33,7 @@ class ExerciseEditorStateTest {
     private var editor: ExerciseEditorViewModel? = null
 
     private fun editorTest(block: DesktopComposeUiTest.(StateRestoration) -> Unit) = runUiTest {
-        val koin = liftTestKoin()
+        val koin = liftTestKoin(features = liftFeatureModules)
         try {
             val restoration = StateRestoration(this)
             restoration.setContent {

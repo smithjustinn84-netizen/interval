@@ -344,7 +344,8 @@ fun fakeLiftStorageModule(storage: FakeLiftStorage = FakeLiftStorage()): Module 
 
 /**
  * Lift's part of the container over fakes, with what core and the app would supply: a clock reading [now], the
- * [FixedTimestampFormatter], [sharer] and [intervals].
+ * [FixedTimestampFormatter], [sharer] and [intervals]. [features] are the feature modules whose ViewModels the
+ * test's Routes resolve: `lift-nav`'s `liftFeatureModules` (this module sees no feature).
  */
 fun liftTestKoin(
     storage: FakeLiftStorage = FakeLiftStorage(),
@@ -352,6 +353,7 @@ fun liftTestKoin(
     now: () -> Long = { 0L },
     intervals: IntervalActivity = FakeIntervalActivity(),
     sharer: Sharer = RecordingSharer(),
+    features: List<Module> = emptyList(),
 ): KoinApplication = koinApplication {
     val app = module {
         single<IntervalActivity> { intervals }
@@ -359,6 +361,7 @@ fun liftTestKoin(
     modules(
         listOf(fakeCorePlatformModule(WallClock(now), sharer = sharer)) +
             liftModules(platformModule, fakeLiftStorageModule(storage)) +
+            features +
             app,
     )
 }

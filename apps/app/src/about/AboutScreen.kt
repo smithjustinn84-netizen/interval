@@ -39,7 +39,7 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.rememberEntrance
 import dev.justinsmith.interval.ui.risingEnter
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.currentKoinScope
+import org.koin.compose.koinInject
 
 /** Reads the build's version and binds it to [AboutScreen]. */
 @Composable
@@ -49,7 +49,7 @@ fun AboutRoute(
     onShowPrivacy: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val info = currentKoinScope().get<AppInfo>()
+    val info = koinInject<AppInfo>()
     AboutScreen(
         version = info.version,
         onBack = onBack,

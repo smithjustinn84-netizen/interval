@@ -29,6 +29,7 @@ import dev.justinsmith.interval.ui.UI_TEST_TIMEOUT
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.rememberNotices
 import dev.justinsmith.interval.ui.runUiTest
+import dev.justinsmith.lift.di.liftFeatureModules
 import dev.justinsmith.lift.fakes.FakeIntervalActivity
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import dev.justinsmith.lift.fakes.RecordingBeeper
@@ -111,6 +112,7 @@ fun liftAppTest(
         now = clock::get,
         intervals = intervals,
         sharer = sharer,
+        features = liftFeatureModules,
     )
     val owner = object : NavigationEventDispatcherOwner {
         override val navigationEventDispatcher = NavigationEventDispatcher()

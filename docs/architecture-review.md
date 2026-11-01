@@ -192,6 +192,10 @@ mutators.
 - Have the existing classes implement them, and inject the interfaces.
 
 ### C4 · Medium · ViewModels are wired by a service locator in composables (DIP)
+
+**Resolved** in change `kzoutvkm` ("DI: ViewModels declared in each feature's Koin module"): each feature
+declares its ViewModels in its own Koin module, Routes resolve them with `koinViewModel`, and
+`VerifyAppModulesTest` checks the whole graph.
 - Routes build ViewModels with positional `scope.get()` calls, eight in `WorkoutScreen.kt:103` and
   `SessionScreen.kt:115`.
 - No ViewModel is declared in a Koin module, so the graph is spread across Route composables, and reordering a

@@ -33,7 +33,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.ConfirmDialog
@@ -109,7 +108,7 @@ import dev.justinsmith.lift.ui.programDayLine
 import dev.justinsmith.lift.ui.programName
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.currentKoinScope
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun TodayRoute(
@@ -120,8 +119,7 @@ fun TodayRoute(
     onOpenExercises: () -> Unit = {},
     onOpenProgram: () -> Unit = {},
 ) {
-    val scope = currentKoinScope()
-    val viewModel = viewModel { TodayViewModel(scope.get(), scope.get(), scope.get(), scope.get()) }
+    val viewModel = koinViewModel<TodayViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
     TodayScreen(
         state,

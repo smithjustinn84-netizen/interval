@@ -12,9 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.GroupLabel
@@ -47,7 +45,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.currentKoinScope
+import org.koin.compose.viewmodel.koinViewModel
 
 /** The library's list, and the page of the exercise open over it, if any. */
 data class ExerciseLibraryUiState(
@@ -121,10 +119,7 @@ fun exerciseDetail(
 /** The library, an exercise's page over it, and a new exercise's form; a session on its page by [onOpenSession]. */
 @Composable
 fun ExerciseLibraryRoute(onBack: () -> Unit, onOpenSession: (uid: String) -> Unit = {}) {
-    val scope = currentKoinScope()
-    val viewModel = viewModel {
-        ExerciseLibraryViewModel(scope.get(), scope.get(), scope.get(), createSavedStateHandle())
-    }
+    val viewModel = koinViewModel<ExerciseLibraryViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
     var adding by rememberSaveable { mutableStateOf<String?>(null) }
     ExerciseLibraryScreen(

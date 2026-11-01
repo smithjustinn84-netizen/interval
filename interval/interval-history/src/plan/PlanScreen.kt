@@ -32,7 +32,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.history.dayHeading
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.common_joined
@@ -99,13 +98,12 @@ import dev.justinsmith.lift.ui.programDayLine
 import dev.justinsmith.lift.ui.programName
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.currentKoinScope
+import org.koin.compose.viewmodel.koinViewModel
 
 /** Resolves the plan's ViewModel and binds it to [PlanScreen]. */
 @Composable
 fun PlanRoute(onBack: () -> Unit, modifier: Modifier = Modifier) {
-    val scope = currentKoinScope()
-    val viewModel = viewModel { PlanViewModel(scope.get(), scope.get(), scope.get(), scope.get()) }
+    val viewModel = koinViewModel<PlanViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val notices = LocalNotices.current
     val undo = stringResource(Res.string.notice_undo)

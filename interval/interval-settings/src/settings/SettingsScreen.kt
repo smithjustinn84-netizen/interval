@@ -19,7 +19,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.ThemeMode
@@ -96,7 +95,8 @@ import dev.justinsmith.interval.ui.enterExpanding
 import dev.justinsmith.interval.ui.exitShrinking
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.currentKoinScope
+import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 
 /** Resolves the screen's ViewModel and binds it to [SettingsScreen]. */
 @Composable
@@ -106,14 +106,11 @@ fun SettingsRoute(
     modifier: Modifier = Modifier,
     inPane: Boolean = false,
 ) {
-    val scope = currentKoinScope()
-    val viewModel = viewModel {
-        SettingsViewModel(scope.get(), scope.get(), scope.get(), scope.get(), scope.get(), scope.get(), scope.get())
-    }
+    val viewModel = koinViewModel<SettingsViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val importing by viewModel.import.collectAsStateWithLifecycle()
     val pickFile = rememberFileOpener(viewModel::reviewImport)
-    val health = rememberHealthConnector(scope.get<HealthStore>())
+    val health = rememberHealthConnector(koinInject<HealthStore>())
     // Read again on each opening: the permission may have been taken back in the store's own settings.
     LaunchedEffect(Unit) { viewModel.refreshHealth() }
     SettingsScreen(

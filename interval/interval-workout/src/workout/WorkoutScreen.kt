@@ -45,7 +45,6 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
@@ -79,7 +78,9 @@ import dev.justinsmith.interval.workout.resources.workout_pause
 import dev.justinsmith.interval.workout.resources.workout_resume
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.currentKoinScope
+import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 /** What the running workout's controls do, passed down as one value rather than five same-typed lambdas. */
 @Immutable
@@ -98,21 +99,8 @@ internal class WorkoutActions(
  */
 @Composable
 fun WorkoutRoute(id: Long, onExit: () -> Unit, modifier: Modifier = Modifier) {
-    val scope = currentKoinScope()
-    val sharer = scope.get<Sharer>()
-    val viewModel = viewModel {
-        WorkoutViewModel(
-            id,
-            scope.get(),
-            scope.get(),
-            scope.get(),
-            scope.get(),
-            scope.get(),
-            scope.get(),
-            scope.get(),
-            scope.get(),
-        )
-    }
+    val sharer = koinInject<Sharer>()
+    val viewModel = koinViewModel<WorkoutViewModel> { parametersOf(id) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     if (state.running && state.keepScreenOn) KeepScreenOn()
     if (!state.isDone) AskToShowNotifications()

@@ -20,7 +20,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.common_cancel
 import dev.justinsmith.interval.history.resources.common_joined
@@ -62,7 +61,9 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.Timeline
 import dev.justinsmith.interval.ui.workoutDescription
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.currentKoinScope
+import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 /**
  * Resolves the page's ViewModel for the workout stored under [id] and binds it to [WorkoutDetailScreen].
@@ -77,9 +78,8 @@ fun WorkoutDetailRoute(
     modifier: Modifier = Modifier,
     inPane: Boolean = false,
 ) {
-    val scope = currentKoinScope()
-    val sharer = scope.get<Sharer>()
-    val viewModel = viewModel(key = "workout-$id") { WorkoutDetailViewModel(id, scope.get(), scope.get(), scope.get()) }
+    val sharer = koinInject<Sharer>()
+    val viewModel = koinViewModel<WorkoutDetailViewModel>(key = "workout-$id") { parametersOf(id) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val gone = state.workout == null
     val leave by rememberUpdatedState(onBack)

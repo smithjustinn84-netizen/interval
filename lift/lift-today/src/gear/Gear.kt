@@ -19,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.GroupLabel
@@ -72,7 +71,7 @@ import dev.justinsmith.lift.ui.RecordRow
 import dev.justinsmith.lift.ui.bandColourName
 import dev.justinsmith.lift.ui.bandName
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.currentKoinScope
+import org.koin.compose.viewmodel.koinViewModel
 
 /** What the page does with a band: changes it, moves it, removes or restores it. */
 class BandActions(
@@ -84,8 +83,7 @@ class BandActions(
 
 @Composable
 fun GearRoute(onBack: () -> Unit) {
-    val scope = currentKoinScope()
-    val viewModel = viewModel { GearViewModel(scope.get()) }
+    val viewModel = koinViewModel<GearViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val actions = remember(viewModel) {
         BandActions(viewModel::saveBand, viewModel::move, viewModel::remove, viewModel::restore)

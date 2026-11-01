@@ -8,6 +8,7 @@ import dev.justinsmith.interval.settings.DataExporter
 import dev.justinsmith.interval.settings.DataImporter
 import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.di.liftFeatureModules
 import dev.justinsmith.lift.di.liftModules
 import dev.justinsmith.lift.di.liftStorageModule
 import kotlinx.coroutines.withTimeoutOrNull
@@ -24,7 +25,8 @@ import kotlin.time.Duration.Companion.seconds
  * the sharer. [platformModule] supplies storage locations, the cue player, the background workout and the
  * plan's reminders; [storage] the database and DataStore built from them (tests swap in fakes);
  * [historyModule] keeps those reminders in step with the plan. [liftPlatform] and [liftStorage] do the same
- * for Lift, whose own database sits beside this one. The app adds the export, which reads both.
+ * for Lift, whose own database sits beside this one. Each feature's module declares its ViewModels. The app
+ * adds the export, which reads both.
  */
 fun appModules(
     corePlatform: Module,
@@ -34,8 +36,13 @@ fun appModules(
     liftStorage: Module = liftStorageModule,
 ): List<Module> =
     listOf(corePlatform, platformModule, storage, dataModule, historyModule) +
+        intervalFeatureModules +
         liftModules(liftPlatform, liftStorage) +
+        liftFeatureModules +
         appModule
+
+/** The ViewModels of the interval side's features; History's are in [historyModule]. */
+private val intervalFeatureModules = listOf(timerModule, presetsModule, workoutModule, settingsModule)
 
 /**
  * What only the app can build, seeing both sides: the export and the import, over both sides' storage, and what

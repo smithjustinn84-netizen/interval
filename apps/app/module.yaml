@@ -57,6 +57,8 @@ test-dependencies@jvm:
   - $compose.desktop.currentOs
   # Dispatchers.Main for viewModelScope, as in desktopApp: the tests compose the real routes.
   - $libs.kotlinx.coroutines.swing
+  # `verify()`, which checks the whole Koin graph by reflection (JVM only).
+  - $libs.koin.test
 
 # Renders the shared @Preview functions in the IDE. Amper has no debug-only dependency scope, so it ships
 # in release builds too; R8 strips what the app never calls.

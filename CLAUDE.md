@@ -175,8 +175,15 @@ toolchain (`$compose.*`).
      back stack fails on iOS/desktop.
   3. `entry<X> { XRoute() }` in the `entryProvider` (App.kt; a Lift page in `liftEntries`, `lift/lift-nav/src/nav/LiftEntries.kt`)
   A tab implements core's `Tab` (`core/core/src/nav/Tab.kt`, with the `push` helper every entry uses).
-- **Screens** are split into `XRoute()` (resolves the ViewModel via `currentKoinScope()` + `viewModel { }`,
-  collects state) and a stateless `XScreen(state, callbacks)` that previews and tests can drive directly.
+- **Screens** are split into `XRoute()` (resolves the ViewModel with `koinViewModel<XViewModel>()`, and a
+  route's key with `{ parametersOf(id) }`; anything else with `koinInject()`; collects state) and a stateless
+  `XScreen(state, callbacks)` that previews and tests can drive directly. Each feature declares its ViewModels in
+  its own Koin module (`<feature>/src/di/`: `timerModule`, `liftSessionModule`, …): `viewModelOf(::X)` where every
+  parameter is bound, else `viewModel { (id: Long) -> X(id, get(), …) }` (leave defaulted parameters out; a
+  `SavedStateHandle` is `get()`, from the entry). `appModules` lists the interval side's, `lift-nav`'s
+  `liftFeatureModules` Lift's (Lift's flow tests pass them to `liftTestKoin(features = …)`).
+  `VerifyAppModulesTest` (`apps/app/test@jvm/di/`) checks the whole graph: a new route parameter goes in its
+  `injectedParameters`.
 - **Page layouts**: a pushed page that scrolls is a `ScrollPage` (Back is `BackAction`), a tab of cards a
   `TabGrid`. Any screen that saves or edits a preset opens it through `PresetEditorHost`
   (`PresetDraft.saveCurrent(config)` for the settings on the Timer).
@@ -195,7 +202,7 @@ toolchain (`$compose.*`).
   closed on Android or iOS, so services and receivers can reach it. Only `apps/` may import `startKoin`,
   `stopKoin` or `GlobalContext` (detekt's `ForbiddenImport`); tests build their own with `testKoin()` and pass it to
   `AppContent`. Neither side's modules
-  bind anything the other needs. Add a module per domain. Constructor-inject everything; keep platform calls (the clock, cues, storage) behind
+  bind anything the other needs. Add a module per domain or feature. Constructor-inject everything; keep platform calls (the clock, cues, storage) behind
   injected interfaces (`WallClock`, `CuePlayer`, `PlatformStorage`) so tests can fake them.
 - **Storage**: `IntervalRepository` (`interval/interval-data/src/data/`) is the only thing that touches it. What it stores
   is described by plain models in `interval/interval-domain/src/model/` (`AppSettings`, `HistoryEntry`, `PlannedWorkout`,

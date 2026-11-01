@@ -27,7 +27,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.ConfirmDialog
@@ -87,7 +86,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.currentKoinScope
+import org.koin.compose.viewmodel.koinViewModel
 
 /** The program followed, if any, and its next day; and the programs the user made. */
 data class ProgramsUiState(
@@ -138,8 +137,7 @@ fun ProgramsRoute(
     onBack: () -> Unit,
     onOpenProgress: () -> Unit = {},
 ) {
-    val scope = currentKoinScope()
-    val viewModel = viewModel { ProgramsViewModel(scope.get()) }
+    val viewModel = koinViewModel<ProgramsViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
     ProgramsScreen(
         following = state.following?.key,

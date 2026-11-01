@@ -14,7 +14,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.ConfirmDialog
@@ -51,14 +50,15 @@ import dev.justinsmith.lift.ui.liftName
 import dev.justinsmith.lift.ui.programName
 import dev.justinsmith.lift.ui.setLine
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.currentKoinScope
+import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 /** Resolves a finished session's ViewModel and binds it to [LiftDetailScreen]; [inPane] beside History's log. */
 @Composable
 fun LiftDetailRoute(uid: String, onBack: () -> Unit, modifier: Modifier = Modifier, inPane: Boolean = false) {
-    val scope = currentKoinScope()
-    val sharer = scope.get<Sharer>()
-    val viewModel = viewModel(key = uid) { LiftDetailViewModel(uid, scope.get(), scope.get()) }
+    val sharer = koinInject<Sharer>()
+    val viewModel = koinViewModel<LiftDetailViewModel>(key = uid) { parametersOf(uid) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val notices = LocalNotices.current
     val undo = stringResource(Res.string.session_undo)

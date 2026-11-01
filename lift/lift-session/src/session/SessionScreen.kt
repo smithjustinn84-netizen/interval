@@ -39,7 +39,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
@@ -105,25 +104,13 @@ import dev.justinsmith.lift.ui.liftName
 import dev.justinsmith.lift.ui.sessionTitle
 import dev.justinsmith.lift.ui.setLine
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.currentKoinScope
+import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun SessionRoute(onExit: () -> Unit) {
-    val scope = currentKoinScope()
-    val sharer = scope.get<Sharer>()
-    val viewModel =
-        viewModel {
-            SessionViewModel(
-                scope.get(),
-                scope.get(),
-                scope.get(),
-                scope.get(),
-                scope.get(),
-                scope.get(),
-                scope.get(),
-                scope.get(),
-            )
-        }
+    val sharer = koinInject<Sharer>()
+    val viewModel = koinViewModel<SessionViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val finished = state.finished
     val emom = state.emom

@@ -24,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.presets.PresetDraft
 import dev.justinsmith.interval.presets.PresetEditorHost
 import dev.justinsmith.interval.presets.rememberPresetDraft
@@ -42,7 +41,7 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ValueSheet
 import dev.justinsmith.interval.ui.isLandscape
-import org.koin.compose.currentKoinScope
+import org.koin.compose.viewmodel.koinViewModel
 
 /** Resolves the tab's ViewModel, scoped to its back-stack entry, and binds it to [TimerScreen]. */
 @Composable
@@ -52,8 +51,7 @@ fun TimerRoute(
     onSeeAllPresets: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val scope = currentKoinScope()
-    val viewModel = viewModel { TimerViewModel(scope.get()) }
+    val viewModel = koinViewModel<TimerViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
     TimerScreen(
         state = state,

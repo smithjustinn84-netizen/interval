@@ -16,9 +16,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalSheet
@@ -71,7 +69,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.currentKoinScope
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 /**
  * The exercise being added or changed: whether it is saved already (and archived), the names of the user's
@@ -214,9 +213,8 @@ private const val CUES = "draft_cues"
  */
 @Composable
 fun rememberExerciseEditor(uid: String?, name: String): ExerciseEditorViewModel {
-    val scope = currentKoinScope()
-    val editor = viewModel(key = "exerciseEditor:${uid.orEmpty()}:$name") {
-        ExerciseEditorViewModel(scope.get(), createSavedStateHandle(), uid, name)
+    val editor = koinViewModel<ExerciseEditorViewModel>(key = "exerciseEditor:${uid.orEmpty()}:$name") {
+        parametersOf(uid, name)
     }
     // Runs only when the sheet is shown anew: brought back, the saveable is restored and this is skipped.
     rememberSaveable(uid, name) {

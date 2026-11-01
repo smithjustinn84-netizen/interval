@@ -27,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.justinsmith.interval.presets.resources.Res
 import dev.justinsmith.interval.presets.resources.common_calories_estimate
 import dev.justinsmith.interval.presets.resources.common_cancel
@@ -76,7 +75,7 @@ import dev.justinsmith.interval.ui.selectableCard
 import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.interval.ui.workoutDescription
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.currentKoinScope
+import org.koin.compose.viewmodel.koinViewModel
 
 /**
  * Resolves the tab's ViewModel and binds it to [PresetsScreen]. A preset goes on the Timer either way;
@@ -89,8 +88,7 @@ fun PresetsRoute(
     onStartWorkout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val scope = currentKoinScope()
-    val viewModel = viewModel { PresetsViewModel(scope.get()) }
+    val viewModel = koinViewModel<PresetsViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
     PresetsScreen(
         state = state,

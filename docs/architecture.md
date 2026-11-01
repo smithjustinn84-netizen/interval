@@ -225,7 +225,7 @@ stateless presentation:
      [ ViewModel ]  (emits StateFlow<UiState>)
            │
            ▼
-      [ XRoute ]    (retrieves ViewModel via currentKoinScope(), collects state, handles nav events)
+      [ XRoute ]    (resolves its ViewModel with koinViewModel(), collects state, handles nav events)
            │
            ▼
      [ XScreen ]    (pure, stateless Composable taking state + callbacks)
@@ -234,7 +234,8 @@ stateless presentation:
 ### The Route / Screen Pattern:
 - **`XRoute`**:
   - Entry-scoped via `rememberViewModelStoreNavEntryDecorator`.
-  - Injects dependencies via `currentKoinScope().get()` or `viewModel { ... }`.
+  - Resolves its ViewModel with `koinViewModel<XViewModel>()` (`{ parametersOf(id) }` for a route's key), declared
+    in the feature's own Koin module (`<feature>/src/di/`); anything else it needs with `koinInject()`.
   - Collects `StateFlow<UiState>` using `collectAsStateWithLifecycle()`.
   - Passes state down to `XScreen` and wires UI callbacks to ViewModel events or navigation `push`/`pop`.
 - **`XScreen`**:
