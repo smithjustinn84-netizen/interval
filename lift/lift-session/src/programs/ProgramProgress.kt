@@ -57,6 +57,7 @@ import dev.justinsmith.lift.domain.ProgramProgress
 import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.domain.programProgress
+import dev.justinsmith.lift.session.effortWord
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_joined
 import dev.justinsmith.lift.session.resources.kg_value
@@ -318,7 +319,7 @@ private fun DaysDone(
     }
 }
 
-/** "Day 7" over its date and "9 of 9 sets", opened by a tap. */
+/** "Day 7" over its date, "9 of 9 sets" and how hard it felt when that was said, opened by a tap. */
 @Composable
 private fun DoneRow(row: DoneRow, onOpenSession: (uid: String) -> Unit) {
     val palette = IntervalTheme.palette
@@ -344,12 +345,14 @@ private fun DoneRow(row: DoneRow, onOpenSession: (uid: String) -> Unit) {
                 style = IntervalTheme.type.label,
                 color = palette.text,
             )
+            val sets = stringResource(
+                Res.string.common_joined,
+                row.date,
+                stringResource(Res.string.program_sets_done, row.day.setsDone, row.day.setsPlanned),
+            )
+            val effort = row.day.session?.effort?.let { effortWord(it) }
             Text(
-                stringResource(
-                    Res.string.common_joined,
-                    row.date,
-                    stringResource(Res.string.program_sets_done, row.day.setsDone, row.day.setsPlanned),
-                ),
+                effort?.let { stringResource(Res.string.common_joined, sets, it) } ?: sets,
                 style = IntervalTheme.type.meta,
                 color = palette.textDim,
             )

@@ -16,6 +16,9 @@ enum class PerceivedEffort {
     /** As stored: 1 for [Easy] up to 5 for [AllOut]. Their order is the scale's, so never reorder them. */
     val level: Int get() = ordinal + 1
 
+    /** Whether a program day that felt this hard leaves its steps up off until asked for: very hard or more. */
+    val holdsBackSteps: Boolean get() = this >= VeryHard
+
     companion object {
         /** The longest note a finished session keeps: a line, not a diary. */
         const val NOTE_MAX_LENGTH = 140

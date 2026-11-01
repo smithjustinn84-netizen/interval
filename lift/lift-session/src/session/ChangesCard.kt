@@ -24,6 +24,7 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ToggleRow
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.BlockChange
+import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.PlanChanges
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.SaveScope
@@ -37,6 +38,7 @@ import dev.justinsmith.lift.session.resources.changes_copy_name
 import dev.justinsmith.lift.session.resources.changes_drop
 import dev.justinsmith.lift.session.resources.changes_every_day
 import dev.justinsmith.lift.session.resources.changes_every_day_hint
+import dev.justinsmith.lift.session.resources.changes_held_back
 import dev.justinsmith.lift.session.resources.changes_keep
 import dev.justinsmith.lift.session.resources.changes_kept
 import dev.justinsmith.lift.session.resources.changes_kept_copy
@@ -66,6 +68,8 @@ internal class ChangesChoices(
     val scopeName: MutableState<String>,
     // The steps up left out, by place, as text: a plain string saves on every platform.
     val declined: MutableState<String>,
+    // Whether a step up's switch was touched: until then, how hard the day felt decides them.
+    val touched: MutableState<Boolean>,
 )
 
 @Composable
@@ -73,19 +77,27 @@ internal fun rememberChangesChoices() = ChangesChoices(
     dismissed = rememberSaveable { mutableStateOf(false) },
     scopeName = rememberSaveable { mutableStateOf(SaveScope.ThisDay.name) },
     declined = rememberSaveable { mutableStateOf("") },
+    touched = rememberSaveable { mutableStateOf(false) },
 )
 
-/** The steps up of [changes] the card has switched on, by place. */
-private fun ChangesChoices.taken(changes: PlanChanges): Set<Int> {
+/**
+ * The steps up of [changes] the card has switched on, by place: all of them, or none while a day said to have felt
+ * very hard or more holds them back, until a switch is touched; then those left on.
+ */
+private fun ChangesChoices.taken(changes: PlanChanges, effort: PerceivedEffort?): Set<Int> {
+    if (heldBack(effort)) return emptySet()
     val left = declined.value.split(',').mapNotNull { it.toIntOrNull() }.toSet()
     return changes.nudges.indices.toSet() - left
 }
+
+/** Whether how hard the day felt holds its steps up back, before a switch of theirs is touched. */
+private fun ChangesChoices.heldBack(effort: PerceivedEffort?) = !touched.value && effort?.holdsBackSteps == true
 
 /** Whether the card still offers something to keep that was neither saved nor set aside with Today only. */
 internal fun ChangesChoices.undecided(finished: Finished): Boolean {
     val changes = finished.changes ?: return false
     if (finished.kept != null || dismissed.value) return false
-    return changes.changes.isNotEmpty() || taken(changes).isNotEmpty()
+    return changes.changes.isNotEmpty() || taken(changes, finished.session.effort).isNotEmpty()
 }
 
 /**
@@ -100,7 +112,8 @@ internal fun ChangesCard(finished: Finished, choices: ChangesChoices, onKeep: (S
     var dismissed by choices.dismissed
     var scopeName by choices.scopeName
     var declined by choices.declined
-    val taken = choices.taken(changes)
+    val effort = finished.session.effort
+    val taken = choices.taken(changes, effort)
     val left = changes.nudges.indices.toSet() - taken
     val name = programName(changes.program)
     val copy = copyName(stringResource(Res.string.changes_copy_name, name), finished.taken)
@@ -116,8 +129,10 @@ internal fun ChangesCard(finished: Finished, choices: ChangesChoices, onKeep: (S
                 KeptLine(changes, name, copy)
                 return@Column
             }
-            NextTime(changes.nudges, taken, finished.bands, onToggle = { i ->
+            NextTime(changes.nudges, taken, finished.bands, choices.heldBack(effort), onToggle = { i ->
+                // Left out as the card shows them, so the first touch flips one switch from where it stands.
                 declined = (if (i in left) left - i else left + i).joinToString(",")
+                choices.touched.value = true
             })
             if (changes.changes.isNotEmpty() || taken.isNotEmpty()) {
                 val scope = SaveScope.valueOf(scopeName)
@@ -141,16 +156,33 @@ internal fun ChangesCard(finished: Finished, choices: ChangesChoices, onKeep: (S
     }
 }
 
-/** The steps up the day earned, each with a switch: on, it goes in the program for next time. */
+/**
+ * The steps up the day earned, each with a switch: on, it goes in the program for next time. [heldBack], the day
+ * felt too hard for them to be on until asked for, and says so.
+ */
 @Composable
-private fun NextTime(nudges: List<BlockChange>, taken: Set<Int>, bands: List<Band>, onToggle: (Int) -> Unit) {
+private fun NextTime(
+    nudges: List<BlockChange>,
+    taken: Set<Int>,
+    bands: List<Band>,
+    heldBack: Boolean,
+    onToggle: (Int) -> Unit,
+) {
     if (nudges.isEmpty()) return
-    Text(
-        stringResource(Res.string.changes_next_time),
-        style = IntervalTheme.type.caption,
-        color = IntervalTheme.palette.textDim,
-        modifier = Modifier.padding(top = Spacing.space8),
-    )
+    Column(Modifier.padding(top = Spacing.space8), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+        Text(
+            stringResource(Res.string.changes_next_time),
+            style = IntervalTheme.type.caption,
+            color = IntervalTheme.palette.textDim,
+        )
+        if (heldBack) {
+            Text(
+                stringResource(Res.string.changes_held_back),
+                style = IntervalTheme.type.meta,
+                color = IntervalTheme.palette.textDim,
+            )
+        }
+    }
     nudges.forEachIndexed { i, nudge ->
         ToggleRow(
             liftName(nudge.to.exercise, nudge.to.double),
@@ -280,7 +312,7 @@ internal fun UndecidedChangesDialog(
         confirm = stringResource(Res.string.changes_keep),
         dismiss = stringResource(Res.string.changes_drop),
         onConfirm = {
-            onKeep(SaveScope.valueOf(choices.scopeName.value), copy, choices.taken(changes))
+            onKeep(SaveScope.valueOf(choices.scopeName.value), copy, choices.taken(changes, finished.session.effort))
             onLeave()
         },
         onDismiss = onLeave,

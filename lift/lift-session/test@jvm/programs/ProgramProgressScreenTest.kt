@@ -17,6 +17,7 @@ import dev.justinsmith.interval.ui.setThemedContent
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.Followed
 import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
@@ -75,6 +76,27 @@ class ProgramProgressScreenTest {
         onNodeWithText("Day 2").assertIsDisplayed()
         onAllNodesWithText("Mon · 9 of 9 sets").assertCountEquals(2)
         onNodeWithText("Follow again").assertDoesNotExist()
+    }
+
+    @Test
+    fun `a day done says how hard it felt once that was said`() = runUiTest {
+        val shown = state(1, 2).let { st ->
+            st.copy(
+                rows = st.rows.map { row ->
+                    val session = row.day.session?.takeIf { row.day.number == 2 }
+                    if (session ==
+                        null
+                    ) {
+                        row
+                    } else {
+                        row.copy(day = row.day.copy(session = session.copy(effort = PerceivedEffort.VeryHard)))
+                    }
+                },
+            )
+        }
+        setThemedContent(dark = true) { ProgramProgressScreen(shown, ProgramProgressActions()) }
+        onNodeWithText("Mon · 9 of 9 sets · Very hard").assertExists()
+        onAllNodesWithText("Mon · 9 of 9 sets").assertCountEquals(1)
     }
 
     @Test

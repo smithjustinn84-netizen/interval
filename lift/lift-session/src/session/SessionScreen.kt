@@ -85,6 +85,7 @@ import dev.justinsmith.lift.session.resources.session_discard_title
 import dev.justinsmith.lift.session.resources.session_edit_set_cd
 import dev.justinsmith.lift.session.resources.session_extra_set
 import dev.justinsmith.lift.session.resources.session_finish
+import dev.justinsmith.lift.session.resources.session_health_title
 import dev.justinsmith.lift.session.resources.session_leave
 import dev.justinsmith.lift.session.resources.session_leave_emom_text
 import dev.justinsmith.lift.session.resources.session_leave_empty_text
@@ -102,6 +103,7 @@ import dev.justinsmith.lift.session.resources.session_undo
 import dev.justinsmith.lift.ui.RecordTag
 import dev.justinsmith.lift.ui.StatTile
 import dev.justinsmith.lift.ui.liftName
+import dev.justinsmith.lift.ui.programName
 import dev.justinsmith.lift.ui.sessionTitle
 import dev.justinsmith.lift.ui.setLine
 import org.jetbrains.compose.resources.stringResource
@@ -132,9 +134,13 @@ fun SessionRoute(onExit: () -> Unit) {
         )
     }
     val title = sessionTitle(state.session?.exercises.orEmpty())
+    val healthTitle = state.programDay?.let {
+        stringResource(Res.string.session_health_title, programName(it.program), it.number)
+    }
     // One set of actions for as long as nothing they close over changes: the state changes every tick while a
     // rest or a hold runs, and a child that takes the actions alone can then skip.
-    val actions = remember(viewModel, title, onExit) { sessionActions(viewModel, title, onExit) }
+    val actions =
+        remember(viewModel, title, healthTitle, onExit) { sessionActions(viewModel, title, healthTitle, onExit) }
     val page = when {
         finished != null -> SessionPage.Summary(finished)
         emom != null && emomState != null -> SessionPage.Emom(emom, emomState)
@@ -180,6 +186,7 @@ private sealed interface SessionPage {
 private fun sessionActions(
     viewModel: SessionViewModel,
     title: String,
+    healthTitle: String?,
     onExit: () -> Unit,
 ): SessionActions = SessionActions(
     onDraft = viewModel::updateDraft,
@@ -209,7 +216,7 @@ private fun sessionActions(
     onStepRest = viewModel::stepRest,
     onSkipRest = viewModel::skipRest,
     // The screen asks first when nothing is logged; should one slip through, it is thrown away and the page closes.
-    onFinish = { if (!viewModel.finish(title)) onExit() },
+    onFinish = { if (!viewModel.finish(title, healthTitle)) onExit() },
     onDiscard = {
         viewModel.discard()
         onExit()

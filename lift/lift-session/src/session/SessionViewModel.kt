@@ -201,6 +201,8 @@ data class SessionUiState(
     val dayDone: Boolean = false,
     /** For a program day: its blocks as today's plan has them. */
     val plan: List<PlanRow> = emptyList(),
+    /** The program day the session is, null for a free one: what names it to the health store. */
+    val programDay: ProgramDay? = null,
     val emom: EmomRun? = null,
     val emomState: EmomState? = null,
     /** A hold being timed on the Log sheet. */
@@ -323,6 +325,7 @@ class SessionViewModel(
                 upNext = plan?.let { upNext(it, active.sets) },
                 dayDone = plan != null && nextPlanned(plan.plannedSets(), active.sets) == null,
                 plan = plan?.planRows(active.sets).orEmpty(),
+                programDay = plan,
                 emom = chosen.emom,
                 hold = chosen.timing.run,
                 otherSide = chosen.timing.offer
@@ -720,10 +723,11 @@ class SessionViewModel(
     }
 
     /**
-     * Finishes the session as [title], keeping it here for the summary with the records it set. One with no
-     * sets has nothing to save and is thrown away instead. True when it was saved, and the summary follows.
+     * Finishes the session as [title], keeping it here for the summary with the records it set; the health store
+     * has it as [healthTitle] when there is one (a program's day, by its name). One with no sets has nothing to
+     * save and is thrown away instead. True when it was saved, and the summary follows.
      */
-    fun finish(title: String): Boolean {
+    fun finish(title: String, healthTitle: String? = null): Boolean {
         val session = repository.active.value ?: return false
         emom.stop()
         holds.cancel()
@@ -753,7 +757,7 @@ class SessionViewModel(
         )
         repository.finishSession(title)
         val now = done.finishedAtEpochMillis ?: clock.nowMillis()
-        val workout = done.healthWorkout(now, intervals.sessionCalories(done.elapsedSeconds(now)))
+        val workout = done.healthWorkout(now, intervals.sessionCalories(done.elapsedSeconds(now)), healthTitle ?: title)
         recorded = workout
         health.record(workout)
         return true

@@ -16,6 +16,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   change made just before leaving is no longer at risk: what the app keeps now lives as long as its process.
 
 ### Added
+- How hard a program day felt reaches the program: said to be Very hard or All out on its summary, the day's
+  steps up for next time wait, switched off, until you turn one on; the program's page shows each day done with
+  how it felt; and Health Connect names a program's session by the program and day ("Simple & Sinister · day
+  12"), the session keeping its own title here.
 - Make it yours: a built-in program's sheet opens a copy of it in the program editor, "(yours)", to change any of
   it (ranges, holds, bands, two bells, its days and weeks). Saved while you follow the built-in, your copy carries
   on from the day you were at.

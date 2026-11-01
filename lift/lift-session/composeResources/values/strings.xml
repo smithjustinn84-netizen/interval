@@ -11,6 +11,7 @@
     <string name="session_add_cd">Add set or EMOM</string>
     <string name="session_extra_set">Extra set</string>
     <string name="session_finish">Finish</string>
+    <string name="session_health_title">%1$s · day %2$d</string>
     <string name="session_discard">Discard</string>
     <string name="session_remove_set_cd">Remove %1$s</string>
     <string name="session_discard_title">Discard session?</string>
@@ -74,6 +75,7 @@
     <string name="changes_title_next">Ready for more?</string>
     <string name="change_line">%1$s → %2$s</string>
     <string name="changes_next_time">Next time</string>
+    <string name="changes_held_back">It felt very hard: these wait until you turn them on.</string>
     <string name="topped_out_title">Top of the range</string>
     <string name="topped_out_hint">Every set reached the top, with nothing heavier to go to yet. Add a heavier bell or band in Your equipment, or plan more weight.</string>
     <string name="changes_this_day">This day</string>

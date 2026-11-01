@@ -15,8 +15,13 @@ import dev.justinsmith.lift.domain.LiftSession
  * titled it, with a segment per set. A set is logged as it ends, so its segment runs from the set before
  * it (or the session's start) to its logging, rests included; a hold's runs for the time it was held. The
  * reps go with the segment. [calories] is the app's estimate for a session of this length, if it makes one.
+ * [named] is its title there: the session's own, or a program day's name.
  */
-internal fun LiftSession.healthWorkout(finishedAtEpochMillis: Long, calories: Int?): HealthWorkout {
+internal fun LiftSession.healthWorkout(
+    finishedAtEpochMillis: Long,
+    calories: Int?,
+    named: String = title,
+): HealthWorkout {
     // A clock set back can finish a session before it started: then it is a session of no length.
     val finishedAt = maxOf(finishedAtEpochMillis, startedAtEpochMillis)
     val segments = mutableListOf<HealthSegment>()
@@ -32,7 +37,7 @@ internal fun LiftSession.healthWorkout(finishedAtEpochMillis: Long, calories: In
     return HealthWorkout(
         id = "lift-$uid",
         kind = HealthWorkoutKind.Strength,
-        title = title,
+        title = named,
         startedAtEpochMillis = startedAtEpochMillis,
         endedAtEpochMillis = finishedAt,
         segments = segments,

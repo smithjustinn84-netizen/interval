@@ -2,7 +2,8 @@
   <description>
     Follow Goblet squat and row, change day 1 in the session (a heavier bell, a set changed after logging,
     the rows skipped), finish, and keep the change in a copy of the program, which is then followed from
-    day 2 with the bell planned. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
+    day 2 with the bell planned. Then day 2 done in full, said to have felt all out: its steps up wait, off,
+    until one is turned on. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
     <action>Tap the "Lift" tab, then "Follow a program"</action>
@@ -31,5 +32,11 @@
     <action>Verify that "Saved as Goblet squat and row (yours). You follow it from day 2." is shown</action>
     <action>Tap "Done"</action>
     <action>Verify that Lift shows "Day 2 of 8 · week 1", "Goblet squat and row (yours)", "Goblet squat" "3 × 10 (10–15)" with "24 kg", and "Start day 2"</action>
+    <action>Tap "Start day 2", then "Log set" until "Up next" is gone (9 sets), then "Finish"</action>
+    <action>Verify that "Next time" lists "Goblet squat" and "Row" a rep more, both switched on, and "Save to Goblet squat and row (yours)" is offered</action>
+    <action>Under "How was it?" tap "All out"</action>
+    <action>Verify that "It felt very hard: these wait until you turn them on." shows under "Next time", both switches are off, and no Save is offered</action>
+    <action>Tap "Done"</action>
+    <action>Verify that no "Keep today's changes?" question is asked, and Lift shows "Day 3 of 8 · week 2" with "Goblet squat" still "3 × 10 (10–15)"</action>
   </actions>
 </journey>

@@ -398,6 +398,20 @@ class SessionViewModelTest {
     }
 
     @Test
+    fun `a program day goes to the health store by the program's name and the session keeps its own`() {
+        val goblets = ProgramKey.BuiltIn(ProgramId.GobletSquatRow)
+        repository.follow(goblets)
+        repository.startSession(goblets)
+        repository.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
+        viewModel().use {
+            assertEquals(1, state.value.programDay?.number)
+            assertTrue(finish("Goblet squat", healthTitle = "Goblet squat and row · day 1"))
+        }
+        assertEquals("Goblet squat and row · day 1", health.workouts.single().title)
+        assertEquals("Goblet squat", repository.sessions.value.single().title)
+    }
+
+    @Test
     fun `the summary's effort and note are kept with the session and shown on it`() {
         repository.startSession(null)
         repository.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)

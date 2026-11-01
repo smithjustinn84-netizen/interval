@@ -6,7 +6,8 @@ import kotlin.test.assertTrue
 
 /**
  * `journeys/lift-plan-changes.xml`: day 1 of Goblet squat and row changed in the session (a heavier bell, a
- * set changed after logging, the rows skipped), and the change kept in a copy followed from day 2.
+ * set changed after logging, the rows skipped), and the change kept in a copy followed from day 2. Then a day
+ * done in full that felt all out: its steps up wait, and leaving keeps the program as it was.
  */
 class LiftPlanChangesAcceptanceTest {
     @Test
@@ -45,5 +46,24 @@ class LiftPlanChangesAcceptanceTest {
 
         closeSummary()
         seeProgramDay("Day 2 of 8 · week 1", "Goblet squat and row (yours)", "Start day 2")
+    }
+
+    @Test
+    fun `a day done in full that felt all out leaves its steps up off`() = liftScenario {
+        followProgram("Goblet squat and row")
+        startProgramDay(1)
+        repeat(9) { logNextSet() }
+        tap("Finish")
+        see("Next time")
+        see("3 × 10 (10–15) → 3 × 11 (10–15)")
+        see("Save as Goblet squat and row (yours)")
+
+        sayHowItWas("All out", "Cooked")
+        see("It felt very hard: these wait until you turn them on.")
+        seeNo("Save as Goblet squat and row (yours)")
+        closeSummary()
+        seeNo("Keep today's changes?")
+        seeProgramDay("Day 2 of 8 · week 1", "Goblet squat and row", "Start day 2")
+        assertTrue(app.storage.programs.rows.value.isEmpty())
     }
 }
