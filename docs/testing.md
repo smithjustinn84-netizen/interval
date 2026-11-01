@@ -43,9 +43,16 @@ the same common UI code.
 ./kotlin test -m app -p jvm                  # The app's navigation and container
 ./kotlin test -p android                     # Common tests as Android local tests
 ./kotlin test -p iosSimulatorArm64           # Common tests in the iOS simulator (macOS)
-./kotlin check                               # Tests + ktlint + detekt
+./kotlin check lint detekt                   # ktlint + detekt
+./kotlin check                               # Every check, but slow: see below
 ./kotlin build                               # Full build incl. the iOS link; catches opt-in leaks
 ```
+
+**Check locally with `./kotlin check lint detekt` and `./kotlin test -p jvm -p android`** (about 3 minutes),
+plus `./kotlin test -p iosSimulatorArm64 -m <module>` for the modules whose common or `src@ios/` code you
+changed, and `./kotlin build` before calling work done. A bare `./kotlin check` takes 15 minutes or more: its
+`tests` check has no platform option and tests iOS in both variants, and the Release links (full
+optimization, no cache) take about 12 minutes each, all at once. `./kotlin test` tests Debug only, as CI does.
 
 CI (`.github/workflows/ci.yml`) runs the JVM and Android tests on Linux and the iOS tests on macOS, with
 lint and detekt in a job of their own. It runs on pushes to `main`, `v*` tags and pull requests, skipping

@@ -17,7 +17,10 @@ Full architecture guide: [docs/architecture.md](docs/architecture.md).
 ./kotlin check lint                 # ktlint over every module
 ./kotlin do format                  # ktlint auto-format
 ./kotlin check detekt               # detekt + Compose rules over every module (config: detekt.yml)
-./kotlin check                      # All checks (tests + lint + detekt)
+./kotlin check lint detekt && ./kotlin test -p jvm -p android   # Local check (~3 min): what CI runs on Linux
+./kotlin test -p iosSimulatorArm64 -m interval-domain   # iOS tests (Debug) for the modules you touched
+./kotlin check                      # All checks; avoid locally: it also links every module's iOS tests
+                                    # in Release (~12 min a link, 14 at once), which CI never runs
 ./kotlin run -m desktopApp --compose-hot-reload   # Desktop window that reloads on every save
 ./kotlin package -m androidApp -f aab   # Release bundle (R8 on; rules in apps/androidApp/proguard-rules.pro).
                                         # Unsigned until a keystore is set up (`./kotlin tool generate-keystore`)

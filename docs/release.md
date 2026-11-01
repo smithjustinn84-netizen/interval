@@ -10,7 +10,7 @@ tracked in [CHANGELOG.md](../CHANGELOG.md).
 
 | Step | Action | Command / Check |
 |---|---|---|
-| 1 | **Static checks & tests** | `./kotlin check` (ktlint, detekt, JVM/Android unit tests) |
+| 1 | **Static checks & tests** | `./kotlin check lint detekt` and `./kotlin test -p jvm -p android` (a bare `./kotlin check` also links every iOS test in Release: 15+ min) |
 | 2 | **Version parity** | `python3 tools/check_versions.py` (Android and iOS match) |
 | 3 | **Full build & opt-in check** | `./kotlin build` (compiles all targets including iOS framework) |
 | 4 | **R8 Minification Smoke Test** | Build release APK, install on emulator, run key journeys |
