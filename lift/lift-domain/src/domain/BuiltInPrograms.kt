@@ -73,8 +73,15 @@ private fun swingDay(reps: Int) = listOf(
     Block(BuiltInExercise.TwoHandSwing, rounds = 10, reps = reps, kind = BlockKind.Emom),
 )
 
-/** Six minutes of [exercise], [reps] at the top of each: as long as a round on the mat. */
-private fun round(exercise: Exercise, reps: Int) = Block(exercise, rounds = 6, reps = reps, kind = BlockKind.Emom)
+/**
+ * This block building from its reps up to [top], and only then a heavier bell or band: a house program's way to
+ * step, so a day done in full asks a rep more rather than a bell a size up, and an EMOM keeps its minutes.
+ */
+private fun Block.upTo(top: Int) = withRange(RepRange(reps, top))
+
+/** Six minutes of [exercise], [reps] at the top of each building to [top]: as long as a round on the mat. */
+private fun round(exercise: Exercise, reps: Int, top: Int) =
+    Block(exercise, rounds = 6, reps = reps, kind = BlockKind.Emom).upTo(top)
 
 val builtInPrograms: List<Program> = listOf(
     builtIn(
@@ -93,15 +100,15 @@ val builtInPrograms: List<Program> = listOf(
         days = listOf(
             listOf(
                 Block(BuiltInExercise.Press, rounds = 3, kind = BlockKind.Ladder, rungs = listOf(1, 2, 3)),
-                Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 10),
+                Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 10).upTo(15),
             ),
             listOf(
                 Block(BuiltInExercise.Press, rounds = 4, kind = BlockKind.Ladder, rungs = listOf(1, 2, 3)),
-                Block(BuiltInExercise.Snatch, rounds = 5, reps = 5),
+                Block(BuiltInExercise.Snatch, rounds = 5, reps = 5).upTo(8),
             ),
             listOf(
                 Block(BuiltInExercise.Press, rounds = 5, kind = BlockKind.Ladder, rungs = listOf(1, 2, 3)),
-                Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 15),
+                Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 15).upTo(20),
             ),
         ),
         daysPerWeek = 3,
@@ -111,8 +118,8 @@ val builtInPrograms: List<Program> = listOf(
         ProgramId.CleanPressEmom,
         days = listOf(
             listOf(
-                Block(BuiltInExercise.Clean, rounds = 10, reps = 3, kind = BlockKind.Emom),
-                Block(BuiltInExercise.Press, rounds = 10, reps = 3, kind = BlockKind.Emom),
+                Block(BuiltInExercise.Clean, rounds = 10, reps = 3, kind = BlockKind.Emom).upTo(5),
+                Block(BuiltInExercise.Press, rounds = 10, reps = 3, kind = BlockKind.Emom).upTo(5),
             ),
         ),
         daysPerWeek = 3,
@@ -265,7 +272,7 @@ val builtInPrograms: List<Program> = listOf(
         days = listOf(
             listOf(
                 Block(BuiltInExercise.FrontSquat, rounds = 5, reps = 5, double = true),
-                Block(BuiltInExercise.Row, rounds = 4, reps = 8),
+                Block(BuiltInExercise.Row, rounds = 4, reps = 8).upTo(12),
                 Block(BuiltInExercise.GetUp, rounds = 3, reps = 1),
             ),
             listOf(
@@ -282,16 +289,16 @@ val builtInPrograms: List<Program> = listOf(
         ProgramId.RoundConditioning,
         days = listOf(
             listOf(
-                round(BuiltInExercise.TwoHandSwing, reps = 15),
-                round(BuiltInExercise.Snatch, reps = 6),
-                round(BuiltInExercise.HighPull, reps = 8),
-                round(BuiltInExercise.GobletSquat, reps = 10),
+                round(BuiltInExercise.TwoHandSwing, reps = 15, top = 20),
+                round(BuiltInExercise.Snatch, reps = 6, top = 10),
+                round(BuiltInExercise.HighPull, reps = 8, top = 12),
+                round(BuiltInExercise.GobletSquat, reps = 10, top = 15),
             ),
             listOf(
-                round(BuiltInExercise.OneHandSwing, reps = 10),
-                round(BuiltInExercise.Clean, reps = 5),
-                round(BuiltInExercise.RackedLunge, reps = 6),
-                round(BuiltInExercise.Halo, reps = 8),
+                round(BuiltInExercise.OneHandSwing, reps = 10, top = 15),
+                round(BuiltInExercise.Clean, reps = 5, top = 8),
+                round(BuiltInExercise.RackedLunge, reps = 6, top = 10),
+                round(BuiltInExercise.Halo, reps = 8, top = 12),
             ),
         ),
         daysPerWeek = 2,
@@ -302,10 +309,10 @@ val builtInPrograms: List<Program> = listOf(
         ProgramId.GripAndPull,
         days = listOf(
             listOf(
-                Block(BuiltInExercise.Row, rounds = 5, reps = 8),
-                Block(BuiltInExercise.HighPull, rounds = 5, reps = 8),
-                Block(BuiltInExercise.Clean, rounds = 5, reps = 5),
-                Block(BuiltInExercise.OneHandSwing, rounds = 5, reps = 15),
+                Block(BuiltInExercise.Row, rounds = 5, reps = 8).upTo(12),
+                Block(BuiltInExercise.HighPull, rounds = 5, reps = 8).upTo(12),
+                Block(BuiltInExercise.Clean, rounds = 5, reps = 5).upTo(8),
+                Block(BuiltInExercise.OneHandSwing, rounds = 5, reps = 15).upTo(20),
             ),
         ),
         daysPerWeek = 2,
@@ -316,10 +323,10 @@ val builtInPrograms: List<Program> = listOf(
         ProgramId.ShoulderArmor,
         days = listOf(
             listOf(
-                Block(BuiltInExercise.Halo, rounds = 3, reps = 10),
+                Block(BuiltInExercise.Halo, rounds = 3, reps = 10).upTo(15),
                 Block(BuiltInExercise.GetUp, rounds = 5, reps = 1),
-                Block(BuiltInExercise.Windmill, rounds = 3, reps = 5),
-                Block(BuiltInExercise.BottomsUpPress, rounds = 3, reps = 5),
+                Block(BuiltInExercise.Windmill, rounds = 3, reps = 5).upTo(8),
+                Block(BuiltInExercise.BottomsUpPress, rounds = 3, reps = 5).upTo(8),
             ),
         ),
         daysPerWeek = 3,
@@ -330,12 +337,12 @@ val builtInPrograms: List<Program> = listOf(
         ProgramId.KettlebellFoundations,
         days = listOf(
             listOf(
-                Block(BuiltInExercise.Deadlift, rounds = 3, reps = 10),
-                Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 8),
-                Block(BuiltInExercise.Halo, rounds = 2, reps = 6),
+                Block(BuiltInExercise.Deadlift, rounds = 3, reps = 10).upTo(15),
+                Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 8).upTo(12),
+                Block(BuiltInExercise.Halo, rounds = 2, reps = 6).upTo(10),
             ),
             listOf(
-                Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 10),
+                Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 10).upTo(15),
                 Block(BuiltInExercise.GetUp, rounds = 3, reps = 1),
             ),
         ),
@@ -353,14 +360,14 @@ val builtInPrograms: List<Program> = listOf(
         ProgramId.BeginnerFullBody,
         days = listOf(
             listOf(
-                Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 8),
-                Block(BuiltInExercise.Press, rounds = 3, reps = 5),
-                Block(BuiltInExercise.Row, rounds = 3, reps = 8),
+                Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 8).upTo(12),
+                Block(BuiltInExercise.Press, rounds = 3, reps = 5).upTo(8),
+                Block(BuiltInExercise.Row, rounds = 3, reps = 8).upTo(12),
             ),
             listOf(
-                Block(BuiltInExercise.Deadlift, rounds = 3, reps = 8),
-                Block(BuiltInExercise.Clean, rounds = 3, reps = 5),
-                Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 10),
+                Block(BuiltInExercise.Deadlift, rounds = 3, reps = 8).upTo(12),
+                Block(BuiltInExercise.Clean, rounds = 3, reps = 5).upTo(8),
+                Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 10).upTo(15),
             ),
         ),
         daysPerWeek = 2,
@@ -416,12 +423,12 @@ val builtInPrograms: List<Program> = listOf(
         ProgramId.BellsAndBodyweight,
         days = listOf(
             listOf(
-                Block(BuiltInExercise.TwoHandSwing, rounds = 10, reps = 10, kind = BlockKind.Emom),
+                Block(BuiltInExercise.TwoHandSwing, rounds = 10, reps = 10, kind = BlockKind.Emom).upTo(15),
                 Block(BuiltInExercise.PushUp, rounds = 5, reps = 10),
-                Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 10),
+                Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 10).upTo(15),
             ),
             listOf(
-                Block(BuiltInExercise.Clean, rounds = 3, reps = 5),
+                Block(BuiltInExercise.Clean, rounds = 3, reps = 5).upTo(8),
                 Block(BuiltInExercise.PullUp, rounds = 5, reps = 5),
                 pressLadders(ladders = 3, top = 3),
                 Block(BuiltInExercise.HollowHold, rounds = 3, reps = 20),
@@ -435,16 +442,16 @@ val builtInPrograms: List<Program> = listOf(
         ProgramId.BandsAndBells,
         days = listOf(
             listOf(
-                Block(BuiltInExercise.Press, rounds = 3, reps = 5),
-                Block(BuiltInExercise.BandPullApart, rounds = 3, reps = 15),
-                Block(BuiltInExercise.Row, rounds = 3, reps = 8),
-                Block(BuiltInExercise.BandFacePull, rounds = 3, reps = 15),
+                Block(BuiltInExercise.Press, rounds = 3, reps = 5).upTo(8),
+                Block(BuiltInExercise.BandPullApart, rounds = 3, reps = 15).upTo(20),
+                Block(BuiltInExercise.Row, rounds = 3, reps = 8).upTo(12),
+                Block(BuiltInExercise.BandFacePull, rounds = 3, reps = 15).upTo(20),
             ),
             listOf(
-                Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 10),
-                Block(BuiltInExercise.BandPallofPress, rounds = 3, reps = 10),
-                Block(BuiltInExercise.Deadlift, rounds = 3, reps = 10),
-                Block(BuiltInExercise.BandGluteBridge, rounds = 3, reps = 15),
+                Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 10).upTo(15),
+                Block(BuiltInExercise.BandPallofPress, rounds = 3, reps = 10).upTo(15),
+                Block(BuiltInExercise.Deadlift, rounds = 3, reps = 10).upTo(15),
+                Block(BuiltInExercise.BandGluteBridge, rounds = 3, reps = 15).upTo(20),
             ),
         ),
         daysPerWeek = 2,

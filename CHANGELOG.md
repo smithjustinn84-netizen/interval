@@ -7,6 +7,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.3.0] — Unreleased
 
 ### Changed
+- Lift's house programs build reps before weight: their bell and band lifts (Press ladders, Clean and press EMOM,
+  Strength for the mat, Round conditioning, Grip and pull, Shoulder armor, Kettlebell foundations, Full body for
+  beginners, Bells and bodyweight, Bands and bells) each climb a few reps from where they start, then take the
+  next bell or band back at the bottom, rather than a bell a size up after one day done in full. An EMOM among
+  them keeps its minutes. Their days ask for what they always did; the programs after a book are as written.
 - Opening the app again after backing out of it (Android) no longer reopens its databases and settings, and a
   change made just before leaving is no longer at risk: what the app keeps now lives as long as its process.
 
