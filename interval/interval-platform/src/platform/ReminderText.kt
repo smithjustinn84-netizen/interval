@@ -25,8 +25,8 @@ data class ReminderWords(val title: String, val body: String)
 /**
  * The words for [reminder], in the app's language, the same on every platform: one workout is named, its
  * shape under it ("Tabata" / "Planned today · 20s on · 10s off · ×8"), or a session on Lift as such; several are
- * counted, their names under the count. Reading strings suspends, so it is worded as the reminder is scheduled,
- * never as it shows.
+ * counted, their names under the count. Android words it as it shows, from the plan as it then stands; iOS, whose
+ * notifications carry their words, as it is scheduled.
  */
 suspend fun reminderWords(reminder: PlanReminder): ReminderWords {
     val plans = reminder.plans

@@ -271,10 +271,13 @@ toolchain (`$compose.*`).
   (`interval/interval-history/src/plan/`, an eager single) recomputes `plannedReminders` (the next 14 days with a plan
   still open, from `TrainingLog.upNext`) on every change and at midnight, and hands the whole set to
   `PlanReminders.schedule`, which replaces what is pending: Android arms one inexact alarm per day
-  (`PlanAlarms`, recorded in a DataStore of its own so `PlanReminderReceiver` can re-arm after a reboot or clock
-  change), iOS one calendar-triggered local notification per day (the workout's notifications remove only their
-  own identifiers, and leave `PLAN_REMINDER_DAYS` of the 64 pending slots free). Words come from
-  `reminderWords`, the same on both. `AskToShowNotifications()` (core's `SystemServices.kt`) asks for the
+  (`PlanAlarms`, a single in the container, recording the days so it can cancel them), iOS one calendar-triggered
+  local notification per day (the workout's notifications remove only their own identifiers, and leave
+  `PLAN_REMINDER_DAYS` of the 64 pending slots free). Words come from `reminderWords`, the same on both. Android's
+  alarm carries only its day: `PlanReminderReceiver` (a `KoinComponent`) asks the scheduler, as
+  `PlanReminderSource`, for the day's reminder as the plan now stands, words and posts it, then has it
+  `reschedule()`, which moves the 14 days on with the app never opened; a reboot or clock change reschedules too.
+  iOS words its notifications as they are scheduled, and its window moves only while the app runs. `AskToShowNotifications()` (core's `SystemServices.kt`) asks for the
   permission on Plan while it is on, as a workout starts and at a Lift session's first rest. iOS shows a reminder
   due with the app open (`willPresent` in `iosApp.swift`, by its `plan-reminder-` prefix) and nothing else then.
 

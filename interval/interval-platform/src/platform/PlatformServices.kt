@@ -115,6 +115,23 @@ interface PlanReminders {
     suspend fun schedule(reminders: List<PlanReminder>)
 }
 
+/**
+ * The plan's reminders as they now stand, for what runs as one is due with no screen open: Android's alarm, which
+ * words its notification from [reminderOn] as it shows and then has the reminders worked out again
+ * ([reschedule]), so they reach two weeks ahead of the last one shown, whether or not the app is opened. History's
+ * `PlanReminderScheduler` is it.
+ */
+interface PlanReminderSource {
+    /** The reminder on [epochDay] as the plan now stands, its time passed or not; null when none is due then. */
+    suspend fun reminderOn(epochDay: Long): PlanReminder?
+
+    /**
+     * Works out the reminders from now and hands them to [PlanReminders], returning once it has them: even the
+     * same set as before, which a change of clock or time zone needs set again.
+     */
+    suspend fun reschedule()
+}
+
 /*
  * Each platform's `platformModule` (Android's of a `Context`, iOS's and the desktop's of nothing) gives the Koin
  * definitions for the interval side's platform services: [PlatformStorage], a [CuePlayer], a [BackgroundWorkout]

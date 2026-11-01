@@ -16,53 +16,67 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 /**
- * Where a reminder's alarm lands: it posts the notification whose words the alarm carries, on a channel of
- * its own ("Planned workouts") that the user can quieten apart from the workout's. Also told of a reboot and
- * of the clock or time zone changing, after which it sets the recorded alarms again ([PlanAlarms.rearm]).
- * Declared in the app's manifest, by this name.
+ * Where a reminder's alarm lands. It words the day's reminder from the plan as it now stands ([PlanReminderSource],
+ * in the app's language of the moment) and posts it on a channel of its own ("Planned workouts") that the user can
+ * quieten apart from the workout's, or posts nothing if the day's workouts were done or taken off meanwhile. Then it
+ * has the reminders worked out again from now, which moves them on to two weeks past this one: so they keep coming
+ * to a user who never opens the app. Also told of a reboot and of the clock or time zone changing, after which it
+ * does the same, setting every alarm afresh. Declared in the app's manifest, by this name; it reaches the process's
+ * container, which the application builds before any receiver runs.
  *
- * Neither job runs on the main thread, where a receiver has seconds before the system gives up on it: the
- * record and the channel's words are read from disk (the words suspend), and at boot, when the alarms are set
- * again, the system is at its slowest to answer. Each broadcast is held open ([goAsync]) and finished as its
- * work ends.
+ * Neither job runs on the main thread, where a receiver has seconds before the system gives up on it: the plan and
+ * the record are read from disk and the words suspend, and at boot the system is at its slowest to answer. Each
+ * broadcast is held open ([goAsync]) and finished as its work ends.
  */
-class PlanReminderReceiver : BroadcastReceiver() {
+class PlanReminderReceiver :
+    BroadcastReceiver(),
+    KoinComponent {
     private val log = Logger.withTag("PlanReminderReceiver")
+    private val reminders: PlanReminderSource by inject()
 
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
-            PlanAlarms.ACTION_SHOW -> show(context, intent)
+            PlanAlarms.ACTION_SHOW -> {
+                val app = context.applicationContext
+                val day = intent.getLongExtra(PlanAlarms.EXTRA_DAY, NO_DAY)
+                offMain("show the reminder") {
+                    // Moved on whatever came of showing it.
+                    try {
+                        show(app, day)
+                    } finally {
+                        reminders.reschedule()
+                    }
+                }
+            }
 
             Intent.ACTION_BOOT_COMPLETED,
             Intent.ACTION_TIMEZONE_CHANGED,
             Intent.ACTION_TIME_CHANGED,
-            -> offMain("set the reminders again") { PlanAlarms.rearm(context.applicationContext) }
+            -> offMain("set the reminders again") { reminders.reschedule() }
         }
     }
 
-    private fun show(context: Context, intent: Intent) {
-        val app = context.applicationContext
+    private suspend fun show(app: Context, day: Long) {
         val manager = app.getSystemService(NotificationManager::class.java) ?: return
         // Refused, or never granted: the alarm fires into nothing, and the plan's page asks again.
         if (!manager.areNotificationsEnabled()) return
-        val title = intent.getStringExtra(PlanAlarms.EXTRA_TITLE)
-        val text = intent.getStringExtra(PlanAlarms.EXTRA_TEXT)
-        val id = intent.getLongExtra(PlanAlarms.EXTRA_DAY, 0L).toInt()
-        offMain("show the reminder") {
-            // The channel must exist before the first notification.
-            createChannel(manager)
-            val notification = NotificationCompat.Builder(app, CHANNEL_ID)
-                .setSmallIcon(app.notificationIcon())
-                .setContentTitle(title)
-                .setContentText(text)
-                .setCategory(NotificationCompat.CATEGORY_REMINDER)
-                .setAutoCancel(true)
-                .setContentIntent(app.openAppIntent(REQUEST_OPEN))
-                .build()
-            manager.notify(id, notification)
-        }
+        val reminder = reminders.reminderOn(day) ?: return
+        val words = reminderWords(reminder)
+        // The channel must exist before the first notification.
+        createChannel(manager)
+        val notification = NotificationCompat.Builder(app, CHANNEL_ID)
+            .setSmallIcon(app.notificationIcon())
+            .setContentTitle(words.title)
+            .setContentText(words.body)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setAutoCancel(true)
+            .setContentIntent(app.openAppIntent(REQUEST_OPEN))
+            .build()
+        manager.notify(day.toInt(), notification)
     }
 
     /** Holds the broadcast open while [work] runs off the main thread, and finishes it however [work] ends. */
@@ -95,6 +109,9 @@ class PlanReminderReceiver : BroadcastReceiver() {
     private companion object {
         const val CHANNEL_ID = "plan_reminders"
         const val REQUEST_OPEN = 0
+
+        /** No day: an alarm without one finds no reminder. */
+        const val NO_DAY = Long.MIN_VALUE
 
         /** Every broadcast's work, off the main thread; a receiver's own instance lives for one call. */
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)

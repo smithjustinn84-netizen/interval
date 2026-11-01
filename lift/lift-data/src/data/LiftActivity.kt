@@ -11,6 +11,9 @@ import kotlinx.coroutines.flow.StateFlow
  * lifted. [LiftRepository] is it; screens outside Lift take this rather than the whole repository.
  */
 interface LiftActivity {
+    /** True once what is below has been read from storage; until then each holds its default. */
+    val ready: StateFlow<Boolean>
+
     /** Finished sessions, newest first. */
     val sessions: StateFlow<List<LiftSession>>
 

@@ -10,16 +10,13 @@ import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
-import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.mutablePreferencesOf
-import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.timer.MINUTES_PER_HOUR
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
@@ -31,106 +28,53 @@ import java.time.ZoneId
  * inexact (`setAndAllowWhileIdle`, so no exact-alarm permission to ask for): the system may hold one back to
  * batch it, up to an hour by its own window though minutes as a rule, and in Doze delivers it all the same,
  * which a reminder can bear. Exact delivery would take `SCHEDULE_EXACT_ALARM`, a special permission the user
- * grants on a settings page. Each reminder is worded here, as it is scheduled, since reading the app's strings
- * suspends, and the words ride in the alarm's intent.
+ * grants on a settings page. An alarm carries its day alone: the receiver words the notification as it shows,
+ * from the plan as it then stands ([PlanReminderSource]).
  */
-internal class AndroidPlanReminders(private val context: Context) : PlanReminders {
+internal class AndroidPlanReminders(private val alarms: PlanAlarms) : PlanReminders {
     override suspend fun schedule(reminders: List<PlanReminder>) {
-        val alarms = reminders.map { reminder ->
-            val words = reminderWords(reminder)
-            PlanAlarm(reminder.epochDay, reminder.minuteOfDay, words.title, words.body)
-        }
-        PlanAlarms.replace(context, alarms)
+        alarms.replace(reminders.map { PlanAlarm(it.epochDay, it.minuteOfDay) })
     }
 }
 
-/** A reminder as its alarm carries it: when, and the notification's words. */
-internal class PlanAlarm(val epochDay: Long, val minuteOfDay: Int, val title: String, val text: String)
+/** A reminder as its alarm is set: the day, and the minute after that day's local midnight. */
+internal class PlanAlarm(val epochDay: Long, val minuteOfDay: Int)
 
 /**
- * The alarms behind the reminders, and the record of them (a DataStore of its own, apart from the settings
- * one: the receiver reads it after a reboot with no Koin container built) by which each one is cancelled
- * exactly when the set changes and the whole set is armed again after a reboot or a change of clock or time
- * zone, which drop or move them.
+ * The alarms behind the reminders, one of these per process (the container's), and the record of the days that
+ * have one ([store], a DataStore of its own), by which each is cancelled exactly when the set changes. A reboot
+ * drops them and a change of clock or time zone leaves them at the wrong moment: the receiver then has the whole
+ * set worked out again ([PlanReminderSource.reschedule]), which cancels by the record and sets them afresh.
  */
-internal object PlanAlarms {
+internal class PlanAlarms(private val context: Context, private val store: DataStore<Preferences>) {
     private val log = Logger.withTag("PlanAlarms")
 
-    @Volatile
-    private var store: DataStore<Preferences>? = null
-
     /**
-     * Held across each replace and re-arm, record and alarms together: otherwise a re-arm reading the record
-     * just before a replace rewrites it could set the old alarms after the new ones, untracked and never
-     * cancelled.
+     * Held across each replace, record and alarms together: otherwise two replaces at once (a change and an alarm's
+     * reschedule) could each cancel by the record before the other's alarms were set, leaving some untracked.
      */
     private val changing = Mutex()
 
-    /** Cancels every alarm set before and sets one per [alarms], recording them for [rearm]. */
-    suspend fun replace(context: Context, alarms: List<PlanAlarm>) = changing.withLock {
+    /** Cancels every alarm set before and sets one per [alarms], recording their days. */
+    suspend fun replace(alarms: List<PlanAlarm>) = changing.withLock {
         val manager = context.getSystemService(AlarmManager::class.java)
-        context.store().updateData { record ->
-            for (alarm in record.alarms()) manager?.cancel(context.showIntent(alarm.epochDay))
+        store.updateData { record ->
+            for (day in record.days()) manager?.cancel(context.showIntent(day))
             alarms.asRecord()
         }
-        arm(context, manager, alarms)
+        arm(manager, alarms)
     }
 
-    /** Sets the recorded alarms again, at their day and time on the clock as it now stands. */
-    suspend fun rearm(context: Context) = changing.withLock {
-        val alarms = context.store().data.first().alarms()
-        arm(context, context.getSystemService(AlarmManager::class.java), alarms)
-    }
-
-    private fun arm(context: Context, manager: AlarmManager?, alarms: List<PlanAlarm>) {
+    private fun arm(manager: AlarmManager?, alarms: List<PlanAlarm>) {
         if (manager == null) return
         val now = System.currentTimeMillis()
         for (alarm in alarms) {
             val at = alarm.triggerMillis()
             // Its moment has gone: a reminder now would be a stale one.
             if (at <= now) continue
-            runCatching { manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, context.showIntent(alarm)) }
-                .onFailure { log.w(it) { "Couldn't set the reminder for day ${alarm.epochDay}" } }
-        }
-    }
-
-    /**
-     * The process's one DataStore for the record: DataStore allows a single active instance per file, and
-     * both the app (scheduling) and the receiver (re-arming) reach it.
-     */
-    private fun Context.store(): DataStore<Preferences> = store ?: synchronized(this@PlanAlarms) {
-        store ?: PreferenceDataStoreFactory.create(
-            // A record that can't be read costs only the re-arm after a reboot; the next schedule rewrites it.
-            corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
-            migrations = listOf(LegacyRecordMigration(applicationContext)),
-            scope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
-            produceFile = { File(applicationContext.filesDir, "datastore/$STORE_NAME") },
-        ).also { store = it }
-    }
-
-    /**
-     * Carries a record kept by an earlier build, in a SharedPreferences file, into the DataStore once and
-     * deletes the file, so alarms it set are still cancelled and re-armed. The only SharedPreferences read
-     * left in the app, as DataStore's own `SharedPreferencesMigration` does it (that class lives in the
-     * Android-only `datastore-preferences`, which this module doesn't take). Safe to drop once no install
-     * has the file.
-     */
-    private class LegacyRecordMigration(private val context: Context) : DataMigration<Preferences> {
-        override suspend fun shouldMigrate(currentData: Preferences) =
-            File(context.dataDir, "shared_prefs/$LEGACY_NAME.xml").exists()
-
-        override suspend fun migrate(currentData: Preferences): Preferences {
-            val legacy = context.getSharedPreferences(LEGACY_NAME, Context.MODE_PRIVATE)
-            val days = legacy.getStringSet(LEGACY_DAYS, emptySet()).orEmpty().mapNotNull { it.toLongOrNull() }
-            return days.mapNotNull { day ->
-                val title = legacy.getString(LEGACY_TITLE + day, null) ?: return@mapNotNull null
-                val text = legacy.getString(LEGACY_TEXT + day, null) ?: return@mapNotNull null
-                PlanAlarm(day, legacy.getInt(LEGACY_MINUTE + day, 0), title, text)
-            }.asRecord()
-        }
-
-        override suspend fun cleanUp() {
-            context.deleteSharedPreferences(LEGACY_NAME)
+            runCatching {
+                manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, context.showIntent(alarm.epochDay))
+            }.onFailure { log.w(it) { "Couldn't set the reminder for day ${alarm.epochDay}" } }
         }
     }
 
@@ -142,59 +86,69 @@ internal object PlanAlarms {
         .toInstant()
         .toEpochMilli()
 
-    private fun Context.showIntent(alarm: PlanAlarm): PendingIntent = showIntent(alarm.epochDay) {
-        putExtra(EXTRA_DAY, alarm.epochDay)
-        putExtra(EXTRA_TITLE, alarm.title)
-        putExtra(EXTRA_TEXT, alarm.text)
-    }
-
     /**
      * The one pending intent for [day]'s alarm, told apart by the day as its request code and matched by the
-     * action alone, extras aside: so the same day's alarm is replaced rather than doubled, and a cancel finds it
-     * without its words. Epoch days are tens of thousands, well within an Int.
+     * action alone, extras aside: so the same day's alarm is replaced rather than doubled, and a cancel finds it,
+     * one set by an earlier build too. Epoch days are tens of thousands, well within an Int.
      */
-    private fun Context.showIntent(day: Long, extras: Intent.() -> Unit = {}): PendingIntent {
-        val intent = Intent(this, PlanReminderReceiver::class.java).setAction(ACTION_SHOW).apply(extras)
+    private fun Context.showIntent(day: Long): PendingIntent {
+        val intent = Intent(this, PlanReminderReceiver::class.java).setAction(ACTION_SHOW).putExtra(EXTRA_DAY, day)
         val flags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         return PendingIntent.getBroadcast(this, day.toInt(), intent, flags)
     }
 
-    internal const val ACTION_SHOW = "dev.justinsmith.interval.SHOW_REMINDER"
-    internal const val EXTRA_DAY = "day"
-    internal const val EXTRA_TITLE = "title"
-    internal const val EXTRA_TEXT = "text"
-
-    private const val STORE_NAME = "plan_reminders.preferences_pb"
-
-    // The SharedPreferences file earlier builds kept, read once by [LegacyRecordMigration].
-    private const val LEGACY_NAME = "plan_reminders"
-    private const val LEGACY_DAYS = "days"
-    private const val LEGACY_MINUTE = "minute_"
-    private const val LEGACY_TITLE = "title_"
-    private const val LEGACY_TEXT = "text_"
+    companion object {
+        // The action, the extra and the record's name and key are what earlier builds used, so the alarms they
+        // set reach the receiver still, and the first replace after an update finds and cancels them.
+        internal const val ACTION_SHOW = "dev.justinsmith.interval.SHOW_REMINDER"
+        internal const val EXTRA_DAY = "day"
+    }
 }
 
-// The alarms as [PlanAlarms] records them: the set of days, and each day's time and words under keys of its own.
+/**
+ * The record's DataStore, which the container keeps one of: DataStore allows a single active instance per file.
+ * A record that can't be read costs only the cancel of what it named; the next replace rewrites it.
+ */
+internal fun planAlarmStore(context: Context): DataStore<Preferences> = PreferenceDataStoreFactory.create(
+    corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
+    migrations = listOf(LegacyRecordMigration(context)),
+    scope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+    produceFile = { File(context.filesDir, "datastore/$STORE_NAME") },
+)
+
+/**
+ * Carries a record kept by an earlier build, in a SharedPreferences file, into the DataStore once and deletes
+ * the file, so alarms it set are still cancelled. The only SharedPreferences read left in the app, as DataStore's
+ * own `SharedPreferencesMigration` does it (that class lives in the Android-only `datastore-preferences`, which
+ * this module doesn't take). Safe to drop once no install has the file.
+ */
+private class LegacyRecordMigration(private val context: Context) : DataMigration<Preferences> {
+    override suspend fun shouldMigrate(currentData: Preferences) =
+        File(context.dataDir, "shared_prefs/$LEGACY_NAME.xml").exists()
+
+    override suspend fun migrate(currentData: Preferences): Preferences {
+        val legacy = context.getSharedPreferences(LEGACY_NAME, Context.MODE_PRIVATE)
+        val days = legacy.getStringSet(LEGACY_DAYS, emptySet()).orEmpty().mapNotNull { it.toLongOrNull() }
+        return days.map { PlanAlarm(it, minuteOfDay = 0) }.asRecord()
+    }
+
+    override suspend fun cleanUp() {
+        context.deleteSharedPreferences(LEGACY_NAME)
+    }
+}
+
+private const val STORE_NAME = "plan_reminders.preferences_pb"
+
+// The SharedPreferences file earlier builds kept, read once by [LegacyRecordMigration].
+private const val LEGACY_NAME = "plan_reminders"
+private const val LEGACY_DAYS = "days"
+
+// The alarms as [PlanAlarms] records them: the days that have one. Earlier builds kept each day's time and words
+// beside it, under keys the first replace drops.
 private val DAYS = stringSetPreferencesKey("days")
 
-private fun minuteKey(day: Long) = intPreferencesKey("minute_$day")
-
-private fun titleKey(day: Long) = stringPreferencesKey("title_$day")
-
-private fun textKey(day: Long) = stringPreferencesKey("text_$day")
-
-private fun Preferences.alarms(): List<PlanAlarm> =
-    this[DAYS].orEmpty().mapNotNull { it.toLongOrNull() }.mapNotNull { day ->
-        val title = this[titleKey(day)] ?: return@mapNotNull null
-        val text = this[textKey(day)] ?: return@mapNotNull null
-        PlanAlarm(day, this[minuteKey(day)] ?: 0, title, text)
-    }
+private fun Preferences.days(): List<Long> = this[DAYS].orEmpty().mapNotNull { it.toLongOrNull() }
 
 private fun List<PlanAlarm>.asRecord(): Preferences = mutablePreferencesOf().also { record ->
     record[DAYS] = map { it.epochDay.toString() }.toSet()
-    for (alarm in this) {
-        record[minuteKey(alarm.epochDay)] = alarm.minuteOfDay
-        record[titleKey(alarm.epochDay)] = alarm.title
-        record[textKey(alarm.epochDay)] = alarm.text
-    }
 }

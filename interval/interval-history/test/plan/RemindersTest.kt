@@ -7,9 +7,11 @@ import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
+import dev.justinsmith.interval.platform.PlanReminder
 import dev.justinsmith.interval.timer.IntervalConfig
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 // Thursday 15 October 2026.
@@ -71,6 +73,21 @@ class RemindersTest {
     fun `reminders reach two weeks ahead and never back`() {
         val reminders = reminders(listOf(once(TODAY - 1), once(TODAY + 13), once(TODAY + 14)))
         assertEquals(listOf(TODAY + 13), reminders.map { it.epochDay })
+    }
+
+    @Test
+    fun `a reminder looked up as it shows is the day's open plans past its time`() {
+        val plans = listOf(weekly(4), once(TODAY))
+        val log = TrainingLog(emptyList(), plans, TODAY) { it.floorDiv(DAY_MILLIS) }
+        assertEquals(PlanReminder(TODAY, EVENING, plans), reminderOn(log, EVENING, TODAY))
+        assertNull(reminderOn(log, EVENING, TODAY + 1))
+    }
+
+    @Test
+    fun `a reminder looked up as it shows is none once the day's workouts are done`() {
+        val plans = listOf(weekly(4))
+        val log = TrainingLog(listOf(workout(TODAY)), plans, TODAY) { it.floorDiv(DAY_MILLIS) }
+        assertNull(reminderOn(log, EVENING, TODAY))
     }
 
     private companion object {

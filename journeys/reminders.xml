@@ -3,6 +3,10 @@
     Turn on the plan's reminder, pick a time, see it on the Plan page and in the notification settings, then
     turn it off. Run on a fresh install (adb shell pm clear dev.justinsmith.interval); the notification
     permission prompt appears as the reminder is first turned on, at the first time picked.
+    Then, with a workout planned every day and the app closed, move the clock past the two weeks the alarms
+    reach: the reminders keep coming, each one shown setting the next. Every adb command takes
+    -s emulator-5554. Move the clock with adb shell cmd alarm set-time (epoch millis), never force-stop the app
+    (it cancels alarms), and set the clock back to the host's time at the end.
   </description>
   <actions>
     <action>Tap the "History" tab</action>
@@ -20,6 +24,18 @@
     <action>Tap "Back"</action>
     <action>Tap "Edit plan" or "Plan your week"</action>
     <action>Verify that the "Reminder" row still reads "6:15 PM on days with a workout planned"</action>
+    <action>Plan the Timer's workout weekly on every day of the week</action>
+    <action>Verify with adb shell dumpsys alarm that dev.justinsmith.interval holds an RTC_WAKEUP alarm for 6:15 PM on each of the next 13 or 14 days</action>
+    <action>Press Home, then close the app's process with adb shell am kill dev.justinsmith.interval, and verify with adb shell pidof dev.justinsmith.interval that it is gone (repeat the kill once it has been in the background a moment if not)</action>
+    <action>Set the clock to 9:00 AM sixteen days from today, and wait ten seconds</action>
+    <action>Verify that no "Planned today" notification is showing (the alarms of the days gone are stale, and show nothing)</action>
+    <action>Verify with adb shell dumpsys alarm that the app holds alarms for 6:15 PM on that day and the 13 after it</action>
+    <action>Close the app's process again (adb shell am kill dev.justinsmith.interval) and verify with pidof that it is gone</action>
+    <action>Set the clock to 7:20 PM that day (past the alarm's hour-long window), and wait ten seconds</action>
+    <action>Verify with adb shell dumpsys notification --noredact that a notification on the "Planned workouts" channel names the planned workout</action>
+    <action>Verify with adb shell dumpsys alarm that the app now holds alarms for 6:15 PM on each of the 13 days after that day, and none for that day itself</action>
+    <action>Set the clock back to the host's time (adb shell cmd alarm set-time with the host's epoch millis)</action>
+    <action>Open the app, tap the "History" tab, then "Edit plan"</action>
     <action>Tap "Reminder"</action>
     <action>Tap "Turn off reminders"</action>
     <action>Verify that the "Reminder" row reads "Off. Set a time to be reminded on days with a workout planned"</action>

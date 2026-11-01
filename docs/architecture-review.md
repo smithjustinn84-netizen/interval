@@ -93,6 +93,14 @@ What follows from that:
 - Platform modules become plain functions of a `Context`.
 
 ### A2 · Medium · Plan reminders can lapse
+
+**Resolved** on Android in change `puqvnxtu` ("Reminders: kept going by each alarm, worded as they show"): an alarm carries its day alone. `PlanReminderReceiver`
+reaches the container (`KoinComponent`) and asks `PlanReminderSource`, which `PlanReminderScheduler` is, for the day's
+reminder as the plan now stands, words it as it shows, then reschedules from now, so the 14 days move on whether or
+not the app is opened. A reboot or a change of clock or time zone reschedules rather than replaying a record, which
+now holds only the days, to cancel them. iOS is as it was: its notifications carry their words from when they are
+scheduled, and no app code runs as one shows, so its window moves only while the app runs. A1d is resolved for
+receivers; the workout's service is ticket 4's.
 - Alarms reach `PLAN_REMINDER_DAYS = 14` days ahead and are recomputed only by `PlanReminderScheduler`, which
   lives in the Activity-scoped container.
 - `PlanReminderReceiver` re-arms recorded alarms but never extends the window, so a user who doesn't open the app

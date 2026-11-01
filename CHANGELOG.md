@@ -54,6 +54,9 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   restarted.
 - A workout's setting or a saved preset, workout or plan damaged on disk now reads as the nearest valid value,
   rather than showing a negative length or leaving the rest of its list empty.
+- Plan reminders (Android) keep coming without the app being opened: each one shown sets the next two weeks', where
+  before they stopped two weeks after the app was last used. A reminder now says what the plan holds as it shows,
+  in the app's current language, and none comes for a day whose workout was already done.
 
 ## [0.2.0] — Unreleased
 

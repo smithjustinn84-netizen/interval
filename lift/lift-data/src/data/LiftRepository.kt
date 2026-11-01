@@ -69,7 +69,7 @@ class LiftRepository(
     private val writer = SerialWriter(scope, log)
 
     private val _ready = MutableStateFlow(false)
-    val ready: StateFlow<Boolean> = _ready.asStateFlow()
+    override val ready: StateFlow<Boolean> = _ready.asStateFlow()
 
     private val _sessions = MutableStateFlow(emptyList<LiftSession>())
 

@@ -21,3 +21,14 @@ fun plannedReminders(
     .filterKeys { day -> day > today || nowMinuteOfDay < minuteOfDay }
     .map { (day, plans) -> PlanReminder(day, minuteOfDay, plans.map { it.plan }) }
     .sortedBy { it.epochDay }
+
+/**
+ * The reminder on [epochDay] as [log] reads it now, for one showing: the day's workouts still to do, at
+ * [minuteOfDay] whether or not it has passed. Null for a day with none left, or one already gone.
+ */
+fun reminderOn(log: TrainingLog, minuteOfDay: Int, epochDay: Long): PlanReminder? =
+    log.upNext(PLAN_REMINDER_DAYS)
+        .filter { it.epochDay == epochDay }
+        .map { it.plan }
+        .takeIf { it.isNotEmpty() }
+        ?.let { PlanReminder(epochDay, minuteOfDay, it) }

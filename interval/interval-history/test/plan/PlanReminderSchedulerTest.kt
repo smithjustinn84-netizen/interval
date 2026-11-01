@@ -23,6 +23,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 // Thursday 15 October 2026, at noon; the reminder is set for 18:00.
@@ -110,6 +111,52 @@ class PlanReminderSchedulerTest {
         repository.updateAppSettings { it.copy(reminderMinuteOfDay = EVENING) }
         runCurrent()
         assertEquals(listOf(TODAY, TODAY + 7), recorded.pending.map { it.epochDay })
+        scope.cancel()
+    }
+
+    @Test
+    fun `a reminder delivered moves the reminders on to the fifteenth day`() = runTest {
+        var now = noonOf(TODAY)
+        val repository = FakeStorage().repository(now = { now })
+        val reminders = RecordingPlanReminders()
+        val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
+        val lift = FakeLiftStorage().repository(now = { now })
+        val scheduler = PlanReminderScheduler(repository, lift, reminders, FixedTimestampFormatter, { now }, scope)
+        repository.planWeekly(tabataPreset.asPlan(), (1..7).toSet())
+        repository.updateAppSettings { it.copy(reminderMinuteOfDay = EVENING) }
+        runCurrent()
+        assertEquals((TODAY..TODAY + 13).toList(), reminders.pending.map { it.epochDay })
+
+        // A day on, with the app not opened since: no midnight passed in it, only the alarm.
+        now = noonOf(TODAY + 1)
+        scheduler.reschedule()
+        assertEquals((TODAY + 1..TODAY + 14).toList(), reminders.pending.map { it.epochDay })
+
+        // The same set again (the clock or time zone changed) is still handed over, to be set anew.
+        val handed = reminders.schedules.size
+        scheduler.reschedule()
+        assertEquals(handed + 1, reminders.schedules.size)
+        scope.cancel()
+    }
+
+    @Test
+    fun `the reminder showing is the day's open plans as they stand`() = runTest {
+        val now = noonOf(TODAY) + 7 * 60 * 60 * 1000L
+        val repository = FakeStorage().repository(now = { now })
+        val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
+        val lift = FakeLiftStorage().repository(now = { now })
+        val scheduler =
+            PlanReminderScheduler(repository, lift, RecordingPlanReminders(), FixedTimestampFormatter, { now }, scope)
+        repository.planWeekly(tabataPreset.asPlan(), setOf(4))
+        repository.updateAppSettings { it.copy(reminderMinuteOfDay = EVENING) }
+        runCurrent()
+
+        // Shown at 19:00, past its time, it is still today's.
+        assertEquals(tabataPreset.asPlan(), scheduler.reminderOn(TODAY)?.plans?.single()?.workout)
+        repository.recordWorkout(tabataPreset.config, elapsedSeconds = 240)
+        assertNull(scheduler.reminderOn(TODAY))
+        repository.updateAppSettings { it.copy(reminderMinuteOfDay = null) }
+        assertNull(scheduler.reminderOn(TODAY + 7))
         scope.cancel()
     }
 

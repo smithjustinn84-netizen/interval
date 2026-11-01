@@ -156,6 +156,16 @@ The cut line is after ticket 5.
   - `journeys/reminders.xml` advances the emulator's clock past 14 days with the app closed and gets the
     reminder.
 
+- As built: `PlanReminderSource` (`interval-platform`, beside `PlanReminders`) is the port the receiver injects, as
+  `interval-platform` can't see History; the scheduler binds it. `reminderOn(day)` reads the day's open plans past
+  their minute (`plannedReminders` drops today's once its minute has come, so a lookup has its own pure
+  `reminderOn` in `Reminders.kt`), and `reschedule()` calls the platform in the caller's coroutine, past the
+  collector's `distinctUntilChanged`, so the receiver's `goAsync` holds until the alarms are set, and a set the same
+  as before is still set afresh after the clock moves. The scheduler waits for Lift's `ready` too (`LiftActivity`
+  gained it), so a cold start at boot doesn't remind of a Lift plan already done. The action, extra, request code and
+  record file are unchanged, so alarms a 0.3 build set reach the new receiver and are cancelled by the first replace.
+  iOS is unchanged.
+
 ### Week 2: the running workout and Lift's timers outside the screen
 
 **4. `WorkoutSession`: the running workout owned by the process** · L · B1, D2, A1e
