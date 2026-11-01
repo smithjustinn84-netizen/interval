@@ -135,6 +135,11 @@ ViewModel's part in it: the workout runs on when the screen is destroyed, and en
 observes it; the ViewModel only views it.
 
 ### B2 · Medium · EMOMs and holds aren't kept alive off screen
+
+**Resolved** in change `mnmxnyxt` ("Lift: the rest, an EMOM and a hold kept alive off screen, owned by the process"): `SessionTimers` (`lift-session`, a Koin single) owns
+the rest, the EMOM and the hold, and `SessionKeepAlive` keeps whichever runs (`TimerRun`): Android's `TimerService`,
+iOS's notification at its end. Starting an EMOM or a hold over a rest hands the keep-alive on without a stop.
+
 - `SessionViewModel` builds `RestTimer`, `EmomRunner` and `HoldTimer` itself (about L249-257). All three tick on
   `viewModelScope`/Main (L260-265, L372-374).
 - Only a rest starts `RestService` and its wake lock. Starting an EMOM (up to 60 min) calls `rest.skip()` →
@@ -165,6 +170,10 @@ replaces a running one without restarting the service, so back-to-back rests kee
 **Recommendation.** Release and re-acquire for `endAt - now + margin` on each `countDown`.
 
 ### B5 · Low · Lift's timers count wall-clock time
+
+**Resolved** in change `mnmxnyxt`: the timers count `realElapsedTime` through a `RunClock`; the wall
+clock only tells the platform when a run ends.
+
 Rest, EMOM and hold measure with `clock.nowMillis()`, so an NTP or manual clock change bends them. The interval
 side uses the monotonic `realElapsedTime`, and `dataModule` already provides it.
 
@@ -366,6 +375,10 @@ reads it.
   on each stepper tap. `TodayViewModel` already injects a computation dispatcher; follow it.
 
 ### F3 · Low · One big UiState copied every tick
+
+**Resolved** in change `mnmxnyxt`: `SessionViewModel.clocks` (`SessionClocks`) carries the clocks, read
+only by the tiles, the EMOM's screen and the hold's countdown; `state` no longer moves with the tick.
+
 A 250 ms tick feeds the whole `SessionUiState`, so every child that takes `state` recomposes each second.
 
 **Recommendation.** A separate `clocks: StateFlow`, collected only by the timer tiles.

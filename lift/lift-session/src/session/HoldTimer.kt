@@ -1,6 +1,5 @@
 package dev.justinsmith.lift.session
 
-import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.HoldClock
 import dev.justinsmith.lift.domain.HoldPhase
@@ -11,8 +10,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/** A hold being timed: the set as the sheet had it, when it started, and whether it is the first side. */
-data class HoldRun(val set: SetDraft, val startedAtMillis: Long, val firstSide: Boolean) {
+/**
+ * A hold being timed: the set as the sheet had it, when it started (on the [RunClock]'s monotonic time, and on
+ * the wall clock), and whether it is the first side.
+ */
+data class HoldRun(
+    val set: SetDraft,
+    val startedAtMillis: Long,
+    val firstSide: Boolean,
+    val startedAtEpochMillis: Long = 0L,
+) {
     val clock: HoldClock get() = HoldClock(set.seconds)
 }
 
@@ -24,11 +31,10 @@ data class HoldTiming(val run: HoldRun? = null, val offer: HoldOffer? = null)
 
 /**
  * Times a hold from the Log sheet: counts in, counts down, beeps like an EMOM and [log]s the set on the last
- * beep, or the whole seconds held when stopped early. [tick] moves it on; the view model calls it with its
- * other cues.
+ * beep, or the whole seconds held when stopped early. [tick] moves it on.
  */
 class HoldTimer(
-    private val clock: WallClock,
+    private val clock: RunClock,
     private val beeper: Beeper,
     private val log: (set: SetDraft, seconds: Int) -> Unit,
 ) {
@@ -43,13 +49,13 @@ class HoldTimer(
         if (!set.held) return
         val otherSide = timing.value.offer == HoldOffer(set.exercise, set.side)
         lastCueMillis = BEFORE_START
-        timing.value = HoldTiming(HoldRun(set, clock.nowMillis(), firstSide = !otherSide))
+        timing.value = HoldTiming(HoldRun(set, clock.now(), firstSide = !otherSide, clock.epochNow()))
     }
 
     /** Stops early, logging the whole seconds held: none in the count-in. */
     fun stop() {
         val run = timing.value.run ?: return
-        end(run, run.clock.heldSeconds(clock.nowMillis() - run.startedAtMillis))
+        end(run, run.clock.heldSeconds(clock.now() - run.startedAtMillis))
     }
 
     /** Stops without logging. */

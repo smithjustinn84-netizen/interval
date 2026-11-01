@@ -32,6 +32,7 @@ import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.lift.di.liftFeatureModules
 import dev.justinsmith.lift.fakes.FakeIntervalActivity
 import dev.justinsmith.lift.fakes.FakeLiftStorage
+import dev.justinsmith.lift.fakes.LiftTestClock
 import dev.justinsmith.lift.fakes.RecordingBeeper
 import dev.justinsmith.lift.fakes.fakeLiftPlatformModule
 import dev.justinsmith.lift.fakes.liftTestKoin
@@ -42,7 +43,6 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import org.koin.compose.KoinIsolatedContext
 import org.koin.core.KoinApplication
-import java.util.concurrent.atomic.AtomicLong
 import kotlin.time.Duration
 
 /**
@@ -51,7 +51,7 @@ import kotlin.time.Duration
  */
 class LiftAppFixture(
     val storage: FakeLiftStorage,
-    val clock: AtomicLong,
+    val clock: LiftTestClock,
     val beeper: RecordingBeeper,
     /** What the pages offered to share. */
     val sharer: RecordingSharer,
@@ -103,13 +103,14 @@ fun liftAppTest(
     timeout: Duration = UI_TEST_TIMEOUT,
     block: suspend DesktopComposeUiTest.(LiftAppFixture) -> Unit,
 ) = runUiTest(window, timeout) {
-    val clock = AtomicLong(0L)
+    val clock = LiftTestClock()
     val beeper = RecordingBeeper()
     val sharer = RecordingSharer()
     val koin = liftTestKoin(
         storage,
         fakeLiftPlatformModule(beeper = beeper),
         now = clock::get,
+        timeSource = clock.elapsed,
         intervals = intervals,
         sharer = sharer,
         features = liftFeatureModules,

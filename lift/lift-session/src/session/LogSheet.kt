@@ -104,7 +104,12 @@ private enum class LogKind { Set, Emom }
  * it offers the other side. Closing it mid-hold drops the hold.
  */
 @Composable
-internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismiss: () -> Unit) {
+internal fun LogSetSheet(
+    state: SessionUiState,
+    clocks: () -> SessionClocks,
+    actions: SessionActions,
+    onDismiss: () -> Unit,
+) {
     val draft = state.draft
     val editing = state.editing != null
     // Saved by name: an enum is not saveable on every platform.
@@ -125,7 +130,7 @@ internal fun LogSetSheet(state: SessionUiState, actions: SessionActions, onDismi
     val sideways = sheetIsSideways()
     IntervalSheet(logSheetTitle(draft.exercise, reading, adding != null, editing), onDismiss = onClose) { hide ->
         val hold = state.hold
-        val holdState = state.holdState
+        val holdState = clocks().holdState
         CloseWhenTimed(timing = hold != null, offering = state.otherSide != null, hide)
         if (hold != null && holdState != null) {
             HoldCountdown(hold, holdState, actions.onStopHold)

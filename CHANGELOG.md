@@ -61,6 +61,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   lighter, what only assisted it, and names any group nothing trained.
 
 ### Fixed
+- Lift (Android): an EMOM or a timed hold keeps counting and beeping with the screen off, as a rest does, and shows
+  in the status bar and on the lock screen ("EMOM · minute 2 of 10"); starting one over a rest no longer lets the
+  phone sleep. On iOS a notification says when it is done. Lift's timers no longer bend when the clock changes,
+  and leaving a session ends its rest.
 - Lift: a change to today's plan made straight after logging a set, or a held + on the next set's load, is no
   longer sometimes lost; each change builds on the last.
 - Lift: finishing or discarding a session, deleting a program and removing a band each happen whole or not at

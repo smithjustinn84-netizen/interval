@@ -29,7 +29,8 @@ import dev.justinsmith.lift.di.liftModules
 import dev.justinsmith.lift.domain.EmomCue
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.platform.Beeper
-import dev.justinsmith.lift.platform.RestAlerts
+import dev.justinsmith.lift.platform.SessionKeepAlive
+import dev.justinsmith.lift.platform.TimerRun
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -44,6 +45,10 @@ import org.koin.core.module.dsl.onClose
 import org.koin.core.module.dsl.withOptions
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
+import kotlin.concurrent.Volatile
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.TestTimeSource
+import kotlin.time.TimeSource
 
 /** [SessionDao] over lists, as the real queries order them. */
 private val loggedOrder = compareBy<SetEntity>({ it.loggedAtEpochMillis }, { it.id })
@@ -312,15 +317,13 @@ class FakeLiftStorage {
     }
 }
 
-/** Records the rests the platform was asked to keep: each start and end it was given, and how many stops. */
-class RecordingRestAlerts : RestAlerts {
-    val starts = mutableListOf<Long>()
-    val ends = mutableListOf<Long>()
+/** Records the runs the platform was asked to keep, in order, and how many times it was let go. */
+class RecordingKeepAlive : SessionKeepAlive {
+    val runs = mutableListOf<TimerRun>()
     var stops = 0
 
-    override fun start(startedAtEpochMillis: Long, endAtEpochMillis: Long) {
-        starts += startedAtEpochMillis
-        ends += endAtEpochMillis
+    override fun start(run: TimerRun) {
+        runs += run
     }
 
     override fun stop() {
@@ -329,11 +332,32 @@ class RecordingRestAlerts : RestAlerts {
 }
 
 /** Stands in for `liftPlatformModule`. Tests never load the real one: it writes a database file. */
-fun fakeLiftPlatformModule(beeper: Beeper = RecordingBeeper(), alerts: RestAlerts = RecordingRestAlerts()): Module =
-    module {
-        single<Beeper> { beeper }
-        single<RestAlerts> { alerts }
+fun fakeLiftPlatformModule(
+    beeper: Beeper = RecordingBeeper(),
+    keepAlive: SessionKeepAlive = RecordingKeepAlive(),
+): Module = module {
+    single<Beeper> { beeper }
+    single<SessionKeepAlive> { keepAlive }
+}
+
+/**
+ * A Lift test's time: the wall clock, which [get] reads, and the monotonic time the session's timers count,
+ * [elapsed]. [set] moves both by the same step, so a test that moves the wall clock moves the timers too; a step
+ * back moves the wall clock alone, as a clock change would.
+ */
+class LiftTestClock(start: Long = 0L) {
+    @Volatile
+    private var millis = start
+    val elapsed = TestTimeSource()
+
+    fun get(): Long = millis
+
+    fun set(to: Long) {
+        val step = to - millis
+        millis = to
+        if (step > 0) elapsed += step.milliseconds
     }
+}
 
 fun fakeLiftStorageModule(storage: FakeLiftStorage = FakeLiftStorage()): Module = module {
     single<CoroutineScope>(LiftStorageScope) { CoroutineScope(SupervisorJob() + Dispatchers.Unconfined) }.withOptions {
@@ -350,13 +374,14 @@ fun fakeLiftStorageModule(storage: FakeLiftStorage = FakeLiftStorage()): Module 
 
 /**
  * Lift's part of the container over fakes, with what core and the app would supply: a clock reading [now], the
- * [FixedTimestampFormatter], [sharer] and [intervals]. [features] are the feature modules whose ViewModels the
- * test's Routes resolve: `lift-nav`'s `liftFeatureModules` (this module sees no feature).
+ * timers' [timeSource], the [FixedTimestampFormatter], [sharer] and [intervals]. [features] are the feature modules
+ * whose ViewModels the test's Routes resolve: `lift-nav`'s `liftFeatureModules` (this module sees no feature).
  */
 fun liftTestKoin(
     storage: FakeLiftStorage = FakeLiftStorage(),
     platformModule: Module = fakeLiftPlatformModule(),
     now: () -> Long = { 0L },
+    timeSource: TimeSource.WithComparableMarks = TimeSource.Monotonic,
     intervals: IntervalActivity = FakeIntervalActivity(),
     sharer: Sharer = RecordingSharer(),
     features: List<Module> = emptyList(),
@@ -365,7 +390,7 @@ fun liftTestKoin(
         single<IntervalActivity> { intervals }
     }
     modules(
-        listOf(fakeCorePlatformModule(WallClock(now), sharer = sharer)) +
+        listOf(fakeCorePlatformModule(WallClock(now), sharer = sharer, timeSource = timeSource)) +
             liftModules(platformModule, fakeLiftStorageModule(storage)) +
             features +
             app,

@@ -3,8 +3,8 @@ package dev.justinsmith.lift.platform
 /*
  * Each platform's `liftPlatformModule` (Android's of a `Context`, iOS's and the desktop's of nothing) gives the
  * Koin definitions for what Lift needs from the platform: a builder for its database file
- * (`RoomDatabase.Builder<LiftDatabase>`), a [Beeper] and [RestAlerts]. The app's entry point builds it once per
- * process.
+ * (`RoomDatabase.Builder<LiftDatabase>`), a [Beeper] and the [SessionKeepAlive]. The app's entry point builds it
+ * once per process.
  */
 
 /**

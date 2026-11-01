@@ -17,7 +17,6 @@ import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.DEFAULT_BAR_KG
 import dev.justinsmith.lift.domain.DEFAULT_BELL_KG
-import dev.justinsmith.lift.domain.EmomClock
 import dev.justinsmith.lift.domain.EmomState
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.Exercise
@@ -66,15 +65,15 @@ import dev.justinsmith.lift.domain.toppedOut
 import dev.justinsmith.lift.library.ExerciseDetailUiState
 import dev.justinsmith.lift.library.LibraryList
 import dev.justinsmith.lift.library.exerciseDetail
-import dev.justinsmith.lift.platform.Beeper
-import dev.justinsmith.lift.platform.RestAlerts
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -168,14 +167,23 @@ data class UpNext(
     val lastTime: SetLog? = null,
 )
 
-data class SessionUiState(
-    val session: LiftSession? = null,
-    /** How long it has run: "14:32". */
+/**
+ * The session's clocks, which move every tick while a timer runs and every second besides. Apart from
+ * [SessionUiState], so only what draws them recomposes as they move.
+ */
+data class SessionClocks(
+    /** How long the session has run: "14:32". */
     val elapsed: String = formatClock(0),
     /** Since the last set, for resting: "0:38"; null before the first. */
     val sinceLast: String? = null,
     /** The rest counting down after a set; null when none is. */
     val rest: RestState? = null,
+    val emomState: EmomState? = null,
+    val holdState: HoldState? = null,
+)
+
+data class SessionUiState(
+    val session: LiftSession? = null,
     /**
      * Whether the screen asks to show notifications, for the rest's off screen: from the session's first rest on,
      * and staying so, so it asks once rather than at each rest.
@@ -204,10 +212,8 @@ data class SessionUiState(
     /** The program day the session is, null for a free one: what names it to the health store. */
     val programDay: ProgramDay? = null,
     val emom: EmomRun? = null,
-    val emomState: EmomState? = null,
     /** A hold being timed on the Log sheet. */
     val hold: HoldRun? = null,
-    val holdState: HoldState? = null,
     /** The side to time next, for the same length, after the first side of a one-sided hold. */
     val otherSide: Side? = null,
     val finished: Finished? = null,
@@ -225,14 +231,15 @@ data class SessionUiState(
 
 /**
  * The session in progress: starts one when opened if none is, logs sets (from the plan, the sheet or an
- * EMOM), and finishes or discards it. [tickMillis] is how often the clocks move and cues are checked.
+ * EMOM), and finishes or discards it. Its rest, EMOM and hold are the process's [timers], which it starts and
+ * stops and shows; [tickMillis] is how often the session's own clocks (its time, the time since the last set)
+ * move.
  */
 @Suppress("detekt.TooManyFunctions") // Every way a session changes, side by side.
 class SessionViewModel(
     private val repository: LiftRepository,
     private val clock: WallClock,
-    private val beeper: Beeper,
-    private val alerts: RestAlerts,
+    private val timers: SessionTimers,
     private val filters: ExerciseFilterStore,
     private val intervals: IntervalActivity,
     private val timestamps: TimestampFormatter,
@@ -252,18 +259,10 @@ class SessionViewModel(
     private var recorded: HealthWorkout? = null
     private var healthNotes: String? = null
 
-    /** Runs an EMOM, logging each minute's set as it is done. */
-    private val emom = EmomRunner(clock, beeper) { run, minute ->
-        repository.logSet(run.exercise, run.bellKg, run.reps, run.sideOf(minute), run.double, band = run.band)
-    }
+    /** Whether a rest has started since this session opened here: it asks to show notifications from then on. */
+    private val rested = MutableStateFlow(false)
 
-    /** Times a hold from the sheet, logging it when done. */
-    private val holds = HoldTimer(clock, beeper) { set, seconds -> logSet(set, seconds) }
-
-    /** Counts a rest down after each set logged here: an EMOM rests out its own minutes. */
-    private val rest = RestTimer(clock, beeper, alerts)
-
-    /** The time, once a tick: one clock for the clocks on screen and the cues alike. */
+    /** The wall clock, once a tick, for the session's own clocks: they move with no timer running. */
     private val ticks = flow {
         while (true) {
             emit(clock.nowMillis())
@@ -287,7 +286,12 @@ class SessionViewModel(
     /** The sheet's draft for a new set, put aside while a set logged is changed. */
     private var freeDraft: SetDraft? = null
 
-    private val runs = combine(emom.state, holds.state, editing, ::Triple)
+    private val runs = combine(
+        timers.state.map { it.emom }.distinctUntilChanged(),
+        timers.state.map { it.hold }.distinctUntilChanged(),
+        editing,
+        ::Triple,
+    )
 
     private val gear = combine(repository.bells, repository.bands, repository.bar, ::Triple)
 
@@ -345,24 +349,26 @@ class SessionViewModel(
         }
 
     val state: StateFlow<SessionUiState> =
-        combine(untimed, ticks, detail, rest.state, rest.rested) { state, now, page, resting, rested ->
-            state.at(now).copy(
-                detail = page,
-                rest = resting?.let { it.clock.at(now - it.startedAtMillis) },
-                asksToShowNotifications = rested,
-            )
+        combine(untimed, detail, rested) { state, page, rested ->
+            state.copy(detail = page, asksToShowNotifications = rested)
         }
             .stateIn(viewModelScope, SharingStarted.Eagerly, SessionUiState())
 
-    /** This state with its clocks read at [now]. */
-    private fun SessionUiState.at(now: Long): SessionUiState = copy(
-        elapsed = formatClock(session?.elapsedSeconds(now) ?: 0),
-        sinceLast = session?.sets?.lastOrNull()?.let {
-            formatClock(((now - it.loggedAtEpochMillis) / MILLIS_PER_SECOND).toInt())
-        },
-        emomState = emom?.let { EmomClock(it.minutes).at(now - it.startedAtMillis, it.done) },
-        holdState = hold?.let { it.clock.at(now - it.startedAtMillis) },
-    )
+    /** The clocks, read at each tick of the session's own and of its timers. */
+    val clocks: StateFlow<SessionClocks> =
+        combine(repository.active, ticks, timers.state) { session, now, timing ->
+            SessionClocks(
+                elapsed = formatClock(session?.elapsedSeconds(now) ?: 0),
+                sinceLast = session?.sets?.lastOrNull()?.let {
+                    formatClock(((now - it.loggedAtEpochMillis) / MILLIS_PER_SECOND).toInt())
+                },
+                rest = timing.restState,
+                emomState = timing.emomState,
+                holdState = timing.holdState,
+            )
+        }
+            .distinctUntilChanged()
+            .stateIn(viewModelScope, SharingStarted.Eagerly, SessionClocks())
 
     /** The user's exercises when the sheet went to add one: the first not among them is the one added. */
     private var awaitingAdd: Set<String>? = null
@@ -380,9 +386,13 @@ class SessionViewModel(
         repository.active.value?.sets?.lastOrNull()?.let { last ->
             draft.update { it.from(last, flipSide = true) }
         }
-        // Cues play from here, not the screen, so they keep time whatever is drawn.
+        // From the first rest on: rested once, the screen asks once.
         viewModelScope.launch {
-            ticks.collect { now -> playCues(now) }
+            timers.state.collect { if (it.rest != null) rested.value = true }
+        }
+        // A hold the timers logged goes on with the other side, as a set logged here does.
+        viewModelScope.launch {
+            timers.heldSets.collect { set -> flipSide(set) }
         }
         // An exercise added from the sheet's search is the one the sheet goes on with.
         viewModelScope.launch {
@@ -461,9 +471,13 @@ class SessionViewModel(
             seconds = seconds.takeIf { set.held },
             band = set.band,
         )
-        // A one-sided lift usually goes on with the other side.
+        flipSide(set)
+        timers.startRest(repository.restSeconds.value)
+    }
+
+    /** A one-sided lift usually goes on with the other side. */
+    private fun flipSide(set: SetDraft) {
         if (set.exercise.sided(set.doubled)) draft.update { it.copy(side = set.side.other) }
-        rest.start(repository.restSeconds.value)
     }
 
     /** Logs the plan's next set as planned, with its suggested load: a hold for its seconds. */
@@ -479,7 +493,7 @@ class SessionViewModel(
             seconds = set.reps.takeIf { set.held },
             band = next.band,
         )
-        rest.start(repository.restSeconds.value)
+        timers.startRest(repository.restSeconds.value)
     }
 
     /**
@@ -490,12 +504,12 @@ class SessionViewModel(
         val seconds = (repository.restSeconds.value + step * RestClock.STEP_SECONDS)
             .coerceIn(RestClock.MIN_SECONDS, RestClock.MAX_SECONDS)
         repository.setRestSeconds(seconds)
-        rest.adjust(seconds)
+        timers.adjustRest(seconds)
     }
 
     /** Ends the rest early. */
     fun skipRest() {
-        rest.skip()
+        timers.skipRest()
     }
 
     /**
@@ -595,8 +609,7 @@ class SessionViewModel(
         val next = state.value.upNext ?: return
         val minutes = next.emomMinutes ?: return
         if (next.set.held) return
-        rest.skip()
-        emom.start(
+        timers.startEmom(
             next.set.exercise,
             next.bellKg,
             next.set.reps,
@@ -620,8 +633,7 @@ class SessionViewModel(
     fun startDraftEmom() {
         val d = draft.value
         if (d.held) return
-        rest.skip()
-        emom.start(
+        timers.startEmom(
             d.exercise,
             d.loadKg,
             d.reps,
@@ -634,27 +646,31 @@ class SessionViewModel(
 
     /** Starts timing the sheet's hold: the other side of the one just done, if that is on offer. */
     fun startHold() {
-        rest.skip()
-        holds.start(draft.value)
+        timers.startHold(draft.value)
     }
 
     /** Stops the hold early, logging the whole seconds held. */
     fun stopHold() {
-        holds.stop()
+        timers.stopHold()
     }
 
     /** Stops the hold without logging it. */
     fun cancelHold() {
-        holds.cancel()
+        timers.cancelHold()
     }
 
     /** Logs this minute's set: the EMOM rests out the minute. */
     fun emomSetDone() {
-        emom.setDone()
+        timers.emomSetDone()
     }
 
     fun stopEmom() {
-        emom.stop()
+        timers.stopEmom()
+    }
+
+    /** Leaves the session for later: its timers stop, its sets stay. */
+    fun leave() {
+        timers.stopAll()
     }
 
     fun removeSet(id: Long) {
@@ -729,9 +745,7 @@ class SessionViewModel(
      */
     fun finish(title: String, healthTitle: String? = null): Boolean {
         val session = repository.active.value ?: return false
-        emom.stop()
-        holds.cancel()
-        rest.skip()
+        timers.stopAll()
         if (session.sets.isEmpty()) {
             repository.discardSession()
             return false
@@ -808,9 +822,7 @@ class SessionViewModel(
     }
 
     fun discard() {
-        emom.stop()
-        holds.cancel()
-        rest.skip()
+        timers.stopAll()
         repository.discardSession()
     }
 
@@ -821,12 +833,6 @@ class SessionViewModel(
             intervals.workouts.value.map { timestamps.dayNumber(it.finishedAtEpochMillis) } +
             today
         return weekStanding(days, today, intervals.weeklyGoal.value)
-    }
-
-    private fun playCues(now: Long) {
-        rest.tick(now)
-        holds.tick(now)
-        emom.tick(now)
     }
 
     private fun upNext(day: ProgramDay, logged: List<SetLog>): UpNext? {

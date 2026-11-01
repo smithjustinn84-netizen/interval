@@ -15,6 +15,7 @@ import dev.justinsmith.interval.timer.epochDayOf
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.koin.core.module.Module
 import org.koin.dsl.module
+import kotlin.time.TimeSource
 
 const val DAY_MILLIS = 24L * 60 * 60 * 1000
 private const val MINUTE_MILLIS = 60L * 1000
@@ -109,16 +110,19 @@ class RecordingHealthStore(initial: HealthStatus = HealthStatus.Disconnected) : 
 }
 
 /**
- * Stands in for core's `corePlatformModule`: a [clock] standing at 0 unless a test moves it, the
- * [FixedTimestampFormatter], [FakeAppInfo], a [sharer] that records and a [health] store that does too.
+ * Stands in for core's `corePlatformModule`: a [clock] standing at 0 unless a test moves it, real monotonic
+ * time unless a test passes a `TestTimeSource` as [timeSource], the [FixedTimestampFormatter], [FakeAppInfo], a
+ * [sharer] that records and a [health] store that does too.
  */
 fun fakeCorePlatformModule(
     clock: WallClock = WallClock { 0L },
     formatter: TimestampFormatter = FixedTimestampFormatter,
     sharer: Sharer = RecordingSharer(),
     health: HealthStore = RecordingHealthStore(),
+    timeSource: TimeSource.WithComparableMarks = TimeSource.Monotonic,
 ): Module = module {
     single { clock }
+    single { timeSource }
     single { formatter }
     single<AppInfo> { FakeAppInfo }
     single { sharer }

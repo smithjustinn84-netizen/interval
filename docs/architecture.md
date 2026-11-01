@@ -47,7 +47,7 @@ graph TD
 
     subgraph Platform ["Platform services"]
         IntervalPlatform["interval-platform (cues, WorkoutService, reminders)"]
-        LiftPlatform["lift-platform (Beeper, RestAlerts)"]
+        LiftPlatform["lift-platform (Beeper, SessionKeepAlive)"]
     end
 
     subgraph Data ["Data"]
@@ -159,14 +159,17 @@ several core issues:
   and multi-statement DAO operations (`finishActive`, `discardActive`, `deleteProgram`, `removeOrArchive`) run in `@Transaction` methods.
 - **Resolved — Domain invariants & edge guards (E3, E5, E6, D5)**: `IntervalConfig` enforces ranges at construction and provides
   `sanitized()` factories for storage mappers. `reviewImport` fails gracefully on corrupted files, and preset flows are derived safely.
-- **Resolved — Rest wake lock renewal (B4)**: `RestService` renews the device wake lock on every rest countdown.
+- **Resolved — Rest wake lock renewal (B4)**: the timers' service (now `TimerService`) renews the device wake lock
+  on every run's countdown.
+- **Resolved — Lift's timers owned by the process (B2, B5, F3)**: `SessionTimers`, a Koin single, runs the rest, the
+  EMOM and the hold on monotonic time, logs as they go and keeps whichever runs alive through `SessionKeepAlive`
+  (Android's `TimerService`, iOS's notification at its end). `SessionViewModel` starts them and shows their clocks
+  apart from the rest of its state. They end with the session, its page or the task.
 - **Resolved — The running workout owned by the process (B1, D2)**: `WorkoutSession`, a Koin single, runs the workout
   (the ticker, cues, course, checkpoint and the service's lifetime); `WorkoutService` and iOS's keeper reach it as
   the `ActiveWorkout` port, and `WorkoutViewModel` only maps its state. It ends when its page leaves the back stack.
 
 **Remaining open debt:**
-- **A ViewModel owns long-running work.** `SessionViewModel` runs Lift's rest, EMOM and hold, and only a rest keeps
-  the process awake on Lift.
 - **The repositories are concrete and wide.** `IntervalRepository` and `LiftRepository` have no interfaces, and
   every ViewModel takes the whole of one. `LiftActivity`/`IntervalActivity` are the pattern to follow.
 - **A ViewModel does too much.** `SessionViewModel` (`@Suppress(TooManyFunctions)`).
@@ -307,7 +310,7 @@ flowchart TD
     Clock -->|Catches up elapsed time on resume| VM
 
     subgraph AndroidExecution ["Android"]
-        Service["Foreground Service (WorkoutService / RestService)"]
+        Service["Foreground Service (WorkoutService / TimerService)"]
         Notif["Notification with Live Updates & Controls"]
         Service --> Notif
     end
@@ -327,7 +330,7 @@ flowchart TD
     VM --> DesktopExecution
 ```
 
-- **Monotonic Time Accounting**: `WorkoutSession` (through `WorkoutTicker`) and `RestClock` calculate time steps against real elapsed time
+- **Monotonic Time Accounting**: `WorkoutSession` (through `WorkoutTicker`) and Lift's `SessionTimers` (through a `RunClock`) calculate time against real elapsed time
   (`realElapsedTime`). Even if the process sleeps or is delayed, resuming ticks forward precisely without lost seconds.
 - **Android**:
   - `WorkoutService` runs as a foreground service with a persistent notification (`specialUse` type) allowing the user
@@ -336,8 +339,8 @@ flowchart TD
   - **Live Updates (Android 16+)**: Built with `NotificationCompat.ProgressStyle` and `setRequestPromotedOngoing(true)`.
     Promotes an active workout to a compact chip with clock countdown in the status bar, and displays a phase-colored
     progress bar on the lock screen and notification shade.
-  - `RestService` maintains countdown awareness during Lift rest periods, renewing wake locks per rest and beeping via
-    the device audio subsystem when the rest concludes.
+  - `TimerService` keeps Lift's rest, EMOM or hold counting with the screen off: a Live Update naming the run
+    ("Resting", "EMOM · minute 2 of 10", "Holding"), a wake lock to each run's end, while `SessionTimers` beeps.
 - **iOS**:
   - Rather than maintaining power-draining background audio sessions, iOS schedules local notifications (`UNUserNotificationCenter`)
     in advance for each upcoming interval or rest expiration. Returning to the app cancels remaining scheduled alerts.

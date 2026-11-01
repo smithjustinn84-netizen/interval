@@ -10,7 +10,7 @@ apply:
 
 dependencies:
   - //lift/lift-library: exported
-  # The EMOM's `Beeper` and the rest's `RestAlerts`.
+  # The timers' `Beeper` and `SessionKeepAlive`, and the `ActiveTimers` port `SessionTimers` is.
   - //lift/lift-platform: exported
 
 test-dependencies:

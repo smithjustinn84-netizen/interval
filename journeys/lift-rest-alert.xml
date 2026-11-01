@@ -19,9 +19,9 @@
     <action>Verify that the "Resting" notification is gone and the session shows "Next set"</action>
     <action>Tap "Log set" and, while that rest counts, tap "Log set" again, and verify that a rest counts down afresh from "0:30" or less</action>
     <action>Turn the screen off (adb shell input keyevent KEYCODE_SLEEP)</action>
-    <action>Verify with adb shell dumpsys power that a PARTIAL_WAKE_LOCK tagged "interval:rest" is held</action>
+    <action>Verify with adb shell dumpsys power that a PARTIAL_WAKE_LOCK tagged "interval:timer" is held</action>
     <action>Wait for the rest to end and verify that the beeps 3-2-1 and Start played with the screen off</action>
-    <action>Wait ten seconds and verify with adb shell dumpsys power that no wake lock tagged "interval:rest" is held</action>
+    <action>Wait ten seconds and verify with adb shell dumpsys power that no wake lock tagged "interval:timer" is held</action>
     <action>Turn the screen on (adb shell input keyevent KEYCODE_WAKEUP) and swipe to unlock</action>
   </actions>
 </journey>

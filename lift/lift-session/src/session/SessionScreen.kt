@@ -115,16 +115,18 @@ fun SessionRoute(onExit: () -> Unit) {
     val sharer = koinInject<Sharer>()
     val viewModel = koinViewModel<SessionViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // The clocks move every tick: read where they are drawn, so the rest of the screen can skip.
+    val clocks = viewModel.clocks.collectAsStateWithLifecycle()
+    val readClocks = remember(clocks) { { clocks.value } }
     val finished = state.finished
     val emom = state.emom
-    val emomState = state.emomState
+    val emomState = clocks.value.emomState
     if (finished == null) {
         LeaveGuard(
             emomRunning = emom != null,
             hasSets = !state.session?.sets.isNullOrEmpty(),
             onLeave = {
-                viewModel.stopEmom()
-                viewModel.cancelHold()
+                viewModel.leave()
                 onExit()
             },
             onDiscard = {
@@ -169,7 +171,7 @@ fun SessionRoute(onExit: () -> Unit) {
                 onStop = viewModel::stopEmom,
             )
 
-            SessionPage.Logging -> SessionScreen(state, actions)
+            SessionPage.Logging -> SessionScreen(state, readClocks, actions)
         }
     }
 }
@@ -313,10 +315,15 @@ data class SessionActions(
 
 /**
  * The session in progress: its time and weight moved, what is next and what is done, + in the title bar for the
- * Log sheet (another set or an EMOM), and Log set or Finish at the foot.
+ * Log sheet (another set or an EMOM), and Log set or Finish at the foot. [clocks] are read only where drawn.
  */
 @Composable
-fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modifier = Modifier) {
+fun SessionScreen(
+    state: SessionUiState,
+    clocks: () -> SessionClocks,
+    actions: SessionActions,
+    modifier: Modifier = Modifier,
+) {
     var logging by rememberSaveable { mutableStateOf(false) }
     var discarding by rememberSaveable { mutableStateOf(false) }
     // Finish with nothing logged: the same ask as Back, since there is nothing to save.
@@ -359,7 +366,7 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
                 actions = { IconAction(IntervalIcons.Add, stringResource(Res.string.session_add_cd), openSheet) },
             )
         },
-        tiles = { wide -> SessionTiles(state, actions, wide) },
+        tiles = { wide -> SessionTiles(state, clocks, actions, wide) },
         plan = {
             SessionPlanContent(
                 state = state,
@@ -382,7 +389,7 @@ fun SessionScreen(state: SessionUiState, actions: SessionActions, modifier: Modi
         },
     )
     SessionLayout(parts, modifier)
-    if (logging) LogSetSheet(state, actions, onDismiss = { logging = false })
+    if (logging) LogSetSheet(state, clocks, actions, onDismiss = { logging = false })
     if (reading) ExercisePageSheet(state, actions, onDismiss = { reading = false })
     if (picking) ExercisePickerSheet(state, actions, onDismiss = { picking = false })
     PlanSheets(state, actions, planning, changing, onPlanning = { planning = it }, onChanging = { changing = it })
@@ -589,10 +596,11 @@ private fun SessionLayout(parts: SessionParts, modifier: Modifier = Modifier) {
  * row when [wide].
  */
 @Composable
-private fun SessionTiles(state: SessionUiState, actions: SessionActions, wide: Boolean) {
+private fun SessionTiles(state: SessionUiState, clocks: () -> SessionClocks, actions: SessionActions, wide: Boolean) {
     val moved = state.session?.tonnageKg ?: 0.0
+    val now = clocks()
     val time = @Composable { modifier: Modifier ->
-        StatTile(stringResource(Res.string.session_time), state.elapsed, modifier)
+        StatTile(stringResource(Res.string.session_time), now.elapsed, modifier)
     }
     val weight = @Composable { modifier: Modifier ->
         StatTile(
@@ -602,8 +610,8 @@ private fun SessionTiles(state: SessionUiState, actions: SessionActions, wide: B
             rank = moved.toInt(),
         )
     }
-    val since = state.sinceLast
-    val rest = state.rest
+    val since = now.sinceLast
+    val rest = now.rest
     val third = when {
         rest != null -> @Composable { modifier: Modifier ->
             RestTile(rest, actions.onStepRest, actions.onSkipRest, modifier)

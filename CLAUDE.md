@@ -123,16 +123,19 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
   lift-data          `LiftRepository`, `LiftDatabase` (Room, KSP, `schemas/`), `IntervalActivity` (what Lift
                      reads of the interval side; `app` binds it), `LiftActivity` (what the interval side reads
                      of Lift; `LiftRepository` is it), `liftModules` (di/). No Compose
-  lift-platform      `Beeper`, `RestAlerts` (+ Android's `RestService`), the rest notification's words, and each
-                     platform's `liftPlatformModule` (the database builder too); Lift's `interval-platform`
+  lift-platform      `Beeper`, `SessionKeepAlive` and its `TimerRun` (+ Android's `TimerService`), the `ActiveTimers`
+                     port, the timers' notification words, and each platform's `liftPlatformModule` (the database
+                     builder too); Lift's `interval-platform`
   lift-ui            Lift's words and widgets (`exerciseName`, `setLine`, `programName`, `LoadPicker`, `Stepper`,
                      `SessionStats`, `BalanceBars`), the built-ins' cues (`cues.xml`, mapped in `ExerciseCues.kt`); most of
                      Lift's strings
   lift-testing       `FakeLiftStorage` and the fake DAOs, `FakeIntervalActivity`, `RecordingBeeper`,
+                     `RecordingKeepAlive`, `LiftTestClock` (the wall clock and the timers' time, moved together),
                      `liftTestKoin`
   lift-today         the Lift tab (with the balance, `MuscleBalance` in lift-domain) and the gear (bells, bar,
                      bands, records)
-  lift-session       the session (log sheet, EMOM, hold and rest timers, plan sheets, summary), the programs
+  lift-session       the session (log sheet, EMOM, hold and rest timers under `SessionTimers`, plan sheets,
+                     summary), the programs
                      and their editor and progress (they share the block editor), a finished session's page
   lift-library       the exercise library, each exercise's page and editor, the picker
   lift-nav           Lift's entry point: its navigation keys (`nav/LiftRoutes.kt`) and the entry for each
@@ -256,10 +259,15 @@ toolchain (`$compose.*`).
   it shows its `status` and its Pause and End act on it. iOS schedules a local notification per phase change ahead
   (`WorkoutEngine.upcomingChanges`, pure, through `ActiveWorkout.upcomingChanges`) as the app leaves the screen,
   and drops them on return; its actual says why not background audio. Desktop keeps nothing.
-  Lift's rest between sets goes the same way through `RestAlerts` (`lift/lift-platform/src/platform/`): Android's
-  `RestService` holds the CPU awake and counts the rest down in a notification while the session's own clock
-  beeps; iOS schedules one notification for the rest's end; desktop nothing. The notification helpers both
-  services share are `core/core-platform/src@android/platform/Notifications.kt`.
+  Lift's timers go the same way. The rest, an EMOM and a hold are `SessionTimers` (`lift-session`, a Koin single),
+  not `SessionViewModel`, which starts them and shows their `state`. They time by `realElapsedTime` (core's
+  `corePlatformModule` binds it for both sides), tick only while one runs, beep and log as they go, and end with
+  the session (finish, discard, Leave), when the `Lifting` key leaves the back stack (`App.kt`, through the
+  `ActiveTimers` port) or when the task is swiped away. Whichever runs is kept off screen through `SessionKeepAlive`
+  (`lift/lift-platform/src/platform/`, a `TimerRun` with its end): Android's `TimerService` holds the CPU awake and
+  counts the run down in a notification while the timers beep; iOS schedules one notification for the run's end;
+  desktop nothing. The notification helpers both services share are
+  `core/core-platform/src@android/platform/Notifications.kt`.
 - **Health Connect**: `HealthStore.record` takes a `HealthWorkout` (core-platform's `Health.kt`): `WorkoutViewModel`
   builds one from the course it keeps (`CourseSpan`s in `WorkoutProgress`, so a restart loses none) as the workout
   ends, `SessionViewModel` from the session's sets (`HealthWorkouts.kt` in each). Android's `HealthConnectStore`

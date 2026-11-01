@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- The rest between sets, as the platform shows it while the app is off screen. -->
-    <string name="rest_channel">Rests</string>
-    <string name="rest_channel_description">A rest between sets, counting down while the app is off screen</string>
+    <!-- The session's timers (a rest between sets, an EMOM, a hold), as the platform shows them while the app is
+         off screen. -->
+    <string name="timer_channel">Timers</string>
+    <string name="timer_channel_description">A rest between sets, an EMOM or a hold, counting down while the app is off screen</string>
     <string name="rest_title">Resting</string>
-    <string name="rest_left">%1$s left</string>
+    <string name="emom_title">EMOM · minute %1$d of %2$d</string>
+    <string name="hold_title">Holding</string>
+    <string name="timer_left">%1$s left</string>
     <string name="rest_over">Rest over</string>
+    <string name="emom_over">EMOM done</string>
+    <string name="hold_over">Hold done</string>
     <string name="rest_over_text">Next set</string>
 </resources>

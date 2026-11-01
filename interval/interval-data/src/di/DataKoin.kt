@@ -7,7 +7,6 @@ import dev.justinsmith.interval.data.AppDatabase
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.data.buildAppDatabase
 import dev.justinsmith.interval.platform.PlatformStorage
-import dev.justinsmith.interval.platform.realElapsedTime
 import dev.justinsmith.interval.storage.storageScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,7 +19,6 @@ import org.koin.core.module.dsl.onClose
 import org.koin.core.module.dsl.withOptions
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
-import kotlin.time.TimeSource
 
 /**
  * The scope storage writes run on. It lives as long as the container, which cancels it on close: drain the
@@ -62,13 +60,8 @@ val storageModule: Module = module {
     }
 }
 
-/**
- * The workout's clock, and the repository over [storageModule]. The wall clock it takes is core's
- * (`corePlatformModule`).
- */
+/** The repository over [storageModule]. The wall clock it takes is core's (`corePlatformModule`). */
 val dataModule: Module = module {
-    // The workout ticker's clock: time that counts through the device's sleep.
-    single<TimeSource.WithComparableMarks> { realElapsedTime }
     single {
         IntervalRepository(
             settings = get(),

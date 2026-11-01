@@ -244,6 +244,27 @@ The cut line is after ticket 5.
   - `journeys/lift-rest-alert.xml` is updated
   - the `CLAUDE.md` "Lift's rest between sets" paragraph is rewritten.
 
+- As built:
+  - **Names.** `RestAlerts` became `SessionKeepAlive` with `start(run: TimerRun)` (`Rest`, `Emom`, `Hold`, each
+    with its end), and `RestService` became `TimerService`. Its channel keeps the id `"rest"`, so a user's settings
+    for it carry over, and its wake lock is tagged `interval:timer`.
+  - **Clocks.** The timers read a `RunClock`: monotonic time to run by, and the wall clock only to tell the
+    platform when a run ends. Each run keeps its epoch start beside its monotonic one, ready for ticket 6.
+    `realElapsedTime` moved from `dataModule` to core's `corePlatformModule`.
+  - **Ticking.** `SessionTimers` ticks only while a run goes. It holds the keep-alive edge-triggered, as
+    `WorkoutSession.hold` does, so a hold logged into its rest, or an EMOM started over one, never stops between.
+  - **Logging.** It logs an EMOM's sets and a hold itself; a hold then starts the rest. The screen hears of a hold
+    logged through `heldSets`, to go on with the other side.
+  - **Ending.** The port `ActiveTimers.stopAll()` ends every run. The session calls it on finish, discard and the
+    Back guard's Leave (which until now let a rest count on in the service). `App.kt` calls it once the `Lifting`
+    key leaves the back stack, and `TimerService` as the task is swiped away.
+  - **`SessionViewModel`.** It takes `SessionTimers` in place of the beeper and the alerts, and keeps a wall-clock
+    tick of its own for the session's time and the time since the last set, which move between runs. The
+    "asks once" latch is its own, so a second session in the process asks again.
+  - **F3.** The clocks are `SessionViewModel.clocks`, read through a lambda by the tiles and the hold's countdown.
+  - **Tests.** `HoldTimerTest` and `SessionTimersTest` are new. Lift's flow tests move the wall clock and the
+    timers' time together through `LiftTestClock`.
+
 --- cut line ---
 
 **6. Lift's runs survive a process kill** · S · B3

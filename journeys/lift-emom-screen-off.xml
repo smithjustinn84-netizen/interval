@@ -1,0 +1,21 @@
+<journey name="Lift: an EMOM heard with the screen off">
+  <description>
+    An EMOM keeps counting and beeping each minute while the screen is off, held awake by the timers' service and
+    shown as a Live Update, and lets go once its minutes are up. Starting it over a rest keeps the service going.
+    Run with the emulator's volume up, notifications allowed (lift-rest-alert.xml asks).
+  </description>
+  <actions>
+    <action>Tap the "Lift" tab, then "Start session" (or "Resume session")</action>
+    <action>Tap "Log set" and verify that a rest counts down</action>
+    <action>Tap "Add set or EMOM" in the title bar, then "An EMOM", set "Minutes" to 3, and tap "Start EMOM"</action>
+    <action>Verify that the EMOM's screen shows "Get ready" and that the session's rest is gone</action>
+    <action>Verify with adb shell dumpsys notification --noredact that an ongoing notification titled "EMOM · minute 1 of 3" is showing, with PROMOTED_ONGOING among its flags (Android 16+)</action>
+    <action>Turn the screen off (adb shell input keyevent KEYCODE_SLEEP)</action>
+    <action>Verify with adb shell dumpsys power that a PARTIAL_WAKE_LOCK tagged "interval:timer" is held</action>
+    <action>Wait about a minute and a half and verify that the minute's beeps 3-2-1 and Start played with the screen off (the emulator's audio, or logcat's AudioTrack lines)</action>
+    <action>Verify with adb shell dumpsys notification --noredact that the notification is titled "EMOM · minute 2 of 3"</action>
+    <action>Wait until the EMOM's three minutes are up and verify that its last beep played with the screen off</action>
+    <action>Wait ten seconds and verify with adb shell dumpsys power that no wake lock tagged "interval:timer" is held, and that the EMOM's notification is gone</action>
+    <action>Turn the screen on (adb shell input keyevent KEYCODE_WAKEUP), swipe to unlock, and verify that the session shows again</action>
+  </actions>
+</journey>

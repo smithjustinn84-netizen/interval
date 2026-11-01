@@ -9,7 +9,6 @@ import dev.justinsmith.lift.fakes.fakeLiftStorageModule
 import org.koin.core.KoinApplication
 import org.koin.core.module.Module
 import org.koin.dsl.koinApplication
-import org.koin.dsl.module
 import kotlin.time.TimeSource
 
 /**
@@ -28,13 +27,11 @@ fun testKoin(
 ): KoinApplication = koinApplication {
     modules(
         appModules(
-            fakeCorePlatformModule(clock),
+            fakeCorePlatformModule(clock, timeSource = timeSource),
             platformModule,
             fakeStorageModule(storage),
             liftPlatform = fakeLiftPlatformModule(beeper),
             liftStorage = fakeLiftStorageModule(lift),
-        ) + module {
-            single<TimeSource.WithComparableMarks> { timeSource }
-        },
+        ),
     )
 }

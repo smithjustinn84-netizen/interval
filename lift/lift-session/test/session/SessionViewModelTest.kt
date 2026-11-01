@@ -30,13 +30,15 @@ import dev.justinsmith.lift.domain.program
 import dev.justinsmith.lift.fakes.FakeIntervalActivity
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import dev.justinsmith.lift.fakes.RecordingBeeper
-import dev.justinsmith.lift.fakes.RecordingRestAlerts
+import dev.justinsmith.lift.fakes.RecordingKeepAlive
+import dev.justinsmith.lift.platform.TimerRun
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -48,6 +50,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.TestTimeSource
 
 /** The sheet's draft, which the Next set card composes: what a lift picked starts from, and how it steps. */
 class SessionViewModelTest {
@@ -69,18 +72,28 @@ class SessionViewModelTest {
     @BeforeTest
     fun setMainDispatcher() = Dispatchers.setMain(UnconfinedTestDispatcher())
 
-    @AfterTest
-    fun resetMainDispatcher() = Dispatchers.resetMain()
+    private val keepAlive = RecordingKeepAlive()
 
-    private val alerts = RecordingRestAlerts()
+    // The timers tick on a dispatcher nothing advances: these tests drive the session, not the time.
+    private val timerScope = CoroutineScope(SupervisorJob() + StandardTestDispatcher())
+
+    /** The process's timers: every ViewModel a test makes shares them, as every session in a process does. */
+    private val timers =
+        SessionTimers(repository, WallClock { now }, TestTimeSource(), RecordingBeeper(), keepAlive, timerScope)
+
+    @AfterTest
+    fun resetMainDispatcher() {
+        timers.close()
+        Dispatchers.resetMain()
+    }
+
     private val intervals = FakeIntervalActivity()
     private val health = RecordingHealthStore(HealthStatus.Connected)
 
     private fun viewModel() = SessionViewModel(
         repository,
         WallClock { now },
-        RecordingBeeper(),
-        alerts,
+        timers,
         ExerciseFilterStore(),
         intervals,
         FixedTimestampFormatter,
@@ -225,31 +238,67 @@ class SessionViewModelTest {
     fun `the platform keeps each rest to its end and lets go of a skipped one`() {
         viewModel().use {
             logSet()
-            assertEquals(listOf(now + RestClock.DEFAULT_SECONDS * 1_000L), alerts.ends)
+            assertEquals(listOf(now + RestClock.DEFAULT_SECONDS * 1_000L), keepAlive.runs.map { it.endAtEpochMillis })
             stepRest(1)
-            assertEquals(now + (RestClock.DEFAULT_SECONDS + RestClock.STEP_SECONDS) * 1_000L, alerts.ends.last())
-            assertEquals(0, alerts.stops)
+            val longer = now + (RestClock.DEFAULT_SECONDS + RestClock.STEP_SECONDS) * 1_000L
+            assertEquals(longer, keepAlive.runs.last().endAtEpochMillis)
+            assertEquals(0, keepAlive.stops)
             skipRest()
-            assertEquals(1, alerts.stops)
+            assertEquals(1, keepAlive.stops)
             skipRest()
-            assertEquals(1, alerts.stops)
+            assertEquals(1, keepAlive.stops)
+        }
+    }
+
+    @Test
+    fun `an EMOM started over a rest is kept with no gap`() {
+        viewModel().use {
+            logSet()
+            startDraftEmom()
+            assertNull(clocks.value.rest)
+            assertEquals(TimerRun.Emom(now, SetDraft.DEFAULT_MINUTES), keepAlive.runs.last())
+            assertEquals(0, keepAlive.stops)
+        }
+    }
+
+    @Test
+    fun `leaving the session ends its rest`() {
+        viewModel().use {
+            logSet()
+            leave()
+            assertNull(clocks.value.rest)
+            assertEquals(1, keepAlive.stops)
+        }
+    }
+
+    @Test
+    fun `a session opened after another asks to show notifications at its own first rest`() {
+        viewModel().use {
+            logSet()
+            assertTrue(state.value.asksToShowNotifications)
+            leave()
+        }
+        viewModel().use {
+            assertFalse(state.value.asksToShowNotifications)
+            logSet()
+            assertTrue(state.value.asksToShowNotifications)
         }
     }
 
     @Test
     fun `logging a set starts a rest of the length last chosen`() {
         viewModel().use {
-            assertNull(state.value.rest)
+            assertNull(clocks.value.rest)
             logSet()
-            assertEquals(RestState(RestClock.DEFAULT_SECONDS, RestClock.DEFAULT_SECONDS, 0f), state.value.rest)
+            assertEquals(RestState(RestClock.DEFAULT_SECONDS, RestClock.DEFAULT_SECONDS, 0f), clocks.value.rest)
             stepRest(1)
             val longer = RestClock.DEFAULT_SECONDS + RestClock.STEP_SECONDS
-            assertEquals(longer, state.value.rest?.seconds)
+            assertEquals(longer, clocks.value.rest?.seconds)
             assertEquals(longer, storage.bells.rest.value?.seconds)
             skipRest()
-            assertNull(state.value.rest)
+            assertNull(clocks.value.rest)
             logSet()
-            assertEquals(longer, state.value.rest?.seconds)
+            assertEquals(longer, clocks.value.rest?.seconds)
         }
     }
 
@@ -281,7 +330,7 @@ class SessionViewModelTest {
             logSet()
             updateDraft { it.copy(exercise = BuiltInExercise.Plank) }
             startHold()
-            assertNull(state.value.rest)
+            assertNull(clocks.value.rest)
         }
     }
 

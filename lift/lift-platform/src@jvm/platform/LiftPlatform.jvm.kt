@@ -15,12 +15,12 @@ fun liftPlatformModule(): Module = module {
     }
     // The system alert sound for every cue; desktops have nothing finer to drive.
     single<Beeper> { Beeper { runCatching { Toolkit.getDefaultToolkit().beep() } } }
-    single<RestAlerts> { NoRestAlerts }
+    single<SessionKeepAlive> { NoSessionKeepAlive }
 }
 
 /** A desktop window stays on screen and its process keeps running: nothing to keep awake or announce. */
-private object NoRestAlerts : RestAlerts {
-    override fun start(startedAtEpochMillis: Long, endAtEpochMillis: Long) = Unit
+private object NoSessionKeepAlive : SessionKeepAlive {
+    override fun start(run: TimerRun) = Unit
 
     override fun stop() = Unit
 }

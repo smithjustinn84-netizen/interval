@@ -103,6 +103,7 @@ import dev.justinsmith.lift.nav.LiftTab
 import dev.justinsmith.lift.nav.Lifting
 import dev.justinsmith.lift.nav.liftEntries
 import dev.justinsmith.lift.nav.liftRoutes
+import dev.justinsmith.lift.platform.ActiveTimers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.serialization.modules.SerializersModule
@@ -191,6 +192,10 @@ internal fun AppContent(
             val workout = koinInject<ActiveWorkout>()
             val workoutOnStack = backStack.any { it is Workout }
             LaunchedEffect(workoutOnStack) { if (!workoutOnStack) workout.leave() }
+            // Lift's timers the same way: a session's page gone, however it went, takes its rest, EMOM or hold.
+            val timers = koinInject<ActiveTimers>()
+            val liftingOnStack = backStack.any { it is Lifting }
+            LaunchedEffect(liftingOnStack) { if (!liftingOnStack) timers.stopAll() }
             val notices = rememberNotices()
             // The intro is dark in either theme while it covers the app.
             SystemBarIcons(lightIcons = dark || introPlaying)

@@ -10,7 +10,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
     <!-- Android 13+: asked for at runtime when the first workout starts. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-    <!-- Android 16+: the workout's and the rest's notifications are Live Updates, a chip in the status bar and a
+    <!-- Android 16+: the workout's and Lift's timers' notifications are Live Updates, a chip in the status bar and a
          bar on the lock screen. A normal permission: granted at install, no prompt; the user can turn it off. -->
     <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS"/>
     <!-- Keeps the CPU up while the workout runs with the screen off, so the cues play on time. -->
@@ -99,14 +99,15 @@
                     android:value="Keeps an interval-training timer the user started counting, and shows its clock, phase and round with Pause and End, while the app is off screen."/>
         </service>
 
-        <!-- Lift's rest between sets, kept counting with the screen off (RestService, in lift-platform). -->
+        <!-- Lift's timers (a rest between sets, an EMOM, a hold), kept counting with the screen off (TimerService, in
+             lift-platform). -->
         <service
                 android:exported="false"
                 android:foregroundServiceType="specialUse"
-                android:name="dev.justinsmith.lift.platform.RestService">
+                android:name="dev.justinsmith.lift.platform.TimerService">
             <property
                     android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                    android:value="Keeps a rest between sets the user started counting, and shows the time left, while the app is off screen, so its end is heard."/>
+                    android:value="Keeps a rest between sets, an EMOM or a hold the user started counting, and shows the time left, while the app is off screen, so its cues are heard."/>
         </service>
 
         <!-- Exported files are offered to the share sheet through this provider (paths in res/xml/file_paths.xml). -->
