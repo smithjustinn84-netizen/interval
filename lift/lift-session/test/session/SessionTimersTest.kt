@@ -8,6 +8,7 @@ import dev.justinsmith.lift.domain.EmomClock
 import dev.justinsmith.lift.domain.EmomCue
 import dev.justinsmith.lift.domain.HoldClock
 import dev.justinsmith.lift.domain.RestClock
+import dev.justinsmith.lift.domain.SavedTimer
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import dev.justinsmith.lift.fakes.RecordingBeeper
@@ -154,5 +155,97 @@ class SessionTimersTest {
         run(60_000)
         assertEquals(beeps, beeper.cues.size)
         assertEquals(at, timers.state.value)
+    }
+
+    @Test
+    fun `the run going is kept on the session at each change and let go as it ends`() = runTest {
+        val timers = timers()
+        repository.startSession()
+        timers.startRest(30)
+        assertEquals(SavedTimer.Rest(now, 30), repository.active.value?.timer)
+        timers.adjustRest(45)
+        assertEquals(SavedTimer.Rest(now, 45), repository.active.value?.timer)
+        timers.skipRest()
+        assertNull(repository.active.value?.timer)
+        timers.startHold(SetDraft(exercise = BuiltInExercise.Plank, seconds = 20))
+        assertEquals(SavedTimer.Hold::class, repository.active.value?.timer?.let { it::class })
+        timers.stopAll()
+        assertNull(repository.active.value?.timer)
+    }
+
+    @Test
+    fun `an EMOM is kept with the minutes done`() = runTest {
+        val timers = timers()
+        repository.startSession()
+        timers.startEmom(BuiltInExercise.Press, 16.0, 5, minutes = 3, firstSide = Side.Left, double = false)
+        run(EmomClock.COUNT_IN_MILLIS)
+        timers.emomSetDone()
+        val kept = repository.active.value?.timer as SavedTimer.Emom
+        assertEquals(setOf(1), kept.done)
+        assertEquals(BuiltInExercise.Press, kept.exercise)
+    }
+
+    @Test
+    fun `a rest a killed process left goes on by the wall clock`() = runTest {
+        repository.startSession()
+        val started = now
+        timers().apply { startRest(60) }.close()
+        // The process is gone for twenty seconds; the next one's timers count from their own start.
+        now += 20_000
+        val timers = timers()
+        timers.restore(repository.active.value?.timer ?: error("Kept no rest"))
+        assertEquals(RestClock(60).at(20_000), timers.state.value.restState)
+        assertEquals(TimerRun.Rest(started, started + 60_000), keepAlive.runs.last())
+        run(40_000)
+        assertNull(timers.state.value.rest)
+        assertEquals(listOf(EmomCue.Countdown, EmomCue.Start), beeper.cues.takeLast(2))
+        assertNull(repository.active.value?.timer)
+    }
+
+    @Test
+    fun `an EMOM a killed process left goes on with its minutes done and no cue for the time away`() = runTest {
+        repository.startSession()
+        timers().apply {
+            startEmom(BuiltInExercise.Press, 16.0, 5, minutes = 3, firstSide = Side.Left, double = false)
+            run(EmomClock.COUNT_IN_MILLIS)
+            emomSetDone()
+        }.close()
+        val cues = beeper.cues.size
+        // Back twenty seconds into the second minute.
+        now += EmomClock.MINUTE_MILLIS + 20_000
+        val timers = timers()
+        timers.restore(repository.active.value?.timer ?: error("Kept no EMOM"))
+        run(0)
+        assertEquals(cues, beeper.cues.size)
+        assertEquals(setOf(1), timers.state.value.emom?.done)
+        timers.emomSetDone()
+        assertEquals(listOf(Side.Left, Side.Right), repository.active.value?.sets?.map { it.side })
+    }
+
+    @Test
+    fun `a run that ended while the process was gone is finished and not played out`() = runTest {
+        repository.startSession()
+        timers().apply { startHold(SetDraft(exercise = BuiltInExercise.Plank, seconds = 20)) }.close()
+        val cues = beeper.cues.size
+        val starts = keepAlive.runs.size
+        now += 60_000
+        val timers = timers()
+        timers.restore(repository.active.value?.timer ?: error("Kept no hold"))
+        run(0)
+        assertNull(timers.state.value.hold.run)
+        assertEquals(emptyList(), repository.active.value?.sets.orEmpty())
+        assertEquals(cues, beeper.cues.size)
+        assertEquals(starts, keepAlive.runs.size)
+        assertNull(repository.active.value?.timer)
+    }
+
+    @Test
+    fun `a run kept is not restored over one going`() = runTest {
+        repository.startSession()
+        val timers = timers()
+        timers.startRest(30)
+        timers.restore(SavedTimer.Rest(now - 10_000, 90))
+        assertEquals(30, timers.state.value.rest?.seconds)
+        assertEquals(SavedTimer.Rest(now, 30), repository.active.value?.timer)
     }
 }

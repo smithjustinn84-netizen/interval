@@ -61,6 +61,9 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   lighter, what only assisted it, and names any group nothing trained.
 
 ### Fixed
+- Lift: a rest, an EMOM or a hold comes back where the clock says it is when the phone closes the app in the
+  background to free memory, rather than being lost, as the session is opened again; an EMOM keeps its minutes
+  done. One that ended meanwhile is over, with nothing logged or beeped for it.
 - Lift (Android): an EMOM or a timed hold keeps counting and beeping with the screen off, as a rest does, and shows
   in the status bar and on the lock screen ("EMOM · minute 2 of 10"); starting one over a rest no longer lets the
   phone sleep. On iOS a notification says when it is done. Lift's timers no longer bend when the clock changes,

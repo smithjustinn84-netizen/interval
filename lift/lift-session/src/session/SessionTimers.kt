@@ -6,8 +6,10 @@ import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.EmomClock
 import dev.justinsmith.lift.domain.EmomState
 import dev.justinsmith.lift.domain.Exercise
+import dev.justinsmith.lift.domain.HoldPhase
 import dev.justinsmith.lift.domain.HoldState
 import dev.justinsmith.lift.domain.RestState
+import dev.justinsmith.lift.domain.SavedTimer
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.platform.ActiveTimers
 import dev.justinsmith.lift.platform.Beeper
@@ -64,6 +66,9 @@ data class TimerState(
  * An EMOM's sets and a hold are logged here as they are done, a hold then resting as a set logged does; the screen
  * hears of a hold logged through [heldSets]. The session ends them ([stopAll]) as it finishes, is discarded or is
  * left, and Android's keep-alive as the app is swiped away.
+ *
+ * The run going is kept on the session in progress at each change of course ([LiftRepository.saveTimer]), so a
+ * process killed in it can go on with it: the session's screen [restore]s it, timed by the wall clock.
  */
 class SessionTimers(
     private val repository: LiftRepository,
@@ -93,6 +98,9 @@ class SessionTimers(
 
     /** The run the platform keeps, so it hears of each change once. */
     private var kept: TimerRun? = null
+
+    /** The run as the session keeps it, so it is written at each change of course rather than each tick. */
+    private var saved: SavedTimer? = null
     private var ticking: Job? = null
 
     /** Starts a rest of [seconds] from now, in place of any already running. */
@@ -165,6 +173,43 @@ class SessionTimers(
         changed()
     }
 
+    /**
+     * Goes on with [timer], the one a process killed in the session left running, from where the wall clock says
+     * it is now: the time away plays no cue. One already over is finished, never played out: it logs nothing and
+     * beeps nothing, and the session keeps it no longer. Nothing while a run goes here already.
+     */
+    fun restore(timer: SavedTimer) {
+        if (current.value.running != null) return
+        val elapsed = (time.epochNow() - timer.startedAtEpochMillis).coerceAtLeast(0L)
+        val startedAt = time.now() - elapsed
+        saved = timer
+        when (timer) {
+            is SavedTimer.Rest -> RestRun(startedAt, timer.seconds, timer.startedAtEpochMillis)
+                .takeUnless { it.clock.isDone(elapsed) }
+                ?.let(rest::resume)
+
+            is SavedTimer.Emom -> EmomRun(
+                timer.exercise,
+                timer.bellKg,
+                timer.reps,
+                timer.minutes,
+                timer.firstSide,
+                startedAt,
+                timer.done,
+                timer.double,
+                timer.band,
+                timer.startedAtEpochMillis,
+            )
+                .takeUnless { EmomClock(it.minutes).isOver(elapsed) }
+                ?.let(emom::resume)
+
+            is SavedTimer.Hold -> HoldRun(timer.draft(), startedAt, timer.firstSide, timer.startedAtEpochMillis)
+                .takeUnless { it.clock.at(elapsed).phase == HoldPhase.Done }
+                ?.let(holds::resume)
+        }
+        changed()
+    }
+
     /** The process is going: nothing ticks again. */
     fun close() = scope.cancel()
 
@@ -184,8 +229,14 @@ class SessionTimers(
 
     /** Publishes where the timers stand, tells the platform of a run started or ended, and ticks while one goes. */
     private fun changed() {
-        current.value = TimerState(time.now(), rest.state.value, emom.state.value, holds.state.value)
-        val run = running()
+        val now = TimerState(time.now(), rest.state.value, emom.state.value, holds.state.value)
+        current.value = now
+        val keep = now.keeping
+        if (keep != saved) {
+            saved = keep
+            repository.saveTimer(keep)
+        }
+        val run = now.running
         if (run != kept) {
             kept = run
             if (run == null) keepAlive.stop() else keepAlive.start(run)
@@ -203,17 +254,60 @@ class SessionTimers(
         }
     }
 
-    /** The run going, as the platform keeps it; at most one is. */
-    private fun running(): TimerRun? = rest.state.value?.let {
-        TimerRun.Rest(it.startedAtEpochMillis, it.startedAtEpochMillis + it.seconds * MILLIS_PER_SECOND)
-    } ?: emom.state.value?.let {
-        TimerRun.Emom(it.startedAtEpochMillis, it.minutes)
-    } ?: holds.state.value.run?.let {
-        TimerRun.Hold(it.startedAtEpochMillis, it.set.seconds)
-    }
-
     companion object {
         const val TICK_MILLIS = 250L
-        private const val MILLIS_PER_SECOND = 1_000L
+        internal const val MILLIS_PER_SECOND = 1_000L
     }
+}
+
+/** The Log sheet's set this hold logs. */
+private fun SavedTimer.Hold.draft() = SetDraft(
+    exercise = exercise,
+    bellKg = bellKg,
+    side = side,
+    double = double,
+    addedKg = addedKg,
+    barKg = barKg,
+    seconds = seconds,
+    band = band,
+)
+
+/** The run going, as the platform keeps it; at most one is. */
+private val TimerState.running: TimerRun? get() = rest?.let {
+    TimerRun.Rest(it.startedAtEpochMillis, it.startedAtEpochMillis + it.seconds * SessionTimers.MILLIS_PER_SECOND)
+} ?: emom?.let {
+    TimerRun.Emom(it.startedAtEpochMillis, it.minutes)
+} ?: hold.run?.let {
+    TimerRun.Hold(it.startedAtEpochMillis, it.set.seconds)
+}
+
+/** The run going, as the session keeps it. */
+private val TimerState.keeping: SavedTimer? get() = rest?.let {
+    SavedTimer.Rest(it.startedAtEpochMillis, it.seconds)
+} ?: emom?.let {
+    SavedTimer.Emom(
+        it.startedAtEpochMillis,
+        it.exercise,
+        it.bellKg,
+        it.reps,
+        it.minutes,
+        it.firstSide,
+        it.double,
+        it.band,
+        it.done,
+    )
+} ?: hold.run?.let {
+    val set = it.set
+    SavedTimer.Hold(
+        it.startedAtEpochMillis,
+        set.exercise,
+        set.bellKg,
+        set.addedKg,
+        set.barKg,
+        set.side,
+        set.double,
+        set.seconds,
+        set.band,
+        it.firstSide,
+    )
 }

@@ -2,6 +2,7 @@
 
 package dev.justinsmith.lift.session
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
@@ -18,6 +19,7 @@ import dev.justinsmith.lift.data.SessionEntity
 import dev.justinsmith.lift.data.SetEntity
 import dev.justinsmith.lift.domain.BAR_KG_STEP
 import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.EmomClock
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.PerceivedEffort
@@ -25,6 +27,7 @@ import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.RestState
+import dev.justinsmith.lift.domain.SavedTimer
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.domain.program
 import dev.justinsmith.lift.fakes.FakeIntervalActivity
@@ -90,7 +93,7 @@ class SessionViewModelTest {
     private val intervals = FakeIntervalActivity()
     private val health = RecordingHealthStore(HealthStatus.Connected)
 
-    private fun viewModel() = SessionViewModel(
+    private fun viewModel(savedState: SavedStateHandle = SavedStateHandle()) = SessionViewModel(
         repository,
         WallClock { now },
         timers,
@@ -98,6 +101,7 @@ class SessionViewModelTest {
         intervals,
         FixedTimestampFormatter,
         health,
+        savedState,
     )
 
     private inline fun <T> SessionViewModel.use(block: SessionViewModel.() -> T): T = try {
@@ -130,6 +134,47 @@ class SessionViewModelTest {
                 equipment = exercise.equipment.name,
                 band = band,
             )
+        }
+    }
+
+    @Test
+    fun `a rest a killed process left goes on as the session opens`() {
+        repository.startSession()
+        repository.saveTimer(SavedTimer.Rest(now - 20_000, 60))
+        viewModel().use {
+            assertEquals(RestClock(60).at(20_000), clocks.value.rest)
+            assertEquals(TimerRun.Rest(now - 20_000, now + 40_000), keepAlive.runs.last())
+        }
+    }
+
+    @Test
+    fun `an EMOM a killed process left goes on with its minutes done`() {
+        repository.startSession()
+        val started = now - EmomClock.COUNT_IN_MILLIS - EmomClock.MINUTE_MILLIS - 20_000
+        repository.saveTimer(
+            SavedTimer.Emom(started, BuiltInExercise.Press, 16.0, 5, 3, Side.Left, false, null, setOf(1)),
+        )
+        viewModel().use {
+            assertEquals(setOf(1), state.value.emom?.done)
+            assertEquals(2, clocks.value.emomState?.minute)
+            emomSetDone()
+            assertEquals(listOf(Side.Right), repository.active.value?.sets?.map { it.side })
+        }
+    }
+
+    @Test
+    fun `the sheet comes back as it was over the last set`() {
+        repository.startSession()
+        repository.logSet(BuiltInExercise.Press, 12.0, 5, Side.Left)
+        val savedState = SavedStateHandle()
+        viewModel(savedState).use {
+            updateDraft { it.copy(exercise = BuiltInExercise.Snatch, bellKg = 20.0, reps = 7) }
+        }
+        // The process is killed: the next screen's ViewModel is made over the same saved state.
+        viewModel(savedState).use {
+            assertEquals(BuiltInExercise.Snatch, state.value.draft.exercise)
+            assertEquals(20.0, state.value.draft.bellKg)
+            assertEquals(7, state.value.draft.reps)
         }
     }
 

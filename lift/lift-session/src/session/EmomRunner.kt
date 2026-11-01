@@ -71,6 +71,12 @@ class EmomRunner(
         )
     }
 
+    /** Goes on with [emom], started before the process was: no cue for the time that passed. */
+    fun resume(emom: EmomRun) {
+        lastCueMillis = clock.now() - emom.startedAtMillis
+        run.value = emom
+    }
+
     /** Logs this minute's set, in its work phase: the EMOM rests out the minute. */
     fun setDone() {
         val current = run.value ?: return

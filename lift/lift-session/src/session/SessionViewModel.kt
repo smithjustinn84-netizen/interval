@@ -1,5 +1,6 @@
 package dev.justinsmith.lift.session
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.platform.HealthStore
@@ -244,6 +245,7 @@ class SessionViewModel(
     private val intervals: IntervalActivity,
     private val timestamps: TimestampFormatter,
     private val health: HealthStore,
+    private val savedState: SavedStateHandle = SavedStateHandle(),
     tickMillis: Long = TICK_MILLIS,
 ) : ViewModel() {
     private val draft = MutableStateFlow(SetDraft())
@@ -382,9 +384,23 @@ class SessionViewModel(
                 draft.update { it.copy(bellKg = bell) }
             }
         }
-        // A session resumed goes on where it left off: its last set, the other side for a one-sided lift.
-        repository.active.value?.sets?.lastOrNull()?.let { last ->
-            draft.update { it.from(last, flipSide = true) }
+        // A session resumed goes on where it left off: the sheet as it was, if a killed process left it half set,
+        // else its last set, the other side for a one-sided lift.
+        val restored = savedState.restoredDraft(repository.customExercises.value, repository.bands.value)
+        if (restored != null) {
+            draft.value = restored
+        } else {
+            repository.active.value?.sets?.lastOrNull()?.let { last ->
+                draft.update { it.from(last, flipSide = true) }
+            }
+        }
+        // The timer a killed process left running goes on, read once: the session re-emits at each write of it.
+        // Here, not as the timers are made, as only a screen on show may start Android's foreground service:
+        // the process can come up behind a receiver or a service, where starting it would throw.
+        repository.active.value?.timer?.let(timers::restore)
+        // The draft for a new set is kept, not one of a set being changed: the last kept is the new set's.
+        viewModelScope.launch {
+            draft.collect { if (editing.value == null) savedState.keep(it) }
         }
         // From the first rest on: rested once, the screen asks once.
         viewModelScope.launch {

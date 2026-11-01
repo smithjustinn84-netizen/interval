@@ -158,6 +158,12 @@ on without its beep (the beep comes from the ViewModel).
 **Recommendation.** Persist each run (start, as epoch millis, plus its config) and restore it, as
 `WorkoutProgress` does for the workout.
 
+**Resolved** in change `nznvzvzq` ("Lift: a rest, an EMOM or a hold survives the process"): `SessionTimers` saves the
+run going on the session in progress (`SavedTimer`, a `timer` JSON column, Lift's database version 14) at each
+change of course, and `SessionViewModel` restores it once as the session opens, timed again by the wall clock;
+one over meanwhile is dropped without a beep or a set. The Log sheet's draft is in `SavedStateHandle`. The edit
+state is not kept: the set being changed is in Room, and the sheet comes back to the new set's draft.
+
 ### B4 · Medium · RestService's wake lock timeout is never renewed
 
 **Resolved** in change `kroqzppq` ("Lift: a plan change never lost, whole writes, and the rest's wake lock renewed"): the lock is no longer reference-counted, and each rest acquires

@@ -52,6 +52,12 @@ class HoldTimer(
         timing.value = HoldTiming(HoldRun(set, clock.now(), firstSide = !otherSide, clock.epochNow()))
     }
 
+    /** Goes on with [hold], started before the process was: no cue for the time that passed. */
+    fun resume(hold: HoldRun) {
+        lastCueMillis = clock.now() - hold.startedAtMillis
+        timing.value = HoldTiming(hold)
+    }
+
     /** Stops early, logging the whole seconds held: none in the count-in. */
     fun stop() {
         val run = timing.value.run ?: return

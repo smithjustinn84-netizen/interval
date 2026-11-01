@@ -278,6 +278,24 @@ The cut line is after ticket 5.
   - `SessionViewModelTest` restores a rest and an EMOM mid-run
   - `journeys/lift-rest-alert.xml` kills the process (`adb shell am kill`) mid-rest and returns to the rest still
     counting.
+- As built:
+  - **Saved.** `SavedTimer` (lift-domain: `Rest`, `Emom` with its minutes done, `Hold` with the set it logs) is the
+    session in progress's `timer` (`StoredTimer.kt`'s JSON, version 14, an auto-migration). `SessionTimers` writes it
+    through `LiftRepository.saveTimer` when it changes, never at a tick; any end (`stopAll` included) writes null,
+    and finishing a session clears it in the same statement.
+  - **Restored.** `SessionTimers.restore` times the run again from its epoch start, plays no cue for the time away,
+    and drops one already over (no set logged, no beep). `SessionViewModel` calls it once as it opens, from the
+    session read then, not a collector (the session re-emits at each save). It stays on the screen's side: it
+    starts `TimerService`, which Android refuses to start from the background.
+  - **Draft.** `SessionViewModel` takes the entry's `SavedStateHandle` and keeps the new set's draft in it
+    (`SavedDraft.kt`, field by field as the editors do); a restored draft wins over the last set.
+  - **The journey's kill.** `am kill` leaves a process holding a foreground service, so the journey kills the
+    process with `kill -9` under `adb root` and checks the PID changed; `force-stop` would drop the saved state.
+  - **On `amper-37`:** a 3:00 rest killed with 2:58 left and reopened 88 seconds later showed 1:32, its notification
+    back; one that ended while the process was gone was dropped. Found there, and not this ticket's: after a
+    process death the app opens on the Timer tab whatever page was on top (Settings too), though Android keeps the
+    task, so `rememberNavBackStack` is not restored. The session is reached through the Lift tab's Resume, and the
+    draft kept in `SavedStateHandle` comes back only once the back stack does.
 
 **7. Narrow ports; ViewModels declared in Koin** · M · C3, C4, C2, G4
 - **Role interfaces**, which the existing classes implement (no split yet):

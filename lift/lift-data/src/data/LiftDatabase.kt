@@ -29,7 +29,8 @@ import kotlinx.coroutines.flow.Flow
  * [CustomExerciseEntity]; version 8 the user's changes to their bands and the bands they add, [BandEntity];
  * version 9 a session's day as it changed it, and the days done of a program before following it; version 10
  * the user's barbell, [BarEntity]; version 11 which day of its program a session was; version 12 how long the
- * user rests between sets, [RestEntity]; version 13 how a session felt ([SessionEntity.effort], [SessionEntity.note]).
+ * user rests between sets, [RestEntity]; version 13 how a session felt ([SessionEntity.effort], [SessionEntity.note]);
+ * version 14 the timer running in the session in progress, [SessionEntity.timer].
  * Every version adds; none rewrites a row.
  */
 @Database(
@@ -44,7 +45,7 @@ import kotlinx.coroutines.flow.Flow
         BarEntity::class,
         RestEntity::class,
     ],
-    version = 13,
+    version = 14,
     // 3 to 4 is MIGRATION_3_4, added in liftStorageModule.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -58,6 +59,7 @@ import kotlinx.coroutines.flow.Flow
         AutoMigration(from = 10, to = 11),
         AutoMigration(from = 11, to = 12),
         AutoMigration(from = 12, to = 13),
+        AutoMigration(from = 13, to = 14),
     ],
 )
 @ConstructedBy(LiftDatabaseConstructor::class)
@@ -142,7 +144,12 @@ interface SessionDao {
     @Query("UPDATE session SET plan = :plan WHERE uid = :uid")
     suspend fun setPlan(uid: String, plan: String?)
 
-    @Query("UPDATE session SET finished_at = :at, title = :title, updated_at = :at WHERE uid = :uid")
+    /** Sets the timer running in the session [uid], in [encodeTimer]'s shape; null for none. */
+    @Query("UPDATE session SET timer = :timer WHERE uid = :uid")
+    suspend fun setTimer(uid: String, timer: String?)
+
+    /** Finishes the session [uid]: a finished session keeps no timer. */
+    @Query("UPDATE session SET finished_at = :at, title = :title, updated_at = :at, timer = NULL WHERE uid = :uid")
     suspend fun finish(uid: String, title: String, at: Long)
 
     /** Sets how the session [uid] felt, at [now]: an effort level, 1 to 5, and a note, either null for none. */
@@ -352,6 +359,8 @@ data class SessionEntity(
     val effort: Int? = null,
     /** A line on how it went; null for none. */
     val note: String? = null,
+    /** The timer running in it while it is in progress, in [encodeTimer]'s shape; null for none. */
+    val timer: String? = null,
 )
 
 @Entity(tableName = "lift_set", indices = [Index("session_uid")])

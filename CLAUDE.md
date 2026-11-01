@@ -266,7 +266,10 @@ toolchain (`$compose.*`).
   `ActiveTimers` port) or when the task is swiped away. Whichever runs is kept off screen through `SessionKeepAlive`
   (`lift/lift-platform/src/platform/`, a `TimerRun` with its end): Android's `TimerService` holds the CPU awake and
   counts the run down in a notification while the timers beep; iOS schedules one notification for the run's end;
-  desktop nothing. The notification helpers both services share are
+  desktop nothing. The run going is saved on the session in progress (`SavedTimer`, its `timer` column) at each
+  change of course, and `SessionViewModel` restores it once as the session opens, by the wall clock (one over meanwhile is
+  dropped, never played out); it does so from the screen because only an app on show may start the service. The
+  Log sheet's draft is in the entry's `SavedStateHandle`. The notification helpers both services share are
   `core/core-platform/src@android/platform/Notifications.kt`.
 - **Health Connect**: `HealthStore.record` takes a `HealthWorkout` (core-platform's `Health.kt`): `WorkoutViewModel`
   builds one from the course it keeps (`CourseSpan`s in `WorkoutProgress`, so a restart loses none) as the workout

@@ -16,6 +16,7 @@ import dev.justinsmith.lift.domain.ProgramDraft
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.SaveScope
+import dev.justinsmith.lift.domain.SavedTimer
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.domain.UnknownExercise
 import dev.justinsmith.lift.domain.planChanges
@@ -83,6 +84,39 @@ class LiftRepositoryTest {
         repository.logSet(BuiltInExercise.GetUp, 20.0, 5, Side.Right)
         now += 60_000
         repository.finishSession("Swings and get-ups")
+    }
+
+    @Test
+    fun `the session in progress keeps each kind of timer as it was and none once finished`() = runTest {
+        val heavy = Band("mine", "Heavy", BandColour.Black, 9)
+        repository.saveBand(heavy)
+        val timers = listOf(
+            SavedTimer.Rest(500, 90),
+            SavedTimer.Emom(500, BuiltInExercise.Press, 16.0, 5, 10, Side.Right, true, null, setOf(1, 3)),
+            SavedTimer.Emom(500, BuiltInExercise.BandPullApart, 0.0, 12, 5, Side.Left, false, heavy, emptySet()),
+            SavedTimer.Hold(500, BuiltInExercise.Plank, 0.0, 10.0, 20.0, Side.Left, false, 45, Band.Default, false),
+        )
+        repository.startSession()
+        timers.forEach { timer ->
+            repository.saveTimer(timer)
+            assertEquals(timer, repository.active.value?.timer)
+        }
+        repository.saveTimer(null)
+        assertNull(repository.active.value?.timer)
+        repository.saveTimer(timers.first())
+        repository.logSet(BuiltInExercise.Press, 16.0, 5, Side.Left)
+        repository.finishSession("Press")
+        assertNull(sessionDao.sessions.value.single().timer)
+    }
+
+    @Test
+    fun `a timer that can't be read is none`() = runTest {
+        repository.startSession()
+        val uid = repository.active.value?.uid ?: error("No session")
+        sessionDao.setTimer(uid, "not a timer")
+        assertNull(repository.active.value?.timer)
+        sessionDao.setTimer(uid, """{"kind":"emom","startedAt":1,"exercise":"gone","minutes":5}""")
+        assertNull(repository.active.value?.timer)
     }
 
     @Test

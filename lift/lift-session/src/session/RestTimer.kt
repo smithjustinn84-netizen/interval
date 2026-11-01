@@ -27,6 +27,12 @@ class RestTimer(private val clock: RunClock, private val beeper: Beeper) {
         run.value = RestRun(clock.now(), seconds, clock.epochNow())
     }
 
+    /** Goes on with [rest], started before the process was: no cue for the time that passed. */
+    fun resume(rest: RestRun) {
+        lastCueMillis = clock.now() - rest.startedAtMillis
+        run.value = rest
+    }
+
     /** Makes the rest running [seconds] long, from when it started: over at the next tick if that is past. */
     fun adjust(seconds: Int) {
         val rest = run.value ?: return

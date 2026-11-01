@@ -25,6 +25,7 @@ import dev.justinsmith.lift.domain.ProgramDraft
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.SaveScope
+import dev.justinsmith.lift.domain.SavedTimer
 import dev.justinsmith.lift.domain.SessionPlan
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.Side
@@ -146,7 +147,7 @@ class LiftRepository(
                         bands,
                     ->
                     val bySession = sets.groupBy({ it.sessionUid }, { it.toDomain(made, bands) })
-                    Triple(made, bands, sessions.map { it.toDomain(bySession[it.uid].orEmpty(), made) })
+                    Triple(made, bands, sessions.map { it.toDomain(bySession[it.uid].orEmpty(), made, bands) })
                 }.orOnError(
                     Triple(emptyList(), bands(emptyList()), emptyList()),
                     "sessions",
@@ -358,6 +359,17 @@ class LiftRepository(
     }
 
     /**
+     * Keeps [timer] as the one running in the session in progress, or none with null, so a process killed in it
+     * goes on with it. Nothing without a session in progress.
+     */
+    fun saveTimer(timer: SavedTimer?) {
+        writer.persist {
+            val row = sessionDao.active() ?: return@persist
+            sessionDao.setTimer(row.uid, timer?.let(::encodeTimer))
+        }
+    }
+
+    /**
      * Changes the day the session in progress is to what [change] makes of it, or leaves it with null. Worked out
      * in the write, from the session as stored behind every write before it, never from [active], which a read
      * of the database can still show as it was: so a change made straight after another, or after a set, builds
@@ -368,7 +380,7 @@ class LiftRepository(
             val row = sessionDao.active() ?: return@persist
             val made = _customExercises.value
             val bands = _bands.value
-            val session = row.toDomain(sessionDao.sets(row.uid).map { it.toDomain(made, bands) }, made)
+            val session = row.toDomain(sessionDao.sets(row.uid).map { it.toDomain(made, bands) }, made, bands)
             val plan = change(session) ?: return@persist
             if (plan != session.plan) sessionDao.setPlan(row.uid, encodePlan(plan))
         }
@@ -646,7 +658,7 @@ private fun CustomExercise.toEntity(updatedAtEpochMillis: Long) = CustomExercise
     updatedAtEpochMillis,
 )
 
-private fun SessionEntity.toDomain(sets: List<SetLog>, made: List<CustomExercise>) = LiftSession(
+private fun SessionEntity.toDomain(sets: List<SetLog>, made: List<CustomExercise>, bands: List<Band>) = LiftSession(
     uid,
     startedAtEpochMillis,
     finishedAtEpochMillis,
@@ -657,6 +669,7 @@ private fun SessionEntity.toDomain(sets: List<SetLog>, made: List<CustomExercise
     programDay,
     PerceivedEffort.of(effort),
     note,
+    timer?.takeIf { finishedAtEpochMillis == null }?.let { decodeTimer(it, made, bands) },
 )
 
 /** The program [stored] names: a built-in, or one of [made]; null for one gone or unknown. */

@@ -312,6 +312,8 @@ data class LiftSession(
     /** How hard it felt and a note on it, as said on its summary; null until said. */
     val effort: PerceivedEffort? = null,
     val note: String? = null,
+    /** The timer running in it, kept so a process killed in it goes on with it; null with none, and once finished. */
+    val timer: SavedTimer? = null,
 ) {
     val tonnageKg: Double get() = sets.sumOf { it.tonnageKg }
 

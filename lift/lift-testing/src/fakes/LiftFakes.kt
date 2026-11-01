@@ -100,6 +100,10 @@ class FakeSessionDao : SessionDao {
         all.map { if (it.uid == uid) it.copy(plan = plan) else it }
     }
 
+    override suspend fun setTimer(uid: String, timer: String?) = sessions.update { all ->
+        all.map { if (it.uid == uid) it.copy(timer = timer) else it }
+    }
+
     override suspend fun reflect(uid: String, effort: Int?, note: String?, now: Long) = sessions.update { all ->
         all.map { if (it.uid == uid) it.copy(effort = effort, note = note, updatedAtEpochMillis = now) else it }
     }
@@ -109,7 +113,7 @@ class FakeSessionDao : SessionDao {
             if (it.uid ==
                 uid
             ) {
-                it.copy(finishedAtEpochMillis = at, title = title, updatedAtEpochMillis = at)
+                it.copy(finishedAtEpochMillis = at, title = title, updatedAtEpochMillis = at, timer = null)
             } else {
                 it
             }
