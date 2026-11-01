@@ -10,9 +10,12 @@ import dev.justinsmith.lift.data.encodeDays
 import dev.justinsmith.lift.domain.CustomExercise
 import dev.justinsmith.lift.domain.ExerciseFilters
 import dev.justinsmith.lift.domain.ProgramDraft
+import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.bands
+import dev.justinsmith.lift.domain.copyName
 import dev.justinsmith.lift.domain.offeredBands
+import dev.justinsmith.lift.domain.program
 import dev.justinsmith.lift.domain.setsOldestFirst
 import dev.justinsmith.lift.domain.standardBells
 import dev.justinsmith.lift.library.LibraryList
@@ -31,26 +34,47 @@ data class ProgramEditorUiState(
     val draft: ProgramDraft = ProgramDraft(),
     val initialDraft: ProgramDraft = ProgramDraft(),
     val saved: Boolean = false,
+    /** For a copy of the built-in followed, the day the copy carries on from; else null. */
+    val carriesOnFrom: Int? = null,
     val choices: BlockChoices = BlockChoices(standardBells, offeredBands(bands(emptyList())), LibraryList(emptyList())),
 )
 
-/** Makes a program, or changes the one the user made under [uid], until it is saved or deleted. */
+/**
+ * A built-in to make a copy of, [of], named from [base] ("Easy Strength (yours)") as the screen words it: a number
+ * is added while a program of the user's has the name.
+ */
+data class ProgramCopy(val of: ProgramId, val base: String)
+
+/**
+ * Makes a program, or changes the one the user made under [uid], until it is saved or deleted; with [copy], makes
+ * one from a built-in.
+ */
 class ProgramEditorViewModel(
     private val repository: LiftRepository,
     private val filters: ExerciseFilterStore,
     uid: String?,
     private val savedState: SavedStateHandle = SavedStateHandle(),
+    copy: ProgramCopy? = null,
 ) : ViewModel() {
     // A program deleted meanwhile (on another page of the back stack) is made afresh.
     private val existing =
         uid?.let { id -> repository.customPrograms.value.firstOrNull { it.key == ProgramKey.Custom(id) } }
     private val uid = (existing?.key as? ProgramKey.Custom)?.uid
-    private val initialDraft = existing?.let(ProgramDraft::of) ?: ProgramDraft()
+    private val copyOf = copy?.takeIf { existing == null }?.let { ProgramKey.BuiltIn(it.of) }
+    private val initialDraft = when {
+        existing != null -> ProgramDraft.of(existing)
+
+        copy != null -> ProgramDraft.of(program(copy.of))
+            .copy(name = copyName(copy.base, repository.customPrograms.value.mapNotNull { it.name }.toSet()))
+
+        else -> ProgramDraft()
+    }
     private val _state = MutableStateFlow(
         ProgramEditorUiState(
             draft = restoreDraft(savedState, repository.customExercises.value, initialDraft),
             initialDraft = initialDraft,
             saved = existing != null,
+            carriesOnFrom = repository.programDay.value?.takeIf { it.program.key == copyOf }?.number,
         ),
     )
 
@@ -82,7 +106,7 @@ class ProgramEditorViewModel(
     fun save(name: String): Boolean {
         val draft = _state.value.draft.copy(name = name)
         if (!draft.canSave) return false
-        repository.saveProgram(uid, draft)
+        copyOf?.let { repository.saveCopy(it, draft) } ?: repository.saveProgram(uid, draft)
         return true
     }
 

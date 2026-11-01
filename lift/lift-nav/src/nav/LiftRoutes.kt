@@ -39,10 +39,13 @@ data object Programs : NavKey
 @SerialName("dev.justinsmith.bells.nav.ProgramProgress")
 data object ProgramProgress : NavKey
 
-/** A program the user makes, or changes by its [uid]. Pushed from Programs. */
+/**
+ * A program the user makes, changes by its [uid], or makes from a copy of the built-in [copyOf] (its
+ * `ProgramId`'s name). Pushed from Programs.
+ */
 @Serializable
 @SerialName("dev.justinsmith.bells.nav.ProgramEditor")
-data class ProgramEditor(val uid: String? = null) : NavKey
+data class ProgramEditor(val uid: String? = null, val copyOf: String? = null) : NavKey
 
 /** The bells the user owns and the records set with them. Pushed from Lift. */
 @Serializable

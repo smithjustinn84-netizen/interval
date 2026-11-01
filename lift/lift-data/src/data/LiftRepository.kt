@@ -303,6 +303,17 @@ class LiftRepository(
         return copy
     }
 
+    /**
+     * Saves [draft] as a new program, a copy of the built-in [of]; returns its uid. While [of] is followed and
+     * goes on, the copy is followed from the day it was at, its days done counted done.
+     */
+    fun saveCopy(of: ProgramKey.BuiltIn, draft: ProgramDraft): String {
+        val uid = saveProgram(null, draft)
+        val day = _programDay.value?.takeIf { _following.value?.key == of && it.program.key == of }
+        if (day != null) follow(ProgramKey.Custom(uid), daysDone = day.number - 1)
+        return uid
+    }
+
     /** Deletes the program [uid] made, and stops following it if it is the one followed. */
     fun deleteProgram(uid: String) {
         writer.persist { customProgramDao.deleteProgram(uid, ProgramKey.Custom(uid).stored) }

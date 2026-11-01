@@ -12,6 +12,7 @@ import dev.justinsmith.lift.fakes.fakeLiftPlatformModule
 import dev.justinsmith.lift.fakes.fakeLiftStorageModule
 import dev.justinsmith.lift.history.LiftDetailViewModel
 import dev.justinsmith.lift.library.ExerciseEditorViewModel
+import dev.justinsmith.lift.programs.ProgramCopy
 import dev.justinsmith.lift.programs.ProgramEditorViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -49,7 +50,7 @@ class VerifyAppModulesTest {
                 definition<WorkoutViewModel>(Long::class),
                 definition<WorkoutDetailViewModel>(Long::class),
                 definition<LiftDetailViewModel>(String::class),
-                definition<ProgramEditorViewModel>(String::class),
+                definition<ProgramEditorViewModel>(String::class, ProgramCopy::class),
                 definition<ExerciseEditorViewModel>(String::class),
             ),
         )

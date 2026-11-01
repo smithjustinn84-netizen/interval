@@ -1,7 +1,9 @@
 <journey name="Lift: what a program works">
   <description>
     A built-in program's sheet before following it: a week of it as a balance of sets per muscle group, and the
-    groups it leaves out named under the bars. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
+    groups it leaves out named under the bars. Then a built-in followed, its first day done, made yours: a copy
+    opened in the editor, a week longer, saved and followed on from day 2. Run on a fresh install
+    (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
     <action>Tap the "Lift" tab</action>
@@ -9,5 +11,13 @@
     <action>Verify that the sheet shows "Full body for beginners", its summary, and under it "Balance" with "Sets in a week"</action>
     <action>Verify that the bars read "Chest", "Shoulders", "Back", "Arms", "Core", "Glutes and hamstrings" and "Quads and calves", the chest's empty, with "Worked most" and "Assisted" under them</action>
     <action>Verify that "Nothing in a week for: Chest" is shown under the bars, and "Day 1" and "Day 2" follow</action>
+    <action>Swipe the sheet away, scroll to "Goblet squat and row", tap it, then tap "Follow this program"</action>
+    <action>Verify that the Lift tab shows "Day 1 of 8 · week 1"; tap "Start day 1", log one set, tap "Finish" and then "Done"</action>
+    <action>Verify that the Lift tab shows "Day 2 of 8 · week 1"; tap "Change program", scroll to "Goblet squat and row" and tap it</action>
+    <action>Verify that the sheet shows "Following" and, under "Days done and left", "Make it yours"; tap "Make it yours"</action>
+    <action>Verify that the editor shows "New program", the name "Goblet squat and row (yours)", "You're following it: your copy carries on from day 2." and the blocks "Goblet squat" and "Row" with "(10–15)"</action>
+    <action>Tap "+" beside "Weeks" so it reads 5, then tap "Save program"</action>
+    <action>Verify that Programs lists "Goblet squat and row (yours)" under "Your programs", checked as followed; go back</action>
+    <action>Verify that the Lift tab shows "Day 2 of 10 · week 1"</action>
   </actions>
 </journey>

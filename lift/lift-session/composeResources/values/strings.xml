@@ -115,6 +115,7 @@
     <string name="program_following">Following</string>
     <string name="program_stop">Stop following</string>
     <string name="program_preview_day">Day %1$d</string>
+    <string name="program_make_yours">Make it yours</string>
     <string name="program_balance_span">Sets in a week</string>
     <string name="program_balance_untrained">Nothing in a week for: %1$s</string>
     <string name="program_follow">Follow this program</string>
@@ -159,6 +160,7 @@
     <string name="editor_remove_day_cd">Remove day %1$d</string>
     <string name="editor_add_block">Add block</string>
     <string name="editor_save">Save program</string>
+    <string name="editor_carries_on">You're following it: your copy carries on from day %1$d.</string>
     <string name="editor_save_hint">Name your program and add at least one block to each day.</string>
     <string name="editor_discard_title">Discard changes?</string>
     <string name="editor_discard_text">Your unsaved program edits will be lost.</string>

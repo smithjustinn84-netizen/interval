@@ -300,7 +300,7 @@ adb shell pm clear dev.justinsmith.interval      # Most journeys expect a fresh 
 | `system-back.xml` | System back from a tab returns to Timer; during a workout it pauses and asks | `SystemBackAcceptanceTest` |
 | `lift-equipment.xml` | A Lift session logging a bell, a band, a hold on one side and bodyweight with weight added, each in its own words, Moved counting only the weighed load, then the summary; a second session, and the Lift tab's balance of the two | `LiftEquipmentAcceptanceTest` |
 | `lift-barbell.xml` | A barbell lift: the bar chosen, plates a side, and the set logged with its load | `LiftBarbellAcceptanceTest` |
-| `lift-programs.xml` | A program's sheet: what a week of it works and what it leaves out | `LiftProgramsAcceptanceTest` |
+| `lift-programs.xml` | A program's sheet: what a week of it works and what it leaves out; a built-in followed part way made yours in the editor and followed on from its day | `LiftProgramsAcceptanceTest` |
 | `lift-plan-changes.xml` | A program's day with a change to its plan: kept for the session, for the program, or in a copy | `LiftPlanChangesAcceptanceTest` |
 | `lift-rest-alert.xml` | A rest between sets keeps counting on the lock screen and beeps as it ends with the screen off | Device only (the in-app rest: `SessionFlowTest`) |
 | `reminders.xml` | Turn the plan's reminder on, pick a time, see it in the notification settings, turn it off | Device only (the sheet: `PlanScreenTest`) |

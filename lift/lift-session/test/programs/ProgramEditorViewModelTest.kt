@@ -4,8 +4,11 @@ package dev.justinsmith.lift.programs
 
 import androidx.lifecycle.SavedStateHandle
 import dev.justinsmith.lift.data.ExerciseFilterStore
+import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.ProgramDraft
+import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.program
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -17,6 +20,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** The program editor: a new program's draft, saving, changing one already saved, deleting it, and the saved state. */
@@ -83,4 +87,40 @@ class ProgramEditorViewModelTest {
         assertFalse(editor.state.value.saved)
         assertEquals(ProgramDraft(), editor.state.value.draft)
     }
+
+    @Test
+    fun `a copy of a built-in starts as it is under a name not taken`() {
+        repository.saveProgram(
+            null,
+            ProgramDraft(name = "Easy Strength (yours)", days = listOf(listOf(ProgramDraft.NEW_BLOCK))),
+        )
+        val editor = copyEditor(ProgramId.EasyStrength, "Easy Strength (yours)")
+
+        val easy = program(ProgramId.EasyStrength)
+        assertEquals(ProgramDraft.of(easy).copy(name = "Easy Strength (yours) 2"), editor.state.value.draft)
+        assertFalse(editor.state.value.saved)
+        assertNull(editor.state.value.carriesOnFrom)
+        assertTrue(editor.save("Easy Strength (yours) 2"))
+        assertEquals(easy.days, repository.customPrograms.value.single { it.name == "Easy Strength (yours) 2" }.days)
+        assertNull(repository.following.value)
+    }
+
+    @Test
+    fun `a copy of the built-in followed carries on from its day`() {
+        val key = ProgramKey.BuiltIn(ProgramId.GobletSquatRow)
+        repository.follow(key)
+        repository.startSession(key)
+        repository.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
+        repository.finishSession("Goblet squat")
+        val editor = copyEditor(ProgramId.GobletSquatRow, "Goblet squat and row (yours)")
+
+        assertEquals(2, editor.state.value.carriesOnFrom)
+        assertTrue(editor.save("Mine"))
+        assertEquals("Mine", repository.following.value?.name)
+        assertEquals(2, repository.programDay.value?.number)
+    }
+
+    /** A copy of [id], named from [base] as the screen words it: a common test can't load the screen's words. */
+    private fun copyEditor(id: ProgramId, base: String) =
+        ProgramEditorViewModel(repository, filters, uid = null, copy = ProgramCopy(id, base))
 }

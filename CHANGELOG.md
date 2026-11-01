@@ -16,6 +16,9 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   change made just before leaving is no longer at risk: what the app keeps now lives as long as its process.
 
 ### Added
+- Make it yours: a built-in program's sheet opens a copy of it in the program editor, "(yours)", to change any of
+  it (ranges, holds, bands, two bells, its days and weeks). Saved while you follow the built-in, your copy carries
+  on from the day you were at.
 - A program's sheet shows what a week of it works: the Lift tab's balance of sets per muscle group, counted from
   the days it plans, with the groups it leaves out named under the bars.
 - Live Updates (Android 16 and later): a running workout and a rest between sets show as a chip with their

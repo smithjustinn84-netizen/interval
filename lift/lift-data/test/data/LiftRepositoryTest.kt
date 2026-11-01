@@ -503,6 +503,29 @@ class LiftRepositoryTest {
     }
 
     @Test
+    fun `a copy of the built-in followed is followed from the day it was at`() = runTest {
+        val key = ProgramKey.BuiltIn(ProgramId.GobletSquatRow)
+        repository.follow(key)
+        finishDayOf(key)
+        val draft = ProgramDraft.of(program(ProgramId.GobletSquatRow)).copy(name = "Mine", weeks = 6)
+        val uid = repository.saveCopy(key, draft)
+        assertEquals(ProgramKey.Custom(uid), repository.following.value?.key)
+        assertEquals(1, repository.followed.value?.daysBefore)
+        assertEquals(2, repository.programDay.value?.number)
+        assertEquals(6, repository.following.value?.weeks)
+    }
+
+    @Test
+    fun `a copy of a built-in not followed leaves the program followed`() = runTest {
+        val ladders = ProgramKey.BuiltIn(ProgramId.PressLadders)
+        repository.follow(ladders)
+        val draft = ProgramDraft.of(program(ProgramId.GobletSquatRow)).copy(name = "Mine")
+        repository.saveCopy(ProgramKey.BuiltIn(ProgramId.GobletSquatRow), draft)
+        assertEquals(ladders, repository.following.value?.key)
+        assertEquals("Mine", repository.customPrograms.value.single().name)
+    }
+
+    @Test
     fun `a deleted session restored returns to history`() = runTest {
         repository.startSession()
         repository.logSet(BuiltInExercise.TwoHandSwing, 24.0, 10, Side.Left)

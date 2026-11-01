@@ -93,6 +93,37 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
         see("Nothing in a week for: $untrained")
     }
 
+    /** From Today, following a program: Change program, find [name] on the list, and open its sheet. */
+    fun openProgramToChange(name: String) {
+        scrollTo("Change program")
+        tap("Change program")
+        scrollTo(name)
+        tap(name)
+        see("Day 1")
+    }
+
+    /** From a built-in's sheet: open a copy of it in the editor, named [name]. */
+    fun makeItYours(name: String) {
+        tap("Make it yours")
+        see("New program")
+        see(hasText(name) and hasSetTextAction())
+    }
+
+    /** In the program editor: a week more, by its stepper. */
+    fun aWeekMore() = tapDescribed("More: Weeks")
+
+    /** Saves the program in the editor, which closes. */
+    fun saveProgram() {
+        tap("Save program")
+        seeNo("Save program")
+    }
+
+    /** The program followed, as the store has it: one the user made, named [name], of [weeks]. */
+    fun followingMine(name: String, weeks: Int) = waitFor("to follow \"$name\" of $weeks weeks") {
+        val id = app.storage.following.row.value?.programId
+        app.storage.programs.rows.value.any { "custom:${it.uid}" == id && it.name == name && it.weeks == weeks }
+    }
+
     fun seeProgramDay(day: String, vararg exercises: String) {
         see(day)
         exercises.forEach { see(it) }

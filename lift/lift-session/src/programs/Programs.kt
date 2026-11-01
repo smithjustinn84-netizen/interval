@@ -52,6 +52,7 @@ import dev.justinsmith.lift.data.LiftRepository
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.ProgramFamily
+import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.weekBalance
@@ -63,6 +64,7 @@ import dev.justinsmith.lift.session.resources.program_balance_untrained
 import dev.justinsmith.lift.session.resources.program_follow
 import dev.justinsmith.lift.session.resources.program_following
 import dev.justinsmith.lift.session.resources.program_keep
+import dev.justinsmith.lift.session.resources.program_make_yours
 import dev.justinsmith.lift.session.resources.program_preview_day
 import dev.justinsmith.lift.session.resources.program_replaces
 import dev.justinsmith.lift.session.resources.program_see_progress
@@ -133,6 +135,8 @@ data class ProgramsActions(
     val onBack: () -> Unit = {},
     /** Opens the program followed: its days done and left. */
     val onOpenProgress: () -> Unit = {},
+    /** Opens a copy of a built-in in the editor, to make it the user's. */
+    val onCopy: (ProgramId) -> Unit = {},
 )
 
 @Composable
@@ -141,6 +145,7 @@ fun ProgramsRoute(
     onEdit: (uid: String) -> Unit,
     onBack: () -> Unit,
     onOpenProgress: () -> Unit = {},
+    onCopy: (ProgramId) -> Unit = {},
 ) {
     val viewModel = koinViewModel<ProgramsViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -161,6 +166,7 @@ fun ProgramsRoute(
             onEdit = onEdit,
             onBack = onBack,
             onOpenProgress = onOpenProgress,
+            onCopy = onCopy,
         ),
     )
 }
@@ -233,6 +239,12 @@ fun ProgramsScreen(
                 previewing = null
                 actions.onOpenProgress()
             },
+            onCopy = (program.key as? ProgramKey.BuiltIn)?.let { key ->
+                {
+                    previewing = null
+                    actions.onCopy(key.id)
+                }
+            },
             onDismiss = { previewing = null },
         )
     }
@@ -272,7 +284,8 @@ private fun familyName(family: ProgramFamily): String = stringResource(
 /**
  * A program before it is followed: what it is, what a week of it works, each of its days block by block, and
  * Follow this program, over a line naming the program and day it replaces when one is followed. The program
- * followed shows Following instead, and the way to its days done and left.
+ * followed shows Following instead, and the way to its days done and left. A built-in offers Make it yours under
+ * them ([onCopy]), to open a copy in the editor.
  */
 @Composable
 private fun ProgramSheet(
@@ -281,6 +294,7 @@ private fun ProgramSheet(
     replacing: ProgramDay?,
     onFollow: () -> Unit,
     onOpenProgress: () -> Unit,
+    onCopy: (() -> Unit)?,
     onDismiss: () -> Unit,
 ) {
     val palette = IntervalTheme.palette
@@ -296,13 +310,17 @@ private fun ProgramSheet(
                     Text(name, style = IntervalTheme.type.value, color = palette.text)
                     Text(programSummary(program), style = IntervalTheme.type.body, color = palette.textDim)
                 }
-                if (sideways) FollowFooter(current, replacing, onFollow, onOpenProgress)
+                if (sideways) FollowFooter(current, replacing, onFollow, onOpenProgress, onCopy)
             },
             second = {
                 // On its side the days come first, beside the name, and the balance under them.
                 if (!sideways) WeekBalance(program)
                 ProgramDays(program)
-                if (sideways) WeekBalance(program) else FollowFooter(current, replacing, onFollow, onOpenProgress)
+                if (sideways) {
+                    WeekBalance(program)
+                } else {
+                    FollowFooter(current, replacing, onFollow, onOpenProgress, onCopy)
+                }
             },
             spacing = Spacing.space20,
         )
@@ -351,10 +369,27 @@ private fun ProgramDays(program: Program) {
 
 /**
  * Following and the way to its days done, for the program followed; otherwise Follow, under the day it takes
- * the place of.
+ * the place of. Make it yours under either, for a built-in.
  */
 @Composable
-private fun FollowFooter(current: Boolean, replacing: ProgramDay?, onFollow: () -> Unit, onOpenProgress: () -> Unit) {
+private fun FollowFooter(
+    current: Boolean,
+    replacing: ProgramDay?,
+    onFollow: () -> Unit,
+    onOpenProgress: () -> Unit,
+    onCopy: (() -> Unit)?,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+    ) {
+        FollowButtons(current, replacing, onFollow, onOpenProgress)
+        onCopy?.let { QuietTextButton(stringResource(Res.string.program_make_yours), it) }
+    }
+}
+
+@Composable
+private fun FollowButtons(current: Boolean, replacing: ProgramDay?, onFollow: () -> Unit, onOpenProgress: () -> Unit) {
     val palette = IntervalTheme.palette
     if (current) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {

@@ -58,15 +58,19 @@ import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.ExerciseFilters
 import dev.justinsmith.lift.domain.ProgramDraft
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.domain.program
 import dev.justinsmith.lift.domain.withExercise
 import dev.justinsmith.lift.library.ExercisePicker
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.block_done
 import dev.justinsmith.lift.session.resources.block_remove
 import dev.justinsmith.lift.session.resources.block_title
+import dev.justinsmith.lift.session.resources.changes_copy_name
 import dev.justinsmith.lift.session.resources.common_cancel
 import dev.justinsmith.lift.session.resources.editor_add_block
 import dev.justinsmith.lift.session.resources.editor_add_day
+import dev.justinsmith.lift.session.resources.editor_carries_on
 import dev.justinsmith.lift.session.resources.editor_day
 import dev.justinsmith.lift.session.resources.editor_days_hint
 import dev.justinsmith.lift.session.resources.editor_days_per_week
@@ -94,6 +98,7 @@ import dev.justinsmith.lift.session.resources.notice_program_saved
 import dev.justinsmith.lift.session.resources.session_undo
 import dev.justinsmith.lift.ui.blockLine
 import dev.justinsmith.lift.ui.liftName
+import dev.justinsmith.lift.ui.programName
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -107,9 +112,13 @@ data class ProgramEditorActions(
     val onBack: () -> Unit = {},
 )
 
+/** The editor for the program [uid] the user made, a new one, or with [copyOf] a copy of that built-in. */
 @Composable
-fun ProgramEditorRoute(uid: String?, onBack: () -> Unit) {
-    val viewModel = koinViewModel<ProgramEditorViewModel> { parametersOf(uid) }
+fun ProgramEditorRoute(uid: String?, onBack: () -> Unit, copyOf: ProgramId? = null) {
+    val copy = copyOf?.let { id ->
+        ProgramCopy(id, stringResource(Res.string.changes_copy_name, programName(program(id))))
+    }
+    val viewModel = koinViewModel<ProgramEditorViewModel> { parametersOf(uid, copy) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     ProgramEditorScreen(
         state,
@@ -233,6 +242,14 @@ private fun ProgramEditorBody(
             maxLength = ProgramDraft.MAX_NAME_LENGTH,
             capitalization = KeyboardCapitalization.Words,
         )
+        state.carriesOnFrom?.let { day ->
+            Text(
+                stringResource(Res.string.editor_carries_on, day),
+                style = IntervalTheme.type.meta,
+                color = IntervalTheme.palette.textDim,
+                modifier = Modifier.padding(horizontal = Spacing.space4),
+            )
+        }
         ScheduleCard(draft, actions.onChange)
         draft.days.forEachIndexed { day, blocks ->
             val removedDayText = stringResource(Res.string.notice_day_removed, day + 1)

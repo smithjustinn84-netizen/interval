@@ -10,6 +10,7 @@ import androidx.navigation3.runtime.NavKey
 import dev.justinsmith.interval.nav.push
 import dev.justinsmith.interval.ui.PageKind
 import dev.justinsmith.interval.ui.pageKind
+import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.gear.GearRoute
 import dev.justinsmith.lift.history.LiftDetailRoute
 import dev.justinsmith.lift.library.ExerciseLibraryRoute
@@ -42,10 +43,17 @@ fun EntryProviderScope<NavKey>.liftEntries(backStack: NavBackStack<NavKey>, twoP
             onNew = { backStack.push(ProgramEditor()) },
             onEdit = { backStack.push(ProgramEditor(it)) },
             onOpenProgress = { backStack.push(ProgramProgress) },
+            onCopy = { backStack.push(ProgramEditor(copyOf = it.name)) },
             onBack = { backStack.removeLastOrNull() },
         )
     }
-    entry<ProgramEditor> { key -> ProgramEditorRoute(uid = key.uid, onBack = { backStack.removeLastOrNull() }) }
+    entry<ProgramEditor> { key ->
+        ProgramEditorRoute(
+            uid = key.uid,
+            copyOf = ProgramId.entries.firstOrNull { it.name == key.copyOf },
+            onBack = { backStack.removeLastOrNull() },
+        )
+    }
     entry<ProgramProgress> {
         ProgramProgressRoute(
             onOpenSession = { backStack.push(LiftDetail(it)) },
