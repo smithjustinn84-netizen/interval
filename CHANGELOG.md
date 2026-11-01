@@ -43,6 +43,14 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   group (chest, shoulders, back, arms, core, glutes and hamstrings, quads and calves), what worked each most and,
   lighter, what only assisted it, and names any group nothing trained.
 
+### Fixed
+- Lift: a change to today's plan made straight after logging a set, or a held + on the next set's load, is no
+  longer sometimes lost; each change builds on the last.
+- Lift: finishing or discarding a session, deleting a program and removing a band each happen whole or not at
+  all, so a crash part way leaves nothing half done.
+- Lift (Android): rests one after another keep the phone awake to the end of each, however long the session; the
+  beeps no longer stop with the screen off fifteen minutes in.
+
 ## [0.2.0] — Unreleased
 
 ### Added

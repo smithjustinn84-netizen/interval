@@ -497,23 +497,23 @@ class SessionViewModel(
 
     /**
      * Steps the next set's load one [step] (−1 or +1): a bell, the bar's smallest pair of plates, or a band.
-     * The rest of its block takes it, for today. Worked out from the plan as it is now, not as last drawn, so a
+     * The rest of its block takes it, for today. Worked out from the session as stored, not as last drawn, so a
      * held + steps once a repeat.
      */
     fun stepNextLoad(step: Int) {
-        val active = repository.active.value ?: return
-        val (plan, _) = today() ?: return
-        val next = programDay(active)?.let { upNext(it, active.sets) } ?: return
-        val equipment = next.set.exercise.equipment
-        val changed = if (equipment == Equipment.Band) {
-            steppedBand(next.band, step, offeredBands(repository.bands.value))
-                ?.let { band -> plan.change(next.block) { it.copy(band = band.id) } }
-        } else {
-            val bells = repository.bells.value.ifEmpty { standardBells }
-            steppedKg(equipment, next.bellKg, step, bells, repository.bar.value)
-                ?.let { kg -> plan.change(next.block) { it.copy(kg = kg) } }
+        repository.changeSessionPlan { session ->
+            val (plan, _) = today(session) ?: return@changeSessionPlan null
+            val next = programDay(session)?.let { upNext(it, session.sets) } ?: return@changeSessionPlan null
+            val equipment = next.set.exercise.equipment
+            if (equipment == Equipment.Band) {
+                steppedBand(next.band, step, offeredBands(repository.bands.value))
+                    ?.let { band -> plan.change(next.block) { it.copy(band = band.id) } }
+            } else {
+                val bells = repository.bells.value.ifEmpty { standardBells }
+                steppedKg(equipment, next.bellKg, step, bells, repository.bar.value)
+                    ?.let { kg -> plan.change(next.block) { it.copy(kg = kg) } }
+            }
         }
-        changed?.let(repository::setSessionPlan)
     }
 
     /**
@@ -548,43 +548,44 @@ class SessionViewModel(
 
     /** Changes block [index] of today's plan by [transform]: its load, rounds or reps. */
     fun changeBlock(index: Int, transform: (Block) -> Block) {
-        val (plan, _) = today() ?: return
-        repository.setSessionPlan(plan.change(index, transform))
+        repository.changeSessionPlan { session -> today(session)?.let { (plan, _) -> plan.change(index, transform) } }
     }
 
     /** Skips the rest of block [index] of today's plan: what comes next moves on. */
     fun skipBlock(index: Int) {
-        val (plan, done) = today() ?: return
-        repository.setSessionPlan(plan.skip(index, done.getOrElse(index) { 0 }))
+        repository.changeSessionPlan { session ->
+            today(session)?.let { (plan, done) -> plan.skip(index, done.getOrElse(index) { 0 }) }
+        }
     }
 
     /** Plans block [index] of today's plan in full again. */
     fun unskipBlock(index: Int) {
-        val (plan, _) = today() ?: return
-        repository.setSessionPlan(plan.unskip(index))
+        repository.changeSessionPlan { session -> today(session)?.let { (plan, _) -> plan.unskip(index) } }
     }
 
     /** Swaps [exercise] in for the sets of block [index] still to do. */
     fun swapBlock(index: Int, exercise: Exercise) {
-        val (plan, done) = today() ?: return
-        val count = done.getOrElse(index) { 0 }
-        if (plan.canSwap(index, count)) repository.setSessionPlan(plan.swap(index, exercise, count))
+        repository.changeSessionPlan { session ->
+            today(session)?.let { (plan, done) ->
+                val count = done.getOrElse(index) { 0 }
+                if (plan.canSwap(index, count)) plan.swap(index, exercise, count) else null
+            }
+        }
     }
 
     /**
-     * Today's plan as the repository has it now, not as last drawn, so a change made straight after another
+     * Today's plan in [session], as stored rather than as last drawn, so a change made straight after another
      * builds on it, and the sets of each block done; null in a free session.
      */
-    private fun today(): Pair<SessionPlan, List<Int>>? {
-        val active = repository.active.value ?: return null
-        val day = programDay(active) ?: return null
-        return day.today to day.planRows(active.sets).map { it.done }
+    private fun today(session: LiftSession): Pair<SessionPlan, List<Int>>? {
+        val day = programDay(session) ?: return null
+        return day.today to day.planRows(session.sets).map { it.done }
     }
 
-    /** The program day [active] is, with today's plan as it has it; null in a free session. */
-    private fun programDay(active: LiftSession): ProgramDay? =
-        repository.programDay.value?.takeIf { active.program != null && it.program.key == active.program }
-            ?.copy(plan = active.plan)
+    /** The program day [session] is, with today's plan as it has it; null in a free session. */
+    private fun programDay(session: LiftSession): ProgramDay? =
+        repository.programDay.value?.takeIf { session.program != null && it.program.key == session.program }
+            ?.copy(plan = session.plan)
 
     /** Starts the plan's next block as an EMOM, if it is one. */
     fun startPlannedEmom() {

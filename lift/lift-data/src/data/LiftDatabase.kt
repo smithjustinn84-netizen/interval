@@ -109,6 +109,10 @@ interface SessionDao {
     @Query("SELECT * FROM lift_set WHERE id = :id")
     suspend fun set(id: Long): SetEntity?
 
+    /** The sets of session [uid], in the order logged. */
+    @Query("SELECT * FROM lift_set WHERE session_uid = :uid ORDER BY logged_at, id")
+    suspend fun sets(uid: String): List<SetEntity>
+
     /** How many sets session [uid] has. */
     @Query("SELECT COUNT(*) FROM lift_set WHERE session_uid = :uid")
     suspend fun countSets(uid: String): Int
@@ -159,6 +163,21 @@ interface SessionDao {
 
     @Query("DELETE FROM lift_set WHERE session_uid = :uid")
     suspend fun discardSets(uid: String)
+
+    /** Finishes the session in progress under [title] at [at], or drops it if it has no sets: one or the other. */
+    @Transaction
+    suspend fun finishActive(title: String, at: Long) {
+        val active = active() ?: return
+        if (countSets(active.uid) == 0) discard(active.uid) else finish(active.uid, title, at)
+    }
+
+    /** Drops the session in progress and its sets, together. */
+    @Transaction
+    suspend fun discardActive() {
+        val active = active() ?: return
+        discardSets(active.uid)
+        discard(active.uid)
+    }
 }
 
 /** What an import adds, all of it or none: one transaction over every table it touches. */
@@ -229,10 +248,6 @@ interface FollowingDao {
 
     @Query("DELETE FROM following")
     suspend fun clear()
-
-    /** Stops following [programId] (as stored), if it is the one followed. */
-    @Query("DELETE FROM following WHERE program_id = :programId")
-    suspend fun clearIfFollowing(programId: String)
 }
 
 @Dao
@@ -245,6 +260,17 @@ interface CustomProgramDao {
 
     @Query("DELETE FROM custom_program WHERE uid = :uid")
     suspend fun delete(uid: String)
+
+    /** Stops following [programId] (as stored), if it is the one followed. */
+    @Query("DELETE FROM following WHERE program_id = :programId")
+    suspend fun unfollow(programId: String)
+
+    /** Deletes the program [uid], stored as [programId], and stops following it if it is followed: both or neither. */
+    @Transaction
+    suspend fun deleteProgram(uid: String, programId: String) {
+        unfollow(programId)
+        delete(uid)
+    }
 }
 
 @Dao
@@ -257,6 +283,16 @@ interface BandDao {
 
     @Query("DELETE FROM band WHERE id = :id")
     suspend fun delete(id: String)
+
+    /** Whether any set was done with the band [id]. */
+    @Query("SELECT EXISTS(SELECT 1 FROM lift_set WHERE band = :id)")
+    suspend fun inUse(id: String): Boolean
+
+    /** Keeps [archived] (a band, archived) if a set was done with it, else deletes it, as one step. */
+    @Transaction
+    suspend fun removeOrArchive(archived: BandEntity) {
+        if (inUse(archived.id)) upsert(listOf(archived)) else delete(archived.id)
+    }
 }
 
 @Dao

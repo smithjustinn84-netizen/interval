@@ -16,6 +16,7 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 
 /** The repository over a real Room database, where a fake can't say what SQLite would refuse. */
 class LiftRoomTest {
@@ -84,6 +85,60 @@ class LiftRoomTest {
         assertEquals(listOf("s1"), database.sessionDao().observeSessions().first().map { it.uid })
         assertEquals(listOf("s1"), database.sessionDao().allSets().map { it.sessionUid })
     }
+
+    @Test
+    fun `discarding the session in progress takes its sets with it`() = runBlocking {
+        val sessions = database.sessionDao()
+        sessions.insert(SessionEntity("s1", 0, null, "", updatedAtEpochMillis = 0))
+        sessions.insert(swing("s1"))
+        sessions.discardActive()
+
+        assertEquals(emptyList(), sessions.allSets())
+        assertEquals(emptyList(), sessions.observeSessions().first())
+    }
+
+    @Test
+    fun `finishing drops a session with no sets and keeps one with sets`() = runBlocking {
+        val sessions = database.sessionDao()
+        sessions.insert(SessionEntity("empty", 0, null, "", updatedAtEpochMillis = 0))
+        sessions.finishActive("Nothing", 500)
+        assertEquals(emptyList(), sessions.observeSessions().first())
+
+        sessions.insert(SessionEntity("s1", 0, null, "", updatedAtEpochMillis = 0))
+        sessions.insert(swing("s1"))
+        sessions.finishActive("Swings", 500)
+        val finished = sessions.observeSessions().first().single()
+        assertEquals("Swings", finished.title)
+        assertEquals(500L, finished.finishedAtEpochMillis)
+    }
+
+    @Test
+    fun `a band done with is archived and one never used is deleted`() = runBlocking {
+        val bands = database.bandDao()
+        val used = BandEntity("used", "Loop", "Red", 5, archived = true, updatedAtEpochMillis = 0)
+        val unused = used.copy(id = "unused", position = 6)
+        bands.upsert(listOf(used.copy(archived = false), unused.copy(archived = false)))
+        database.sessionDao().insert(SessionEntity("s1", 0, null, "", updatedAtEpochMillis = 0))
+        database.sessionDao().insert(swing("s1").copy(exercise = "BandPullApart", band = "used"))
+        bands.removeOrArchive(used)
+        bands.removeOrArchive(unused)
+
+        assertEquals(listOf(used), bands.observeAll().first())
+    }
+
+    @Test
+    fun `deleting the program followed stops following it`() = runBlocking {
+        val programs = database.customProgramDao()
+        programs.upsert(CustomProgramEntity("abc", "Mine", 3, 4, "[]", 0))
+        database.followingDao().upsert(FollowingEntity(programId = "custom:abc", startedAtEpochMillis = 0))
+        programs.deleteProgram("abc", "custom:abc")
+
+        assertEquals(emptyList(), programs.observeAll().first())
+        assertNull(database.followingDao().observe().first())
+    }
+
+    private fun swing(session: String) =
+        SetEntity(0, session, "TwoHandSwing", 24.0, 10, side = null, loggedAtEpochMillis = 100)
 
     private companion object {
         const val TIMEOUT_MILLIS = 5_000L

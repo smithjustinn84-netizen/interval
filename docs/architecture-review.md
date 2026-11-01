@@ -140,6 +140,9 @@ on without its beep (the beep comes from the ViewModel).
 `WorkoutProgress` does for the workout.
 
 ### B4 · Medium · RestService's wake lock timeout is never renewed
+
+**Resolved** in change `kroqzppq` ("Lift: a plan change never lost, whole writes, and the rest's wake lock renewed"): the lock is no longer reference-counted, and each rest acquires
+it afresh until its end, the linger and a few seconds' margin, so rests back to back never outlast it.
 `countDown` acquires for 15 minutes only when the lock isn't already held
 ([RestAlerts.android.kt:125](../lift/lift-platform/src@android/platform/RestAlerts.android.kt)). A new rest
 replaces a running one without restarting the service, so back-to-back rests keep the service but lose the lock
@@ -257,6 +260,11 @@ lambda can run more than once.
 ## E. Data correctness
 
 ### E1 · High · Lost update on a session's plan
+
+**Resolved** in change `kroqzppq` ("Lift: a plan change never lost, whole writes, and the rest's wake lock renewed"): `changeSessionPlan` takes a change of the session as stored and
+works it out inside the writer, behind every write before it; nothing is written to `active` optimistically, so a
+stale read can only lag the screen for a moment. `SessionViewModel`'s plan edits and `stepNextLoad` each pass one.
+No pending overlay: nothing depends on what is drawn.
 [`LiftRepository.setSessionPlan`](../lift/lift-data/src/data/LiftRepository.kt) (L353-359) sets
 `_active.value = _active.value?.copy(plan = plan)` optimistically on Main. The collector on IO (L154-159)
 overwrites `_active` with every database emission. An emission computed before the plan's write lands restores
@@ -266,6 +274,10 @@ the old plan, and the next edit, built on `today()`, silently drops the change.
 database confirms. Use `update {}` everywhere.
 
 ### E2 · Medium · Multi-statement writes without a transaction; no foreign key
+
+**Resolved, but for the foreign key,** in change `kroqzppq` ("Lift: a plan change never lost, whole writes, and the rest's wake lock renewed"): `@Transaction` DAO methods do each job
+in one step (`SessionDao.finishActive` and `discardActive`, `CustomProgramDao.deleteProgram`,
+`BandDao.removeOrArchive`, which asks `EXISTS` rather than loading every set). The foreign key is still open.
 - `discardSession`, `deleteProgram`, `finishSession` (count, then finish) and `removeBand` each make several DAO
   calls outside a transaction; only import uses `@Transaction`.
 - `lift_set` has no foreign key to `session` (LiftDatabase.kt:321), so a crash halfway leaves orphan sets.

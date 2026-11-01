@@ -88,8 +88,10 @@ class RestService : Service() {
         scope.launch {
             createChannel(getString(Res.string.rest_channel), getString(Res.string.rest_channel_description))
         }
+        // Not counted: each rest acquires it afresh, and one release in onDestroy lets it go however many came.
         wakeLock = getSystemService(PowerManager::class.java)
             ?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG)
+            ?.apply { setReferenceCounted(false) }
     }
 
     // Each stop is for the commands before it: a rest started after it (its start, a later id) keeps the service.
@@ -121,8 +123,10 @@ class RestService : Service() {
         }
     }
 
+    // Held to this rest's end, each rest afresh: rests back to back keep one service, and never outlast the lock.
     private fun countDown(startedAt: Long, endAt: Long) {
-        runCatching { wakeLock?.takeUnless { it.isHeld }?.acquire(WAKE_LOCK_TIMEOUT_MILLIS) }
+        val holdFor = endAt - System.currentTimeMillis() + LINGER_MILLIS + WAKE_LOCK_MARGIN_MILLIS
+        runCatching { wakeLock?.acquire(holdFor) }
             .onFailure { log.w(it) { "Couldn't hold the wake lock" } }
         countdown?.cancel()
         countdown = scope.launch {
@@ -211,7 +215,7 @@ class RestService : Service() {
         private const val MILLIS_PER_SECOND = 1_000L
         private const val LINGER_MILLIS = 1_500L
 
-        /** Let go on its own after this long, well past the longest rest, should the stop somehow not come. */
-        private const val WAKE_LOCK_TIMEOUT_MILLIS = 15L * 60 * 1000
+        /** How long past a rest's end and linger the lock lasts, should the stop somehow not come by then. */
+        private const val WAKE_LOCK_MARGIN_MILLIS = 5_000L
     }
 }

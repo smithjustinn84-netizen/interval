@@ -77,6 +77,16 @@ The cut line is after ticket 5.
   - `LiftRoomTest` shows a discard leaves no sets, and a band in use is archived without `allSets()`
   - `journeys/lift-rest-alert.xml` runs two rests back to back with the screen off and hears both.
 
+- As built: `setSessionPlan(plan)` became `changeSessionPlan(change: (LiftSession) -> SessionPlan?)`. The writer reads
+  the session in progress and its sets (`SessionDao.sets`), hands it to the change, and writes only a plan that
+  differs (null leaves it). No `pendingPlan` overlay: nothing depends on what is drawn, and the database's next
+  emission redraws the change. `today()` and `programDay()` take the session the change is given. Each transaction is
+  on the DAO of the table it ends in: `SessionDao.finishActive`/`discardActive`, `CustomProgramDao.deleteProgram`
+  (with the `following` delete), `BandDao.removeOrArchive` (with `inUse`, the `EXISTS`); the fakes of the last two
+  take the fake holding the other table. The rest's lock is not reference-counted, and is acquired for the rest's
+  time left, the linger and 5 s at each start. The lock's lapse after 15 minutes can't be waited out in a journey,
+  so it was checked by reading; the journey checks the lock is held through a second rest and let go after.
+
 **1. Guards at the edges** · XS · E3, E5 (review), E6, D5
 - **E3.** `IntervalConfig` gets `init { require(...) }` over its `*_RANGE`s, and a `sanitized()` factory that
   coerces into them. Every mapper that builds one from stored or imported data uses `sanitized()`:

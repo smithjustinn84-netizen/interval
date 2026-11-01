@@ -10,6 +10,7 @@ import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.ExerciseDraft
 import dev.justinsmith.lift.domain.Focus
 import dev.justinsmith.lift.domain.Followed
+import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.Measure
 import dev.justinsmith.lift.domain.ProgramDraft
 import dev.justinsmith.lift.domain.ProgramId
@@ -29,6 +30,8 @@ import dev.justinsmith.lift.fakes.FakeSessionDao
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -42,9 +45,9 @@ class LiftRepositoryTest {
     private val sessionDao = FakeSessionDao()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
     private val followingDao = FakeFollowingDao()
-    private val programDao = FakeCustomProgramDao()
+    private val programDao = FakeCustomProgramDao(followingDao)
     private val exerciseDao = FakeCustomExerciseDao()
-    private val bandDao = FakeBandDao()
+    private val bandDao = FakeBandDao(sessionDao)
     private val bellDao = FakeBellDao()
     private val repository = LiftRepository(
         sessionDao,
@@ -411,7 +414,7 @@ class LiftRepositoryTest {
         repository.follow(ProgramKey.BuiltIn(ProgramId.GobletSquatRow))
         repository.startSession(ProgramKey.BuiltIn(ProgramId.GobletSquatRow))
         val plan = repository.programDay.value!!.today.change(0) { it.copy(kg = 28.0) }
-        repository.setSessionPlan(plan)
+        repository.changeSessionPlan { plan }
         assertEquals(plan, repository.active.value?.plan)
         assertEquals(
             28.0,
@@ -420,6 +423,42 @@ class LiftRepositoryTest {
             }?.blocks?.first()?.block?.kg,
         )
     }
+
+    @Test
+    fun `a plan change after a stale read still builds on the change before it`() = runTest {
+        // Room can hand back the session's row as it was before a write landed, as a set logged re-reads the sets.
+        val stale = MutableSharedFlow<List<SessionEntity>>(extraBufferCapacity = 1)
+        val lagging = object : SessionDao by sessionDao {
+            override fun observeSessions() = merge(sessionDao.observeSessions(), stale)
+        }
+        val repository = LiftRepository(
+            lagging,
+            bellDao,
+            followingDao,
+            programDao,
+            exerciseDao,
+            bandDao,
+            FakeLiftImportDao(sessionDao, bellDao, followingDao, programDao, exerciseDao, bandDao),
+            scope,
+        ) { now }
+        val key = ProgramKey.BuiltIn(ProgramId.GobletSquatRow)
+        repository.follow(key)
+        repository.startSession(key)
+        val before = sessionDao.sessions.value
+        val rounds = repository.programDay.value!!.today.blocks.first().block.rounds
+        repository.changeSessionPlan { repository.today(it).change(0) { block -> block.copy(kg = 28.0) } }
+        repository.logSet(BuiltInExercise.GobletSquat, 28.0, 8, null)
+        stale.tryEmit(before)
+        repository.changeSessionPlan {
+            repository.today(it).change(0) { block -> block.copy(rounds = block.rounds + 1) }
+        }
+        val stored = sessionDao.sessions.value.single().plan?.let { decodePlan(it, emptyList()) }
+        assertEquals(28.0, stored?.blocks?.first()?.block?.kg)
+        assertEquals(rounds + 1, stored?.blocks?.first()?.block?.rounds)
+    }
+
+    /** Today's plan in [session], the way the session's screen builds a change on it. */
+    private fun LiftRepository.today(session: LiftSession) = programDay.value!!.copy(plan = session.plan).today
 
     @Test
     fun `changes to a built-in go in a copy followed from the day after`() = runTest {

@@ -65,6 +65,8 @@ class FakeSessionDao : SessionDao {
 
     override suspend fun set(id: Long) = sets.value.firstOrNull { it.id == id }
 
+    override suspend fun sets(uid: String) = sets.value.filter { it.sessionUid == uid }.sortedWith(loggedOrder)
+
     override suspend fun countSets(uid: String) = sets.value.count { it.sessionUid == uid }
 
     override suspend fun active() = sessions.value.firstOrNull { it.finishedAtEpochMillis == null && !it.deleted }
@@ -164,13 +166,10 @@ class FakeFollowingDao : FollowingDao {
     override suspend fun clear() {
         row.value = null
     }
-
-    override suspend fun clearIfFollowing(programId: String) {
-        if (row.value?.programId == programId) row.value = null
-    }
 }
 
-class FakeCustomProgramDao : CustomProgramDao {
+/** [CustomProgramDao] over a list; it stops [following] a program deleted, as the real one's query does. */
+class FakeCustomProgramDao(private val following: FakeFollowingDao) : CustomProgramDao {
     val rows = MutableStateFlow(emptyList<CustomProgramEntity>())
 
     override fun observeAll(): Flow<List<CustomProgramEntity>> =
@@ -180,6 +179,10 @@ class FakeCustomProgramDao : CustomProgramDao {
         rows.update { all -> all.filterNot { it.uid == program.uid } + program }
 
     override suspend fun delete(uid: String) = rows.update { all -> all.filterNot { it.uid == uid } }
+
+    override suspend fun unfollow(programId: String) {
+        if (following.row.value?.programId == programId) following.row.value = null
+    }
 }
 
 class FakeCustomExerciseDao : CustomExerciseDao {
@@ -192,7 +195,8 @@ class FakeCustomExerciseDao : CustomExerciseDao {
         rows.update { all -> all.filterNot { it.uid == exercise.uid } + exercise }
 }
 
-class FakeBandDao : BandDao {
+/** [BandDao] over a list; a band is in use when [sessions] holds a set of it, as the real one's query asks. */
+class FakeBandDao(private val sessions: FakeSessionDao) : BandDao {
     val rows = MutableStateFlow(emptyList<BandEntity>())
 
     override fun observeAll(): Flow<List<BandEntity>> = rows.map { all ->
@@ -203,6 +207,8 @@ class FakeBandDao : BandDao {
         rows.update { all -> all.filterNot { row -> bands.any { it.id == row.id } } + bands }
 
     override suspend fun delete(id: String) = rows.update { all -> all.filterNot { it.id == id } }
+
+    override suspend fun inUse(id: String) = sessions.sets.value.any { it.band == id }
 }
 
 /** The rest of the app as Lift sees it: interval workouts and a weekly goal a test sets. */
@@ -258,9 +264,9 @@ class FakeLiftStorage {
     val sessions = FakeSessionDao()
     val bells = FakeBellDao()
     val following = FakeFollowingDao()
-    val programs = FakeCustomProgramDao()
+    val programs = FakeCustomProgramDao(following)
     val exercises = FakeCustomExerciseDao()
-    val bands = FakeBandDao()
+    val bands = FakeBandDao(sessions)
     val imports = FakeLiftImportDao(sessions, bells, following, programs, exercises, bands)
 
     /** A repository over this storage, its writes landed by the time a call returns. */

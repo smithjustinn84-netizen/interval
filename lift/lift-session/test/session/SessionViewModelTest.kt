@@ -346,6 +346,25 @@ class SessionViewModelTest {
     }
 
     @Test
+    fun `changes to today's plan one after another each build on the last`() {
+        val goblets = ProgramKey.BuiltIn(ProgramId.GobletSquatRow)
+        repository.follow(goblets)
+        repository.startSession(goblets)
+        viewModel().use {
+            val start = assertNotNull(state.value.upNext).bellKg
+            stepNextLoad(1)
+            val once = assertNotNull(state.value.upNext).bellKg
+            stepNextLoad(1)
+            val twice = assertNotNull(state.value.upNext).bellKg
+            changeBlock(0) { it.copy(rounds = it.rounds + 1) }
+            assertTrue(start < once && once < twice)
+            val block = repository.active.value?.plan?.blocks?.first()?.block
+            assertEquals(twice, block?.kg)
+            assertEquals(4, block?.rounds)
+        }
+    }
+
+    @Test
     fun `finishing a day before the last names no program finished`() {
         val goblets = ProgramKey.BuiltIn(ProgramId.GobletSquatRow)
         storage.following.row.value = FollowingEntity(programId = goblets.stored, startedAtEpochMillis = 0)

@@ -305,10 +305,7 @@ class LiftRepository(
 
     /** Deletes the program [uid] made, and stops following it if it is the one followed. */
     fun deleteProgram(uid: String) {
-        writer.persist {
-            followingDao.clearIfFollowing(ProgramKey.Custom(uid).stored)
-            customProgramDao.delete(uid)
-        }
+        writer.persist { customProgramDao.deleteProgram(uid, ProgramKey.Custom(uid).stored) }
     }
 
     fun stopFollowing() {
@@ -349,13 +346,20 @@ class LiftRepository(
         }
     }
 
-    /** Changes the day the session in progress is to [plan], or back to as programmed with null. */
-    fun setSessionPlan(plan: SessionPlan?) {
-        // Shown at once, so a change made straight after builds on this one.
-        _active.value = _active.value?.copy(plan = plan)
+    /**
+     * Changes the day the session in progress is to what [change] makes of it, or leaves it with null. Worked out
+     * in the write, from the session as stored behind every write before it, never from [active], which a read
+     * of the database can still show as it was: so a change made straight after another, or after a set, builds
+     * on both. [change] runs on the storage's thread.
+     */
+    fun changeSessionPlan(change: (LiftSession) -> SessionPlan?) {
         writer.persist {
-            val active = sessionDao.active() ?: return@persist
-            sessionDao.setPlan(active.uid, plan?.let(::encodePlan))
+            val row = sessionDao.active() ?: return@persist
+            val made = _customExercises.value
+            val bands = _bands.value
+            val session = row.toDomain(sessionDao.sets(row.uid).map { it.toDomain(made, bands) }, made)
+            val plan = change(session) ?: return@persist
+            if (plan != session.plan) sessionDao.setPlan(row.uid, encodePlan(plan))
         }
     }
 
@@ -409,14 +413,7 @@ class LiftRepository(
 
     /** Finishes the session in progress under [title]; one with no sets is dropped instead. */
     fun finishSession(title: String) {
-        writer.persist {
-            val active = sessionDao.active() ?: return@persist
-            if (sessionDao.countSets(active.uid) == 0) {
-                sessionDao.discard(active.uid)
-            } else {
-                sessionDao.finish(active.uid, title, clock.nowMillis())
-            }
-        }
+        writer.persist { sessionDao.finishActive(title, clock.nowMillis()) }
     }
 
     /**
@@ -458,11 +455,7 @@ class LiftRepository(
 
     /** Drops the session in progress and its sets. */
     fun discardSession() {
-        writer.persist {
-            val active = sessionDao.active() ?: return@persist
-            sessionDao.discardSets(active.uid)
-            sessionDao.discard(active.uid)
-        }
+        writer.persist { sessionDao.discardActive() }
     }
 
     /** Deletes a finished session, leaving its row behind as a tombstone. */
@@ -537,13 +530,7 @@ class LiftRepository(
         }
         val now = clock.nowMillis()
         // Decided in the write, behind any set still queued: one logged with the band a moment ago counts.
-        writer.persist {
-            if (sessionDao.allSets().any { it.band == band.id }) {
-                bandDao.upsert(listOf(band.copy(archived = true).toEntity(now)))
-            } else {
-                bandDao.delete(band.id)
-            }
-        }
+        writer.persist { bandDao.removeOrArchive(band.copy(archived = true).toEntity(now)) }
     }
 
     fun setOwned(kg: Double, owned: Boolean) {
