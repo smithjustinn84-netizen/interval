@@ -18,7 +18,7 @@ class RepositoryIntervalActivityTest {
     fun `Lift sees the workouts already logged and each one finished after`() {
         val repository = storage.repository(WallClock { 1_000L })
         repository.recordWorkout(IntervalConfig(), elapsedSeconds = 300)
-        val activity = RepositoryIntervalActivity(repository, scope)
+        val activity = RepositoryIntervalActivity(repository, repository, scope)
         val first = activity.workouts.value.single()
         assertEquals(1_000L to 300, first.finishedAtEpochMillis to first.elapsedSeconds)
 
@@ -29,7 +29,7 @@ class RepositoryIntervalActivityTest {
     @Test
     fun `Lift sees the weekly goal set on Plan`() {
         val repository = storage.repository()
-        val activity = RepositoryIntervalActivity(repository, scope)
+        val activity = RepositoryIntervalActivity(repository, repository, scope)
         assertNull(activity.weeklyGoal.value)
 
         repository.updateAppSettings { it.copy(weeklyGoal = 3) }

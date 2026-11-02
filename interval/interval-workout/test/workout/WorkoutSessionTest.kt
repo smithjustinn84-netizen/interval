@@ -80,8 +80,9 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
         timeSource: TimeSource.WithComparableMarks = testScheduler.timeSource,
     ): WorkoutSession {
         val ticker = WorkoutTicker(timeSource, tickerScope()).also { tickers += it }
-        val recorder = WorkoutRecorder(repository, lifts, FixedTimestampFormatter, { now }, health)
-        return WorkoutSession(repository, player, { now }, background, recorder, ticker)
+        val recorder =
+            WorkoutRecorder(repository, repository, repository, lifts, FixedTimestampFormatter, { now }, health)
+        return WorkoutSession(repository, repository, player, { now }, background, recorder, ticker)
     }
 
     /**

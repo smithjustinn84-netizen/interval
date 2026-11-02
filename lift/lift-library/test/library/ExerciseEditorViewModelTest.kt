@@ -17,7 +17,7 @@ class ExerciseEditorViewModelTest : MainDispatcherTest() {
     private val repository = FakeLiftStorage().repository()
 
     private fun editor(uid: String? = null, name: String = "", saved: SavedStateHandle = SavedStateHandle()) =
-        ExerciseEditorViewModel(repository, saved, uid, name)
+        ExerciseEditorViewModel(repository, repository, saved, uid, name)
 
     private inline fun ExerciseEditorViewModel.use(block: ExerciseEditorViewModel.() -> Unit) = try {
         block()

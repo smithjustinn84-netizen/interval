@@ -9,9 +9,11 @@ import dev.justinsmith.interval.platform.days
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.timer.weekStartOf
 import dev.justinsmith.interval.timer.weekdayOf
+import dev.justinsmith.lift.data.GearStore
 import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.data.IntervalWorkout
-import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.data.ProgramStore
+import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.domain.BALANCE_DAYS
 import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.DEFAULT_BELL_KG
@@ -80,7 +82,9 @@ data class TodayUiState(
  * is built again on each set logged (the session under way changes with it). Only the first is built on the caller.
  */
 class TodayViewModel(
-    private val repository: LiftRepository,
+    private val sessionStore: SessionStore,
+    private val programStore: ProgramStore,
+    private val gearStore: GearStore,
     private val intervals: IntervalActivity,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
@@ -90,41 +94,41 @@ class TodayViewModel(
     // Read again each midnight, so the week strip and its "today" move on with the screen open.
     val state: StateFlow<TodayUiState> =
         combine(
-            repository.sessions,
+            sessionStore.sessions,
             intervals.workouts,
-            repository.active,
-            repository.bar,
+            sessionStore.active,
+            gearStore.bar,
             clock.days(timestamps, dayCheckMillis),
         ) { sessions, interval, active, bar, _ -> build(sessions, interval, active, bar) }
             .combine(
-                combine(repository.following, repository.programDay, intervals.weeklyGoal, ::Triple),
+                combine(programStore.following, programStore.programDay, intervals.weeklyGoal, ::Triple),
             ) { state, (following, day, goal) ->
                 state.copy(following = following, programDay = day, weeklyGoal = goal)
             }.flowOn(computation).stateIn(
                 viewModelScope,
                 SharingStarted.Eagerly,
                 build(
-                    repository.sessions.value,
+                    sessionStore.sessions.value,
                     intervals.workouts.value,
-                    repository.active.value,
-                    repository.bar.value,
+                    sessionStore.active.value,
+                    gearStore.bar.value,
                 )
                     .copy(
-                        following = repository.following.value,
-                        programDay = repository.programDay.value,
+                        following = programStore.following.value,
+                        programDay = programStore.programDay.value,
                         weeklyGoal = intervals.weeklyGoal.value,
                     ),
             )
 
     /** Starts the session about to open: [program]'s next day, or a free one with null. */
     fun start(program: ProgramKey?) {
-        repository.startSession(program)
+        sessionStore.startSession(program)
     }
 
     /** Drops the session in progress and starts [program]'s next day in its place. */
     fun startOver(program: ProgramKey) {
-        repository.discardSession()
-        repository.startSession(program)
+        sessionStore.discardSession()
+        sessionStore.startSession(program)
     }
 
     private fun build(

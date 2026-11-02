@@ -2,7 +2,7 @@ package dev.justinsmith.interval.workout
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.interval.data.IntervalRepository
+import dev.justinsmith.interval.data.PresetStore
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.timer.Preset
 import kotlinx.coroutines.flow.SharingStarted
@@ -22,7 +22,7 @@ class WorkoutViewModel(
     /** The route's: the workout this page shows, and the saved progress it picks up after the process died. */
     private val id: Long,
     private val session: WorkoutSession,
-    private val repository: IntervalRepository,
+    private val presetStore: PresetStore,
 ) : ViewModel() {
     init {
         session.open(id)
@@ -32,12 +32,12 @@ class WorkoutViewModel(
     // name it. Matched once per change of either, not only on a tick.
     val state: StateFlow<WorkoutUiState> = combine(
         session.state.filterNotNull().filter { it.id == id },
-        repository.presets,
+        presetStore.presets,
     ) { run, presets -> run.toUiState(presets) }
         .stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
-            checkNotNull(session.state.value).toUiState(repository.presets.value),
+            checkNotNull(session.state.value).toUiState(presetStore.presets.value),
         )
 
     fun togglePause() = session.togglePause()
@@ -62,7 +62,7 @@ class WorkoutViewModel(
      * save lands.
      */
     fun saveAsPreset(preset: Preset) {
-        repository.saveAndApplyPreset(preset)
+        presetStore.saveAndApplyPreset(preset)
     }
 
     /** How hard the finished workout felt, from the summary; kept in History with it at once. */

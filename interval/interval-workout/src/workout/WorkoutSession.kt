@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.workout
 
-import dev.justinsmith.interval.data.IntervalRepository
+import dev.justinsmith.interval.data.SettingsStore
+import dev.justinsmith.interval.data.WorkoutProgressStore
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.PerceivedEffort
@@ -28,13 +29,14 @@ import kotlinx.coroutines.flow.asStateFlow
  * the [recorder], which keeps it in History and hands it to the [HealthStore] with its course.
  *
  * Off screen it is kept going and in view by [background], which shows [status] and acts on it through
- * [ActiveWorkout]. Its course is saved in the repository at each change ([WorkoutRun.toProgress]), so a process
+ * [ActiveWorkout]. Its course is saved in the [progressStore] at each change ([WorkoutRun.toProgress]), so a process
  * killed mid-workout picks it up where it had got to when the page opens it again, or shows the summary of what
  * ran, instead of starting again. Everything here runs on the main thread, the screen's actions and the
  * notification's alike.
  */
 class WorkoutSession(
-    private val repository: IntervalRepository,
+    private val settingsStore: SettingsStore,
+    private val progressStore: WorkoutProgressStore,
     private val player: CuePlayer,
     private val clock: WallClock,
     private val background: BackgroundWorkout,
@@ -69,11 +71,11 @@ class WorkoutSession(
      */
     fun open(id: Long) {
         if (run?.id == id) return
-        val saved = repository.workoutProgress.value?.takeIf { it.id == id }
+        val saved = progressStore.workoutProgress.value?.takeIf { it.id == id }
         leave()
-        val settings = repository.appSettings.value
+        val settings = settingsStore.appSettings.value
         if (saved == null) {
-            begin(id, repository.config.value, settings.keepScreenOn, settings.body)
+            begin(id, settingsStore.config.value, settings.keepScreenOn, settings.body)
             return
         }
         run = WorkoutRun.restored(saved, settings.keepScreenOn, settings.body)
@@ -187,7 +189,7 @@ class WorkoutSession(
         ticker.stop()
         hold(keep = false)
         run = null
-        repository.saveWorkoutProgress(null)
+        progressStore.saveWorkoutProgress(null)
     }
 
     private fun begin(id: Long, config: IntervalConfig, keepScreenOn: Boolean, body: BodySettings) {
@@ -202,7 +204,7 @@ class WorkoutSession(
                 body = body,
             )
         hold(keep = true)
-        player.play(start.cues, repository.cueSettings.value)
+        player.play(start.cues, settingsStore.cueSettings.value)
         ticker.start(tick)
         checkpoint()
     }
@@ -210,7 +212,7 @@ class WorkoutSession(
     private fun applyStep(step: Step) {
         val before = run ?: return
         val next = before.stepped(step, clock.nowMillis())
-        player.play(step.cues, repository.cueSettings.value)
+        player.play(step.cues, settingsStore.cueSettings.value)
         if (next.engine.isDone) {
             ticker.stop()
             val finished = recorder.finished(next.turned(phase = null, clock.nowMillis()), endedEarly = false)
@@ -234,7 +236,7 @@ class WorkoutSession(
     /** Saves where the workout stands now, for a process killed before the next change to come back to. */
     private fun checkpoint() {
         val current = run ?: return
-        repository.saveWorkoutProgress(current.toProgress(clock.nowMillis()))
+        progressStore.saveWorkoutProgress(current.toProgress(clock.nowMillis()))
     }
 }
 

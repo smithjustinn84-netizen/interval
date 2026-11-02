@@ -24,5 +24,5 @@ interface LiftActivity {
     val active: StateFlow<LiftSession?>
 
     /** Starts a session, a day of [program] or a free one, unless one is in progress already. */
-    fun startSession(program: ProgramKey? = null)
+    fun startSession(program: ProgramKey?)
 }

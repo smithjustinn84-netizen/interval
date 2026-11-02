@@ -48,7 +48,7 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.interval.ui.sheetIsSideways
-import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.ProgramFamily
@@ -103,26 +103,26 @@ data class ProgramsUiState(
 )
 
 /** The built-in programs, the ones the user made, which one is followed and its next day. */
-class ProgramsViewModel(private val repository: LiftRepository) : ViewModel() {
+class ProgramsViewModel(private val programStore: ProgramStore) : ViewModel() {
     val state: StateFlow<ProgramsUiState> =
-        combine(repository.following, repository.programDay, repository.customPrograms, ::ProgramsUiState)
+        combine(programStore.following, programStore.programDay, programStore.customPrograms, ::ProgramsUiState)
             .stateIn(
                 viewModelScope,
                 SharingStarted.Eagerly,
                 ProgramsUiState(
-                    repository.following.value,
-                    repository.programDay.value,
-                    repository.customPrograms.value,
+                    programStore.following.value,
+                    programStore.programDay.value,
+                    programStore.customPrograms.value,
                 ),
             )
 
     /** Follows [key] from its first day; the program followed already keeps its place. */
     fun follow(key: ProgramKey) {
-        if (key != repository.following.value?.key) repository.follow(key)
+        if (key != programStore.following.value?.key) programStore.follow(key)
     }
 
     fun stop() {
-        repository.stopFollowing()
+        programStore.stopFollowing()
     }
 }
 

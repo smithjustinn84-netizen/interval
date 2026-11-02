@@ -2,7 +2,8 @@ package dev.justinsmith.interval.presets
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.interval.data.IntervalRepository
+import dev.justinsmith.interval.data.PresetStore
+import dev.justinsmith.interval.data.SettingsStore
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -49,22 +50,22 @@ data class PresetsUiState(
     val rows: List<PresetRowItem> get() = custom + builtIn
 }
 
-class PresetsViewModel(private val repository: IntervalRepository) : ViewModel() {
+class PresetsViewModel(private val presetStore: PresetStore, private val settingsStore: SettingsStore) : ViewModel() {
     val state: StateFlow<PresetsUiState> =
-        combine(repository.config, repository.presets, repository.appSettings, ::buildState)
+        combine(settingsStore.config, presetStore.presets, settingsStore.appSettings, ::buildState)
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.Eagerly,
                 initialValue = buildState(
-                    repository.config.value,
-                    repository.presets.value,
-                    repository.appSettings.value,
+                    settingsStore.config.value,
+                    presetStore.presets.value,
+                    settingsStore.appSettings.value,
                 ),
             )
 
     /** Puts [preset]'s shape on the Timer. */
     fun putOnTimer(preset: Preset) {
-        repository.applyPreset(preset)
+        presetStore.applyPreset(preset)
     }
 
     /**
@@ -73,21 +74,21 @@ class PresetsViewModel(private val repository: IntervalRepository) : ViewModel()
      * old shape there, unsaved.
      */
     fun save(preset: Preset) {
-        if (preset.custom) repository.updatePreset(preset) else repository.savePreset(preset)
+        if (preset.custom) presetStore.updatePreset(preset) else presetStore.savePreset(preset)
     }
 
     /** Saves [preset] as a new one of the user's own and puts its shape on the Timer, which it came from. */
     fun saveCurrent(preset: Preset) {
-        repository.saveAndApplyPreset(preset)
+        presetStore.saveAndApplyPreset(preset)
     }
 
     fun delete(preset: Preset) {
-        repository.deletePreset(preset)
+        presetStore.deletePreset(preset)
     }
 
     /** Undo on [delete]: the preset comes back under its own id. */
     fun restore(preset: Preset) {
-        repository.restorePreset(preset)
+        presetStore.restorePreset(preset)
     }
 
     private fun buildState(config: IntervalConfig, presets: List<Preset>, app: AppSettings): PresetsUiState {

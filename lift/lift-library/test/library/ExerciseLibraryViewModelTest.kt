@@ -20,7 +20,7 @@ class ExerciseLibraryViewModelTest : MainDispatcherTest() {
     private val filters = ExerciseFilterStore()
 
     private fun library(saved: SavedStateHandle = SavedStateHandle()) =
-        ExerciseLibraryViewModel(repository, filters, FixedTimestampFormatter, saved)
+        ExerciseLibraryViewModel(repository, repository, repository, filters, FixedTimestampFormatter, saved)
 
     private inline fun ExerciseLibraryViewModel.use(block: ExerciseLibraryViewModel.() -> Unit) = try {
         block()

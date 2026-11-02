@@ -212,6 +212,13 @@ mutators.
 **Recommendation.** Role interfaces first (**C3**); split the class later if it keeps growing.
 
 ### C3 · High · ViewModels take the whole concrete repository (ISP, DIP)
+
+**Resolved** in change `xulqrkos` ("DI: each screen takes the stores it uses, not a repository"): the interval
+side's `SettingsStore`, `PresetStore`, `HistoryStore`, `PlanStore` and `WorkoutProgressStore`, Lift's `SessionStore`,
+`SetStore`, `ProgramStore`, `ExerciseStore` and `GearStore`, which the repositories implement and Koin binds. Every
+ViewModel but `SessionViewModel` (all five of Lift's, narrowed by its split, D1) takes only what it uses;
+`TimerViewModelTest` runs over `InMemorySettingsStore`/`InMemoryPresetStore`, `GearViewModelTest` over
+`InMemoryGearStore`.
 - `GearViewModel` uses only bells, bar and bands. `TimerViewModel` uses only config and presets but can call
   `clearHistory()` and `importAll()`.
 - With no interface, every ViewModel test builds the real repository over fake DAOs.

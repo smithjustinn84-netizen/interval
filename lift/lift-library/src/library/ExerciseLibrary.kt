@@ -21,7 +21,9 @@ import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.lift.data.ExerciseFilterStore
-import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.data.ExerciseStore
+import dev.justinsmith.lift.data.GearStore
+import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.domain.CustomExercise
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.Exercise
@@ -59,7 +61,9 @@ data class ExerciseLibraryUiState(
  * process being let go.
  */
 class ExerciseLibraryViewModel(
-    repository: LiftRepository,
+    sessionStore: SessionStore,
+    exerciseStore: ExerciseStore,
+    gearStore: GearStore,
     private val filters: ExerciseFilterStore,
     private val timestamps: TimestampFormatter,
     private val savedState: SavedStateHandle = SavedStateHandle(),
@@ -67,11 +71,11 @@ class ExerciseLibraryViewModel(
     private val opened = savedState.getStateFlow<String?>(KEY_OPENED, null)
 
     private val list = combine(
-        repository.customExercises,
-        repository.sessions,
-        repository.active,
+        exerciseStore.customExercises,
+        sessionStore.sessions,
+        sessionStore.active,
         filters.filters,
-        combine(repository.bells, repository.bands, repository.bar, ::ownedEquipment),
+        combine(gearStore.bells, gearStore.bands, gearStore.bar, ::ownedEquipment),
     ) { made, sessions, active, narrowed, owned ->
         val offered = offeredExercises(made, archived = narrowed.showArchived)
         val history = sessions.setsOldestFirst() + active?.sets.orEmpty()
@@ -79,7 +83,7 @@ class ExerciseLibraryViewModel(
     }
 
     // The exercise open, by its key; null while none is, or once it is gone.
-    private val detail = combine(opened, repository.sessions, repository.customExercises) { key, sessions, made ->
+    private val detail = combine(opened, sessionStore.sessions, exerciseStore.customExercises) { key, sessions, made ->
         key?.let { Exercise.parse(it, made) }?.let { exerciseDetail(it, sessions, timestamps) }
     }
 

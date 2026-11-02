@@ -2,7 +2,10 @@ package dev.justinsmith.interval.history
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.interval.data.IntervalRepository
+import dev.justinsmith.interval.data.HistoryStore
+import dev.justinsmith.interval.data.PlanStore
+import dev.justinsmith.interval.data.PresetStore
+import dev.justinsmith.interval.data.SettingsStore
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.HistoryEntry
@@ -105,7 +108,10 @@ private data class HistoryView(
  * on their own and rebuild nothing else.
  */
 class HistoryViewModel(
-    private val repository: IntervalRepository,
+    private val historyStore: HistoryStore,
+    private val presetStore: PresetStore,
+    private val planStore: PlanStore,
+    private val settingsStore: SettingsStore,
     private val bells: LiftActivity,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
@@ -123,16 +129,16 @@ class HistoryViewModel(
     }.distinctUntilChanged()
 
     private val built = combine(
-        combine(repository.history, lifting) { history, lifting -> history to lifting },
-        repository.planned,
-        repository.presets,
-        repository.appSettings,
+        combine(historyStore.history, lifting) { history, lifting -> history to lifting },
+        planStore.planned,
+        presetStore.presets,
+        settingsStore.appSettings,
         combine(days, view) { _, view -> view },
     ) { (history, lifting), planned, presets, app, view ->
         buildState(history, lifting, planned, presets, app, view)
     }
 
-    private val choices = combine(repository.presets, repository.config, ::planChoices).distinctUntilChanged()
+    private val choices = combine(presetStore.presets, settingsStore.config, ::planChoices).distinctUntilChanged()
 
     val state: StateFlow<HistoryUiState> =
         combine(built, choices) { state, choices -> state.copy(choices = choices) }
@@ -155,15 +161,15 @@ class HistoryViewModel(
 
     /** Puts [name]'s [config] on the Timer, for the workout about to start. */
     fun putOnTimer(name: String, config: IntervalConfig) {
-        repository.applyPreset(Preset(name, config))
+        presetStore.applyPreset(Preset(name, config))
     }
 
     fun planWeekly(workout: PlanWorkout, weekdays: Set<Int>) {
-        repository.planWeekly(workout, weekdays)
+        planStore.planWeekly(workout, weekdays)
     }
 
     fun planOnce(workout: PlanWorkout, epochDay: Long) {
-        repository.planOnce(workout, epochDay)
+        planStore.planOnce(workout, epochDay)
     }
 
     /** Starts the next day of [program], or a free session with none, for the Lifting page about to open. */
@@ -173,17 +179,17 @@ class HistoryViewModel(
 
     /** Takes the plan off, handing it back for Undo ([restorePlanned]); null when it was gone already. */
     fun removePlanned(planId: Long): PlannedWorkout? {
-        val plan = repository.planned.value.firstOrNull { it.id == planId }
-        repository.removePlanned(planId)
+        val plan = planStore.planned.value.firstOrNull { it.id == planId }
+        planStore.removePlanned(planId)
         return plan
     }
 
     fun restorePlanned(plan: PlannedWorkout) {
-        repository.restorePlanned(plan)
+        planStore.restorePlanned(plan)
     }
 
     fun clear() {
-        repository.clearHistory()
+        historyStore.clearHistory()
     }
 
     /**

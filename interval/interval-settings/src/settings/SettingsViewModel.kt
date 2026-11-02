@@ -5,7 +5,7 @@ package dev.justinsmith.interval.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
-import dev.justinsmith.interval.data.IntervalRepository
+import dev.justinsmith.interval.data.SettingsStore
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.CueSettings
@@ -95,7 +95,7 @@ enum class CueToggle { Sound, Voice, Halfway, Vibrate }
  */
 @Suppress("detekt.TooManyFunctions") // One function per setting, and export and import beside them.
 class SettingsViewModel(
-    private val repository: IntervalRepository,
+    private val settingsStore: SettingsStore,
     private val player: CuePlayer,
     private val exporter: DataExporter,
     private val sharer: Sharer,
@@ -110,9 +110,9 @@ class SettingsViewModel(
 
     val state: StateFlow<SettingsUiState> =
         combine(
-            repository.cueSettings,
-            repository.config,
-            repository.appSettings,
+            settingsStore.cueSettings,
+            settingsStore.config,
+            settingsStore.appSettings,
             health.status,
             healthWeightKg,
             ::buildState,
@@ -120,9 +120,9 @@ class SettingsViewModel(
             scope = viewModelScope,
             started = SharingStarted.Eagerly,
             initialValue = buildState(
-                repository.cueSettings.value,
-                repository.config.value,
-                repository.appSettings.value,
+                settingsStore.cueSettings.value,
+                settingsStore.config.value,
+                settingsStore.appSettings.value,
                 health.status.value,
                 healthWeightKg = null,
             ),
@@ -135,7 +135,7 @@ class SettingsViewModel(
     fun disconnectHealth() = health.disconnect()
 
     fun toggle(toggle: CueToggle) {
-        repository.updateCueSettings { cues ->
+        settingsStore.updateCueSettings { cues ->
             when (toggle) {
                 CueToggle.Sound -> cues.copy(sound = !cues.sound)
                 CueToggle.Voice -> cues.copy(voice = !cues.voice)
@@ -143,7 +143,7 @@ class SettingsViewModel(
                 CueToggle.Vibrate -> cues.copy(vibrate = !cues.vibrate)
             }
         }
-        preview(toggle, repository.cueSettings.value)
+        preview(toggle, settingsStore.cueSettings.value)
     }
 
     /** Plays the cue [toggle] has just switched on, as a workout would; switching one off is silent. */
@@ -157,19 +157,19 @@ class SettingsViewModel(
     }
 
     fun stepPrep(direction: Int) {
-        repository.updateConfig { it.stepped(ConfigField.Prep, direction) }
+        settingsStore.updateConfig { it.stepped(ConfigField.Prep, direction) }
     }
 
     fun setPrep(seconds: Int) {
-        repository.updateConfig { it.withValue(ConfigField.Prep, seconds) }
+        settingsStore.updateConfig { it.withValue(ConfigField.Prep, seconds) }
     }
 
     fun toggleKeepScreenOn() {
-        repository.updateAppSettings { it.copy(keepScreenOn = !it.keepScreenOn) }
+        settingsStore.updateAppSettings { it.copy(keepScreenOn = !it.keepScreenOn) }
     }
 
     fun setTheme(theme: ThemeMode) {
-        repository.updateAppSettings { it.copy(theme = theme) }
+        settingsStore.updateAppSettings { it.copy(theme = theme) }
     }
 
     /** Sets the body weight to [value] whole units of the current unit, clamped to its range. */
@@ -271,7 +271,7 @@ class SettingsViewModel(
     }
 
     private fun updateBody(transform: (BodySettings) -> BodySettings) {
-        repository.updateAppSettings { it.copy(body = transform(it.body)) }
+        settingsStore.updateAppSettings { it.copy(body = transform(it.body)) }
     }
 
     private fun buildState(

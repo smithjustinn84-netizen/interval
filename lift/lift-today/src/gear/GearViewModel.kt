@@ -2,7 +2,8 @@ package dev.justinsmith.lift.gear
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.data.GearStore
+import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.BandColour
 import dev.justinsmith.lift.domain.PersonalRecord
@@ -28,9 +29,9 @@ data class GearUiState(
 )
 
 /** The bells, bar and bands the user has, and their records. */
-class GearViewModel(private val repository: LiftRepository) : ViewModel() {
+class GearViewModel(private val gearStore: GearStore, private val sessionStore: SessionStore) : ViewModel() {
     val state: StateFlow<GearUiState> =
-        combine(repository.bells, repository.bar, repository.bands, repository.sessions) {
+        combine(gearStore.bells, gearStore.bar, gearStore.bands, sessionStore.sessions) {
                 bells,
                 bar,
                 bands,
@@ -41,28 +42,28 @@ class GearViewModel(private val repository: LiftRepository) : ViewModel() {
         }.stateIn(viewModelScope, SharingStarted.Eagerly, GearUiState())
 
     fun toggle(kg: Double) {
-        repository.setOwned(kg, owned = kg !in state.value.owned)
+        gearStore.setOwned(kg, owned = kg !in state.value.owned)
     }
 
     /** Sets the user's bar to one weighing [kg] empty, or to none. */
-    fun setBar(kg: Double?) = repository.setBar(kg)
+    fun setBar(kg: Double?) = gearStore.setBar(kg)
 
     /** Saves [band] as [name] (blank for its starting words) in [colour], or adds a band with a null one. */
     fun saveBand(band: Band?, name: String, colour: BandColour) {
         if (band == null) {
-            repository.addBand(name.trim(), colour)
+            gearStore.addBand(name.trim(), colour)
         } else {
-            repository.saveBand(band.copy(name = name, colour = colour))
+            gearStore.saveBand(band.copy(name = name, colour = colour))
         }
     }
 
     /** Moves [band] [by] places among those not archived: lighter when negative. */
     fun move(band: Band, by: Int) {
         val offered = offeredBands(state.value.bands)
-        repository.saveBands(offered.moved(band.id, by) + state.value.bands.filter { it.archived })
+        gearStore.saveBands(offered.moved(band.id, by) + state.value.bands.filter { it.archived })
     }
 
-    fun remove(band: Band) = repository.removeBand(band)
+    fun remove(band: Band) = gearStore.removeBand(band)
 
-    fun restore(band: Band) = repository.saveBand(band.copy(archived = false))
+    fun restore(band: Band) = gearStore.saveBand(band.copy(archived = false))
 }

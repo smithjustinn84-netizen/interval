@@ -7,6 +7,7 @@ import dev.justinsmith.lift.domain.BandLevel
 import dev.justinsmith.lift.domain.PersonalRecord
 import dev.justinsmith.lift.domain.offeredBands
 import dev.justinsmith.lift.fakes.FakeLiftStorage
+import dev.justinsmith.lift.fakes.InMemoryGearStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -22,8 +23,11 @@ import kotlin.test.assertTrue
 
 /** Your equipment: the bells owned, the bar, the bands in their order, and the records across every session. */
 class GearViewModelTest {
+    private val gear = InMemoryGearStore()
+
+    // Only the records read sessions, which the stored ones stand in for.
     private val storage = FakeLiftStorage()
-    private val repository = storage.repository()
+    private val sessions = storage.repository()
 
     @BeforeTest
     fun setMainDispatcher() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -31,7 +35,7 @@ class GearViewModelTest {
     @AfterTest
     fun resetMainDispatcher() = Dispatchers.resetMain()
 
-    private fun viewModel() = GearViewModel(repository)
+    private fun viewModel() = GearViewModel(gear, sessions)
 
     @Test
     fun `a bell toggled is owned and toggled again let go`() {

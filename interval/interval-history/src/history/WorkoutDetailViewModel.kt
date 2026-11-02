@@ -2,7 +2,10 @@ package dev.justinsmith.interval.history
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.interval.data.IntervalRepository
+import dev.justinsmith.interval.data.HistoryStore
+import dev.justinsmith.interval.data.PlanStore
+import dev.justinsmith.interval.data.PresetStore
+import dev.justinsmith.interval.data.SettingsStore
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.PerceivedEffort
@@ -64,7 +67,10 @@ data class WorkoutDetailUiState(
 /** The workout stored under [id]: its figures, and the ways to repeat, plan again or delete it. */
 class WorkoutDetailViewModel(
     private val id: Long,
-    private val repository: IntervalRepository,
+    private val historyStore: HistoryStore,
+    private val presetStore: PresetStore,
+    private val planStore: PlanStore,
+    private val settingsStore: SettingsStore,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
     dayCheckMillis: Long = DAY_CHECK_MILLIS,
@@ -72,10 +78,10 @@ class WorkoutDetailViewModel(
     // Read again each midnight, so "Today" turns to "Yesterday" with the page open.
     val state: StateFlow<WorkoutDetailUiState> =
         combine(
-            repository.history,
-            repository.planned,
-            repository.presets,
-            repository.appSettings,
+            historyStore.history,
+            planStore.planned,
+            presetStore.presets,
+            settingsStore.appSettings,
             clock.days(timestamps, dayCheckMillis),
         ) {
                 history,
@@ -89,34 +95,34 @@ class WorkoutDetailViewModel(
             viewModelScope,
             SharingStarted.Eagerly,
             buildState(
-                repository.history.value,
-                repository.planned.value,
-                repository.presets.value,
-                repository.appSettings.value,
+                historyStore.history.value,
+                planStore.planned.value,
+                presetStore.presets.value,
+                settingsStore.appSettings.value,
             ),
         )
 
     /** Puts this workout's shape on the Timer, for the repeat about to start. */
     fun putOnTimer() {
         val workout = state.value.workout ?: return
-        repository.applyPreset(Preset(workout.name, workout.config))
+        presetStore.applyPreset(Preset(workout.name, workout.config))
     }
 
     /** Undo on [delete]. */
     fun restore() {
-        repository.restoreWorkout(id)
+        historyStore.restoreWorkout(id)
     }
 
     fun delete() {
-        repository.deleteWorkout(id)
+        historyStore.deleteWorkout(id)
     }
 
     fun planWeekly(workout: PlanWorkout, weekdays: Set<Int>) {
-        repository.planWeekly(workout, weekdays)
+        planStore.planWeekly(workout, weekdays)
     }
 
     fun planOnce(workout: PlanWorkout, epochDay: Long) {
-        repository.planOnce(workout, epochDay)
+        planStore.planOnce(workout, epochDay)
     }
 
     private fun buildState(

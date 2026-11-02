@@ -27,7 +27,8 @@ import dev.justinsmith.interval.ui.NameField
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ToggleRow
-import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.data.ExerciseStore
+import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.domain.CustomExercise
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.ExerciseDraft
@@ -89,10 +90,11 @@ data class ExerciseEditorUiState(
  * archiving or restoring: the user's [openedUid]; one gone meanwhile is added afresh. It belongs to the screen
  * (see [rememberExerciseEditor]), so it lives through a configuration change, and its draft through process
  * death in [savedState]; a sheet opened again calls [reopen], to start from what is saved rather than from a
- * draft left behind. The names taken and whether sets of it are logged follow the repository while it is open.
+ * draft left behind. The names taken and whether sets of it are logged follow the stores while it is open.
  */
 class ExerciseEditorViewModel(
-    private val repository: LiftRepository,
+    private val exerciseStore: ExerciseStore,
+    private val sessionStore: SessionStore,
     private val savedState: SavedStateHandle,
     private val openedUid: String?,
     private val openedName: String,
@@ -103,7 +105,7 @@ class ExerciseEditorViewModel(
     private val draft = MutableStateFlow(savedState.restoredDraft() ?: savedDraft())
 
     val state: StateFlow<ExerciseEditorUiState> =
-        combine(draft, repository.customExercises, repository.sessions, repository.active) {
+        combine(draft, exerciseStore.customExercises, sessionStore.sessions, sessionStore.active) {
                 draft,
                 made,
                 sessions,
@@ -115,8 +117,8 @@ class ExerciseEditorViewModel(
             SharingStarted.Eagerly,
             editorState(
                 draft.value,
-                repository.customExercises.value,
-                repository.sessions.value.flatMap { it.sets } + repository.active.value?.sets.orEmpty(),
+                exerciseStore.customExercises.value,
+                sessionStore.sessions.value.flatMap { it.sets } + sessionStore.active.value?.sets.orEmpty(),
             ),
         )
 
@@ -142,9 +144,11 @@ class ExerciseEditorViewModel(
         savedState.keep(draft.value)
     }
 
-    private fun savedUid() = openedUid?.let { id -> repository.customExercises.value.firstOrNull { it.uid == id } }?.uid
+    private fun savedUid() = openedUid?.let { id ->
+        exerciseStore.customExercises.value.firstOrNull { it.uid == id }
+    }?.uid
 
-    private fun savedDraft() = repository.customExercises.value.firstOrNull { it.uid == uid }
+    private fun savedDraft() = exerciseStore.customExercises.value.firstOrNull { it.uid == uid }
         ?.let { ExerciseDraft(it.name, it.equipment, it.measure, it.perSide, it.focus, it.cues) }
         ?: ExerciseDraft(name = openedName.trim())
 
@@ -164,14 +168,14 @@ class ExerciseEditorViewModel(
     fun save(name: String, cues: String): Boolean {
         val current = state.value
         if (!current.draft.canSave(name, current.taken)) return false
-        repository.saveExercise(uid, current.draft.copy(name = name, cues = cues))
+        exerciseStore.saveExercise(uid, current.draft.copy(name = name, cues = cues))
         return true
     }
 
     /** Archives the exercise, or restores an archived one; nothing for one not saved yet. */
     fun toggleArchived() {
         val uid = uid ?: return
-        repository.setArchived(uid, !state.value.archived)
+        exerciseStore.setArchived(uid, !state.value.archived)
     }
 }
 

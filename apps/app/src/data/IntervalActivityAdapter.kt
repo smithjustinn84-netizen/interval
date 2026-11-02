@@ -10,22 +10,23 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
-/** What Lift reads of the interval side, from [repository], kept current on [scope]. */
+/** What Lift reads of the interval side, from its [historyStore] and [settingsStore], kept current on [scope]. */
 class RepositoryIntervalActivity(
-    private val repository: IntervalRepository,
+    private val historyStore: HistoryStore,
+    private val settingsStore: SettingsStore,
     scope: CoroutineScope,
 ) : IntervalActivity {
-    override val workouts: StateFlow<List<IntervalWorkout>> = repository.history
+    override val workouts: StateFlow<List<IntervalWorkout>> = historyStore.history
         .map { history -> history.map { it.asIntervalWorkout() } }
-        .stateIn(scope, SharingStarted.Eagerly, repository.history.value.map { it.asIntervalWorkout() })
+        .stateIn(scope, SharingStarted.Eagerly, historyStore.history.value.map { it.asIntervalWorkout() })
 
-    override val weeklyGoal: StateFlow<Int?> = repository.appSettings
+    override val weeklyGoal: StateFlow<Int?> = settingsStore.appSettings
         .map { it.weeklyGoal }
-        .stateIn(scope, SharingStarted.Eagerly, repository.appSettings.value.weeklyGoal)
+        .stateIn(scope, SharingStarted.Eagerly, settingsStore.appSettings.value.weeklyGoal)
 
     /** As History counts a session's calories: all of it as kettlebell work, its rests being short. */
     override fun sessionCalories(elapsedSeconds: Int): Int? =
-        repository.appSettings.value.body.calories(elapsedSeconds, 0, Activity.Kettlebell)
+        settingsStore.appSettings.value.body.calories(elapsedSeconds, 0, Activity.Kettlebell)
 }
 
 // Every stored workout has an id; one without is never in the history flow, but it still needs a key.

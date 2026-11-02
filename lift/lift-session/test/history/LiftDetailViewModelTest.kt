@@ -31,7 +31,7 @@ class LiftDetailViewModelTest {
     @AfterTest
     fun resetMainDispatcher() = Dispatchers.resetMain()
 
-    private fun viewModel(uid: String) = LiftDetailViewModel(uid, repository, FixedTimestampFormatter)
+    private fun viewModel(uid: String) = LiftDetailViewModel(uid, repository, repository, FixedTimestampFormatter)
 
     @Test
     fun `the session shows when it finished and the records it set over those before it`() {

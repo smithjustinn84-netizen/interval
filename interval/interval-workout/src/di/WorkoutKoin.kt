@@ -21,7 +21,7 @@ val workoutModule: Module = module {
     single { WorkoutTicker(get()) }.withOptions {
         onClose { it?.close() }
     }
-    single { WorkoutRecorder(get(), get(), get(), get(), get()) }
-    single { WorkoutSession(get(), get(), get(), get(), get(), get()) } bind ActiveWorkout::class
+    single { WorkoutRecorder(get(), get(), get(), get(), get(), get(), get()) }
+    single { WorkoutSession(get(), get(), get(), get(), get(), get(), get()) } bind ActiveWorkout::class
     viewModel { (id: Long) -> WorkoutViewModel(id, get(), get()) }
 }

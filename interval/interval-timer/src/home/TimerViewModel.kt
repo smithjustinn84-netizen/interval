@@ -2,7 +2,8 @@ package dev.justinsmith.interval.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.interval.data.IntervalRepository
+import dev.justinsmith.interval.data.PresetStore
+import dev.justinsmith.interval.data.SettingsStore
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.ConfigField
@@ -31,40 +32,40 @@ data class TimerUiState(
     val canSavePreset: Boolean get() = presetName == null
 }
 
-class TimerViewModel(private val repository: IntervalRepository) : ViewModel() {
+class TimerViewModel(private val settingsStore: SettingsStore, private val presetStore: PresetStore) : ViewModel() {
     val state: StateFlow<TimerUiState> =
-        combine(repository.config, repository.presets, repository.appSettings, ::buildState)
+        combine(settingsStore.config, presetStore.presets, settingsStore.appSettings, ::buildState)
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.Eagerly,
                 initialValue = buildState(
-                    repository.config.value,
-                    repository.presets.value,
-                    repository.appSettings.value,
+                    settingsStore.config.value,
+                    presetStore.presets.value,
+                    settingsStore.appSettings.value,
                 ),
             )
 
     /** What the work intervals are spent doing, for the calorie estimate. */
     fun setActivity(activity: Activity) {
-        repository.updateConfig { it.copy(activity = activity) }
+        settingsStore.updateConfig { it.copy(activity = activity) }
     }
 
     fun step(field: ConfigField, direction: Int) {
-        repository.updateConfig { it.stepped(field, direction) }
+        settingsStore.updateConfig { it.stepped(field, direction) }
     }
 
     fun set(field: ConfigField, value: Int) {
-        repository.updateConfig { it.withValue(field, value) }
+        settingsStore.updateConfig { it.withValue(field, value) }
     }
 
     /** Puts a workout read from words onto the Timer, keeping the get-ready countdown, as a preset does. */
     fun useDescribed(config: IntervalConfig) {
-        repository.updateConfig { config.copy(prepSeconds = it.prepSeconds) }
+        settingsStore.updateConfig { config.copy(prepSeconds = it.prepSeconds) }
     }
 
     /** Saves [preset] as a new one of the user's own, keeping its shape (changed in the editor or not) on the Timer. */
     fun savePreset(preset: Preset) {
-        repository.saveAndApplyPreset(preset)
+        presetStore.saveAndApplyPreset(preset)
     }
 
     private fun buildState(config: IntervalConfig, presets: List<Preset>, app: AppSettings): TimerUiState =

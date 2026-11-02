@@ -3,7 +3,8 @@ package dev.justinsmith.lift.programs
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.platform.TimestampFormatter
-import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.data.ProgramStore
+import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.domain.DayDone
 import dev.justinsmith.lift.domain.Followed
 import dev.justinsmith.lift.domain.LiftSession
@@ -28,15 +29,16 @@ data class ProgramProgressUiState(val progress: ProgramProgress? = null, val row
 
 /** The program followed: its days done and left, and once it is over what it came to. */
 class ProgramProgressViewModel(
-    private val repository: LiftRepository,
+    private val programStore: ProgramStore,
+    private val sessionStore: SessionStore,
     private val timestamps: TimestampFormatter,
 ) : ViewModel() {
     val state: StateFlow<ProgramProgressUiState> =
-        combine(repository.followed, repository.sessions, ::build)
+        combine(programStore.followed, sessionStore.sessions, ::build)
             .stateIn(
                 viewModelScope,
                 SharingStarted.Eagerly,
-                build(repository.followed.value, repository.sessions.value),
+                build(programStore.followed.value, sessionStore.sessions.value),
             )
 
     /**
@@ -44,7 +46,7 @@ class ProgramProgressViewModel(
      * still open belongs to that run.
      */
     fun followAgain() {
-        repository.followed.value?.let { repository.follow(it.program.key) }
+        programStore.followed.value?.let { programStore.follow(it.program.key) }
     }
 
     private fun build(followed: Followed?, sessions: List<LiftSession>): ProgramProgressUiState {

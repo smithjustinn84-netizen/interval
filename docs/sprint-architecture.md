@@ -322,8 +322,18 @@ The cut line is after ticket 5.
 - As built (Koin half): Each feature declares its ViewModels in a Koin module (`timerModule`, `presetsModule`,
   `workoutModule`, `settingsModule`, `historyModule`, `liftTodayModule`, `liftSessionModule`, `liftLibraryModule`).
   Routes resolve them via `koinViewModel`, passing keys with `parametersOf`. Positional `scope.get()` calls are
-  removed. `VerifyAppModulesTest` validates the entire DI graph using Koin's `verify()`. Role interfaces (C3)
-  remain to be completed.
+  removed. `VerifyAppModulesTest` validates the entire DI graph using Koin's `verify()`.
+- As built (ports half): the nine stores as listed and a tenth, `SetStore`, split from `SessionStore` (detekt's eleven
+  functions an interface): the sets, plan, timer and rest of the session in progress, all `SessionTimers` takes. They
+  are in a `Stores.kt` beside each repository, each bound to the same single (`binds`). A ViewModel that uses several
+  takes each, so `HistoryViewModel` takes four and `GearViewModel` `GearStore` with `SessionStore` (its records);
+  `SessionViewModel` keeps `LiftRepository` until ticket 8, since five stores beside its other six parameters would be
+  a long list the split removes anyway. What only the app does (`ready`, `writeErrors`, `importAll`, `close`) is on no
+  store: the shell, export, import and `PlanReminderScheduler` (it waits on `ready`) take the repository.
+  `startSession`'s default moved from `LiftActivity` to `SessionStore` (a member inherited twice takes its default
+  from one). The fakes are `InMemorySettingsStore` and `InMemoryPresetStore` (`interval-testing`) and
+  `InMemoryGearStore` (`lift-testing`), in memory alone; the repositories' own tests keep the storage behaviour (a
+  band archived or deleted, preset names).
 
 **8. `SessionViewModel`, split** · M · D1, D3, D4, F2
 - `SetDraftEditor`: a pure state holder for the draft, its clamping and suggestions.

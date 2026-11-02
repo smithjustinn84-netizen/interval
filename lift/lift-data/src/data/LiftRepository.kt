@@ -67,7 +67,7 @@ class LiftRepository(
     private val importDao: LiftImportDao,
     private val scope: CoroutineScope,
     private val clock: WallClock,
-) : LiftActivity {
+) : LiftActivity, SessionStore, SetStore, ProgramStore, ExerciseStore, GearStore {
     private val log = Logger.withTag("LiftRepository")
     private val writer = SerialWriter(scope, log)
 
@@ -90,42 +90,42 @@ class LiftRepository(
     private val _bells = MutableStateFlow(emptyList<Double>())
 
     /** The bells the user owns, lightest first. */
-    val bells: StateFlow<List<Double>> = _bells.asStateFlow()
+    override val bells: StateFlow<List<Double>> = _bells.asStateFlow()
 
     private val _bar = MutableStateFlow<Double?>(null)
 
     /** What the user's barbell weighs empty, or null until they say they have one. */
-    val bar: StateFlow<Double?> = _bar.asStateFlow()
+    override val bar: StateFlow<Double?> = _bar.asStateFlow()
 
     private val _restSeconds = MutableStateFlow(RestClock.DEFAULT_SECONDS)
 
     /** How long a rest between sets lasts, in seconds. */
-    val restSeconds: StateFlow<Int> = _restSeconds.asStateFlow()
+    override val restSeconds: StateFlow<Int> = _restSeconds.asStateFlow()
 
     private val _customExercises = MutableStateFlow(emptyList<CustomExercise>())
 
     /** The exercises the user added, archived ones too, by name. */
-    val customExercises: StateFlow<List<CustomExercise>> = _customExercises.asStateFlow()
+    override val customExercises: StateFlow<List<CustomExercise>> = _customExercises.asStateFlow()
 
     private val _bands = MutableStateFlow(bands(emptyList()))
 
     /** The user's bands, archived ones too, lightest first: the five every user starts with, then theirs. */
-    val bands: StateFlow<List<Band>> = _bands.asStateFlow()
+    override val bands: StateFlow<List<Band>> = _bands.asStateFlow()
 
     private val _customPrograms = MutableStateFlow(emptyList<Program>())
 
     /** The programs the user made, by name. */
-    val customPrograms: StateFlow<List<Program>> = _customPrograms.asStateFlow()
+    override val customPrograms: StateFlow<List<Program>> = _customPrograms.asStateFlow()
 
     private val _programDay = MutableStateFlow<ProgramDay?>(null)
     private val _following = MutableStateFlow<Program?>(null)
     private val _followed = MutableStateFlow<Followed?>(null)
 
     /** The program the user follows, if any, as it stands: a change to one they made shows at once. */
-    val following: StateFlow<Program?> = _following.asStateFlow()
+    override val following: StateFlow<Program?> = _following.asStateFlow()
 
     /** [following] with when it was followed from and the days of it counted done before; null for none. */
-    val followed: StateFlow<Followed?> = _followed.asStateFlow()
+    override val followed: StateFlow<Followed?> = _followed.asStateFlow()
 
     /**
      * The day of [following] to do next: the one after the last day done, as its sessions were logged (see
@@ -266,7 +266,7 @@ class LiftRepository(
     }
 
     /** Follows [program] from its first day, or after [daysDone] of it, in place of any other. */
-    fun follow(program: ProgramKey, daysDone: Int = 0) {
+    override fun follow(program: ProgramKey, daysDone: Int) {
         val now = clock.nowMillis()
         val row = FollowingEntity(programId = program.stored, startedAtEpochMillis = now, daysBefore = daysDone)
         writer.persist { followingDao.upsert(row) }
@@ -277,7 +277,7 @@ class LiftRepository(
      * keeps its place: the days done still count, against the program as it now is.
      */
     @OptIn(ExperimentalUuidApi::class)
-    fun saveProgram(uid: String?, draft: ProgramDraft): String {
+    override fun saveProgram(uid: String?, draft: ProgramDraft): String {
         val id = uid ?: Uuid.random().toHexString()
         val now = clock.nowMillis()
         val row = CustomProgramEntity(
@@ -297,7 +297,7 @@ class LiftRepository(
      * stays; for a built-in, in a copy named [copyName], which is followed from the day after while the built-in
      * is and goes on. Returns the program kept in.
      */
-    fun saveChanges(changes: PlanChanges, scope: SaveScope, copyName: String): ProgramKey {
+    override fun saveChanges(changes: PlanChanges, scope: SaveScope, copyName: String): ProgramKey {
         val program = changes.program
         val key = program.key
         if (key is ProgramKey.Custom) {
@@ -313,7 +313,7 @@ class LiftRepository(
      * Saves [draft] as a new program, a copy of the built-in [of]; returns its uid. While [of] is followed and
      * goes on, the copy is followed from the day it was at, its days done counted done.
      */
-    fun saveCopy(of: ProgramKey.BuiltIn, draft: ProgramDraft): String {
+    override fun saveCopy(of: ProgramKey.BuiltIn, draft: ProgramDraft): String {
         val uid = saveProgram(null, draft)
         val day = _programDay.value?.takeIf { _following.value?.key == of && it.program.key == of }
         if (day != null) follow(ProgramKey.Custom(uid), daysDone = day.number - 1)
@@ -321,11 +321,11 @@ class LiftRepository(
     }
 
     /** Deletes the program [uid] made, and stops following it if it is the one followed. */
-    fun deleteProgram(uid: String) {
+    override fun deleteProgram(uid: String) {
         writer.persist { customProgramDao.deleteProgram(uid, ProgramKey.Custom(uid).stored) }
     }
 
-    fun stopFollowing() {
+    override fun stopFollowing() {
         writer.persist { followingDao.clear() }
     }
 
@@ -333,14 +333,14 @@ class LiftRepository(
      * Logs a set to the session in progress, with two bells when [double] and [exercise] can be. A held
      * exercise keeps its [seconds], a band one its [band]; each is dropped from any other.
      */
-    fun logSet(
+    override fun logSet(
         exercise: Exercise,
         bellKg: Double,
         reps: Int,
         side: Side?,
-        double: Boolean = false,
-        seconds: Int? = null,
-        band: Band? = null,
+        double: Boolean,
+        seconds: Int?,
+        band: Band?,
     ) {
         writer.persist {
             val active = sessionDao.active() ?: return@persist
@@ -367,7 +367,7 @@ class LiftRepository(
      * Keeps [timer] as the one running in the session in progress, or none with null, so a process killed in it
      * goes on with it. Nothing without a session in progress.
      */
-    fun saveTimer(timer: SavedTimer?) {
+    override fun saveTimer(timer: SavedTimer?) {
         writer.persist {
             val row = sessionDao.active() ?: return@persist
             sessionDao.setTimer(row.uid, timer?.let(::encodeTimer))
@@ -380,7 +380,7 @@ class LiftRepository(
      * of the database can still show as it was: so a change made straight after another, or after a set, builds
      * on both. [change] runs on the storage's thread.
      */
-    fun changeSessionPlan(change: (LiftSession) -> SessionPlan?) {
+    override fun changeSessionPlan(change: (LiftSession) -> SessionPlan?) {
         writer.persist {
             val row = sessionDao.active() ?: return@persist
             val made = _customExercises.value
@@ -395,7 +395,7 @@ class LiftRepository(
      * Changes the logged set [set.id] to [set]: its load, reps or seconds and side. It keeps its session and when
      * it was logged; a held exercise keeps seconds and a band one its band, each dropped from any other.
      */
-    fun updateSet(set: SetLog) {
+    override fun updateSet(set: SetLog) {
         writer.persist {
             val row = sessionDao.set(set.id) ?: return@persist
             val exercise = set.exercise
@@ -413,12 +413,12 @@ class LiftRepository(
         }
     }
 
-    fun removeSet(id: Long) {
+    override fun removeSet(id: Long) {
         writer.persist { sessionDao.deleteSet(id) }
     }
 
     /** Puts back [set], just removed, into the session in progress, in its place among the others. */
-    fun restoreSet(set: SetLog) {
+    override fun restoreSet(set: SetLog) {
         writer.persist {
             val active = sessionDao.active() ?: return@persist
             sessionDao.insert(
@@ -440,7 +440,7 @@ class LiftRepository(
     }
 
     /** Finishes the session in progress under [title]; one with no sets is dropped instead. */
-    fun finishSession(title: String) {
+    override fun finishSession(title: String) {
         writer.persist { sessionDao.finishActive(title, clock.nowMillis()) }
     }
 
@@ -448,7 +448,7 @@ class LiftRepository(
      * Keeps how the finished session [uid] felt, as said on its summary: [effort] and a [note], blank for none. In
      * order after the write that finished it, so it never lands first.
      */
-    fun reflectOnSession(uid: String, effort: PerceivedEffort?, note: String) {
+    override fun reflectOnSession(uid: String, effort: PerceivedEffort?, note: String) {
         val now = clock.nowMillis()
         val kept = note.trim().take(PerceivedEffort.NOTE_MAX_LENGTH).ifEmpty { null }
         writer.persist { sessionDao.reflect(uid, effort?.level, kept, now) }
@@ -482,18 +482,18 @@ class LiftRepository(
     }
 
     /** Drops the session in progress and its sets. */
-    fun discardSession() {
+    override fun discardSession() {
         writer.persist { sessionDao.discardActive() }
     }
 
     /** Deletes a finished session, leaving its row behind as a tombstone. */
-    fun deleteSession(uid: String) {
+    override fun deleteSession(uid: String) {
         val now = clock.nowMillis()
         writer.persist { sessionDao.markDeleted(uid, now) }
     }
 
     /** Brings back a finished session deleted with [deleteSession]. */
-    fun restoreSession(uid: String) {
+    override fun restoreSession(uid: String) {
         val now = clock.nowMillis()
         writer.persist { sessionDao.unmarkDeleted(uid, now) }
     }
@@ -503,7 +503,7 @@ class LiftRepository(
      * written, trimmed, and an archived one stays archived.
      */
     @OptIn(ExperimentalUuidApi::class)
-    fun saveExercise(uid: String?, draft: ExerciseDraft): String {
+    override fun saveExercise(uid: String?, draft: ExerciseDraft): String {
         val id = uid ?: Uuid.random().toHexString()
         val made = CustomExercise(
             id,
@@ -523,25 +523,25 @@ class LiftRepository(
      * Archives the user's exercise [uid], which the Log sheet then no longer offers, or with false brings it
      * back. Its sets keep it either way.
      */
-    fun setArchived(uid: String, archived: Boolean) {
+    override fun setArchived(uid: String, archived: Boolean) {
         val made = _customExercises.value.firstOrNull { it.uid == uid } ?: return
         writer.persist { customExerciseDao.upsert(made.copy(archived = archived).toEntity(clock.nowMillis())) }
     }
 
     /** Saves [band] as changed: renamed (blank for its starting words), recoloured or archived. */
-    fun saveBand(band: Band) {
+    override fun saveBand(band: Band) {
         saveBands(listOf(band.copy(name = band.name.trim())))
     }
 
     /** Saves the order [bands] are in, each band's position its place. */
-    fun saveBands(bands: List<Band>) {
+    override fun saveBands(bands: List<Band>) {
         val now = clock.nowMillis()
         writer.persist { bandDao.upsert(bands.map { it.toEntity(now) }) }
     }
 
     /** Adds a band named [name] in [colour], heaviest of all; returns its id. */
     @OptIn(ExperimentalUuidApi::class)
-    fun addBand(name: String, colour: BandColour): String {
+    override fun addBand(name: String, colour: BandColour): String {
         val id = Uuid.random().toHexString()
         saveBand(Band(id, name, colour, nextBandPosition(_bands.value)))
         return id
@@ -551,7 +551,7 @@ class LiftRepository(
      * Removes [band]: one the user added with no sets of it goes, any other (one they started with, or one
      * with sets) is archived, so every set keeps its band.
      */
-    fun removeBand(band: Band) {
+    override fun removeBand(band: Band) {
         if (band.level != null) {
             saveBand(band.copy(archived = true))
             return
@@ -561,17 +561,17 @@ class LiftRepository(
         writer.persist { bandDao.removeOrArchive(band.copy(archived = true).toEntity(now)) }
     }
 
-    fun setOwned(kg: Double, owned: Boolean) {
+    override fun setOwned(kg: Double, owned: Boolean) {
         writer.persist { if (owned) bellDao.upsert(BellEntity(kg)) else bellDao.delete(kg) }
     }
 
     /** Sets the user's barbell to one weighing [kg] empty, or to none. */
-    fun setBar(kg: Double?) {
+    override fun setBar(kg: Double?) {
         writer.persist { if (kg != null) bellDao.upsertBar(BarEntity(kg = kg)) else bellDao.clearBar() }
     }
 
     /** Sets how long a rest between sets lasts, in seconds. */
-    fun setRestSeconds(seconds: Int) {
+    override fun setRestSeconds(seconds: Int) {
         _restSeconds.value = seconds
         writer.persist { bellDao.upsertRest(RestEntity(seconds = seconds)) }
     }

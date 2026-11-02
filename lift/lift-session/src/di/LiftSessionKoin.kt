@@ -28,7 +28,9 @@ val liftSessionModule: Module = module {
     } bind ActiveTimers::class
     viewModel { SessionViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModelOf(::ProgramsViewModel)
-    viewModel { (uid: String?, copy: ProgramCopy?) -> ProgramEditorViewModel(get(), get(), uid, get(), copy) }
+    viewModel { (uid: String?, copy: ProgramCopy?) ->
+        ProgramEditorViewModel(get(), get(), get(), get(), get(), uid, get(), copy)
+    }
     viewModelOf(::ProgramProgressViewModel)
-    viewModel { (uid: String) -> LiftDetailViewModel(uid, get(), get()) }
+    viewModel { (uid: String) -> LiftDetailViewModel(uid, get(), get(), get()) }
 }

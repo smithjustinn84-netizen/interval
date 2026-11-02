@@ -52,7 +52,9 @@ class HistoryViewModelTest : MainDispatcherTest() {
     private val lift = FakeLiftStorage()
     private val bells = lift.repository(now = { clock })
     private val viewModel by lazy {
-        HistoryViewModel(repository, bells, FixedTimestampFormatter, clock = { clock }, computation = dispatcher)
+        HistoryViewModel(repository, repository, repository, repository, bells, FixedTimestampFormatter, clock = {
+            clock
+        }, computation = dispatcher)
     }
 
     private fun at(day: Long) {
@@ -327,7 +329,9 @@ class HistoryViewModelTest : MainDispatcherTest() {
         clock = sunday * DAY_MILLIS + DAY_MILLIS - 1_000
         repository.recordWorkout(tabata, tabata.totalSeconds)
         val viewModel =
-            HistoryViewModel(repository, bells, FixedTimestampFormatter, clock = { clock }, computation = main)
+            HistoryViewModel(repository, repository, repository, repository, bells, FixedTimestampFormatter, clock = {
+                clock
+            }, computation = main)
         assertEquals(listOf(HistoryDay.Today), viewModel.state.value.sections.map { it.day })
         assertEquals(1, viewModel.state.value.weekCount)
 
@@ -346,7 +350,9 @@ class HistoryViewModelTest : MainDispatcherTest() {
         repository.recordWorkout(tabata, tabata.totalSeconds)
         val computation = StandardTestDispatcher(testScheduler)
         val viewModel =
-            HistoryViewModel(repository, bells, FixedTimestampFormatter, clock = { clock }, computation = computation)
+            HistoryViewModel(repository, repository, repository, repository, bells, FixedTimestampFormatter, clock = {
+                clock
+            }, computation = computation)
         assertSame(HistoryUiState.Loading, viewModel.state.value)
         assertFalse(viewModel.state.value.isEmpty)
 

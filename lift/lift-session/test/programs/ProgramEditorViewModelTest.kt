@@ -36,7 +36,7 @@ class ProgramEditorViewModelTest {
     fun resetMainDispatcher() = Dispatchers.resetMain()
 
     private fun editor(uid: String? = null, savedState: SavedStateHandle = SavedStateHandle()) =
-        ProgramEditorViewModel(repository, filters, uid, savedState)
+        ProgramEditorViewModel(repository, repository, repository, repository, filters, uid, savedState)
 
     @Test
     fun `a new program starts from the default draft and cannot be saved with an empty day`() {
@@ -122,5 +122,13 @@ class ProgramEditorViewModelTest {
 
     /** A copy of [id], named from [base] as the screen words it: a common test can't load the screen's words. */
     private fun copyEditor(id: ProgramId, base: String) =
-        ProgramEditorViewModel(repository, filters, uid = null, copy = ProgramCopy(id, base))
+        ProgramEditorViewModel(
+            repository,
+            repository,
+            repository,
+            repository,
+            filters,
+            uid = null,
+            copy = ProgramCopy(id, base),
+        )
 }

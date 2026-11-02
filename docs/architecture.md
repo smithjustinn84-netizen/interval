@@ -169,12 +169,18 @@ several core issues:
   (the ticker, cues, course, checkpoint and the service's lifetime); `WorkoutService` and iOS's keeper reach it as
   the `ActiveWorkout` port, and `WorkoutViewModel` only maps its state. It ends when its page leaves the back stack.
 
-**Remaining open debt:**
-- **The repositories are concrete and wide.** `IntervalRepository` and `LiftRepository` have no interfaces, and
-  every ViewModel takes the whole of one. `LiftActivity`/`IntervalActivity` are the pattern to follow.
-- **A ViewModel does too much.** `SessionViewModel` (`@Suppress(TooManyFunctions)`).
+- **Resolved — Narrow ports (C3)**: each repository plays roles a consumer takes one by one, bound in Koin as the
+  same single: the interval side's `SettingsStore`, `PresetStore`, `HistoryStore`, `PlanStore` and
+  `WorkoutProgressStore` (`interval-data`'s `Stores.kt`), Lift's `SessionStore`, `SetStore`, `ProgramStore`,
+  `ExerciseStore` and `GearStore` (`lift-data`'s). What only the app does (`ready`, `writeErrors`, `importAll`,
+  `close`) stays on the repository, which the app shell, export, import and `PlanReminderScheduler` (it waits on
+  `ready`) still take.
 
-New code should not add to these: inject a narrow interface rather than a repository, and keep new long-running
+**Remaining open debt:**
+- **A ViewModel does too much.** `SessionViewModel` (`@Suppress(TooManyFunctions)`), which also still takes the whole
+  `LiftRepository`: it uses all five of Lift's stores, and its split (sprint ticket 8) narrows it.
+
+New code should not add to these: inject the stores it uses rather than a repository, and keep new long-running
 work out of `viewModelScope`.
 
 ---

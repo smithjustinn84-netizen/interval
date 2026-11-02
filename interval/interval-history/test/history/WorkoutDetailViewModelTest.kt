@@ -31,9 +31,8 @@ class WorkoutDetailViewModelTest : MainDispatcherTest() {
     private val repository = FakeStorage().repository(now = { clock })
     private val hiit = hiitPreset
 
-    private fun viewModel(id: Long = 1) = WorkoutDetailViewModel(id, repository, FixedTimestampFormatter, clock = {
-        clock
-    })
+    private fun viewModel(id: Long = 1) =
+        WorkoutDetailViewModel(id, repository, repository, repository, repository, FixedTimestampFormatter, { clock })
 
     @Test
     fun `a workout shows its figures and whether it did a plan`() {
@@ -89,7 +88,7 @@ class WorkoutDetailViewModelTest : MainDispatcherTest() {
         var now = noonOf(TODAY)
         val shared = FakeStorage().repository(now = { now })
         shared.recordWorkout(hiit.config, elapsedSeconds = 580)
-        val page = WorkoutDetailViewModel(1, shared, FixedTimestampFormatter, clock = { now })
+        val page = WorkoutDetailViewModel(1, shared, shared, shared, shared, FixedTimestampFormatter, clock = { now })
         assertEquals(HistoryDay.Today, page.state.value.workout?.day)
 
         now = noonOf(TODAY + 1)

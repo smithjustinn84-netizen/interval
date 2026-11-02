@@ -51,7 +51,7 @@ private val intervalFeatureModules = listOf(timerModule, presetsModule, workoutM
 private val appModule = module {
     single<DataExporter> { AppDataExporter(get(), get(), get(), get(), get()) }
     single<DataImporter> { AppDataImporter(get(), get()) }
-    single<IntervalActivity> { RepositoryIntervalActivity(get(), get(StorageScope)) }
+    single<IntervalActivity> { RepositoryIntervalActivity(get(), get(), get(StorageScope)) }
 }
 
 /**

@@ -5,6 +5,7 @@ package dev.justinsmith.lift.today
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
+import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.lift.data.LiftRepository
 import dev.justinsmith.lift.data.SessionEntity
 import dev.justinsmith.lift.data.SetEntity
@@ -14,6 +15,7 @@ import dev.justinsmith.lift.domain.MuscleGroup
 import dev.justinsmith.lift.domain.barbellLifts
 import dev.justinsmith.lift.fakes.FakeIntervalActivity
 import dev.justinsmith.lift.fakes.FakeLiftStorage
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -50,15 +52,23 @@ class TodayViewModelTest {
     @BeforeTest
     fun setMainDispatcher() = Dispatchers.setMain(main)
 
+    private fun today(clock: WallClock, computation: CoroutineDispatcher) = TodayViewModel(
+        repository,
+        repository,
+        repository,
+        FakeIntervalActivity(),
+        FixedTimestampFormatter,
+        clock,
+        computation = computation,
+    )
+
     @AfterTest
     fun resetMainDispatcher() = Dispatchers.resetMain()
 
     @Test
     fun `a barbell lift never done suggests the bar the user owns and follows a change of it`() {
         val today =
-            TodayViewModel(repository, FakeIntervalActivity(), FixedTimestampFormatter, clock = {
-                1_000L
-            }, computation = main)
+            today(clock = { 1_000L }, main)
         val lift = barbellLifts.first() to false
         assertEquals(DEFAULT_BAR_KG, today.state.value.bells[lift])
 
@@ -73,9 +83,7 @@ class TodayViewModelTest {
         // Sunday night, epoch day 3 (a Sunday), then Monday: a new week.
         var now = 4 * DAY_MILLIS - 1_000
         val today =
-            TodayViewModel(repository, FakeIntervalActivity(), FixedTimestampFormatter, clock = {
-                now
-            }, computation = main)
+            today(clock = { now }, main)
         assertEquals(3L, today.state.value.week.single { it.today }.epochDay)
 
         now = 4 * DAY_MILLIS
@@ -93,9 +101,7 @@ class TodayViewModelTest {
         finished("old", day = 72, BuiltInExercise.BarbellBenchPress)
         finished("first", day = 73, BuiltInExercise.GobletSquat)
         val today =
-            TodayViewModel(repository, FakeIntervalActivity(), FixedTimestampFormatter, clock = {
-                now
-            }, computation = main)
+            today(clock = { now }, main)
         assertNull(today.state.value.balance)
 
         finished("second", day = 100, BuiltInExercise.GobletSquat)

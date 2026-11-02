@@ -2,9 +2,9 @@
 
 package dev.justinsmith.interval.home
 
-import dev.justinsmith.interval.fakes.FakeStorage
+import dev.justinsmith.interval.fakes.InMemoryPresetStore
+import dev.justinsmith.interval.fakes.InMemorySettingsStore
 import dev.justinsmith.interval.fakes.MainDispatcherTest
-import dev.justinsmith.interval.fakes.saveCurrentAsPreset
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.ConfigField
@@ -21,8 +21,9 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class TimerViewModelTest : MainDispatcherTest() {
-    private val repository = FakeStorage().repository(now = { 0L })
-    private val viewModel by lazy { TimerViewModel(repository) }
+    private val settings = InMemorySettingsStore()
+    private val presets = InMemoryPresetStore(settings)
+    private val viewModel by lazy { TimerViewModel(settings, presets) }
 
     @Test
     fun `stepping a field updates the config and the total`() {
@@ -43,7 +44,7 @@ class TimerViewModelTest : MainDispatcherTest() {
     @Test
     fun `a preset put on the Timer names the shape but keeps the get-ready countdown`() {
         viewModel.set(ConfigField.Prep, 25)
-        repository.applyPreset(builtInPresets.first())
+        presets.applyPreset(builtInPresets.first())
         val state = viewModel.state.value
         assertEquals("Tabata", state.presetName)
         assertEquals(25, state.config.prepSeconds)
@@ -51,37 +52,37 @@ class TimerViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `a shape no preset has is nameless until one is saved`() {
-        repository.applyPreset(builtInPresets.first())
+        presets.applyPreset(builtInPresets.first())
         viewModel.step(ConfigField.Work, 1)
         assertNull(viewModel.state.value.presetName)
-        repository.saveCurrentAsPreset("Mine")
+        presets.savePreset(Preset("Mine", settings.config.value))
         assertEquals("Mine", viewModel.state.value.presetName)
     }
 
     @Test
     fun `a described workout goes onto the Timer but keeps the get-ready countdown`() {
-        repository.updateConfig { it.copy(prepSeconds = 15) }
+        settings.updateConfig { it.copy(prepSeconds = 15) }
         val described =
             IntervalConfig(prepSeconds = 0, workSeconds = 45, restSeconds = 15, rounds = 12, activity = Activity.Rower)
         viewModel.useDescribed(described)
-        assertEquals(described.copy(prepSeconds = 15), repository.config.value)
+        assertEquals(described.copy(prepSeconds = 15), settings.config.value)
     }
 
     @Test
     fun `saving a preset keeps its shape on the Timer`() {
-        repository.updateConfig { it.copy(prepSeconds = 15) }
+        settings.updateConfig { it.copy(prepSeconds = 15) }
         val reshaped = IntervalConfig(prepSeconds = 0, workSeconds = 50, restSeconds = 10, rounds = 4)
         viewModel.savePreset(Preset("Mine", reshaped))
-        assertEquals(reshaped.copy(prepSeconds = 15), repository.config.value)
-        assertEquals(listOf("Mine"), repository.customPresets.value.map { it.name })
+        assertEquals(reshaped.copy(prepSeconds = 15), settings.config.value)
+        assertEquals(listOf("Mine"), presets.customPresets.value.map { it.name })
         assertEquals("Mine", viewModel.state.value.presetName)
     }
 
     @Test
     fun `the timer estimates calories only with a weight`() {
-        repository.updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
+        settings.updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
         assertNull(viewModel.state.value.calories)
-        repository.updateAppSettings { it.copy(body = BodySettings(weightKg = 70.0, effort = Effort.Hard)) }
+        settings.updateAppSettings { it.copy(body = BodySettings(weightKg = 70.0, effort = Effort.Hard)) }
         val config = IntervalConfig()
         val work = config.rounds * config.workSeconds
         val expected = estimateCalories(work, config.totalSeconds - work, 70.0, Effort.Hard)
@@ -93,7 +94,7 @@ class TimerViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `the estimate follows the activity`() {
-        repository.updateAppSettings { it.copy(body = BodySettings(weightKg = 70.0, effort = Effort.Hard)) }
+        settings.updateAppSettings { it.copy(body = BodySettings(weightKg = 70.0, effort = Effort.Hard)) }
         viewModel.setActivity(Activity.Barbell)
         val barbell = viewModel.state.value.calories!!
         viewModel.setActivity(Activity.Running)

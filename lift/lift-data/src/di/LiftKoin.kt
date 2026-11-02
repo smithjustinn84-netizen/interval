@@ -4,10 +4,15 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import dev.justinsmith.interval.storage.storageScope
 import dev.justinsmith.lift.data.ExerciseFilterStore
+import dev.justinsmith.lift.data.ExerciseStore
+import dev.justinsmith.lift.data.GearStore
 import dev.justinsmith.lift.data.LiftActivity
 import dev.justinsmith.lift.data.LiftDatabase
 import dev.justinsmith.lift.data.LiftRepository
 import dev.justinsmith.lift.data.MIGRATION_3_4
+import dev.justinsmith.lift.data.ProgramStore
+import dev.justinsmith.lift.data.SessionStore
+import dev.justinsmith.lift.data.SetStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -16,7 +21,7 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.onClose
 import org.koin.core.module.dsl.withOptions
 import org.koin.core.qualifier.named
-import org.koin.dsl.bind
+import org.koin.dsl.binds
 import org.koin.dsl.module
 
 /**
@@ -51,8 +56,16 @@ val liftStorageModule: Module = module {
 val liftDataModule: Module = module {
     single {
         LiftRepository(get(), get(), get(), get(), get(), get(), get(), scope = get(LiftStorageScope), clock = get())
-    }
-        .bind<LiftActivity>()
+    }.binds(
+        arrayOf(
+            LiftActivity::class,
+            SessionStore::class,
+            SetStore::class,
+            ProgramStore::class,
+            ExerciseStore::class,
+            GearStore::class,
+        ),
+    )
     single { ExerciseFilterStore() }
 }
 

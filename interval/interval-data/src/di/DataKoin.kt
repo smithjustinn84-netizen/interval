@@ -4,7 +4,12 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import dev.justinsmith.interval.data.AppDatabase
+import dev.justinsmith.interval.data.HistoryStore
 import dev.justinsmith.interval.data.IntervalRepository
+import dev.justinsmith.interval.data.PlanStore
+import dev.justinsmith.interval.data.PresetStore
+import dev.justinsmith.interval.data.SettingsStore
+import dev.justinsmith.interval.data.WorkoutProgressStore
 import dev.justinsmith.interval.data.buildAppDatabase
 import dev.justinsmith.interval.platform.PlatformStorage
 import dev.justinsmith.interval.storage.storageScope
@@ -18,6 +23,7 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.onClose
 import org.koin.core.module.dsl.withOptions
 import org.koin.core.qualifier.named
+import org.koin.dsl.binds
 import org.koin.dsl.module
 
 /**
@@ -60,7 +66,10 @@ val storageModule: Module = module {
     }
 }
 
-/** The repository over [storageModule]. The wall clock it takes is core's (`corePlatformModule`). */
+/**
+ * The repository over [storageModule], bound as each of its stores too ([SettingsStore], [PresetStore], …) for the
+ * screens that take one. The wall clock it takes is core's (`corePlatformModule`).
+ */
 val dataModule: Module = module {
     single {
         IntervalRepository(
@@ -72,5 +81,13 @@ val dataModule: Module = module {
             scope = get(StorageScope),
             clock = get(),
         )
-    }
+    }.binds(
+        arrayOf(
+            SettingsStore::class,
+            PresetStore::class,
+            HistoryStore::class,
+            PlanStore::class,
+            WorkoutProgressStore::class,
+        ),
+    )
 }

@@ -19,7 +19,7 @@ import kotlin.test.assertTrue
 
 class PresetsViewModelTest : MainDispatcherTest() {
     private val repository = FakeStorage().repository(now = { 0L })
-    private val viewModel by lazy { PresetsViewModel(repository) }
+    private val viewModel by lazy { PresetsViewModel(repository, repository) }
 
     @Test
     fun `the user's own come first and apart from the built-ins`() {

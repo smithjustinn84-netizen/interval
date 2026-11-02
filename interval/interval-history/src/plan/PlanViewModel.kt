@@ -2,7 +2,10 @@ package dev.justinsmith.interval.plan
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.interval.data.IntervalRepository
+import dev.justinsmith.interval.data.HistoryStore
+import dev.justinsmith.interval.data.PlanStore
+import dev.justinsmith.interval.data.PresetStore
+import dev.justinsmith.interval.data.SettingsStore
 import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.history.TrainingLog
 import dev.justinsmith.interval.history.asLiftWorkouts
@@ -103,7 +106,10 @@ data class PlanUiState(
  * [PlanUiState.choices], which are worked out on their own and rebuild nothing else.
  */
 class PlanViewModel(
-    private val repository: IntervalRepository,
+    private val planStore: PlanStore,
+    private val historyStore: HistoryStore,
+    private val presetStore: PresetStore,
+    private val settingsStore: SettingsStore,
     private val bells: LiftActivity,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
@@ -112,10 +118,10 @@ class PlanViewModel(
 ) : ViewModel() {
     // Read again each midnight, so the one-offs and their headings move on with the screen open.
     private val built = combine(
-        repository.planned,
-        repository.appSettings,
+        planStore.planned,
+        settingsStore.appSettings,
         combine(
-            repository.history,
+            historyStore.history,
             bells.sessions,
             bells.programDay,
             clock.days(timestamps, dayCheckMillis),
@@ -126,7 +132,7 @@ class PlanViewModel(
         buildState(planned, app, history, lifts, programDay)
     }
 
-    private val choices = combine(repository.presets, repository.config, ::planChoices).distinctUntilChanged()
+    private val choices = combine(presetStore.presets, settingsStore.config, ::planChoices).distinctUntilChanged()
 
     val state: StateFlow<PlanUiState> =
         combine(built, choices) { state, choices -> state.copy(choices = choices) }
@@ -135,40 +141,40 @@ class PlanViewModel(
 
     /** Raises or lowers the goal by one, as [steppedGoal] does. */
     fun stepGoal(direction: Int) {
-        repository.updateAppSettings { it.copy(weeklyGoal = steppedGoal(it.weeklyGoal, direction)) }
+        settingsStore.updateAppSettings { it.copy(weeklyGoal = steppedGoal(it.weeklyGoal, direction)) }
     }
 
     /** Sets the reminder to [minuteOfDay] after midnight, wrapping past either end of the day; null turns it off. */
     fun setReminder(minuteOfDay: Int?) {
-        repository.updateAppSettings { it.copy(reminderMinuteOfDay = minuteOfDay?.mod(MINUTES_PER_DAY)) }
+        settingsStore.updateAppSettings { it.copy(reminderMinuteOfDay = minuteOfDay?.mod(MINUTES_PER_DAY)) }
     }
 
     fun planWeekly(workout: PlanWorkout, weekdays: Set<Int>) {
-        repository.planWeekly(workout, weekdays)
+        planStore.planWeekly(workout, weekdays)
     }
 
     fun planOnce(workout: PlanWorkout, epochDay: Long) {
-        repository.planOnce(workout, epochDay)
+        planStore.planOnce(workout, epochDay)
     }
 
     /** Plans each of [routine]'s workouts on its days, and sets its goal if it has one. */
     fun planDescribed(routine: DescribedRoutine) {
         routine.plans.forEach { plan ->
-            repository.planWeekly(plan.workout, plan.weekdays)
-            plan.days.sorted().forEach { repository.planOnce(plan.workout, it) }
+            planStore.planWeekly(plan.workout, plan.weekdays)
+            plan.days.sorted().forEach { planStore.planOnce(plan.workout, it) }
         }
-        routine.goal?.let { goal -> repository.updateAppSettings { it.copy(weeklyGoal = goal) } }
+        routine.goal?.let { goal -> settingsStore.updateAppSettings { it.copy(weeklyGoal = goal) } }
     }
 
     /** Takes the plan off, handing it back for Undo ([restorePlanned]); null when it was gone already. */
     fun removePlanned(planId: Long): PlannedWorkout? {
-        val plan = repository.planned.value.firstOrNull { it.id == planId }
-        repository.removePlanned(planId)
+        val plan = planStore.planned.value.firstOrNull { it.id == planId }
+        planStore.removePlanned(planId)
         return plan
     }
 
     fun restorePlanned(plan: PlannedWorkout) {
-        repository.restorePlanned(plan)
+        planStore.restorePlanned(plan)
     }
 
     private fun buildState(

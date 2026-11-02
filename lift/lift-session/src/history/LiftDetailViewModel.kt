@@ -3,7 +3,8 @@ package dev.justinsmith.lift.history
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.platform.TimestampFormatter
-import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.data.ProgramStore
+import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.PersonalRecord
 import dev.justinsmith.lift.domain.Program
@@ -29,22 +30,23 @@ data class LiftDetailUiState(
 /** The session stored under [uid], as History opens it, with what it set and a way to delete it. */
 class LiftDetailViewModel(
     private val uid: String,
-    private val repository: LiftRepository,
+    private val sessionStore: SessionStore,
+    private val programStore: ProgramStore,
     private val timestamps: TimestampFormatter,
 ) : ViewModel() {
-    val state: StateFlow<LiftDetailUiState> = combine(repository.sessions, repository.customPrograms, ::build)
+    val state: StateFlow<LiftDetailUiState> = combine(sessionStore.sessions, programStore.customPrograms, ::build)
         .stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
-            build(repository.sessions.value, repository.customPrograms.value),
+            build(sessionStore.sessions.value, programStore.customPrograms.value),
         )
 
     fun delete() {
-        repository.deleteSession(uid)
+        sessionStore.deleteSession(uid)
     }
 
     fun restore() {
-        repository.restoreSession(uid)
+        sessionStore.restoreSession(uid)
     }
 
     private fun build(sessions: List<LiftSession>, custom: List<Program>): LiftDetailUiState {

@@ -59,10 +59,11 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
     private fun TestScope.workoutSession(repository: IntervalRepository = this@WorkoutViewModelTest.repository) =
         WorkoutSession(
             repository,
+            repository,
             RecordingCuePlayer(),
             { 7L },
             background,
-            WorkoutRecorder(repository, lifts, FixedTimestampFormatter, {
+            WorkoutRecorder(repository, repository, repository, lifts, FixedTimestampFormatter, {
                 7L
             }, RecordingHealthStore(HealthStatus.Connected)),
             WorkoutTicker(testScheduler.timeSource, tickerScope()).also { tickers += it },

@@ -208,7 +208,10 @@ toolchain (`$compose.*`).
   `AppContent`. Neither side's modules
   bind anything the other needs. Add a module per domain or feature. Constructor-inject everything; keep platform calls (the clock, cues, storage) behind
   injected interfaces (`WallClock`, `CuePlayer`, `PlatformStorage`) so tests can fake them.
-- **Storage**: `IntervalRepository` (`interval/interval-data/src/data/`) is the only thing that touches it. What it stores
+- **Storage**: `IntervalRepository` (`interval/interval-data/src/data/`) is the only thing that touches it. A screen
+  takes the roles it plays rather than the repository: `SettingsStore`, `PresetStore`, `HistoryStore`, `PlanStore`,
+  `WorkoutProgressStore` (`Stores.kt` beside it; Lift's `SessionStore`, `SetStore`, `ProgramStore`, `ExerciseStore`,
+  `GearStore` beside `LiftRepository`), each bound to the same single; `InMemory*Store` fakes stand in for one. What it stores
   is described by plain models in `interval/interval-domain/src/model/` (`AppSettings`, `HistoryEntry`, `PlannedWorkout`,
   `LiftWorkout`, `LoggedWorkout`); Room entities and DataStore keys stay in `data/`, behind its mappers. Settings live
   in DataStore Preferences (`SettingsPreferences.kt`); history and custom presets in Room

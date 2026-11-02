@@ -1,6 +1,8 @@
 package dev.justinsmith.interval.workout
 
-import dev.justinsmith.interval.data.IntervalRepository
+import dev.justinsmith.interval.data.HistoryStore
+import dev.justinsmith.interval.data.PresetStore
+import dev.justinsmith.interval.data.SettingsStore
 import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.HealthWorkout
 import dev.justinsmith.interval.platform.TimestampFormatter
@@ -16,7 +18,9 @@ import dev.justinsmith.lift.data.LiftActivity
  * goes.
  */
 class WorkoutRecorder(
-    private val repository: IntervalRepository,
+    private val historyStore: HistoryStore,
+    private val presetStore: PresetStore,
+    private val settingsStore: SettingsStore,
     private val bells: LiftActivity,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
@@ -29,7 +33,7 @@ class WorkoutRecorder(
     fun finished(run: WorkoutRun, endedEarly: Boolean): WorkoutRun {
         // Before the write, which lands later, so the summary has it as it arrives.
         val week = weekWith()
-        val uid = repository.recordWorkout(run.config, run.activeSeconds, endedEarly, workSeconds = run.workSeconds)
+        val uid = historyStore.recordWorkout(run.config, run.activeSeconds, endedEarly, workSeconds = run.workSeconds)
         health.record(healthWorkout(run, endedAt = run.openSince))
         return run.copy(week = week, entryUid = uid)
     }
@@ -37,7 +41,7 @@ class WorkoutRecorder(
     /** Keeps what the summary of [run] says, in History at once. Nothing before the workout is recorded. */
     fun reflect(run: WorkoutRun) {
         val uid = run.entryUid ?: return
-        repository.reflectOnWorkout(uid, run.effort, run.note)
+        historyStore.reflectOnWorkout(uid, run.effort, run.note)
     }
 
     /**
@@ -52,16 +56,16 @@ class WorkoutRecorder(
 
     /** [run] as it ran, to [endedAt], as the health store takes it, named for the preset its shape now matches. */
     private fun healthWorkout(run: WorkoutRun, endedAt: Long): HealthWorkout {
-        val presetName = repository.presets.value.matching(run.config)?.name
+        val presetName = presetStore.presets.value.matching(run.config)?.name
         return healthWorkout(run.config.activity, presetName, run.startedAt, endedAt, run.spans, run.calories)
     }
 
     /** The week as it stands with a workout today in it, both kinds of workout counted as History counts them. */
     private fun weekWith(): WeekStanding {
         val today = timestamps.dayNumber(clock.nowMillis())
-        val days = repository.history.value.map { timestamps.dayNumber(it.finishedAtEpochMillis) } +
+        val days = historyStore.history.value.map { timestamps.dayNumber(it.finishedAtEpochMillis) } +
             bells.sessions.value.mapNotNull { it.finishedAtEpochMillis }.map(timestamps::dayNumber) +
             today
-        return weekStanding(days, today, repository.appSettings.value.weeklyGoal)
+        return weekStanding(days, today, settingsStore.appSettings.value.weeklyGoal)
     }
 }

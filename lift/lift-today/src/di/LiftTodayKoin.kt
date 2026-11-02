@@ -9,6 +9,6 @@ import org.koin.dsl.module
 
 /** The Lift tab's ViewModel and the gear's. */
 val liftTodayModule: Module = module {
-    viewModel { TodayViewModel(get(), get(), get(), get()) }
+    viewModel { TodayViewModel(get(), get(), get(), get(), get(), get()) }
     viewModelOf(::GearViewModel)
 }

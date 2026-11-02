@@ -4,7 +4,10 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.lift.data.ExerciseFilterStore
-import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.data.ExerciseStore
+import dev.justinsmith.lift.data.GearStore
+import dev.justinsmith.lift.data.ProgramStore
+import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.data.decodeDraftDays
 import dev.justinsmith.lift.data.encodeDays
 import dev.justinsmith.lift.domain.CustomExercise
@@ -50,7 +53,10 @@ data class ProgramCopy(val of: ProgramId, val base: String)
  * one from a built-in.
  */
 class ProgramEditorViewModel(
-    private val repository: LiftRepository,
+    private val programStore: ProgramStore,
+    private val exerciseStore: ExerciseStore,
+    private val gearStore: GearStore,
+    private val sessionStore: SessionStore,
     private val filters: ExerciseFilterStore,
     uid: String?,
     private val savedState: SavedStateHandle = SavedStateHandle(),
@@ -58,34 +64,34 @@ class ProgramEditorViewModel(
 ) : ViewModel() {
     // A program deleted meanwhile (on another page of the back stack) is made afresh.
     private val existing =
-        uid?.let { id -> repository.customPrograms.value.firstOrNull { it.key == ProgramKey.Custom(id) } }
+        uid?.let { id -> programStore.customPrograms.value.firstOrNull { it.key == ProgramKey.Custom(id) } }
     private val uid = (existing?.key as? ProgramKey.Custom)?.uid
     private val copyOf = copy?.takeIf { existing == null }?.let { ProgramKey.BuiltIn(it.of) }
     private val initialDraft = when {
         existing != null -> ProgramDraft.of(existing)
 
         copy != null -> ProgramDraft.of(program(copy.of))
-            .copy(name = copyName(copy.base, repository.customPrograms.value.mapNotNull { it.name }.toSet()))
+            .copy(name = copyName(copy.base, programStore.customPrograms.value.mapNotNull { it.name }.toSet()))
 
         else -> ProgramDraft()
     }
     private val _state = MutableStateFlow(
         ProgramEditorUiState(
-            draft = restoreDraft(savedState, repository.customExercises.value, initialDraft),
+            draft = restoreDraft(savedState, exerciseStore.customExercises.value, initialDraft),
             initialDraft = initialDraft,
             saved = existing != null,
-            carriesOnFrom = repository.programDay.value?.takeIf { it.program.key == copyOf }?.number,
+            carriesOnFrom = programStore.programDay.value?.takeIf { it.program.key == copyOf }?.number,
         ),
     )
 
     private val choices = combine(
-        repository.bells,
-        repository.bands,
-        repository.customExercises,
+        gearStore.bells,
+        gearStore.bands,
+        exerciseStore.customExercises,
         filters.filters,
-        repository.bar,
+        gearStore.bar,
     ) { owned, bands, made, narrowed, bar ->
-        blockChoices(owned, bands, made, narrowed, repository.sessions.value.setsOldestFirst(), bar)
+        blockChoices(owned, bands, made, narrowed, sessionStore.sessions.value.setsOldestFirst(), bar)
     }
 
     val state: StateFlow<ProgramEditorUiState> = combine(_state, choices) { editing, choices ->
@@ -106,12 +112,12 @@ class ProgramEditorViewModel(
     fun save(name: String): Boolean {
         val draft = _state.value.draft.copy(name = name)
         if (!draft.canSave) return false
-        copyOf?.let { repository.saveCopy(it, draft) } ?: repository.saveProgram(uid, draft)
+        copyOf?.let { programStore.saveCopy(it, draft) } ?: programStore.saveProgram(uid, draft)
         return true
     }
 
     fun delete() {
-        uid?.let(repository::deleteProgram)
+        uid?.let(programStore::deleteProgram)
     }
 }
 

@@ -1,7 +1,7 @@
 package dev.justinsmith.lift.session
 
 import dev.justinsmith.interval.platform.WallClock
-import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.data.SetStore
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.EmomClock
 import dev.justinsmith.lift.domain.EmomState
@@ -67,11 +67,11 @@ data class TimerState(
  * hears of a hold logged through [heldSets]. The session ends them ([stopAll]) as it finishes, is discarded or is
  * left, and Android's keep-alive as the app is swiped away.
  *
- * The run going is kept on the session in progress at each change of course ([LiftRepository.saveTimer]), so a
+ * The run going is kept on the session in progress at each change of course ([SetStore.saveTimer]), so a
  * process killed in it can go on with it: the session's screen [restore]s it, timed by the wall clock.
  */
 class SessionTimers(
-    private val repository: LiftRepository,
+    private val setStore: SetStore,
     clock: WallClock,
     timeSource: TimeSource.WithComparableMarks,
     beeper: Beeper,
@@ -83,7 +83,7 @@ class SessionTimers(
     private val rest = RestTimer(time, beeper)
 
     private val emom = EmomRunner(time, beeper) { run, minute ->
-        repository.logSet(run.exercise, run.bellKg, run.reps, run.sideOf(minute), run.double, band = run.band)
+        setStore.logSet(run.exercise, run.bellKg, run.reps, run.sideOf(minute), run.double, band = run.band)
     }
 
     private val holds = HoldTimer(time, beeper) { set, seconds -> logHeld(set, seconds) }
@@ -214,8 +214,8 @@ class SessionTimers(
     fun close() = scope.cancel()
 
     private fun logHeld(set: SetDraft, seconds: Int) {
-        repository.logSet(set.exercise, set.loadKg, 0, set.side, set.doubled, seconds = seconds, band = set.band)
-        rest.start(repository.restSeconds.value)
+        setStore.logSet(set.exercise, set.loadKg, 0, set.side, set.doubled, seconds = seconds, band = set.band)
+        rest.start(setStore.restSeconds.value)
         held.tryEmit(set)
     }
 
@@ -234,7 +234,7 @@ class SessionTimers(
         val keep = now.keeping
         if (keep != saved) {
             saved = keep
-            repository.saveTimer(keep)
+            setStore.saveTimer(keep)
         }
         val run = now.running
         if (run != kept) {
