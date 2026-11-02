@@ -383,9 +383,16 @@ flowchart TD
   - Android's `HealthConnectStore` writes it to Health Connect as an exercise session and a total-calories record,
     keyed by the workout's id so a repeated write replaces rather than doubles, and only while the user has
     connected it in Settings (the permission sheet is Health Connect's, opened through `rememberHealthConnector`).
-    iOS and desktop have `NoHealthStore`, and Settings shows no row.
+    iOS's `HealthKitStore` writes it to Apple Health through a `HKWorkoutBuilder` dated to when it ran: a stretch
+    (an activity of the workout's own kind, its move and reps in its metadata) per interval, rest or set, a pause
+    and a resume per pause, and an active-energy sample, the workout and the sample each under a sync identifier
+    and version, so a later write replaces. iOS has no revoke: Settings' switch off is the app's own, kept in the
+    user defaults; connecting asks HealthKit's sheet only what it hasn't asked, and a user who refused the
+    writes is sent to the Health app. Desktop has `NoHealthStore`, and Settings shows no row. Every screen names
+    the store by core's `healthStoreName` ("Health Connect", "Apple Health"), as resources have no platform
+    qualifier.
   - It reads two things back. `latestWeightKg`, the last weight weighed in the past 30 days by any app: Settings'
-    weight sheet offers it as a button ("Use Health Connect's: 82 kg") and never takes it on its own. And
+    weight sheet offers it as a button ("Use Health Connect's: 82 kg", "Use Apple Health's" on iOS) and never takes it on its own. And
     `heartRate(start, end)`, a watch's average and peak over a finished workout or session: the summary and the
     finished one's page read it each time they come into view (`LifecycleStartEffect`) until one is found, since
     Health Connect answers only an app on show and a watch syncs late, and keep it on the History entry or the

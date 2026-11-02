@@ -154,9 +154,8 @@ The next sprint's tickets, which take most of these up, are in [sprint-0.3.md](s
 
 ## Left out on purpose
 
-- **HealthKit, widgets, Wear OS**: each a platform project. Health Connect's write side landed (the `HealthStore`
-  in core-platform), and in 0.3 the reads of the body weight and a watch's heart rate; HealthKit would be its iOS
-  actual.
+- **Widgets, Wear OS**: each a platform project. The `HealthStore` (core-platform) has both actuals since 0.3:
+  Health Connect and Apple Health, writing workouts and reading the body weight and a watch's heart rate.
 - **Localisation**: the built-in presets' names are stored data by design, and both text parsers are
   English-keyword; a second locale is a sprint, not a ticket.
 - **Splitting the `TooManyFunctions` classes** (`WorkoutViewModel`, `IntervalRepository`, `LiftRepository`,

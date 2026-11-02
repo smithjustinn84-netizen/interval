@@ -85,10 +85,11 @@ enum class HealthMove {
 
 /**
  * The platform's health store, which keeps the user's workouts beside every other app's: Health Connect on
- * Android. The app writes its workouts to it and reads two things back: the latest body weight, which Settings
- * offers to take, and the heart rate over a finished workout, which a watch may have recorded. Connecting takes
- * a permission sheet, which only a screen can open (core's `rememberHealthConnector`); the store hears of the
- * answer through [refresh]. Injected, so tests record what was written.
+ * Android, Apple Health on iOS (`HealthKitStore`, in src@ios). The app writes its workouts to it and reads two
+ * things back: the latest body weight, which Settings offers to take, and the heart rate over a finished workout,
+ * which a watch may have recorded. Connecting takes a permission sheet, which only a screen can open (core's
+ * `rememberHealthConnector`); the store hears of the answer through [refresh]. Injected, so tests record what was
+ * written.
  */
 interface HealthStore {
     /** How the store stands now, as last read: see [refresh]. */
@@ -97,7 +98,10 @@ interface HealthStore {
     /** Reads the store's state again: as Settings opens, and as the permission sheet closes. */
     fun refresh()
 
-    /** Gives the leave to write back, so nothing more is written until the user connects again. */
+    /**
+     * Gives the leave to write back, so nothing more is written until the user connects again. iOS lets no app
+     * give its permissions back, so there it is the app's own switch, which stops the reads too.
+     */
     fun disconnect()
 
     /**
@@ -121,7 +125,7 @@ interface HealthStore {
     suspend fun heartRate(startEpochMillis: Long, endEpochMillis: Long): HeartRate?
 }
 
-/** The platform has no health store: desktop, and iOS until HealthKit is wired. */
+/** The platform has no health store: desktop. */
 object NoHealthStore : HealthStore {
     override val status: StateFlow<HealthStatus> = MutableStateFlow(HealthStatus.Unavailable)
 

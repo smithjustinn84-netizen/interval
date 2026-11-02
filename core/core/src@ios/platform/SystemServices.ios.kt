@@ -7,8 +7,14 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.uikit.LocalUIViewController
+import dev.justinsmith.core.resources.Res
+import dev.justinsmith.core.resources.apple_health
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.StringResource
+import platform.Foundation.NSURL
 import platform.UIKit.UIAccessibilityIsReduceMotionEnabled
 import platform.UIKit.UIApplication
 import platform.UIKit.UIStatusBarStyle
@@ -88,5 +94,32 @@ actual val materialBackPreview: Boolean = false
 
 actual val platformPageTransitions: Boolean = true
 
+actual val healthStoreName: StringResource = Res.string.apple_health
+
+/**
+ * Apple Health's permission sheet, asked through [HealthKitStore.connect]. HealthKit shows it once per question,
+ * so a user who refused the writes is taken to the Health app, the one place they can be allowed now; the store
+ * reads its status again as the app comes back. There is nothing to install: Health is part of iOS.
+ */
 @Composable
-actual fun rememberHealthConnector(store: HealthStore): HealthConnector = NoHealthConnector
+actual fun rememberHealthConnector(store: HealthStore): HealthConnector {
+    val scope = rememberCoroutineScope()
+    return remember(store, scope) {
+        val healthKit = store as? HealthKitStore ?: return@remember NoHealthConnector
+        object : HealthConnector {
+            override fun connect() {
+                scope.launch { if (healthKit.connect()) openHealthApp() }
+            }
+
+            override fun install() = Unit
+        }
+    }
+}
+
+/** The Health app, where the app's permissions are under its name. */
+private fun openHealthApp() {
+    val health = NSURL.URLWithString(HEALTH_APP) ?: return
+    UIApplication.sharedApplication.openURL(health, options = emptyMap<Any?, Any>(), completionHandler = null)
+}
+
+private const val HEALTH_APP = "x-apple-health://"

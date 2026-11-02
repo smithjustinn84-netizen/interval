@@ -10,6 +10,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.health.connect.client.PermissionController
 import co.touchlab.kermit.Logger
+import dev.justinsmith.core.resources.Res
+import dev.justinsmith.core.resources.health_connect
+import org.jetbrains.compose.resources.StringResource
+
+actual val healthStoreName: StringResource = Res.string.health_connect
 
 /**
  * Health Connect's permission sheet, for what the app asks (to write workouts, to read the weight), and

@@ -1,7 +1,8 @@
 # Interval: privacy policy
 
 The app's Privacy page (About > Privacy), word for word. This file is the policy Google Play links to; change it
-with `privacy_*` in `apps/app/composeResources/values/strings.xml`, which the app shows.
+with `privacy_*` in `apps/app/composeResources/values/strings.xml`, which the app shows. On an iPhone the app's
+page says Apple Health wherever this says Health Connect, and all of it holds for Apple Health.
 
 Interval keeps everything on this device. There are no accounts, no analytics and no ads, and nothing leaves the
 phone unless you send it.
@@ -19,8 +20,8 @@ does with it is up to that app.
 
 ## Health Connect
 
-If you connect Health Connect in Settings, each workout and Lift session you finish is written there as an
-exercise session, with its intervals or sets, how hard you said it was and any note you wrote on it, and, when you
+If you connect Health Connect in Settings, each workout and Lift session you finish is written there as a
+workout, with its intervals or sets, how hard you said it was and any note you wrote on it, and, when you
 have set a body weight, its calorie estimate. Interval reads two things from Health Connect: your latest body
 weight, which the weight sheet in Settings offers to use, set only when you tap it; and your heart rate during a
 workout or session you finished, as a watch recorded it there, whose average and peak its summary and page show.

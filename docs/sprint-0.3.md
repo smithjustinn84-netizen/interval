@@ -252,6 +252,24 @@ Sizes: XS ≤ half a day, S ≈ 1 day, M ≈ 2 days, L ≈ 3 days. The cut line 
   entitlement and `NSHealthUpdateUsageDescription` in the Xcode project. The simulator has HealthKit,
   so it can be checked without a device; Play's declaration has no Apple counterpart until an App
   Store listing exists.
+- As built: `HealthKitStore` (core-platform's src@ios), the reads too (the latest `bodyMass` in 30 days, a
+  `HKStatisticsQuery` of the heart rate's average and peak), so iOS has what Android has. Only a multisport workout
+  mixes kinds of activity, so each segment but a pause is an activity of the workout's own kind with its move and
+  reps in its metadata (`IntervalMove`, `IntervalRepetitions`); a pause is a pause and a resume event, which
+  HealthKit leaves out of the duration. Title and notes go in metadata (`IntervalTitle`, `IntervalNotes`), as
+  HealthKit has no field for them. The workout and its energy sample carry `HKMetadataKeySyncIdentifier` and
+  `…SyncVersion`, so the summary's rewrite replaces both. The mapping (`HealthKitWorkout.kt`) is pure and tested
+  in `test@ios`. iOS can't revoke a permission, so Settings' off is the app's own switch in the user defaults,
+  stopping the reads too; HealthKit hides whether a read was allowed, so a refused one reads as nothing found.
+  The sheet asks once per question: a user who refused the writes is sent to the Health app, and the status is
+  read again as the app comes to the front. The toolchain builds with signing off (no team), yet Xcode still puts
+  the entitlement in the simulator binary's `__entitlements` section, which is all HealthKit there checks. Screens
+  name the store by core's `healthStoreName` ("Health Connect", "Apple Health"), and the privacy policy says
+  "workout" rather than Health Connect's "exercise session". Checked on the iPhone 18 Pro simulator: the sheet,
+  a workout with a pause written and rewritten (the Health database holds one, the first version deleted), a Lift
+  session as strength training with its reps, off and on again, and a refusal (the switch stays off; the next tap
+  opens Health). The weight and heart-rate reads are unchecked there, with no samples to read; there is no iOS
+  journey runner.
 
 **10. Warm-up and cool-down** · M (pulled forward from 0.4's richer shapes, on request)
 - `IntervalConfig.warmUpSeconds`/`coolDownSeconds` (0 is off) and `Phase.WarmUp`/`Phase.CoolDown`, run as Get

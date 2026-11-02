@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import dev.justinsmith.interval.platform.healthStoreName
 import dev.justinsmith.interval.settings.resources.Res
 import dev.justinsmith.interval.settings.resources.common_done
 import dev.justinsmith.interval.settings.resources.settings_weight
@@ -102,7 +103,7 @@ internal fun WeightSheet(
 private fun HealthWeight(weight: Int, unit: WeightUnit, isSet: Boolean, onUse: () -> Unit) {
     val words = if (isSet) Res.string.weight_sheet_from_health else Res.string.weight_sheet_use_health
     SecondaryButton(
-        stringResource(words, weight, stringResource(unit.labelRes)),
+        stringResource(words, stringResource(healthStoreName), weight, stringResource(unit.labelRes)),
         onClick = onUse,
         modifier = Modifier.fillMaxWidth(),
         enabled = !isSet,

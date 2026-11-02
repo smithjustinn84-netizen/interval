@@ -83,7 +83,8 @@ core/
   core-platform      what the platform gives that isn't drawing, with no Compose: the clocks (`WallClock`,
                      `epochMillisNow`, `realElapsedTime`, `days`), `TimestampFormatter`, `AppInfo`, `Sharer`,
                      `HealthStore` (`Health.kt`: the workout both sides hand it as they finish; Android's is
-                     `HealthConnectStore`, in src@android, writes workouts and reads the weight and the heart rate; elsewhere `NoHealthStore`),
+                     `HealthConnectStore`, in src@android, writes workouts and reads the weight and the heart rate; iOS's is
+                     `HealthKitStore`, Apple Health; desktop's `NoHealthStore`),
                      Android's notification helpers, and `storage/Storage.kt` (`SerialWriter`, `storageScope`,
                      `orOnError`/`orEmptyOnError`); packages `.platform`, `.storage`; exports `core-time`. The
                      data modules depend on this, not `core`, so a theme edit neither recompiles them nor reruns
@@ -288,7 +289,11 @@ toolchain (`$compose.*`).
   connected before it was asked) keeps the writes and shows nothing read. Settings' row connects through `rememberHealthConnector` (the
   sheet is Health Connect's) and disconnects by revoking. The manifest declares the four permissions and
   `PrivacyActivity` (the policy, `about/PrivacyScreen.kt`, also under About), which Health Connect opens for its
-  rationale. Play's Health apps declaration must list the same four data types.
+  rationale. Play's Health apps declaration must list the same four data types. iOS's `HealthKitStore` does the same
+  through a back-dated `HKWorkoutBuilder` (sync identifier and version, so a rewrite replaces); the app carries the
+  HealthKit entitlement (`apps/iosApp/src/iosApp.entitlements`) and both `NSHealth…UsageDescription`s. iOS can't
+  revoke, so its switch off is the app's own (user defaults), and one refused on HealthKit's sheet is sent to the
+  Health app. Screens name the store by core's `healthStoreName`, never a literal.
 - **Reminders for the plan**: `AppSettings.reminderMinuteOfDay` (set on Plan, null is off). `PlanReminderScheduler`
   (`interval/interval-history/src/plan/`, an eager single) recomputes `plannedReminders` (the next 14 days with a plan
   still open, from `TrainingLog.upNext`) on every change and at midnight, and hands the whole set to

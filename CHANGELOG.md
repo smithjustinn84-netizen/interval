@@ -22,6 +22,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   change made just before leaving is no longer at risk: what the app keeps now lives as long as its process.
 
 ### Added
+- Apple Health (iOS): Settings connects it as Health Connect is on Android. Each workout and Lift session you
+  finish is saved there as a workout, with its intervals or sets, pauses, calorie estimate and how hard it was;
+  the weight sheet offers your latest weight from it, and a summary shows a watch's heart rate. Turned off in
+  Settings, nothing more is written or read.
 - How hard a program day felt reaches the program: said to be Very hard or All out on its summary, the day's
   steps up for next time wait, switched off, until you turn one on; the program's page shows each day done with
   how it felt; and Health Connect names a program's session by the program and day ("Simple & Sinister · day

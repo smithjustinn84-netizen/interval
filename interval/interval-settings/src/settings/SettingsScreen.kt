@@ -24,6 +24,7 @@ import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.HealthStore
+import dev.justinsmith.interval.platform.healthStoreName
 import dev.justinsmith.interval.platform.rememberFileOpener
 import dev.justinsmith.interval.platform.rememberHealthConnector
 import dev.justinsmith.interval.settings.resources.Res
@@ -47,7 +48,6 @@ import dev.justinsmith.interval.settings.resources.settings_export_hint
 import dev.justinsmith.interval.settings.resources.settings_halfway
 import dev.justinsmith.interval.settings.resources.settings_halfway_hint
 import dev.justinsmith.interval.settings.resources.settings_halfway_needs_cue
-import dev.justinsmith.interval.settings.resources.settings_health
 import dev.justinsmith.interval.settings.resources.settings_health_install_hint
 import dev.justinsmith.interval.settings.resources.settings_health_off_hint
 import dev.justinsmith.interval.settings.resources.settings_health_on_hint
@@ -337,7 +337,7 @@ private fun settingsGroups(
 private fun HealthRow(status: HealthStatus, actions: HealthActions, modifier: Modifier = Modifier) {
     when (status) {
         HealthStatus.NotInstalled -> LinkRow(
-            stringResource(Res.string.settings_health),
+            stringResource(healthStoreName),
             stringResource(Res.string.settings_health_install_hint),
             onClick = actions.onInstall,
             modifier = modifier,
@@ -347,7 +347,7 @@ private fun HealthRow(status: HealthStatus, actions: HealthActions, modifier: Mo
             val connected = status == HealthStatus.Connected
             val hint = if (connected) Res.string.settings_health_on_hint else Res.string.settings_health_off_hint
             ToggleRow(
-                stringResource(Res.string.settings_health),
+                stringResource(healthStoreName),
                 stringResource(hint),
                 checked = connected,
                 onToggle = if (connected) actions.onDisconnect else actions.onConnect,

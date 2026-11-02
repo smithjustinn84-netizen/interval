@@ -37,8 +37,9 @@
     <string name="weight_more_cd">More weight</string>
     <string name="weight_sheet_privacy">Only used to estimate calories. It stays on this device.</string>
     <string name="weight_sheet_clear">Turn off calorie estimates</string>
-    <string name="weight_sheet_use_health">Use Health Connect's: %1$d %2$s</string>
-    <string name="weight_sheet_from_health">From Health Connect: %1$d %2$s</string>
+    <!-- %1$s is the health store's name: Health Connect, Apple Health. -->
+    <string name="weight_sheet_use_health">Use %1$s's: %2$d %3$s</string>
+    <string name="weight_sheet_from_health">From %1$s: %2$d %3$s</string>
     <string name="settings_data">Your data</string>
     <string name="settings_export">Export</string>
     <string name="settings_export_hint">A file of your workouts, presets, plan, settings and lifting, to keep or move</string>
@@ -88,8 +89,7 @@
         <item quantity="one">%1$d program</item>
         <item quantity="other">%1$d programs</item>
     </plurals>
-    <!-- The platform's health store, by its name: Android's. The row shows only where there is one. -->
-    <string name="settings_health">Health Connect</string>
+    <!-- The platform's health store's row, named by core's `healthStoreName`, shows only where there is one. -->
     <string name="settings_health_off_hint">Save finished workouts and Lift sessions there too</string>
     <string name="settings_health_on_hint">Finished workouts and Lift sessions are saved there</string>
     <string name="settings_health_install_hint">Get it from Google Play to save workouts there</string>

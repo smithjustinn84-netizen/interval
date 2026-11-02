@@ -27,7 +27,8 @@
     <string name="about_tagline">A timer for work and rest intervals, with cues loud enough for the gym.</string>
     <string name="about_made_by">Made by Justin Smith</string>
     <string name="about_privacy">Privacy</string>
-    <string name="about_privacy_hint">What stays on this phone, and what Health Connect gets</string>
+    <!-- %1$s is the health store's name, core's `healthStoreName`: Health Connect, Apple Health. -->
+    <string name="about_privacy_hint">What stays on this phone, and what %1$s gets</string>
     <string name="about_licenses">Open-source licenses</string>
     <string name="about_licenses_hint">The fonts and libraries Interval is built with</string>
 
@@ -39,8 +40,8 @@
     <string name="privacy_stored">Your workouts, presets, plan, settings, body weight and Lift sessions, in the app's own storage. Export, in Settings, puts the lot in one file for you to keep; Android's backup carries it to a new phone with your other apps' data.</string>
     <string name="privacy_sharing_title">Sharing</string>
     <string name="privacy_sharing">A finished workout, a session or your export goes nowhere until you choose an app to share it with. What that app does with it is up to that app.</string>
-    <string name="privacy_health_title">Health Connect</string>
-    <string name="privacy_health">If you connect Health Connect in Settings, each workout and Lift session you finish is written there as an exercise session, with its intervals or sets, how hard you said it was and any note you wrote on it, and, when you have set a body weight, its calorie estimate. Interval reads two things from Health Connect: your latest body weight, which the weight sheet in Settings offers to use, set only when you tap it; and your heart rate during a workout or session you finished, as a watch recorded it there, whose average and peak its summary and page show. Both stay on this device like the weight you set yourself. Turn it off in Settings, or take the permission back in Health Connect, and nothing more is written; what was written stays there for you to keep or delete.</string>
+    <!-- %1$s is the health store's name, which is also the section's title. -->
+    <string name="privacy_health">If you connect %1$s in Settings, each workout and Lift session you finish is written there as a workout, with its intervals or sets, how hard you said it was and any note you wrote on it, and, when you have set a body weight, its calorie estimate. Interval reads two things from %1$s: your latest body weight, which the weight sheet in Settings offers to use, set only when you tap it; and your heart rate during a workout or session you finished, as a watch recorded it there, whose average and peak its summary and page show. Both stay on this device like the weight you set yourself. Turn it off in Settings, or take the permission back in %1$s, and nothing more is written; what was written stays there for you to keep or delete.</string>
 
     <!-- Licenses -->
     <string name="licenses_title">Licenses</string>

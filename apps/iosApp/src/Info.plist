@@ -22,6 +22,11 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<!-- Apple Health (HealthKitStore, in core-platform): what its permission sheet says the app reads and writes. -->
+	<key>NSHealthShareUsageDescription</key>
+	<string>Interval reads your latest body weight, to offer it for the calorie estimate, and your heart rate during a workout you finished, to show on its summary.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Interval saves each workout and Lift session you finish to Apple Health, with its calorie estimate.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

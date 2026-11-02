@@ -5,4 +5,7 @@
     <string name="sheet_drag_handle_cd">Drag handle</string>
     <string name="sheet_close_cd">Close</string>
     <string name="field_clear_cd">Clear text</string>
+    <!-- The platform's health store, by its name (`healthStoreName`): Android's, then iOS's. -->
+    <string name="health_connect">Health Connect</string>
+    <string name="apple_health">Apple Health</string>
 </resources>

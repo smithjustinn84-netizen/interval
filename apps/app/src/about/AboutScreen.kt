@@ -13,6 +13,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import dev.justinsmith.interval.platform.AppInfo
+import dev.justinsmith.interval.platform.healthStoreName
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.about_licenses
 import dev.justinsmith.interval.resources.about_licenses_hint
@@ -83,7 +84,7 @@ fun AboutScreen(
         ListCard(Modifier.padding(top = Spacing.space32)) {
             LinkRow(
                 stringResource(Res.string.about_privacy),
-                stringResource(Res.string.about_privacy_hint),
+                stringResource(Res.string.about_privacy_hint, stringResource(healthStoreName)),
                 onClick = onShowPrivacy,
             )
             RowDivider()

@@ -7,6 +7,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.staticCompositionLocalOf
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.StringResource
 
 /**
  * Keeps the display awake while this is in the composition. Several callers may hold it at once (a page on
@@ -84,7 +85,13 @@ interface HealthConnector {
 @Composable
 expect fun rememberHealthConnector(store: HealthStore): HealthConnector
 
-/** Where there is no store to connect: iOS until HealthKit is wired, and desktop. */
+/**
+ * The platform's [HealthStore] by its name, which the screens put into their words: Health Connect on Android,
+ * Apple Health on iOS. Desktop has none to name, and says Android's, as its tests read.
+ */
+expect val healthStoreName: StringResource
+
+/** Where there is no store to connect: desktop. */
 internal object NoHealthConnector : HealthConnector {
     override fun connect() = Unit
 
