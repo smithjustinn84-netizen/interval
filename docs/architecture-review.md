@@ -374,6 +374,11 @@ reads it.
 **Recommendation.** A cheap first state; drop `config` (or narrow it with `map {}.distinctUntilChanged()`);
 `WhileSubscribed(5_000)`.
 
+**Resolved** in change `qyzuvmuy` ("History and Plan: a cheap first state, and the Timer's steps rebuild neither"):
+both start from `Loading` and build every state on the computation dispatcher; `config` feeds only `choices`,
+worked out on their own and joined last, so a Timer step rebuilds nothing else. They keep `Eagerly`: the first
+state is what cost, and `WhileSubscribed` would show Loading again on each return to the tab.
+
 ### F2 · Medium · Whole history reprocessed on every change
 - `observeSets()` streams every set, including those of deleted sessions, and every insert re-maps the whole
   history.

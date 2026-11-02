@@ -22,14 +22,17 @@ import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 // Thursday 15 October 2026.
@@ -187,6 +190,36 @@ class PlanViewModelTest : MainDispatcherTest() {
 
         assertEquals(listOf(HistoryDay.Today), plan.state.value.oneOffs.map { it.day })
         plan.viewModelScope.cancel()
+    }
+
+    @Test
+    fun `the screen starts from loading until the first state is built`() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        repository.updateAppSettings { it.copy(reminderMinuteOfDay = 18 * 60) }
+        val computation = StandardTestDispatcher(testScheduler)
+        val viewModel =
+            PlanViewModel(repository, bells, FixedTimestampFormatter, clock = { clock }, computation = computation)
+        assertSame(PlanUiState.Loading, viewModel.state.value)
+        assertFalse(viewModel.state.value.reminder.on)
+
+        runCurrent()
+
+        assertFalse(viewModel.state.value.loading)
+        assertTrue(viewModel.state.value.reminder.on)
+        viewModel.viewModelScope.cancel()
+    }
+
+    @Test
+    fun `a Timer step changes the choices and rebuilds nothing else`() {
+        repository.planWeekly(tabataPreset.asPlan(), setOf(1))
+        val before = viewModel.state.value
+
+        repository.updateConfig { it.copy(workSeconds = it.workSeconds + 5) }
+
+        val after = viewModel.state.value
+        assertSame(before.routine, after.routine)
+        assertSame(before.days, after.days)
+        assertEquals(repository.config.value, after.choices.first().preset.config)
     }
 }
 

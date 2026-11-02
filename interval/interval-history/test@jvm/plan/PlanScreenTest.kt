@@ -99,6 +99,14 @@ class PlanScreenTest {
     }
 
     @Test
+    fun `while loading it draws no cards`() = runUiTest {
+        setThemedContent { Screen(PlanUiState.Loading) }
+        onNodeWithText("Plan").assertExists()
+        onNodeWithText("Weekly goal").assertDoesNotExist()
+        onNodeWithText("Routine").assertDoesNotExist()
+    }
+
+    @Test
     fun `the goal steps either way and shows the streak`() = runUiTest {
         setThemedContent { Screen(state) }
         onNodeWithText("Workouts a week, lifts and intervals alike · 5-week streak").assertExists()

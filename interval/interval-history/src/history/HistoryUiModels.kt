@@ -139,10 +139,17 @@ data class HistoryUiState(
     val choices: List<PlanChoice> = emptyList(),
     /** The day of the program followed to do next, which a plan of the program's next day starts. */
     val programDay: ProgramDay? = null,
+    /** Not built yet: the screen waits rather than taking it for the first run. */
+    val loading: Boolean = false,
 ) {
     /** Nothing done and nothing planned: the first run. */
-    val isEmpty: Boolean get() = sections.isEmpty() && !hasPlans
+    val isEmpty: Boolean get() = !loading && sections.isEmpty() && !hasPlans
 
     /** The most workouts in one of [weeks], for scaling its bars; at least the goal, so its line fits. */
     val weeksMax: Int get() = maxOf(weeks.maxOfOrNull { it.count } ?: 0, goal ?: 0, 1)
+
+    companion object {
+        /** What the screen shows until the first state is built. */
+        val Loading = HistoryUiState(sections = emptyList(), loading = true)
+    }
 }

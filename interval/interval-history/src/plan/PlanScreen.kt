@@ -161,6 +161,8 @@ fun PlanScreen(
             IconAction(IntervalIcons.Describe, stringResource(Res.string.plan_describe_cd), { describing = true })
         },
     ) {
+        // Nothing until the first state is built, rather than an empty plan for a moment.
+        if (state.loading) return@TabGrid
         item(key = "goal") { GoalCard(state, onStepGoal, Modifier.padding(horizontal = Spacing.space16)) }
         item(key = "reminder") {
             ReminderCard(state.reminder, { editingReminder = true }, Modifier.padding(horizontal = Spacing.space16))

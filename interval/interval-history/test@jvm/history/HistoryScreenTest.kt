@@ -240,6 +240,14 @@ class HistoryScreenTest {
     }
 
     @Test
+    fun `while loading it shows neither the first run nor a summary`() = runUiTest {
+        setThemedContent { HistoryScreen(HistoryUiState.Loading, actions) }
+        onNodeWithText("History").assertExists()
+        onNodeWithText("Train to a plan").assertDoesNotExist()
+        onNodeWithText("Month").assertDoesNotExist()
+    }
+
+    @Test
     fun `clearing asks first`() = runUiTest {
         setThemedContent { HistoryScreen(oneWorkout, actions) }
         onNodeWithContentDescription("More options").performClick()

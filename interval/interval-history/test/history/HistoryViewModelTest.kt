@@ -26,8 +26,10 @@ import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlin.test.Test
@@ -35,6 +37,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 private val tabata = tabataPreset.config
@@ -335,5 +338,35 @@ class HistoryViewModelTest : MainDispatcherTest() {
         assertEquals(0, viewModel.state.value.weekCount)
         assertEquals(sunday + 1, viewModel.state.value.week.first().epochDay)
         viewModel.viewModelScope.cancel()
+    }
+
+    @Test
+    fun `the screen starts from loading until the first state is built`() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        repository.recordWorkout(tabata, tabata.totalSeconds)
+        val computation = StandardTestDispatcher(testScheduler)
+        val viewModel =
+            HistoryViewModel(repository, bells, FixedTimestampFormatter, clock = { clock }, computation = computation)
+        assertSame(HistoryUiState.Loading, viewModel.state.value)
+        assertFalse(viewModel.state.value.isEmpty)
+
+        runCurrent()
+
+        assertFalse(viewModel.state.value.loading)
+        assertEquals(listOf(HistoryDay.Today), viewModel.state.value.sections.map { it.day })
+        viewModel.viewModelScope.cancel()
+    }
+
+    @Test
+    fun `a Timer step changes the choices and rebuilds nothing else`() {
+        repository.recordWorkout(tabata, tabata.totalSeconds)
+        val before = viewModel.state.value
+
+        repository.updateConfig { it.copy(workSeconds = it.workSeconds + 5) }
+
+        val after = viewModel.state.value
+        assertSame(before.sections, after.sections)
+        assertSame(before.week, after.week)
+        assertEquals(repository.config.value, after.choices.first().preset.config)
     }
 }

@@ -346,6 +346,13 @@ The cut line is after ticket 5.
 - Done when:
   - `HistoryViewModelTest` shows a Timer step rebuilds nothing
   - the screen tests pass with `waitForText`.
+- As built: `HistoryUiState.Loading` and `PlanUiState.Loading` (`loading = true`) are the first values; while
+  loading each screen draws its title bar and nothing under it, so History never shows its first-run card for a
+  moment, and Plan's reminder is off so it asks nothing. The two keep `SharingStarted.Eagerly`: the cost was the
+  first state built on the caller, and `WhileSubscribed` would rebuild (and show Loading) on each return after five
+  seconds, for no saving a tab's ViewModel needs. `choices` (`planChoices` over the presets and `config`) is a flow
+  of its own joined to the built state last, so a Timer step costs a `copy`; the tests check that the sections,
+  week, routine and days are the same instances after one.
 
 **10. Write errors shown** · S · E4
 - `SerialWriter` publishes failures on `errors: SharedFlow<StorageError>` as well as logging them. Both

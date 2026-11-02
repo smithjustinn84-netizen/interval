@@ -100,8 +100,9 @@ private data class HistoryView(
  *
  * Each state is built on [computation], not the main thread: the build walks the whole history, formats every
  * row's time and date and reads the calendar for every day since the first workout, and it is built again on
- * every change, the Timer's steps and each set logged on Lift among them. Only the first, at construction, is
- * built on the caller.
+ * every change, each set logged on Lift among them. The screen starts from [HistoryUiState.Loading] until the
+ * first is built. The Timer's steps change only the day sheet's [HistoryUiState.choices], which are worked out
+ * on their own and rebuild nothing else.
  */
 class HistoryViewModel(
     private val repository: IntervalRepository,
@@ -121,30 +122,22 @@ class HistoryViewModel(
         Lifting(sessions, day, active != null)
     }.distinctUntilChanged()
 
+    private val built = combine(
+        combine(repository.history, lifting) { history, lifting -> history to lifting },
+        repository.planned,
+        repository.presets,
+        repository.appSettings,
+        combine(days, view) { _, view -> view },
+    ) { (history, lifting), planned, presets, app, view ->
+        buildState(history, lifting, planned, presets, app, view)
+    }
+
+    private val choices = combine(repository.presets, repository.config, ::planChoices).distinctUntilChanged()
+
     val state: StateFlow<HistoryUiState> =
-        combine(
-            combine(repository.history, lifting) { history, lifting -> history to lifting },
-            repository.planned,
-            repository.presets,
-            repository.appSettings,
-            combine(days, view, repository.config) { _, view, config -> view to config },
-        ) { (history, lifting), planned, presets, app, (view, config) ->
-            buildState(history, lifting, planned, presets, app, view, config)
-        }
+        combine(built, choices) { state, choices -> state.copy(choices = choices) }
             .flowOn(computation)
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.Eagerly,
-                initialValue = buildState(
-                    repository.history.value,
-                    Lifting(bells.sessions.value, bells.programDay.value, bells.active.value != null),
-                    repository.planned.value,
-                    repository.presets.value,
-                    repository.appSettings.value,
-                    view.value,
-                    repository.config.value,
-                ),
-            )
+            .stateIn(viewModelScope, SharingStarted.Eagerly, HistoryUiState.Loading)
 
     fun setRange(range: TrainingRange) {
         view.update { it.copy(range = range) }
@@ -208,7 +201,6 @@ class HistoryViewModel(
         presets: List<Preset>,
         app: AppSettings,
         view: HistoryView,
-        config: IntervalConfig,
     ): HistoryUiState {
         val today = timestamps.dayNumber(clock.nowMillis())
         val lifts = lifting.sessions.asLiftWorkouts()
@@ -261,7 +253,6 @@ class HistoryViewModel(
             },
             upNext = timestamps.upNext(log, planned, lifting, today),
             hasPlans = planned.isNotEmpty() || lifting.programDay != null,
-            choices = planChoices(presets, config),
             programDay = lifting.programDay,
             daySheet = view.openDay?.let { day ->
                 val training = log.day(day)

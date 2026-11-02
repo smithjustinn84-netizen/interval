@@ -18,9 +18,7 @@ import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.days
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
-import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.MINUTES_PER_DAY
-import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.lift.data.LiftActivity
 import dev.justinsmith.lift.domain.ProgramDay
@@ -29,6 +27,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 
@@ -75,14 +74,33 @@ data class PlanUiState(
     /** The routine's sessions on Lift a week, and its interval workouts. */
     val routineLifts: Int = 0,
     val routineIntervals: Int = 0,
-)
+    /** Not built yet: the screen waits rather than drawing an empty plan. */
+    val loading: Boolean = false,
+) {
+    companion object {
+        /** What the screen shows until the first state is built: nothing to draw, the reminder off. */
+        val Loading = PlanUiState(
+            goal = null,
+            streak = 0,
+            routine = emptyList(),
+            oneOffs = emptyList(),
+            choices = emptyList(),
+            days = emptyList(),
+            todayWeekday = 1,
+            today = 0,
+            reminder = ReminderUi(on = false, minuteOfDay = 0, text = "", picks = emptyList()),
+            loading = true,
+        )
+    }
+}
 
 /**
  * The plan: the weekly goal, the routine for each weekday, and one-offs on dates to come. Adding goes
  * through [planWeekly] or [planOnce] with one of [PlanUiState.choices], or [planDescribed] with a routine
  * read from words. Each state is built on [computation], off the main thread: the streak reads the whole
- * history into a [TrainingLog], and the state is built again on every change of the plan, the history, the
- * settings or the Timer. Only the first is built on the caller.
+ * history into a [TrainingLog], and the state is built again on every change of the plan, the history or the
+ * settings. The screen starts from [PlanUiState.Loading] until the first is built. The Timer's steps change only
+ * [PlanUiState.choices], which are worked out on their own and rebuild nothing else.
  */
 class PlanViewModel(
     private val repository: IntervalRepository,
@@ -93,35 +111,27 @@ class PlanViewModel(
     computation: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     // Read again each midnight, so the one-offs and their headings move on with the screen open.
-    val state: StateFlow<PlanUiState> =
+    private val built = combine(
+        repository.planned,
+        repository.appSettings,
         combine(
-            repository.planned,
-            repository.presets,
-            repository.config,
-            repository.appSettings,
-            combine(
-                repository.history,
-                bells.sessions,
-                bells.programDay,
-                clock.days(timestamps, dayCheckMillis),
-            ) { history, sessions, programDay, _ ->
-                Triple(history, sessions.asLiftWorkouts(), programDay)
-            },
-        ) { planned, presets, config, app, (history, lifts, programDay) ->
-            buildState(planned, presets, config, app, history, lifts, programDay)
-        }.flowOn(computation).stateIn(
-            viewModelScope,
-            SharingStarted.Eagerly,
-            buildState(
-                repository.planned.value,
-                repository.presets.value,
-                repository.config.value,
-                repository.appSettings.value,
-                repository.history.value,
-                bells.sessions.value.asLiftWorkouts(),
-                bells.programDay.value,
-            ),
-        )
+            repository.history,
+            bells.sessions,
+            bells.programDay,
+            clock.days(timestamps, dayCheckMillis),
+        ) { history, sessions, programDay, _ ->
+            Triple(history, sessions.asLiftWorkouts(), programDay)
+        },
+    ) { planned, app, (history, lifts, programDay) ->
+        buildState(planned, app, history, lifts, programDay)
+    }
+
+    private val choices = combine(repository.presets, repository.config, ::planChoices).distinctUntilChanged()
+
+    val state: StateFlow<PlanUiState> =
+        combine(built, choices) { state, choices -> state.copy(choices = choices) }
+            .flowOn(computation)
+            .stateIn(viewModelScope, SharingStarted.Eagerly, PlanUiState.Loading)
 
     /** Raises or lowers the goal by one, as [steppedGoal] does. */
     fun stepGoal(direction: Int) {
@@ -163,8 +173,6 @@ class PlanViewModel(
 
     private fun buildState(
         planned: List<PlannedWorkout>,
-        presets: List<Preset>,
-        config: IntervalConfig,
         app: AppSettings,
         history: List<HistoryEntry>,
         lifts: List<LiftWorkout>,
@@ -192,7 +200,7 @@ class PlanViewModel(
                 }
                 .sortedWith(compareBy({ it.second }, { it.first.id }))
                 .map { (plan, day) -> OneOff(entries.getValue(plan), day, timestamps.heading(day, today)) },
-            choices = planChoices(presets, config),
+            choices = emptyList(),
             days = dayChoices(today),
             todayWeekday = weekdayOf(today),
             today = today,

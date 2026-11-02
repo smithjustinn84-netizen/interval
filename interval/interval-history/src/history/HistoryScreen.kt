@@ -226,11 +226,12 @@ fun HistoryScreen(
             SummaryBesideLog(title, titleActions, state, actions, selected)
         } else {
             TabGrid(title, actions = titleActions) {
+                // While loading, neither: no first run's card for a moment, and no summary of nothing.
                 if (state.isEmpty) {
                     item(key = "empty", span = StaggeredGridItemSpan.FullLine) {
                         FirstRun(actions, Modifier.animateItem().then(Gutter))
                     }
-                } else {
+                } else if (!state.loading) {
                     summaryItems(state, actions)
                 }
                 state.sections.forEach { section ->
