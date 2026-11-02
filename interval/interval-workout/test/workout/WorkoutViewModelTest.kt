@@ -14,6 +14,7 @@ import dev.justinsmith.interval.fakes.RecordingHealthStore
 import dev.justinsmith.interval.fakes.deferredStorageScope
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.platform.HealthStatus
+import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.lift.fakes.FakeLiftStorage
@@ -34,6 +35,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** The page's view of the session: what it maps and hands on. How a workout runs is [WorkoutSessionTest]'s. */
@@ -41,6 +43,7 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
     private val repository = FakeStorage().repository(now = { 7L })
     private val lifts = FakeLiftStorage().repository()
     private val background = RecordingBackgroundWorkout()
+    private val health = RecordingHealthStore(HealthStatus.Connected)
     private val tickers = mutableListOf<WorkoutTicker>()
     private val viewModels = mutableListOf<WorkoutViewModel>()
 
@@ -65,7 +68,7 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
             background,
             WorkoutRecorder(repository, repository, repository, lifts, FixedTimestampFormatter, {
                 7L
-            }, RecordingHealthStore(HealthStatus.Connected)),
+            }, health),
             WorkoutTicker(testScheduler.timeSource, tickerScope()).also { tickers += it },
         )
 
@@ -144,6 +147,30 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
         val entry = repository.history.value.single()
         assertEquals(PerceivedEffort.Hard, entry.effort)
         assertEquals("Felt strong", entry.note)
+    }
+
+    @Test
+    fun `the summary shows a watch's heart rate once the store has it and keeps it in History`() = runTest(dispatcher) {
+        val viewModel = workoutViewModel(workoutSession())
+        // Asked before the workout is over, there is nothing to read.
+        viewModel.readHeartRate()
+        runCurrent()
+        assertTrue(health.heartRateReads.isEmpty())
+        run(15_000)
+
+        viewModel.readHeartRate()
+        runCurrent()
+        assertNull(viewModel.state.value.heartRate)
+
+        health.heartRate = HeartRate(averageBpm = 150, peakBpm = 176)
+        viewModel.readHeartRate()
+        runCurrent()
+
+        assertEquals(HeartRate(150, 176), viewModel.state.value.heartRate)
+        assertEquals(150, repository.history.value.single().averageBpm)
+        viewModel.readHeartRate()
+        runCurrent()
+        assertEquals(2, health.heartRateReads.size)
     }
 
     @Test

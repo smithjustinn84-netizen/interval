@@ -23,5 +23,5 @@ val historyModule: Module = module {
     } bind PlanReminderSource::class
     viewModel { HistoryViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { PlanViewModel(get(), get(), get(), get(), get(), get(), get()) }
-    viewModel { (id: Long) -> WorkoutDetailViewModel(id, get(), get(), get(), get(), get(), get()) }
+    viewModel { (id: Long) -> WorkoutDetailViewModel(id, get(), get(), get(), get(), get(), get(), get()) }
 }

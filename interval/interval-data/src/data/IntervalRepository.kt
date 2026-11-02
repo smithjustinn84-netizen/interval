@@ -16,6 +16,7 @@ import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.WorkoutProgress
+import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.storage.SerialWriter
 import dev.justinsmith.interval.storage.StorageError
@@ -258,10 +259,19 @@ class IntervalRepository(
         elapsedSeconds: Int,
         endedEarly: Boolean,
         workSeconds: Int?,
+        startedAtEpochMillis: Long?,
     ): String {
         val now = clock.nowMillis()
         val uid = Uuid.random().toHexString()
-        val entry = HistoryEntry(now, config, elapsedSeconds, endedEarly, workSeconds)
+        val entry =
+            HistoryEntry(
+                now,
+                config,
+                elapsedSeconds,
+                endedEarly,
+                workSeconds,
+                startedAtEpochMillis = startedAtEpochMillis,
+            )
         writer.persist { historyDao.insert(entry.toEntity(uid = uid, updatedAtEpochMillis = now)) }
         return uid
     }
@@ -274,6 +284,17 @@ class IntervalRepository(
         val now = clock.nowMillis()
         val kept = note.trim().take(PerceivedEffort.NOTE_MAX_LENGTH).ifEmpty { null }
         writer.persist { historyDao.reflect(uid, effort?.level, kept, now) }
+    }
+
+    /** In order after the write that recorded the workout, so it never lands first. */
+    override fun keepHeartRate(uid: String, heartRate: HeartRate) {
+        val now = clock.nowMillis()
+        writer.persist { historyDao.keepHeartRate(uid, heartRate.averageBpm, heartRate.peakBpm, now) }
+    }
+
+    override fun keepHeartRateOf(id: Long, heartRate: HeartRate) {
+        val now = clock.nowMillis()
+        writer.persist { historyDao.keepHeartRateOf(id, heartRate.averageBpm, heartRate.peakBpm, now) }
     }
 
     /**

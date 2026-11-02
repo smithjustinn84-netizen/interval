@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 /**
  * The Workout page's view of the [WorkoutSession], which runs the workout: it opens the one the route's [id]
@@ -70,6 +71,14 @@ class WorkoutViewModel(
 
     /** The summary's note as typed; kept in History with the workout at once, trimmed. */
     fun setNote(note: String) = session.reflect(session.state.value?.effort, note)
+
+    /**
+     * Reads the finished workout's heart rate for the summary, as it comes into view: each time, until one is
+     * found, as a watch may sync after the workout ends. Nothing before it is finished.
+     */
+    fun readHeartRate() {
+        viewModelScope.launch { session.readHeartRate() }
+    }
 
     /** The summary's effort and note in words, for the health store's note: see [WorkoutSession.describeForHealth]. */
     fun describeForHealth(notes: String?) = session.describeForHealth(notes)

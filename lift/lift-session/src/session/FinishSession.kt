@@ -2,6 +2,7 @@ package dev.justinsmith.lift.session
 
 import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.HealthWorkout
+import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.WeekStanding
@@ -100,6 +101,21 @@ class FinishSession(
     }
 
     /**
+     * Reads the finished session's heart rate from the health store, for its summary, unless it has it; kept with
+     * the session once found. The screen asks as the summary comes into view: a watch may not have synced yet, and
+     * the session's page asks again.
+     */
+    suspend fun readHeartRate() {
+        val done = current.value?.session?.takeIf { it.averageBpm == null } ?: return
+        val end = done.finishedAtEpochMillis ?: return
+        val heartRate = health.heartRate(done.startedAtEpochMillis, end) ?: return
+        current.value = current.value?.takeIf { it.session.uid == done.uid }?.let {
+            it.copy(session = it.session.copy(averageBpm = heartRate.averageBpm, peakBpm = heartRate.peakBpm))
+        } ?: return
+        sessionStore.keepHeartRate(done.uid, heartRate)
+    }
+
+    /**
      * Keeps the finished session's changes, and the steps up at [nudges], in their program, as far as [scope]
      * reaches, or in a copy named [copyName]: see [ProgramStore.saveChanges].
      */
@@ -159,6 +175,10 @@ class SessionHealth(
             health.record(described)
         }
     }
+
+    /** The heart rate the store has between [startEpochMillis] and [endEpochMillis]: see [HealthStore.heartRate]. */
+    suspend fun heartRate(startEpochMillis: Long, endEpochMillis: Long): HeartRate? =
+        health.heartRate(startEpochMillis, endEpochMillis)
 
     fun close() = scope.cancel()
 

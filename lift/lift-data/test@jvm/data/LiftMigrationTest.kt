@@ -138,7 +138,7 @@ class LiftMigrationTest {
     }
 
     @Test
-    fun `version 13 opens at version 14 with the session in progress keeping no timer`() = runBlocking {
+    fun `version 13 opens at the current version with no timer in progress and no heart rate`() = runBlocking {
         BundledSQLiteDriver().open(file.absolutePath).apply {
             VERSION_13.forEach { execSQL(it) }
             execSQL("INSERT INTO session VALUES ('s1', 0, NULL, '', 0, 0, NULL, '[]', NULL, NULL, NULL)")
@@ -159,6 +159,11 @@ class LiftMigrationTest {
             assertEquals("{}", dao.active()?.timer)
             dao.finishActive("Press", 60_000)
             assertNull(dao.observeSessions().first().single().timer)
+            assertNull(dao.observeSessions().first().single().averageBpm)
+            // A heart rate found later is kept on the row, and only the first.
+            dao.keepHeartRate("s1", 130, 165, 70_000)
+            dao.keepHeartRate("s1", 100, 120, 80_000)
+            assertEquals(130 to 165, dao.observeSessions().first().single().let { it.averageBpm to it.peakBpm })
         } finally {
             database.close()
         }

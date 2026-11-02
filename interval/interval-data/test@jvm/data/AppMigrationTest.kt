@@ -54,6 +54,12 @@ class AppMigrationTest {
             assertNull(workout.activity)
             assertEquals(0, workout.warmUpSeconds)
             assertEquals(0, workout.coolDownSeconds)
+            assertNull(workout.startedAtEpochMillis)
+            assertNull(workout.averageBpm)
+            // A heart rate found later is kept on the row, and only the first.
+            database.historyDao().keepHeartRateOf(workout.id, 140, 170, 2000)
+            database.historyDao().keepHeartRateOf(workout.id, 100, 120, 3000)
+            assertEquals(140 to 170, database.historyDao().all().single().let { it.averageBpm to it.peakBpm })
             val added = PresetEntity(0, "Rowing", 5, 60, 30, 4, activity = "Rowing")
             val id = database.presetDao().insert(added)
             assertEquals(added.copy(id = id), database.presetDao().all().last())

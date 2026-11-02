@@ -7,6 +7,7 @@ import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.WorkoutProgress
+import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import kotlinx.coroutines.flow.StateFlow
@@ -56,9 +57,16 @@ interface HistoryStore {
         elapsedSeconds: Int,
         endedEarly: Boolean = false,
         workSeconds: Int? = null,
+        startedAtEpochMillis: Long? = null,
     ): String
 
     fun reflectOnWorkout(uid: String, effort: PerceivedEffort?, note: String)
+
+    /** Keeps the [heartRate] of the workout [uid] unless it has one: the first found stays. */
+    fun keepHeartRate(uid: String, heartRate: HeartRate)
+
+    /** As [keepHeartRate], for the workout stored under [id]. */
+    fun keepHeartRateOf(id: Long, heartRate: HeartRate)
 
     fun deleteWorkout(id: Long)
 

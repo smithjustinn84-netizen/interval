@@ -5,6 +5,7 @@ import dev.justinsmith.interval.platform.FileOpener
 import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.HealthWorkout
+import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.ShareableFile
 import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.platform.TimestampFormatter
@@ -88,6 +89,10 @@ class RecordingHealthStore(initial: HealthStatus = HealthStatus.Disconnected) : 
 
     /** The body weight weighed in the store, in kilograms, or null for none. */
     var weightKg: Double? = null
+
+    /** The heart rate recorded in the store over any window, or null for none; and each window asked for. */
+    var heartRate: HeartRate? = null
+    val heartRateReads = mutableListOf<LongRange>()
     var refreshes = 0
     var disconnects = 0
 
@@ -107,6 +112,12 @@ class RecordingHealthStore(initial: HealthStatus = HealthStatus.Disconnected) : 
 
     /** Gives [weightKg] only while connected, as the real store reads nothing without its permissions. */
     override suspend fun latestWeightKg(): Double? = weightKg.takeIf { status.value == HealthStatus.Connected }
+
+    /** Gives [heartRate] only while connected, as the real store reads nothing without its permissions. */
+    override suspend fun heartRate(startEpochMillis: Long, endEpochMillis: Long): HeartRate? {
+        heartRateReads += startEpochMillis..endEpochMillis
+        return heartRate.takeIf { status.value == HealthStatus.Connected }
+    }
 }
 
 /**

@@ -2,6 +2,7 @@ package dev.justinsmith.lift.history
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 /** One finished session, or null once it is gone (deleted here or never there), and when it finished. */
 data class LiftDetailUiState(
@@ -33,6 +35,7 @@ class LiftDetailViewModel(
     private val sessionStore: SessionStore,
     private val programStore: ProgramStore,
     private val timestamps: TimestampFormatter,
+    private val health: HealthStore,
 ) : ViewModel() {
     val state: StateFlow<LiftDetailUiState> = combine(sessionStore.sessions, programStore.customPrograms, ::build)
         .stateIn(
@@ -40,6 +43,19 @@ class LiftDetailViewModel(
             SharingStarted.Eagerly,
             build(sessionStore.sessions.value, programStore.customPrograms.value),
         )
+
+    /**
+     * Reads the session's heart rate from the health store as the page comes into view, unless it has one, and keeps
+     * it with the session once found: a watch may have synced since the summary. Only the page on show may read.
+     */
+    fun readHeartRate() {
+        val session = sessionStore.sessions.value.firstOrNull { it.uid == uid }?.takeIf { it.averageBpm == null }
+        val end = session?.finishedAtEpochMillis ?: return
+        viewModelScope.launch {
+            val heartRate = health.heartRate(session.startedAtEpochMillis, end) ?: return@launch
+            sessionStore.keepHeartRate(uid, heartRate)
+        }
+    }
 
     fun delete() {
         sessionStore.deleteSession(uid)

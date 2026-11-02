@@ -13,6 +13,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.ui.BackAction
@@ -60,6 +61,12 @@ fun LiftDetailRoute(uid: String, onBack: () -> Unit, modifier: Modifier = Modifi
     val sharer = koinInject<Sharer>()
     val viewModel = koinViewModel<LiftDetailViewModel>(key = uid) { parametersOf(uid) }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // Each time the page comes into view without a heart rate: a watch may have synced since the summary.
+    val unread = state.session?.averageBpm == null
+    LifecycleStartEffect(unread) {
+        if (unread) viewModel.readHeartRate()
+        onStopOrDispose {}
+    }
     val notices = LocalNotices.current
     val undo = stringResource(Res.string.session_undo)
     val deleted = stringResource(Res.string.notice_session_deleted)

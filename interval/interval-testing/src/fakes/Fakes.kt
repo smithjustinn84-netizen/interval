@@ -89,6 +89,24 @@ class FakeHistoryDao : HistoryDao {
         }
     }
 
+    override suspend fun keepHeartRate(uid: String, average: Int, peak: Int, now: Long) =
+        keepHeartRateWhere(average, peak, now) { it.uid == uid }
+
+    override suspend fun keepHeartRateOf(id: Long, average: Int, peak: Int, now: Long) =
+        keepHeartRateWhere(average, peak, now) { it.id == id }
+
+    private fun keepHeartRateWhere(average: Int, peak: Int, now: Long, which: (HistoryEntity) -> Boolean) {
+        rows.update { all ->
+            all.map {
+                if (which(it) && it.averageBpm == null) {
+                    it.copy(averageBpm = average, peakBpm = peak, updatedAtEpochMillis = now)
+                } else {
+                    it
+                }
+            }
+        }
+    }
+
     override suspend fun clear(now: Long) {
         rows.update { all -> all.map { if (it.deleted) it else it.copy(deleted = true, updatedAtEpochMillis = now) } }
     }

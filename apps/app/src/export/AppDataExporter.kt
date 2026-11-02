@@ -104,6 +104,8 @@ private fun HistoryEntry.export() =
         workActiveSeconds,
         effort?.level,
         note,
+        averageBpm,
+        peakBpm,
     )
 
 private fun PlannedWorkout.export(): PlannedExport {
@@ -150,6 +152,8 @@ private fun LiftSession.export(): SessionExport? {
         sets.map { it.export() },
         effort?.level,
         note,
+        averageBpm,
+        peakBpm,
     )
 }
 

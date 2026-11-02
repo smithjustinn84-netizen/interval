@@ -384,10 +384,14 @@ flowchart TD
     keyed by the workout's id so a repeated write replaces rather than doubles, and only while the user has
     connected it in Settings (the permission sheet is Health Connect's, opened through `rememberHealthConnector`).
     iOS and desktop have `NoHealthStore`, and Settings shows no row.
-  - It reads one thing back: `latestWeightKg`, the last weight weighed in the past 30 days by any app. Settings'
-    weight sheet offers it as a button ("Use Health Connect's: 82 kg") and never takes it on its own. Being
-    connected means the write permissions; the weight's read is asked on the same sheet but checked on its own,
-    so a user who refuses it, or connected before the app asked, still has their workouts written.
+  - It reads two things back. `latestWeightKg`, the last weight weighed in the past 30 days by any app: Settings'
+    weight sheet offers it as a button ("Use Health Connect's: 82 kg") and never takes it on its own. And
+    `heartRate(start, end)`, a watch's average and peak over a finished workout or session: the summary and the
+    finished one's page read it each time they come into view (`LifecycleStartEffect`) until one is found, since
+    Health Connect answers only an app on show and a watch syncs late, and keep it on the History entry or the
+    session (`average_bpm`, `peak_bpm`, the first found stays). Being connected means the write permissions; each
+    read is asked on the same sheet but checked on its own, so a user who refuses one, or connected before the app
+    asked, still has their workouts written.
 
 ---
 

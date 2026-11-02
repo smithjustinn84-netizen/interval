@@ -39,11 +39,12 @@ import kotlinx.coroutines.flow.Flow
  * workouts shared by a sibling app, which version 5 dropped when that app became part of this one;
  * version 6 let a plan be a session on Lift ([PlannedEntity.lift]); version 7 kept how a workout felt
  * ([HistoryEntity.effort], [HistoryEntity.note]); version 8 gave every workout, preset and plan a warm-up and a
- * cool-down ([HistoryEntity.warmUpSeconds], [HistoryEntity.coolDownSeconds]), 0 in rows from before.
+ * cool-down ([HistoryEntity.warmUpSeconds], [HistoryEntity.coolDownSeconds]), 0 in rows from before; version 9
+ * kept when a workout began and its heart rate ([HistoryEntity.startedAtEpochMillis], [HistoryEntity.averageBpm]).
  */
 @Database(
     entities = [HistoryEntity::class, PresetEntity::class, PlannedEntity::class],
-    version = 8,
+    version = 9,
     // 3 to 4 and 4 to 5 are MIGRATION_3_4 and MIGRATION_4_5, added by buildAppDatabase.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -51,6 +52,7 @@ import kotlinx.coroutines.flow.Flow
         AutoMigration(from = 5, to = 6),
         AutoMigration(from = 6, to = 7),
         AutoMigration(from = 7, to = 8),
+        AutoMigration(from = 8, to = 9),
     ],
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -156,6 +158,20 @@ interface HistoryDao {
     @Query("UPDATE history SET effort = :effort, note = :note, updated_at = :now WHERE uid = :uid")
     suspend fun reflect(uid: String, effort: Int?, note: String?, now: Long)
 
+    /** Keeps the heart rate of the workout [uid], at [now], unless it has one: the first found stays. */
+    @Query(
+        "UPDATE history SET average_bpm = :average, peak_bpm = :peak, updated_at = :now " +
+            "WHERE uid = :uid AND average_bpm IS NULL",
+    )
+    suspend fun keepHeartRate(uid: String, average: Int, peak: Int, now: Long)
+
+    /** As [keepHeartRate], for the workout stored under [id]. */
+    @Query(
+        "UPDATE history SET average_bpm = :average, peak_bpm = :peak, updated_at = :now " +
+            "WHERE id = :id AND average_bpm IS NULL",
+    )
+    suspend fun keepHeartRateOf(id: Long, average: Int, peak: Int, now: Long)
+
     /** Marks every workout not yet deleted as deleted at [now]. */
     @Query("UPDATE history SET deleted = 1, updated_at = :now WHERE deleted = 0")
     suspend fun clear(now: Long)
@@ -258,6 +274,11 @@ data class HistoryEntity(
     /** 0 for none, and in rows from before version 8. */
     @ColumnInfo(name = "warm_up_seconds", defaultValue = "0") val warmUpSeconds: Int = 0,
     @ColumnInfo(name = "cool_down_seconds", defaultValue = "0") val coolDownSeconds: Int = 0,
+    /** When it began; null in rows from before version 9, whose start is run back from [finishedAtEpochMillis]. */
+    @ColumnInfo(name = "started_at") val startedAtEpochMillis: Long? = null,
+    /** Its heart rate, average and peak in beats a minute, as read from the health store; null until read. */
+    @ColumnInfo(name = "average_bpm") val averageBpm: Int? = null,
+    @ColumnInfo(name = "peak_bpm") val peakBpm: Int? = null,
 )
 
 @Entity(tableName = "preset")
@@ -332,6 +353,9 @@ internal fun HistoryEntity.toDomain() = HistoryEntry(
     id = id,
     effort = PerceivedEffort.of(effort),
     note = note,
+    startedAtEpochMillis = startedAtEpochMillis,
+    averageBpm = averageBpm,
+    peakBpm = peakBpm,
 )
 
 internal fun HistoryEntry.toEntity(uid: String, updatedAtEpochMillis: Long) = HistoryEntity(
@@ -351,6 +375,9 @@ internal fun HistoryEntry.toEntity(uid: String, updatedAtEpochMillis: Long) = Hi
     updatedAtEpochMillis = updatedAtEpochMillis,
     effort = effort?.level,
     note = note,
+    startedAtEpochMillis = startedAtEpochMillis,
+    averageBpm = averageBpm,
+    peakBpm = peakBpm,
 )
 
 internal fun PresetEntity.toDomain() =

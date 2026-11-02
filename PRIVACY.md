@@ -21,9 +21,10 @@ does with it is up to that app.
 
 If you connect Health Connect in Settings, each workout and Lift session you finish is written there as an
 exercise session, with its intervals or sets, how hard you said it was and any note you wrote on it, and, when you
-have set a body weight, its calorie estimate. Interval reads one thing from Health Connect, your latest body
-weight, which the weight sheet in Settings offers to use; it is set only when you tap it, and stays on this device
-like the weight you set yourself. Turn it off in Settings, or take the permission back in Health Connect, and
+have set a body weight, its calorie estimate. Interval reads two things from Health Connect: your latest body
+weight, which the weight sheet in Settings offers to use, set only when you tap it; and your heart rate during a
+workout or session you finished, as a watch recorded it there, whose average and peak its summary and page show.
+Both stay on this device like the weight you set yourself. Turn it off in Settings, or take the permission back in Health Connect, and
 nothing more is written; what was written stays there for you to keep or delete.
 
 ## Questions

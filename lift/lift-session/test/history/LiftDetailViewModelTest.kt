@@ -3,6 +3,9 @@
 package dev.justinsmith.lift.history
 
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
+import dev.justinsmith.interval.fakes.RecordingHealthStore
+import dev.justinsmith.interval.platform.HealthStatus
+import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.lift.domain.PersonalRecord
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
@@ -24,6 +27,7 @@ private const val DAY = 24L * 60 * 60 * 1000
 class LiftDetailViewModelTest {
     private val storage = FakeLiftStorage()
     private val repository = storage.repository()
+    private val health = RecordingHealthStore(HealthStatus.Connected)
 
     @BeforeTest
     fun setMainDispatcher() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -31,7 +35,13 @@ class LiftDetailViewModelTest {
     @AfterTest
     fun resetMainDispatcher() = Dispatchers.resetMain()
 
-    private fun viewModel(uid: String) = LiftDetailViewModel(uid, repository, repository, FixedTimestampFormatter)
+    private fun viewModel(uid: String) = LiftDetailViewModel(
+        uid,
+        repository,
+        repository,
+        FixedTimestampFormatter,
+        health,
+    )
 
     @Test
     fun `the session shows when it finished and the records it set over those before it`() {
@@ -78,5 +88,27 @@ class LiftDetailViewModelTest {
     @Test
     fun `a session never there is an empty page`() {
         assertEquals(LiftDetailUiState(), viewModel("gone").state.value)
+    }
+
+    @Test
+    fun `the page reads a watch's heart rate over the session and keeps it`() {
+        storage.finished("a", "Swings", 0, 60_000, 16.0 to 10)
+        health.heartRate = HeartRate(averageBpm = 128, peakBpm = 160)
+        val viewModel = viewModel("a")
+
+        viewModel.readHeartRate()
+
+        assertEquals(listOf(0L..60_000L), health.heartRateReads)
+        assertEquals(128, viewModel.state.value.session?.averageBpm)
+        assertEquals(160, viewModel.state.value.session?.peakBpm)
+        viewModel.readHeartRate()
+        assertEquals(1, health.heartRateReads.size)
+    }
+
+    @Test
+    fun `with none in the store the session shows none`() {
+        storage.finished("a", "Swings", 0, 60_000, 16.0 to 10)
+        viewModel("a").readHeartRate()
+        assertNull(viewModel("a").state.value.session?.averageBpm)
     }
 }

@@ -260,6 +260,14 @@ class SessionViewModel(
     }
 
     /**
+     * Reads the finished session's heart rate for the summary, as it comes into view: each time, until one is found,
+     * as a watch may sync after the session ends. Nothing before it is finished.
+     */
+    fun readHeartRate() {
+        viewModelScope.launch { summary.readHeartRate() }
+    }
+
+    /**
      * Finishes the session for the [summary], as [title] (and [healthTitle] in the health store): see
      * [FinishSession.finish]. Its timers stop either way. True when it was saved, and the summary follows.
      */

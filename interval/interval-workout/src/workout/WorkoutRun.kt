@@ -4,6 +4,7 @@ import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.CourseSpan
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.WorkoutProgress
+import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.WorkoutStatus
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
@@ -47,6 +48,8 @@ data class WorkoutRun(
     val note: String = "",
     /** The summary's words for the health store's note, as the screen put them. */
     val healthNotes: String? = null,
+    /** Its heart rate as a watch recorded it in the health store, once read there: not saved, it is read again. */
+    val heartRate: HeartRate? = null,
     /** Read once at start, like the configuration: a setting changed mid-workout applies next time. */
     val keepScreenOn: Boolean = false,
     val body: BodySettings = BodySettings(),
@@ -138,7 +141,10 @@ data class WorkoutRun(
         leaving = leaving,
         effort = effort,
         note = note,
-    )
+    ).copy(heartRate = heartRate)
+
+    /** When it ended: as its course closed, for the window its heart rate is read over. */
+    val endedAt: Long get() = spans.lastOrNull()?.endEpochMillis ?: openSince
 
     companion object {
         /** The workout [saved] was, as it stood then; a running one has not yet caught up with the time since. */

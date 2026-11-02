@@ -15,6 +15,8 @@ import dev.justinsmith.interval.plan.DayChoice
 import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.plan.dayChoices
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
+import dev.justinsmith.interval.platform.HealthStore
+import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.days
@@ -28,6 +30,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 /** One finished workout, as its page shows it. */
 data class FinishedWorkout(
@@ -48,6 +51,8 @@ data class FinishedWorkout(
     /** How hard it felt and a note on it, as said on its summary; null for none. */
     val effort: PerceivedEffort? = null,
     val note: String? = null,
+    /** Its heart rate as a watch recorded it, average and peak in beats a minute; null until read. */
+    val heartRate: HeartRate? = null,
 ) {
     /** What it is planned or repeated as: its preset's name, or its shape's. */
     val name: String get() = presetName ?: config.defaultPresetName()
@@ -73,6 +78,7 @@ class WorkoutDetailViewModel(
     private val settingsStore: SettingsStore,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
+    private val health: HealthStore,
     dayCheckMillis: Long = DAY_CHECK_MILLIS,
 ) : ViewModel() {
     // Read again each midnight, so "Today" turns to "Yesterday" with the page open.
@@ -106,6 +112,18 @@ class WorkoutDetailViewModel(
     fun putOnTimer() {
         val workout = state.value.workout ?: return
         presetStore.applyPreset(Preset(workout.name, workout.config))
+    }
+
+    /**
+     * Reads the workout's heart rate from the health store as the page comes into view, unless it has one, and keeps
+     * it in History once found: a watch may have synced since the summary. Only the page on show may read.
+     */
+    fun readHeartRate() {
+        val entry = historyStore.history.value.firstOrNull { it.id == id }?.takeIf { it.averageBpm == null } ?: return
+        viewModelScope.launch {
+            val heartRate = health.heartRate(entry.startedAt, entry.finishedAtEpochMillis) ?: return@launch
+            historyStore.keepHeartRateOf(id, heartRate)
+        }
     }
 
     /** Undo on [delete]. */
@@ -148,6 +166,7 @@ class WorkoutDetailViewModel(
                 planned = log.day(day).plans.any { it.workoutId == id },
                 effort = entry.effort,
                 note = entry.note,
+                heartRate = entry.averageBpm?.let { average -> entry.peakBpm?.let { HeartRate(average, it) } },
             )
         }
         return WorkoutDetailUiState(workout, dayChoices(today), weekdayOf(today))

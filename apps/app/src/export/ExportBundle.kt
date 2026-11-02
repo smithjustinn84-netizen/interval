@@ -7,9 +7,9 @@ import kotlinx.serialization.Serializable
  * Everything the app stores, as the export file holds it: primitives and names only, so the domain types
  * can change shape while an old file still reads. [schema] counts the file's own shape; a reader refuses a
  * newer one (schema 2 let a plan be a session on Lift; schema 3 added how a workout or a session felt, its
- * `effort` 1 to 5 and its `note`, and every shape's `warmUpSeconds` and `coolDownSeconds`, all absent from older
- * files). Lift's sessions carry their sets but not how a
- * day's plan was changed: the sets are the record.
+ * `effort` 1 to 5 and its `note`, every shape's `warmUpSeconds` and `coolDownSeconds`, and a workout's or a
+ * session's heart rate, `averageBpm` and `peakBpm`, all absent from older files). Lift's sessions carry their
+ * sets but not how a day's plan was changed: the sets are the record.
  */
 @Serializable
 data class ExportBundle(
@@ -82,6 +82,9 @@ data class WorkoutExport(
     /** How hard it felt, 1 (easy) to 5 (all out), and a note on it; null for none, and in schema 1 and 2. */
     val effort: Int? = null,
     val note: String? = null,
+    /** Its heart rate as a watch recorded it, average and peak in beats a minute; null for none, and in older files. */
+    val averageBpm: Int? = null,
+    val peakBpm: Int? = null,
 )
 
 /** A planned workout: [weekday] (1 Monday to 7 Sunday) when weekly, [epochDay] when once. */
@@ -163,9 +166,11 @@ data class SessionExport(
     val program: String?,
     val day: Int?,
     val sets: List<SetExport>,
-    /** As [WorkoutExport.effort] and [WorkoutExport.note]. */
+    /** As [WorkoutExport.effort], [WorkoutExport.note] and [WorkoutExport.averageBpm]. */
     val effort: Int? = null,
     val note: String? = null,
+    val averageBpm: Int? = null,
+    val peakBpm: Int? = null,
 )
 
 @Serializable

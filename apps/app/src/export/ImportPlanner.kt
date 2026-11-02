@@ -9,6 +9,7 @@ import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.ThemeMode
+import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.settings.ImportCounts
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Effort
@@ -238,6 +239,7 @@ private fun PresetExport.toDomain(): Preset {
 
 private fun WorkoutExport.toDomain(): HistoryEntry {
     require(elapsedSeconds >= 0 && (workActiveSeconds ?: 0) >= 0) { "time" }
+    requireHeartRate(averageBpm, peakBpm)
     return HistoryEntry(
         finishedAtEpochMillis,
         config.toDomain(),
@@ -246,7 +248,17 @@ private fun WorkoutExport.toDomain(): HistoryEntry {
         workActiveSeconds,
         effort = PerceivedEffort.of(effort),
         note = note?.take(PerceivedEffort.NOTE_MAX_LENGTH)?.ifBlank { null },
+        averageBpm = averageBpm,
+        peakBpm = peakBpm,
     )
+}
+
+/** A heart rate is both figures or neither, each one a heart could beat at. */
+private fun requireHeartRate(averageBpm: Int?, peakBpm: Int?) {
+    require((averageBpm == null) == (peakBpm == null)) { "heart rate" }
+    if (averageBpm != null && peakBpm != null) {
+        require(averageBpm in HeartRate.BPM_RANGE && peakBpm in HeartRate.BPM_RANGE) { "heart rate" }
+    }
 }
 
 /** A plan, linked to the user's own preset of its name when one is here (one coming is linked as it lands). */
@@ -332,6 +344,7 @@ private fun BlockExport.toDomain(exercises: List<CustomExercise>): Block {
 
 private fun SessionExport.toDomain(exercises: List<CustomExercise>, bands: List<Band>): LiftSession {
     require(uid.isNotBlank() && finishedAtEpochMillis >= startedAtEpochMillis) { "session" }
+    requireHeartRate(averageBpm, peakBpm)
     return LiftSession(
         uid = uid,
         startedAtEpochMillis = startedAtEpochMillis,
@@ -342,6 +355,8 @@ private fun SessionExport.toDomain(exercises: List<CustomExercise>, bands: List<
         day = day,
         effort = LiftEffort.of(effort),
         note = note?.take(LiftEffort.NOTE_MAX_LENGTH)?.ifBlank { null },
+        averageBpm = averageBpm,
+        peakBpm = peakBpm,
     )
 }
 

@@ -5,11 +5,13 @@ import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.ExerciseSegment
 import androidx.health.connect.client.records.ExerciseSessionRecord
+import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.Record
 import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import androidx.health.connect.client.records.WeightRecord
 import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
+import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import androidx.health.connect.client.units.Energy
@@ -29,9 +31,9 @@ import java.time.ZoneId
 /**
  * Health Connect as the app's [HealthStore]. Built into Android 14 and up; before that it is an app of its
  * own, which [HealthStatus.NotInstalled] says is missing. The app asks to write exercise sessions and their
- * calories and to read the body weight, nothing more, so the permission sheet is short. Writing is what
- * connects: the weight is a leave of its own, which a user connected before the app read it hasn't given, or
- * may refuse on the sheet. The permissions can be taken back in Health Connect's own settings at any time, so
+ * calories and to read the body weight and the heart rate, nothing more, so the permission sheet is short. Writing
+ * is what connects: each read is a leave of its own, which a user connected before the app read it hasn't given,
+ * or may refuse on the sheet. The permissions can be taken back in Health Connect's own settings at any time, so
  * they are checked before every write and read, not just once.
  *
  * Each workout goes in as one exercise session, with a segment per interval, rest, pause or set, and
@@ -92,6 +94,22 @@ class HealthConnectStore(
             ?.records?.firstOrNull()?.weight?.inKilograms
     }
 
+    override suspend fun heartRate(startEpochMillis: Long, endEpochMillis: Long): HeartRate? {
+        val client = client ?: return null
+        if (endEpochMillis <= startEpochMillis || !granted(READ_HEART_RATE)) return null
+        val request = AggregateRequest(
+            metrics = setOf(HeartRateRecord.BPM_AVG, HeartRateRecord.BPM_MAX),
+            timeRangeFilter = TimeRangeFilter.between(
+                Instant.ofEpochMilli(startEpochMillis),
+                Instant.ofEpochMilli(endEpochMillis),
+            ),
+        )
+        val result = attempt("Couldn't read the heart rate") { client.aggregate(request) } ?: return null
+        val average = result[HeartRateRecord.BPM_AVG]?.toInt() ?: return null
+        val peak = result[HeartRateRecord.BPM_MAX]?.toInt() ?: return null
+        return HeartRate(average, peak).takeIf { average in HeartRate.BPM_RANGE && peak in HeartRate.BPM_RANGE }
+    }
+
     /** Installed or not, and if so whether the app may write: the status as it stands this moment. */
     private suspend fun currentStatus(): HealthStatus = when (val sdk = statusOfSdk()) {
         HealthStatus.Disconnected -> if (granted()) HealthStatus.Connected else HealthStatus.Disconnected
@@ -133,8 +151,11 @@ class HealthConnectStore(
         /** The leave to read the body weight, for Settings' weight sheet. */
         private val READ_WEIGHT: Set<String> = setOf(HealthPermission.getReadPermission(WeightRecord::class))
 
-        /** What the permission sheet asks for: to write, and to read the weight. */
-        val PERMISSIONS: Set<String> = WRITE + READ_WEIGHT
+        /** The leave to read the heart rate, for a finished workout's summary and page. */
+        private val READ_HEART_RATE: Set<String> = setOf(HealthPermission.getReadPermission(HeartRateRecord::class))
+
+        /** What the permission sheet asks for: to write, and to read the weight and the heart rate. */
+        val PERMISSIONS: Set<String> = WRITE + READ_WEIGHT + READ_HEART_RATE
 
         /**
          * How far back a weight is looked for: an older one says little of today's, and Health Connect keeps

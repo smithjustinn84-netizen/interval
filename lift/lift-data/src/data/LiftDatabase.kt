@@ -30,7 +30,8 @@ import kotlinx.coroutines.flow.Flow
  * version 9 a session's day as it changed it, and the days done of a program before following it; version 10
  * the user's barbell, [BarEntity]; version 11 which day of its program a session was; version 12 how long the
  * user rests between sets, [RestEntity]; version 13 how a session felt ([SessionEntity.effort], [SessionEntity.note]);
- * version 14 the timer running in the session in progress, [SessionEntity.timer].
+ * version 14 the timer running in the session in progress, [SessionEntity.timer]; version 15 a finished session's
+ * heart rate ([SessionEntity.averageBpm], [SessionEntity.peakBpm]).
  * Every version adds; none rewrites a row.
  */
 @Database(
@@ -45,7 +46,7 @@ import kotlinx.coroutines.flow.Flow
         BarEntity::class,
         RestEntity::class,
     ],
-    version = 14,
+    version = 15,
     // 3 to 4 is MIGRATION_3_4, added in liftStorageModule.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -60,6 +61,7 @@ import kotlinx.coroutines.flow.Flow
         AutoMigration(from = 11, to = 12),
         AutoMigration(from = 12, to = 13),
         AutoMigration(from = 13, to = 14),
+        AutoMigration(from = 14, to = 15),
     ],
 )
 @ConstructedBy(LiftDatabaseConstructor::class)
@@ -155,6 +157,13 @@ interface SessionDao {
     /** Sets how the session [uid] felt, at [now]: an effort level, 1 to 5, and a note, either null for none. */
     @Query("UPDATE session SET effort = :effort, note = :note, updated_at = :now WHERE uid = :uid")
     suspend fun reflect(uid: String, effort: Int?, note: String?, now: Long)
+
+    /** Keeps the heart rate of the session [uid], at [now], unless it has one: the first found stays. */
+    @Query(
+        "UPDATE session SET average_bpm = :average, peak_bpm = :peak, updated_at = :now " +
+            "WHERE uid = :uid AND average_bpm IS NULL",
+    )
+    suspend fun keepHeartRate(uid: String, average: Int, peak: Int, now: Long)
 
     /** Marks a finished session deleted, keeping the row as a tombstone. */
     @Query("UPDATE session SET deleted = 1, updated_at = :now WHERE uid = :uid")
@@ -361,6 +370,9 @@ data class SessionEntity(
     val note: String? = null,
     /** The timer running in it while it is in progress, in [encodeTimer]'s shape; null for none. */
     val timer: String? = null,
+    /** Its heart rate, average and peak in beats a minute, as read from the health store; null until read. */
+    @ColumnInfo(name = "average_bpm") val averageBpm: Int? = null,
+    @ColumnInfo(name = "peak_bpm") val peakBpm: Int? = null,
 )
 
 @Entity(tableName = "lift_set", indices = [Index("session_uid")])

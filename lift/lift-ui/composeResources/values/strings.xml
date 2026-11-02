@@ -121,6 +121,9 @@
     <string name="session_title_more">%1$s and %2$d more</string>
     <string name="session_time">Time</string>
     <string name="session_moved">Moved</string>
+    <string name="session_average_heart_rate">Avg heart rate</string>
+    <string name="session_peak_heart_rate">Peak heart rate</string>
+    <string name="session_bpm_value">%1$d bpm</string>
     <string name="measure_reps">Reps</string>
     <string name="measure_time">Time</string>
     <string name="exercise_measure_a_side">%1$s a side</string>

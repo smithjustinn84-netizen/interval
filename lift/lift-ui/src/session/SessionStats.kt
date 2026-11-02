@@ -18,15 +18,19 @@ import dev.justinsmith.lift.ui.RecordRow
 import dev.justinsmith.lift.ui.StatTile
 import dev.justinsmith.lift.ui.resources.Res
 import dev.justinsmith.lift.ui.resources.kg_value
+import dev.justinsmith.lift.ui.resources.session_average_heart_rate
+import dev.justinsmith.lift.ui.resources.session_bpm_value
 import dev.justinsmith.lift.ui.resources.session_moved
+import dev.justinsmith.lift.ui.resources.session_peak_heart_rate
 import dev.justinsmith.lift.ui.resources.session_time
 import dev.justinsmith.lift.ui.resources.summary_records
 import dev.justinsmith.lift.ui.resources.summary_reps
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * A finished session's numbers: its time and reps, the weight moved, then the [records] it set, if any,
- * each tagged when [highlight]. The summary shows them as a session ends, and its page in History afterwards.
+ * A finished session's numbers: its time and reps, the weight moved, its heart rate once read from the health
+ * store, then the [records] it set, if any, each tagged when [highlight]. The summary shows them as a session
+ * ends, and its page in History afterwards.
  */
 @Composable
 fun SessionStats(
@@ -49,6 +53,22 @@ fun SessionStats(
             stringResource(Res.string.kg_value, formatKg(session.tonnageKg)),
             Modifier.fillMaxWidth(),
         )
+        val average = session.averageBpm
+        val peak = session.peakBpm
+        if (average != null && peak != null) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+                StatTile(
+                    stringResource(Res.string.session_average_heart_rate),
+                    stringResource(Res.string.session_bpm_value, average),
+                    Modifier.weight(1f),
+                )
+                StatTile(
+                    stringResource(Res.string.session_peak_heart_rate),
+                    stringResource(Res.string.session_bpm_value, peak),
+                    Modifier.weight(1f),
+                )
+            }
+        }
         if (records.isNotEmpty()) {
             GroupLabel(stringResource(Res.string.summary_records))
             ListCard {

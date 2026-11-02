@@ -19,16 +19,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.common_cancel
 import dev.justinsmith.interval.history.resources.common_joined
+import dev.justinsmith.interval.history.resources.detail_average_heart_rate
+import dev.justinsmith.interval.history.resources.detail_bpm_value
 import dev.justinsmith.interval.history.resources.detail_close_cd
 import dev.justinsmith.interval.history.resources.detail_delete_confirm
 import dev.justinsmith.interval.history.resources.detail_delete_menu
 import dev.justinsmith.interval.history.resources.detail_delete_text
 import dev.justinsmith.interval.history.resources.detail_delete_title
 import dev.justinsmith.interval.history.resources.detail_how_it_went
+import dev.justinsmith.interval.history.resources.detail_peak_heart_rate
 import dev.justinsmith.interval.history.resources.detail_plan_again
 import dev.justinsmith.interval.history.resources.detail_planned_done
 import dev.justinsmith.interval.history.resources.detail_repeat
@@ -81,6 +85,12 @@ fun WorkoutDetailRoute(
     val sharer = koinInject<Sharer>()
     val viewModel = koinViewModel<WorkoutDetailViewModel>(key = "workout-$id") { parametersOf(id) }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // Each time the page comes into view without a heart rate: a watch may have synced since the summary.
+    val unread = state.workout?.heartRate == null
+    LifecycleStartEffect(unread) {
+        if (unread) viewModel.readHeartRate()
+        onStopOrDispose {}
+    }
     val gone = state.workout == null
     val leave by rememberUpdatedState(onBack)
     LaunchedEffect(gone) { if (gone) leave() }
@@ -230,6 +240,18 @@ private fun DetailFigures(workout: FinishedWorkout) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             Stat(stringResource(Res.string.detail_work), workout.work, accent = true)
             workout.calories?.let { Stat(stringResource(Res.string.history_calories), it.toString()) }
+        }
+        workout.heartRate?.let { heartRate ->
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+                Stat(
+                    stringResource(Res.string.detail_average_heart_rate),
+                    stringResource(Res.string.detail_bpm_value, heartRate.averageBpm),
+                )
+                Stat(
+                    stringResource(Res.string.detail_peak_heart_rate),
+                    stringResource(Res.string.detail_bpm_value, heartRate.peakBpm),
+                )
+            }
         }
     }
     if (workout.effort != null || workout.note != null) {

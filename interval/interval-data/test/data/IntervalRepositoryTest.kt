@@ -17,6 +17,7 @@ import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.model.WorkoutProgress
 import dev.justinsmith.interval.model.asPlan
+import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.storage.StorageError
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.ConfigField
@@ -353,6 +354,21 @@ class IntervalRepositoryTest {
         val (older, newer) = repository().history.value
         assertEquals(240, newer.workActiveSeconds)
         assertEquals(null, older.workActiveSeconds)
+    }
+
+    @Test
+    fun `a workout keeps when it began and the first heart rate found for it`() {
+        val uid = repository().recordWorkout(IntervalConfig(), elapsedSeconds = 300, startedAtEpochMillis = 1_000)
+        repository().keepHeartRate(uid, HeartRate(averageBpm = 140, peakBpm = 170))
+        repository().keepHeartRate(uid, HeartRate(averageBpm = 100, peakBpm = 120))
+        val entry = repository().history.value.single()
+        assertEquals(1_000L, entry.startedAtEpochMillis)
+        assertEquals(140 to 170, entry.averageBpm to entry.peakBpm)
+
+        repository().recordWorkout(IntervalConfig(), elapsedSeconds = 300)
+        val id = requireNotNull(repository().history.value.first { it.startedAtEpochMillis == null }.id)
+        repository().keepHeartRateOf(id, HeartRate(averageBpm = 120, peakBpm = 150))
+        assertEquals(120, repository().history.value.first { it.id == id }.averageBpm)
     }
 
     @Test

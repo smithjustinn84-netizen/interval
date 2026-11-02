@@ -29,6 +29,7 @@ import dev.justinsmith.interval.platform.HealthSegment
 import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.HealthWorkoutKind
+import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.ShareableFile
 import dev.justinsmith.interval.tab
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
@@ -420,6 +421,23 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     /** A scale or another app records a weight of [kg] in Health Connect. */
     fun weighInHealthConnect(kg: Double) {
         healthStore.weightKg = kg
+    }
+
+    /** A watch has recorded the heart rate in Health Connect, [average] and [peak] beats a minute, and synced. */
+    fun watchSyncsHeartRate(average: Int, peak: Int) {
+        healthStore.heartRate = HeartRate(average, peak)
+    }
+
+    /** The summary shows the workout's heart rate, its average and peak. */
+    fun seeSummaryHeartRate(average: Int, peak: Int) = see("Heart rate $average avg · $peak peak")
+
+    fun seeNoSummaryHeartRate() = seeNo(hasText("Heart rate", substring = true))
+
+    /** A finished workout's page shows its heart rate, average and peak, and History has kept it. */
+    fun seeWorkoutHeartRate(average: Int, peak: Int) {
+        waitFor("a heart rate kept in History") { app.repository.history.value.single().averageBpm == average }
+        see("$average bpm")
+        see("$peak bpm")
     }
 
     /** Opens the body weight's sheet, takes Health Connect's [weight] from its button, and closes it with Done. */

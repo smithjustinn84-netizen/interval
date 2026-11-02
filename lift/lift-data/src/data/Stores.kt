@@ -1,5 +1,6 @@
 package dev.justinsmith.lift.data
 
+import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.BandColour
 import dev.justinsmith.lift.domain.CustomExercise
@@ -38,6 +39,9 @@ interface SessionStore {
     fun finishSession(title: String)
 
     fun reflectOnSession(uid: String, effort: PerceivedEffort?, note: String)
+
+    /** Keeps the [heartRate] of the finished session [uid] unless it has one: the first found stays. */
+    fun keepHeartRate(uid: String, heartRate: HeartRate)
 
     fun discardSession()
 

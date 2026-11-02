@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
@@ -124,6 +125,12 @@ fun SessionRoute(onExit: () -> Unit) {
     val clocks = viewModel.clocks.collectAsStateWithLifecycle()
     val readClocks = remember(clocks) { { clocks.value } }
     val finished = state.finished
+    // The summary's heart rate, each time it comes into view without one: a watch may sync after the session ends.
+    val unread = finished != null && finished.session.averageBpm == null
+    LifecycleStartEffect(unread) {
+        if (unread) viewModel.readHeartRate()
+        onStopOrDispose {}
+    }
     val emom = state.emom
     val emomState = clocks.value.emomState
     if (finished == null) {

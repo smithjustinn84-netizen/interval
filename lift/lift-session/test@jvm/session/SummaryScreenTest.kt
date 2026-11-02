@@ -102,4 +102,25 @@ class SummaryScreenTest {
         onNodeWithText("Steady").assertExists()
         onNodeWithText("Grip went").assertExists()
     }
+
+    @Test
+    fun `a watch's heart rate shows on the summary and the session's page once it is read`() = runUiTest {
+        var finished by mutableStateOf(Finished(session, emptyList()))
+        setThemedContent(dark = true) { SummaryScreen(finished, onDone = {}) }
+        onNodeWithText("Avg heart rate").assertDoesNotExist()
+
+        finished = Finished(session.copy(averageBpm = 128, peakBpm = 160), emptyList())
+        onNodeWithText("128 bpm").assertExists()
+        onNodeWithText("160 bpm").assertExists()
+    }
+
+    @Test
+    fun `a session's page shows a watch's heart rate once it is read`() = runUiTest {
+        val read = session.copy(averageBpm = 128, peakBpm = 160)
+        setThemedContent(dark = true) {
+            LiftDetailScreen(LiftDetailUiState(read, "Saturday", "1:21 PM"), onDelete = {}, onBack = {})
+        }
+        onNodeWithText("Avg heart rate").assertExists()
+        onNodeWithText("128 bpm").assertExists()
+    }
 }

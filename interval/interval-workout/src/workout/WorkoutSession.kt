@@ -34,6 +34,8 @@ import kotlinx.coroutines.flow.asStateFlow
  * ran, instead of starting again. Everything here runs on the main thread, the screen's actions and the
  * notification's alike.
  */
+// One per control, and the summary's three: how it felt, its words for the health store, and the heart rate.
+@Suppress("detekt.TooManyFunctions")
 class WorkoutSession(
     private val settingsStore: SettingsStore,
     private val progressStore: WorkoutProgressStore,
@@ -174,6 +176,17 @@ class WorkoutSession(
      */
     fun describeForHealth(notes: String?) {
         run = run?.copy(healthNotes = notes)
+    }
+
+    /**
+     * Reads the finished workout's heart rate from the health store, for its summary, unless it has it; kept in
+     * History once found. The screen asks as the summary shows: a watch may not have synced yet, and History's page
+     * asks again.
+     */
+    suspend fun readHeartRate() {
+        val finished = run?.takeIf { it.entryUid != null && it.heartRate == null } ?: return
+        val heartRate = recorder.heartRate(finished) ?: return
+        run = run?.takeIf { it.entryUid == finished.entryUid }?.copy(heartRate = heartRate) ?: return
     }
 
     // Up to a tick behind the clock: the platform's notifications land within a tenth of a second of the cue.

@@ -44,6 +44,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
@@ -106,6 +107,11 @@ fun WorkoutRoute(id: Long, onExit: () -> Unit, modifier: Modifier = Modifier) {
     if (!state.isDone) AskToShowNotifications()
     val exit by rememberUpdatedState(onExit)
     LaunchedEffect(state.leaving) { if (state.leaving) exit() }
+    // The summary's heart rate, each time it comes into view without one: a watch may sync after the workout ends.
+    LifecycleStartEffect(state.isDone, state.heartRate == null) {
+        if (state.isDone && state.heartRate == null) viewModel.readHeartRate()
+        onStopOrDispose {}
+    }
     WorkoutScreen(
         state = state,
         onTogglePause = viewModel::togglePause,

@@ -18,12 +18,14 @@
     <!-- The plan's reminders are alarms, which a reboot drops: PlanReminderReceiver sets them again. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <!-- Health Connect (HealthConnectStore, in core-platform): finished workouts and Lift sessions written there
-         as exercise sessions with their calories, once the user connects it in Settings, and the latest body
-         weight read back for Settings' weight sheet to offer. Nothing else is read. Health Connect asks the user
-         through its own sheet; Play's Health apps declaration must list all three. -->
+         as exercise sessions with their calories, once the user connects it in Settings, the latest body weight
+         read back for Settings' weight sheet to offer, and the heart rate over a finished workout or session (a
+         watch's) for its summary and page. Nothing else is read. Health Connect asks the user through its own
+         sheet; Play's Health apps declaration must list all four. -->
     <uses-permission android:name="android.permission.health.WRITE_EXERCISE"/>
     <uses-permission android:name="android.permission.health.WRITE_TOTAL_CALORIES_BURNED"/>
     <uses-permission android:name="android.permission.health.READ_WEIGHT"/>
+    <uses-permission android:name="android.permission.health.READ_HEART_RATE"/>
 
     <!-- Android 11+ package visibility: lets TextToSpeech find the device's speech engine, and the Health Connect
          client find its app on Android 13 and before (on 14 and up it is part of the system). -->

@@ -22,6 +22,7 @@ import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.pressKey
 import dev.justinsmith.interval.model.PerceivedEffort
+import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.WeekStanding
@@ -205,9 +206,12 @@ class WorkoutScreenTest {
 
     @Test
     fun `on a phone the summary's how was it fits above its actions`() = runUiTest(Window.Phone) {
-        // The fullest summary: calories and the week's line under the stats.
+        // The fullest summary: calories, a watch's heart rate and the week's line under the stats.
         setThemedContent {
-            Screen(done.toUiState(running = false, calories = 64, week = WeekStanding(3, goal = 4, streak = 2)))
+            Screen(
+                done.toUiState(running = false, calories = 64, week = WeekStanding(3, goal = 4, streak = 2))
+                    .copy(heartRate = HeartRate(averageBpm = 148, peakBpm = 175)),
+            )
         }
         waitForIdle()
         // Where each is laid out, not the part of it on show: a field scrolled under the actions is clipped to nothing.
@@ -224,6 +228,15 @@ class WorkoutScreenTest {
         state = done.toUiState(running = false, calories = 64)
         onNodeWithText("kcal").assertExists()
         onNodeWithText("64").assertExists()
+    }
+
+    @Test
+    fun `the summary shows a watch's heart rate once it is read`() = runUiTest {
+        var state by mutableStateOf(done.toUiState(running = false))
+        setThemedContent { Screen(state) }
+        onNodeWithText("Heart rate", substring = true).assertDoesNotExist()
+        state = state.copy(heartRate = HeartRate(averageBpm = 148, peakBpm = 175))
+        onNodeWithText("Heart rate 148 avg · 175 peak").assertExists()
     }
 
     @Test

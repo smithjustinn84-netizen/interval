@@ -13,6 +13,7 @@ import dev.justinsmith.interval.fixtures.SCHEMA_4_EXPORT
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.ThemeMode
+import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.ShareableFile
 import dev.justinsmith.interval.settings.ImportCounts
 import dev.justinsmith.interval.settings.ImportReview
@@ -70,6 +71,7 @@ class AppDataImporterTest {
         val bookended = IntervalConfig(rounds = 4, warmUpSeconds = 60, coolDownSeconds = 30)
         val workout = intervals.recordWorkout(bookended, elapsedSeconds = 200, workSeconds = 120)
         intervals.reflectOnWorkout(workout, PerceivedEffort.Hard, "Felt strong")
+        intervals.keepHeartRate(workout, HeartRate(averageBpm = 141, peakBpm = 172))
         intervals.planWeekly(
             PlanWorkout.Interval(
                 "Hills",
@@ -86,6 +88,7 @@ class AppDataImporterTest {
         lift.logSet(BuiltInExercise.TwoHandSwing, bellKg = 16.0, reps = 10, side = null)
         lift.logSet(lift.customExercises.value.single { it.uid == press }, bellKg = 30.0, reps = 8, side = null)
         lift.finishSession("Swings and press")
+        lift.keepHeartRate(lift.sessions.value.single().uid, HeartRate(averageBpm = 118, peakBpm = 149))
     }
 
     /** The phone's export, as Settings' Export writes it. */
@@ -187,6 +190,18 @@ class AppDataImporterTest {
         assertEquals(
             ImportReview.Unreadable,
             target.importer.review(ShareableFile("x.json", "application/json", content)),
+        )
+    }
+
+    @Test
+    fun `a heart rate no heart beats at makes the file unreadable`() = runTest {
+        val source = stocked()
+        val file = source.file().content
+        val content = file.replace("\"peakBpm\": 172", "\"peakBpm\": 900")
+        assertTrue(content != file)
+        assertEquals(
+            ImportReview.Unreadable,
+            Phone(now).importer.review(ShareableFile("x.json", "application/json", content)),
         )
     }
 }

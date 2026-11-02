@@ -157,6 +157,9 @@
     <string name="plan_describe_no_day">No day, so it stays off the plan</string>
     <string name="detail_total">Total</string>
     <string name="detail_work">Work</string>
+    <string name="detail_average_heart_rate">Avg heart rate</string>
+    <string name="detail_peak_heart_rate">Peak heart rate</string>
+    <string name="detail_bpm_value">%1$d bpm</string>
     <string name="detail_planned_done">Planned · done</string>
     <string name="detail_repeat">Repeat now</string>
     <string name="detail_plan_again">Plan again</string>

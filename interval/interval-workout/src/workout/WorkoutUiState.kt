@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.workout
 
 import dev.justinsmith.interval.model.PerceivedEffort
+import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.Preset
@@ -76,6 +77,8 @@ data class WorkoutUiState(
     val effort: PerceivedEffort? = null,
     /** The summary's note as typed. */
     val note: String = "",
+    /** Its heart rate as a watch recorded it, for the summary; null without one. */
+    val heartRate: HeartRate? = null,
 ) {
     /** Offer "Save as preset" on the summary: no preset has this shape yet. */
     val canSavePreset: Boolean get() = presetName == null

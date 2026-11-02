@@ -5,6 +5,7 @@ package dev.justinsmith.lift.session
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.RecordingHealthStore
 import dev.justinsmith.interval.platform.HealthStatus
+import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.fakes.FakeIntervalActivity
@@ -68,6 +69,26 @@ class FinishSessionTest {
         assertNull(finishing.finished.value)
         assertNull(repository.active.value)
         assertTrue(health.workouts.isEmpty())
+    }
+
+    @Test
+    fun `the summary reads a watch's heart rate over the session and keeps it`() = runTest {
+        logged()
+        val finishing = finishing(backgroundScope)
+        now = 160_000
+        finishing.finish("Squats")
+        // A watch yet to sync: none, and nothing kept.
+        finishing.readHeartRate()
+        assertNull(finishing.finished.value?.session?.averageBpm)
+
+        health.heartRate = HeartRate(averageBpm = 131, peakBpm = 158)
+        finishing.readHeartRate()
+
+        assertEquals(listOf(100_000L..160_000L, 100_000L..160_000L), health.heartRateReads)
+        assertEquals(131, finishing.finished.value?.session?.averageBpm)
+        assertEquals(158, repository.sessions.value.single().peakBpm)
+        finishing.readHeartRate()
+        assertEquals(2, health.heartRateReads.size)
     }
 
     @Test

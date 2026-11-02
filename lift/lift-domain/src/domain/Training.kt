@@ -314,6 +314,9 @@ data class LiftSession(
     val note: String? = null,
     /** The timer running in it, kept so a process killed in it goes on with it; null with none, and once finished. */
     val timer: SavedTimer? = null,
+    /** Its heart rate, average and peak in beats a minute, as a watch recorded it in health; null until read. */
+    val averageBpm: Int? = null,
+    val peakBpm: Int? = null,
 ) {
     val tonnageKg: Double get() = sets.sumOf { it.tonnageKg }
 

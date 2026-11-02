@@ -54,6 +54,7 @@
     <string name="workout_stat_time">Time</string>
     <string name="workout_stat_rounds">Rounds</string>
     <string name="workout_stat_calories">kcal</string>
+    <string name="workout_heart_rate">Heart rate %1$d avg · %2$d peak</string>
     <string name="workout_stat_rounds_value">%1$d/%2$d</string>
     <string name="workout_saved">Saved to history</string>
     <string name="summary_how_was_it">How was it?</string>

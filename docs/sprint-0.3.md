@@ -230,6 +230,21 @@ Sizes: XS ≤ half a day, S ≈ 1 day, M ≈ 2 days, L ≈ 3 days. The cut line 
   on the summary and the History page, keeping them on the entry (two nullable columns, additive
   migration). `READ_HEART_RATE` joins the permissions and the Play declaration. Nothing to show without a
   wearable, so the card hides when the read is empty.
+- As built: `HealthStore.heartRate(start, end)` (core-platform's `HeartRate`, average and peak) is one aggregate
+  read (`BPM_AVG`, `BPM_MAX`) under `READ_HEART_RATE`, which joins the permission sheet but, like the weight's, is
+  checked on its own, so a user connected before keeps writing and sees none until they connect again. Health
+  Connect answers only an app on show, and a watch syncs minutes late, so the read is the screens': the summary
+  and a finished workout's or session's page ask each time they come into view (`LifecycleStartEffect`) until one
+  is found, which is then kept (`average_bpm`, `peak_bpm`; the first found stays) and never asked for again. A
+  summary restored after a kill reads again rather than saving it. History's entry also keeps when the workout
+  began (`started_at`), so the page reads the window the summary did; an older one's is run back from its finish.
+  On the workout's summary it is one line under the stats ("Heart rate 142 avg · 171 peak"): a row of tiles
+  pushed "How was it?" under Repeat on a phone. A workout's page shows two tiles in its figures, and Lift's
+  `SessionStats` two tiles on both its summary and its page, which scroll. The export carries both figures in schema 3 (still unreleased,
+  so no bump), checked on import as a pair a heart can beat at (`HeartRate.BPM_RANGE`); an import still matches a
+  workout by when and what, never by its heart rate. Interval's database is at 9, Lift's at 15. `amper-37` has no
+  watch, so the journey checks only that nothing shows without one; the reads are covered by
+  `HealthConnectAcceptanceTest` over the recording store.
 
 **9. HealthKit: the iOS actual of `HealthStore`** · L (stretch, only if 0–7 land early)
 - `HKWorkoutBuilder` with `.highIntensityIntervalTraining` / `.traditionalStrengthTraining`, a

@@ -5,6 +5,7 @@ import dev.justinsmith.interval.data.PresetStore
 import dev.justinsmith.interval.data.SettingsStore
 import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.HealthWorkout
+import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.WeekStanding
@@ -33,7 +34,13 @@ class WorkoutRecorder(
     fun finished(run: WorkoutRun, endedEarly: Boolean): WorkoutRun {
         // Before the write, which lands later, so the summary has it as it arrives.
         val week = weekWith()
-        val uid = historyStore.recordWorkout(run.config, run.activeSeconds, endedEarly, workSeconds = run.workSeconds)
+        val uid = historyStore.recordWorkout(
+            run.config,
+            run.activeSeconds,
+            endedEarly,
+            workSeconds = run.workSeconds,
+            startedAtEpochMillis = run.startedAt,
+        )
         health.record(healthWorkout(run, endedAt = run.openSince))
         return run.copy(week = week, entryUid = uid)
     }
@@ -42,6 +49,17 @@ class WorkoutRecorder(
     fun reflect(run: WorkoutRun) {
         val uid = run.entryUid ?: return
         historyStore.reflectOnWorkout(uid, run.effort, run.note)
+    }
+
+    /**
+     * The heart rate over the finished [run], read from the health store and kept in History with it; null when there
+     * is none to read yet. Read from the screen: the store answers only an app on show.
+     */
+    suspend fun heartRate(run: WorkoutRun): HeartRate? {
+        val uid = run.entryUid ?: return null
+        val heartRate = health.heartRate(run.startedAt, run.endedAt) ?: return null
+        historyStore.keepHeartRate(uid, heartRate)
+        return heartRate
     }
 
     /**

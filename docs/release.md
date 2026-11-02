@@ -125,7 +125,7 @@ To change one later (a new password, say), run its command again: `gh secret set
    (`apps/app/src/about/PrivacyScreen.kt`): `PRIVACY.md`, at the repository's root, is that text, and its GitHub
    page (https://github.com/smithjustinn84-netizen/interval/blob/main/PRIVACY.md) is the URL to give Play. And
    the Play Console's Health apps declaration must name the data types in the manifest: exercise and total
-   calories burned (write) and, from 0.3, body weight (read). Without the declaration Play blocks the release's
+   calories burned (write) and, from 0.3, body weight and heart rate (read). Without the declaration Play blocks the release's
    review.
 5. **Tag and upload.** `git tag v0.2.0 && git push origin v0.2.0` (jj has no tags). The tag must be `v` +
    `versionName` (`tools/check_versions.py --tag` fails the job before anything is signed). CI attaches
@@ -155,8 +155,8 @@ The next sprint's tickets, which take most of these up, are in [sprint-0.3.md](s
 ## Left out on purpose
 
 - **HealthKit, widgets, Wear OS**: each a platform project. Health Connect's write side landed (the `HealthStore`
-  in core-platform), and in 0.3 the body weight's read; HealthKit would be its iOS actual, and a watch's heart
-  rate a layer on top.
+  in core-platform), and in 0.3 the reads of the body weight and a watch's heart rate; HealthKit would be its iOS
+  actual.
 - **Localisation**: the built-in presets' names are stored data by design, and both text parsers are
   English-keyword; a second locale is a sprint, not a ticket.
 - **Splitting the `TooManyFunctions` classes** (`WorkoutViewModel`, `IntervalRepository`, `LiftRepository`,

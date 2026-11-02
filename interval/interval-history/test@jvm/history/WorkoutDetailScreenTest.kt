@@ -16,6 +16,7 @@ import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.plan.DayChoice
+import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
@@ -106,6 +107,18 @@ class WorkoutDetailScreenTest {
             listOf("share HIIT 30/30 · Wednesday, Oct 14 · 7:05 AM\n9:40 total · 5:00 work · 84 kcal\nLegs heavy"),
             events,
         )
+    }
+
+    @Test
+    fun `a watch's heart rate shows once it is read`() = runUiTest {
+        var shown by mutableStateOf(state)
+        setThemedContent { Screen(shown) }
+        onNodeWithText("Avg heart rate").assertDoesNotExist()
+
+        shown = state.copy(workout = workout.copy(heartRate = HeartRate(averageBpm = 142, peakBpm = 171)))
+        onNodeWithText("Avg heart rate").assertExists()
+        onNodeWithText("142 bpm").assertExists()
+        onNodeWithText("171 bpm").assertExists()
     }
 
     @Test

@@ -3,6 +3,7 @@
 package dev.justinsmith.lift.data
 
 import co.touchlab.kermit.Logger
+import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.storage.SerialWriter
 import dev.justinsmith.interval.storage.StorageError
@@ -454,6 +455,11 @@ class LiftRepository(
         writer.persist { sessionDao.reflect(uid, effort?.level, kept, now) }
     }
 
+    override fun keepHeartRate(uid: String, heartRate: HeartRate) {
+        val now = clock.nowMillis()
+        writer.persist { sessionDao.keepHeartRate(uid, heartRate.averageBpm, heartRate.peakBpm, now) }
+    }
+
     /**
      * Adds what an import brings, all of it or none (one transaction), behind every write before it, and returns
      * once it has landed; a failure is thrown, nothing having been written. Sessions keep their uids, exercises
@@ -626,6 +632,8 @@ private fun LiftSession.importRow(now: Long) = SessionEntity(
     programDay = day,
     effort = effort?.level,
     note = note,
+    averageBpm = averageBpm,
+    peakBpm = peakBpm,
 )
 
 private fun SetLog.importRow(sessionUid: String) = SetEntity(
@@ -675,6 +683,8 @@ private fun SessionEntity.toDomain(sets: List<SetLog>, made: List<CustomExercise
     PerceivedEffort.of(effort),
     note,
     timer?.takeIf { finishedAtEpochMillis == null }?.let { decodeTimer(it, made, bands) },
+    averageBpm,
+    peakBpm,
 )
 
 /** The program [stored] names: a built-in, or one of [made]; null for one gone or unknown. */

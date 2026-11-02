@@ -40,6 +40,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
 import dev.justinsmith.interval.model.PerceivedEffort
+import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.prefersReducedMotion
 import dev.justinsmith.interval.presets.PresetDraft
 import dev.justinsmith.interval.presets.PresetEditorHost
@@ -79,6 +80,7 @@ import dev.justinsmith.interval.workout.resources.summary_week_count
 import dev.justinsmith.interval.workout.resources.summary_week_of_goal
 import dev.justinsmith.interval.workout.resources.workout_done
 import dev.justinsmith.interval.workout.resources.workout_ended
+import dev.justinsmith.interval.workout.resources.workout_heart_rate
 import dev.justinsmith.interval.workout.resources.workout_repeat
 import dev.justinsmith.interval.workout.resources.workout_save_preset
 import dev.justinsmith.interval.workout.resources.workout_saved
@@ -323,6 +325,7 @@ private fun SummaryDetails(
                 }
             }
         }
+        HeartRateLine(state.heartRate)
         AnimatedVisibility(entrance, enter = risingEnter(Motion.STAGGER_MILLIS * SAVED_STEP)) {
             Row(
                 Modifier.padding(top = Spacing.space20),
@@ -367,6 +370,24 @@ private fun SummaryDetails(
                 modifier = Modifier.padding(top = Spacing.space24).widthIn(max = Sizes.content),
             )
         }
+    }
+}
+
+/**
+ * The workout's heart rate, "Heart rate 142 avg · 171 peak", once read from the health store, if a watch recorded it:
+ * it arrives after the rest. One line, not a row of tiles, so "How was it?" still fits above the actions on a phone.
+ */
+@Composable
+private fun ColumnScope.HeartRateLine(heartRate: HeartRate?) {
+    AnimatedVisibility(heartRate != null, enter = risingEnter()) {
+        val shown = heartRate ?: return@AnimatedVisibility
+        Text(
+            stringResource(Res.string.workout_heart_rate, shown.averageBpm, shown.peakBpm),
+            style = IntervalTheme.type.meta,
+            color = IntervalTheme.workout.onGround,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = Spacing.space12),
+        )
     }
 }
 
