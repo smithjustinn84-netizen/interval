@@ -255,6 +255,11 @@ in the Route.
 ## D. ViewModels
 
 ### D1 · High · `SessionViewModel` does eight jobs
+
+**Resolved** in change `unlqzyyl` ("Lift: the session's draft, plan and finish, each a part of its own"): `SetDraftEditor` (the draft, its clamping, suggestions and edit mode, and the
+added exercise awaited), `TodayPlanEditor` (change, skip, swap, the next load stepped) and `FinishSession` (records,
+plan changes, topped out, week standing, Health, the summary's reflection), beside `SessionTimers` (B2). The
+ViewModel is under 300 lines with no `@Suppress`; the Route's actions call the parts it exposes.
 [SessionViewModel.kt](../lift/lift-session/src/session/SessionViewModel.kt) covers:
 - draft editing and suggestions
 - plan editing (change, skip, swap)
@@ -284,6 +289,11 @@ course spans, checkpointing, the service lifecycle and the week standing.
 state to `WorkoutUiState`.
 
 ### D3 · Medium · Snapshot reads inside reactive pipelines
+
+**Resolved for the session** in change `unlqzyyl` ("Lift: the session's draft, plan and finish, each a part of its own"): its state is built from the stores' flows, the sets before
+this session (`Before`) from `sessions` as it changes, so a deletion or an import mid-session corrects records,
+suggestions and "last time"; the actions read the stores as they stand when they run. `ProgramEditorViewModel`'s read
+of `sessions.value` is still open.
 - `upNext()` reads `repository.bar.value`, `bands.value` and `draft.value` inside a `combine` that already takes
   them (SessionViewModel L823-827).
 - `ProgramEditorViewModel` reads `repository.sessions.value` inside a combine (L64).
@@ -291,6 +301,9 @@ state to `WorkoutUiState`.
   importing mid-session leaves records and suggestions wrong.
 
 ### D4 · Low · I/O in lifecycle callbacks
+
+**Partly resolved** in change `unlqzyyl` ("Lift: the session's draft, plan and finish, each a part of its own"): the summary's words go to Health once they settle, through
+`SessionHealth`, a single that outlives the summary, not in `onCleared`. The session is still started in `init`.
 `SessionViewModel` starts a session in `init` and writes to Health in `onCleared`. A process killed before
 `onCleared` loses the note.
 
@@ -392,6 +405,12 @@ worked out on their own and joined last, so a Timer step rebuilds nothing else. 
 state is what cost, and `WhileSubscribed` would show Loading again on each return to the tab.
 
 ### F2 · Medium · Whole history reprocessed on every change
+
+**Resolved for the session's screen** in change `unlqzyyl` ("Lift: the session's draft, plan and finish, each a part of its own"): the sets before the session are flattened
+`flowOn` an injected computation dispatcher as the sessions change, the first on the caller; the records and recent
+lifts are worked out again as a set is logged or the history changes, never on a stepper tap. The rest of the state
+stays on the main thread, so a tap shows in the frame after it (the whole state `flowOn` Default left Lift's
+acceptance specs a frame behind). `observeSets()` still re-maps the whole history on each insert.
 - `observeSets()` streams every set, including those of deleted sessions, and every insert re-maps the whole
   history.
 - `SessionViewModel`'s `untimed` combine runs on Main with no `flowOn`, recomputing records and recent exercises

@@ -42,6 +42,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -72,8 +73,10 @@ class SessionViewModelTest {
         ) { now }
     }
 
+    private val main = UnconfinedTestDispatcher()
+
     @BeforeTest
-    fun setMainDispatcher() = Dispatchers.setMain(UnconfinedTestDispatcher())
+    fun setMainDispatcher() = Dispatchers.setMain(main)
 
     private val keepAlive = RecordingKeepAlive()
 
@@ -87,21 +90,40 @@ class SessionViewModelTest {
     @AfterTest
     fun resetMainDispatcher() {
         timers.close()
+        healthScope.cancel()
         Dispatchers.resetMain()
     }
 
     private val intervals = FakeIntervalActivity()
     private val health = RecordingHealthStore(HealthStatus.Connected)
 
+    private val filterStore = ExerciseFilterStore()
+
+    /** Where the health store's second write waits for the summary's words: the process's, not the screen's. */
+    private val healthScope = TestScope()
+
     private fun viewModel(savedState: SavedStateHandle = SavedStateHandle()) = SessionViewModel(
         repository,
-        WallClock { now },
+        repository,
+        repository,
+        repository,
+        repository,
+        filterStore,
+        TodayPlanEditor(repository, repository, repository),
+        FinishSession(
+            repository,
+            repository,
+            repository,
+            intervals,
+            FixedTimestampFormatter,
+            { now },
+            SessionHealth(health, { now }, healthScope, settleMillis = SETTLE_MILLIS),
+        ),
         timers,
-        ExerciseFilterStore(),
-        intervals,
         FixedTimestampFormatter,
-        health,
+        { now },
         savedState,
+        computation = main,
     )
 
     private inline fun <T> SessionViewModel.use(block: SessionViewModel.() -> T): T = try {
@@ -157,7 +179,7 @@ class SessionViewModelTest {
         viewModel().use {
             assertEquals(setOf(1), state.value.emom?.done)
             assertEquals(2, clocks.value.emomState?.minute)
-            emomSetDone()
+            timers.emomSetDone()
             assertEquals(listOf(Side.Right), repository.active.value?.sets?.map { it.side })
         }
     }
@@ -168,7 +190,7 @@ class SessionViewModelTest {
         repository.logSet(BuiltInExercise.Press, 12.0, 5, Side.Left)
         val savedState = SavedStateHandle()
         viewModel(savedState).use {
-            updateDraft { it.copy(exercise = BuiltInExercise.Snatch, bellKg = 20.0, reps = 7) }
+            draft.update { it.copy(exercise = BuiltInExercise.Snatch, bellKg = 20.0, reps = 7) }
         }
         // The process is killed: the next screen's ViewModel is made over the same saved state.
         viewModel(savedState).use {
@@ -179,8 +201,8 @@ class SessionViewModelTest {
     }
 
     @Test
-    fun `the log sheet's filters go through the session and narrow its list`() = viewModel().use {
-        updateFilters { it.copy(equipment = setOf(Equipment.Kettlebell)) }
+    fun `the log sheet's filters narrow its list`() = viewModel().use {
+        filterStore.update { it.copy(equipment = setOf(Equipment.Kettlebell)) }
         assertEquals(setOf(Equipment.Kettlebell), state.value.library.filters.equipment)
     }
 
@@ -188,7 +210,7 @@ class SessionViewModelTest {
     fun `picking a lift suggests the bell it was last done with and shows that set as last time`() {
         earlier(1, BuiltInExercise.Press, 12.0, side = Side.Left)
         viewModel().use {
-            updateDraft { it.copy(exercise = BuiltInExercise.Press) }
+            draft.update { it.copy(exercise = BuiltInExercise.Press) }
             assertEquals(12.0, state.value.draft.bellKg)
             assertEquals(1L, state.value.draftLastTime?.id)
         }
@@ -197,8 +219,8 @@ class SessionViewModelTest {
     @Test
     fun `picking a lift never done keeps the bell in hand`() {
         viewModel().use {
-            updateDraft { it.copy(bellKg = 24.0) }
-            updateDraft { it.copy(exercise = BuiltInExercise.Press) }
+            draft.update { it.copy(bellKg = 24.0) }
+            draft.update { it.copy(exercise = BuiltInExercise.Press) }
             assertEquals(24.0, state.value.draft.bellKg)
             assertNull(state.value.draftLastTime)
         }
@@ -209,7 +231,7 @@ class SessionViewModelTest {
         val heavy = repository.bands.value.last()
         earlier(1, BuiltInExercise.BandPullApart, 0.0, band = heavy.id)
         viewModel().use {
-            updateDraft { it.copy(exercise = BuiltInExercise.BandPullApart) }
+            draft.update { it.copy(exercise = BuiltInExercise.BandPullApart) }
             assertEquals(heavy.id, state.value.draft.band.id)
         }
     }
@@ -218,7 +240,7 @@ class SessionViewModelTest {
     fun `picking a bodyweight lift suggests the weight last added`() {
         earlier(1, BuiltInExercise.PushUp, 8.0)
         viewModel().use {
-            updateDraft { it.copy(exercise = BuiltInExercise.PushUp) }
+            draft.update { it.copy(exercise = BuiltInExercise.PushUp) }
             assertEquals(8.0, state.value.draft.addedKg)
         }
     }
@@ -229,12 +251,12 @@ class SessionViewModelTest {
         repository.setOwned(24.0, owned = true)
         viewModel().use {
             assertEquals(16.0, state.value.draft.bellKg)
-            stepDraftLoad(1)
+            draft.stepLoad(1)
             assertEquals(24.0, state.value.draft.bellKg)
-            stepDraftLoad(1)
+            draft.stepLoad(1)
             assertEquals(24.0, state.value.draft.bellKg)
-            stepDraftLoad(-1)
-            stepDraftLoad(-1)
+            draft.stepLoad(-1)
+            draft.stepLoad(-1)
             assertEquals(16.0, state.value.draft.bellKg)
         }
     }
@@ -243,11 +265,11 @@ class SessionViewModelTest {
     fun `the bar steps by its plates and never below the bar`() {
         repository.setBar(20.0)
         viewModel().use {
-            updateDraft { it.copy(exercise = BuiltInExercise.BarbellDeadlift) }
+            draft.update { it.copy(exercise = BuiltInExercise.BarbellDeadlift) }
             assertEquals(20.0, state.value.draft.barKg)
-            stepDraftLoad(-1)
+            draft.stepLoad(-1)
             assertEquals(20.0, state.value.draft.barKg)
-            stepDraftLoad(1)
+            draft.stepLoad(1)
             assertEquals(20.0 + BAR_KG_STEP, state.value.draft.barKg)
         }
     }
@@ -256,14 +278,14 @@ class SessionViewModelTest {
     fun `a band steps among the bands offered and the mat has no load to step`() {
         val offered = repository.bands.value
         viewModel().use {
-            updateDraft { it.copy(exercise = BuiltInExercise.BandPullApart) }
+            draft.update { it.copy(exercise = BuiltInExercise.BandPullApart) }
             val at = offered.indexOfFirst { it.id == state.value.draft.band.id }
-            stepDraftLoad(1)
+            draft.stepLoad(1)
             assertEquals(offered[at + 1].id, state.value.draft.band.id)
 
-            updateDraft { it.copy(exercise = BuiltInExercise.Hundred) }
+            draft.update { it.copy(exercise = BuiltInExercise.Hundred) }
             val before = state.value.draft
-            stepDraftLoad(1)
+            draft.stepLoad(1)
             assertEquals(before, state.value.draft)
         }
     }
@@ -271,7 +293,7 @@ class SessionViewModelTest {
     @Test
     fun `logging the card's set keeps the draft and flips the side of a one-sided lift`() {
         viewModel().use {
-            updateDraft { it.copy(exercise = BuiltInExercise.Press, side = Side.Left) }
+            draft.update { it.copy(exercise = BuiltInExercise.Press, side = Side.Left) }
             logSet()
             assertEquals(1, repository.active.value?.sets?.size)
             assertEquals(BuiltInExercise.Press, state.value.draft.exercise)
@@ -288,9 +310,9 @@ class SessionViewModelTest {
             val longer = now + (RestClock.DEFAULT_SECONDS + RestClock.STEP_SECONDS) * 1_000L
             assertEquals(longer, keepAlive.runs.last().endAtEpochMillis)
             assertEquals(0, keepAlive.stops)
-            skipRest()
+            timers.skipRest()
             assertEquals(1, keepAlive.stops)
-            skipRest()
+            timers.skipRest()
             assertEquals(1, keepAlive.stops)
         }
     }
@@ -340,7 +362,7 @@ class SessionViewModelTest {
             val longer = RestClock.DEFAULT_SECONDS + RestClock.STEP_SECONDS
             assertEquals(longer, clocks.value.rest?.seconds)
             assertEquals(longer, storage.bells.rest.value?.seconds)
-            skipRest()
+            timers.skipRest()
             assertNull(clocks.value.rest)
             logSet()
             assertEquals(longer, clocks.value.rest?.seconds)
@@ -354,7 +376,7 @@ class SessionViewModelTest {
             logSet()
             assertTrue(state.value.asksToShowNotifications)
             // It stays asked as the rest ends and another starts, so the screen asks once, not each rest.
-            skipRest()
+            timers.skipRest()
             assertTrue(state.value.asksToShowNotifications)
             logSet()
             assertTrue(state.value.asksToShowNotifications)
@@ -373,7 +395,7 @@ class SessionViewModelTest {
     fun `timing a hold ends the rest`() {
         viewModel().use {
             logSet()
-            updateDraft { it.copy(exercise = BuiltInExercise.Plank) }
+            draft.update { it.copy(exercise = BuiltInExercise.Plank) }
             startHold()
             assertNull(clocks.value.rest)
         }
@@ -382,7 +404,7 @@ class SessionViewModelTest {
     @Test
     fun `a resumed session starts from its last set on the other side`() {
         viewModel().use {
-            updateDraft { it.copy(exercise = BuiltInExercise.Press, bellKg = 24.0, reps = 5, side = Side.Left) }
+            draft.update { it.copy(exercise = BuiltInExercise.Press, bellKg = 24.0, reps = 5, side = Side.Left) }
             logSet()
         }
         viewModel().use {
@@ -412,14 +434,48 @@ class SessionViewModelTest {
     fun `last time is the lift's last set before this session not one just logged`() {
         earlier(1, BuiltInExercise.Press, 12.0)
         viewModel().use {
-            updateDraft { it.copy(exercise = BuiltInExercise.Press) }
+            draft.update { it.copy(exercise = BuiltInExercise.Press) }
             logSet()
             assertEquals(1L, state.value.draftLastTime?.id)
         }
     }
 
+    @Test
+    fun `a set becomes a record once the session holding the record is deleted`() {
+        // A lighter session first, then the one holding the record the set logged here falls short of.
+        storage.sessions.sessions.update { it + SessionEntity(OLDER, 0, 30_000, "Older", 30_000) }
+        storage.sessions.sets.update {
+            it + SetEntity(2, OLDER, BuiltInExercise.TwoHandSwing.key, 12.0, 5, null, loggedAtEpochMillis = 2)
+        }
+        earlier(1, BuiltInExercise.TwoHandSwing, 24.0, reps = 12)
+        viewModel().use {
+            logSet()
+            assertTrue(state.value.recordSetIds.isEmpty())
+
+            repository.deleteSession(EARLIER)
+
+            val logged = assertNotNull(repository.active.value?.sets?.single())
+            assertEquals(setOf(logged.id), state.value.recordSetIds)
+        }
+    }
+
+    @Test
+    fun `a lift's last time follows a session deleted while this one is open`() {
+        earlier(1, BuiltInExercise.Press, 12.0)
+        viewModel().use {
+            draft.update { it.copy(exercise = BuiltInExercise.Press) }
+            assertEquals(1L, state.value.draftLastTime?.id)
+
+            repository.deleteSession(EARLIER)
+
+            assertNull(state.value.draftLastTime)
+        }
+    }
+
     private companion object {
         const val EARLIER = "earlier"
+        const val OLDER = "older"
+        const val SETTLE_MILLIS = 1_000L
     }
 
     @Test
@@ -450,7 +506,7 @@ class SessionViewModelTest {
             val once = assertNotNull(state.value.upNext).bellKg
             stepNextLoad(1)
             val twice = assertNotNull(state.value.upNext).bellKg
-            changeBlock(0) { it.copy(rounds = it.rounds + 1) }
+            plan.changeBlock(0) { it.copy(rounds = it.rounds + 1) }
             assertTrue(start < once && once < twice)
             val block = repository.active.value?.plan?.blocks?.first()?.block
             assertEquals(twice, block?.kg)
@@ -511,8 +567,8 @@ class SessionViewModelTest {
         repository.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
         viewModel().use {
             assertTrue(finish("Squats"))
-            setEffort(PerceivedEffort.Hard)
-            setNote("  Felt strong ")
+            summary.setEffort(PerceivedEffort.Hard)
+            summary.setNote("  Felt strong ")
 
             val finished = assertNotNull(state.value.finished)
             assertEquals(PerceivedEffort.Hard, finished.session.effort)
@@ -525,30 +581,23 @@ class SessionViewModelTest {
     }
 
     @Test
-    fun `the health store is written again with the summary's words as the summary goes`() {
+    fun `the summary's words reach the health store after its screen is gone`() {
         repository.startSession(null)
         repository.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
         val viewModel = viewModel()
         viewModel.finish("Squats")
-        viewModel.setEffort(PerceivedEffort.AllOut)
-        viewModel.describeForHealth("All out")
-        now = 999_000
+        viewModel.summary.setEffort(PerceivedEffort.AllOut)
+        viewModel.summary.describeForHealth("All out")
         ViewModelStore().apply { put("session", viewModel) }.clear()
+
+        now = 999_000
+        healthScope.testScheduler.advanceTimeBy(SETTLE_MILLIS + 1)
+        healthScope.testScheduler.runCurrent()
 
         assertEquals(2, health.workouts.size)
         assertEquals(health.workouts.first().id, health.workouts.last().id)
         assertEquals("All out", health.workouts.last().notes)
         assertEquals(999_000, health.workouts.last().version)
-    }
-
-    @Test
-    fun `with nothing said of the session the health store is not written again`() {
-        repository.startSession(null)
-        repository.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
-        val viewModel = viewModel()
-        viewModel.finish("Squats")
-        ViewModelStore().apply { put("session", viewModel) }.clear()
-        assertEquals(1, health.workouts.size)
     }
 
     @Test

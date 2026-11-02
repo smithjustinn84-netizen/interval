@@ -66,6 +66,8 @@ import dev.justinsmith.interval.ui.isLandscape
 import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.interval.ui.rememberArrival
 import dev.justinsmith.interval.ui.risingEnter
+import dev.justinsmith.lift.data.ExerciseFilterStore
+import dev.justinsmith.lift.data.SetStore
 import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.EmomState
 import dev.justinsmith.lift.domain.Exercise
@@ -114,6 +116,9 @@ import org.koin.compose.viewmodel.koinViewModel
 fun SessionRoute(onExit: () -> Unit) {
     val sharer = koinInject<Sharer>()
     val viewModel = koinViewModel<SessionViewModel>()
+    val timers = koinInject<SessionTimers>()
+    val sets = koinInject<SetStore>()
+    val filters = koinInject<ExerciseFilterStore>()
     val state by viewModel.state.collectAsStateWithLifecycle()
     // The clocks move every tick: read where they are drawn, so the rest of the screen can skip.
     val clocks = viewModel.clocks.collectAsStateWithLifecycle()
@@ -142,7 +147,9 @@ fun SessionRoute(onExit: () -> Unit) {
     // One set of actions for as long as nothing they close over changes: the state changes every tick while a
     // rest or a hold runs, and a child that takes the actions alone can then skip.
     val actions =
-        remember(viewModel, title, healthTitle, onExit) { sessionActions(viewModel, title, healthTitle, onExit) }
+        remember(viewModel, title, healthTitle, onExit) {
+            sessionActions(ActionTargets(viewModel, timers, sets, filters), title, healthTitle, onExit)
+        }
     val page = when {
         finished != null -> SessionPage.Summary(finished)
         emom != null && emomState != null -> SessionPage.Emom(emom, emomState)
@@ -159,16 +166,18 @@ fun SessionRoute(onExit: () -> Unit) {
             is SessionPage.Summary -> SummaryScreen(
                 shown.finished,
                 onDone = onExit,
-                onKeep = viewModel::keepChanges,
+                onKeep = viewModel.summary::keepChanges,
                 onShare = sharer::shareText,
-                reflection = SummaryReflection(viewModel::setEffort, viewModel::setNote, viewModel::describeForHealth),
+                reflection = viewModel.summary.let {
+                    SummaryReflection(it::setEffort, it::setNote, it::describeForHealth)
+                },
             )
 
             is SessionPage.Emom -> EmomScreen(
                 shown.run,
                 shown.state,
-                onFinishSet = viewModel::emomSetDone,
-                onStop = viewModel::stopEmom,
+                onFinishSet = timers::emomSetDone,
+                onStop = timers::stopEmom,
             )
 
             SessionPage.Logging -> SessionScreen(state, readClocks, actions)
@@ -185,45 +194,52 @@ private sealed interface SessionPage {
     data object Logging : SessionPage
 }
 
-private fun sessionActions(
-    viewModel: SessionViewModel,
-    title: String,
-    healthTitle: String?,
-    onExit: () -> Unit,
-): SessionActions = SessionActions(
-    onDraft = viewModel::updateDraft,
-    onFilters = viewModel::updateFilters,
-    onAddExercise = viewModel::expectNewExercise,
-    onLog = viewModel::logSet,
-    onLogNext = viewModel::logNext,
-    onOpenLog = viewModel::openLogSheet,
-    onStepLoad = viewModel::stepNextLoad,
-    onStepDraftLoad = viewModel::stepDraftLoad,
-    onOpenExercise = viewModel::openExercise,
-    onStartPlannedEmom = viewModel::startPlannedEmom,
-    onTimePlannedHold = viewModel::startPlannedHold,
-    onStartEmom = viewModel::startDraftEmom,
-    onTimeHold = viewModel::startHold,
-    onStopHold = viewModel::stopHold,
-    onCancelHold = viewModel::cancelHold,
-    onRemoveSet = viewModel::removeSet,
-    onRestoreSet = viewModel::restoreSet,
-    onEditSet = viewModel::editSet,
-    onSaveEdit = viewModel::saveEdit,
-    onCancelEdit = viewModel::cancelEdit,
-    onChangeBlock = viewModel::changeBlock,
-    onSwapBlock = viewModel::swapBlock,
-    onSkipBlock = viewModel::skipBlock,
-    onUnskipBlock = viewModel::unskipBlock,
-    onStepRest = viewModel::stepRest,
-    onSkipRest = viewModel::skipRest,
-    // The screen asks first when nothing is logged; should one slip through, it is thrown away and the page closes.
-    onFinish = { if (!viewModel.finish(title, healthTitle)) onExit() },
-    onDiscard = {
-        viewModel.discard()
-        onExit()
-    },
+/** What the Lifting page's actions act on: the session, its timers, its sets and the picker's filters. */
+private class ActionTargets(
+    val viewModel: SessionViewModel,
+    val timers: SessionTimers,
+    val sets: SetStore,
+    val filters: ExerciseFilterStore,
 )
+
+private fun sessionActions(parts: ActionTargets, title: String, healthTitle: String?, onExit: () -> Unit) =
+    with(parts) {
+        SessionActions(
+            onDraft = viewModel.draft::update,
+            onFilters = filters::update,
+            onAddExercise = viewModel.draft::expectNewExercise,
+            onLog = viewModel::logSet,
+            onLogNext = viewModel::logNext,
+            onOpenLog = viewModel::openLogSheet,
+            onStepLoad = viewModel::stepNextLoad,
+            onStepDraftLoad = viewModel.draft::stepLoad,
+            onOpenExercise = viewModel::openExercise,
+            onStartPlannedEmom = viewModel::startPlannedEmom,
+            onTimePlannedHold = viewModel::startPlannedHold,
+            onStartEmom = viewModel::startDraftEmom,
+            onTimeHold = viewModel::startHold,
+            onStopHold = timers::stopHold,
+            onCancelHold = timers::cancelHold,
+            onRemoveSet = sets::removeSet,
+            onRestoreSet = sets::restoreSet,
+            onEditSet = viewModel.draft::edit,
+            onSaveEdit = viewModel::saveEdit,
+            onCancelEdit = viewModel.draft::endEdit,
+            onChangeBlock = viewModel.plan::changeBlock,
+            onSwapBlock = viewModel.plan::swapBlock,
+            onSkipBlock = viewModel.plan::skipBlock,
+            onUnskipBlock = viewModel.plan::unskipBlock,
+            onStepRest = viewModel::stepRest,
+            onSkipRest = timers::skipRest,
+            // The screen asks first when nothing is logged; should one slip through, it is thrown away and the page
+            // closes.
+            onFinish = { if (!viewModel.finish(title, healthTitle)) onExit() },
+            onDiscard = {
+                viewModel.discard()
+                onExit()
+            },
+        )
+    }
 
 /**
  * Back, or the back gesture, asks before leaving a session: with sets logged or an EMOM running, the sets stay,

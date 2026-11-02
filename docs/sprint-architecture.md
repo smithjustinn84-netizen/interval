@@ -347,6 +347,21 @@ The cut line is after ticket 5.
   - each new piece has its own test file
   - `SessionViewModel` is under 300 lines with no `@Suppress`
   - `SessionFlowTest` and Lift's acceptance specs pass unchanged.
+- As built: the three as named, in `lift-session`'s `session/`. `SetDraftEditor` is pure, over a `DraftContext` it
+  reads at each change (the bells, bar and bands on offer, the sets before and logged, the user's exercises); it
+  holds edit mode and the exercise awaited from the sheet's search too. `TodayPlanEditor` and `FinishSession` are
+  Koin factories over the stores; the pure `upNext` and `programDay` are beside the first, so the state and the
+  actions work the next set out alike. The ViewModel stays under the 15 functions detekt allows by exposing the three
+  (`draft`, `plan`, `summary`) for the Route's actions, which also take `SessionTimers` and `SetStore` (remove,
+  restore) and the `ExerciseFilterStore` straight. D4: the Health re-write moved from `onCleared` to `SessionHealth`,
+  a single on its own main-thread scope, which writes the summary's words a second after they stop changing; the
+  session is still started in `init`. D3: the state's inputs are `SessionInputs.kt`, `Before` taken from `sessions`
+  as it changes; the actions (`logNext`, the planned EMOM and hold, the sheet opening) work out what is up next from
+  the stores as they run rather than from the last state. F2: only the history's flattening runs on the computation
+  dispatcher, and the records and recent lifts (`Logged`) follow a set logged rather than a tap; the whole state
+  `flowOn` Default, tried first, drew a tap a frame late and failed `LiftEquipmentAcceptanceTest`.
+  detekt's `LongParameterList` is not active in this configuration (a nine-parameter constructor passes), so the
+  existing suppressions of it are inert.
 
 **9. Cheap first states** · S · F1
 - `HistoryViewModel` and `PlanViewModel` start from a `Loading` state (the screens show what they show while

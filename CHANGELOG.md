@@ -64,6 +64,12 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   lighter, what only assisted it, and names any group nothing trained.
 
 ### Fixed
+- Lift: what a session's summary says of it (how hard it felt, a note) reaches Health Connect a second after it is
+  said, without waiting for the summary to close.
+- Lift: deleting a past session, or importing, while a session is open now shows the open session's records,
+  suggested loads and "last time" as they stand, rather than as they were when it opened.
+- Lift: the session's screen stays smooth as a long history grows: a tap on the Log sheet no longer works out every
+  record and recent lift again.
 - Lift: a rest, an EMOM or a hold comes back where the clock says it is when the phone closes the app in the
   background to free memory, rather than being lost, as the session is opened again; an EMOM keeps its minutes
   done. One that ended meanwhile is over, with nothing logged or beeped for it.

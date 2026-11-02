@@ -176,12 +176,17 @@ several core issues:
   `close`) stays on the repository, which the app shell, export, import and `PlanReminderScheduler` (it waits on
   `ready`) still take.
 
-**Remaining open debt:**
-- **A ViewModel does too much.** `SessionViewModel` (`@Suppress(TooManyFunctions)`), which also still takes the whole
-  `LiftRepository`: it uses all five of Lift's stores, and its split (sprint ticket 8) narrows it.
+- **Resolved — `SessionViewModel`, split (D1, D3, F2; D4 in part)**: the Log sheet's draft is `SetDraftEditor`
+  (pure: what it goes by is a function it reads at each change), today's plan `TodayPlanEditor`, and the finish and
+  its summary `FinishSession`, whose health store copy outlives the summary (`SessionHealth`, a single, writes the
+  summary's words once they settle rather than in `onCleared`). The ViewModel exposes the three (`draft`, `plan`,
+  `summary`), which the Route's actions call, with the timers and `SetStore`'s remove and restore taken there
+  straight. Its state is built from the stores' flows (`SessionInputs.kt`): the sets before this session are flattened on a
+  computation dispatcher as the sessions change, and the records and recent lifts worked out as a set is logged,
+  not at each tap on the sheet, which shows at once. It still starts a session as it opens.
 
-New code should not add to these: inject the stores it uses rather than a repository, and keep new long-running
-work out of `viewModelScope`.
+New code should not add to what these resolved: inject the stores it uses rather than a repository, keep new
+long-running work out of `viewModelScope`, and give a ViewModel's parts classes of their own rather than functions.
 
 ---
 

@@ -3,69 +3,25 @@ package dev.justinsmith.lift.session
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.justinsmith.interval.platform.HealthStore
-import dev.justinsmith.interval.platform.HealthWorkout
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
-import dev.justinsmith.interval.timer.WeekStanding
-import dev.justinsmith.interval.timer.formatClock
-import dev.justinsmith.interval.timer.weekStanding
 import dev.justinsmith.lift.data.ExerciseFilterStore
-import dev.justinsmith.lift.data.IntervalActivity
-import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.data.ExerciseStore
+import dev.justinsmith.lift.data.GearStore
+import dev.justinsmith.lift.data.ProgramStore
+import dev.justinsmith.lift.data.SessionStore
+import dev.justinsmith.lift.data.SetStore
 import dev.justinsmith.lift.domain.Band
-import dev.justinsmith.lift.domain.Block
-import dev.justinsmith.lift.domain.BuiltInExercise
-import dev.justinsmith.lift.domain.DEFAULT_BAR_KG
-import dev.justinsmith.lift.domain.DEFAULT_BELL_KG
-import dev.justinsmith.lift.domain.EmomState
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.Exercise
-import dev.justinsmith.lift.domain.ExerciseFilters
-import dev.justinsmith.lift.domain.HoldState
-import dev.justinsmith.lift.domain.LiftSession
-import dev.justinsmith.lift.domain.MAX_BAR_KG
-import dev.justinsmith.lift.domain.Measure
-import dev.justinsmith.lift.domain.PerceivedEffort
-import dev.justinsmith.lift.domain.PersonalRecord
-import dev.justinsmith.lift.domain.PlanChanges
-import dev.justinsmith.lift.domain.PlanRow
-import dev.justinsmith.lift.domain.PlannedSet
-import dev.justinsmith.lift.domain.Program
-import dev.justinsmith.lift.domain.ProgramDay
-import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.RestClock
-import dev.justinsmith.lift.domain.RestState
-import dev.justinsmith.lift.domain.SaveScope
-import dev.justinsmith.lift.domain.SessionPlan
-import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.Side
-import dev.justinsmith.lift.domain.bands
-import dev.justinsmith.lift.domain.newRecords
-import dev.justinsmith.lift.domain.nextPlanned
-import dev.justinsmith.lift.domain.nextSet
 import dev.justinsmith.lift.domain.offeredBands
-import dev.justinsmith.lift.domain.offeredExercises
-import dev.justinsmith.lift.domain.other
-import dev.justinsmith.lift.domain.ownedEquipment
-import dev.justinsmith.lift.domain.planChanges
-import dev.justinsmith.lift.domain.planRows
-import dev.justinsmith.lift.domain.plannedBand
-import dev.justinsmith.lift.domain.progressions
-import dev.justinsmith.lift.domain.recentExercises
-import dev.justinsmith.lift.domain.recordSetIds
-import dev.justinsmith.lift.domain.setsOldestFirst
 import dev.justinsmith.lift.domain.standardBells
-import dev.justinsmith.lift.domain.steppedBand
-import dev.justinsmith.lift.domain.steppedKg
-import dev.justinsmith.lift.domain.suggestedBand
-import dev.justinsmith.lift.domain.suggestedBar
-import dev.justinsmith.lift.domain.suggestedBell
-import dev.justinsmith.lift.domain.suggestedLoad
-import dev.justinsmith.lift.domain.toppedOut
 import dev.justinsmith.lift.library.ExerciseDetailUiState
-import dev.justinsmith.lift.library.LibraryList
 import dev.justinsmith.lift.library.exerciseDetail
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -74,195 +30,94 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * The set the Log sheet will log, kept between sets so the next starts where the last left off. Each kind of
- * load keeps its own value, so going from a bell to a band and back finds the bell where it was.
+ * The session in progress: starts one when opened if none is, logs sets (from the plan, the sheet or an EMOM),
+ * and finishes or discards it. Its parts are its own: the sheet's [draft], today's [plan] and the [summary]; its
+ * rest, EMOM and hold are the process's [timers], which it starts and stops and shows. Its state follows what is
+ * stored as it changes, the sets before this session flattened on [computation]; [tickMillis] is how often the
+ * session's own clocks (its time, the time since the last set) move.
  */
-data class SetDraft(
-    val exercise: Exercise = BuiltInExercise.TwoHandSwing,
-    val bellKg: Double = DEFAULT_BELL_KG,
-    val reps: Int = DEFAULT_REPS,
-    val side: Side = Side.Left,
-    /** For an EMOM started from the sheet. */
-    val minutes: Int = DEFAULT_MINUTES,
-    /** Two bells asked for: kept while a lift that can't be doubled is picked, for the next that can. */
-    val double: Boolean = false,
-    /** Weight added to a bodyweight exercise; 0 for none. */
-    val addedKg: Double = 0.0,
-    /** The total on the bar, for a barbell lift. */
-    val barKg: Double = DEFAULT_BAR_KG,
-    /** How long a hold lasted. */
-    val seconds: Int = DEFAULT_SECONDS,
-    val band: Band = Band.Default,
-) {
-    /** Whether the set is done with two bells. */
-    val doubled: Boolean get() = exercise.doubled(double)
-
-    /** The weight the set is logged with: the bell, the bar as loaded, the weight added to bodyweight, or none. */
-    val loadKg: Double get() = when (exercise.equipment) {
-        Equipment.Kettlebell -> bellKg
-        Equipment.Barbell -> barKg
-        Equipment.Bodyweight -> addedKg
-        Equipment.Band, Equipment.Mat -> 0.0
-    }
-
-    /** Whether the set is a hold, timed rather than counted. */
-    val held: Boolean get() = exercise.measure == Measure.Time
-
-    companion object {
-        const val DEFAULT_REPS = 10
-        const val DEFAULT_MINUTES = 10
-        const val DEFAULT_SECONDS = 30
-        const val MAX_REPS = 999
-        const val MAX_MINUTES = 60
-
-        /** A hold steps by five seconds, up to ten minutes. */
-        const val SECONDS_STEP = 5
-        const val MAX_SECONDS = 600
-    }
-}
-
-/**
- * A session just finished, for the summary: it as saved and the records it set; for a program day changed,
- * the [changes] to offer to keep, the names the user's programs already have, and once kept, the program they
- * were [kept] in.
- */
-data class Finished(
-    val session: LiftSession,
-    val records: List<PersonalRecord>,
-    /** Where the week stands with this session in it. */
-    val week: WeekStanding? = null,
-    val changes: PlanChanges? = null,
-    val taken: Set<String> = emptySet(),
-    val kept: ProgramKey? = null,
-    /** The user's bands, to name a band a change plans by. */
-    val bands: List<Band> = emptyList(),
-    /** The program this session finished, when it was its last day. */
-    val lastDayOf: Program? = null,
-    /** Its blocks done in full at the top of their range, with no heavier load to go to. */
-    val toppedOut: List<Block> = emptyList(),
-    /** The summary's note as typed; [session] holds it as kept, trimmed. */
-    val note: String = "",
-)
-
-/**
- * The plan's next set: which of [total] it is, with its load (the bell, the bar as loaded, the weight added to
- * bodyweight, or none, and the [band] for band work), and whether it opens an EMOM of [emomMinutes].
- */
-data class UpNext(
-    val set: PlannedSet,
-    val bellKg: Double,
-    val number: Int,
-    val total: Int,
-    val emomMinutes: Int?,
-    val band: Band? = null,
-    /** Which of the day's blocks it is in, from 0. */
-    val block: Int = 0,
-    /** The last set of the lift in a session before this one, to go by; null the first time. */
-    val lastTime: SetLog? = null,
-)
-
-/**
- * The session's clocks, which move every tick while a timer runs and every second besides. Apart from
- * [SessionUiState], so only what draws them recomposes as they move.
- */
-data class SessionClocks(
-    /** How long the session has run: "14:32". */
-    val elapsed: String = formatClock(0),
-    /** Since the last set, for resting: "0:38"; null before the first. */
-    val sinceLast: String? = null,
-    /** The rest counting down after a set; null when none is. */
-    val rest: RestState? = null,
-    val emomState: EmomState? = null,
-    val holdState: HoldState? = null,
-)
-
-data class SessionUiState(
-    val session: LiftSession? = null,
-    /**
-     * Whether the screen asks to show notifications, for the rest's off screen: from the session's first rest on,
-     * and staying so, so it asks once rather than at each rest.
-     */
-    val asksToShowNotifications: Boolean = false,
-    /** The bells the sheet offers: the user's own, or every standard size until they have said. */
-    val bells: List<Double> = standardBells,
-    val ownsBells: Boolean = false,
-    /** What the user's barbell weighs empty; null until they have said. */
-    val bar: Double? = null,
-    /** The bands the sheet offers, lightest first. */
-    val bands: List<Band> = offeredBands(bands(emptyList())),
-    val draft: SetDraft = SetDraft(),
-    /** Whether no program day lays the session out: the Next set card composes [draft]. */
-    val free: Boolean = false,
-    /**
-     * In a free session: the last set of [draft]'s lift in a session before this one, to go by; null the
-     * first time.
-     */
-    val draftLastTime: SetLog? = null,
-    /** For a program day: what comes next, or null once its sets are done ([dayDone]). */
-    val upNext: UpNext? = null,
-    val dayDone: Boolean = false,
-    /** For a program day: its blocks as today's plan has them. */
-    val plan: List<PlanRow> = emptyList(),
-    /** The program day the session is, null for a free one: what names it to the health store. */
-    val programDay: ProgramDay? = null,
-    val emom: EmomRun? = null,
-    /** A hold being timed on the Log sheet. */
-    val hold: HoldRun? = null,
-    /** The side to time next, for the same length, after the first side of a one-sided hold. */
-    val otherSide: Side? = null,
-    val finished: Finished? = null,
-    /** A set logged, open on the Log sheet to change: the sheet's draft is it until saved or closed. */
-    val editing: SetLog? = null,
-    /** The sets of this session that beat a record standing as they were logged: see [recordSetIds]. */
-    val recordSetIds: Set<Long> = emptySet(),
-    /** The last set logged, when it is one of them: the one to announce. */
-    val latestRecord: SetLog? = null,
-    /** What the sheet's picker offers, the ones done lately first, and how it is narrowed. */
-    val library: LibraryList = LibraryList(offeredExercises(emptyList())),
-    /** The exercise whose page is open, and the user's history with it. */
-    val detail: ExerciseDetailUiState? = null,
-)
-
-/**
- * The session in progress: starts one when opened if none is, logs sets (from the plan, the sheet or an
- * EMOM), and finishes or discards it. Its rest, EMOM and hold are the process's [timers], which it starts and
- * stops and shows; [tickMillis] is how often the session's own clocks (its time, the time since the last set)
- * move.
- */
-@Suppress("detekt.TooManyFunctions") // Every way a session changes, side by side.
 class SessionViewModel(
-    private val repository: LiftRepository,
-    private val clock: WallClock,
-    private val timers: SessionTimers,
+    private val sessionStore: SessionStore,
+    private val setStore: SetStore,
+    private val gearStore: GearStore,
+    private val programStore: ProgramStore,
+    private val exerciseStore: ExerciseStore,
     private val filters: ExerciseFilterStore,
-    private val intervals: IntervalActivity,
-    private val timestamps: TimestampFormatter,
-    private val health: HealthStore,
+    val plan: TodayPlanEditor,
+    val summary: FinishSession,
+    private val timers: SessionTimers,
+    timestamps: TimestampFormatter,
+    clock: WallClock,
     private val savedState: SavedStateHandle = SavedStateHandle(),
     tickMillis: Long = TICK_MILLIS,
+    computation: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
-    private val draft = MutableStateFlow(SetDraft())
+    /**
+     * The sets of the sessions finished before this one, as they are stored, not as when it opened: flattened off the
+     * main thread, as the sessions change, the first time on the caller.
+     */
+    private val before: StateFlow<Before> = sessionStore.sessions.map(Before::of).flowOn(computation)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, Before.of(sessionStore.sessions.value))
 
-    /** Every set of the sessions before this one: what a set logged now has to beat to be a record. */
-    private val setsBefore = repository.sessions.value.flatMap { it.sets }
-
-    // The same sets oldest first, flattened once: the suggestions read them on every change of the draft.
-    private val setsBeforeOldestFirst = repository.sessions.value.setsOldestFirst()
-    private val finished = MutableStateFlow<Finished?>(null)
-
-    /** The finished session as the health store took it, and the summary's words for its note. */
-    private var recorded: HealthWorkout? = null
-    private var healthNotes: String? = null
+    /** The Log sheet's draft, and a set logged opened on it to change. */
+    val draft = SetDraftEditor {
+        DraftContext(
+            bells = gearStore.bells.value.ifEmpty { standardBells },
+            bar = gearStore.bar.value,
+            bands = offeredBands(gearStore.bands.value),
+            history = before.value.oldestFirst + sessionStore.active.value?.sets.orEmpty(),
+            logged = sessionStore.active.value?.sets.orEmpty(),
+            made = exerciseStore.customExercises.value,
+        )
+    }.also {
+        if (sessionStore.active.value == null) sessionStore.startSession()
+        // A session resumed goes on where it left off: the sheet as it was, if a killed process left it half set,
+        // else its last set, the other side for a one-sided lift.
+        it.start(
+            owned = gearStore.bells.value,
+            restored = savedState.restoredDraft(exerciseStore.customExercises.value, gearStore.bands.value),
+            last = sessionStore.active.value?.sets?.lastOrNull(),
+        )
+    }
 
     /** Whether a rest has started since this session opened here: it asks to show notifications from then on. */
     private val rested = MutableStateFlow(false)
+
+    /** The exercise whose page is open, by its key. */
+    private val opened = MutableStateFlow<String?>(null)
+
+    private val detail: Flow<ExerciseDetailUiState?> =
+        combine(opened, sessionStore.sessions, exerciseStore.customExercises) { key, sessions, made ->
+            key?.let { Exercise.parse(it, made) }?.let { exerciseDetail(it, sessions, timestamps) }
+        }
+
+    // The records and the lifts done lately scan every set ever logged: worked out again as a set is logged, not
+    // at each tap on the sheet.
+    private val logged: Flow<Logged> =
+        combine(before, sessionStore.active, exerciseStore.customExercises, Logged::of)
+
+    private val inputs: Flow<Inputs> = combine(
+        combine(logged, programStore.programDay, ::Pair),
+        combine(gearStore.bells, gearStore.bands, gearStore.bar, ::Triple),
+        combine(draft.draft, draft.editing, summary.finished, ::Triple),
+        timers.state.map { it.emom to it.hold }.distinctUntilChanged(),
+        filters.filters,
+    ) { (logged, day), (owned, bands, bar), (draft, editing, finished), runs, narrowed ->
+        Inputs(logged, day, owned, bands, bar, draft, editing, finished, runs, narrowed)
+    }
+
+    // On the main thread, so a tap on the sheet shows at once: what scans the history is worked out apart, above.
+    val state: StateFlow<SessionUiState> =
+        combine(inputs.map(Inputs::state), detail, rested) { state, page, rested ->
+            state.copy(detail = page, asksToShowNotifications = rested)
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, inputsNow.state())
 
     /** The wall clock, once a tick, for the session's own clocks: they move with no timer running. */
     private val ticks = flow {
@@ -272,135 +127,24 @@ class SessionViewModel(
         }
     }.shareIn(viewModelScope, SharingStarted.WhileSubscribed(), replay = 1)
 
-    private val editing = MutableStateFlow<SetLog?>(null)
-
-    /** The exercise whose page is open, by its key. */
-    private val opened = MutableStateFlow<String?>(null)
-
-    private val detail: Flow<ExerciseDetailUiState?> =
-        combine(opened, repository.sessions, repository.customExercises) { key, sessions, made ->
-            key?.let { Exercise.parse(it, made) }?.let { exerciseDetail(it, sessions, timestamps) }
-        }
-
-    /** What was up next when the Log sheet last opened on it. */
-    private var sheetOpenedOn: UpNext? = null
-
-    /** The sheet's draft for a new set, put aside while a set logged is changed. */
-    private var freeDraft: SetDraft? = null
-
-    private val runs = combine(
-        timers.state.map { it.emom }.distinctUntilChanged(),
-        timers.state.map { it.hold }.distinctUntilChanged(),
-        editing,
-        ::Triple,
-    )
-
-    private val gear = combine(repository.bells, repository.bands, repository.bar, ::Triple)
-
-    private val view = combine(draft, finished, runs, repository.customExercises, filters.filters) {
-            draft,
-            finished,
-            (emom, timing, changing),
-            made,
-            narrowed,
-        ->
-        // The sheet never offers an archived exercise, whatever the library shows.
-        View(draft, finished, emom, timing, offeredExercises(made), narrowed.copy(showArchived = false), changing)
-    }
-
-    /** Everything but the clocks, worked out again only when something changes, not every tick. */
-    private val untimed: Flow<SessionUiState> =
-        combine(repository.active, gear, repository.programDay, view) {
-                active,
-                (owned, bands, bar),
-                day,
-                chosen,
-            ->
-            val plan = active?.takeIf { it.program != null && it.program == day?.program?.key }
-                ?.let { day?.copy(plan = it.plan) }
-            val records = recordSetIds(setsBefore, active?.sets.orEmpty())
-            SessionUiState(
-                session = active,
-                bells = owned.ifEmpty { standardBells },
-                ownsBells = owned.isNotEmpty(),
-                bar = bar,
-                bands = offeredBands(bands),
-                draft = chosen.draft,
-                free = active != null && plan == null,
-                draftLastTime = if (plan == null) lastTime(chosen.draft.exercise, chosen.draft.doubled) else null,
-                upNext = plan?.let { upNext(it, active.sets) },
-                dayDone = plan != null && nextPlanned(plan.plannedSets(), active.sets) == null,
-                plan = plan?.planRows(active.sets).orEmpty(),
-                programDay = plan,
-                emom = chosen.emom,
-                hold = chosen.timing.run,
-                otherSide = chosen.timing.offer
-                    ?.takeIf { it.exercise == chosen.draft.exercise && it.side == chosen.draft.side }
-                    ?.side,
-                finished = chosen.finished,
-                editing = chosen.editing,
-                recordSetIds = records,
-                latestRecord = active?.sets?.lastOrNull()?.takeIf { it.id in records },
-                library = LibraryList(
-                    chosen.exercises,
-                    recentExercises(setsBeforeOldestFirst + active?.sets.orEmpty(), chosen.exercises),
-                    chosen.filters,
-                    ownedEquipment(owned, bands, bar),
-                ),
-            )
-        }
-
-    val state: StateFlow<SessionUiState> =
-        combine(untimed, detail, rested) { state, page, rested ->
-            state.copy(detail = page, asksToShowNotifications = rested)
-        }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, SessionUiState())
-
     /** The clocks, read at each tick of the session's own and of its timers. */
     val clocks: StateFlow<SessionClocks> =
-        combine(repository.active, ticks, timers.state) { session, now, timing ->
-            SessionClocks(
-                elapsed = formatClock(session?.elapsedSeconds(now) ?: 0),
-                sinceLast = session?.sets?.lastOrNull()?.let {
-                    formatClock(((now - it.loggedAtEpochMillis) / MILLIS_PER_SECOND).toInt())
-                },
-                rest = timing.restState,
-                emomState = timing.emomState,
-                holdState = timing.holdState,
-            )
-        }
+        combine(sessionStore.active, ticks, timers.state, ::clocksAt)
             .distinctUntilChanged()
             .stateIn(viewModelScope, SharingStarted.Eagerly, SessionClocks())
 
-    /** The user's exercises when the sheet went to add one: the first not among them is the one added. */
-    private var awaitingAdd: Set<String>? = null
+    /** What is up next on today's plan as things stand now, not as last drawn; null in a free session. */
+    private val upNextNow: UpNext?
+        get() = plan.next(sessionStore.active.value, before.value.oldestFirst, draft.draft.value)
 
     init {
-        if (repository.active.value == null) repository.startSession()
-        // Start from the user's own bells: the lightest they own at or above the default.
-        repository.bells.value.let { owned ->
-            if (owned.isNotEmpty()) {
-                val bell = owned.firstOrNull { it >= DEFAULT_BELL_KG } ?: owned.last()
-                draft.update { it.copy(bellKg = bell) }
-            }
-        }
-        // A session resumed goes on where it left off: the sheet as it was, if a killed process left it half set,
-        // else its last set, the other side for a one-sided lift.
-        val restored = savedState.restoredDraft(repository.customExercises.value, repository.bands.value)
-        if (restored != null) {
-            draft.value = restored
-        } else {
-            repository.active.value?.sets?.lastOrNull()?.let { last ->
-                draft.update { it.from(last, flipSide = true) }
-            }
-        }
         // The timer a killed process left running goes on, read once: the session re-emits at each write of it.
         // Here, not as the timers are made, as only a screen on show may start Android's foreground service:
         // the process can come up behind a receiver or a service, where starting it would throw.
-        repository.active.value?.timer?.let(timers::restore)
+        sessionStore.active.value?.timer?.let(timers::restore)
         // The draft for a new set is kept, not one of a set being changed: the last kept is the new set's.
         viewModelScope.launch {
-            draft.collect { if (editing.value == null) savedState.keep(it) }
+            draft.draft.collect { if (draft.editing.value == null) savedState.keep(it) }
         }
         // From the first rest on: rested once, the screen asks once.
         viewModelScope.launch {
@@ -408,77 +152,17 @@ class SessionViewModel(
         }
         // A hold the timers logged goes on with the other side, as a set logged here does.
         viewModelScope.launch {
-            timers.heldSets.collect { set -> flipSide(set) }
+            timers.heldSets.collect(draft::flipSide)
         }
         // An exercise added from the sheet's search is the one the sheet goes on with.
         viewModelScope.launch {
-            repository.customExercises.collect { made ->
-                val before = awaitingAdd ?: return@collect
-                made.firstOrNull { it.uid !in before }?.let { added ->
-                    awaitingAdd = null
-                    updateDraft { it.copy(exercise = added) }
-                }
-            }
-        }
-    }
-
-    /** The sheet is off to add an exercise: once it is saved, the sheet picks it. */
-    fun expectNewExercise() {
-        awaitingAdd = repository.customExercises.value.map { it.uid }.toSet()
-    }
-
-    /** Narrows the log sheet's exercise picker; the library page shares the same filters. */
-    fun updateFilters(transform: (ExerciseFilters) -> ExerciseFilters) {
-        filters.update(transform)
-    }
-
-    fun updateDraft(transform: (SetDraft) -> SetDraft) {
-        draft.update { before ->
-            transform(before).let { changed ->
-                // A lift picked starts from what it was last done with: a snatch is no deadlift, a press no swing.
-                if (changed.exercise != before.exercise) changed.suggested(history()) else changed
-            }.let { d ->
-                d.copy(
-                    barKg = d.barKg.coerceIn(repository.bar.value ?: 0.0, MAX_BAR_KG),
-                    reps = d.reps.coerceIn(1, SetDraft.MAX_REPS),
-                    minutes = d.minutes.coerceIn(1, SetDraft.MAX_MINUTES),
-                    seconds = d.seconds.coerceIn(SetDraft.SECONDS_STEP, SetDraft.MAX_SECONDS),
-                )
-            }
-        }
-    }
-
-    /** This draft's load as its lift was last done, or as it is when the lift has no history. */
-    private fun SetDraft.suggested(history: List<SetLog>): SetDraft = when (exercise.equipment) {
-        Equipment.Kettlebell -> copy(bellKg = suggestedBell(exercise, doubled, history, fallback = bellKg))
-        Equipment.Barbell -> copy(barKg = suggestedBar(exercise, history, repository.bar.value))
-        Equipment.Bodyweight -> copy(addedKg = suggestedBell(exercise, double = false, history, fallback = 0.0))
-        Equipment.Band -> copy(band = suggestedBand(exercise, history, offeredBands(repository.bands.value), band))
-        Equipment.Mat -> this
-    }
-
-    /**
-     * Steps the sheet's load one [step] (−1 lighter, +1 heavier): the next of the user's bells, the bar's smallest
-     * pair of plates, the next weight added to bodyweight, or the next band. Nothing on the mat, or at either end.
-     */
-    fun stepDraftLoad(step: Int) {
-        val bells = repository.bells.value.ifEmpty { standardBells }
-        val bar = repository.bar.value
-        val bands = offeredBands(repository.bands.value)
-        updateDraft { d ->
-            when (val equipment = d.exercise.equipment) {
-                Equipment.Kettlebell -> steppedKg(equipment, d.bellKg, step, bells, bar)?.let { d.copy(bellKg = it) }
-                Equipment.Barbell -> steppedKg(equipment, d.barKg, step, bells, bar)?.let { d.copy(barKg = it) }
-                Equipment.Bodyweight -> steppedKg(equipment, d.addedKg, step, bells, bar)?.let { d.copy(addedKg = it) }
-                Equipment.Band -> steppedBand(d.band, step, bands)?.let { d.copy(band = it) }
-                Equipment.Mat -> null
-            } ?: d
+            exerciseStore.customExercises.collect(draft::exercisesChanged)
         }
     }
 
     /** Logs [set], by default the sheet's: a hold for [seconds], fewer when a timed one is stopped early. */
-    fun logSet(set: SetDraft = draft.value, seconds: Int = set.seconds) {
-        repository.logSet(
+    fun logSet(set: SetDraft = draft.draft.value, seconds: Int = set.seconds) {
+        setStore.logSet(
             set.exercise,
             set.loadKg,
             if (set.held) 0 else set.reps,
@@ -487,20 +171,15 @@ class SessionViewModel(
             seconds = seconds.takeIf { set.held },
             band = set.band,
         )
-        flipSide(set)
-        timers.startRest(repository.restSeconds.value)
-    }
-
-    /** A one-sided lift usually goes on with the other side. */
-    private fun flipSide(set: SetDraft) {
-        if (set.exercise.sided(set.doubled)) draft.update { it.copy(side = set.side.other) }
+        draft.flipSide(set)
+        timers.startRest(setStore.restSeconds.value)
     }
 
     /** Logs the plan's next set as planned, with its suggested load: a hold for its seconds. */
     fun logNext() {
-        val next = state.value.upNext ?: return
+        val next = upNextNow ?: return
         val set = next.set
-        repository.logSet(
+        setStore.logSet(
             set.exercise,
             next.bellKg,
             if (set.held) 0 else set.reps,
@@ -509,7 +188,12 @@ class SessionViewModel(
             seconds = set.reps.takeIf { set.held },
             band = next.band,
         )
-        timers.startRest(repository.restSeconds.value)
+        timers.startRest(setStore.restSeconds.value)
+    }
+
+    /** Saves the set being changed as the sheet's draft now has it. */
+    fun saveEdit() {
+        draft.takeEdit()?.let(setStore::updateSet)
     }
 
     /**
@@ -517,36 +201,15 @@ class SessionViewModel(
      * and every one after.
      */
     fun stepRest(step: Int) {
-        val seconds = (repository.restSeconds.value + step * RestClock.STEP_SECONDS)
+        val seconds = (setStore.restSeconds.value + step * RestClock.STEP_SECONDS)
             .coerceIn(RestClock.MIN_SECONDS, RestClock.MAX_SECONDS)
-        repository.setRestSeconds(seconds)
+        setStore.setRestSeconds(seconds)
         timers.adjustRest(seconds)
     }
 
-    /** Ends the rest early. */
-    fun skipRest() {
-        timers.skipRest()
-    }
-
-    /**
-     * Steps the next set's load one [step] (−1 or +1): a bell, the bar's smallest pair of plates, or a band.
-     * The rest of its block takes it, for today. Worked out from the session as stored, not as last drawn, so a
-     * held + steps once a repeat.
-     */
+    /** Steps the next set's load one [step] (−1 or +1), for the rest of its block today: see [TodayPlanEditor]. */
     fun stepNextLoad(step: Int) {
-        repository.changeSessionPlan { session ->
-            val (plan, _) = today(session) ?: return@changeSessionPlan null
-            val next = programDay(session)?.let { upNext(it, session.sets) } ?: return@changeSessionPlan null
-            val equipment = next.set.exercise.equipment
-            if (equipment == Equipment.Band) {
-                steppedBand(next.band, step, offeredBands(repository.bands.value))
-                    ?.let { band -> plan.change(next.block) { it.copy(band = band.id) } }
-            } else {
-                val bells = repository.bells.value.ifEmpty { standardBells }
-                steppedKg(equipment, next.bellKg, step, bells, repository.bar.value)
-                    ?.let { kg -> plan.change(next.block) { it.copy(kg = kg) } }
-            }
-        }
+        plan.stepNextLoad(step, before.value.oldestFirst, draft.draft.value)
     }
 
     /**
@@ -554,24 +217,7 @@ class SessionViewModel(
      * that same set before and may have been changed since.
      */
     fun openLogSheet() {
-        val next = state.value.upNext ?: return
-        if (editing.value != null || next == sheetOpenedOn) return
-        sheetOpenedOn = next
-        val set = next.set
-        val load = next.bellKg
-        draft.update { d ->
-            d.copy(
-                exercise = set.exercise,
-                bellKg = if (set.exercise.equipment == Equipment.Kettlebell) load else d.bellKg,
-                barKg = if (set.exercise.equipment == Equipment.Barbell) load else d.barKg,
-                addedKg = if (set.exercise.equipment == Equipment.Bodyweight) load else d.addedKg,
-                reps = if (set.held) d.reps else set.reps.coerceIn(1, SetDraft.MAX_REPS),
-                seconds = if (set.held) set.reps.coerceIn(SetDraft.SECONDS_STEP, SetDraft.MAX_SECONDS) else d.seconds,
-                side = set.side ?: d.side,
-                double = set.double,
-                band = next.band ?: d.band,
-            )
-        }
+        upNextNow?.let(draft::openOn)
     }
 
     /** Opens the page of the exercise [key] names, or closes the one open with null. */
@@ -579,109 +225,33 @@ class SessionViewModel(
         opened.value = key
     }
 
-    /** Changes block [index] of today's plan by [transform]: its load, rounds or reps. */
-    fun changeBlock(index: Int, transform: (Block) -> Block) {
-        repository.changeSessionPlan { session -> today(session)?.let { (plan, _) -> plan.change(index, transform) } }
-    }
-
-    /** Skips the rest of block [index] of today's plan: what comes next moves on. */
-    fun skipBlock(index: Int) {
-        repository.changeSessionPlan { session ->
-            today(session)?.let { (plan, done) -> plan.skip(index, done.getOrElse(index) { 0 }) }
-        }
-    }
-
-    /** Plans block [index] of today's plan in full again. */
-    fun unskipBlock(index: Int) {
-        repository.changeSessionPlan { session -> today(session)?.let { (plan, _) -> plan.unskip(index) } }
-    }
-
-    /** Swaps [exercise] in for the sets of block [index] still to do. */
-    fun swapBlock(index: Int, exercise: Exercise) {
-        repository.changeSessionPlan { session ->
-            today(session)?.let { (plan, done) ->
-                val count = done.getOrElse(index) { 0 }
-                if (plan.canSwap(index, count)) plan.swap(index, exercise, count) else null
-            }
-        }
-    }
-
-    /**
-     * Today's plan in [session], as stored rather than as last drawn, so a change made straight after another
-     * builds on it, and the sets of each block done; null in a free session.
-     */
-    private fun today(session: LiftSession): Pair<SessionPlan, List<Int>>? {
-        val day = programDay(session) ?: return null
-        return day.today to day.planRows(session.sets).map { it.done }
-    }
-
-    /** The program day [session] is, with today's plan as it has it; null in a free session. */
-    private fun programDay(session: LiftSession): ProgramDay? =
-        repository.programDay.value?.takeIf { session.program != null && it.program.key == session.program }
-            ?.copy(plan = session.plan)
-
     /** Starts the plan's next block as an EMOM, if it is one. */
     fun startPlannedEmom() {
-        val next = state.value.upNext ?: return
+        val next = upNextNow ?: return
         val minutes = next.emomMinutes ?: return
         if (next.set.held) return
-        timers.startEmom(
-            next.set.exercise,
-            next.bellKg,
-            next.set.reps,
-            minutes,
-            next.set.side ?: Side.Left,
-            next.set.double,
-            next.band,
-        )
+        val set = next.set
+        timers.startEmom(set.exercise, next.bellKg, set.reps, minutes, set.side ?: Side.Left, set.double, next.band)
     }
 
     /** Starts timing the plan's next set when it is a hold, putting it on the sheet first. */
     fun startPlannedHold() {
-        val next = state.value.upNext ?: return
-        if (!next.set.held) return
-        sheetOpenedOn = null
-        openLogSheet()
-        startHold()
+        val next = upNextNow?.takeIf { it.set.held } ?: return
+        draft.openOn(next, again = true)
+        timers.startHold(draft.draft.value)
     }
 
-    /** Starts an EMOM of the sheet's lift, bell and reps for its minutes. */
+    /** Starts an EMOM of the sheet's lift, load and reps for its minutes. */
     fun startDraftEmom() {
-        val d = draft.value
+        val d = draft.draft.value
         if (d.held) return
-        timers.startEmom(
-            d.exercise,
-            d.loadKg,
-            d.reps,
-            d.minutes,
-            d.side,
-            d.doubled,
-            d.band.takeIf { d.exercise.equipment == Equipment.Band },
-        )
+        val band = d.band.takeIf { d.exercise.equipment == Equipment.Band }
+        timers.startEmom(d.exercise, d.loadKg, d.reps, d.minutes, d.side, d.doubled, band)
     }
 
     /** Starts timing the sheet's hold: the other side of the one just done, if that is on offer. */
     fun startHold() {
-        timers.startHold(draft.value)
-    }
-
-    /** Stops the hold early, logging the whole seconds held. */
-    fun stopHold() {
-        timers.stopHold()
-    }
-
-    /** Stops the hold without logging it. */
-    fun cancelHold() {
-        timers.cancelHold()
-    }
-
-    /** Logs this minute's set: the EMOM rests out the minute. */
-    fun emomSetDone() {
-        timers.emomSetDone()
-    }
-
-    fun stopEmom() {
-        timers.stopEmom()
+        timers.startHold(draft.draft.value)
     }
 
     /** Leaves the session for later: its timers stop, its sets stay. */
@@ -689,204 +259,36 @@ class SessionViewModel(
         timers.stopAll()
     }
 
-    fun removeSet(id: Long) {
-        repository.removeSet(id)
-    }
-
-    /** Opens set [id] on the sheet to change: the draft becomes it, the one for a new set put aside. */
-    fun editSet(id: Long) {
-        val set = repository.active.value?.sets?.firstOrNull { it.id == id } ?: return
-        if (editing.value == null) freeDraft = draft.value
-        editing.value = set
-        draft.update { it.from(set, flipSide = false) }
-    }
-
     /**
-     * This draft as [set] has it, for its equipment; the rest stays. With [flipSide], the other side of a
-     * one-sided lift, to go on with.
-     */
-    private fun SetDraft.from(set: SetLog, flipSide: Boolean): SetDraft {
-        val side = set.side ?: side
-        return copy(
-            exercise = set.exercise,
-            bellKg = if (set.equipment == Equipment.Kettlebell) set.bellKg else bellKg,
-            barKg = if (set.equipment == Equipment.Barbell) set.bellKg else barKg,
-            addedKg = if (set.equipment == Equipment.Bodyweight) set.bellKg else addedKg,
-            reps = set.reps.coerceAtLeast(1),
-            side = if (flipSide && set.exercise.sided(set.double)) side.other else side,
-            double = set.double,
-            seconds = set.seconds ?: seconds,
-            band = set.band ?: band,
-        )
-    }
-
-    /** Saves the set being changed as the sheet's draft now has it. */
-    fun saveEdit() {
-        val set = editing.value ?: return
-        val d = draft.value
-        repository.updateSet(
-            set.copy(
-                bellKg = d.loadKg,
-                reps = if (d.held) 0 else d.reps,
-                side = d.side,
-                double = d.doubled,
-                seconds = d.seconds.takeIf { d.held },
-                band = d.band.takeIf { d.exercise.equipment == Equipment.Band },
-            ),
-        )
-        endEdit()
-    }
-
-    /** Leaves the set being changed as it was; the draft for a new set comes back. */
-    fun cancelEdit() {
-        endEdit()
-    }
-
-    private fun endEdit() {
-        if (editing.value == null) return
-        editing.value = null
-        freeDraft?.let { draft.value = it }
-        freeDraft = null
-    }
-
-    /** Puts back a set just removed. */
-    fun restoreSet(set: SetLog) {
-        repository.restoreSet(set)
-    }
-
-    /**
-     * Finishes the session as [title], keeping it here for the summary with the records it set; the health store
-     * has it as [healthTitle] when there is one (a program's day, by its name). One with no sets has nothing to
-     * save and is thrown away instead. True when it was saved, and the summary follows.
+     * Finishes the session for the [summary], as [title] (and [healthTitle] in the health store): see
+     * [FinishSession.finish]. Its timers stop either way. True when it was saved, and the summary follows.
      */
     fun finish(title: String, healthTitle: String? = null): Boolean {
-        val session = repository.active.value ?: return false
         timers.stopAll()
-        if (session.sets.isEmpty()) {
-            repository.discardSession()
-            return false
-        }
-        val before = repository.sessions.value.flatMap { it.sets }
-        val done = session.copy(finishedAtEpochMillis = clock.nowMillis(), title = title)
-        // Taken now: once the session is saved, the program day moves on to the next.
-        val bells = repository.bells.value.ifEmpty { standardBells }
-        val bands = offeredBands(repository.bands.value)
-        val day = repository.programDay.value?.takeIf { session.program != null && it.program.key == session.program }
-        val asDone = day?.copy(plan = session.plan)
-        val changes = asDone?.let { planChanges(it, progressions(it, session.sets, bells, bands)) }
-        val taken = repository.customPrograms.value.mapNotNull { it.name }.toSet()
-        finished.value = Finished(
-            done,
-            newRecords(before, done),
-            weekWithThis(),
-            changes,
-            taken,
-            bands = repository.bands.value,
-            lastDayOf = day?.program?.takeIf { day.number >= it.totalDays },
-            toppedOut = asDone?.let { toppedOut(it, session.sets, bells, bands) }.orEmpty(),
-        )
-        repository.finishSession(title)
-        val now = done.finishedAtEpochMillis ?: clock.nowMillis()
-        val workout = done.healthWorkout(now, intervals.sessionCalories(done.elapsedSeconds(now)), healthTitle ?: title)
-        recorded = workout
-        health.record(workout)
-        return true
-    }
-
-    /** How hard the finished session felt, from the summary; kept with it at once. */
-    fun setEffort(effort: PerceivedEffort?) {
-        reflect { it.copy(session = it.session.copy(effort = effort)) }
-    }
-
-    /** The summary's note as typed; kept with the session at once, trimmed. */
-    fun setNote(note: String) {
-        val typed = note.take(PerceivedEffort.NOTE_MAX_LENGTH)
-        reflect { it.copy(note = typed, session = it.session.copy(note = typed.trim().ifEmpty { null })) }
-    }
-
-    /**
-     * The summary's effort and note in words, for the health store's note: the screen words them. Written to the
-     * store as the summary goes ([onCleared]), not at every keystroke.
-     */
-    fun describeForHealth(notes: String?) {
-        healthNotes = notes
-    }
-
-    private fun reflect(change: (Finished) -> Finished) {
-        val done = finished.value?.let(change) ?: return
-        finished.value = done
-        repository.reflectOnSession(done.session.uid, done.session.effort, done.note)
-    }
-
-    /** The summary goes: the session is written to the health store again with its words, if any were said. */
-    override fun onCleared() {
-        val session = finished.value?.session ?: return
-        val workout = recorded ?: return
-        if (session.effort == null && session.note == null) return
-        health.record(workout.copy(notes = healthNotes, version = clock.nowMillis()))
-    }
-
-    /**
-     * Keeps the finished session's changes, and the steps up at [nudges], in their program, as far as [scope]
-     * reaches, or in a copy named [copyName]: see [LiftRepository.saveChanges].
-     */
-    fun keepChanges(scope: SaveScope, copyName: String, nudges: Set<Int> = emptySet()) {
-        val done = finished.value ?: return
-        val changes = done.changes?.withNudges(nudges)?.takeIf { it.changes.isNotEmpty() } ?: return
-        if (done.kept != null) return
-        finished.value = done.copy(kept = repository.saveChanges(changes, scope, copyName))
+        return summary.finish(title, healthTitle)
     }
 
     fun discard() {
         timers.stopAll()
-        repository.discardSession()
+        sessionStore.discardSession()
     }
 
-    /** The week as it stands with this session in it, the interval workouts counted too, as Lift's week card counts. */
-    private fun weekWithThis(): WeekStanding {
-        val today = timestamps.dayNumber(clock.nowMillis())
-        val days = repository.sessions.value.mapNotNull { it.finishedAtEpochMillis }.map(timestamps::dayNumber) +
-            intervals.workouts.value.map { timestamps.dayNumber(it.finishedAtEpochMillis) } +
-            today
-        return weekStanding(days, today, intervals.weeklyGoal.value)
-    }
-
-    private fun upNext(day: ProgramDay, logged: List<SetLog>): UpNext? {
-        val next = day.nextSet(logged) ?: return null
-        val history = history(logged)
-        return UpNext(
-            set = next.set,
-            bellKg = suggestedLoad(next.set, history, repository.bar.value, draft.value.bellKg),
-            number = next.index + 1,
-            total = next.total,
-            emomMinutes = next.emomMinutes,
-            band = plannedBand(next.set, history, offeredBands(repository.bands.value), draft.value.band),
-            block = next.block,
-            lastTime = lastTime(next.set.exercise, next.set.double),
+    /** What the state is worked out from, as stored now: the first state's. */
+    private val inputsNow: Inputs
+        get() = Inputs(
+            Logged.of(before.value, sessionStore.active.value, exerciseStore.customExercises.value),
+            programStore.programDay.value,
+            gearStore.bells.value,
+            gearStore.bands.value,
+            gearStore.bar.value,
+            draft.draft.value,
+            draft.editing.value,
+            summary.finished.value,
+            timers.state.value.let { it.emom to it.hold },
+            filters.filters.value,
         )
-    }
-
-    /** The last set of [exercise], with two bells or one ([double]), in a session before this one. */
-    private fun lastTime(exercise: Exercise, double: Boolean): SetLog? =
-        setsBeforeOldestFirst.lastOrNull { it.exercise.key == exercise.key && it.double == double }
-
-    /** Every set logged, oldest first: those of the sessions finished, then [logged], by default this one's. */
-    private fun history(logged: List<SetLog> = repository.active.value?.sets.orEmpty()): List<SetLog> =
-        setsBeforeOldestFirst + logged
-
-    /** What the screen chose, and the exercises it can choose from. */
-    private data class View(
-        val draft: SetDraft,
-        val finished: Finished?,
-        val emom: EmomRun?,
-        val timing: HoldTiming,
-        val exercises: List<Exercise>,
-        val filters: ExerciseFilters,
-        val editing: SetLog?,
-    )
 
     private companion object {
         const val TICK_MILLIS = 250L
-        const val MILLIS_PER_SECOND = 1_000L
     }
 }

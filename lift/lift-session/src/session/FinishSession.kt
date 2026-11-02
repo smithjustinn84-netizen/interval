@@ -1,0 +1,169 @@
+package dev.justinsmith.lift.session
+
+import dev.justinsmith.interval.platform.HealthStore
+import dev.justinsmith.interval.platform.HealthWorkout
+import dev.justinsmith.interval.platform.TimestampFormatter
+import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.interval.timer.WeekStanding
+import dev.justinsmith.interval.timer.weekStanding
+import dev.justinsmith.lift.data.GearStore
+import dev.justinsmith.lift.data.IntervalActivity
+import dev.justinsmith.lift.data.ProgramStore
+import dev.justinsmith.lift.data.SessionStore
+import dev.justinsmith.lift.domain.PerceivedEffort
+import dev.justinsmith.lift.domain.SaveScope
+import dev.justinsmith.lift.domain.newRecords
+import dev.justinsmith.lift.domain.offeredBands
+import dev.justinsmith.lift.domain.planChanges
+import dev.justinsmith.lift.domain.progressions
+import dev.justinsmith.lift.domain.standardBells
+import dev.justinsmith.lift.domain.toppedOut
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+/**
+ * A session finishing, and its summary: [finish] saves it with the records it set, the changes a program day
+ * offers to keep, where the week stands and what topped out, and writes it to the health store; then what the
+ * summary says of it (how hard it felt, a note) is kept with it, and its plan changes in their program.
+ */
+class FinishSession(
+    private val sessionStore: SessionStore,
+    private val programStore: ProgramStore,
+    private val gearStore: GearStore,
+    private val intervals: IntervalActivity,
+    private val timestamps: TimestampFormatter,
+    private val clock: WallClock,
+    private val health: SessionHealth,
+) {
+    private val current = MutableStateFlow<Finished?>(null)
+
+    /** The session just finished, for the summary; null until one is. */
+    val finished: StateFlow<Finished?> = current.asStateFlow()
+
+    /**
+     * Finishes the session in progress as [title], keeping it for the summary with the records it set; the health
+     * store has it as [healthTitle] when there is one (a program's day, by its name). One with no sets has nothing
+     * to save and is thrown away instead. True when it was saved, and the summary follows.
+     */
+    fun finish(title: String, healthTitle: String? = null): Boolean {
+        val session = sessionStore.active.value ?: return false
+        if (session.sets.isEmpty()) {
+            sessionStore.discardSession()
+            return false
+        }
+        val done = session.copy(finishedAtEpochMillis = clock.nowMillis(), title = title)
+        // Taken now: once the session is saved, the program day moves on to the next.
+        val bells = gearStore.bells.value.ifEmpty { standardBells }
+        val bands = offeredBands(gearStore.bands.value)
+        val day = programDay(programStore.programDay.value, session)
+        val changes = day?.let { planChanges(it, progressions(it, session.sets, bells, bands)) }
+        current.value = Finished(
+            done,
+            newRecords(sessionStore.sessions.value.flatMap { it.sets }, done),
+            weekWithThis(),
+            changes,
+            taken = programStore.customPrograms.value.mapNotNull { it.name }.toSet(),
+            bands = gearStore.bands.value,
+            lastDayOf = day?.program?.takeIf { day.number >= it.totalDays },
+            toppedOut = day?.let { toppedOut(it, session.sets, bells, bands) }.orEmpty(),
+        )
+        sessionStore.finishSession(title)
+        val now = done.finishedAtEpochMillis ?: clock.nowMillis()
+        health.record(
+            done.healthWorkout(now, intervals.sessionCalories(done.elapsedSeconds(now)), healthTitle ?: title),
+        )
+        return true
+    }
+
+    /** How hard the finished session felt, from the summary; kept with it at once. */
+    fun setEffort(effort: PerceivedEffort?) {
+        reflect { it.copy(session = it.session.copy(effort = effort)) }
+    }
+
+    /** The summary's note as typed; kept with the session at once, trimmed. */
+    fun setNote(note: String) {
+        val typed = note.take(PerceivedEffort.NOTE_MAX_LENGTH)
+        reflect { it.copy(note = typed, session = it.session.copy(note = typed.trim().ifEmpty { null })) }
+    }
+
+    /** The summary's effort and note in words, for the health store's note: the screen words them. */
+    fun describeForHealth(notes: String?) {
+        health.describe(notes)
+    }
+
+    /**
+     * Keeps the finished session's changes, and the steps up at [nudges], in their program, as far as [scope]
+     * reaches, or in a copy named [copyName]: see [ProgramStore.saveChanges].
+     */
+    fun keepChanges(scope: SaveScope, copyName: String, nudges: Set<Int> = emptySet()) {
+        val done = current.value ?: return
+        val changes = done.changes?.withNudges(nudges)?.takeIf { it.changes.isNotEmpty() } ?: return
+        if (done.kept != null) return
+        current.value = done.copy(kept = programStore.saveChanges(changes, scope, copyName))
+    }
+
+    private fun reflect(change: (Finished) -> Finished) {
+        val done = current.value?.let(change) ?: return
+        current.value = done
+        sessionStore.reflectOnSession(done.session.uid, done.session.effort, done.note)
+    }
+
+    /** The week as it stands with this session in it, the interval workouts counted too, as Lift's week card counts. */
+    private fun weekWithThis(): WeekStanding {
+        val today = timestamps.dayNumber(clock.nowMillis())
+        val days = sessionStore.sessions.value.mapNotNull { it.finishedAtEpochMillis }.map(timestamps::dayNumber) +
+            intervals.workouts.value.map { timestamps.dayNumber(it.finishedAtEpochMillis) } +
+            today
+        return weekStanding(days, today, intervals.weeklyGoal.value)
+    }
+}
+
+/**
+ * The health store's copy of the session last finished, for the life of the process rather than of its summary:
+ * written as it finishes ([record]), then again with the summary's words for it a second after they stop changing
+ * ([describe]), whether or not the summary is still open; only the process ending within that second loses them.
+ * A store keeps a record written again under its id only at a higher version: each is written at the time it is.
+ */
+class SessionHealth(
+    private val health: HealthStore,
+    private val clock: WallClock,
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
+    private val settleMillis: Long = SETTLE_MILLIS,
+) {
+    private var recorded: HealthWorkout? = null
+    private var describing: Job? = null
+
+    fun record(workout: HealthWorkout) {
+        describing?.cancel()
+        recorded = workout
+        health.record(workout)
+    }
+
+    /** The finished session's [notes] as the summary words them; written once they stop changing. */
+    fun describe(notes: String?) {
+        val workout = recorded ?: return
+        describing?.cancel()
+        if (notes == workout.notes) return
+        describing = scope.launch {
+            delay(settleMillis)
+            val described = workout.copy(notes = notes, version = clock.nowMillis())
+            recorded = described
+            health.record(described)
+        }
+    }
+
+    fun close() = scope.cancel()
+
+    private companion object {
+        /** Long enough for a note being typed to settle, short enough that leaving straight after keeps it. */
+        const val SETTLE_MILLIS = 1_000L
+    }
+}

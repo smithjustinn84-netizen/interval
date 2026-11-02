@@ -277,7 +277,8 @@ toolchain (`$compose.*`).
   `core/core-platform/src@android/platform/Notifications.kt`.
 - **Health Connect**: `HealthStore.record` takes a `HealthWorkout` (core-platform's `Health.kt`): `WorkoutViewModel`
   builds one from the course it keeps (`CourseSpan`s in `WorkoutProgress`, so a restart loses none) as the workout
-  ends, `SessionViewModel` from the session's sets (`HealthWorkouts.kt` in each). Android's `HealthConnectStore`
+  ends, `FinishSession` (`lift-session`) from the session's sets (`HealthWorkouts.kt` in each); each is written
+  again with its summary's words, the workout's as the summary goes, the session's once they settle (`SessionHealth`). Android's `HealthConnectStore`
   writes an exercise session with segments and a total-calories record, keyed by the workout's id, and checks its
   permissions before every write. It reads one thing, `latestWeightKg` (the last 30 days), which Settings' weight
   sheet offers as a button and never takes on its own. Connected means the two write permissions; the weight's
