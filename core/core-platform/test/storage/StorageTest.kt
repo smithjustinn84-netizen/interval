@@ -14,10 +14,12 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class StorageTest {
@@ -36,6 +38,29 @@ class StorageTest {
         writer.persist { last.complete(Unit) }
         last.await()
         assertEquals(listOf(1, 2), done)
+    }
+
+    @Test
+    fun `a failed write is published and the next still runs`() = runTest {
+        val writer = SerialWriter(backgroundScope, log)
+        val errors = mutableListOf<StorageError>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { writer.errors.collect { errors += it } }
+        val last = CompletableDeferred<Unit>()
+        writer.persist { error("disk full") }
+        writer.persist { last.complete(Unit) }
+        last.await()
+        assertEquals(listOf("disk full"), errors.map { it.cause.message })
+    }
+
+    @Test
+    fun `an awaited write that fails is thrown to its caller and not published`() = runTest {
+        val writer = SerialWriter(backgroundScope, log)
+        val errors = mutableListOf<StorageError>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { writer.errors.collect { errors += it } }
+        val thrown = assertFailsWith<IllegalStateException> { writer.await { error("disk full") } }
+        assertEquals("disk full", thrown.message)
+        writer.await { }
+        assertEquals(emptyList(), errors)
     }
 
     @Test

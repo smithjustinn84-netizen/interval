@@ -15,6 +15,7 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 - Four house programs gain the work a week of them left out: push-ups in Full body for beginners and Kettlebell
   foundations, band chest presses in Bands and bells, and ten minutes of inverted rows on the minute in Bodyweight
   EMOM's second day. Following one, its days done count against the program as it now is.
+- A save that fails (a full disk, say) now says so, "Couldn't save. Try again.", rather than passing unnoticed.
 - History and Plan open at once and fill in as they are worked out, rather than holding the tap until then, and
   a change on the Timer no longer works either out again.
 - Opening the app again after backing out of it (Android) no longer reopens its databases and settings, and a

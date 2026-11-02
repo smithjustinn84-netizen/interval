@@ -1,5 +1,6 @@
 package dev.justinsmith.lift.data
 
+import dev.justinsmith.interval.storage.StorageError
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.BandColour
 import dev.justinsmith.lift.domain.BandLevel
@@ -31,8 +32,10 @@ import dev.justinsmith.lift.fakes.FakeSessionDao
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -134,6 +137,20 @@ class LiftRepositoryTest {
         val done = repository.sessions.value.single()
         assertEquals("Swings", done.title)
         assertEquals(600, done.elapsedSeconds(0))
+    }
+
+    @Test
+    fun `a set that can't be saved is published and the next one lands`() = runTest {
+        val errors = mutableListOf<StorageError>()
+        val watching = scope.launch { repository.writeErrors.collect { errors += it } }
+        repository.startSession()
+        sessionDao.failWrites = true
+        repository.logSet(BuiltInExercise.TwoHandSwing, 24.0, 10, side = null)
+        sessionDao.failWrites = false
+        repository.logSet(BuiltInExercise.TwoHandSwing, 24.0, 12, side = null)
+        assertEquals(listOf(12), repository.active.value?.sets?.map { it.reps })
+        assertEquals(listOf("disk full"), errors.map { it.cause.message })
+        watching.cancel()
     }
 
     @Test

@@ -10,6 +10,9 @@
     <!-- Joins two parts of a line: "Tabata · 20s on · 10s off · ×8". -->
     <string name="common_joined">%1$s · %2$s</string>
 
+    <!-- A save that failed, as a notice over any screen -->
+    <string name="save_failed">Couldn't save. Try again.</string>
+
     <!-- Navigation -->
     <string name="nav_timer">Timer</string>
     <string name="nav_lift">Lift</string>

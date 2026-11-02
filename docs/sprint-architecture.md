@@ -360,6 +360,15 @@ The cut line is after ticket 5.
 - `AppShell` shows a notice ("Couldn't save. Try again.") through `LocalNotices`.
 - `recordWorkout`, `finishSession` and `logSet` use `await`, so their callers know whether the write landed.
 - Done when a `StorageTest` with a failing DAO emits the error, and an acceptance step shows the notice.
+- As built: `StorageError` (its `cause`) on `SerialWriter.errors`, a few kept for a collector busy with the last;
+  `IntervalRepository.writeErrors` and `LiftRepository.writeErrors`; `AppContent` collects both while the app is
+  composed and shows `save_failed` through its `Notices`. The flow replays nothing: a failure while no app is
+  composed (Android's activity gone, a workout ending behind it) is logged only. Only `persist` publishes: an `await`'s failure is its
+  caller's, so the import's own "couldn't import" stays the one notice. `recordWorkout`, `finishSession` and
+  `logSet` stay `persist`, by choice: making them `await` turns them `suspend` up through `WorkoutRecorder`, the
+  timers' callbacks and the session's finish, for callers that would do nothing with the answer yet. The fakes'
+  `FakeHistoryDao.failWrites` and `FakeSessionDao.failWrites` refuse writes; `SaveFailedAcceptanceTest` ends a
+  workout with History refusing and sees the notice (no journey: a full disk can't be made on the emulator).
 
 ## Explicitly not this sprint (the next one's candidates)
 

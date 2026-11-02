@@ -342,6 +342,11 @@ and the repository APIs return `Unit`. A failed `logSet` or `recordWorkout` is i
 
 **Recommendation.** `writeErrors: SharedFlow`, shown as a notice; `await` for the writes the user must see land.
 
+**Resolved** in change `tkvsnrvx` ("Storage: a save that fails says so"): `SerialWriter.errors` publishes each
+failed `persist`, both repositories expose it as `writeErrors`, and `AppContent` shows "Couldn't save. Try again."
+as a notice over any screen. `await` throws to its caller and publishes nothing (the import says its own). The
+writes stay `persist`: nothing acts on whether one landed yet, and the notice already tells the user.
+
 ### E5 · Medium · Import across the two stores
 - The interval import is one transaction; Lift's and the settings are separate steps (a known, documented
   trade-off).

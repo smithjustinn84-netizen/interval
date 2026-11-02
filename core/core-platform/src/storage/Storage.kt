@@ -7,9 +7,13 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.launch
@@ -24,14 +28,26 @@ fun storageScope(dispatcher: CoroutineDispatcher, name: String): CoroutineScope 
     return CoroutineScope(SupervisorJob() + dispatcher + CoroutineExceptionHandler { _, e -> log.e(e) { "Failed" } })
 }
 
+/** A write that failed, for the app to tell the user: [cause] is what the storage threw. */
+class StorageError(val cause: Exception)
+
 /**
  * A repository's writes, queued in call order and run one at a time in [scope], so a save can't overtake an
- * earlier one (a clear landing before the insert it followed). A failed write is logged, never thrown:
- * losing one save must not crash a workout.
+ * earlier one (a clear landing before the insert it followed). A failed write is logged and published on
+ * [errors], never thrown: losing one save must not crash a workout, but the user should know.
  */
 class SerialWriter(scope: CoroutineScope, private val log: Logger) {
     private val writes = Channel<suspend () -> Unit>(Channel.UNLIMITED)
     private val consumer = scope.launch { for (write in writes) runLogged(write) }
+
+    // A few kept for a collector still busy with the last, the oldest dropped past that: one shown is enough.
+    private val failures = MutableSharedFlow<StorageError>(
+        extraBufferCapacity = ERRORS_KEPT,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+
+    /** Each [persist] that failed, as it fails. An [await]'s failure is its caller's, thrown there, not here. */
+    val errors: SharedFlow<StorageError> = failures.asSharedFlow()
 
     /** Queues [write] behind every write before it. After [close], it is dropped. */
     fun persist(write: suspend () -> Unit) {
@@ -76,7 +92,12 @@ class SerialWriter(scope: CoroutineScope, private val log: Logger) {
             throw e
         } catch (e: Exception) {
             log.e(e) { "Couldn't save" }
+            failures.tryEmit(StorageError(e))
         }
+    }
+
+    private companion object {
+        const val ERRORS_KEPT = 8
     }
 }
 

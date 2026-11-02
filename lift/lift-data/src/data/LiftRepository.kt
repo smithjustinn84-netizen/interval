@@ -5,6 +5,7 @@ package dev.justinsmith.lift.data
 import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.storage.SerialWriter
+import dev.justinsmith.interval.storage.StorageError
 import dev.justinsmith.interval.storage.orEmptyOnError
 import dev.justinsmith.interval.storage.orOnError
 import dev.justinsmith.lift.domain.Band
@@ -39,6 +40,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -68,6 +70,9 @@ class LiftRepository(
 ) : LiftActivity {
     private val log = Logger.withTag("LiftRepository")
     private val writer = SerialWriter(scope, log)
+
+    /** Each save that failed, as it fails, for the app to say so: the write itself is dropped. */
+    val writeErrors: SharedFlow<StorageError> get() = writer.errors
 
     private val _ready = MutableStateFlow(false)
     override val ready: StateFlow<Boolean> = _ready.asStateFlow()

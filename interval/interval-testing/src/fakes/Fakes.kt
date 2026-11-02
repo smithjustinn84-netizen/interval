@@ -55,6 +55,9 @@ class FakeHistoryDao : HistoryDao {
     private val rows = MutableStateFlow(emptyList<HistoryEntity>())
     private val ids = AutoIds()
 
+    /** While on, every insert fails as a full disk would. */
+    var failWrites = false
+
     override fun observeAll(): Flow<List<HistoryEntity>> =
         rows.map { all ->
             all.filterNot { it.deleted }
@@ -66,6 +69,7 @@ class FakeHistoryDao : HistoryDao {
     // As Room's autoGenerate does: an id of 0 takes the next one, any other is kept. Like the unique
     // index, a uid already stored is refused.
     override suspend fun insert(entry: HistoryEntity) {
+        check(!failWrites) { "disk full" }
         check(rows.value.none { it.uid == entry.uid }) { "UNIQUE constraint failed: history.uid" }
         val id = ids.assign(entry.id)
         rows.update { it + entry.copy(id = id) }

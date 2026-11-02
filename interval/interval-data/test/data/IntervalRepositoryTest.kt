@@ -17,6 +17,7 @@ import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.model.WorkoutProgress
 import dev.justinsmith.interval.model.asPlan
+import dev.justinsmith.interval.storage.StorageError
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.Effort
@@ -32,11 +33,13 @@ import dev.justinsmith.interval.timer.stepped
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -445,9 +448,13 @@ class IntervalRepositoryTest {
                     clock
                 },
             )
+        val errors = mutableListOf<StorageError>()
+        val watching = CoroutineScope(Dispatchers.Unconfined).launch { repository.writeErrors.collect { errors += it } }
         repository.recordWorkout(IntervalConfig(), elapsedSeconds = 1)
         repository.recordWorkout(IntervalConfig(), elapsedSeconds = 2)
         assertEquals(listOf(2), repository.history.value.map { it.elapsedSeconds })
+        assertEquals(listOf("disk full"), errors.map { it.cause.message })
+        watching.cancel()
     }
 
     @Test

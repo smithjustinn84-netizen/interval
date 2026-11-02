@@ -60,6 +60,9 @@ class FakeSessionDao : SessionDao {
     val sets = MutableStateFlow(emptyList<SetEntity>())
     private var nextId = 1L
 
+    /** While on, every set logged fails as a full disk would. */
+    var failWrites = false
+
     override fun observeSessions(): Flow<List<SessionEntity>> =
         sessions.map { all -> all.filterNot { it.deleted }.sortedByDescending { it.startedAtEpochMillis } }
 
@@ -88,6 +91,7 @@ class FakeSessionDao : SessionDao {
 
     // As Room: an id of 0 is generated, any other is kept (a set restored to its place).
     override suspend fun insert(set: SetEntity) = sets.update {
+        check(!failWrites) { "disk full" }
         val id = if (set.id == 0L) nextId++ else set.id.also { nextId = maxOf(nextId, it + 1) }
         it + set.copy(id = id)
     }

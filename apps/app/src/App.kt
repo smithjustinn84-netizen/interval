@@ -74,6 +74,8 @@ import dev.justinsmith.interval.platform.SystemBarIcons
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.materialBackPreview
 import dev.justinsmith.interval.presets.PresetsRoute
+import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.save_failed
 import dev.justinsmith.interval.settings.SettingsRoute
 import dev.justinsmith.interval.splash.WithIntro
 import dev.justinsmith.interval.ui.AppSizes
@@ -106,11 +108,13 @@ import dev.justinsmith.lift.nav.liftRoutes
 import dev.justinsmith.lift.platform.ActiveTimers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.merge
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.plus
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 import org.jetbrains.compose.reload.DevelopmentEntryPoint
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.KoinIsolatedContext
 import org.koin.compose.koinInject
 import org.koin.core.KoinApplication
@@ -197,6 +201,11 @@ internal fun AppContent(
             val liftingOnStack = backStack.any { it is Lifting }
             LaunchedEffect(liftingOnStack) { if (!liftingOnStack) timers.stopAll() }
             val notices = rememberNotices()
+            // A save that failed is gone: say so, wherever the app is, rather than let it pass unnoticed.
+            val saveFailed = stringResource(Res.string.save_failed)
+            LaunchedEffect(repository, lift) {
+                merge(repository.writeErrors, lift.writeErrors).collect { notices.show(saveFailed) }
+            }
             // The intro is dark in either theme while it covers the app.
             SystemBarIcons(lightIcons = dark || introPlaying)
             WatchForIdle {

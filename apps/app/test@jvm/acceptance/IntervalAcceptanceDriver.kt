@@ -162,6 +162,15 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     fun closeSummary() = tap("Done")
 
+    // A save that fails
+
+    /** From here the disk is full: every workout recorded in History fails to save. */
+    fun diskIsFull() {
+        app.storage.history.failWrites = true
+    }
+
+    fun seeSaveFailed() = see("Couldn't save. Try again.")
+
     // History and Plan
 
     fun seeHistoryEmpty() = see("Train to a plan")
