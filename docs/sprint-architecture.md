@@ -292,10 +292,13 @@ The cut line is after ticket 5.
   - **The journey's kill.** `am kill` leaves a process holding a foreground service, so the journey kills the
     process with `kill -9` under `adb root` and checks the PID changed; `force-stop` would drop the saved state.
   - **On `amper-37`:** a 3:00 rest killed with 2:58 left and reopened 88 seconds later showed 1:32, its notification
-    back; one that ended while the process was gone was dropped. Found there, and not this ticket's: after a
-    process death the app opens on the Timer tab whatever page was on top (Settings too), though Android keeps the
-    task, so `rememberNavBackStack` is not restored. The session is reached through the Lift tab's Resume, and the
-    draft kept in `SavedStateHandle` comes back only once the back stack does.
+    back; one that ended while the process was gone was dropped. Reopened through the launcher intent (the icon,
+    Recents), the back stack comes back with the session on top and the Log sheet's draft in it, as do Settings and a
+    running workout. An app opened on the Timer tab after the kill was the relaunch's doing, not the restore's:
+    `am start -n` names the activity without the launcher's action and category, so Android
+    starts a second, fresh `MainActivity` over the restored one (`dumpsys activity activities` shows the task's `sz=2`;
+    Back reveals the session). The app's own ways in reach the activity it has: notifications use the launch intent
+    with `SINGLE_TOP` (`Notifications.kt`), shortcuts `CLEAR_TOP | SINGLE_TOP`.
 
 **7. Narrow ports; ViewModels declared in Koin** · M · C3, C4, C2, G4
 - **Role interfaces**, which the existing classes implement (no split yet):

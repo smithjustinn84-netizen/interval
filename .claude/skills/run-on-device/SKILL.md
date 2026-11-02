@@ -12,6 +12,12 @@ android layout -p                   # UI tree as JSON, faster than a screenshot
 android docs search "<topic>"       # Official Android docs
 ```
 
+To check a page survives process death: Home, then `adb shell am kill dev.justinsmith.interval` (with a
+foreground service running, `adb root` and `adb shell kill -9 <pid>`; never `force-stop`, which drops saved
+state), and reopen through the launcher intent (`adb shell monkey -p dev.justinsmith.interval -c
+android.intent.category.LAUNCHER 1`, the icon or Recents). `am start -n` stacks a fresh
+`MainActivity` over the restored one, so the app seems to open on the Timer.
+
 `amper-37` is a **resizable** emulator on API 37 (the app's target SDK): one device for every form factor.
 It boots as a phone; switch with `adb -s <serial> emu resize-display <mode>`:
 

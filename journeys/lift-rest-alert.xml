@@ -26,8 +26,7 @@
     <action>Turn the screen on (adb shell input keyevent KEYCODE_WAKEUP) and swipe to unlock</action>
     <action>Tap "Log set", tap "+" until the rest reads "2:00" or more, and press Home</action>
     <action>Note the app's PID (adb shell pidof dev.justinsmith.interval), then kill it as the system would (adb root, then adb shell kill -9 PID); never force-stop, which drops the saved screen</action>
-    <action>Wait twenty seconds, return to the app (the launcher icon), wait for it to load, and verify that adb shell pidof gives a new PID</action>
-    <action>Tap the "Lift" tab, then "Resume session" (the app opens on the Timer tab after a process death until its back stack is restored)</action>
-    <action>Verify that the rest is still counting, about twenty seconds less than before the kill, and that the "Resting" notification is back</action>
+    <action>Wait twenty seconds, return to the app through its launcher intent (the launcher icon, Recents, or adb shell monkey -p dev.justinsmith.interval -c android.intent.category.LAUNCHER 1; never am start -n, which stacks a fresh activity over the restored one), wait for it to load, and verify that adb shell pidof gives a new PID</action>
+    <action>Verify that the session is the page on top, its rest still counting, about twenty seconds less than before the kill, and that the "Resting" notification is back</action>
   </actions>
 </journey>
