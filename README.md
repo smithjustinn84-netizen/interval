@@ -249,7 +249,7 @@ For testing architecture, harnesses, and test fakes, see [docs/testing.md](./doc
 - [Architecture Guide](./docs/architecture.md): System architecture, Navigation 3 backstack, Room multiplatform, and background execution.
 - [Testing Strategy](./docs/testing.md): Compose UI desktop harness, fakes, and on-device journeys.
 - [Release Guide](./docs/release.md): Release preparation, R8 optimization, keystore setup, and deployment checklist.
-- [Sprint 0.3](./docs/sprint-0.3.md): The current sprint's tickets, order and definition of done.
+- [Sprint 0.4](./docs/sprint-0.4.md): The current sprint's tickets, order and definition of done; [Sprint 0.3](./docs/sprint-0.3.md) and the [architecture sprint](./docs/sprint-architecture.md) before it.
 - [Developer Guide (CLAUDE.md)](./CLAUDE.md): Code conventions, architecture invariants, and toolchain command reference.
 - [Changelog](./CHANGELOG.md): History of notable changes and milestone releases.
 
