@@ -10,12 +10,10 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.QuietTextButton
-import dev.justinsmith.lift.domain.Band
-import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.Exercise
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.SetLog
-import dev.justinsmith.lift.domain.steppedBand
-import dev.justinsmith.lift.domain.steppedKg
+import dev.justinsmith.lift.domain.stepped
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.next_change
 import dev.justinsmith.lift.session.resources.next_how_to
@@ -65,28 +63,15 @@ internal fun LiftHeading(
  * plates a side. Draws nothing with no load to show: the mat, or a band not yet known.
  */
 @Composable
-internal fun LoadStep(
-    kg: Double,
-    equipment: Equipment,
-    state: SessionUiState,
-    onStep: (Int) -> Unit,
-    double: Boolean = false,
-    band: Band? = null,
-) {
-    val load = loadLine(kg, double, equipment, band) ?: return
-    val canStep = { step: Int ->
-        if (equipment == Equipment.Band) {
-            steppedBand(band, step, state.bands) != null
-        } else {
-            steppedKg(equipment, kg, step, state.bells, state.bar) != null
-        }
-    }
+internal fun LoadStep(load: Load, state: SessionUiState, onStep: (Int) -> Unit) {
+    val line = loadLine(load) ?: return
+    val canStep = { step: Int -> load.stepped(step, state.bells, state.bar, state.bands) != null }
     LoadStepper(
-        load,
+        line,
         canLower = canStep(-1),
         canRaise = canStep(1),
         onStep = onStep,
-        note = if (equipment == Equipment.Barbell) platesLine(kg, state.bar) else null,
+        note = (load as? Load.Bar)?.let { platesLine(it.kg, state.bar) },
         compact = true,
     )
 }

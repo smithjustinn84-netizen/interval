@@ -8,7 +8,7 @@ class ExerciseHistoryTest {
     private var nextId = 1L
 
     private fun set(exercise: Exercise, kg: Double, reps: Int, double: Boolean = false) =
-        SetLog(nextId++, exercise, kg, reps, null, nextId, double)
+        SetLog.of(nextId++, exercise, kg, reps, null, nextId, double)
 
     private fun session(uid: String, startedAt: Long, vararg sets: SetLog) =
         LiftSession(uid, startedAt, startedAt + 60_000, "", sets.toList())
@@ -58,19 +58,19 @@ class ExerciseHistoryTest {
 
     @Test
     fun `the same set in a row folds into one and order is kept`() {
-        val left = SetLog(1, BuiltInExercise.Press, 16.0, 5, Side.Left, 0)
+        val left = SetLog.of(1, BuiltInExercise.Press, 16.0, 5, Side.Left, 0)
         val runs = collapsedSets(
             listOf(
                 left,
                 left.copy(id = 2),
                 left.copy(id = 3, side = Side.Right),
                 left.copy(id = 4),
-                left.copy(id = 5, bellKg = 20.0),
+                left.copy(id = 5, load = Load.Bell(20.0)),
             ),
         )
         assertEquals(listOf(2, 1, 1, 1), runs.map { it.count })
         assertEquals(listOf(Side.Left, Side.Right, Side.Left, Side.Left), runs.map { it.set.side })
-        assertEquals(20.0, runs.last().set.bellKg)
+        assertEquals(20.0, runs.last().set.load.kg)
     }
 }
 
@@ -80,7 +80,7 @@ class ExerciseTrendTest {
     private fun session(startedAt: Long, vararg sets: SetLog) = PastSession("s$startedAt", startedAt, sets.toList())
 
     private fun set(exercise: Exercise, kg: Double, reps: Int, seconds: Int? = null) =
-        SetLog(nextId++, exercise, kg, reps, null, nextId, seconds = seconds)
+        SetLog.of(nextId++, exercise, kg, reps, null, nextId, seconds = seconds)
 
     @Test
     fun `a weighted lift trends by its heaviest set each session oldest first`() {

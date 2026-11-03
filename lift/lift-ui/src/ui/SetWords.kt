@@ -8,6 +8,7 @@ import dev.justinsmith.lift.domain.BandLevel
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.Focus
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.Measure
 import dev.justinsmith.lift.domain.Muscle
 import dev.justinsmith.lift.domain.SetLog
@@ -80,51 +81,50 @@ import org.jetbrains.compose.resources.stringResource
 
 /** A logged set in words, as [setLine] puts it. */
 @Composable
-fun setLine(set: SetLog): String =
-    setLine(set.bellKg, set.reps, set.side, set.double, set.equipment, set.seconds, set.band)
+fun setLine(set: SetLog): String = setLine(set.load, set.reps, set.side, set.seconds)
 
 /**
- * A set in words, by what it was done with: a bell "24 kg × 10", two "2 × 16 kg × 5"; a bar "62.5 kg × 3";
- * bodyweight "× 15", or
- * "+10 kg × 6" with weight added; a band "Medium × 20"; the mat "× 10"; a hold "0:45", or "+10 kg · 0:45".
- * A one-sided set adds its side: "24 kg × 10 · Left".
+ * A set in words, by its [load]: a bell "24 kg × 10", two "2 × 16 kg × 5"; a bar "62.5 kg × 3"; bodyweight
+ * "× 15", or "+10 kg × 6" with weight added; a band "Medium × 20"; the mat "× 10"; a hold "0:45", or
+ * "+10 kg · 0:45". A one-sided set adds its side: "24 kg × 10 · Left".
  */
 @Composable
-fun setLine(
-    bellKg: Double,
-    reps: Int,
-    side: Side?,
-    double: Boolean = false,
-    equipment: Equipment = Equipment.Kettlebell,
-    seconds: Int? = null,
-    band: Band? = null,
-): String {
-    val added = equipment == Equipment.Bodyweight && bellKg > 0
+fun setLine(load: Load, reps: Int, side: Side?, seconds: Int? = null): String {
+    val added = (load as? Load.Bodyweight)?.kg?.takeIf { it > 0 }
     val line = when {
-        seconds != null && added -> stringResource(
+        seconds != null && added != null -> stringResource(
             Res.string.set_line_added_held,
-            formatKg(bellKg),
+            formatKg(added),
             formatClock(seconds),
         )
 
         seconds != null -> formatClock(seconds)
 
-        equipment == Equipment.Kettlebell && double -> stringResource(
-            Res.string.set_line_double,
-            formatKg(bellKg),
-            reps,
-        )
-
-        equipment == Equipment.Kettlebell || equipment == Equipment.Barbell ->
-            stringResource(Res.string.set_line, formatKg(bellKg), reps)
-
-        added -> stringResource(Res.string.set_line_added, formatKg(bellKg), reps)
-
-        band != null -> stringResource(Res.string.set_line_band, bandName(band), reps)
-
-        else -> stringResource(Res.string.set_line_reps, reps)
+        else -> repsLine(load, reps)
     }
     return if (side == null) line else stringResource(Res.string.common_joined, line, sideName(side))
+}
+
+@Composable
+private fun repsLine(load: Load, reps: Int): String = when (load) {
+    is Load.Bell -> if (load.double) {
+        stringResource(Res.string.set_line_double, formatKg(load.kg), reps)
+    } else {
+        stringResource(Res.string.set_line, formatKg(load.kg), reps)
+    }
+
+    is Load.Bar -> stringResource(Res.string.set_line, formatKg(load.kg), reps)
+
+    is Load.Bodyweight -> if (load.kg > 0) {
+        stringResource(Res.string.set_line_added, formatKg(load.kg), reps)
+    } else {
+        stringResource(Res.string.set_line_reps, reps)
+    }
+
+    is Load.Banded -> load.band?.let { stringResource(Res.string.set_line_band, bandName(it), reps) }
+        ?: stringResource(Res.string.set_line_reps, reps)
+
+    Load.Mat -> stringResource(Res.string.set_line_reps, reps)
 }
 
 /**
@@ -132,24 +132,24 @@ fun setLine(
  * bodyweight "+10 kg" or none, a band by name; null on the mat, or a band not yet known.
  */
 @Composable
-fun loadLine(kg: Double, double: Boolean, equipment: Equipment, band: Band?): String? = when (equipment) {
-    Equipment.Kettlebell -> if (double) {
-        stringResource(Res.string.load_double, formatKg(kg))
+fun loadLine(load: Load): String? = when (load) {
+    is Load.Bell -> if (load.double) {
+        stringResource(Res.string.load_double, formatKg(load.kg))
     } else {
-        stringResource(Res.string.kg_value, formatKg(kg))
+        stringResource(Res.string.kg_value, formatKg(load.kg))
     }
 
-    Equipment.Barbell -> stringResource(Res.string.kg_value, formatKg(kg))
+    is Load.Bar -> stringResource(Res.string.kg_value, formatKg(load.kg))
 
-    Equipment.Bodyweight -> if (kg > 0) {
-        stringResource(Res.string.load_added, formatKg(kg))
+    is Load.Bodyweight -> if (load.kg > 0) {
+        stringResource(Res.string.load_added, formatKg(load.kg))
     } else {
         stringResource(Res.string.log_added_none)
     }
 
-    Equipment.Band -> band?.let { bandName(it) }
+    is Load.Banded -> load.band?.let { bandName(it) }
 
-    Equipment.Mat -> null
+    Load.Mat -> null
 }
 
 /**

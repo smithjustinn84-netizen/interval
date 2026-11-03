@@ -122,7 +122,8 @@ interval/            the interval timer
 
 lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
   lift-domain        Lift's pure domain (`dev.justinsmith.lift.domain`): exercises, programs, sets and
-                     sessions, records, `EmomClock`/`HoldClock`/`RestClock`, suggestions. No dependencies
+                     sessions, a set's `Load` (sealed: bell, bar, bodyweight, band, mat), records,
+                     `EmomClock`/`HoldClock`/`RestClock`, suggestions. No dependencies
   lift-data          `LiftRepository`, the root of a repository per store (`SessionRepository`, `SetRepository`,
                      `ProgramRepository`, `ExerciseRepository`, `GearRepository`, over one `SerialWriter`; the
                      mappers in `LiftMappers.kt`), `LiftDatabase` (Room, KSP, `schemas/`), `IntervalActivity` (what

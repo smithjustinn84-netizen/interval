@@ -96,7 +96,7 @@ private val SetLog.lift: Triple<String, Boolean, RecordKind> get() = Triple(exer
 
 private val SetLog.recordKind: RecordKind get() = when {
     seconds != null -> RecordKind.Held
-    equipment == Equipment.Band && band != null -> RecordKind.Banded
+    load.band != null -> RecordKind.Banded
     else -> RecordKind.Weighted
 }
 
@@ -111,21 +111,21 @@ private val PersonalRecord.kindOrder: Int get() = kind.ordinal
 private val PersonalRecord.lift: Triple<String, Boolean, RecordKind> get() = Triple(exercise.key, double, kind)
 
 private fun weighted(exercise: Exercise, done: List<SetLog>, double: Boolean): PersonalRecord.Weighted {
-    val heaviest = done.maxOf { it.bellKg }
-    val most = done.maxWith(compareBy<SetLog> { it.reps }.thenBy { it.bellKg })
+    val heaviest = done.maxOf { it.load.kg }
+    val most = done.maxWith(compareBy<SetLog> { it.reps }.thenBy { it.load.kg })
     return PersonalRecord.Weighted(
         exercise = exercise,
         heaviestKg = heaviest,
-        repsAtHeaviest = done.filter { it.bellKg == heaviest }.maxOf { it.reps },
+        repsAtHeaviest = done.filter { it.load.kg == heaviest }.maxOf { it.reps },
         mostReps = most.reps,
-        mostRepsKg = most.bellKg,
+        mostRepsKg = most.load.kg,
         double = double,
     )
 }
 
 private fun banded(exercise: Exercise, done: List<SetLog>): PersonalRecord.Banded {
     // Every one has a band: that is what made it a band record.
-    val sets = done.mapNotNull { set -> set.band?.let { it to set.reps } }
+    val sets = done.mapNotNull { set -> set.load.band?.let { it to set.reps } }
     val heaviest = sets.maxBy { it.first.position }.first
     val most = sets.maxWith(compareBy<Pair<Band, Int>> { it.second }.thenBy { it.first.position })
     return PersonalRecord.Banded(

@@ -13,6 +13,7 @@ import dev.justinsmith.lift.domain.ExerciseDraft
 import dev.justinsmith.lift.domain.Focus
 import dev.justinsmith.lift.domain.Followed
 import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.Measure
 import dev.justinsmith.lift.domain.ProgramDraft
 import dev.justinsmith.lift.domain.ProgramId
@@ -21,6 +22,7 @@ import dev.justinsmith.lift.domain.SaveScope
 import dev.justinsmith.lift.domain.SavedTimer
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.domain.UnknownExercise
+import dev.justinsmith.lift.domain.band
 import dev.justinsmith.lift.domain.planChanges
 import dev.justinsmith.lift.domain.program
 import dev.justinsmith.lift.fakes.FakeBandDao
@@ -31,6 +33,7 @@ import dev.justinsmith.lift.fakes.FakeFollowingDao
 import dev.justinsmith.lift.fakes.FakeLiftImportDao
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import dev.justinsmith.lift.fakes.FakeSessionDao
+import dev.justinsmith.lift.fakes.logSet
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -98,8 +101,8 @@ class LiftRepositoryTest {
         repository.gear.saveBand(heavy)
         val timers = listOf(
             SavedTimer.Rest(500, 90),
-            SavedTimer.Emom(500, BuiltInExercise.Press, 16.0, 5, 10, Side.Right, true, null, setOf(1, 3)),
-            SavedTimer.Emom(500, BuiltInExercise.BandPullApart, 0.0, 12, 5, Side.Left, false, heavy, emptySet()),
+            SavedTimer.Emom(500, BuiltInExercise.Press, Load.Bell(16.0, double = true), 5, 10, Side.Right, setOf(1, 3)),
+            SavedTimer.Emom(500, BuiltInExercise.BandPullApart, Load.Banded(heavy), 12, 5, Side.Left, emptySet()),
             SavedTimer.Hold(500, BuiltInExercise.Plank, 0.0, 10.0, 20.0, Side.Left, false, 45, Band.Default, false),
         )
         repository.sessions.startSession()
@@ -198,9 +201,9 @@ class LiftRepositoryTest {
         val (plank, pullApart) = assertNotNull(repository.sessions.active.value).sets
         assertEquals(45, plank.seconds)
         assertEquals(Side.Left, plank.side)
-        assertEquals(Equipment.Bodyweight, plank.equipment)
-        assertEquals(Band.of(BandLevel.Medium), pullApart.band)
-        assertEquals(Equipment.Band, pullApart.equipment)
+        assertEquals(Equipment.Bodyweight, plank.load.equipment)
+        assertEquals(Band.of(BandLevel.Medium), pullApart.load.band)
+        assertEquals(Equipment.Band, pullApart.load.equipment)
     }
 
     @Test
@@ -208,8 +211,8 @@ class LiftRepositoryTest {
         repository.sessions.startSession()
         repository.sets.logSet(BuiltInExercise.BarbellPowerClean, 62.5, 3, null)
         val clean = assertNotNull(repository.sessions.active.value).sets.single()
-        assertEquals(Equipment.Barbell, clean.equipment)
-        assertEquals(62.5, clean.bellKg)
+        assertEquals(Equipment.Barbell, clean.load.equipment)
+        assertEquals(62.5, clean.load.kg)
         assertEquals(187.5, clean.tonnageKg)
     }
 
@@ -230,7 +233,7 @@ class LiftRepositoryTest {
         repository.sets.logSet(BuiltInExercise.PushUp, 0.0, 15, null, seconds = 30, band = Band.of(BandLevel.Heavy))
         val pushUp = assertNotNull(repository.sessions.active.value).sets.single()
         assertNull(pushUp.seconds)
-        assertNull(pushUp.band)
+        assertNull(pushUp.load.band)
     }
 
     @Test
@@ -268,7 +271,7 @@ class LiftRepositoryTest {
         repository.sets.logSet(BuiltInExercise.BandPullApart, 0.0, 15, null, band = Band.of(BandLevel.Heavy))
         val heavy = repository.gear.bands.value.single { it.id == "Heavy" }
         repository.gear.saveBand(heavy.copy(name = " Blue loop "))
-        assertEquals("Blue loop", assertNotNull(repository.sessions.active.value).sets.single().band?.name)
+        assertEquals("Blue loop", assertNotNull(repository.sessions.active.value).sets.single().load.band?.name)
         assertEquals("Blue loop", repository.gear.bands.value.single { it.id == "Heavy" }.name)
     }
 
@@ -310,7 +313,7 @@ class LiftRepositoryTest {
         sessionDao.sets.value = listOf(SetEntity(0, session, "Press", 16.0, 5, "Left", 0))
         val press = assertNotNull(repository.sessions.active.value).sets.single()
         assertEquals(BuiltInExercise.Press, press.exercise)
-        assertEquals(Equipment.Kettlebell, press.equipment)
+        assertEquals(Equipment.Kettlebell, press.load.equipment)
         assertNull(press.seconds)
     }
 

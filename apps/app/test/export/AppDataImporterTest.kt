@@ -25,6 +25,7 @@ import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.ExerciseDraft
 import dev.justinsmith.lift.fakes.FakeLiftStorage
+import dev.justinsmith.lift.fakes.logSet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test

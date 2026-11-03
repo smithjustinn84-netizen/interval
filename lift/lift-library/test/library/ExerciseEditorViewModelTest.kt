@@ -7,6 +7,7 @@ import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.ExerciseDraft
 import dev.justinsmith.lift.domain.Measure
 import dev.justinsmith.lift.fakes.FakeLiftStorage
+import dev.justinsmith.lift.fakes.logSet
 import kotlinx.coroutines.cancel
 import kotlin.test.Test
 import kotlin.test.assertEquals

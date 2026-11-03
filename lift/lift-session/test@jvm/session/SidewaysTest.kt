@@ -25,6 +25,7 @@ import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.EmomPhase
 import dev.justinsmith.lift.domain.EmomState
 import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.PlanChanges
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.domain.builtInPrograms
@@ -35,7 +36,8 @@ import kotlin.test.assertTrue
 class SidewaysTest {
     @Test
     fun `an EMOM shows its clock and Set done`() = runUiTest(Window.PhoneSideways) {
-        val run = EmomRun(BuiltInExercise.TwoHandSwing, 24.0, 10, 10, firstSide = Side.Left, startedAtMillis = 0)
+        val run =
+            EmomRun(BuiltInExercise.TwoHandSwing, Load.Bell(24.0), 10, 10, firstSide = Side.Left, startedAtMillis = 0)
         setThemedContent(dark = true) {
             EmomScreen(run, EmomState(EmomPhase.Work, 3, 10, 45, 0.25f), onFinishSet = {}, onStop = {})
         }

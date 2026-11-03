@@ -4,9 +4,12 @@ import co.touchlab.kermit.Logger
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.CustomExercise
 import dev.justinsmith.lift.domain.Exercise
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.SavedTimer
 import dev.justinsmith.lift.domain.Side
+import dev.justinsmith.lift.domain.band
 import dev.justinsmith.lift.domain.bandOf
+import dev.justinsmith.lift.domain.double
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -48,12 +51,12 @@ internal fun encodeTimer(timer: SavedTimer): String = json.encodeToString(
             EMOM,
             timer.startedAtEpochMillis,
             exercise = timer.exercise.key,
-            bellKg = timer.bellKg,
+            bellKg = timer.load.kg,
             reps = timer.reps,
             minutes = timer.minutes,
             side = timer.firstSide.name,
-            double = timer.double,
-            band = timer.band?.id,
+            double = timer.load.double,
+            band = timer.load.band?.id,
             done = timer.done.sorted(),
         )
 
@@ -92,12 +95,10 @@ internal fun decodeTimer(stored: String, made: List<CustomExercise>, bands: List
         EMOM -> SavedTimer.Emom(
             timer.startedAt,
             exercise,
-            timer.bellKg,
+            Load.of(exercise.equipment, timer.bellKg, timer.double, timer.band?.let { bandOf(it, bands) }),
             timer.reps,
             timer.minutes,
             side,
-            timer.double,
-            timer.band?.let { bandOf(it, bands) },
             timer.done.toSet(),
         ).takeIf { timer.minutes > 0 }
 

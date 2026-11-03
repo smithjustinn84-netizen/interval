@@ -10,6 +10,7 @@ import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.fakes.FakeIntervalActivity
 import dev.justinsmith.lift.fakes.FakeLiftStorage
+import dev.justinsmith.lift.fakes.logSet
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope

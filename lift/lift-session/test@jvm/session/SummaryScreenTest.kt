@@ -31,7 +31,7 @@ private val session = LiftSession(
     0,
     600_000,
     "Swings",
-    listOf(SetLog(1, BuiltInExercise.TwoHandSwing, 24.0, 10, null, 0)),
+    listOf(SetLog.of(1, BuiltInExercise.TwoHandSwing, 24.0, 10, null, 0)),
 )
 
 /**

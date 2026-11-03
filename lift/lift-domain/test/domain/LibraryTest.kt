@@ -58,7 +58,7 @@ class LibraryTest {
     @Test
     fun `recents are the last done first once each and no more than four`() {
         val offered = offeredExercises(listOf(plank))
-        fun set(exercise: Exercise) = SetLog(0, exercise, 0.0, 1, null, 0)
+        fun set(exercise: Exercise) = SetLog.of(0, exercise, 0.0, 1, null, 0)
         val sets = listOf(
             BuiltInExercise.Press,
             BuiltInExercise.PushUp,

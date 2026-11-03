@@ -11,7 +11,7 @@ class SessionPlanTest {
     private val presses = Block(BuiltInExercise.Press, rounds = 3, reps = 5)
 
     private fun logged(exercise: Exercise, times: Int, side: Side? = null) =
-        (1..times).map { SetLog(it.toLong(), exercise, 24.0, 10, side, it.toLong()) }
+        (1..times).map { SetLog.of(it.toLong(), exercise, 24.0, 10, side, it.toLong()) }
 
     private fun day(vararg blocks: Block, plan: SessionPlan? = null) = ProgramDay(
         Program(ProgramKey.Custom("p"), listOf(blocks.toList()), daysPerWeek = 3, weeks = 4),

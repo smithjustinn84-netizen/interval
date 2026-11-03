@@ -16,10 +16,11 @@ import dev.justinsmith.lift.domain.DEFAULT_BAR_KG
 import dev.justinsmith.lift.domain.Doubles
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.Exercise
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.MAX_BAR_KG
 import dev.justinsmith.lift.domain.formatKg
+import dev.justinsmith.lift.domain.stepped
 import dev.justinsmith.lift.domain.steppedBand
-import dev.justinsmith.lift.domain.steppedKg
 import dev.justinsmith.lift.ui.resources.Res
 import dev.justinsmith.lift.ui.resources.kg_value
 import dev.justinsmith.lift.ui.resources.lift_double
@@ -101,13 +102,7 @@ private fun BellChoices(
     val last = stringResource(Res.string.load_last_time)
     GroupLabel(stringResource(Res.string.log_bell))
     if (kg != null && null !in options) {
-        KgStepper(
-            loadLine(kg, exercise.doubled(double), Equipment.Kettlebell, null),
-            kg,
-            Equipment.Kettlebell,
-            options,
-            onKg,
-        )
+        KgStepper(Load.Bell(kg, exercise.doubled(double)), options, onKg)
     }
     ChoiceRow(options, kg, { it?.let(::formatKg) ?: last }, onKg)
     if (!ownsBells) {
@@ -131,7 +126,7 @@ private fun AddedChoices(kg: Double?, options: List<Double?>, onKg: (Double?) ->
     val none = stringResource(Res.string.log_added_none)
     GroupLabel(stringResource(Res.string.log_added))
     if (kg != null && null !in options) {
-        KgStepper(loadLine(kg, false, Equipment.Bodyweight, null), kg, Equipment.Bodyweight, options, onKg)
+        KgStepper(Load.Bodyweight(kg), options, onKg)
     }
     ChoiceRow(options, kg, { option -> option?.let { if (it == 0.0) none else formatKg(it) } ?: last }, onKg)
 }
@@ -189,20 +184,15 @@ fun LoadStepper(
     }
 }
 
-/** [value], the [kg] a lift done with [equipment] takes, a step at a time among [options]. */
+/** [load], a bell or weight added, a step at a time among [options]. */
 @Composable
-private fun KgStepper(
-    value: String?,
-    kg: Double,
-    equipment: Equipment,
-    options: List<Double?>,
-    onKg: (Double?) -> Unit,
-) {
+private fun KgStepper(load: Load, options: List<Double?>, onKg: (Double?) -> Unit) {
     val bells = options.filterNotNull()
+    val stepped = { step: Int -> load.stepped(step, bells, bar = null, offered = emptyList()) }
     LoadStepper(
-        value.orEmpty(),
-        canLower = steppedKg(equipment, kg, -1, bells, bar = null) != null,
-        canRaise = steppedKg(equipment, kg, 1, bells, bar = null) != null,
-        onStep = { step -> steppedKg(equipment, kg, step, bells, bar = null)?.let(onKg) },
+        loadLine(load).orEmpty(),
+        canLower = stepped(-1) != null,
+        canRaise = stepped(1) != null,
+        onStep = { step -> stepped(step)?.let { onKg(it.kg) } },
     )
 }

@@ -11,6 +11,7 @@ import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.fakes.FakeLiftStorage
+import dev.justinsmith.lift.fakes.logSet
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.int

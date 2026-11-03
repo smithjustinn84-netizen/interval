@@ -22,12 +22,13 @@ import dev.justinsmith.interval.ui.setThemedContent
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.EmomPhase
 import dev.justinsmith.lift.domain.EmomState
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.Side
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 private val swings =
-    EmomRun(BuiltInExercise.TwoHandSwing, 24.0, 10, minutes = 10, firstSide = Side.Left, startedAtMillis = 0)
+    EmomRun(BuiltInExercise.TwoHandSwing, Load.Bell(24.0), 10, minutes = 10, firstSide = Side.Left, startedAtMillis = 0)
 
 /** The EMOM's page over fixed state. A whole EMOM in a session is lift-nav's `EmomFlowTest`. */
 class EmomScreenTest {
@@ -60,7 +61,7 @@ class EmomScreenTest {
 
     @Test
     fun `a one-sided lift alternates sides minute by minute`() = runUiTest {
-        val presses = swings.copy(exercise = BuiltInExercise.Press, bellKg = 16.0, reps = 5)
+        val presses = swings.copy(exercise = BuiltInExercise.Press, load = Load.Bell(16.0), reps = 5)
         var state by mutableStateOf(EmomState(EmomPhase.Work, 1, 10, 50, 0.1f))
         setThemedContent(dark = true) { EmomScreen(presses, state, onFinishSet = {}, onStop = {}) }
         onNodeWithText("Press · 16 kg × 5 · Left").assertExists()

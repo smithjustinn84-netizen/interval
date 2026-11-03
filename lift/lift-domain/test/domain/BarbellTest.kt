@@ -32,8 +32,8 @@ class BarbellTest {
 
     @Test
     fun `a barbell lift starts from its last weight then the empty bar`() {
-        val snatch = SetLog(1, BuiltInExercise.BarbellSnatch, 45.0, 2, null, 0)
-        val squat = SetLog(2, BuiltInExercise.BarbellBackSquat, 100.0, 5, null, 0)
+        val snatch = SetLog.of(1, BuiltInExercise.BarbellSnatch, 45.0, 2, null, 0)
+        val squat = SetLog.of(2, BuiltInExercise.BarbellBackSquat, 100.0, 5, null, 0)
         val history = listOf(snatch, squat)
         assertEquals(45.0, suggestedBar(BuiltInExercise.BarbellSnatch, history, bar = 20.0))
         assertEquals(15.0, suggestedBar(BuiltInExercise.BarbellClean, history, bar = 15.0))

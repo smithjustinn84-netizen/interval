@@ -21,7 +21,6 @@ import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.lift.domain.Doubles
-import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.exercise_editor_new
@@ -53,7 +52,6 @@ internal fun DraftSetCard(
     onTimeIt: () -> Unit,
 ) {
     val draft = state.draft
-    val equipment = draft.exercise.equipment
     ListCard(Modifier.padding(top = Spacing.space8)) {
         Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
             Text(
@@ -62,14 +60,7 @@ internal fun DraftSetCard(
                 color = IntervalTheme.palette.textDim,
             )
             LiftHeading(draft.exercise, draft.doubled, actions.onOpenExercise, onChange = onChange)
-            LoadStep(
-                draft.loadKg,
-                equipment,
-                state,
-                actions.onStepDraftLoad,
-                double = draft.doubled,
-                band = draft.band.takeIf { equipment == Equipment.Band },
-            )
+            LoadStep(draft.load, state, actions.onStepDraftLoad)
             DraftCount(draft, actions, onTimeIt)
             DraftOptions(draft, actions)
             LastTimeLine(state.draftLastTime)

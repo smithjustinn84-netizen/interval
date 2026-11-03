@@ -2,12 +2,12 @@ package dev.justinsmith.lift.session
 
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.lift.data.SetStore
-import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.EmomClock
 import dev.justinsmith.lift.domain.EmomState
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.HoldPhase
 import dev.justinsmith.lift.domain.HoldState
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.RestState
 import dev.justinsmith.lift.domain.SavedTimer
 import dev.justinsmith.lift.domain.Side
@@ -83,7 +83,7 @@ class SessionTimers(
     private val rest = RestTimer(time, beeper)
 
     private val emom = EmomRunner(time, beeper) { run, minute ->
-        setStore.logSet(run.exercise, run.bellKg, run.reps, run.sideOf(minute), run.double, band = run.band)
+        setStore.logSet(run.exercise, run.load, run.reps, run.sideOf(minute))
     }
 
     private val holds = HoldTimer(time, beeper) { set, seconds -> logHeld(set, seconds) }
@@ -121,18 +121,9 @@ class SessionTimers(
     }
 
     /** Starts an EMOM, ending the rest: the keep-alive goes on from the one to the other. */
-    @Suppress("detekt.LongParameterList") // The EMOM's own.
-    fun startEmom(
-        exercise: Exercise,
-        bellKg: Double,
-        reps: Int,
-        minutes: Int,
-        firstSide: Side,
-        double: Boolean,
-        band: Band? = null,
-    ) {
+    fun startEmom(exercise: Exercise, load: Load, reps: Int, minutes: Int, firstSide: Side) {
         rest.skip()
-        emom.start(exercise, bellKg, reps, minutes, firstSide, double, band)
+        emom.start(exercise, load, reps, minutes, firstSide)
         changed()
     }
 
@@ -190,14 +181,12 @@ class SessionTimers(
 
             is SavedTimer.Emom -> EmomRun(
                 timer.exercise,
-                timer.bellKg,
+                timer.load,
                 timer.reps,
                 timer.minutes,
                 timer.firstSide,
                 startedAt,
                 timer.done,
-                timer.double,
-                timer.band,
                 timer.startedAtEpochMillis,
             )
                 .takeUnless { EmomClock(it.minutes).isOver(elapsed) }
@@ -214,7 +203,7 @@ class SessionTimers(
     fun close() = scope.cancel()
 
     private fun logHeld(set: SetDraft, seconds: Int) {
-        setStore.logSet(set.exercise, set.loadKg, 0, set.side, set.doubled, seconds = seconds, band = set.band)
+        setStore.logSet(set.exercise, set.load, 0, set.side, seconds = seconds)
         rest.start(setStore.restSeconds.value)
         held.tryEmit(set)
     }
@@ -288,12 +277,10 @@ private val TimerState.keeping: SavedTimer? get() = rest?.let {
     SavedTimer.Emom(
         it.startedAtEpochMillis,
         it.exercise,
-        it.bellKg,
+        it.load,
         it.reps,
         it.minutes,
         it.firstSide,
-        it.double,
-        it.band,
         it.done,
     )
 } ?: hold.run?.let {

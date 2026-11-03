@@ -6,7 +6,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ProgramsTest {
-    private fun logged(exercise: Exercise, side: Side? = null) = SetLog(0, exercise, 24.0, 10, side, 0)
+    private fun logged(exercise: Exercise, side: Side? = null) = SetLog.of(0, exercise, 24.0, 10, side, 0)
 
     @Test
     fun `a one-sided block is done on both sides and an EMOM alternates by minute`() {
@@ -76,8 +76,8 @@ class ProgramsTest {
     fun `the suggested bell is the last used for the lift`() {
         val history =
             listOf(
-                SetLog(0, BuiltInExercise.Press, 16.0, 5, Side.Left, 0),
-                SetLog(0, BuiltInExercise.Press, 20.0, 3, Side.Left, 1),
+                SetLog.of(0, BuiltInExercise.Press, 16.0, 5, Side.Left, 0),
+                SetLog.of(0, BuiltInExercise.Press, 20.0, 3, Side.Left, 1),
             )
         assertEquals(20.0, suggestedBell(BuiltInExercise.Press, false, history, fallback = 12.0))
         assertEquals(12.0, suggestedBell(BuiltInExercise.Snatch, false, history, fallback = 12.0))
@@ -85,8 +85,8 @@ class ProgramsTest {
 
     @Test
     fun `the suggested bell for two bells is the last pair used else the last single`() {
-        val single = SetLog(0, BuiltInExercise.Press, 20.0, 3, Side.Left, 0)
-        val pair = SetLog(0, BuiltInExercise.Press, 16.0, 5, null, 1, double = true)
+        val single = SetLog.of(0, BuiltInExercise.Press, 20.0, 3, Side.Left, 0)
+        val pair = SetLog.of(0, BuiltInExercise.Press, 16.0, 5, null, 1, double = true)
         assertEquals(20.0, suggestedBell(BuiltInExercise.Press, true, listOf(single), fallback = 12.0))
         assertEquals(16.0, suggestedBell(BuiltInExercise.Press, true, listOf(pair, single), fallback = 12.0))
         assertEquals(20.0, suggestedBell(BuiltInExercise.Press, false, listOf(single, pair), fallback = 12.0))
@@ -110,7 +110,7 @@ class ProgramsTest {
     fun `a planned double set of a one-sided lift is not done by a single one`() {
         val planned = Block(BuiltInExercise.Clean, rounds = 1, reps = 5, double = true).plannedSets()
         assertEquals(0, nextPlanned(planned, listOf(logged(BuiltInExercise.Clean, Side.Left))))
-        assertNull(nextPlanned(planned, listOf(SetLog(0, BuiltInExercise.Clean, 16.0, 5, null, 0, double = true))))
+        assertNull(nextPlanned(planned, listOf(SetLog.of(0, BuiltInExercise.Clean, 16.0, 5, null, 0, double = true))))
     }
 
     @Test
@@ -255,8 +255,8 @@ class ProgramsTest {
     @Test
     fun `the band suggested is the last one used for the exercise`() {
         val history = listOf(
-            SetLog(0, BuiltInExercise.BandFacePull, 0.0, 15, null, 0, band = Band.of(BandLevel.Heavy)),
-            SetLog(0, BuiltInExercise.BandPullApart, 0.0, 15, null, 1, band = Band.of(BandLevel.Light)),
+            SetLog.of(0, BuiltInExercise.BandFacePull, 0.0, 15, null, 0, band = Band.of(BandLevel.Heavy)),
+            SetLog.of(0, BuiltInExercise.BandPullApart, 0.0, 15, null, 1, band = Band.of(BandLevel.Light)),
         )
         val offered = bands(emptyList())
         val medium = Band.of(BandLevel.Medium)

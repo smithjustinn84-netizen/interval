@@ -5,6 +5,7 @@ import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.CustomExercise
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.Focus
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.Measure
 import dev.justinsmith.lift.domain.PlannedSet
 import dev.justinsmith.lift.domain.SetLog
@@ -29,7 +30,7 @@ class SetDraftEditorTest {
     private val draft get() = editor.draft.value
 
     private fun set(id: Long, kg: Double, reps: Int = 5, side: Side? = Side.Left) =
-        SetLog(id, BuiltInExercise.Press, kg, reps, side, loggedAtEpochMillis = id)
+        SetLog.of(id, BuiltInExercise.Press, kg, reps, side, loggedAtEpochMillis = id)
 
     @Test
     fun `a lift picked starts from the load it was last done with`() {
@@ -108,7 +109,7 @@ class SetDraftEditorTest {
 
     @Test
     fun `the sheet opens on the set up next once and again only when asked`() {
-        val next = UpNext(PlannedSet(BuiltInExercise.Press, 6, Side.Left), 20.0, 1, 10, emomMinutes = null)
+        val next = UpNext(PlannedSet(BuiltInExercise.Press, 6, Side.Left), Load.Bell(20.0), 1, 10, emomMinutes = null)
         editor.openOn(next)
         assertEquals(BuiltInExercise.Press to 20.0, draft.exercise to draft.bellKg)
 

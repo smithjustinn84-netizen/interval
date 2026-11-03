@@ -14,12 +14,10 @@ sealed interface SavedTimer {
     data class Emom(
         override val startedAtEpochMillis: Long,
         val exercise: Exercise,
-        val bellKg: Double,
+        val load: Load,
         val reps: Int,
         val minutes: Int,
         val firstSide: Side,
-        val double: Boolean,
-        val band: Band?,
         val done: Set<Int>,
     ) : SavedTimer
 

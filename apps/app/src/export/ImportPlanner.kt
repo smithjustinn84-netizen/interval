@@ -365,10 +365,10 @@ private fun SetExport.toDomain(exercises: List<CustomExercise>, bands: List<Band
     require(reps >= 0 && bellKg >= 0) { "set" }
     val equipment = enumNamed<Equipment>(equipment)
     val measure = if (seconds != null) Measure.Time else Measure.Reps
-    return SetLog(
+    return SetLog.of(
         id = 0,
         exercise = Exercise.parse(exercise, exercises) ?: UnknownExercise(exercise, equipment, measure),
-        bellKg = bellKg,
+        kg = bellKg,
         reps = reps,
         side = side?.let { enumNamed<Side>(it) },
         loggedAtEpochMillis = loggedAtEpochMillis,

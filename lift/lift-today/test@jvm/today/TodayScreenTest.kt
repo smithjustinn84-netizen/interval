@@ -145,7 +145,13 @@ class TodayScreenTest {
     fun `the last session opens on a tap`() = runUiTest {
         val opened = mutableListOf<String>()
         val last =
-            LiftSession("s1", 0, 600_000, "Swings", listOf(SetLog(1, BuiltInExercise.TwoHandSwing, 24.0, 10, null, 0)))
+            LiftSession(
+                "s1",
+                0,
+                600_000,
+                "Swings",
+                listOf(SetLog.of(1, BuiltInExercise.TwoHandSwing, 24.0, 10, null, 0)),
+            )
         setThemedContent(dark = true) {
             TodayScreen(
                 TodayUiState(last = last),
@@ -163,13 +169,13 @@ class TodayScreenTest {
         fun session(uid: String, vararg sets: SetLog) = LiftSession(uid, 0, 600_000, "Day", sets.toList())
         val swings = session(
             "a",
-            SetLog(1, BuiltInExercise.TwoHandSwing, 24.0, 10, null, 0),
-            SetLog(2, BuiltInExercise.TwoHandSwing, 24.0, 10, null, 0),
+            SetLog.of(1, BuiltInExercise.TwoHandSwing, 24.0, 10, null, 0),
+            SetLog.of(2, BuiltInExercise.TwoHandSwing, 24.0, 10, null, 0),
         )
         val presses = session(
             "b",
-            SetLog(3, BuiltInExercise.Press, 16.0, 5, Side.Left, 0),
-            SetLog(4, BuiltInExercise.Press, 16.0, 5, Side.Right, 0),
+            SetLog.of(3, BuiltInExercise.Press, 16.0, 5, Side.Left, 0),
+            SetLog.of(4, BuiltInExercise.Press, 16.0, 5, Side.Right, 0),
         )
         var state by mutableStateOf(TodayUiState(last = presses))
         setThemedContent(dark = true) { TodayScreen(state, onStartSession = {}, onChooseProgram = {}) }

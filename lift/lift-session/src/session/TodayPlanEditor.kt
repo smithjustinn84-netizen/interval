@@ -5,20 +5,18 @@ import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SetStore
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.Block
-import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.SessionPlan
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.nextSet
 import dev.justinsmith.lift.domain.offeredBands
 import dev.justinsmith.lift.domain.planRows
-import dev.justinsmith.lift.domain.plannedBand
+import dev.justinsmith.lift.domain.plannedLoad
 import dev.justinsmith.lift.domain.standardBells
-import dev.justinsmith.lift.domain.steppedBand
-import dev.justinsmith.lift.domain.steppedKg
-import dev.justinsmith.lift.domain.suggestedLoad
+import dev.justinsmith.lift.domain.stepped
 
 /**
  * Today's plan, on a program day: a block's load, rounds or reps changed, skipped or planned again, another lift
@@ -66,15 +64,9 @@ class TodayPlanEditor(
         setStore.changeSessionPlan { session ->
             val (plan, _) = today(session) ?: return@changeSessionPlan null
             val next = next(session, before, draft) ?: return@changeSessionPlan null
-            val equipment = next.set.exercise.equipment
-            if (equipment == Equipment.Band) {
-                steppedBand(next.band, step, offeredBands(gearStore.bands.value))
-                    ?.let { band -> plan.change(next.block) { it.copy(band = band.id) } }
-            } else {
-                val bells = gearStore.bells.value.ifEmpty { standardBells }
-                steppedKg(equipment, next.bellKg, step, bells, gearStore.bar.value)
-                    ?.let { kg -> plan.change(next.block) { it.copy(kg = kg) } }
-            }
+            val bells = gearStore.bells.value.ifEmpty { standardBells }
+            next.load.stepped(step, bells, gearStore.bar.value, offeredBands(gearStore.bands.value))
+                ?.let { load -> plan.change(next.block) { it.planning(load) } }
         }
     }
 
@@ -123,11 +115,10 @@ internal fun upNext(
     val history = before + logged
     return UpNext(
         set = next.set,
-        bellKg = suggestedLoad(next.set, history, bar, draft.bellKg),
+        load = plannedLoad(next.set, history, bar, bands, draft.bellKg, draft.band),
         number = next.index + 1,
         total = next.total,
         emomMinutes = next.emomMinutes,
-        band = plannedBand(next.set, history, bands, draft.band),
         block = next.block,
         lastTime = lastTime(before, next.set.exercise, next.set.double),
     )
@@ -136,3 +127,9 @@ internal fun upNext(
 /** The last set of [exercise], with two bells or one ([double]), among [before] (oldest first). */
 internal fun lastTime(before: List<SetLog>, exercise: Exercise, double: Boolean): SetLog? =
     before.lastOrNull { it.exercise.key == exercise.key && it.double == double }
+
+/** [this] block planned at [load]: its band for band work, else its weight. */
+private fun Block.planning(load: Load): Block = when (load) {
+    is Load.Banded -> copy(band = load.band?.id)
+    is Load.Bell, is Load.Bar, is Load.Bodyweight, Load.Mat -> copy(kg = load.kg)
+}

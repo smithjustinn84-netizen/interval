@@ -22,6 +22,7 @@ import dev.justinsmith.lift.domain.Followed
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.SetLog
+import dev.justinsmith.lift.domain.band
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -160,12 +161,12 @@ private fun LiftSession.export(): SessionExport? {
 private fun SetLog.export() = SetExport(
     id = id,
     exercise = exercise.key,
-    equipment = equipment.name,
-    bellKg = bellKg,
+    equipment = load.equipment.name,
+    bellKg = load.kg,
     reps = reps,
     side = side?.name,
     double = double,
     seconds = seconds,
-    band = band?.id,
+    band = load.band?.id,
     loggedAtEpochMillis = loggedAtEpochMillis,
 )

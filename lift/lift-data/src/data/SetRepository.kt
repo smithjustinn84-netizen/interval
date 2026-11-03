@@ -4,16 +4,18 @@ import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.storage.SerialWriter
 import dev.justinsmith.interval.storage.orOnError
-import dev.justinsmith.lift.domain.Band
-import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.Measure
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.SavedTimer
 import dev.justinsmith.lift.domain.SessionPlan
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.Side
+import dev.justinsmith.lift.domain.band
+import dev.justinsmith.lift.domain.double
+import dev.justinsmith.lift.domain.taking
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -57,34 +59,26 @@ class SetRepository(
     }
 
     /**
-     * Logs a set to the session in progress, with two bells when [double] and [exercise] can be. A held
-     * exercise keeps its [seconds], a band one its [band]; each is dropped from any other.
+     * Logs a set to the session in progress, its [load] as [exercise] takes it: with two bells only if it can
+     * be, a band only for band work. A held exercise keeps its [seconds], dropped from any other.
      */
-    override fun logSet(
-        exercise: Exercise,
-        bellKg: Double,
-        reps: Int,
-        side: Side?,
-        double: Boolean,
-        seconds: Int?,
-        band: Band?,
-    ) {
+    override fun logSet(exercise: Exercise, load: Load, reps: Int, side: Side?, seconds: Int?) {
         writer.persist {
             val active = sessionDao.active() ?: return@persist
-            val doubled = exercise.doubled(double)
+            val taken = exercise.taking(load)
             sessionDao.insert(
                 SetEntity(
                     0,
                     active.uid,
                     exercise.key,
-                    bellKg,
+                    taken.kg,
                     reps,
-                    side.takeIf { exercise.sided(doubled) }?.name,
+                    side.takeIf { exercise.sided(taken.double) }?.name,
                     clock.nowMillis(),
-                    doubled,
-                    equipment = exercise.equipment.name,
+                    taken.double,
+                    equipment = taken.equipment.name,
                     seconds = seconds.takeIf { exercise.measure == Measure.Time },
-                    band = band.takeIf { exercise.equipment == Equipment.Band }?.id,
+                    band = taken.band?.id,
                 ),
             )
         }
@@ -101,12 +95,12 @@ class SetRepository(
             val doubled = exercise.doubled(set.double)
             sessionDao.update(
                 row.copy(
-                    bellKg = set.bellKg,
+                    bellKg = set.load.kg,
                     reps = set.reps,
                     side = set.side.takeIf { exercise.sided(doubled) }?.name,
                     doubled = doubled,
                     seconds = set.seconds.takeIf { exercise.measure == Measure.Time },
-                    band = set.band.takeIf { exercise.equipment == Equipment.Band }?.id,
+                    band = set.load.band?.id,
                 ),
             )
         }

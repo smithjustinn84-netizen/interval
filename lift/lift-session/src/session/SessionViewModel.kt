@@ -11,8 +11,6 @@ import dev.justinsmith.lift.data.GearStore
 import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.data.SetStore
-import dev.justinsmith.lift.domain.Band
-import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.Side
@@ -164,12 +162,10 @@ class SessionViewModel(
     fun logSet(set: SetDraft = draft.draft.value, seconds: Int = set.seconds) {
         setStore.logSet(
             set.exercise,
-            set.loadKg,
+            set.load,
             if (set.held) 0 else set.reps,
             set.side,
-            set.doubled,
             seconds = seconds.takeIf { set.held },
-            band = set.band,
         )
         draft.flipSide(set)
         timers.startRest(setStore.restSeconds.value)
@@ -181,12 +177,10 @@ class SessionViewModel(
         val set = next.set
         setStore.logSet(
             set.exercise,
-            next.bellKg,
+            next.load,
             if (set.held) 0 else set.reps,
             set.side,
-            set.double,
             seconds = set.reps.takeIf { set.held },
-            band = next.band,
         )
         timers.startRest(setStore.restSeconds.value)
     }
@@ -231,7 +225,7 @@ class SessionViewModel(
         val minutes = next.emomMinutes ?: return
         if (next.set.held) return
         val set = next.set
-        timers.startEmom(set.exercise, next.bellKg, set.reps, minutes, set.side ?: Side.Left, set.double, next.band)
+        timers.startEmom(set.exercise, next.load, set.reps, minutes, set.side ?: Side.Left)
     }
 
     /** Starts timing the plan's next set when it is a hold, putting it on the sheet first. */
@@ -245,8 +239,7 @@ class SessionViewModel(
     fun startDraftEmom() {
         val d = draft.draft.value
         if (d.held) return
-        val band = d.band.takeIf { d.exercise.equipment == Equipment.Band }
-        timers.startEmom(d.exercise, d.loadKg, d.reps, d.minutes, d.side, d.doubled, band)
+        timers.startEmom(d.exercise, d.load, d.reps, d.minutes, d.side)
     }
 
     /** Starts timing the sheet's hold: the other side of the one just done, if that is on offer. */

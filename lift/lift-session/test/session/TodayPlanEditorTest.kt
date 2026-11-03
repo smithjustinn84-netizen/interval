@@ -48,12 +48,12 @@ class TodayPlanEditorTest {
     @Test
     fun `the next load stepped twice builds on the first step`() {
         startDay()
-        val start = assertNotNull(editor.next(repository.sessions.active.value, emptyList(), SetDraft())).bellKg
+        val start = assertNotNull(editor.next(repository.sessions.active.value, emptyList(), SetDraft())).load.kg
 
         editor.stepNextLoad(1, emptyList(), SetDraft())
-        val once = assertNotNull(editor.next(repository.sessions.active.value, emptyList(), SetDraft())).bellKg
+        val once = assertNotNull(editor.next(repository.sessions.active.value, emptyList(), SetDraft())).load.kg
         editor.stepNextLoad(1, emptyList(), SetDraft())
-        val twice = assertNotNull(editor.next(repository.sessions.active.value, emptyList(), SetDraft())).bellKg
+        val twice = assertNotNull(editor.next(repository.sessions.active.value, emptyList(), SetDraft())).load.kg
 
         assertTrue(start < once && once < twice)
         assertEquals(twice, blocks.first().block.kg)

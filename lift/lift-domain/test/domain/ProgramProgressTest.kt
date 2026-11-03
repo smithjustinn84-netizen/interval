@@ -13,7 +13,7 @@ class ProgramProgressTest {
     private val followed = Followed(program, startedAtEpochMillis = 100)
 
     private fun set(exercise: Exercise, kg: Double = 16.0, reps: Int = 10, at: Long = 0) =
-        SetLog(0, exercise, kg, reps, null, at)
+        SetLog.of(0, exercise, kg, reps, null, at)
 
     /** A finished session of [program] started [at], its [day] as stored, with [sets]. */
     private fun session(

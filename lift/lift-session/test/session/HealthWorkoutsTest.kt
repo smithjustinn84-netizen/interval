@@ -16,7 +16,7 @@ import kotlin.test.assertEquals
 
 class HealthWorkoutsTest {
     private fun set(id: Long, exercise: Exercise, loggedAt: Long, reps: Int = 10, seconds: Int? = null) =
-        SetLog(id, exercise, bellKg = 16.0, reps = reps, side = null, loggedAtEpochMillis = loggedAt, seconds = seconds)
+        SetLog.of(id, exercise, kg = 16.0, reps = reps, side = null, loggedAtEpochMillis = loggedAt, seconds = seconds)
 
     @Test
     fun `a session becomes strength training with a segment per set up to its logging`() {

@@ -7,6 +7,7 @@ import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.EmomClock
 import dev.justinsmith.lift.domain.EmomCue
 import dev.justinsmith.lift.domain.HoldClock
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.SavedTimer
 import dev.justinsmith.lift.domain.Side
@@ -80,7 +81,7 @@ class SessionTimersTest {
         val timers = timers()
         timers.startRest(RestClock.DEFAULT_SECONDS)
         run(10_000)
-        timers.startEmom(BuiltInExercise.Press, 16.0, 5, minutes = 3, firstSide = Side.Left, double = false)
+        timers.startEmom(BuiltInExercise.Press, Load.Bell(16.0), 5, minutes = 3, firstSide = Side.Left)
         assertNull(timers.state.value.rest)
         assertEquals(TimerRun.Emom(now, 3), keepAlive.runs.last())
         assertEquals(0, keepAlive.stops)
@@ -94,7 +95,7 @@ class SessionTimersTest {
     fun `an EMOM logs each minute's set as it is done`() = runTest {
         val timers = timers()
         repository.sessions.startSession()
-        timers.startEmom(BuiltInExercise.Press, 16.0, 5, minutes = 3, firstSide = Side.Left, double = false)
+        timers.startEmom(BuiltInExercise.Press, Load.Bell(16.0), 5, minutes = 3, firstSide = Side.Left)
         run(EmomClock.COUNT_IN_MILLIS)
         timers.emomSetDone()
         run(EmomClock.MINUTE_MILLIS)
@@ -177,7 +178,7 @@ class SessionTimersTest {
     fun `an EMOM is kept with the minutes done`() = runTest {
         val timers = timers()
         repository.sessions.startSession()
-        timers.startEmom(BuiltInExercise.Press, 16.0, 5, minutes = 3, firstSide = Side.Left, double = false)
+        timers.startEmom(BuiltInExercise.Press, Load.Bell(16.0), 5, minutes = 3, firstSide = Side.Left)
         run(EmomClock.COUNT_IN_MILLIS)
         timers.emomSetDone()
         val kept = repository.sessions.active.value?.timer as SavedTimer.Emom
@@ -206,7 +207,7 @@ class SessionTimersTest {
     fun `an EMOM a killed process left goes on with its minutes done and no cue for the time away`() = runTest {
         repository.sessions.startSession()
         timers().apply {
-            startEmom(BuiltInExercise.Press, 16.0, 5, minutes = 3, firstSide = Side.Left, double = false)
+            startEmom(BuiltInExercise.Press, Load.Bell(16.0), 5, minutes = 3, firstSide = Side.Left)
             run(EmomClock.COUNT_IN_MILLIS)
             emomSetDone()
         }.close()

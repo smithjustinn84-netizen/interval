@@ -8,6 +8,7 @@ import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.ExerciseDraft
 import dev.justinsmith.lift.domain.Followed
 import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.PlanChanges
 import dev.justinsmith.lift.domain.Program
@@ -55,15 +56,7 @@ interface SessionStore {
 interface SetStore {
     val restSeconds: StateFlow<Int>
 
-    fun logSet(
-        exercise: Exercise,
-        bellKg: Double,
-        reps: Int,
-        side: Side?,
-        double: Boolean = false,
-        seconds: Int? = null,
-        band: Band? = null,
-    )
+    fun logSet(exercise: Exercise, load: Load, reps: Int, side: Side?, seconds: Int? = null)
 
     fun updateSet(set: SetLog)
 

@@ -266,30 +266,43 @@ val Side.other: Side get() = if (this == Side.Left) Side.Right else Side.Left
 enum class BandLevel { ExtraLight, Light, Medium, Heavy, ExtraHeavy }
 
 /**
- * One logged set: [reps] of [exercise] with a [bellKg] bell, or a pair of them when [double], on [side] for
- * a one-sided lift. The set keeps the [equipment] it was done with, so changing an exercise later never
- * changes what its sets were. A held set lasted [seconds]; a band set used [band]. For a barbell [bellKg] is
- * the total on the bar, for bodyweight the weight added, for a band or the mat it is 0.
+ * One logged set: [reps] of [exercise] with its [load], on [side] for a one-sided lift. The set keeps the load
+ * it was done with, equipment and all, so changing an exercise later never changes what its sets were. A held
+ * set lasted [seconds].
  */
 data class SetLog(
     val id: Long,
     val exercise: Exercise,
-    val bellKg: Double,
+    val load: Load,
     val reps: Int,
     val side: Side?,
     val loggedAtEpochMillis: Long,
-    val double: Boolean = false,
-    val equipment: Equipment = exercise.equipment,
     val seconds: Int? = null,
-    val band: Band? = null,
 ) {
-    /**
-     * The weight moved: the bell, or both, the bar as loaded, or the weight added to bodyweight, times the
-     * reps. A band, the mat and a hold move none that can be weighed.
-     */
-    val tonnageKg: Double get() = when (equipment) {
-        Equipment.Kettlebell, Equipment.Barbell, Equipment.Bodyweight -> bellKg * reps * (if (double) 2 else 1)
-        Equipment.Band, Equipment.Mat -> 0.0
+    /** Whether it was done with two bells. */
+    val double: Boolean get() = load.double
+
+    /** The weight moved: what one rep of its [load] moves, times the reps. */
+    val tonnageKg: Double get() = load.movedKg * reps
+
+    companion object {
+        /**
+         * A set as its parts are stored: its [kg], two bells or not ([double]) and [band], read as a load of
+         * [equipment] (what [exercise] is done with, unless the set kept another).
+         */
+        @Suppress("detekt.LongParameterList") // A stored set's columns.
+        fun of(
+            id: Long,
+            exercise: Exercise,
+            kg: Double,
+            reps: Int,
+            side: Side?,
+            loggedAtEpochMillis: Long,
+            double: Boolean = false,
+            equipment: Equipment = exercise.equipment,
+            seconds: Int? = null,
+            band: Band? = null,
+        ): SetLog = SetLog(id, exercise, Load.of(equipment, kg, double, band), reps, side, loggedAtEpochMillis, seconds)
     }
 }
 

@@ -22,6 +22,7 @@ import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.EmomClock
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.Exercise
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
@@ -34,6 +35,7 @@ import dev.justinsmith.lift.fakes.FakeIntervalActivity
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import dev.justinsmith.lift.fakes.RecordingBeeper
 import dev.justinsmith.lift.fakes.RecordingKeepAlive
+import dev.justinsmith.lift.fakes.logSet
 import dev.justinsmith.lift.platform.TimerRun
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -175,7 +177,7 @@ class SessionViewModelTest {
         repository.sessions.startSession()
         val started = now - EmomClock.COUNT_IN_MILLIS - EmomClock.MINUTE_MILLIS - 20_000
         repository.sets.saveTimer(
-            SavedTimer.Emom(started, BuiltInExercise.Press, 16.0, 5, 3, Side.Left, false, null, setOf(1)),
+            SavedTimer.Emom(started, BuiltInExercise.Press, Load.Bell(16.0), 5, 3, Side.Left, setOf(1)),
         )
         viewModel().use {
             assertEquals(setOf(1), state.value.emom?.done)
@@ -502,11 +504,11 @@ class SessionViewModelTest {
         repository.programs.follow(goblets)
         repository.sessions.startSession(goblets)
         viewModel().use {
-            val start = assertNotNull(state.value.upNext).bellKg
+            val start = assertNotNull(state.value.upNext).load.kg
             stepNextLoad(1)
-            val once = assertNotNull(state.value.upNext).bellKg
+            val once = assertNotNull(state.value.upNext).load.kg
             stepNextLoad(1)
-            val twice = assertNotNull(state.value.upNext).bellKg
+            val twice = assertNotNull(state.value.upNext).load.kg
             plan.changeBlock(0) { it.copy(rounds = it.rounds + 1) }
             assertTrue(start < once && once < twice)
             val block = repository.sessions.active.value?.plan?.blocks?.first()?.block

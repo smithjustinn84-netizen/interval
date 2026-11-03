@@ -7,6 +7,7 @@ import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.EmomState
 import dev.justinsmith.lift.domain.HoldState
 import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.PersonalRecord
 import dev.justinsmith.lift.domain.PlanChanges
 import dev.justinsmith.lift.domain.PlanRow
@@ -49,16 +50,15 @@ data class Finished(
 )
 
 /**
- * The plan's next set: which of [total] it is, with its load (the bell, the bar as loaded, the weight added to
- * bodyweight, or none, and the [band] for band work), and whether it opens an EMOM of [emomMinutes].
+ * The plan's next set: which of [total] it is, with its [load] as suggested, and whether it opens an EMOM of
+ * [emomMinutes].
  */
 data class UpNext(
     val set: PlannedSet,
-    val bellKg: Double,
+    val load: Load,
     val number: Int,
     val total: Int,
     val emomMinutes: Int?,
-    val band: Band? = null,
     /** Which of the day's blocks it is in, from 0. */
     val block: Int = 0,
     /** The last set of the lift in a session before this one, to go by; null the first time. */

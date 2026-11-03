@@ -7,7 +7,7 @@ import kotlin.test.assertNull
 class MuscleBalanceTest {
     private var nextId = 1L
 
-    private fun set(exercise: Exercise, side: Side? = null) = SetLog(nextId++, exercise, 16.0, 10, side, nextId)
+    private fun set(exercise: Exercise, side: Side? = null) = SetLog.of(nextId++, exercise, 16.0, 10, side, nextId)
 
     private fun session(vararg sets: SetLog) = LiftSession("s$nextId", 0, 60_000, "", sets.toList())
 

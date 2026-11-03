@@ -36,7 +36,7 @@ fun nextStep(block: Block, done: List<SetLog?>, bells: List<Double>, bands: List
     val sets = doneInFull(block, done) ?: return null
     val equipment = block.exercise.equipment
     val band = if (equipment == Equipment.Band) bandUsed(block, sets, bands) ?: return null else null
-    return stepUp(block, kg = block.kg ?: sets.minOf { it.bellKg }, band, bells, bands)
+    return stepUp(block, kg = block.kg ?: sets.minOf { it.load.kg }, band, bells, bands)
 }
 
 /** [block] a step up from [kg] or [band], as [nextStep] lays the steps out. */
@@ -87,12 +87,12 @@ private fun metPlan(block: Block, sets: List<SetLog>): Boolean {
     val held = block.exercise.measure == Measure.Time
     if (sets.any { (if (held) it.seconds ?: 0 else it.reps) < block.reps }) return false
     val kg = block.kg ?: return true
-    return !block.exercise.equipment.takesKg || sets.none { it.bellKg < kg }
+    return !block.exercise.equipment.takesKg || sets.none { it.load.kg < kg }
 }
 
 /** The band [block] was done with: the plan's, if every set used it or a heavier one, else the lightest used. */
 private fun bandUsed(block: Block, sets: List<SetLog>, bands: List<Band>): Band? {
-    val used = sets.map { set -> set.band?.let { b -> bands.firstOrNull { it.id == b.id } ?: b } ?: return null }
+    val used = sets.map { set -> set.load.band?.let { b -> bands.firstOrNull { it.id == b.id } ?: b } ?: return null }
     val lightest = used.minBy { it.position }
     val planned = block.band?.let { id -> bands.firstOrNull { it.id == id } } ?: return lightest
     return planned.takeIf { lightest.position >= planned.position }
@@ -124,7 +124,7 @@ fun toppedOut(day: ProgramDay, logged: List<SetLog>, bells: List<Double>, bands:
         } else {
             null
         }
-        block.takeIf { heavier(block, block.kg ?: sets.minOf { it.bellKg }, band, bells, bands) == null }
+        block.takeIf { heavier(block, block.kg ?: sets.minOf { it.load.kg }, band, bells, bands) == null }
     }
 
 /** Block [index] of a day's plan, and the set logged for each of its planned sets, null for one not done. */

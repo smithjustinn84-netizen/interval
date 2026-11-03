@@ -57,9 +57,8 @@ fun collapsedSets(sets: List<SetLog>): List<SetRun> = buildList {
     }
 }
 
-private fun SetLog.sameAs(other: SetLog) = exercise.key == other.exercise.key && bellKg == other.bellKg &&
-    reps == other.reps && side == other.side && double == other.double && equipment == other.equipment &&
-    seconds == other.seconds && band == other.band
+private fun SetLog.sameAs(other: SetLog) = exercise.key == other.exercise.key && load == other.load &&
+    reps == other.reps && side == other.side && seconds == other.seconds
 
 /** What a trend counts for an exercise: the bell's weight, the reps (bodyweight or band work), or the hold. */
 enum class TrendMeasure { Kg, Reps, Seconds }
@@ -86,14 +85,14 @@ fun exerciseTrend(exercise: Exercise, recent: List<PastSession>): Trend? {
     val measure = when {
         exercise.measure == Measure.Time -> TrendMeasure.Seconds
         exercise.equipment == Equipment.Band || exercise.equipment == Equipment.Mat -> TrendMeasure.Reps
-        sessions.all { session -> session.sets.all { it.bellKg == 0.0 } } -> TrendMeasure.Reps
+        sessions.all { session -> session.sets.all { it.load.kg == 0.0 } } -> TrendMeasure.Reps
         else -> TrendMeasure.Kg
     }
     val points = sessions.map { session ->
         val value = when (measure) {
             TrendMeasure.Seconds -> session.sets.maxOf { it.seconds ?: 0 }.toDouble()
             TrendMeasure.Reps -> session.sets.maxOf { it.reps }.toDouble()
-            TrendMeasure.Kg -> session.sets.maxOf { it.bellKg }
+            TrendMeasure.Kg -> session.sets.maxOf { it.load.kg }
         }
         TrendPoint(session.startedAtEpochMillis, value)
     }

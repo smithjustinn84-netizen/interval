@@ -141,7 +141,7 @@ private fun NextSetCard(
 @Composable
 private fun NextLoad(next: UpNext, state: SessionUiState, actions: SessionActions) {
     val set = next.set
-    LoadStep(next.bellKg, set.exercise.equipment, state, actions.onStepLoad, double = set.double, band = next.band)
+    LoadStep(next.load, state, actions.onStepLoad)
     Text(
         countLine(if (set.held) 0 else set.reps, set.side, set.reps.takeIf { set.held }),
         style = IntervalTheme.type.value,

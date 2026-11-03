@@ -3,6 +3,7 @@ package dev.justinsmith.lift.session
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.EmomClock
 import dev.justinsmith.lift.domain.EmomCue
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.fakes.RecordingBeeper
 import kotlin.test.Test
@@ -19,14 +20,14 @@ class EmomRunnerTest {
 
     @Test
     fun `a set done in the count-in logs nothing`() {
-        runner.start(BuiltInExercise.Press, 16.0, 5, minutes = 3, firstSide = Side.Left, double = false)
+        runner.start(BuiltInExercise.Press, Load.Bell(16.0), 5, minutes = 3, firstSide = Side.Left)
         runner.setDone()
         assertEquals(emptyList<Pair<Side?, Int>>(), logged)
     }
 
     @Test
     fun `each minute's set logs once on its side and the minute rests after it`() {
-        runner.start(BuiltInExercise.Press, 16.0, 5, minutes = 3, firstSide = Side.Left, double = false)
+        runner.start(BuiltInExercise.Press, Load.Bell(16.0), 5, minutes = 3, firstSide = Side.Left)
         hand.now = workOfMinuteOne
         runner.setDone()
         runner.setDone()
@@ -38,7 +39,7 @@ class EmomRunnerTest {
 
     @Test
     fun `ticks beep the count-in and each minute and the run ends once its minutes are up`() {
-        runner.start(BuiltInExercise.TwoHandSwing, 24.0, 10, minutes = 1, firstSide = Side.Left, double = false)
+        runner.start(BuiltInExercise.TwoHandSwing, Load.Bell(24.0), 10, minutes = 1, firstSide = Side.Left)
         hand.now = workOfMinuteOne
         runner.tick(hand.now)
         assertEquals(EmomCue.Start, beeper.cues.last())

@@ -7,6 +7,7 @@ import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.BandColour
 import dev.justinsmith.lift.domain.PersonalRecord
+import dev.justinsmith.lift.domain.band
 import dev.justinsmith.lift.domain.bands
 import dev.justinsmith.lift.domain.moved
 import dev.justinsmith.lift.domain.offeredBands
@@ -38,7 +39,7 @@ class GearViewModel(private val gearStore: GearStore, private val sessionStore: 
                 sessions,
             ->
             val sets = sessions.flatMap { it.sets }
-            GearUiState(bells.toSet(), bar, bands, sets.mapNotNull { it.band?.id }.toSet(), personalRecords(sets))
+            GearUiState(bells.toSet(), bar, bands, sets.mapNotNull { it.load.band?.id }.toSet(), personalRecords(sets))
         }.stateIn(viewModelScope, SharingStarted.Eagerly, GearUiState())
 
     fun toggle(kg: Double) {

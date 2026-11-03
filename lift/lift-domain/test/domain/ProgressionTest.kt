@@ -15,7 +15,7 @@ class ProgressionTest {
         side: Side? = null,
         seconds: Int? = null,
         band: Band? = null,
-    ) = SetLog(0, exercise, kg, reps, side, 0, seconds = seconds, band = band)
+    ) = SetLog.of(0, exercise, kg, reps, side, 0, seconds = seconds, band = band)
 
     private fun sets(n: Int, make: () -> SetLog) = List(n) { make() }
 
@@ -67,7 +67,7 @@ class ProgressionTest {
         val full = set(BuiltInExercise.GobletSquat, 24.0)
         assertNull(nextStep(goblets, listOf(full, null), bells, bands))
         assertNull(nextStep(goblets, listOf(full, full.copy(reps = 9)), bells, bands))
-        assertNull(nextStep(goblets, listOf(full, full.copy(bellKg = 16.0)), bells, bands))
+        assertNull(nextStep(goblets, listOf(full, full.copy(load = Load.Bell(16.0))), bells, bands))
     }
 
     @Test
@@ -85,7 +85,7 @@ class ProgressionTest {
         val medium = set(BuiltInExercise.BandPullApart, reps = 15, band = Band.of(BandLevel.Medium))
         assertEquals(pulls.copy(band = BandLevel.Heavy.name), nextStep(pulls, listOf(medium), bells, bands))
         val heaviest = pulls.copy(band = BandLevel.ExtraHeavy.name)
-        val done = listOf(medium.copy(band = Band.of(BandLevel.ExtraHeavy)))
+        val done = listOf(medium.copy(load = Load.Banded(Band.of(BandLevel.ExtraHeavy))))
         assertEquals(heaviest.copy(reps = 16), nextStep(heaviest, done, bells, bands))
         // A lighter band than planned earns nothing.
         assertNull(nextStep(heaviest, listOf(medium), bells, bands))

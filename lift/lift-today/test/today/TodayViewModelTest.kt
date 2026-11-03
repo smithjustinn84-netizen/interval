@@ -15,6 +15,7 @@ import dev.justinsmith.lift.domain.MuscleGroup
 import dev.justinsmith.lift.domain.barbellLifts
 import dev.justinsmith.lift.fakes.FakeIntervalActivity
 import dev.justinsmith.lift.fakes.FakeLiftStorage
+import dev.justinsmith.lift.fakes.logSet
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

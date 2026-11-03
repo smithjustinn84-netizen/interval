@@ -3,11 +3,9 @@ package dev.justinsmith.lift.session
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.CustomExercise
 import dev.justinsmith.lift.domain.DEFAULT_BELL_KG
-import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.other
-import dev.justinsmith.lift.domain.steppedBand
-import dev.justinsmith.lift.domain.steppedKg
+import dev.justinsmith.lift.domain.stepped
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -82,15 +80,7 @@ class SetDraftEditor(private val context: () -> DraftContext) {
      */
     fun stepLoad(step: Int) {
         val (bells, bar, bands) = context()
-        update { d ->
-            when (val equipment = d.exercise.equipment) {
-                Equipment.Kettlebell -> steppedKg(equipment, d.bellKg, step, bells, bar)?.let { d.copy(bellKg = it) }
-                Equipment.Barbell -> steppedKg(equipment, d.barKg, step, bells, bar)?.let { d.copy(barKg = it) }
-                Equipment.Bodyweight -> steppedKg(equipment, d.addedKg, step, bells, bar)?.let { d.copy(addedKg = it) }
-                Equipment.Band -> steppedBand(d.band, step, bands)?.let { d.copy(band = it) }
-                Equipment.Mat -> null
-            } ?: d
-        }
+        update { d -> d.load.stepped(step, bells, bar, bands)?.let(d::keeping) ?: d }
     }
 
     /**

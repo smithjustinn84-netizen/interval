@@ -52,4 +52,4 @@ private const val EPSILON = 1e-6
  * [DEFAULT_BAR_KG].
  */
 fun suggestedBar(exercise: Exercise, history: List<SetLog>, bar: Double?): Double =
-    history.lastOrNull { it.exercise.key == exercise.key }?.bellKg ?: bar ?: DEFAULT_BAR_KG
+    history.lastOrNull { it.exercise.key == exercise.key }?.load?.kg ?: bar ?: DEFAULT_BAR_KG

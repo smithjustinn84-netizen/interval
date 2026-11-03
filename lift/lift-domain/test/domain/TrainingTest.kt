@@ -9,7 +9,7 @@ class TrainingTest {
     private var nextId = 1L
 
     private fun set(exercise: Exercise, kg: Double, reps: Int, double: Boolean = false) =
-        SetLog(nextId++, exercise, kg, reps, null, nextId, double)
+        SetLog.of(nextId++, exercise, kg, reps, null, nextId, double)
 
     private fun session(vararg sets: SetLog) = LiftSession("s", 0, 60_000, "", sets.toList())
 
@@ -89,11 +89,11 @@ class TrainingTest {
 
     @Test
     fun `moved counts weight added to bodyweight but no band or mat or hold`() {
-        val pushUps = SetLog(1, BuiltInExercise.PushUp, 10.0, 6, null, 0)
-        val bare = SetLog(2, BuiltInExercise.PushUp, 0.0, 15, null, 0)
-        val band = SetLog(3, BuiltInExercise.BandPullApart, 0.0, 20, null, 0, band = Band.of(BandLevel.Medium))
-        val mat = SetLog(4, BuiltInExercise.Hundred, 0.0, 100, null, 0)
-        val hold = SetLog(5, BuiltInExercise.Plank, 10.0, 0, null, 0, seconds = 60)
+        val pushUps = SetLog.of(1, BuiltInExercise.PushUp, 10.0, 6, null, 0)
+        val bare = SetLog.of(2, BuiltInExercise.PushUp, 0.0, 15, null, 0)
+        val band = SetLog.of(3, BuiltInExercise.BandPullApart, 0.0, 20, null, 0, band = Band.of(BandLevel.Medium))
+        val mat = SetLog.of(4, BuiltInExercise.Hundred, 0.0, 100, null, 0)
+        val hold = SetLog.of(5, BuiltInExercise.Plank, 10.0, 0, null, 0, seconds = 60)
         assertEquals(60.0, session(pushUps, bare, band, mat, hold).tonnageKg)
     }
 
@@ -101,14 +101,14 @@ class TrainingTest {
     fun `every measure sets a record in its own terms`() {
         val records = personalRecords(
             listOf(
-                SetLog(1, BuiltInExercise.PushUp, 0.0, 15, null, 0),
-                SetLog(2, BuiltInExercise.PushUp, 10.0, 6, null, 0),
-                SetLog(3, BuiltInExercise.BandPullApart, 0.0, 20, null, 0, band = Band.of(BandLevel.Light)),
-                SetLog(4, BuiltInExercise.BandPullApart, 0.0, 10, null, 0, band = Band.of(BandLevel.Heavy)),
-                SetLog(5, BuiltInExercise.Hundred, 0.0, 100, null, 0),
-                SetLog(6, BuiltInExercise.Plank, 0.0, 0, null, 0, seconds = 45),
-                SetLog(7, BuiltInExercise.Plank, 0.0, 0, null, 0, seconds = 90),
-                SetLog(8, UnknownExercise("Gone", Equipment.Mat, Measure.Reps), 0.0, 10, null, 0),
+                SetLog.of(1, BuiltInExercise.PushUp, 0.0, 15, null, 0),
+                SetLog.of(2, BuiltInExercise.PushUp, 10.0, 6, null, 0),
+                SetLog.of(3, BuiltInExercise.BandPullApart, 0.0, 20, null, 0, band = Band.of(BandLevel.Light)),
+                SetLog.of(4, BuiltInExercise.BandPullApart, 0.0, 10, null, 0, band = Band.of(BandLevel.Heavy)),
+                SetLog.of(5, BuiltInExercise.Hundred, 0.0, 100, null, 0),
+                SetLog.of(6, BuiltInExercise.Plank, 0.0, 0, null, 0, seconds = 45),
+                SetLog.of(7, BuiltInExercise.Plank, 0.0, 0, null, 0, seconds = 90),
+                SetLog.of(8, UnknownExercise("Gone", Equipment.Mat, Measure.Reps), 0.0, 10, null, 0),
             ),
         )
         assertEquals(
@@ -130,9 +130,9 @@ class TrainingTest {
 
     @Test
     fun `a longer hold or a heavier band is a new record and an equal one is not`() {
-        val plank = { seconds: Int -> SetLog(nextId++, BuiltInExercise.Plank, 0.0, 0, null, 0, seconds = seconds) }
+        val plank = { seconds: Int -> SetLog.of(nextId++, BuiltInExercise.Plank, 0.0, 0, null, 0, seconds = seconds) }
         val band = { level: BandLevel, reps: Int ->
-            SetLog(nextId++, BuiltInExercise.BandPullApart, 0.0, reps, null, 0, band = Band.of(level))
+            SetLog.of(nextId++, BuiltInExercise.BandPullApart, 0.0, reps, null, 0, band = Band.of(level))
         }
         val before = listOf(plank(60), band(BandLevel.Medium, 15))
         assertEquals(emptyList(), newRecords(before, session(plank(60), band(BandLevel.Medium, 15))))
@@ -243,7 +243,7 @@ class TrainingTest {
 
     @Test
     fun `a barbell set moves the bar as loaded times the reps`() {
-        val set = SetLog(1, BuiltInExercise.BarbellBackSquat, 62.5, 5, null, 0)
+        val set = SetLog.of(1, BuiltInExercise.BarbellBackSquat, 62.5, 5, null, 0)
         assertEquals(312.5, set.tonnageKg)
         assertTrue(Equipment.Barbell.takesKg)
     }

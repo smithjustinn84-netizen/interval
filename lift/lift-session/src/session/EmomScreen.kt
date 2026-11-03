@@ -68,6 +68,7 @@ import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.EmomClock
 import dev.justinsmith.lift.domain.EmomPhase
 import dev.justinsmith.lift.domain.EmomState
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_cancel
@@ -376,7 +377,7 @@ private fun ClockText(state: EmomState, color: Color, diameter: Dp, style: TextS
 @Composable
 private fun TaskText(run: EmomRun, state: EmomState) {
     val side = run.sideOf(state.minute)
-    val task = setLine(run.bellKg, run.reps, side, run.double, run.exercise.equipment, band = run.band)
+    val task = setLine(run.load, run.reps, side)
     Text(
         if (state.phase == EmomPhase.Rest) {
             stringResource(Res.string.emom_next, task)
@@ -395,7 +396,7 @@ private fun EmomScreenPreview() {
         EmomScreen(
             EmomRun(
                 BuiltInExercise.TwoHandSwing,
-                bellKg = 24.0,
+                Load.Bell(kg = 24.0),
                 reps = 10,
                 minutes = 10,
                 firstSide = Side.Left,

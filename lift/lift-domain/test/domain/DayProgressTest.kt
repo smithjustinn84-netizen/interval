@@ -9,7 +9,7 @@ class DayProgressTest {
     private val squatEmom = Block(BuiltInExercise.GobletSquat, rounds = 4, reps = 5, kind = BlockKind.Emom)
 
     private fun logged(exercise: Exercise, times: Int) =
-        (1..times).map { SetLog(it.toLong(), exercise, 24.0, 10, null, it.toLong()) }
+        (1..times).map { SetLog.of(it.toLong(), exercise, 24.0, 10, null, it.toLong()) }
 
     private fun day(vararg blocks: Block, plan: SessionPlan? = null) = ProgramDay(
         Program(ProgramKey.Custom("p"), listOf(blocks.toList()), daysPerWeek = 3, weeks = 4),

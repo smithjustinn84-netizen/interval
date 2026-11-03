@@ -17,6 +17,7 @@ import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.EmomPhase
 import dev.justinsmith.lift.domain.EmomState
 import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.history.LiftDetailScreen
@@ -29,8 +30,8 @@ class TabletTest {
     @Test
     fun `a finished session on a tablet puts its lifts beside its numbers`() = runUiTest(Window.Tablet) {
         val sets = listOf(
-            SetLog(1, BuiltInExercise.TwoHandSwing, 24.0, 10, null, 0),
-            SetLog(2, BuiltInExercise.GobletSquat, 20.0, 8, null, 0),
+            SetLog.of(1, BuiltInExercise.TwoHandSwing, 24.0, 10, null, 0),
+            SetLog.of(2, BuiltInExercise.GobletSquat, 20.0, 8, null, 0),
         )
         val state = LiftDetailUiState(LiftSession("s", 0, 600_000, "Swings and squats", sets), "Saturday", "1:21 PM")
         setThemedContent(dark = true) { LiftDetailScreen(state, onDelete = {}, onBack = {}) }
@@ -42,7 +43,8 @@ class TabletTest {
 
     @Test
     fun `an EMOM on a tablet keeps its readout inside a bigger ring`() = runUiTest(Window.Tablet) {
-        val run = EmomRun(BuiltInExercise.TwoHandSwing, 24.0, 10, 10, firstSide = Side.Left, startedAtMillis = 0)
+        val run =
+            EmomRun(BuiltInExercise.TwoHandSwing, Load.Bell(24.0), 10, 10, firstSide = Side.Left, startedAtMillis = 0)
         setThemedContent(dark = true) {
             EmomScreen(run, EmomState(EmomPhase.Work, 3, 10, 45, 0.25f), onFinishSet = {}, onStop = {})
         }

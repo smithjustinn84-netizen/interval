@@ -10,6 +10,7 @@ import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.program
 import dev.justinsmith.lift.fakes.FakeLiftStorage
+import dev.justinsmith.lift.fakes.logSet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher

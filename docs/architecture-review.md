@@ -462,6 +462,19 @@ History's range, month and open day are in a plain `MutableStateFlow`.
 ## G. Open/Closed and modules
 
 ### G1 · Medium · `Equipment` branching (OCP)
+
+**Resolved** in change `lqqlkvsl` ("Lift: a sealed Load in place of the equipment branches"): a set carries a
+sealed `Load` (`Bell`, with `double`; `Bar`; `Bodyweight`, the weight added; `Banded`; `Mat`; `Load.kt` in
+lift-domain) in place of `bellKg`, `double`, `equipment` and `band`. Tonnage, stepping (`Load.stepped`), the
+suggestion (`suggestedFor`) and the words (`setLine`, `loadLine`) are a `when` over it with no `else`, so a new
+kind fails to compile wherever it needs a rule. `Load.of` is the one place a kind of equipment becomes a load: the
+mapper, the import, the saved EMOM and a plan's next set go through it; the store's columns and the export's JSON
+are as they were. The EMOM, its saved timer and Up next carry a `Load`; `SetStore.logSet` takes one. `SetDraft`
+still keeps a value per kind, so a bell comes back after a band (`load` and `keeping` map between them), as does
+the saved hold. What still branches on `Equipment` is the exercise's kind: the library's filter, the picker and
+editor, its name, Health's move, and a program block's `kg`/`band` (`Progression`, `suggestedLoad`), which a
+planned `Load` could take next.
+
 - There are about 70 `Equipment.*` branches across 11 files (`SetWords`, `SessionViewModel` ×17, `LoadPicker`,
   `LogSheet`, `Progression`, `Suggestions`, `LoadSteps`, `HealthWorkouts`, the repository).
 - `SetDraft` has a field per equipment; `SetLog.bellKg` doubles as a generic load.

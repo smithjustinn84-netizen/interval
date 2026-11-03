@@ -5,6 +5,7 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.SetLog
+import dev.justinsmith.lift.fakes.logSet
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -66,7 +67,7 @@ class LiftRoomTest {
 
     @Test
     fun `an import that fails part way writes nothing`() = runBlocking {
-        val set = SetLog(0, BuiltInExercise.TwoHandSwing, 24.0, 10, null, 500)
+        val set = SetLog.of(0, BuiltInExercise.TwoHandSwing, 24.0, 10, null, 500)
         val session = LiftSession("s1", 0, 1_000, "Swings", listOf(set))
         val bell = 16.0
         // The second session's uid is the first's: SQLite refuses it after the bell and the first session went in.
@@ -80,7 +81,7 @@ class LiftRoomTest {
 
     @Test
     fun `an import lands its sessions with their sets`() = runBlocking {
-        val set = SetLog(0, BuiltInExercise.TwoHandSwing, 24.0, 10, null, 500)
+        val set = SetLog.of(0, BuiltInExercise.TwoHandSwing, 24.0, 10, null, 500)
         repository.importAll(LiftImport(sessions = listOf(LiftSession("s1", 0, 1_000, "Swings", listOf(set)))))
 
         assertEquals(listOf("s1"), database.sessionDao().observeSessions().first().map { it.uid })

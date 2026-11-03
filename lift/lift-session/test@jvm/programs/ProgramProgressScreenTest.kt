@@ -39,8 +39,8 @@ class ProgramProgressScreenTest {
     /** Day [day] of Goblet squat and row, every set done: 3 goblet squats, then 3 rows a side. */
     private fun dayDone(day: Int, program: ProgramKey = goblets.key): LiftSession {
         val at = day * 1_000L
-        val sets = List(3) { SetLog(it + 1L, BuiltInExercise.GobletSquat, 16.0, 10, null, at) } +
-            Side.entries.flatMap { side -> List(3) { SetLog(it + 4L, BuiltInExercise.Row, 16.0, 10, side, at) } }
+        val sets = List(3) { SetLog.of(it + 1L, BuiltInExercise.GobletSquat, 16.0, 10, null, at) } +
+            Side.entries.flatMap { side -> List(3) { SetLog.of(it + 4L, BuiltInExercise.Row, 16.0, 10, side, at) } }
         return LiftSession("s$day", at, at + 1, "Goblet squat and row", sets, program, day = day)
     }
 

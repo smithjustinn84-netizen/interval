@@ -14,6 +14,7 @@ import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.domain.UnknownExercise
+import dev.justinsmith.lift.domain.band
 import dev.justinsmith.lift.domain.bandOf
 import dev.justinsmith.lift.domain.builtInPrograms
 
@@ -30,7 +31,7 @@ internal fun SetEntity.toDomain(made: List<CustomExercise>, bands: List<Band>): 
     val done = equipment?.let { e -> Equipment.entries.firstOrNull { it.name == e } } ?: Equipment.Kettlebell
     val lift = Exercise.parse(exercise, made)
         ?: UnknownExercise(exercise, done, if (seconds != null) Measure.Time else Measure.Reps)
-    return SetLog(
+    return SetLog.of(
         id,
         lift,
         bellKg,
@@ -49,14 +50,14 @@ internal fun SetLog.toEntity(sessionUid: String, id: Long = 0): SetEntity = SetE
     id,
     sessionUid,
     exercise.key,
-    bellKg,
+    load.kg,
     reps,
     side?.name,
     loggedAtEpochMillis,
     double,
-    equipment = equipment.name,
+    equipment = load.equipment.name,
     seconds = seconds,
-    band = band?.id,
+    band = load.band?.id,
 )
 
 internal fun SessionEntity.toDomain(sets: List<SetLog>, made: List<CustomExercise>, bands: List<Band>) =
