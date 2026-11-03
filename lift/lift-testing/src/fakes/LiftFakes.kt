@@ -90,9 +90,11 @@ class FakeSessionDao : SessionDao {
             }.sortedBy { it.startedAtEpochMillis }
         }
 
-    // As Room: an id of 0 is generated, any other is kept (a set restored to its place).
+    // As Room: an id of 0 is generated, any other is kept (a set restored to its place); and as the foreign key, a
+    // set needs its session.
     override suspend fun insert(set: SetEntity) = sets.update {
         check(!failWrites) { "disk full" }
+        check(sessions.value.any { session -> session.uid == set.sessionUid }) { "FOREIGN KEY constraint failed" }
         val id = if (set.id == 0L) nextId++ else set.id.also { nextId = maxOf(nextId, it + 1) }
         it + set.copy(id = id)
     }
@@ -143,9 +145,11 @@ class FakeSessionDao : SessionDao {
         all.map { if (it.uid == uid) it.copy(deleted = false, updatedAtEpochMillis = now) else it }
     }
 
-    override suspend fun discard(uid: String) = sessions.update { all -> all.filterNot { it.uid == uid } }
-
-    override suspend fun discardSets(uid: String) = sets.update { all -> all.filterNot { it.sessionUid == uid } }
+    // As the foreign key's cascade: the session's sets go with it.
+    override suspend fun discard(uid: String) {
+        sessions.update { all -> all.filterNot { it.uid == uid } }
+        sets.update { all -> all.filterNot { it.sessionUid == uid } }
+    }
 }
 
 class FakeBellDao : BellDao {

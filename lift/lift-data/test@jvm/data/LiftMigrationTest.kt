@@ -1,6 +1,7 @@
 package dev.justinsmith.lift.data
 
 import androidx.room.Room
+import androidx.sqlite.SQLiteException
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.execSQL
 import kotlinx.coroutines.Dispatchers
@@ -11,6 +12,7 @@ import java.io.File
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
 /**
@@ -43,6 +45,7 @@ class LiftMigrationTest {
     fun `version 6 opens at version 7 with its sets as they were`() = runBlocking {
         writeVersion6()
         val database = Room.databaseBuilder<LiftDatabase>(name = file.absolutePath)
+            .addMigrations(*LIFT_MIGRATIONS)
             .setDriver(BundledSQLiteDriver())
             .setQueryCoroutineContext(Dispatchers.IO)
             .build()
@@ -72,6 +75,7 @@ class LiftMigrationTest {
             close()
         }
         val database = Room.databaseBuilder<LiftDatabase>(name = file.absolutePath)
+            .addMigrations(*LIFT_MIGRATIONS)
             .setDriver(BundledSQLiteDriver())
             .setQueryCoroutineContext(Dispatchers.IO)
             .build()
@@ -97,6 +101,7 @@ class LiftMigrationTest {
             close()
         }
         val database = Room.databaseBuilder<LiftDatabase>(name = file.absolutePath)
+            .addMigrations(*LIFT_MIGRATIONS)
             .setDriver(BundledSQLiteDriver())
             .setQueryCoroutineContext(Dispatchers.IO)
             .build()
@@ -123,6 +128,7 @@ class LiftMigrationTest {
             close()
         }
         val database = Room.databaseBuilder<LiftDatabase>(name = file.absolutePath)
+            .addMigrations(*LIFT_MIGRATIONS)
             .setDriver(BundledSQLiteDriver())
             .setQueryCoroutineContext(Dispatchers.IO)
             .build()
@@ -147,6 +153,7 @@ class LiftMigrationTest {
             close()
         }
         val database = Room.databaseBuilder<LiftDatabase>(name = file.absolutePath)
+            .addMigrations(*LIFT_MIGRATIONS)
             .setDriver(BundledSQLiteDriver())
             .setQueryCoroutineContext(Dispatchers.IO)
             .build()
@@ -164,6 +171,37 @@ class LiftMigrationTest {
             dao.keepHeartRate("s1", 130, 165, 70_000)
             dao.keepHeartRate("s1", 100, 120, 80_000)
             assertEquals(130 to 165, dao.observeSessions().first().single().let { it.averageBpm to it.peakBpm })
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
+    fun `version 15 opens at version 16 without the sets whose session is gone`() = runBlocking {
+        BundledSQLiteDriver().open(file.absolutePath).apply {
+            VERSION_15.forEach { execSQL(it) }
+            execSQL(
+                "INSERT INTO session VALUES " +
+                    "('s1', 0, 60000, 'Press', 60000, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)",
+            )
+            execSQL("INSERT INTO lift_set VALUES (1, 's1', 'press', 16.0, 5, 'Left', 10, 0, NULL, NULL, NULL)")
+            // Left behind by a crash between a discard's two deletes, before they were one transaction.
+            execSQL("INSERT INTO lift_set VALUES (2, 'gone', 'press', 16.0, 5, 'Left', 20, 0, NULL, NULL, NULL)")
+            execSQL("PRAGMA user_version = 15")
+            close()
+        }
+        val database = Room.databaseBuilder<LiftDatabase>(name = file.absolutePath)
+            .addMigrations(*LIFT_MIGRATIONS)
+            .setDriver(BundledSQLiteDriver())
+            .setQueryCoroutineContext(Dispatchers.IO)
+            .build()
+        try {
+            val dao = database.sessionDao()
+            assertEquals(listOf(SetEntity(1, "s1", "press", 16.0, 5, "Left", 10)), dao.allSets())
+            // A set needs its session, and goes with it.
+            assertFailsWith<SQLiteException> { dao.insert(SetEntity(0, "gone", "press", 16.0, 5, null, 30)) }
+            dao.discard("s1")
+            assertEquals(emptyList(), dao.allSets())
         } finally {
             database.close()
         }
@@ -308,5 +346,18 @@ class LiftMigrationTest {
             "INSERT OR REPLACE INTO room_master_table (id,identity_hash) " +
                 "VALUES(42, '2488d8f560322f3ad6b9d6dc0b9f9d98')",
         )
+
+        /** `schemas/…/15.json`: version 13's tables, a session with its timer and heart rate. */
+        val VERSION_15 = listOf(
+            "CREATE TABLE IF NOT EXISTS `session` (`uid` TEXT NOT NULL, `started_at` INTEGER NOT NULL, " +
+                "`finished_at` INTEGER, `title` TEXT NOT NULL, `updated_at` INTEGER NOT NULL, " +
+                "`deleted` INTEGER NOT NULL, `program_id` TEXT, `plan` TEXT, `program_day` INTEGER, " +
+                "`effort` INTEGER, `note` TEXT, `timer` TEXT, `average_bpm` INTEGER, `peak_bpm` INTEGER, " +
+                "PRIMARY KEY(`uid`))",
+        ) + VERSION_13.drop(1).dropLast(1) +
+            (
+                "INSERT OR REPLACE INTO room_master_table (id,identity_hash) " +
+                    "VALUES(42, '374501aa3e74cff79301b370ffd9252e')"
+                )
     }
 }

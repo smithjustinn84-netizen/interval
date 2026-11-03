@@ -343,7 +343,13 @@ database confirms. Use `update {}` everywhere.
 
 **Resolved, but for the foreign key,** in change `kroqzppq` ("Lift: a plan change never lost, whole writes, and the rest's wake lock renewed"): `@Transaction` DAO methods do each job
 in one step (`SessionDao.finishActive` and `discardActive`, `CustomProgramDao.deleteProgram`,
-`BandDao.removeOrArchive`, which asks `EXISTS` rather than loading every set). The foreign key is still open.
+`BandDao.removeOrArchive`, which asks `EXISTS` rather than loading every set).
+
+**The foreign key resolved** in change `rxxvmxqm` ("Lift: a set belongs to its session, and goes with it"): version 16
+of `LiftDatabase` makes `lift_set.session_uid` a foreign key to `session`, `ON DELETE CASCADE`, so `discardActive` is
+one delete and a set can't be stored without its session. `MIGRATION_15_16` builds the table again and leaves behind
+any set whose session was already gone; `LiftMigrationTest` covers it, and `FakeSessionDao` cascades and refuses as the
+table does.
 - `discardSession`, `deleteProgram`, `finishSession` (count, then finish) and `removeBand` each make several DAO
   calls outside a transaction; only import uses `@Transaction`.
 - `lift_set` has no foreign key to `session` (LiftDatabase.kt:321), so a crash halfway leaves orphan sets.

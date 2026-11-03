@@ -6,10 +6,10 @@ import dev.justinsmith.interval.storage.storageScope
 import dev.justinsmith.lift.data.ExerciseFilterStore
 import dev.justinsmith.lift.data.ExerciseStore
 import dev.justinsmith.lift.data.GearStore
+import dev.justinsmith.lift.data.LIFT_MIGRATIONS
 import dev.justinsmith.lift.data.LiftActivity
 import dev.justinsmith.lift.data.LiftDatabase
 import dev.justinsmith.lift.data.LiftRepository
-import dev.justinsmith.lift.data.MIGRATION_3_4
 import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.data.SetStore
@@ -37,7 +37,7 @@ val liftStorageModule: Module = module {
     }
     single<LiftDatabase> {
         get<RoomDatabase.Builder<LiftDatabase>>()
-            .addMigrations(MIGRATION_3_4)
+            .addMigrations(*LIFT_MIGRATIONS)
             .setDriver(BundledSQLiteDriver())
             .setQueryCoroutineContext(Dispatchers.IO)
             .build()

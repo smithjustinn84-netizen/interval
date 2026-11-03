@@ -6,6 +6,7 @@ import androidx.room.ConstructedBy
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.Insert
 import androidx.room.PrimaryKey
@@ -31,8 +32,9 @@ import kotlinx.coroutines.flow.Flow
  * the user's barbell, [BarEntity]; version 11 which day of its program a session was; version 12 how long the
  * user rests between sets, [RestEntity]; version 13 how a session felt ([SessionEntity.effort], [SessionEntity.note]);
  * version 14 the timer running in the session in progress, [SessionEntity.timer]; version 15 a finished session's
- * heart rate ([SessionEntity.averageBpm], [SessionEntity.peakBpm]).
- * Every version adds; none rewrites a row.
+ * heart rate ([SessionEntity.averageBpm], [SessionEntity.peakBpm]); version 16 a set's session as a foreign key,
+ * so a set goes with its session ([MIGRATION_15_16]).
+ * Every version adds; none rewrites a row, and only 16 drops one: a set whose session was already gone.
  */
 @Database(
     entities = [
@@ -46,8 +48,8 @@ import kotlinx.coroutines.flow.Flow
         BarEntity::class,
         RestEntity::class,
     ],
-    version = 15,
-    // 3 to 4 is MIGRATION_3_4, added in liftStorageModule.
+    version = 16,
+    // 3 to 4 and 15 to 16 are by hand, [LIFT_MIGRATIONS], added in liftStorageModule.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
@@ -87,6 +89,34 @@ expect object LiftDatabaseConstructor : RoomDatabaseConstructor<LiftDatabase> {
     override fun initialize(): LiftDatabase
 }
 
+/**
+ * Version 15 to 16: a set's session becomes a foreign key, deleting its sets with it. SQLite adds one only by
+ * building the table again, and a set whose session is gone (a crash between a discard's two deletes, before they
+ * were one transaction) can't be copied into it, so it is left behind: no screen ever showed it.
+ */
+internal val MIGRATION_15_16 = object : Migration(15, 16) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            "CREATE TABLE IF NOT EXISTS `_new_lift_set` (" +
+                "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `session_uid` TEXT NOT NULL, " +
+                "`exercise` TEXT NOT NULL, `bell_kg` REAL NOT NULL, `reps` INTEGER NOT NULL, " +
+                "`side` TEXT, `logged_at` INTEGER NOT NULL, `doubled` INTEGER NOT NULL DEFAULT 0, " +
+                "`equipment` TEXT, `seconds` INTEGER, `band` TEXT, " +
+                "FOREIGN KEY(`session_uid`) REFERENCES `session`(`uid`) ON UPDATE NO ACTION ON DELETE CASCADE)",
+        )
+        // By name: a table first made at version 1 has its later columns in the order their versions added them.
+        val columns = "`id`, `session_uid`, `exercise`, `bell_kg`, `reps`, `side`, `logged_at`, `doubled`, " +
+            "`equipment`, `seconds`, `band`"
+        connection.execSQL(
+            "INSERT INTO `_new_lift_set` ($columns) SELECT $columns FROM `lift_set` " +
+                "WHERE `session_uid` IN (SELECT `uid` FROM `session`)",
+        )
+        connection.execSQL("DROP TABLE `lift_set`")
+        connection.execSQL("ALTER TABLE `_new_lift_set` RENAME TO `lift_set`")
+        connection.execSQL("CREATE INDEX IF NOT EXISTS `index_lift_set_session_uid` ON `lift_set` (`session_uid`)")
+    }
+}
+
 /** Version 3 to 4: Interval's workouts and the shared settings, which Interval itself now holds, go. */
 internal val MIGRATION_3_4 = object : Migration(3, 4) {
     override fun migrate(connection: SQLiteConnection) {
@@ -94,6 +124,9 @@ internal val MIGRATION_3_4 = object : Migration(3, 4) {
         connection.execSQL("DROP TABLE IF EXISTS `shared_settings`")
     }
 }
+
+/** The migrations Room can't work out itself, for every builder of the database. */
+internal val LIFT_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_3_4, MIGRATION_15_16)
 
 // Sessions and their sets change together, so one DAO holds both.
 @Suppress("detekt.TooManyFunctions")
@@ -173,12 +206,9 @@ interface SessionDao {
     @Query("UPDATE session SET deleted = 0, updated_at = :now WHERE uid = :uid")
     suspend fun unmarkDeleted(uid: String, now: Long)
 
-    /** Drops a session discarded before it finished. */
+    /** Drops a session discarded before it finished, and its sets with it (the foreign key's cascade). */
     @Query("DELETE FROM session WHERE uid = :uid")
     suspend fun discard(uid: String)
-
-    @Query("DELETE FROM lift_set WHERE session_uid = :uid")
-    suspend fun discardSets(uid: String)
 
     /** Finishes the session in progress under [title] at [at], or drops it if it has no sets: one or the other. */
     @Transaction
@@ -187,11 +217,10 @@ interface SessionDao {
         if (countSets(active.uid) == 0) discard(active.uid) else finish(active.uid, title, at)
     }
 
-    /** Drops the session in progress and its sets, together. */
+    /** Drops the session in progress, its sets going with it. */
     @Transaction
     suspend fun discardActive() {
         val active = active() ?: return
-        discardSets(active.uid)
         discard(active.uid)
     }
 }
@@ -375,7 +404,18 @@ data class SessionEntity(
     @ColumnInfo(name = "peak_bpm") val peakBpm: Int? = null,
 )
 
-@Entity(tableName = "lift_set", indices = [Index("session_uid")])
+@Entity(
+    tableName = "lift_set",
+    indices = [Index("session_uid")],
+    foreignKeys = [
+        ForeignKey(
+            entity = SessionEntity::class,
+            parentColumns = ["uid"],
+            childColumns = ["session_uid"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+)
 data class SetEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "session_uid") val sessionUid: String,
