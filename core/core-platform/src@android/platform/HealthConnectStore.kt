@@ -48,6 +48,14 @@ class HealthConnectStore(
     private val _status = MutableStateFlow(statusOfSdk())
     override val status: StateFlow<HealthStatus> = _status.asStateFlow()
 
+    /**
+     * Whether the permissions were given back in this process. Health Connect applies a revoke only once the app's
+     * process ends, and until then still reports them granted, so the store takes the user at their word: nothing is
+     * written or read, and the status is disconnected, until they connect again ([answered]).
+     */
+    @Volatile
+    private var revoked = false
+
     private val client: HealthConnectClient? by lazy {
         if (HealthConnectClient.getSdkStatus(context) == HealthConnectClient.SDK_AVAILABLE) {
             HealthConnectClient.getOrCreate(context)
@@ -65,10 +73,17 @@ class HealthConnectStore(
     }
 
     override fun disconnect() {
+        revoked = true
         scope.launch {
-            attempt("Couldn't disconnect") { client?.permissionController?.revokeAllPermissions() }
             _status.value = currentStatus()
+            attempt("Couldn't disconnect") { client?.permissionController?.revokeAllPermissions() }
         }
+    }
+
+    /** The permission sheet's answer: what it [granted] is the app's again, a revoke earlier in the process undone. */
+    fun answered(granted: Set<String>) {
+        if (granted.isNotEmpty()) revoked = false
+        refresh()
     }
 
     override fun record(workout: HealthWorkout) {
@@ -125,6 +140,7 @@ class HealthConnectStore(
 
     /** Whether the app holds every one of [permissions]: by default, the leave to write, which is to be connected. */
     private suspend fun granted(permissions: Set<String> = WRITE): Boolean {
+        if (revoked) return false
         val controller = client?.permissionController ?: return false
         return attempt("Couldn't read the permissions") { controller.getGrantedPermissions() }
             ?.containsAll(permissions) ?: false

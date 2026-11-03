@@ -163,6 +163,27 @@ class PlanReminderSchedulerTest {
         scope.cancel()
     }
 
+    @Test
+    fun `an alarm for a day gone shows nothing`() = runTest {
+        var now = noonOf(TODAY)
+        val repository = FakeStorage().repository(now = { now })
+        val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
+        val lift = FakeLiftStorage().repository(now = { now })
+        val scheduler =
+            PlanReminderScheduler(repository, lift.sessions, RecordingPlanReminders(), FixedTimestampFormatter, {
+                now
+            }, scope)
+        repository.planWeekly(tabataPreset.asPlan(), (1..7).toSet())
+        repository.updateAppSettings { it.copy(reminderMinuteOfDay = EVENING) }
+        runCurrent()
+
+        // The clock moved past two weeks with the app closed: every alarm fires at once, each for its own day.
+        now = noonOf(TODAY + 16)
+        assertTrue((TODAY + 1..TODAY + 13).all { scheduler.reminderOn(it) == null })
+        assertEquals(tabataPreset.asPlan(), scheduler.reminderOn(TODAY + 16)?.plans?.single()?.workout)
+        scope.cancel()
+    }
+
     private companion object {
         const val EVENING = 18 * 60
     }

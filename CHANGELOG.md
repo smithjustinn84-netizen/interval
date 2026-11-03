@@ -73,6 +73,8 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   lighter, what only assisted it, and names any group nothing trained.
 
 ### Fixed
+- Turning Health Connect off in Settings takes effect at once: Android gives the permissions back only as the
+  app's process ends, and until then the switch stayed on and finished workouts were still written.
 - Lift: what a session's summary says of it (how hard it felt, a note) reaches Health Connect a second after it is
   said, without waiting for the summary to close.
 - Lift: deleting a past session, or importing, while a session is open now shows the open session's records,

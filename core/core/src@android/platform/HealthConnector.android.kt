@@ -24,9 +24,10 @@ actual val healthStoreName: StringResource = Res.string.health_connect
 @Composable
 actual fun rememberHealthConnector(store: HealthStore): HealthConnector {
     val context = LocalContext.current
-    val ask = rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) {
-        store.refresh()
-    }
+    val ask =
+        rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) { granted ->
+            if (store is HealthConnectStore) store.answered(granted) else store.refresh()
+        }
     return remember(store, context) {
         object : HealthConnector {
             override fun connect() = ask.launch(HealthConnectStore.PERMISSIONS)
