@@ -21,7 +21,6 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.onClose
 import org.koin.core.module.dsl.withOptions
 import org.koin.core.qualifier.named
-import org.koin.dsl.binds
 import org.koin.dsl.module
 
 /**
@@ -53,6 +52,11 @@ val liftStorageModule: Module = module {
     single { get<LiftDatabase>().importDao() }
 }
 
+/**
+ * [LiftRepository] over [liftStorageModule], and each of its repositories as the store its screens take
+ * ([SessionStore], [SetStore], …; the sessions as the [LiftActivity] the interval side reads too). The wall clock
+ * and the ids it takes are core's (`corePlatformModule`).
+ */
 val liftDataModule: Module = module {
     single {
         LiftRepository(
@@ -67,16 +71,13 @@ val liftDataModule: Module = module {
             clock = get(),
             ids = get(),
         )
-    }.binds(
-        arrayOf(
-            LiftActivity::class,
-            SessionStore::class,
-            SetStore::class,
-            ProgramStore::class,
-            ExerciseStore::class,
-            GearStore::class,
-        ),
-    )
+    }
+    single<SessionStore> { get<LiftRepository>().sessions }
+    single<LiftActivity> { get<LiftRepository>().sessions }
+    single<SetStore> { get<LiftRepository>().sets }
+    single<ProgramStore> { get<LiftRepository>().programs }
+    single<ExerciseStore> { get<LiftRepository>().exercises }
+    single<GearStore> { get<LiftRepository>().gear }
     single { ExerciseFilterStore() }
 }
 

@@ -52,12 +52,12 @@ private class Phone(val now: Long) {
                 (it.workout as? PlanWorkout.Interval)?.copy(presetId = null) ?: it.workout,
             )
         },
-        lift.sessions.value.map { session -> session.copy(sets = session.sets.map { it.copy(id = 0) }) },
-        lift.customExercises.value,
-        lift.customPrograms.value,
-        lift.bands.value,
-        lift.bells.value,
-        lift.bar.value,
+        lift.sessions.sessions.value.map { session -> session.copy(sets = session.sets.map { it.copy(id = 0) }) },
+        lift.exercises.customExercises.value,
+        lift.programs.customPrograms.value,
+        lift.gear.bands.value,
+        lift.gear.bells.value,
+        lift.gear.bar.value,
     )
 }
 
@@ -81,14 +81,24 @@ class AppDataImporterTest {
         )
         intervals.planOnce(PlanWorkout.Lift.AnySession, TODAY + 1)
         intervals.updateAppSettings { it.copy(theme = ThemeMode.Light, weeklyGoal = 3) }
-        lift.setOwned(20.0, owned = true)
-        lift.setBar(15.0)
-        val press = lift.saveExercise(null, ExerciseDraft("Landmine press", Equipment.Barbell))
-        lift.startSession(null)
-        lift.logSet(BuiltInExercise.TwoHandSwing, bellKg = 16.0, reps = 10, side = null)
-        lift.logSet(lift.customExercises.value.single { it.uid == press }, bellKg = 30.0, reps = 8, side = null)
-        lift.finishSession("Swings and press")
-        lift.keepHeartRate(lift.sessions.value.single().uid, HeartRate(averageBpm = 118, peakBpm = 149))
+        lift.gear.setOwned(20.0, owned = true)
+        lift.gear.setBar(15.0)
+        val press = lift.exercises.saveExercise(null, ExerciseDraft("Landmine press", Equipment.Barbell))
+        lift.sessions.startSession(null)
+        lift.sets.logSet(BuiltInExercise.TwoHandSwing, bellKg = 16.0, reps = 10, side = null)
+        lift.sets.logSet(
+            lift.exercises.customExercises.value.single {
+                it.uid == press
+            },
+            bellKg = 30.0,
+            reps = 8,
+            side = null,
+        )
+        lift.sessions.finishSession("Swings and press")
+        lift.sessions.keepHeartRate(
+            lift.sessions.sessions.value.single().uid,
+            HeartRate(averageBpm = 118, peakBpm = 149),
+        )
     }
 
     /** The phone's export, as Settings' Export writes it. */
@@ -157,9 +167,9 @@ class AppDataImporterTest {
         assertEquals("Hills", plan.name)
         // Linked to the preset as it landed here, not to the other phone's id.
         assertEquals(target.intervals.customPresets.value.single().id, plan.presetId)
-        assertEquals(listOf(16.0, 24.0), target.lift.bells.value)
-        assertEquals(120, target.lift.restSeconds.value)
-        assertEquals(10, target.lift.sessions.value.single().sets.single().reps)
+        assertEquals(listOf(16.0, 24.0), target.lift.gear.bells.value)
+        assertEquals(120, target.lift.sets.restSeconds.value)
+        assertEquals(10, target.lift.sessions.sessions.value.single().sets.single().reps)
         assertEquals(82.0, target.intervals.appSettings.value.body.weightKg)
     }
 

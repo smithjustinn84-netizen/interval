@@ -17,7 +17,7 @@ class ExerciseEditorViewModelTest : MainDispatcherTest() {
     private val repository = FakeLiftStorage().repository()
 
     private fun editor(uid: String? = null, name: String = "", saved: SavedStateHandle = SavedStateHandle()) =
-        ExerciseEditorViewModel(repository, repository, saved, uid, name)
+        ExerciseEditorViewModel(repository.exercises, repository.sessions, saved, uid, name)
 
     private inline fun ExerciseEditorViewModel.use(block: ExerciseEditorViewModel.() -> Unit) = try {
         block()
@@ -34,19 +34,22 @@ class ExerciseEditorViewModelTest : MainDispatcherTest() {
     @Test
     fun `a name taken while the sheet is open cannot be saved`() = editor().use {
         assertFalse("turkish sit-up" in state.value.taken)
-        repository.saveExercise(null, ExerciseDraft(name = "Turkish sit-up"))
+        repository.exercises.saveExercise(null, ExerciseDraft(name = "Turkish sit-up"))
         assertTrue(state.value.taken.isNotEmpty())
         assertFalse(save("Turkish sit-up", ""))
-        assertEquals(1, repository.customExercises.value.size)
+        assertEquals(1, repository.exercises.customExercises.value.size)
     }
 
     @Test
     fun `an exercise with sets logged keeps its equipment and measure`() {
-        val uid = repository.saveExercise(null, ExerciseDraft(name = "Copenhagen plank", measure = Measure.Time))
+        val uid = repository.exercises.saveExercise(
+            null,
+            ExerciseDraft(name = "Copenhagen plank", measure = Measure.Time),
+        )
         editor(uid).use {
             assertFalse(state.value.locked)
-            repository.startSession()
-            repository.logSet(repository.customExercises.value.single(), 0.0, 0, null, seconds = 30)
+            repository.sessions.startSession()
+            repository.sets.logSet(repository.exercises.customExercises.value.single(), 0.0, 0, null, seconds = 30)
             assertTrue(state.value.locked)
             change { it.copy(equipment = Equipment.Kettlebell, measure = Measure.Reps, name = "Side plank") }
             assertEquals(Measure.Time, state.value.draft.measure)
@@ -56,7 +59,7 @@ class ExerciseEditorViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `archiving follows the exercise as saved`() {
-        val uid = repository.saveExercise(null, ExerciseDraft(name = "Copenhagen plank"))
+        val uid = repository.exercises.saveExercise(null, ExerciseDraft(name = "Copenhagen plank"))
         editor(uid).use {
             toggleArchived()
             assertTrue(state.value.archived)

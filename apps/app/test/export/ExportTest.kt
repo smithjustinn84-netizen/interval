@@ -37,10 +37,10 @@ class ExportTest {
         val workout = intervals.recordWorkout(IntervalConfig(rounds = 4), elapsedSeconds = 200)
         intervals.reflectOnWorkout(workout, PerceivedEffort.Hard, "Felt strong")
         intervals.updateAppSettings { it.copy(theme = ThemeMode.Light, weeklyGoal = 3) }
-        bells.startSession()
-        bells.logSet(BuiltInExercise.TwoHandSwing, bellKg = 16.0, reps = 10, side = null)
-        bells.finishSession("Swings")
-        bells.reflectOnSession(bells.sessions.value.single().uid, LiftEffort.Steady, "")
+        bells.sessions.startSession()
+        bells.sets.logSet(BuiltInExercise.TwoHandSwing, bellKg = 16.0, reps = 10, side = null)
+        bells.sessions.finishSession("Swings")
+        bells.sessions.reflectOnSession(bells.sessions.sessions.value.single().uid, LiftEffort.Steady, "")
 
         val file = exporter.export()
 
@@ -78,8 +78,8 @@ class ExportTest {
 
     @Test
     fun `a session in progress is not exported`() {
-        bells.startSession()
-        bells.logSet(BuiltInExercise.TwoHandSwing, bellKg = 24.0, reps = 5, side = null)
+        bells.sessions.startSession()
+        bells.sets.logSet(BuiltInExercise.TwoHandSwing, bellKg = 24.0, reps = 5, side = null)
 
         assertEquals(emptyList(), exporter.bundle(now).lift.sessions)
     }

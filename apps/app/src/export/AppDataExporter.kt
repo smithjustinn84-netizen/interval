@@ -59,14 +59,14 @@ class AppDataExporter(
         history = intervals.history.value.map { it.export() },
         plan = intervals.planned.value.map { it.export() },
         lift = LiftExport(
-            bellsKg = lift.bells.value,
-            barKg = lift.bar.value,
-            restSeconds = lift.restSeconds.value,
-            bands = lift.bands.value.map { it.export() },
-            exercises = lift.customExercises.value.map { it.export() },
-            programs = lift.customPrograms.value.map { it.export() },
-            following = lift.followed.value?.export(),
-            sessions = lift.sessions.value.mapNotNull { it.export() },
+            bellsKg = lift.gear.bells.value,
+            barKg = lift.gear.bar.value,
+            restSeconds = lift.sets.restSeconds.value,
+            bands = lift.gear.bands.value.map { it.export() },
+            exercises = lift.exercises.customExercises.value.map { it.export() },
+            programs = lift.programs.customPrograms.value.map { it.export() },
+            following = lift.programs.followed.value?.export(),
+            sessions = lift.sessions.sessions.value.mapNotNull { it.export() },
         ),
     )
 }

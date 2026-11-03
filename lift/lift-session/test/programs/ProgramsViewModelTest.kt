@@ -18,7 +18,7 @@ class ProgramsViewModelTest : MainDispatcherTest() {
     private val repository = FakeLiftStorage().repository()
     private val ladders = ProgramKey.BuiltIn(ProgramId.PressLadders)
 
-    private inline fun programs(block: ProgramsViewModel.() -> Unit) = ProgramsViewModel(repository).run {
+    private inline fun programs(block: ProgramsViewModel.() -> Unit) = ProgramsViewModel(repository.programs).run {
         try {
             block()
         } finally {
@@ -42,9 +42,9 @@ class ProgramsViewModelTest : MainDispatcherTest() {
     @Test
     fun `following the program already followed keeps its place`() = programs {
         follow(ladders)
-        val since = repository.following.value
+        val since = repository.programs.following.value
         follow(ladders)
-        assertEquals(since, repository.following.value)
+        assertEquals(since, repository.programs.following.value)
     }
 
     @Test
@@ -58,7 +58,7 @@ class ProgramsViewModelTest : MainDispatcherTest() {
     fun `a program made shows among the custom ones`() = programs {
         val draft =
             ProgramDraft(name = "Swings", days = listOf(listOf(Block(BuiltInExercise.TwoHandSwing, rounds = 5))))
-        repository.saveProgram(null, draft)
+        repository.programs.saveProgram(null, draft)
         assertEquals(listOf("Swings"), state.value.custom.map { it.name })
     }
 }

@@ -21,10 +21,11 @@ import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.Side
 import kotlinx.coroutines.flow.StateFlow
 
-// The roles LiftRepository plays, one per kind of thing it keeps, so a screen takes only what it reads and
-// writes: the gear can't discard a session, and a test can hand a ViewModel a store of its own. The repository is
-// each of them; its docs say how each behaves. What only the app does (import, close) stays on it alone, and what
-// the interval side reads is LiftActivity.
+// The roles Lift's storage plays, one per kind of thing it keeps, so a screen takes only what it reads and
+// writes: the gear can't discard a session, and a test can hand a ViewModel a store of its own. Each is one of
+// LiftRepository's repositories (SessionRepository is SessionStore, SetRepository SetStore, …), whose docs say how
+// each behaves. What only the app does (ready, import, close) stays on LiftRepository alone, and what the interval
+// side reads is LiftActivity.
 
 /** The sessions: those finished, the one in progress, and starting, finishing or dropping one. */
 interface SessionStore {

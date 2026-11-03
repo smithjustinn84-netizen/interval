@@ -40,7 +40,7 @@ class PlanReminderSchedulerTest {
             repository,
             lift.repository(now = {
                 now
-            }),
+            }).sessions,
             reminders,
             FixedTimestampFormatter,
             { now },
@@ -103,7 +103,7 @@ class PlanReminderSchedulerTest {
         }
         val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
         val lift = FakeLiftStorage().repository(now = { now })
-        PlanReminderScheduler(repository, lift, reminders, FixedTimestampFormatter, { now }, scope)
+        PlanReminderScheduler(repository, lift.sessions, reminders, FixedTimestampFormatter, { now }, scope)
         runCurrent()
 
         failing = false
@@ -121,7 +121,8 @@ class PlanReminderSchedulerTest {
         val reminders = RecordingPlanReminders()
         val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
         val lift = FakeLiftStorage().repository(now = { now })
-        val scheduler = PlanReminderScheduler(repository, lift, reminders, FixedTimestampFormatter, { now }, scope)
+        val scheduler =
+            PlanReminderScheduler(repository, lift.sessions, reminders, FixedTimestampFormatter, { now }, scope)
         repository.planWeekly(tabataPreset.asPlan(), (1..7).toSet())
         repository.updateAppSettings { it.copy(reminderMinuteOfDay = EVENING) }
         runCurrent()
@@ -146,7 +147,9 @@ class PlanReminderSchedulerTest {
         val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
         val lift = FakeLiftStorage().repository(now = { now })
         val scheduler =
-            PlanReminderScheduler(repository, lift, RecordingPlanReminders(), FixedTimestampFormatter, { now }, scope)
+            PlanReminderScheduler(repository, lift.sessions, RecordingPlanReminders(), FixedTimestampFormatter, {
+                now
+            }, scope)
         repository.planWeekly(tabataPreset.asPlan(), setOf(4))
         repository.updateAppSettings { it.copy(reminderMinuteOfDay = EVENING) }
         runCurrent()

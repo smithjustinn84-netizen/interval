@@ -56,7 +56,11 @@ class ProgramProgressViewModelTest {
 
     @Test
     fun `each day done is listed with its date and the sets done of those planned`() {
-        val state = ProgramProgressViewModel(repository, repository, FixedTimestampFormatter).state.value
+        val state = ProgramProgressViewModel(
+            repository.programs,
+            repository.sessions,
+            FixedTimestampFormatter,
+        ).state.value
         val row = state.rows.single()
         assertEquals("day 0", row.date)
         assertEquals(1, row.day.number)
@@ -66,12 +70,12 @@ class ProgramProgressViewModelTest {
 
     @Test
     fun `Follow again starts the program over and keeps the run in History`() {
-        val viewModel = ProgramProgressViewModel(repository, repository, FixedTimestampFormatter)
+        val viewModel = ProgramProgressViewModel(repository.programs, repository.sessions, FixedTimestampFormatter)
         viewModel.followAgain()
         assertEquals(1_000L, storage.following.row.value?.startedAtEpochMillis)
         val state = viewModel.state.value
         assertTrue(state.rows.isEmpty())
         assertEquals(1, state.progress?.next?.number)
-        assertEquals(1, repository.sessions.value.size)
+        assertEquals(1, repository.sessions.sessions.value.size)
     }
 }

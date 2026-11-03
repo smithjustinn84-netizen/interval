@@ -42,9 +42,16 @@ class PlanViewModelTest : MainDispatcherTest() {
     private val repository = FakeStorage().repository(now = { clock })
     private val bells = FakeLiftStorage().repository(now = { clock })
     private val viewModel by lazy {
-        PlanViewModel(repository, repository, repository, repository, bells, FixedTimestampFormatter, clock = {
-            clock
-        }, computation = dispatcher)
+        PlanViewModel(
+            repository,
+            repository,
+            repository,
+            repository,
+            bells.sessions,
+            FixedTimestampFormatter,
+            clock = { clock },
+            computation = dispatcher,
+        )
     }
     private val tabata = tabataPreset
     private val hiit = hiitPreset
@@ -105,7 +112,7 @@ class PlanViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `plans of the program's next day take its days in turn and count against its pace`() {
-        bells.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
+        bells.programs.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
         viewModel.planWeekly(PlanWorkout.Lift.ProgramDay, setOf(1, 4, 5))
         viewModel.planWeekly(tabata.asPlan(), setOf(2))
         val state = viewModel.state.value
@@ -185,9 +192,16 @@ class PlanViewModelTest : MainDispatcherTest() {
         var now = noonOf(TODAY)
         repository.planOnce(hiit.asPlan(), TODAY + 1)
         val plan =
-            PlanViewModel(repository, repository, repository, repository, bells, FixedTimestampFormatter, clock = {
-                now
-            }, computation = main)
+            PlanViewModel(
+                repository,
+                repository,
+                repository,
+                repository,
+                bells.sessions,
+                FixedTimestampFormatter,
+                clock = { now },
+                computation = main,
+            )
         assertEquals(listOf(HistoryDay.Tomorrow), plan.state.value.oneOffs.map { it.day })
 
         now = noonOf(TODAY + 1)
@@ -203,9 +217,16 @@ class PlanViewModelTest : MainDispatcherTest() {
         repository.updateAppSettings { it.copy(reminderMinuteOfDay = 18 * 60) }
         val computation = StandardTestDispatcher(testScheduler)
         val viewModel =
-            PlanViewModel(repository, repository, repository, repository, bells, FixedTimestampFormatter, clock = {
-                clock
-            }, computation = computation)
+            PlanViewModel(
+                repository,
+                repository,
+                repository,
+                repository,
+                bells.sessions,
+                FixedTimestampFormatter,
+                clock = { clock },
+                computation = computation,
+            )
         assertSame(PlanUiState.Loading, viewModel.state.value)
         assertFalse(viewModel.state.value.reminder.on)
 

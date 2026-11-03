@@ -45,22 +45,22 @@ class LiftRoomTest {
 
     private fun <T> await(read: () -> T, until: (T) -> Boolean): T = runBlocking {
         withTimeout(TIMEOUT_MILLIS) {
-            repository.active.first { until(read()) }
+            repository.sessions.active.first { until(read()) }
             read()
         }
     }
 
     @Test
     fun `a set removed and put back keeps its place and its id`() {
-        repository.startSession()
-        repository.logSet(BuiltInExercise.TwoHandSwing, 24.0, 10, null)
-        repository.logSet(BuiltInExercise.Press, 16.0, 5, null)
-        val sets = await({ repository.active.value?.sets.orEmpty() }) { it.size == 2 }
+        repository.sessions.startSession()
+        repository.sets.logSet(BuiltInExercise.TwoHandSwing, 24.0, 10, null)
+        repository.sets.logSet(BuiltInExercise.Press, 16.0, 5, null)
+        val sets = await({ repository.sessions.active.value?.sets.orEmpty() }) { it.size == 2 }
         val first = sets.first()
-        repository.removeSet(first.id)
-        await({ repository.active.value?.sets.orEmpty() }) { it.size == 1 }
-        repository.restoreSet(first)
-        val back = await({ repository.active.value?.sets.orEmpty() }) { it.size == 2 }
+        repository.sets.removeSet(first.id)
+        await({ repository.sessions.active.value?.sets.orEmpty() }) { it.size == 1 }
+        repository.sets.restoreSet(first)
+        val back = await({ repository.sessions.active.value?.sets.orEmpty() }) { it.size == 2 }
         assertEquals(sets, back)
     }
 

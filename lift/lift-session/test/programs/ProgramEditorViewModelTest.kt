@@ -36,7 +36,15 @@ class ProgramEditorViewModelTest {
     fun resetMainDispatcher() = Dispatchers.resetMain()
 
     private fun editor(uid: String? = null, savedState: SavedStateHandle = SavedStateHandle()) =
-        ProgramEditorViewModel(repository, repository, repository, repository, filters, uid, savedState)
+        ProgramEditorViewModel(
+            repository.programs,
+            repository.exercises,
+            repository.gear,
+            repository.sessions,
+            filters,
+            uid,
+            savedState,
+        )
 
     @Test
     fun `a new program starts from the default draft and cannot be saved with an empty day`() {
@@ -45,7 +53,7 @@ class ProgramEditorViewModelTest {
         assertFalse(editor.state.value.saved)
         assertEquals(ProgramDraft(), editor.state.value.draft)
         assertFalse(editor.save("Mine"))
-        assertEquals(emptyList(), repository.customPrograms.value)
+        assertEquals(emptyList(), repository.programs.customPrograms.value)
     }
 
     @Test
@@ -54,7 +62,7 @@ class ProgramEditorViewModelTest {
         editor.change { it.addBlock(0) }
 
         assertTrue(editor.save("Mine"))
-        val program = repository.customPrograms.value.single()
+        val program = repository.programs.customPrograms.value.single()
         assertEquals("Mine", program.name)
 
         val again = editor(uid = (program.key as ProgramKey.Custom).uid)
@@ -62,10 +70,10 @@ class ProgramEditorViewModelTest {
         assertEquals(ProgramDraft.of(program), again.state.value.draft)
         again.change { it.copy(weeks = 8) }
         assertTrue(again.save("Mine still"))
-        assertEquals(listOf("Mine still" to 8), repository.customPrograms.value.map { it.name to it.weeks })
+        assertEquals(listOf("Mine still" to 8), repository.programs.customPrograms.value.map { it.name to it.weeks })
 
         again.delete()
-        assertEquals(emptyList(), repository.customPrograms.value)
+        assertEquals(emptyList(), repository.programs.customPrograms.value)
     }
 
     @Test
@@ -90,7 +98,7 @@ class ProgramEditorViewModelTest {
 
     @Test
     fun `a copy of a built-in starts as it is under a name not taken`() {
-        repository.saveProgram(
+        repository.programs.saveProgram(
             null,
             ProgramDraft(name = "Easy Strength (yours)", days = listOf(listOf(ProgramDraft.NEW_BLOCK))),
         )
@@ -101,23 +109,28 @@ class ProgramEditorViewModelTest {
         assertFalse(editor.state.value.saved)
         assertNull(editor.state.value.carriesOnFrom)
         assertTrue(editor.save("Easy Strength (yours) 2"))
-        assertEquals(easy.days, repository.customPrograms.value.single { it.name == "Easy Strength (yours) 2" }.days)
-        assertNull(repository.following.value)
+        assertEquals(
+            easy.days,
+            repository.programs.customPrograms.value.single {
+                it.name == "Easy Strength (yours) 2"
+            }.days,
+        )
+        assertNull(repository.programs.following.value)
     }
 
     @Test
     fun `a copy of the built-in followed carries on from its day`() {
         val key = ProgramKey.BuiltIn(ProgramId.GobletSquatRow)
-        repository.follow(key)
-        repository.startSession(key)
-        repository.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
-        repository.finishSession("Goblet squat")
+        repository.programs.follow(key)
+        repository.sessions.startSession(key)
+        repository.sets.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
+        repository.sessions.finishSession("Goblet squat")
         val editor = copyEditor(ProgramId.GobletSquatRow, "Goblet squat and row (yours)")
 
         assertEquals(2, editor.state.value.carriesOnFrom)
         assertTrue(editor.save("Mine"))
-        assertEquals("Mine", repository.following.value?.name)
-        assertEquals(2, repository.programDay.value?.number)
+        assertEquals("Mine", repository.programs.following.value?.name)
+        assertEquals(2, repository.programs.programDay.value?.number)
     }
 
     @Test
@@ -125,9 +138,9 @@ class ProgramEditorViewModelTest {
         val editor = editor()
         assertEquals(emptyList(), editor.state.value.choices.library.recents)
 
-        repository.startSession(null)
-        repository.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
-        repository.finishSession("Goblet squat")
+        repository.sessions.startSession(null)
+        repository.sets.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
+        repository.sessions.finishSession("Goblet squat")
 
         assertEquals(listOf(BuiltInExercise.GobletSquat), editor.state.value.choices.library.recents)
     }
@@ -135,10 +148,10 @@ class ProgramEditorViewModelTest {
     /** A copy of [id], named from [base] as the screen words it: a common test can't load the screen's words. */
     private fun copyEditor(id: ProgramId, base: String) =
         ProgramEditorViewModel(
-            repository,
-            repository,
-            repository,
-            repository,
+            repository.programs,
+            repository.exercises,
+            repository.gear,
+            repository.sessions,
             filters,
             uid = null,
             copy = ProgramCopy(id, base),

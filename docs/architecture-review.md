@@ -188,6 +188,16 @@ side uses the monotonic `realElapsedTime`, and `dataModule` already provides it.
 ## C. Repositories and dependency direction
 
 ### C1 · High · `LiftRepository` does nine jobs (SRP)
+
+**Resolved** in change `tzpmumrl` ("Lift: a repository per store, over one queue of writes"): `LiftRepository` is the root of
+five, one per port, each over the DAOs of its own kind: `SessionRepository` (`SessionStore`, and the `LiftActivity` the
+interval side reads), `SetRepository` (`SetStore`), `ProgramRepository`, `ExerciseRepository` and `GearRepository`.
+They share one `SerialWriter`, so a write of one kind still lands behind an earlier one of another (a band removed
+behind the set just logged with it), and the sessions and programs read the user's exercises and bands from
+`ExerciseRepository.made` and `GearRepository.owned`, shared flows that show nothing until read. The mappers are
+`LiftMappers.kt`. The policy stayed with its kind (`saveChanges` in the programs', `removeBand` in the gear's)
+rather than in use cases of its own: each is one method behind a port. The root keeps what only the app does
+(`ready`, `writeErrors`, `importAll`, `close`); Koin binds each store to its repository.
 [LiftRepository.kt](../lift/lift-data/src/data/LiftRepository.kt) is 667 lines, takes 7 DAOs and carries
 `@Suppress TooManyFunctions`. It:
 - caches nine tables

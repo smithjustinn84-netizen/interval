@@ -27,7 +27,7 @@ class GearViewModelTest {
 
     // Only the records read sessions, which the stored ones stand in for.
     private val storage = FakeLiftStorage()
-    private val sessions = storage.repository()
+    private val lift = storage.repository()
 
     @BeforeTest
     fun setMainDispatcher() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -35,7 +35,7 @@ class GearViewModelTest {
     @AfterTest
     fun resetMainDispatcher() = Dispatchers.resetMain()
 
-    private fun viewModel() = GearViewModel(gear, sessions)
+    private fun viewModel() = GearViewModel(gear, lift.sessions)
 
     @Test
     fun `a bell toggled is owned and toggled again let go`() {

@@ -20,7 +20,14 @@ class ExerciseLibraryViewModelTest : MainDispatcherTest() {
     private val filters = ExerciseFilterStore()
 
     private fun library(saved: SavedStateHandle = SavedStateHandle()) =
-        ExerciseLibraryViewModel(repository, repository, repository, filters, FixedTimestampFormatter, saved)
+        ExerciseLibraryViewModel(
+            repository.sessions,
+            repository.exercises,
+            repository.gear,
+            filters,
+            FixedTimestampFormatter,
+            saved,
+        )
 
     private inline fun ExerciseLibraryViewModel.use(block: ExerciseLibraryViewModel.() -> Unit) = try {
         block()
@@ -30,8 +37,8 @@ class ExerciseLibraryViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `an exercise added shows in the list`() = library().use {
-        repository.saveExercise(null, ExerciseDraft(name = "Copenhagen plank"))
-        assertTrue(state.value.list.exercises.any { it.key == repository.customExercises.value.single().key })
+        repository.exercises.saveExercise(null, ExerciseDraft(name = "Copenhagen plank"))
+        assertTrue(state.value.list.exercises.any { it.key == repository.exercises.customExercises.value.single().key })
     }
 
     @Test

@@ -66,7 +66,7 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
             RecordingCuePlayer(),
             { 7L },
             background,
-            WorkoutRecorder(repository, repository, repository, lifts, FixedTimestampFormatter, {
+            WorkoutRecorder(repository, repository, repository, lifts.sessions, FixedTimestampFormatter, {
                 7L
             }, health),
             WorkoutTicker(testScheduler.timeSource, tickerScope()).also { tickers += it },

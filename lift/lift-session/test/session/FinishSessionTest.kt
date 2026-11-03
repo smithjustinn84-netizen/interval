@@ -30,9 +30,9 @@ class FinishSessionTest {
     private val health = RecordingHealthStore(HealthStatus.Connected)
 
     private fun finishing(scope: CoroutineScope) = FinishSession(
-        repository,
-        repository,
-        repository,
+        repository.sessions,
+        repository.programs,
+        repository.gear,
         FakeIntervalActivity(),
         FixedTimestampFormatter,
         { now },
@@ -40,8 +40,8 @@ class FinishSessionTest {
     )
 
     private fun logged() {
-        repository.startSession(null)
-        repository.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
+        repository.sessions.startSession(null)
+        repository.sets.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
     }
 
     @Test
@@ -54,20 +54,20 @@ class FinishSessionTest {
 
         val finished = assertNotNull(finishing.finished.value)
         assertEquals("Squats", finished.session.title)
-        assertNull(repository.active.value)
-        assertEquals("Squats", repository.sessions.value.single().title)
+        assertNull(repository.sessions.active.value)
+        assertEquals("Squats", repository.sessions.sessions.value.single().title)
         assertEquals(1, health.workouts.size)
     }
 
     @Test
     fun `a session with no sets is thrown away and written nowhere`() = runTest {
-        repository.startSession(null)
+        repository.sessions.startSession(null)
         val finishing = finishing(backgroundScope)
 
         assertFalse(finishing.finish("Nothing"))
 
         assertNull(finishing.finished.value)
-        assertNull(repository.active.value)
+        assertNull(repository.sessions.active.value)
         assertTrue(health.workouts.isEmpty())
     }
 
@@ -86,7 +86,7 @@ class FinishSessionTest {
 
         assertEquals(listOf(100_000L..160_000L, 100_000L..160_000L), health.heartRateReads)
         assertEquals(131, finishing.finished.value?.session?.averageBpm)
-        assertEquals(158, repository.sessions.value.single().peakBpm)
+        assertEquals(158, repository.sessions.sessions.value.single().peakBpm)
         finishing.readHeartRate()
         assertEquals(2, health.heartRateReads.size)
     }
@@ -103,7 +103,7 @@ class FinishSessionTest {
         val finished = assertNotNull(finishing.finished.value)
         assertEquals("  Felt strong ", finished.note)
         assertEquals("Felt strong", finished.session.note)
-        val kept = repository.sessions.value.single()
+        val kept = repository.sessions.sessions.value.single()
         assertEquals(PerceivedEffort.Hard, kept.effort)
         assertEquals("Felt strong", kept.note)
     }

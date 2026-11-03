@@ -81,7 +81,9 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
     ): WorkoutSession {
         val ticker = WorkoutTicker(timeSource, tickerScope()).also { tickers += it }
         val recorder =
-            WorkoutRecorder(repository, repository, repository, lifts, FixedTimestampFormatter, { now }, health)
+            WorkoutRecorder(repository, repository, repository, lifts.sessions, FixedTimestampFormatter, {
+                now
+            }, health)
         return WorkoutSession(repository, repository, player, { now }, background, recorder, ticker)
     }
 

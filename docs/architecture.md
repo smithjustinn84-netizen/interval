@@ -134,7 +134,7 @@ container; those edges are left out for legibility. `tools/check_module_rules.py
    Where cross-domain interaction is needed (e.g. History counting Lift sessions or Today showing workout recaps),
    it is mediated via minimal interfaces in `lift-data`: `IntervalActivity` (what Lift reads of the interval side,
    implemented in `app`) and `LiftActivity` (what History, Plan and the workout read of Lift, implemented by
-   `LiftRepository`).
+   `SessionRepository`).
 3. **Pure Domains**: `interval-domain` and `lift-domain` contain only pure Kotlin models and calculation engines.
    They have no dependencies on Compose, Android, or third-party persistence libraries.
 4. **Offline-First & Local-Only**: All user data resides on device. There is no remote backend, telemetry, or user
@@ -175,6 +175,12 @@ several core issues:
   `ExerciseStore` and `GearStore` (`lift-data`'s). What only the app does (`ready`, `writeErrors`, `importAll`,
   `close`) stays on the repository, which the app shell, export, import and `PlanReminderScheduler` (it waits on
   `ready`) still take.
+
+- **Resolved — `LiftRepository`, split (C1)**: one repository per store, each over the DAOs of its kind:
+  `SessionRepository` (also the `LiftActivity` the interval side reads), `SetRepository`, `ProgramRepository`,
+  `ExerciseRepository` and `GearRepository`, sharing one `SerialWriter` so writes of different kinds keep their
+  order, with the mappers in `LiftMappers.kt`. `LiftRepository` is their root, what the app alone takes for `ready`,
+  `writeErrors`, `importAll` and `close`; Koin binds each store to its repository.
 
 - **Resolved — `SessionViewModel`, split (D1, D3, F2; D4 in part)**: the Log sheet's draft is `SetDraftEditor`
   (pure: what it goes by is a function it reads at each change), today's plan `TodayPlanEditor`, and the finish and

@@ -123,9 +123,11 @@ interval/            the interval timer
 lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
   lift-domain        Lift's pure domain (`dev.justinsmith.lift.domain`): exercises, programs, sets and
                      sessions, records, `EmomClock`/`HoldClock`/`RestClock`, suggestions. No dependencies
-  lift-data          `LiftRepository`, `LiftDatabase` (Room, KSP, `schemas/`), `IntervalActivity` (what Lift
-                     reads of the interval side; `app` binds it), `LiftActivity` (what the interval side reads
-                     of Lift; `LiftRepository` is it), `liftModules` (di/). No Compose
+  lift-data          `LiftRepository`, the root of a repository per store (`SessionRepository`, `SetRepository`,
+                     `ProgramRepository`, `ExerciseRepository`, `GearRepository`, over one `SerialWriter`; the
+                     mappers in `LiftMappers.kt`), `LiftDatabase` (Room, KSP, `schemas/`), `IntervalActivity` (what
+                     Lift reads of the interval side; `app` binds it), `LiftActivity` (what the interval side reads
+                     of Lift; `SessionRepository` is it), `liftModules` (di/). No Compose
   lift-platform      `Beeper`, `SessionKeepAlive` and its `TimerRun` (+ Android's `TimerService`), the `ActiveTimers`
                      port, the timers' notification words, and each platform's `liftPlatformModule` (the database
                      builder too); Lift's `interval-platform`
@@ -214,7 +216,7 @@ toolchain (`$compose.*`).
 - **Storage**: `IntervalRepository` (`interval/interval-data/src/data/`) is the only thing that touches it. A screen
   takes the roles it plays rather than the repository: `SettingsStore`, `PresetStore`, `HistoryStore`, `PlanStore`,
   `WorkoutProgressStore` (`Stores.kt` beside it; Lift's `SessionStore`, `SetStore`, `ProgramStore`, `ExerciseStore`,
-  `GearStore` beside `LiftRepository`), each bound to the same single; `InMemory*Store` fakes stand in for one. What it stores
+  `GearStore` beside `LiftRepository`, each a repository of its own under it), each bound to its single; `InMemory*Store` fakes stand in for one. What it stores
   is described by plain models in `interval/interval-domain/src/model/` (`AppSettings`, `HistoryEntry`, `PlannedWorkout`,
   `LiftWorkout`, `LoggedWorkout`); Room entities and DataStore keys stay in `data/`, behind its mappers. Settings live
   in DataStore Preferences (`SettingsPreferences.kt`); history and custom presets in Room

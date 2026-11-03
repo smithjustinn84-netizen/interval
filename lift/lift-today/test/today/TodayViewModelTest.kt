@@ -54,9 +54,9 @@ class TodayViewModelTest {
     fun setMainDispatcher() = Dispatchers.setMain(main)
 
     private fun today(clock: WallClock, computation: CoroutineDispatcher) = TodayViewModel(
-        repository,
-        repository,
-        repository,
+        repository.sessions,
+        repository.programs,
+        repository.gear,
         FakeIntervalActivity(),
         FixedTimestampFormatter,
         clock,
@@ -73,7 +73,7 @@ class TodayViewModelTest {
         val lift = barbellLifts.first() to false
         assertEquals(DEFAULT_BAR_KG, today.state.value.bells[lift])
 
-        repository.setBar(15.0)
+        repository.gear.setBar(15.0)
         assertEquals(15.0, today.state.value.bells[lift])
     }
 
@@ -107,8 +107,8 @@ class TodayViewModelTest {
 
         finished("second", day = 100, BuiltInExercise.GobletSquat)
         // An open session's sets wait until it finishes.
-        repository.startSession(null)
-        repository.logSet(BuiltInExercise.BarbellBenchPress, 60.0, 5, null)
+        repository.sessions.startSession(null)
+        repository.sets.logSet(BuiltInExercise.BarbellBenchPress, 60.0, 5, null)
 
         val balance = today.state.value.balance!!
         assertEquals(2.0, balance.loads.single { it.group == MuscleGroup.Legs }.worked)

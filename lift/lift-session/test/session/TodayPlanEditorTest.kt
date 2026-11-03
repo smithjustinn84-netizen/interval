@@ -13,21 +13,21 @@ import kotlin.test.assertTrue
 /** Today's plan on a program day: each change kept with the session, built on the one before. */
 class TodayPlanEditorTest {
     private val repository = FakeLiftStorage().repository()
-    private val editor = TodayPlanEditor(repository, repository, repository)
+    private val editor = TodayPlanEditor(repository.sets, repository.programs, repository.gear)
     private val goblets = ProgramKey.BuiltIn(ProgramId.GobletSquatRow)
 
-    private val blocks get() = assertNotNull(repository.active.value?.plan).blocks
+    private val blocks get() = assertNotNull(repository.sessions.active.value?.plan).blocks
 
     private fun startDay() {
-        repository.follow(goblets)
-        repository.startSession(goblets)
+        repository.programs.follow(goblets)
+        repository.sessions.startSession(goblets)
     }
 
     @Test
     fun `a block changed skipped and planned again is kept with the session`() {
         startDay()
         // Today's plan is the day's as written until something changes it.
-        val rounds = assertNotNull(repository.programDay.value).today.blocks.first().block.rounds
+        val rounds = assertNotNull(repository.programs.programDay.value).today.blocks.first().block.rounds
 
         editor.changeBlock(0) { it.copy(rounds = it.rounds + 1) }
         assertEquals(rounds + 1, blocks.first().block.rounds)
@@ -48,12 +48,12 @@ class TodayPlanEditorTest {
     @Test
     fun `the next load stepped twice builds on the first step`() {
         startDay()
-        val start = assertNotNull(editor.next(repository.active.value, emptyList(), SetDraft())).bellKg
+        val start = assertNotNull(editor.next(repository.sessions.active.value, emptyList(), SetDraft())).bellKg
 
         editor.stepNextLoad(1, emptyList(), SetDraft())
-        val once = assertNotNull(editor.next(repository.active.value, emptyList(), SetDraft())).bellKg
+        val once = assertNotNull(editor.next(repository.sessions.active.value, emptyList(), SetDraft())).bellKg
         editor.stepNextLoad(1, emptyList(), SetDraft())
-        val twice = assertNotNull(editor.next(repository.active.value, emptyList(), SetDraft())).bellKg
+        val twice = assertNotNull(editor.next(repository.sessions.active.value, emptyList(), SetDraft())).bellKg
 
         assertTrue(start < once && once < twice)
         assertEquals(twice, blocks.first().block.kg)
@@ -61,10 +61,10 @@ class TodayPlanEditorTest {
 
     @Test
     fun `a free session has nothing up next and no plan to change`() {
-        repository.startSession(null)
-        assertNull(editor.next(repository.active.value, emptyList(), SetDraft()))
+        repository.sessions.startSession(null)
+        assertNull(editor.next(repository.sessions.active.value, emptyList(), SetDraft()))
 
         editor.changeBlock(0) { it.copy(rounds = it.rounds + 1) }
-        assertNull(repository.active.value?.plan)
+        assertNull(repository.sessions.active.value?.plan)
     }
 }

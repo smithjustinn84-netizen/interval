@@ -37,8 +37,8 @@ class LiftDetailViewModelTest {
 
     private fun viewModel(uid: String) = LiftDetailViewModel(
         uid,
-        repository,
-        repository,
+        repository.sessions,
+        repository.programs,
         FixedTimestampFormatter,
         health,
     )

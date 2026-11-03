@@ -53,9 +53,16 @@ class HistoryViewModelTest : MainDispatcherTest() {
     private val lift = FakeLiftStorage()
     private val bells = lift.repository(now = { clock })
     private val viewModel by lazy {
-        HistoryViewModel(repository, repository, repository, repository, bells, FixedTimestampFormatter, clock = {
-            clock
-        }, computation = dispatcher)
+        HistoryViewModel(
+            repository,
+            repository,
+            repository,
+            repository,
+            bells.sessions,
+            FixedTimestampFormatter,
+            clock = { clock },
+            computation = dispatcher,
+        )
     }
 
     private fun at(day: Long) {
@@ -168,7 +175,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `the program followed on Lift is up next today with its next day`() {
-        bells.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
+        bells.programs.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
 
         val state = viewModel.state.value
         val next = assertIs<UpNextItem.Lift>(state.upNext.single())
@@ -185,7 +192,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
         val ladders = ProgramKey.BuiltIn(ProgramId.PressLadders)
         // Followed first thing, so the session after it counts as its first day.
         clock = TODAY * DAY_MILLIS
-        bells.follow(ladders)
+        bells.programs.follow(ladders)
         val finished = noonOf(TODAY)
         clock = finished
         lift.finished("b1", "Press ladders", finished - 1_000_000, finished, 16.0 to 6, program = ladders)
@@ -198,7 +205,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `plans of the program's next day are up next with the days the program comes to`() {
-        bells.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
+        bells.programs.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
         repository.planWeekly(PlanWorkout.Lift.ProgramDay, setOf(4, 5))
 
         val upNext = viewModel.state.value.upNext
@@ -223,7 +230,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
     @Test
     fun `the program day comes before an interval plan on the same day`() {
         repository.planOnce(hiit.asPlan(), TODAY)
-        bells.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
+        bells.programs.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
 
         val upNext = viewModel.state.value.upNext
         assertIs<UpNextItem.Lift>(upNext[0])
@@ -238,8 +245,8 @@ class HistoryViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `a session in progress makes the program day a resume`() {
-        bells.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
-        bells.startSession()
+        bells.programs.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
+        bells.sessions.startSession()
 
         assertTrue(assertIs<UpNextItem.Lift>(viewModel.state.value.upNext.single()).resume)
     }
@@ -249,7 +256,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
         val ladders = ProgramKey.BuiltIn(ProgramId.PressLadders)
         viewModel.startLift(ladders)
 
-        assertEquals(ladders, bells.active.value?.program)
+        assertEquals(ladders, bells.sessions.active.value?.program)
     }
 
     @Test
@@ -316,7 +323,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
                 repository,
                 repository,
                 repository,
-                bells,
+                bells.sessions,
                 FixedTimestampFormatter,
                 clock = { clock },
                 savedState = saved,
@@ -357,9 +364,16 @@ class HistoryViewModelTest : MainDispatcherTest() {
         clock = sunday * DAY_MILLIS + DAY_MILLIS - 1_000
         repository.recordWorkout(tabata, tabata.totalSeconds)
         val viewModel =
-            HistoryViewModel(repository, repository, repository, repository, bells, FixedTimestampFormatter, clock = {
-                clock
-            }, computation = main)
+            HistoryViewModel(
+                repository,
+                repository,
+                repository,
+                repository,
+                bells.sessions,
+                FixedTimestampFormatter,
+                clock = { clock },
+                computation = main,
+            )
         assertEquals(listOf(HistoryDay.Today), viewModel.state.value.sections.map { it.day })
         assertEquals(1, viewModel.state.value.weekCount)
 
@@ -378,9 +392,16 @@ class HistoryViewModelTest : MainDispatcherTest() {
         repository.recordWorkout(tabata, tabata.totalSeconds)
         val computation = StandardTestDispatcher(testScheduler)
         val viewModel =
-            HistoryViewModel(repository, repository, repository, repository, bells, FixedTimestampFormatter, clock = {
-                clock
-            }, computation = computation)
+            HistoryViewModel(
+                repository,
+                repository,
+                repository,
+                repository,
+                bells.sessions,
+                FixedTimestampFormatter,
+                clock = { clock },
+                computation = computation,
+            )
         assertSame(HistoryUiState.Loading, viewModel.state.value)
         assertFalse(viewModel.state.value.isEmpty)
 

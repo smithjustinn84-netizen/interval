@@ -86,7 +86,7 @@ class SessionViewModelTest {
 
     /** The process's timers: every ViewModel a test makes shares them, as every session in a process does. */
     private val timers =
-        SessionTimers(repository, WallClock { now }, TestTimeSource(), RecordingBeeper(), keepAlive, timerScope)
+        SessionTimers(repository.sets, WallClock { now }, TestTimeSource(), RecordingBeeper(), keepAlive, timerScope)
 
     @AfterTest
     fun resetMainDispatcher() {
@@ -104,17 +104,17 @@ class SessionViewModelTest {
     private val healthScope = TestScope()
 
     private fun viewModel(savedState: SavedStateHandle = SavedStateHandle()) = SessionViewModel(
-        repository,
-        repository,
-        repository,
-        repository,
-        repository,
+        repository.sessions,
+        repository.sets,
+        repository.gear,
+        repository.programs,
+        repository.exercises,
         filterStore,
-        TodayPlanEditor(repository, repository, repository),
+        TodayPlanEditor(repository.sets, repository.programs, repository.gear),
         FinishSession(
-            repository,
-            repository,
-            repository,
+            repository.sessions,
+            repository.programs,
+            repository.gear,
             intervals,
             FixedTimestampFormatter,
             { now },
@@ -162,8 +162,8 @@ class SessionViewModelTest {
 
     @Test
     fun `a rest a killed process left goes on as the session opens`() {
-        repository.startSession()
-        repository.saveTimer(SavedTimer.Rest(now - 20_000, 60))
+        repository.sessions.startSession()
+        repository.sets.saveTimer(SavedTimer.Rest(now - 20_000, 60))
         viewModel().use {
             assertEquals(RestClock(60).at(20_000), clocks.value.rest)
             assertEquals(TimerRun.Rest(now - 20_000, now + 40_000), keepAlive.runs.last())
@@ -172,23 +172,23 @@ class SessionViewModelTest {
 
     @Test
     fun `an EMOM a killed process left goes on with its minutes done`() {
-        repository.startSession()
+        repository.sessions.startSession()
         val started = now - EmomClock.COUNT_IN_MILLIS - EmomClock.MINUTE_MILLIS - 20_000
-        repository.saveTimer(
+        repository.sets.saveTimer(
             SavedTimer.Emom(started, BuiltInExercise.Press, 16.0, 5, 3, Side.Left, false, null, setOf(1)),
         )
         viewModel().use {
             assertEquals(setOf(1), state.value.emom?.done)
             assertEquals(2, clocks.value.emomState?.minute)
             timers.emomSetDone()
-            assertEquals(listOf(Side.Right), repository.active.value?.sets?.map { it.side })
+            assertEquals(listOf(Side.Right), repository.sessions.active.value?.sets?.map { it.side })
         }
     }
 
     @Test
     fun `the sheet comes back as it was over the last set`() {
-        repository.startSession()
-        repository.logSet(BuiltInExercise.Press, 12.0, 5, Side.Left)
+        repository.sessions.startSession()
+        repository.sets.logSet(BuiltInExercise.Press, 12.0, 5, Side.Left)
         val savedState = SavedStateHandle()
         viewModel(savedState).use {
             draft.update { it.copy(exercise = BuiltInExercise.Snatch, bellKg = 20.0, reps = 7) }
@@ -229,7 +229,7 @@ class SessionViewModelTest {
 
     @Test
     fun `picking band work suggests its last band`() {
-        val heavy = repository.bands.value.last()
+        val heavy = repository.gear.bands.value.last()
         earlier(1, BuiltInExercise.BandPullApart, 0.0, band = heavy.id)
         viewModel().use {
             draft.update { it.copy(exercise = BuiltInExercise.BandPullApart) }
@@ -248,8 +248,8 @@ class SessionViewModelTest {
 
     @Test
     fun `the load steps among the owned bells and stops at the ends`() {
-        repository.setOwned(16.0, owned = true)
-        repository.setOwned(24.0, owned = true)
+        repository.gear.setOwned(16.0, owned = true)
+        repository.gear.setOwned(24.0, owned = true)
         viewModel().use {
             assertEquals(16.0, state.value.draft.bellKg)
             draft.stepLoad(1)
@@ -264,7 +264,7 @@ class SessionViewModelTest {
 
     @Test
     fun `the bar steps by its plates and never below the bar`() {
-        repository.setBar(20.0)
+        repository.gear.setBar(20.0)
         viewModel().use {
             draft.update { it.copy(exercise = BuiltInExercise.BarbellDeadlift) }
             assertEquals(20.0, state.value.draft.barKg)
@@ -277,7 +277,7 @@ class SessionViewModelTest {
 
     @Test
     fun `a band steps among the bands offered and the mat has no load to step`() {
-        val offered = repository.bands.value
+        val offered = repository.gear.bands.value
         viewModel().use {
             draft.update { it.copy(exercise = BuiltInExercise.BandPullApart) }
             val at = offered.indexOfFirst { it.id == state.value.draft.band.id }
@@ -296,7 +296,7 @@ class SessionViewModelTest {
         viewModel().use {
             draft.update { it.copy(exercise = BuiltInExercise.Press, side = Side.Left) }
             logSet()
-            assertEquals(1, repository.active.value?.sets?.size)
+            assertEquals(1, repository.sessions.active.value?.sets?.size)
             assertEquals(BuiltInExercise.Press, state.value.draft.exercise)
             assertEquals(Side.Right, state.value.draft.side)
         }
@@ -388,7 +388,7 @@ class SessionViewModelTest {
     fun `a rest steps no shorter than its least`() {
         viewModel().use {
             repeat(RestClock.DEFAULT_SECONDS / RestClock.STEP_SECONDS + 2) { stepRest(-1) }
-            assertEquals(RestClock.MIN_SECONDS, repository.restSeconds.value)
+            assertEquals(RestClock.MIN_SECONDS, repository.sets.restSeconds.value)
         }
     }
 
@@ -420,10 +420,10 @@ class SessionViewModelTest {
     @Test
     fun `a free session is free and a program day is not`() {
         viewModel().use { assertTrue(state.value.free) }
-        repository.discardSession()
+        repository.sessions.discardSession()
         val program = ProgramKey.BuiltIn(ProgramId.FirstHundredSwings)
-        repository.follow(program)
-        repository.startSession(program)
+        repository.programs.follow(program)
+        repository.sessions.startSession(program)
         viewModel().use {
             assertFalse(state.value.free)
             assertNotNull(state.value.upNext)
@@ -453,9 +453,9 @@ class SessionViewModelTest {
             logSet()
             assertTrue(state.value.recordSetIds.isEmpty())
 
-            repository.deleteSession(EARLIER)
+            repository.sessions.deleteSession(EARLIER)
 
-            val logged = assertNotNull(repository.active.value?.sets?.single())
+            val logged = assertNotNull(repository.sessions.active.value?.sets?.single())
             assertEquals(setOf(logged.id), state.value.recordSetIds)
         }
     }
@@ -467,7 +467,7 @@ class SessionViewModelTest {
             draft.update { it.copy(exercise = BuiltInExercise.Press) }
             assertEquals(1L, state.value.draftLastTime?.id)
 
-            repository.deleteSession(EARLIER)
+            repository.sessions.deleteSession(EARLIER)
 
             assertNull(state.value.draftLastTime)
         }
@@ -487,9 +487,9 @@ class SessionViewModelTest {
             val at = day * 1_000L
             SessionEntity("d$day", at, at + 1, "Day", at + 1, programId = goblets.stored, programDay = day)
         }
-        assertEquals(8, repository.programDay.value?.number)
-        repository.startSession(goblets)
-        repository.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
+        assertEquals(8, repository.programs.programDay.value?.number)
+        repository.sessions.startSession(goblets)
+        repository.sets.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
         viewModel().use {
             assertTrue(finish("Day 8"))
             assertEquals(program(ProgramId.GobletSquatRow), state.value.finished?.lastDayOf)
@@ -499,8 +499,8 @@ class SessionViewModelTest {
     @Test
     fun `changes to today's plan one after another each build on the last`() {
         val goblets = ProgramKey.BuiltIn(ProgramId.GobletSquatRow)
-        repository.follow(goblets)
-        repository.startSession(goblets)
+        repository.programs.follow(goblets)
+        repository.sessions.startSession(goblets)
         viewModel().use {
             val start = assertNotNull(state.value.upNext).bellKg
             stepNextLoad(1)
@@ -509,7 +509,7 @@ class SessionViewModelTest {
             val twice = assertNotNull(state.value.upNext).bellKg
             plan.changeBlock(0) { it.copy(rounds = it.rounds + 1) }
             assertTrue(start < once && once < twice)
-            val block = repository.active.value?.plan?.blocks?.first()?.block
+            val block = repository.sessions.active.value?.plan?.blocks?.first()?.block
             assertEquals(twice, block?.kg)
             assertEquals(4, block?.rounds)
         }
@@ -519,8 +519,8 @@ class SessionViewModelTest {
     fun `finishing a day before the last names no program finished`() {
         val goblets = ProgramKey.BuiltIn(ProgramId.GobletSquatRow)
         storage.following.row.value = FollowingEntity(programId = goblets.stored, startedAtEpochMillis = 0)
-        repository.startSession(goblets)
-        repository.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
+        repository.sessions.startSession(goblets)
+        repository.sets.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
         viewModel().use {
             assertTrue(finish("Day 1"))
             assertNull(state.value.finished?.lastDayOf)
@@ -531,10 +531,10 @@ class SessionViewModelTest {
     fun `a finished session goes to the health store with its sets and the app's calorie estimate`() {
         intervals.caloriesPerSecond = 0.1
         now = 100_000
-        repository.startSession(null)
+        repository.sessions.startSession(null)
         now = 130_000
-        repository.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
-        val uid = repository.active.value!!.uid
+        repository.sets.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
+        val uid = repository.sessions.active.value!!.uid
         now = 160_000
         viewModel().use { assertTrue(finish("Squats")) }
 
@@ -551,21 +551,21 @@ class SessionViewModelTest {
     @Test
     fun `a program day goes to the health store by the program's name and the session keeps its own`() {
         val goblets = ProgramKey.BuiltIn(ProgramId.GobletSquatRow)
-        repository.follow(goblets)
-        repository.startSession(goblets)
-        repository.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
+        repository.programs.follow(goblets)
+        repository.sessions.startSession(goblets)
+        repository.sets.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
         viewModel().use {
             assertEquals(1, state.value.programDay?.number)
             assertTrue(finish("Goblet squat", healthTitle = "Goblet squat and row · day 1"))
         }
         assertEquals("Goblet squat and row · day 1", health.workouts.single().title)
-        assertEquals("Goblet squat", repository.sessions.value.single().title)
+        assertEquals("Goblet squat", repository.sessions.sessions.value.single().title)
     }
 
     @Test
     fun `the summary's effort and note are kept with the session and shown on it`() {
-        repository.startSession(null)
-        repository.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
+        repository.sessions.startSession(null)
+        repository.sets.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
         viewModel().use {
             assertTrue(finish("Squats"))
             summary.setEffort(PerceivedEffort.Hard)
@@ -576,15 +576,15 @@ class SessionViewModelTest {
             assertEquals("Felt strong", finished.session.note)
             assertEquals("  Felt strong ", finished.note)
         }
-        val kept = repository.sessions.value.single()
+        val kept = repository.sessions.sessions.value.single()
         assertEquals(PerceivedEffort.Hard, kept.effort)
         assertEquals("Felt strong", kept.note)
     }
 
     @Test
     fun `the summary's words reach the health store after its screen is gone`() {
-        repository.startSession(null)
-        repository.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
+        repository.sessions.startSession(null)
+        repository.sets.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
         val viewModel = viewModel()
         viewModel.finish("Squats")
         viewModel.summary.setEffort(PerceivedEffort.AllOut)
@@ -603,7 +603,7 @@ class SessionViewModelTest {
 
     @Test
     fun `a session with no sets is discarded and goes nowhere`() {
-        repository.startSession(null)
+        repository.sessions.startSession(null)
         viewModel().use { assertFalse(finish("Nothing")) }
         assertTrue(health.workouts.isEmpty())
     }
