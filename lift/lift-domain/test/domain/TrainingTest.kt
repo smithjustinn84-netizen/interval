@@ -187,7 +187,7 @@ class TrainingTest {
             listOf(
                 "TwoHandSwing", "OneHandSwing", "Clean", "Press", "Snatch", "GetUp", "GobletSquat", "Row", "Jerk",
                 "LongCycle", "Halo", "FrontSquat", "ArmorBuildingComplex", "Deadlift", "HighPull", "RackedLunge",
-                "Windmill", "BottomsUpPress", "IronCardio",
+                "Windmill", "BottomsUpPress", "IronCardio", "CleanAndPress", "Thruster",
             ),
             kettlebellLifts.map { it.key },
         )
@@ -218,10 +218,10 @@ class TrainingTest {
     }
 
     @Test
-    fun `the starter catalogue has 94 exercises across five kinds of equipment`() {
+    fun `the starter catalogue has 96 exercises across five kinds of equipment`() {
         assertEquals(
             mapOf(
-                Equipment.Kettlebell to 19,
+                Equipment.Kettlebell to 21,
                 Equipment.Barbell to 20,
                 Equipment.Bodyweight to 22,
                 Equipment.Band to 15,
@@ -229,8 +229,8 @@ class TrainingTest {
             ),
             BuiltInExercise.entries.groupingBy { it.equipment }.eachCount(),
         )
-        assertEquals(BuiltInExercise.entries.take(19), kettlebellLifts)
-        assertEquals(BuiltInExercise.entries.drop(19).take(20), barbellLifts)
+        assertEquals(BuiltInExercise.entries.take(21), kettlebellLifts)
+        assertEquals(BuiltInExercise.entries.drop(21).take(20), barbellLifts)
     }
 
     @Test

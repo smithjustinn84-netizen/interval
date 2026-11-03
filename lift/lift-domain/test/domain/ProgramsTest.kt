@@ -182,6 +182,23 @@ class ProgramsTest {
     }
 
     @Test
+    fun `the fifteen-minute kettlebell plan alternates a three-lift circuit and a fifteen-minute EMOM`() {
+        val plan = program(ProgramId.FifteenMinuteKettlebell)
+        assertEquals(18, plan.totalDays)
+        val (strength, conditioning) = plan.days
+        assertEquals(
+            listOf(BuiltInExercise.FrontSquat, BuiltInExercise.CleanAndPress, BuiltInExercise.Row),
+            strength.map { it.exercise },
+        )
+        assertTrue(strength.all { it.double && it.rounds == 3 })
+        assertEquals(listOf(8 to 12, 6 to 12, 10 to 15), strength.map { it.reps to it.range?.top })
+        assertEquals(listOf(BuiltInExercise.TwoHandSwing, BuiltInExercise.Thruster), conditioning.map { it.exercise })
+        assertEquals(15, conditioning.sumOf { it.rounds })
+        assertTrue(conditioning.all { it.kind == BlockKind.Emom })
+        assertTrue(conditioning[1].double)
+    }
+
+    @Test
     fun `round conditioning is four six-minute rounds a day`() {
         program(ProgramId.RoundConditioning).days.forEach { day ->
             assertEquals(4, day.size)

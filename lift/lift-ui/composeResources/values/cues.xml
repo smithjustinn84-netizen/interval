@@ -95,6 +95,16 @@
         <item>Keep the bell in the rack for the squat</item>
         <item>Breathe at the top of each rep and find a steady pace</item>
     </string-array>
+    <string-array name="cues_clean_and_press">
+        <item>Clean the bell close to the body into a tight rack</item>
+        <item>Brace the glutes and abs, then press overhead to lockout</item>
+        <item>Lower to the rack before dropping into the next clean</item>
+    </string-array>
+    <string-array name="cues_thruster">
+        <item>Hold the bell at the chest by the horns, or rack a pair</item>
+        <item>Sit into a full squat with the chest up</item>
+        <item>Drive up hard and carry the momentum straight into a press overhead</item>
+    </string-array>
     <string-array name="cues_barbell_snatch">
         <item>Start with a wide grip and the hips higher than the knees</item>
         <item>Push the floor away, then extend hard through hips and knees</item>

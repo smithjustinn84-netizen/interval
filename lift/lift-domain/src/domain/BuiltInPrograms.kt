@@ -35,6 +35,7 @@ enum class ProgramId(val family: ProgramFamily = ProgramFamily.Classic) {
     IronCardio,
     SnatchTestPrep,
     LongCycleEmom,
+    FifteenMinuteKettlebell,
     GrapplerStrength(ProgramFamily.Grappling),
     RoundConditioning(ProgramFamily.Grappling),
     GripAndPull(ProgramFamily.Grappling),
@@ -262,6 +263,23 @@ val builtInPrograms: List<Program> = listOf(
                 Block(BuiltInExercise.Snatch, rounds = 5, reps = 10),
             ),
             listOf(Block(BuiltInExercise.LongCycle, rounds = 12, reps = 5, kind = BlockKind.Emom)),
+        ),
+        daysPerWeek = 3,
+        weeks = 6,
+    ),
+    // Two fifteen-minute days in turn: a strength circuit of three lifts, and swings and thrusters on the minute.
+    builtIn(
+        ProgramId.FifteenMinuteKettlebell,
+        days = listOf(
+            listOf(
+                Block(BuiltInExercise.FrontSquat, rounds = 3, reps = 8, double = true).upTo(12),
+                Block(BuiltInExercise.CleanAndPress, rounds = 3, reps = 6, double = true).upTo(12),
+                Block(BuiltInExercise.Row, rounds = 3, reps = 10, double = true).upTo(15),
+            ),
+            listOf(
+                Block(BuiltInExercise.TwoHandSwing, rounds = 8, reps = 15, kind = BlockKind.Emom).upTo(20),
+                Block(BuiltInExercise.Thruster, rounds = 7, reps = 5, kind = BlockKind.Emom, double = true).upTo(6),
+            ),
         ),
         daysPerWeek = 3,
         weeks = 6,

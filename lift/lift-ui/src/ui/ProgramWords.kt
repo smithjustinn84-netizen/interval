@@ -51,6 +51,8 @@ import dev.justinsmith.lift.ui.resources.program_day
 import dev.justinsmith.lift.ui.resources.program_days_count
 import dev.justinsmith.lift.ui.resources.program_easy_strength_name
 import dev.justinsmith.lift.ui.resources.program_easy_strength_summary
+import dev.justinsmith.lift.ui.resources.program_fifteen_minute_name
+import dev.justinsmith.lift.ui.resources.program_fifteen_minute_summary
 import dev.justinsmith.lift.ui.resources.program_first_hundred_name
 import dev.justinsmith.lift.ui.resources.program_first_hundred_summary
 import dev.justinsmith.lift.ui.resources.program_five_by_five_name
@@ -129,6 +131,7 @@ fun programName(id: ProgramId): String = stringResource(
         ProgramId.IronCardio -> Res.string.program_iron_cardio_name
         ProgramId.SnatchTestPrep -> Res.string.program_snatch_test_name
         ProgramId.LongCycleEmom -> Res.string.program_long_cycle_name
+        ProgramId.FifteenMinuteKettlebell -> Res.string.program_fifteen_minute_name
         ProgramId.GrapplerStrength -> Res.string.program_grappler_strength_name
         ProgramId.RoundConditioning -> Res.string.program_rounds_name
         ProgramId.GripAndPull -> Res.string.program_grip_pull_name
@@ -179,6 +182,7 @@ private fun programSummary(id: ProgramId): String = stringResource(
         ProgramId.IronCardio -> Res.string.program_iron_cardio_summary
         ProgramId.SnatchTestPrep -> Res.string.program_snatch_test_summary
         ProgramId.LongCycleEmom -> Res.string.program_long_cycle_summary
+        ProgramId.FifteenMinuteKettlebell -> Res.string.program_fifteen_minute_summary
         ProgramId.GrapplerStrength -> Res.string.program_grappler_strength_summary
         ProgramId.RoundConditioning -> Res.string.program_rounds_summary
         ProgramId.GripAndPull -> Res.string.program_grip_pull_summary

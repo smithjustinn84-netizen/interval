@@ -141,6 +141,12 @@ enum class BuiltInExercise(
     /** Iron Cardio: a clean, a press and a squat, as one rep; with two bells, double Iron Cardio. */
     IronCardio(Equipment.Kettlebell, perSide = true, Focus.FullBody),
 
+    /** A clean to the rack and a press overhead, as one rep; with two bells, the double clean and press. */
+    CleanAndPress(Equipment.Kettlebell, perSide = true, Focus.FullBody),
+
+    /** A front squat driven straight into a press overhead; with one bell, held by the horns at the chest. */
+    Thruster(Equipment.Kettlebell, perSide = false, Focus.FullBody),
+
     // Barbell: the Olympic lifts and their pulls and squats, then the strength lifts. Prefixed, so a key never
     // clashes with a bell lift's.
     BarbellSnatch(Equipment.Barbell, perSide = false, Focus.FullBody),

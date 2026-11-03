@@ -72,6 +72,8 @@ val BuiltInExercise.muscles: Muscles
         BuiltInExercise.Windmill -> works(Obliques, Shoulders) and listOf(Hamstrings, Glutes)
         BuiltInExercise.BottomsUpPress -> works(Shoulders, Forearms) and listOf(Triceps, Abs)
         BuiltInExercise.IronCardio -> works(Glutes, Shoulders, Quads) and listOf(Hamstrings, Triceps, Abs)
+        BuiltInExercise.CleanAndPress -> works(Glutes, Hamstrings, Shoulders) and listOf(Triceps, UpperBack, Forearms)
+        BuiltInExercise.Thruster -> works(Quads, Glutes, Shoulders) and listOf(Triceps, Abs, UpperBack)
         BuiltInExercise.BarbellSnatch -> works(Glutes, Quads, Hamstrings) and listOf(Traps, Shoulders, UpperBack)
         BuiltInExercise.BarbellCleanAndJerk -> works(Glutes, Quads, Shoulders) and listOf(Hamstrings, Traps, Triceps)
         BuiltInExercise.BarbellClean -> works(Glutes, Quads, Hamstrings) and listOf(Traps, UpperBack)

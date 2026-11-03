@@ -22,6 +22,9 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   change made just before leaving is no longer at risk: what the app keeps now lives as long as its process.
 
 ### Added
+- Lift: "15-minute kettlebell plan" under Classics, alternating a three-set strength day of double front squats,
+  clean and presses and rows with a 15-minute EMOM day of two-hand swings and double thrusters, three days a week
+  for six weeks, along with Clean and press and Thruster in the exercise library.
 - Apple Health (iOS): Settings connects it as Health Connect is on Android. Each workout and Lift session you
   finish is saved there as a workout, with its intervals or sets, pauses, calorie estimate and how hard it was;
   the weight sheet offers your latest weight from it, and a summary shows a watch's heart rate. Turned off in

@@ -46,6 +46,7 @@ import dev.justinsmith.lift.ui.resources.cues_burpee
 import dev.justinsmith.lift.ui.resources.cues_calf_raise
 import dev.justinsmith.lift.ui.resources.cues_chin_up
 import dev.justinsmith.lift.ui.resources.cues_clean
+import dev.justinsmith.lift.ui.resources.cues_clean_and_press
 import dev.justinsmith.lift.ui.resources.cues_criss_cross
 import dev.justinsmith.lift.ui.resources.cues_dead_bug
 import dev.justinsmith.lift.ui.resources.cues_deadlift
@@ -93,6 +94,7 @@ import dev.justinsmith.lift.ui.resources.cues_step_up
 import dev.justinsmith.lift.ui.resources.cues_swan
 import dev.justinsmith.lift.ui.resources.cues_swimming
 import dev.justinsmith.lift.ui.resources.cues_teaser
+import dev.justinsmith.lift.ui.resources.cues_thruster
 import dev.justinsmith.lift.ui.resources.cues_two_hand_swing
 import dev.justinsmith.lift.ui.resources.cues_wall_sit
 import dev.justinsmith.lift.ui.resources.cues_windmill
@@ -120,6 +122,8 @@ fun BuiltInExercise.cues(): StringArrayResource = when (this) {
     BuiltInExercise.Windmill -> Res.array.cues_windmill
     BuiltInExercise.BottomsUpPress -> Res.array.cues_bottoms_up_press
     BuiltInExercise.IronCardio -> Res.array.cues_iron_cardio
+    BuiltInExercise.CleanAndPress -> Res.array.cues_clean_and_press
+    BuiltInExercise.Thruster -> Res.array.cues_thruster
     BuiltInExercise.BarbellSnatch -> Res.array.cues_barbell_snatch
     BuiltInExercise.BarbellCleanAndJerk -> Res.array.cues_barbell_clean_and_jerk
     BuiltInExercise.BarbellClean -> Res.array.cues_barbell_clean

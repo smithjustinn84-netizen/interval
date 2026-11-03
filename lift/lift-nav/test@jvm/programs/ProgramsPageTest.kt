@@ -152,4 +152,25 @@ class ProgramsPageTest {
         onNodeWithText("Day 2 of 8 · week 1").assertExists()
         onNodeWithText("Day 1").assertExists()
     }
+
+    @Test
+    fun `the 15-minute kettlebell plan shows its strength circuit and its EMOM day`() = liftAppTest { app ->
+        onNodeWithText("Follow a program").performClick()
+        scrollToText("15-minute kettlebell plan")
+        onNodeWithText("15-minute kettlebell plan").performClick()
+        waitForText("Follow this program")
+        onNodeWithText("Front squat · Two bells").assertExists()
+        onNodeWithText("3 × 8 (8–12)").assertExists()
+        onNodeWithText("Clean and press · Two bells").assertExists()
+        onNodeWithText("3 × 6 (6–12)").assertExists()
+        onNodeWithText("Row · Two bells").assertExists()
+        onNodeWithText("3 × 10 (10–15)").assertExists()
+        onNodeWithText("Two-hand swing").assertExists()
+        onNodeWithText("15 every minute for 8 minutes (15–20)").assertExists()
+        onNodeWithText("Thruster · Two bells").assertExists()
+        onNodeWithText("5 every minute for 7 minutes (5–6)").assertExists()
+        onNodeWithText("Follow this program").performScrollTo().performClick()
+        waitForText("Day 1 of 18 · week 1")
+        assertEquals(ProgramId.FifteenMinuteKettlebell.name, app.storage.following.row.value?.programId)
+    }
 }

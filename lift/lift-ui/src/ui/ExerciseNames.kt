@@ -46,6 +46,7 @@ import dev.justinsmith.lift.ui.resources.exercise_burpee
 import dev.justinsmith.lift.ui.resources.exercise_calf_raise
 import dev.justinsmith.lift.ui.resources.exercise_chin_up
 import dev.justinsmith.lift.ui.resources.exercise_clean
+import dev.justinsmith.lift.ui.resources.exercise_clean_and_press
 import dev.justinsmith.lift.ui.resources.exercise_criss_cross
 import dev.justinsmith.lift.ui.resources.exercise_dead_bug
 import dev.justinsmith.lift.ui.resources.exercise_deadlift
@@ -93,6 +94,7 @@ import dev.justinsmith.lift.ui.resources.exercise_step_up
 import dev.justinsmith.lift.ui.resources.exercise_swan
 import dev.justinsmith.lift.ui.resources.exercise_swimming
 import dev.justinsmith.lift.ui.resources.exercise_teaser
+import dev.justinsmith.lift.ui.resources.exercise_thruster
 import dev.justinsmith.lift.ui.resources.exercise_two_hand_swing
 import dev.justinsmith.lift.ui.resources.exercise_wall_sit
 import dev.justinsmith.lift.ui.resources.exercise_windmill
@@ -120,6 +122,8 @@ internal fun BuiltInExercise.label(): StringResource = when (this) {
     BuiltInExercise.Windmill -> Res.string.exercise_windmill
     BuiltInExercise.BottomsUpPress -> Res.string.exercise_bottoms_up_press
     BuiltInExercise.IronCardio -> Res.string.exercise_iron_cardio
+    BuiltInExercise.CleanAndPress -> Res.string.exercise_clean_and_press
+    BuiltInExercise.Thruster -> Res.string.exercise_thruster
     BuiltInExercise.BarbellSnatch -> Res.string.exercise_barbell_snatch
     BuiltInExercise.BarbellCleanAndJerk -> Res.string.exercise_barbell_clean_and_jerk
     BuiltInExercise.BarbellClean -> Res.string.exercise_barbell_clean

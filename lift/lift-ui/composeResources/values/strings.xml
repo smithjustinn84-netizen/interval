@@ -39,6 +39,8 @@
     <string name="exercise_windmill">Windmill</string>
     <string name="exercise_bottoms_up_press">Bottoms-up press</string>
     <string name="exercise_iron_cardio">Iron Cardio</string>
+    <string name="exercise_clean_and_press">Clean and press</string>
+    <string name="exercise_thruster">Thruster</string>
     <string name="exercise_barbell_snatch">Barbell snatch</string>
     <string name="exercise_barbell_clean_and_jerk">Clean and jerk</string>
     <string name="exercise_barbell_clean">Barbell clean</string>
@@ -210,6 +212,8 @@
     <string name="program_snatch_test_summary">Snatches on the minute, alternating hands, and a day at the test's pace of 100 in 5 minutes · 3 days a week for 6 weeks</string>
     <string name="program_long_cycle_name">Long cycle EMOM</string>
     <string name="program_long_cycle_summary">Long cycles on the minute, alternating sides, with a day of jerks and snatches between · 3 days a week for 6 weeks</string>
+    <string name="program_fifteen_minute_name">15-minute kettlebell plan</string>
+    <string name="program_fifteen_minute_summary">Double front squats, clean and presses and rows for 3 sets one day; swings and double thrusters on the minute for 15 minutes the other · 3 days a week for 6 weeks</string>
     <string name="program_grappler_strength_name">Strength for the mat</string>
     <string name="program_grappler_strength_summary">Double front squats or deadlifts, rows, presses, get-ups and windmills, heavy and low in reps · 2 days a week for 8 weeks</string>
     <string name="program_rounds_name">Round conditioning</string>
