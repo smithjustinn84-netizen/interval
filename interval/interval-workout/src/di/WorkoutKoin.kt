@@ -1,6 +1,9 @@
 package dev.justinsmith.interval.di
 
+import androidx.compose.ui.graphics.toArgb
 import dev.justinsmith.interval.platform.ActiveWorkout
+import dev.justinsmith.interval.platform.StatusColors
+import dev.justinsmith.interval.ui.PhaseColors
 import dev.justinsmith.interval.workout.WorkoutRecorder
 import dev.justinsmith.interval.workout.WorkoutSession
 import dev.justinsmith.interval.workout.WorkoutTicker
@@ -14,8 +17,8 @@ import org.koin.dsl.module
 
 /**
  * The running workout, one per process: its [WorkoutSession], which the platform's off-screen keepers reach as the
- * [ActiveWorkout], with its clock and its recorder; and the page's ViewModel, for the route's id
- * (`parametersOf(id)`).
+ * [ActiveWorkout], with its clock and its recorder; the [StatusColors] they show it in, the phases' own; and the
+ * page's ViewModel, for the route's id (`parametersOf(id)`).
  */
 val workoutModule: Module = module {
     single { WorkoutTicker(get()) }.withOptions {
@@ -23,5 +26,10 @@ val workoutModule: Module = module {
     }
     single { WorkoutRecorder(get(), get(), get(), get(), get(), get(), get()) }
     single { WorkoutSession(get(), get(), get(), get(), get(), get(), get()) } bind ActiveWorkout::class
+    single {
+        with(PhaseColors) {
+            StatusColors(prep.toArgb(), work.toArgb(), rest.toArgb(), done.toArgb(), paused.toArgb())
+        }
+    }
     viewModel { (id: Long) -> WorkoutViewModel(id, get(), get()) }
 }

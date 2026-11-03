@@ -141,10 +141,24 @@ interface PlanReminderSource {
     suspend fun reschedule()
 }
 
+/**
+ * The colours a workout is shown in off screen, as ARGB: Android's notification and its progress bar, tinted by
+ * the phase. The design system's phase colours, which the app passes in so the platform draws without it.
+ */
+data class StatusColors(val prep: Int, val work: Int, val rest: Int, val done: Int, val paused: Int) {
+    /** [phase]'s colour; the warm-up shares get ready's, the cool-down rest's. */
+    fun of(phase: Phase): Int = when (phase) {
+        Phase.Prep, Phase.WarmUp -> prep
+        Phase.Work -> work
+        Phase.Rest, Phase.CoolDown -> rest
+        Phase.Done -> done
+    }
+}
+
 /*
- * Each platform's `platformModule` (Android's of a `Context`, iOS's and the desktop's of nothing) gives the Koin
- * definitions for the interval side's platform services: [PlatformStorage], a [CuePlayer], a [BackgroundWorkout]
- * and [PlanReminders]; the [ActiveWorkout] a [BackgroundWorkout] shows is the workout feature's. What both sides
- * take (the clock, the formatter, [AppInfo] and the sharer) is core's `corePlatformModule`. The app's entry point
- * builds it once per process.
+ * Each platform's `platformModule` (in `interval-platform`; Android's of a `Context`, iOS's and the desktop's of
+ * nothing) gives the Koin definitions for the services above: a [CuePlayer], a [BackgroundWorkout] and
+ * [PlanReminders], with the data module's `PlatformStorage`. The [ActiveWorkout] a [BackgroundWorkout] shows is
+ * the workout feature's, as are the [StatusColors]. What both sides take (the clock, the formatter, `AppInfo`
+ * and the sharer) is core's `corePlatformModule`. The app's entry point builds it once per process.
  */

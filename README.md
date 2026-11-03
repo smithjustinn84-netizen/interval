@@ -108,6 +108,7 @@ interval/
 ├── interval/            # The interval timer
 │   ├── interval-domain/   # Timer engine, workout state machine, calorie math, parsers
 │   ├── interval-data/     # Room database (AppDatabase), DataStore settings, repository
+│   ├── interval-platform-api/ # What the features ask of the platform: cue player, workout off screen, reminders
 │   ├── interval-platform/ # Audio/speech cues, Android Foreground Service, iOS notifications
 │   ├── interval-ui/       # Shared workout widgets, Timeline, PhaseColors, Splash
 │   ├── interval-testing/  # FakeStorage, RecordingCuePlayer, fake DAOs
@@ -119,7 +120,8 @@ interval/
 │
 ├── lift/                # Lift, the strength side (code in dev.justinsmith.lift)
 │   ├── lift-domain/     # Exercises, programs, EMOM/hold clocks, PRs
-│   ├── lift-data/       # Room database (LiftDatabase), repository, the ports to the interval side
+│   ├── lift-api/        # The ports to the interval side (LiftActivity, IntervalActivity)
+│   ├── lift-data/       # Room database (LiftDatabase), repository
 │   ├── lift-platform/   # Beeper, rest alert service, platform Koin module
 │   ├── lift-ui/         # Lift widgets, exercise formatters, cues mapping
 │   ├── lift-testing/    # FakeLiftStorage, RecordingBeeper, fake DAOs

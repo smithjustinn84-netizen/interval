@@ -1,0 +1,18 @@
+# What the interval side asks of the platform, with nothing of the platform's in it: the cue player and its
+# sounds, words and vibrations, `playCue` (a cue into them, by the user's switches), the workout as the platform
+# sees it off screen (`ActiveWorkout`, `BackgroundWorkout`, `WorkoutStatus`, `StatusColors`) and the plan's
+# reminders. The features and the fakes take this; only the app sees `interval-platform`, which implements it.
+description: "Interval platform contracts: cues, the workout off screen, plan reminders"
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/tested-lib.module-template.yaml
+
+dependencies:
+  - //interval/interval-domain: exported
+  - $libs.kotlinx.coroutines.core: exported
+
+test-dependencies:
+  - //interval/interval-testing

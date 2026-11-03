@@ -483,6 +483,17 @@ planned `Load` could take next.
 **Recommendation.** A sealed `Load` type (`Bell`, `Bar`, `Band`, `Bodyweight`), with behaviour on the type.
 
 ### G2 · Low · Exported dependencies widen API surfaces
+
+**Resolved** in change `zurwuryr` ("Architecture: interval-platform-api and lift-api; the workout's notification
+coloured in ARGB"): `interval-platform-api` holds the platform's contracts (`CuePlayer` and its cues, `playCue`,
+`ActiveWorkout`, `BackgroundWorkout`, `WorkoutStatus`, `StatusColors`, the plan's reminders) over
+`interval-domain`; `interval-platform` implements it and no longer exports `interval-data`, so `interval-settings`
+names the data module it uses, and only `app` sees the platform. `lift-api` holds `LiftActivity`,
+`IntervalActivity` and `IntervalWorkout` over `lift-domain`; `interval-workout` and `interval-history` take it
+in place of `lift-data`. `check_module_rules.py` has an `api` kind (no Compose, over a domain only), lets the
+interval side use Lift's domain, api and ui but not its storage, and keeps features off a platform that has an
+api module. `PlatformStorage` stays in `interval-data`, which names its `AppDatabase`.
+
 - `interval-platform` exports `interval-data` (Room and DataStore) because `PlatformStorage` lives in data. So
   `interval-settings` reaches `IntervalRepository` only through `interval-platform`.
 - `interval-workout` and `interval-history` take all of `lift-data` for `LiftActivity`.
@@ -491,6 +502,11 @@ planned `Load` could take next.
 cross-side ports, and `exported` only where a module's API really names the dependency.
 
 ### G3 · Low · A platform service draws with the design system
+
+**Resolved** in the same change: `WorkoutService` injects `StatusColors` (ARGB per phase, and paused), which
+`workoutModule` binds from `PhaseColors`. `interval-platform` now depends on `core-platform` rather than `core`,
+and takes no `$compose.ui`.
+
 `WorkoutService` imports Compose's `Color` and `PhaseColors`. Pass the colours in as ARGB, or give the platform a
 non-Compose token.
 

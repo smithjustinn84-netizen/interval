@@ -52,7 +52,12 @@ graph TD
 
     subgraph Data ["Data"]
         IntervalData["interval-data (Room, DataStore)"]
-        LiftData["lift-data (Room, LiftActivity, IntervalActivity)"]
+        LiftData["lift-data (Room)"]
+    end
+
+    subgraph Api ["Contracts"]
+        IntervalPlatformApi["interval-platform-api (CuePlayer, ActiveWorkout, PlanReminders)"]
+        LiftApi["lift-api (LiftActivity, IntervalActivity)"]
     end
 
     subgraph Pure ["Pure layers"]
@@ -76,16 +81,17 @@ graph TD
 
     Timer --> Presets
     Workout --> Presets
-    Workout --> IntervalPlatform
-    Workout --> LiftData
+    Workout --> IntervalPlatformApi
+    Workout --> LiftApi
     Presets --> IntervalData
     Presets --> IntervalUI
-    Settings --> IntervalPlatform
+    Settings --> IntervalData
+    Settings --> IntervalPlatformApi
     Settings --> IntervalUI
     History --> IntervalData
     History --> IntervalUI
-    History --> IntervalPlatform
-    History --> LiftData
+    History --> IntervalPlatformApi
+    History --> LiftApi
     History --> LiftUI
 
     LiftNav --> LiftToday
@@ -104,8 +110,12 @@ graph TD
     LiftUI --> LiftDomain
     Core --> CorePlatform
 
+    IntervalPlatform --> IntervalPlatformApi
     IntervalPlatform --> IntervalData
-    IntervalPlatform --> Core
+    IntervalPlatform --> CorePlatform
+    IntervalPlatformApi --> IntervalDomain
+    LiftData --> LiftApi
+    LiftApi --> LiftDomain
     LiftPlatform --> LiftData
     LiftPlatform --> CorePlatform
 
@@ -132,9 +142,13 @@ container; those edges are left out for legibility. `tools/check_module_rules.py
 2. **Domain Decoupling**: The kettlebell domain (`lift-*`) has zero dependencies on the interval domain (`interval-*`),
    and the two domain modules know nothing of each other: History turns a Lift session into interval's `LiftWorkout`.
    Where cross-domain interaction is needed (e.g. History counting Lift sessions or Today showing workout recaps),
-   it is mediated via minimal interfaces in `lift-data`: `IntervalActivity` (what Lift reads of the interval side,
+   it is mediated via minimal interfaces in `lift-api`: `IntervalActivity` (what Lift reads of the interval side,
    implemented in `app`) and `LiftActivity` (what History, Plan and the workout read of Lift, implemented by
-   `SessionRepository`).
+   `SessionRepository`). The interval side depends on `lift-api`, never on `lift-data`.
+   The same goes for the platform: the interval features take `interval-platform-api` (the cue player, the
+   workout off screen, the plan's reminders), and only `app` sees `interval-platform`, which implements it. The
+   platform draws nothing of the design system: the workout's notification takes its colours as ARGB
+   (`StatusColors`, bound by the workout feature from `PhaseColors`).
 3. **Pure Domains**: `interval-domain` and `lift-domain` contain only pure Kotlin models and calculation engines.
    They have no dependencies on Compose, Android, or third-party persistence libraries.
 4. **Offline-First & Local-Only**: All user data resides on device. There is no remote backend, telemetry, or user
@@ -213,9 +227,9 @@ Each module applies a reusable template from `templates/`:
 | **App Targets** | `androidApp`, `iosApp`, `desktopApp` | Platform entry points, manifests, splash/launch assets, packaging. |
 | **Container** | `app` | Application entry (`App.kt`), Navigation 3 routing table, Koin graph assembly, root theme host. |
 | **Core** | `core`, `core-platform`, `core-time`, `core-testing` | Design tokens (`Spacing`, `Radius`, `Sizes`, `Motion`), `IntervalTheme`, navigation primitives; the clocks, timestamp formatter and storage utilities in `core-platform`, which has no Compose so the data modules (and their Room KSP) don't rebuild on a UI change; calendar and clock maths in `core-time`, which has no dependencies so the domains compile without Compose; UI test harness. |
-| **Interval Domain & Data** | `interval-domain`, `interval-data`, `interval-platform` | Timer calculation engine, Room database, DataStore preferences, audio/speech cues, Android Foreground Service, iOS notifications. |
+| **Interval Domain & Data** | `interval-domain`, `interval-data`, `interval-platform-api`, `interval-platform` | Timer calculation engine, Room database, DataStore preferences, audio/speech cues, Android Foreground Service, iOS notifications. |
 | **Interval Features** | `interval-timer`, `interval-workout`, `interval-presets`, `interval-history`, `interval-settings`, `interval-ui` | Timer tab, active workout screen, preset management, history calendar & routines plan, settings, shared workout components. |
-| **Lift Domain & Data** | `lift-domain`, `lift-data`, `lift-platform` | Kettlebell exercises, training programs, EMOM/hold timers, Room database; the EMOM beeper and rest alert services in `lift-platform`. |
+| **Lift Domain & Data** | `lift-domain`, `lift-api`, `lift-data`, `lift-platform` | Kettlebell exercises, training programs, EMOM/hold timers, the ports to the interval side (`lift-api`), Room database; the EMOM beeper and rest alert services in `lift-platform`. |
 | **Lift Features** | `lift-nav`, `lift-today`, `lift-session`, `lift-library`, `lift-ui` | Lift navigation registry, Lift tab & gear, active session logger & timers, exercise library & editor, shared Lift UI. |
 | **Test Fakes** | `interval-testing`, `lift-testing` | In-memory storage, recording cue players, fake DAOs, and mock platform services for tests. |
 | **Toolchain Plugins** | `lint-plugin`, `detekt-plugin` | Kotlin Toolchain task plugins for ktlint formatting and Detekt static analysis. |

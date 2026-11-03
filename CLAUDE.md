@@ -104,9 +104,12 @@ interval/            the interval timer
                      makes a `LiftWorkout` from a Lift session, `asLiftWorkouts` in interval-history)
   interval-data      `IntervalRepository`, `AppDatabase` (Room, KSP, `schemas/`), the settings DataStore,
                      `PlatformStorage`, `storageModule`/`dataModule` (di/)
-  interval-platform  `CuePlayer`, `ActiveWorkout`, `BackgroundWorkout`, `PlanReminders` (+ `reminderWords`),
-                     `SpeechQueue`, `playCue`, and each platform's `platformModule` with its storage,
-                     player, `WorkoutService` and `PlanReminderReceiver` (android)
+  interval-platform-api  what the features ask of the platform, over `interval-domain` and no Compose:
+                     `CuePlayer` (`Beep`, `Speech`, `Haptic`), `playCue`, `ActiveWorkout`, `BackgroundWorkout`,
+                     `WorkoutStatus`, `StatusColors` (the notification's ARGB), `PlanReminders`, `PlanReminderSource`
+  interval-platform  implements it: `reminderWords`, `SpeechQueue`, `StatusBar`, and each platform's
+                     `platformModule` with its storage, player, `WorkoutService` and `PlanReminderReceiver`
+                     (android). Over `core-platform`, not `core`; only `app` depends on it
   interval-ui        the workout's shared words and widgets (`ConfigText`, `FieldRow`, `ValueSheet`, `Timeline`,
                      `WeekdayForm`, `ActivitySheet`, `StartButton`, `DescribeHint`), `PhaseColorsOf`, the intro
                      (splash/: `WithIntro`, `IntervalMark`)
@@ -124,11 +127,13 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
   lift-domain        Lift's pure domain (`dev.justinsmith.lift.domain`): exercises, programs, sets and
                      sessions, a set's `Load` (sealed: bell, bar, bodyweight, band, mat), records,
                      `EmomClock`/`HoldClock`/`RestClock`, suggestions. No dependencies
+  lift-api           the ports between the sides, package `dev.justinsmith.lift.data`: `IntervalActivity` (what
+                     Lift reads of the interval side; `app` binds it), `LiftActivity` (what the interval side reads
+                     of Lift; `SessionRepository` is it). Over `lift-domain` alone
   lift-data          `LiftRepository`, the root of a repository per store (`SessionRepository`, `SetRepository`,
                      `ProgramRepository`, `ExerciseRepository`, `GearRepository`, over one `SerialWriter`; the
-                     mappers in `LiftMappers.kt`), `LiftDatabase` (Room, KSP, `schemas/`), `IntervalActivity` (what
-                     Lift reads of the interval side; `app` binds it), `LiftActivity` (what the interval side reads
-                     of Lift; `SessionRepository` is it), `liftModules` (di/). No Compose
+                     mappers in `LiftMappers.kt`), `LiftDatabase` (Room, KSP, `schemas/`), `liftModules` (di/);
+                     exports `lift-api`. No Compose
   lift-platform      `Beeper`, `SessionKeepAlive` and its `TimerRun` (+ Android's `TimerService`), the `ActiveTimers`
                      port, the timers' notification words, and each platform's `liftPlatformModule` (the database
                      builder too); Lift's `interval-platform`
@@ -162,11 +167,13 @@ tooling/
   lint-plugin        Toolchain task plugin: runs ktlint checks and auto-formatting (`./kotlin check lint`, `./kotlin do format`)
 ```
 Dependencies point toward `core/`: a feature depends on its side's `*-ui`, `*-data` and `*-domain` (through
-`exported`), `app` on every feature and `lift-nav`, the interval side on `lift-data`/`lift-domain`/`lift-ui`
-where History and the workout count Lift's sessions (their ViewModels take `LiftActivity`, never the whole
-`LiftRepository`), and `lift-nav` never on anything of the interval side. `tools/check_module_rules.py`
-enforces this in CI: `lift/` never sees `interval/`, the pure layers (`core-time`, `core-platform`, the domains
-and data modules) take no Compose, the data modules depend on `core-platform` rather than `core`, the
+`exported`), `app` on every feature and `lift-nav`, the interval side on `lift-api`/`lift-domain`/`lift-ui`
+where History and the workout count Lift's sessions (their ViewModels take `LiftActivity`, never Lift's
+storage), the interval features on `interval-platform-api` (only `app` sees `interval-platform`), and `lift-nav`
+never on anything of the interval side. `tools/check_module_rules.py`
+enforces this in CI: `lift/` never sees `interval/`, the pure layers (`core-time`, `core-platform`, the domains,
+the `*-api` modules and the data modules) take no Compose, an `*-api` module depends on a domain alone, a
+feature never depends on a platform module that has an `*-api`, the data modules depend on `core-platform` rather than `core`, the
 `*-testing` modules appear only under `test-dependencies`, a feature depends on another only where its
 `FEATURE_EDGES` lists the pair (`interval-timer` and `interval-workout` on `interval-presets`, `lift-session` on
 `lift-library`), every library applies a template, and no source under `interval/` names `LiftRepository`. The

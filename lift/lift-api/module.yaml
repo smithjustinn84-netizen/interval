@@ -1,0 +1,14 @@
+# The ports between the two sides: `LiftActivity` (what the interval side reads of Lift; `lift-data`'s
+# `SessionRepository` is it) and `IntervalActivity` (what Lift reads of the interval side; the app binds it).
+# History and the workout depend on this, not on Lift's storage.
+description: "Lift's ports to the interval side: LiftActivity and IntervalActivity"
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/lib.module-template.yaml
+
+dependencies:
+  - //lift/lift-domain: exported
+  - $libs.kotlinx.coroutines.core: exported

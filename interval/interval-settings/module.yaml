@@ -8,7 +8,8 @@ apply:
   - //templates/compose-lib.module-template.yaml
 
 dependencies:
-  - //interval/interval-platform: exported
+  - //interval/interval-platform-api
+  - //interval/interval-data
   - //interval/interval-ui: exported
 
 test-dependencies:

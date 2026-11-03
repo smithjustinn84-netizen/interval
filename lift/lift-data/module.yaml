@@ -13,6 +13,8 @@ apply:
 
 dependencies:
   - //lift/lift-domain: exported
+  # Exported: `SessionRepository` is the `LiftActivity` port, and Lift's screens take `IntervalActivity`.
+  - //lift/lift-api: exported
   - //core/core-platform
   - $libs.koin.core
   - $libs.kermit

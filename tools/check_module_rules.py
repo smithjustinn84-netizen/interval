@@ -2,14 +2,16 @@
 """Fails when a module depends on one it shouldn't, by the rules CLAUDE.md's "Modules" section describes.
 
 Each module has a side (its folder: core, interval, lift, apps, tooling) and a kind (time, core-platform, core,
-core-testing, domain, data, platform, ui, testing, feature, entry, app, host). The rules:
+core-testing, domain, api, data, platform, ui, testing, feature, entry, app, host). The rules:
 - sides: core sees only core; interval sees interval, lift and core; lift sees lift and core, never interval;
   apps sees the rest; tooling sees nothing. Test dependencies follow this rule too.
 - kinds: each kind may depend on the kinds below it (`ALLOWED`). A feature depends on another feature only
-  where `FEATURE_EDGES` lists the pair; interval may use only Lift's domain, data and ui.
+  where `FEATURE_EDGES` lists the pair; interval may use only Lift's domain, api and ui, never its storage.
+- a platform with an api module (`interval-platform-api`) is seen through it: features and ui take the api,
+  and only the app, the testing modules and the platform's own tests see the platform.
 - the `*-testing` modules and `core-testing` are for `test-dependencies`, outside the testing modules. Any other
   test dependency is one the module's `dependencies` could take.
-- the pure layers (time, core-platform, domain, data) take no Compose: no `$compose.*`, `$libs.compose.*` or
+- the pure layers (time, core-platform, domain, api, data) take no Compose: no `$compose.*`, `$libs.compose.*` or
   `$libs.koin.compose`, no `compose-lib`, and no `settings: compose: enabled`.
 - every library (all but the hosts and the tooling plugins) applies a template from `templates/`.
 - no source under `interval/*/src*` names `LiftRepository`: the interval side reads Lift through `LiftActivity`.
@@ -45,13 +47,16 @@ ALLOWED = {
     "core-testing": {"time", "core-platform", "core"},
     # The two domains stand apart: a Lift session becomes interval's `LiftWorkout` in interval-history.
     "domain": {"time"},
-    "data": {"time", "core-platform", "domain"},
-    "platform": FOUNDATION | {"domain", "data"},
-    "ui": FOUNDATION | {"domain"},
-    "testing": FOUNDATION | {"core-testing", "domain", "data", "platform", "testing"},
-    "feature": FOUNDATION | {"domain", "data", "platform", "ui", "feature"},
-    "entry": FOUNDATION | {"domain", "data", "platform", "ui", "feature"},
-    "app": FOUNDATION | {"domain", "data", "platform", "ui", "feature", "entry"},
+    # The contracts a side offers: the platform's services (`interval-platform-api`), the ports between the sides
+    # (`lift-api`). Over a domain, with nothing of the platform's or the storage's.
+    "api": {"time", "domain"},
+    "data": {"time", "core-platform", "domain", "api"},
+    "platform": FOUNDATION | {"domain", "api", "data"},
+    "ui": FOUNDATION | {"domain", "api"},
+    "testing": FOUNDATION | {"core-testing", "domain", "api", "data", "platform", "testing"},
+    "feature": FOUNDATION | {"domain", "api", "data", "platform", "ui", "feature"},
+    "entry": FOUNDATION | {"domain", "api", "data", "platform", "ui", "feature"},
+    "app": FOUNDATION | {"domain", "api", "data", "platform", "ui", "feature", "entry"},
     "host": {"app"},
     "tooling": set(),
 }
@@ -64,11 +69,13 @@ FEATURE_EDGES = {
     ("lift-session", "lift-library"),
 }
 
-# What the interval side may use of Lift's: never its features, platform or navigation.
-CROSS_SIDE_KINDS = {"domain", "data", "ui"}
+# What the interval side may use of Lift's: its ports, never its storage, features, platform or navigation.
+CROSS_SIDE_KINDS = {"domain", "api", "ui"}
+# Who may see a platform that has an api module; everyone else takes the api.
+PLATFORM_SEERS = {"app", "testing"}
 
 TEST_ONLY = {"testing", "core-testing"}
-NO_COMPOSE = {"time", "core-platform", "domain", "data"}
+NO_COMPOSE = {"time", "core-platform", "domain", "api", "data"}
 # What brings Compose in under `dependencies`.
 COMPOSE_PREFIXES = ("$compose.", "$libs.compose.", "$libs.koin.compose")
 # The kinds that apply no template: the hosts are applications, the tooling plugins build plugins.
@@ -77,7 +84,7 @@ UNTEMPLATED = {"host", "tooling"}
 LIFT_REPOSITORY = re.compile(r"\bLiftRepository\b")
 
 CORE_KINDS = {"core-time": "time", "core-platform": "core-platform", "core": "core", "core-testing": "core-testing"}
-SUFFIX_KINDS = {"domain", "data", "platform", "ui", "testing"}
+SUFFIX_KINDS = {"domain", "api", "data", "platform", "ui", "testing"}
 
 
 @dataclass
@@ -88,6 +95,11 @@ class Module:
     test_deps: set[str] = field(default_factory=set)  # module names under `test-dependencies*`
     compose: list[str] = field(default_factory=list)  # what brings Compose in, if anything
     templates: list[str] = field(default_factory=list)  # its own `apply:` entries
+
+
+def a(kind: str) -> str:
+    """[kind] with its article: "a data", "an api"."""
+    return f"{'an' if kind[0] in 'aeiou' else 'a'} {kind}"
 
 
 def kind_of(name: str, side: str) -> str:
@@ -205,18 +217,20 @@ def check(modules: dict[str, Module]) -> list[str]:
                 continue
             if test:
                 if dep_kind not in TEST_ONLY and dep_kind not in ALLOWED[kind]:
-                    problems.append(f"{where}: a {kind} module's tests don't depend on a {dep_kind} module")
+                    problems.append(f"{where}: {a(kind)} module's tests don't depend on {a(dep_kind)} module")
                 continue
             if dep_kind in TEST_ONLY and kind not in {"testing", "core-testing"}:
                 problems.append(f"{where}: a testing module belongs under test-dependencies")
             elif dep_kind not in ALLOWED[kind]:
-                problems.append(f"{where}: a {kind} module doesn't depend on a {dep_kind} module")
+                problems.append(f"{where}: {a(kind)} module doesn't depend on {a(dep_kind)} module")
             elif module.side == "interval" and dep.side == "lift" and dep_kind not in CROSS_SIDE_KINDS:
-                problems.append(f"{where}: the interval side uses only Lift's domain, data and ui")
+                problems.append(f"{where}: the interval side uses only Lift's domain, api and ui")
+            elif dep_kind == "platform" and f"{dep.name}-api" in modules and kind not in PLATFORM_SEERS:
+                problems.append(f"{where}: {a(kind)} module takes {dep.name}-api, not the platform")
             elif kind == "feature" and dep_kind == "feature" and (module.name, dep.name) not in FEATURE_EDGES:
                 problems.append(f"{where}: features don't depend on each other (add it to FEATURE_EDGES if it must)")
         if kind in NO_COMPOSE and module.compose:
-            problems.append(f"{module.name}: a {kind} module takes no Compose ({', '.join(sorted(set(module.compose)))})")
+            problems.append(f"{module.name}: {a(kind)} module takes no Compose ({', '.join(sorted(set(module.compose)))})")
         if kind not in UNTEMPLATED and not module.templates:
             problems.append(f"{module.name}: a library applies a template from templates/")
     return problems
@@ -243,16 +257,20 @@ def self_test() -> None:
             fake("core", "core", ["core-platform", "core-time"], compose=["$compose.ui"]),
             fake("core-testing", "core", ["core"]),
             fake("lift-domain", "lift"),
-            fake("lift-data", "lift", ["lift-domain", "core-platform"]),
+            fake("lift-api", "lift", ["lift-domain"]),
+            fake("lift-data", "lift", ["lift-domain", "lift-api", "core-platform"]),
             fake("lift-ui", "lift", ["lift-domain", "core"]),
             fake("lift-library", "lift", ["lift-data", "lift-ui", "core"]),
             fake("interval-domain", "interval", ["core-time"]),
             fake("interval-data", "interval", ["interval-domain", "core-platform"]),
-            fake("interval-testing", "interval", ["interval-data", "core-testing"]),
+            fake("interval-platform-api", "interval", ["interval-domain"], ["interval-testing"]),
+            fake("interval-platform", "interval", ["interval-platform-api", "interval-data", "core-platform"]),
+            fake("interval-testing", "interval", ["interval-platform-api", "interval-data", "core-testing"]),
             fake("interval-presets", "interval", ["interval-data", "core"], ["interval-testing"]),
             fake("interval-timer", "interval", ["interval-presets", "core"]),
-            fake("interval-settings", "interval", ["interval-data", "core"]),
-            fake("app", "apps", ["interval-timer", "lift-library", "core"], ["interval-testing"]),
+            fake("interval-settings", "interval", ["interval-data", "interval-platform-api", "core"]),
+            fake("interval-history", "interval", ["interval-data", "lift-api", "lift-domain", "lift-ui", "core"]),
+            fake("app", "apps", ["interval-timer", "interval-platform", "lift-library", "core"], ["interval-testing"]),
             fake("androidApp", "apps", ["app"]),
         ]
     }
@@ -267,7 +285,11 @@ def self_test() -> None:
         "the domains stand apart": ("interval-domain", "deps", "lift-domain", "doesn't depend on a domain module"),
         "testing only under tests": ("interval-presets", "deps", "interval-testing", "belongs under test-dependencies"),
         "features stand alone": ("interval-settings", "deps", "interval-presets", "features don't depend on each other"),
-        "no Lift features on interval": ("interval-timer", "deps", "lift-library", "uses only Lift's domain, data and ui"),
+        "no Lift features on interval": ("interval-timer", "deps", "lift-library", "uses only Lift's domain, api and ui"),
+        "no Lift storage on interval": ("interval-history", "deps", "lift-data", "uses only Lift's domain, api and ui"),
+        "features take the platform's api": ("interval-settings", "deps", "interval-platform", "takes interval-platform-api"),
+        "an api takes no storage": ("interval-platform-api", "deps", "interval-data", "an api module doesn't depend on a data"),
+        "an api takes no core": ("lift-api", "deps", "core", "an api module doesn't depend on a core module"),
         "nothing depends on a host": ("app", "deps", "androidApp", "doesn't depend on a host module"),
         "every dependency is a module": ("app", "deps", "nowhere", "no such module"),
         "tests take what the module could": ("lift-ui", "test_deps", "lift-library", "tests don't depend on a feature"),
@@ -281,6 +303,10 @@ def self_test() -> None:
     graph = {k: fake(v.name, v.side, v.deps, v.test_deps, v.compose) for k, v in base.items()}
     graph["lift-data"].compose.append("$compose.runtime")
     assert any("takes no Compose" in p for p in check(graph)), "pure layers take no Compose"
+
+    graph = {k: fake(v.name, v.side, v.deps, v.test_deps, v.compose) for k, v in base.items()}
+    graph["lift-api"].compose.append("$compose.runtime")
+    assert any("takes no Compose" in p for p in check(graph)), "an api takes no Compose"
 
     graph = {k: fake(v.name, v.side, v.deps, v.test_deps, v.compose) for k, v in base.items()}
     graph["lift-ui"].templates.clear()
@@ -302,7 +328,7 @@ def self_test() -> None:
         assert lift_repository_uses(root) == [], "LiftActivity is fine"
         source.write_text("class HistoryViewModel(private val lift: LiftRepository)\n")
         assert lift_repository_uses(root), "the interval side never names LiftRepository"
-    print(f"{len(breaches) + 5} cases pass")
+    print(f"{len(breaches) + 6} cases pass")
 
 
 def main() -> None:

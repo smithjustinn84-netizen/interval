@@ -9,9 +9,9 @@ apply:
 
 dependencies:
   - //interval/interval-presets: exported
-  - //interval/interval-platform: exported
+  - //interval/interval-platform-api
   # The week's standing counts Lift's sessions too.
-  - //lift/lift-data
+  - //lift/lift-api
 
 test-dependencies:
   - //interval/interval-testing

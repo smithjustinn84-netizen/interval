@@ -11,10 +11,10 @@ apply:
 dependencies:
   - //interval/interval-data: exported
   - //interval/interval-ui: exported
-  # The plan's reminders: the platform's notifications, and the permission to show them.
-  - //interval/interval-platform
+  # The plan's reminders: the platform's notifications.
+  - //interval/interval-platform-api
   # History shows Lift's sessions and the program's day too.
-  - //lift/lift-data
+  - //lift/lift-api
   - //lift/lift-domain
   - //lift/lift-ui
 

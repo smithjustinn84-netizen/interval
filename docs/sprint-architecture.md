@@ -404,7 +404,7 @@ The cut line is after ticket 5.
 - **A foreign key from `lift_set` to `session`, `ON DELETE CASCADE`** (E2). It is a table rebuild with a manual
   migration and its test. Ticket 0's transactions stop new orphans meanwhile.
 - **`lift-api` and `interval-platform-api` modules; colours passed to the service as ARGB** (G2, G3). A rule
-  for them in `check_module_rules.py`.
+  for them in `check_module_rules.py`. Done since, in `zurwuryr`.
 - **An `IdGenerator`; `WallClock` in the reminders** (C5). **History's view in `SavedStateHandle`** (F4).
 - **The architecture diagram generated** from `module.yaml` by `check_module_rules.py`, so it can't go stale
   again.

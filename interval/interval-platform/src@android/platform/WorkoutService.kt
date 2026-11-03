@@ -10,8 +10,6 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.core.app.NotificationCompat
 import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.platform.resources.Res
@@ -29,7 +27,6 @@ import dev.justinsmith.interval.platform.resources.workout_pause
 import dev.justinsmith.interval.platform.resources.workout_paused
 import dev.justinsmith.interval.platform.resources.workout_resume
 import dev.justinsmith.interval.timer.Phase
-import dev.justinsmith.interval.ui.PhaseColors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -53,6 +50,7 @@ class WorkoutService :
     Service(),
     KoinComponent {
     private val workout: ActiveWorkout by inject()
+    private val colors: StatusColors by inject()
     private val log = Logger.withTag("WorkoutService")
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var wakeLock: PowerManager.WakeLock? = null
@@ -179,13 +177,13 @@ class WorkoutService :
                 status.rounds,
             )
         }
-        val color = if (status.paused) PhaseColors.paused else phaseColor(status.phase)
+        val color = if (status.paused) colors.paused else colors.of(status.phase)
         val pauseLabel = getString(if (status.paused) Res.string.workout_resume else Res.string.workout_pause)
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .common()
             .setContentTitle(status.clock)
             .setContentText(text)
-            .setColor(color.toArgb())
+            .setColor(color)
             .setColorized(Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA)
             .setShortCriticalText(status.clock)
             .setRequestPromotedOngoing(true)
@@ -199,12 +197,12 @@ class WorkoutService :
      * The workout end to end, each interval in its phase's colour (or, past what the system draws apart, one
      * segment in [color]), a point where each round begins, and the tracker at the time gone.
      */
-    private fun progressStyle(bar: StatusBar, color: Color): NotificationCompat.ProgressStyle =
+    private fun progressStyle(bar: StatusBar, color: Int): NotificationCompat.ProgressStyle =
         NotificationCompat.ProgressStyle()
             .setProgressSegments(
                 bar.segments.map { segment ->
                     NotificationCompat.ProgressStyle.Segment(segment.length)
-                        .setColor((segment.phase?.let(::phaseColor) ?: color).toArgb())
+                        .setColor(segment.phase?.let(colors::of) ?: color)
                 },
             )
             .setProgressPoints(bar.points.map { NotificationCompat.ProgressStyle.Point(it) })
@@ -221,13 +219,6 @@ class WorkoutService :
         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
         .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
         .setContentIntent(openApp)
-
-    private fun phaseColor(phase: Phase): Color = when (phase) {
-        Phase.Prep, Phase.WarmUp -> PhaseColors.prep
-        Phase.Work -> PhaseColors.work
-        Phase.Rest, Phase.CoolDown -> PhaseColors.rest
-        Phase.Done -> PhaseColors.done
-    }
 
     private fun appName(): CharSequence = applicationInfo.loadLabel(packageManager)
 

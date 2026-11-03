@@ -18,6 +18,7 @@ modules:
   - interval/interval-domain
   - interval/interval-history
   - interval/interval-platform
+  - interval/interval-platform-api
   - interval/interval-presets
   - interval/interval-settings
   - interval/interval-testing
@@ -26,6 +27,7 @@ modules:
   - interval/interval-workout
 
   # Lift, the strength side (packages `dev.justinsmith.lift.*`): its foundation, features and navigation.
+  - lift/lift-api
   - lift/lift-data
   - lift/lift-domain
   - lift/lift-library
