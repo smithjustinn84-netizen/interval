@@ -2,6 +2,7 @@
 
 package dev.justinsmith.interval.history
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.fakes.DAY_MILLIS
 import dev.justinsmith.interval.fakes.FakeStorage
@@ -304,6 +305,33 @@ class HistoryViewModelTest : MainDispatcherTest() {
         assertEquals(emptyList(), repository.planned.value.filter { it.schedule == PlanSchedule.Once(TODAY + 2) })
         viewModel.openDay(null)
         assertNull(viewModel.state.value.daySheet)
+    }
+
+    @Test
+    fun `the range month and open day come back after the process is gone`() {
+        val saved = SavedStateHandle()
+        fun history() =
+            HistoryViewModel(
+                repository,
+                repository,
+                repository,
+                repository,
+                bells,
+                FixedTimestampFormatter,
+                clock = { clock },
+                savedState = saved,
+                computation = dispatcher,
+            )
+        history().apply {
+            setRange(TrainingRange.Month)
+            shiftMonth(-1)
+            openDay(TODAY - 20)
+        }
+
+        val restored = history().state.value
+        assertEquals(TrainingRange.Month, restored.range)
+        assertEquals("9/2026", restored.month.title)
+        assertEquals(HistoryDay.On("day ${TODAY - 20}"), restored.daySheet?.day)
     }
 
     @Test

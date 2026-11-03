@@ -16,6 +16,7 @@ import dev.justinsmith.interval.platform.BackgroundWorkout
 import dev.justinsmith.interval.platform.Beep
 import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.Haptic
+import dev.justinsmith.interval.platform.IdGenerator
 import dev.justinsmith.interval.platform.PlanReminder
 import dev.justinsmith.interval.platform.PlanReminders
 import dev.justinsmith.interval.platform.Speech
@@ -183,12 +184,14 @@ class FakeStorage {
      * A repository over this storage. By default its writes run unconfined and the fakes never suspend, so
      * every write and read has landed by the time a call returns. Pass [deferredStorageScope] instead to have
      * writes and reads wait for the test's scheduler, as they wait for `Dispatchers.IO` in the app: that is
-     * how a test catches code that reads a value back before its write has landed.
+     * how a test catches code that reads a value back before its write has landed. What it makes is stored
+     * under [ids].
      */
     fun repository(
         now: WallClock = WallClock { 0L },
         scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
-    ): IntervalRepository = IntervalRepository(settings, history, presets, planned, imports, scope, now)
+        ids: IdGenerator = IdGenerator.Random,
+    ): IntervalRepository = IntervalRepository(settings, history, presets, planned, imports, scope, now, ids)
 }
 
 /**

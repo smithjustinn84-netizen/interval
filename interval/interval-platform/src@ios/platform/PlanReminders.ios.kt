@@ -21,7 +21,7 @@ import platform.UserNotifications.UNUserNotificationCenter
  * scheduled, since reading the app's strings suspends. A reminder due while the app is open is not shown:
  * the app installs no notification-centre delegate, and the plan is on screen for the asking.
  */
-internal class IosPlanReminders : PlanReminders {
+internal class IosPlanReminders(private val clock: WallClock) : PlanReminders {
     private val log = Logger.withTag("IosPlanReminders")
     private val center: UNUserNotificationCenter get() = UNUserNotificationCenter.currentNotificationCenter()
 
@@ -57,7 +57,7 @@ internal class IosPlanReminders : PlanReminders {
      * counted in UTC, a day out at most, which the margin covers.
      */
     private fun possibleIdentifiers(): List<String> {
-        val today = epochMillisNow().floorDiv(DAY_MILLIS)
+        val today = clock.nowMillis().floorDiv(DAY_MILLIS)
         return ((today - PLAN_REMINDER_DAYS - 1)..(today + PLAN_REMINDER_DAYS + 1)).map(::identifier)
     }
 

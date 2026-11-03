@@ -3,6 +3,7 @@ package dev.justinsmith.lift.fakes
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.RecordingSharer
 import dev.justinsmith.interval.fakes.fakeCorePlatformModule
+import dev.justinsmith.interval.platform.IdGenerator
 import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.lift.data.BandDao
@@ -292,18 +293,20 @@ class FakeLiftStorage {
     val bands = FakeBandDao(sessions)
     val imports = FakeLiftImportDao(sessions, bells, following, programs, exercises, bands)
 
-    /** A repository over this storage, its writes landed by the time a call returns. */
-    fun repository(now: WallClock = WallClock { 0L }): LiftRepository = LiftRepository(
-        sessions,
-        bells,
-        following,
-        programs,
-        exercises,
-        bands,
-        imports,
-        CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
-        now,
-    )
+    /** A repository over this storage, its writes landed by the time a call returns; what it makes is under [ids]. */
+    fun repository(ids: IdGenerator = IdGenerator.Random, now: WallClock = WallClock { 0L }): LiftRepository =
+        LiftRepository(
+            sessions,
+            bells,
+            following,
+            programs,
+            exercises,
+            bands,
+            imports,
+            CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
+            now,
+            ids,
+        )
 
     /**
      * Stores a finished session of [sets] (bell and reps of two-hand swings), as if logged in Lift: a day of

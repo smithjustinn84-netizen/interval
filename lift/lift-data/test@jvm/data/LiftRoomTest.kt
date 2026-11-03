@@ -34,7 +34,8 @@ class LiftRoomTest {
         database.bandDao(),
         database.importDao(),
         scope,
-    ) { 1_000L }
+        clock = { 1_000L },
+    )
 
     @AfterTest
     fun close() {

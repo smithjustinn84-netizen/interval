@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.updateAndGet
 
@@ -84,14 +85,14 @@ class ProgramEditorViewModel(
         ),
     )
 
+    // The history follows the sessions, so one finished while the editor is open is among the recent.
     private val choices = combine(
-        gearStore.bells,
-        gearStore.bands,
+        combine(gearStore.bells, gearStore.bands, gearStore.bar, ::Triple),
         exerciseStore.customExercises,
         filters.filters,
-        gearStore.bar,
-    ) { owned, bands, made, narrowed, bar ->
-        blockChoices(owned, bands, made, narrowed, sessionStore.sessions.value.setsOldestFirst(), bar)
+        sessionStore.sessions.map { it.setsOldestFirst() },
+    ) { (owned, bands, bar), made, narrowed, history ->
+        blockChoices(owned, bands, made, narrowed, history, bar)
     }
 
     val state: StateFlow<ProgramEditorUiState> = combine(_state, choices) { editing, choices ->

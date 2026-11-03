@@ -12,6 +12,7 @@ import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import co.touchlab.kermit.Logger
+import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.notificationIcon
 import dev.justinsmith.interval.platform.openAppIntent
 import dev.justinsmith.interval.timer.formatClock
@@ -39,13 +40,13 @@ import org.koin.core.component.inject
  * to the service as commands, which it takes in order: it has gone to the foreground with a start before it sees
  * the stop that follows, as the system demands of a service started for the foreground.
  */
-internal class AndroidSessionKeepAlive(private val context: Context) : SessionKeepAlive {
+internal class AndroidSessionKeepAlive(private val context: Context, private val clock: WallClock) : SessionKeepAlive {
     private val log = Logger.withTag("AndroidSessionKeepAlive")
     private var running = false
 
     override fun start(run: TimerRun) {
         // A rest shortened past the time it has run is already over: nothing to count down.
-        if (run.endAtEpochMillis <= System.currentTimeMillis()) {
+        if (run.endAtEpochMillis <= clock.nowMillis()) {
             stop()
             return
         }
@@ -89,6 +90,7 @@ internal class AndroidSessionKeepAlive(private val context: Context) : SessionKe
 class TimerService : Service(), KoinComponent {
     private val log = Logger.withTag("TimerService")
     private val timers: ActiveTimers by inject()
+    private val clock: WallClock by inject()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var wakeLock: PowerManager.WakeLock? = null
     private var countdown: Job? = null
@@ -123,7 +125,7 @@ class TimerService : Service(), KoinComponent {
         // Started for the foreground, so to the foreground first, whatever follows: stopping short of it
         // crashes the app.
         goForeground(endAt)
-        if (endAt <= System.currentTimeMillis()) {
+        if (endAt <= clock.nowMillis()) {
             stopSelf(startId)
         } else {
             countDown(Run(kind, startedAt, endAt, minutes))
@@ -143,12 +145,12 @@ class TimerService : Service(), KoinComponent {
 
     // Held to this run's end, each run afresh: runs back to back keep one service, and never outlast the lock.
     private fun countDown(run: Run) {
-        val holdFor = run.endAt - System.currentTimeMillis() + LINGER_MILLIS + WAKE_LOCK_MARGIN_MILLIS
+        val holdFor = run.endAt - clock.nowMillis() + LINGER_MILLIS + WAKE_LOCK_MARGIN_MILLIS
         runCatching { wakeLock?.acquire(holdFor) }
             .onFailure { log.w(it) { "Couldn't hold the wake lock" } }
         countdown?.cancel()
         countdown = scope.launch {
-            while (System.currentTimeMillis() < run.endAt) {
+            while (clock.nowMillis() < run.endAt) {
                 notifications?.notify(NOTIFICATION_ID, notification(run))
                 delay(TICK_MILLIS)
             }
@@ -187,7 +189,7 @@ class TimerService : Service(), KoinComponent {
      * runs; below 16 the builder drops both, and the request to promote it.
      */
     private suspend fun notification(run: Run): Notification {
-        val now = System.currentTimeMillis()
+        val now = clock.nowMillis()
         val emom = run.takeIf { it.kind == KIND_EMOM && it.minutes > 0 }
             ?.let { EmomClock(it.minutes).at(now - it.startedAt, emptySet()) }
         val left = formatClock(emom?.secondsLeft ?: secondsLeft(run.endAt))
@@ -209,7 +211,7 @@ class TimerService : Service(), KoinComponent {
             .build()
     }
 
-    private fun secondsLeft(endAt: Long): Int = ceilSeconds(endAt - System.currentTimeMillis())
+    private fun secondsLeft(endAt: Long): Int = ceilSeconds(endAt - clock.nowMillis())
 
     private fun ceilSeconds(millis: Long): Int =
         ((millis.coerceAtLeast(0) + MILLIS_PER_SECOND - 1) / MILLIS_PER_SECOND).toInt()

@@ -3,7 +3,7 @@
 package dev.justinsmith.lift.platform
 
 import co.touchlab.kermit.Logger
-import dev.justinsmith.interval.platform.epochMillisNow
+import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.lift.platform.resources.Res
 import dev.justinsmith.lift.platform.resources.emom_over
 import dev.justinsmith.lift.platform.resources.hold_over
@@ -28,7 +28,7 @@ import platform.UserNotifications.UNUserNotificationCenter
  * While the app is up the system shows none (the app's notification delegate shows only plan reminders), and the
  * session's beep is the cue.
  */
-internal class IosSessionKeepAlive : SessionKeepAlive {
+internal class IosSessionKeepAlive(private val clock: WallClock) : SessionKeepAlive {
     private val log = Logger.withTag("IosSessionKeepAlive")
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val center: UNUserNotificationCenter get() = UNUserNotificationCenter.currentNotificationCenter()
@@ -51,7 +51,7 @@ internal class IosSessionKeepAlive : SessionKeepAlive {
                 setBody(getString(Res.string.rest_over_text))
                 setSound(UNNotificationSound.defaultSound)
             }
-            val seconds = (run.endAtEpochMillis - epochMillisNow()) / MILLIS_PER_SECOND
+            val seconds = (run.endAtEpochMillis - clock.nowMillis()) / MILLIS_PER_SECOND
             if (mine != generation || seconds < MIN_TRIGGER_SECONDS) return@launch
             val trigger = UNTimeIntervalNotificationTrigger.triggerWithTimeInterval(seconds, repeats = false)
             val request = UNNotificationRequest.requestWithIdentifier(IDENTIFIER, content, trigger)

@@ -25,9 +25,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.ConfirmDialog
@@ -48,7 +46,6 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.interval.ui.sheetIsSideways
-import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.ProgramFamily
@@ -88,43 +85,8 @@ import dev.justinsmith.lift.ui.blockLine
 import dev.justinsmith.lift.ui.liftName
 import dev.justinsmith.lift.ui.programName
 import dev.justinsmith.lift.ui.programSummary
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
-
-/** The program followed, if any, and its next day; and the programs the user made. */
-data class ProgramsUiState(
-    val following: Program? = null,
-    val followingDay: ProgramDay? = null,
-    val custom: List<Program> = emptyList(),
-)
-
-/** The built-in programs, the ones the user made, which one is followed and its next day. */
-class ProgramsViewModel(private val programStore: ProgramStore) : ViewModel() {
-    val state: StateFlow<ProgramsUiState> =
-        combine(programStore.following, programStore.programDay, programStore.customPrograms, ::ProgramsUiState)
-            .stateIn(
-                viewModelScope,
-                SharingStarted.Eagerly,
-                ProgramsUiState(
-                    programStore.following.value,
-                    programStore.programDay.value,
-                    programStore.customPrograms.value,
-                ),
-            )
-
-    /** Follows [key] from its first day; the program followed already keeps its place. */
-    fun follow(key: ProgramKey) {
-        if (key != programStore.following.value?.key) programStore.follow(key)
-    }
-
-    fun stop() {
-        programStore.stopFollowing()
-    }
-}
 
 /** What the Programs page does: follow a program or stop, make one or change one made, and go back. */
 data class ProgramsActions(

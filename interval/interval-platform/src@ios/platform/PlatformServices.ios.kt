@@ -66,7 +66,7 @@ fun platformModule(): Module = module {
     single<BackgroundWorkout> { IosBackgroundWorkout(lazy { get<ActiveWorkout>() }) }.withOptions {
         onClose { (it as? IosBackgroundWorkout)?.release() }
     }
-    single<PlanReminders> { IosPlanReminders() }
+    single<PlanReminders> { IosPlanReminders(get()) }
 }
 
 /**

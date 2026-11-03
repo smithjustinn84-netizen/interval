@@ -44,7 +44,8 @@ class TodayViewModelTest {
             bands,
             imports,
             CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
-        ) { 1_000L }
+            clock = { 1_000L },
+        )
     }
 
     private val main = UnconfinedTestDispatcher()

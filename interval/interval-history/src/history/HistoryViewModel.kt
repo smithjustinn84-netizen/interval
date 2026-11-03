@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.history
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.data.HistoryStore
@@ -41,6 +42,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.updateAndGet
 
 /**
  * The plans still to do from [today], by day. A plan of the program's next day takes the day the program will be
@@ -85,10 +87,29 @@ private fun TimestampFormatter.upNext(
     return (listOfNotNull(unplanned) + plans).sortedBy { it.epochDay }
 }
 
+private const val KEY_RANGE = "history_range"
+private const val KEY_MONTH_OFFSET = "history_month_offset"
+private const val KEY_OPEN_DAY = "history_open_day"
+
+private fun SavedStateHandle.restoredView() = HistoryView(
+    range = TrainingRange.entries.firstOrNull { it.name == get<String>(KEY_RANGE) } ?: TrainingRange.Week,
+    monthOffset = get<Int>(KEY_MONTH_OFFSET) ?: 0,
+    openDay = get<Long>(KEY_OPEN_DAY),
+)
+
+private fun SavedStateHandle.keep(view: HistoryView) {
+    this[KEY_RANGE] = view.range.name
+    this[KEY_MONTH_OFFSET] = view.monthOffset
+    this[KEY_OPEN_DAY] = view.openDay
+}
+
 /** Lift's side: its finished sessions, the followed program's next day, and whether one is in progress. */
 private data class Lifting(val sessions: List<LiftSession>, val programDay: ProgramDay?, val inProgress: Boolean)
 
-/** What the screen is looking at, apart from the data: the range, the month and the open day. */
+/**
+ * What the screen is looking at, apart from the data: the range, the month and the open day, each kept in the
+ * entry's saved state so that they outlive the process. The locale is the screen's, set again as it shows.
+ */
 private data class HistoryView(
     val range: TrainingRange = TrainingRange.Week,
     val monthOffset: Int = 0,
@@ -115,12 +136,13 @@ class HistoryViewModel(
     private val bells: LiftActivity,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
+    private val savedState: SavedStateHandle = SavedStateHandle(),
     dayCheckMillis: Long = DAY_CHECK_MILLIS,
     computation: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     private val days = clock.days(timestamps, dayCheckMillis)
 
-    private val view = MutableStateFlow(HistoryView())
+    private val view = MutableStateFlow(savedState.restoredView())
 
     // Distinct, so a set logged on Lift (which changes `active`) rebuilds nothing here: only a session finished,
     // the program's day or whether one is under way at all count.
@@ -146,17 +168,17 @@ class HistoryViewModel(
             .stateIn(viewModelScope, SharingStarted.Eagerly, HistoryUiState.Loading)
 
     fun setRange(range: TrainingRange) {
-        view.update { it.copy(range = range) }
+        changeView { it.copy(range = range) }
     }
 
     /** Moves the calendar [months] months on, or back when negative. */
     fun shiftMonth(months: Int) {
-        view.update { it.copy(monthOffset = it.monthOffset + months) }
+        changeView { it.copy(monthOffset = it.monthOffset + months) }
     }
 
     /** Opens the day sheet on [epochDay], or closes it with null. */
     fun openDay(epochDay: Long?) {
-        view.update { it.copy(openDay = epochDay) }
+        changeView { it.copy(openDay = epochDay) }
     }
 
     /** Puts [name]'s [config] on the Timer, for the workout about to start. */
@@ -198,6 +220,11 @@ class HistoryViewModel(
      */
     fun setLocale(languageTag: String) {
         view.update { it.copy(locale = languageTag) }
+    }
+
+    // Kept once the change is in, outside the update, whose lambda can run more than once.
+    private fun changeView(transform: (HistoryView) -> HistoryView) {
+        savedState.keep(view.updateAndGet(transform))
     }
 
     private fun buildState(

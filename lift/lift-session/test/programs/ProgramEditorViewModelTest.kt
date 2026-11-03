@@ -120,6 +120,18 @@ class ProgramEditorViewModelTest {
         assertEquals(2, repository.programDay.value?.number)
     }
 
+    @Test
+    fun `an exercise lifted while the editor is open is offered among the recent`() {
+        val editor = editor()
+        assertEquals(emptyList(), editor.state.value.choices.library.recents)
+
+        repository.startSession(null)
+        repository.logSet(BuiltInExercise.GobletSquat, 16.0, 10, null)
+        repository.finishSession("Goblet squat")
+
+        assertEquals(listOf(BuiltInExercise.GobletSquat), editor.state.value.choices.library.recents)
+    }
+
     /** A copy of [id], named from [base] as the screen words it: a common test can't load the screen's words. */
     private fun copyEditor(id: ProgramId, base: String) =
         ProgramEditorViewModel(

@@ -75,14 +75,16 @@ the database file (`bells.db`), the serial names that its route keys are saved u
 core/
   core               the theme, tokens, motion, components, lanes, `Tab` and `push` (nav/), the Composable
                      platform hooks the UI needs (`SystemServices.kt`), and each platform's `corePlatformModule`
-                     (`CorePlatform*.kt`: the `WallClock`, `TimestampFormatter`, `AppInfo`, `Sharer` and `HealthStore`
-                     both sides' containers take, with each platform's `Sharer`) and `rememberHealthConnector`
-                     (the store's permission sheet, for Settings); exports `core-platform` and `core-time`.
+                     (`CorePlatform*.kt`: the `WallClock`, `IdGenerator`, `TimestampFormatter`, `AppInfo`, `Sharer`
+                     and `HealthStore` both sides' containers take, with each platform's `Sharer`) and
+                     `rememberHealthConnector` (the store's permission sheet, for Settings); exports `core-platform`
+                     and `core-time`.
                      Packages `dev.justinsmith.interval.ui`, `.platform`, `.nav`; resources
                      `dev.justinsmith.core.resources`
   core-platform      what the platform gives that isn't drawing, with no Compose: the clocks (`WallClock`,
-                     `epochMillisNow`, `realElapsedTime`, `days`), `TimestampFormatter`, `AppInfo`, `Sharer`,
-                     `HealthStore` (`Health.kt`: the workout both sides hand it as they finish; Android's is
+                     `epochMillisNow`, `realElapsedTime`, `days`), `IdGenerator` (`Ids.kt`), `TimestampFormatter`,
+                     `AppInfo`, `Sharer`, `HealthStore` (`Health.kt`: the workout both sides hand it as they finish;
+                     Android's is
                      `HealthConnectStore`, in src@android, writes workouts and reads the weight and the heart rate; iOS's is
                      `HealthKitStore`, Apple Health; desktop's `NoHealthStore`),
                      Android's notification helpers, and `storage/Storage.kt` (`SerialWriter`, `storageScope`,
@@ -200,7 +202,7 @@ toolchain (`$compose.*`).
 - **DI is Koin DSL** (no annotations/KSP), **one container per process**, assembled in `apps/app/src/di/AppKoin.kt`
   (`appModules`) from each side's modules: `storageModule`/`dataModule` in `interval/interval-data/src/di/`,
   `historyModule` in `interval/interval-history/src/di/`, `liftModules` in `lift/lift-data/src/di/`, and the three
-  platform modules: core's `corePlatformModule` (what both sides take: the clock, formatter, `AppInfo`, `Sharer`),
+  platform modules: core's `corePlatformModule` (what both sides take: the clock, ids, formatter, `AppInfo`, `Sharer`),
   `interval-platform`'s `platformModule` and `lift-platform`'s `liftPlatformModule`, plain functions (Android's of a
   `Context`). `initAppKoin` starts it (`startKoin`, once): Android's `IntervalApplication.onCreate`, desktop's
   `main` (which drains both repositories and stops it as the window closes), iOS's first `App()`. It is never
@@ -208,7 +210,7 @@ toolchain (`$compose.*`).
   `stopKoin` or `GlobalContext` (detekt's `ForbiddenImport`); tests build their own with `testKoin()` and pass it to
   `AppContent`. Neither side's modules
   bind anything the other needs. Add a module per domain or feature. Constructor-inject everything; keep platform calls (the clock, cues, storage) behind
-  injected interfaces (`WallClock`, `CuePlayer`, `PlatformStorage`) so tests can fake them.
+  injected interfaces (`WallClock`, `IdGenerator`, `CuePlayer`, `PlatformStorage`) so tests can fake them.
 - **Storage**: `IntervalRepository` (`interval/interval-data/src/data/`) is the only thing that touches it. A screen
   takes the roles it plays rather than the repository: `SettingsStore`, `PresetStore`, `HistoryStore`, `PlanStore`,
   `WorkoutProgressStore` (`Stores.kt` beside it; Lift's `SessionStore`, `SetStore`, `ProgramStore`, `ExerciseStore`,

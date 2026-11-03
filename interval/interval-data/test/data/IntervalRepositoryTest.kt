@@ -5,6 +5,7 @@ package dev.justinsmith.interval.data
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import dev.justinsmith.interval.fakes.FakeStorage
+import dev.justinsmith.interval.fakes.SequentialIds
 import dev.justinsmith.interval.fakes.deferredStorageScope
 import dev.justinsmith.interval.fakes.saveCurrentAsPreset
 import dev.justinsmith.interval.model.AppSettings
@@ -289,6 +290,14 @@ class IntervalRepositoryTest {
         repository.restorePlanned(monday)
         assertEquals(listOf(monday, repository.planned.value[1]), repository.planned.value)
         assertEquals(1_000L, repository.planned.value.first().createdAtEpochMillis)
+    }
+
+    @Test
+    fun `each workout recorded is stored under a new id from the generator`() {
+        val repository = storage.repository(ids = SequentialIds())
+
+        assertEquals("id-1", repository.recordWorkout(IntervalConfig(), elapsedSeconds = 240))
+        assertEquals("id-2", repository.recordWorkout(IntervalConfig(), elapsedSeconds = 300))
     }
 
     @Test

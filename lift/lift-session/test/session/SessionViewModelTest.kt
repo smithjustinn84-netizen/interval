@@ -70,7 +70,8 @@ class SessionViewModelTest {
             bands,
             imports,
             CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
-        ) { now }
+            clock = { now },
+        )
     }
 
     private val main = UnconfinedTestDispatcher()

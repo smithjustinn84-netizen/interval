@@ -46,7 +46,11 @@ internal class PlanAlarm(val epochDay: Long, val minuteOfDay: Int)
  * drops them and a change of clock or time zone leaves them at the wrong moment: the receiver then has the whole
  * set worked out again ([PlanReminderSource.reschedule]), which cancels by the record and sets them afresh.
  */
-internal class PlanAlarms(private val context: Context, private val store: DataStore<Preferences>) {
+internal class PlanAlarms(
+    private val context: Context,
+    private val store: DataStore<Preferences>,
+    private val clock: WallClock,
+) {
     private val log = Logger.withTag("PlanAlarms")
 
     /**
@@ -67,7 +71,7 @@ internal class PlanAlarms(private val context: Context, private val store: DataS
 
     private fun arm(manager: AlarmManager?, alarms: List<PlanAlarm>) {
         if (manager == null) return
-        val now = System.currentTimeMillis()
+        val now = clock.nowMillis()
         for (alarm in alarms) {
             val at = alarm.triggerMillis()
             // Its moment has gone: a reminder now would be a stale one.

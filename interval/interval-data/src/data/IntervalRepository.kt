@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalUuidApi::class)
-
 package dev.justinsmith.interval.data
 
 import androidx.datastore.core.DataStore
@@ -17,6 +15,7 @@ import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.WorkoutProgress
 import dev.justinsmith.interval.platform.HeartRate
+import dev.justinsmith.interval.platform.IdGenerator
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.storage.SerialWriter
 import dev.justinsmith.interval.storage.StorageError
@@ -41,8 +40,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 /**
  * The app's saved state: the current setup, cue toggles, app settings, custom presets, workout history and
@@ -64,6 +61,7 @@ class IntervalRepository(
     private val importDao: ImportDao,
     private val scope: CoroutineScope,
     private val clock: WallClock,
+    private val ids: IdGenerator = IdGenerator.Random,
 ) : SettingsStore, PresetStore, HistoryStore, PlanStore, WorkoutProgressStore {
     private val log = Logger.withTag("IntervalRepository")
     private val writer = SerialWriter(scope, log)
@@ -262,7 +260,7 @@ class IntervalRepository(
         startedAtEpochMillis: Long?,
     ): String {
         val now = clock.nowMillis()
-        val uid = Uuid.random().toHexString()
+        val uid = ids.newId()
         val entry =
             HistoryEntry(
                 now,
@@ -325,7 +323,7 @@ class IntervalRepository(
      */
     suspend fun importAll(history: List<HistoryEntry>, presets: List<Preset>, planned: List<PlannedWorkout>) {
         val now = clock.nowMillis()
-        val rows = history.map { it.copy(id = null).toEntity(uid = Uuid.random().toHexString(), now) }
+        val rows = history.map { it.copy(id = null).toEntity(uid = ids.newId(), now) }
         val presetRows = presets.map { it.copy(id = null).toEntity() }
         val planRows = planned.map { it.copy(id = 0).toEntity() }
         val names = planned.map { (it.workout as? PlanWorkout.Interval)?.takeIf { w -> w.presetId == null }?.name }

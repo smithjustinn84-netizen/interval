@@ -21,7 +21,7 @@ fun liftPlatformModule(context: Context): Module = context.applicationContext.le
         single<Beeper> { ToneBeeper() }.withOptions {
             onClose { it?.release() }
         }
-        single<SessionKeepAlive> { AndroidSessionKeepAlive(app) }
+        single<SessionKeepAlive> { AndroidSessionKeepAlive(app, get()) }
     }
 }
 

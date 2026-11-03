@@ -40,7 +40,7 @@ fun liftPlatformModule(): Module = module {
             AudioServicesPlaySystemSound(sound)
         }
     }
-    single<SessionKeepAlive> { IosSessionKeepAlive() }.withOptions {
+    single<SessionKeepAlive> { IosSessionKeepAlive(get()) }.withOptions {
         onClose { (it as? IosSessionKeepAlive)?.release() }
     }
 }

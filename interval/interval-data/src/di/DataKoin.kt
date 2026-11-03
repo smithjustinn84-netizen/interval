@@ -68,7 +68,7 @@ val storageModule: Module = module {
 
 /**
  * The repository over [storageModule], bound as each of its stores too ([SettingsStore], [PresetStore], …) for the
- * screens that take one. The wall clock it takes is core's (`corePlatformModule`).
+ * screens that take one. The wall clock and the ids it takes are core's (`corePlatformModule`).
  */
 val dataModule: Module = module {
     single {
@@ -80,6 +80,7 @@ val dataModule: Module = module {
             importDao = get(),
             scope = get(StorageScope),
             clock = get(),
+            ids = get(),
         )
     }.binds(
         arrayOf(

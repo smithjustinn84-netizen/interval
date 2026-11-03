@@ -244,6 +244,11 @@ declares its ViewModels in its own Koin module, Routes resolve them with `koinVi
 in the Route.
 
 ### C5 · Low · IDs and some clocks are hard-coded
+
+**Resolved** in change `vqnonwzy` ("Architecture: ids and the clock injected, History's view kept, a ViewModel per file"): both repositories take an `IdGenerator` (core-platform's
+`Ids.kt`, `IdGenerator.Random` bound in `corePlatformModule`; tests can pass core-testing's `SequentialIds`), and
+Android's `PlanAlarms`, `AndroidSessionKeepAlive` and `TimerService` and iOS's `IosPlanReminders` and
+`IosSessionKeepAlive` read the injected `WallClock`. The health stores' read windows still take the platform's now.
 - `Uuid.random()` is called inside both repositories.
 - `System.currentTimeMillis()` is used in `RestAlerts.android.kt` and `PlanReminders.android.kt`, and
   `epochMillisNow()` on iOS, beside an injected `WallClock`.
@@ -292,8 +297,11 @@ state to `WorkoutUiState`.
 
 **Resolved for the session** in change `unlqzyyl` ("Lift: the session's draft, plan and finish, each a part of its own"): its state is built from the stores' flows, the sets before
 this session (`Before`) from `sessions` as it changes, so a deletion or an import mid-session corrects records,
-suggestions and "last time"; the actions read the stores as they stand when they run. `ProgramEditorViewModel`'s read
-of `sessions.value` is still open.
+suggestions and "last time"; the actions read the stores as they stand when they run.
+
+**Resolved** in change `vqnonwzy` ("Architecture: ids and the clock injected, History's view kept, a ViewModel per file"): `ProgramEditorViewModel`'s block choices follow `sessions`, so an exercise
+lifted while the editor is open is among the recent. The other `.value` reads left are a `stateIn`'s first value or an
+action's one-off read, which is what they should be.
 - `upNext()` reads `repository.bar.value`, `bands.value` and `draft.value` inside a `combine` that already takes
   them (SessionViewModel L823-827).
 - `ProgramEditorViewModel` reads `repository.sessions.value` inside a combine (L64).
@@ -426,6 +434,9 @@ A 250 ms tick feeds the whole `SessionUiState`, so every child that takes `state
 **Recommendation.** A separate `clocks: StateFlow`, collected only by the timer tiles.
 
 ### F4 · Low · Screen-only state lost on process death
+
+**Resolved** in change `vqnonwzy` ("Architecture: ids and the clock injected, History's view kept, a ViewModel per file"): History's range, month and open day are kept in the entry's
+`SavedStateHandle`, written outside the update as the Lift editors do.
 History's range, month and open day are in a plain `MutableStateFlow`.
 
 **Recommendation.** `SavedStateHandle`, as the Lift editors do.
@@ -455,6 +466,9 @@ cross-side ports, and `exported` only where a module's API really names the depe
 non-Compose token.
 
 ### G4 · Low · ViewModels in screen files
+
+**Resolved** in change `vqnonwzy` ("Architecture: ids and the clock injected, History's view kept, a ViewModel per file"): `ProgramsViewModel`, `ExerciseLibraryViewModel` and
+`ExerciseEditorViewModel` are each in a file of their own, beside their screens, with their UI states.
 `ProgramsViewModel`, `ExerciseLibraryViewModel` and `ExerciseEditorViewModel` share files with their screens.
 Use one ViewModel per file, as the interval side does.
 

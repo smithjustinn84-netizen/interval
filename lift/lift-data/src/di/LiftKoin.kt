@@ -55,7 +55,18 @@ val liftStorageModule: Module = module {
 
 val liftDataModule: Module = module {
     single {
-        LiftRepository(get(), get(), get(), get(), get(), get(), get(), scope = get(LiftStorageScope), clock = get())
+        LiftRepository(
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            scope = get(LiftStorageScope),
+            clock = get(),
+            ids = get(),
+        )
     }.binds(
         arrayOf(
             LiftActivity::class,

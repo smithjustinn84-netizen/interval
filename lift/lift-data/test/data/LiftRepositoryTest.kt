@@ -1,5 +1,6 @@
 package dev.justinsmith.lift.data
 
+import dev.justinsmith.interval.fakes.SequentialIds
 import dev.justinsmith.interval.storage.StorageError
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.BandColour
@@ -28,6 +29,7 @@ import dev.justinsmith.lift.fakes.FakeCustomExerciseDao
 import dev.justinsmith.lift.fakes.FakeCustomProgramDao
 import dev.justinsmith.lift.fakes.FakeFollowingDao
 import dev.justinsmith.lift.fakes.FakeLiftImportDao
+import dev.justinsmith.lift.fakes.FakeLiftStorage
 import dev.justinsmith.lift.fakes.FakeSessionDao
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -62,7 +64,8 @@ class LiftRepositoryTest {
         bandDao,
         FakeLiftImportDao(sessionDao, bellDao, followingDao, programDao, exerciseDao, bandDao),
         scope,
-    ) { now }
+        clock = { now },
+    )
 
     private val pressAndSwings = ProgramDraft(
         name = "Press and swings",
@@ -491,7 +494,8 @@ class LiftRepositoryTest {
             bandDao,
             FakeLiftImportDao(sessionDao, bellDao, followingDao, programDao, exerciseDao, bandDao),
             scope,
-        ) { now }
+            clock = { now },
+        )
         val key = ProgramKey.BuiltIn(ProgramId.GobletSquatRow)
         repository.follow(key)
         repository.startSession(key)
@@ -590,5 +594,17 @@ class LiftRepositoryTest {
         now += 1_000
         repository.restoreSession(uid)
         assertEquals(uid, repository.sessions.value.single().uid)
+    }
+
+    @Test
+    fun `a session and a band are stored under ids from the generator`() {
+        val repository = FakeLiftStorage().repository(ids = SequentialIds())
+
+        repository.startSession(null)
+        val band = repository.addBand("Red", BandColour.Red)
+
+        assertEquals("id-1", repository.active.value?.uid)
+        assertEquals("id-2", band)
+        assertEquals("Red", repository.bands.value.single { it.id == "id-2" }.name)
     }
 }

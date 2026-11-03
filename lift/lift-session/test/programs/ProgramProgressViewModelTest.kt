@@ -44,7 +44,8 @@ class ProgramProgressViewModelTest {
             bands,
             imports,
             CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
-        ) { 1_000L }
+            clock = { 1_000L },
+        )
     }
 
     @BeforeTest

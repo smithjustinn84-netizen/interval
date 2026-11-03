@@ -4,6 +4,7 @@ package dev.justinsmith.lift.data
 
 import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.platform.HeartRate
+import dev.justinsmith.interval.platform.IdGenerator
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.storage.SerialWriter
 import dev.justinsmith.interval.storage.StorageError
@@ -49,8 +50,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 /**
  * Lift's saved state: its sessions and their sets, the bells the user owns, the programs they made and the
@@ -68,6 +67,7 @@ class LiftRepository(
     private val importDao: LiftImportDao,
     private val scope: CoroutineScope,
     private val clock: WallClock,
+    private val ids: IdGenerator = IdGenerator.Random,
 ) : LiftActivity, SessionStore, SetStore, ProgramStore, ExerciseStore, GearStore {
     private val log = Logger.withTag("LiftRepository")
     private val writer = SerialWriter(scope, log)
@@ -245,7 +245,6 @@ class LiftRepository(
      * Starts a session, a day of [program] or a free one, unless one is in progress already. A day of the
      * program followed is logged as the day it is.
      */
-    @OptIn(ExperimentalUuidApi::class)
     override fun startSession(program: ProgramKey?) {
         val day = _programDay.value?.takeIf { program != null && it.program.key == program }?.number
         writer.persist {
@@ -253,7 +252,7 @@ class LiftRepository(
                 val now = clock.nowMillis()
                 sessionDao.insert(
                     SessionEntity(
-                        Uuid.random().toHexString(),
+                        ids.newId(),
                         now,
                         null,
                         title = "",
@@ -277,9 +276,8 @@ class LiftRepository(
      * Saves [draft] as the program [uid], or as a new one with null; returns its uid. A program followed
      * keeps its place: the days done still count, against the program as it now is.
      */
-    @OptIn(ExperimentalUuidApi::class)
     override fun saveProgram(uid: String?, draft: ProgramDraft): String {
-        val id = uid ?: Uuid.random().toHexString()
+        val id = uid ?: ids.newId()
         val now = clock.nowMillis()
         val row = CustomProgramEntity(
             id,
@@ -508,9 +506,8 @@ class LiftRepository(
      * Saves [draft] as the exercise [uid], or as a new one with null; returns its uid. Its name is kept as
      * written, trimmed, and an archived one stays archived.
      */
-    @OptIn(ExperimentalUuidApi::class)
     override fun saveExercise(uid: String?, draft: ExerciseDraft): String {
-        val id = uid ?: Uuid.random().toHexString()
+        val id = uid ?: ids.newId()
         val made = CustomExercise(
             id,
             draft.name.trim(),
@@ -546,9 +543,8 @@ class LiftRepository(
     }
 
     /** Adds a band named [name] in [colour], heaviest of all; returns its id. */
-    @OptIn(ExperimentalUuidApi::class)
     override fun addBand(name: String, colour: BandColour): String {
-        val id = Uuid.random().toHexString()
+        val id = ids.newId()
         saveBand(Band(id, name, colour, nextBandPosition(_bands.value)))
         return id
     }
