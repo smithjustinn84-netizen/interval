@@ -22,17 +22,15 @@ data class WorkoutOutline(val intervals: List<OutlinedInterval>, val elapsedSeco
         fun of(state: WorkoutState): WorkoutOutline {
             val intervals = mutableListOf<OutlinedInterval>()
             var elapsed = 0
-            var current = WorkoutEngine.start(state.config).state
-            while (!current.isDone) {
-                val now = current.phase == state.phase && current.round == state.round
-                val millis = if (now) state.phaseMillis else current.phaseMillis
-                val interval = OutlinedInterval(current.phase, current.round, (millis / MILLIS_PER_SECOND).toInt())
+            Course.of(state.config).forEach { planned ->
+                val now = planned.comparedTo(state) == 0
+                val seconds = if (now) (state.phaseMillis / MILLIS_PER_SECOND).toInt() else planned.seconds
+                val interval = OutlinedInterval(planned.phase, planned.round, seconds)
                 if (now) {
                     val into = ((state.phaseMillis - state.remainingMillis) / MILLIS_PER_SECOND).toInt()
                     elapsed = intervals.sumOf { it.seconds } + into.coerceIn(0, interval.seconds)
                 }
                 intervals += interval
-                current = WorkoutEngine.advance(current).state
             }
             val outline = WorkoutOutline(intervals, elapsed)
             return if (state.isDone) outline.copy(elapsedSeconds = outline.totalSeconds) else outline

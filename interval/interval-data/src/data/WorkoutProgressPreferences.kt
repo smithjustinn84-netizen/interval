@@ -65,6 +65,8 @@ private class StoredProgress(
     val entryUid: String? = null,
     val effort: Int? = null,
     val note: String = "",
+    /** Since 0.4: a workout saved by 0.3 is in its one set. */
+    val set: Int = 1,
 ) {
     fun toDomain(): WorkoutProgress? {
         val phase = Phase.entries.firstOrNull { it.name == phase } ?: return null
@@ -79,7 +81,7 @@ private class StoredProgress(
         )
         return WorkoutProgress(
             id = id,
-            state = WorkoutState(config, phase, round, remainingMillis, phaseMillis, halfwayCued),
+            state = WorkoutState(config, phase, round, remainingMillis, phaseMillis, halfwayCued, set),
             running = running,
             ended = ended,
             activeMillis = activeMillis,
@@ -129,4 +131,5 @@ private fun WorkoutProgress.stored() = StoredProgress(
     entryUid = entryUid,
     effort = effort?.level,
     note = note,
+    set = state.set,
 )

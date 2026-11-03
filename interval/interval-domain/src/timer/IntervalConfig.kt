@@ -27,10 +27,10 @@ data class IntervalConfig(
 
     /**
      * Wall-clock length of the whole session: prep, the warm-up, every work interval and the rests between
-     * them, and the cool-down.
+     * them, and the cool-down; its [Course]'s sum.
      */
     val totalSeconds: Int
-        get() = prepSeconds + warmUpSeconds + rounds * workSeconds + (rounds - 1) * restSeconds + coolDownSeconds
+        get() = Course.of(this).sumOf { it.seconds }
 
     companion object {
         val PREP_RANGE = 0..600

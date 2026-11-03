@@ -99,7 +99,8 @@ core/
                      src@jvm: the UI harness (`runUiTest`, `setThemedContent`, `StateRestoration`, `waitForText`)
 
 interval/            the interval timer
-  interval-domain    packages `.timer` and `.model`: `IntervalConfig`, `Preset`, `WorkoutEngine`, calories, the
+  interval-domain    packages `.timer` and `.model`: `IntervalConfig`, `Preset`, `Course` (every
+                     interval a config runs through, which `WorkoutEngine` walks), calories, the
                      describe parser, `AppSettings`, `HistoryEntry`, `PlannedWorkout`, `LiftWorkout`,
                      `WorkoutProgress`; over `core-time` alone, neither `core` nor anything of Lift's (History
                      makes a `LiftWorkout` from a Lift session, `asLiftWorkouts` in interval-history)

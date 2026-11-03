@@ -91,6 +91,9 @@ class IntervalRepositoryTest {
         )
         repository().saveWorkoutProgress(progress)
         assertEquals(progress, repository().workoutProgress.value)
+        val secondSet = progress.copy(state = state.copy(set = 2))
+        repository().saveWorkoutProgress(secondSet)
+        assertEquals(secondSet, repository().workoutProgress.value)
 
         repository().saveWorkoutProgress(null)
         assertNull(repository().workoutProgress.value)

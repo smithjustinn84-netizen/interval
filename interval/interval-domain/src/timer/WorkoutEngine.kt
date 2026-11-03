@@ -17,6 +17,8 @@ data class WorkoutState(
     val phaseMillis: Long,
     /** The current interval's [Cue.Halfway] has played: added time can't bring it back. */
     val halfwayCued: Boolean = false,
+    /** 1-based, like [round]: the set the round is in. 1 for a workout of one set. */
+    val set: Int = 1,
 ) {
     val isDone: Boolean get() = phase == Phase.Done
     val isLastRound: Boolean get() = round >= config.rounds
@@ -28,20 +30,8 @@ data class WorkoutState(
     /** Time left in the whole session, the current interval included. */
     val sessionRemainingMillis: Long
         get() {
-            val roundsAfter = (config.rounds - round).toLong()
-            val work = config.workSeconds * MILLIS_PER_SECOND
-            val rest = config.restSeconds * MILLIS_PER_SECOND
-            val warmUp = config.warmUpSeconds * MILLIS_PER_SECOND
-            val coolDown = config.coolDownSeconds * MILLIS_PER_SECOND
-            val rounds = config.rounds * work + (config.rounds - 1) * rest
-            val after = when (phase) {
-                Phase.Prep -> warmUp + rounds + coolDown
-                Phase.WarmUp -> rounds + coolDown
-                Phase.Work -> roundsAfter * (work + rest) + coolDown
-                Phase.Rest -> roundsAfter * work + (roundsAfter - 1).coerceAtLeast(0) * rest + coolDown
-                Phase.CoolDown, Phase.Done -> 0L
-            }
-            return (remainingMillis.coerceAtLeast(0) + after).coerceAtLeast(0)
+            val after = Course.of(config).filter { it.comparedTo(this) > 0 }.sumOf { it.seconds.toLong() }
+            return remainingMillis.coerceAtLeast(0) + after * MILLIS_PER_SECOND
         }
 }
 
@@ -94,15 +84,7 @@ object WorkoutEngine {
     /** How far into an interval Back restarts it rather than going to the previous one. */
     const val BACK_RESTART_THRESHOLD_MILLIS = 2_000L
 
-    fun start(config: IntervalConfig): Step = started(
-        config,
-        when {
-            config.prepSeconds > 0 -> Phase.Prep
-            config.warmUpSeconds > 0 -> Phase.WarmUp
-            else -> Phase.Work
-        },
-        round = 1,
-    )
+    fun start(config: IntervalConfig): Step = started(config, Course.of(config).first())
 
     /**
      * Moves the workout on by [elapsedMillis], however long: the tenth of a second between two ticks, or
@@ -164,25 +146,9 @@ object WorkoutEngine {
 
     /** Ends the current interval now and starts the next, as if its time had run out. */
     fun advance(state: WorkoutState): Step {
-        val config = state.config
-        return when (state.phase) {
-            Phase.Prep -> started(config, if (config.warmUpSeconds > 0) Phase.WarmUp else Phase.Work, state.round)
-
-            Phase.WarmUp -> started(config, Phase.Work, state.round)
-
-            Phase.Work -> when {
-                state.isLastRound && config.coolDownSeconds > 0 -> started(config, Phase.CoolDown, state.round)
-                state.isLastRound -> finished(state)
-                config.restSeconds == 0 -> started(config, Phase.Work, state.round + 1)
-                else -> started(config, Phase.Rest, state.round)
-            }
-
-            Phase.Rest -> started(config, Phase.Work, state.round + 1)
-
-            Phase.CoolDown -> finished(state)
-
-            Phase.Done -> Step(state)
-        }
+        if (state.isDone) return Step(state)
+        val next = Course.of(state.config).firstOrNull { it.comparedTo(state) > 0 }
+        return if (next == null) finished(state) else started(state.config, next)
     }
 
     private fun finished(state: WorkoutState): Step =
@@ -194,36 +160,12 @@ object WorkoutEngine {
      */
     fun back(state: WorkoutState): WorkoutState {
         if (state.isDone) return state
-        val config = state.config
+        val course = Course.of(state.config)
         val intoInterval = state.phaseMillis - state.remainingMillis
-        val before = before(state)
-        if (intoInterval > BACK_RESTART_THRESHOLD_MILLIS || before == null) {
-            return enter(config, state.phase, state.round)
-        }
-        return enter(config, before.first, before.second)
-    }
-
-    /** The interval that runs before the current one, as its phase and round; null for the first. */
-    private fun before(state: WorkoutState): Pair<Phase, Int>? {
-        val config = state.config
-        val beforeRounds = when {
-            config.warmUpSeconds > 0 -> Phase.WarmUp
-            config.prepSeconds > 0 -> Phase.Prep
-            else -> null
-        }
-        return when (state.phase) {
-            Phase.Prep, Phase.Done -> null
-
-            Phase.WarmUp -> if (config.prepSeconds > 0) Phase.Prep to 1 else null
-
-            Phase.Work -> when {
-                state.round == 1 -> beforeRounds?.let { it to 1 }
-                config.restSeconds == 0 -> Phase.Work to state.round - 1
-                else -> Phase.Rest to state.round - 1
-            }
-
-            Phase.Rest, Phase.CoolDown -> Phase.Work to state.round
-        }
+        val current = course.firstOrNull { it.comparedTo(state) == 0 }
+        val before = course.lastOrNull { it.comparedTo(state) < 0 }
+        val target = if (intoInterval > BACK_RESTART_THRESHOLD_MILLIS || before == null) current else before
+        return target?.let { enter(state.config, it) } ?: state.copy(remainingMillis = state.phaseMillis)
     }
 
     /**
@@ -233,15 +175,16 @@ object WorkoutEngine {
      * Pure: what a phone that is about to suspend the app can schedule in its stead. Empty once done.
      */
     fun upcomingChanges(state: WorkoutState): List<UpcomingChange> {
+        if (state.isDone) return emptyList()
         val changes = mutableListOf<UpcomingChange>()
-        var current = state
-        var offset = 0L
-        while (!current.isDone) {
-            offset += current.remainingMillis.coerceAtLeast(0)
-            current = advance(current).state
-            changes += UpcomingChange(current.phase, current.round, offset)
+        var offset = state.remainingMillis.coerceAtLeast(0)
+        var lastRound = state.round
+        Course.of(state.config).filter { it.comparedTo(state) > 0 }.forEach {
+            changes += UpcomingChange(it.phase, it.round, offset)
+            offset += it.seconds * MILLIS_PER_SECOND
+            lastRound = it.round
         }
-        return changes
+        return changes + UpcomingChange(Phase.Done, lastRound, offset)
     }
 
     fun addTime(state: WorkoutState, millis: Long = ADD_TIME_MILLIS): WorkoutState {
@@ -250,20 +193,14 @@ object WorkoutEngine {
         return state.copy(remainingMillis = remaining, phaseMillis = maxOf(state.phaseMillis, remaining))
     }
 
-    private fun started(config: IntervalConfig, phase: Phase, round: Int): Step {
-        val state = enter(config, phase, round)
-        return Step(state, listOf(Cue.PhaseStarted(phase, lastRound = phase == Phase.Work && state.isLastRound)))
+    private fun started(config: IntervalConfig, interval: Interval): Step {
+        val state = enter(config, interval)
+        val lastRound = interval.phase == Phase.Work && state.isLastRound
+        return Step(state, listOf(Cue.PhaseStarted(interval.phase, lastRound)))
     }
 
-    private fun enter(config: IntervalConfig, phase: Phase, round: Int): WorkoutState {
-        val millis = when (phase) {
-            Phase.Prep -> config.prepSeconds
-            Phase.WarmUp -> config.warmUpSeconds
-            Phase.Work -> config.workSeconds
-            Phase.Rest -> config.restSeconds
-            Phase.CoolDown -> config.coolDownSeconds
-            Phase.Done -> 0
-        } * MILLIS_PER_SECOND
-        return WorkoutState(config, phase, round, remainingMillis = millis, phaseMillis = millis)
+    private fun enter(config: IntervalConfig, interval: Interval): WorkoutState {
+        val millis = interval.seconds * MILLIS_PER_SECOND
+        return WorkoutState(config, interval.phase, interval.round, millis, millis, set = interval.set)
     }
 }

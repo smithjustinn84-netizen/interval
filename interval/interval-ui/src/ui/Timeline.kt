@@ -25,7 +25,9 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
+import dev.justinsmith.interval.timer.Course
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.Phase
 
 /**
  * Round-by-round marks (the workout's dots, a timeline's segments) stop being readable past a
@@ -52,20 +54,23 @@ fun Timeline(
     val palette = IntervalTheme.palette
     val work = palette.accent
     val rest = palette.timelineRest
-    val segments = buildList {
-        if (showPrep && config.prepSeconds > 0) add(palette.surfaceVariant to config.prepSeconds)
-        if (config.warmUpSeconds > 0) add(rest to config.warmUpSeconds)
-        if (config.rounds <= MAX_ROUND_MARKS) {
-            repeat(config.rounds) { round ->
-                add(work to config.workSeconds)
-                if (round < config.rounds - 1 && config.restSeconds > 0) add(rest to config.restSeconds)
-            }
-        } else {
-            add(work to config.rounds * config.workSeconds)
-            val restTotal = (config.rounds - 1) * config.restSeconds
-            if (restTotal > 0) add(rest to restTotal)
+    fun colorOf(phase: Phase) = when (phase) {
+        Phase.Prep -> palette.surfaceVariant
+        Phase.Work -> work
+        else -> rest
+    }
+    val course = Course.of(config).filter { showPrep || it.phase != Phase.Prep }
+    val segments = if (config.rounds <= MAX_ROUND_MARKS) {
+        course.map { colorOf(it.phase) to it.seconds }
+    } else {
+        // Only the shares: what comes before the rounds, all their work, all their rest, then the cool-down.
+        fun total(phase: Phase) = course.filter { it.phase == phase }.sumOf { it.seconds }
+        buildList {
+            course.takeWhile { it.phase != Phase.Work }.forEach { add(colorOf(it.phase) to it.seconds) }
+            add(work to total(Phase.Work))
+            if (total(Phase.Rest) > 0) add(rest to total(Phase.Rest))
+            if (total(Phase.CoolDown) > 0) add(rest to total(Phase.CoolDown))
         }
-        if (config.coolDownSeconds > 0) add(rest to config.coolDownSeconds)
     }
     Row(
         modifier

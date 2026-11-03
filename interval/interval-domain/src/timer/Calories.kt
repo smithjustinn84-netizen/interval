@@ -110,12 +110,14 @@ fun estimateCalories(
  * guess for those.
  */
 fun IntervalConfig.plannedWorkSeconds(elapsedSeconds: Int, endedEarly: Boolean): Int {
-    val all = rounds * workSeconds
-    if (!endedEarly) return all
-    val intoRounds = (elapsedSeconds - prepSeconds - warmUpSeconds).coerceAtLeast(0)
-    val cycle = workSeconds + restSeconds
-    val work = intoRounds / cycle * workSeconds + minOf(intoRounds % cycle, workSeconds)
-    return work.coerceAtMost(all)
+    if (!endedEarly) return Course.workSeconds(this)
+    var start = 0
+    var work = 0
+    Course.of(this).forEach {
+        if (it.phase == Phase.Work) work += (elapsedSeconds - start).coerceIn(0, it.seconds)
+        start += it.seconds
+    }
+    return work
 }
 
 private const val OXYGEN_ML_PER_MET = 3.5

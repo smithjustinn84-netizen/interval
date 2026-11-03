@@ -378,6 +378,10 @@ flowchart TD
 - **Warm-Up & Cool-Down Phases**:
   - `IntervalConfig` supports optional `warmUpSeconds` and `coolDownSeconds`. The workout engine runs them in sequence
     (`GetReady` → `WarmUp` → rounds → `CoolDown`).
+  - `Course.of(config)` (`interval-domain`, `timer/Course.kt`) lays out every `Interval` (phase, set, round, seconds)
+    once from the config. The engine walks it by (phase, set, round): `advance`, Back, `sessionRemainingMillis` and
+    `upcomingChanges` read it, as do `WorkoutOutline`, the `Timeline`, `totalSeconds` and the calorie fallback. Nothing
+    else works out a workout's length from its fields.
   - Both phases are visually distinguished in the timeline, announced by spoken/audio cues, tracked in Live Updates,
     and written as distinct exercise activity spans to Health Connect.
 - **Finish Reflection ("How was it?")**:

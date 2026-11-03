@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.model
 
 import dev.justinsmith.interval.timer.Activity
+import dev.justinsmith.interval.timer.Course
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.MINUTES_PER_DAY
@@ -37,7 +38,7 @@ data class BodySettings(
 
     /** What [config] will burn if it runs as planned, get ready included; null without a weight. */
     fun plannedCalories(config: IntervalConfig): Int? {
-        val work = config.rounds * config.workSeconds
+        val work = Course.workSeconds(config)
         return calories(work, config.totalSeconds - work, config.activity)
     }
 }
