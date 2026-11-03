@@ -27,7 +27,8 @@ Full architecture guide: [docs/architecture.md](docs/architecture.md). Known deb
                                         # Unsigned until a keystore is set up (`./kotlin tool generate-keystore`)
 python3 tools/check_versions.py         # Verify Android and iOS version parity (run in CI)
 python3 tools/check_ios_shards.py       # Every module with common tests is on one line of ios-test-shards.txt (run in CI)
-python3 tools/check_module_rules.py     # Every module dependency keeps the layering below (run in CI)
+python3 tools/check_module_rules.py     # Every module dependency keeps the layering below, and docs/architecture.md's
+                                        # diagram draws the modules as they are (run in CI); --write-diagram redraws it
 uv run --with pillow tools/generate_icons.py  # Regenerate app icons and launch screens from the vector mark
 ./kotlin show modules | settings | dependencies | tasks
 ```

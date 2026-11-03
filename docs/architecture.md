@@ -16,120 +16,119 @@ The system is structured around two distinct workout domains unified within a sh
 
 ```mermaid
 graph TD
-    subgraph Applications ["Application targets"]
-        AndroidApp["androidApp"]
-        IOSApp["iosApp"]
-        DesktopApp["desktopApp"]
+    subgraph applicationTargets ["Application targets"]
+        androidApp["androidApp"]
+        desktopApp["desktopApp"]
+        iosApp["iosApp"]
     end
 
-    App["app (App.kt, Navigation 3, AppKoin, export and import)"]
+    app["app"]
 
-    subgraph IntervalFeatures ["Interval features"]
-        Timer["interval-timer"]
-        Workout["interval-workout"]
-        Presets["interval-presets"]
-        History["interval-history (History and Plan)"]
-        Settings["interval-settings"]
+    subgraph intervalFeatures ["Interval features"]
+        intervalHistory["interval-history"]
+        intervalPresets["interval-presets"]
+        intervalSettings["interval-settings"]
+        intervalTimer["interval-timer"]
+        intervalWorkout["interval-workout"]
     end
 
-    subgraph LiftFeatures ["Lift features"]
-        LiftNav["lift-nav (routes and entries)"]
-        LiftToday["lift-today"]
-        LiftSession["lift-session"]
-        LiftLib["lift-library"]
+    subgraph liftFeatures ["Lift features"]
+        liftLibrary["lift-library"]
+        liftNav["lift-nav"]
+        liftSession["lift-session"]
+        liftToday["lift-today"]
     end
 
-    subgraph SharedUI ["Shared UI"]
-        IntervalUI["interval-ui"]
-        LiftUI["lift-ui"]
-        Core["core (theme, tokens, components, nav)"]
+    subgraph sharedUi ["Shared UI"]
+        core["core"]
+        intervalUi["interval-ui"]
+        liftUi["lift-ui"]
     end
 
-    subgraph Platform ["Platform services"]
-        IntervalPlatform["interval-platform (cues, WorkoutService, reminders)"]
-        LiftPlatform["lift-platform (Beeper, SessionKeepAlive)"]
+    subgraph platformServices ["Platform services"]
+        intervalPlatform["interval-platform"]
+        liftPlatform["lift-platform"]
     end
 
-    subgraph Data ["Data"]
-        IntervalData["interval-data (Room, DataStore)"]
-        LiftData["lift-data (Room)"]
+    subgraph data ["Data"]
+        intervalData["interval-data"]
+        liftData["lift-data"]
     end
 
-    subgraph Api ["Contracts"]
-        IntervalPlatformApi["interval-platform-api (CuePlayer, ActiveWorkout, PlanReminders)"]
-        LiftApi["lift-api (LiftActivity, IntervalActivity)"]
+    subgraph contracts ["Contracts"]
+        intervalPlatformApi["interval-platform-api"]
+        liftApi["lift-api"]
     end
 
-    subgraph Pure ["Pure layers"]
-        IntervalDomain["interval-domain"]
-        LiftDomain["lift-domain"]
-        CorePlatform["core-platform (clocks, Health, storage plumbing)"]
-        CoreTime["core-time"]
+    subgraph pureLayers ["Pure layers"]
+        corePlatform["core-platform"]
+        coreTime["core-time"]
+        intervalDomain["interval-domain"]
+        liftDomain["lift-domain"]
     end
 
-    AndroidApp --> App
-    IOSApp --> App
-    DesktopApp --> App
+    androidApp --> app
+    desktopApp --> app
+    iosApp --> app
 
-    App --> Timer
-    App --> Workout
-    App --> Settings
-    App --> History
-    App --> LiftNav
-    App --> IntervalPlatform
-    App --> LiftPlatform
+    app --> intervalHistory
+    app --> intervalSettings
+    app --> intervalTimer
+    app --> intervalWorkout
+    app --> liftNav
+    app --> intervalPlatform
 
-    Timer --> Presets
-    Workout --> Presets
-    Workout --> IntervalPlatformApi
-    Workout --> LiftApi
-    Presets --> IntervalData
-    Presets --> IntervalUI
-    Settings --> IntervalData
-    Settings --> IntervalPlatformApi
-    Settings --> IntervalUI
-    History --> IntervalData
-    History --> IntervalUI
-    History --> IntervalPlatformApi
-    History --> LiftApi
-    History --> LiftUI
+    intervalHistory --> intervalUi
+    intervalHistory --> liftUi
+    intervalHistory --> intervalData
+    intervalHistory --> intervalPlatformApi
+    intervalHistory --> liftApi
+    intervalPresets --> intervalUi
+    intervalPresets --> intervalData
+    intervalSettings --> intervalUi
+    intervalSettings --> intervalData
+    intervalSettings --> intervalPlatformApi
+    intervalTimer --> intervalPresets
+    intervalWorkout --> intervalPresets
+    intervalWorkout --> intervalPlatformApi
+    intervalWorkout --> liftApi
 
-    LiftNav --> LiftToday
-    LiftNav --> LiftSession
-    LiftNav --> LiftLib
-    LiftSession --> LiftLib
-    LiftSession --> LiftPlatform
-    LiftToday --> LiftData
-    LiftToday --> LiftUI
-    LiftLib --> LiftData
-    LiftLib --> LiftUI
+    liftLibrary --> liftUi
+    liftLibrary --> liftData
+    liftNav --> liftSession
+    liftNav --> liftToday
+    liftSession --> liftLibrary
+    liftSession --> liftPlatform
+    liftToday --> liftUi
+    liftToday --> liftData
 
-    IntervalUI --> Core
-    IntervalUI --> IntervalDomain
-    LiftUI --> Core
-    LiftUI --> LiftDomain
-    Core --> CorePlatform
+    core --> corePlatform
+    intervalUi --> core
+    intervalUi --> intervalDomain
+    liftUi --> core
+    liftUi --> liftDomain
 
-    IntervalPlatform --> IntervalPlatformApi
-    IntervalPlatform --> IntervalData
-    IntervalPlatform --> CorePlatform
-    IntervalPlatformApi --> IntervalDomain
-    LiftData --> LiftApi
-    LiftApi --> LiftDomain
-    LiftPlatform --> LiftData
-    LiftPlatform --> CorePlatform
+    intervalPlatform --> intervalData
+    intervalPlatform --> intervalPlatformApi
+    liftPlatform --> liftData
 
-    IntervalData --> IntervalDomain
-    IntervalData --> CorePlatform
-    LiftData --> LiftDomain
-    LiftData --> CorePlatform
-    IntervalDomain --> CoreTime
-    CorePlatform --> CoreTime
+    intervalData --> corePlatform
+    intervalData --> intervalDomain
+    liftData --> liftApi
+    liftData --> corePlatform
+
+    intervalPlatformApi --> intervalDomain
+    liftApi --> liftDomain
+
+    corePlatform --> coreTime
+    intervalDomain --> coreTime
 ```
 
-Direct dependencies only, as each `module.yaml` lists them; every Compose feature module also takes `core` through
-the `compose-lib` template. `app` also lists each side's domain, data and `interval-ui` to assemble the
-container; those edges are left out for legibility. `tools/check_module_rules.py` is the authority.
+Drawn from the modules themselves: `python3 tools/check_module_rules.py --diagram` reads every `module.yaml`
+(templates expanded) and draws each module's `dependencies`, the testing modules and the build plugins left out,
+reduced to the edges no other already implies (`app` lists `interval-domain`, say, but reaches it through
+`interval-timer`; every Compose module takes `core` through its `-ui`). CI fails when this block and the modules
+disagree; `--write-diagram` puts the current one here. The module table below says what each does.
 
 ---
 
@@ -212,7 +211,7 @@ long-running work out of `viewModelScope`, and give a ViewModel's parts classes 
 
 ## Module Architecture
 
-The project contains 29 modules in five folders (`apps/`, `core/`, `interval/`, `lift/`, `tooling/`), configured via
+The project contains 31 modules in five folders (`apps/`, `core/`, `interval/`, `lift/`, `tooling/`), configured via
 [project.yaml](../project.yaml) and each module's `module.yaml`; `./kotlin show modules` describes each.
 Each module applies a reusable template from `templates/`:
 - `lib`: Standard Kotlin Multiplatform library with warnings-as-errors, ktlint, and detekt.

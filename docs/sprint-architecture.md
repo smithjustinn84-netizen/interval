@@ -407,7 +407,8 @@ The cut line is after ticket 5.
   for them in `check_module_rules.py`. Done since, in `zurwuryr`.
 - **An `IdGenerator`; `WallClock` in the reminders** (C5). **History's view in `SavedStateHandle`** (F4).
 - **The architecture diagram generated** from `module.yaml` by `check_module_rules.py`, so it can't go stale
-  again.
+  again. Done since, in `mqkprtyn`: `--diagram` draws it, `--write-diagram` puts it in `docs/architecture.md`, and
+  the check fails when the two disagree.
 
 ## Suggested order and calendar
 

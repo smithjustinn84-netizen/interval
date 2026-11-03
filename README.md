@@ -65,18 +65,21 @@ Built with **Compose Multiplatform** for **Android**, **iOS**, and **Desktop (JV
 - **App Shortcuts**: Long-press launcher shortcuts on Android to quickly "Start a workout" or "Start a Lift session" without interrupting any active workout.
 
 ### 🏋️ Strength & Kettlebell Training (Lift)
-- **Built-in & Custom Programs**: 29 built-in programs across 6 training families (Simple & Sinister, Rite of Passage, Quick & the Dead, etc.), with an interactive block and rep-range editor.
-- **100+ Exercise Library**: Extensive movement catalog categorized by muscle groups (kettlebell, barbell, bodyweight, bands) complete with form cues and custom movement creation.
-- **Session Tracking**: Sets, weights, reps, EMOM timers, hold clocks, and automatic rest intervals.
+- **Built-in & Custom Programs**: 30 built-in programs across 6 training families (Simple & Sinister, Rite of Passage, Easy Strength, 15-Minute Kettlebell Plan, etc.), with an interactive block and rep-range editor.
+- **Make It Yours**: Clone any built-in program into a customizable copy (`(yours)`) to modify rep ranges, timed holds, resistance bands, double bells, and schedules while preserving your progression.
+- **Rep Progression & Balance Preview**: Programs build volume within a rep range before stepping up to a heavier bell; "Very hard" or "All out" exertion ratings hold step-ups back until approved. Program sheets display weekly muscle group balance and highlight untargeted groups.
+- **100+ Exercise Library**: Extensive movement catalog categorized by muscle groups (kettlebell, barbell, bodyweight, bands, mat Pilates) complete with form cues and custom movement creation.
+- **Session Tracking**: Sets, loads (single/double bells, barbell, bodyweight, bands), reps, EMOM timers, hold clocks, and automatic rest intervals.
 - **Muscle Balance**: 4-week balance card tracking sets across 7 key muscle groups (chest, shoulders, back, arms, core, glutes & hamstrings, quads & calves), separating primary and assisting volume and highlighting unworked areas.
-- **Screen-Off Rest Alerts**: Android counts rest on the lock screen with Live Update chips and beeps when finished; iOS displays in-app banners when open and local notifications when locked.
+- **Screen-Off Timers & Process Survivability**: Android counts rests, EMOMs, and timed holds on the lock screen with Live Update chips and beeps when finished; iOS displays in-app banners when open and local notifications when locked. Active sessions, rest clocks, and EMOM intervals safely survive background memory reclamation.
 - **Personal Records (PRs)**: Automatic PR detection and volume load progression tracking.
 
 ### 📅 Unified History, Planning & Streaks
 - **Integrated Training Log**: Daily calendar view, 12-week volume charts, weekly goals, workout kind breakdowns, and streak tracking that unifies cardio and strength workouts.
-- **Post-Workout Reflection ("How was it?")**: Log perceived exertion (Easy, Steady, Hard, Very hard, All out) and a custom note upon completing any interval or Lift workout; reflected in history, exports, summaries, and Health Connect notes.
+- **Post-Workout Reflection ("How was it?")**: Log perceived exertion (Easy, Steady, Hard, Very hard, All out) and a custom note upon completing any interval or Lift workout; reflected in history, exports, summaries, Apple Health, and Health Connect.
 - **Routines & Reminders**: Schedule recurring workouts by weekday with reboot-resilient notification reminders.
-- **Calorie Estimation & Health Connect**: Dynamic calorie expenditure calculations based on exercise type, duration, and body weight. Syncs completed interval workouts and Lift sessions to Health Connect as exercise sessions with notes and calories, and provides one-tap reading of latest weight without unwanted background syncing.
+- **Health Platform Sync (Apple Health & Health Connect)**: Dynamic calorie expenditure calculations based on exercise type, duration, and body weight. Syncs completed interval workouts and Lift sessions with intervals/sets, pauses, calories, and perceived exertion to Apple Health (iOS) and Health Connect (Android).
+- **Watch Heart Rate & Scale Weight**: Displays average and peak heart rate recorded by connected smartwatches on workout summaries and detail pages. Offers one-tap reading of your latest scale weight without background syncing or polling. Fully opt-in with immediate disconnect.
 
 ### 🔒 Privacy-First & Offline
 - **Zero Tracking**: No accounts, no sign-ups, no ads, and zero analytics or telemetry.
@@ -89,7 +92,7 @@ Built with **Compose Multiplatform** for **Android**, **iOS**, and **Desktop (JV
 
 ## 🏗️ Architecture & Tech Stack
 
-Interval is designed around modern multiplatform architecture principles, cleanly separated into 29 modules in five folders:
+Interval is designed around modern multiplatform architecture principles, cleanly separated into 31 modules in five folders:
 
 ```
 interval/
@@ -143,7 +146,7 @@ interval/
 - **Navigation**: [Jetpack Navigation 3](https://developer.android.com/guide/navigation) with adaptive multi-pane layouts
 - **Dependency Injection**: [Koin](https://insert-koin.io/) & `koin-compose` with process-scoped initialization, feature modules, and compile-time verification (`VerifyAppModulesTest`)
 - **Database & Persistence**: [Room KMP](https://developer.android.com/kotlin/multiplatform/room) with SQLite driver + AndroidX DataStore
-- **Health Platform**: [Health Connect](https://developer.android.com/health-and-fitness/guides/health-connect) on Android for exercise sessions, calorie logs, and weight reads
+- **Health Platforms**: [Health Connect](https://developer.android.com/health-and-fitness/guides/health-connect) on Android and [HealthKit / Apple Health](https://developer.apple.com/documentation/healthkit) on iOS for workouts, sets, calorie logs, heart rate, and weight reads
 - **Build Toolchain**: [Kotlin Toolchain (Amper)](https://kotlin-toolchain.org/latest/) — **No Gradle daemon, zero `build.gradle.kts` files**
 - **Architecture Guide**: For in-depth rules and layer boundaries, see [docs/architecture.md](./docs/architecture.md).
 
@@ -157,7 +160,7 @@ The repository includes self-bootstrapping wrappers (`./kotlin` for macOS/Linux,
 
 - **Desktop (JVM) & Android**: JDK and Android SDK components are auto-provisioned by the toolchain.
 - **iOS**: Requires macOS with Xcode installed to compile Kotlin/Native frameworks.
-- **Tools**: Python 3 is required for release and version validation scripts (`tools/check_versions.py`).
+- **Tools**: Python 3 is required for architecture rule validation (`tools/check_module_rules.py`) and version parity checks (`tools/check_versions.py`).
 
 ### Common Commands
 
@@ -176,6 +179,9 @@ The repository includes self-bootstrapping wrappers (`./kotlin` for macOS/Linux,
 
 # Run Detekt static analysis
 ./kotlin check detekt
+
+# Verify architectural module boundary rules
+python3 tools/check_module_rules.py
 ```
 
 ---

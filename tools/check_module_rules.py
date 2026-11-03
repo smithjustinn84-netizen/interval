@@ -15,6 +15,10 @@ core-testing, domain, api, data, platform, ui, testing, feature, entry, app, hos
   `$libs.koin.compose`, no `compose-lib`, and no `settings: compose: enabled`.
 - every library (all but the hosts and the tooling plugins) applies a template from `templates/`.
 - no source under `interval/*/src*` names `LiftRepository`: the interval side reads Lift through `LiftActivity`.
+- the module diagram in docs/architecture.md is the one these modules draw (`--diagram` prints it,
+  `--write-diagram` puts it in the doc): each module's `dependencies`, the testing modules and the build plugins
+  left out, reduced to the edges no other already implies (`app` lists `interval-domain`, but reaches it through
+  `interval-timer`), one subgraph per layer.
 
 Dependencies are read from every module's `dependencies`, `dependencies@<platform>` and `test-dependencies`
 sections, after the templates under `apply:` are expanded. Standard library only:
@@ -29,6 +33,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PROJECT = ROOT / "project.yaml"
+ARCHITECTURE = ROOT / "docs" / "architecture.md"
 
 SIDES_SEEN = {
     "core": {"core"},
@@ -85,6 +90,36 @@ LIFT_REPOSITORY = re.compile(r"\bLiftRepository\b")
 
 CORE_KINDS = {"core-time": "time", "core-platform": "core-platform", "core": "core", "core-testing": "core-testing"}
 SUFFIX_KINDS = {"domain", "api", "data", "platform", "ui", "testing"}
+
+# The diagram's layers, top down, and the kind of module each draws; a feature's is its side's. The testing
+# modules and the build plugins are not drawn: nothing the app runs depends on them. `app` stands alone between
+# the hosts and the features.
+LAYERS = [
+    "Application targets",
+    "",
+    "Interval features",
+    "Lift features",
+    "Shared UI",
+    "Platform services",
+    "Data",
+    "Contracts",
+    "Pure layers",
+]
+LAYER_OF_KIND = {
+    "host": "Application targets",
+    "app": "",
+    "entry": "Lift features",
+    "ui": "Shared UI",
+    "core": "Shared UI",
+    "platform": "Platform services",
+    "data": "Data",
+    "api": "Contracts",
+    "domain": "Pure layers",
+    "core-platform": "Pure layers",
+    "time": "Pure layers",
+}
+# The doc's diagram: the one fenced Mermaid graph in docs/architecture.md.
+DIAGRAM = re.compile(r"(?<=```mermaid\n)graph TD\n.*?(?=```)", re.S)
 
 
 @dataclass
@@ -245,6 +280,84 @@ def lift_repository_uses(root: Path) -> list[str]:
     ]
 
 
+def layer_of(module: Module) -> str | None:
+    """The diagram layer [module] is drawn in, or None for one that isn't."""
+    kind = kind_of(module.name, module.side)
+    if kind == "feature":
+        return "Interval features" if module.side == "interval" else "Lift features"
+    return LAYER_OF_KIND.get(kind)
+
+
+def reduced(graph: dict[str, set[str]]) -> dict[str, set[str]]:
+    """Each node's edges that no path through its other edges already implies: the transitive reduction."""
+    reach: dict[str, set[str]] = {}
+
+    def reachable(node: str) -> set[str]:
+        if node not in reach:
+            reach[node] = set()  # stops a cycle, which the rules refuse anyway
+            found = set()
+            for dep in graph.get(node, ()):
+                found.add(dep)
+                found |= reachable(dep)
+            reach[node] = found
+        return reach[node]
+
+    return {
+        node: {dep for dep in deps if not any(dep in reachable(other) for other in deps if other != dep)}
+        for node, deps in graph.items()
+    }
+
+
+def node_id(name: str) -> str:
+    """A Mermaid id for a module: `interval-ui` is `intervalUi`."""
+    first, *rest = name.split("-")
+    return first + "".join(part.capitalize() for part in rest)
+
+
+def diagram(modules: dict[str, Module]) -> str:
+    """The Mermaid graph of the modules drawn (`layer_of`), a subgraph per layer, the edges reduced."""
+    drawn = {name: module for name, module in modules.items() if layer_of(module) is not None}
+    edges = reduced({name: {dep for dep in module.deps if dep in drawn} for name, module in drawn.items()})
+    lines, order = ["graph TD"], []
+    for layer in LAYERS:
+        members = sorted(name for name, module in drawn.items() if layer_of(module) == layer)
+        order += members
+        if layer:
+            lines.append(f'    subgraph {node_id(layer.lower().replace(" ", "-"))} ["{layer}"]')
+            lines += [f'        {node_id(name)}["{name}"]' for name in members]
+            lines.append("    end")
+        else:
+            lines += [f'    {node_id(name)}["{name}"]' for name in members]
+        lines.append("")
+    for layer in LAYERS:
+        drawn_edges = [
+            f"    {node_id(name)} --> {node_id(dep)}"
+            for name in order
+            if layer_of(drawn[name]) == layer
+            for dep in sorted(edges[name], key=order.index)
+        ]
+        if drawn_edges:
+            lines += drawn_edges + [""]
+    return "\n".join(lines[:-1]) + "\n"
+
+
+def doc_diagram(doc: Path) -> str | None:
+    """The diagram [doc] holds, or None when it has none."""
+    found = DIAGRAM.search(doc.read_text())
+    return found.group(0) if found else None
+
+
+def write_diagram(doc: Path, drawn: str) -> None:
+    doc.write_text(DIAGRAM.sub(lambda _: drawn, doc.read_text(), count=1))
+
+
+def stale_diagram(doc: Path, drawn: str) -> list[str]:
+    """A problem when [doc]'s diagram isn't [drawn]."""
+    if doc_diagram(doc) == drawn:
+        return []
+    return [f"{doc.name}: the module diagram is not the modules' (python3 tools/check_module_rules.py --write-diagram)"]
+
+
 def self_test() -> None:
     def fake(name: str, side: str, deps=(), test_deps=(), compose=(), templates=("lib",)) -> Module:
         return Module(name, side, set(deps), set(test_deps), list(compose), list(templates))
@@ -312,8 +425,30 @@ def self_test() -> None:
     graph["lift-ui"].templates.clear()
     assert any("applies a template" in p for p in check(graph)), "every library applies a template"
 
+    assert reduced({"a": {"b", "c"}, "b": {"c"}, "c": set()}) == {"a": {"b"}, "b": {"c"}, "c": set()}, "an implied edge is dropped"
+    assert reduced({"a": {"b", "c"}, "b": set(), "c": set()}) == {"a": {"b", "c"}, "b": set(), "c": set()}, "direct edges stay"
+    assert node_id("interval-platform-api") == "intervalPlatformApi" and node_id("androidApp") == "androidApp"
+    drawn = diagram(base)
+    assert drawn.startswith("graph TD\n    subgraph applicationTargets [\"Application targets\"]\n        androidApp[\"androidApp\"]\n")
+    assert '    app["app"]' in drawn, "app stands alone"
+    assert "subgraph intervalFeatures" in drawn and "subgraph pureLayers" in drawn, "a subgraph per layer"
+    assert "Testing" not in drawn and "testing" not in drawn, "the testing modules aren't drawn"
+    assert "    app --> intervalTimer\n" in drawn and "    app --> core\n" not in drawn, "an edge another implies is left out"
+    assert "    intervalTimer --> intervalPresets\n" in drawn and "    liftApi --> liftDomain\n" in drawn
+    assert drawn == diagram(base), "the diagram is the same each time"
+
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)
+        doc = root / "architecture.md"
+        doc.write_text("# Architecture\n\n```mermaid\ngraph TD\n    old[\"old\"]\n```\n\nAfter.\n")
+        assert doc_diagram(doc) == 'graph TD\n    old["old"]\n'
+        assert stale_diagram(doc, drawn), "a diagram the modules don't draw is stale"
+        write_diagram(doc, drawn)
+        assert stale_diagram(doc, drawn) == [], "the written diagram is current"
+        assert doc.read_text().startswith("# Architecture\n\n```mermaid\ngraph TD\n    subgraph") and doc.read_text().endswith("```\n\nAfter.\n")
+        doc.write_text("# Architecture\n\nNo diagram.\n")
+        assert doc_diagram(doc) is None and stale_diagram(doc, drawn), "a doc without the diagram is stale"
+
         module = root / "module.yaml"
         module.write_text("settings:\n  kotlin:\n    serialization: json\n")
         assert not compose_enabled(module), "no compose settings, no Compose"
@@ -328,7 +463,7 @@ def self_test() -> None:
         assert lift_repository_uses(root) == [], "LiftActivity is fine"
         source.write_text("class HistoryViewModel(private val lift: LiftRepository)\n")
         assert lift_repository_uses(root), "the interval side never names LiftRepository"
-    print(f"{len(breaches) + 6} cases pass")
+    print(f"{len(breaches) + 8} cases pass")
 
 
 def main() -> None:
@@ -336,11 +471,18 @@ def main() -> None:
         self_test()
         return
     modules = load()
-    problems = check(modules) + lift_repository_uses(ROOT)
+    if sys.argv[1:] == ["--diagram"]:
+        print(diagram(modules), end="")
+        return
+    if sys.argv[1:] == ["--write-diagram"]:
+        write_diagram(ARCHITECTURE, diagram(modules))
+        print(f"{ARCHITECTURE.relative_to(ROOT)} draws the modules as they are")
+        return
+    problems = check(modules) + lift_repository_uses(ROOT) + stale_diagram(ARCHITECTURE, diagram(modules))
     if problems:
         sys.exit("\n".join(problems))
     edges = sum(len(m.deps) + len(m.test_deps) for m in modules.values())
-    print(f"{len(modules)} modules and {edges} module dependencies keep the rules")
+    print(f"{len(modules)} modules and {edges} module dependencies keep the rules, and the diagram draws them")
 
 
 if __name__ == "__main__":
