@@ -123,6 +123,20 @@
                     android:resource="@xml/file_paths"/>
         </provider>
 
+        <!-- The home-screen widget (src/widget/): the system's updates, and its own midnight alarm (an explicit intent,
+             not in the filter). -->
+        <receiver
+                android:exported="true"
+                android:label="@string/widget_week_label"
+                android:name=".widget.WeekWidgetReceiver">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                    android:name="android.appwidget.provider"
+                    android:resource="@xml/week_widget_info"/>
+        </receiver>
+
         <!-- The plan's reminders: each alarm lands here, as do the reboots and clock changes they are set again after. -->
         <receiver
                 android:exported="false"

@@ -7,6 +7,8 @@ dependencies:
   - $libs.koin.core
   - $libs.androidx.activity.compose
   - $libs.androidx.core.splashscreen
+  # The home-screen widget (src/widget/): the week's ring and its Workout and Lift buttons.
+  - $libs.androidx.glance.appwidget
 
 settings:
   compose: enabled

@@ -287,7 +287,9 @@ Sizes: XS ≤ half a day, S ≈ 1 day, M ≈ 2 days, L ≈ 3 days. The cut line 
   describe parser ("4 x (8 x 20/10), 1:00 between"), presets, export, History's estimate and Health
   Connect's segments. The headline of 0.4, a sprint of its own, not a ticket beside import.
 - **A home-screen widget** (the week's ring and Start last workout, Glance): a module of its own on the
-  Android side, after ticket 2's start routes exist to launch into.
+  Android side, after ticket 2's start routes exist to launch into. *Shipped after the sprint, in `androidApp`
+  rather than a module of its own: it is host glue (a receiver, `res/xml`, an intent into `ShortcutActivity`),
+  over a `WeekStandingSource` in `app`.*
 - **AppFunctions** ("start a Tabata", "log a set"): the `androidx.appfunctions` API is still alpha and
   Android 16-only; worth a ticket once it is stable, over the same start routes.
 - **Localisation**, **splitting the `TooManyFunctions` classes**, **iOS signing**: as in 0.2.

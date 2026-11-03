@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Start a Lift session shortcut's kettlebell (ic_shortcut_kettlebell_glyph), cropped to the bell and in the
+     workout page's text colour, for the widget's round Lift button on its upcoming fill. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+        android:width="24dp" android:height="24dp"
+        android:viewportWidth="52" android:viewportHeight="52">
+    <group android:translateX="-28" android:translateY="-29">
+        <path android:strokeColor="#FFF1F4F8" android:strokeWidth="6" android:strokeLineCap="round"
+              android:pathData="M37,60 V42 a9,9 0 0,1 9,-9 H62 a9,9 0 0,1 9,9 V60"/>
+        <path android:fillColor="#FFF1F4F8" android:pathData="M42.5,76 a17,17 0 1,1 23,0 Z"/>
+    </group>
+</vector>

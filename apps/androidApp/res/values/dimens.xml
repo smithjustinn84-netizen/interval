@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The widget's card, the launcher's own corner on Android 12 and up; its buttons are pills of WidgetSizes.button. -->
+    <dimen name="widget_card_corner">24dp</dimen>
+    <dimen name="widget_button_corner">20dp</dimen>
+</resources>

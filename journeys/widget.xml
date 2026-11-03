@@ -1,0 +1,30 @@
+<journey name="Home-screen widget">
+  <description>
+    The week widget: this week's workouts against the goal, the streak, and Workout and Lift buttons that start one
+    as the launcher's shortcuts do, a workout already running kept. Run on a fresh install (adb shell pm clear
+    dev.justinsmith.interval). The widget is placed from the launcher's widget picker (a long-press on the
+    wallpaper, then Widgets, then Interval); the "This week" widget is the only one.
+  </description>
+  <actions>
+    <action>Open the app, go to History, and set a weekly goal of 3 from its "Set a weekly goal" row</action>
+    <action>Go to Timer, start a workout, let a round finish, press the system back button and tap "End workout", then "Done" on the summary</action>
+    <action>Press Home, long-press the wallpaper, tap "Widgets", find "Interval" and place its "This week" widget at its offered size (two cells by two)</action>
+    <action>Verify that the widget shows "1/3" in its ring, "2 to go" under it, and "Workout" and "Lift" buttons</action>
+    <action>Tap "Workout" on the widget</action>
+    <action>Verify that the workout screen shows "Get ready" and "Round 1 of 8"</action>
+    <action>Press Home and tap "Lift" on the widget</action>
+    <action>Verify that the same workout is shown, still counting, and that adb shell dumpsys activity activities lists one MainActivity</action>
+    <action>Press the system back button and tap "End workout" in the dialog; if a round had finished by then, the summary shows first: tap "Done"</action>
+    <action>Press Home</action>
+    <action>Verify that the widget shows "2/3" and "1 to go" if the round had finished, else still "1/3"</action>
+    <action>Tap "Lift" on the widget</action>
+    <action>Verify that the session shows "Log set"</action>
+    <action>Press the system back button and tap "Leave" in the dialog, then press Home</action>
+    <action>Run adb shell am force-stop dev.justinsmith.interval, then tap "Workout" on the widget</action>
+    <action>Verify that the workout screen shows "Get ready": the widget starts the app's container before it opens the workout</action>
+    <action>Press the system back button, tap "End workout", press Home, long-press the widget and resize it to two cells by one</action>
+    <action>Verify that the widget shows the ring with its figure and both buttons in one row</action>
+    <action>Resize it to four cells by two</action>
+    <action>Verify that the widget shows the ring, its words beside it, and the two buttons stacked on the right</action>
+  </actions>
+</journey>

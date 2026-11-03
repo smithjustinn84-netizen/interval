@@ -2,6 +2,7 @@ package dev.justinsmith.interval.di
 
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.data.RepositoryIntervalActivity
+import dev.justinsmith.interval.data.WeekStandingSource
 import dev.justinsmith.interval.export.AppDataExporter
 import dev.justinsmith.interval.export.AppDataImporter
 import dev.justinsmith.interval.settings.DataExporter
@@ -45,13 +46,15 @@ fun appModules(
 private val intervalFeatureModules = listOf(timerModule, presetsModule, workoutModule, settingsModule)
 
 /**
- * What only the app can build, seeing both sides: the export and the import, over both sides' storage, and what
- * Lift reads of the interval side (the workouts for its week, and the goal set on Plan).
+ * What only the app can build, seeing both sides: the export and the import, over both sides' storage, what
+ * Lift reads of the interval side (the workouts for its week, and the goal set on Plan), and the week as the
+ * home-screen widget shows it (built on first use: only Android's host asks for it).
  */
 private val appModule = module {
     single<DataExporter> { AppDataExporter(get(), get(), get(), get(), get()) }
     single<DataImporter> { AppDataImporter(get(), get()) }
     single<IntervalActivity> { RepositoryIntervalActivity(get(), get(), get(StorageScope)) }
+    single { WeekStandingSource(get(), get(), get(), get(), get(StorageScope)) }
 }
 
 /**

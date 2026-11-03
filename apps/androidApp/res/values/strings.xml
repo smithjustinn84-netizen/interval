@@ -5,4 +5,24 @@
     <string name="shortcut_start_workout_long">Start a workout</string>
     <string name="shortcut_lift_session">Lift</string>
     <string name="shortcut_lift_session_long">Start a Lift session</string>
+    <!-- The home-screen widget (src/widget/): the week's ring, its words, and the picker's description. Its
+         buttons say the shortcuts' labels. -->
+    <string name="widget_week_label">This week</string>
+    <string name="widget_week_description">This week\'s workouts against your goal, with Workout and Lift to start one</string>
+    <string name="widget_this_week">This week</string>
+    <string name="widget_goal_ring">%1$d/%2$d</string>
+    <string name="widget_goal_cd">%1$d of %2$d workouts this week</string>
+    <string name="widget_goal_met">Goal met this week</string>
+    <plurals name="widget_goal_left">
+        <item quantity="one">%1$d to go</item>
+        <item quantity="other">%1$d to go</item>
+    </plurals>
+    <plurals name="widget_count">
+        <item quantity="one">%1$d workout this week</item>
+        <item quantity="other">%1$d workouts this week</item>
+    </plurals>
+    <plurals name="widget_streak">
+        <item quantity="one">%1$d-week streak</item>
+        <item quantity="other">%1$d-week streak</item>
+    </plurals>
 </resources>

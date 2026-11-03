@@ -155,11 +155,15 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
 
 apps/
   app                the app: `App.kt` (the back stack and every entry), `di/AppKoin.kt` (`appModules`,
-                     `initAppKoin`, and the `IntervalActivity` Lift reads, over `IntervalRepository`),
+                     `initAppKoin`, the `IntervalActivity` Lift reads, over `IntervalRepository`, and the
+                     `WeekStandingSource` the widget shows, over both sides' stores; `data/`),
                      `nav/Routes.kt` (the app's own keys), `ui/AppNavigation.kt`, about/, export/,
                      `app_name` and `app_icon`. What `androidApp`, `iosApp` and `desktopApp` depend on
-  androidApp         Android host application: `IntervalApplication` (starts the container), AndroidManifest.xml,
-                     res/, launch theme, ProGuard rules, keystore
+  androidApp         Android host application: `IntervalApplication` (starts the container, and keeps the widget
+                     drawn), AndroidManifest.xml, res/, launch theme, ProGuard rules, keystore, `ShortcutActivity`,
+                     and the home-screen widget (`widget/`: Glance's `WeekWidget` and its receiver, the ring drawn
+                     on a bitmap in `PhaseColors`, `WidgetSizes`, `WidgetDayAlarm` for the day's turn; its words
+                     in `res/values/strings.xml`)
   desktopApp         Desktop host application: main.kt entry point, Swing integration, window sizing
   iosApp             iOS host application: ViewController.kt, iosApp.swift, Xcode project, Info.plist, Assets
 

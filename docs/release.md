@@ -154,8 +154,10 @@ The next sprint's tickets are in [sprint-0.4.md](sprint-0.4.md); [sprint-0.3.md]
 
 ## Left out on purpose
 
-- **Widgets, Wear OS**: each a platform project. The `HealthStore` (core-platform) has both actuals since 0.3:
-  Health Connect and Apple Health, writing workouts and reading the body weight and a watch's heart rate.
+- **Wear OS**: a platform project. The `HealthStore` (core-platform) has both actuals since 0.3:
+  Health Connect and Apple Health, writing workouts and reading the body weight and a watch's heart rate. The
+  Android home-screen widget shipped in 0.3 (Glance, in `androidApp`); an iOS widget would be a WidgetKit
+  extension of its own.
 - **Localisation**: the built-in presets' names are stored data by design, and both text parsers are
   English-keyword; a second locale is a sprint, not a ticket.
 - **Splitting the `TooManyFunctions` classes** (`WorkoutViewModel`, `IntervalRepository`, `LiftRepository`,
