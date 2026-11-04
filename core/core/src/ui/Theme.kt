@@ -96,6 +96,8 @@ data class WorkoutColors(
     val prep: Color,
     val work: Color,
     val rest: Color,
+    /** The longer rest between two sets, told apart from a round's rest. */
+    val setRest: Color,
     val done: Color,
     /** The ring and band while paused. A paused primary control fills with [onGround] instead. */
     val paused: Color,
@@ -138,6 +140,7 @@ object PhaseColors {
     val prep = Color(0xFFF2A81D)
     val work = Color(0xFFFF5A43)
     val rest = Color(0xFF2FD3A0)
+    val setRest = Color(0xFFB18CFF)
     val done = Color(0xFF5B8CFF)
 
     /** The ring and band while paused. Too dark for [ink], so a paused primary control fills with [onGround]. */
@@ -205,6 +208,7 @@ internal val darkWorkoutColors = WorkoutColors(
     prep = PhaseColors.prep,
     work = PhaseColors.work,
     rest = PhaseColors.rest,
+    setRest = PhaseColors.setRest,
     done = PhaseColors.done,
     paused = PhaseColors.paused,
     ground = PhaseColors.ground,
@@ -224,6 +228,7 @@ internal val lightWorkoutColors = WorkoutColors(
     prep = Color(0xFF966003),
     work = Color(0xFFC4361F),
     rest = lightPalette.restMark,
+    setRest = Color(0xFF6A3FC8),
     done = lightPalette.accent,
     paused = lightPalette.textDim,
     ground = lightPalette.background,

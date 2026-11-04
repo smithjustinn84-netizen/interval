@@ -29,6 +29,16 @@ import dev.justinsmith.interval.ui.resources.field_rounds_hint
 import dev.justinsmith.interval.ui.resources.field_rounds_label
 import dev.justinsmith.interval.ui.resources.field_rounds_less
 import dev.justinsmith.interval.ui.resources.field_rounds_more
+import dev.justinsmith.interval.ui.resources.field_set_rest_edit
+import dev.justinsmith.interval.ui.resources.field_set_rest_hint
+import dev.justinsmith.interval.ui.resources.field_set_rest_label
+import dev.justinsmith.interval.ui.resources.field_set_rest_less
+import dev.justinsmith.interval.ui.resources.field_set_rest_more
+import dev.justinsmith.interval.ui.resources.field_sets_edit
+import dev.justinsmith.interval.ui.resources.field_sets_hint
+import dev.justinsmith.interval.ui.resources.field_sets_label
+import dev.justinsmith.interval.ui.resources.field_sets_less
+import dev.justinsmith.interval.ui.resources.field_sets_more
 import dev.justinsmith.interval.ui.resources.field_warm_up_edit
 import dev.justinsmith.interval.ui.resources.field_warm_up_hint
 import dev.justinsmith.interval.ui.resources.field_warm_up_label
@@ -51,6 +61,8 @@ val ConfigField.labelRes: StringResource
         ConfigField.Rounds -> Res.string.field_rounds_label
         ConfigField.WarmUp -> Res.string.field_warm_up_label
         ConfigField.CoolDown -> Res.string.field_cool_down_label
+        ConfigField.Sets -> Res.string.field_sets_label
+        ConfigField.SetRest -> Res.string.field_set_rest_label
     }
 
 /** The line under the name, saying what the value is for. */
@@ -62,6 +74,8 @@ val ConfigField.hintRes: StringResource
         ConfigField.Rounds -> Res.string.field_rounds_hint
         ConfigField.WarmUp -> Res.string.field_warm_up_hint
         ConfigField.CoolDown -> Res.string.field_cool_down_hint
+        ConfigField.Sets -> Res.string.field_sets_hint
+        ConfigField.SetRest -> Res.string.field_set_rest_hint
     }
 
 /** What tapping the value's row does, for screen readers: "Edit work". */
@@ -73,6 +87,8 @@ val ConfigField.editRes: StringResource
         ConfigField.Rounds -> Res.string.field_rounds_edit
         ConfigField.WarmUp -> Res.string.field_warm_up_edit
         ConfigField.CoolDown -> Res.string.field_cool_down_edit
+        ConfigField.Sets -> Res.string.field_sets_edit
+        ConfigField.SetRest -> Res.string.field_set_rest_edit
     }
 
 /** The − stepper, for screen readers: "Less work time", "Fewer rounds". */
@@ -84,6 +100,8 @@ val ConfigField.lessRes: StringResource
         ConfigField.Rounds -> Res.string.field_rounds_less
         ConfigField.WarmUp -> Res.string.field_warm_up_less
         ConfigField.CoolDown -> Res.string.field_cool_down_less
+        ConfigField.Sets -> Res.string.field_sets_less
+        ConfigField.SetRest -> Res.string.field_set_rest_less
     }
 
 /** The + stepper, for screen readers: "More work time", "More rounds". */
@@ -95,6 +113,8 @@ val ConfigField.moreRes: StringResource
         ConfigField.Rounds -> Res.string.field_rounds_more
         ConfigField.WarmUp -> Res.string.field_warm_up_more
         ConfigField.CoolDown -> Res.string.field_cool_down_more
+        ConfigField.Sets -> Res.string.field_sets_more
+        ConfigField.SetRest -> Res.string.field_set_rest_more
     }
 
 /** The phase stripe that ties a field to its workout colour; Rounds takes the accent. */
@@ -113,6 +133,11 @@ fun ConfigField.stripe(): Color = when (this) {
     ConfigField.WarmUp -> IntervalTheme.palette.prepMark
 
     ConfigField.CoolDown -> IntervalTheme.palette.restMark
+
+    // How many sets counts like the rounds; the rest between them is a rest.
+    ConfigField.Sets -> IntervalTheme.palette.accent
+
+    ConfigField.SetRest -> IntervalTheme.palette.restMark
 }
 
 /** The pale wash of the field's colour behind its value. */
@@ -126,8 +151,8 @@ fun ConfigField.tint(): Color = IntervalTheme.palette.tint(stripe())
 fun ConfigField.valueColor(): Color =
     if (this == ConfigField.Prep || this == ConfigField.WarmUp) IntervalTheme.palette.onPrepTint else stripe()
 
-/** A warm-up or cool-down of no length is none: "Off". */
-fun ConfigField.isOff(value: Int): Boolean = this in ConfigField.bookends && value == 0
+/** A warm-up, cool-down or rest between sets of no length is none: "Off". */
+fun ConfigField.isOff(value: Int): Boolean = (this in ConfigField.bookends || this == ConfigField.SetRest) && value == 0
 
 /** [value] as a sheet or picker shows it: a clock, a count, or "Off" for a warm-up or cool-down of none. */
 @Composable

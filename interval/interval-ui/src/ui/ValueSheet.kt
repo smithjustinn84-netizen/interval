@@ -25,6 +25,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.interval.timer.ConfigField
+import dev.justinsmith.interval.timer.isCount
 import dev.justinsmith.interval.ui.resources.Res
 import dev.justinsmith.interval.ui.resources.common_done
 import dev.justinsmith.interval.ui.resources.value_sheet_hint_hold
@@ -58,7 +59,7 @@ fun ValueSheet(
             canLower = value > field.range.first,
             canRaise = value < field.range.last,
             onStep = onStep,
-            hint = if (field == ConfigField.Rounds) {
+            hint = if (field.isCount) {
                 stringResource(Res.string.value_sheet_hint_hold)
             } else {
                 stringResource(Res.string.value_sheet_hint_steps, field.step)

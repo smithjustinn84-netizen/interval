@@ -56,6 +56,31 @@ class StatusBarTest {
     }
 
     @Test
+    fun `a workout of sets is a segment per set and per rest between them`() {
+        // Prep, then 4 sets of 8 × 20/10 with a minute between: sixty-odd intervals, eight segments.
+        val tabatas = IntervalConfig(prepSeconds = 10, workSeconds = 20, restSeconds = 10, rounds = 8)
+        val bar = bar(tabatas.copy(sets = 4, setRestSeconds = 60))!!
+        val set = 8 * 20 + 7 * 10
+        assertEquals(
+            listOf(BarSegment(10, Phase.Prep)) +
+                List(3) { listOf(BarSegment(set, Phase.Work), BarSegment(60, Phase.SetRest)) }.flatten() +
+                BarSegment(set, Phase.Work),
+            bar.segments,
+        )
+        assertEquals(listOf(10 + set + 60, 10 + 2 * (set + 60), 10 + 3 * (set + 60)), bar.points)
+    }
+
+    @Test
+    fun `sets with no rest of their own keep the ordinary rest in the set before`() {
+        val bar = bar(IntervalConfig(prepSeconds = 0, workSeconds = 20, restSeconds = 10, rounds = 2, sets = 2))!!
+        assertEquals(
+            listOf(BarSegment(20 + 10 + 20 + 10, Phase.Work), BarSegment(20 + 10 + 20, Phase.Work)),
+            bar.segments,
+        )
+        assertEquals(listOf(60), bar.points)
+    }
+
+    @Test
     fun `nothing to draw without a workout`() {
         assertNull(StatusBar.of(WorkoutOutline.Empty))
     }

@@ -189,7 +189,7 @@ private fun ActivityPill(activity: Activity, onClick: () -> Unit, modifier: Modi
 
 /**
  * Work, Rest and Rounds, sharing the height they're given (or stacking naturally when scrolling), then the
- * warm-up and cool-down as a short row under them.
+ * sets (and, with more than one, the rest between them) and the warm-up and cool-down as short rows under them.
  */
 @Composable
 internal fun ColumnScope.StepperRows(
@@ -208,6 +208,8 @@ internal fun ColumnScope.StepperRows(
             modifier = if (fillHeight) Modifier.weight(1f) else Modifier,
         )
     }
+    Spacer(Modifier.size(Spacing.space8))
+    BookendRow(config, onEdit, fields = ConfigField.setsOf(config))
     Spacer(Modifier.size(Spacing.space8))
     BookendRow(config, onEdit)
 }

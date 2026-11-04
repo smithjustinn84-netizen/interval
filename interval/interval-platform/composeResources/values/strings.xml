@@ -3,6 +3,7 @@
     <string name="phase_get_ready">Get ready</string>
     <string name="phase_work">Work</string>
     <string name="phase_rest">Rest</string>
+    <string name="phase_set_rest">Set rest</string>
     <string name="phase_warm_up">Warm-up</string>
     <string name="phase_cool_down">Cool-down</string>
     <string name="phase_done">Done</string>
@@ -14,6 +15,8 @@
     <string name="notification_channel_workout_description">The running timer: its clock, phase and round, with Pause and End.</string>
     <string name="notification_workout_text">%1$s · Round %2$d of %3$d</string>
     <string name="notification_round">Round %1$d of %2$d</string>
+    <string name="notification_workout_set_text">%1$s · Set %2$d of %3$d · Round %4$d of %5$d</string>
+    <string name="notification_set_round">Set %1$d of %2$d · Round %3$d of %4$d</string>
     <string name="notification_channel_reminders">Planned workouts</string>
     <string name="notification_channel_reminders_description">A reminder at the time you chose, on each day with a workout planned.</string>
     <string name="reminder_body_one">Planned today · %1$s</string>
@@ -34,6 +37,8 @@
     <string name="cue_work">Work</string>
     <string name="cue_last_round_work">Last round. Work</string>
     <string name="cue_rest">Rest</string>
+    <string name="cue_set_work">Set %1$d. Work</string>
+    <string name="cue_set_rest">Rest between sets</string>
     <string name="cue_warm_up">Warm up</string>
     <string name="cue_cool_down">Cool down</string>
     <string name="cue_halfway">Halfway</string>

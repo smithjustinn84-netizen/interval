@@ -194,7 +194,7 @@ private fun EditorShapeCard(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.fillMaxWidth().clip(Corners.radius18).background(IntervalTheme.palette.surfaceVariant)) {
-        (ConfigField.shape + ConfigField.bookends).forEachIndexed { index, field ->
+        (ConfigField.shape + ConfigField.setsOf(config) + ConfigField.bookends).forEachIndexed { index, field ->
             if (index > 0) RowDivider()
             FieldRow(field, config.valueOf(field), onClick = { onEditField(field) })
         }

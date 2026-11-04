@@ -221,6 +221,8 @@ private fun ConfigExport.toDomain(): IntervalConfig {
     require(rounds in IntervalConfig.ROUNDS_RANGE) { "rounds" }
     require(warmUpSeconds in IntervalConfig.WARM_UP_RANGE) { "warm-up" }
     require(coolDownSeconds in IntervalConfig.COOL_DOWN_RANGE) { "cool-down" }
+    require(sets in IntervalConfig.SETS_RANGE) { "sets" }
+    require(setRestSeconds in IntervalConfig.SET_REST_RANGE) { "set rest" }
     return IntervalConfig(
         prepSeconds = prepSeconds,
         workSeconds = workSeconds,
@@ -229,6 +231,8 @@ private fun ConfigExport.toDomain(): IntervalConfig {
         warmUpSeconds = warmUpSeconds,
         coolDownSeconds = coolDownSeconds,
         activity = Activity.named(activity),
+        sets = sets,
+        setRestSeconds = setRestSeconds,
     )
 }
 

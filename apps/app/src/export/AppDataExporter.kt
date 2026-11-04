@@ -91,6 +91,8 @@ private fun IntervalConfig.export() = ConfigExport(
     activity = activity.name,
     warmUpSeconds = warmUpSeconds,
     coolDownSeconds = coolDownSeconds,
+    sets = sets,
+    setRestSeconds = setRestSeconds,
 )
 
 private fun Preset.export() = PresetExport(id, name, config.export())

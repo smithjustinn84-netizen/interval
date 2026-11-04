@@ -11,6 +11,16 @@ class PresetNameTest {
     }
 
     @Test
+    fun `a shape of sets names its sets too`() {
+        assertEquals(
+            "20/10 ×8, 4 sets",
+            IntervalConfig(workSeconds = 20, restSeconds = 10, rounds = 8, sets = 4).defaultPresetName(),
+        )
+        val longest = IntervalConfig(workSeconds = 3600, restSeconds = 3600, rounds = 99, sets = 20).defaultPresetName()
+        assertEquals(true, longest.length <= Preset.MAX_NAME_LENGTH)
+    }
+
+    @Test
     fun `whole minutes read as minutes`() {
         assertEquals("1m/30 ×5", IntervalConfig(workSeconds = 60, restSeconds = 30, rounds = 5).defaultPresetName())
         assertEquals("2m/1m ×4", IntervalConfig(workSeconds = 120, restSeconds = 60, rounds = 4).defaultPresetName())

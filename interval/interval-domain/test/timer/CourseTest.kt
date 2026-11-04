@@ -9,6 +9,10 @@ class CourseTest {
     private fun pinned(config: IntervalConfig) =
         Course.of(config).joinToString(" ") { "${it.phase} ${it.round}:${it.seconds}" }
 
+    /** A course of sets as "Phase set.round:seconds". */
+    private fun pinnedSets(config: IntervalConfig) =
+        Course.of(config).joinToString(" ") { "${it.phase} ${it.set}.${it.round}:${it.seconds}" }
+
     private fun preset(name: String) = builtInPresets.first { it.name == name }.config
 
     @Test
@@ -72,8 +76,40 @@ class CourseTest {
     }
 
     @Test
+    fun `two sets of three rounds rest between the sets and not after the last`() {
+        val config = IntervalConfig(prepSeconds = 5, workSeconds = 20, restSeconds = 10, rounds = 3)
+        assertEquals(
+            "Prep 1.1:5 Work 1.1:20 Rest 1.1:10 Work 1.2:20 Rest 1.2:10 Work 1.3:20 SetRest 1.3:60 " +
+                "Work 2.1:20 Rest 2.1:10 Work 2.2:20 Rest 2.2:10 Work 2.3:20",
+            pinnedSets(config.copy(sets = 2, setRestSeconds = 60)),
+        )
+        assertEquals(5 + 2 * (3 * 20 + 2 * 10) + 60, config.copy(sets = 2, setRestSeconds = 60).totalSeconds)
+    }
+
+    @Test
+    fun `a set rest of none is the ordinary rest between the sets`() {
+        val config = IntervalConfig(prepSeconds = 0, workSeconds = 20, restSeconds = 10, rounds = 2, sets = 2)
+        assertEquals(
+            "Work 1.1:20 Rest 1.1:10 Work 1.2:20 Rest 1.2:10 Work 2.1:20 Rest 2.1:10 Work 2.2:20",
+            pinnedSets(config),
+        )
+        val noRest = config.copy(restSeconds = 0)
+        assertEquals("Work 1.1:20 Work 1.2:20 Work 2.1:20 Work 2.2:20", pinnedSets(noRest))
+    }
+
+    @Test
+    fun `the cool-down is in the last round of the last set`() {
+        val config =
+            IntervalConfig(prepSeconds = 0, workSeconds = 20, restSeconds = 0, rounds = 1, coolDownSeconds = 60)
+        assertEquals(
+            "Work 1.1:20 SetRest 1.1:30 Work 2.1:20 CoolDown 2.1:60",
+            pinnedSets(config.copy(sets = 2, setRestSeconds = 30)),
+        )
+    }
+
+    @Test
     fun `the engine walks the course interval by interval`() {
-        val config = preset("Tabata").copy(warmUpSeconds = 60, coolDownSeconds = 60)
+        val config = preset("Tabata").copy(warmUpSeconds = 60, coolDownSeconds = 60, sets = 3, setRestSeconds = 90)
         val walked = generateSequence(WorkoutEngine.start(config).state) { WorkoutEngine.advance(it).state }
             .takeWhile { !it.isDone }
             .map { Interval(it.phase, it.set, it.round, (it.phaseMillis / 1_000).toInt()) }

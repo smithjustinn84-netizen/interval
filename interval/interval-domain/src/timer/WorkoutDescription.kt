@@ -17,7 +17,9 @@ data class DescribedWorkout(
 /**
  * Reads a workout from how someone would say it: "tabata", "40/20 x8", "45 on 15 off, 12 rounds",
  * "work 1:30 rest 0:30", "10 rounds of 30 seconds", "20 min of burpees, short rests", "5 min warm-up,
- * then 40/20 x8, 3 min cool down". A preset's name
+ * then 40/20 x8, 3 min cool down", "4 x (8 x 20/10), 1:00 between", "4 sets of 8 rounds 20/10". Sets of
+ * rounds take a second count: one alone is the rounds ("8 sets of 20/10" is eight), and sets with no rest
+ * named between them get a minute's ([IntervalConfig.DEFAULT_SET_REST_SECONDS]). A preset's name
  * starts from that preset; a total length with no rounds gives as many rounds as fit. What the words
  * leave out keeps [current]'s value, and the get-ready countdown is always [current]'s, as it is when
  * a preset goes onto the Timer. Values are clamped to their ranges. Null when nothing is understood.
@@ -38,6 +40,10 @@ fun describeWorkout(text: String, current: IntervalConfig, presets: List<Preset>
     reading.values.forEach { (field, value) ->
         config = config.withValue(field, value)
         understood += field
+    }
+    if (ConfigField.Sets in reading.values && ConfigField.SetRest !in reading.values) {
+        config = config.withValue(ConfigField.SetRest, IntervalConfig.DEFAULT_SET_REST_SECONDS)
+        understood += ConfigField.SetRest
     }
     reading.totalSeconds?.takeIf { ConfigField.Rounds !in reading.values }?.let { total ->
         config = config.withValue(ConfigField.Rounds, config.roundsIn(total))
@@ -88,7 +94,8 @@ private class Reading(var text: String) {
     }
 
     fun readShape() {
-        // First, so that "5 min warm-up" is neither the work nor the whole workout's length.
+        readSets()
+        // So that "5 min warm-up" is neither the work nor the whole workout's length.
         for ((regex, field) in BOOKENDS) {
             if (field in values) continue
             take(regex)?.secondsAt(1)?.let { values[field] = it }
@@ -97,7 +104,7 @@ private class Reading(var text: String) {
             match.secondsAt(1)?.let { values[ConfigField.Work] = it }
             match.secondsAt(DURATION_GROUPS + 1)?.let { values[ConfigField.Rest] = it }
         }
-        ROUNDS.firstNotNullOfOrNull(::take)?.let {
+        ROUNDS.takeIf { ConfigField.Rounds !in values }?.firstNotNullOfOrNull(::take)?.let {
             // Too many digits for an Int is still "as many as can be", which the range then clamps.
             values[ConfigField.Rounds] = it.groupValues[1].toIntOrNull() ?: Int.MAX_VALUE
         }
@@ -106,6 +113,15 @@ private class Reading(var text: String) {
         vagueRest = VAGUE_RESTS.firstOrNull { (regex, _) -> take(regex) != null }?.second
         readLabelled()
         readUnlabelled()
+    }
+
+    /** First, so that "1:00 between" is no interval, and "4 x (8 x" neither the rounds nor a duration. */
+    private fun readSets() {
+        SET_RESTS.firstNotNullOfOrNull(::take)?.secondsAt(1)?.let { values[ConfigField.SetRest] = it }
+        SETS_OF_ROUNDS.firstNotNullOfOrNull(::take)?.let {
+            values[ConfigField.Sets] = it.groupValues[1].toIntOrNull() ?: Int.MAX_VALUE
+            values[ConfigField.Rounds] = it.groupValues[2].toIntOrNull() ?: Int.MAX_VALUE
+        }
     }
 
     /**
@@ -182,6 +198,19 @@ private const val DURATION_GROUPS = 2
 private const val UNIT_NEXT = """\s*(?:seconds?|secs?|s|minutes?|mins?|m)\b"""
 
 private val SLASH_PAIR = Regex("""$DURATION\s*/\s*$DURATION""")
+
+// "4 x (8 x 20/10)", "4 sets of 8 rounds", "4 sets of 8 x 20/10": a count of sets, then one of rounds. Not
+// "3 sets of 10 reps", which counts the rounds.
+private val SETS_OF_ROUNDS = listOf(
+    Regex("""\b(\d+)\s*x\s*\(\s*(\d+)\s*(?:x(?![a-z])|rounds?\b)"""),
+    Regex("""\b(\d+)\s*sets?\s*(?:of\s+)?(\d+)\s*(?:rounds?\b|x(?![a-z]))"""),
+)
+
+// "1:00 between", "1 min between sets", "1 min rest between sets", "between sets 90s", "rest between sets: 2 min".
+private val SET_RESTS = listOf(
+    Regex("""\b$DURATION\s*(?:of\s+)?(?:rest\s+|break\s+)?between(?:\s+(?:the\s+)?sets?)?\b"""),
+    Regex("""\b(?:rest\s+|break\s+)?between\s+(?:the\s+)?sets?\s*(?:of\s+|for\s+)?:?\s*$DURATION"""),
+)
 
 // "8 rounds", then "x8" (but not the "x 30s" of "8 x 30s"), then "8x".
 private val ROUNDS = listOf(

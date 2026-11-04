@@ -4,6 +4,16 @@ Notable changes to Interval, newest first. The format follows [Keep a Changelog]
 The version is `versionName` in `androidApp/module.yaml`; the iOS marketing version must match, and
 `tools/check_versions.py` fails CI when the two drift apart.
 
+## [0.4.0] — Unreleased
+
+### Added
+- Sets of rounds, with a longer rest between them: a "Sets" chip under the Timer's rows and the editor's, and once
+  there is more than one a "Between sets" chip ("20s on · 10s off · ×8 · 4 sets · 1m between"). The workout says
+  "Set 2 of 4 · Round 3 of 8" on screen and in the notification, shows the rest between sets in a colour of its own
+  and says "Rest between sets" and "Set 2. Work"; Health Connect counts it as rest. Describe reads
+  "4 x (8 x 20/10), 1:00 between" and "4 sets of 8 rounds 20/10" (one count alone, "8 sets of 20/10", is still
+  rounds). Exports are schema 4, which a 0.3 build refuses with "update the app"; older files read as one set.
+
 ## [0.3.0] — Unreleased
 
 ### Added

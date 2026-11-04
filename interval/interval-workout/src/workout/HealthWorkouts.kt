@@ -52,7 +52,7 @@ internal fun healthWorkout(
 private fun Phase?.healthMove(activity: Activity): HealthMove? = when (this) {
     null -> HealthMove.Pause
     Phase.Work, Phase.WarmUp, Phase.CoolDown -> activity.healthMove
-    Phase.Rest -> HealthMove.Rest
+    Phase.Rest, Phase.SetRest -> HealthMove.Rest
     Phase.Prep, Phase.Done -> null
 }
 

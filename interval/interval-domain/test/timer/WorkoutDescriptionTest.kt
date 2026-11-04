@@ -137,4 +137,31 @@ class WorkoutDescriptionTest {
         assertNull(read("something fun"))
         assertNull(read(""))
     }
+
+    /** Sets, the rest between them, and the rounds of each, as [text] reads. */
+    private fun sets(text: String): Triple<Int, Int, Int>? =
+        read(text)?.config?.let { Triple(it.sets, it.setRestSeconds, it.rounds) }
+
+    @Test
+    fun `a count of sets of a count of rounds reads as sets of rounds`() {
+        assertEquals(Triple(4, 60, 8), sets("4 x (8 x 20/10), 1:00 between"))
+        assertEquals(Triple(20, 10, 8), shape("4 x (8 x 20/10), 1:00 between"))
+        assertEquals(Triple(4, 60, 8), sets("4 sets of 8 rounds 20/10 with 1 min between sets"))
+        assertEquals(Triple(20, 10, 8), shape("4 sets of 8 rounds 20/10 with 1 min between sets"))
+        assertEquals(Triple(3, 90, 5), sets("3 sets of 5 x 40/20, rest between sets 90s"))
+    }
+
+    @Test
+    fun `sets with no rest named between them rest a minute`() {
+        assertEquals(Triple(4, 60, 8), sets("4 x (8 x 20/10)"))
+        val described = read("4 sets of 8 rounds 20/10")!!
+        assertTrue(ConfigField.Sets in described.understood && ConfigField.SetRest in described.understood)
+    }
+
+    @Test
+    fun `one count alone is still the rounds`() {
+        assertEquals(Triple(20, 10, 8), shape("8 sets of 20/10"))
+        assertEquals(1, read("8 sets of 20/10")!!.config.sets)
+        assertEquals(1, read("3 sets of 10 reps")!!.config.sets)
+    }
 }

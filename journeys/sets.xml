@@ -1,0 +1,23 @@
+<journey name="Sets of rounds">
+  <description>
+    Set two sets of three rounds with a minute between them on the Timer, run the workout through the rest between
+    the sets, and check what the notification says of the set. Run on a fresh install
+    (adb shell pm clear dev.justinsmith.interval).
+  </description>
+  <actions>
+    <action>Verify that the Timer tab is shown with a "Start workout" button and a "Sets" chip reading "1"</action>
+    <action>Tap the "Fewer rounds" button until the rounds read "×3"</action>
+    <action>Tap the "Sets" chip, tap the "2" quick pick, then "Done"</action>
+    <action>Verify that a "Between sets" chip reading "Off" is shown beside the "Sets" chip</action>
+    <action>Tap the "Between sets" chip, tap the "1:00" quick pick, then "Done"</action>
+    <action>Verify that the chips read "Sets 2" and "Between sets 1:00" and the total reads 5:10</action>
+    <action>Tap "Start workout"</action>
+    <action>Verify that the workout screen shows "Get ready", then "Work" with "Set 1 of 2 · Round 1 of 3"</action>
+    <action>Tap "Skip" until the screen shows "Set rest" with "Next: set 2 of 2"</action>
+    <action>Tap "Skip" and verify that the screen shows "Work" with "Set 2 of 2 · Round 1 of 3"</action>
+    <action>Press Home and verify that the notification reads "Work · Set 2 of 2 · Round 1 of 3"</action>
+    <action>Return to the workout, tap "End", then "End workout" in the dialog</action>
+    <action>Verify that the summary says "Saved to history" and shows 3/6 rounds</action>
+    <action>Tap "Done", open "All presets" and verify that the unsaved card reads "30s on · 15s off · ×3 · 2 sets · 1m between"</action>
+  </actions>
+</journey>

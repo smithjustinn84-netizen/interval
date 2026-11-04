@@ -10,23 +10,28 @@ import dev.justinsmith.interval.ui.resources.common_custom
 import dev.justinsmith.interval.ui.resources.common_joined
 import dev.justinsmith.interval.ui.resources.config_cool_down
 import dev.justinsmith.interval.ui.resources.config_description
+import dev.justinsmith.interval.ui.resources.config_set_rest
+import dev.justinsmith.interval.ui.resources.config_sets
 import dev.justinsmith.interval.ui.resources.config_warm_up
 import dev.justinsmith.interval.ui.resources.duration_short_minutes
 import dev.justinsmith.interval.ui.resources.duration_short_seconds
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * A workout's shape in one line: "20s on · 10s off · ×8", with a warm-up and cool-down either side when it has
- * them: "5m warm-up · 20s on · 10s off · ×8 · 3m cool-down".
+ * A workout's shape in one line: "20s on · 10s off · ×8", with its sets when it has more than one ("20s on ·
+ * 10s off · ×8 · 4 sets · 1m between") and a warm-up and cool-down either side when it has them: "5m warm-up ·
+ * 20s on · 10s off · ×8 · 3m cool-down".
  */
 @Composable
 fun configDescription(config: IntervalConfig): String {
-    val rounds = stringResource(
+    val shape = stringResource(
         Res.string.config_description,
         shortDurationText(config.workSeconds),
         shortDurationText(config.restSeconds),
         config.rounds,
     )
+    val rounds = if (config.sets > 1) joined(listOfNotNull(shape, setsText(config))) else shape
     if (config.warmUpSeconds == 0 && config.coolDownSeconds == 0) return rounds
     return joined(
         listOfNotNull(
@@ -38,6 +43,18 @@ fun configDescription(config: IntervalConfig): String {
                 stringResource(Res.string.config_cool_down, shortDurationText(it))
             },
         ),
+    )
+}
+
+/** "4 sets · 1m between", or "4 sets" with no rest of their own between them. */
+@Composable
+private fun setsText(config: IntervalConfig): String {
+    val sets = pluralStringResource(Res.plurals.config_sets, config.sets, config.sets)
+    if (config.setRestSeconds == 0) return sets
+    return stringResource(
+        Res.string.common_joined,
+        sets,
+        stringResource(Res.string.config_set_rest, shortDurationText(config.setRestSeconds)),
     )
 }
 

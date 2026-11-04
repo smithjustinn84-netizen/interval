@@ -54,32 +54,48 @@ import dev.justinsmith.interval.workout.resources.next_cool_down
 import dev.justinsmith.interval.workout.resources.next_last_round
 import dev.justinsmith.interval.workout.resources.next_rest
 import dev.justinsmith.interval.workout.resources.next_round
+import dev.justinsmith.interval.workout.resources.next_set
+import dev.justinsmith.interval.workout.resources.next_set_rest
 import dev.justinsmith.interval.workout.resources.next_warm_up
 import dev.justinsmith.interval.workout.resources.next_work
 import dev.justinsmith.interval.workout.resources.phase_cool_down
 import dev.justinsmith.interval.workout.resources.phase_done
 import dev.justinsmith.interval.workout.resources.phase_get_ready
 import dev.justinsmith.interval.workout.resources.phase_rest
+import dev.justinsmith.interval.workout.resources.phase_set_rest
 import dev.justinsmith.interval.workout.resources.phase_warm_up
 import dev.justinsmith.interval.workout.resources.phase_work
 import dev.justinsmith.interval.workout.resources.workout_paused
 import dev.justinsmith.interval.workout.resources.workout_status
 import dev.justinsmith.interval.workout.resources.workout_status_left
+import dev.justinsmith.interval.workout.resources.workout_status_set
 import dev.justinsmith.interval.workout.resources.workout_tap_pause
 import dev.justinsmith.interval.workout.resources.workout_tap_resume
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
-/** "Round 3 of 8 · 4:03 left"; in the warm-up and cool-down, outside the rounds, "12:03 left". */
+/**
+ * "Round 3 of 8 · 4:03 left", with the set first in a workout of sets ("Set 2 of 4 · Round 3 of 8 · 4:03 left");
+ * in the warm-up and cool-down, outside the rounds, "12:03 left".
+ */
 @Composable
 internal fun RoundStatus(state: WorkoutUiState, modifier: Modifier = Modifier) {
     if (state.isDone) return
     val bookend = state.phase == Phase.WarmUp || state.phase == Phase.CoolDown
     Text(
-        if (bookend) {
-            stringResource(Res.string.workout_status_left, state.sessionLeft)
-        } else {
-            stringResource(Res.string.workout_status, state.round, state.rounds, state.sessionLeft)
+        when {
+            bookend -> stringResource(Res.string.workout_status_left, state.sessionLeft)
+
+            state.sets > 1 -> stringResource(
+                Res.string.workout_status_set,
+                state.set,
+                state.sets,
+                state.round,
+                state.setRounds,
+                state.sessionLeft,
+            )
+
+            else -> stringResource(Res.string.workout_status, state.round, state.setRounds, state.sessionLeft)
         },
         style = IntervalTheme.type.label,
         color = IntervalTheme.workout.onGround,
@@ -89,24 +105,24 @@ internal fun RoundStatus(state: WorkoutUiState, modifier: Modifier = Modifier) {
 }
 
 /**
- * A short bar per round: finished ones filled, the round being worked in the phase colour ([accent]),
+ * A short bar per round of the set: finished ones filled, the round being worked in the phase colour ([accent]),
  * the rest dim, each crossfading as its turn comes. Bars narrow to share a tight row. On the summary
- * no round is being worked any more, so it shows only what was finished. Past [MAX_ROUND_MARKS] rounds
- * they would be too thin to read, so it draws nothing.
+ * no round is being worked any more, so it shows only what was finished, and nothing for a workout of sets,
+ * whose lines say it. Past [MAX_ROUND_MARKS] rounds they would be too thin to read, so it draws nothing.
  */
 @Composable
 internal fun RoundDots(state: WorkoutUiState, accent: Color, modifier: Modifier = Modifier) {
-    if (state.rounds > MAX_ROUND_MARKS) return
+    if (state.setRounds > MAX_ROUND_MARKS || (state.isDone && state.sets > 1)) return
     val active = state.activeRound.takeUnless { state.isDone }
     Row(
         modifier.clearAndSetSemantics {},
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8, Alignment.CenterHorizontally),
     ) {
-        repeat(state.rounds) { index ->
+        repeat(state.setRounds) { index ->
             val round = index + 1
             val target = when {
                 round == active -> accent
-                round <= state.completedRounds -> IntervalTheme.workout.onGround
+                round <= state.completedSetRounds -> IntervalTheme.workout.onGround
                 else -> IntervalTheme.workout.upcoming
             }
             val color by animateColorAsState(target, tween(Motion.STATE_MILLIS, easing = StandardEasing), label = "dot")
@@ -184,6 +200,7 @@ private fun PhaseLabel(state: WorkoutUiState, accent: Color) {
             Phase.WarmUp -> Res.string.phase_warm_up
             Phase.Work -> Res.string.phase_work
             Phase.Rest -> Res.string.phase_rest
+            Phase.SetRest -> Res.string.phase_set_rest
             Phase.CoolDown -> Res.string.phase_cool_down
             Phase.Done -> Res.string.phase_done
         }
@@ -226,6 +243,8 @@ private fun nextUpText(next: NextUp?): String = when (next) {
     is NextUp.CoolDown -> stringResource(Res.string.next_cool_down, next.clock)
     is NextUp.Rest -> stringResource(Res.string.next_rest, next.clock)
     is NextUp.Round -> stringResource(Res.string.next_round, next.round, next.of)
+    is NextUp.SetRest -> stringResource(Res.string.next_set_rest, next.clock)
+    is NextUp.Set -> stringResource(Res.string.next_set, next.set, next.of)
     NextUp.LastRound -> stringResource(Res.string.next_last_round)
     null -> ""
 }

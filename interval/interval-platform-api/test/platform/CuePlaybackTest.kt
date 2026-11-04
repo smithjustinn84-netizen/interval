@@ -17,6 +17,8 @@ class CuePlaybackTest {
         Cue.PhaseStarted(Phase.Rest, lastRound = false),
         Cue.PhaseStarted(Phase.WarmUp, lastRound = false),
         Cue.PhaseStarted(Phase.CoolDown, lastRound = false),
+        Cue.PhaseStarted(Phase.SetRest, lastRound = false),
+        Cue.PhaseStarted(Phase.Work, lastRound = false, set = 2),
         Cue.Finished,
     )
 
@@ -67,6 +69,15 @@ class CuePlaybackTest {
             assertEquals(listOf(Beep.Rest), beeps)
             assertEquals(listOf<Speech>(Speech.CoolDown), spoken)
             assertEquals(listOf(Haptic.Rest), haptics)
+        }
+        with(played(Cue.PhaseStarted(Phase.SetRest, lastRound = false), on)) {
+            assertEquals(listOf(Beep.Rest), beeps)
+            assertEquals(listOf<Speech>(Speech.SetRest), spoken)
+            assertEquals(listOf(Haptic.Rest), haptics)
+        }
+        with(played(Cue.PhaseStarted(Phase.Work, lastRound = false, set = 2), on)) {
+            assertEquals(listOf(Beep.Work), beeps)
+            assertEquals(listOf<Speech>(Speech.Work(lastRound = false, set = 2)), spoken)
         }
         with(played(Cue.Finished, on)) {
             assertEquals(listOf(Beep.Finished), beeps)

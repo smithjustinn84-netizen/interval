@@ -72,4 +72,33 @@ class WorkoutUiStateTest {
         )
         assertTrue(states.last().hasProgress)
     }
+
+    @Test
+    fun `a workout of sets says the rest between them and the set after it`() {
+        val sets =
+            IntervalConfig(
+                prepSeconds = 0,
+                workSeconds = 20,
+                restSeconds = 10,
+                rounds = 2,
+                sets = 3,
+                setRestSeconds = 60,
+            )
+        val course = generateSequence(WorkoutEngine.start(sets).state) { WorkoutEngine.advance(it).state }
+            .takeWhile { !it.isDone }
+            .map { it.toUiState(running = true) }
+            .toList()
+        // Work, rest, work, then the set's rest.
+        assertEquals(NextUp.SetRest("1:00"), course[2].next)
+        val setRest = course[3]
+        assertEquals(Phase.SetRest, setRest.phase)
+        assertEquals(NextUp.Set(2, 3), setRest.next)
+        assertEquals(2, setRest.completedRounds)
+        assertEquals(6, setRest.rounds)
+        val secondSet = course[4]
+        assertEquals(2 to 1, secondSet.set to secondSet.round)
+        assertEquals(0, secondSet.completedSetRounds)
+        assertEquals(NextUp.Rest("0:10"), secondSet.next)
+        assertEquals(NextUp.LastRound, course.last().next)
+    }
 }

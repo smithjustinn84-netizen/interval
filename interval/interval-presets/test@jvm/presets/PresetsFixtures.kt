@@ -10,6 +10,7 @@ import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
@@ -37,8 +38,8 @@ internal fun state(
 // The list stays in the tree under a sheet, and a sheet under the delete dialog, each drawn before
 // what covers it; a sheet is a dialog to semantics, as the dialog is.
 
-/** The editor's Save, not the unsaved card's Save pill under it. */
-internal fun DesktopComposeUiTest.saveInEditor() = onAllNodesWithText("Save").onLast().performClick()
+/** The editor's Save, not the unsaved card's Save pill under it; scrolled to, as the editor can outgrow a phone. */
+internal fun DesktopComposeUiTest.saveInEditor() = onAllNodesWithText("Save").onLast().performScrollTo().performClick()
 
 /** A node in an open sheet or dialog, not one of the list's under it. */
 internal fun DesktopComposeUiTest.inSheet(text: String) = onNode(hasText(text) and hasAnyAncestor(isDialog()))

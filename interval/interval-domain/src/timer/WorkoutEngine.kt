@@ -1,10 +1,10 @@
 package dev.justinsmith.interval.timer
 
 /**
- * The parts of a workout in the order they run: get ready, a warm-up, the rounds of work and rest, a
- * cool-down. A part of no length is left out.
+ * The parts of a workout in the order they run: get ready, a warm-up, the rounds of work and rest, the rest
+ * after a set, a cool-down. A part of no length is left out. Stored by name.
  */
-enum class Phase { Prep, WarmUp, Work, Rest, CoolDown, Done }
+enum class Phase { Prep, WarmUp, Work, Rest, SetRest, CoolDown, Done }
 
 /** A snapshot of a running workout. Immutable: every [WorkoutEngine] call returns a new one. */
 data class WorkoutState(
@@ -21,7 +21,9 @@ data class WorkoutState(
     val set: Int = 1,
 ) {
     val isDone: Boolean get() = phase == Phase.Done
-    val isLastRound: Boolean get() = round >= config.rounds
+
+    /** The last round of the last set. */
+    val isLastRound: Boolean get() = round >= config.rounds && set >= config.sets
 
     /** Share of the current interval still to go, 1 at its start and 0 at its end. */
     val progress: Float
@@ -43,7 +45,8 @@ sealed interface Cue {
     /** The midpoint of an interval longer than [WorkoutEngine.HALFWAY_MIN_SECONDS]. */
     data object Halfway : Cue
 
-    data class PhaseStarted(val phase: Phase, val lastRound: Boolean) : Cue
+    /** [set] is the set a work interval begins, 1-based, in a workout of sets; null for every other start. */
+    data class PhaseStarted(val phase: Phase, val lastRound: Boolean, val set: Int? = null) : Cue
 
     data object Finished : Cue
 }
@@ -57,6 +60,8 @@ data class UpcomingChange(
     /** 1-based, like [WorkoutState.round]; for [Phase.Done] the last round. */
     val round: Int,
     val offsetMillis: Long,
+    /** 1-based, like [WorkoutState.set]. */
+    val set: Int = 1,
 )
 
 /**
@@ -147,7 +152,7 @@ object WorkoutEngine {
     /** Ends the current interval now and starts the next, as if its time had run out. */
     fun advance(state: WorkoutState): Step {
         if (state.isDone) return Step(state)
-        val next = Course.of(state.config).firstOrNull { it.comparedTo(state) > 0 }
+        val next = Course.next(state)
         return if (next == null) finished(state) else started(state.config, next)
     }
 
@@ -178,13 +183,13 @@ object WorkoutEngine {
         if (state.isDone) return emptyList()
         val changes = mutableListOf<UpcomingChange>()
         var offset = state.remainingMillis.coerceAtLeast(0)
-        var lastRound = state.round
+        var last = state.set to state.round
         Course.of(state.config).filter { it.comparedTo(state) > 0 }.forEach {
-            changes += UpcomingChange(it.phase, it.round, offset)
+            changes += UpcomingChange(it.phase, it.round, offset, it.set)
             offset += it.seconds * MILLIS_PER_SECOND
-            lastRound = it.round
+            last = it.set to it.round
         }
-        return changes + UpcomingChange(Phase.Done, lastRound, offset)
+        return changes + UpcomingChange(Phase.Done, last.second, offset, last.first)
     }
 
     fun addTime(state: WorkoutState, millis: Long = ADD_TIME_MILLIS): WorkoutState {
@@ -196,7 +201,8 @@ object WorkoutEngine {
     private fun started(config: IntervalConfig, interval: Interval): Step {
         val state = enter(config, interval)
         val lastRound = interval.phase == Phase.Work && state.isLastRound
-        return Step(state, listOf(Cue.PhaseStarted(interval.phase, lastRound)))
+        val set = interval.set.takeIf { interval.phase == Phase.Work && interval.round == 1 && config.sets > 1 }
+        return Step(state, listOf(Cue.PhaseStarted(interval.phase, lastRound, set)))
     }
 
     private fun enter(config: IntervalConfig, interval: Interval): WorkoutState {

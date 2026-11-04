@@ -22,13 +22,19 @@ import dev.justinsmith.interval.timer.valueOf
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The warm-up and the cool-down side by side, under a shape's rows: each a small card with its name and value
- * ("Off" for none), on its colour's wash while it is on. Tapping one opens its edit sheet through [onEdit].
+ * The warm-up and the cool-down side by side, under a shape's rows (or other [fields], such as the sets and the
+ * rest between them): each a small card with its name and value ("Off" for none), on its colour's wash while it
+ * is on. Tapping one opens its edit sheet through [onEdit].
  */
 @Composable
-fun BookendRow(config: IntervalConfig, onEdit: (ConfigField) -> Unit, modifier: Modifier = Modifier) {
+fun BookendRow(
+    config: IntervalConfig,
+    onEdit: (ConfigField) -> Unit,
+    modifier: Modifier = Modifier,
+    fields: List<ConfigField> = ConfigField.bookends,
+) {
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-        ConfigField.bookends.forEach { field ->
+        fields.forEach { field ->
             BookendChip(field, config.valueOf(field), onClick = { onEdit(field) }, modifier = Modifier.weight(1f))
         }
     }
@@ -37,7 +43,8 @@ fun BookendRow(config: IntervalConfig, onEdit: (ConfigField) -> Unit, modifier: 
 @Composable
 private fun BookendChip(field: ConfigField, value: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
-    val off = field.isOff(value)
+    // One set is the plain workout: shown as quietly as a bookend that is off.
+    val off = field.isOff(value) || (field == ConfigField.Sets && value == 1)
     val spec = tween<Color>(Motion.STATE_MILLIS, easing = StandardEasing)
     val fill by animateColorAsState(if (off) palette.surface else field.tint(), spec, label = "fill")
     val valueColor by animateColorAsState(if (off) palette.textDim else field.valueColor(), spec, label = "value")

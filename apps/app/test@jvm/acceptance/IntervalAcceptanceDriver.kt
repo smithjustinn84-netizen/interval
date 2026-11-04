@@ -22,15 +22,18 @@ import androidx.compose.ui.test.performTextReplacement
 import dev.justinsmith.interval.AppFixture
 import dev.justinsmith.interval.appTest
 import dev.justinsmith.interval.fakes.FakeStorage
+import dev.justinsmith.interval.fakes.RecordingCuePlayer
 import dev.justinsmith.interval.fakes.RecordingHealthStore
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.nav.Shortcut
+import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.HealthSegment
 import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.HealthWorkoutKind
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.ShareableFile
+import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.tab
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
 import dev.justinsmith.interval.ui.AcceptanceSteps
@@ -105,6 +108,19 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         tap("Done")
         see(hasText(name) and hasText(value) and hasClickAction())
     }
+
+    /** Takes the Timer's rounds down to [rounds] a step at a time, as the − beside them does. */
+    fun lowerRoundsTo(rounds: Int) {
+        val now = app.repository.config.value.rounds
+        repeat(now - rounds) { tapDescribed("Fewer rounds") }
+        see(hasText("×$rounds"))
+    }
+
+    /** The sets chip under the Timer's rows, then a quick pick on its sheet. */
+    fun setSets(count: String) = setBookend("Sets", count)
+
+    /** The rest between sets, whose chip shows once there is more than one. */
+    fun setRestBetweenSets(value: String) = setBookend("Between sets", value)
 
     fun seeTimerTotal(total: String) = see(total)
 
@@ -488,6 +504,16 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     fun workoutKeptFinished() = assertEquals(false, app.repository.history.value.single().endedEarly)
 
     fun savedWorkouts(count: Int) = assertEquals(count, app.repository.history.value.size)
+
+    /** The workout History holds was kept as [sets] sets of [rounds]. */
+    fun workoutKeptWithSets(sets: Int, rounds: Int) = waitFor("a workout kept as $sets sets of $rounds") {
+        app.repository.history.value.any { it.config.sets == sets && it.config.rounds == rounds }
+    }
+
+    /** The voice said [speech]: the workout's cues, as the player was asked for them. */
+    fun heard(speech: Speech) = waitFor("to hear $speech") { speech in cuePlayer.spoken }
+
+    private val cuePlayer: RecordingCuePlayer get() = app.koin.koin.get<CuePlayer>() as RecordingCuePlayer
 }
 
 /** A segment's length in whole seconds, as the summary counts time. */

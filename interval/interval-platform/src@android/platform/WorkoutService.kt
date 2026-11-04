@@ -15,11 +15,13 @@ import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.platform.resources.Res
 import dev.justinsmith.interval.platform.resources.notification_channel_workout
 import dev.justinsmith.interval.platform.resources.notification_channel_workout_description
+import dev.justinsmith.interval.platform.resources.notification_workout_set_text
 import dev.justinsmith.interval.platform.resources.notification_workout_text
 import dev.justinsmith.interval.platform.resources.phase_cool_down
 import dev.justinsmith.interval.platform.resources.phase_done
 import dev.justinsmith.interval.platform.resources.phase_get_ready
 import dev.justinsmith.interval.platform.resources.phase_rest
+import dev.justinsmith.interval.platform.resources.phase_set_rest
 import dev.justinsmith.interval.platform.resources.phase_warm_up
 import dev.justinsmith.interval.platform.resources.phase_work
 import dev.justinsmith.interval.platform.resources.workout_end
@@ -160,6 +162,7 @@ class WorkoutService :
                     Phase.WarmUp -> Res.string.phase_warm_up
                     Phase.Work -> Res.string.phase_work
                     Phase.Rest -> Res.string.phase_rest
+                    Phase.SetRest -> Res.string.phase_set_rest
                     Phase.CoolDown -> Res.string.phase_cool_down
                     Phase.Done -> Res.string.phase_done
                 }
@@ -167,15 +170,19 @@ class WorkoutService :
         )
         // The warm-up and cool-down are outside the rounds: no "Round 1 of 8" under them.
         val bookend = status.phase == Phase.WarmUp || status.phase == Phase.CoolDown
-        val text = if (bookend) {
-            phase
-        } else {
-            getString(
-                Res.string.notification_workout_text,
+        val text = when {
+            bookend -> phase
+
+            status.sets > 1 -> getString(
+                Res.string.notification_workout_set_text,
                 phase,
+                status.set,
+                status.sets,
                 status.round,
                 status.rounds,
             )
+
+            else -> getString(Res.string.notification_workout_text, phase, status.round, status.rounds)
         }
         val color = if (status.paused) colors.paused else colors.of(status.phase)
         val pauseLabel = getString(if (status.paused) Res.string.workout_resume else Res.string.workout_pause)

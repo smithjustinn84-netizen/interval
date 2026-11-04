@@ -221,4 +221,52 @@ class WorkoutEngineTest {
         assertEquals(done, WorkoutEngine.back(done))
         assertEquals(Step(done), WorkoutEngine.tick(done, 1_000))
     }
+
+    @Test
+    fun `two sets of three run through the rest between the sets to the last round`() {
+        val sets = config.copy(prepSeconds = 0, workSeconds = 20, restSeconds = 10, sets = 2, setRestSeconds = 60)
+        val start = WorkoutEngine.start(sets)
+        assertEquals(listOf<Cue>(Cue.PhaseStarted(Phase.Work, lastRound = false, set = 1)), start.cues)
+        // Three rounds of work and two rests bring the first set's rest.
+        val setRest = run(start.state, 3 * 20_000L + 2 * 10_000L)
+        assertEquals(Phase.SetRest, setRest.state.phase)
+        assertEquals(1 to 3, setRest.state.set to setRest.state.round)
+        assertEquals(Cue.PhaseStarted(Phase.SetRest, lastRound = false), setRest.cues.last())
+        assertEquals((60 + 3 * 20 + 2 * 10) * 1_000L, setRest.state.sessionRemainingMillis)
+
+        val secondSet = run(setRest.state, 60_000)
+        assertEquals(2 to 1, secondSet.state.set to secondSet.state.round)
+        assertEquals(Cue.PhaseStarted(Phase.Work, lastRound = false, set = 2), secondSet.cues.last())
+        assertTrue(!secondSet.state.isLastRound)
+
+        val lastRound = run(secondSet.state, 2 * 20_000L + 2 * 10_000L)
+        assertEquals(Phase.Work, lastRound.state.phase)
+        assertTrue(lastRound.state.isLastRound)
+        assertEquals(Cue.PhaseStarted(Phase.Work, lastRound = true), lastRound.cues.last())
+        assertEquals(Phase.Done, run(lastRound.state, 20_000).state.phase)
+    }
+
+    @Test
+    fun `back from a set's first work goes to the rest before it`() {
+        val sets = config.copy(prepSeconds = 0, rounds = 1, sets = 2, setRestSeconds = 60)
+        val secondSet = WorkoutEngine.advance(WorkoutEngine.advance(WorkoutEngine.start(sets).state).state).state
+        assertEquals(2, secondSet.set)
+        val back = WorkoutEngine.back(secondSet)
+        assertEquals(Phase.SetRest to 1, back.phase to back.set)
+        assertEquals(60_000L, back.remainingMillis)
+    }
+
+    @Test
+    fun `the changes ahead name their set`() {
+        val sets = config.copy(prepSeconds = 0, rounds = 1, restSeconds = 0, sets = 2, setRestSeconds = 60)
+        val changes = WorkoutEngine.upcomingChanges(WorkoutEngine.start(sets).state)
+        assertEquals(
+            listOf(
+                UpcomingChange(Phase.SetRest, 1, 30_000, set = 1),
+                UpcomingChange(Phase.Work, 1, 90_000, set = 2),
+                UpcomingChange(Phase.Done, 1, 120_000, set = 2),
+            ),
+            changes,
+        )
+    }
 }

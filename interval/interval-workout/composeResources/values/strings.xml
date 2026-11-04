@@ -10,6 +10,7 @@
     <string name="phase_get_ready">Get ready</string>
     <string name="phase_work">Work</string>
     <string name="phase_rest">Rest</string>
+    <string name="phase_set_rest">Set rest</string>
     <string name="phase_warm_up">Warm-up</string>
     <string name="phase_cool_down">Cool-down</string>
     <string name="phase_done">Done</string>
@@ -19,8 +20,11 @@
     <string name="next_warm_up">Next: warm-up %1$s</string>
     <string name="next_cool_down">Next: cool-down %1$s</string>
     <string name="next_round">Next: round %1$d of %2$d</string>
+    <string name="next_set_rest">Next: rest between sets %1$s</string>
+    <string name="next_set">Next: set %1$d of %2$d</string>
     <string name="next_last_round">Last round — finish strong</string>
     <string name="workout_status">Round %1$d of %2$d · %3$s left</string>
+    <string name="workout_status_set">Set %1$d of %2$d · Round %3$d of %4$d · %5$s left</string>
     <string name="workout_status_left">%1$s left</string>
     <string name="workout_tap_pause">Tap anywhere to pause</string>
     <string name="workout_tap_resume">Tap anywhere to resume</string>

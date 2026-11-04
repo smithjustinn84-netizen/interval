@@ -12,5 +12,7 @@ fun WorkoutColors.of(phase: Phase): Color = when (phase) {
 
     Phase.Rest, Phase.CoolDown -> rest
 
+    Phase.SetRest -> setRest
+
     Phase.Done -> done
 }

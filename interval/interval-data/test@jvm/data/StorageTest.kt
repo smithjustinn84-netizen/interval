@@ -73,6 +73,8 @@ class StorageTest {
             warmUpSeconds = 300,
             coolDownSeconds = 120,
             activity = Activity.Kettlebell,
+            sets = 3,
+            setRestSeconds = 90,
         )
         withApp { repository ->
             repository.updateConfig { config }
@@ -261,6 +263,37 @@ class StorageTest {
             val plan = repository.planned.value.single()
             assertEquals(PlanSchedule.Weekly(2), plan.schedule)
             assertEquals(PlanWorkout.Interval("Tabata", IntervalConfig(10, 20, 10, rounds = 8)), plan.workout)
+        }
+    }
+
+    @Test
+    fun `a version 9 database keeps its workouts presets and plans as one set`() {
+        BundledSQLiteDriver().open(directory.resolve(DATABASE_NAME).absolutePath).use { connection ->
+            V9_SCHEMA.forEach(connection::execSQL)
+            connection.execSQL(
+                "INSERT INTO history (finished_at, prep_seconds, work_seconds, rest_seconds, rounds, " +
+                    "elapsed_seconds, ended_early, uid, updated_at) VALUES ($NOW, 10, 20, 10, 8, 240, 0, 'a', $NOW)",
+            )
+            connection.execSQL(
+                "INSERT INTO preset (name, prep_seconds, work_seconds, rest_seconds, rounds) " +
+                    "VALUES ('Mine', 10, 40, 20, 6)",
+            )
+            connection.execSQL(
+                "INSERT INTO planned (weekday, epoch_day, name, prep_seconds, work_seconds, rest_seconds, rounds, " +
+                    "activity, preset_id, created_at) VALUES (2, NULL, 'Tabata', 10, 20, 10, 8, 'General', NULL, $NOW)",
+            )
+            connection.execSQL("PRAGMA user_version = 9")
+        }
+        withApp { repository ->
+            val configs = listOf(
+                repository.history.value.single().config,
+                repository.customPresets.value.single().config,
+                (repository.planned.value.single().workout as PlanWorkout.Interval).config,
+            )
+            configs.forEach {
+                assertEquals(1, it.sets)
+                assertEquals(0, it.setRestSeconds)
+            }
         }
     }
 
@@ -473,4 +506,30 @@ private val V3_SCHEMA = listOf(
         "`created_at` INTEGER NOT NULL)",
     "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
     "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '280580113cb327b642526bc22a7229ce')",
+)
+
+/** Version 9 as it shipped (`schemas/.../9.json`). */
+private val V9_SCHEMA = listOf(
+    "CREATE TABLE IF NOT EXISTS `history` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+        "`finished_at` INTEGER NOT NULL, `prep_seconds` INTEGER NOT NULL, `work_seconds` INTEGER NOT NULL, " +
+        "`rest_seconds` INTEGER NOT NULL, `rounds` INTEGER NOT NULL, `elapsed_seconds` INTEGER NOT NULL, " +
+        "`ended_early` INTEGER NOT NULL, `work_active_seconds` INTEGER, `activity` TEXT, " +
+        "`uid` TEXT NOT NULL DEFAULT '', `updated_at` INTEGER NOT NULL DEFAULT 0, " +
+        "`deleted` INTEGER NOT NULL DEFAULT 0, `effort` INTEGER, `note` TEXT, " +
+        "`warm_up_seconds` INTEGER NOT NULL DEFAULT 0, `cool_down_seconds` INTEGER NOT NULL DEFAULT 0, " +
+        "`started_at` INTEGER, `average_bpm` INTEGER, `peak_bpm` INTEGER)",
+    "CREATE INDEX IF NOT EXISTS `index_history_finished_at` ON `history` (`finished_at`)",
+    "CREATE UNIQUE INDEX IF NOT EXISTS `index_history_uid` ON `history` (`uid`)",
+    "CREATE TABLE IF NOT EXISTS `preset` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+        "`name` TEXT NOT NULL, `prep_seconds` INTEGER NOT NULL, `work_seconds` INTEGER NOT NULL, " +
+        "`rest_seconds` INTEGER NOT NULL, `rounds` INTEGER NOT NULL, `activity` TEXT, " +
+        "`warm_up_seconds` INTEGER NOT NULL DEFAULT 0, `cool_down_seconds` INTEGER NOT NULL DEFAULT 0)",
+    "CREATE TABLE IF NOT EXISTS `planned` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+        "`weekday` INTEGER, `epoch_day` INTEGER, `name` TEXT NOT NULL, `prep_seconds` INTEGER NOT NULL, " +
+        "`work_seconds` INTEGER NOT NULL, `rest_seconds` INTEGER NOT NULL, `rounds` INTEGER NOT NULL, " +
+        "`activity` TEXT, `preset_id` INTEGER, `created_at` INTEGER NOT NULL, `lift` TEXT, " +
+        "`warm_up_seconds` INTEGER NOT NULL DEFAULT 0, `cool_down_seconds` INTEGER NOT NULL DEFAULT 0)",
+    "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+    "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, " +
+        "'4fe20881722ab4102459d597d42e8ddd')",
 )

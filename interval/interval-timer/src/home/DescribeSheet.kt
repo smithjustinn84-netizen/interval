@@ -124,14 +124,15 @@ internal fun DescribeSheet(
 }
 
 /**
- * What the words come to: one row per value (a warm-up or cool-down only when there is one), then the total,
+ * What the words come to: one row per value (sets, a warm-up or cool-down only when there are), then the total,
  * and a note when some values are kept.
  */
 @Composable
 private fun DescribedPreview(described: DescribedWorkout) {
     val config = described.config
     val bookends = ConfigField.bookends.filter { it in described.understood || config.valueOf(it) > 0 }
-    val fields = ConfigField.shape + bookends
+    val sets = ConfigField.setsOf(config).takeIf { config.sets > 1 || ConfigField.Sets in described.understood }
+    val fields = ConfigField.shape + sets.orEmpty() + bookends
     ListCard {
         fields.forEachIndexed { index, field ->
             if (index > 0) RowDivider()

@@ -123,8 +123,10 @@ data class WorkoutRun(
             shown.paused,
             shown.clock,
             shown.round,
-            shown.rounds,
+            shown.setRounds,
             WorkoutOutline.of(engine),
+            shown.set,
+            shown.sets,
         )
     }
 

@@ -70,7 +70,7 @@ class ThemeContrastTest {
                 assertContrast(4.5, w.onGroundDim, ground, "$theme onGroundDim on $ground")
             }
             // The phase word and the ring sit on the ground; onFill labels the primary control filled with them.
-            listOf(w.prep, w.work, w.rest, w.done).forEach { phase ->
+            listOf(w.prep, w.work, w.rest, w.setRest, w.done).forEach { phase ->
                 assertContrast(4.5, phase, w.ground, "$theme $phase on ground")
                 assertContrast(4.5, w.onFill(phase), phase, "$theme label on $phase")
             }
@@ -83,7 +83,9 @@ class ThemeContrastTest {
     @Test
     fun `dark workout labels stay ink`() {
         val w = darkWorkoutColors
-        listOf(w.prep, w.work, w.rest, w.done, w.onGround).forEach { assertEquals(PhaseColors.ink, w.onFill(it)) }
+        listOf(w.prep, w.work, w.rest, w.setRest, w.done, w.onGround).forEach {
+            assertEquals(PhaseColors.ink, w.onFill(it))
+        }
     }
 
     @Test

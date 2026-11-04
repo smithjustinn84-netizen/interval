@@ -8,10 +8,12 @@ import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.data.AppDatabase
 import dev.justinsmith.interval.platform.resources.Res
 import dev.justinsmith.interval.platform.resources.notification_round
+import dev.justinsmith.interval.platform.resources.notification_set_round
 import dev.justinsmith.interval.platform.resources.phase_cool_down
 import dev.justinsmith.interval.platform.resources.phase_done
 import dev.justinsmith.interval.platform.resources.phase_get_ready
 import dev.justinsmith.interval.platform.resources.phase_rest
+import dev.justinsmith.interval.platform.resources.phase_set_rest
 import dev.justinsmith.interval.platform.resources.phase_warm_up
 import dev.justinsmith.interval.platform.resources.phase_work
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
@@ -143,23 +145,29 @@ private class IosBackgroundWorkout(private val active: Lazy<ActiveWorkout>) : Ba
 
     /** The app is going to the background: the changes ahead, read now, become the system's to announce. */
     private fun leftScreen() {
-        val rounds = status?.rounds ?: return
+        val shown = status ?: return
         // Empty while paused or over: nothing to announce.
         val changes = active.value.upcomingChanges().takeIf { it.isNotEmpty() } ?: return
         center.removePendingNotificationRequestsWithIdentifiers(identifiers)
         val mine = ++generation
-        scope.launch { schedule(changes.take(WORKOUT_REQUESTS), rounds, mine) }
+        scope.launch { schedule(changes.take(WORKOUT_REQUESTS), shown.rounds, shown.sets, mine) }
     }
 
     /** Reading each string suspends, so the app may have come back midway: then the rest are not added. */
-    private suspend fun schedule(changes: List<UpcomingChange>, rounds: Int, mine: Int) {
+    private suspend fun schedule(changes: List<UpcomingChange>, rounds: Int, sets: Int, mine: Int) {
         for ((index, change) in changes.withIndex()) {
             if (mine != generation) return
             val content = UNMutableNotificationContent().apply {
                 setTitle(getString(change.phase.title()))
                 // The warm-up and cool-down are outside the rounds: no round under them.
                 if (change.phase != Phase.WarmUp && change.phase != Phase.CoolDown) {
-                    setBody(getString(Res.string.notification_round, change.round, rounds))
+                    setBody(
+                        if (sets > 1) {
+                            getString(Res.string.notification_set_round, change.set, sets, change.round, rounds)
+                        } else {
+                            getString(Res.string.notification_round, change.round, rounds)
+                        },
+                    )
                 }
                 setSound(UNNotificationSound.defaultSound)
             }
@@ -184,6 +192,7 @@ private class IosBackgroundWorkout(private val active: Lazy<ActiveWorkout>) : Ba
         Phase.WarmUp -> Res.string.phase_warm_up
         Phase.Work -> Res.string.phase_work
         Phase.Rest -> Res.string.phase_rest
+        Phase.SetRest -> Res.string.phase_set_rest
         Phase.CoolDown -> Res.string.phase_cool_down
         Phase.Done -> Res.string.phase_done
     }

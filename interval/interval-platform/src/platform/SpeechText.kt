@@ -8,6 +8,8 @@ import dev.justinsmith.interval.platform.resources.cue_get_ready
 import dev.justinsmith.interval.platform.resources.cue_halfway
 import dev.justinsmith.interval.platform.resources.cue_last_round_work
 import dev.justinsmith.interval.platform.resources.cue_rest
+import dev.justinsmith.interval.platform.resources.cue_set_rest
+import dev.justinsmith.interval.platform.resources.cue_set_work
 import dev.justinsmith.interval.platform.resources.cue_warm_up
 import dev.justinsmith.interval.platform.resources.cue_work
 import kotlinx.coroutines.CancellationException
@@ -23,12 +25,28 @@ import org.jetbrains.compose.resources.getString
 /** The words for this line, in the app's language: "Last round. Work", or the countdown's number. */
 internal suspend fun Speech.text(): String = when (this) {
     is Speech.Countdown -> secondsLeft.toString()
+
     Speech.GetReady -> getString(Res.string.cue_get_ready)
-    is Speech.Work -> getString(if (lastRound) Res.string.cue_last_round_work else Res.string.cue_work)
+
+    is Speech.Work -> {
+        val set = set
+        when {
+            lastRound -> getString(Res.string.cue_last_round_work)
+            set != null -> getString(Res.string.cue_set_work, set)
+            else -> getString(Res.string.cue_work)
+        }
+    }
+
     Speech.Rest -> getString(Res.string.cue_rest)
+
+    Speech.SetRest -> getString(Res.string.cue_set_rest)
+
     Speech.WarmUp -> getString(Res.string.cue_warm_up)
+
     Speech.CoolDown -> getString(Res.string.cue_cool_down)
+
     Speech.Halfway -> getString(Res.string.cue_halfway)
+
     Speech.Finished -> getString(Res.string.cue_finished)
 }
 

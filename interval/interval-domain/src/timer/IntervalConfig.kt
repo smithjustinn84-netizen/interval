@@ -15,6 +15,10 @@ data class IntervalConfig(
     val coolDownSeconds: Int = 0,
     /** What the work intervals are spent doing, for the calorie estimate. Not part of the [sameShape]. */
     val activity: Activity = Activity.General,
+    /** How many times the rounds run, 1 for a workout of one set. */
+    val sets: Int = 1,
+    /** The longer rest after every set but the last, 0 for an ordinary rest between the sets. */
+    val setRestSeconds: Int = 0,
 ) {
     init {
         require(prepSeconds in PREP_RANGE) { "Get ready of $prepSeconds s" }
@@ -23,11 +27,13 @@ data class IntervalConfig(
         require(rounds in ROUNDS_RANGE) { "$rounds rounds" }
         require(warmUpSeconds in WARM_UP_RANGE) { "Warm-up of $warmUpSeconds s" }
         require(coolDownSeconds in COOL_DOWN_RANGE) { "Cool-down of $coolDownSeconds s" }
+        require(sets in SETS_RANGE) { "$sets sets" }
+        require(setRestSeconds in SET_REST_RANGE) { "Set rest of $setRestSeconds s" }
     }
 
     /**
      * Wall-clock length of the whole session: prep, the warm-up, every work interval and the rests between
-     * them, and the cool-down; its [Course]'s sum.
+     * them, the rests between the sets, and the cool-down; its [Course]'s sum.
      */
     val totalSeconds: Int
         get() = Course.of(this).sumOf { it.seconds }
@@ -39,6 +45,8 @@ data class IntervalConfig(
         val ROUNDS_RANGE = 1..99
         val WARM_UP_RANGE = 0..3600
         val COOL_DOWN_RANGE = 0..3600
+        val SETS_RANGE = 1..20
+        val SET_REST_RANGE = 0..3600
 
         /**
          * A config of these values, each taken to the nearest in its range: for one read back from storage,
@@ -52,6 +60,8 @@ data class IntervalConfig(
             warmUpSeconds: Int = 0,
             coolDownSeconds: Int = 0,
             activity: Activity = Activity.General,
+            sets: Int = 1,
+            setRestSeconds: Int = 0,
         ) = IntervalConfig(
             prepSeconds = prepSeconds.coerceIn(PREP_RANGE),
             workSeconds = workSeconds.coerceIn(WORK_RANGE),
@@ -60,6 +70,8 @@ data class IntervalConfig(
             warmUpSeconds = warmUpSeconds.coerceIn(WARM_UP_RANGE),
             coolDownSeconds = coolDownSeconds.coerceIn(COOL_DOWN_RANGE),
             activity = activity,
+            sets = sets.coerceIn(SETS_RANGE),
+            setRestSeconds = setRestSeconds.coerceIn(SET_REST_RANGE),
         )
 
         // The one-tap values the edit sheet offers for each field.
@@ -68,6 +80,11 @@ data class IntervalConfig(
         val REST_PICKS = listOf(0, 10, 15, 20, 30, 45, 60, 90)
         val ROUNDS_PICKS = listOf(4, 6, 8, 10, 12, 15, 20, 30)
         val BOOKEND_PICKS = listOf(0, 60, 120, 180, 300, 480, 600, 900)
+        val SETS_PICKS = listOf(2, 3, 4, 5)
+        val SET_REST_PICKS = listOf(30, 60, 90, 120, 180)
+
+        /** The rest between sets a workout of sets is given when nothing names one: a minute. */
+        const val DEFAULT_SET_REST_SECONDS = 60
     }
 }
 
@@ -79,6 +96,8 @@ enum class ConfigField(val step: Int, val range: IntRange, val quickPicks: List<
     Rounds(step = 1, range = IntervalConfig.ROUNDS_RANGE, quickPicks = IntervalConfig.ROUNDS_PICKS),
     WarmUp(step = 30, range = IntervalConfig.WARM_UP_RANGE, quickPicks = IntervalConfig.BOOKEND_PICKS),
     CoolDown(step = 30, range = IntervalConfig.COOL_DOWN_RANGE, quickPicks = IntervalConfig.BOOKEND_PICKS),
+    Sets(step = 1, range = IntervalConfig.SETS_RANGE, quickPicks = IntervalConfig.SETS_PICKS),
+    SetRest(step = 15, range = IntervalConfig.SET_REST_RANGE, quickPicks = IntervalConfig.SET_REST_PICKS),
     ;
 
     companion object {
@@ -87,6 +106,17 @@ enum class ConfigField(val step: Int, val range: IntRange, val quickPicks: List<
 
         /** The rest of a preset's shape, either side of the rounds, offered under the rows; 0 is off. */
         val bookends: List<ConfigField> = listOf(WarmUp, CoolDown)
+
+        /**
+         * The rows under the shape for its sets: how many, and once there are more than one the rest between them.
+         */
+        fun setsOf(config: IntervalConfig): List<ConfigField> = if (config.sets >
+            1
+        ) {
+            listOf(Sets, SetRest)
+        } else {
+            listOf(Sets)
+        }
     }
 }
 
@@ -98,6 +128,8 @@ fun IntervalConfig.valueOf(field: ConfigField): Int = when (field) {
     ConfigField.Rounds -> rounds
     ConfigField.WarmUp -> warmUpSeconds
     ConfigField.CoolDown -> coolDownSeconds
+    ConfigField.Sets -> sets
+    ConfigField.SetRest -> setRestSeconds
 }
 
 /** Sets [field] to [value], clamped to the field's range. */
@@ -110,19 +142,25 @@ fun IntervalConfig.withValue(field: ConfigField, value: Int): IntervalConfig {
         ConfigField.Rounds -> copy(rounds = clamped)
         ConfigField.WarmUp -> copy(warmUpSeconds = clamped)
         ConfigField.CoolDown -> copy(coolDownSeconds = clamped)
+        ConfigField.Sets -> copy(sets = clamped)
+        ConfigField.SetRest -> copy(setRestSeconds = clamped)
     }
 }
 
-/** "0:30" for durations, "8" for rounds. */
-fun ConfigField.format(value: Int): String = if (this == ConfigField.Rounds) value.toString() else formatClock(value)
+/** A count, the rounds or the sets, rather than a duration. */
+val ConfigField.isCount: Boolean get() = this == ConfigField.Rounds || this == ConfigField.Sets
+
+/** "0:30" for durations, "8" for rounds and sets. */
+fun ConfigField.format(value: Int): String = if (isCount) value.toString() else formatClock(value)
 
 /**
- * Same work, rest and rounds, warm-up and cool-down. The get-ready countdown is an app setting rather than
- * part of a workout's shape, so presets match and apply regardless of it.
+ * Same work, rest and rounds, warm-up and cool-down, sets and the rest between them. The get-ready countdown is
+ * an app setting rather than part of a workout's shape, so presets match and apply regardless of it.
  */
 fun IntervalConfig.sameShape(other: IntervalConfig): Boolean =
     workSeconds == other.workSeconds && restSeconds == other.restSeconds && rounds == other.rounds &&
-        warmUpSeconds == other.warmUpSeconds && coolDownSeconds == other.coolDownSeconds
+        warmUpSeconds == other.warmUpSeconds && coolDownSeconds == other.coolDownSeconds &&
+        sets == other.sets && setRestSeconds == other.setRestSeconds
 
 /** Moves [field] one step in [direction] (+1 or -1), clamped to the field's range. */
 fun IntervalConfig.stepped(field: ConfigField, direction: Int): IntervalConfig =

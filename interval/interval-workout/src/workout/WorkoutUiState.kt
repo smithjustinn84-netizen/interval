@@ -2,6 +2,7 @@ package dev.justinsmith.interval.workout
 
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.platform.HeartRate
+import dev.justinsmith.interval.timer.Course
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.Preset
@@ -28,6 +29,12 @@ sealed interface NextUp {
     /** The next round's work, straight after this interval. */
     data class Round(val round: Int, val of: Int) : NextUp
 
+    /** The longer rest of this length after the set. */
+    data class SetRest(val clock: String) : NextUp
+
+    /** The next set's first work, straight after this interval. */
+    data class Set(val set: Int, val of: Int) : NextUp
+
     /** This work interval is the last one. */
     data object LastRound : NextUp
 }
@@ -37,13 +44,13 @@ data class WorkoutUiState(
     val running: Boolean,
     val config: IntervalConfig,
     /**
-     * 1-based: the round being worked or rested after, or about to start during get ready and the warm-up;
-     * the last during the cool-down.
+     * 1-based: the round of its set being worked or rested after, or about to start during get ready and the
+     * warm-up; the last during the cool-down.
      */
     val round: Int,
-    /** Rounds whose work interval is behind us. */
+    /** Rounds whose work interval is behind us, in every set. */
     val completedRounds: Int,
-    /** The round being worked, or null between work intervals. */
+    /** The round of the set being worked, or null between work intervals. */
     val activeRound: Int?,
     val clock: String,
     /** Whole seconds left in the interval, as the clock shows them; the last few get a countdown. */
@@ -79,11 +86,22 @@ data class WorkoutUiState(
     val note: String = "",
     /** Its heart rate as a watch recorded it, for the summary; null without one. */
     val heartRate: HeartRate? = null,
+    /** 1-based, the set [round] is in. */
+    val set: Int = 1,
 ) {
     /** Offer "Save as preset" on the summary: no preset has this shape yet. */
     val canSavePreset: Boolean get() = presetName == null
 
-    val rounds: Int get() = config.rounds
+    /** Every round of the workout, in all its sets. */
+    val rounds: Int get() = config.sets * config.rounds
+
+    /** The rounds of one set. */
+    val setRounds: Int get() = config.rounds
+
+    val sets: Int get() = config.sets
+
+    /** Rounds of the current set whose work is behind it. */
+    val completedSetRounds: Int get() = (completedRounds - (set - 1) * setRounds).coerceIn(0, setRounds)
     val isDone: Boolean get() = phase == Phase.Done || ended
     val paused: Boolean get() = !running && !isDone
 
@@ -111,7 +129,6 @@ fun WorkoutState.toUiState(
     effort: PerceivedEffort? = null,
     note: String = "",
 ): WorkoutUiState {
-    val rounds = config.rounds
     val secondsLeft = ceilSeconds(remainingMillis)
     return WorkoutUiState(
         phase = phase,
@@ -123,26 +140,7 @@ fun WorkoutState.toUiState(
         clock = formatClock(secondsLeft),
         secondsLeft = secondsLeft,
         progress = if (isDone) 0f else progress,
-        next = when (phase) {
-            Phase.Prep -> if (config.warmUpSeconds > 0) {
-                NextUp.WarmUp(formatClock(config.warmUpSeconds))
-            } else {
-                NextUp.Work(formatClock(config.workSeconds))
-            }
-
-            Phase.WarmUp -> NextUp.Work(formatClock(config.workSeconds))
-
-            Phase.Work -> when {
-                isLastRound && config.coolDownSeconds > 0 -> NextUp.CoolDown(formatClock(config.coolDownSeconds))
-                isLastRound -> NextUp.LastRound
-                config.restSeconds == 0 -> NextUp.Round(round + 1, rounds)
-                else -> NextUp.Rest(formatClock(config.restSeconds))
-            }
-
-            Phase.Rest -> NextUp.Round(round + 1, rounds)
-
-            Phase.CoolDown, Phase.Done -> null
-        },
+        next = nextUp(),
         sessionLeft = formatClock(ceilSeconds(sessionRemainingMillis)),
         total = formatClock(config.totalSeconds),
         ended = ended,
@@ -156,14 +154,39 @@ fun WorkoutState.toUiState(
         leaving = leaving,
         effort = effort,
         note = note,
+        set = set,
     )
 }
 
-/** Rounds whose work interval is behind it: ending now keeps a workout only once there is one. */
+/** What follows this interval in the course: its length, the round or the set it starts. */
+private fun WorkoutState.nextUp(): NextUp? {
+    if (phase == Phase.CoolDown || phase == Phase.Done) return null
+    val next = Course.next(this) ?: return NextUp.LastRound
+    val clock = formatClock(next.seconds)
+    return when (next.phase) {
+        Phase.WarmUp -> NextUp.WarmUp(clock)
+
+        Phase.Work -> when {
+            phase == Phase.Prep || phase == Phase.WarmUp -> NextUp.Work(clock)
+            next.set != set -> NextUp.Set(next.set, config.sets)
+            else -> NextUp.Round(next.round, config.rounds)
+        }
+
+        Phase.Rest -> NextUp.Rest(clock)
+
+        Phase.SetRest -> NextUp.SetRest(clock)
+
+        Phase.CoolDown -> NextUp.CoolDown(clock)
+
+        Phase.Prep, Phase.Done -> null
+    }
+}
+
+/** Rounds whose work interval is behind it, in every set: ending now keeps a workout only once there is one. */
 val WorkoutState.completedRounds: Int
     get() = when (phase) {
         Phase.Prep, Phase.WarmUp -> 0
-        Phase.Work -> round - 1
-        Phase.Rest -> round
-        Phase.CoolDown, Phase.Done -> config.rounds
+        Phase.Work -> (set - 1) * config.rounds + round - 1
+        Phase.Rest, Phase.SetRest -> (set - 1) * config.rounds + round
+        Phase.CoolDown, Phase.Done -> config.sets * config.rounds
     }

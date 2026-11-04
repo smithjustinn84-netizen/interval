@@ -19,9 +19,13 @@ sealed interface Speech {
 
     data object GetReady : Speech
 
-    data class Work(val lastRound: Boolean) : Speech
+    /** [set] is said with a set's first work in a workout of sets ("Set 2. Work"), null otherwise. */
+    data class Work(val lastRound: Boolean, val set: Int? = null) : Speech
 
     data object Rest : Speech
+
+    /** A rest after a set: "Rest between sets". */
+    data object SetRest : Speech
 
     data object WarmUp : Speech
 
@@ -50,10 +54,14 @@ data class WorkoutStatus(
     val paused: Boolean,
     /** Time left in the interval, "m:ss". */
     val clock: String,
+    /** The round of its set, and how many a set has. */
     val round: Int,
     val rounds: Int,
     /** The whole workout end to end, for Android's progress bar ([StatusBar]). */
     val outline: WorkoutOutline = WorkoutOutline.Empty,
+    /** The set, and how many; 1 of 1 for a workout of one set, which says no set. */
+    val set: Int = 1,
+    val sets: Int = 1,
 )
 
 /**
@@ -145,12 +153,20 @@ interface PlanReminderSource {
  * The colours a workout is shown in off screen, as ARGB: Android's notification and its progress bar, tinted by
  * the phase. The design system's phase colours, which the app passes in so the platform draws without it.
  */
-data class StatusColors(val prep: Int, val work: Int, val rest: Int, val done: Int, val paused: Int) {
+data class StatusColors(
+    val prep: Int,
+    val work: Int,
+    val rest: Int,
+    val done: Int,
+    val paused: Int,
+    val setRest: Int = rest,
+) {
     /** [phase]'s colour; the warm-up shares get ready's, the cool-down rest's. */
     fun of(phase: Phase): Int = when (phase) {
         Phase.Prep, Phase.WarmUp -> prep
         Phase.Work -> work
         Phase.Rest, Phase.CoolDown -> rest
+        Phase.SetRest -> setRest
         Phase.Done -> done
     }
 }

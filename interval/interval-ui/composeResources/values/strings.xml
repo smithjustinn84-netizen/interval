@@ -6,6 +6,11 @@
     <string name="common_joined">%1$s · %2$s</string>
     <string name="config_description">%1$s on · %2$s off · ×%3$d</string>
     <string name="config_rounds_short">×%1$d</string>
+    <plurals name="config_sets">
+        <item quantity="one">%1$d set</item>
+        <item quantity="other">%1$d sets</item>
+    </plurals>
+    <string name="config_set_rest">%1$s between</string>
     <string name="duration_short_seconds">%1$ds</string>
     <string name="duration_short_minutes">%1$dm</string>
     <string name="field_prep_label">Get ready</string>
@@ -39,6 +44,16 @@
     <string name="field_warm_up_more">More warm-up time</string>
     <string name="field_cool_down_more">More cool-down time</string>
     <string name="field_off">Off</string>
+    <string name="field_sets_label">Sets</string>
+    <string name="field_sets_hint">Times the rounds run</string>
+    <string name="field_sets_edit">Edit sets</string>
+    <string name="field_sets_less">Fewer sets</string>
+    <string name="field_sets_more">More sets</string>
+    <string name="field_set_rest_label">Between sets</string>
+    <string name="field_set_rest_hint">Longer rest after each set</string>
+    <string name="field_set_rest_edit">Edit rest between sets</string>
+    <string name="field_set_rest_less">Less rest between sets</string>
+    <string name="field_set_rest_more">More rest between sets</string>
     <string name="config_warm_up">%1$s warm-up</string>
     <string name="config_cool_down">%1$s cool-down</string>
     <string name="value_sheet_new_total">New total</string>

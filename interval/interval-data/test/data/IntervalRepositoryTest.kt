@@ -71,7 +71,8 @@ class IntervalRepositoryTest {
 
     @Test
     fun `the workout under way survives a restart and clears`() {
-        val config = IntervalConfig(workSeconds = 40, warmUpSeconds = 60, coolDownSeconds = 30)
+        val config =
+            IntervalConfig(workSeconds = 40, warmUpSeconds = 60, coolDownSeconds = 30, sets = 2, setRestSeconds = 30)
         val state = WorkoutEngine.tick(WorkoutEngine.start(config).state, 12_500).state
         val progress = WorkoutProgress(
             id = 42,
@@ -91,7 +92,7 @@ class IntervalRepositoryTest {
         )
         repository().saveWorkoutProgress(progress)
         assertEquals(progress, repository().workoutProgress.value)
-        val secondSet = progress.copy(state = state.copy(set = 2))
+        val secondSet = progress.copy(state = state.copy(phase = Phase.Work, set = 2))
         repository().saveWorkoutProgress(secondSet)
         assertEquals(secondSet, repository().workoutProgress.value)
 

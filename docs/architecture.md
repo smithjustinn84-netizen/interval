@@ -379,7 +379,8 @@ flowchart TD
   - `IntervalConfig` supports optional `warmUpSeconds` and `coolDownSeconds`. The workout engine runs them in sequence
     (`GetReady` → `WarmUp` → rounds → `CoolDown`).
   - `Course.of(config)` (`interval-domain`, `timer/Course.kt`) lays out every `Interval` (phase, set, round, seconds)
-    once from the config. The engine walks it by (phase, set, round): `advance`, Back, `sessionRemainingMillis` and
+    once from the config: each of `IntervalConfig.sets` is its rounds with their rests, and a `Phase.SetRest` of
+    `setRestSeconds` follows every set but the last (a set rest of 0 is the ordinary rest). The engine walks it by (phase, set, round): `advance`, Back, `sessionRemainingMillis` and
     `upcomingChanges` read it, as do `WorkoutOutline`, the `Timeline`, `totalSeconds` and the calorie fallback. Nothing
     else works out a workout's length from its fields.
   - Both phases are visually distinguished in the timeline, announced by spoken/audio cues, tracked in Live Updates,

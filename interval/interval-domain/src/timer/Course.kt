@@ -9,18 +9,37 @@ data class Interval(val phase: Phase, val set: Int, val round: Int, val seconds:
 /**
  * Every interval a workout passes through, in order, get ready to the cool-down, worked out once from its config:
  * the one source of what a config looks like, which the engine walks, the outline and the Timeline draw and the
- * totals sum. A part of no length is left out, the rest after the last round too.
+ * totals sum. Each set is its rounds with the rest between them, and a [Phase.SetRest] after every set but the
+ * last. A part of no length is left out, the rest after the last round too.
  */
 object Course {
     fun of(config: IntervalConfig): List<Interval> = buildList {
         if (config.prepSeconds > 0) add(Interval(Phase.Prep, 1, 1, config.prepSeconds))
         if (config.warmUpSeconds > 0) add(Interval(Phase.WarmUp, 1, 1, config.warmUpSeconds))
-        for (round in 1..config.rounds) {
-            add(Interval(Phase.Work, 1, round, config.workSeconds))
-            if (round < config.rounds && config.restSeconds > 0) add(Interval(Phase.Rest, 1, round, config.restSeconds))
+        for (set in 1..config.sets) {
+            for (round in 1..config.rounds) {
+                add(Interval(Phase.Work, set, round, config.workSeconds))
+                val after = when {
+                    round < config.rounds -> Phase.Rest
+
+                    set == config.sets -> null
+
+                    config.setRestSeconds > 0 -> Phase.SetRest
+
+                    // A set rest of none is the ordinary rest, between the sets as between their rounds.
+                    else -> Phase.Rest
+                }
+                val seconds = if (after == Phase.SetRest) config.setRestSeconds else config.restSeconds
+                if (after != null && seconds > 0) add(Interval(after, set, round, seconds))
+            }
         }
-        if (config.coolDownSeconds > 0) add(Interval(Phase.CoolDown, 1, config.rounds, config.coolDownSeconds))
+        if (config.coolDownSeconds > 0) {
+            add(Interval(Phase.CoolDown, config.sets, config.rounds, config.coolDownSeconds))
+        }
     }
+
+    /** The interval after the one [state] is in; null in the last, and once done. */
+    fun next(state: WorkoutState): Interval? = of(state.config).firstOrNull { it.comparedTo(state) > 0 }
 
     /** The seconds of work in [config]'s course. */
     fun workSeconds(config: IntervalConfig): Int = of(config).filter { it.phase == Phase.Work }.sumOf { it.seconds }

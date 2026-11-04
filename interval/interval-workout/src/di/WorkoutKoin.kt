@@ -28,7 +28,7 @@ val workoutModule: Module = module {
     single { WorkoutSession(get(), get(), get(), get(), get(), get(), get()) } bind ActiveWorkout::class
     single {
         with(PhaseColors) {
-            StatusColors(prep.toArgb(), work.toArgb(), rest.toArgb(), done.toArgb(), paused.toArgb())
+            StatusColors(prep.toArgb(), work.toArgb(), rest.toArgb(), done.toArgb(), paused.toArgb(), setRest.toArgb())
         }
     }
     viewModel { (id: Long) -> WorkoutViewModel(id, get(), get()) }

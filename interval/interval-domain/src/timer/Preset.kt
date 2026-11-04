@@ -26,9 +26,13 @@ fun List<Preset>.matching(config: IntervalConfig): Preset? {
 
 /**
  * The name a preset gets when the user gives it none: its shape, "40/20 ×6", with a whole number of
- * minutes as "1m". A stored name rather than a label, so it is built here, like a clock string.
+ * minutes as "1m", and its sets when it has more than one, "20/10 ×8, 4 sets". A stored name rather than a
+ * label, so it is built here, like a clock string.
  */
-fun IntervalConfig.defaultPresetName(): String = "${nameLabel(workSeconds)}/${nameLabel(restSeconds)} ×$rounds"
+fun IntervalConfig.defaultPresetName(): String {
+    val rounds = "${nameLabel(workSeconds)}/${nameLabel(restSeconds)} ×$rounds"
+    return if (sets > 1) "$rounds, $sets sets" else rounds
+}
 
 private fun nameLabel(seconds: Int): String = when (val duration = shortDuration(seconds)) {
     is ShortDuration.Seconds -> duration.seconds.toString()
