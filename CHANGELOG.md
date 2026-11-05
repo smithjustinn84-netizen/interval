@@ -21,6 +21,7 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 - The Home Screen's quick actions on iOS, as Android's launcher shortcuts: a long-press on the icon offers "Start a
   workout" and "Start a Lift session", from a cold start or with the app running, and a workout already running is
   kept.
+- The home-screen widget's preview in Android's widget picker, drawn over a sample week (Android 15 and up).
 
 ## [0.3.0] — 2026-11-04
 
@@ -28,8 +29,7 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 - A home-screen widget on Android: this week's workouts, lifts and intervals alike, as the ring against the
   weekly goal set on Plan (or the count alone with no goal), the streak under it, and Workout and Lift buttons
   that start one as the launcher's shortcuts do, keeping a workout already running. It follows History as a
-  workout or session is finished or the goal moves, and turns with the week on its own. On Android 15 and up
-  the widget picker previews it drawn, over a sample week.
+  workout or session is finished or the goal moves, and turns with the week on its own.
 
 ### Changed
 - Lift's house programs build reps before weight: their bell and band lifts (Press ladders, Clean and press EMOM,
