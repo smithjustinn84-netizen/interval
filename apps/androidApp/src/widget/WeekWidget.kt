@@ -20,6 +20,7 @@ import androidx.glance.LocalSize
 import androidx.glance.action.Action
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.PreviewSizeMode
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.provideContent
@@ -62,23 +63,35 @@ import org.koin.core.component.inject
  * wallpaper, as the workout sits on its dark ground. The standing comes from the container's
  * [WeekStandingSource], which `IntervalApplication` started before any receiver ran; it draws once the stores are
  * read, Glance's loading layout showing until then. One layout per size: a row for a short widget, the ring
- * over the buttons for a tall one, the words beside the ring for a wide one.
+ * over the buttons for a tall one, the words beside the ring for a wide one. The picker's preview (Android 15
+ * and up, published by [WidgetPreview]) is the same content over a sample week.
  */
 class WeekWidget :
     GlanceAppWidget(),
     KoinComponent {
     private val source: WeekStandingSource by inject()
 
-    override val sizeMode: SizeMode = SizeMode.Responsive(
+    /** One layout per size, the preview's too: by default a preview is drawn at the smallest size alone. */
+    private val sizes = SizeMode.Responsive(
         setOf(
             DpSize(WidgetSizes.wideFrom / 2, WidgetSizes.tallFrom / 2),
             DpSize(WidgetSizes.wideFrom / 2, WidgetSizes.tallFrom),
             DpSize(WidgetSizes.wideFrom, WidgetSizes.tallFrom),
         ),
     )
+    override val sizeMode: SizeMode = sizes
+    override val previewSizeMode: PreviewSizeMode = sizes
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val standing = source.standing.filterNotNull().first()
+        show(context, source.standing.filterNotNull().first())
+    }
+
+    /** The picker's preview: a week part way to its goal, on a streak, so each part of the widget shows. */
+    override suspend fun providePreview(context: Context, widgetCategory: Int) {
+        show(context, PREVIEW_WEEK)
+    }
+
+    private suspend fun show(context: Context, standing: WeekStanding) {
         // Drawn once, before the content: Glance composes it for every size, and the sizes share each bitmap.
         val ring = weekRing(context, standing, WidgetSizes.ring, WidgetSizes.ringStroke)
         val ringCompact = weekRing(context, standing, WidgetSizes.ringCompact, WidgetSizes.ringStrokeCompact)
@@ -96,6 +109,10 @@ class WeekWidget :
                 .putExtra(ShortcutActivity.EXTRA_SHORTCUT, shortcut.id)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
         )
+
+    private companion object {
+        val PREVIEW_WEEK = WeekStanding(count = 3, goal = 5, streak = 2)
+    }
 }
 
 @Composable

@@ -166,8 +166,9 @@ apps/
   androidApp         Android host application: `IntervalApplication` (starts the container, and keeps the widget
                      drawn), AndroidManifest.xml, res/, launch theme, ProGuard rules, keystore, `ShortcutActivity`,
                      and the home-screen widget (`widget/`: Glance's `WeekWidget` and its receiver, the ring drawn
-                     on a bitmap in `PhaseColors`, `WidgetSizes`, `WidgetDayAlarm` for the day's turn; its words
-                     in `res/values/strings.xml`)
+                     on a bitmap in `PhaseColors`, `WidgetSizes`, `WidgetDayAlarm` for the day's turn, `WidgetPreview`
+                     publishing the picker's preview once a version on Android 15+; its words in
+                     `res/values/strings.xml`)
   desktopApp         Desktop host application: main.kt entry point, Swing integration, window sizing
   iosApp             iOS host application: ViewController.kt (and `openShortcut`, the quick actions'), iosApp.swift,
                      Xcode project, Info.plist (the quick actions, as `UIApplicationShortcutItems`), Assets
