@@ -140,8 +140,9 @@ To change one later (a new password, say), run its command again: `gh secret set
 
 ## Follow-ups found during the sprint
 
-The next sprint's tickets are in [sprint-0.4.md](sprint-0.4.md); [sprint-0.3.md](sprint-0.3.md) and
-[sprint-architecture.md](sprint-architecture.md) took up most of what the earlier sprints found.
+The next sprint's tickets are in [sprint-0.5.md](sprint-0.5.md); [sprint-0.4.md](sprint-0.4.md),
+[sprint-0.3.md](sprint-0.3.md) and [sprint-architecture.md](sprint-architecture.md) took up most of what the
+earlier sprints found.
 
 - **Other workspaces' stacks.** Commits made in another jj workspace above the old `main` rebase onto the
   new one with `jj rebase -d main`.
