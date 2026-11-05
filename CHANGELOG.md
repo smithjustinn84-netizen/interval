@@ -12,6 +12,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   and "Next: block 2 of 3 · 0:40", the voice "Rest before block 2" and "Block 2. Work", and the notification the
   block too; a preset of blocks reads "20s on · 10s off · ×8, then 1m on · 30s off · ×5 · 2m between blocks".
   Exports are schema 5, which a 0.4 build refuses with "update the app"; older files read as one block.
+- Building a sequence: "Add a block" on the Timer's Sets sheet, or in the preset editor, adds a block like the last;
+  each block is a card of its own rows that moves up or down or goes, and "Between blocks" sets the rest between
+  them. A sequence on the Timer shows its blocks on one card, which opens the editor ("Edit blocks"); Done puts it
+  back on the Timer without saving a preset, and "Save as preset" names it. The Timeline draws every block.
 
 ## [0.4.0] — 2026-11-05
 

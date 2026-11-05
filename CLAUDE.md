@@ -218,7 +218,8 @@ toolchain (`$compose.*`).
   `injectedParameters`.
 - **Page layouts**: a pushed page that scrolls is a `ScrollPage` (Back is `BackAction`), a tab of cards a
   `TabGrid`. Any screen that saves or edits a preset opens it through `PresetEditorHost`
-  (`PresetDraft.saveCurrent(config)` for the settings on the Timer).
+  (`PresetDraft.saveCurrent(config)` for the settings on the Timer; `PresetDraft.timer(config)` shapes the Timer's
+  own workout, a sequence's blocks and all, and Done puts it back on the Timer without saving a preset).
   The navigation bar or rail is an overlay (`NavigationAreaBar`, `core/core/src/ui/NavigationArea.kt`) that slides
   away as a page is pushed over a tab; a tab's scene reserves its room through `NavigationArea.tabScenes()`, so a
   tab screen pads nothing itself and a pushed page pads `safeDrawing`.

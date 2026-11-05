@@ -33,6 +33,14 @@
     <string name="preset_editor_prep_hint">Get ready time comes from Settings.</string>
     <string name="preset_editor_saves_as">Saves as %1$s</string>
     <string name="preset_editor_same_shape">Same shape as %1$s</string>
+    <string name="preset_editor_timer_title">Edit workout</string>
+    <string name="preset_editor_block">Block %1$d</string>
+    <string name="preset_editor_add_block">Add a block</string>
+    <string name="preset_editor_move_up">Move block %1$d up</string>
+    <string name="preset_editor_move_down">Move block %1$d down</string>
+    <string name="preset_editor_remove_block">Remove block %1$d</string>
+    <string name="preset_editor_save_as_preset">Save as preset</string>
+    <string name="common_done">Done</string>
     <string name="notice_undo">Undo</string>
     <string name="notice_preset_saved">Saved as %1$s</string>
     <string name="notice_preset_deleted">Deleted %1$s</string>

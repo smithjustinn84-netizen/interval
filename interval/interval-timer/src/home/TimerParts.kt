@@ -20,8 +20,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,7 +47,10 @@ import dev.justinsmith.interval.home.resources.common_calories_estimate
 import dev.justinsmith.interval.home.resources.common_joined
 import dev.justinsmith.interval.home.resources.common_prep_line
 import dev.justinsmith.interval.home.resources.timer_all_presets_cd
+import dev.justinsmith.interval.home.resources.timer_block
+import dev.justinsmith.interval.home.resources.timer_block_rest
 import dev.justinsmith.interval.home.resources.timer_describe_cd
+import dev.justinsmith.interval.home.resources.timer_edit_blocks
 import dev.justinsmith.interval.home.resources.timer_save_as_preset_cd
 import dev.justinsmith.interval.home.resources.timer_title
 import dev.justinsmith.interval.home.resources.timer_total
@@ -68,6 +73,7 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StartButton
 import dev.justinsmith.interval.ui.TitleBar
+import dev.justinsmith.interval.ui.blockDescription
 import dev.justinsmith.interval.ui.displayText
 import dev.justinsmith.interval.ui.editRes
 import dev.justinsmith.interval.ui.enterExpanding
@@ -77,6 +83,7 @@ import dev.justinsmith.interval.ui.ladderNote
 import dev.justinsmith.interval.ui.phaseStripe
 import dev.justinsmith.interval.ui.presetNameOrCustom
 import dev.justinsmith.interval.ui.rememberRising
+import dev.justinsmith.interval.ui.shortDurationText
 import dev.justinsmith.interval.ui.stripe
 import dev.justinsmith.interval.ui.surfaceButton
 import org.jetbrains.compose.resources.stringResource
@@ -219,6 +226,71 @@ internal fun ColumnScope.StepperRows(
     }
     Spacer(Modifier.size(Spacing.space8))
     BookendRow(config, onEdit, fields = listOf(ConfigField.Sets) + ConfigField.bookends)
+}
+
+/**
+ * A sequence on the Timer, whose blocks the three rows can't hold: one card of them, each "Block 2" over what it runs
+ * ("40s on · 20s off · ×3"), and the rest between them, which opens the editor through [onEditBlocks]; then the
+ * warm-up and cool-down under it, as for one block.
+ */
+@Composable
+internal fun ColumnScope.SequenceRows(
+    config: IntervalConfig,
+    onEditBlocks: () -> Unit,
+    onEdit: (ConfigField) -> Unit,
+    fillHeight: Boolean = true,
+) {
+    val palette = IntervalTheme.palette
+    val interaction = remember { MutableInteractionSource() }
+    // Sharing the height, a long sequence scrolls within its card; in a page that scrolls, the page does.
+    val height = if (fillHeight) Modifier.weight(1f).verticalScroll(rememberScrollState()) else Modifier
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .surfaceButton(
+                interaction,
+                Corners.radius18,
+                palette.surface,
+                onClick = onEditBlocks,
+                onClickLabel = stringResource(Res.string.timer_edit_blocks),
+            )
+            .then(height)
+            .padding(Spacing.space16),
+        verticalArrangement = Arrangement.spacedBy(Spacing.space12),
+    ) {
+        config.blocks.forEachIndexed { index, block ->
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+                Text(
+                    stringResource(Res.string.timer_block, index + 1),
+                    style = IntervalTheme.type.label,
+                    color = palette.textDim,
+                )
+                Text(blockDescription(block), style = IntervalTheme.type.value, color = palette.text)
+            }
+        }
+        if (config.blockRestSeconds > 0) {
+            Text(
+                stringResource(Res.string.timer_block_rest, shortDurationText(config.blockRestSeconds)),
+                style = IntervalTheme.type.label,
+                color = palette.textDim,
+            )
+        }
+        // What a tap does, as a row that leads on says it; the card itself is the button.
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space4),
+        ) {
+            Text(stringResource(Res.string.timer_edit_blocks), style = IntervalTheme.type.label, color = palette.accent)
+            Icon(
+                IntervalIcons.Chevron,
+                contentDescription = null,
+                tint = palette.accent,
+                modifier = Modifier.size(Sizes.icon),
+            )
+        }
+    }
+    Spacer(Modifier.size(Spacing.space8))
+    BookendRow(config, onEdit, fields = ConfigField.bookends)
 }
 
 /**

@@ -197,4 +197,30 @@ class PresetEditorTest {
         saveInEditor()
         assertEquals(Activity.Kettlebell, saved.single().config.activity)
     }
+
+    @Test
+    fun `a block added moved and removed in the editor keeps the total and the saved shape in step`() = runUiTest {
+        setThemedContent { Screen() }
+        onNodeWithText("Morning").performClick()
+        onNodeWithText("Edit").performClick()
+        // 8 × 25s with 10s between, and the 10s countdown.
+        inSheet("4:40").assertExists()
+        onNodeWithText("Add a block").performScrollTo().performClick()
+        onNodeWithText("Block 1").assertExists()
+        onNodeWithText("Block 2").assertExists()
+        // Twice the block, with the first's 10s rest between them.
+        onNodeWithText("9:20").performScrollTo().assertExists()
+        // The second block's rounds, then that block first.
+        onAllNodesWithText("×8").onLast().performScrollTo().performClick()
+        onNodeWithText("4").performClick()
+        onNodeWithText("Done").performClick()
+        onNodeWithText("7:00").performScrollTo().assertExists()
+        onNodeWithContentDescription("Move block 2 up").performScrollTo().performClick()
+        onNodeWithText("7:00").performScrollTo().assertExists()
+        onNodeWithContentDescription("Remove block 2").performScrollTo().performClick()
+        onNodeWithText("Block 1").assertDoesNotExist()
+        onNodeWithText("2:20").performScrollTo().assertExists()
+        saveInEditor()
+        assertEquals(listOf(Preset("Morning", morning.config.copy(rounds = 4), id = 7)), saved)
+    }
 }

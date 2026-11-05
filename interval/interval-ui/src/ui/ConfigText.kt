@@ -62,7 +62,7 @@ fun configDescription(config: IntervalConfig): String {
 
 /** One block's rounds, "20s on · 10s off · ×8", with a ladder's step and its sets as [configDescription] says them. */
 @Composable
-private fun blockDescription(block: Block): String {
+fun blockDescription(block: Block): String {
     val shape = if (block.isLadder) {
         stringResource(
             Res.string.config_ladder,

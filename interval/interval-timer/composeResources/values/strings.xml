@@ -10,6 +10,10 @@
     <string name="timer_all_presets_cd">All presets</string>
     <string name="timer_save_as_preset_cd">Save as preset</string>
     <string name="timer_describe_cd">Describe a workout</string>
+    <string name="timer_block">Block %1$d</string>
+    <string name="timer_block_rest">%1$s between blocks</string>
+    <string name="timer_edit_blocks">Edit blocks</string>
+    <string name="timer_add_block">Add a block</string>
     <string name="describe_title">Describe a workout</string>
     <string name="describe_field_label">Workout in words</string>
     <string name="describe_placeholder">40/20 x8 on the rower</string>

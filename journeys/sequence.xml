@@ -1,0 +1,28 @@
+<journey name="A sequence of blocks">
+  <description>
+    Add a second block to the Timer's workout from the sets' sheet, give it a minute's work and a rest between the
+    blocks in the editor, put it on the Timer, run the workout into the second block, and check what the notification
+    says of the block. Save it as a preset from the editor and find it on Presets. Run on a fresh install
+    (adb shell pm clear dev.justinsmith.interval).
+  </description>
+  <actions>
+    <action>Verify that the Timer tab is shown with a "Start workout" button and Work, Rest and Rounds rows</action>
+    <action>Tap the "Fewer rounds" button until the rounds read "×2"</action>
+    <action>Tap the "Sets" chip, then "Add a block" under the quick picks</action>
+    <action>Verify that the "Edit workout" sheet shows "Block 1" and "Block 2", each with Work, Rest and Rounds rows</action>
+    <action>In "Block 2", tap the Work row reading "0:30", tap the "1:00" quick pick, then "Done"</action>
+    <action>Tap the "Between blocks" row, tap the "0:30" quick pick, then "Done"</action>
+    <action>Tap "Done" at the foot of the editor</action>
+    <action>Verify that the Timer shows a card with "Block 1" reading "30s on · 15s off · ×2", "Block 2" reading "1m on · 15s off · ×2", "30s between blocks" and "Edit blocks", and the total reads 4:10</action>
+    <action>Tap "Start workout"</action>
+    <action>Verify that the workout screen shows "Get ready", then "Work" with "Block 1 of 2 · Round 1 of 2"</action>
+    <action>Tap "Skip" until the screen shows "Rest between blocks" with "Next: block 2 of 2 · 1:00"</action>
+    <action>Tap "Skip" and verify that the screen shows "Work" with "Block 2 of 2 · Round 1 of 2"</action>
+    <action>Press Home and verify that the notification reads "Work · Block 2 of 2 · Round 1 of 2"</action>
+    <action>Return to the workout, tap "End", then "End workout" in the dialog</action>
+    <action>Verify that the summary says "Saved to history" and shows 2/4 rounds</action>
+    <action>Tap "Done", tap the Timer's block card, then "Save as preset" in the editor</action>
+    <action>Verify that the sheet is now "Save as preset" with a name field reading "30/15 ×2, then 1m/15 ×2" as its placeholder, then tap "Save"</action>
+    <action>Open "All presets" and verify that "30/15 ×2, then 1m/15 ×2" is under "Yours", reading "30s on · 15s off · ×2, then 1m on · 15s off · ×2 · 30s between blocks"</action>
+  </actions>
+</journey>

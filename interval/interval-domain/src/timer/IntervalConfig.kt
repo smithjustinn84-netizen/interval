@@ -163,6 +163,7 @@ enum class ConfigField(val step: Int, val range: IntRange, val quickPicks: List<
     Sets(step = 1, range = IntervalConfig.SETS_RANGE, quickPicks = IntervalConfig.SETS_PICKS),
     SetRest(step = 15, range = IntervalConfig.SET_REST_RANGE, quickPicks = IntervalConfig.SET_REST_PICKS),
     WorkStep(step = 5, range = IntervalConfig.WORK_STEP_RANGE, quickPicks = IntervalConfig.WORK_STEP_PICKS),
+    BlockRest(step = 15, range = IntervalConfig.BLOCK_REST_RANGE, quickPicks = IntervalConfig.SET_REST_PICKS),
     ;
 
     companion object {
@@ -178,13 +179,13 @@ enum class ConfigField(val step: Int, val range: IntRange, val quickPicks: List<
         /**
          * The rows under the shape for its sets: how many, and once there are more than one the rest between them.
          */
-        fun setsOf(config: IntervalConfig): List<ConfigField> = if (config.sets >
-            1
-        ) {
-            listOf(Sets, SetRest)
-        } else {
-            listOf(Sets)
-        }
+        fun setsOf(config: IntervalConfig): List<ConfigField> = setsOf(config.blocks.first())
+
+        /** As [setsOf] a config, for one of its blocks. */
+        fun setsOf(block: Block): List<ConfigField> = if (block.sets > 1) listOf(Sets, SetRest) else listOf(Sets)
+
+        /** The rows of one block of a sequence: its shape, its ladder and its sets. */
+        fun blockFields(block: Block): List<ConfigField> = shape + ladder + setsOf(block)
     }
 }
 
@@ -199,6 +200,40 @@ fun IntervalConfig.valueOf(field: ConfigField): Int = when (field) {
     ConfigField.Sets -> sets
     ConfigField.SetRest -> setRestSeconds
     ConfigField.WorkStep -> workStepSeconds
+    ConfigField.BlockRest -> blockRestSeconds
+}
+
+/** The current value of [field] in [block] (0-based); a field of the whole workout, such as the warm-up, as it is. */
+fun IntervalConfig.valueOf(field: ConfigField, block: Int): Int =
+    if (block == 0 || field !in Block.FIELDS) valueOf(field) else blocks[block].valueOf(field)
+
+/** [withValue], in [block] (0-based) for a field of a block's own. */
+fun IntervalConfig.withValue(field: ConfigField, value: Int, block: Int): IntervalConfig =
+    if (block == 0 || field !in Block.FIELDS) {
+        withValue(field, value)
+    } else {
+        withBlocks(blocks.toMutableList().also { it[block] = it[block].withValue(field, value) })
+    }
+
+/** [stepped], in [block] (0-based) for a field of a block's own. */
+fun IntervalConfig.stepped(field: ConfigField, direction: Int, block: Int): IntervalConfig =
+    withValue(field, valueOf(field, block) + direction * field.step, block)
+
+/** A block more at the end, as the last one is, so it reads as more of the same; none past the most, MAX_BLOCKS. */
+fun IntervalConfig.withBlockAdded(): IntervalConfig =
+    if (blocks.size >= IntervalConfig.MAX_BLOCKS) this else withBlocks(blocks + blocks.last())
+
+/** Without [block] (0-based); the last one left stays. */
+fun IntervalConfig.withoutBlock(block: Int): IntervalConfig =
+    if (blocks.size <= 1) this else withBlocks(blocks.filterIndexed { index, _ -> index != block })
+
+/** [block] (0-based) moved [by] places, -1 earlier or +1 later, as far as the ends allow. */
+fun IntervalConfig.withBlockMoved(block: Int, by: Int): IntervalConfig {
+    val to = (block + by).coerceIn(blocks.indices)
+    if (to == block) return this
+    val moved = blocks.toMutableList()
+    moved.add(to, moved.removeAt(block))
+    return withBlocks(moved)
 }
 
 /**
@@ -220,7 +255,7 @@ fun IntervalConfig.withValue(field: ConfigField, value: Int): IntervalConfig {
         setRestSeconds = of(ConfigField.SetRest, setRestSeconds),
         workStepSeconds = of(ConfigField.WorkStep, workStepSeconds),
         then = then,
-        blockRestSeconds = blockRestSeconds,
+        blockRestSeconds = of(ConfigField.BlockRest, blockRestSeconds),
     )
 }
 

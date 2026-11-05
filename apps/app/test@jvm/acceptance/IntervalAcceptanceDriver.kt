@@ -37,6 +37,7 @@ import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.tab
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
+import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.AcceptanceSteps
 import dev.justinsmith.interval.ui.JOURNEY_TIMEOUT
 import dev.justinsmith.interval.ui.Window
@@ -558,6 +559,8 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     fun nothingIsSaved() = savedWorkouts(0)
 
+    fun nothingSavedAsPreset() = waitFor("no preset saved") { app.repository.presets.customPresets.value.isEmpty() }
+
     /** On the summary, under "How was it?": how hard the workout felt, then a note on it. */
     fun sayHowItWas(effort: String, note: String) {
         see("How was it?")
@@ -586,6 +589,29 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     /** The workout History holds was kept as [sets] sets of [rounds]. */
     fun workoutKeptWithSets(sets: Int, rounds: Int) = waitFor("a workout kept as $sets sets of $rounds") {
         app.repository.history.history.value.any { it.config.sets == sets && it.config.rounds == rounds }
+    }
+
+    /** Add a block, on the sets' sheet: the editor opens on the Timer's workout with a second block, as the first. */
+    fun addBlockOnTimer() {
+        tap("Sets")
+        tap("Add a block")
+        see("Edit workout")
+        see("Block 2")
+    }
+
+    /** The last block's work, picked on its sheet from the editor: [clock] is the quick pick's, "1:00". */
+    fun setLastBlockWork(clock: String) {
+        val work = app.repository.settings.config.value.workSeconds
+        tap(formatClock(work))
+        tap(clock)
+        tap("Done")
+    }
+
+    /** The editor's Done: the Timer takes the workout, saving no preset. */
+    fun finishEditingWorkout(blocks: Int) {
+        tap("Done")
+        waitFor("the Timer's workout of $blocks blocks") { app.repository.settings.config.value.blocks.size == blocks }
+        see("Edit blocks")
     }
 
     fun workoutKeptAsSequence(blocks: Int) = waitFor("a workout kept as a sequence of $blocks blocks") {

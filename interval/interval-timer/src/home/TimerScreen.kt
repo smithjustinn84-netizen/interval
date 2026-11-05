@@ -24,6 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.justinsmith.interval.home.resources.Res
+import dev.justinsmith.interval.home.resources.timer_add_block
+import dev.justinsmith.interval.presets.EditorMode
 import dev.justinsmith.interval.presets.PresetDraft
 import dev.justinsmith.interval.presets.PresetEditorHost
 import dev.justinsmith.interval.presets.rememberPresetDraft
@@ -33,16 +36,19 @@ import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.valueOf
+import dev.justinsmith.interval.timer.withBlockAdded
 import dev.justinsmith.interval.ui.ActivitySheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LadderField
 import dev.justinsmith.interval.ui.PreviewFormFactors
+import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.SetupLanes
 import dev.justinsmith.interval.ui.SheetField
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ValueSheet
 import dev.justinsmith.interval.ui.isLandscape
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Resolves the tab's ViewModel, scoped to its back-stack entry, and binds it to [TimerScreen]. */
@@ -98,6 +104,7 @@ fun TimerScreen(
     val onEdit = { field: ConfigField -> editingName = field.name }
     var draft by rememberPresetDraft()
     val onSave = { draft = PresetDraft.saveCurrent(state.config) }
+    val onEditBlocks = { draft = PresetDraft.timer(state.config) }
     var describing by rememberSaveable { mutableStateOf(false) }
     val onDescribe = { describing = true }
     BoxWithConstraints(modifier.fillMaxSize().background(IntervalTheme.palette.background)) {
@@ -118,7 +125,11 @@ fun TimerScreen(
                         .fillMaxHeight()
                         .padding(top = Spacing.space16, bottom = Spacing.space16, end = Spacing.space16),
                 ) {
-                    StepperRows(state.config, onStep, onEdit)
+                    if (state.config.isSequence) {
+                        SequenceRows(state.config, onEditBlocks, onEdit)
+                    } else {
+                        StepperRows(state.config, onStep, onEdit)
+                    }
                 }
             }
         } else {
@@ -131,7 +142,7 @@ fun TimerScreen(
             Box(Modifier.align(Alignment.TopCenter).widthIn(max = Sizes.contentWide).fillMaxSize()) {
                 Column(Modifier.fillMaxSize()) {
                     TimerTitleBar(state.canSavePreset, onSave, onDescribe, onOpenSettings)
-                    TimerBody(state, expandRows, onStep, onEdit, onEditActivity, Modifier.weight(1f))
+                    TimerBody(state, expandRows, onStep, onEdit, onEditActivity, onEditBlocks, Modifier.weight(1f))
                     StartRow(
                         onStart,
                         onSeeAllPresets,
@@ -141,7 +152,10 @@ fun TimerScreen(
             }
         }
     }
-    editing?.let { field -> TimerValueSheet(field, state, onStep, onSet, onDismiss = { editingName = null }) }
+    editing?.let { field ->
+        val addBlock = { draft = PresetDraft.timer(state.config.withBlockAdded()).also { editingName = null } }
+        TimerValueSheet(field, state, onStep, onSet, onAddBlock = addBlock, onDismiss = { editingName = null })
+    }
     if (choosingActivity) {
         ActivitySheet(
             selected = state.config.activity,
@@ -157,13 +171,17 @@ fun TimerScreen(
         onDraftChange = { draft = it },
         prepSeconds = state.config.prepSeconds,
         presets = state.presets,
-        onSave = { _, preset -> onSavePreset(preset) },
+        // The Timer's own workout, shaped in the editor, goes back on the Timer as a described one does.
+        onSave = { opened, preset ->
+            if (opened.mode == EditorMode.Timer) onUseDescription(preset.config) else onSavePreset(preset)
+        },
     )
 }
 
 /**
  * [field]'s edit sheet, with what changes that value under its quick picks rather than on the Timer: the ladder
- * on the work's, and the rest between sets on the sets' once there is more than one.
+ * on the work's, and the rest between sets on the sets' once there is more than one, and the way to a sequence,
+ * Add a block, which opens the editor with a second through [onAddBlock].
  */
 @Composable
 private fun TimerValueSheet(
@@ -171,6 +189,7 @@ private fun TimerValueSheet(
     state: TimerUiState,
     onStep: (ConfigField, Int) -> Unit,
     onSet: (ConfigField, Int) -> Unit,
+    onAddBlock: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val config = state.config
@@ -185,11 +204,16 @@ private fun TimerValueSheet(
         when {
             field == ConfigField.Work -> LadderField(config, onStep = { onStep(ConfigField.WorkStep, it) })
 
-            field == ConfigField.Sets && config.sets > 1 -> SheetField(
-                ConfigField.SetRest,
-                config.setRestSeconds,
-                onStep = { onStep(ConfigField.SetRest, it) },
-            )
+            field == ConfigField.Sets -> Column {
+                if (config.sets > 1) {
+                    SheetField(ConfigField.SetRest, config.setRestSeconds, onStep = { onStep(ConfigField.SetRest, it) })
+                }
+                QuietTextButton(
+                    stringResource(Res.string.timer_add_block),
+                    onClick = onAddBlock,
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                )
+            }
         }
     }
 }
@@ -201,6 +225,7 @@ private fun TimerBody(
     onStep: (ConfigField, Int) -> Unit,
     onEdit: (ConfigField) -> Unit,
     onEditActivity: () -> Unit,
+    onEditBlocks: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scroll = if (expandRows) Modifier else Modifier.verticalScroll(rememberScrollState())
@@ -208,7 +233,11 @@ private fun TimerBody(
         Total(state, onEditActivity, Modifier.padding(horizontal = Spacing.space20))
         val rowModifier = if (expandRows) Modifier.weight(1f) else Modifier
         Column(rowModifier.padding(horizontal = Spacing.space16, vertical = Spacing.space12)) {
-            StepperRows(state.config, onStep, onEdit, fillHeight = expandRows)
+            if (state.config.isSequence) {
+                SequenceRows(state.config, onEditBlocks, onEdit, fillHeight = expandRows)
+            } else {
+                StepperRows(state.config, onStep, onEdit, fillHeight = expandRows)
+            }
         }
     }
 }

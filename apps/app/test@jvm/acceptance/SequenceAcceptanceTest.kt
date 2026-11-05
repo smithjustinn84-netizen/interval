@@ -49,4 +49,25 @@ class SequenceAcceptanceTest {
         see("4/4")
         workoutKeptAsSequence(blocks = 2)
     }
+
+    @Test
+    fun `a block added on the Timer makes a sequence that runs both blocks`() = acceptanceScenario {
+        seeTimer()
+        lowerRoundsTo(2)
+        addBlockOnTimer()
+        setLastBlockWork("1:00")
+        finishEditingWorkout(blocks = 2)
+        see("30s on · 15s off · ×2")
+        see("1m on · 15s off · ×2")
+        nothingSavedAsPreset()
+
+        startWorkout()
+        seePhase("Get ready")
+        letTimePass(11.seconds)
+        seeRound("Block 1 of 2 · Round 1 of 2")
+        // The first block's 2 × 30s with 15s between, then its 15s rest before the second.
+        letTimePass((2 * 30 + 15 + 15).seconds)
+        seeRound("Block 2 of 2 · Round 1 of 2")
+        seePhase("Work")
+    }
 }

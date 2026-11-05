@@ -137,4 +137,36 @@ class IntervalConfigTest {
         assertTrue(!sequence.sameShape(sequence.copy(blockRestSeconds = 60)))
         assertTrue(!sequence.sameShape(sequence.copy(then = listOf(second.copy(rounds = 5)))))
     }
+
+    @Test
+    fun `a block is added as the last one moved and taken out`() {
+        val first = Block(workSeconds = 20, restSeconds = 10, rounds = 8)
+        val second = Block(workSeconds = 60, restSeconds = 30, rounds = 4)
+        val added = IntervalConfig().withBlocks(listOf(first)).withBlockAdded()
+        assertEquals(listOf(first, first), added.blocks)
+        val two = added.withBlocks(listOf(first, second))
+        assertEquals(listOf(second, first), two.withBlockMoved(1, by = -1).blocks)
+        assertEquals(two, two.withBlockMoved(1, by = +1))
+        assertEquals(listOf(first), two.withoutBlock(1).blocks)
+        assertEquals(listOf(second), two.withoutBlock(0).blocks)
+        assertEquals(two.withoutBlock(0), two.withoutBlock(0).withoutBlock(0))
+        val full = IntervalConfig(then = List(IntervalConfig.MAX_BLOCKS - 1) { first })
+        assertEquals(full, full.withBlockAdded())
+    }
+
+    @Test
+    fun `a block's own field is read and changed in that block alone`() {
+        val second = Block(workSeconds = 60, restSeconds = 30, rounds = 4)
+        val config = IntervalConfig(warmUpSeconds = 60, then = listOf(second))
+        assertEquals(60, config.valueOf(ConfigField.Work, block = 1))
+        assertEquals(config.workSeconds, config.valueOf(ConfigField.Work, block = 0))
+        // The warm-up is the whole workout's, whichever block asks.
+        assertEquals(60, config.valueOf(ConfigField.WarmUp, block = 1))
+        val stepped = config.stepped(ConfigField.Rounds, +1, block = 1)
+        assertEquals(5, stepped.then.single().rounds)
+        assertEquals(config.rounds, stepped.rounds)
+        assertEquals(10, config.withValue(ConfigField.Rounds, 10, block = 0).rounds)
+        assertEquals(99, config.withValue(ConfigField.Rounds, 500, block = 1).then.single().rounds)
+        assertEquals(90, config.withValue(ConfigField.BlockRest, 90).blockRestSeconds)
+    }
 }

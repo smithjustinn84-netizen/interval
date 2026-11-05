@@ -118,6 +118,11 @@ line is after ticket 5; ticket 4 sits below it.
 - Done when: a screen test adds, moves and removes a block and sees the total follow; `SequenceAcceptanceTest`
   builds its sequence in the editor from the Timer; `journeys/sequence.xml` builds one on `amper-37`, runs it and
   reads "Block 2 of 2" in the notification.
+- As built: "Add a block" on the Timer is on the Sets sheet, under its quick picks, so the Timer's three rows keep
+  their heights; a sequence on the Timer replaces them with one card of its blocks, and the Sets chip with the
+  bookends alone. The editor edits a block's own fields through `valueOf`/`withValue`/`stepped` with the block's
+  index (`ConfigField.BlockRest` is the whole workout's), and `withBlockAdded`, `withoutBlock` and
+  `withBlockMoved` reshape the list. `RoutineDescription` needed nothing.
 
 **5. The week on iOS's Home Screen** · L
 - Spike first, half a day: a second, Swift-only target in `apps/iosApp/module.xcodeproj` beside `app` (the

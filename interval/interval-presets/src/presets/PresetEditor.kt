@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,19 +24,30 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import dev.justinsmith.interval.presets.resources.Res
 import dev.justinsmith.interval.presets.resources.activity_title
 import dev.justinsmith.interval.presets.resources.common_cancel
+import dev.justinsmith.interval.presets.resources.common_done
 import dev.justinsmith.interval.presets.resources.common_save
 import dev.justinsmith.interval.presets.resources.notice_preset_saved
+import dev.justinsmith.interval.presets.resources.preset_editor_add_block
+import dev.justinsmith.interval.presets.resources.preset_editor_block
 import dev.justinsmith.interval.presets.resources.preset_editor_copy_title
 import dev.justinsmith.interval.presets.resources.preset_editor_edit_title
+import dev.justinsmith.interval.presets.resources.preset_editor_move_down
+import dev.justinsmith.interval.presets.resources.preset_editor_move_up
 import dev.justinsmith.interval.presets.resources.preset_editor_new_title
 import dev.justinsmith.interval.presets.resources.preset_editor_prep_hint
+import dev.justinsmith.interval.presets.resources.preset_editor_remove_block
 import dev.justinsmith.interval.presets.resources.preset_editor_same_shape
+import dev.justinsmith.interval.presets.resources.preset_editor_save_as_preset
 import dev.justinsmith.interval.presets.resources.preset_editor_saves_as
+import dev.justinsmith.interval.presets.resources.preset_editor_timer_title
 import dev.justinsmith.interval.presets.resources.preset_editor_total
 import dev.justinsmith.interval.presets.resources.preset_name_count
 import dev.justinsmith.interval.presets.resources.preset_name_label
@@ -50,11 +63,16 @@ import dev.justinsmith.interval.timer.sameShape
 import dev.justinsmith.interval.timer.stepped
 import dev.justinsmith.interval.timer.storedName
 import dev.justinsmith.interval.timer.valueOf
+import dev.justinsmith.interval.timer.withBlockAdded
+import dev.justinsmith.interval.timer.withBlockMoved
 import dev.justinsmith.interval.timer.withValue
+import dev.justinsmith.interval.timer.withoutBlock
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.ActivitySheet
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.FieldRow
+import dev.justinsmith.interval.ui.IconAction
+import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
@@ -71,9 +89,10 @@ import org.jetbrains.compose.resources.stringResource
 /**
  * What the editor opened to do, which names its title. [SaveCurrent] saves the settings on the Timer,
  * from the Timer, the Presets list or a workout's summary; [New] starts a preset from them without
- * touching the Timer.
+ * touching the Timer. [Timer] shapes the workout on the Timer itself, a sequence's blocks and all: Done puts it
+ * there and saves nothing, and Save as preset turns it into [SaveCurrent].
  */
-enum class EditorMode { Edit, New, Copy, SaveCurrent }
+enum class EditorMode { Edit, New, Copy, SaveCurrent, Timer }
 
 /**
  * A preset as the editor has it: the shape being set, the name it opened with (the field holds what
@@ -88,16 +107,21 @@ data class PresetDraft(
     companion object {
         /** A new, unnamed preset in [config]'s shape, to save the settings on the Timer. */
         fun saveCurrent(config: IntervalConfig) = PresetDraft(EditorMode.SaveCurrent, name = "", config = config)
+
+        /** The workout on the Timer, [config], to shape in place. */
+        fun timer(config: IntervalConfig) = PresetDraft(EditorMode.Timer, name = "", config = config)
     }
 }
 
 /**
- * Names and shapes a preset in a sheet: the name with its count, Work, Rest and Rounds, the warm-up and
- * cool-down as rows that open the edit sheet, the total it comes to with the user's get-ready countdown,
- * and Save. A blank name saves as the shape's own ("40/20 ×6"), which the empty field shows. Before Save it says what
- * the repository will do with a name another of [presets] has ("Saves as Tabata 2") and which one
- * already has this shape. Each change to the shape goes back through [onChangeShape], so the [draft]
- * lives with its caller.
+ * Names and shapes a preset in a sheet: the name with its count, a card of rows for each block (Work, Rest and
+ * Rounds, the ladder and the sets; one for a workout of one block), Add a block, then the rest between blocks, the
+ * warm-up, cool-down and activity, each row opening its edit sheet; the total it comes to with the user's get-ready
+ * countdown, and Save. A sequence's blocks each say their number and move up or down or go. A blank name saves as
+ * the shape's own ("40/20 ×6"), which the empty field shows. Before Save it says what the repository will do with a
+ * name another of [presets] has ("Saves as Tabata 2") and which one already has this shape. Each change to the shape
+ * goes back through [onChangeShape], so the [draft] lives with its caller. In [EditorMode.Timer] there is no name:
+ * Done hands the shape to [onSave], and Save as preset goes to [onSaveAsPreset].
  */
 @Composable
 internal fun PresetEditor(
@@ -107,6 +131,7 @@ internal fun PresetEditor(
     onChangeShape: ((IntervalConfig) -> IntervalConfig) -> Unit,
     onSave: (Preset) -> Unit,
     onDismiss: () -> Unit,
+    onSaveAsPreset: () -> Unit = {},
 ) {
     val palette = IntervalTheme.palette
     val name = rememberTextFieldState(draft.name)
@@ -119,56 +144,46 @@ internal fun PresetEditor(
     val wanted = name.text.toString().trim().ifEmpty { placeholder }
     val storedName = Preset(wanted, draft.config, draft.id).storedName(presets)
     val sameShape = others.firstOrNull { it.config.sameShape(draft.config) }
-    // Saved by name: an enum is not saveable on every platform.
-    var editingName by rememberSaveable { mutableStateOf<String?>(null) }
-    val editing = editingName?.let(ConfigField::valueOf)
+    val timer = draft.mode == EditorMode.Timer
+    // The block and the field being edited, as "1:Work": saved as text, which every platform can.
+    var editingKey by rememberSaveable { mutableStateOf<String?>(null) }
+    val editing = editingKey?.let(::editingOf)
     var choosingActivity by rememberSaveable { mutableStateOf(false) }
     val notices = LocalNotices.current
     val savedText = stringResource(Res.string.notice_preset_saved, storedName)
     IntervalSheet(title = title, onDismiss = onDismiss) { hide ->
         val save = {
             onSave(Preset(wanted, draft.config, draft.id))
-            notices.show(savedText)
+            if (!timer) notices.show(savedText)
             hide()
         }
         EditorHeader(title, onCancel = hide)
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = Spacing.space4), verticalAlignment = Alignment.Bottom) {
-                Text(
-                    stringResource(Res.string.preset_name_label),
-                    style = IntervalTheme.type.caption,
-                    color = palette.textDim,
-                    modifier = Modifier.weight(1f).clearAndSetSemantics {},
-                )
-                Text(
-                    stringResource(Res.string.preset_name_count, name.text.length, Preset.MAX_NAME_LENGTH),
-                    style = IntervalTheme.type.caption,
-                    color = palette.textDim,
-                )
-            }
-            NameField(
-                name,
-                placeholder,
-                stringResource(Res.string.preset_name_label),
-                Preset.MAX_NAME_LENGTH,
-                onDone = save,
-                capitalization = KeyboardCapitalization.Words,
-            )
-            if (storedName != wanted) EditorHint(stringResource(Res.string.preset_editor_saves_as, storedName))
+        if (!timer) {
+            EditorName(name, placeholder, storedName, wanted, save)
         }
-        EditorShapeCard(draft.config, { editingName = it.name }, { choosingActivity = true })
+        EditorBlocks(draft.config, { block, field -> editingKey = "$block:${field.name}" }, onChangeShape)
+        EditorWorkoutCard(draft.config, { editingKey = "0:${it.name}" }, { choosingActivity = true })
         EditorTotal(total)
-        sameShape?.let { EditorHint(stringResource(Res.string.preset_editor_same_shape, it.name)) }
-        AccentButton(stringResource(Res.string.common_save), onClick = save, modifier = Modifier.fillMaxWidth())
+        if (!timer) sameShape?.let { EditorHint(stringResource(Res.string.preset_editor_same_shape, it.name)) }
+        if (timer) {
+            AccentButton(stringResource(Res.string.common_done), onClick = save, modifier = Modifier.fillMaxWidth())
+            QuietTextButton(
+                stringResource(Res.string.preset_editor_save_as_preset),
+                onClick = onSaveAsPreset,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+            )
+        } else {
+            AccentButton(stringResource(Res.string.common_save), onClick = save, modifier = Modifier.fillMaxWidth())
+        }
     }
-    editing?.let { field ->
+    editing?.let { (block, field) ->
         ValueSheet(
             field = field,
-            value = draft.config.valueOf(field),
+            value = draft.config.valueOf(field, block),
             total = total,
-            onStep = { direction -> onChangeShape { it.stepped(field, direction) } },
-            onPick = { value -> onChangeShape { it.withValue(field, value) } },
-            onDismiss = { editingName = null },
+            onStep = { direction -> onChangeShape { it.stepped(field, direction, block) } },
+            onPick = { value -> onChangeShape { it.withValue(field, value, block) } },
+            onDismiss = { editingKey = null },
         )
     }
     if (choosingActivity) {
@@ -180,25 +195,153 @@ internal fun PresetEditor(
     }
 }
 
+/** The block (0-based) and field [key] names, "1:Work"; null for one this build can't read. */
+private fun editingOf(key: String): Pair<Int, ConfigField>? {
+    val parts = key.split(':')
+    val block = parts.first().toIntOrNull()
+    val field = ConfigField.entries.firstOrNull { it.name == parts.getOrNull(1) }
+    return if (parts.size == 2 && block != null && field != null) block to field else null
+}
+
+/** The name with its count, the field, and what Save will call it when that differs from what is typed. */
+@Composable
+private fun EditorName(
+    name: TextFieldState,
+    placeholder: String,
+    storedName: String,
+    wanted: String,
+    onDone: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val palette = IntervalTheme.palette
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = Spacing.space4), verticalAlignment = Alignment.Bottom) {
+            Text(
+                stringResource(Res.string.preset_name_label),
+                style = IntervalTheme.type.caption,
+                color = palette.textDim,
+                modifier = Modifier.weight(1f).clearAndSetSemantics {},
+            )
+            Text(
+                stringResource(Res.string.preset_name_count, name.text.length, Preset.MAX_NAME_LENGTH),
+                style = IntervalTheme.type.caption,
+                color = palette.textDim,
+            )
+        }
+        NameField(
+            name,
+            placeholder,
+            stringResource(Res.string.preset_name_label),
+            Preset.MAX_NAME_LENGTH,
+            onDone = onDone,
+            capitalization = KeyboardCapitalization.Words,
+        )
+        if (storedName != wanted) EditorHint(stringResource(Res.string.preset_editor_saves_as, storedName))
+    }
+}
+
 private fun EditorMode.titleRes() = when (this) {
     EditorMode.Edit -> Res.string.preset_editor_edit_title
     EditorMode.New -> Res.string.preset_editor_new_title
     EditorMode.Copy -> Res.string.preset_editor_copy_title
     EditorMode.SaveCurrent -> Res.string.preset_save_title
+    EditorMode.Timer -> Res.string.preset_editor_timer_title
 }
 
+/**
+ * A card per block of [config]: its rows, under its number and the ways to move it or take it out when there is
+ * more than one; then Add a block, while there is room for one.
+ */
 @Composable
-private fun EditorShapeCard(
+private fun EditorBlocks(
+    config: IntervalConfig,
+    onEditField: (Int, ConfigField) -> Unit,
+    onChangeShape: ((IntervalConfig) -> IntervalConfig) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+        config.blocks.forEachIndexed { index, block ->
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(Corners.radius18)
+                    .background(IntervalTheme.palette.surfaceVariant)
+                    // Each block's rows read after its number, so "Edit work" says which block's.
+                    .semantics { isTraversalGroup = true },
+            ) {
+                if (config.isSequence) {
+                    BlockHeader(
+                        number = index + 1,
+                        first = index == 0,
+                        last = index == config.blocks.lastIndex,
+                        onMove = { by -> onChangeShape { it.withBlockMoved(index, by) } },
+                        onRemove = { onChangeShape { it.withoutBlock(index) } },
+                    )
+                    RowDivider()
+                }
+                ConfigField.blockFields(block).forEachIndexed { row, field ->
+                    if (row > 0) RowDivider()
+                    FieldRow(field, block.valueOf(field), onClick = { onEditField(index, field) })
+                }
+            }
+        }
+        if (config.blocks.size < IntervalConfig.MAX_BLOCKS) {
+            QuietTextButton(
+                stringResource(Res.string.preset_editor_add_block),
+                onClick = { onChangeShape { it.withBlockAdded() } },
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+            )
+        }
+    }
+}
+
+/** "Block 2", a heading, with the ways to move it earlier or later and to take it out. */
+@Composable
+private fun BlockHeader(
+    number: Int,
+    first: Boolean,
+    last: Boolean,
+    onMove: (Int) -> Unit,
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier.fillMaxWidth().padding(start = Spacing.space16, end = Spacing.space4),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            stringResource(Res.string.preset_editor_block, number),
+            style = IntervalTheme.type.label,
+            color = IntervalTheme.palette.text,
+            modifier = Modifier.weight(1f).semantics { heading() },
+        )
+        if (!first) {
+            IconAction(IntervalIcons.ChevronUp, stringResource(Res.string.preset_editor_move_up, number), {
+                onMove(-1)
+            })
+        }
+        if (!last) {
+            IconAction(
+                IntervalIcons.ChevronDown,
+                stringResource(Res.string.preset_editor_move_down, number),
+                { onMove(+1) },
+            )
+        }
+        IconAction(IntervalIcons.Close, stringResource(Res.string.preset_editor_remove_block, number), onRemove)
+    }
+}
+
+/** What is the whole workout's rather than a block's: the rest between blocks, the bookends and the activity. */
+@Composable
+private fun EditorWorkoutCard(
     config: IntervalConfig,
     onEditField: (ConfigField) -> Unit,
     onChooseActivity: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.fillMaxWidth().clip(Corners.radius18).background(IntervalTheme.palette.surfaceVariant)) {
-        (ConfigField.shape + ConfigField.ladder + ConfigField.setsOf(config) + ConfigField.bookends).forEachIndexed {
-                index,
-                field,
-            ->
+        val fields = listOfNotNull(ConfigField.BlockRest.takeIf { config.isSequence }) + ConfigField.bookends
+        fields.forEachIndexed { index, field ->
             if (index > 0) RowDivider()
             FieldRow(field, config.valueOf(field), onClick = { onEditField(field) })
         }
@@ -293,6 +436,7 @@ fun PresetEditorHost(
         onChangeShape = { transform -> onDraftChange(draft.copy(config = transform(draft.config))) },
         onSave = { onSave(draft, it) },
         onDismiss = { onDraftChange(null) },
+        onSaveAsPreset = { onDraftChange(draft.copy(mode = EditorMode.SaveCurrent)) },
     )
 }
 

@@ -62,6 +62,11 @@
     <string name="field_set_rest_edit">Edit rest between sets</string>
     <string name="field_set_rest_less">Less rest between sets</string>
     <string name="field_set_rest_more">More rest between sets</string>
+    <string name="field_block_rest_label">Between blocks</string>
+    <string name="field_block_rest_hint">Rest from one block to the next</string>
+    <string name="field_block_rest_edit">Edit rest between blocks</string>
+    <string name="field_block_rest_less">Less rest between blocks</string>
+    <string name="field_block_rest_more">More rest between blocks</string>
     <string name="field_work_step_label">Ladder</string>
     <string name="field_work_step_hint">Work added each round, or taken off</string>
     <string name="field_work_step_edit">Edit ladder</string>

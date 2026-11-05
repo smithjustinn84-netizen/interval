@@ -8,6 +8,11 @@ import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.format
 import dev.justinsmith.interval.ui.resources.Res
 import dev.justinsmith.interval.ui.resources.config_rounds_short
+import dev.justinsmith.interval.ui.resources.field_block_rest_edit
+import dev.justinsmith.interval.ui.resources.field_block_rest_hint
+import dev.justinsmith.interval.ui.resources.field_block_rest_label
+import dev.justinsmith.interval.ui.resources.field_block_rest_less
+import dev.justinsmith.interval.ui.resources.field_block_rest_more
 import dev.justinsmith.interval.ui.resources.field_cool_down_edit
 import dev.justinsmith.interval.ui.resources.field_cool_down_hint
 import dev.justinsmith.interval.ui.resources.field_cool_down_label
@@ -69,6 +74,7 @@ val ConfigField.labelRes: StringResource
         ConfigField.Sets -> Res.string.field_sets_label
         ConfigField.SetRest -> Res.string.field_set_rest_label
         ConfigField.WorkStep -> Res.string.field_work_step_label
+        ConfigField.BlockRest -> Res.string.field_block_rest_label
     }
 
 /** The line under the name, saying what the value is for. */
@@ -83,6 +89,7 @@ val ConfigField.hintRes: StringResource
         ConfigField.Sets -> Res.string.field_sets_hint
         ConfigField.SetRest -> Res.string.field_set_rest_hint
         ConfigField.WorkStep -> Res.string.field_work_step_hint
+        ConfigField.BlockRest -> Res.string.field_block_rest_hint
     }
 
 /** What tapping the value's row does, for screen readers: "Edit work". */
@@ -97,6 +104,7 @@ val ConfigField.editRes: StringResource
         ConfigField.Sets -> Res.string.field_sets_edit
         ConfigField.SetRest -> Res.string.field_set_rest_edit
         ConfigField.WorkStep -> Res.string.field_work_step_edit
+        ConfigField.BlockRest -> Res.string.field_block_rest_edit
     }
 
 /** The − stepper, for screen readers: "Less work time", "Fewer rounds". */
@@ -111,6 +119,7 @@ val ConfigField.lessRes: StringResource
         ConfigField.Sets -> Res.string.field_sets_less
         ConfigField.SetRest -> Res.string.field_set_rest_less
         ConfigField.WorkStep -> Res.string.field_work_step_less
+        ConfigField.BlockRest -> Res.string.field_block_rest_less
     }
 
 /** The + stepper, for screen readers: "More work time", "More rounds". */
@@ -125,6 +134,7 @@ val ConfigField.moreRes: StringResource
         ConfigField.Sets -> Res.string.field_sets_more
         ConfigField.SetRest -> Res.string.field_set_rest_more
         ConfigField.WorkStep -> Res.string.field_work_step_more
+        ConfigField.BlockRest -> Res.string.field_block_rest_more
     }
 
 /** The phase stripe that ties a field to its workout colour; Rounds takes the accent. */
@@ -151,6 +161,8 @@ fun ConfigField.stripe(): Color = when (this) {
 
     // A ladder changes the work.
     ConfigField.WorkStep -> IntervalTheme.palette.workMark
+
+    ConfigField.BlockRest -> IntervalTheme.palette.restMark
 }
 
 /** The pale wash of the field's colour behind its value. */

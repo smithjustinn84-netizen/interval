@@ -40,7 +40,7 @@ const val MAX_ROUND_MARKS = 12
  * in the accent and its rest in a pale wash of it, each as wide as it is long; a warm-up and a cool-down
  * either side of the rounds are washes too, in rest's. Work and rest differ
  * in lightness, not hue; phase colours stay on the workout screen and the field stripes. Past
- * [MAX_ROUND_MARKS] rounds the bar shows only the work and rest shares. Decorative: the text
+ * [MAX_ROUND_MARKS] rounds the bar shows only the work and rest shares, block by block. Decorative: the text
  * beside it says the same thing.
  */
 @Composable
@@ -60,16 +60,22 @@ fun Timeline(
         else -> rest
     }
     val course = Course.of(config).filter { showPrep || it.phase != Phase.Prep }
-    val segments = if (config.rounds <= MAX_ROUND_MARKS) {
+    val segments = if (config.blocks.sumOf { it.rounds } <= MAX_ROUND_MARKS) {
         course.map { colorOf(it.phase) to it.seconds }
     } else {
-        // Only the shares: what comes before the rounds, all their work, all their rest, then the cool-down.
-        fun total(phase: Phase) = course.filter { it.phase == phase }.sumOf { it.seconds }
+        // Only the shares: what comes before the rounds, each block's work and rest, the rest between the blocks,
+        // then the cool-down.
+        fun total(phase: Phase, block: Int) =
+            course.filter { it.phase == phase && it.block == block }.sumOf { it.seconds }
         buildList {
             course.takeWhile { it.phase != Phase.Work }.forEach { add(colorOf(it.phase) to it.seconds) }
-            add(work to total(Phase.Work))
-            if (total(Phase.Rest) > 0) add(rest to total(Phase.Rest))
-            if (total(Phase.CoolDown) > 0) add(rest to total(Phase.CoolDown))
+            config.blocks.indices.forEach { block ->
+                add(work to total(Phase.Work, block))
+                if (total(Phase.Rest, block) > 0) add(rest to total(Phase.Rest, block))
+                course.filter { it.block == block && config.isBlockRest(it) }.forEach { add(rest to it.seconds) }
+            }
+            val coolDown = course.filter { it.phase == Phase.CoolDown }.sumOf { it.seconds }
+            if (coolDown > 0) add(rest to coolDown)
         }
     }
     Row(

@@ -32,7 +32,41 @@ data class Block(
     /** The work of [round] (1-based) of each set: [workSeconds], and a [workStepSeconds] more each round after. */
     fun workOf(round: Int): Int = workSeconds + (round - 1) * workStepSeconds
 
+    /** The value of [field], one of [FIELDS]. */
+    fun valueOf(field: ConfigField): Int = when (field) {
+        ConfigField.Work -> workSeconds
+        ConfigField.Rest -> restSeconds
+        ConfigField.Rounds -> rounds
+        ConfigField.Sets -> sets
+        ConfigField.SetRest -> setRestSeconds
+        ConfigField.WorkStep -> workStepSeconds
+        else -> error("$field is not a block's")
+    }
+
+    /** [field], one of [FIELDS], at [value], taken into its range as [IntervalConfig.withValue] takes it. */
+    fun withValue(field: ConfigField, value: Int): Block {
+        fun of(own: ConfigField, current: Int) = if (own == field) value else current
+        return sanitized(
+            workSeconds = of(ConfigField.Work, workSeconds),
+            restSeconds = of(ConfigField.Rest, restSeconds),
+            rounds = of(ConfigField.Rounds, rounds),
+            sets = of(ConfigField.Sets, sets),
+            setRestSeconds = of(ConfigField.SetRest, setRestSeconds),
+            workStepSeconds = of(ConfigField.WorkStep, workStepSeconds),
+        )
+    }
+
     companion object {
+        /** The fields a block has of its own; the rest are the whole workout's. */
+        val FIELDS: Set<ConfigField> = setOf(
+            ConfigField.Work,
+            ConfigField.Rest,
+            ConfigField.Rounds,
+            ConfigField.Sets,
+            ConfigField.SetRest,
+            ConfigField.WorkStep,
+        )
+
         /**
          * A block of these values, each taken to the nearest in its range, the ladder's step shortened so its last
          * round fits: for one read back from storage, which must still read.
