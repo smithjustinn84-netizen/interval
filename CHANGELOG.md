@@ -4,7 +4,7 @@ Notable changes to Interval, newest first. The format follows [Keep a Changelog]
 The version is `versionName` in `androidApp/module.yaml`; the iOS marketing version must match, and
 `tools/check_versions.py` fails CI when the two drift apart.
 
-## [0.4.0] — Unreleased
+## [0.4.0] — 2026-11-05
 
 ### Added
 - Settings from every tab: History and Lift have the gear the Timer has. Opened from them it is a page of its own;
