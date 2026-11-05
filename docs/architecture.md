@@ -329,10 +329,10 @@ All disk I/O is encapsulated behind repositories.
 
 ### 3. Backup & JSON Data Portability
 - **Android System Backup**: Full cloud backup and device-to-device migration configured via Android Backup rules.
-- **JSON Export & Import (`ExportBundle.SCHEMA = 3`)**:
+- **JSON Export & Import (`ExportBundle.SCHEMA = 5`)**:
   - **Export**: Settings > Your data > Export bundles the entire database (workouts, presets, routines, settings,
     Lift sessions, programs, exercises, and gear) into a single validated JSON document sharable via system share.
-  - **Import**: Settings > Your data > Import parses exported files across schema versions 1 to 3 via `AppDataImporter`
+  - **Import**: Settings > Your data > Import parses exported files across schema versions 1 to 5 via `AppDataImporter`
     and `ImportPlanner`. It inspects the file, checks schema compatibility, rejects corrupted or newer versions,
     strictly validates all domain ranges, prevents duplicates, assigns clean local IDs, and commits changes in atomic
     Room transactions (`ImportDao`, `SerialWriter.await`). Settings are imported optionally on user confirmation.
@@ -390,13 +390,18 @@ flowchart TD
     (`GetReady` → `WarmUp` → rounds → `CoolDown`).
   - `Course.of(config)` (`interval-domain`, `timer/Course.kt`) lays out every `Interval` (phase, block, set, round,
     seconds) once from the config: the bookends around `IntervalConfig.blocks` (a `Block` is work, rest, rounds, sets,
-    set rest and ladder; one for every workout until sequences, the config's own fields). Each of a block's sets is
-    its rounds with their rests, and a `Phase.SetRest` of `setRestSeconds` follows every set but the last (a set rest
-    of 0 is the ordinary rest); on a ladder each round works its own `Block.workOf(round)`, `workStepSeconds` more
-    than the one before, starting over with each set. The engine walks it by (block, set, round, phase), the place
+    set rest and ladder: the config's own fields are the first, `IntervalConfig.then` those after it, and between
+    two blocks comes a `Phase.SetRest` of `blockRestSeconds`, or the block's ordinary rest when that is 0;
+    `IntervalConfig.isBlockRest` tells it from a set's, for the words, the cue and the notification). Each of a
+    block's sets is its rounds with their rests, and a `Phase.SetRest` of `setRestSeconds` follows every set but the
+    last (a set rest of 0 is the ordinary rest); on a ladder each round works its own `Block.workOf(round)`,
+    `workStepSeconds` more than the one before, starting over with each set. The engine walks it by (block, set, round, phase), the place
     `WorkoutState` holds: `advance`, Back, `sessionRemainingMillis` and `upcomingChanges` read it, as do
     `WorkoutOutline`, the `Timeline`, `totalSeconds`, the calorie fallback and the readout's counts
     (`Course.workBehind`, the block's own rounds and sets). Nothing else works out a workout's length from its fields.
+    Every store keeps the blocks after the first as one JSON list (`BlocksJson.kt` in interval-data: Room's
+    `then_blocks` column since version 12, the settings' `then_blocks` key, the saved workout) and the export as
+    `ConfigExport.then` (schema 5); a sequence is described block by block ("…, then …", `ConfigText`).
   - Both phases are visually distinguished in the timeline, announced by spoken/audio cues, tracked in Live Updates,
     and written as distinct exercise activity spans to Health Connect.
 - **Finish Reflection ("How was it?")**:

@@ -26,6 +26,13 @@ data class IntervalConfig(
      * each set, so round r works [workOf] it. 0 is every round alike.
      */
     val workStepSeconds: Int = 0,
+    /**
+     * The blocks after the first, which this config's own work, rest, rounds, sets and ladder are: a sequence, run one
+     * block after another. Empty for a workout of one block.
+     */
+    val then: List<Block> = emptyList(),
+    /** The rest between one block and the next, 0 for the block's ordinary rest. */
+    val blockRestSeconds: Int = 0,
 ) {
     init {
         require(prepSeconds in PREP_RANGE) { "Get ready of $prepSeconds s" }
@@ -38,14 +45,41 @@ data class IntervalConfig(
         require(setRestSeconds in SET_REST_RANGE) { "Set rest of $setRestSeconds s" }
         require(workStepSeconds in WORK_STEP_RANGE) { "Ladder step of $workStepSeconds s" }
         require(workOf(rounds) in WORK_RANGE) { "Last round's work of ${workOf(rounds)} s" }
+        require(then.size < MAX_BLOCKS) { "${then.size + 1} blocks" }
+        require(blockRestSeconds in BLOCK_REST_RANGE) { "Block rest of $blockRestSeconds s" }
     }
 
     /**
-     * The blocks of rounds between the bookends, in the order they run: this config's work, rest, rounds, sets and
-     * ladder as the one block every workout has today. Worked out on each read, as [init] reads it.
+     * The blocks of rounds between the bookends, in the order they run: this config's own work, rest, rounds, sets
+     * and ladder as the first, then [then]. Worked out on each read, as [init] reads it.
      */
     val blocks: List<Block>
-        get() = listOf(Block(workSeconds, restSeconds, rounds, sets, setRestSeconds, workStepSeconds))
+        get() = listOf(Block(workSeconds, restSeconds, rounds, sets, setRestSeconds, workStepSeconds)) + then
+
+    /** A workout of more than one block. */
+    val isSequence: Boolean get() = then.isNotEmpty()
+
+    /**
+     * This config with [blocks] in place of its own: the first in its fields, the others [then]. One block keeps no
+     * rest between blocks.
+     */
+    fun withBlocks(blocks: List<Block>): IntervalConfig {
+        val first = blocks.first()
+        return copy(
+            workSeconds = first.workSeconds,
+            restSeconds = first.restSeconds,
+            rounds = first.rounds,
+            sets = first.sets,
+            setRestSeconds = first.setRestSeconds,
+            workStepSeconds = first.workStepSeconds,
+            then = blocks.drop(1),
+            blockRestSeconds = if (blocks.size > 1) blockRestSeconds else 0,
+        )
+    }
+
+    /** [interval] is the rest between one block and the next: a set rest after the last set of a block not the last. */
+    fun isBlockRest(interval: Interval): Boolean =
+        interval.phase == Phase.SetRest && interval.block < then.size && interval.set >= blocks[interval.block].sets
 
     /** A ladder: the rounds' work climbs or falls. */
     val isLadder: Boolean get() = blocks.first().isLadder
@@ -70,6 +104,10 @@ data class IntervalConfig(
         val SETS_RANGE = 1..20
         val SET_REST_RANGE = 0..3600
         val WORK_STEP_RANGE = -300..300
+        val BLOCK_REST_RANGE = 0..3600
+
+        /** The most blocks a sequence runs. */
+        const val MAX_BLOCKS = 10
 
         /**
          * A config of these values, each taken to the nearest in its range: for one read back from storage,
@@ -86,33 +124,17 @@ data class IntervalConfig(
             sets: Int = 1,
             setRestSeconds: Int = 0,
             workStepSeconds: Int = 0,
+            then: List<Block> = emptyList(),
+            blockRestSeconds: Int = 0,
         ): IntervalConfig {
-            val work = workSeconds.coerceIn(WORK_RANGE)
-            val count = rounds.coerceIn(ROUNDS_RANGE)
+            val first = Block.sanitized(workSeconds, restSeconds, rounds, sets, setRestSeconds, workStepSeconds)
             return IntervalConfig(
                 prepSeconds = prepSeconds.coerceIn(PREP_RANGE),
-                workSeconds = work,
-                restSeconds = restSeconds.coerceIn(REST_RANGE),
-                rounds = count,
                 warmUpSeconds = warmUpSeconds.coerceIn(WARM_UP_RANGE),
                 coolDownSeconds = coolDownSeconds.coerceIn(COOL_DOWN_RANGE),
                 activity = activity,
-                sets = sets.coerceIn(SETS_RANGE),
-                setRestSeconds = setRestSeconds.coerceIn(SET_REST_RANGE),
-                workStepSeconds = fittedStep(workStepSeconds.coerceIn(WORK_STEP_RANGE), work, count),
-            )
-        }
-
-        /**
-         * [step] as a ladder of [rounds] from [work] can take it: itself while the last round's work stays in
-         * [WORK_RANGE], else shortened toward 0, to a multiple of [ConfigField.WorkStep]'s step, until it does.
-         */
-        private fun fittedStep(step: Int, work: Int, rounds: Int): Int {
-            if (rounds <= 1 || work + (rounds - 1) * step in WORK_RANGE) return step
-            val room = if (step > 0) WORK_RANGE.last - work else work - WORK_RANGE.first
-            val most = room / (rounds - 1)
-            val fitted = most - most % ConfigField.WorkStep.step
-            return if (step > 0) fitted else -fitted
+                blockRestSeconds = blockRestSeconds.coerceIn(BLOCK_REST_RANGE),
+            ).withBlocks(listOf(first) + then.take(MAX_BLOCKS - 1))
         }
 
         // The one-tap values the edit sheet offers for each field.
@@ -197,6 +219,8 @@ fun IntervalConfig.withValue(field: ConfigField, value: Int): IntervalConfig {
         sets = of(ConfigField.Sets, sets),
         setRestSeconds = of(ConfigField.SetRest, setRestSeconds),
         workStepSeconds = of(ConfigField.WorkStep, workStepSeconds),
+        then = then,
+        blockRestSeconds = blockRestSeconds,
     )
 }
 
@@ -211,13 +235,15 @@ fun ConfigField.format(value: Int): String = when {
 }
 
 /**
- * Same work, rest and rounds, ladder, warm-up and cool-down, sets and the rest between them. The get-ready countdown is
+ * Same work, rest and rounds, ladder, warm-up and cool-down, sets and the rest between them, the blocks after the
+ * first and the rest between blocks. The get-ready countdown is
  * an app setting rather than part of a workout's shape, so presets match and apply regardless of it.
  */
 fun IntervalConfig.sameShape(other: IntervalConfig): Boolean =
     workSeconds == other.workSeconds && restSeconds == other.restSeconds && rounds == other.rounds &&
         warmUpSeconds == other.warmUpSeconds && coolDownSeconds == other.coolDownSeconds &&
-        sets == other.sets && setRestSeconds == other.setRestSeconds && workStepSeconds == other.workStepSeconds
+        sets == other.sets && setRestSeconds == other.setRestSeconds && workStepSeconds == other.workStepSeconds &&
+        then == other.then && blockRestSeconds == other.blockRestSeconds
 
 /** Moves [field] one step in [direction] (+1 or -1), clamped to the field's range. */
 fun IntervalConfig.stepped(field: ConfigField, direction: Int): IntervalConfig =

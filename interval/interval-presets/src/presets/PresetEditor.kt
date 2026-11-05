@@ -40,6 +40,7 @@ import dev.justinsmith.interval.presets.resources.preset_name_count
 import dev.justinsmith.interval.presets.resources.preset_name_label
 import dev.justinsmith.interval.presets.resources.preset_save_title
 import dev.justinsmith.interval.timer.Activity
+import dev.justinsmith.interval.timer.Block
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
@@ -327,6 +328,11 @@ private fun IntervalConfig.saved(): Map<String, Any?> = mapOf(
     SETS to sets,
     SET_REST to setRestSeconds,
     WORK_STEP to workStepSeconds,
+    // The blocks after the first, flat: a Bundle keeps an IntArray, not a list of them.
+    THEN to then.flatMap {
+        listOf(it.workSeconds, it.restSeconds, it.rounds, it.sets, it.setRestSeconds, it.workStepSeconds)
+    }.toIntArray(),
+    BLOCK_REST to blockRestSeconds,
 )
 
 private fun Map<String, Any?>.restoredConfig(): IntervalConfig =
@@ -341,6 +347,13 @@ private fun Map<String, Any?>.restoredConfig(): IntervalConfig =
         sets = this[SETS] as Int? ?: 1,
         setRestSeconds = this[SET_REST] as Int? ?: 0,
         workStepSeconds = this[WORK_STEP] as Int? ?: 0,
+        then = (this[THEN] as IntArray? ?: IntArray(0)).toList().chunked(BLOCK_VALUES)
+            .filter { it.size == BLOCK_VALUES }
+            .map { values ->
+                val next = values.iterator()
+                Block.sanitized(next.next(), next.next(), next.next(), next.next(), next.next(), next.next())
+            },
+        blockRestSeconds = this[BLOCK_REST] as Int? ?: 0,
     )
 
 private const val MODE = "mode"
@@ -356,3 +369,6 @@ private const val ACTIVITY = "activity"
 private const val SETS = "sets"
 private const val SET_REST = "set_rest"
 private const val WORK_STEP = "work_step"
+private const val THEN = "then"
+private const val BLOCK_REST = "block_rest"
+private const val BLOCK_VALUES = 6

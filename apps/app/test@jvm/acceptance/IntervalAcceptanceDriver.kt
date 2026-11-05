@@ -588,6 +588,10 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         app.repository.history.history.value.any { it.config.sets == sets && it.config.rounds == rounds }
     }
 
+    fun workoutKeptAsSequence(blocks: Int) = waitFor("a workout kept as a sequence of $blocks blocks") {
+        app.repository.history.history.value.any { it.config.blocks.size == blocks }
+    }
+
     /** The voice said [speech]: the workout's cues, as the player was asked for them. */
     fun heard(speech: Speech) = waitFor("to hear $speech") { speech in cuePlayer.spoken }
 

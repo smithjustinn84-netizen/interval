@@ -2,12 +2,14 @@ package dev.justinsmith.interval.ui
 
 import androidx.compose.runtime.Composable
 import dev.justinsmith.interval.timer.Activity
+import dev.justinsmith.interval.timer.Block
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.ShortDuration
 import dev.justinsmith.interval.timer.shortDuration
 import dev.justinsmith.interval.ui.resources.Res
 import dev.justinsmith.interval.ui.resources.common_custom
 import dev.justinsmith.interval.ui.resources.common_joined
+import dev.justinsmith.interval.ui.resources.config_block_rest
 import dev.justinsmith.interval.ui.resources.config_cool_down
 import dev.justinsmith.interval.ui.resources.config_description
 import dev.justinsmith.interval.ui.resources.config_ladder
@@ -16,6 +18,7 @@ import dev.justinsmith.interval.ui.resources.config_set_rest
 import dev.justinsmith.interval.ui.resources.config_sets
 import dev.justinsmith.interval.ui.resources.config_step_down
 import dev.justinsmith.interval.ui.resources.config_step_up
+import dev.justinsmith.interval.ui.resources.config_then
 import dev.justinsmith.interval.ui.resources.config_warm_up
 import dev.justinsmith.interval.ui.resources.duration_short_minutes
 import dev.justinsmith.interval.ui.resources.duration_short_seconds
@@ -26,27 +29,23 @@ import kotlin.math.abs
 /**
  * A workout's shape in one line: "20s on · 10s off · ×8" ("20s on, +10s a round · 10s off · ×5" for a ladder),
  * with its sets when it has more than one ("20s on · 10s off · ×8 · 4 sets · 1m between") and a warm-up and
- * cool-down either side when it has them: "5m warm-up · 20s on · 10s off · ×8 · 3m cool-down".
+ * cool-down either side when it has them: "5m warm-up · 20s on · 10s off · ×8 · 3m cool-down". A sequence says
+ * its blocks one after another, then the rest between them: "20s on · 10s off · ×8, then 1m on · 30s off · ×5 ·
+ * 2m between blocks".
  */
 @Composable
 fun configDescription(config: IntervalConfig): String {
-    val shape = if (config.isLadder) {
+    val blocks = config.blocks.map { blockDescription(it) }
+        .reduce { all, block -> stringResource(Res.string.config_then, all, block) }
+    val rounds = if (config.isSequence && config.blockRestSeconds > 0) {
         stringResource(
-            Res.string.config_ladder,
-            shortDurationText(config.workSeconds),
-            stepText(config.workStepSeconds),
-            shortDurationText(config.restSeconds),
-            config.rounds,
+            Res.string.common_joined,
+            blocks,
+            stringResource(Res.string.config_block_rest, shortDurationText(config.blockRestSeconds)),
         )
     } else {
-        stringResource(
-            Res.string.config_description,
-            shortDurationText(config.workSeconds),
-            shortDurationText(config.restSeconds),
-            config.rounds,
-        )
+        blocks
     }
-    val rounds = if (config.sets > 1) joined(listOfNotNull(shape, setsText(config))) else shape
     if (config.warmUpSeconds == 0 && config.coolDownSeconds == 0) return rounds
     return joined(
         listOfNotNull(
@@ -59,6 +58,28 @@ fun configDescription(config: IntervalConfig): String {
             },
         ),
     )
+}
+
+/** One block's rounds, "20s on · 10s off · ×8", with a ladder's step and its sets as [configDescription] says them. */
+@Composable
+private fun blockDescription(block: Block): String {
+    val shape = if (block.isLadder) {
+        stringResource(
+            Res.string.config_ladder,
+            shortDurationText(block.workSeconds),
+            stepText(block.workStepSeconds),
+            shortDurationText(block.restSeconds),
+            block.rounds,
+        )
+    } else {
+        stringResource(
+            Res.string.config_description,
+            shortDurationText(block.workSeconds),
+            shortDurationText(block.restSeconds),
+            block.rounds,
+        )
+    }
+    return if (block.sets > 1) joined(listOf(shape, setsText(block))) else shape
 }
 
 /** What a ladder does to each round's work, for beside the work's name: "+10s a round"; null with no ladder. */
@@ -86,13 +107,13 @@ private fun stepText(seconds: Int): String =
 
 /** "4 sets · 1m between", or "4 sets" with no rest of their own between them. */
 @Composable
-private fun setsText(config: IntervalConfig): String {
-    val sets = pluralStringResource(Res.plurals.config_sets, config.sets, config.sets)
-    if (config.setRestSeconds == 0) return sets
+private fun setsText(block: Block): String {
+    val sets = pluralStringResource(Res.plurals.config_sets, block.sets, block.sets)
+    if (block.setRestSeconds == 0) return sets
     return stringResource(
         Res.string.common_joined,
         sets,
-        stringResource(Res.string.config_set_rest, shortDurationText(config.setRestSeconds)),
+        stringResource(Res.string.config_set_rest, shortDurationText(block.setRestSeconds)),
     )
 }
 

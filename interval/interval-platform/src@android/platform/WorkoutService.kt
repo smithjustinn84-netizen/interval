@@ -15,8 +15,12 @@ import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.platform.resources.Res
 import dev.justinsmith.interval.platform.resources.notification_channel_workout
 import dev.justinsmith.interval.platform.resources.notification_channel_workout_description
+import dev.justinsmith.interval.platform.resources.notification_round
+import dev.justinsmith.interval.platform.resources.notification_set_round
+import dev.justinsmith.interval.platform.resources.notification_workout_block_text
 import dev.justinsmith.interval.platform.resources.notification_workout_set_text
 import dev.justinsmith.interval.platform.resources.notification_workout_text
+import dev.justinsmith.interval.platform.resources.phase_block_rest
 import dev.justinsmith.interval.platform.resources.phase_cool_down
 import dev.justinsmith.interval.platform.resources.phase_done
 import dev.justinsmith.interval.platform.resources.phase_get_ready
@@ -162,7 +166,7 @@ class WorkoutService :
                     Phase.WarmUp -> Res.string.phase_warm_up
                     Phase.Work -> Res.string.phase_work
                     Phase.Rest -> Res.string.phase_rest
-                    Phase.SetRest -> Res.string.phase_set_rest
+                    Phase.SetRest -> if (status.blockRest) Res.string.phase_block_rest else Res.string.phase_set_rest
                     Phase.CoolDown -> Res.string.phase_cool_down
                     Phase.Done -> Res.string.phase_done
                 }
@@ -172,6 +176,19 @@ class WorkoutService :
         val bookend = status.phase == Phase.WarmUp || status.phase == Phase.CoolDown
         val text = when {
             bookend -> phase
+
+            // A workout of blocks says the block, then the set and round as the screen does.
+            status.blocks.size > 1 -> getString(
+                Res.string.notification_workout_block_text,
+                phase,
+                status.block + 1,
+                status.blocks.size,
+                if (status.sets > 1) {
+                    getString(Res.string.notification_set_round, status.set, status.sets, status.round, status.rounds)
+                } else {
+                    getString(Res.string.notification_round, status.round, status.rounds)
+                },
+            )
 
             status.sets > 1 -> getString(
                 Res.string.notification_workout_set_text,

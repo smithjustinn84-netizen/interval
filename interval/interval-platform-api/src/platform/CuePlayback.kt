@@ -26,7 +26,7 @@ fun playCue(cue: Cue, settings: CueSettings, player: CuePlayer) {
                 Phase.Work -> {
                     beep(Beep.Work)
                     buzz(Haptic.Work)
-                    say(Speech.Work(cue.lastRound, cue.set))
+                    say(Speech.Work(cue.lastRound, cue.set, cue.block))
                 }
 
                 Phase.Rest -> {
@@ -38,7 +38,7 @@ fun playCue(cue: Cue, settings: CueSettings, player: CuePlayer) {
                 Phase.SetRest -> {
                     beep(Beep.Rest)
                     buzz(Haptic.Rest)
-                    say(Speech.SetRest)
+                    say(cue.block?.let(Speech::BlockRest) ?: Speech.SetRest)
                 }
 
                 // Easier stretches, cued as the moves into them: the warm-up like get ready, the cool-down like rest.

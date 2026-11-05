@@ -38,7 +38,8 @@ fun describeWorkout(text: String, current: IntervalConfig, presets: List<Preset>
     if (preset == null) reading.vagueRest?.let { reading.values.getOrPut(ConfigField.Rest) { it } }
     if (preset == null && reading.readNothing && activity == null) return null
 
-    var config = preset?.let(current::withPreset) ?: current
+    // A description is one block: what the Timer held after its first is not kept.
+    var config = preset?.let(current::withPreset) ?: current.withBlocks(current.blocks.take(1))
     val understood = if (preset != null) ConfigField.shape.toMutableSet() else mutableSetOf()
     // The ladder's step last, so it is fitted to the work and rounds the words give, not to the Timer's.
     reading.values.entries.sortedBy { it.key == ConfigField.WorkStep }.forEach { (field, value) ->

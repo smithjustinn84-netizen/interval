@@ -18,7 +18,18 @@ object Course {
     fun of(config: IntervalConfig): List<Interval> = buildList {
         if (config.prepSeconds > 0) add(Interval(Phase.Prep, 1, 1, config.prepSeconds))
         if (config.warmUpSeconds > 0) add(Interval(Phase.WarmUp, 1, 1, config.warmUpSeconds))
-        config.blocks.forEachIndexed { index, block -> addAll(rounds(block, index)) }
+        config.blocks.forEachIndexed { index, block ->
+            addAll(rounds(block, index))
+            if (index < config.blocks.lastIndex) {
+                // Between blocks: the rest between them, or, of none, the block's own rest between its rounds.
+                val (phase, seconds) = if (config.blockRestSeconds > 0) {
+                    Phase.SetRest to config.blockRestSeconds
+                } else {
+                    Phase.Rest to block.restSeconds
+                }
+                if (seconds > 0) add(Interval(phase, block.sets, block.rounds, seconds, index))
+            }
+        }
         if (config.coolDownSeconds > 0) {
             val last = config.blocks.last()
             add(Interval(Phase.CoolDown, last.sets, last.rounds, config.coolDownSeconds, config.blocks.lastIndex))

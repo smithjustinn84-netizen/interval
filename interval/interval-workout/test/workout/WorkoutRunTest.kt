@@ -2,6 +2,7 @@ package dev.justinsmith.interval.workout
 
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.CourseSpan
+import dev.justinsmith.interval.timer.Block
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.WorkoutEngine
@@ -67,5 +68,23 @@ class WorkoutRunTest {
 
         assertEquals(paused, restored)
         assertNull(restored.openPhase)
+    }
+
+    @Test
+    fun `the notification's status says the block of a sequence and its rest`() {
+        val sequence = config.copy(
+            then = listOf(Block(workSeconds = 10, restSeconds = 5, rounds = 3)),
+            blockRestSeconds = 20,
+        )
+        val started = begun.copy(engine = WorkoutEngine.start(sequence).state)
+        assertEquals(emptyList(), begun.status().blocks)
+        assertEquals(sequence.blocks, started.status().blocks)
+        // Work, rest, work, then the rest before the second block, and its first work.
+        val states = generateSequence(started.engine) { WorkoutEngine.advance(it).state }.take(5).toList()
+        val blockRest = started.copy(engine = states[3]).status()
+        assertEquals(Phase.SetRest to true, blockRest.phase to blockRest.blockRest)
+        val second = started.copy(engine = states[4]).status()
+        assertEquals(Triple(1, 1, 3), Triple(second.block, second.round, second.rounds))
+        assertFalse(second.blockRest)
     }
 }

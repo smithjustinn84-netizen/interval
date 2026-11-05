@@ -43,6 +43,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
+import dev.justinsmith.interval.timer.Block as IntervalBlock
 import dev.justinsmith.lift.domain.PerceivedEffort as LiftEffort
 
 /** What both sides hold now, as an import is weighed against it. */
@@ -227,6 +228,8 @@ private fun ConfigExport.toDomain(): IntervalConfig {
     require(setRestSeconds in IntervalConfig.SET_REST_RANGE) { "set rest" }
     require(workStepSeconds in IntervalConfig.WORK_STEP_RANGE) { "ladder" }
     require(workSeconds + (rounds - 1) * workStepSeconds in IntervalConfig.WORK_RANGE) { "ladder's last round" }
+    require(then.size < IntervalConfig.MAX_BLOCKS) { "blocks" }
+    require(blockRestSeconds in IntervalConfig.BLOCK_REST_RANGE) { "block rest" }
     return IntervalConfig(
         prepSeconds = prepSeconds,
         workSeconds = workSeconds,
@@ -238,6 +241,11 @@ private fun ConfigExport.toDomain(): IntervalConfig {
         sets = sets,
         setRestSeconds = setRestSeconds,
         workStepSeconds = workStepSeconds,
+        // Each block refuses a value out of its range, as the fields above do.
+        then = then.map {
+            IntervalBlock(it.workSeconds, it.restSeconds, it.rounds, it.sets, it.setRestSeconds, it.workStepSeconds)
+        },
+        blockRestSeconds = blockRestSeconds,
     )
 }
 

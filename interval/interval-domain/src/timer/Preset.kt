@@ -27,10 +27,12 @@ fun List<Preset>.matching(config: IntervalConfig): Preset? {
 /**
  * The name a preset gets when the user gives it none: its shape, "40/20 ×6", with a whole number of
  * minutes as "1m", a ladder's first and last work, "20→60/10 ×5" ("1m→3m" when both are whole minutes), and
- * its sets when it has more than one, "20/10 ×8, 4 sets". A stored name rather than a label, so it is built
- * here, like a clock string.
+ * its sets when it has more than one, "20/10 ×8, 4 sets"; a sequence its blocks one after another,
+ * "20/10 ×8, then 1m/30 ×5". A stored name rather than a label, so it is built here, like a clock string.
  */
-fun IntervalConfig.defaultPresetName(): String {
+fun IntervalConfig.defaultPresetName(): String = blocks.joinToString(", then ") { it.name() }
+
+private fun Block.name(): String {
     val work = if (isLadder) ladderLabel(workSeconds, workOf(rounds)) else nameLabel(workSeconds)
     val rounds = "$work/${nameLabel(restSeconds)} ×$rounds"
     return if (sets > 1) "$rounds, $sets sets" else rounds

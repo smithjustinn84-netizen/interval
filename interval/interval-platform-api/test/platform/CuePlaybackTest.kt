@@ -19,6 +19,8 @@ class CuePlaybackTest {
         Cue.PhaseStarted(Phase.CoolDown, lastRound = false),
         Cue.PhaseStarted(Phase.SetRest, lastRound = false),
         Cue.PhaseStarted(Phase.Work, lastRound = false, set = 2),
+        Cue.PhaseStarted(Phase.SetRest, lastRound = false, block = 2),
+        Cue.PhaseStarted(Phase.Work, lastRound = false, block = 2),
         Cue.Finished,
     )
 
@@ -102,5 +104,17 @@ class CuePlaybackTest {
     fun `halfway is silent when its own switch is off`() {
         val player = played(Cue.Halfway, CueSettings(halfway = false))
         assertTrue(player.beeps.isEmpty() && player.spoken.isEmpty() && player.haptics.isEmpty())
+    }
+
+    @Test
+    fun `a block's start and the rest before it say the block`() {
+        with(played(Cue.PhaseStarted(Phase.SetRest, lastRound = false, block = 2), CueSettings())) {
+            assertEquals(listOf(Beep.Rest), beeps)
+            assertEquals(listOf<Speech>(Speech.BlockRest(2)), spoken)
+            assertEquals(listOf(Haptic.Rest), haptics)
+        }
+        with(played(Cue.PhaseStarted(Phase.Work, lastRound = false, set = 1, block = 2), CueSettings())) {
+            assertEquals(listOf<Speech>(Speech.Work(lastRound = false, set = 1, block = 2)), spoken)
+        }
     }
 }

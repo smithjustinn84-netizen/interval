@@ -95,6 +95,10 @@ private fun IntervalConfig.export() = ConfigExport(
     sets = sets,
     setRestSeconds = setRestSeconds,
     workStepSeconds = workStepSeconds,
+    then = then.map {
+        IntervalBlockExport(it.workSeconds, it.restSeconds, it.rounds, it.sets, it.setRestSeconds, it.workStepSeconds)
+    },
+    blockRestSeconds = blockRestSeconds,
 )
 
 private fun Preset.export() = PresetExport(id, name, config.export())

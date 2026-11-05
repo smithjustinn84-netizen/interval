@@ -24,6 +24,8 @@ private fun intervalConfig(
     sets: Int,
     setRestSeconds: Int,
     workStepSeconds: Int,
+    thenBlocks: String,
+    blockRestSeconds: Int,
 ) = IntervalConfig.sanitized(
     prepSeconds = prepSeconds,
     workSeconds = workSeconds,
@@ -35,6 +37,8 @@ private fun intervalConfig(
     sets = sets,
     setRestSeconds = setRestSeconds,
     workStepSeconds = workStepSeconds,
+    then = decodeBlocks(thenBlocks),
+    blockRestSeconds = blockRestSeconds,
 )
 
 internal const val LIFT_PROGRAM_DAY = "program_day"
@@ -53,6 +57,8 @@ internal fun HistoryEntity.toDomain() = HistoryEntry(
         sets,
         setRestSeconds,
         workStepSeconds,
+        thenBlocks,
+        blockRestSeconds,
     ),
     elapsedSeconds = elapsedSeconds,
     endedEarly = endedEarly,
@@ -77,6 +83,8 @@ internal fun HistoryEntry.toEntity(uid: String, updatedAtEpochMillis: Long) = Hi
     sets = config.sets,
     setRestSeconds = config.setRestSeconds,
     workStepSeconds = config.workStepSeconds,
+    thenBlocks = encodeBlocks(config.then),
+    blockRestSeconds = config.blockRestSeconds,
     elapsedSeconds = elapsedSeconds,
     endedEarly = endedEarly,
     workActiveSeconds = workActiveSeconds,
@@ -104,6 +112,8 @@ internal fun PresetEntity.toDomain() =
             sets,
             setRestSeconds,
             workStepSeconds,
+            thenBlocks,
+            blockRestSeconds,
         ),
         id = id,
     )
@@ -120,6 +130,8 @@ internal fun Preset.toEntity() = PresetEntity(
     sets = config.sets,
     setRestSeconds = config.setRestSeconds,
     workStepSeconds = config.workStepSeconds,
+    thenBlocks = encodeBlocks(config.then),
+    blockRestSeconds = config.blockRestSeconds,
     activity = config.activity.name,
 )
 
@@ -147,6 +159,8 @@ internal fun PlannedEntity.toDomain(): PlannedWorkout? {
                 sets,
                 setRestSeconds,
                 workStepSeconds,
+                thenBlocks,
+                blockRestSeconds,
             ),
             presetId,
         )
@@ -177,6 +191,8 @@ internal fun PlannedWorkout.toEntity(): PlannedEntity {
         sets = config?.sets ?: 1,
         setRestSeconds = config?.setRestSeconds ?: 0,
         workStepSeconds = config?.workStepSeconds ?: 0,
+        thenBlocks = encodeBlocks(config?.then.orEmpty()),
+        blockRestSeconds = config?.blockRestSeconds ?: 0,
         activity = config?.activity?.name,
         presetId = interval?.presetId,
         createdAtEpochMillis = createdAtEpochMillis,

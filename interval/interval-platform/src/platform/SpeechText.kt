@@ -2,6 +2,8 @@ package dev.justinsmith.interval.platform
 
 import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.platform.resources.Res
+import dev.justinsmith.interval.platform.resources.cue_block_rest
+import dev.justinsmith.interval.platform.resources.cue_block_work
 import dev.justinsmith.interval.platform.resources.cue_cool_down
 import dev.justinsmith.interval.platform.resources.cue_finished
 import dev.justinsmith.interval.platform.resources.cue_get_ready
@@ -30,8 +32,10 @@ internal suspend fun Speech.text(): String = when (this) {
 
     is Speech.Work -> {
         val set = set
+        val block = block
         when {
             lastRound -> getString(Res.string.cue_last_round_work)
+            block != null -> getString(Res.string.cue_block_work, block)
             set != null -> getString(Res.string.cue_set_work, set)
             else -> getString(Res.string.cue_work)
         }
@@ -40,6 +44,8 @@ internal suspend fun Speech.text(): String = when (this) {
     Speech.Rest -> getString(Res.string.cue_rest)
 
     Speech.SetRest -> getString(Res.string.cue_set_rest)
+
+    is Speech.BlockRest -> getString(Res.string.cue_block_rest, block)
 
     Speech.WarmUp -> getString(Res.string.cue_warm_up)
 

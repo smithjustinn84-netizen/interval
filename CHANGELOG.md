@@ -6,6 +6,13 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 
 ## [0.5.0] — Unreleased
 
+### Added
+- Sequences: a workout of blocks run one after another, each block a shape of its own (work, rest, rounds, sets
+  and ladder) with a rest between blocks. The workout says "Block 2 of 3 · Round 1 of 8", "Rest between blocks"
+  and "Next: block 2 of 3 · 0:40", the voice "Rest before block 2" and "Block 2. Work", and the notification the
+  block too; a preset of blocks reads "20s on · 10s off · ×8, then 1m on · 30s off · ×5 · 2m between blocks".
+  Exports are schema 5, which a 0.4 build refuses with "update the app"; older files read as one block.
+
 ## [0.4.0] — 2026-11-05
 
 ### Added

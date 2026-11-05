@@ -70,4 +70,71 @@ class IntervalConfigTest {
         val config = IntervalConfig(workSeconds = 20, rounds = 5)
         assertTrue(!config.sameShape(config.copy(workStepSeconds = 10)))
     }
+
+    @Test
+    fun `a sequence refuses a block out of range and too many blocks`() {
+        assertFailsWith<IllegalArgumentException> { Block(workSeconds = 2, restSeconds = 10, rounds = 2) }
+        assertFailsWith<IllegalArgumentException> {
+            Block(workSeconds = 10, restSeconds = 10, rounds = 3, workStepSeconds = -5)
+        }
+        val block = Block(workSeconds = 20, restSeconds = 10, rounds = 2)
+        assertFailsWith<IllegalArgumentException> { IntervalConfig(then = List(IntervalConfig.MAX_BLOCKS) { block }) }
+        assertFailsWith<IllegalArgumentException> { IntervalConfig(then = listOf(block), blockRestSeconds = 3601) }
+        assertEquals(
+            IntervalConfig.MAX_BLOCKS,
+            IntervalConfig(
+                then = List(IntervalConfig.MAX_BLOCKS - 1) {
+                    block
+                },
+            ).blocks.size,
+        )
+    }
+
+    @Test
+    fun `sanitized takes each block to the nearest in its range and keeps at most ten`() {
+        val block = Block(workSeconds = 20, restSeconds = 10, rounds = 2)
+        val config = IntervalConfig.sanitized(then = List(12) { block }, blockRestSeconds = 5000)
+        assertEquals(IntervalConfig.MAX_BLOCKS, config.blocks.size)
+        assertEquals(3600, config.blockRestSeconds)
+        assertEquals(
+            Block(workSeconds = 5, restSeconds = 3600, rounds = 99, sets = 20),
+            Block.sanitized(1, 9000, 500, 40),
+        )
+        assertEquals(
+            -5,
+            Block.sanitized(workSeconds = 15, restSeconds = 0, rounds = 3, workStepSeconds = -30).workStepSeconds,
+        )
+    }
+
+    @Test
+    fun `blocks are the first block in the config's own fields and those after it`() {
+        val first = Block(workSeconds = 40, restSeconds = 20, rounds = 6, sets = 2, setRestSeconds = 60)
+        val second = Block(workSeconds = 60, restSeconds = 30, rounds = 4, workStepSeconds = 10)
+        val config = IntervalConfig(blockRestSeconds = 120).withBlocks(listOf(first, second))
+        assertEquals(listOf(first, second), config.blocks)
+        assertEquals(40 to 6, config.workSeconds to config.rounds)
+        assertEquals(listOf(second), config.then)
+        assertTrue(config.isSequence)
+        assertEquals(0, config.withBlocks(listOf(second)).blockRestSeconds)
+    }
+
+    @Test
+    fun `a stepper on a sequence changes its first block and keeps the others`() {
+        val second = Block(workSeconds = 60, restSeconds = 30, rounds = 4)
+        val config = IntervalConfig(then = listOf(second), blockRestSeconds = 90)
+        val stepped = config.stepped(ConfigField.Rounds, +1)
+        assertEquals(config.rounds + 1, stepped.rounds)
+        assertEquals(listOf(second), stepped.then)
+        assertEquals(90, stepped.blockRestSeconds)
+    }
+
+    @Test
+    fun `the blocks after the first and the rest between them are part of the shape`() {
+        val second = Block(workSeconds = 60, restSeconds = 30, rounds = 4)
+        val sequence = IntervalConfig(then = listOf(second), blockRestSeconds = 90)
+        assertTrue(sequence.sameShape(sequence.copy(prepSeconds = 0)))
+        assertTrue(!sequence.sameShape(IntervalConfig()))
+        assertTrue(!sequence.sameShape(sequence.copy(blockRestSeconds = 60)))
+        assertTrue(!sequence.sameShape(sequence.copy(then = listOf(second.copy(rounds = 5)))))
+    }
 }

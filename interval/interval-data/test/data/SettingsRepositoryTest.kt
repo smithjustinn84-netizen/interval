@@ -12,6 +12,7 @@ import dev.justinsmith.interval.model.CourseSpan
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.model.WorkoutProgress
+import dev.justinsmith.interval.timer.Block
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -54,6 +55,8 @@ class SettingsRepositoryTest {
             sets = 2,
             setRestSeconds = 30,
             workStepSeconds = -5,
+            then = listOf(Block(workSeconds = 20, restSeconds = 10, rounds = 3)),
+            blockRestSeconds = 45,
         )
         val state = WorkoutEngine.tick(WorkoutEngine.start(config).state, 12_500).state
         val progress = WorkoutProgress(

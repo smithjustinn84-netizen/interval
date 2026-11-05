@@ -212,4 +212,14 @@ class WorkoutDescriptionTest {
         // A bare clock without the preset's name is still a duration.
         assertEquals(915, read("work 15:15")!!.config.workSeconds)
     }
+
+    @Test
+    fun `a description is one block whatever the Timer held after its first`() {
+        val sequence =
+            IntervalConfig(then = listOf(Block(workSeconds = 60, restSeconds = 30, rounds = 4)), blockRestSeconds = 60)
+        val described = describeWorkout("40/20 x6", sequence, emptyList())!!.config
+        assertEquals(1, described.blocks.size)
+        assertEquals(0, described.blockRestSeconds)
+        assertEquals(Triple(40, 20, 6), Triple(described.workSeconds, described.restSeconds, described.rounds))
+    }
 }

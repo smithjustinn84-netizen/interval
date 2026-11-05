@@ -97,8 +97,11 @@ line is after ticket 5; ticket 4 sits below it.
   through its block rests and its last round; `StatusBarTest` draws the per-block bar; `IntervalConfigTest`
   refuses a block out of range and `sanitized` clamps it; the repository tests and `AppDataImporterTest`
   round-trip the two fields, and a schema-4 fixture reads as one block; `AppMigrationTest` covers 11 → 12;
-  `SequenceAcceptanceTest` starts a two-block preset, hears the block rest and finishes;
-  `journeys/sequence.xml` runs it on `amper-37` and reads "Block 2 of 2" in the notification.
+  `SequenceAcceptanceTest` starts a two-block preset, hears the block rest and finishes. `journeys/sequence.xml`
+  moved to ticket 3: on a device a sequence can't be made before its editor.
+- As built: the migration is covered in `StorageTest` (a version-11 database read at 12), as 10 and 11 were, and
+  the schema-1 fixture stands for the older files; the rest between blocks is a `SetRest` told apart by
+  `IntervalConfig.isBlockRest`, so its colour, Health Connect segment and calories needed nothing.
 
 ### Week 2 — building one, then the iOS widget
 
@@ -113,7 +116,8 @@ line is after ticket 5; ticket 4 sits below it.
 - `Timeline` and `MiniTimeline` draw the whole course, a gap at each block rest.
 - `RoutineDescription` (Plan) still names a sequence by its preset through `sameShape`.
 - Done when: a screen test adds, moves and removes a block and sees the total follow; `SequenceAcceptanceTest`
-  builds its sequence in the editor from the Timer.
+  builds its sequence in the editor from the Timer; `journeys/sequence.xml` builds one on `amper-37`, runs it and
+  reads "Block 2 of 2" in the notification.
 
 **5. The week on iOS's Home Screen** · L
 - Spike first, half a day: a second, Swift-only target in `apps/iosApp/module.xcodeproj` beside `app` (the

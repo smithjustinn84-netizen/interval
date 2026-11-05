@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.platform
 
 import dev.justinsmith.interval.model.PlannedWorkout
+import dev.justinsmith.interval.timer.Block
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.UpcomingChange
 import dev.justinsmith.interval.timer.WorkoutOutline
@@ -19,13 +20,19 @@ sealed interface Speech {
 
     data object GetReady : Speech
 
-    /** [set] is said with a set's first work in a workout of sets ("Set 2. Work"), null otherwise. */
-    data class Work(val lastRound: Boolean, val set: Int? = null) : Speech
+    /**
+     * [set] is said with a set's first work in a workout of sets ("Set 2. Work"), null otherwise; [block] with a
+     * block's first in a workout of blocks ("Block 2. Work"), which it says in place of the set.
+     */
+    data class Work(val lastRound: Boolean, val set: Int? = null, val block: Int? = null) : Speech
 
     data object Rest : Speech
 
     /** A rest after a set: "Rest between sets". */
     data object SetRest : Speech
+
+    /** The rest between one block and the next, [block] (1-based): "Rest before block 2". */
+    data class BlockRest(val block: Int) : Speech
 
     data object WarmUp : Speech
 
@@ -62,6 +69,12 @@ data class WorkoutStatus(
     /** The set, and how many; 1 of 1 for a workout of one set, which says no set. */
     val set: Int = 1,
     val sets: Int = 1,
+    /** The block (0-based) the set is in. */
+    val block: Int = 0,
+    /** Every block of a workout of blocks, for what each says of its rounds; empty for a workout of one. */
+    val blocks: List<Block> = emptyList(),
+    /** In the rest between one block and the next. */
+    val blockRest: Boolean = false,
 )
 
 /**

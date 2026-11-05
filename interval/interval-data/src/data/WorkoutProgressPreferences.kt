@@ -70,8 +70,10 @@ private class StoredProgress(
     val sets: Int = 1,
     val setRestSeconds: Int = 0,
     val workStepSeconds: Int = 0,
-    /** Since 0.5: a workout saved by 0.4 is in its one block. */
+    /** Since 0.5: a workout saved by 0.4 is in its one block, of one. */
     val block: Int = 0,
+    val then: List<StoredBlock> = emptyList(),
+    val blockRestSeconds: Int = 0,
 ) {
     fun toDomain(): WorkoutProgress? {
         val phase = Phase.entries.firstOrNull { it.name == phase } ?: return null
@@ -86,6 +88,8 @@ private class StoredProgress(
             sets = sets,
             setRestSeconds = setRestSeconds,
             workStepSeconds = workStepSeconds,
+            then = then.map { it.toDomain() },
+            blockRestSeconds = blockRestSeconds,
         )
         return WorkoutProgress(
             id = id,
@@ -154,4 +158,6 @@ private fun WorkoutProgress.stored() = StoredProgress(
     setRestSeconds = state.config.setRestSeconds,
     workStepSeconds = state.config.workStepSeconds,
     block = state.block,
+    then = state.config.then.map { it.stored() },
+    blockRestSeconds = state.config.blockRestSeconds,
 )

@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.workout
 
+import dev.justinsmith.interval.timer.Block
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.WorkoutEngine
@@ -125,5 +126,37 @@ class WorkoutUiStateTest {
         val flat = ladder.copy(workStepSeconds = 0)
         val rest = WorkoutEngine.advance(WorkoutEngine.start(flat).state).state.toUiState(running = true)
         assertEquals(NextUp.Round(2, 3), rest.next)
+    }
+
+    @Test
+    fun `a sequence says its block and what comes after each`() {
+        val sequence = IntervalConfig(
+            prepSeconds = 0,
+            workSeconds = 20,
+            restSeconds = 10,
+            rounds = 2,
+            then = listOf(Block(workSeconds = 40, restSeconds = 20, rounds = 3, sets = 2, setRestSeconds = 45)),
+            blockRestSeconds = 30,
+        )
+        val course = generateSequence(WorkoutEngine.start(sequence).state) { WorkoutEngine.advance(it).state }
+            .takeWhile { !it.isDone }
+            .map { it.toUiState(running = true) }
+            .toList()
+        // Work, rest, work, then the rest before the second block.
+        assertEquals(NextUp.BlockRest(2, "0:30"), course[2].next)
+        val blockRest = course[3]
+        assertTrue(blockRest.inBlockRest)
+        assertEquals(NextUp.Block(2, 2, "0:40"), blockRest.next)
+        assertEquals(2, blockRest.completedRounds)
+        val second = course[4]
+        assertEquals(Triple(1, 1, 1), Triple(second.block, second.set, second.round))
+        assertEquals(2 to 3, second.sets to second.setRounds)
+        assertEquals(2, second.blocks)
+        assertEquals(2 + 6, second.rounds)
+        assertEquals(0, second.completedSetRounds)
+        assertTrue(!second.inBlockRest)
+        // The second block's own set rest is a set's, not a block's.
+        val setRest = course.first { it.phase == Phase.SetRest && it.block == 1 }
+        assertTrue(!setRest.inBlockRest)
     }
 }

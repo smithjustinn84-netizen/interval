@@ -9,7 +9,7 @@ import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.fixtures.DAMAGED_EXPORT
 import dev.justinsmith.interval.fixtures.FOREIGN_JSON
 import dev.justinsmith.interval.fixtures.SCHEMA_1_EXPORT
-import dev.justinsmith.interval.fixtures.SCHEMA_5_EXPORT
+import dev.justinsmith.interval.fixtures.SCHEMA_6_EXPORT
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.ThemeMode
@@ -39,6 +39,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import dev.justinsmith.interval.timer.Block as IntervalBlock
 
 /** A phone's two repositories over fakes, and its export and import. */
 private class Phone(val now: Long) {
@@ -82,6 +83,10 @@ class AppDataImporterTest {
                 sets = 2,
                 setRestSeconds = 45,
                 workStepSeconds = 10,
+                then = listOf(
+                    IntervalBlock(workSeconds = 60, restSeconds = 30, rounds = 3, sets = 2, setRestSeconds = 90),
+                ),
+                blockRestSeconds = 120,
             )
         val workout = intervals.history.recordWorkout(bookended, elapsedSeconds = 200, workSeconds = 120)
         intervals.history.reflectOnWorkout(workout, PerceivedEffort.Hard, "Felt strong")
@@ -199,10 +204,11 @@ class AppDataImporterTest {
         assertEquals(listOf(490, 130), history.map { it.elapsedSeconds })
         assertNull(history.first().effort)
         assertEquals(Activity.Running, history.first().config.activity)
-        // From before sets: every shape is one set.
+        // From before sets and sequences: every shape is one block of one set.
         assertTrue(
             history.all {
-                it.config.sets == 1 && it.config.setRestSeconds == 0 && it.config.workStepSeconds == 0
+                it.config.sets == 1 && it.config.setRestSeconds == 0 && it.config.workStepSeconds == 0 &&
+                    it.config.blocks.size == 1 && it.config.blockRestSeconds == 0
             },
         )
         val plan = target.intervals.plans.planned.value.single().workout as PlanWorkout.Interval
@@ -218,7 +224,7 @@ class AppDataImporterTest {
     @Test
     fun `a newer file says so and changes nothing`() = runTest {
         val target = Phone(now)
-        val file = ShareableFile("new.json", ExportBundle.MIME_TYPE, SCHEMA_5_EXPORT)
+        val file = ShareableFile("new.json", ExportBundle.MIME_TYPE, SCHEMA_6_EXPORT)
         assertEquals(ImportReview.TooNew("0.9.0"), target.importer.review(file))
         assertFailsWith<IllegalArgumentException> { target.importer.import(file, withSettings = true) }
         assertTrue(target.intervals.history.history.value.isEmpty())

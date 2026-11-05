@@ -127,6 +127,9 @@ data class WorkoutRun(
             WorkoutOutline.of(engine),
             shown.set,
             shown.sets,
+            shown.block,
+            engine.config.blocks.takeIf { it.size > 1 }.orEmpty(),
+            shown.inBlockRest,
         )
     }
 

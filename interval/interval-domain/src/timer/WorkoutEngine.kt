@@ -27,6 +27,9 @@ data class WorkoutState(
     /** The block of rounds this is in, whose sets and rounds [set] and [round] count. */
     val shape: Block get() = config.blocks[block]
 
+    /** In the rest between one block and the next. */
+    val inBlockRest: Boolean get() = config.isBlockRest(Interval(phase, set, round, 0, block))
+
     /** The last round of the last set of the last block. */
     val isLastRound: Boolean
         get() = block == config.blocks.lastIndex && round >= shape.rounds && set >= shape.sets
@@ -51,8 +54,13 @@ sealed interface Cue {
     /** The midpoint of an interval longer than [WorkoutEngine.HALFWAY_MIN_SECONDS]. */
     data object Halfway : Cue
 
-    /** [set] is the set a work interval begins, 1-based, in a workout of sets; null for every other start. */
-    data class PhaseStarted(val phase: Phase, val lastRound: Boolean, val set: Int? = null) : Cue
+    /**
+     * [set] is the set a work interval begins, 1-based, in a workout of sets; null for every other start. [block],
+     * 1-based, in a workout of blocks: the one a block's first work begins, or the one a rest between blocks leads
+     * into; null for every other start.
+     */
+    data class PhaseStarted(val phase: Phase, val lastRound: Boolean, val set: Int? = null, val block: Int? = null) :
+        Cue
 
     data object Finished : Cue
 }
@@ -211,7 +219,14 @@ object WorkoutEngine {
         val lastRound = interval.phase == Phase.Work && state.isLastRound
         val sets = config.blocks[interval.block].sets
         val set = interval.set.takeIf { interval.phase == Phase.Work && interval.round == 1 && sets > 1 }
-        return Step(state, listOf(Cue.PhaseStarted(interval.phase, lastRound, set)))
+        val opensBlock = interval.phase == Phase.Work && interval.set == 1 && interval.round == 1
+        val block = when {
+            !config.isSequence -> null
+            opensBlock -> interval.block + 1
+            config.isBlockRest(interval) -> interval.block + 2
+            else -> null
+        }
+        return Step(state, listOf(Cue.PhaseStarted(interval.phase, lastRound, set, block)))
     }
 
     private fun enter(config: IntervalConfig, interval: Interval): WorkoutState {

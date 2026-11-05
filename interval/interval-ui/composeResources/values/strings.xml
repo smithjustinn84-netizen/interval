@@ -11,6 +11,8 @@
         <item quantity="other">%1$d sets</item>
     </plurals>
     <string name="config_set_rest">%1$s between</string>
+    <string name="config_then">%1$s, then %2$s</string>
+    <string name="config_block_rest">%1$s between blocks</string>
     <string name="config_ladder">%1$s on, %2$s a round · %3$s off · ×%4$d</string>
     <string name="config_step_up">+%1$s</string>
     <string name="config_step_down">−%1$s</string>

@@ -38,11 +38,13 @@ import kotlinx.coroutines.flow.Flow
  * kept when a workout began and its heart rate ([HistoryEntity.startedAtEpochMillis], [HistoryEntity.averageBpm]);
  * version 10 gave every workout, preset and plan its sets and the rest between them ([HistoryEntity.sets],
  * [HistoryEntity.setRestSeconds]), one set with none in rows from before; version 11 their ladder
- * ([HistoryEntity.workStepSeconds]), none in rows from before.
+ * ([HistoryEntity.workStepSeconds]), none in rows from before; version 12 the blocks of a sequence after its first
+ * and the rest between them ([HistoryEntity.thenBlocks], [HistoryEntity.blockRestSeconds]), one block in rows from
+ * before.
  */
 @Database(
     entities = [HistoryEntity::class, PresetEntity::class, PlannedEntity::class],
-    version = 11,
+    version = 12,
     // 3 to 4 and 4 to 5 are MIGRATION_3_4 and MIGRATION_4_5, added by buildAppDatabase.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -53,6 +55,7 @@ import kotlinx.coroutines.flow.Flow
         AutoMigration(from = 8, to = 9),
         AutoMigration(from = 9, to = 10),
         AutoMigration(from = 10, to = 11),
+        AutoMigration(from = 11, to = 12),
     ],
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -283,6 +286,9 @@ data class HistoryEntity(
     @ColumnInfo(defaultValue = "1") val sets: Int = 1,
     @ColumnInfo(name = "set_rest_seconds", defaultValue = "0") val setRestSeconds: Int = 0,
     @ColumnInfo(name = "work_step_seconds", defaultValue = "0") val workStepSeconds: Int = 0,
+    /** A sequence's blocks after its first, a JSON list ([encodeBlocks]); "[]", one block, in rows from before 12. */
+    @ColumnInfo(name = "then_blocks", defaultValue = "'[]'") val thenBlocks: String = "[]",
+    @ColumnInfo(name = "block_rest_seconds", defaultValue = "0") val blockRestSeconds: Int = 0,
 )
 
 @Entity(tableName = "preset")
@@ -302,6 +308,9 @@ data class PresetEntity(
     @ColumnInfo(defaultValue = "1") val sets: Int = 1,
     @ColumnInfo(name = "set_rest_seconds", defaultValue = "0") val setRestSeconds: Int = 0,
     @ColumnInfo(name = "work_step_seconds", defaultValue = "0") val workStepSeconds: Int = 0,
+    /** As [HistoryEntity.thenBlocks]. */
+    @ColumnInfo(name = "then_blocks", defaultValue = "'[]'") val thenBlocks: String = "[]",
+    @ColumnInfo(name = "block_rest_seconds", defaultValue = "0") val blockRestSeconds: Int = 0,
 )
 
 /**
@@ -331,4 +340,7 @@ data class PlannedEntity(
     @ColumnInfo(defaultValue = "1") val sets: Int = 1,
     @ColumnInfo(name = "set_rest_seconds", defaultValue = "0") val setRestSeconds: Int = 0,
     @ColumnInfo(name = "work_step_seconds", defaultValue = "0") val workStepSeconds: Int = 0,
+    /** As [HistoryEntity.thenBlocks]. */
+    @ColumnInfo(name = "then_blocks", defaultValue = "'[]'") val thenBlocks: String = "[]",
+    @ColumnInfo(name = "block_rest_seconds", defaultValue = "0") val blockRestSeconds: Int = 0,
 )

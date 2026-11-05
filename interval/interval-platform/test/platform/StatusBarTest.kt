@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.platform
 
+import dev.justinsmith.interval.timer.Block
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.WorkoutEngine
@@ -83,5 +84,29 @@ class StatusBarTest {
     @Test
     fun `nothing to draw without a workout`() {
         assertNull(StatusBar.of(WorkoutOutline.Empty))
+    }
+
+    @Test
+    fun `a sequence is drawn a segment per block with the rest between them`() {
+        val config = IntervalConfig(
+            prepSeconds = 10,
+            workSeconds = 20,
+            restSeconds = 10,
+            rounds = 4,
+            then = listOf(Block(workSeconds = 40, restSeconds = 20, rounds = 3)),
+            blockRestSeconds = 60,
+        )
+        val bar = bar(config)!!
+        assertEquals(
+            listOf(
+                BarSegment(10, Phase.Prep),
+                BarSegment(4 * 20 + 3 * 10, Phase.Work),
+                BarSegment(60, Phase.SetRest),
+                BarSegment(3 * 40 + 2 * 20, Phase.Work),
+            ),
+            bar.segments,
+        )
+        // The second block begins after get ready, the first block and the rest.
+        assertEquals(listOf(10 + 110 + 60), bar.points)
     }
 }

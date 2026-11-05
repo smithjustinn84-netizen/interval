@@ -269,4 +269,40 @@ class WorkoutEngineTest {
             changes,
         )
     }
+
+    @Test
+    fun `a sequence runs to its end naming each block as it begins`() {
+        val config = IntervalConfig(
+            prepSeconds = 0,
+            workSeconds = 20,
+            restSeconds = 10,
+            rounds = 2,
+            then = listOf(Block(workSeconds = 40, restSeconds = 20, rounds = 2)),
+            blockRestSeconds = 30,
+        )
+        var step = WorkoutEngine.start(config)
+        val starts = mutableListOf<Cue.PhaseStarted>()
+        while (!step.state.isDone) {
+            starts += step.cues.filterIsInstance<Cue.PhaseStarted>()
+            step = WorkoutEngine.advance(step.state)
+        }
+        assertEquals(
+            listOf(
+                Cue.PhaseStarted(Phase.Work, lastRound = false, block = 1),
+                Cue.PhaseStarted(Phase.Rest, lastRound = false),
+                Cue.PhaseStarted(Phase.Work, lastRound = false),
+                Cue.PhaseStarted(Phase.SetRest, lastRound = false, block = 2),
+                Cue.PhaseStarted(Phase.Work, lastRound = false, block = 2),
+                Cue.PhaseStarted(Phase.Rest, lastRound = false),
+                Cue.PhaseStarted(Phase.Work, lastRound = true),
+            ),
+            starts,
+        )
+        val inRest = WorkoutEngine.advance(
+            WorkoutEngine.advance(WorkoutEngine.advance(WorkoutEngine.start(config).state).state).state,
+        ).state
+        assertTrue(inRest.inBlockRest)
+        assertEquals((30 + 40 + 20 + 40) * 1_000L, inRest.sessionRemainingMillis)
+        assertEquals(20 + 10 + 20 + 30 + 40 + 20 + 40, config.totalSeconds)
+    }
 }

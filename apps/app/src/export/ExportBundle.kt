@@ -9,7 +9,8 @@ import kotlinx.serialization.Serializable
  * newer one (schema 2 let a plan be a session on Lift; schema 3 added how a workout or a session felt, its
  * `effort` 1 to 5 and its `note`, every shape's `warmUpSeconds` and `coolDownSeconds`, and a workout's or a
  * session's heart rate, `averageBpm` and `peakBpm`; schema 4 every shape's `sets`, `setRestSeconds` and
- * `workStepSeconds`, all absent from older files). Lift's sessions carry their sets but not how a day's plan was
+ * `workStepSeconds`; schema 5 a sequence's blocks after its first, `then`, and `blockRestSeconds`, all absent from
+ * older files). Lift's sessions carry their sets but not how a day's plan was
  * changed: the sets are the record.
  */
 @Serializable
@@ -28,7 +29,7 @@ data class ExportBundle(
     val lift: LiftExport,
 ) {
     companion object {
-        const val SCHEMA = 4
+        const val SCHEMA = 5
         const val APP = "interval"
         const val MIME_TYPE = "application/json"
 
@@ -68,6 +69,20 @@ data class ConfigExport(
     val warmUpSeconds: Int = 0,
     val coolDownSeconds: Int = 0,
     /** One set with no rest between and no ladder, and in schema 1 to 3. */
+    val sets: Int = 1,
+    val setRestSeconds: Int = 0,
+    val workStepSeconds: Int = 0,
+    /** A sequence's blocks after its first, which is the fields above; none, one block, and in schema 1 to 4. */
+    val then: List<IntervalBlockExport> = emptyList(),
+    val blockRestSeconds: Int = 0,
+)
+
+/** One block of a sequence after its first, as [ConfigExport] holds the first. */
+@Serializable
+data class IntervalBlockExport(
+    val workSeconds: Int,
+    val restSeconds: Int,
+    val rounds: Int,
     val sets: Int = 1,
     val setRestSeconds: Int = 0,
     val workStepSeconds: Int = 0,

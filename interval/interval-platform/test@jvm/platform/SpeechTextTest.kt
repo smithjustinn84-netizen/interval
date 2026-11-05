@@ -20,6 +20,8 @@ class SpeechTextTest {
             Speech.Work(lastRound = false, set = 2) to "Set 2. Work",
             Speech.Rest to "Rest",
             Speech.SetRest to "Rest between sets",
+            Speech.BlockRest(block = 2) to "Rest before block 2",
+            Speech.Work(lastRound = false, set = 1, block = 3) to "Block 3. Work",
             Speech.WarmUp to "Warm up",
             Speech.CoolDown to "Cool down",
             Speech.Halfway to "Halfway",

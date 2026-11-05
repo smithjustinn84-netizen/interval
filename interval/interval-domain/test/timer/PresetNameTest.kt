@@ -87,4 +87,15 @@ class PresetNameTest {
             IntervalConfig(workSeconds = 60, restSeconds = 30, rounds = 3, workStepSeconds = 60).defaultPresetName(),
         )
     }
+
+    @Test
+    fun `a sequence is named by its blocks one after another`() {
+        val config = IntervalConfig(
+            workSeconds = 20,
+            restSeconds = 10,
+            rounds = 8,
+            then = listOf(Block(workSeconds = 60, restSeconds = 30, rounds = 5, sets = 2)),
+        )
+        assertEquals("20/10 ×8, then 1m/30 ×5, 2 sets", config.defaultPresetName())
+    }
 }

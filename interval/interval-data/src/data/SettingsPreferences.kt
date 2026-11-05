@@ -26,6 +26,8 @@ private val COOL_DOWN = intPreferencesKey("cool_down")
 private val SETS = intPreferencesKey("sets")
 private val SET_REST = intPreferencesKey("set_rest")
 private val WORK_STEP = intPreferencesKey("work_step")
+private val THEN_BLOCKS = stringPreferencesKey("then_blocks")
+private val BLOCK_REST = intPreferencesKey("block_rest")
 private val ACTIVITY = stringPreferencesKey("activity")
 
 private val CUE_SOUND = booleanPreferencesKey("cue_sound")
@@ -58,6 +60,8 @@ internal fun Preferences.toConfig(): IntervalConfig {
         sets = this[SETS] ?: defaults.sets,
         setRestSeconds = this[SET_REST] ?: defaults.setRestSeconds,
         workStepSeconds = this[WORK_STEP] ?: defaults.workStepSeconds,
+        then = decodeBlocks(this[THEN_BLOCKS]),
+        blockRestSeconds = this[BLOCK_REST] ?: defaults.blockRestSeconds,
     )
 }
 
@@ -72,6 +76,8 @@ internal fun MutablePreferences.write(config: IntervalConfig) {
     this[SETS] = config.sets
     this[SET_REST] = config.setRestSeconds
     this[WORK_STEP] = config.workStepSeconds
+    this[THEN_BLOCKS] = encodeBlocks(config.then)
+    this[BLOCK_REST] = config.blockRestSeconds
 }
 
 internal fun Preferences.toCueSettings(): CueSettings {

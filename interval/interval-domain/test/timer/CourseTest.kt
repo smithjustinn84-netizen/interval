@@ -192,4 +192,49 @@ class CourseTest {
             .toList()
         assertEquals(listOf(false, false, false, false, false, true), works.map { it.isLastRound })
     }
+
+    @Test
+    fun `a sequence runs its blocks one after another with the rest between them`() {
+        val config = IntervalConfig(
+            prepSeconds = 0,
+            workSeconds = 20,
+            restSeconds = 10,
+            rounds = 2,
+            then = listOf(
+                Block(
+                    workSeconds = 30,
+                    restSeconds = 15,
+                    rounds = 2,
+                    sets = 2,
+                    setRestSeconds = 45,
+                    workStepSeconds = 10,
+                ),
+                Block(workSeconds = 60, restSeconds = 0, rounds = 1),
+            ),
+            blockRestSeconds = 90,
+        )
+        assertEquals(
+            "Work 0.1.1:20 Rest 0.1.1:10 Work 0.1.2:20 SetRest 0.1.2:90 " +
+                "Work 1.1.1:30 Rest 1.1.1:15 Work 1.1.2:40 SetRest 1.1.2:45 " +
+                "Work 1.2.1:30 Rest 1.2.1:15 Work 1.2.2:40 SetRest 1.2.2:90 " +
+                "Work 2.1.1:60",
+            Course.of(config).joinToString(" ") { "${it.phase} ${it.block}.${it.set}.${it.round}:${it.seconds}" },
+        )
+        val rests = Course.of(config).filter { it.phase == Phase.SetRest }.map { config.isBlockRest(it) }
+        assertEquals(listOf(true, false, true), rests)
+    }
+
+    @Test
+    fun `blocks with no rest between them are joined by the block's own rest`() {
+        val config = IntervalConfig(
+            prepSeconds = 0,
+            workSeconds = 20,
+            restSeconds = 10,
+            rounds = 1,
+            then = listOf(Block(workSeconds = 40, restSeconds = 0, rounds = 1)),
+        )
+        assertEquals("Work 1:20 Rest 1:10 Work 1:40", pinned(config))
+        val noRest = config.copy(restSeconds = 0)
+        assertEquals("Work 1:20 Work 1:40", pinned(noRest))
+    }
 }

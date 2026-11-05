@@ -7,8 +7,10 @@ import androidx.room.RoomDatabase
 import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.data.AppDatabase
 import dev.justinsmith.interval.platform.resources.Res
+import dev.justinsmith.interval.platform.resources.notification_block_round
 import dev.justinsmith.interval.platform.resources.notification_round
 import dev.justinsmith.interval.platform.resources.notification_set_round
+import dev.justinsmith.interval.platform.resources.phase_block_rest
 import dev.justinsmith.interval.platform.resources.phase_cool_down
 import dev.justinsmith.interval.platform.resources.phase_done
 import dev.justinsmith.interval.platform.resources.phase_get_ready
@@ -28,6 +30,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.onClose
@@ -150,25 +153,21 @@ private class IosBackgroundWorkout(private val active: Lazy<ActiveWorkout>) : Ba
         val changes = active.value.upcomingChanges().takeIf { it.isNotEmpty() } ?: return
         center.removePendingNotificationRequestsWithIdentifiers(identifiers)
         val mine = ++generation
-        scope.launch { schedule(changes.take(WORKOUT_REQUESTS), shown.rounds, shown.sets, mine) }
+        scope.launch { schedule(changes.take(WORKOUT_REQUESTS), shown, mine) }
     }
 
-    /** Reading each string suspends, so the app may have come back midway: then the rest are not added. */
-    private suspend fun schedule(changes: List<UpcomingChange>, rounds: Int, sets: Int, mine: Int) {
+    /**
+     * Reading each string suspends, so the app may have come back midway: then the rest are not added. Each change
+     * counts the rounds and sets of its own block, from [shown]'s blocks in a workout of blocks.
+     */
+    private suspend fun schedule(changes: List<UpcomingChange>, shown: WorkoutStatus, mine: Int) {
         for ((index, change) in changes.withIndex()) {
             if (mine != generation) return
+            val title = getString(title(change, shown))
+            val body = body(change, shown)
             val content = UNMutableNotificationContent().apply {
-                setTitle(getString(change.phase.title()))
-                // The warm-up and cool-down are outside the rounds: no round under them.
-                if (change.phase != Phase.WarmUp && change.phase != Phase.CoolDown) {
-                    setBody(
-                        if (sets > 1) {
-                            getString(Res.string.notification_set_round, change.set, sets, change.round, rounds)
-                        } else {
-                            getString(Res.string.notification_round, change.round, rounds)
-                        },
-                    )
-                }
+                setTitle(title)
+                body?.let(::setBody)
                 setSound(UNNotificationSound.defaultSound)
             }
             // A trigger wants a positive interval; a change due this instant is announced at once.
@@ -179,6 +178,32 @@ private class IosBackgroundWorkout(private val active: Lazy<ActiveWorkout>) : Ba
                 if (error != null) log.w { "Couldn't schedule ${change.phase} at ${change.offsetMillis} ms: $error" }
             }
         }
+    }
+
+    /** The phase [change] starts: a set rest after a block's last set, a block after it, is the rest between blocks. */
+    private fun title(change: UpcomingChange, shown: WorkoutStatus): StringResource {
+        val block = shown.blocks.getOrNull(change.block)
+        val blockRest = block != null && change.phase == Phase.SetRest && change.set >= block.sets &&
+            change.block < shown.blocks.lastIndex
+        return if (blockRest) Res.string.phase_block_rest else change.phase.title()
+    }
+
+    /**
+     * Its round, of the rounds and sets of its own block ([shown]'s blocks in a workout of blocks, with the block
+     * first); none in the warm-up and cool-down, outside the rounds.
+     */
+    private suspend fun body(change: UpcomingChange, shown: WorkoutStatus): String? {
+        if (change.phase == Phase.WarmUp || change.phase == Phase.CoolDown) return null
+        val block = shown.blocks.getOrNull(change.block)
+        val rounds = block?.rounds ?: shown.rounds
+        val sets = block?.sets ?: shown.sets
+        val round = if (sets > 1) {
+            getString(Res.string.notification_set_round, change.set, sets, change.round, rounds)
+        } else {
+            getString(Res.string.notification_round, change.round, rounds)
+        }
+        if (block == null) return round
+        return getString(Res.string.notification_block_round, change.block + 1, shown.blocks.size, round)
     }
 
     private fun clear() {

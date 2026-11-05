@@ -35,6 +35,12 @@ sealed interface NextUp {
     /** The next set's first work, straight after this interval; with its [clock] on a ladder, where it differs. */
     data class Set(val set: Int, val of: Int, val clock: String? = null) : NextUp
 
+    /** The next block's first work (1-based [block] of [of]), straight after this interval, with its length. */
+    data class Block(val block: Int, val of: Int, val clock: String) : NextUp
+
+    /** The rest of this length between this block and the next, [block] (1-based). */
+    data class BlockRest(val block: Int, val clock: String) : NextUp
+
     /** This work interval is the last one. */
     data object LastRound : NextUp
 }
@@ -90,6 +96,8 @@ data class WorkoutUiState(
     val set: Int = 1,
     /** 0-based, the block of the config that [set] is in. */
     val block: Int = 0,
+    /** In the rest between one block and the next. */
+    val inBlockRest: Boolean = false,
 ) {
     /** Offer "Save as preset" on the summary: no preset has this shape yet. */
     val canSavePreset: Boolean get() = presetName == null
@@ -102,6 +110,9 @@ data class WorkoutUiState(
 
     /** The sets of the current block. */
     val sets: Int get() = config.blocks[block].sets
+
+    /** The blocks of the workout, 1 for a workout of one. */
+    val blocks: Int get() = config.blocks.size
 
     /** Rounds of the current set whose work is behind it. */
     val completedSetRounds: Int
@@ -165,6 +176,7 @@ fun WorkoutState.toUiState(
         note = note,
         set = set,
         block = block,
+        inBlockRest = inBlockRest,
     )
 }
 
@@ -182,6 +194,7 @@ private fun WorkoutState.nextUp(): NextUp? {
             val coming = config.blocks[next.block]
             when {
                 phase == Phase.Prep || phase == Phase.WarmUp -> NextUp.Work(clock)
+                next.block != block -> NextUp.Block(next.block + 1, config.blocks.size, clock)
                 next.set != set -> NextUp.Set(next.set, coming.sets, differs)
                 else -> NextUp.Round(next.round, coming.rounds, differs)
             }
@@ -189,7 +202,14 @@ private fun WorkoutState.nextUp(): NextUp? {
 
         Phase.Rest -> NextUp.Rest(clock)
 
-        Phase.SetRest -> NextUp.SetRest(clock)
+        Phase.SetRest -> if (config.isBlockRest(
+                next,
+            )
+        ) {
+            NextUp.BlockRest(next.block + 2, clock)
+        } else {
+            NextUp.SetRest(clock)
+        }
 
         Phase.CoolDown -> NextUp.CoolDown(clock)
 
