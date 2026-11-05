@@ -123,7 +123,8 @@ interval/            the interval timer
   interval-timer     the Timer tab and its describe sheet (package `dev.justinsmith.interval.home`)
   interval-workout   the running workout, its readout, controls and summary
   interval-presets   the Presets page, sheet and editor (`PresetEditorHost`, `PresetDraft`)
-  interval-settings  Settings and the weight sheet
+  interval-settings  Settings (its groups in `SettingsGroups.kt`), the weight sheet, export and import
+                     (`DataExporter`, `DataImporter`, the review sheet); opened by every tab's gear
   interval-history   History (log, calendar, summaries, a finished workout) and Plan: one module, each needs
                      the other; `PlanReminderScheduler` (`historyModule`, di/) keeps the platform's reminders
                      in step with the plan
@@ -203,7 +204,8 @@ toolchain (`$compose.*`).
   2. `subclass(X::class)` in `navConfiguration` (App.kt; a Lift key in `liftRoutes()`). Without it saving the
      back stack fails on iOS/desktop.
   3. `entry<X> { XRoute() }` in the `entryProvider` (App.kt; a Lift page in `liftEntries`, `lift/lift-nav/src/nav/LiftEntries.kt`)
-  A tab implements core's `Tab` (`core/core/src/nav/Tab.kt`, with the `push` helper every entry uses).
+  A tab implements core's `Tab` (`core/core/src/nav/Tab.kt`, with the `push` helper every entry uses), and its
+  title bar ends in core's `SettingsAction`; Lift's takes what it opens through `liftEntries`.
 - **Screens** are split into `XRoute()` (resolves the ViewModel with `koinViewModel<XViewModel>()`, and a
   route's key with `{ parametersOf(id) }`; anything else with `koinInject()`; collects state) and a stateless
   `XScreen(state, callbacks)` that previews and tests can drive directly. Each feature declares its ViewModels in

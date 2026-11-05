@@ -7,6 +7,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.4.0] — Unreleased
 
 ### Added
+- Settings from every tab: History and Lift have the gear the Timer has. Opened from them it is a page of its own;
+  on a wide window it still sits beside the Timer when opened from there.
+- Settings shows the plan's weekly goal and reminder as they stand, under "Plan"; either row opens Plan, where they
+  are changed.
 - Loaded carries and kettlebell sport lifts in Lift: Farmer's walk (always two bells), Suitcase carry, Rack carry and
   Bottoms-up carry, timed as holds with their bell ("24 kg · 0:30 · Left", "2 × 24 kg · 0:45") and setting heaviest
   and longest records ("Heaviest 24 kg · 0:30 · longest 1:00 at 16 kg"); Half snatch and kettlebell Push press (with
@@ -35,6 +39,9 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 - The home-screen widget's preview in Android's widget picker, drawn over a sample week (Android 15 and up).
 
 ### Changed
+- Settings is regrouped: the health store has a "Health" group of its own, after the calories its weight feeds,
+  instead of a row under "Your data"; Effort and Theme sit in cards under their names, which also name their
+  options for a screen reader; the body weight shows in a pill as Get ready does; and About is a row at the foot.
 - Lift's Dan John programs and kettlebell cues: Armor Building Formula alternates the 20-minute ABC EMOM and five
   double-bell press ladders of 2-3-5-10 across eight weeks; Easy Strength finishes with a suitcase carry; 10,000 Swings
   rotates press, goblet squat, chin-up and bench dip across four days; and the swing, clean, press, snatch, get-up and

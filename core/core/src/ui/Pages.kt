@@ -32,9 +32,9 @@ import dev.justinsmith.core.resources.common_settings
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * A pushed page that scrolls as one: Settings, About, Licenses. Its [TitleBar] and [content] share one
- * centred column of [Sizes.content] at most, inside the horizontal and top safe area, while scrolling on
- * under the gesture bar and clearing the keyboard.
+ * A pushed page that scrolls as one: About, Licenses, Settings in its pane beside the Timer. Its [TitleBar] and
+ * [content] share one centred column of [Sizes.content] at most, inside the horizontal and top safe area, while
+ * scrolling on under the gesture bar and clearing the keyboard.
  */
 @Composable
 fun ScrollPage(
@@ -79,9 +79,9 @@ fun SettingsAction(onClick: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 /**
- * A page of cards, a tab's (History, Lift) or one pushed from it (Presets, the bells): the lanes behind, filling
- * the window rather than stopping at the column's edge, then a grid of one column on a phone and more as the
- * window widens, its [TitleBar] across the top.
+ * A page of cards, a tab's (History, Lift) or one pushed from it (Presets, the bells, Settings): the lanes
+ * behind, filling the window rather than stopping at the column's edge, then a grid of one column on a phone and
+ * more as the window widens, its [TitleBar] across the top.
  * [content] adds the grid's items under it. A pushed page passes [navigation], its Back. The page keeps inside
  * the safe area, though its cards scroll on under the gesture bar rather than stopping above it; under a tab the
  * scene has taken the system's and the navigation bar's share already, so nothing is left to keep out of.

@@ -1,5 +1,6 @@
-# Settings: cues, the get-ready countdown, keep screen on, theme, body and units.
-description: "Settings and the weight sheet"
+# Settings: cues, the get-ready countdown, keep screen on, calories, the health store, the plan's goal and
+# reminder as they stand, theme, export and import, and the way to About.
+description: "Settings: its groups, the weight sheet, export and import"
 product:
   type: kmp/lib
   platforms: [android, iosArm64, iosSimulatorArm64, jvm]
