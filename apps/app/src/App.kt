@@ -144,7 +144,7 @@ internal val navConfiguration = SavedStateConfiguration {
 
 /**
  * The root composable every platform entry point hosts: the app, with the intro over it at launch. [shortcut] is
- * a launcher shortcut to open (Android's); the app opens it once it is ready and then calls [onShortcutOpen],
+ * a launcher shortcut to open (Android's, or an iOS quick action); the app opens it once it is ready and then calls [onShortcutOpen],
  * whose caller lets it go, so the same shortcut handed again opens again.
  */
 @Composable

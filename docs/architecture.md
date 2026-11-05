@@ -264,7 +264,10 @@ The application uses Jetpack Navigation 3 with a single, unified back stack host
 5. **App Shortcuts & Launcher Intent Routing**:
    - Android launcher shortcuts ("Start a workout" and "Start a Lift session", declared in `shortcuts.xml`) route through
      a dedicated `ShortcutActivity` that passes a `Shortcut` enum into `MainActivity` with `SINGLE_TOP | CLEAR_TOP`.
-   - `App(shortcut: Shortcut?, onShortcutTaken: () -> Unit)` inspects the shortcut: if a workout is already in progress,
+   - iOS's Home Screen quick actions are the same two (`UIApplicationShortcutItems` in `Info.plist`, each type a
+     `Shortcut.id`): `SceneDelegate` hands the type to `openShortcut` (`ViewController.kt`) from the scene's
+     connection options at a cold launch and from `windowScene(_:performActionFor:)` with the app running.
+   - `App(shortcut: Shortcut?, onShortcutOpen: () -> Unit)` inspects the shortcut: if a workout is already in progress,
      it preserves it; otherwise it navigates directly to the target tab and pushes the requested action.
 
 ---

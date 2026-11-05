@@ -27,6 +27,27 @@
 	<string>Interval reads your latest body weight, to offer it for the calorie estimate, and your heart rate during a workout you finished, to show on its summary.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Interval saves each workout and Lift session you finish to Apple Health, with its calorie estimate.</string>
+	<!-- The Home Screen's quick actions (a long-press on the icon), Android's launcher shortcuts: each type is a
+	     Shortcut.id (apps/app/src/nav/Shortcut.kt), which SceneDelegate hands to the app. -->
+	<key>UIApplicationShortcutItems</key>
+	<array>
+		<dict>
+			<key>UIApplicationShortcutItemType</key>
+			<string>start-workout</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Start a workout</string>
+			<key>UIApplicationShortcutItemIconSymbolName</key>
+			<string>timer</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemType</key>
+			<string>lift-session</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Start a Lift session</string>
+			<key>UIApplicationShortcutItemIconSymbolName</key>
+			<string>dumbbell.fill</string>
+		</dict>
+	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

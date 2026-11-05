@@ -18,6 +18,9 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   each round's own length, and "Next: round 2 of 5 · 0:30" says how long the coming one is. A ladder that would fall
   below five seconds falls less steeply instead. Describe reads "ladder 20 to 60 by 10", "20/10 climbing 10 a round"
   and "60 down to 20 by 10, 10 off".
+- The Home Screen's quick actions on iOS, as Android's launcher shortcuts: a long-press on the icon offers "Start a
+  workout" and "Start a Lift session", from a cold start or with the app running, and a workout already running is
+  kept.
 
 ## [0.3.0] — 2026-11-04
 

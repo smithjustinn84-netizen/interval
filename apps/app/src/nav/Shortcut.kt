@@ -1,8 +1,8 @@
 package dev.justinsmith.interval.nav
 
 /**
- * Where a launcher shortcut opens the app (Android's long-press on the icon), each over its own tab, so Back
- * lands there. [id] is what the shortcut's intent carries.
+ * Where a launcher shortcut opens the app (a long-press on the icon: Android's shortcuts, iOS's quick actions),
+ * each over its own tab, so Back lands there. [id] is what the shortcut's intent carries, and a quick action's type.
  */
 enum class Shortcut(val id: String) {
     /** A workout of what the Timer holds, as its Start begins one, over the Timer. */

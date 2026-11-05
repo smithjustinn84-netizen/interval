@@ -43,6 +43,19 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = scene as? UIWindowScene else { return }
         show(in: windowScene)
+        // Launched by a quick action from the Home Screen: open it once the app is ready, as a running app does.
+        if let item = connectionOptions.shortcutItem {
+            _ = ViewControllerKt.openShortcut(type: item.type)
+        }
+    }
+
+    // A quick action chosen while the app runs, in the background or on screen. Its type is a `Shortcut.id`.
+    func windowScene(
+        _ windowScene: UIWindowScene,
+        performActionFor shortcutItem: UIApplicationShortcutItem,
+        completionHandler: @escaping (Bool) -> Void
+    ) {
+        completionHandler(ViewControllerKt.openShortcut(type: shortcutItem.type))
     }
 
     func show(in scene: UIWindowScene) {

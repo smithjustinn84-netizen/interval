@@ -137,9 +137,6 @@ To change one later (a new password, say), run its command again: `gh secret set
 The next sprint's tickets are in [sprint-0.4.md](sprint-0.4.md); [sprint-0.3.md](sprint-0.3.md) and
 [sprint-architecture.md](sprint-architecture.md) took up most of what the earlier sprints found.
 
-- **iOS: the launcher shortcuts.** Android's two (0.3) open the app through `App(shortcut = …)`; iOS would need
-  `UIApplicationShortcutItem`s in `Info.plist` and a scene delegate's `performActionFor` handing the item's type
-  (a `Shortcut.id`) to `ViewController()` the same way.
 - **Other workspaces' stacks.** Commits made in another jj workspace above the old `main` rebase onto the
   new one with `jj rebase -d main`.
 

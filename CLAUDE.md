@@ -169,7 +169,8 @@ apps/
                      on a bitmap in `PhaseColors`, `WidgetSizes`, `WidgetDayAlarm` for the day's turn; its words
                      in `res/values/strings.xml`)
   desktopApp         Desktop host application: main.kt entry point, Swing integration, window sizing
-  iosApp             iOS host application: ViewController.kt, iosApp.swift, Xcode project, Info.plist, Assets
+  iosApp             iOS host application: ViewController.kt (and `openShortcut`, the quick actions'), iosApp.swift,
+                     Xcode project, Info.plist (the quick actions, as `UIApplicationShortcutItems`), Assets
 
 tooling/
   detekt-plugin      Toolchain task plugin: runs detekt with Compose rules across modules (`./kotlin check detekt`)
