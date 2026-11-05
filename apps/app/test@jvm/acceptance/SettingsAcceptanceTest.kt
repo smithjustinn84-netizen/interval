@@ -35,7 +35,8 @@ class SettingsAcceptanceTest {
             seeVoice(on = false)
             pickTheme("Light")
             seeTheme("Light")
-            goBack()
+            // The theme is down the page, its title bar and Back scrolled away above it.
+            pressSystemBack()
             seeTimer()
         }
         acceptanceScenario(storage = storage) {
@@ -44,7 +45,7 @@ class SettingsAcceptanceTest {
             seeTheme("Light")
             toggleVoice()
             pickTheme("Dark")
-            goBack()
+            pressSystemBack()
             seeTimer()
         }
         acceptanceScenario(storage = storage) {

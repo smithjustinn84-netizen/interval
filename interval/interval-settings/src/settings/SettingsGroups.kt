@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.HealthStatus
@@ -17,7 +19,6 @@ import dev.justinsmith.interval.settings.resources.effort_easy
 import dev.justinsmith.interval.settings.resources.effort_hard
 import dev.justinsmith.interval.settings.resources.effort_max
 import dev.justinsmith.interval.settings.resources.effort_steady
-import dev.justinsmith.interval.settings.resources.settings_about
 import dev.justinsmith.interval.settings.resources.settings_about_app
 import dev.justinsmith.interval.settings.resources.settings_about_app_hint
 import dev.justinsmith.interval.settings.resources.settings_appearance
@@ -25,6 +26,7 @@ import dev.justinsmith.interval.settings.resources.settings_calories
 import dev.justinsmith.interval.settings.resources.settings_cues
 import dev.justinsmith.interval.settings.resources.settings_cues_all_off
 import dev.justinsmith.interval.settings.resources.settings_data
+import dev.justinsmith.interval.settings.resources.settings_effort
 import dev.justinsmith.interval.settings.resources.settings_effort_hint
 import dev.justinsmith.interval.settings.resources.settings_export
 import dev.justinsmith.interval.settings.resources.settings_export_action
@@ -32,6 +34,7 @@ import dev.justinsmith.interval.settings.resources.settings_export_hint
 import dev.justinsmith.interval.settings.resources.settings_halfway
 import dev.justinsmith.interval.settings.resources.settings_halfway_hint
 import dev.justinsmith.interval.settings.resources.settings_halfway_needs_cue
+import dev.justinsmith.interval.settings.resources.settings_health
 import dev.justinsmith.interval.settings.resources.settings_health_install_hint
 import dev.justinsmith.interval.settings.resources.settings_health_off_hint
 import dev.justinsmith.interval.settings.resources.settings_health_on_hint
@@ -42,6 +45,8 @@ import dev.justinsmith.interval.settings.resources.settings_keep_screen_on
 import dev.justinsmith.interval.settings.resources.settings_keep_screen_on_hint
 import dev.justinsmith.interval.settings.resources.settings_sound
 import dev.justinsmith.interval.settings.resources.settings_sound_hint
+import dev.justinsmith.interval.settings.resources.settings_theme
+import dev.justinsmith.interval.settings.resources.settings_theme_hint
 import dev.justinsmith.interval.settings.resources.settings_value_off
 import dev.justinsmith.interval.settings.resources.settings_vibrate
 import dev.justinsmith.interval.settings.resources.settings_vibrate_hint
@@ -80,7 +85,10 @@ internal class SettingsGroup(val key: String, val content: @Composable () -> Uni
 /** What the health store's row does: connect, disconnect, or fetch the store where it is missing. */
 internal class HealthActions(val onConnect: () -> Unit, val onDisconnect: () -> Unit, val onInstall: () -> Unit)
 
-/** The groups in order: cues, the workout, calories, appearance, your data and About. */
+/**
+ * The groups in order: cues, the workout, calories, the health store where there is one, appearance, your data
+ * and, at the foot with no label, the way to About.
+ */
 @Suppress("detekt.LongParameterList") // One callback per setting, as the screen takes them.
 internal fun settingsGroups(
     state: SettingsUiState,
@@ -94,7 +102,7 @@ internal fun settingsGroups(
     onImport: () -> Unit,
     health: HealthActions,
     onShowAbout: () -> Unit,
-): List<SettingsGroup> = listOf(
+): List<SettingsGroup> = listOfNotNull(
     SettingsGroup("cues") {
         GroupLabel(stringResource(Res.string.settings_cues))
         CuesCard(state.cues, onToggle)
@@ -116,9 +124,23 @@ internal fun settingsGroups(
         GroupLabel(stringResource(Res.string.settings_calories))
         CaloriesCard(state, onEditWeight = onEditWeight, onSetEffort = onSetEffort)
     },
+    // After the calories its weight feeds, and only where the platform has a store.
+    SettingsGroup("health") {
+        GroupLabel(stringResource(Res.string.settings_health))
+        ListCard { HealthRow(state.health, health) }
+    }.takeIf { state.health != HealthStatus.Unavailable },
     SettingsGroup("appearance") {
         GroupLabel(stringResource(Res.string.settings_appearance))
-        SegmentedPicker(ThemeMode.entries, state.app.theme, label = { stringResource(it.labelRes) }, onSetTheme)
+        ListCard {
+            ChoiceRow(
+                stringResource(Res.string.settings_theme),
+                stringResource(Res.string.settings_theme_hint),
+                ThemeMode.entries,
+                state.app.theme,
+                label = { stringResource(it.labelRes) },
+                onSelect = onSetTheme,
+            )
+        }
     },
     SettingsGroup("data") {
         GroupLabel(stringResource(Res.string.settings_data))
@@ -136,15 +158,11 @@ internal fun settingsGroups(
                 onClick = onImport,
                 onClickLabel = stringResource(Res.string.settings_import_action),
             )
-            if (state.health != HealthStatus.Unavailable) {
-                RowDivider()
-                HealthRow(state.health, health)
-            }
         }
     },
+    // The page's foot rather than a group of one: no label, set apart from the settings above it.
     SettingsGroup("about") {
-        GroupLabel(stringResource(Res.string.settings_about))
-        ListCard {
+        ListCard(Modifier.padding(top = Spacing.space24)) {
             LinkRow(
                 stringResource(Res.string.settings_about_app),
                 stringResource(Res.string.settings_about_app_hint),
@@ -155,7 +173,7 @@ internal fun settingsGroups(
 )
 
 /**
- * The health store's row under Your data: a switch while the store is there, which opens its permission
+ * The health store's row, a group of its own: a switch while the store is there, which opens its permission
  * sheet or gives the permissions back; a link to fetch it while it is missing.
  */
 @Composable
@@ -245,7 +263,42 @@ private fun ColumnScope.CueRows(cues: CueSettings, halfwayAudible: Boolean, onTo
     )
 }
 
-/** The calorie estimates' inputs: the body weight, which opens its sheet, and the effort of the work. */
+/**
+ * A setting picked from a few, as a card's row: its [title] and [hint] over a [SegmentedPicker] of the [options].
+ * The picker's group takes the title as its name, so a screen reader says what the options are options of.
+ * [check] off where the options are too many for the card's row to keep both their words and the check.
+ */
+@Composable
+private fun <T> ChoiceRow(
+    title: String,
+    hint: String,
+    options: List<T>,
+    selected: T,
+    label: @Composable (T) -> String,
+    onSelect: (T) -> Unit,
+    modifier: Modifier = Modifier,
+    check: Boolean = true,
+) {
+    Column(
+        modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+        verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+    ) {
+        Column(Modifier.semantics(mergeDescendants = true) {}) {
+            Text(title, style = IntervalTheme.type.label, color = IntervalTheme.palette.text)
+            Text(hint, style = IntervalTheme.type.meta, color = IntervalTheme.palette.textDim)
+        }
+        SegmentedPicker(
+            options,
+            selected,
+            label,
+            onSelect,
+            Modifier.semantics { contentDescription = title },
+            check = check,
+        )
+    }
+}
+
+/** The calorie estimates' inputs, in one card: the body weight, which opens its sheet, and the effort of the work. */
 @Composable
 private fun CaloriesCard(
     state: SettingsUiState,
@@ -254,29 +307,31 @@ private fun CaloriesCard(
     modifier: Modifier = Modifier,
 ) {
     val weight = state.weight
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-        ListCard {
-            ValueRow(
-                stringResource(Res.string.settings_weight),
-                stringResource(
-                    if (weight == null) Res.string.settings_weight_unset else Res.string.settings_weight_hint,
-                ),
-                value = if (weight == null) {
-                    stringResource(Res.string.settings_value_off)
-                } else {
-                    stringResource(Res.string.settings_weight_value, weight, stringResource(state.body.unit.labelRes))
-                },
-                onClick = onEditWeight,
-                onClickLabel = stringResource(Res.string.settings_weight_edit),
-                dim = weight == null,
-            )
-        }
-        SegmentedPicker(Effort.entries, state.body.effort, label = { stringResource(it.labelRes) }, onSetEffort)
-        Text(
+    ListCard(modifier) {
+        ValueRow(
+            stringResource(Res.string.settings_weight),
+            stringResource(
+                if (weight == null) Res.string.settings_weight_unset else Res.string.settings_weight_hint,
+            ),
+            value = if (weight == null) {
+                stringResource(Res.string.settings_value_off)
+            } else {
+                stringResource(Res.string.settings_weight_value, weight, stringResource(state.body.unit.labelRes))
+            },
+            onClick = onEditWeight,
+            onClickLabel = stringResource(Res.string.settings_weight_edit),
+            dim = weight == null,
+        )
+        RowDivider()
+        ChoiceRow(
+            stringResource(Res.string.settings_effort),
             stringResource(Res.string.settings_effort_hint),
-            style = IntervalTheme.type.meta,
-            color = IntervalTheme.palette.textDim,
-            modifier = Modifier.padding(start = Spacing.space4),
+            Effort.entries,
+            state.body.effort,
+            label = { stringResource(it.labelRes) },
+            onSelect = onSetEffort,
+            // Four options inside the card: the chosen one's card says which, and "Hard" keeps its letters.
+            check = false,
         )
     }
 }

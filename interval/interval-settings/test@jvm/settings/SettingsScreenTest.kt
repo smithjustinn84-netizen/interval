@@ -6,13 +6,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -71,14 +74,17 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun `the health row shows only where there is a store and connects or disconnects it`() = runUiTest {
+    fun `the health group shows only where there is a store and connects or disconnects it`() = runUiTest {
         var state by mutableStateOf(defaults)
         setThemedContent { Screen(state) }
-        scrollToText("Export")
+        // Its place is between Calories and Appearance: nothing there without a store.
+        scrollToText("Appearance")
+        onNodeWithText("Health").assertDoesNotExist()
         onNodeWithText("Health Connect").assertDoesNotExist()
 
         state = defaults.copy(health = HealthStatus.Disconnected)
         scrollToText("Health Connect")
+        onNodeWithText("Health").assertExists()
         onNodeWithText("Health Connect").assertIsOff()
         onNodeWithText("Health Connect").performClick()
 
@@ -115,6 +121,8 @@ class SettingsScreenTest {
         scrollToText("Export")
         onNodeWithText("Export").performClick()
         scrollToText("About Interval")
+        // The page's foot, not a group: no heading over it.
+        onNodeWithText("About").assertDoesNotExist()
         onNodeWithText("About Interval").performClick()
         assertEquals(listOf<Any>("export", "about"), calls)
     }
@@ -160,9 +168,20 @@ class SettingsScreenTest {
     @Test
     fun `the theme picker shows and changes the theme`() = runUiTest {
         setThemedContent { Screen() }
+        scrollToText("Theme")
         onNodeWithText("Dark").assertIsSelected()
-        onNodeWithText("Light").performClick()
+        onNodeWithText("Light").performScrollTo().performClick()
         assertEquals(listOf<Any>(ThemeMode.Light), calls)
+    }
+
+    @Test
+    fun `each picker's options are named by what they choose`() = runUiTest {
+        setThemedContent { Screen() }
+        val group = SemanticsMatcher.keyIsDefined(SemanticsProperties.SelectableGroup)
+        scrollToText("Effort")
+        onNode(hasContentDescription("Effort") and group).assertExists()
+        scrollToText("Theme")
+        onNode(hasContentDescription("Theme") and group).assertExists()
     }
 
     @Test

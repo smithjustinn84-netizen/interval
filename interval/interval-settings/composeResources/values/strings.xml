@@ -19,6 +19,8 @@
     <string name="settings_keep_screen_on">Keep screen on</string>
     <string name="settings_keep_screen_on_hint">While a workout is running</string>
     <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_hint">System follows your device</string>
     <string name="theme_system">System</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
@@ -30,6 +32,7 @@
     <!-- A setting's value where it has none: no body weight, no goal, no reminder. -->
     <string name="settings_value_off">Off</string>
     <string name="settings_weight_value">%1$d %2$s</string>
+    <string name="settings_effort">Effort</string>
     <string name="settings_effort_hint">How hard you push in work intervals. Calories are an estimate from this, your weight and the activity on the Timer.</string>
     <string name="effort_easy">Easy</string>
     <string name="effort_steady">Steady</string>
@@ -95,11 +98,11 @@
         <item quantity="one">%1$d program</item>
         <item quantity="other">%1$d programs</item>
     </plurals>
-    <!-- The platform's health store's row, named by core's `healthStoreName`, shows only where there is one. -->
+    <!-- The platform's health store's group and its row, named by core's `healthStoreName`: only where there is one. -->
+    <string name="settings_health">Health</string>
     <string name="settings_health_off_hint">Save finished workouts and Lift sessions there too</string>
     <string name="settings_health_on_hint">Finished workouts and Lift sessions are saved there</string>
     <string name="settings_health_install_hint">Get it from Google Play to save workouts there</string>
-    <string name="settings_about">About</string>
     <string name="settings_about_app">About Interval</string>
     <string name="settings_about_app_hint">Version, credits and licenses</string>
 </resources>

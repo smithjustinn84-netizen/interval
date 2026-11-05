@@ -427,15 +427,22 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     fun savedPresetsNamed(vararg names: String) =
         assertEquals(names.toList(), app.repository.presets.customPresets.value.map { it.name })
 
-    fun toggleVoice() = tap("Voice")
+    fun toggleVoice() {
+        scrollTo("Voice")
+        tap("Voice")
+    }
 
     fun seeVoice(on: Boolean) {
         waitFor("voice cues ${if (on) "on" else "off"}") { app.repository.settings.cueSettings.value.voice == on }
+        scrollTo("Voice")
         if (on) ui.onNodeWithText("Voice").assertIsOn() else ui.onNodeWithText("Voice").assertIsOff()
     }
 
     /** Picks [name] ("System", "Light" or "Dark") in the theme picker. */
-    fun pickTheme(name: String) = tap(name)
+    fun pickTheme(name: String) {
+        scrollTo("Theme")
+        tap(name)
+    }
 
     // Health Connect
 
@@ -513,6 +520,7 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     fun seeTheme(name: String) {
         waitFor("the $name theme") { app.repository.settings.appSettings.value.theme.name == name }
+        scrollTo("Theme")
         ui.onNode(hasText(name) and hasClickAction()).assertIsSelected()
     }
 
