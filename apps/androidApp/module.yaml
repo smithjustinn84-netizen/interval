@@ -22,8 +22,8 @@ settings:
     minSdk: 26
     # Bump versionCode before every Play upload; versionName is the release in CHANGELOG.md.
     # tools/check_versions.py keeps both equal to the iOS project's.
-    versionCode: 3
-    versionName: "0.3.0"
+    versionCode: 4
+    versionName: "0.4.0"
     # Signs the release AAB (`./kotlin package -m androidApp`) with apps/androidApp/keystore.properties
     # (gitignored: storeFile, storePassword, keyAlias, keyPassword). CI writes it from secrets.
     signing: enabled

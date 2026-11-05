@@ -19,7 +19,7 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   below five seconds falls less steeply instead. Describe reads "ladder 20 to 60 by 10", "20/10 climbing 10 a round"
   and "60 down to 20 by 10, 10 off".
 
-## [0.3.0] — Unreleased
+## [0.3.0] — 2026-11-04
 
 ### Added
 - A home-screen widget on Android: this week's workouts, lifts and intervals alike, as the ring against the
@@ -128,7 +128,7 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 - A workout (Android) keeps running when the system closes the app's screen in the background, and is there to come
   back to from its notification; before, it ended with the screen.
 
-## [0.2.0] — Unreleased
+## [0.2.0] — 2026-11-04
 
 ### Added
 - A signed release bundle: `./kotlin package -m androidApp` signs with `androidApp/keystore.properties`,
