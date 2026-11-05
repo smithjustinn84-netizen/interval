@@ -42,6 +42,25 @@ class HealthWorkoutsTest {
     }
 
     @Test
+    fun `a rest between sets is a rest segment`() {
+        val spans = listOf(
+            CourseSpan(Phase.Work, 0, 20_000),
+            CourseSpan(Phase.SetRest, 20_000, 80_000),
+            CourseSpan(Phase.Work, 80_000, 100_000),
+        )
+        val workout = healthWorkout(Activity.Kettlebell, null, 0, 100_000, spans, calories = null)
+
+        assertEquals(
+            listOf(
+                HealthSegment(0, 20_000, HealthMove.KettlebellSwing),
+                HealthSegment(20_000, 80_000, HealthMove.Rest),
+                HealthSegment(80_000, 100_000, HealthMove.KettlebellSwing),
+            ),
+            workout.segments,
+        )
+    }
+
+    @Test
     fun `segments keep within the session and never overlap`() {
         val spans = listOf(
             CourseSpan(Phase.Work, 0, 5_000),

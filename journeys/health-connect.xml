@@ -9,7 +9,7 @@
   </description>
   <actions>
     <action>Tap the "Settings" button on the Timer tab</action>
-    <action>Scroll to "Your data" and verify that it shows a "Health Connect" switch, off, saying "Save finished workouts and Lift sessions there too"</action>
+    <action>Scroll to "Health" and verify that it shows a "Health Connect" switch, off, saying "Save finished workouts and Lift sessions there too"</action>
     <action>Tap the "Health Connect" switch</action>
     <action>Verify that Health Connect's permission sheet opens, asking to write exercise and total calories burned and to read weight and heart rate, with Interval's privacy policy linked</action>
     <action>Tap the privacy policy link and verify that Interval's "Privacy" page opens, with a "Health Connect" section; go back to the sheet</action>
