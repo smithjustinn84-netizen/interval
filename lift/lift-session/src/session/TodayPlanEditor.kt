@@ -7,7 +7,6 @@ import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.LiftSession
-import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.SessionPlan
 import dev.justinsmith.lift.domain.SetLog
@@ -17,6 +16,7 @@ import dev.justinsmith.lift.domain.planRows
 import dev.justinsmith.lift.domain.plannedLoad
 import dev.justinsmith.lift.domain.standardBells
 import dev.justinsmith.lift.domain.stepped
+import dev.justinsmith.lift.domain.withLoad
 
 /**
  * Today's plan, on a program day: a block's load, rounds or reps changed, skipped or planned again, another lift
@@ -66,7 +66,7 @@ class TodayPlanEditor(
             val next = next(session, before, draft) ?: return@changeSessionPlan null
             val bells = gearStore.bells.value.ifEmpty { standardBells }
             next.load.stepped(step, bells, gearStore.bar.value, offeredBands(gearStore.bands.value))
-                ?.let { load -> plan.change(next.block) { it.planning(load) } }
+                ?.let { load -> plan.change(next.block) { it.withLoad(load) } }
         }
     }
 
@@ -127,9 +127,3 @@ internal fun upNext(
 /** The last set of [exercise], with two bells or one ([double]), among [before] (oldest first). */
 internal fun lastTime(before: List<SetLog>, exercise: Exercise, double: Boolean): SetLog? =
     before.lastOrNull { it.exercise.key == exercise.key && it.double == double }
-
-/** [this] block planned at [load]: its band for band work, else its weight. */
-private fun Block.planning(load: Load): Block = when (load) {
-    is Load.Banded -> copy(band = load.band?.id)
-    is Load.Bell, is Load.Bar, is Load.Bodyweight, Load.Mat -> copy(kg = load.kg)
-}

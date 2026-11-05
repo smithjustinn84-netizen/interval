@@ -37,21 +37,10 @@ fun startingLoadKg(exercise: Exercise): Double =
     if (exercise.equipment == Equipment.Barbell) DEFAULT_BAR_KG else DEFAULT_BELL_KG
 
 /**
- * The load to suggest for [set]: the plan's, when it names one, else what was used last in [history]. A bell
- * falls back to [bellKg], a bar to the user's [bar]; weight added to bodyweight starts at none, and a band
- * and the mat take no weight.
- */
-fun suggestedLoad(set: PlannedSet, history: List<SetLog>, bar: Double?, bellKg: Double): Double =
-    when (set.exercise.equipment) {
-        Equipment.Kettlebell -> set.kg ?: suggestedBell(set.exercise, set.double, history, bellKg)
-        Equipment.Barbell -> set.kg ?: suggestedBar(set.exercise, history, bar)
-        Equipment.Bodyweight -> set.kg ?: suggestedBell(set.exercise, double = false, history, fallback = 0.0)
-        Equipment.Band, Equipment.Mat -> 0.0
-    }
-
-/**
- * The load for [set], of its lift's equipment: its weight as [suggestedLoad] has it (from [bellKg] at the
- * least), two bells as planned, and its band as [plannedBand] has it (from [band] at the least).
+ * The load to suggest for [set]: the plan's, when it names one, else of its lift's equipment as it was last done
+ * in [history] ([suggestedFor]). With nothing to go on a bell is [bellKg], a bar the user's [bar], weight added to
+ * bodyweight none and a band [band]. A band the plan names stands only while still [offered]; else the one last
+ * used for it.
  */
 @Suppress("detekt.LongParameterList") // What a suggestion goes by.
 fun plannedLoad(
@@ -61,20 +50,15 @@ fun plannedLoad(
     offered: List<Band>,
     bellKg: Double,
     band: Band,
-): Load = Load.of(
-    set.exercise.equipment,
-    suggestedLoad(set, history, bar, bellKg),
-    set.double,
-    plannedBand(set, history, offered, band),
-)
+): Load {
+    val unnamed = Load.of(set.exercise.equipment, bellKg, set.double, band)
+    return when (val named = set.load) {
+        null -> unnamed.suggestedFor(set.exercise, history, bar, offered)
 
-/**
- * The band for [set], when it is band work: the one the plan names while still [offered], else the one
- * last used for it, else [fallback]. Null for any other set.
- */
-fun plannedBand(set: PlannedSet, history: List<SetLog>, offered: List<Band>, fallback: Band): Band? =
-    if (set.exercise.equipment == Equipment.Band) {
-        offered.firstOrNull { it.id == set.band } ?: suggestedBand(set.exercise, history, offered, fallback)
-    } else {
-        null
+        is Load.Banded -> named.band?.let { planned -> offered.firstOrNull { it.id == planned.id } }
+            ?.let(Load::Banded)
+            ?: unnamed.suggestedFor(set.exercise, history, bar, offered)
+
+        is Load.Bell, is Load.Bar, is Load.Bodyweight, Load.Mat -> named
     }
+}

@@ -67,9 +67,8 @@ data class PlanChanges(
 private fun BlockChange.carry(block: Block): Block {
     if (block.exercise != from.exercise) return block
     var carried = block
-    if (block.double == from.double && (to.kg != from.kg || to.band != from.band)) {
-        carried = carried.copy(kg = to.kg, band = to.band)
-    }
+    // The load as the block before would take it: a change of bells alone is no change of load.
+    if (block.double == from.double && from.withLoad(to.load) != from) carried = carried.withLoad(to.load)
     return if (block.kind == from.kind && from.kind == to.kind) carryCounts(carried) else carried
 }
 

@@ -20,17 +20,22 @@ import dev.justinsmith.lift.domain.BlockKind
 import dev.justinsmith.lift.domain.CustomExercise
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.ExerciseFilters
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.Measure
 import dev.justinsmith.lift.domain.ProgramDraft
 import dev.justinsmith.lift.domain.RepRange
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.asKind
+import dev.justinsmith.lift.domain.band
 import dev.justinsmith.lift.domain.bandOf
 import dev.justinsmith.lift.domain.offeredBands
 import dev.justinsmith.lift.domain.offeredExercises
 import dev.justinsmith.lift.domain.ownedEquipment
 import dev.justinsmith.lift.domain.recentExercises
 import dev.justinsmith.lift.domain.standardBells
+import dev.justinsmith.lift.domain.weighedKg
+import dev.justinsmith.lift.domain.withDouble
+import dev.justinsmith.lift.domain.withLoad
 import dev.justinsmith.lift.domain.withRange
 import dev.justinsmith.lift.library.LibraryList
 import dev.justinsmith.lift.session.ExerciseCard
@@ -112,13 +117,13 @@ internal fun BlockLoad(
         LoadPicker(
             block.exercise,
             block.double,
-            kg = block.kg,
-            band = block.band?.let { bandOf(it, choices.bands) },
+            kg = block.load?.weighedKg,
+            band = block.load?.band?.let { bandOf(it.id, choices.bands) },
             bells = choices.bells,
             bands = choices.bands,
-            onKg = { kg -> onChange { it.copy(kg = kg) } },
-            onBand = { band -> onChange { it.copy(band = band?.id) } },
-            onDouble = { onChange { it.copy(double = !it.double) } },
+            onKg = { kg -> onChange { it.copy(load = Load.named(it.exercise.equipment, kg, it.double)) } },
+            onBand = { band -> onChange { it.withLoad(band?.let(Load::Banded)) } },
+            onDouble = { onChange { it.withDouble(!it.double) } },
             lastTime = true,
             bar = choices.bar,
         )

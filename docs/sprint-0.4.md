@@ -161,6 +161,12 @@ after ticket 4.
   insert; a query over live sessions, mapped per session with `distinctUntilChanged`.
 - **G1's remainder**: a program block's load is still `kg`/`band`; make it a `Load` as a set's is, with its
   export unchanged in form.
+- As built, in one commit: **D4**, the shortcut starts the session as the Lift tab and History already did, the
+  ViewModel starts none, and a page restored after the process died on its summary closes rather than opening an
+  empty session (`sessionGone`). **F2**, the query joins `session` and `SessionMapping` keeps each session's
+  mapping until its rows change. **G1**, `Block.load: Load?` with `Load.named`, `withLoad` and `withDouble`; a
+  block's band is read with the user's bands (`toProgram`, `decodePlan` and `decodeDraftDays` take them), so the
+  Programs list names a band the user added; `Equipment.takesKg`, `suggestedLoad` and `plannedBand` are gone.
 
 ## Explicitly not this sprint (0.5's candidates)
 

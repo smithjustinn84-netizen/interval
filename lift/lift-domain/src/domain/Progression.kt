@@ -34,18 +34,29 @@ private const val EMOM_MAX_MINUTES = 60
 fun nextStep(block: Block, done: List<SetLog?>, bells: List<Double>, bands: List<Band>): Block? {
     if (block.kind == BlockKind.Ladder) return null
     val sets = doneInFull(block, done) ?: return null
-    val equipment = block.exercise.equipment
-    val band = if (equipment == Equipment.Band) bandUsed(block, sets, bands) ?: return null else null
-    return stepUp(block, kg = block.kg ?: sets.minOf { it.load.kg }, band, bells, bands)
+    return stepUp(block, loadDone(block, sets, bands) ?: return null, bells, bands)
 }
 
-/** [block] a step up from [kg] or [band], as [nextStep] lays the steps out. */
-private fun stepUp(block: Block, kg: Double, band: Band?, bells: List<Double>, bands: List<Band>): Block? {
+/**
+ * The load [block] was done at in [sets], of its lift's equipment: the plan's, or with none named the lightest
+ * done. Band work was done at the plan's band if every set used it or a heavier one, else at the lightest used;
+ * null when a set of it kept no band.
+ */
+private fun loadDone(block: Block, sets: List<SetLog>, bands: List<Band>): Load? {
+    val kg = block.load?.kg ?: sets.minOf { it.load.kg }
+    return when (val at = Load.of(block.exercise.equipment, kg, block.double)) {
+        is Load.Banded -> bandUsed(block, sets, bands)?.let(Load::Banded)
+        is Load.Bell, is Load.Bar, is Load.Bodyweight, Load.Mat -> at
+    }
+}
+
+/** [block] a step up from [at], the load it was done at, as [nextStep] lays the steps out. */
+private fun stepUp(block: Block, at: Load, bells: List<Double>, bands: List<Band>): Block? {
     block.ranged?.let { range ->
         return if (block.reps < range.top) {
             block.copy(reps = block.reps + 1)
         } else {
-            heavier(block, kg, band, bells, bands)?.copy(reps = range.bottom)
+            heavier(block, at, bells, bands)?.copy(reps = range.bottom)
         }
     }
     return when {
@@ -55,28 +66,29 @@ private fun stepUp(block: Block, kg: Double, band: Band?, bells: List<Double>, b
         block.kind == BlockKind.Emom ->
             block.copy(rounds = (block.rounds + 1).coerceAtMost(EMOM_MAX_MINUTES)).takeIf { it != block }
 
-        else -> heavier(block, kg, band, bells, bands) ?: block.copy(reps = block.reps + 1)
+        else -> heavier(block, at, bells, bands) ?: block.copy(reps = block.reps + 1)
     }
 }
 
 /**
- * [block] at the next load up from [kg] or [band]: the next of [bells] heavier, [BAR_KG_STEP] more on the bar,
+ * [block] at the next load up from [at]: the next of [bells] heavier, [BAR_KG_STEP] more on the bar,
  * [ADDED_KG_STEP] more added to bodyweight, the next of [bands] heavier. Null with none heavier, or none to add.
  */
-private fun heavier(block: Block, kg: Double, band: Band?, bells: List<Double>, bands: List<Band>): Block? =
-    when (block.exercise.equipment) {
-        Equipment.Kettlebell -> bells.filter { it > kg }.minOrNull()?.let { block.copy(kg = it) }
+private fun heavier(block: Block, at: Load, bells: List<Double>, bands: List<Band>): Block? {
+    val next = when (at) {
+        is Load.Bell -> bells.filter { it > at.kg }.minOrNull()?.let { at.copy(kg = it) }
 
-        Equipment.Barbell -> (kg + BAR_KG_STEP).coerceAtMost(MAX_BAR_KG).takeIf { it > kg }
-            ?.let { block.copy(kg = it) }
+        is Load.Bar -> (at.kg + BAR_KG_STEP).coerceAtMost(MAX_BAR_KG).takeIf { it > at.kg }?.let(Load::Bar)
 
-        Equipment.Bodyweight -> block.copy(kg = kg + ADDED_KG_STEP).takeIf { kg > 0 }
+        is Load.Bodyweight -> Load.Bodyweight(at.kg + ADDED_KG_STEP).takeIf { at.kg > 0 }
 
-        Equipment.Band -> band?.let { b -> bands.firstOrNull { it.position > b.position && !it.archived } }
-            ?.let { block.copy(band = it.id) }
+        is Load.Banded -> at.band?.let { b -> bands.firstOrNull { it.position > b.position && !it.archived } }
+            ?.let(Load::Banded)
 
-        Equipment.Mat -> null
+        Load.Mat -> null
     }
+    return next?.let { block.copy(load = it) }
+}
 
 /** The sets [done] for [block], when every one was done and met its plan; else null. */
 private fun doneInFull(block: Block, done: List<SetLog?>): List<SetLog>? =
@@ -86,15 +98,16 @@ private fun doneInFull(block: Block, done: List<SetLog?>): List<SetLog>? =
 private fun metPlan(block: Block, sets: List<SetLog>): Boolean {
     val held = block.exercise.measure == Measure.Time
     if (sets.any { (if (held) it.seconds ?: 0 else it.reps) < block.reps }) return false
-    val kg = block.kg ?: return true
-    return !block.exercise.equipment.takesKg || sets.none { it.load.kg < kg }
+    val planned = block.load ?: return true
+    // A band weighs nothing, so none is under it here: whether one was lighter is bandUsed's to say.
+    return sets.none { it.load.kg < planned.kg }
 }
 
 /** The band [block] was done with: the plan's, if every set used it or a heavier one, else the lightest used. */
 private fun bandUsed(block: Block, sets: List<SetLog>, bands: List<Band>): Band? {
     val used = sets.map { set -> set.load.band?.let { b -> bands.firstOrNull { it.id == b.id } ?: b } ?: return null }
     val lightest = used.minBy { it.position }
-    val planned = block.band?.let { id -> bands.firstOrNull { it.id == id } } ?: return lightest
+    val planned = block.load?.band?.let { named -> bands.firstOrNull { it.id == named.id } } ?: return lightest
     return planned.takeIf { lightest.position >= planned.position }
 }
 
@@ -117,14 +130,8 @@ fun toppedOut(day: ProgramDay, logged: List<SetLog>, bells: List<Double>, bands:
         val range = block.ranged?.takeIf { block.reps >= it.top } ?: return@mapNotNull null
         val sets = doneInFull(block, done) ?: return@mapNotNull null
         // Done with a lighter band than planned is short of the plan, not at the top of it.
-        val band = if (block.exercise.equipment ==
-            Equipment.Band
-        ) {
-            bandUsed(block, sets, bands) ?: return@mapNotNull null
-        } else {
-            null
-        }
-        block.takeIf { heavier(block, block.kg ?: sets.minOf { it.load.kg }, band, bells, bands) == null }
+        val at = loadDone(block, sets, bands) ?: return@mapNotNull null
+        block.takeIf { heavier(block, at, bells, bands) == null }
     }
 
 /** Block [index] of a day's plan, and the set logged for each of its planned sets, null for one not done. */

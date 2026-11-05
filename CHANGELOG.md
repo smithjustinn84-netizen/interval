@@ -31,6 +31,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   small name over its value, with no wash, border or stripe, so the three rows keep the colour and the height.
 
 ### Fixed
+- A Lift session that Android brings back after the app was closed on its summary returns to the Lift tab,
+  rather than opening a new, empty session.
+- A program's block planned with a band you added shows that band's name on the Programs list and the Lift tab,
+  not "Band".
 - The Timer's Work, Rest and Rounds values were cut off on a phone once the chips under them took three rows. The
   rows now share the height only where each has room for its value, and scroll where they don't.
 

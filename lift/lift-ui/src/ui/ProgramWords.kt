@@ -5,13 +5,12 @@ import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.BlockKind
-import dev.justinsmith.lift.domain.Equipment
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.Measure
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
-import dev.justinsmith.lift.domain.bandOf
 import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.ui.resources.Res
 import dev.justinsmith.lift.ui.resources.block_emom
@@ -219,20 +218,22 @@ fun blockLine(block: Block, bands: List<Band> = emptyList(), withLoad: Boolean =
  * none named.
  */
 @Composable
-fun blockLoad(block: Block, bands: List<Band> = emptyList()): String? = when (block.exercise.equipment) {
-    Equipment.Kettlebell -> block.kg?.let {
-        stringResource(if (block.double) Res.string.load_double else Res.string.load_kg, formatKg(it))
+fun blockLoad(block: Block, bands: List<Band> = emptyList()): String? = when (val load = block.load) {
+    null, Load.Mat -> null
+
+    is Load.Bell ->
+        stringResource(if (load.double) Res.string.load_double else Res.string.load_kg, formatKg(load.kg))
+
+    is Load.Bar -> stringResource(Res.string.load_kg, formatKg(load.kg))
+
+    is Load.Bodyweight -> if (load.kg > 0) {
+        stringResource(Res.string.load_added, formatKg(load.kg))
+    } else {
+        stringResource(Res.string.log_added_none)
     }
 
-    Equipment.Barbell -> block.kg?.let { stringResource(Res.string.load_kg, formatKg(it)) }
-
-    Equipment.Bodyweight -> block.kg?.let {
-        if (it > 0) stringResource(Res.string.load_added, formatKg(it)) else stringResource(Res.string.log_added_none)
-    }
-
-    Equipment.Band -> block.band?.let { bandName(bandOf(it, bands)) }
-
-    Equipment.Mat -> null
+    // By the user's own name for it now, where the caller has their bands.
+    is Load.Banded -> load.band?.let { named -> bandName(bands.firstOrNull { it.id == named.id } ?: named) }
 }
 
 @Composable

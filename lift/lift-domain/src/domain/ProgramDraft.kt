@@ -75,7 +75,6 @@ fun Block.asKind(kind: BlockKind): Block = copy(
  * count afresh.
  */
 fun Block.withExercise(exercise: Exercise): Block {
-    val sameLoad = exercise.equipment == this.exercise.equipment
     val sameMeasure = exercise.measure == this.exercise.measure
     val held = exercise.measure == Measure.Time
     return copy(
@@ -87,10 +86,9 @@ fun Block.withExercise(exercise: Exercise): Block {
             held -> ProgramDraft.NEW_SECONDS
             else -> ProgramDraft.NEW_REPS
         },
-        kg = kg.takeIf { sameLoad },
-        band = band.takeIf { sameLoad },
+        load = null,
         range = range.takeIf { !held },
-    )
+    ).withLoad(load)
 }
 
 /** This block building within a range from its reps, up to [maxReps]; or, [on] false, at fixed reps again. */

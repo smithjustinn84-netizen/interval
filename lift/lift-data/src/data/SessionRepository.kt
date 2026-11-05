@@ -6,6 +6,8 @@ import dev.justinsmith.interval.platform.IdGenerator
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.storage.SerialWriter
 import dev.justinsmith.interval.storage.orEmptyOnError
+import dev.justinsmith.lift.domain.Band
+import dev.justinsmith.lift.domain.CustomExercise
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.ProgramDay
@@ -57,22 +59,16 @@ class SessionRepository(
     init {
         scope.launch {
             // The user's exercises and bands come with the sets, which name them.
-            combine(sessionDao.observeSessions(), sessionDao.observeSets(), exercises.made, gear.owned) {
-                    sessions,
-                    sets,
-                    made,
-                    bands,
-                ->
-                val bySession = sets.groupBy({ it.sessionUid }, { it.toDomain(made, bands) })
-                sessions.map { it.toDomain(bySession[it.uid].orEmpty(), made, bands) }
-            }.orEmptyOnError("sessions", log).collect { all ->
-                _sessions.value = all.filter { it.finishedAtEpochMillis != null }
-                _active.value = all.firstOrNull { it.finishedAtEpochMillis == null }
-                if (!_ready.value) {
-                    programs.ready.first { it }
-                    _ready.value = true
+            val mapping = SessionMapping()
+            combine(sessionDao.observeSessions(), sessionDao.observeSets(), exercises.made, gear.owned, mapping::map)
+                .orEmptyOnError("sessions", log).collect { all ->
+                    _sessions.value = all.filter { it.finishedAtEpochMillis != null }
+                    _active.value = all.firstOrNull { it.finishedAtEpochMillis == null }
+                    if (!_ready.value) {
+                        programs.ready.first { it }
+                        _ready.value = true
+                    }
                 }
-            }
         }
     }
 
@@ -135,5 +131,38 @@ class SessionRepository(
     override fun restoreSession(uid: String) {
         val now = clock.nowMillis()
         writer.persist { sessionDao.unmarkDeleted(uid, now) }
+    }
+}
+
+/**
+ * The sessions as the domain reads them, each mapped again only when its row, its sets or what they name (the
+ * user's exercises and bands) changed. A set logged maps its own session, not the whole history; a session that
+ * didn't change is the one it was, so whatever compares the history after finds it the same at once.
+ */
+internal class SessionMapping {
+    private class Mapped(val row: SessionEntity, val sets: List<SetEntity>, val session: LiftSession)
+
+    private var made: List<CustomExercise> = emptyList()
+    private var bands: List<Band> = emptyList()
+    private var mapped: Map<String, Mapped> = emptyMap()
+
+    /** [sessions] with their [sets], which name [made] and [bands], in [sessions]' order. */
+    fun map(
+        sessions: List<SessionEntity>,
+        sets: List<SetEntity>,
+        made: List<CustomExercise>,
+        bands: List<Band>,
+    ): List<LiftSession> {
+        val kept = if (made == this.made && bands == this.bands) mapped else emptyMap()
+        val bySession = sets.groupBy { it.sessionUid }
+        val next = sessions.associate { row ->
+            val rows = bySession[row.uid].orEmpty()
+            val same = kept[row.uid]?.takeIf { it.row == row && it.sets == rows }
+            row.uid to (same ?: Mapped(row, rows, row.toDomain(rows.map { it.toDomain(made, bands) }, made, bands)))
+        }
+        this.made = made
+        this.bands = bands
+        mapped = next
+        return sessions.map { next.getValue(it.uid).session }
     }
 }

@@ -236,7 +236,7 @@ class ProgramsTest {
         listOf(ProgramId.OlympicFoundations, ProgramId.BarbellFiveByFive).forEach { id ->
             program(id).days.flatten().forEach {
                 assertTrue(it.exercise in barbellLifts, it.exercise.key)
-                assertNull(it.kg)
+                assertNull(it.load)
             }
         }
         assertEquals(36, program(ProgramId.BarbellFiveByFive).totalDays)

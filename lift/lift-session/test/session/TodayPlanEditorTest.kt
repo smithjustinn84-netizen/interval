@@ -56,7 +56,7 @@ class TodayPlanEditorTest {
         val twice = assertNotNull(editor.next(repository.sessions.active.value, emptyList(), SetDraft())).load.kg
 
         assertTrue(start < once && once < twice)
-        assertEquals(twice, blocks.first().block.kg)
+        assertEquals(twice, blocks.first().block.load?.kg)
     }
 
     @Test

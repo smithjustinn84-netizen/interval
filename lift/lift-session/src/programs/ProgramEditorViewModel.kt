@@ -10,6 +10,7 @@ import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.data.decodeDraftDays
 import dev.justinsmith.lift.data.encodeDays
+import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.CustomExercise
 import dev.justinsmith.lift.domain.ExerciseFilters
 import dev.justinsmith.lift.domain.ProgramDraft
@@ -78,7 +79,7 @@ class ProgramEditorViewModel(
     }
     private val _state = MutableStateFlow(
         ProgramEditorUiState(
-            draft = restoreDraft(savedState, exerciseStore.customExercises.value, initialDraft),
+            draft = restoreDraft(savedState, exerciseStore.customExercises.value, gearStore.bands.value, initialDraft),
             initialDraft = initialDraft,
             saved = existing != null,
             carriesOnFrom = programStore.programDay.value?.takeIf { it.program.key == copyOf }?.number,
@@ -130,10 +131,11 @@ private const val KEY_DRAFT_DAYS = "draft_days"
 private fun restoreDraft(
     savedState: SavedStateHandle,
     made: List<CustomExercise>,
+    bands: List<Band>,
     fallback: ProgramDraft,
 ): ProgramDraft {
     val encodedDays = savedState.get<String>(KEY_DRAFT_DAYS)
-    val days = encodedDays?.let { decodeDraftDays(it, made) } ?: fallback.days
+    val days = encodedDays?.let { decodeDraftDays(it, made, bands) } ?: fallback.days
     return ProgramDraft(
         name = savedState[KEY_DRAFT_NAME] ?: fallback.name,
         days = days,

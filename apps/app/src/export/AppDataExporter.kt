@@ -23,6 +23,7 @@ import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.band
+import dev.justinsmith.lift.domain.weighedKg
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -139,7 +140,18 @@ private fun Program.export() =
     ProgramExport(key.stored, name, daysPerWeek, weeks, days.map { day -> day.map { it.export() } })
 
 private fun Block.export() =
-    BlockExport(exercise.key, rounds, reps, kind.name, rungs, double, kg, band, range?.bottom, range?.top)
+    BlockExport(
+        exercise.key,
+        rounds,
+        reps,
+        kind.name,
+        rungs,
+        double,
+        load?.weighedKg,
+        load?.band?.id,
+        range?.bottom,
+        range?.top,
+    )
 
 private fun Followed.export() = FollowedExport(program.key.stored, startedAtEpochMillis, daysBefore)
 

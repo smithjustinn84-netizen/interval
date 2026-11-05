@@ -89,6 +89,22 @@ class LiftRoomTest {
     }
 
     @Test
+    fun `the sets read are those of sessions not deleted`() = runBlocking {
+        val sessions = database.sessionDao()
+        sessions.insert(SessionEntity("s1", 0, 1_000, "Swings", updatedAtEpochMillis = 0))
+        sessions.insert(SessionEntity("s2", 2_000, 3_000, "More swings", updatedAtEpochMillis = 0))
+        sessions.insert(swing("s1"))
+        sessions.insert(swing("s2"))
+        sessions.markDeleted("s1", now = 5_000)
+
+        assertEquals(listOf("s2"), sessions.observeSets().first().map { it.sessionUid })
+        // The deleted session's set is still stored, for the day it is brought back.
+        assertEquals(listOf("s1", "s2"), sessions.allSets().map { it.sessionUid })
+        sessions.unmarkDeleted("s1", now = 6_000)
+        assertEquals(listOf("s1", "s2"), sessions.observeSets().first().map { it.sessionUid })
+    }
+
+    @Test
     fun `discarding the session in progress takes its sets with it`() = runBlocking {
         val sessions = database.sessionDao()
         sessions.insert(SessionEntity("s1", 0, null, "", updatedAtEpochMillis = 0))

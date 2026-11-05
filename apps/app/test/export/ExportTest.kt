@@ -9,7 +9,13 @@ import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.lift.domain.Band
+import dev.justinsmith.lift.domain.BandLevel
+import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.Load
+import dev.justinsmith.lift.domain.ProgramDraft
+import dev.justinsmith.lift.domain.withLoad
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import dev.justinsmith.lift.fakes.logSet
 import kotlinx.coroutines.test.runTest
@@ -83,6 +89,32 @@ class ExportTest {
         bells.sets.logSet(BuiltInExercise.TwoHandSwing, bellKg = 24.0, reps = 5, side = null)
 
         assertEquals(emptyList(), exporter.bundle(now).lift.sessions)
+    }
+
+    @Test
+    fun `a program block's load is written as its weight or its band's id`() {
+        bells.programs.saveProgram(
+            null,
+            ProgramDraft(
+                name = "Mine",
+                days = listOf(
+                    listOf(
+                        Block(BuiltInExercise.Clean, rounds = 5, reps = 5, double = true).withLoad(Load.Bell(16.0)),
+                        Block(BuiltInExercise.BandPullApart, rounds = 3, reps = 15)
+                            .withLoad(Load.Banded(Band.of(BandLevel.Heavy))),
+                        Block(BuiltInExercise.PushUp, rounds = 3, reps = 10),
+                    ),
+                ),
+                daysPerWeek = 3,
+                weeks = 4,
+            ),
+        )
+
+        val blocks = exporter.bundle(now).lift.programs.single().days.single()
+
+        assertEquals(listOf(16.0, null, null), blocks.map { it.kg })
+        assertEquals(listOf(null, "Heavy", null), blocks.map { it.band })
+        assertEquals(listOf(true, false, false), blocks.map { it.double })
     }
 
     @Test

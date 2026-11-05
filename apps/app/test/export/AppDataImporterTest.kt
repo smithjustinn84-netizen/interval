@@ -21,9 +21,14 @@ import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.domain.BandColour
+import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.ExerciseDraft
+import dev.justinsmith.lift.domain.Load
+import dev.justinsmith.lift.domain.ProgramDraft
+import dev.justinsmith.lift.domain.withLoad
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import dev.justinsmith.lift.fakes.logSet
 import kotlinx.coroutines.Dispatchers
@@ -108,6 +113,25 @@ class AppDataImporterTest {
             lift.sessions.sessions.value.single().uid,
             HeartRate(averageBpm = 118, peakBpm = 149),
         )
+        // A program whose blocks name each kind of load: a pair of bells, a band of the user's own, and none.
+        val loop = lift.gear.addBand("Door loop", BandColour.Purple)
+        lift.programs.saveProgram(
+            null,
+            ProgramDraft(
+                name = "Mine",
+                days = listOf(
+                    listOf(
+                        Block(BuiltInExercise.Clean, rounds = 5, reps = 5, double = true)
+                            .withLoad(Load.Bell(16.0)),
+                        Block(BuiltInExercise.BandPullApart, rounds = 3, reps = 15)
+                            .withLoad(Load.Banded(lift.gear.bands.value.single { it.id == loop })),
+                        Block(BuiltInExercise.PushUp, rounds = 3, reps = 10),
+                    ),
+                ),
+                daysPerWeek = 3,
+                weeks = 4,
+            ),
+        )
     }
 
     /** The phone's export, as Settings' Export writes it. */
@@ -119,7 +143,10 @@ class AppDataImporterTest {
         val target = Phone(now + 1)
 
         val review = assertIs<ImportReview.Ready>(target.importer.review(source.file()))
-        assertEquals(ImportCounts(workouts = 1, presets = 1, plans = 2, sessions = 1, exercises = 1), review.new)
+        assertEquals(
+            ImportCounts(workouts = 1, presets = 1, plans = 2, sessions = 1, exercises = 1, programs = 1),
+            review.new,
+        )
         assertEquals(0, review.alreadyHere)
         assertEquals(review.new, target.importer.import(source.file(), withSettings = false))
 
@@ -135,7 +162,7 @@ class AppDataImporterTest {
 
         val review = assertIs<ImportReview.Ready>(phone.importer.review(phone.file()))
         assertEquals(ImportCounts(), review.new)
-        assertEquals(6, review.alreadyHere)
+        assertEquals(7, review.alreadyHere)
         phone.importer.import(phone.file(), withSettings = false)
         assertEquals(before, phone.contents())
     }

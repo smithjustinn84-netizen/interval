@@ -328,8 +328,12 @@ action's one-off read, which is what they should be.
 
 ### D4 · Low · I/O in lifecycle callbacks
 
-**Partly resolved** in change `unlqzyyl` ("Lift: the session's draft, plan and finish, each a part of its own"): the summary's words go to Health once they settle, through
-`SessionHealth`, a single that outlives the summary, not in `onCleared`. The session is still started in `init`.
+**Resolved.** In change `unlqzyyl` ("Lift: the session's draft, plan and finish, each a part of its own") the summary's words go to Health once they settle, through
+`SessionHealth`, a single that outlives the summary, not in `onCleared`. In change `lotxvupu` ("Lift: the session starts before its page, sets read per live session, a block's load a Load") the
+session is started by whatever opens its page (`SessionStore.startSession`: the Lift tab's button, History, the
+launcher shortcut in `App.kt`), and `SessionViewModel` only reads. A page a killed process left on its summary
+comes back with no session behind it and closes (`sessionGone`, by a mark in its saved state) rather than starting
+an empty one.
 `SessionViewModel` starts a session in `init` and writes to Health in `onCleared`. A process killed before
 `onCleared` loses the note.
 
@@ -442,7 +446,10 @@ state is what cost, and `WhileSubscribed` would show Loading again on each retur
 `flowOn` an injected computation dispatcher as the sessions change, the first on the caller; the records and recent
 lifts are worked out again as a set is logged or the history changes, never on a stepper tap. The rest of the state
 stays on the main thread, so a tap shows in the frame after it (the whole state `flowOn` Default left Lift's
-acceptance specs a frame behind). `observeSets()` still re-maps the whole history on each insert.
+acceptance specs a frame behind). **Resolved for the store** in change `lotxvupu` ("Lift: the session starts before its page, sets read per live session, a block's load a Load"): `observeSets()` reads the
+sets of sessions not deleted (a join on `session`), and `SessionMapping` (`SessionRepository.kt`) maps a session
+again only when its row, its sets or the exercises and bands they name changed, so a set logged maps the session
+in progress and every finished one is the instance it was.
 - `observeSets()` streams every set, including those of deleted sessions, and every insert re-maps the whole
   history.
 - `SessionViewModel`'s `untimed` combine runs on Main with no `flowOn`, recomputing records and recent exercises
@@ -480,8 +487,11 @@ mapper, the import, the saved EMOM and a plan's next set go through it; the stor
 are as they were. The EMOM, its saved timer and Up next carry a `Load`; `SetStore.logSet` takes one. `SetDraft`
 still keeps a value per kind, so a bell comes back after a band (`load` and `keeping` map between them), as does
 the saved hold. What still branches on `Equipment` is the exercise's kind: the library's filter, the picker and
-editor, its name, Health's move, and a program block's `kg`/`band` (`Progression`, `suggestedLoad`), which a
-planned `Load` could take next.
+editor, its name and Health's move. A program block's load followed in change `lotxvupu` ("Lift: the session starts before its page, sets read per live session, a block's load a Load"): `Block.load` and `PlannedSet.load` are a `Load?`, null for none named, in
+place of `kg` and `band`; `Load.named` is the one place a block's stored parts become one, `Block.withLoad` and
+`withDouble` keep it of the lift's equipment and bells, the step up (`Progression`) and the suggestion
+(`plannedLoad`) are a `when` over it, and a block's band is the user's `Band`, read with their bands as a set's
+is. `StoredBlock` and the export's `BlockExport` keep `kg` and `band` as they were.
 
 - There are about 70 `Equipment.*` branches across 11 files (`SetWords`, `SessionViewModel` ×17, `LoadPicker`,
   `LogSheet`, `Progression`, `Suggestions`, `LoadSteps`, `HealthWorkouts`, the repository).

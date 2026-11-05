@@ -31,6 +31,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -117,6 +118,12 @@ import org.koin.compose.viewmodel.koinViewModel
 fun SessionRoute(onExit: () -> Unit) {
     val sharer = koinInject<Sharer>()
     val viewModel = koinViewModel<SessionViewModel>()
+    // A page a killed process left on a session since finished or dropped has nothing to go on with: it closes.
+    if (viewModel.sessionGone) {
+        val exit by rememberUpdatedState(onExit)
+        LaunchedEffect(Unit) { exit() }
+        return
+    }
     val timers = koinInject<SessionTimers>()
     val sets = koinInject<SetStore>()
     val filters = koinInject<ExerciseFilterStore>()

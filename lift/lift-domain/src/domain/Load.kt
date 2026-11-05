@@ -56,6 +56,18 @@ sealed interface Load {
                 Equipment.Band -> Banded(band)
                 Equipment.Mat -> Mat
             }
+
+        /**
+         * The load a plan names for [equipment], from the parts it is stored as: [kg] for what is weighed (a
+         * bell, or a pair when [double]; the bar's total; the weight added), [band] for band work. Null when it
+         * names none, leaving it to what was used last time, and for the mat, which takes none.
+         */
+        fun named(equipment: Equipment, kg: Double?, double: Boolean = false, band: Band? = null): Load? =
+            when (equipment) {
+                Equipment.Kettlebell, Equipment.Barbell, Equipment.Bodyweight -> kg?.let { of(equipment, it, double) }
+                Equipment.Band -> band?.let(::Banded)
+                Equipment.Mat -> null
+            }
     }
 }
 
@@ -70,6 +82,12 @@ val Load.double: Boolean get() = this is Load.Bell && double
 
 /** The band it is done with, if a band it is. */
 val Load.band: Band? get() = (this as? Load.Banded)?.band
+
+/** Its weight where it is weighed, as a plan stores it: none for a band or the mat. */
+val Load.weighedKg: Double? get() = when (this) {
+    is Load.Bell, is Load.Bar, is Load.Bodyweight -> kg
+    is Load.Banded, Load.Mat -> null
+}
 
 /**
  * This load one [step] (−1 lighter, +1 heavier) among what the user can load: the next of their [bells], the

@@ -76,6 +76,11 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         ui.tab("Lift").assertIsSelected()
     }
 
+    /** A Lift session is stored as in progress: started by whatever opened its page, not by the page. */
+    fun aLiftSessionIsInProgress() {
+        waitFor("a session in progress") { app.lift.sessions.sessions.value.any { it.finishedAtEpochMillis == null } }
+    }
+
     /** Leaves a Lift session from the dialog Back asks. */
     fun leaveSession() {
         see("Leave the session?")

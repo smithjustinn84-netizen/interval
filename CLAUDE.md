@@ -130,7 +130,8 @@ interval/            the interval timer
 
 lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
   lift-domain        Lift's pure domain (`dev.justinsmith.lift.domain`): exercises, programs, sets and
-                     sessions, a set's `Load` (sealed: bell, bar, bodyweight, band, mat), records,
+                     sessions, a set's `Load` (sealed: bell, bar, bodyweight, band, mat) and a block's (null
+                     for none named; `Load.named`, `Block.withLoad`), records,
                      `EmomClock`/`HoldClock`/`RestClock`, suggestions. No dependencies
   lift-api           the ports between the sides, package `dev.justinsmith.lift.data`: `IntervalActivity` (what
                      Lift reads of the interval side; `app` binds it), `LiftActivity` (what the interval side reads
@@ -288,8 +289,10 @@ toolchain (`$compose.*`).
   it shows its `status` and its Pause and End act on it. iOS schedules a local notification per phase change ahead
   (`WorkoutEngine.upcomingChanges`, pure, through `ActiveWorkout.upcomingChanges`) as the app leaves the screen,
   and drops them on return; its actual says why not background audio. Desktop keeps nothing.
-  Lift's timers go the same way. The rest, an EMOM and a hold are `SessionTimers` (`lift-session`, a Koin single),
-  not `SessionViewModel`, which starts them and shows their `state`. They time by `realElapsedTime` (core's
+  Lift's timers go the same way. A session is started by whatever pushes `Lifting` (`SessionStore.startSession`:
+  the Lift tab, History, the shortcut in `App.kt`), never by `SessionViewModel`, which only reads; its page
+  restored with no session behind it closes (`sessionGone`). The rest, an EMOM and a hold are `SessionTimers`
+  (`lift-session`, a Koin single), not `SessionViewModel`, which starts them and shows their `state`. They time by `realElapsedTime` (core's
   `corePlatformModule` binds it for both sides), tick only while one runs, beep and log as they go, and end with
   the session (finish, discard, Leave), when the `Lifting` key leaves the back stack (`App.kt`, through the
   `ActiveTimers` port) or when the task is swiped away. Whichever runs is kept off screen through `SessionKeepAlive`

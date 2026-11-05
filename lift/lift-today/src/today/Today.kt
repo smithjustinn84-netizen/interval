@@ -125,11 +125,14 @@ fun TodayRoute(
     TodayScreen(
         state,
         onStartSession = { program ->
+            // The page reads the session and starts none, so one is always asked for here: the store starts
+            // nothing with one in progress, which is how Resume goes on, and so it is right even where this
+            // state hasn't caught up with a session just finished or dropped.
             when {
-                !state.inProgress -> viewModel.start(program)
-
                 // Start day N while a session is open: the day takes the open session's place.
-                program != null -> viewModel.startOver(program)
+                state.inProgress && program != null -> viewModel.startOver(program)
+
+                else -> viewModel.start(program)
             }
             onStartSession()
         },

@@ -400,7 +400,7 @@ The cut line is after ticket 5.
 - **Splitting `LiftRepository` into four** (C1). After ticket 7 its ports exist, so the split becomes an
   implementation detail behind them.
 - **A sealed `Load`** in place of the `Equipment` branches (G1). An L of its own, best done before a new kind of
-  equipment is. Done since, in `lqqlkvsl`; a program block's load is still `kg`/`band`.
+  equipment is. Done since, in `lqqlkvsl`, and a program block's load in sprint 0.4's ticket 6.
 - **A foreign key from `lift_set` to `session`, `ON DELETE CASCADE`** (E2). It is a table rebuild with a manual
   migration and its test. Ticket 0's transactions stop new orphans meanwhile.
 - **`lift-api` and `interval-platform-api` modules; colours passed to the service as ARGB** (G2, G3). A rule

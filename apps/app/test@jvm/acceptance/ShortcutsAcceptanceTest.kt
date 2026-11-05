@@ -20,6 +20,7 @@ class ShortcutsAcceptanceTest {
     fun `Lift session starts a session and Back leaves it to the Lift tab`() = acceptanceScenario {
         launchFrom(Shortcut.LiftSession)
         see("Log set")
+        aLiftSessionIsInProgress()
 
         pressSystemBack()
         leaveSession()

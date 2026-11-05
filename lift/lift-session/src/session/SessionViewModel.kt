@@ -35,11 +35,12 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
- * The session in progress: starts one when opened if none is, logs sets (from the plan, the sheet or an EMOM),
- * and finishes or discards it. Its parts are its own: the sheet's [draft], today's [plan] and the [summary]; its
- * rest, EMOM and hold are the process's [timers], which it starts and stops and shows. Its state follows what is
- * stored as it changes, the sets before this session flattened on [computation]; [tickMillis] is how often the
- * session's own clocks (its time, the time since the last set) move.
+ * The session in progress, which whatever opens its page has started ([SessionStore.startSession]): it logs sets
+ * (from the plan, the sheet or an EMOM), and finishes or discards it, and starts none itself. Its parts are its
+ * own: the sheet's [draft], today's [plan] and the [summary]; its rest, EMOM and hold are the process's [timers],
+ * which it starts and stops and shows. Its state follows what is stored as it changes, the sets before this
+ * session flattened on [computation]; [tickMillis] is how often the session's own clocks (its time, the time
+ * since the last set) move.
  */
 class SessionViewModel(
     private val sessionStore: SessionStore,
@@ -64,6 +65,13 @@ class SessionViewModel(
     private val before: StateFlow<Before> = sessionStore.sessions.map(Before::of).flowOn(computation)
         .stateIn(viewModelScope, SharingStarted.Eagerly, Before.of(sessionStore.sessions.value))
 
+    /**
+     * Whether the page came back from a killed process with no session behind it: the one it showed was finished
+     * or dropped before the process went, so there is nothing here to go on with, and the page closes. Never
+     * true of a page just opened, whose session may still be on its way to the store.
+     */
+    val sessionGone: Boolean = savedState.openedBefore() && sessionStore.active.value == null
+
     /** The Log sheet's draft, and a set logged opened on it to change. */
     val draft = SetDraftEditor {
         DraftContext(
@@ -75,7 +83,6 @@ class SessionViewModel(
             made = exerciseStore.customExercises.value,
         )
     }.also {
-        if (sessionStore.active.value == null) sessionStore.startSession()
         // A session resumed goes on where it left off: the sheet as it was, if a killed process left it half set,
         // else its last set, the other side for a one-sided lift.
         it.start(
@@ -136,6 +143,7 @@ class SessionViewModel(
         get() = plan.next(sessionStore.active.value, before.value.oldestFirst, draft.draft.value)
 
     init {
+        savedState.markOpened()
         // The timer a killed process left running goes on, read once: the session re-emits at each write of it.
         // Here, not as the timers are made, as only a screen on show may start Android's foreground service:
         // the process can come up behind a receiver or a service, where starting it would throw.

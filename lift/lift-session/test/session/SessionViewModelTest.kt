@@ -105,7 +105,14 @@ class SessionViewModelTest {
     /** Where the health store's second write waits for the summary's words: the process's, not the screen's. */
     private val healthScope = TestScope()
 
-    private fun viewModel(savedState: SavedStateHandle = SavedStateHandle()) = SessionViewModel(
+    /** The session's page as the app opens it: over a session started first, as the Lift tab's button does. */
+    private fun viewModel(savedState: SavedStateHandle = SavedStateHandle()): SessionViewModel {
+        repository.sessions.startSession()
+        return opened(savedState)
+    }
+
+    /** The page's ViewModel alone, over whatever is stored. */
+    private fun opened(savedState: SavedStateHandle = SavedStateHandle()) = SessionViewModel(
         repository.sessions,
         repository.sets,
         repository.gear,
@@ -159,6 +166,39 @@ class SessionViewModelTest {
                 equipment = exercise.equipment.name,
                 band = band,
             )
+        }
+    }
+
+    @Test
+    fun `the page starts no session of its own`() {
+        opened().use {
+            assertNull(repository.sessions.active.value)
+            assertFalse(sessionGone)
+        }
+    }
+
+    @Test
+    fun `a page a killed process left on its summary has no session to go on with`() {
+        val savedState = SavedStateHandle()
+        viewModel(savedState).use {
+            logSet()
+            assertTrue(finish("Press"))
+            assertFalse(sessionGone)
+        }
+        // The process is killed on the summary: the page comes back over the same saved state, its session done.
+        opened(savedState).use {
+            assertTrue(sessionGone)
+            assertNull(repository.sessions.active.value)
+        }
+    }
+
+    @Test
+    fun `a page a killed process left in its session goes on with it`() {
+        val savedState = SavedStateHandle()
+        viewModel(savedState).use { logSet() }
+        opened(savedState).use {
+            assertFalse(sessionGone)
+            assertEquals(1, state.value.session?.sets?.size)
         }
     }
 
@@ -512,7 +552,7 @@ class SessionViewModelTest {
             plan.changeBlock(0) { it.copy(rounds = it.rounds + 1) }
             assertTrue(start < once && once < twice)
             val block = repository.sessions.active.value?.plan?.blocks?.first()?.block
-            assertEquals(twice, block?.kg)
+            assertEquals(twice, block?.load?.kg)
             assertEquals(4, block?.rounds)
         }
     }

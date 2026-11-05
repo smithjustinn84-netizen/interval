@@ -68,7 +68,7 @@ internal fun SessionEntity.toDomain(sets: List<SetLog>, made: List<CustomExercis
         title,
         sets,
         programId?.let(ProgramKey::parse),
-        plan?.let { decodePlan(it, made) },
+        plan?.let { decodePlan(it, made, bands) },
         programDay,
         PerceivedEffort.of(effort),
         note,

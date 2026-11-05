@@ -59,10 +59,37 @@ class DayProgressTest {
 
     @Test
     fun `a planned load wins and a bar lift with no history starts at the user's bar`() {
-        val planned = PlannedSet(BuiltInExercise.Press, reps = 5, side = Side.Left, kg = 20.0)
-        assertEquals(20.0, suggestedLoad(planned, emptyList(), bar = null, bellKg = 16.0))
+        val medium = Band.of(BandLevel.Medium)
+        val planned = PlannedSet(BuiltInExercise.Press, reps = 5, side = Side.Left, load = Load.Bell(20.0))
+        assertEquals(Load.Bell(20.0), plannedLoad(planned, emptyList(), bar = null, emptyList(), 16.0, medium))
         val squat = PlannedSet(barbellLifts.first(), reps = 5, side = null)
-        assertEquals(15.0, suggestedLoad(squat, emptyList(), bar = 15.0, bellKg = 16.0))
-        assertNull(plannedBand(planned, emptyList(), emptyList(), Band.of(BandLevel.Medium)))
+        assertEquals(Load.Bar(15.0), plannedLoad(squat, emptyList(), bar = 15.0, emptyList(), 16.0, medium))
+    }
+
+    @Test
+    fun `a lift with no load named takes the one in hand until it has a history`() {
+        val medium = Band.of(BandLevel.Medium)
+        val press = PlannedSet(BuiltInExercise.Press, reps = 5, side = Side.Left, double = true)
+        assertEquals(Load.Bell(16.0, double = true), plannedLoad(press, emptyList(), null, emptyList(), 16.0, medium))
+        val before = listOf(SetLog.of(1, BuiltInExercise.Press, 20.0, 5, Side.Left, 0, double = true))
+        assertEquals(Load.Bell(20.0, double = true), plannedLoad(press, before, null, emptyList(), 16.0, medium))
+        val pushUp = PlannedSet(BuiltInExercise.PushUp, reps = 10, side = null)
+        assertEquals(Load.Bodyweight(0.0), plannedLoad(pushUp, emptyList(), null, emptyList(), 16.0, medium))
+    }
+
+    @Test
+    fun `a planned band stands while it is offered and gives way to the last used once it is not`() {
+        val offered = bands(emptyList())
+        val (light, medium, heavy) = Triple(
+            Band.of(BandLevel.Light),
+            Band.of(BandLevel.Medium),
+            Band.of(BandLevel.Heavy),
+        )
+        val pulls = PlannedSet(BuiltInExercise.BandPullApart, reps = 15, side = null, load = Load.Banded(heavy))
+        assertEquals(Load.Banded(heavy), plannedLoad(pulls, emptyList(), null, offered, 16.0, medium))
+        val before = listOf(SetLog.of(1, BuiltInExercise.BandPullApart, 0.0, 15, null, 0, band = light))
+        val withoutHeavy = offered.filterNot { it.id == heavy.id }
+        assertEquals(Load.Banded(light), plannedLoad(pulls, before, null, withoutHeavy, 16.0, medium))
+        assertEquals(Load.Banded(medium), plannedLoad(pulls, emptyList(), null, withoutHeavy, 16.0, medium))
     }
 }

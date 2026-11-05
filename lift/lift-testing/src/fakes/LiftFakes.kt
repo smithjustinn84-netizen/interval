@@ -38,6 +38,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import org.koin.core.KoinApplication
@@ -67,8 +68,11 @@ class FakeSessionDao : SessionDao {
     override fun observeSessions(): Flow<List<SessionEntity>> =
         sessions.map { all -> all.filterNot { it.deleted }.sortedByDescending { it.startedAtEpochMillis } }
 
-    // As the queries order them: as logged.
-    override fun observeSets(): Flow<List<SetEntity>> = sets.map { it.sortedWith(loggedOrder) }
+    // As the query has them: those of sessions not deleted, as logged.
+    override fun observeSets(): Flow<List<SetEntity>> = combine(sessions, sets) { sessions, sets ->
+        val live = sessions.filterNot { it.deleted }.map { it.uid }.toSet()
+        sets.filter { it.sessionUid in live }.sortedWith(loggedOrder)
+    }
 
     override suspend fun allSets() = sets.value.sortedWith(loggedOrder)
 

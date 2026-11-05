@@ -40,10 +40,10 @@ class SessionPlanTest {
 
     @Test
     fun `a change to a block plans its sets anew`() {
-        val plan = SessionPlan.of(listOf(swings)).change(0) { it.copy(rounds = 3, kg = 28.0) }
+        val plan = SessionPlan.of(listOf(swings)).change(0) { it.copy(rounds = 3, load = Load.Bell(28.0)) }
         val sets = day(swings, plan = plan).plannedSets()
         assertEquals(3, sets.size)
-        assertEquals(listOf(28.0), sets.map { it.kg }.distinct())
+        assertEquals(listOf<Load?>(Load.Bell(28.0)), sets.map { it.load }.distinct())
     }
 
     @Test

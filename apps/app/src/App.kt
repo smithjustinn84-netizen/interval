@@ -188,7 +188,7 @@ internal fun AppContent(
             val opened by rememberUpdatedState(onShortcutOpen)
             LaunchedEffect(shortcut) {
                 if (shortcut == null) return@LaunchedEffect
-                backStack.open(shortcut, clock)
+                backStack.open(shortcut, clock, startLift = { lift.sessions.startSession() })
                 opened()
             }
             // The workout lives as long as its page is on the back stack, which outlives the screen when Android
@@ -445,9 +445,10 @@ private fun storageReady(interval: IntervalRepository, lift: LiftRepository): Fl
 
 /**
  * Opens [shortcut] over its tab. A workout already running is kept rather than replaced or popped (leaving its
- * page ends it): every shortcut returns to it. A Lift session is not lost by popping it, it resumes.
+ * page ends it): every shortcut returns to it. A Lift session is not lost by popping it, it resumes: [startLift]
+ * starts one before its page opens, as the Lift tab's button does, and nothing with one in progress.
  */
-private fun NavBackStack<NavKey>.open(shortcut: Shortcut, clock: WallClock) {
+private fun NavBackStack<NavKey>.open(shortcut: Shortcut, clock: WallClock, startLift: () -> Unit) {
     if (any { it is Workout }) {
         while (lastOrNull() !is Workout) removeLastOrNull()
         return
@@ -460,6 +461,7 @@ private fun NavBackStack<NavKey>.open(shortcut: Shortcut, clock: WallClock) {
 
         Shortcut.LiftSession -> {
             selectTab(LiftTab)
+            startLift()
             push(Lifting)
         }
     }

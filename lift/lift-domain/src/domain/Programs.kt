@@ -7,10 +7,10 @@ enum class BlockKind { Sets, Emom, Ladder }
  * One part of a program day. [Sets]: [rounds] sets of [reps]. [Emom]: [rounds] minutes, [reps] at the top
  * of each. [Ladder]: [rounds] ladders, each climbing [rungs]. A one-sided lift does each set on both sides,
  * unless it is done with two bells ([double]). For a hold ([Measure.Time]), [reps] counts the seconds held,
- * and a hold is only ever sets. Its load, when the plan names one: [kg], the bell or the weight added to
- * bodyweight (0 for none), or [band], a [Band]'s id; null leaves it to what was used last time. Sets or an EMOM
- * of a counted lift can build within a [range]: [reps] is then where it stands, and the load goes up only once
- * every set reaches the top (see [nextStep]).
+ * and a hold is only ever sets. Its [load], when the plan names one, is a [Load] as a set's is: of its lift's
+ * equipment, a bell's with as many bells as the block ([withLoad] keeps it so); null leaves it to what was used
+ * last time. Sets or an EMOM of a counted lift can build within a [range]: [reps] is then where it stands, and
+ * the load goes up only once every set reaches the top (see [nextStep]).
  */
 data class Block(
     val exercise: Exercise,
@@ -19,8 +19,7 @@ data class Block(
     val kind: BlockKind = BlockKind.Sets,
     val rungs: List<Int> = emptyList(),
     val double: Boolean = false,
-    val kg: Double? = null,
-    val band: String? = null,
+    val load: Load? = null,
     val range: RepRange? = null,
 ) {
     /** The [range] it builds within: none for a ladder or a hold, which never take one. */
@@ -32,7 +31,7 @@ data class Block(
 
         BlockKind.Emom -> (0 until rounds).map { minute ->
             val side = if (exercise.sided(double)) Side.entries[minute % 2] else null
-            PlannedSet(exercise, reps, side, double, kg, band)
+            PlannedSet(exercise, reps, side, double, load)
         }
 
         BlockKind.Ladder -> (1..rounds).flatMap { rungs.flatMap { rung -> sides(rung) } }
@@ -43,13 +42,23 @@ data class Block(
 
     private fun sides(reps: Int) =
         if (exercise.sided(double)) {
-            Side.entries.map {
-                PlannedSet(exercise, reps, it, double, kg, band)
-            }
+            Side.entries.map { PlannedSet(exercise, reps, it, double, load) }
         } else {
-            listOf(PlannedSet(exercise, reps, null, double, kg, band))
+            listOf(PlannedSet(exercise, reps, null, double, load))
         }
 }
+
+/**
+ * This block at [load], as it takes it: of its lift's equipment, a bell's with as many bells as the block has.
+ * Null, a load of another kind or a band that names none leaves it to what was used last time.
+ */
+fun Block.withLoad(load: Load?): Block = copy(
+    load = load?.takeIf { it.equipment == exercise.equipment }
+        ?.let { Load.named(exercise.equipment, it.kg, double, it.band) },
+)
+
+/** This block done with two bells or one ([double]), the bell it names going with it. */
+fun Block.withDouble(double: Boolean): Block = copy(double = double).withLoad(load)
 
 /**
  * Reps to build within, from [bottom] to [top]: a set done at [top] every time earns the next load, back at
@@ -62,16 +71,15 @@ data class RepRange(val bottom: Int, val top: Int) {
 }
 
 /**
- * One set a program asks for, with two bells when [double]. A hold's [reps] are the seconds it lasts. Its load
- * is its block's: [kg] or [band], null for none named.
+ * One set a program asks for, with two bells when [double]. A hold's [reps] are the seconds it lasts. Its [load]
+ * is its block's, null for none named.
  */
 data class PlannedSet(
     val exercise: Exercise,
     val reps: Int,
     val side: Side?,
     val double: Boolean = false,
-    val kg: Double? = null,
-    val band: String? = null,
+    val load: Load? = null,
 ) {
     /** Whether it is a hold, timed rather than counted. */
     val held: Boolean get() = exercise.measure == Measure.Time

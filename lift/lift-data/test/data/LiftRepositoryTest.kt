@@ -25,6 +25,7 @@ import dev.justinsmith.lift.domain.UnknownExercise
 import dev.justinsmith.lift.domain.band
 import dev.justinsmith.lift.domain.planChanges
 import dev.justinsmith.lift.domain.program
+import dev.justinsmith.lift.domain.withLoad
 import dev.justinsmith.lift.fakes.FakeBandDao
 import dev.justinsmith.lift.fakes.FakeBellDao
 import dev.justinsmith.lift.fakes.FakeCustomExerciseDao
@@ -39,6 +40,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
@@ -47,6 +49,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class LiftRepositoryTest {
@@ -143,6 +146,33 @@ class LiftRepositoryTest {
         val done = repository.sessions.sessions.value.single()
         assertEquals("Swings", done.title)
         assertEquals(600, done.elapsedSeconds(0))
+    }
+
+    @Test
+    fun `a set logged maps its own session and leaves those finished as they were`() = runTest {
+        repository.sessions.startSession()
+        repository.sets.logSet(BuiltInExercise.TwoHandSwing, 24.0, 10, side = null)
+        repository.sessions.finishSession("Swings")
+        val finished = repository.sessions.sessions.value.single()
+        now += 60_000
+        repository.sessions.startSession()
+        repository.sets.logSet(BuiltInExercise.Press, 16.0, 5, Side.Left)
+        assertEquals(1, repository.sessions.active.value?.sets?.size)
+        // Not one equal to it, mapped again: the one it was.
+        assertSame(finished, repository.sessions.sessions.value.single())
+    }
+
+    @Test
+    fun `a deleted session's sets are left unread until it is brought back`() = runTest {
+        repository.sessions.startSession()
+        repository.sets.logSet(BuiltInExercise.TwoHandSwing, 24.0, 10, side = null)
+        repository.sessions.finishSession("Swings")
+        val uid = repository.sessions.sessions.value.single().uid
+        repository.sessions.deleteSession(uid)
+        assertEquals(emptyList(), sessionDao.observeSets().first())
+        assertEquals(emptyList(), repository.sessions.sessions.value)
+        repository.sessions.restoreSession(uid)
+        assertEquals(listOf(10), repository.sessions.sessions.value.single().sets.map { it.reps })
     }
 
     @Test
@@ -473,14 +503,14 @@ class LiftRepositoryTest {
     fun `a session plan changed is kept with the session`() = runTest {
         repository.programs.follow(ProgramKey.BuiltIn(ProgramId.GobletSquatRow))
         repository.sessions.startSession(ProgramKey.BuiltIn(ProgramId.GobletSquatRow))
-        val plan = repository.programs.programDay.value!!.today.change(0) { it.copy(kg = 28.0) }
+        val plan = repository.programs.programDay.value!!.today.change(0) { it.withLoad(Load.Bell(28.0)) }
         repository.sets.changeSessionPlan { plan }
         assertEquals(plan, repository.sessions.active.value?.plan)
         assertEquals(
             28.0,
             sessionDao.sessions.value.single().plan?.let {
-                decodePlan(it, emptyList())
-            }?.blocks?.first()?.block?.kg,
+                decodePlan(it, emptyList(), emptyList())
+            }?.blocks?.first()?.block?.load?.kg,
         )
     }
 
@@ -507,14 +537,16 @@ class LiftRepositoryTest {
         repository.sessions.startSession(key)
         val before = sessionDao.sessions.value
         val rounds = repository.programs.programDay.value!!.today.blocks.first().block.rounds
-        repository.sets.changeSessionPlan { repository.today(it).change(0) { block -> block.copy(kg = 28.0) } }
+        repository.sets.changeSessionPlan {
+            repository.today(it).change(0) { block -> block.withLoad(Load.Bell(28.0)) }
+        }
         repository.sets.logSet(BuiltInExercise.GobletSquat, 28.0, 8, null)
         stale.tryEmit(before)
         repository.sets.changeSessionPlan {
             repository.today(it).change(0) { block -> block.copy(rounds = block.rounds + 1) }
         }
-        val stored = sessionDao.sessions.value.single().plan?.let { decodePlan(it, emptyList()) }
-        assertEquals(28.0, stored?.blocks?.first()?.block?.kg)
+        val stored = sessionDao.sessions.value.single().plan?.let { decodePlan(it, emptyList(), emptyList()) }
+        assertEquals(28.0, stored?.blocks?.first()?.block?.load?.kg)
         assertEquals(rounds + 1, stored?.blocks?.first()?.block?.rounds)
     }
 
@@ -527,12 +559,12 @@ class LiftRepositoryTest {
         repository.programs.follow(key)
         finishDayOf(key)
         val day = repository.programs.programDay.value!!.copy(number = 1)
-        val changes = planChanges(day.copy(plan = day.today.change(0) { it.copy(kg = 28.0) }))!!
+        val changes = planChanges(day.copy(plan = day.today.change(0) { it.withLoad(Load.Bell(28.0)) }))!!
         val copy = repository.programs.saveChanges(changes, SaveScope.ThisDay, "Goblet squat and row (yours)")
         assertTrue(copy is ProgramKey.Custom)
         assertEquals(copy, repository.programs.following.value?.key)
         assertEquals(2, repository.programs.programDay.value?.number)
-        assertEquals(28.0, repository.programs.following.value?.days?.single()?.first()?.kg)
+        assertEquals(28.0, repository.programs.following.value?.days?.single()?.first()?.load?.kg)
         assertEquals("Goblet squat and row (yours)", repository.programs.following.value?.name)
     }
 

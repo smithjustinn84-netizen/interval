@@ -24,6 +24,7 @@ import dev.justinsmith.lift.data.encodeDays
 import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.BlockKind
 import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.RepRange
 import dev.justinsmith.lift.fakes.FakeLiftStorage
@@ -64,7 +65,14 @@ class PlanFlowTest {
     @Test
     fun `the top of a range on the heaviest bell owned says a heavier bell is next`() = liftAppTest(
         FakeLiftStorage().apply {
-            val squats = Block(BuiltInExercise.GobletSquat, rounds = 2, reps = 12, kg = 24.0, range = RepRange(10, 12))
+            val squats =
+                Block(
+                    BuiltInExercise.GobletSquat,
+                    rounds = 2,
+                    reps = 12,
+                    load = Load.Bell(24.0),
+                    range = RepRange(10, 12),
+                )
             programs.rows.value = listOf(CustomProgramEntity("p1", "Mine", 3, 4, encodeDays(listOf(listOf(squats))), 0))
             following.row.value = FollowingEntity(programId = "custom:p1", startedAtEpochMillis = 0)
             bells.rows.value = listOf(BellEntity(16.0), BellEntity(24.0))

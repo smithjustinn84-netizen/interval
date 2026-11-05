@@ -30,14 +30,15 @@ import kotlinx.coroutines.launch
 
 /**
  * The programs the user made, the one followed and its day to do next: Lift's [ProgramStore]. A program's
- * blocks can name the user's exercises, so they are read with [exercises]; its next day is counted from the
- * sessions of it in [sessionDao]. Written through [writer], the queue every Lift repository shares.
+ * blocks can name the user's exercises and bands, so they are read with [exercises] and [gear]; its next day is
+ * counted from the sessions of it in [sessionDao]. Written through [writer], the queue every Lift repository shares.
  */
 class ProgramRepository(
     private val customProgramDao: CustomProgramDao,
     private val followingDao: FollowingDao,
     sessionDao: SessionDao,
     exercises: ExerciseRepository,
+    gear: GearRepository,
     private val writer: SerialWriter,
     private val clock: WallClock,
     private val ids: IdGenerator,
@@ -74,11 +75,12 @@ class ProgramRepository(
     init {
         scope.launch {
             val customLoaded = CompletableDeferred<Unit>()
-            // A program's blocks can name the user's exercises, archived ones too.
-            val custom =
-                combine(customProgramDao.observeAll().orEmptyOnError("programs", log), exercises.made) { rows, made ->
-                    rows.mapNotNull { it.toProgram(made) }
-                }
+            // A program's blocks can name the user's exercises, archived ones too, and their bands.
+            val custom = combine(
+                customProgramDao.observeAll().orEmptyOnError("programs", log),
+                exercises.made,
+                gear.owned,
+            ) { rows, made, bands -> rows.mapNotNull { it.toProgram(made, bands) } }
             launch {
                 custom.collect {
                     _customPrograms.value = it

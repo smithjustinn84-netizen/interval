@@ -56,12 +56,27 @@ class ProgramDraftTest {
 
     @Test
     fun `a block keeps its load only while the equipment stays`() {
-        val bell = swings.copy(kg = 24.0)
-        assertEquals(24.0, bell.withExercise(BuiltInExercise.GobletSquat).kg)
+        val bell = swings.copy(load = Load.Bell(24.0))
+        assertEquals(Load.Bell(24.0), bell.withExercise(BuiltInExercise.GobletSquat).load)
         val band = bell.withExercise(BuiltInExercise.BandPullApart)
-        assertEquals(null, band.kg)
+        assertEquals(null, band.load)
         assertEquals(10, band.reps)
-        assertEquals(null, band.copy(band = "Heavy").withExercise(BuiltInExercise.PushUp).band)
+        val heavy = Load.Banded(Band.of(BandLevel.Heavy))
+        assertEquals(heavy, band.withLoad(heavy).load)
+        assertEquals(null, band.withLoad(heavy).withExercise(BuiltInExercise.PushUp).load)
+    }
+
+    @Test
+    fun `a block's bell goes with it to two bells and back and a load of another kind is none`() {
+        val cleans = Block(BuiltInExercise.Clean, rounds = 3, reps = 5, load = Load.Bell(16.0))
+        val pair = cleans.withDouble(true)
+        assertEquals(Load.Bell(16.0, double = true), pair.load)
+        assertEquals(cleans, pair.withDouble(false))
+        // With none named, two bells is still how it is done.
+        assertEquals(null, cleans.copy(load = null).withDouble(true).load)
+        assertEquals(null, cleans.withLoad(Load.Bar(60.0)).load)
+        assertEquals(null, cleans.withLoad(null).load)
+        assertEquals(Load.Bell(24.0, double = true), pair.withLoad(Load.Bell(24.0)).load)
     }
 
     @Test
@@ -75,8 +90,8 @@ class ProgramDraftTest {
 
     @Test
     fun `planned sets carry their block load`() {
-        val sets = Block(BuiltInExercise.Press, rounds = 2, reps = 5, kg = 16.0).plannedSets()
-        assertEquals(listOf(16.0), sets.map { it.kg }.distinct())
+        val sets = Block(BuiltInExercise.Press, rounds = 2, reps = 5, load = Load.Bell(16.0)).plannedSets()
+        assertEquals(listOf<Load?>(Load.Bell(16.0)), sets.map { it.load }.distinct())
         assertEquals(4, sets.size)
     }
 }

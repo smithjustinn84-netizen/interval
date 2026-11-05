@@ -247,12 +247,6 @@ val barbellLifts: List<BuiltInExercise> = BuiltInExercise.entries.filter { it.eq
 /** What an exercise is done with. */
 enum class Equipment { Kettlebell, Barbell, Bodyweight, Band, Mat }
 
-/** Whether a set done with it is weighed: a bell, the total on a bar, or weight added to bodyweight. */
-val Equipment.takesKg: Boolean get() = when (this) {
-    Equipment.Kettlebell, Equipment.Barbell, Equipment.Bodyweight -> true
-    Equipment.Band, Equipment.Mat -> false
-}
-
 /** How a set is counted: reps, or the time held. */
 enum class Measure { Reps, Time }
 

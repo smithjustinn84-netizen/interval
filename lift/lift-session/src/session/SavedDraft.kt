@@ -40,6 +40,15 @@ internal fun SavedStateHandle.restoredDraft(made: List<CustomExercise>, bands: L
     )
 }
 
+/** Marks the session's page as opened, for [openedBefore] in the process after this one. */
+internal fun SavedStateHandle.markOpened() {
+    this[OPENED] = true
+}
+
+/** Whether the session's page was opened by a process before this one: its saved state has come back. */
+internal fun SavedStateHandle.openedBefore(): Boolean = get<Boolean>(OPENED) == true
+
+private const val OPENED = "session_opened"
 private const val EXERCISE = "set_exercise"
 private const val BELL_KG = "set_bell_kg"
 private const val REPS = "set_reps"

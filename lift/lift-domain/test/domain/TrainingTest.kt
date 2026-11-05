@@ -245,7 +245,6 @@ class TrainingTest {
     fun `a barbell set moves the bar as loaded times the reps`() {
         val set = SetLog.of(1, BuiltInExercise.BarbellBackSquat, 62.5, 5, null, 0)
         assertEquals(312.5, set.tonnageKg)
-        assertTrue(Equipment.Barbell.takesKg)
     }
 
     @Test

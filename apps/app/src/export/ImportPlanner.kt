@@ -28,6 +28,7 @@ import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.Focus
 import dev.justinsmith.lift.domain.Followed
 import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.Measure
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramKey
@@ -36,6 +37,7 @@ import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.domain.UnknownExercise
+import dev.justinsmith.lift.domain.bandOf
 import dev.justinsmith.lift.domain.builtInPrograms
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -177,7 +179,7 @@ private class LiftPlan(file: LiftExport, holdings: Holdings) {
     private val bands = fileBands.filter { it.id !in bandIds }.distinctBy { it.id }
     private val allBands = holdings.bands + bands
 
-    private val filePrograms = file.programs.mapNotNull { it.toDomain(known) }
+    private val filePrograms = file.programs.mapNotNull { it.toDomain(known, allBands) }
     val customProgramsInFile = filePrograms.size
     private val programKeys = holdings.programs.map { it.key }.toSet()
     val programs = filePrograms.filter { it.key !in programKeys }.distinctBy { it.key }
@@ -329,22 +331,26 @@ private fun BandExport.toDomain() =
     Band(id, name, BandColour.entries.firstOrNull { it.name == colour } ?: BandColour.Grey, position, archived)
 
 /** One of the user's own programs; a built-in needs nothing imported, so null. */
-private fun ProgramExport.toDomain(exercises: List<CustomExercise>): Program? {
+private fun ProgramExport.toDomain(exercises: List<CustomExercise>, bands: List<Band>): Program? {
     val key = ProgramKey.parse(key) as? ProgramKey.Custom ?: return null
-    return Program(key, days.map { day -> day.map { it.toDomain(exercises) } }, daysPerWeek, weeks, name)
+    return Program(key, days.map { day -> day.map { it.toDomain(exercises, bands) } }, daysPerWeek, weeks, name)
 }
 
-private fun BlockExport.toDomain(exercises: List<CustomExercise>): Block {
+/**
+ * A block, its load as its lift takes it: a band among [bands] by id, one neither here nor in the file by its
+ * id alone.
+ */
+private fun BlockExport.toDomain(exercises: List<CustomExercise>, bands: List<Band>): Block {
     require(rounds > 0 && reps >= 0) { "block" }
+    val lift = Exercise.parse(exercise, exercises) ?: UnknownExercise(exercise, Equipment.Bodyweight, Measure.Reps)
     return Block(
-        exercise = Exercise.parse(exercise, exercises) ?: UnknownExercise(exercise, Equipment.Bodyweight, Measure.Reps),
+        exercise = lift,
         rounds = rounds,
         reps = reps,
         kind = enumNamed<BlockKind>(kind),
         rungs = rungs,
         double = double,
-        kg = kg,
-        band = band,
+        load = Load.named(lift.equipment, kg, double, band?.let { bandOf(it, bands) }),
         range = if (rangeBottom != null && rangeTop != null) RepRange(rangeBottom, rangeTop) else null,
     )
 }

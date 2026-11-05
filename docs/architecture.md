@@ -207,7 +207,9 @@ several core issues:
   `summary`), which the Route's actions call, with the timers and `SetStore`'s remove and restore taken there
   straight. Its state is built from the stores' flows (`SessionInputs.kt`): the sets before this session are flattened on a
   computation dispatcher as the sessions change, and the records and recent lifts worked out as a set is logged,
-  not at each tap on the sheet, which shows at once. It still starts a session as it opens.
+  not at each tap on the sheet, which shows at once. It starts no session: whatever opens its page does
+  (`SessionStore.startSession`: the Lift tab, History, the launcher shortcut), and a page restored with no session
+  behind it closes (`sessionGone`).
 
 New code should not add to what these resolved: inject the stores it uses rather than a repository, keep new
 long-running work out of `viewModelScope`, and give a ViewModel's parts classes of their own rather than functions.

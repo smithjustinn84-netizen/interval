@@ -136,10 +136,14 @@ interface SessionDao {
     @Query("SELECT * FROM session WHERE deleted = 0 ORDER BY started_at DESC")
     fun observeSessions(): Flow<List<SessionEntity>>
 
-    /** Every set of every session, in the order logged. */
-    @Query("SELECT * FROM lift_set ORDER BY logged_at, id")
+    /** Every set of every session not deleted, in the order logged: a deleted session's stay stored, unread. */
+    @Query(
+        "SELECT lift_set.* FROM lift_set JOIN session ON session.uid = lift_set.session_uid " +
+            "WHERE session.deleted = 0 ORDER BY lift_set.logged_at, lift_set.id",
+    )
     fun observeSets(): Flow<List<SetEntity>>
 
+    /** Every set stored, those of deleted sessions too, in the order logged. */
     @Query("SELECT * FROM lift_set ORDER BY logged_at, id")
     suspend fun allSets(): List<SetEntity>
 

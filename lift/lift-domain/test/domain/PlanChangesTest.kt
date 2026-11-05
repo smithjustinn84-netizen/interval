@@ -9,7 +9,7 @@ class PlanChangesTest {
     private val swings = Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 10)
     private val squats = Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 5)
     private val rangedSquats =
-        Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 15, kg = 16.0, range = RepRange(10, 15))
+        Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 15, load = Load.Bell(16.0), range = RepRange(10, 15))
     private val swingEmom = Block(BuiltInExercise.TwoHandSwing, rounds = 10, reps = 10, kind = BlockKind.Emom)
     private val program = Program(
         ProgramKey.Custom("p"),
@@ -32,19 +32,21 @@ class PlanChangesTest {
 
     @Test
     fun `this day keeps a change on the day done only`() {
-        val changes = changed(0) { it.change(0) { b -> b.copy(kg = 24.0, reps = 12) } }!!
-        assertEquals(listOf(BlockChange(0, swings, swings.copy(kg = 24.0, reps = 12))), changes.changes)
+        val changes = changed(0) { it.change(0) { b -> b.copy(load = Load.Bell(24.0), reps = 12) } }!!
+        assertEquals(listOf(BlockChange(0, swings, swings.copy(load = Load.Bell(24.0), reps = 12))), changes.changes)
         val days = changes.applied(SaveScope.ThisDay)
-        assertEquals(listOf(swings.copy(kg = 24.0, reps = 12), squats), days[0])
+        assertEquals(listOf(swings.copy(load = Load.Bell(24.0), reps = 12), squats), days[0])
         assertEquals(program.days[1], days[1])
     }
 
     @Test
     fun `every day carries a load everywhere and a count only to blocks that had it`() {
-        val days = changed(0) { it.change(0) { b -> b.copy(kg = 24.0, reps = 12) } }!!.applied(SaveScope.EveryDay)
+        val days = changed(0) {
+            it.change(0) { b -> b.copy(load = Load.Bell(24.0), reps = 12) }
+        }!!.applied(SaveScope.EveryDay)
         // The EMOM takes the bell but keeps its reps: it is another kind. Sets of 15 keep theirs.
-        assertEquals(swingEmom.copy(kg = 24.0), days[1][0])
-        assertEquals(swings.copy(reps = 15, kg = 24.0), days[1][1])
+        assertEquals(swingEmom.copy(load = Load.Bell(24.0)), days[1][0])
+        assertEquals(swings.copy(reps = 15, load = Load.Bell(24.0)), days[1][1])
     }
 
     @Test
@@ -56,7 +58,7 @@ class PlanChangesTest {
             weeks = 2,
             name = "Ranged",
         )
-        val earned = rangedSquats.copy(kg = 24.0, reps = 10)
+        val earned = rangedSquats.copy(load = Load.Bell(24.0), reps = 10)
         val changes = PlanChanges(ranged, 1, 0, listOf(BlockChange(0, rangedSquats, earned)))
         assertEquals(listOf(listOf(earned), listOf(earned)), changes.applied(SaveScope.EveryDay))
     }

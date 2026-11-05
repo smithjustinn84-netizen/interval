@@ -72,7 +72,7 @@ data class TodayUiState(
 
     /** The load to show beside [block]: the plan's, else the one last used for its lift, else where it starts. */
     fun suggestedKg(block: Block): Double =
-        block.kg ?: bells[block.exercise to block.double] ?: startingLoadKg(block.exercise)
+        block.load?.kg ?: bells[block.exercise to block.double] ?: startingLoadKg(block.exercise)
     val intervalCount: Int get() = week.sumOf { it.interval }
 }
 
@@ -120,7 +120,7 @@ class TodayViewModel(
                     ),
             )
 
-    /** Starts the session about to open: [program]'s next day, or a free one with null. */
+    /** Starts the session about to open: [program]'s next day, or a free one with null; none with one in progress. */
     fun start(program: ProgramKey?) {
         sessionStore.startSession(program)
     }
