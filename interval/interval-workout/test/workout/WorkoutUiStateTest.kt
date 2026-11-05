@@ -101,4 +101,29 @@ class WorkoutUiStateTest {
         assertEquals(NextUp.Rest("0:10"), secondSet.next)
         assertEquals(NextUp.LastRound, course.last().next)
     }
+
+    @Test
+    fun `a ladder says the coming round's length where it differs`() {
+        val ladder =
+            IntervalConfig(
+                prepSeconds = 0,
+                workSeconds = 20,
+                restSeconds = 10,
+                rounds = 3,
+                sets = 2,
+                workStepSeconds = 10,
+            )
+        val course = generateSequence(WorkoutEngine.start(ladder).state) { WorkoutEngine.advance(it).state }
+            .takeWhile { !it.isDone }
+            .map { it.toUiState(running = true) }
+            .toList()
+        assertEquals("0:20", course[0].clock)
+        assertEquals(NextUp.Round(2, 3, "0:30"), course[1].next)
+        assertEquals("0:30", course[2].clock)
+        // The ordinary rest after the set's last round, then the next set starting over.
+        assertEquals(NextUp.Set(2, 2, "0:20"), course[5].next)
+        val flat = ladder.copy(workStepSeconds = 0)
+        val rest = WorkoutEngine.advance(WorkoutEngine.start(flat).state).state.toUiState(running = true)
+        assertEquals(NextUp.Round(2, 3), rest.next)
+    }
 }

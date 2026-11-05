@@ -8,9 +8,9 @@ import kotlinx.serialization.Serializable
  * can change shape while an old file still reads. [schema] counts the file's own shape; a reader refuses a
  * newer one (schema 2 let a plan be a session on Lift; schema 3 added how a workout or a session felt, its
  * `effort` 1 to 5 and its `note`, every shape's `warmUpSeconds` and `coolDownSeconds`, and a workout's or a
- * session's heart rate, `averageBpm` and `peakBpm`; schema 4 every shape's `sets` and `setRestSeconds`, all absent
- * from older files). Lift's sessions carry their
- * sets but not how a day's plan was changed: the sets are the record.
+ * session's heart rate, `averageBpm` and `peakBpm`; schema 4 every shape's `sets`, `setRestSeconds` and
+ * `workStepSeconds`, all absent from older files). Lift's sessions carry their sets but not how a day's plan was
+ * changed: the sets are the record.
  */
 @Serializable
 data class ExportBundle(
@@ -67,9 +67,10 @@ data class ConfigExport(
     /** 0 for none, and in schema 1 and 2. */
     val warmUpSeconds: Int = 0,
     val coolDownSeconds: Int = 0,
-    /** One set with no rest between, and in schema 1 to 3. */
+    /** One set with no rest between and no ladder, and in schema 1 to 3. */
     val sets: Int = 1,
     val setRestSeconds: Int = 0,
+    val workStepSeconds: Int = 0,
 )
 
 @Serializable

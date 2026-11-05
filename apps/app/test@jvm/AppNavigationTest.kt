@@ -15,6 +15,7 @@ import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.navigationevent.NavigationEvent
 import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.timer.builtInPresets
@@ -186,7 +187,7 @@ class AppNavigationTest {
         onNodeWithContentDescription("All presets").performClick()
         onNodeWithContentDescription("New preset").performClick()
         // The unsaved card's own Save pill stays in the tree under the editor, drawn first.
-        onAllNodesWithText("Save").onLast().performClick()
+        onAllNodesWithText("Save").onLast().performScrollTo().performClick()
         onNodeWithText("30/15 ×8").assertExists()
         onNodeWithContentDescription("Back").performClick()
         onNodeWithText("30/15 ×8 · Total").assertExists()
@@ -366,7 +367,7 @@ class AppNavigationTest {
     fun `a saved preset says its name and a deleted one comes back with Undo`() = appTest {
         onNodeWithContentDescription("All presets").performClick()
         onNodeWithContentDescription("New preset").performClick()
-        onAllNodesWithText("Save").onLast().performClick()
+        onAllNodesWithText("Save").onLast().performScrollTo().performClick()
         onNodeWithText("Saved as 30/15 ×8").assertExists()
         onNodeWithText("30/15 ×8").performClick()
         onNodeWithText("Delete").performClick()

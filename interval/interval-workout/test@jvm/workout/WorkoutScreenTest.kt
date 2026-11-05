@@ -19,6 +19,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.pressKey
 import dev.justinsmith.interval.model.PerceivedEffort
@@ -200,7 +201,7 @@ class WorkoutScreenTest {
         onNodeWithText("Save as preset").performClick()
         // The editor's name field, over the summary's note.
         onAllNodes(hasSetTextAction()).onLast().performTextInput("Classic")
-        onNodeWithText("Save").performClick()
+        onNodeWithText("Save").performScrollTo().performClick()
         assertEquals(listOf("restart", "exit", "save Classic"), calls)
     }
 

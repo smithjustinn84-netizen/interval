@@ -9,8 +9,8 @@ data class Interval(val phase: Phase, val set: Int, val round: Int, val seconds:
 /**
  * Every interval a workout passes through, in order, get ready to the cool-down, worked out once from its config:
  * the one source of what a config looks like, which the engine walks, the outline and the Timeline draw and the
- * totals sum. Each set is its rounds with the rest between them, and a [Phase.SetRest] after every set but the
- * last. A part of no length is left out, the rest after the last round too.
+ * totals sum. Each set is its rounds with the rest between them, each round's work its own on a ladder, and a
+ * [Phase.SetRest] after every set but the last. A part of no length is left out, the rest after the last round too.
  */
 object Course {
     fun of(config: IntervalConfig): List<Interval> = buildList {
@@ -18,7 +18,7 @@ object Course {
         if (config.warmUpSeconds > 0) add(Interval(Phase.WarmUp, 1, 1, config.warmUpSeconds))
         for (set in 1..config.sets) {
             for (round in 1..config.rounds) {
-                add(Interval(Phase.Work, set, round, config.workSeconds))
+                add(Interval(Phase.Work, set, round, config.workOf(round)))
                 val after = when {
                     round < config.rounds -> Phase.Rest
 

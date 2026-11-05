@@ -189,7 +189,8 @@ private fun ActivityPill(activity: Activity, onClick: () -> Unit, modifier: Modi
 
 /**
  * Work, Rest and Rounds, sharing the height they're given (or stacking naturally when scrolling), then the
- * sets (and, with more than one, the rest between them) and the warm-up and cool-down as short rows under them.
+ * ladder, the sets (and, with more than one, the rest between them) and the warm-up and cool-down as short rows
+ * under them; with [ladderBesideSets], where the height is short, the ladder in the sets' row.
  */
 @Composable
 internal fun ColumnScope.StepperRows(
@@ -197,6 +198,7 @@ internal fun ColumnScope.StepperRows(
     onStep: (ConfigField, Int) -> Unit,
     onEdit: (ConfigField) -> Unit,
     fillHeight: Boolean = true,
+    ladderBesideSets: Boolean = false,
 ) {
     ConfigField.shape.forEachIndexed { index, field ->
         if (index > 0) Spacer(Modifier.size(Spacing.space8))
@@ -209,7 +211,13 @@ internal fun ColumnScope.StepperRows(
         )
     }
     Spacer(Modifier.size(Spacing.space8))
-    BookendRow(config, onEdit, fields = ConfigField.setsOf(config))
+    if (ladderBesideSets) {
+        BookendRow(config, onEdit, fields = ConfigField.ladder + ConfigField.setsOf(config))
+    } else {
+        BookendRow(config, onEdit, fields = ConfigField.ladder)
+        Spacer(Modifier.size(Spacing.space8))
+        BookendRow(config, onEdit, fields = ConfigField.setsOf(config))
+    }
     Spacer(Modifier.size(Spacing.space8))
     BookendRow(config, onEdit)
 }

@@ -164,4 +164,43 @@ class WorkoutDescriptionTest {
         assertEquals(1, read("8 sets of 20/10")!!.config.sets)
         assertEquals(1, read("3 sets of 10 reps")!!.config.sets)
     }
+
+    /** Work, the ladder's step and the rounds, as [text] reads. */
+    private fun ladder(text: String): Triple<Int, Int, Int>? =
+        read(text)?.config?.let { Triple(it.workSeconds, it.workStepSeconds, it.rounds) }
+
+    @Test
+    fun `a span with a step reads as a ladder and sets the rounds`() {
+        assertEquals(Triple(20, 10, 5), ladder("ladder 20 to 60 by 10"))
+        assertEquals(Triple(60, -10, 5), ladder("60 down to 20 by 10, 10 off"))
+        assertEquals(10, read("60 down to 20 by 10, 10 off")!!.config.restSeconds)
+        assertTrue(ConfigField.WorkStep in read("ladder 20 to 60 by 10")!!.understood)
+    }
+
+    @Test
+    fun `a span the step doesn't divide reads to the last round that fits`() {
+        assertEquals(Triple(20, 10, 4), ladder("ladder 20 to 55 by 10"))
+    }
+
+    @Test
+    fun `a step a round climbs or falls from the work`() {
+        assertEquals(Triple(20, 10, 8), ladder("20/10 climbing 10 a round"))
+        assertEquals(10, read("20/10 climbing 10 a round")!!.config.restSeconds)
+        assertFalse(read("20/10 climbing 10 a round")!!.activityFound)
+        assertEquals(Triple(60, -5, 8), ladder("60/15 down 5 each round"))
+        assertEquals(Triple(30, 15, 6), ladder("30 on 15 off x6 +15s per round"))
+    }
+
+    @Test
+    fun `climbing with no step a round is still the activity`() {
+        val described = read("30 min climbing")!!
+        assertEquals(Activity.Climbing, described.config.activity)
+        assertEquals(0, described.config.workStepSeconds)
+    }
+
+    @Test
+    fun `a ladder's step fits the words' work and rounds and not the timer's`() {
+        // The Timer is at 30 s × 8: a fall of 10 a round from it would not fit, from 60 s × 5 it does.
+        assertEquals(Triple(60, -10, 5), ladder("60 on, 10 off, 5 rounds, down 10 a round"))
+    }
 }

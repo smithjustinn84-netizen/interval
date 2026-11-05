@@ -10,27 +10,41 @@ import dev.justinsmith.interval.ui.resources.common_custom
 import dev.justinsmith.interval.ui.resources.common_joined
 import dev.justinsmith.interval.ui.resources.config_cool_down
 import dev.justinsmith.interval.ui.resources.config_description
+import dev.justinsmith.interval.ui.resources.config_ladder
 import dev.justinsmith.interval.ui.resources.config_set_rest
 import dev.justinsmith.interval.ui.resources.config_sets
+import dev.justinsmith.interval.ui.resources.config_step_down
+import dev.justinsmith.interval.ui.resources.config_step_up
 import dev.justinsmith.interval.ui.resources.config_warm_up
 import dev.justinsmith.interval.ui.resources.duration_short_minutes
 import dev.justinsmith.interval.ui.resources.duration_short_seconds
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import kotlin.math.abs
 
 /**
- * A workout's shape in one line: "20s on · 10s off · ×8", with its sets when it has more than one ("20s on ·
- * 10s off · ×8 · 4 sets · 1m between") and a warm-up and cool-down either side when it has them: "5m warm-up ·
- * 20s on · 10s off · ×8 · 3m cool-down".
+ * A workout's shape in one line: "20s on · 10s off · ×8" ("20s on, +10s a round · 10s off · ×5" for a ladder),
+ * with its sets when it has more than one ("20s on · 10s off · ×8 · 4 sets · 1m between") and a warm-up and
+ * cool-down either side when it has them: "5m warm-up · 20s on · 10s off · ×8 · 3m cool-down".
  */
 @Composable
 fun configDescription(config: IntervalConfig): String {
-    val shape = stringResource(
-        Res.string.config_description,
-        shortDurationText(config.workSeconds),
-        shortDurationText(config.restSeconds),
-        config.rounds,
-    )
+    val shape = if (config.isLadder) {
+        stringResource(
+            Res.string.config_ladder,
+            shortDurationText(config.workSeconds),
+            stepText(config.workStepSeconds),
+            shortDurationText(config.restSeconds),
+            config.rounds,
+        )
+    } else {
+        stringResource(
+            Res.string.config_description,
+            shortDurationText(config.workSeconds),
+            shortDurationText(config.restSeconds),
+            config.rounds,
+        )
+    }
     val rounds = if (config.sets > 1) joined(listOfNotNull(shape, setsText(config))) else shape
     if (config.warmUpSeconds == 0 && config.coolDownSeconds == 0) return rounds
     return joined(
@@ -45,6 +59,20 @@ fun configDescription(config: IntervalConfig): String {
         ),
     )
 }
+
+/** A ladder's step with its sign: "+10s", "−5s". */
+@Composable
+private fun stepText(seconds: Int): String =
+    stringResource(
+        if (seconds >
+            0
+        ) {
+            Res.string.config_step_up
+        } else {
+            Res.string.config_step_down
+        },
+        shortDurationText(abs(seconds)),
+    )
 
 /** "4 sets · 1m between", or "4 sets" with no rest of their own between them. */
 @Composable

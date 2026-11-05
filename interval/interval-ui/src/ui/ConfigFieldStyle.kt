@@ -49,6 +49,11 @@ import dev.justinsmith.interval.ui.resources.field_work_hint
 import dev.justinsmith.interval.ui.resources.field_work_label
 import dev.justinsmith.interval.ui.resources.field_work_less
 import dev.justinsmith.interval.ui.resources.field_work_more
+import dev.justinsmith.interval.ui.resources.field_work_step_edit
+import dev.justinsmith.interval.ui.resources.field_work_step_hint
+import dev.justinsmith.interval.ui.resources.field_work_step_label
+import dev.justinsmith.interval.ui.resources.field_work_step_less
+import dev.justinsmith.interval.ui.resources.field_work_step_more
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -63,6 +68,7 @@ val ConfigField.labelRes: StringResource
         ConfigField.CoolDown -> Res.string.field_cool_down_label
         ConfigField.Sets -> Res.string.field_sets_label
         ConfigField.SetRest -> Res.string.field_set_rest_label
+        ConfigField.WorkStep -> Res.string.field_work_step_label
     }
 
 /** The line under the name, saying what the value is for. */
@@ -76,6 +82,7 @@ val ConfigField.hintRes: StringResource
         ConfigField.CoolDown -> Res.string.field_cool_down_hint
         ConfigField.Sets -> Res.string.field_sets_hint
         ConfigField.SetRest -> Res.string.field_set_rest_hint
+        ConfigField.WorkStep -> Res.string.field_work_step_hint
     }
 
 /** What tapping the value's row does, for screen readers: "Edit work". */
@@ -89,6 +96,7 @@ val ConfigField.editRes: StringResource
         ConfigField.CoolDown -> Res.string.field_cool_down_edit
         ConfigField.Sets -> Res.string.field_sets_edit
         ConfigField.SetRest -> Res.string.field_set_rest_edit
+        ConfigField.WorkStep -> Res.string.field_work_step_edit
     }
 
 /** The − stepper, for screen readers: "Less work time", "Fewer rounds". */
@@ -102,6 +110,7 @@ val ConfigField.lessRes: StringResource
         ConfigField.CoolDown -> Res.string.field_cool_down_less
         ConfigField.Sets -> Res.string.field_sets_less
         ConfigField.SetRest -> Res.string.field_set_rest_less
+        ConfigField.WorkStep -> Res.string.field_work_step_less
     }
 
 /** The + stepper, for screen readers: "More work time", "More rounds". */
@@ -115,6 +124,7 @@ val ConfigField.moreRes: StringResource
         ConfigField.CoolDown -> Res.string.field_cool_down_more
         ConfigField.Sets -> Res.string.field_sets_more
         ConfigField.SetRest -> Res.string.field_set_rest_more
+        ConfigField.WorkStep -> Res.string.field_work_step_more
     }
 
 /** The phase stripe that ties a field to its workout colour; Rounds takes the accent. */
@@ -138,6 +148,9 @@ fun ConfigField.stripe(): Color = when (this) {
     ConfigField.Sets -> IntervalTheme.palette.accent
 
     ConfigField.SetRest -> IntervalTheme.palette.restMark
+
+    // A ladder changes the work.
+    ConfigField.WorkStep -> IntervalTheme.palette.workMark
 }
 
 /** The pale wash of the field's colour behind its value. */
@@ -151,8 +164,9 @@ fun ConfigField.tint(): Color = IntervalTheme.palette.tint(stripe())
 fun ConfigField.valueColor(): Color =
     if (this == ConfigField.Prep || this == ConfigField.WarmUp) IntervalTheme.palette.onPrepTint else stripe()
 
-/** A warm-up, cool-down or rest between sets of no length is none: "Off". */
-fun ConfigField.isOff(value: Int): Boolean = (this in ConfigField.bookends || this == ConfigField.SetRest) && value == 0
+/** A warm-up, cool-down, rest between sets or ladder step of none is off: "Off". */
+fun ConfigField.isOff(value: Int): Boolean =
+    (this in ConfigField.bookends || this == ConfigField.SetRest || this == ConfigField.WorkStep) && value == 0
 
 /** [value] as a sheet or picker shows it: a clock, a count, or "Off" for a warm-up or cool-down of none. */
 @Composable

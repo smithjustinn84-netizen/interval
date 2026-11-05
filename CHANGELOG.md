@@ -13,6 +13,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   and says "Rest between sets" and "Set 2. Work"; Health Connect counts it as rest. Describe reads
   "4 x (8 x 20/10), 1:00 between" and "4 sets of 8 rounds 20/10" (one count alone, "8 sets of 20/10", is still
   rounds). Exports are schema 4, which a 0.3 build refuses with "update the app"; older files read as one set.
+- Ladders, whose work climbs or falls a step each round: a "Ladder" chip under the Timer's rows and the editor's
+  ("20s on, +10s a round · 10s off · ×5", named "20→60/10 ×5"), starting over with each set. The workout's clock is
+  each round's own length, and "Next: round 2 of 5 · 0:30" says how long the coming one is. A ladder that would fall
+  below five seconds falls less steeply instead. Describe reads "ladder 20 to 60 by 10", "20/10 climbing 10 a round"
+  and "60 down to 20 by 10, 10 off".
 
 ## [0.3.0] — Unreleased
 

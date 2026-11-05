@@ -116,6 +116,14 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         see(hasText("×$rounds"))
     }
 
+    /** The ladder's chip under the Timer's rows, then a quick pick on its sheet: "+0:10" a round. */
+    fun setLadder(step: String) = setBookend("Ladder", step)
+
+    /** The workout History holds was kept as a ladder of [step] seconds a round. */
+    fun workoutKeptAsLadder(step: Int) = waitFor("a workout kept as a ladder of $step s") {
+        app.repository.history.value.any { it.config.workStepSeconds == step }
+    }
+
     /** The sets chip under the Timer's rows, then a quick pick on its sheet. */
     fun setSets(count: String) = setBookend("Sets", count)
 

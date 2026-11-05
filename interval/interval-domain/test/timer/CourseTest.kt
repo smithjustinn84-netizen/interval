@@ -116,4 +116,35 @@ class CourseTest {
             .toList()
         assertEquals(Course.of(config), walked)
     }
+
+    @Test
+    fun `a ladder climbs a step each round and starts over with each set`() {
+        val config =
+            IntervalConfig(prepSeconds = 0, workSeconds = 20, restSeconds = 10, rounds = 3, workStepSeconds = 10)
+        assertEquals("Work 1:20 Rest 1:10 Work 2:30 Rest 2:10 Work 3:40", pinned(config))
+        assertEquals(20 + 30 + 40 + 2 * 10, config.totalSeconds)
+        assertEquals(
+            "Work 1.1:20 Rest 1.1:10 Work 1.2:30 Rest 1.2:10 Work 1.3:40 SetRest 1.3:60 " +
+                "Work 2.1:20 Rest 2.1:10 Work 2.2:30 Rest 2.2:10 Work 2.3:40",
+            pinnedSets(config.copy(sets = 2, setRestSeconds = 60)),
+        )
+    }
+
+    @Test
+    fun `a falling ladder works less each round`() {
+        val config =
+            IntervalConfig(prepSeconds = 0, workSeconds = 60, restSeconds = 0, rounds = 5, workStepSeconds = -10)
+        assertEquals("Work 1:60 Work 2:50 Work 3:40 Work 4:30 Work 5:20", pinned(config))
+        assertEquals(60 + 50 + 40 + 30 + 20, Course.workSeconds(config))
+    }
+
+    @Test
+    fun `the engine walks a ladder with each round's own clock and time left`() {
+        val config =
+            IntervalConfig(prepSeconds = 0, workSeconds = 20, restSeconds = 10, rounds = 3, workStepSeconds = 10)
+        val second = WorkoutEngine.advance(WorkoutEngine.advance(WorkoutEngine.start(config).state).state).state
+        assertEquals(Phase.Work to 2, second.phase to second.round)
+        assertEquals(30_000, second.remainingMillis)
+        assertEquals((30 + 10 + 40) * 1_000L, second.sessionRemainingMillis)
+    }
 }

@@ -26,14 +26,14 @@ sealed interface NextUp {
     /** A rest of this length. */
     data class Rest(val clock: String) : NextUp
 
-    /** The next round's work, straight after this interval. */
-    data class Round(val round: Int, val of: Int) : NextUp
+    /** The next round's work, straight after this interval; with its [clock] on a ladder, where it differs. */
+    data class Round(val round: Int, val of: Int, val clock: String? = null) : NextUp
 
     /** The longer rest of this length after the set. */
     data class SetRest(val clock: String) : NextUp
 
-    /** The next set's first work, straight after this interval. */
-    data class Set(val set: Int, val of: Int) : NextUp
+    /** The next set's first work, straight after this interval; with its [clock] on a ladder, where it differs. */
+    data class Set(val set: Int, val of: Int, val clock: String? = null) : NextUp
 
     /** This work interval is the last one. */
     data object LastRound : NextUp
@@ -166,10 +166,14 @@ private fun WorkoutState.nextUp(): NextUp? {
     return when (next.phase) {
         Phase.WarmUp -> NextUp.WarmUp(clock)
 
-        Phase.Work -> when {
-            phase == Phase.Prep || phase == Phase.WarmUp -> NextUp.Work(clock)
-            next.set != set -> NextUp.Set(next.set, config.sets)
-            else -> NextUp.Round(next.round, config.rounds)
+        Phase.Work -> {
+            // On a ladder the coming round works another length than this one: say how long.
+            val differs = clock.takeIf { next.seconds != config.workOf(round) }
+            when {
+                phase == Phase.Prep || phase == Phase.WarmUp -> NextUp.Work(clock)
+                next.set != set -> NextUp.Set(next.set, config.sets, differs)
+                else -> NextUp.Round(next.round, config.rounds, differs)
+            }
         }
 
         Phase.Rest -> NextUp.Rest(clock)

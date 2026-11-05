@@ -70,4 +70,21 @@ class PresetNameTest {
         val mine = Preset("Mine", IntervalConfig(), id = 1)
         assertEquals("Mine", mine.storedName(listOf(mine)))
     }
+
+    @Test
+    fun `a ladder names its first and last work`() {
+        assertEquals(
+            "20→60/10 ×5",
+            IntervalConfig(workSeconds = 20, restSeconds = 10, rounds = 5, workStepSeconds = 10).defaultPresetName(),
+        )
+        assertEquals(
+            "60→20/10 ×5, 2 sets",
+            IntervalConfig(workSeconds = 60, restSeconds = 10, rounds = 5, workStepSeconds = -10, sets = 2)
+                .defaultPresetName(),
+        )
+        assertEquals(
+            "1m→3m/30 ×3",
+            IntervalConfig(workSeconds = 60, restSeconds = 30, rounds = 3, workStepSeconds = 60).defaultPresetName(),
+        )
+    }
 }

@@ -11,6 +11,9 @@
         <item quantity="other">%1$d sets</item>
     </plurals>
     <string name="config_set_rest">%1$s between</string>
+    <string name="config_ladder">%1$s on, %2$s a round · %3$s off · ×%4$d</string>
+    <string name="config_step_up">+%1$s</string>
+    <string name="config_step_down">−%1$s</string>
     <string name="duration_short_seconds">%1$ds</string>
     <string name="duration_short_minutes">%1$dm</string>
     <string name="field_prep_label">Get ready</string>
@@ -54,6 +57,11 @@
     <string name="field_set_rest_edit">Edit rest between sets</string>
     <string name="field_set_rest_less">Less rest between sets</string>
     <string name="field_set_rest_more">More rest between sets</string>
+    <string name="field_work_step_label">Ladder</string>
+    <string name="field_work_step_hint">Work added each round, or taken off</string>
+    <string name="field_work_step_edit">Edit ladder</string>
+    <string name="field_work_step_less">Less work each round</string>
+    <string name="field_work_step_more">More work each round</string>
     <string name="config_warm_up">%1$s warm-up</string>
     <string name="config_cool_down">%1$s cool-down</string>
     <string name="value_sheet_new_total">New total</string>

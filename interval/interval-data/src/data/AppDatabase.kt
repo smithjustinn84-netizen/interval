@@ -42,11 +42,12 @@ import kotlinx.coroutines.flow.Flow
  * cool-down ([HistoryEntity.warmUpSeconds], [HistoryEntity.coolDownSeconds]), 0 in rows from before; version 9
  * kept when a workout began and its heart rate ([HistoryEntity.startedAtEpochMillis], [HistoryEntity.averageBpm]);
  * version 10 gave every workout, preset and plan its sets and the rest between them ([HistoryEntity.sets],
- * [HistoryEntity.setRestSeconds]), one set with none in rows from before.
+ * [HistoryEntity.setRestSeconds]), one set with none in rows from before; version 11 their ladder
+ * ([HistoryEntity.workStepSeconds]), none in rows from before.
  */
 @Database(
     entities = [HistoryEntity::class, PresetEntity::class, PlannedEntity::class],
-    version = 10,
+    version = 11,
     // 3 to 4 and 4 to 5 are MIGRATION_3_4 and MIGRATION_4_5, added by buildAppDatabase.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -56,6 +57,7 @@ import kotlinx.coroutines.flow.Flow
         AutoMigration(from = 7, to = 8),
         AutoMigration(from = 8, to = 9),
         AutoMigration(from = 9, to = 10),
+        AutoMigration(from = 10, to = 11),
     ],
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -282,9 +284,10 @@ data class HistoryEntity(
     /** Its heart rate, average and peak in beats a minute, as read from the health store; null until read. */
     @ColumnInfo(name = "average_bpm") val averageBpm: Int? = null,
     @ColumnInfo(name = "peak_bpm") val peakBpm: Int? = null,
-    /** 1 and 0, one set with no rest between, in rows from before version 10. */
+    /** 1 and 0, one set with no rest between, in rows from before version 10; no ladder before 11. */
     @ColumnInfo(defaultValue = "1") val sets: Int = 1,
     @ColumnInfo(name = "set_rest_seconds", defaultValue = "0") val setRestSeconds: Int = 0,
+    @ColumnInfo(name = "work_step_seconds", defaultValue = "0") val workStepSeconds: Int = 0,
 )
 
 @Entity(tableName = "preset")
@@ -303,6 +306,7 @@ data class PresetEntity(
     /** As [HistoryEntity.sets]. */
     @ColumnInfo(defaultValue = "1") val sets: Int = 1,
     @ColumnInfo(name = "set_rest_seconds", defaultValue = "0") val setRestSeconds: Int = 0,
+    @ColumnInfo(name = "work_step_seconds", defaultValue = "0") val workStepSeconds: Int = 0,
 )
 
 /**
@@ -331,6 +335,7 @@ data class PlannedEntity(
     /** As [HistoryEntity.sets]. */
     @ColumnInfo(defaultValue = "1") val sets: Int = 1,
     @ColumnInfo(name = "set_rest_seconds", defaultValue = "0") val setRestSeconds: Int = 0,
+    @ColumnInfo(name = "work_step_seconds", defaultValue = "0") val workStepSeconds: Int = 0,
 )
 
 /** The [IntervalConfig] a row's columns hold, the same in every table, each value read into its range. */
@@ -345,6 +350,7 @@ private fun intervalConfig(
     activity: String?,
     sets: Int,
     setRestSeconds: Int,
+    workStepSeconds: Int,
 ) = IntervalConfig.sanitized(
     prepSeconds = prepSeconds,
     workSeconds = workSeconds,
@@ -355,6 +361,7 @@ private fun intervalConfig(
     activity = Activity.named(activity),
     sets = sets,
     setRestSeconds = setRestSeconds,
+    workStepSeconds = workStepSeconds,
 )
 
 internal const val LIFT_PROGRAM_DAY = "program_day"
@@ -372,6 +379,7 @@ internal fun HistoryEntity.toDomain() = HistoryEntry(
         activity,
         sets,
         setRestSeconds,
+        workStepSeconds,
     ),
     elapsedSeconds = elapsedSeconds,
     endedEarly = endedEarly,
@@ -395,6 +403,7 @@ internal fun HistoryEntry.toEntity(uid: String, updatedAtEpochMillis: Long) = Hi
     coolDownSeconds = config.coolDownSeconds,
     sets = config.sets,
     setRestSeconds = config.setRestSeconds,
+    workStepSeconds = config.workStepSeconds,
     elapsedSeconds = elapsedSeconds,
     endedEarly = endedEarly,
     workActiveSeconds = workActiveSeconds,
@@ -421,6 +430,7 @@ internal fun PresetEntity.toDomain() =
             activity,
             sets,
             setRestSeconds,
+            workStepSeconds,
         ),
         id = id,
     )
@@ -436,6 +446,7 @@ internal fun Preset.toEntity() = PresetEntity(
     coolDownSeconds = config.coolDownSeconds,
     sets = config.sets,
     setRestSeconds = config.setRestSeconds,
+    workStepSeconds = config.workStepSeconds,
     activity = config.activity.name,
 )
 
@@ -462,6 +473,7 @@ internal fun PlannedEntity.toDomain(): PlannedWorkout? {
                 activity,
                 sets,
                 setRestSeconds,
+                workStepSeconds,
             ),
             presetId,
         )
@@ -491,6 +503,7 @@ internal fun PlannedWorkout.toEntity(): PlannedEntity {
         coolDownSeconds = config?.coolDownSeconds ?: 0,
         sets = config?.sets ?: 1,
         setRestSeconds = config?.setRestSeconds ?: 0,
+        workStepSeconds = config?.workStepSeconds ?: 0,
         activity = config?.activity?.name,
         presetId = interval?.presetId,
         createdAtEpochMillis = createdAtEpochMillis,

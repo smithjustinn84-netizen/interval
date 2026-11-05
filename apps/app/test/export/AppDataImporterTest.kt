@@ -70,7 +70,14 @@ class AppDataImporterTest {
         intervals.savePreset(Preset("Hills", IntervalConfig(workSeconds = 45, activity = Activity.Running)))
         intervals.updateConfig { IntervalConfig(rounds = 4) }
         val bookended =
-            IntervalConfig(rounds = 4, warmUpSeconds = 60, coolDownSeconds = 30, sets = 2, setRestSeconds = 45)
+            IntervalConfig(
+                rounds = 4,
+                warmUpSeconds = 60,
+                coolDownSeconds = 30,
+                sets = 2,
+                setRestSeconds = 45,
+                workStepSeconds = 10,
+            )
         val workout = intervals.recordWorkout(bookended, elapsedSeconds = 200, workSeconds = 120)
         intervals.reflectOnWorkout(workout, PerceivedEffort.Hard, "Felt strong")
         intervals.keepHeartRate(workout, HeartRate(averageBpm = 141, peakBpm = 172))
@@ -166,7 +173,11 @@ class AppDataImporterTest {
         assertNull(history.first().effort)
         assertEquals(Activity.Running, history.first().config.activity)
         // From before sets: every shape is one set.
-        assertTrue(history.all { it.config.sets == 1 && it.config.setRestSeconds == 0 })
+        assertTrue(
+            history.all {
+                it.config.sets == 1 && it.config.setRestSeconds == 0 && it.config.workStepSeconds == 0
+            },
+        )
         val plan = target.intervals.planned.value.single().workout as PlanWorkout.Interval
         assertEquals("Hills", plan.name)
         // Linked to the preset as it landed here, not to the other phone's id.

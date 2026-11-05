@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.timer
 
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /**
@@ -17,7 +18,9 @@ data class DescribedWorkout(
 /**
  * Reads a workout from how someone would say it: "tabata", "40/20 x8", "45 on 15 off, 12 rounds",
  * "work 1:30 rest 0:30", "10 rounds of 30 seconds", "20 min of burpees, short rests", "5 min warm-up,
- * then 40/20 x8, 3 min cool down", "4 x (8 x 20/10), 1:00 between", "4 sets of 8 rounds 20/10". Sets of
+ * then 40/20 x8, 3 min cool down", "4 x (8 x 20/10), 1:00 between", "4 sets of 8 rounds 20/10", and ladders,
+ * "ladder 20 to 60 by 10", "20/10 climbing 10 a round", "60 down to 20 by 10, 10 off". A span with a step
+ * sets the rounds, as many as fit within it ("20 to 55 by 10" is four). Sets of
  * rounds take a second count: one alone is the rounds ("8 sets of 20/10" is eight), and sets with no rest
  * named between them get a minute's ([IntervalConfig.DEFAULT_SET_REST_SECONDS]). A preset's name
  * starts from that preset; a total length with no rounds gives as many rounds as fit. What the words
@@ -37,7 +40,8 @@ fun describeWorkout(text: String, current: IntervalConfig, presets: List<Preset>
 
     var config = preset?.let(current::withPreset) ?: current
     val understood = if (preset != null) ConfigField.shape.toMutableSet() else mutableSetOf()
-    reading.values.forEach { (field, value) ->
+    // The ladder's step last, so it is fitted to the work and rounds the words give, not to the Timer's.
+    reading.values.entries.sortedBy { it.key == ConfigField.WorkStep }.forEach { (field, value) ->
         config = config.withValue(field, value)
         understood += field
     }
@@ -95,6 +99,7 @@ private class Reading(var text: String) {
 
     fun readShape() {
         readSets()
+        readLadder()
         // So that "5 min warm-up" is neither the work nor the whole workout's length.
         for ((regex, field) in BOOKENDS) {
             if (field in values) continue
@@ -121,6 +126,27 @@ private class Reading(var text: String) {
         SETS_OF_ROUNDS.firstNotNullOfOrNull(::take)?.let {
             values[ConfigField.Sets] = it.groupValues[1].toIntOrNull() ?: Int.MAX_VALUE
             values[ConfigField.Rounds] = it.groupValues[2].toIntOrNull() ?: Int.MAX_VALUE
+        }
+    }
+
+    /**
+     * Before the work and rest, so that "climbing 10 a round" is no rest (nor climbing, the activity), and a span's
+     * ends neither the work and rest nor a duration.
+     */
+    private fun readLadder() {
+        take(LADDER_SPAN)?.let { match ->
+            val from = match.secondsAt(1) ?: return@let
+            val to = match.secondsAt(DURATION_GROUPS + 1) ?: return@let
+            val by = match.secondsAt(2 * DURATION_GROUPS + 1)?.takeIf { it > 0 } ?: return@let
+            values[ConfigField.Work] = from
+            values.getOrPut(ConfigField.Rounds) { abs(to - from) / by + 1 }
+            values[ConfigField.WorkStep] = if (to < from) -by else by
+        }
+        if (ConfigField.WorkStep in values) return
+        for ((regex, sign) in LADDER_STEPS) {
+            val seconds = take(regex)?.secondsAt(1) ?: continue
+            values[ConfigField.WorkStep] = sign * seconds
+            return
         }
     }
 
@@ -157,7 +183,7 @@ private class Reading(var text: String) {
 
 /** Lower case, with the other ways of writing "x" and dashes as the plain ones. */
 private fun normalized(text: String): String =
-    text.lowercase().replace('×', 'x').replace('–', '-').replace('—', '-')
+    text.lowercase().replace('×', 'x').replace('–', '-').replace('—', '-').replace('\u2212', '-')
 
 /** How many rounds of this work and rest fill [totalSeconds], the last rest left out as the workout leaves it. */
 private fun IntervalConfig.roundsIn(totalSeconds: Int): Int =
@@ -204,6 +230,20 @@ private val SLASH_PAIR = Regex("""$DURATION\s*/\s*$DURATION""")
 private val SETS_OF_ROUNDS = listOf(
     Regex("""\b(\d+)\s*x\s*\(\s*(\d+)\s*(?:x(?![a-z])|rounds?\b)"""),
     Regex("""\b(\d+)\s*sets?\s*(?:of\s+)?(\d+)\s*(?:rounds?\b|x(?![a-z]))"""),
+)
+
+// "ladder 20 to 60 by 10", "from 20s to 60s by 10s", "60 down to 20 by 10": the first round's work, the last's, the
+// step. Three durations, six groups.
+private val LADDER_SPAN = Regex(
+    """\b(?:ladders?\s+(?:of\s+)?)?(?:from\s+)?$DURATION\s*(?:(?:down|up)\s+)?to\s*$DURATION\s*""" +
+        """(?:by|in\s+steps\s+of|stepping)\s*$DURATION""",
+)
+
+// "climbing 10 a round", "+10s each round", "down 5 per round". Not "30 min climbing", which is the activity.
+private const val A_ROUND = """\s*(?:a|each|per|every)\s+round\b"""
+private val LADDER_STEPS = listOf(
+    Regex("""(?:\b(?:climbing|rising|adding|up|plus)\s*(?:by\s+)?|\+\s*)$DURATION$A_ROUND""") to 1,
+    Regex("""(?:\b(?:falling|dropping|down|less|minus)\s*(?:by\s+)?|-\s*)$DURATION$A_ROUND""") to -1,
 )
 
 // "1:00 between", "1 min between sets", "1 min rest between sets", "between sets 90s", "rest between sets: 2 min".

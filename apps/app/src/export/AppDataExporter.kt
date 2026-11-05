@@ -93,6 +93,7 @@ private fun IntervalConfig.export() = ConfigExport(
     coolDownSeconds = coolDownSeconds,
     sets = sets,
     setRestSeconds = setRestSeconds,
+    workStepSeconds = workStepSeconds,
 )
 
 private fun Preset.export() = PresetExport(id, name, config.export())

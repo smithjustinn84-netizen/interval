@@ -1,0 +1,19 @@
+<journey name="Ladder">
+  <description>
+    Set a climbing ladder on the Timer, run the workout into its second round and check that it works longer than the
+    first. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
+  </description>
+  <actions>
+    <action>Verify that the Timer tab is shown with a "Start workout" button and a "Ladder" chip reading "Off"</action>
+    <action>Tap the "Fewer rounds" button until the rounds read "×3"</action>
+    <action>Tap the "Ladder" chip, tap the "+0:10" quick pick, then "Done"</action>
+    <action>Verify that the "Ladder" chip reads "+0:10" and the total reads 2:40</action>
+    <action>Tap "Start workout"</action>
+    <action>Verify that the workout screen shows "Get ready", then "Work" with "Round 1 of 3" and a clock from 0:30</action>
+    <action>Tap "Skip" and verify that the screen shows "Rest" with "Next: round 2 of 3 · 0:40"</action>
+    <action>Tap "Skip" and verify that the screen shows "Work" with "Round 2 of 3" and a clock from 0:40</action>
+    <action>Return to the workout if needed, tap "End", then "End workout" in the dialog</action>
+    <action>Verify that the summary says "Saved to history"</action>
+    <action>Tap "Done", open "All presets" and verify that the unsaved card reads "30s on, +10s a round · 15s off · ×3"</action>
+  </actions>
+</journey>

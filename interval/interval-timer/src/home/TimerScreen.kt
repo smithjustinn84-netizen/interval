@@ -115,14 +115,17 @@ fun TimerScreen(
                         .fillMaxHeight()
                         .padding(top = Spacing.space16, bottom = Spacing.space16, end = Spacing.space16),
                 ) {
-                    StepperRows(state.config, onStep, onEdit)
+                    // Too short for a row of chips more: the ladder shares the sets' row.
+                    StepperRows(state.config, onStep, onEdit, ladderBesideSets = true)
                 }
             }
         } else {
             // Upright: one column, as wide as a tablet's, over lanes that fill the window.
             SetupLanes(Modifier.matchParentSize())
+            // Larger text needs more height for the same rows: below it they would be squeezed, so they scroll.
+            val fontScale = LocalDensity.current.fontScale
             val expandRows =
-                maxHeight >= COMPACT_PORTRAIT_HEIGHT && LocalDensity.current.fontScale <= COMPACT_FONT_SCALE
+                maxHeight >= COMPACT_PORTRAIT_HEIGHT * fontScale.coerceAtLeast(1f) && fontScale <= COMPACT_FONT_SCALE
             Box(Modifier.align(Alignment.TopCenter).widthIn(max = Sizes.contentWide).fillMaxSize()) {
                 Column(Modifier.fillMaxSize()) {
                     TimerTitleBar(state.canSavePreset, onSave, onDescribe, onOpenSettings)
@@ -210,6 +213,9 @@ private fun TimerScreenPreview() {
     TimerPreview()
 }
 
-/** Below this portrait height or above [COMPACT_FONT_SCALE], the upper fields scroll above a pinned Start row. */
-private val COMPACT_PORTRAIT_HEIGHT = 640.dp
+/**
+ * Below this portrait height (at a font scale of 1, grown with a larger one) or above [COMPACT_FONT_SCALE], the
+ * upper fields scroll above a pinned Start row: the height the three rows and their three rows of chips need.
+ */
+private val COMPACT_PORTRAIT_HEIGHT = 700.dp
 private const val COMPACT_FONT_SCALE = 1.35f

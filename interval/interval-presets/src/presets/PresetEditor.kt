@@ -194,7 +194,10 @@ private fun EditorShapeCard(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.fillMaxWidth().clip(Corners.radius18).background(IntervalTheme.palette.surfaceVariant)) {
-        (ConfigField.shape + ConfigField.setsOf(config) + ConfigField.bookends).forEachIndexed { index, field ->
+        (ConfigField.shape + ConfigField.ladder + ConfigField.setsOf(config) + ConfigField.bookends).forEachIndexed {
+                index,
+                field,
+            ->
             if (index > 0) RowDivider()
             FieldRow(field, config.valueOf(field), onClick = { onEditField(field) })
         }
@@ -321,6 +324,9 @@ private fun IntervalConfig.saved(): Map<String, Any?> = mapOf(
     WARM_UP to warmUpSeconds,
     COOL_DOWN to coolDownSeconds,
     ACTIVITY to activity.name,
+    SETS to sets,
+    SET_REST to setRestSeconds,
+    WORK_STEP to workStepSeconds,
 )
 
 private fun Map<String, Any?>.restoredConfig(): IntervalConfig =
@@ -332,6 +338,9 @@ private fun Map<String, Any?>.restoredConfig(): IntervalConfig =
         warmUpSeconds = this[WARM_UP] as Int? ?: 0,
         coolDownSeconds = this[COOL_DOWN] as Int? ?: 0,
         activity = Activity.named(this[ACTIVITY] as String?),
+        sets = this[SETS] as Int? ?: 1,
+        setRestSeconds = this[SET_REST] as Int? ?: 0,
+        workStepSeconds = this[WORK_STEP] as Int? ?: 0,
     )
 
 private const val MODE = "mode"
@@ -344,3 +353,6 @@ private const val ROUNDS = "rounds"
 private const val WARM_UP = "warm_up"
 private const val COOL_DOWN = "cool_down"
 private const val ACTIVITY = "activity"
+private const val SETS = "sets"
+private const val SET_REST = "set_rest"
+private const val WORK_STEP = "work_step"

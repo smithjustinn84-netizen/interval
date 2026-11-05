@@ -54,7 +54,9 @@ import dev.justinsmith.interval.workout.resources.next_cool_down
 import dev.justinsmith.interval.workout.resources.next_last_round
 import dev.justinsmith.interval.workout.resources.next_rest
 import dev.justinsmith.interval.workout.resources.next_round
+import dev.justinsmith.interval.workout.resources.next_round_clock
 import dev.justinsmith.interval.workout.resources.next_set
+import dev.justinsmith.interval.workout.resources.next_set_clock
 import dev.justinsmith.interval.workout.resources.next_set_rest
 import dev.justinsmith.interval.workout.resources.next_warm_up
 import dev.justinsmith.interval.workout.resources.next_work
@@ -239,13 +241,23 @@ private fun PhaseLabel(state: WorkoutUiState, accent: Color) {
 @Composable
 private fun nextUpText(next: NextUp?): String = when (next) {
     is NextUp.Work -> stringResource(Res.string.next_work, next.clock)
+
     is NextUp.WarmUp -> stringResource(Res.string.next_warm_up, next.clock)
+
     is NextUp.CoolDown -> stringResource(Res.string.next_cool_down, next.clock)
+
     is NextUp.Rest -> stringResource(Res.string.next_rest, next.clock)
-    is NextUp.Round -> stringResource(Res.string.next_round, next.round, next.of)
+
+    is NextUp.Round -> next.clock?.let { stringResource(Res.string.next_round_clock, next.round, next.of, it) }
+        ?: stringResource(Res.string.next_round, next.round, next.of)
+
     is NextUp.SetRest -> stringResource(Res.string.next_set_rest, next.clock)
-    is NextUp.Set -> stringResource(Res.string.next_set, next.set, next.of)
+
+    is NextUp.Set -> next.clock?.let { stringResource(Res.string.next_set_clock, next.set, next.of, it) }
+        ?: stringResource(Res.string.next_set, next.set, next.of)
+
     NextUp.LastRound -> stringResource(Res.string.next_last_round)
+
     null -> ""
 }
 

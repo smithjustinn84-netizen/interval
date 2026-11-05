@@ -65,10 +65,11 @@ private class StoredProgress(
     val entryUid: String? = null,
     val effort: Int? = null,
     val note: String = "",
-    /** Since 0.4: a workout saved by 0.3 is in its one set, of one, with no rest between. */
+    /** Since 0.4: a workout saved by 0.3 is in its one set, of one, with no rest between and no ladder. */
     val set: Int = 1,
     val sets: Int = 1,
     val setRestSeconds: Int = 0,
+    val workStepSeconds: Int = 0,
 ) {
     fun toDomain(): WorkoutProgress? {
         val phase = Phase.entries.firstOrNull { it.name == phase } ?: return null
@@ -82,6 +83,7 @@ private class StoredProgress(
             activity = Activity.named(activity),
             sets = sets,
             setRestSeconds = setRestSeconds,
+            workStepSeconds = workStepSeconds,
         )
         return WorkoutProgress(
             id = id,
@@ -138,4 +140,5 @@ private fun WorkoutProgress.stored() = StoredProgress(
     set = state.set,
     sets = state.config.sets,
     setRestSeconds = state.config.setRestSeconds,
+    workStepSeconds = state.config.workStepSeconds,
 )

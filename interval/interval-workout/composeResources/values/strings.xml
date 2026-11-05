@@ -20,8 +20,10 @@
     <string name="next_warm_up">Next: warm-up %1$s</string>
     <string name="next_cool_down">Next: cool-down %1$s</string>
     <string name="next_round">Next: round %1$d of %2$d</string>
+    <string name="next_round_clock">Next: round %1$d of %2$d · %3$s</string>
     <string name="next_set_rest">Next: rest between sets %1$s</string>
     <string name="next_set">Next: set %1$d of %2$d</string>
+    <string name="next_set_clock">Next: set %1$d of %2$d · %3$s</string>
     <string name="next_last_round">Last round — finish strong</string>
     <string name="workout_status">Round %1$d of %2$d · %3$s left</string>
     <string name="workout_status_set">Set %1$d of %2$d · Round %3$d of %4$d · %5$s left</string>

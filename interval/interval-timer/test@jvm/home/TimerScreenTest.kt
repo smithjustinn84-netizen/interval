@@ -134,7 +134,7 @@ class TimerScreenTest {
         onNodeWithContentDescription("Save as preset").performClick()
         onNodeWithText("Save as preset").assertExists()
         onNode(hasSetTextAction()).performTextInput("Mine")
-        onNodeWithText("Save").performClick()
+        onNodeWithText("Save").performScrollTo().performClick()
         assertEquals(listOf(Preset("Mine", custom)), saved)
         onNodeWithText("Save as preset").assertDoesNotExist()
     }
@@ -165,7 +165,7 @@ class TimerScreenTest {
         onNode(hasSetTextAction()).performTextInput("30 on 30 off x5")
         onNodeWithText("Save as preset").performClick()
         onNode(hasSetTextAction()).performTextInput("Easy")
-        onNodeWithText("Save").performClick()
+        onNodeWithText("Save").performScrollTo().performClick()
         assertEquals(listOf(Preset("Easy", custom.copy(workSeconds = 30, restSeconds = 30, rounds = 5))), saved)
     }
 
