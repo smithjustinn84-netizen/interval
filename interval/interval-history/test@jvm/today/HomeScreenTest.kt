@@ -91,8 +91,9 @@ class HomeScreenTest {
     fun `a program day starts by its number and a session in progress resumes`() = runUiTest {
         val started = mutableListOf<ProgramKey?>()
         val day = program(ProgramId.PressLadders).day(3)
-        var state = empty.copy(upNext = listOf(UpNextItem.Lift(THURSDAY, HistoryDay.Today, day)))
+        var state = empty.copy(upNext = listOf(UpNextItem.Lift(THURSDAY, HistoryDay.Today, day, minutes = 35)))
         setThemedContent { HomeScreen(state, HomeActions(onStartLift = { started += it })) }
+        onNodeWithText("about 35 min", substring = true).assertExists()
         onNodeWithText("Start day 3").performClick()
         assertEquals(listOf<ProgramKey?>(day.program.key), started)
 

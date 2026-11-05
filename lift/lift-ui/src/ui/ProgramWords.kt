@@ -50,6 +50,8 @@ import dev.justinsmith.lift.ui.resources.program_day
 import dev.justinsmith.lift.ui.resources.program_days_count
 import dev.justinsmith.lift.ui.resources.program_easy_strength_name
 import dev.justinsmith.lift.ui.resources.program_easy_strength_summary
+import dev.justinsmith.lift.ui.resources.program_estimate
+import dev.justinsmith.lift.ui.resources.program_estimate_range
 import dev.justinsmith.lift.ui.resources.program_fifteen_minute_name
 import dev.justinsmith.lift.ui.resources.program_fifteen_minute_summary
 import dev.justinsmith.lift.ui.resources.program_first_hundred_name
@@ -113,6 +115,18 @@ fun programDayLifts(day: ProgramDay): String = day.blocks
     .distinct()
     .reduceOrNull { line, lift -> stringResource(Res.string.common_joined, line, lift) }
     .orEmpty()
+
+/** About how long a day takes: "about 20 min". */
+@Composable
+fun estimateLine(minutes: Int): String = stringResource(Res.string.program_estimate, minutes)
+
+/** About how long a program's days take: "about 20–35 min", or as one day's when they all take the same. */
+@Composable
+fun estimateLine(minutes: IntRange): String = if (minutes.first == minutes.last) {
+    estimateLine(minutes.first)
+} else {
+    stringResource(Res.string.program_estimate_range, minutes.first, minutes.last)
+}
 
 /** A built-in program's name. */
 @Composable

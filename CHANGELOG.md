@@ -11,6 +11,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   the next day of the program followed) under one Start, and "Or pick by time", which offers the presets that fit
   5, 10, 20 or 30 minutes, each with a Start of its own. With nothing planned it leads to the plan and to Lift's
   programs. The Timer, Lift and History stay tabs beside it, and Back from any of them returns to Today.
+- About how long a program's day takes: "about 20 min" on Lift's program card, on each day of a program's sheet,
+  on every program in the list ("about 12–15 min" where its days differ) and on Today's Up next. It is
+  estimated from the day's sets and reps, each lift's pace, the minutes of anything on the minute and the rest
+  between sets set on Lift, so a longer rest makes a longer day; a day that is all on the minute says its
+  minutes exactly, any other is rounded to five.
 - Sequences: a workout of blocks run one after another, each block a shape of its own (work, rest, rounds, sets
   and ladder) with a rest between blocks. The workout says "Block 2 of 3 · Round 1 of 8", "Rest between blocks"
   and "Next: block 2 of 3 · 0:40", the voice "Rest before block 2" and "Block 2. Work", and the notification the

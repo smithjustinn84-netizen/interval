@@ -7,8 +7,9 @@ import kotlinx.coroutines.flow.StateFlow
 
 /**
  * What the rest of the app reads of Lift, the mirror of [IntervalActivity]: History and Plan count its sessions
- * in the week, History shows the program's next day and starts it, and the workout's summary counts the days
- * lifted. [LiftRepository] is it; screens outside Lift take this rather than the whole repository.
+ * in the week, History and Today show the program's next day, about how long it takes and start it, and the
+ * workout's summary counts the days lifted. [LiftRepository] is it; screens outside Lift take this rather than
+ * the whole repository.
  */
 interface LiftActivity {
     /** True once what is below has been read from storage; until then each holds its default. */
@@ -22,6 +23,9 @@ interface LiftActivity {
 
     /** The session in progress, if one is. */
     val active: StateFlow<LiftSession?>
+
+    /** How long a rest between sets lasts, in seconds: what a day's length is estimated with. */
+    val restSeconds: StateFlow<Int>
 
     /** Starts a session, a day of [program] or a free one, unless one is in progress already. */
     fun startSession(program: ProgramKey?)

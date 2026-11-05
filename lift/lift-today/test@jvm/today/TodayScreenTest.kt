@@ -75,6 +75,7 @@ class TodayScreenTest {
         }
         onNodeWithText("Goblet squat and row").assertExists()
         onNodeWithText("Day 1 of 8 · week 1").assertExists()
+        onNodeWithText("about 10 min").assertExists()
         onNodeWithText("Goblet squat").assertExists()
         onNodeWithText("Start session").assertDoesNotExist()
         onNodeWithText("Start day 1").performClick()

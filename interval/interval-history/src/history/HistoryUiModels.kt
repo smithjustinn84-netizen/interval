@@ -70,7 +70,7 @@ sealed interface UpNextItem {
      * A session on Lift: a day of the program followed ([programDay]), or a free one when it is null. Planned,
      * by [planId], or with no plan of a session on Lift, the program's next day: today, or tomorrow once a day
      * of it is done today. [resume] when a session is in progress already, which Lift picks up before starting
-     * another.
+     * another. About how long the program's day takes is [minutes]: null for a free session or one to resume.
      */
     data class Lift(
         override val epochDay: Long,
@@ -78,6 +78,7 @@ sealed interface UpNextItem {
         val programDay: ProgramDay?,
         val resume: Boolean = false,
         val planId: Long? = null,
+        val minutes: Int? = null,
     ) : UpNextItem
 }
 

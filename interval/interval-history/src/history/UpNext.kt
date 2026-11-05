@@ -7,22 +7,33 @@ import dev.justinsmith.interval.timer.dateOfEpochDay
 import dev.justinsmith.lift.data.LiftActivity
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.ProgramDay
+import dev.justinsmith.lift.domain.RestClock
+import dev.justinsmith.lift.domain.estimatedMinutes
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 // What History and Today both build from the log: what is up next, Lift's side of it, and a day of the week strip.
 
-/** Lift's side: its finished sessions, the followed program's next day, and whether one is in progress. */
-internal data class Lifting(val sessions: List<LiftSession>, val programDay: ProgramDay?, val inProgress: Boolean)
+/**
+ * Lift's side: its finished sessions, the followed program's next day, whether one is in progress, and the rest
+ * between sets, which a day's length is estimated with.
+ */
+internal data class Lifting(
+    val sessions: List<LiftSession>,
+    val programDay: ProgramDay?,
+    val inProgress: Boolean,
+    val restSeconds: Int = RestClock.DEFAULT_SECONDS,
+)
 
 /**
  * Lift's side as it changes. Distinct, so a set logged on Lift (which changes `active`) rebuilds nothing: only a
  * session finished, the program's day or whether one is under way at all count.
  */
-internal fun LiftActivity.lifting(): Flow<Lifting> = combine(sessions, programDay, active) { sessions, day, active ->
-    Lifting(sessions, day, active != null)
-}.distinctUntilChanged()
+internal fun LiftActivity.lifting(): Flow<Lifting> =
+    combine(sessions, programDay, active, restSeconds) { sessions, day, active, rest ->
+        Lifting(sessions, day, active != null, rest)
+    }.distinctUntilChanged()
 
 /**
  * The plans still to do from [today], by day. A plan of the program's next day takes the day the program will be
@@ -41,7 +52,13 @@ internal fun TimestampFormatter.upNext(
             session.program == day.program.key && session.finishedAtEpochMillis?.let(::dayNumber) == today
         }
         val epochDay = if (doneToday) today + 1 else today
-        UpNextItem.Lift(epochDay, heading(epochDay, today), day, resume = lifting.inProgress)
+        UpNextItem.Lift(
+            epochDay,
+            heading(epochDay, today),
+            day,
+            resume = lifting.inProgress,
+            minutes = day.takeUnless { lifting.inProgress }?.estimatedMinutes(lifting.restSeconds),
+        )
     }
     var programDay = lifting.programDay
     var resume = lifting.inProgress
@@ -59,8 +76,9 @@ internal fun TimestampFormatter.upNext(
             is PlanWorkout.Lift -> {
                 val ofProgram = programDay?.takeIf { workout == PlanWorkout.Lift.ProgramDay }
                 if (ofProgram != null) programDay = ofProgram.program.dayAfter(ofProgram.number)
-                UpNextItem.Lift(next.epochDay, day, ofProgram, resume = resume, planId = next.plan.id)
-                    .also { resume = false }
+                // The session in progress is part done: only a day still to start says how long it takes.
+                val minutes = ofProgram?.takeUnless { resume }?.estimatedMinutes(lifting.restSeconds)
+                UpNextItem.Lift(next.epochDay, day, ofProgram, resume, next.plan.id, minutes).also { resume = false }
             }
         }
     }

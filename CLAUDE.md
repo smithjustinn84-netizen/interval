@@ -136,7 +136,8 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
   lift-domain        Lift's pure domain (`dev.justinsmith.lift.domain`): exercises, programs, sets and
                      sessions, a set's `Load` (sealed: bell, bar, bodyweight, band, mat) and a block's (null
                      for none named; `Load.named`, `Block.withLoad`), records,
-                     `EmomClock`/`HoldClock`/`RestClock`, suggestions. No dependencies
+                     `EmomClock`/`HoldClock`/`RestClock`, suggestions, about how long a program's day takes
+                     (`Estimate.kt`, from its sets, each lift's pace and the rest between sets). No dependencies
   lift-api           the ports between the sides, package `dev.justinsmith.lift.data`: `IntervalActivity` (what
                      Lift reads of the interval side; `app` binds it), `LiftActivity` (what the interval side reads
                      of Lift; `SessionRepository` is it). Over `lift-domain` alone

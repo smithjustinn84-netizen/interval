@@ -14,6 +14,7 @@ import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.data.IntervalWorkout
 import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
+import dev.justinsmith.lift.data.SetStore
 import dev.justinsmith.lift.domain.BALANCE_DAYS
 import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.DEFAULT_BELL_KG
@@ -23,7 +24,9 @@ import dev.justinsmith.lift.domain.MuscleBalance
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.barbellLifts
+import dev.justinsmith.lift.domain.estimatedMinutes
 import dev.justinsmith.lift.domain.kettlebellLifts
 import dev.justinsmith.lift.domain.setsOldestFirst
 import dev.justinsmith.lift.domain.startingLoadKg
@@ -67,8 +70,13 @@ data class TodayUiState(
     val weeklyGoal: Int? = null,
     /** Sets per muscle group over the last [BALANCE_DAYS] days; null until two sessions finished in them. */
     val balance: MuscleBalance? = null,
+    /** The rest between sets, which [dayMinutes] is estimated with. */
+    val restSeconds: Int = RestClock.DEFAULT_SECONDS,
 ) {
     val weekCount: Int get() = week.sumOf { it.bells + it.interval }
+
+    /** About how long [programDay] takes, in minutes; null with none to do. */
+    val dayMinutes: Int? get() = programDay?.estimatedMinutes(restSeconds)
 
     /** The load to show beside [block]: the plan's, else the one last used for its lift, else where it starts. */
     fun suggestedKg(block: Block): Double =
@@ -85,6 +93,7 @@ class TodayViewModel(
     private val sessionStore: SessionStore,
     private val programStore: ProgramStore,
     private val gearStore: GearStore,
+    setStore: SetStore,
     private val intervals: IntervalActivity,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
@@ -104,7 +113,8 @@ class TodayViewModel(
                 combine(programStore.following, programStore.programDay, intervals.weeklyGoal, ::Triple),
             ) { state, (following, day, goal) ->
                 state.copy(following = following, programDay = day, weeklyGoal = goal)
-            }.flowOn(computation).stateIn(
+            }.combine(setStore.restSeconds) { state, rest -> state.copy(restSeconds = rest) }
+            .flowOn(computation).stateIn(
                 viewModelScope,
                 SharingStarted.Eagerly,
                 build(
@@ -117,6 +127,7 @@ class TodayViewModel(
                         following = programStore.following.value,
                         programDay = programStore.programDay.value,
                         weeklyGoal = intervals.weeklyGoal.value,
+                        restSeconds = setStore.restSeconds.value,
                     ),
             )
 

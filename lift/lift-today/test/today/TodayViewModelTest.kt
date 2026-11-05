@@ -12,6 +12,8 @@ import dev.justinsmith.lift.data.SetEntity
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.DEFAULT_BAR_KG
 import dev.justinsmith.lift.domain.MuscleGroup
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.barbellLifts
 import dev.justinsmith.lift.fakes.FakeIntervalActivity
 import dev.justinsmith.lift.fakes.FakeLiftStorage
@@ -58,6 +60,7 @@ class TodayViewModelTest {
         repository.sessions,
         repository.programs,
         repository.gear,
+        repository.sets,
         FakeIntervalActivity(),
         FixedTimestampFormatter,
         clock,
@@ -114,6 +117,22 @@ class TodayViewModelTest {
         val balance = today.state.value.balance!!
         assertEquals(2.0, balance.loads.single { it.group == MuscleGroup.Legs }.worked)
         assertEquals(0.0, balance.loads.single { it.group == MuscleGroup.Chest }.total)
+    }
+
+    @Test
+    fun `the day to do says about how long it takes and longer with a longer rest`() {
+        // Goblet squat and row: 3 sets of 10 squats, then 3 of 10 rows a side.
+        repository.programs.follow(ProgramKey.BuiltIn(ProgramId.GobletSquatRow))
+        val today = today(clock = { 1_000L }, main)
+        assertEquals(10, today.state.value.dayMinutes)
+
+        repository.sets.setRestSeconds(180)
+        assertEquals(20, today.state.value.dayMinutes)
+    }
+
+    @Test
+    fun `with no program followed no day says how long it takes`() {
+        assertNull(today(clock = { 1_000L }, main).state.value.dayMinutes)
     }
 
     private fun finished(uid: String, day: Long, exercise: BuiltInExercise) {

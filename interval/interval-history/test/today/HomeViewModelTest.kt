@@ -21,6 +21,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 private val tabata = tabataPreset.config
@@ -86,6 +87,8 @@ class HomeViewModelTest : MainDispatcherTest() {
         assertEquals(1, next.programDay?.number)
         assertEquals(HistoryDay.Today, next.day)
         assertFalse(next.resume)
+        // Three ladders of presses a side and five sets of swings, a minute and a half between them.
+        assertEquals(25, next.minutes)
     }
 
     @Test
@@ -94,7 +97,10 @@ class HomeViewModelTest : MainDispatcherTest() {
         viewModel.startLift(null)
 
         assertNotNull(bells.sessions.active.value)
-        assertTrue(assertIs<UpNextItem.Lift>(viewModel.state.value.upNext.single()).resume)
+        val next = assertIs<UpNextItem.Lift>(viewModel.state.value.upNext.single())
+        assertTrue(next.resume)
+        // Part done, it no longer says how long the whole day takes.
+        assertNull(next.minutes)
     }
 
     @Test

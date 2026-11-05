@@ -223,6 +223,8 @@
     <string name="program_snatch_test_summary">Snatches on the minute, alternating hands, and a day at the test's pace of 100 in 5 minutes · 3 days a week for 6 weeks</string>
     <string name="program_long_cycle_name">Long cycle EMOM</string>
     <string name="program_long_cycle_summary">Long cycles on the minute, alternating sides, with a day of jerks and snatches between · 3 days a week for 6 weeks</string>
+    <string name="program_estimate">about %1$d min</string>
+    <string name="program_estimate_range">about %1$d–%2$d min</string>
     <string name="program_fifteen_minute_name">15-minute kettlebell plan</string>
     <string name="program_fifteen_minute_summary">Double front squats, clean and presses and rows for 3 sets one day; swings and double thrusters on the minute for 15 minutes the other · 3 days a week for 6 weeks</string>
     <string name="program_grappler_strength_name">Strength for the mat</string>

@@ -105,6 +105,7 @@ import dev.justinsmith.lift.today.resources.weekday_initial_7
 import dev.justinsmith.lift.today.resources.weekday_rest
 import dev.justinsmith.lift.ui.Legend
 import dev.justinsmith.lift.ui.blockLine
+import dev.justinsmith.lift.ui.estimateLine
 import dev.justinsmith.lift.ui.liftName
 import dev.justinsmith.lift.ui.programDayLine
 import dev.justinsmith.lift.ui.programName
@@ -331,7 +332,7 @@ private fun ProgramCard(
         return
     }
     ListCard(modifier) {
-        ProgramHeader(following, day, onOpenProgram)
+        ProgramHeader(following, day, state.dayMinutes, onOpenProgram)
         day?.blocks?.forEach { block ->
             RowDivider()
             Row(
@@ -368,9 +369,12 @@ private fun ProgramCard(
     }
 }
 
-/** Where the program stands over its name, opened by a tap: its days done and left. */
+/**
+ * Where the program stands over its name, opened by a tap: its days done and left. Beside them, about how long
+ * the day takes ([minutes]).
+ */
 @Composable
-private fun ProgramHeader(following: Program, day: ProgramDay?, onOpenProgram: () -> Unit) {
+private fun ProgramHeader(following: Program, day: ProgramDay?, minutes: Int?, onOpenProgram: () -> Unit) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
     Row(
@@ -405,6 +409,7 @@ private fun ProgramHeader(following: Program, day: ProgramDay?, onOpenProgram: (
                 modifier = Modifier.semantics { heading() },
             )
         }
+        if (minutes != null) Text(estimateLine(minutes), style = IntervalTheme.type.meta, color = palette.textDim)
         Icon(
             IntervalIcons.Chevron,
             contentDescription = null,

@@ -44,6 +44,7 @@ import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.interval.ui.weekdayText
 import dev.justinsmith.interval.ui.workoutDescription
 import dev.justinsmith.lift.domain.program
+import dev.justinsmith.lift.ui.estimateLine
 import dev.justinsmith.lift.ui.programDayLifts
 import dev.justinsmith.lift.ui.programDayLine
 import dev.justinsmith.lift.ui.programName
@@ -133,7 +134,13 @@ private fun UpNextLead(next: UpNextItem, actions: HistoryActions, modifier: Modi
                 if (day != null) {
                     UpNextText(
                         programName(day.program),
-                        joined(listOf(programDayLine(day), programDayLifts(day))),
+                        joined(
+                            listOfNotNull(
+                                programDayLine(day),
+                                programDayLifts(day),
+                                next.minutes?.let { estimateLine(it) },
+                            ),
+                        ),
                         Modifier.weight(1f),
                     )
                 } else {

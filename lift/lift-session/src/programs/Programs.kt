@@ -51,7 +51,10 @@ import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.ProgramFamily
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.builtInPrograms
+import dev.justinsmith.lift.domain.dayMinutes
+import dev.justinsmith.lift.domain.estimatedMinutes
 import dev.justinsmith.lift.domain.weekBalance
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.notice_program_followed
@@ -82,6 +85,7 @@ import dev.justinsmith.lift.session.resources.programs_title
 import dev.justinsmith.lift.session.resources.programs_yours
 import dev.justinsmith.lift.ui.BalanceBars
 import dev.justinsmith.lift.ui.blockLine
+import dev.justinsmith.lift.ui.estimateLine
 import dev.justinsmith.lift.ui.liftName
 import dev.justinsmith.lift.ui.programName
 import dev.justinsmith.lift.ui.programSummary
@@ -115,6 +119,7 @@ fun ProgramsRoute(
         following = state.following?.key,
         custom = state.custom,
         followingDay = state.followingDay,
+        restSeconds = state.restSeconds,
         actions = ProgramsActions(
             onFollow = {
                 viewModel.follow(it)
@@ -137,7 +142,8 @@ fun ProgramsRoute(
  * The built-in programs by family, then the user's own, side by side on a wider window. A tap opens a
  * program's sheet, its days laid out, from which it is followed from its first day. Following one in place
  * of a program part done asks first: [followingDay] is the followed program's next day, null for none or
- * once it is over.
+ * once it is over. Each program and each of its days says about how long it takes, resting [restSeconds]
+ * between sets.
  */
 @Composable
 fun ProgramsScreen(
@@ -146,6 +152,7 @@ fun ProgramsScreen(
     actions: ProgramsActions,
     modifier: Modifier = Modifier,
     followingDay: ProgramDay? = null,
+    restSeconds: Int = RestClock.DEFAULT_SECONDS,
 ) {
     val families = builtInPrograms.groupBy { (it.key as? ProgramKey.BuiltIn)?.id?.family }
     // Saved by their stored keys: a program is not saveable.
@@ -159,12 +166,11 @@ fun ProgramsScreen(
     TabGrid(stringResource(Res.string.programs_title), modifier, navigation = { BackAction(actions.onBack) }) {
         ProgramFamily.entries.forEach { family ->
             item(key = family.name) {
-                Column(gutter) {
-                    ProgramGroup(familyName(family), families[family].orEmpty(), following, onOpen, actions)
-                }
+                val programs = families[family].orEmpty()
+                ProgramGroup(familyName(family), programs, following, restSeconds, onOpen, actions, gutter)
             }
         }
-        item(key = "yours") { YoursGroup(custom, following, onOpen, actions, gutter) }
+        item(key = "yours") { YoursGroup(custom, following, restSeconds, onOpen, actions, gutter) }
         val followed = programOf(following?.stored)
         if (followed != null) {
             item(key = "stop", span = StaggeredGridItemSpan.FullLine) {
@@ -186,6 +192,7 @@ fun ProgramsScreen(
         val followedText = stringResource(Res.string.notice_program_followed, programName(program))
         ProgramSheet(
             program,
+            restSeconds,
             current = program.key == following,
             replacing = replacing,
             onFollow = {
@@ -252,6 +259,7 @@ private fun familyName(family: ProgramFamily): String = stringResource(
 @Composable
 private fun ProgramSheet(
     program: Program,
+    restSeconds: Int,
     current: Boolean,
     replacing: ProgramDay?,
     onFollow: () -> Unit,
@@ -277,7 +285,7 @@ private fun ProgramSheet(
             second = {
                 // On its side the days come first, beside the name, and the balance under them.
                 if (!sideways) WeekBalance(program)
-                ProgramDays(program)
+                ProgramDays(program, restSeconds)
                 if (sideways) {
                     WeekBalance(program)
                 } else {
@@ -299,13 +307,22 @@ private fun WeekBalance(program: Program) {
     )
 }
 
-/** Each day of [program], its blocks in a card. */
+/** Each day of [program], its blocks in a card, under its number and about how long it takes. */
 @Composable
-private fun ProgramDays(program: Program) {
+private fun ProgramDays(program: Program, restSeconds: Int) {
     val palette = IntervalTheme.palette
     program.days.forEachIndexed { i, blocks ->
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-            GroupLabel(stringResource(Res.string.program_preview_day, i + 1))
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                GroupLabel(stringResource(Res.string.program_preview_day, i + 1), Modifier.weight(1f))
+                val minutes = remember(program, i, restSeconds) { program.day(i + 1).estimatedMinutes(restSeconds) }
+                Text(
+                    estimateLine(minutes),
+                    style = IntervalTheme.type.meta,
+                    color = palette.textDim,
+                    modifier = Modifier.padding(end = Spacing.space4),
+                )
+            }
             // On the sheet's own surface a card needs the variant fill to show as one.
             Column(Modifier.fillMaxWidth().clip(Corners.radius18).background(palette.surfaceVariant)) {
                 blocks.forEachIndexed { j, block ->
@@ -390,14 +407,18 @@ private fun ProgramGroup(
     title: String,
     programs: List<Program>,
     following: ProgramKey?,
+    restSeconds: Int,
     onOpen: (ProgramKey) -> Unit,
     actions: ProgramsActions,
+    modifier: Modifier = Modifier,
 ) {
-    GroupLabel(title)
-    ListCard {
-        programs.forEachIndexed { i, program ->
-            if (i > 0) RowDivider()
-            ProgramRow(program, program.key == following, onOpen, actions)
+    Column(modifier) {
+        GroupLabel(title)
+        ListCard {
+            programs.forEachIndexed { i, program ->
+                if (i > 0) RowDivider()
+                ProgramRow(program, program.key == following, restSeconds, onOpen, actions)
+            }
         }
     }
 }
@@ -407,6 +428,7 @@ private fun ProgramGroup(
 private fun YoursGroup(
     custom: List<Program>,
     following: ProgramKey?,
+    restSeconds: Int,
     onOpen: (ProgramKey) -> Unit,
     actions: ProgramsActions,
     modifier: Modifier = Modifier,
@@ -415,7 +437,7 @@ private fun YoursGroup(
         GroupLabel(stringResource(Res.string.programs_yours))
         ListCard {
             custom.forEach { program ->
-                ProgramRow(program, program.key == following, onOpen, actions)
+                ProgramRow(program, program.key == following, restSeconds, onOpen, actions)
                 RowDivider()
             }
             LinkRow(
@@ -427,9 +449,18 @@ private fun YoursGroup(
     }
 }
 
-/** A program, opened on a tap, checked while it is followed; one the user made ends in a way to change it. */
+/**
+ * A program, opened on a tap, checked while it is followed, with about how long its days take under what it
+ * asks for; one the user made ends in a way to change it.
+ */
 @Composable
-private fun ProgramRow(program: Program, current: Boolean, onOpen: (ProgramKey) -> Unit, actions: ProgramsActions) {
+private fun ProgramRow(
+    program: Program,
+    current: Boolean,
+    restSeconds: Int,
+    onOpen: (ProgramKey) -> Unit,
+    actions: ProgramsActions,
+) {
     val palette = IntervalTheme.palette
     val name = programName(program)
     val key = program.key
@@ -452,6 +483,11 @@ private fun ProgramRow(program: Program, current: Boolean, onOpen: (ProgramKey) 
         Column(Modifier.weight(1f)) {
             Text(name, style = IntervalTheme.type.label, color = palette.text)
             Text(programSummary(program), style = IntervalTheme.type.meta, color = palette.textDim)
+            Text(
+                estimateLine(remember(program, restSeconds) { program.dayMinutes(restSeconds) }),
+                style = IntervalTheme.type.meta,
+                color = palette.textDim,
+            )
         }
         if (current) {
             Icon(

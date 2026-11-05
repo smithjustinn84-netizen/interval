@@ -42,6 +42,7 @@ import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.AcceptanceSteps
 import dev.justinsmith.interval.ui.JOURNEY_TIMEOUT
 import dev.justinsmith.interval.ui.Window
+import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlin.test.assertEquals
 import kotlin.time.Duration
 
@@ -128,6 +129,9 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     fun startPick(name: String) = tapDescribed("Start $name")
 
     fun startSessionFromToday() = tap("Start session")
+
+    /** Up next's line says about how long the program's day takes, after its day and its lifts. */
+    fun seeUpNextTakes(words: String) = see(hasText(words, substring = true))
 
     /** Today's block on the week strip, read as done. */
     fun seeTodayDoneOnTheWeek() = see(hasContentDescription("Today, done"))
@@ -678,5 +682,6 @@ private val HealthSegment.lengthSeconds: Int
 fun acceptanceScenario(
     window: Window = Window.Phone,
     storage: FakeStorage = FakeStorage(),
+    lift: FakeLiftStorage = FakeLiftStorage(),
     scenario: suspend IntervalAcceptanceDriver.() -> Unit,
-) = appTest(window, storage, timeout = JOURNEY_TIMEOUT) { app -> IntervalAcceptanceDriver(this, app).scenario() }
+) = appTest(window, storage, lift, timeout = JOURNEY_TIMEOUT) { app -> IntervalAcceptanceDriver(this, app).scenario() }

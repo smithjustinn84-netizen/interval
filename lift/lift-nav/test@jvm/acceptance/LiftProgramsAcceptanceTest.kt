@@ -7,8 +7,8 @@ import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlin.test.Test
 
 /**
- * `journeys/lift-programs.xml`: a program's sheet, what a week of it works; a built-in followed part way made
- * yours in the editor, a week longer, and followed on from the day it was at.
+ * `journeys/lift-programs.xml`: a program's sheet, what a week of it works and about how long its days take; a
+ * built-in followed part way made yours in the editor, a week longer, and followed on from the day it was at.
  */
 class LiftProgramsAcceptanceTest {
     @Test
@@ -21,6 +21,16 @@ class LiftProgramsAcceptanceTest {
             "Shoulders: 25 sets worked it most",
             "Chest: 0 sets worked it most, 0 assisted",
         )
+    }
+
+    @Test
+    fun `a program's days say about how long they take and so does the day followed`() = liftScenario {
+        // Three sets each of three lifts one day, 8 and 7 minutes on the minute the other.
+        openProgram("15-minute kettlebell plan")
+        seeEstimate("about 15 min")
+        followFromSheet()
+        seeProgramDay("Day 1 of 18 · week 1")
+        seeEstimate("about 15 min")
     }
 
     @Test

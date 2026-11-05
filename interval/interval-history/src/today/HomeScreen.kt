@@ -70,6 +70,7 @@ import dev.justinsmith.interval.ui.configDescription
 import dev.justinsmith.interval.ui.joined
 import dev.justinsmith.interval.ui.workoutDescription
 import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.ui.estimateLine
 import dev.justinsmith.lift.ui.programDayLifts
 import dev.justinsmith.lift.ui.programDayLine
 import dev.justinsmith.lift.ui.programName
@@ -225,7 +226,7 @@ private fun upNextTitle(next: UpNextItem): String = when (next) {
         ?: stringResource(Res.string.history_lift_session)
 }
 
-/** The line under it: the workout's shape and length, or the program's day and its lifts. */
+/** The line under it: the workout's shape and length, or the program's day, its lifts and about how long. */
 @Composable
 private fun upNextDetail(next: UpNextItem): String = when (next) {
     is UpNextItem.Planned -> stringResource(
@@ -234,8 +235,9 @@ private fun upNextDetail(next: UpNextItem): String = when (next) {
         formatClock(next.config.totalSeconds),
     )
 
-    is UpNextItem.Lift -> next.programDay?.let { joined(listOf(programDayLine(it), programDayLifts(it))) }
-        ?: stringResource(Res.string.history_lift_any)
+    is UpNextItem.Lift -> next.programDay?.let { day ->
+        joined(listOfNotNull(programDayLine(day), programDayLifts(day), next.minutes?.let { estimateLine(it) }))
+    } ?: stringResource(Res.string.history_lift_any)
 }
 
 /** Nothing up next: what Today is waiting for, and the two ways to give it one. */

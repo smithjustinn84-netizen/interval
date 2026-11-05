@@ -1,5 +1,8 @@
 package dev.justinsmith.interval.acceptance
 
+import dev.justinsmith.lift.data.FollowingEntity
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlin.test.Test
 
 /**
@@ -47,5 +50,16 @@ class TodayAcceptanceTest {
         seeTodayTab()
         seeTodayDoneOnTheWeek()
         seeNothingMoreDue()
+    }
+
+    @Test
+    fun `the program's next day is up next and says about how long it takes`() = acceptanceScenario(
+        lift = FakeLiftStorage().apply {
+            val program = ProgramId.FifteenMinuteKettlebell.name
+            following.row.value = FollowingEntity(programId = program, startedAtEpochMillis = 0)
+        },
+    ) {
+        seeUpNext("15-minute kettlebell plan")
+        seeUpNextTakes("about 15 min")
     }
 }

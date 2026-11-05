@@ -83,6 +83,15 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
         see("Day 1")
     }
 
+    /** About how long a day takes, as a program's sheet says of each of its days and Today of the day followed. */
+    fun seeEstimate(words: String) = see(words)
+
+    /** From a program's sheet: follow it, which closes Programs. */
+    fun followFromSheet() {
+        tap("Follow this program")
+        seeNo("Follow this program")
+    }
+
     /**
      * The sheet's balance of a week of the program: each of [rows] a group's line as a screen reader says it, and
      * the line naming what it leaves [untrained].

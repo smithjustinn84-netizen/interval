@@ -49,11 +49,12 @@ class LiftRepository(
     val programs =
         ProgramRepository(customProgramDao, followingDao, sessionDao, exercises, gear, writer, clock, ids, scope)
 
-    /** The sessions, finished and in progress, and what the interval side reads of Lift. */
-    val sessions = SessionRepository(sessionDao, exercises, gear, programs, writer, clock, ids, scope)
-
     /** The session in progress's sets, plan and timer, and the rest. */
     val sets = SetRepository(sessionDao, bellDao, exercises, gear, writer, clock, scope)
+
+    /** The sessions, finished and in progress, and what the interval side reads of Lift. */
+    val sessions =
+        SessionRepository(sessionDao, exercises, gear, programs, writer, clock, ids, scope, sets.restSeconds)
 
     private val _ready = MutableStateFlow(false)
 

@@ -35,6 +35,8 @@ class SessionRepository(
     private val clock: WallClock,
     private val ids: IdGenerator,
     scope: CoroutineScope,
+    /** The rest between sets, as [SetRepository] keeps it. */
+    override val restSeconds: StateFlow<Int>,
 ) : LiftActivity, SessionStore {
     private val log = Logger.withTag("SessionRepository")
 

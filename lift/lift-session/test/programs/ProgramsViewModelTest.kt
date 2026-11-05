@@ -18,13 +18,14 @@ class ProgramsViewModelTest : MainDispatcherTest() {
     private val repository = FakeLiftStorage().repository()
     private val ladders = ProgramKey.BuiltIn(ProgramId.PressLadders)
 
-    private inline fun programs(block: ProgramsViewModel.() -> Unit) = ProgramsViewModel(repository.programs).run {
-        try {
-            block()
-        } finally {
-            viewModelScope.cancel()
+    private inline fun programs(block: ProgramsViewModel.() -> Unit) =
+        ProgramsViewModel(repository.programs, repository.sets).run {
+            try {
+                block()
+            } finally {
+                viewModelScope.cancel()
+            }
         }
-    }
 
     @Test
     fun `nothing is followed to start`() = programs {
