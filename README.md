@@ -115,7 +115,7 @@ interval/
 │   ├── interval-platform/ # Audio/speech cues, Android Foreground Service, iOS notifications
 │   ├── interval-ui/       # Shared workout widgets, Timeline, PhaseColors, Splash
 │   ├── interval-testing/  # FakeStorage, RecordingCuePlayer, fake DAOs
-│   ├── interval-timer/    # Timer tab and natural language describe sheet
+│   ├── interval-timer/    # Timer and natural language describe sheet
 │   ├── interval-workout/  # Live workout screen, circular countdown readout, summaries
 │   ├── interval-presets/  # Preset editor, built-ins, custom preset cards
 │   ├── interval-history/  # History calendar, training log, routine planner & reminders

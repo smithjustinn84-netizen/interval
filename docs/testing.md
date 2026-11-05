@@ -237,8 +237,7 @@ done when both pass.
 ```kotlin
 @Test
 fun `a workout ended before its first round saves nothing`() = acceptanceScenario {
-    openTab("Timer")
-    seeTimer()
+    openTimer()
     setWorkTime("1:00")
     startWorkout()
     seePhase("Get ready")
@@ -297,12 +296,12 @@ adb shell pm clear dev.justinsmith.interval      # Most journeys expect a fresh 
 | `start-workout.xml` | Edit work time via the sheet, start, pause/resume, skip, end with nothing saved | `StartWorkoutAcceptanceTest` |
 | `history.xml` | Set a weekly goal from the first run, end after a round, find it in History and open it, see it on the month, clear History | `HistoryAcceptanceTest` |
 | `plan-lift.xml` | Plan a session on Lift for today, start it from Up next, log a set and finish, find the plan done | `PlanLiftAcceptanceTest` |
-| `presets.xml` | On the Presets page (All presets on the Timer): save the Timer's settings, put a built-in on the Timer and start one from its sheet, edit and delete the saved one, open New preset | `PresetsAcceptanceTest` |
+| `presets.xml` | On the presets (Train's Conditioning pillar, under the Timer): save the Timer's settings, put a built-in on the Timer and start one from its sheet, edit and delete the saved one, open New preset | `PresetsAcceptanceTest` |
 | `settings.xml` | Settings opens from every tab; the plan's goal and reminder show and lead to Plan; toggle a cue, switch to Light and back, settings persist | `SettingsAcceptanceTest` (not Export's share sheet) |
 | `health-connect.xml` | Connect Health Connect from Settings, take its weight, finish a workout and find it there, disconnect; the policy from the sheet and from About | `HealthConnectAcceptanceTest` (the store stands connected: the sheet is Health Connect's) |
 | `widget.xml` | Place the week widget, see the count and goal and the streak, start a workout and a Lift session from it, a running workout kept; resize it | `WeekStandingSourceTest` (the count); the widget itself only on a device |
 | `sequence.xml` | Add a block from the Timer's Sets sheet, shape it and the rest between blocks in the editor, run into the second block (the notification says it), save it as a preset | `SequenceAcceptanceTest` (a seeded preset of two blocks run through; a block added on the Timer and run) |
-| `system-back.xml` | System back from Settings or a tab returns to Today; during a workout it pauses and asks | `SystemBackAcceptanceTest` |
+| `system-back.xml` | System back from Settings or a tab returns to Today, from the Timer to the presets and then Today; during a workout it pauses and asks | `SystemBackAcceptanceTest` |
 | `lift-equipment.xml` | A Lift session logging a bell, a band, a hold on one side and bodyweight with weight added, each in its own words, Moved counting only the weighed load, then the summary; a second session, and Strength's balance of the two | `LiftEquipmentAcceptanceTest` |
 | `lift-barbell.xml` | A barbell lift: the bar chosen, plates a side, and the set logged with its load | `LiftBarbellAcceptanceTest` |
 | `lift-programs.xml` | A program's sheet: what a week of it works and what it leaves out, about how long each day takes; a built-in followed part way made yours in the editor and followed on from its day | `LiftProgramsAcceptanceTest` |

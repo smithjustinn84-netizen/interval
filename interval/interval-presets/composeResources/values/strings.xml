@@ -11,6 +11,8 @@
     <string name="preset_name_label">Name</string>
     <string name="preset_name_count">%1$d / %2$d</string>
     <string name="presets_title">Presets</string>
+    <string name="presets_timer">Timer</string>
+    <string name="presets_timer_text">Set the work, rest and rounds yourself</string>
     <string name="presets_new_cd">New preset</string>
     <string name="presets_current_unsaved">On the Timer · not saved</string>
     <string name="presets_built_in">Built-in</string>

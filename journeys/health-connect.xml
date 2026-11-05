@@ -8,7 +8,7 @@
     Where a step cannot be verified without the Health Connect app, note it as not checked.
   </description>
   <actions>
-    <action>Tap the "Timer" tab, then its "Settings" button</action>
+    <action>Tap the "Train" tab, tap "Conditioning", then tap "Timer" at the top of the presets, then the Timer's "Settings" button</action>
     <action>Scroll to "Health" and verify that it shows a "Health Connect" switch, off, saying "Save finished workouts and Lift sessions there too"</action>
     <action>Tap the "Health Connect" switch</action>
     <action>Verify that Health Connect's permission sheet opens, asking to write exercise and total calories burned and to read weight and heart rate, with Interval's privacy policy linked</action>
@@ -16,7 +16,7 @@
     <action>Allow all</action>
     <action>Verify that the "Health Connect" switch is on and says "Finished workouts and Lift sessions are saved there"</action>
     <action>Open Health Connect (Settings > Security and privacy > Health Connect > Data and access > Weight), add a weight entry of 82 kg for today, and return to Interval's Settings</action>
-    <action>Tap "Back", then the Timer tab's "Settings" button again, so Settings reads Health Connect afresh</action>
+    <action>Tap "Back", then the Timer's "Settings" button again, so Settings reads Health Connect afresh</action>
     <action>Scroll to "Calories", tap "Body weight" (which reads its value in a pill), and verify that the sheet offers "Use Health Connect's: 82 kg"</action>
     <action>Tap "Use Health Connect's: 82 kg" and verify that the weight reads 82, the button turns into a disabled "From Health Connect: 82 kg" without the sheet moving, and that "More weight" makes it 83 and offers "Use Health Connect's: 82 kg" again; tap that once more</action>
     <action>Tap "Done" and verify that "Body weight" reads "82 kg"</action>
@@ -25,9 +25,9 @@
     <action>Verify that the summary says "Ended" and shows no "Heart rate" line (no watch recorded one)</action>
     <action>Under "How was it?" tap "Hard" and type "Felt strong" in the note field</action>
     <action>Tap "Done", then open Health Connect (Settings > Security and privacy > Health Connect > Data and access > Exercise) and verify that an Interval entry of high intensity interval training is listed for today, with segments and the notes "Hard · Felt strong"</action>
-    <action>Return to Interval, tap the "History" tab and verify that today's workout reads "Hard" and "Felt strong"; then tap the "Timer" tab and its "Settings" button</action>
+    <action>Return to Interval, tap "Back" on the Timer, tap the "History" tab and verify that today's workout reads "Hard" and "Felt strong"; then tap the "Train" tab, "Conditioning", "Timer" and the Timer's "Settings" button</action>
     <action>Tap the "Health Connect" switch and verify that it is off</action>
     <action>Open Health Connect's app permissions and verify that Interval has no permissions left</action>
-    <action>Tap the "Settings" button on the Timer tab, then "About Interval" at the foot of the page, then "Privacy", and verify that the policy page shows</action>
+    <action>Tap the "Settings" button on the Timer, then "About Interval" at the foot of the page, then "Privacy", and verify that the policy page shows</action>
   </actions>
 </journey>

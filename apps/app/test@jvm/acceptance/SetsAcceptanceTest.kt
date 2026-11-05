@@ -11,7 +11,7 @@ import kotlin.time.Duration.Companion.seconds
 class SetsAcceptanceTest {
     @Test
     fun `two sets of three rounds rest between the sets and finish`() = acceptanceScenario {
-        openTab("Timer")
+        openTimer()
         seeTimer()
         lowerRoundsTo(3)
         setSets("2")

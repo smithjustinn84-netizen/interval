@@ -44,6 +44,8 @@ import dev.justinsmith.interval.presets.resources.presets_empty
 import dev.justinsmith.interval.presets.resources.presets_empty_title
 import dev.justinsmith.interval.presets.resources.presets_new_cd
 import dev.justinsmith.interval.presets.resources.presets_on_timer
+import dev.justinsmith.interval.presets.resources.presets_timer
+import dev.justinsmith.interval.presets.resources.presets_timer_text
 import dev.justinsmith.interval.presets.resources.presets_title
 import dev.justinsmith.interval.presets.resources.presets_yours
 import dev.justinsmith.interval.timer.Activity
@@ -59,6 +61,7 @@ import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.MiniTimeline
@@ -81,9 +84,15 @@ import org.koin.compose.viewmodel.koinViewModel
 /**
  * The presets as a tab's page rather than one pushed with a Back: Train's Conditioning pillar. It goes under the
  * tab's [title], with [header] across the top (the picker of Train's pillars), and its actions end in the gear,
- * [onOpenSettings], as every tab's do.
+ * [onOpenSettings], as every tab's do. Its first row opens the Timer ([onOpenTimer]), for a workout no preset
+ * has.
  */
-class PresetsTab(val title: String, val onOpenSettings: () -> Unit, val header: @Composable () -> Unit)
+class PresetsTab(
+    val title: String,
+    val onOpenSettings: () -> Unit,
+    val onOpenTimer: () -> Unit,
+    val header: @Composable () -> Unit,
+)
 
 /**
  * Resolves the ViewModel and binds it to [PresetsScreen]. A preset goes on the Timer either way;
@@ -232,6 +241,17 @@ private fun PresetsList(
         },
         header = tab?.header,
     ) {
+        tab?.let {
+            item(key = "timer", span = StaggeredGridItemSpan.FullLine) {
+                ListCard(Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4)) {
+                    LinkRow(
+                        stringResource(Res.string.presets_timer),
+                        stringResource(Res.string.presets_timer_text),
+                        onClick = it.onOpenTimer,
+                    )
+                }
+            }
+        }
         // Keyed, so the card fades and the groups slide as the current shape stops or starts matching a preset.
         if (state.canSaveCurrent) {
             item(key = "current", span = StaggeredGridItemSpan.FullLine) {
@@ -289,7 +309,7 @@ private fun CardColumn(content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) { content() }
 }
 
-/** The settings on the Timer tab when they match no preset: their total, shape and a button to save them. */
+/** The settings on the Timer when they match no preset: their total, shape and a button to save them. */
 @Composable
 private fun CurrentCard(
     config: IntervalConfig,

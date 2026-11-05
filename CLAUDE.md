@@ -121,10 +121,11 @@ interval/            the interval timer
                      (splash/: `WithIntro`, `IntervalMark`)
   interval-testing   `FakeStorage` and the fake DAOs, `RecordingCuePlayer`, `RecordingBackgroundWorkout`,
                      `RecordingPlanReminders`, `fakePlatformModule`/`fakeStorageModule`, the presets tests lean on
-  interval-timer     the Timer tab and its describe sheet (package `dev.justinsmith.interval.home`)
+  interval-timer     the Timer, a page pushed over Train's Conditioning pillar, and its describe sheet (package
+                     `dev.justinsmith.interval.home`)
   interval-workout   the running workout, its readout, controls and summary
-  interval-presets   the presets, sheet and editor (`PresetEditorHost`, `PresetDraft`): a page pushed from the
-                     Timer, and Train's Conditioning pillar as a tab's page (`PresetsTab`)
+  interval-presets   the presets, sheet and editor (`PresetEditorHost`, `PresetDraft`): Train's Conditioning
+                     pillar, a tab's page (`PresetsTab`), with the row that opens the Timer
   interval-settings  Settings (its groups in `SettingsGroups.kt`), the weight sheet, export and import
                      (`DataExporter`, `DataImporter`, the review sheet); opened by every tab's gear
   interval-history   History (log, calendar, summaries, a finished workout) and Plan: one module, each needs
@@ -165,7 +166,8 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      (`liftEntries`), which `App` registers and composes; its flow tests drive those entries
 
 apps/
-  app                the app: `App.kt` (the back stack and every entry), `di/AppKoin.kt` (`appModules`,
+  app                the app: `App.kt` (the back stack and every entry), `BackStack.kt` (what the app does to
+                     it: `selectTab`, `showTimer`, a shortcut's `open`, the fix-ups for a stack an older build saved), `di/AppKoin.kt` (`appModules`,
                      `initAppKoin`, the `IntervalActivity` Lift reads, over `IntervalRepository`, and the
                      `WeekStandingSource` the widget shows, over both sides' stores; `data/`),
                      `nav/Routes.kt` (the app's own keys), `ui/AppNavigation.kt`, about/, export/,
@@ -209,7 +211,7 @@ toolchain (`$compose.*`).
   2. `subclass(X::class)` in `navConfiguration` (App.kt; a Lift key in `liftRoutes()`). Without it saving the
      back stack fails on iOS/desktop.
   3. `entry<X> { XRoute() }` in the `entryProvider` (App.kt; a Lift page in `liftEntries`, `lift/lift-nav/src/nav/LiftEntries.kt`)
-  `TodayTab` is the start destination and the back stack's root: Back from Timer, Train or History returns to it
+  `TodayTab` is the start destination and the back stack's root: Back from Train or History returns to it
   (`selectTab`), and a stack saved by a build that opened on the Timer gets it put underneath (`rootAtToday`).
   A tab implements core's `Tab` (`core/core/src/nav/Tab.kt`, with the `push` helper every entry uses), and its
   title bar ends in core's `SettingsAction`; Lift's takes what it opens through `liftEntries`.
@@ -218,6 +220,12 @@ toolchain (`$compose.*`).
   `header` the app fills with `PillarPicker`; their entries share a `tabGroup`, so moving between them fades the
   new one in over the old with the title and picker standing still (`pillarSwap`, `Navigation.kt`), and the bar
   reopens the pillar last shown (`rememberTrainPillar`).
+  The Timer (`Timer`, saved under its old name `TimerTab`) is a page pushed over Conditioning: everything that
+  shows it goes through `showTimer` (the presets' Timer row and "Put on Timer", Today, History, the
+  `start-workout` shortcut), its Back and presets square through `leaveTimer`, and a stack saved while it was a
+  tab is put right by `timerUnderTrain`. On a wide window Settings still opens beside it (`settingsOverTimer`),
+  each pane giving up the window's inset on the edge they share. A page that isn't a tab pads `safeDrawing`
+  itself, as the Timer does.
 - **Screens** are split into `XRoute()` (resolves the ViewModel with `koinViewModel<XViewModel>()`, and a
   route's key with `{ parametersOf(id) }`; anything else with `koinInject()`; collects state) and a stateless
   `XScreen(state, callbacks)` that previews and tests can drive directly. Each feature declares its ViewModels in

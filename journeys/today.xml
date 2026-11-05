@@ -24,6 +24,6 @@
     <action>Tap "Edit plan", remove "Lift session" from today's weekday row in "Routine" (its "Remove" button), then tap "Back"</action>
     <action>Tap the "Train" tab, which opens on "Strength", tap "Follow a program", scroll to "15-minute kettlebell plan", tap it and tap "Follow this program"</action>
     <action>Tap the "Today" tab</action>
-    <action>Verify that Today shows "Up next · Today" with "15-minute kettlebell plan", a line with "Day 1 of 18 · week 1" ending in "about 15 min", and a "Start day 1" button</action>
+    <action>Verify that Today shows "Up next · Today" with "15-minute kettlebell plan", a line starting "about 15 min" before "Day 1 of 18 · week 1", and a "Start day 1" button</action>
   </actions>
 </journey>

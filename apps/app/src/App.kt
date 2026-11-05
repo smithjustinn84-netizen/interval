@@ -7,8 +7,13 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Surface
@@ -69,7 +74,7 @@ import dev.justinsmith.interval.nav.Privacy
 import dev.justinsmith.interval.nav.Settings
 import dev.justinsmith.interval.nav.Shortcut
 import dev.justinsmith.interval.nav.Tab
-import dev.justinsmith.interval.nav.TimerTab
+import dev.justinsmith.interval.nav.Timer
 import dev.justinsmith.interval.nav.TodayTab
 import dev.justinsmith.interval.nav.Workout
 import dev.justinsmith.interval.nav.WorkoutDetail
@@ -142,7 +147,7 @@ internal val navConfiguration = SavedStateConfiguration {
     serializersModule = serializersModule + SerializersModule {
         polymorphic(NavKey::class) {
             subclass(TodayTab::class)
-            subclass(TimerTab::class)
+            subclass(Timer::class)
             subclass(LiftTab::class)
             subclass(ConditioningTab::class)
             subclass(HistoryTab::class)
@@ -201,8 +206,11 @@ internal fun AppContent(
         }
         IntervalTheme(darkTheme = dark) {
             val backStack = rememberNavBackStack(navConfiguration, TodayTab)
-            // Once, before anything reads it: a stack saved by a build that opened on the Timer.
-            remember(backStack) { backStack.rootAtToday() }
+            // Once, before anything reads it: a stack saved by a build that opened on the Timer, or had it as a tab.
+            remember(backStack) {
+                backStack.rootAtToday()
+                backStack.timerUnderTrain()
+            }
             val clock = koinInject<WallClock>()
             val opened by rememberUpdatedState(onShortcutOpen)
             LaunchedEffect(shortcut) {
@@ -235,14 +243,14 @@ internal fun AppContent(
 }
 
 /**
- * One back stack: the Today tab at the root, at most one other tab above it, then whatever was
- * pushed (Settings, Presets, Workout, a session). Back from Timer, Lift or History returns to Today, as both
- * platforms expect. The navigation bar or rail shows only while a tab is on top, or while a page sits beside
- * its tab: windows of [AppSizes.twoPaneMinWidth] and up open Settings as a supporting pane beside Timer (opened
- * from Lift or History it is a page of its own, whatever the window: [settingsOverTimer]), and
- * windows of Material's expanded width and up a finished workout or session beside History's log, a pane
- * waiting for one until it is picked. The bar or rail lies over the pages and slides away as a page is pushed
- * over its tab ([NavigationAreaBar]).
+ * One back stack: the Today tab at the root, at most one other tab above it (a pillar of Train, or History), then
+ * whatever was pushed (the Timer, Settings, Workout, a session). Back from Train or History returns to Today, as
+ * both platforms expect. The navigation bar or rail shows only while a tab is on top, or while a page sits beside
+ * History's log: windows of Material's expanded width and up open a finished workout or session there, a pane
+ * waiting for one until it is picked. Windows of [AppSizes.twoPaneMinWidth] and up open Settings as a supporting
+ * pane beside the Timer, a pair of pages with no bar (opened from a tab it is a page of its own, whatever the
+ * window: [settingsOverTimer]). The bar or rail lies over the pages and slides away as a page is pushed over its
+ * tab ([NavigationAreaBar]).
  */
 @Composable
 private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
@@ -251,11 +259,7 @@ private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
     val panes = rememberPanes()
     val twoPane = panes.historyBeside
     val settingsBeside = panes.settingsBeside && backStack.settingsOverTimer
-    val currentTab = top as? Tab ?: when {
-        settingsBeside && top == Settings -> TimerTab
-        twoPane && top.opensBesideHistory -> HistoryTab
-        else -> null
-    }
+    val currentTab = top as? Tab ?: HistoryTab.takeIf { twoPane && top.opensBesideHistory }
     val selectTab = { tab: Tab -> backStack.selectTab(tab) }
     val pillar = rememberTrainPillar(backStack)
     val palette = IntervalTheme.palette
@@ -388,7 +392,7 @@ private fun rememberPanes(): Panes {
 /**
  * The screen for each [NavKey], and what each screen's actions do to the [backStack]. [twoPane] when a finished
  * workout opens beside History's log, [settingsBeside] when Settings is open beside the Timer. Every tab's gear
- * opens Settings; only over the Timer does it take the supporting pane.
+ * and the Timer's opens Settings; only over the Timer does it take the supporting pane.
  */
 private fun appEntries(
     backStack: NavBackStack<NavKey>,
@@ -399,30 +403,7 @@ private fun appEntries(
     clock: WallClock,
 ): (NavKey) -> NavEntry<NavKey> = entryProvider {
     todayEntry(backStack, selectTab, clock)
-    entry<TimerTab>(metadata = SupportingPaneSceneStrategy.mainPane() + pageKind(PageKind.Tab)) {
-        TimerRoute(
-            onStart = { backStack.startWorkout(clock) },
-            // Beside Timer, the gear closes Settings again.
-            onOpenSettings = {
-                when {
-                    backStack.lastOrNull() != Settings -> backStack.add(Settings)
-                    settingsBeside -> backStack.removeLastOrNull()
-                }
-            },
-            onSeeAllPresets = { backStack.push(Presets) },
-            // As Settings opens or closes beside it, the Timer lays out at the size it is going to, once,
-            // rather than squeezing through every width on the way, and shows only as much as its pane
-            // has grown to, so Settings is seen leaving rather than covered at once.
-            modifier = with(sharedScope) { Modifier.clipToBounds().skipToLookaheadSize() },
-        )
-    }
-    entry<Presets> {
-        PresetsRoute(
-            onBack = { backStack.removeLastOrNull() },
-            onShowTimer = { selectTab(TimerTab) },
-            onStartWorkout = { backStack.startWorkout(clock) },
-        )
-    }
+    timerEntry(backStack, settingsBeside, sharedScope, clock)
     trainEntries(backStack, twoPane, selectTab, clock)
     entry<HistoryTab>(
         metadata = ListDetailSceneStrategy.listPane(HISTORY_SCENE, detailPlaceholder = { HistoryPlaceholder() }) +
@@ -438,7 +419,7 @@ private fun appEntries(
             onOpenLift = { backStack.openDetail(LiftDetail(it, fromHistory = true)) },
             onPlan = { backStack.push(Plan) },
             onStartWorkout = { backStack.startWorkout(clock) },
-            onShowTimer = { selectTab(TimerTab) },
+            onShowTimer = { backStack.showTimer() },
             onStartSession = { backStack.push(Lifting) },
             onOpenSettings = { backStack.push(Settings) },
         )
@@ -458,6 +439,12 @@ private fun appEntries(
             onBack = { backStack.removeLastOrNull() },
             onShowAbout = { backStack.push(About) },
             onShowPlan = { backStack.push(Plan) },
+            // Beside the Timer its start is the Timer's edge, not the window's.
+            modifier = if (settingsBeside) {
+                Modifier.consumeWindowInsets(safeDrawingAt(WindowInsetsSides.Start))
+            } else {
+                Modifier
+            },
             inPane = settingsBeside,
         )
     }
@@ -485,6 +472,43 @@ private fun appEntries(
 }
 
 /**
+ * The Timer, a page pushed over Train's Conditioning pillar, and the main pane when Settings opens beside it. Back
+ * and its presets square both return to Conditioning, through Settings if that is open beside it.
+ */
+private fun EntryProviderScope<NavKey>.timerEntry(
+    backStack: NavBackStack<NavKey>,
+    settingsBeside: Boolean,
+    sharedScope: SharedTransitionScope,
+    clock: WallClock,
+) {
+    entry<Timer>(metadata = SupportingPaneSceneStrategy.mainPane()) {
+        val beside = settingsBeside && backStack.lastOrNull() == Settings
+        TimerRoute(
+            onStart = { backStack.startWorkout(clock) },
+            // Beside Timer, the gear closes Settings again.
+            onOpenSettings = {
+                when {
+                    backStack.lastOrNull() != Settings -> backStack.add(Settings)
+                    settingsBeside -> backStack.removeLastOrNull()
+                }
+            },
+            onSeeAllPresets = { backStack.leaveTimer() },
+            onBack = { backStack.leaveTimer() },
+            // As Settings opens or closes beside it, the Timer lays out at the size it is going to, once,
+            // rather than squeezing through every width on the way, and shows only as much as its pane
+            // has grown to, so Settings is seen leaving rather than covered at once. With Settings beside it
+            // its end is Settings' edge, not the window's.
+            modifier = with(sharedScope) { Modifier.clipToBounds().skipToLookaheadSize() }
+                .then(if (beside) Modifier.consumeWindowInsets(safeDrawingAt(WindowInsetsSides.End)) else Modifier),
+        )
+    }
+}
+
+/** The window's safe-drawing insets on [sides] alone: what a pane gives up where its edge is another pane's. */
+@Composable
+private fun safeDrawingAt(sides: WindowInsetsSides): WindowInsets = WindowInsets.safeDrawing.only(sides)
+
+/**
  * Train's pillars, each a tab of its own in one group, under the same title and the picker between them:
  * Strength is Lift's tab with every page of Lift's, Conditioning the presets as a tab's page.
  */
@@ -504,11 +528,13 @@ private fun EntryProviderScope<NavKey>.trainEntries(
         tabHeader = { PillarPicker(LiftTab, selectTab) },
     )
     entry<ConditioningTab>(metadata = pageKind(PageKind.Tab) + pillars) {
-        val tab = PresetsTab(stringResource(Res.string.nav_train), onOpenSettings = { backStack.push(Settings) }) {
-            PillarPicker(ConditioningTab, selectTab)
-        }
+        val tab = PresetsTab(
+            stringResource(Res.string.nav_train),
+            onOpenSettings = { backStack.push(Settings) },
+            onOpenTimer = { backStack.showTimer() },
+        ) { PillarPicker(ConditioningTab, selectTab) }
         PresetsRoute(
-            onShowTimer = { selectTab(TimerTab) },
+            onShowTimer = { backStack.showTimer() },
             onStartWorkout = { backStack.startWorkout(clock) },
             tab = tab,
         )
@@ -531,7 +557,7 @@ private fun EntryProviderScope<NavKey>.todayEntry(
             onPlan = { backStack.push(Plan) },
             onPrograms = { backStack.push(Programs) },
             onOpenHistory = { selectTab(HistoryTab) },
-            onOpenTimer = { selectTab(TimerTab) },
+            onOpenTimer = { backStack.showTimer() },
             onOpenSettings = { backStack.push(Settings) },
         )
     }
@@ -544,66 +570,5 @@ private fun EntryProviderScope<NavKey>.todayEntry(
 private fun storageReady(interval: IntervalRepository, lift: LiftRepository): Flow<Boolean> =
     combine(interval.ready, lift.ready) { intervalReady, liftReady -> intervalReady && liftReady }
 
-/**
- * Opens [shortcut] over its tab. A workout already running is kept rather than replaced or popped (leaving its
- * page ends it): every shortcut returns to it. A Lift session is not lost by popping it, it resumes: [startLift]
- * starts one before its page opens, as the Lift tab's button does, and nothing with one in progress.
- */
-private fun NavBackStack<NavKey>.open(shortcut: Shortcut, clock: WallClock, startLift: () -> Unit) {
-    if (any { it is Workout }) {
-        while (lastOrNull() !is Workout) removeLastOrNull()
-        return
-    }
-    when (shortcut) {
-        Shortcut.StartWorkout -> {
-            selectTab(TimerTab)
-            startWorkout(clock)
-        }
-
-        Shortcut.LiftSession -> {
-            selectTab(LiftTab)
-            startLift()
-            push(Lifting)
-        }
-    }
-}
-
-/** Starts a workout now, by [clock], unless one is on top already: a double tap on Start must not stack two. */
-private fun NavBackStack<NavKey>.startWorkout(clock: WallClock) {
-    if (lastOrNull() !is Workout) add(Workout(clock.nowMillis()))
-}
-
 /** The scene History's log and the workout beside it share, apart from Settings beside the Timer. */
 private const val HISTORY_SCENE = "history"
-
-/** Settings pairs with the Timer alone: over another tab it is a page of its own, whatever the window. */
-private val NavBackStack<NavKey>.settingsOverTimer: Boolean
-    get() = getOrNull(indexOf(Settings) - 1) == TimerTab
-
-/** A finished workout or session opened from History: on a wide window it sits beside the log. */
-private val NavKey?.opensBesideHistory: Boolean
-    get() = this is WorkoutDetail || (this is LiftDetail && fromHistory)
-
-/**
- * Opens [key] beside History's log, in place of whatever was open there, so Back closes it rather than walking
- * through every workout looked at. On a phone nothing is open over History when a row is tapped.
- */
-private fun NavBackStack<NavKey>.openDetail(key: NavKey) {
-    if (lastOrNull() == key) return
-    while (lastOrNull().opensBesideHistory) removeLastOrNull()
-    add(key)
-}
-
-/** Shows [tab]: Today is the root, so it pops back to it; any other tab replaces what is above Today. */
-private fun NavBackStack<NavKey>.selectTab(tab: Tab) {
-    while (size > 1) removeLastOrNull()
-    if (tab != TodayTab) add(tab)
-}
-
-/**
- * Puts Today under a stack that has another root: one saved by a build whose first tab was the Timer comes back
- * as it was saved, and without this Back would stop at the Timer with no way to Today but its tab.
- */
-internal fun MutableList<NavKey>.rootAtToday() {
-    if (firstOrNull() != TodayTab) add(0, TodayTab)
-}

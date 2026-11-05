@@ -10,7 +10,7 @@ import kotlin.time.Duration.Companion.seconds
 class WarmUpCoolDownAcceptanceTest {
     @Test
     fun `a warm-up and a cool-down bookend the rounds`() = acceptanceScenario {
-        openTab("Timer")
+        openTimer()
         seeTimer()
         setWarmUp("1:00")
         setCoolDown("2:00")
@@ -37,7 +37,7 @@ class WarmUpCoolDownAcceptanceTest {
 
     @Test
     fun `a cool-down ended early still counts the workout as finished`() = acceptanceScenario {
-        openTab("Timer")
+        openTimer()
         setCoolDown("2:00")
         startWorkout()
         seePhase("Get ready")

@@ -59,6 +59,7 @@ import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.valueOf
+import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.BookendRow
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.FieldStepButton
@@ -89,8 +90,8 @@ import dev.justinsmith.interval.ui.surfaceButton
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The title, with + to save a shape no preset has yet, the way to describe a workout in words, and the
- * settings gear. The + grows in as the
+ * The title, after Back ([onBack]) where the Timer is a page, with + to save a shape no preset has yet, the way
+ * to describe a workout in words, and the settings gear. The + grows in as the
  * shape leaves the presets behind and shrinks away as it lands on one, the gear sliding over to make
  * room, so the bar never jumps.
  */
@@ -100,8 +101,9 @@ internal fun TimerTitleBar(
     onSave: () -> Unit,
     onDescribe: () -> Unit,
     onOpenSettings: () -> Unit,
+    onBack: (() -> Unit)? = null,
 ) {
-    TitleBar(stringResource(Res.string.timer_title)) {
+    TitleBar(stringResource(Res.string.timer_title), navigation = { onBack?.let { BackAction(it) } }) {
         AnimatedVisibility(
             canSavePreset,
             enter = fadeIn(tween(Motion.STATE_MILLIS)) + scaleIn(tween(Motion.STATE_MILLIS)) +

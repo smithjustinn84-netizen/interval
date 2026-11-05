@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.nav
 
 import androidx.navigation3.runtime.NavKey
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 // Every destination is a NavKey. A new one must also be registered in `navConfiguration`
@@ -14,13 +15,18 @@ import kotlinx.serialization.Serializable
 @Serializable
 data object TodayTab : Tab
 
-/** The current workout's shape as three steppers, Start, and the way to the presets. */
+/**
+ * The current workout's shape as three steppers, Start, and the way back to the presets. Pushed from Train's
+ * Conditioning pillar. It was a tab, `TimerTab`, the name a saved back stack still knows it by.
+ */
 @Serializable
-data object TimerTab : Tab
+@SerialName("dev.justinsmith.interval.nav.TimerTab")
+data object Timer : NavKey
 
 /**
- * Train's Conditioning pillar: the presets, as a tab's page. Train is one destination of the bar in two parts,
- * each a tab of its own picked on its page; the other, Strength, is Lift's `LiftTab`.
+ * Train's Conditioning pillar: the presets, as a tab's page, and the way to the [Timer]. Train is one
+ * destination of the bar in two parts, each a tab of its own picked on its page; the other, Strength, is Lift's
+ * `LiftTab`.
  */
 @Serializable
 data object ConditioningTab : Tab
@@ -30,8 +36,8 @@ data object ConditioningTab : Tab
 data object HistoryTab : Tab
 
 /**
- * The set-once preferences, your data and the way to About. Pushed from every tab's gear; beside the Timer on a
- * wide window when opened from there.
+ * The set-once preferences, your data and the way to About. Pushed from every tab's gear and the Timer's; beside
+ * the Timer on a wide window when opened from there.
  */
 @Serializable
 data object Settings : NavKey
@@ -64,8 +70,9 @@ data class WorkoutDetail(val id: Long) : NavKey
 data object Plan : NavKey
 
 /**
- * Built-in and saved presets: start one, put it on the Timer, and save, edit or delete the user's own.
- * Pushed from Timer.
+ * The presets as a page pushed from the Timer, while the Timer was a tab. They are Train's Conditioning pillar
+ * now ([ConditioningTab]) and nothing pushes this; it stays so a back stack saved with it still reads, and
+ * `timerUnderTrain` takes it out.
  */
 @Serializable
 data object Presets : NavKey

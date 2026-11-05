@@ -108,9 +108,31 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         tap(hasText("Leave") and hasAnyAncestor(isDialog()))
     }
 
+    /** The Timer where it lives: Train, its Conditioning pillar, then the Timer row at the top of the presets. */
+    fun openTimer() {
+        openTab("Train")
+        pickPillar("Conditioning")
+        tap("Timer")
+        seeTimer()
+    }
+
+    /** From Conditioning: the Timer row at the top of the presets. */
+    fun openTimerFromPresets() {
+        tap("Timer")
+        seeTimer()
+    }
+
+    /** Back from the Timer to the presets it sits over, where the bar is again. */
+    fun leaveTimer() {
+        goBack()
+        seeConditioning()
+    }
+
+    /** The Timer's page: its Start, and a Back to the presets it was opened from. */
     fun seeTimer() {
         see("Start workout")
-        ui.tab("Timer").assertIsSelected()
+        see(hasContentDescription("Describe a workout") and hasClickAction())
+        see(hasContentDescription("Back") and hasClickAction())
     }
 
     fun seeHistoryTab() {
@@ -148,7 +170,7 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     fun startSessionFromToday() = tap("Start session")
 
-    /** Up next's line says about how long the program's day takes, after its day and its lifts. */
+    /** Up next's line says about how long the program's day takes, before its day and its lifts. */
     fun seeUpNextTakes(words: String) = see(hasText(words, substring = true))
 
     /** Today's block on the week strip, read as done. */
@@ -228,7 +250,11 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     // A running workout
 
-    fun seePhase(name: String) = see(name)
+    /** The running workout's phase, once its page is the only one on screen: the Timer under it says "Work" too. */
+    fun seePhase(name: String) {
+        seeNo("Start workout")
+        see(name)
+    }
 
     /** Lets a running workout count on by [duration], which its next tick catches up in one step. */
     fun letTimePass(duration: Duration) = app.advance(duration)

@@ -13,11 +13,12 @@ class HistoryAcceptanceTest {
         seeWeeklyGoal(3)
         goBack()
 
-        openTab("Timer")
+        openTimer()
         endWorkoutAfterFirstRound()
         seeSummarySaved()
         savedWorkouts(1)
         closeSummary()
+        leaveTimer()
 
         openTab("History")
         seeThisWeek(done = 1, goal = 3)

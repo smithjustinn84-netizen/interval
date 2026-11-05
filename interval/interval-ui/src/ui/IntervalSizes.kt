@@ -11,7 +11,7 @@ object IntervalSizes {
     /** Width of each side rail of workout controls in landscape. */
     val rail = 120.dp
 
-    /** Start workout's height, and the Timer tab's square start button. */
+    /** Start workout's height, and the Timer's square start button. */
     val start = 72.dp
 
     /** Elevation of Start workout, the only raised element (`shadow-start`). */
@@ -20,10 +20,10 @@ object IntervalSizes {
     /** The play glyph inside Start workout. */
     val playIcon = 26.dp
 
-    /** The largest a Timer tab stepper value grows to when the row has room; it never shrinks below a stat. */
+    /** The largest a Timer stepper value grows to when the row has room; it never shrinks below a stat. */
     val stepperValueMax = 72.sp
 
-    /** A value in its phase-tinted pill on the Timer tab. */
+    /** A value in its phase-tinted pill on the Timer. */
     val valuePill = 48.dp
 
     /** The smaller value pill on a Settings row. */
@@ -70,7 +70,7 @@ object IntervalSizes {
     /** The least the summary's ring shrinks to, on a phone too short for it and "How was it?" both. */
     val summaryRingLeast = 160.dp
 
-    /** Minimum height of a Timer tab interval row. */
+    /** Minimum height of a Timer interval row. */
     val intervalRow = 72.dp
 
     /** The edit sheet's − / + buttons, a size up from [stepper]. */

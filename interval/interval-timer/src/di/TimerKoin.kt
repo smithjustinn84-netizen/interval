@@ -5,7 +5,7 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
-/** The Timer tab's ViewModel. */
+/** The Timer's ViewModel. */
 val timerModule: Module = module {
     viewModelOf(::TimerViewModel)
 }

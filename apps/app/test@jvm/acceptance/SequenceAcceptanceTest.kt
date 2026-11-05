@@ -26,7 +26,7 @@ class SequenceAcceptanceTest {
     fun `a preset of two blocks runs both with a rest between them and finishes`() = acceptanceScenario(
         storage = FakeStorage().apply { repository().presets.savePreset(Preset("Two blocks", twoBlocks)) },
     ) {
-        openTab("Timer")
+        openTimer()
         openAllPresets()
         seePresetReading("Two blocks", "20s on · 10s off · ×2, then 40s on · 20s off · ×2 · 30s between blocks")
         openPreset("Two blocks")
@@ -53,7 +53,7 @@ class SequenceAcceptanceTest {
 
     @Test
     fun `a block added on the Timer makes a sequence that runs both blocks`() = acceptanceScenario {
-        openTab("Timer")
+        openTimer()
         seeTimer()
         lowerRoundsTo(2)
         addBlockOnTimer()

@@ -88,7 +88,7 @@ import org.koin.compose.viewmodel.koinViewModel
 /**
  * Resolves the tab's ViewModel and binds it to [HistoryScreen]. Starting a workout puts it on the Timer,
  * then [onStartWorkout]; [onOpenWorkout] opens one finished workout, [onOpenLift] one kettlebell session,
- * [onPlan] the plan, [onShowTimer] the Timer tab, [onOpenSettings] Settings. Starting the lift program's day
+ * [onPlan] the plan, [onShowTimer] the Timer, [onOpenSettings] Settings. Starting the lift program's day
  * opens [onStartSession].
  * [selectedWorkout] or [selectedLift] is the one open beside the log, on a wide window.
  */

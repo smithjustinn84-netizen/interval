@@ -9,6 +9,8 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.performClick
 import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventDispatcher
@@ -101,6 +103,15 @@ fun appTest(
     } finally {
         koin.close()
     }
+}
+
+/** Opens the Timer where it lives: Train, its Conditioning pillar, then the Timer row over the presets. */
+fun DesktopComposeUiTest.openTimer() {
+    tab("Train").performClick()
+    onNode(hasText("Conditioning") and isSelectable()).performClick()
+    waitForIdle()
+    onNode(hasText("Timer") and hasClickAction()).performClick()
+    waitForIdle()
 }
 
 /** A navigation bar or rail item; "History" alone would also match the History screen's title. */

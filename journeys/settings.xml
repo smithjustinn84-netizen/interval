@@ -7,7 +7,7 @@
     <action>Tap the "Settings" button in Today's title bar and verify that Settings opens; tap "Back" and verify that the Today tab is shown</action>
     <action>Tap the "Train" tab, which opens on "Strength", then the "Settings" button in its title bar, and verify that Settings opens; tap "Back" and verify that Train's Strength pillar is shown</action>
     <action>Tap the "History" tab, then the "Settings" button in its title bar, and verify that Settings opens; tap "Back" and verify that the History tab is shown</action>
-    <action>Tap the "Timer" tab, then its "Settings" button</action>
+    <action>Tap the "Train" tab, tap "Conditioning", then tap "Timer" at the top of the presets, then the Timer's "Settings" button</action>
     <action>Verify, scrolling down, that the Settings screen shows "Cues", "Workout", "Calories", "Health", "Plan", "Appearance" and "Your data", and "About Interval" at its foot with no heading over it</action>
     <action>Under "Plan", verify that "Weekly goal" and "Reminder" each read "Off" (a fresh install), then tap "Weekly goal" and verify that the Plan page opens</action>
     <action>Tap "Raise the goal", tap "Reminder", pick "6:00 PM" and tap "Done"; tap "Back" and verify that Settings reads "3" beside "Weekly goal" and "6:00 PM" beside "Reminder"</action>
@@ -25,11 +25,11 @@
     <action>Tap "Light" under "Theme"</action>
     <action>Verify that "Light" is selected and the screen has a light background</action>
     <action>Go back with the system's Back</action>
-    <action>Verify that the Timer tab is shown with a light background</action>
-    <action>Tap the "Settings" button on the Timer tab</action>
+    <action>Verify that the Timer is shown with a light background</action>
+    <action>Tap the "Settings" button on the Timer</action>
     <action>Verify that the "Voice" switch is still off</action>
     <action>Tap "Voice", scroll to "Appearance" and tap "Dark" under "Theme"</action>
     <action>Go back with the system's Back</action>
-    <action>Verify that the Timer tab is shown</action>
+    <action>Verify that the Timer is shown</action>
   </actions>
 </journey>

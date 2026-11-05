@@ -10,7 +10,7 @@ import kotlin.time.Duration.Companion.seconds
 class LadderAcceptanceTest {
     @Test
     fun `a climbing ladder works each round longer`() = acceptanceScenario {
-        openTab("Timer")
+        openTimer()
         seeTimer()
         lowerRoundsTo(3)
         setLadder(seconds = 10)

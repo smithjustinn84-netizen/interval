@@ -12,7 +12,7 @@ class HealthConnectAcceptanceTest {
     @Test
     fun `a connected Health Connect gives its weight and gets each finished workout until it is disconnected`() {
         acceptanceScenario {
-            openTab("Timer")
+            openTimer()
             openSettings()
             seeHealthConnect(on = false)
             allowHealthConnect()
@@ -44,13 +44,14 @@ class HealthConnectAcceptanceTest {
     @Test
     fun `a watch's heart rate shows on the summary when it has synced and on the workout's page when it syncs later`() {
         acceptanceScenario {
-            openTab("Timer")
+            openTimer()
             allowHealthConnect()
             watchSyncsHeartRate(average = 142, peak = 171)
             endWorkoutAfterFirstRound()
             seeSummarySaved()
             seeSummaryHeartRate(average = 142, peak = 171)
             closeSummary()
+            leaveTimer()
             openTab("History")
             openWorkoutUnderToday("30s on · 15s off · ×8")
             seeWorkoutHeartRate(average = 142, peak = 171)
@@ -60,13 +61,14 @@ class HealthConnectAcceptanceTest {
     @Test
     fun `a watch that syncs after the summary closed shows its heart rate on the workout's page`() {
         acceptanceScenario {
-            openTab("Timer")
+            openTimer()
             allowHealthConnect()
             endWorkoutAfterFirstRound()
             seeSummarySaved()
             seeNoSummaryHeartRate()
             closeSummary()
             watchSyncsHeartRate(average = 138, peak = 165)
+            leaveTimer()
             openTab("History")
             openWorkoutUnderToday("30s on · 15s off · ×8")
             seeWorkoutHeartRate(average = 138, peak = 165)

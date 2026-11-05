@@ -6,22 +6,28 @@ import kotlin.test.Test
 /** `journeys/settings.xml`: change a cue and the theme, see both kept, then put the theme back. */
 class SettingsAcceptanceTest {
     @Test
-    fun `settings opens from every tab and back returns to that tab`() = acceptanceScenario {
+    fun `settings opens from every tab and the timer and back returns to where it was opened`() = acceptanceScenario {
         openSettings()
         goBack()
         seeTodayTab()
 
-        openTab("Timer")
-        seeTimer()
-        openSettings()
-        goBack()
-        seeTimer()
-
         openTab("Train")
-        seeLiftTab()
+        seeStrength()
         openSettings()
         goBack()
-        seeLiftTab()
+        seeStrength()
+
+        pickPillar("Conditioning")
+        seeConditioning()
+        openSettings()
+        goBack()
+        seeConditioning()
+
+        openTimerFromPresets()
+        openSettings()
+        goBack()
+        seeTimer()
+        leaveTimer()
 
         openTab("History")
         seeHistoryTab()

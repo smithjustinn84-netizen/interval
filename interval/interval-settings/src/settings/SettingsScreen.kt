@@ -93,7 +93,7 @@ fun SettingsRoute(
 /**
  * The set-once preferences, out of the way of the workout itself, the plan's goal and reminder as they stand
  * ([onShowPlan] leads to where they are changed), your data and the way to About. [inPane] when it sits beside
- * the Timer tab on a wide window: there it closes rather than going back.
+ * the Timer on a wide window: there it closes rather than going back.
  */
 @Composable
 fun SettingsScreen(

@@ -15,7 +15,7 @@
     <action>Press Home, long-press the app's icon and tap "Start a Lift session"</action>
     <action>Verify that the same workout is shown, still counting, and that adb shell dumpsys activity activities lists one MainActivity</action>
     <action>Press the system back button and tap "End workout" in the dialog; if a round had finished by then, the summary shows first: tap "Done"</action>
-    <action>Verify that the Timer tab is shown with a "Start workout" button</action>
+    <action>Verify that the Timer is shown with a "Start workout" button</action>
     <action>Press Home, long-press the app's icon and tap "Start a Lift session"</action>
     <action>Verify that the session shows "Log set"</action>
     <action>Press the system back button and tap "Leave" in the dialog</action>

@@ -80,7 +80,7 @@ import org.koin.compose.viewmodel.koinViewModel
 /**
  * The Today tab, the app's first: this week, what is up next with its Start, and the presets that fit a few
  * minutes. [onStartWorkout] opens the workout the Timer was just handed and [onStartSession] the session Lift
- * was just told to start; the rest lead to the plan, Lift's programs, the History and Timer tabs and Settings.
+ * was just told to start; the rest lead to the plan, Lift's programs, the History tab, the Timer and Settings.
  */
 @Composable
 fun HomeRoute(
@@ -226,7 +226,7 @@ private fun upNextTitle(next: UpNextItem): String = when (next) {
         ?: stringResource(Res.string.history_lift_session)
 }
 
-/** The line under it: the workout's shape and length, or the program's day, its lifts and about how long. */
+/** The line under it: the workout's shape and length, or about how long the program's day takes, its day and lifts. */
 @Composable
 private fun upNextDetail(next: UpNextItem): String = when (next) {
     is UpNextItem.Planned -> stringResource(
@@ -236,7 +236,8 @@ private fun upNextDetail(next: UpNextItem): String = when (next) {
     )
 
     is UpNextItem.Lift -> next.programDay?.let { day ->
-        joined(listOfNotNull(programDayLine(day), programDayLifts(day), next.minutes?.let { estimateLine(it) }))
+        // How long comes first: it is what Today is asked.
+        joined(listOfNotNull(next.minutes?.let { estimateLine(it) }, programDayLine(day), programDayLifts(day)))
     } ?: stringResource(Res.string.history_lift_any)
 }
 

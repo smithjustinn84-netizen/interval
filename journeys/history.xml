@@ -11,7 +11,7 @@
     <action>Tap "Raise the goal"</action>
     <action>Verify that the weekly goal shows 3</action>
     <action>Tap "Back"</action>
-    <action>Tap the "Timer" tab</action>
+    <action>Tap the "Train" tab, tap "Conditioning", then tap "Timer" at the top of the presets</action>
     <action>Tap "Start workout"</action>
     <action>Tap "Skip"</action>
     <action>Verify that the screen shows "Work"</action>
@@ -22,7 +22,7 @@
     <action>Tap "End workout" in the dialog</action>
     <action>Verify that the summary shows "Ended" and "Saved to history"</action>
     <action>Tap "Done"</action>
-    <action>Tap the "History" tab</action>
+    <action>Tap "Back" on the Timer, which returns to Conditioning, then tap the "History" tab</action>
     <action>Verify that "Week" is picked, "This week" reads "2 more to hit 3" with a 1/3 ring, and a "Today" section lists one workout</action>
     <action>Tap the workout under "Today"</action>
     <action>Verify that its page shows "ended early", "Repeat now" and "Plan again"</action>

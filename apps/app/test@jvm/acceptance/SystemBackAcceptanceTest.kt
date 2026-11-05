@@ -16,15 +16,17 @@ class SystemBackAcceptanceTest {
         pressSystemBack()
         seeTodayTab()
 
-        openTab("Timer")
-        seeTimer()
+        // The Timer is a page over Train's Conditioning pillar: Back shows the presets, then Today.
+        openTimer()
+        pressSystemBack()
+        seeConditioning()
         pressSystemBack()
         seeTodayTab()
     }
 
     @Test
     fun `system back during a workout pauses and asks before ending`() = acceptanceScenario {
-        openTab("Timer")
+        openTimer()
         startWorkout()
         seePhase("Get ready")
 

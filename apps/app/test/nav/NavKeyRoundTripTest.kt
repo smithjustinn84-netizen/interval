@@ -5,6 +5,7 @@ import dev.justinsmith.interval.nav.About
 import dev.justinsmith.interval.nav.Licenses
 import dev.justinsmith.interval.navConfiguration
 import dev.justinsmith.interval.rootAtToday
+import dev.justinsmith.interval.timerUnderTrain
 import dev.justinsmith.lift.nav.ExerciseLibrary
 import dev.justinsmith.lift.nav.LiftDetail
 import dev.justinsmith.lift.nav.LiftTab
@@ -31,8 +32,9 @@ class NavKeyRoundTripTest {
     fun `every route survives saving and restoring`() {
         val routes = listOf<NavKey>(
             TodayTab,
-            TimerTab,
+            Timer,
             LiftTab,
+            ConditioningTab,
             HistoryTab,
             Settings,
             Workout(1_700_000_000_000),
@@ -57,17 +59,73 @@ class NavKeyRoundTripTest {
 
     @Test
     fun `a back stack saved when the timer was the first tab gets today under it`() {
-        val saved = mutableListOf<NavKey>(TimerTab, HistoryTab, Plan)
+        val saved = mutableListOf<NavKey>(Timer, HistoryTab, Plan)
         saved.rootAtToday()
-        assertEquals(listOf<NavKey>(TodayTab, TimerTab, HistoryTab, Plan), saved)
+        assertEquals(listOf<NavKey>(TodayTab, Timer, HistoryTab, Plan), saved)
 
         // One that has it already is left as it is.
         saved.rootAtToday()
-        assertEquals(listOf<NavKey>(TodayTab, TimerTab, HistoryTab, Plan), saved)
+        assertEquals(listOf<NavKey>(TodayTab, Timer, HistoryTab, Plan), saved)
 
         val fresh = mutableListOf<NavKey>(TodayTab)
         fresh.rootAtToday()
         assertEquals(listOf<NavKey>(TodayTab), fresh)
+    }
+
+    @Test
+    fun `the timer saved as a tab restores as the timer`() {
+        val saved = """{"type":"dev.justinsmith.interval.nav.TimerTab"}"""
+        assertEquals<NavKey>(Timer, json.decodeFromString(serializer, saved))
+    }
+
+    @Test
+    fun `a back stack saved with the timer as a tab gets conditioning under it`() {
+        assertEquals(listOf<NavKey>(TodayTab, ConditioningTab, Timer), underTrain(TodayTab, Timer))
+        // Settings beside or over it stays over it.
+        assertEquals(
+            listOf<NavKey>(TodayTab, ConditioningTab, Timer, Settings),
+            underTrain(TodayTab, Timer, Settings),
+        )
+        assertEquals(
+            listOf<NavKey>(TodayTab, ConditioningTab, Timer, Workout(7)),
+            underTrain(TodayTab, Timer, Workout(7)),
+        )
+    }
+
+    @Test
+    fun `the presets page pushed from the timer becomes conditioning under it`() {
+        // Presets was the page on top: the Timer it was pushed from now sits over what Presets became.
+        assertEquals(listOf<NavKey>(TodayTab, ConditioningTab, Timer), underTrain(TodayTab, Timer, Presets))
+    }
+
+    @Test
+    fun `a timer left under another tab goes`() {
+        // The root of a build older still, with History chosen over it: nothing shows the Timer there.
+        val saved = mutableListOf<NavKey>(Timer, HistoryTab, Plan)
+        saved.rootAtToday()
+        saved.timerUnderTrain()
+        assertEquals(listOf<NavKey>(TodayTab, HistoryTab, Plan), saved)
+    }
+
+    @Test
+    fun `a back stack with the timer where it lives is left as it is`() {
+        assertEquals(
+            listOf<NavKey>(TodayTab, ConditioningTab, Timer, Settings),
+            underTrain(TodayTab, ConditioningTab, Timer, Settings),
+        )
+        assertEquals(listOf<NavKey>(TodayTab, LiftTab, Lifting), underTrain(TodayTab, LiftTab, Lifting))
+        assertEquals(listOf<NavKey>(TodayTab), underTrain(TodayTab))
+        // Twice over changes nothing more.
+        val twice = underTrain(TodayTab, Timer).toMutableList()
+        twice.timerUnderTrain()
+        assertEquals(listOf<NavKey>(TodayTab, ConditioningTab, Timer), twice)
+    }
+
+    private fun underTrain(vararg keys: NavKey): List<NavKey> {
+        val stack = mutableListOf<NavKey>()
+        stack.addAll(keys)
+        stack.timerUnderTrain()
+        return stack
     }
 
     @Test

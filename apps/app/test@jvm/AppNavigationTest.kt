@@ -48,7 +48,7 @@ class AppNavigationTest {
 
     @Test
     fun `the workout rises into place rather than sliding in from the side`() = appTest {
-        tab("Timer").performClick()
+        openTimer()
         waitForIdle()
         mainClock.autoAdvance = false
         onNodeWithText("Start workout").performClick()
@@ -172,9 +172,13 @@ class AppNavigationTest {
         tab("History").performClick()
         onNodeWithText("Train to a plan").assertExists()
 
-        tab("Timer").performClick()
+        // The Timer is a page over Train's Conditioning pillar: the bar is away until Back.
+        openTimer()
         onNodeWithText("Start workout").assertExists()
-        tab("Timer").assertIsSelected()
+        tab("Train").assertDoesNotExist()
+        onNodeWithContentDescription("Back").performClick()
+        onNodeWithText("Built-in").assertExists()
+        tab("Train").assertIsSelected()
 
         tab("Today").performClick()
         onNodeWithText("This week").assertExists()
@@ -183,20 +187,22 @@ class AppNavigationTest {
 
     @Test
     fun `a preset put on the Timer from All presets becomes the next workout`() = appTest { app ->
-        tab("Timer").performClick()
+        openTimer()
+        // The Timer's way to the presets is the way back to them.
         onNodeWithContentDescription("All presets").performClick()
+        scrollToText("Hangboard")
         onNodeWithText("Hangboard").performClick()
         onNodeWithText("Put on Timer").performClick()
         onNodeWithText("Start workout").assertExists()
-        tab("Timer").assertIsSelected()
+        onNodeWithText("Hangboard · Total").assertExists()
         val config = app.repository.settings.config.value
         assertTrue(config.sameShape(builtInPresets.single { it.name == "Hangboard" }.config))
     }
 
     @Test
-    fun `a preset started from its sheet opens the workout and ends back on Presets`() = appTest { app ->
-        tab("Timer").performClick()
-        onNodeWithContentDescription("All presets").performClick()
+    fun `a preset started from its sheet opens the workout and ends back on the presets`() = appTest { app ->
+        tab("Train").performClick()
+        onNode(hasText("Conditioning") and isSelectable()).performClick()
         onNodeWithText("Tabata").performClick()
         onNodeWithText("Start workout").performClick()
         onNodeWithContentDescription("End workout").assertExists()
@@ -206,30 +212,28 @@ class AppNavigationTest {
         onNodeWithText("End workout").performClick()
         onNodeWithText("Built-in").assertExists()
         onNodeWithText("Put on Timer").assertDoesNotExist()
-        // Presets is a page over the Timer, so Back returns there.
-        tab("Timer").assertDoesNotExist()
-        onNodeWithContentDescription("Back").performClick()
-        onNodeWithText("Start workout").assertExists()
+        // The presets are Train's Conditioning pillar, a tab: the bar is back.
+        tab("Train").assertIsSelected()
     }
 
     @Test
-    fun `a preset saved on the Presets page is named on the Timer`() = appTest {
-        tab("Timer").performClick()
-        onNodeWithContentDescription("All presets").performClick()
+    fun `a preset saved among the presets is named on the Timer`() = appTest {
+        tab("Train").performClick()
+        onNode(hasText("Conditioning") and isSelectable()).performClick()
         onNodeWithContentDescription("New preset").performClick()
         // The unsaved card's own Save pill stays in the tree under the editor, drawn first.
         onAllNodesWithText("Save").onLast().performScrollTo().performClick()
         onNodeWithText("30/15 ×8").assertExists()
-        onNodeWithContentDescription("Back").performClick()
+        onNode(hasText("Timer") and hasClickAction()).performClick()
         onNodeWithText("30/15 ×8 · Total").assertExists()
     }
 
     @Test
     fun `a workout opens full screen and ends back on the timer`() = appTest {
-        tab("Timer").performClick()
+        openTimer()
         onNodeWithText("Start workout").performClick()
         onNodeWithContentDescription("End workout").assertExists()
-        tab("Timer").assertDoesNotExist()
+        tab("Train").assertDoesNotExist()
 
         onNodeWithContentDescription("End workout").performClick()
         onNodeWithText("End workout").performClick()
@@ -238,7 +242,7 @@ class AppNavigationTest {
 
     @Test
     fun `on a phone settings opens full screen and goes back`() = appTest {
-        tab("Timer").performClick()
+        openTimer()
         onNodeWithContentDescription("Settings").performClick()
         onNodeWithText("Cues").assertExists()
         onNodeWithText("Start workout").assertDoesNotExist()
@@ -268,7 +272,7 @@ class AppNavigationTest {
 
     @Test
     fun `on a tablet settings opens beside the timer`() = appTest(Window.Tablet) {
-        tab("Timer").performClick()
+        openTimer()
         onNodeWithContentDescription("Settings").performClick()
         onNodeWithText("Cues").assertExists()
         onNodeWithText("Start workout").assertExists()
@@ -332,7 +336,7 @@ class AppNavigationTest {
 
     @Test
     fun `beside the timer settings slides in from the end and slides back out`() = appTest(Window.Tablet) {
-        tab("Timer").performClick()
+        openTimer()
         waitForIdle()
         mainClock.autoAdvance = false
         onNodeWithContentDescription("Settings").performClick()
@@ -390,7 +394,7 @@ class AppNavigationTest {
 
     @Test
     fun `the desktop window opens settings beside the timer`() = appTest(Window.Desktop) {
-        tab("Timer").performClick()
+        openTimer()
         onNodeWithContentDescription("Settings").performClick()
         onNodeWithText("Cues").assertExists()
         onNodeWithText("Start workout").assertExists()
@@ -398,7 +402,7 @@ class AppNavigationTest {
 
     @Test
     fun `on a tablet held upright settings opens full screen`() = appTest(Window.TabletPortrait) {
-        tab("Timer").performClick()
+        openTimer()
         onNodeWithContentDescription("Settings").performClick()
         onNodeWithText("Cues").assertExists()
         onNodeWithText("Start workout").assertDoesNotExist()
@@ -440,8 +444,8 @@ class AppNavigationTest {
 
     @Test
     fun `a saved preset says its name and a deleted one comes back with Undo`() = appTest {
-        tab("Timer").performClick()
-        onNodeWithContentDescription("All presets").performClick()
+        tab("Train").performClick()
+        onNode(hasText("Conditioning") and isSelectable()).performClick()
         onNodeWithContentDescription("New preset").performClick()
         onAllNodesWithText("Save").onLast().performScrollTo().performClick()
         onNodeWithText("Saved as 30/15 ×8").assertExists()

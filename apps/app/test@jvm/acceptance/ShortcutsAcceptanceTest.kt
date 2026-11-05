@@ -29,7 +29,7 @@ class ShortcutsAcceptanceTest {
 
     @Test
     fun `a shortcut while a workout runs returns to that workout`() = acceptanceScenario {
-        openTab("Timer")
+        openTimer()
         startWorkout()
         skipPhase()
         seePhase("Work")

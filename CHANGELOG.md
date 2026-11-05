@@ -10,7 +10,7 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 - Today, a new first tab and where the app opens: this week against the goal, what is up next (today's plan, or
   the next day of the program followed) under one Start, and "Or pick by time", which offers the presets that fit
   5, 10, 20 or 30 minutes, each with a Start of its own. With nothing planned it leads to the plan and to Lift's
-  programs. The Timer, Lift and History stay tabs beside it, and Back from any of them returns to Today.
+  programs. Train and History are the tabs beside it, and Back from either returns to Today.
 - About how long a program's day takes: "about 20 min" on Lift's program card, on each day of a program's sheet,
   on every program in the list ("about 12–15 min" where its days differ) and on Today's Up next. It is
   estimated from the day's sets and reps, each lift's pace, the minutes of anything on the minute and the rest
@@ -19,7 +19,7 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 - Train, in place of the Lift tab: one tab for what there is to train, in two pillars picked under its title.
   Strength is what the Lift tab was (the program's day, the last session, the balance, the exercises and the
   equipment, with Start session pinned under them); Conditioning lists the presets, each started or put on the
-  Timer from its sheet. The tab reopens on the pillar last shown.
+  Timer from its sheet, under a row that opens the Timer. The tab reopens on the pillar last shown.
 - Sequences: a workout of blocks run one after another, each block a shape of its own (work, rest, rounds, sets
   and ladder) with a rest between blocks. The workout says "Block 2 of 3 · Round 1 of 8", "Rest between blocks"
   and "Next: block 2 of 3 · 0:40", the voice "Rest before block 2" and "Block 2. Work", and the notification the
@@ -31,6 +31,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   back on the Timer without saving a preset, and "Save as preset" names it. The Timeline draws every block.
 
 ### Changed
+- The Timer is no longer a tab: it is a page over Train's Conditioning pillar, opened by the "Timer" row at the
+  top of the presets, with a Back to them. The bar is Today · Train · History. "Put on Timer", the "Start a
+  workout" shortcut and the widget open it as before, and Back from it returns to the presets, then Today. On a
+  wide window Settings still opens beside it.
 - The week's marks and the weekly goal no longer show on Lift's side: Today shows the week, for both sides.
 
 ## [0.4.0] — 2026-11-05

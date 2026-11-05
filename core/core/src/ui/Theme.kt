@@ -249,7 +249,7 @@ internal val lightWorkoutColors = WorkoutColors(
 data class IntervalType(
     /** The workout countdown; callers size it to the window with `copy(fontSize, lineHeight)`. */
     val clock: TextStyle,
-    /** The biggest value on a screen: the Timer tab's total, the edit sheet's value, Done. */
+    /** The biggest value on a screen: the Timer's total, the edit sheet's value, Done. */
     val display: TextStyle,
     /** Screen titles: "Timer", "Presets". */
     val title: TextStyle,
