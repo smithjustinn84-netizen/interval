@@ -120,7 +120,8 @@ To change one later (a new password, say), run its command again: `gh secret set
    running workout and the Presets page.
    **0.4.0, 2026-11-05:** every `journeys/*.xml` on the release APK. `widget.xml` found the one rule the app
    needs: Glance's WorkManager 2.7.1 keeps its input mergers' classes but not their constructors under R8's full
-   mode, so the widget never drew (0.3.0 shipped so). Run `widget.xml` on every release build.
+   mode, so the widget never drew (0.3.0 shipped so). Run `widget.xml` on every release build. Tagged `v0.4.0`
+   the same day; CI's `release` job attached `interval-v0.4.0.aab`.
 3. **On-device checks CI cannot run.**
    - `journeys/settings.xml`: Export opens the share sheet with `interval-<date>.json`.
    - `journeys/lift-rest-alert.xml`: a rest keeps counting on the lock screen and beeps as it ends.
