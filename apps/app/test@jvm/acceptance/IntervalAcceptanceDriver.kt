@@ -35,6 +35,7 @@ import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.ShareableFile
 import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.tab
+import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
 import dev.justinsmith.interval.ui.AcceptanceSteps
 import dev.justinsmith.interval.ui.JOURNEY_TIMEOUT
@@ -100,7 +101,7 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     fun setCoolDown(value: String) = setBookend("Cool-down", value)
 
-    /** Under the Timer's three rows, the warm-up's or cool-down's chip, then a quick pick on its sheet. */
+    /** Under the Timer's three rows, a chip (sets, warm-up or cool-down), then a quick pick on its sheet. */
     private fun setBookend(name: String, value: String) {
         tap(name)
         see("Quick picks")
@@ -116,8 +117,15 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         see(hasText("×$rounds"))
     }
 
-    /** The ladder's chip under the Timer's rows, then a quick pick on its sheet: "+0:10" a round. */
-    fun setLadder(step: String) = setBookend("Ladder", step)
+    /** The ladder, on Work's sheet: its + a step at a time to [seconds] a round, which the Work row then says. */
+    fun setLadder(seconds: Int) {
+        tap("Work")
+        see("Ladder")
+        val now = app.repository.settings.config.value.workStepSeconds
+        repeat((seconds - now) / ConfigField.WorkStep.step) { tapDescribed("More work each round") }
+        tap("Done")
+        see("Work · +${seconds}s a round")
+    }
 
     /** The workout History holds was kept as a ladder of [step] seconds a round. */
     fun workoutKeptAsLadder(step: Int) = waitFor("a workout kept as a ladder of $step s") {
@@ -127,8 +135,17 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     /** The sets chip under the Timer's rows, then a quick pick on its sheet. */
     fun setSets(count: String) = setBookend("Sets", count)
 
-    /** The rest between sets, whose chip shows once there is more than one. */
-    fun setRestBetweenSets(value: String) = setBookend("Between sets", value)
+    /** The rest between sets, on the sets' sheet once there are two: its + a step at a time to [seconds]. */
+    fun setRestBetweenSets(seconds: Int) {
+        tap("Sets")
+        see("Between sets")
+        val now = app.repository.settings.config.value.setRestSeconds
+        repeat((seconds - now) / ConfigField.SetRest.step) { tapDescribed("More rest between sets") }
+        tap("Done")
+        waitFor("a rest of $seconds s between sets") {
+            app.repository.settings.config.value.setRestSeconds == seconds
+        }
+    }
 
     fun seeTimerTotal(total: String) = see(total)
 

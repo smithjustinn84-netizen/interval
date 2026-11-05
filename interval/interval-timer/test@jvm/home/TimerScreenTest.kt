@@ -37,9 +37,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /** A shape no built-in preset has, which the screen calls Custom. */
-private val custom = IntervalConfig(prepSeconds = 10, workSeconds = 40, restSeconds = 20, rounds = 6)
+internal val custom = IntervalConfig(prepSeconds = 10, workSeconds = 40, restSeconds = 20, rounds = 6)
 
-private fun state(config: IntervalConfig = custom) = TimerUiState(
+internal fun state(config: IntervalConfig = custom) = TimerUiState(
     config = config,
     total = formatClock(config.totalSeconds),
     presetName = builtInPresets.firstOrNull { it.config.sameShape(config) }?.name,

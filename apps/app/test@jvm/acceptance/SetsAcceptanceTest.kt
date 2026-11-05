@@ -14,7 +14,7 @@ class SetsAcceptanceTest {
         seeTimer()
         lowerRoundsTo(3)
         setSets("2")
-        setRestBetweenSets("1:00")
+        setRestBetweenSets(seconds = 60)
         // 10 s to get ready, then twice 3 × 30 s on with 2 × 15 s between, and a minute between the two.
         seeTimerTotal("5:10")
 

@@ -14,6 +14,9 @@
     <string name="config_ladder">%1$s on, %2$s a round · %3$s off · ×%4$d</string>
     <string name="config_step_up">+%1$s</string>
     <string name="config_step_down">−%1$s</string>
+    <string name="config_ladder_note">%1$s a round</string>
+    <string name="ladder_rounds_work">Rounds work %1$s</string>
+    <string name="common_ellipsis">…</string>
     <string name="duration_short_seconds">%1$ds</string>
     <string name="duration_short_minutes">%1$dm</string>
     <string name="field_prep_label">Get ready</string>

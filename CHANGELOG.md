@@ -7,14 +7,17 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.4.0] — Unreleased
 
 ### Added
-- Sets of rounds, with a longer rest between them: a "Sets" chip under the Timer's rows and the editor's, and once
-  there is more than one a "Between sets" chip ("20s on · 10s off · ×8 · 4 sets · 1m between"). The workout says
+- Sets of rounds, with a longer rest between them: a "Sets" chip under the Timer's rows, whose sheet takes the rest
+  between them once there is more than one (the chip then reads "4 · 1m"), and rows for both in the editor
+  ("20s on · 10s off · ×8 · 4 sets · 1m between"). The workout says
   "Set 2 of 4 · Round 3 of 8" on screen and in the notification, shows the rest between sets in a colour of its own
   and says "Rest between sets" and "Set 2. Work"; Health Connect counts it as rest. Describe reads
   "4 x (8 x 20/10), 1:00 between" and "4 sets of 8 rounds 20/10" (one count alone, "8 sets of 20/10", is still
   rounds). Exports are schema 4, which a 0.3 build refuses with "update the app"; older files read as one set.
-- Ladders, whose work climbs or falls a step each round: a "Ladder" chip under the Timer's rows and the editor's
-  ("20s on, +10s a round · 10s off · ×5", named "20→60/10 ×5"), starting over with each set. The workout's clock is
+- Ladders, whose work climbs or falls a step each round, starting over with each set: set on the Timer in Work's
+  sheet, under its quick picks, where a bar and "Rounds work 0:20 · 0:30 · … · 1:00" show what it makes of the
+  rounds, and said on the Work row ("Work · +10s a round"); a "Ladder" row in the editor
+  ("20s on, +10s a round · 10s off · ×5", named "20→60/10 ×5"). The workout's clock is
   each round's own length, and "Next: round 2 of 5 · 0:30" says how long the coming one is. A ladder that would fall
   below five seconds falls less steeply instead. Describe reads "ladder 20 to 60 by 10", "20/10 climbing 10 a round"
   and "60 down to 20 by 10, 10 off".
@@ -22,6 +25,14 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   workout" and "Start a Lift session", from a cold start or with the app running, and a workout already running is
   kept.
 - The home-screen widget's preview in Android's widget picker, drawn over a sample week (Android 15 and up).
+
+### Changed
+- The Timer's chips are one quiet row under Work, Rest and Rounds: the sets, the warm-up and the cool-down, each a
+  small name over its value, with no wash, border or stripe, so the three rows keep the colour and the height.
+
+### Fixed
+- The Timer's Work, Rest and Rounds values were cut off on a phone once the chips under them took three rows. The
+  rows now share the height only where each has room for its value, and scroll where they don't.
 
 ## [0.3.0] — 2026-11-04
 

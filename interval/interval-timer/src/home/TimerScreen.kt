@@ -35,8 +35,10 @@ import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.valueOf
 import dev.justinsmith.interval.ui.ActivitySheet
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.LadderField
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.SetupLanes
+import dev.justinsmith.interval.ui.SheetField
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ValueSheet
@@ -69,8 +71,9 @@ fun TimerRoute(
 
 /**
  * Home: the session total, then Work, Rest and Rounds as three tall rows, each with its own − and +
- * (hold to run), the warm-up and cool-down under them, and Start within thumb reach beside the way to
- * the presets, all over the lanes. Tapping a value opens its edit sheet for the quick picks. The title
+ * (hold to run), the sets, the warm-up and the cool-down as a row of chips under them, and Start within thumb
+ * reach beside the way to the presets, all over the lanes. Tapping a value opens its edit sheet for the quick
+ * picks, and for what changes it: the ladder on the work's, the rest between sets on the sets'. The title
  * bar opens [DescribeSheet], whose workout goes to [onUseDescription] or, through the preset editor,
  * [onSavePreset].
  */
@@ -115,8 +118,7 @@ fun TimerScreen(
                         .fillMaxHeight()
                         .padding(top = Spacing.space16, bottom = Spacing.space16, end = Spacing.space16),
                 ) {
-                    // Too short for a row of chips more: the ladder shares the sets' row.
-                    StepperRows(state.config, onStep, onEdit, ladderBesideSets = true)
+                    StepperRows(state.config, onStep, onEdit)
                 }
             }
         } else {
@@ -139,16 +141,7 @@ fun TimerScreen(
             }
         }
     }
-    editing?.let { field ->
-        ValueSheet(
-            field = field,
-            value = state.config.valueOf(field),
-            total = state.total,
-            onStep = { onStep(field, it) },
-            onPick = { onSet(field, it) },
-            onDismiss = { editingName = null },
-        )
-    }
+    editing?.let { field -> TimerValueSheet(field, state, onStep, onSet, onDismiss = { editingName = null }) }
     if (choosingActivity) {
         ActivitySheet(
             selected = state.config.activity,
@@ -166,6 +159,39 @@ fun TimerScreen(
         presets = state.presets,
         onSave = { _, preset -> onSavePreset(preset) },
     )
+}
+
+/**
+ * [field]'s edit sheet, with what changes that value under its quick picks rather than on the Timer: the ladder
+ * on the work's, and the rest between sets on the sets' once there is more than one.
+ */
+@Composable
+private fun TimerValueSheet(
+    field: ConfigField,
+    state: TimerUiState,
+    onStep: (ConfigField, Int) -> Unit,
+    onSet: (ConfigField, Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val config = state.config
+    ValueSheet(
+        field = field,
+        value = config.valueOf(field),
+        total = state.total,
+        onStep = { onStep(field, it) },
+        onPick = { onSet(field, it) },
+        onDismiss = onDismiss,
+    ) {
+        when {
+            field == ConfigField.Work -> LadderField(config, onStep = { onStep(ConfigField.WorkStep, it) })
+
+            field == ConfigField.Sets && config.sets > 1 -> SheetField(
+                ConfigField.SetRest,
+                config.setRestSeconds,
+                onStep = { onStep(ConfigField.SetRest, it) },
+            )
+        }
+    }
 }
 
 @Composable
@@ -215,7 +241,9 @@ private fun TimerScreenPreview() {
 
 /**
  * Below this portrait height (at a font scale of 1, grown with a larger one) or above [COMPACT_FONT_SCALE], the
- * upper fields scroll above a pinned Start row: the height the three rows and their three rows of chips need.
+ * upper fields scroll above a pinned Start row. It is the height the three rows need to share for each to hold
+ * its name over its value at the smallest size (80 dp a row), with the row of chips and all that is fixed round
+ * them; shorter, and sharing would clip the values.
  */
-private val COMPACT_PORTRAIT_HEIGHT = 700.dp
+private val COMPACT_PORTRAIT_HEIGHT = 730.dp
 private const val COMPACT_FONT_SCALE = 1.35f

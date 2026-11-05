@@ -11,6 +11,7 @@ import dev.justinsmith.interval.ui.resources.common_joined
 import dev.justinsmith.interval.ui.resources.config_cool_down
 import dev.justinsmith.interval.ui.resources.config_description
 import dev.justinsmith.interval.ui.resources.config_ladder
+import dev.justinsmith.interval.ui.resources.config_ladder_note
 import dev.justinsmith.interval.ui.resources.config_set_rest
 import dev.justinsmith.interval.ui.resources.config_sets
 import dev.justinsmith.interval.ui.resources.config_step_down
@@ -59,6 +60,15 @@ fun configDescription(config: IntervalConfig): String {
         ),
     )
 }
+
+/** What a ladder does to each round's work, for beside the work's name: "+10s a round"; null with no ladder. */
+@Composable
+fun ladderNote(config: IntervalConfig): String? =
+    if (config.isLadder) {
+        stringResource(Res.string.config_ladder_note, stepText(config.workStepSeconds))
+    } else {
+        null
+    }
 
 /** A ladder's step with its sign: "+10s", "−5s". */
 @Composable

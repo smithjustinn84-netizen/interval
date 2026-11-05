@@ -4,15 +4,15 @@ import kotlin.test.Test
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * `journeys/ladder.xml`: a ladder set on the Timer works each round a step longer than the one before, says how long
- * the coming round is, and is kept with the workout as its shape.
+ * `journeys/ladder.xml`: a ladder set on the Timer, in Work's sheet, works each round a step longer than the one
+ * before, says how long the coming round is, and is kept with the workout as its shape.
  */
 class LadderAcceptanceTest {
     @Test
     fun `a climbing ladder works each round longer`() = acceptanceScenario {
         seeTimer()
         lowerRoundsTo(3)
-        setLadder("+0:10")
+        setLadder(seconds = 10)
         // 10 s to get ready, then 30, 40 and 50 s on with 15 s between.
         seeTimerTotal("2:40")
 

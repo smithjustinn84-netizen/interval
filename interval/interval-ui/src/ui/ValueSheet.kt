@@ -37,6 +37,7 @@ import org.jetbrains.compose.resources.stringResource
 /**
  * The edit sheet for one value: big − / + steppers (hold to repeat), one-tap common values, the
  * session total it leads to, and Done. Changes apply as they are made; Done, or any way out of the sheet, closes.
+ * [extra] goes under the common values: a value that changes this one, such as a [LadderField] under the work.
  */
 @Composable
 fun ValueSheet(
@@ -46,6 +47,7 @@ fun ValueSheet(
     onStep: (Int) -> Unit,
     onPick: (Int) -> Unit,
     onDismiss: () -> Unit,
+    extra: @Composable () -> Unit = {},
 ) {
     val palette = IntervalTheme.palette
     // Screen readers announce the sheet by its field as it opens.
@@ -67,6 +69,7 @@ fun ValueSheet(
             color = field.valueColor(),
         )
         QuickPicks(field, value, onPick)
+        extra()
         if (total != null) {
             Row(Modifier.fillMaxWidth().padding(horizontal = Spacing.space4)) {
                 Text(

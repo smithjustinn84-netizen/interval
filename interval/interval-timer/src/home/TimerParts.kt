@@ -34,6 +34,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.em
 import dev.justinsmith.interval.home.resources.Res
 import dev.justinsmith.interval.home.resources.activity_choose_cd
@@ -69,6 +73,7 @@ import dev.justinsmith.interval.ui.editRes
 import dev.justinsmith.interval.ui.enterExpanding
 import dev.justinsmith.interval.ui.exitShrinking
 import dev.justinsmith.interval.ui.labelRes
+import dev.justinsmith.interval.ui.ladderNote
 import dev.justinsmith.interval.ui.phaseStripe
 import dev.justinsmith.interval.ui.presetNameOrCustom
 import dev.justinsmith.interval.ui.rememberRising
@@ -188,9 +193,10 @@ private fun ActivityPill(activity: Activity, onClick: () -> Unit, modifier: Modi
 }
 
 /**
- * Work, Rest and Rounds, sharing the height they're given (or stacking naturally when scrolling), then the
- * ladder, the sets (and, with more than one, the rest between them) and the warm-up and cool-down as short rows
- * under them; with [ladderBesideSets], where the height is short, the ladder in the sets' row.
+ * Work, Rest and Rounds, sharing the height they're given (or stacking naturally when scrolling), then one row of
+ * quiet chips under them: the sets, the warm-up and the cool-down. Everything else is on the sheet of the value it
+ * changes: a ladder on the work's, whose row says it ("Work · +10s a round"), and the rest between sets on the
+ * sets'. So the three rows keep the height and the colour.
  */
 @Composable
 internal fun ColumnScope.StepperRows(
@@ -198,8 +204,8 @@ internal fun ColumnScope.StepperRows(
     onStep: (ConfigField, Int) -> Unit,
     onEdit: (ConfigField) -> Unit,
     fillHeight: Boolean = true,
-    ladderBesideSets: Boolean = false,
 ) {
+    val ladder = ladderNote(config)
     ConfigField.shape.forEachIndexed { index, field ->
         if (index > 0) Spacer(Modifier.size(Spacing.space8))
         StepperRow(
@@ -208,23 +214,17 @@ internal fun ColumnScope.StepperRows(
             onStep = { onStep(field, it) },
             onEdit = { onEdit(field) },
             modifier = if (fillHeight) Modifier.weight(1f) else Modifier,
+            note = ladder.takeIf { field == ConfigField.Work },
         )
     }
     Spacer(Modifier.size(Spacing.space8))
-    if (ladderBesideSets) {
-        BookendRow(config, onEdit, fields = ConfigField.ladder + ConfigField.setsOf(config))
-    } else {
-        BookendRow(config, onEdit, fields = ConfigField.ladder)
-        Spacer(Modifier.size(Spacing.space8))
-        BookendRow(config, onEdit, fields = ConfigField.setsOf(config))
-    }
-    Spacer(Modifier.size(Spacing.space8))
-    BookendRow(config, onEdit)
+    BookendRow(config, onEdit, fields = listOf(ConfigField.Sets) + ConfigField.bookends)
 }
 
 /**
  * One value as a card: its phase stripe down the start edge, its name in the stripe's colour over the
- * value as big as the row allows, and − and + at thumb reach. The name and value open the edit sheet.
+ * value as big as the row allows, and − and + at thumb reach. The name and value open the edit sheet. A [note]
+ * follows the name, dimmer: what else shapes the value, such as a ladder's step.
  */
 @Composable
 private fun StepperRow(
@@ -233,10 +233,18 @@ private fun StepperRow(
     onStep: (Int) -> Unit,
     onEdit: () -> Unit,
     modifier: Modifier = Modifier,
+    note: String? = null,
 ) {
     val palette = IntervalTheme.palette
     val stripe = field.stripe()
     val text = field.displayText(value)
+    val name = stringResource(field.labelRes)
+    val noted = note?.let { stringResource(Res.string.common_joined, name, it) }
+    val label = buildAnnotatedString {
+        withStyle(SpanStyle(color = stripe)) { append(name) }
+        // The name is the line's start in every language the join is written for; the rest of it is the note.
+        noted?.let { append(it.removePrefix(name)) }
+    }
     // The whole card opens the sheet, so its ripple and press fill the card; − and + take their own taps.
     val interaction = remember { MutableInteractionSource() }
     Row(
@@ -262,7 +270,13 @@ private fun StepperRow(
                 .padding(vertical = Spacing.space8),
             verticalArrangement = Arrangement.Center,
         ) {
-            Text(stringResource(field.labelRes), style = IntervalTheme.type.label, color = stripe)
+            Text(
+                label,
+                style = IntervalTheme.type.label,
+                color = palette.textDim,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             BasicText(
                 text,
                 // A line height in em, so it shrinks with the auto-sized font; display's 96.sp would not.
