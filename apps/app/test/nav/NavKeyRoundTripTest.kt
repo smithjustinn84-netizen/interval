@@ -4,6 +4,7 @@ import androidx.navigation3.runtime.NavKey
 import dev.justinsmith.interval.nav.About
 import dev.justinsmith.interval.nav.Licenses
 import dev.justinsmith.interval.navConfiguration
+import dev.justinsmith.interval.rootAtToday
 import dev.justinsmith.lift.nav.ExerciseLibrary
 import dev.justinsmith.lift.nav.LiftDetail
 import dev.justinsmith.lift.nav.LiftTab
@@ -29,6 +30,7 @@ class NavKeyRoundTripTest {
     @Test
     fun `every route survives saving and restoring`() {
         val routes = listOf<NavKey>(
+            TodayTab,
             TimerTab,
             LiftTab,
             HistoryTab,
@@ -51,6 +53,21 @@ class NavKeyRoundTripTest {
         for (route in routes) {
             assertEquals(route, json.decodeFromString(serializer, json.encodeToString(serializer, route)))
         }
+    }
+
+    @Test
+    fun `a back stack saved when the timer was the first tab gets today under it`() {
+        val saved = mutableListOf<NavKey>(TimerTab, HistoryTab, Plan)
+        saved.rootAtToday()
+        assertEquals(listOf<NavKey>(TodayTab, TimerTab, HistoryTab, Plan), saved)
+
+        // One that has it already is left as it is.
+        saved.rootAtToday()
+        assertEquals(listOf<NavKey>(TodayTab, TimerTab, HistoryTab, Plan), saved)
+
+        val fresh = mutableListOf<NavKey>(TodayTab)
+        fresh.rootAtToday()
+        assertEquals(listOf<NavKey>(TodayTab), fresh)
     }
 
     @Test

@@ -6,7 +6,7 @@
     (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
-    <action>Verify that the Timer tab is shown with a "Start workout" button and Work, Rest and Rounds rows</action>
+    <action>Tap the "Timer" tab and verify that it is shown with a "Start workout" button and Work, Rest and Rounds rows</action>
     <action>Tap the "Fewer rounds" button until the rounds read "×2"</action>
     <action>Tap the "Sets" chip, then "Add a block" under the quick picks</action>
     <action>Verify that the "Edit workout" sheet shows "Block 1" and "Block 2", each with Work, Rest and Rounds rows</action>

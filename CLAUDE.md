@@ -128,7 +128,9 @@ interval/            the interval timer
                      (`DataExporter`, `DataImporter`, the review sheet); opened by every tab's gear
   interval-history   History (log, calendar, summaries, a finished workout) and Plan: one module, each needs
                      the other; `PlanReminderScheduler` (`historyModule`, di/) keeps the platform's reminders
-                     in step with the plan
+                     in step with the plan. And Today, the first tab (`today/`: `HomeRoute`, `HomeViewModel`,
+                     named Home since Lift's tab is `TodayRoute`): the week, what is up next and the presets that
+                     fit a few minutes (`QuickPicks.kt`), over the same log (`history/UpNext.kt`)
 
 lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
   lift-domain        Lift's pure domain (`dev.justinsmith.lift.domain`): exercises, programs, sets and
@@ -205,6 +207,8 @@ toolchain (`$compose.*`).
   2. `subclass(X::class)` in `navConfiguration` (App.kt; a Lift key in `liftRoutes()`). Without it saving the
      back stack fails on iOS/desktop.
   3. `entry<X> { XRoute() }` in the `entryProvider` (App.kt; a Lift page in `liftEntries`, `lift/lift-nav/src/nav/LiftEntries.kt`)
+  `TodayTab` is the start destination and the back stack's root: Back from Timer, Lift or History returns to it
+  (`selectTab`), and a stack saved by a build that opened on the Timer gets it put underneath (`rootAtToday`).
   A tab implements core's `Tab` (`core/core/src/nav/Tab.kt`, with the `push` helper every entry uses), and its
   title bar ends in core's `SettingsAction`; Lift's takes what it opens through `liftEntries`.
 - **Screens** are split into `XRoute()` (resolves the ViewModel with `koinViewModel<XViewModel>()`, and a

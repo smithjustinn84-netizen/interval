@@ -4,6 +4,7 @@
     the theme, then put the theme back. Run on a phone in portrait, where Settings opens full screen.
   </description>
   <actions>
+    <action>Tap the "Settings" button in Today's title bar and verify that Settings opens; tap "Back" and verify that the Today tab is shown</action>
     <action>Tap the "Lift" tab, then the "Settings" button in its title bar, and verify that Settings opens; tap "Back" and verify that the Lift tab is shown</action>
     <action>Tap the "History" tab, then the "Settings" button in its title bar, and verify that Settings opens; tap "Back" and verify that the History tab is shown</action>
     <action>Tap the "Timer" tab, then its "Settings" button</action>

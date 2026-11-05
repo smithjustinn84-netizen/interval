@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
@@ -64,6 +65,7 @@ import dev.justinsmith.interval.nav.Settings
 import dev.justinsmith.interval.nav.Shortcut
 import dev.justinsmith.interval.nav.Tab
 import dev.justinsmith.interval.nav.TimerTab
+import dev.justinsmith.interval.nav.TodayTab
 import dev.justinsmith.interval.nav.Workout
 import dev.justinsmith.interval.nav.WorkoutDetail
 import dev.justinsmith.interval.nav.push
@@ -78,6 +80,7 @@ import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.save_failed
 import dev.justinsmith.interval.settings.SettingsRoute
 import dev.justinsmith.interval.splash.WithIntro
+import dev.justinsmith.interval.today.HomeRoute
 import dev.justinsmith.interval.ui.AppSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LocalNotices
@@ -103,6 +106,7 @@ import dev.justinsmith.lift.data.LiftRepository
 import dev.justinsmith.lift.nav.LiftDetail
 import dev.justinsmith.lift.nav.LiftTab
 import dev.justinsmith.lift.nav.Lifting
+import dev.justinsmith.lift.nav.Programs
 import dev.justinsmith.lift.nav.liftEntries
 import dev.justinsmith.lift.nav.liftRoutes
 import dev.justinsmith.lift.platform.ActiveTimers
@@ -126,6 +130,7 @@ import org.koin.core.KoinApplication
 internal val navConfiguration = SavedStateConfiguration {
     serializersModule = serializersModule + SerializersModule {
         polymorphic(NavKey::class) {
+            subclass(TodayTab::class)
             subclass(TimerTab::class)
             subclass(LiftTab::class)
             subclass(HistoryTab::class)
@@ -183,7 +188,9 @@ internal fun AppContent(
             ThemeMode.Dark -> true
         }
         IntervalTheme(darkTheme = dark) {
-            val backStack = rememberNavBackStack(navConfiguration, TimerTab)
+            val backStack = rememberNavBackStack(navConfiguration, TodayTab)
+            // Once, before anything reads it: a stack saved by a build that opened on the Timer.
+            remember(backStack) { backStack.rootAtToday() }
             val clock = koinInject<WallClock>()
             val opened by rememberUpdatedState(onShortcutOpen)
             LaunchedEffect(shortcut) {
@@ -216,8 +223,8 @@ internal fun AppContent(
 }
 
 /**
- * One back stack: the Timer tab at the root, at most one other tab above it, then whatever was
- * pushed (Settings, Presets, Workout, a session). Back from Lift or History returns to Timer, as both
+ * One back stack: the Today tab at the root, at most one other tab above it, then whatever was
+ * pushed (Settings, Presets, Workout, a session). Back from Timer, Lift or History returns to Today, as both
  * platforms expect. The navigation bar or rail shows only while a tab is on top, or while a page sits beside
  * its tab: windows of [AppSizes.twoPaneMinWidth] and up open Settings as a supporting pane beside Timer (opened
  * from Lift or History it is a page of its own, whatever the window: [settingsOverTimer]), and
@@ -246,7 +253,7 @@ private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
         val area = rememberNavigationArea(navigationSuiteType(maxWidth, maxHeight))
         val tabScenes = remember(area) { area.tabScenes<NavKey>() }
         // The area still names the tab it leaves with.
-        val shown = remember { ShownTab(currentTab ?: TimerTab) }
+        val shown = remember { ShownTab(currentTab ?: TodayTab) }
         currentTab?.let { shown.tab = it }
         Surface(Modifier.fillMaxSize(), color = palette.background, contentColor = palette.text) {
             // NavDisplay stays at one place in the tree whatever the area does, so its entries keep their state.
@@ -340,7 +347,7 @@ private fun rememberPanes(): Panes {
     )
     val supportingPane = rememberSupportingPaneSceneStrategy<NavKey>(directive = settingsDirective)
     // The placeholder beside History counts as a pane, so the default behaviour would pop History along with
-    // the workout beside it, landing on the Timer.
+    // the workout beside it, landing on Today.
     val listDetail = rememberListDetailSceneStrategy<NavKey>(
         backNavigationBehavior = BackNavigationBehavior.PopLatest,
         directive = historyDirective,
@@ -365,6 +372,7 @@ private fun appEntries(
     sharedScope: SharedTransitionScope,
     clock: WallClock,
 ): (NavKey) -> NavEntry<NavKey> = entryProvider {
+    todayEntry(backStack, selectTab, clock)
     entry<TimerTab>(metadata = SupportingPaneSceneStrategy.mainPane() + pageKind(PageKind.Tab)) {
         TimerRoute(
             onStart = { backStack.startWorkout(clock) },
@@ -451,6 +459,28 @@ private fun appEntries(
 }
 
 /**
+ * Today, the root of the stack. It starts what its screen set up: the Timer was handed the workout, and Lift told
+ * of the session, before either page opens.
+ */
+private fun EntryProviderScope<NavKey>.todayEntry(
+    backStack: NavBackStack<NavKey>,
+    selectTab: (Tab) -> Unit,
+    clock: WallClock,
+) {
+    entry<TodayTab>(metadata = pageKind(PageKind.Tab)) {
+        HomeRoute(
+            onStartWorkout = { backStack.startWorkout(clock) },
+            onStartSession = { backStack.push(Lifting) },
+            onPlan = { backStack.push(Plan) },
+            onPrograms = { backStack.push(Programs) },
+            onOpenHistory = { selectTab(HistoryTab) },
+            onOpenTimer = { selectTab(TimerTab) },
+            onOpenSettings = { backStack.push(Settings) },
+        )
+    }
+}
+
+/**
  * True once both stores are read: the interval side's and Lift's. Until then the app draws nothing, so
  * no screen starts from defaults.
  */
@@ -507,8 +537,16 @@ private fun NavBackStack<NavKey>.openDetail(key: NavKey) {
     add(key)
 }
 
-/** Shows [tab]: Timer is the root, so it pops back to it; any other tab replaces what is above Timer. */
+/** Shows [tab]: Today is the root, so it pops back to it; any other tab replaces what is above Today. */
 private fun NavBackStack<NavKey>.selectTab(tab: Tab) {
     while (size > 1) removeLastOrNull()
-    if (tab != TimerTab) add(tab)
+    if (tab != TodayTab) add(tab)
+}
+
+/**
+ * Puts Today under a stack that has another root: one saved by a build whose first tab was the Timer comes back
+ * as it was saved, and without this Back would stop at the Timer with no way to Today but its tab.
+ */
+internal fun MutableList<NavKey>.rootAtToday() {
+    if (firstOrNull() != TodayTab) add(0, TodayTab)
 }

@@ -7,7 +7,14 @@ import kotlinx.serialization.Serializable
 // (App.kt) and given an `entry<…>` in the entry provider, or it cannot be saved or shown. Lift's keys
 // live in `lift-nav` (`dev.justinsmith.lift.nav`); `Tab` in core.
 
-/** Home: the current workout's shape as three steppers, Start, and the way to the presets. */
+/**
+ * Home, the first tab and the root of the back stack: this week, what is up next with its Start, and the presets
+ * that fit a few minutes.
+ */
+@Serializable
+data object TodayTab : Tab
+
+/** The current workout's shape as three steppers, Start, and the way to the presets. */
 @Serializable
 data object TimerTab : Tab
 

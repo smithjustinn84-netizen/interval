@@ -7,6 +7,7 @@ import kotlin.time.Duration.Companion.seconds
 class StartWorkoutAcceptanceTest {
     @Test
     fun `a workout ended before its first round saves nothing`() = acceptanceScenario {
+        openTab("Timer")
         seeTimer()
         setWorkTime("1:00")
 
@@ -31,6 +32,7 @@ class StartWorkoutAcceptanceTest {
 
     @Test
     fun `a workout left to run to its end is saved whole`() = acceptanceScenario {
+        openTab("Timer")
         startWorkout()
         seePhase("Get ready")
         // 10 s to get ready, then eight rounds of 30 s on and seven rests of 15 s between them.

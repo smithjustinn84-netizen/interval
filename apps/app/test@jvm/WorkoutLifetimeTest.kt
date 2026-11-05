@@ -27,6 +27,7 @@ import kotlin.time.TestTimeSource
 class WorkoutLifetimeTest {
     @Test
     fun `leaving the workout's page ends the workout`() = appTest { app ->
+        tab("Timer").performClick()
         onNodeWithText("Start workout").performClick()
         onNodeWithContentDescription("End workout").assertExists()
         val session = app.koin.koin.get<WorkoutSession>()
@@ -53,6 +54,7 @@ class WorkoutLifetimeTest {
             restoration.setContent {
                 CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides owner) { AppContent(koin) }
             }
+            tab("Timer").performClick()
             onNodeWithText("Start workout").performClick()
             onNodeWithContentDescription("End workout").assertExists()
             val session = koin.koin.get<WorkoutSession>()

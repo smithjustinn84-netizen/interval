@@ -9,6 +9,7 @@ import kotlin.test.Test
 class PresetsAcceptanceTest {
     @Test
     fun `a preset saved from the timer is started edited and deleted`() = acceptanceScenario {
+        openTab("Timer")
         seeTimerTotalFor("Custom")
         openAllPresets()
         seeUnsavedTimerCard("30s on · 15s off · ×8")

@@ -26,11 +26,15 @@ import dev.justinsmith.interval.ui.resources.common_start_workout
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The one raised, accent-filled action of a screen: Start workout. Its shadow is the accent itself,
- * so the button glows rather than sits in a grey smudge.
+ * The one raised, accent-filled action of a screen: Start workout, or what else it starts by its [label]. Its
+ * shadow is the accent itself, so the button glows rather than sits in a grey smudge.
  */
 @Composable
-fun StartButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun StartButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    label: String = stringResource(Res.string.common_start_workout),
+) {
     val palette = IntervalTheme.palette
     val shape = Corners.radius18
     val glow = palette.accent.copy(alpha = Opacity.START_SHADOW)
@@ -58,7 +62,7 @@ fun StartButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
             modifier = Modifier.size(IntervalSizes.playIcon),
         )
         Text(
-            stringResource(Res.string.common_start_workout),
+            label,
             style = IntervalTheme.type.value,
             color = palette.onAccent,
         )

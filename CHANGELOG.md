@@ -7,6 +7,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.5.0] — Unreleased
 
 ### Added
+- Today, a new first tab and where the app opens: this week against the goal, what is up next (today's plan, or
+  the next day of the program followed) under one Start, and "Or pick by time", which offers the presets that fit
+  5, 10, 20 or 30 minutes, each with a Start of its own. With nothing planned it leads to the plan and to Lift's
+  programs. The Timer, Lift and History stay tabs beside it, and Back from any of them returns to Today.
 - Sequences: a workout of blocks run one after another, each block a shape of its own (work, rest, rounds, sets
   and ladder) with a rest between blocks. The workout says "Block 2 of 3 · Round 1 of 8", "Rest between blocks"
   and "Next: block 2 of 3 · 0:40", the voice "Rest before block 2" and "Block 2. Work", and the notification the

@@ -14,6 +14,7 @@
     <string name="save_failed">Couldn't save. Try again.</string>
 
     <!-- Navigation -->
+    <string name="nav_today">Today</string>
     <string name="nav_timer">Timer</string>
     <string name="nav_lift">Lift</string>
     <string name="nav_history">History</string>

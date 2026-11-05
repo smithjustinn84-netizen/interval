@@ -23,14 +23,11 @@ import dev.justinsmith.interval.platform.days
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
-import dev.justinsmith.interval.timer.dateOfEpochDay
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.monthStartAfter
 import dev.justinsmith.interval.timer.monthStartOf
 import dev.justinsmith.lift.data.LiftActivity
-import dev.justinsmith.lift.domain.LiftSession
-import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.ProgramKey
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -43,49 +40,6 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
-
-/**
- * The plans still to do from [today], by day. A plan of the program's next day takes the day the program will be
- * at by then: the first of them the next day, each after it the day after. With no plan of a session on Lift at
- * all, the program's next day falls today, unless a day of it was finished today already, and leads the plans of
- * its day.
- */
-private fun TimestampFormatter.upNext(
-    log: TrainingLog,
-    planned: List<PlannedWorkout>,
-    lifting: Lifting,
-    today: Long,
-): List<UpNextItem> {
-    val unplanned = lifting.programDay?.takeIf { planned.none { it.workout is PlanWorkout.Lift } }?.let { day ->
-        val doneToday = lifting.sessions.any { session ->
-            session.program == day.program.key && session.finishedAtEpochMillis?.let(::dayNumber) == today
-        }
-        val epochDay = if (doneToday) today + 1 else today
-        UpNextItem.Lift(epochDay, heading(epochDay, today), day, resume = lifting.inProgress)
-    }
-    var programDay = lifting.programDay
-    var resume = lifting.inProgress
-    val plans = log.upNext().map { next ->
-        val day = heading(next.epochDay, today)
-        when (val workout = next.plan.workout) {
-            is PlanWorkout.Interval -> UpNextItem.Planned(
-                next.plan.id,
-                next.epochDay,
-                day,
-                workout.name,
-                workout.config,
-            )
-
-            is PlanWorkout.Lift -> {
-                val ofProgram = programDay?.takeIf { workout == PlanWorkout.Lift.ProgramDay }
-                if (ofProgram != null) programDay = ofProgram.program.dayAfter(ofProgram.number)
-                UpNextItem.Lift(next.epochDay, day, ofProgram, resume = resume, planId = next.plan.id)
-                    .also { resume = false }
-            }
-        }
-    }
-    return (listOfNotNull(unplanned) + plans).sortedBy { it.epochDay }
-}
 
 private const val KEY_RANGE = "history_range"
 private const val KEY_MONTH_OFFSET = "history_month_offset"
@@ -102,9 +56,6 @@ private fun SavedStateHandle.keep(view: HistoryView) {
     this[KEY_MONTH_OFFSET] = view.monthOffset
     this[KEY_OPEN_DAY] = view.openDay
 }
-
-/** Lift's side: its finished sessions, the followed program's next day, and whether one is in progress. */
-private data class Lifting(val sessions: List<LiftSession>, val programDay: ProgramDay?, val inProgress: Boolean)
 
 /**
  * What the screen is looking at, apart from the data: the range, the month and the open day, each kept in the
@@ -146,9 +97,7 @@ class HistoryViewModel(
 
     // Distinct, so a set logged on Lift (which changes `active`) rebuilds nothing here: only a session finished,
     // the program's day or whether one is under way at all count.
-    private val lifting = combine(bells.sessions, bells.programDay, bells.active) { sessions, day, active ->
-        Lifting(sessions, day, active != null)
-    }.distinctUntilChanged()
+    private val lifting = bells.lifting()
 
     private val built = combine(
         combine(historyStore.history, lifting) { history, lifting -> history to lifting },
@@ -274,10 +223,10 @@ class HistoryViewModel(
             weekLifts = week.sumOf { it.liftWorkouts.size },
             goal = goal,
             streak = goal?.let(log::streak),
-            week = week.map { cell(it, inMonth = true) },
+            week = week.map { timestamps.dayCell(it) },
             month = MonthView(
                 title = timestamps.monthTitle(monthOf),
-                cells = log.month(monthOf).map { cell(it.day, it.inMonth) },
+                cells = log.month(monthOf).map { timestamps.dayCell(it.day, it.inMonth) },
                 current = monthOf == monthStartOf(today),
             ),
             weeks = log.weeklyCounts(WEEKS_SHOWN),
@@ -341,18 +290,6 @@ class HistoryViewModel(
                 )
             }
         }
-
-    private fun cell(day: TrainingDay, inMonth: Boolean) = DayCell(
-        epochDay = day.epochDay,
-        weekday = day.weekday,
-        dayOfMonth = dateOfEpochDay(day.epochDay).day,
-        state = day.state,
-        seconds = day.seconds,
-        today = day.isToday,
-        inMonth = inMonth,
-        date = timestamps.dateOfDay(day.epochDay),
-        liftSeconds = day.liftWorkouts.sumOf { it.elapsedSeconds },
-    )
 
     private companion object {
         const val WEEKS_SHOWN = 12

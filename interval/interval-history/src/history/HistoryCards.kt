@@ -82,19 +82,25 @@ internal fun UpNextCard(upNext: List<UpNextItem>, actions: HistoryActions, modif
                 }
             }
             UpNextLead(next, actions)
-            val later = upNext.drop(1).take(2)
-            if (later.isNotEmpty()) {
-                val parts = later.map {
-                    stringResource(Res.string.common_joined, shortDay(it.day, it.epochDay), upNextName(it))
-                }
-                Text(
-                    stringResource(Res.string.history_then, joined(parts)),
-                    style = IntervalTheme.type.meta,
-                    color = palette.textDim,
-                )
-            }
+            UpNextLater(upNext)
         }
     }
+}
+
+/** The two plans after the first of [upNext], in a line: "Then Fri · Tabata · Sat · Lift session". None, nothing. */
+@Composable
+internal fun UpNextLater(upNext: List<UpNextItem>, modifier: Modifier = Modifier) {
+    val later = upNext.drop(1).take(2)
+    if (later.isEmpty()) return
+    val parts = later.map {
+        stringResource(Res.string.common_joined, shortDay(it.day, it.epochDay), upNextName(it))
+    }
+    Text(
+        stringResource(Res.string.history_then, joined(parts)),
+        style = IntervalTheme.type.meta,
+        color = IntervalTheme.palette.textDim,
+        modifier = modifier,
+    )
 }
 
 @Composable

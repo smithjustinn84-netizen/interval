@@ -13,6 +13,7 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
+import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -97,6 +98,47 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         see(hasContentDescription("Plan"))
         ui.tab("History").assertIsSelected()
     }
+
+    // Today
+
+    fun seeTodayTab() {
+        see("This week")
+        ui.tab("Today").assertIsSelected()
+    }
+
+    fun seeNothingPlanned() = see("Nothing planned")
+
+    /** The plan has nothing left for now: not the first run's card, which offers a first plan. */
+    fun seeNothingMoreDue() {
+        see("Nothing more due")
+        seeNo("Plan your week")
+    }
+
+    fun openPlanFromToday() {
+        tap("Plan your week")
+        see("Weekly goal")
+    }
+
+    /** Or pick by time: one of its lengths, which the presets under it then fit. */
+    fun pickMinutes(minutes: Int) = tap(hasText("$minutes min") and isSelectable())
+
+    fun seePick(name: String) = see(name)
+
+    /** A pick's own Start, told from the others by the preset it starts. */
+    fun startPick(name: String) = tapDescribed("Start $name")
+
+    fun startSessionFromToday() = tap("Start session")
+
+    /** Today's block on the week strip, read as done. */
+    fun seeTodayDoneOnTheWeek() = see(hasContentDescription("Today, done"))
+
+    /** The Timer was handed this shape, which the workout then runs. */
+    fun timerHolds(workSeconds: Int, restSeconds: Int, rounds: Int) =
+        waitFor("the Timer holding $workSeconds s on, $restSeconds s off, $rounds rounds") {
+            app.repository.settings.config.value.let {
+                it.workSeconds == workSeconds && it.restSeconds == restSeconds && it.rounds == rounds
+            }
+        }
 
     // The Timer
 
@@ -247,7 +289,8 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     }
 
     fun openWorkoutUnderToday(name: String) {
-        see("Today")
+        // The day's heading on the log: the Today tab's label is on screen everywhere.
+        see(hasText("Today") and isHeading())
         tap(name)
         see("Repeat now")
     }

@@ -5,7 +5,7 @@
     (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
-    <action>Verify that the Timer tab is shown with a "Start workout" button and a "Sets" chip reading "1"</action>
+    <action>Tap the "Timer" tab and verify that it is shown with a "Start workout" button and a "Sets" chip reading "1"</action>
     <action>Tap the "Fewer rounds" button until the rounds read "×3"</action>
     <action>Tap the "Sets" chip, tap the "2" quick pick and verify that "Between sets" reading "Off" is shown under the quick picks</action>
     <action>Tap "More rest between sets" four times and verify that it reads "1:00", then tap "Done"</action>

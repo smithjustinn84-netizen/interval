@@ -4,7 +4,7 @@
     first. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
-    <action>Verify that the Timer tab is shown with a "Start workout" button, a "Work" row whose name stands alone, and the "Work", "Rest" and "Rounds" values whole, none cut off</action>
+    <action>Tap the "Timer" tab and verify that it is shown with a "Start workout" button, a "Work" row whose name stands alone, and the "Work", "Rest" and "Rounds" values whole, none cut off</action>
     <action>Tap the "Fewer rounds" button until the rounds read "×3"</action>
     <action>Tap the "Work" row and verify that its sheet shows "Ladder" reading "Off" under the quick picks</action>
     <action>Tap "More work each round" twice and verify that the ladder reads "+0:10" over "Rounds work 0:30 · 0:40 · 0:50"</action>

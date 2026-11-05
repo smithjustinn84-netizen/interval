@@ -4,9 +4,9 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 
 /**
- * A destination in the navigation bar. The back stack holds at most one, right above the Timer tab. Here,
- * under every feature, so Lift's tab (`lift-nav`) and the app's own are one kind; not sealed, since a sealed
- * type can't be extended from another module.
+ * A destination in the navigation bar. The back stack holds Today at its root and at most one other, right
+ * above it. Here, under every feature, so Lift's tab (`lift-nav`) and the app's own are one kind; not sealed,
+ * since a sealed type can't be extended from another module.
  */
 interface Tab : NavKey
 

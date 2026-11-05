@@ -8,7 +8,7 @@
     Where a step cannot be verified without the Health Connect app, note it as not checked.
   </description>
   <actions>
-    <action>Tap the "Settings" button on the Timer tab</action>
+    <action>Tap the "Timer" tab, then its "Settings" button</action>
     <action>Scroll to "Health" and verify that it shows a "Health Connect" switch, off, saying "Save finished workouts and Lift sessions there too"</action>
     <action>Tap the "Health Connect" switch</action>
     <action>Verify that Health Connect's permission sheet opens, asking to write exercise and total calories burned and to read weight and heart rate, with Interval's privacy policy linked</action>

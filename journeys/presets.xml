@@ -6,7 +6,7 @@
     (adb shell pm clear dev.justinsmith.interval), whose default workout matches no preset.
   </description>
   <actions>
-    <action>Verify that the Timer tab is shown, its total labelled "Custom · Total"</action>
+    <action>Tap the "Timer" tab and verify that it is shown, its total labelled "Custom · Total"</action>
     <action>Tap "All presets" beside "Start workout"</action>
     <action>Verify that a page titled "Presets" is shown with "Back" and a "New preset" button in the title bar</action>
     <action>Verify that a card captioned "On the Timer · not saved" is shown at the top with a "Save" button, reading "30s on · 15s off · ×8 · ≈ 50 kcal"</action>

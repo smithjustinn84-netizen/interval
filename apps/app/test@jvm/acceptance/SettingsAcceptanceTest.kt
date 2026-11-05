@@ -9,6 +9,12 @@ class SettingsAcceptanceTest {
     fun `settings opens from every tab and back returns to that tab`() = acceptanceScenario {
         openSettings()
         goBack()
+        seeTodayTab()
+
+        openTab("Timer")
+        seeTimer()
+        openSettings()
+        goBack()
         seeTimer()
 
         openTab("Lift")
@@ -53,7 +59,7 @@ class SettingsAcceptanceTest {
             seeTheme("Light")
             // The theme is down the page, its title bar and Back scrolled away above it.
             pressSystemBack()
-            seeTimer()
+            seeTodayTab()
         }
         acceptanceScenario(storage = storage) {
             openSettings()
@@ -62,7 +68,7 @@ class SettingsAcceptanceTest {
             toggleVoice()
             pickTheme("Dark")
             pressSystemBack()
-            seeTimer()
+            seeTodayTab()
         }
         acceptanceScenario(storage = storage) {
             openSettings()

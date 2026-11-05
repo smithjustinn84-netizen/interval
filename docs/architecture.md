@@ -234,7 +234,7 @@ Each module applies a reusable template from `templates/`:
 | **Container** | `app` | Application entry (`App.kt`), Navigation 3 routing table, Koin graph assembly, root theme host. |
 | **Core** | `core`, `core-platform`, `core-time`, `core-testing` | Design tokens (`Spacing`, `Radius`, `Sizes`, `Motion`), `IntervalTheme`, navigation primitives; the clocks, timestamp formatter and storage utilities in `core-platform`, which has no Compose so the data modules (and their Room KSP) don't rebuild on a UI change; calendar and clock maths in `core-time`, which has no dependencies so the domains compile without Compose; UI test harness. |
 | **Interval Domain & Data** | `interval-domain`, `interval-data`, `interval-platform-api`, `interval-platform` | Timer calculation engine, Room database, DataStore preferences, audio/speech cues, Android Foreground Service, iOS notifications. |
-| **Interval Features** | `interval-timer`, `interval-workout`, `interval-presets`, `interval-history`, `interval-settings`, `interval-ui` | Timer tab, active workout screen, preset management, history calendar & routines plan, settings, shared workout components. |
+| **Interval Features** | `interval-timer`, `interval-workout`, `interval-presets`, `interval-history`, `interval-settings`, `interval-ui` | Timer tab, active workout screen, preset management, the Today tab, history calendar & routines plan, settings, shared workout components. |
 | **Lift Domain & Data** | `lift-domain`, `lift-api`, `lift-data`, `lift-platform` | Kettlebell exercises, training programs, EMOM/hold timers, the ports to the interval side (`lift-api`), Room database; the EMOM beeper and rest alert services in `lift-platform`. |
 | **Lift Features** | `lift-nav`, `lift-today`, `lift-session`, `lift-library`, `lift-ui` | Lift navigation registry, Lift tab & gear, active session logger & timers, exercise library & editor, shared Lift UI. |
 | **Test Fakes** | `interval-testing`, `lift-testing` | In-memory storage, recording cue players, fake DAOs, and mock platform services for tests. |
@@ -249,8 +249,8 @@ The application uses Jetpack Navigation 3 with a single, unified back stack host
 ### Key Elements:
 
 1. **Type-Safe Keys (`NavKey`)**:
-   - Every destination is a `@Serializable` class or object implementing `NavKey` (e.g. `TimerTab`, `Settings`, `Workout(id)`).
-   - Lift keys live in `lift/lift-nav/src/nav/LiftRoutes.kt` (e.g. `LiftTodayTab`, `ExerciseDetail(id)`).
+   - Every destination is a `@Serializable` class or object implementing `NavKey` (e.g. `TodayTab`, `TimerTab`, `Settings`, `Workout(id)`). `TodayTab` is the start destination and the root of the back stack: Back from any other tab returns to it.
+   - Lift keys live in `lift/lift-nav/src/nav/LiftRoutes.kt` (e.g. `LiftTab`, `Lifting`, `LiftDetail(uid)`).
    - Tabs implement the `Tab` interface (`core/core/src/nav/Tab.kt`), which provides the `push` helper.
 2. **Polymorphic Serialization**:
    - Because the back stack is saved across configuration changes and process recreations, all keys must be registered in

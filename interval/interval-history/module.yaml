@@ -1,6 +1,7 @@
 # History: the training log, calendar and summaries, a finished workout's page, and the plan (the weekly
-# goal, the routine by weekday and one-offs), which the log shows and the plan page edits.
-description: "History and Plan, with plan reminders"
+# goal, the routine by weekday and one-offs), which the log shows and the plan page edits. And Today, the first
+# tab, which reads the same log: this week, what is up next, and the presets that fit a few minutes.
+description: "Today, History and Plan, with plan reminders"
 product:
   type: kmp/lib
   platforms: [android, iosArm64, iosSimulatorArm64, jvm]

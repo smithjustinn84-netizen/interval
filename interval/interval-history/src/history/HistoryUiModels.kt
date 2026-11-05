@@ -81,6 +81,9 @@ sealed interface UpNextItem {
     ) : UpNextItem
 }
 
+/** This week against the weekly goal: its workouts, [lifts] of them Lift's; [goal] is null until set. */
+data class WeekGoal(val count: Int = 0, val lifts: Int = 0, val goal: Int? = null, val streak: Streak? = null)
+
 /** The summary's figures for its range. [time] is a clock, "16:35"; [totalSeconds] is for longer ones. */
 data class RangeSummary(
     val count: Int,
@@ -144,6 +147,9 @@ data class HistoryUiState(
 ) {
     /** Nothing done and nothing planned: the first run. */
     val isEmpty: Boolean get() = !loading && sections.isEmpty() && !hasPlans
+
+    /** This week's count, goal and streak together, as the goal row takes them. */
+    val weekGoal: WeekGoal get() = WeekGoal(weekCount, weekLifts, goal, streak)
 
     /** The most workouts in one of [weeks], for scaling its bars; at least the goal, so its line fits. */
     val weeksMax: Int get() = maxOf(weeks.maxOfOrNull { it.count } ?: 0, goal ?: 0, 1)

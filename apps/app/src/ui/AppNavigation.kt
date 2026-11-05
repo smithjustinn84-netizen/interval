@@ -14,10 +14,12 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import dev.justinsmith.interval.nav.HistoryTab
 import dev.justinsmith.interval.nav.Tab
 import dev.justinsmith.interval.nav.TimerTab
+import dev.justinsmith.interval.nav.TodayTab
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.nav_history
 import dev.justinsmith.interval.resources.nav_lift
 import dev.justinsmith.interval.resources.nav_timer
+import dev.justinsmith.interval.resources.nav_today
 import dev.justinsmith.lift.nav.LiftTab
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -25,6 +27,7 @@ import org.jetbrains.compose.resources.stringResource
 private data class TabSpec(val tab: Tab, val label: StringResource, val icon: ImageVector)
 
 private val Tabs = listOf(
+    TabSpec(TodayTab, Res.string.nav_today, IntervalIcons.Today),
     TabSpec(TimerTab, Res.string.nav_timer, IntervalIcons.Timer),
     TabSpec(LiftTab, Res.string.nav_lift, IntervalIcons.Bell),
     TabSpec(HistoryTab, Res.string.nav_history, IntervalIcons.History),

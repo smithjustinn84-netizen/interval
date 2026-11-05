@@ -6,7 +6,7 @@
     fresh install (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
-    <action>Verify that the Timer tab is shown with a "Start workout" button</action>
+    <action>Tap the "Timer" tab and verify that it is shown with a "Start workout" button</action>
     <action>Tap the "Work" row under "Intervals"</action>
     <action>Verify that a sheet titled "Work" is shown with "Quick picks"</action>
     <action>Tap the "1:00" quick pick</action>
@@ -36,6 +36,6 @@
     <action>With a screen lock set, lock the screen (adb shell input keyevent KEYCODE_SLEEP, then KEYCODE_WAKEUP) and verify that the lock screen shows the workout's notification</action>
     <action>Tap "Pause" in the notification on the lock screen and verify that it reads "Paused"</action>
     <action>Unlock, open Recents and swipe the app away</action>
-    <action>Verify with adb shell dumpsys notification --noredact that no workout notification is left, and that opening the app shows the Timer</action>
+    <action>Verify with adb shell dumpsys notification --noredact that no workout notification is left, and that opening the app shows Today</action>
   </actions>
 </journey>

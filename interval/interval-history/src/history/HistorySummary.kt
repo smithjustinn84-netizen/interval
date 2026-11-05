@@ -128,7 +128,7 @@ internal fun WeekSummary(
     modifier: Modifier = Modifier,
 ) {
     SummaryCard(modifier) {
-        GoalRow(state, onSetGoal)
+        GoalRow(state.weekGoal, onSetGoal)
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             Stat(stringResource(Res.string.history_time), state.summary.time, state.summary.totalSeconds, accent = true)
             state.summary.calories?.let { Stat(stringResource(Res.string.history_calories), it.toString(), it) }
@@ -138,10 +138,11 @@ internal fun WeekSummary(
     }
 }
 
+/** This week against the goal: the ring, what is left of it and the streak, or the count and the way to a goal. */
 @Composable
-private fun GoalRow(state: HistoryUiState, onSetGoal: () -> Unit) {
+internal fun GoalRow(week: WeekGoal, onSetGoal: () -> Unit) {
     val palette = IntervalTheme.palette
-    val goal = state.goal
+    val goal = week.goal
     if (goal == null) {
         // The way to a goal goes under the count where the two don't fit side by side (a narrow column),
         // rather than squeezing it.
@@ -157,11 +158,11 @@ private fun GoalRow(state: HistoryUiState, onSetGoal: () -> Unit) {
                     color = palette.textDim,
                 )
                 Text(
-                    pluralStringResource(Res.plurals.history_week_count, state.weekCount, state.weekCount),
+                    pluralStringResource(Res.plurals.history_week_count, week.count, week.count),
                     style = IntervalTheme.type.title,
                     color = palette.text,
                 )
-                WeekSplit(state)
+                WeekSplit(week)
             }
             ChipButton(
                 stringResource(Res.string.history_goal_set),
@@ -172,14 +173,14 @@ private fun GoalRow(state: HistoryUiState, onSetGoal: () -> Unit) {
         return
     }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.space16)) {
-        GoalRing(state.weekCount, goal)
+        GoalRing(week.count, goal)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
             Text(
                 stringResource(Res.string.history_this_week),
                 style = IntervalTheme.type.caption,
                 color = palette.textDim,
             )
-            val left = goal - state.weekCount
+            val left = goal - week.count
             Text(
                 if (left <= 0) {
                     stringResource(Res.string.history_goal_met)
@@ -189,8 +190,8 @@ private fun GoalRow(state: HistoryUiState, onSetGoal: () -> Unit) {
                 style = IntervalTheme.type.title,
                 color = palette.text,
             )
-            WeekSplit(state)
-            state.streak?.current?.takeIf { it > 0 }?.let { weeks ->
+            WeekSplit(week)
+            week.streak?.current?.takeIf { it > 0 }?.let { weeks ->
                 Row(
                     Modifier
                         .clip(Corners.full)
@@ -213,10 +214,10 @@ private fun GoalRow(state: HistoryUiState, onSetGoal: () -> Unit) {
 
 /** This week's workouts by kind, "1 lift · 2 intervals", once a session on Lift is among them. */
 @Composable
-private fun WeekSplit(state: HistoryUiState) {
-    if (state.weekLifts == 0) return
-    val intervals = state.weekCount - state.weekLifts
-    val lifts = pluralStringResource(Res.plurals.history_week_lifts, state.weekLifts, state.weekLifts)
+private fun WeekSplit(week: WeekGoal) {
+    if (week.lifts == 0) return
+    val intervals = week.count - week.lifts
+    val lifts = pluralStringResource(Res.plurals.history_week_lifts, week.lifts, week.lifts)
     Text(
         if (intervals > 0) {
             stringResource(

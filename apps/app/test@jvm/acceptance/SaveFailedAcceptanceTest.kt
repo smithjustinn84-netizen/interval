@@ -9,6 +9,7 @@ import kotlin.test.Test
 class SaveFailedAcceptanceTest {
     @Test
     fun `a workout that can't be saved says so and is not kept`() = acceptanceScenario {
+        openTab("Timer")
         diskIsFull()
         endWorkoutAfterFirstRound()
         seeSaveFailed()
