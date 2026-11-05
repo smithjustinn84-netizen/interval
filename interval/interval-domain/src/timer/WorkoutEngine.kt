@@ -19,11 +19,17 @@ data class WorkoutState(
     val halfwayCued: Boolean = false,
     /** 1-based, like [round]: the set the round is in. 1 for a workout of one set. */
     val set: Int = 1,
+    /** 0-based: the block of [IntervalConfig.blocks] the set is in. */
+    val block: Int = 0,
 ) {
     val isDone: Boolean get() = phase == Phase.Done
 
-    /** The last round of the last set. */
-    val isLastRound: Boolean get() = round >= config.rounds && set >= config.sets
+    /** The block of rounds this is in, whose sets and rounds [set] and [round] count. */
+    val shape: Block get() = config.blocks[block]
+
+    /** The last round of the last set of the last block. */
+    val isLastRound: Boolean
+        get() = block == config.blocks.lastIndex && round >= shape.rounds && set >= shape.sets
 
     /** Share of the current interval still to go, 1 at its start and 0 at its end. */
     val progress: Float
@@ -62,6 +68,8 @@ data class UpcomingChange(
     val offsetMillis: Long,
     /** 1-based, like [WorkoutState.set]. */
     val set: Int = 1,
+    /** 0-based, like [WorkoutState.block]. */
+    val block: Int = 0,
 )
 
 /**
@@ -183,13 +191,13 @@ object WorkoutEngine {
         if (state.isDone) return emptyList()
         val changes = mutableListOf<UpcomingChange>()
         var offset = state.remainingMillis.coerceAtLeast(0)
-        var last = state.set to state.round
+        var last = Interval(state.phase, state.set, state.round, 0, state.block)
         Course.of(state.config).filter { it.comparedTo(state) > 0 }.forEach {
-            changes += UpcomingChange(it.phase, it.round, offset, it.set)
+            changes += UpcomingChange(it.phase, it.round, offset, it.set, it.block)
             offset += it.seconds * MILLIS_PER_SECOND
-            last = it.set to it.round
+            last = it
         }
-        return changes + UpcomingChange(Phase.Done, last.second, offset, last.first)
+        return changes + UpcomingChange(Phase.Done, last.round, offset, last.set, last.block)
     }
 
     fun addTime(state: WorkoutState, millis: Long = ADD_TIME_MILLIS): WorkoutState {
@@ -201,12 +209,21 @@ object WorkoutEngine {
     private fun started(config: IntervalConfig, interval: Interval): Step {
         val state = enter(config, interval)
         val lastRound = interval.phase == Phase.Work && state.isLastRound
-        val set = interval.set.takeIf { interval.phase == Phase.Work && interval.round == 1 && config.sets > 1 }
+        val sets = config.blocks[interval.block].sets
+        val set = interval.set.takeIf { interval.phase == Phase.Work && interval.round == 1 && sets > 1 }
         return Step(state, listOf(Cue.PhaseStarted(interval.phase, lastRound, set)))
     }
 
     private fun enter(config: IntervalConfig, interval: Interval): WorkoutState {
         val millis = interval.seconds * MILLIS_PER_SECOND
-        return WorkoutState(config, interval.phase, interval.round, millis, millis, set = interval.set)
+        return WorkoutState(
+            config,
+            interval.phase,
+            interval.round,
+            millis,
+            millis,
+            set = interval.set,
+            block = interval.block,
+        )
     }
 }

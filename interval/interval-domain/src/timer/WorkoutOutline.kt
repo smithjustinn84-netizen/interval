@@ -1,7 +1,7 @@
 package dev.justinsmith.interval.timer
 
 /** One interval of a workout laid end to end with the others: what it is and how long, in whole seconds. */
-data class OutlinedInterval(val phase: Phase, val round: Int, val seconds: Int, val set: Int = 1)
+data class OutlinedInterval(val phase: Phase, val round: Int, val seconds: Int, val set: Int = 1, val block: Int = 0)
 
 /**
  * The whole workout as it stands, for a bar of it: every interval in order, and how far into them it is. The
@@ -25,7 +25,7 @@ data class WorkoutOutline(val intervals: List<OutlinedInterval>, val elapsedSeco
             Course.of(state.config).forEach { planned ->
                 val now = planned.comparedTo(state) == 0
                 val seconds = if (now) (state.phaseMillis / MILLIS_PER_SECOND).toInt() else planned.seconds
-                val interval = OutlinedInterval(planned.phase, planned.round, seconds, planned.set)
+                val interval = OutlinedInterval(planned.phase, planned.round, seconds, planned.set, planned.block)
                 if (now) {
                     val into = ((state.phaseMillis - state.remainingMillis) / MILLIS_PER_SECOND).toInt()
                     elapsed = intervals.sumOf { it.seconds } + into.coerceIn(0, interval.seconds)

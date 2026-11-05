@@ -88,20 +88,29 @@ data class WorkoutUiState(
     val heartRate: HeartRate? = null,
     /** 1-based, the set [round] is in. */
     val set: Int = 1,
+    /** 0-based, the block of the config that [set] is in. */
+    val block: Int = 0,
 ) {
     /** Offer "Save as preset" on the summary: no preset has this shape yet. */
     val canSavePreset: Boolean get() = presetName == null
 
-    /** Every round of the workout, in all its sets. */
-    val rounds: Int get() = config.sets * config.rounds
+    /** Every round of the workout, in all its sets and blocks. */
+    val rounds: Int get() = Course.of(config).count { it.phase == Phase.Work }
 
-    /** The rounds of one set. */
-    val setRounds: Int get() = config.rounds
+    /** The rounds of one set of the current block. */
+    val setRounds: Int get() = config.blocks[block].rounds
 
-    val sets: Int get() = config.sets
+    /** The sets of the current block. */
+    val sets: Int get() = config.blocks[block].sets
 
     /** Rounds of the current set whose work is behind it. */
-    val completedSetRounds: Int get() = (completedRounds - (set - 1) * setRounds).coerceIn(0, setRounds)
+    val completedSetRounds: Int
+        get() {
+            val before = Course.of(config).count {
+                it.phase == Phase.Work && (it.block < block || (it.block == block && it.set < set))
+            }
+            return (completedRounds - before).coerceIn(0, setRounds)
+        }
     val isDone: Boolean get() = phase == Phase.Done || ended
     val paused: Boolean get() = !running && !isDone
 
@@ -155,6 +164,7 @@ fun WorkoutState.toUiState(
         effort = effort,
         note = note,
         set = set,
+        block = block,
     )
 }
 
@@ -168,11 +178,12 @@ private fun WorkoutState.nextUp(): NextUp? {
 
         Phase.Work -> {
             // On a ladder the coming round works another length than this one: say how long.
-            val differs = clock.takeIf { next.seconds != config.workOf(round) }
+            val differs = clock.takeIf { next.seconds != shape.workOf(round) }
+            val coming = config.blocks[next.block]
             when {
                 phase == Phase.Prep || phase == Phase.WarmUp -> NextUp.Work(clock)
-                next.set != set -> NextUp.Set(next.set, config.sets, differs)
-                else -> NextUp.Round(next.round, config.rounds, differs)
+                next.set != set -> NextUp.Set(next.set, coming.sets, differs)
+                else -> NextUp.Round(next.round, coming.rounds, differs)
             }
         }
 
@@ -190,7 +201,6 @@ private fun WorkoutState.nextUp(): NextUp? {
 val WorkoutState.completedRounds: Int
     get() = when (phase) {
         Phase.Prep, Phase.WarmUp -> 0
-        Phase.Work -> (set - 1) * config.rounds + round - 1
-        Phase.Rest, Phase.SetRest -> (set - 1) * config.rounds + round
-        Phase.CoolDown, Phase.Done -> config.sets * config.rounds
+        Phase.Work, Phase.Rest, Phase.SetRest -> Course.workBehind(this)
+        Phase.CoolDown, Phase.Done -> Course.of(config).count { it.phase == Phase.Work }
     }

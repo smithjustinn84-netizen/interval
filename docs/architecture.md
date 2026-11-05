@@ -388,13 +388,15 @@ flowchart TD
 - **Warm-Up & Cool-Down Phases**:
   - `IntervalConfig` supports optional `warmUpSeconds` and `coolDownSeconds`. The workout engine runs them in sequence
     (`GetReady` → `WarmUp` → rounds → `CoolDown`).
-  - `Course.of(config)` (`interval-domain`, `timer/Course.kt`) lays out every `Interval` (phase, set, round, seconds)
-    once from the config: each of `IntervalConfig.sets` is its rounds with their rests, and a `Phase.SetRest` of
-    `setRestSeconds` follows every set but the last (a set rest of 0 is the ordinary rest); on a ladder each round
-    works its own `IntervalConfig.workOf(round)`, `workStepSeconds` more than the one before, starting over with each
-    set. The engine walks it by (phase, set, round): `advance`, Back, `sessionRemainingMillis` and
-    `upcomingChanges` read it, as do `WorkoutOutline`, the `Timeline`, `totalSeconds` and the calorie fallback. Nothing
-    else works out a workout's length from its fields.
+  - `Course.of(config)` (`interval-domain`, `timer/Course.kt`) lays out every `Interval` (phase, block, set, round,
+    seconds) once from the config: the bookends around `IntervalConfig.blocks` (a `Block` is work, rest, rounds, sets,
+    set rest and ladder; one for every workout until sequences, the config's own fields). Each of a block's sets is
+    its rounds with their rests, and a `Phase.SetRest` of `setRestSeconds` follows every set but the last (a set rest
+    of 0 is the ordinary rest); on a ladder each round works its own `Block.workOf(round)`, `workStepSeconds` more
+    than the one before, starting over with each set. The engine walks it by (block, set, round, phase), the place
+    `WorkoutState` holds: `advance`, Back, `sessionRemainingMillis` and `upcomingChanges` read it, as do
+    `WorkoutOutline`, the `Timeline`, `totalSeconds`, the calorie fallback and the readout's counts
+    (`Course.workBehind`, the block's own rounds and sets). Nothing else works out a workout's length from its fields.
   - Both phases are visually distinguished in the timeline, announced by spoken/audio cues, tracked in Live Updates,
     and written as distinct exercise activity spans to Health Connect.
 - **Finish Reflection ("How was it?")**:

@@ -147,4 +147,49 @@ class CourseTest {
         assertEquals(30_000, second.remainingMillis)
         assertEquals((30 + 10 + 40) * 1_000L, second.sessionRemainingMillis)
     }
+
+    @Test
+    fun `every workout today is one block with its cool-down in the last set and round`() {
+        val config = IntervalConfig(warmUpSeconds = 60, coolDownSeconds = 60, sets = 2, setRestSeconds = 30)
+        assertEquals(1, config.blocks.size)
+        builtInPresets.map { it.config }.plus(config).forEach { preset ->
+            assertTrue(Course.of(preset).all { it.block == 0 }, preset.toString())
+        }
+        assertEquals(Interval(Phase.CoolDown, 2, 8, 60), Course.of(config).last())
+    }
+
+    @Test
+    fun `a later block comes after the last round of the one before`() {
+        val config = IntervalConfig(rounds = 3, sets = 2)
+        val lastRound = WorkoutState(config, Phase.Work, round = 3, remainingMillis = 0, phaseMillis = 0, set = 2)
+        assertTrue(Interval(Phase.Prep, 1, 1, 10, block = 1).comparedTo(lastRound) > 0)
+        assertTrue(Interval(Phase.CoolDown, 2, 3, 10, block = 0).comparedTo(lastRound.copy(block = 1)) < 0)
+    }
+
+    @Test
+    fun `the work behind each place of two sets of three rounds counts every round done`() {
+        val config = IntervalConfig(rounds = 3, sets = 2, setRestSeconds = 30, coolDownSeconds = 60)
+        var state = WorkoutEngine.start(config).state
+        val behind = mutableListOf<String>()
+        while (!state.isDone) {
+            behind += "${state.phase} ${state.set}.${state.round}:${Course.workBehind(state)}"
+            state = WorkoutEngine.advance(state).state
+        }
+        assertEquals(
+            "Prep 1.1:0 Work 1.1:0 Rest 1.1:1 Work 1.2:1 Rest 1.2:2 Work 1.3:2 SetRest 1.3:3 " +
+                "Work 2.1:3 Rest 2.1:4 Work 2.2:4 Rest 2.2:5 Work 2.3:5 CoolDown 2.3:6",
+            behind.joinToString(" "),
+        )
+        assertEquals(6, Course.workBehind(state))
+    }
+
+    @Test
+    fun `only the last round of the last set is the last round`() {
+        val config = IntervalConfig(rounds = 3, sets = 2)
+        val works = generateSequence(WorkoutEngine.start(config).state) { WorkoutEngine.advance(it).state }
+            .takeWhile { !it.isDone }
+            .filter { it.phase == Phase.Work }
+            .toList()
+        assertEquals(listOf(false, false, false, false, false, true), works.map { it.isLastRound })
+    }
 }

@@ -40,11 +40,18 @@ data class IntervalConfig(
         require(workOf(rounds) in WORK_RANGE) { "Last round's work of ${workOf(rounds)} s" }
     }
 
-    /** A ladder: the rounds' work climbs or falls. */
-    val isLadder: Boolean get() = workStepSeconds != 0 && rounds > 1
+    /**
+     * The blocks of rounds between the bookends, in the order they run: this config's work, rest, rounds, sets and
+     * ladder as the one block every workout has today. Worked out on each read, as [init] reads it.
+     */
+    val blocks: List<Block>
+        get() = listOf(Block(workSeconds, restSeconds, rounds, sets, setRestSeconds, workStepSeconds))
 
-    /** The work of [round] (1-based) of each set: [workSeconds], and a [workStepSeconds] more each round after. */
-    fun workOf(round: Int): Int = workSeconds + (round - 1) * workStepSeconds
+    /** A ladder: the rounds' work climbs or falls. */
+    val isLadder: Boolean get() = blocks.first().isLadder
+
+    /** The work of [round] (1-based) of each set of the first block, as [Block.workOf]. */
+    fun workOf(round: Int): Int = blocks.first().workOf(round)
 
     /**
      * Wall-clock length of the whole session: prep, the warm-up, every work interval and the rests between

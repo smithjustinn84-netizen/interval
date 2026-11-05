@@ -70,6 +70,8 @@ private class StoredProgress(
     val sets: Int = 1,
     val setRestSeconds: Int = 0,
     val workStepSeconds: Int = 0,
+    /** Since 0.5: a workout saved by 0.4 is in its one block. */
+    val block: Int = 0,
 ) {
     fun toDomain(): WorkoutProgress? {
         val phase = Phase.entries.firstOrNull { it.name == phase } ?: return null
@@ -87,7 +89,17 @@ private class StoredProgress(
         )
         return WorkoutProgress(
             id = id,
-            state = WorkoutState(config, phase, round, remainingMillis, phaseMillis, halfwayCued, set),
+            state = WorkoutState(
+                config,
+                phase,
+                round,
+                remainingMillis,
+                phaseMillis,
+                halfwayCued,
+                set,
+                // A damaged file still reads, in a block the config has.
+                block = block.coerceIn(0, config.blocks.lastIndex),
+            ),
             running = running,
             ended = ended,
             activeMillis = activeMillis,
@@ -141,4 +153,5 @@ private fun WorkoutProgress.stored() = StoredProgress(
     sets = state.config.sets,
     setRestSeconds = state.config.setRestSeconds,
     workStepSeconds = state.config.workStepSeconds,
+    block = state.block,
 )

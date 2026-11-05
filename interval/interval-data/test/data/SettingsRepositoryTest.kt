@@ -2,6 +2,8 @@
 
 package dev.justinsmith.interval.data
 
+import androidx.datastore.preferences.core.preferencesOf
+import androidx.datastore.preferences.core.stringPreferencesKey
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.saveCurrentAsPreset
 import dev.justinsmith.interval.model.AppSettings
@@ -78,6 +80,38 @@ class SettingsRepositoryTest {
 
         repository().settings.saveWorkoutProgress(null)
         assertNull(repository().settings.workoutProgress.value)
+    }
+
+    @Test
+    fun `a workout saved before blocks restores in its one block`() {
+        val saved = """
+            {"id":7,"prepSeconds":10,"workSeconds":20,"restSeconds":10,"rounds":8,"activity":"General",
+            "phase":"Rest","round":3,"remainingMillis":4000,"phaseMillis":10000,"halfwayCued":false,
+            "running":true,"ended":false,"activeMillis":70000,"workMillis":60000,"atEpochMillis":1700000000000,
+            "set":2,"sets":2,"setRestSeconds":60}
+        """.trimIndent()
+        val progress = preferencesOf(stringPreferencesKey("workout_progress") to saved).toWorkoutProgress()
+        val state = checkNotNull(progress).state
+        assertEquals(0, state.block)
+        assertEquals(2, state.set)
+        assertEquals(3, state.round)
+    }
+
+    @Test
+    fun `a saved block the workout has not is read as its last`() {
+        val state = WorkoutEngine.start(IntervalConfig()).state.copy(block = 3)
+        val progress = WorkoutProgress(
+            id = 1,
+            state = state,
+            running = false,
+            ended = false,
+            activeMillis = 0,
+            workMillis = 0,
+            week = null,
+            atEpochMillis = 1_700_000_000_000,
+        )
+        repository().settings.saveWorkoutProgress(progress)
+        assertEquals(0, repository().settings.workoutProgress.value?.state?.block)
     }
 
     @Test

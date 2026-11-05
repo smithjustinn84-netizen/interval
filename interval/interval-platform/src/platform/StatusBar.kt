@@ -24,7 +24,7 @@ data class StatusBar(val segments: List<BarSegment>, val points: List<Int>, val 
         /** The bar of [outline], with its point at the elapsed time; null with nothing to draw. */
         fun of(outline: WorkoutOutline): StatusBar? {
             if (outline.totalSeconds <= 0) return null
-            val sets = outline.intervals.any { it.set > 1 }
+            val sets = outline.intervals.any { it.set > 1 || it.block > 0 }
             val drawn = if (sets) {
                 bySet(outline.intervals)
             } else {
@@ -36,7 +36,8 @@ data class StatusBar(val segments: List<BarSegment>, val points: List<Int>, val 
             val starts = mutableListOf<Int>()
             var at = 0
             outline.intervals.forEach {
-                val starting = it.phase == Phase.Work && if (sets) it.round == 1 && it.set > 1 else it.round > 1
+                val starting = it.phase == Phase.Work &&
+                    if (sets) it.round == 1 && (it.set > 1 || it.block > 0) else it.round > 1
                 if (starting) starts += at
                 at += it.seconds
             }
@@ -46,15 +47,16 @@ data class StatusBar(val segments: List<BarSegment>, val points: List<Int>, val 
 
         /** A segment per set (its rounds and the rests within it) and per rest between sets; the others as they are. */
         private fun bySet(intervals: List<OutlinedInterval>): List<BarSegment> = buildList {
-            var drawing: Int? = null
+            var drawing: Pair<Int, Int>? = null
             intervals.forEach {
                 val inRounds = it.phase == Phase.Work || it.phase == Phase.Rest
+                val ofSet = it.block to it.set
                 when {
-                    inRounds && it.set == drawing -> set(lastIndex, BarSegment(last().length + it.seconds, Phase.Work))
+                    inRounds && ofSet == drawing -> set(lastIndex, BarSegment(last().length + it.seconds, Phase.Work))
                     inRounds -> add(BarSegment(it.seconds, Phase.Work))
                     else -> add(BarSegment(it.seconds, it.phase))
                 }
-                drawing = if (inRounds) it.set else null
+                drawing = if (inRounds) ofSet else null
             }
         }
     }
