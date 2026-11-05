@@ -54,6 +54,16 @@ class TodayScreenTest {
     }
 
     @Test
+    fun `the gear opens settings`() = runUiTest {
+        var opened = 0
+        setThemedContent(dark = true) {
+            TodayScreen(TodayUiState(), onStartSession = {}, onChooseProgram = {}, onOpenSettings = { opened++ })
+        }
+        onNodeWithContentDescription("Settings").performClick()
+        assertEquals(1, opened)
+    }
+
+    @Test
     fun `with a program Today lays out its next day`() = runUiTest {
         val started = mutableListOf<ProgramKey?>()
         val state = TodayUiState(

@@ -85,7 +85,7 @@ private fun LiftHost(koin: KoinApplication, back: NavigationEventDispatcherOwner
                             rememberViewModelStoreNavEntryDecorator(),
                         ),
                         entryProvider = entryProvider {
-                            liftEntries(backStack, twoPane = false, historyScene = "history")
+                            liftEntries(backStack, twoPane = false, historyScene = "history", onOpenSettings = {})
                         },
                     )
                     NoticeHost(notices, Modifier.align(Alignment.BottomCenter))

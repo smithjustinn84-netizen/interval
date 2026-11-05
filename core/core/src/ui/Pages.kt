@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import dev.justinsmith.core.resources.Res
 import dev.justinsmith.core.resources.common_back
+import dev.justinsmith.core.resources.common_settings
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -69,6 +70,12 @@ fun ScrollPage(
 @Composable
 fun BackAction(onBack: () -> Unit, modifier: Modifier = Modifier) {
     IconAction(IntervalIcons.Back, stringResource(Res.string.common_back), onBack, modifier)
+}
+
+/** The way to Settings, for a tab's [TitleBar]: the gear, the last of its actions on every tab. */
+@Composable
+fun SettingsAction(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    IconAction(IntervalIcons.Settings, stringResource(Res.string.common_settings), onClick, modifier)
 }
 
 /**

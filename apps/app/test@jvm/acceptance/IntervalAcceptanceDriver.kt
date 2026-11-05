@@ -92,6 +92,11 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         ui.tab("Timer").assertIsSelected()
     }
 
+    fun seeHistoryTab() {
+        see(hasContentDescription("Plan"))
+        ui.tab("History").assertIsSelected()
+    }
+
     // The Timer
 
     fun setWorkTime(value: String) {

@@ -316,6 +316,31 @@ class AppNavigationTest {
     }
 
     @Test
+    fun `on a tablet settings opened from Lift is a page of its own`() = appTest(Window.Tablet) {
+        tab("Lift").performClick()
+        onNodeWithContentDescription("Settings").performClick()
+        onNodeWithText("Cues").assertExists()
+        onNodeWithText("Start session").assertDoesNotExist()
+        onNodeWithContentDescription("Close settings").assertDoesNotExist()
+
+        onNodeWithContentDescription("Back").performClick()
+        onNodeWithText("Start session").assertExists()
+        tab("Lift").assertIsSelected()
+    }
+
+    @Test
+    fun `on a tablet settings opened from History is a page of its own`() = appTest(Window.Tablet) {
+        tab("History").performClick()
+        onNodeWithContentDescription("Settings").performClick()
+        onNodeWithText("Cues").assertExists()
+        onNodeWithContentDescription("Close settings").assertDoesNotExist()
+
+        onNodeWithContentDescription("Back").performClick()
+        onNodeWithText("Cues").assertDoesNotExist()
+        tab("History").assertIsSelected()
+    }
+
+    @Test
     fun `the desktop window opens settings beside the timer`() = appTest(Window.Desktop) {
         onNodeWithContentDescription("Settings").performClick()
         onNodeWithText("Cues").assertExists()

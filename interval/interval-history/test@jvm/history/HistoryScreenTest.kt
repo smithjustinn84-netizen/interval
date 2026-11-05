@@ -83,7 +83,15 @@ class HistoryScreenTest {
         onPlan = { events += "plan" },
         onShowTimer = { events += "timer" },
         onStartLift = { events += "lift ${it?.stored}" },
+        onOpenSettings = { events += "settings" },
     )
+
+    @Test
+    fun `the gear opens settings`() = runUiTest {
+        setThemedContent { HistoryScreen(oneWorkout, actions) }
+        onNodeWithContentDescription("Settings").performClick()
+        assertEquals(listOf("settings"), events)
+    }
 
     @Test
     fun `finished workouts show under their day and open`() = runUiTest {

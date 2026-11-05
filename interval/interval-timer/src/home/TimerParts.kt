@@ -44,7 +44,6 @@ import dev.justinsmith.interval.home.resources.activity_choose_cd
 import dev.justinsmith.interval.home.resources.common_calories_estimate
 import dev.justinsmith.interval.home.resources.common_joined
 import dev.justinsmith.interval.home.resources.common_prep_line
-import dev.justinsmith.interval.home.resources.common_settings
 import dev.justinsmith.interval.home.resources.timer_all_presets_cd
 import dev.justinsmith.interval.home.resources.timer_describe_cd
 import dev.justinsmith.interval.home.resources.timer_save_as_preset_cd
@@ -64,6 +63,7 @@ import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.RollingText
+import dev.justinsmith.interval.ui.SettingsAction
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StartButton
@@ -105,7 +105,7 @@ internal fun TimerTitleBar(
             IconAction(IntervalIcons.Add, stringResource(Res.string.timer_save_as_preset_cd), onSave)
         }
         IconAction(IntervalIcons.Describe, stringResource(Res.string.timer_describe_cd), onDescribe)
-        IconAction(IntervalIcons.Settings, stringResource(Res.string.common_settings), onOpenSettings)
+        SettingsAction(onOpenSettings)
     }
 }
 

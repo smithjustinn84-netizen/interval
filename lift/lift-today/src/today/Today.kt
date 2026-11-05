@@ -47,6 +47,7 @@ import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SecondaryButton
+import dev.justinsmith.interval.ui.SettingsAction
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StandardEasing
@@ -119,6 +120,7 @@ fun TodayRoute(
     onOpenSession: (uid: String) -> Unit = {},
     onOpenExercises: () -> Unit = {},
     onOpenProgram: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
 ) {
     val viewModel = koinViewModel<TodayViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -141,6 +143,7 @@ fun TodayRoute(
         onOpenSession = onOpenSession,
         onOpenExercises = onOpenExercises,
         onOpenProgram = onOpenProgram,
+        onOpenSettings = onOpenSettings,
     )
 }
 
@@ -160,13 +163,17 @@ fun TodayScreen(
     onOpenSession: (uid: String) -> Unit = {},
     onOpenExercises: () -> Unit = {},
     onOpenProgram: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
 ) {
     val palette = IntervalTheme.palette
     val card = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4)
     TabGrid(
         stringResource(Res.string.today_title),
         modifier,
-        actions = { IconAction(IntervalIcons.Bell, stringResource(Res.string.today_bells_cd), onOpenBells) },
+        actions = {
+            IconAction(IntervalIcons.Bell, stringResource(Res.string.today_bells_cd), onOpenBells)
+            SettingsAction(onOpenSettings)
+        },
         bottomBar = { StartRow(state, onStartSession, Modifier.widthIn(max = Sizes.content)) },
     ) {
         item(key = "week") { WeekCard(state, card) }

@@ -219,7 +219,8 @@ internal fun AppContent(
  * One back stack: the Timer tab at the root, at most one other tab above it, then whatever was
  * pushed (Settings, Presets, Workout, a session). Back from Lift or History returns to Timer, as both
  * platforms expect. The navigation bar or rail shows only while a tab is on top, or while a page sits beside
- * its tab: windows of [AppSizes.twoPaneMinWidth] and up open Settings as a supporting pane beside Timer, and
+ * its tab: windows of [AppSizes.twoPaneMinWidth] and up open Settings as a supporting pane beside Timer (opened
+ * from Lift or History it is a page of its own, whatever the window: [settingsOverTimer]), and
  * windows of Material's expanded width and up a finished workout or session beside History's log, a pane
  * waiting for one until it is picked. The bar or rail lies over the pages and slides away as a page is pushed
  * over its tab ([NavigationAreaBar]).
@@ -230,7 +231,7 @@ private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
     val clock = koinInject<WallClock>()
     val panes = rememberPanes()
     val twoPane = panes.historyBeside
-    val settingsBeside = panes.settingsBeside
+    val settingsBeside = panes.settingsBeside && backStack.settingsOverTimer
     val currentTab = top as? Tab ?: when {
         settingsBeside && top == Settings -> TimerTab
         twoPane && top.opensBesideHistory -> HistoryTab
@@ -319,7 +320,7 @@ private class Panes(
     val strategies: List<SceneStrategy<NavKey>>,
     /** A finished workout or session opens beside History's log. */
     val historyBeside: Boolean,
-    /** Settings opens beside the Timer. */
+    /** The window has room for Settings beside the Timer, where it was opened from there. */
     val settingsBeside: Boolean,
 )
 
@@ -353,7 +354,8 @@ private fun rememberPanes(): Panes {
 
 /**
  * The screen for each [NavKey], and what each screen's actions do to the [backStack]. [twoPane] when a finished
- * workout opens beside History's log, [settingsBeside] when Settings opens beside the Timer.
+ * workout opens beside History's log, [settingsBeside] when Settings is open beside the Timer. Every tab's gear
+ * opens Settings; only over the Timer does it take the supporting pane.
  */
 private fun appEntries(
     backStack: NavBackStack<NavKey>,
@@ -387,7 +389,7 @@ private fun appEntries(
             onStartWorkout = { backStack.startWorkout(clock) },
         )
     }
-    liftEntries(backStack, twoPane, HISTORY_SCENE)
+    liftEntries(backStack, twoPane, HISTORY_SCENE, onOpenSettings = { backStack.push(Settings) })
     entry<HistoryTab>(
         metadata = ListDetailSceneStrategy.listPane(HISTORY_SCENE, detailPlaceholder = { HistoryPlaceholder() }) +
             ListDetailSceneStrategy.preferredPaneSize(width = AppSizes.listPane) +
@@ -404,9 +406,20 @@ private fun appEntries(
             onStartWorkout = { backStack.startWorkout(clock) },
             onShowTimer = { selectTab(TimerTab) },
             onStartSession = { backStack.push(Lifting) },
+            onOpenSettings = { backStack.push(Settings) },
         )
     }
-    entry<Settings>(metadata = SupportingPaneSceneStrategy.supportingPane() + pageKind(PageKind.Beside)) {
+    entry<Settings>(
+        // The supporting pane's scene is made of the entries that carry its metadata, and of the tabs only the
+        // Timer does: over Lift or History, Settings beside it would be beside nothing.
+        metadata = {
+            if (backStack.settingsOverTimer) {
+                SupportingPaneSceneStrategy.supportingPane() + pageKind(PageKind.Beside)
+            } else {
+                emptyMap()
+            }
+        },
+    ) {
         SettingsRoute(
             onBack = { backStack.removeLastOrNull() },
             onShowAbout = { backStack.push(About) },
@@ -474,6 +487,10 @@ private fun NavBackStack<NavKey>.startWorkout(clock: WallClock) {
 
 /** The scene History's log and the workout beside it share, apart from Settings beside the Timer. */
 private const val HISTORY_SCENE = "history"
+
+/** Settings pairs with the Timer alone: over another tab it is a page of its own, whatever the window. */
+private val NavBackStack<NavKey>.settingsOverTimer: Boolean
+    get() = getOrNull(indexOf(Settings) - 1) == TimerTab
 
 /** A finished workout or session opened from History: on a wide window it sits beside the log. */
 private val NavKey?.opensBesideHistory: Boolean

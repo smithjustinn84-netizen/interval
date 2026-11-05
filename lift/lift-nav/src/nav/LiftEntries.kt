@@ -22,9 +22,15 @@ import dev.justinsmith.lift.today.TodayRoute
 
 /**
  * The screen for each Lift key, and what each screen's actions do to the [backStack]. A finished session
- * opened from History sits in [historyScene]'s detail pane, beside the log when [twoPane].
+ * opened from History sits in [historyScene]'s detail pane, beside the log when [twoPane]. [onOpenSettings] is the
+ * Lift tab's gear: Settings is the app's page, not Lift's, so the app says what opens it.
  */
-fun EntryProviderScope<NavKey>.liftEntries(backStack: NavBackStack<NavKey>, twoPane: Boolean, historyScene: String) {
+fun EntryProviderScope<NavKey>.liftEntries(
+    backStack: NavBackStack<NavKey>,
+    twoPane: Boolean,
+    historyScene: String,
+    onOpenSettings: () -> Unit,
+) {
     entry<LiftTab>(metadata = pageKind(PageKind.Tab)) {
         TodayRoute(
             onStartSession = { backStack.push(Lifting) },
@@ -33,6 +39,7 @@ fun EntryProviderScope<NavKey>.liftEntries(backStack: NavBackStack<NavKey>, twoP
             onOpenSession = { backStack.push(LiftDetail(it)) },
             onOpenExercises = { backStack.push(ExerciseLibrary) },
             onOpenProgram = { backStack.push(ProgramProgress) },
+            onOpenSettings = onOpenSettings,
         )
     }
     entry<Lifting>(metadata = pageKind(PageKind.Mode)) {

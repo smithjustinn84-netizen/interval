@@ -72,6 +72,7 @@ import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.NoticeAction
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.SecondaryButton
+import dev.justinsmith.interval.ui.SettingsAction
 import dev.justinsmith.interval.ui.SetupLanes
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
@@ -87,7 +88,8 @@ import org.koin.compose.viewmodel.koinViewModel
 /**
  * Resolves the tab's ViewModel and binds it to [HistoryScreen]. Starting a workout puts it on the Timer,
  * then [onStartWorkout]; [onOpenWorkout] opens one finished workout, [onOpenLift] one kettlebell session,
- * [onPlan] the plan, [onShowTimer] the Timer tab. Starting the lift program's day opens [onStartSession].
+ * [onPlan] the plan, [onShowTimer] the Timer tab, [onOpenSettings] Settings. Starting the lift program's day
+ * opens [onStartSession].
  * [selectedWorkout] or [selectedLift] is the one open beside the log, on a wide window.
  */
 @Composable
@@ -101,6 +103,7 @@ fun HistoryRoute(
     modifier: Modifier = Modifier,
     selectedWorkout: Long? = null,
     selectedLift: String? = null,
+    onOpenSettings: () -> Unit = {},
 ) {
     val viewModel = koinViewModel<HistoryViewModel>()
     val locale = Locale.current.toLanguageTag()
@@ -113,6 +116,7 @@ fun HistoryRoute(
     val plan by rememberUpdatedState(onPlan)
     val showTimer by rememberUpdatedState(onShowTimer)
     val startSession by rememberUpdatedState(onStartSession)
+    val openSettings by rememberUpdatedState(onOpenSettings)
     val notices = LocalNotices.current
     val undo = stringResource(Res.string.notice_undo)
     val actions = remember(viewModel, notices, undo) {
@@ -146,6 +150,7 @@ fun HistoryRoute(
                 viewModel.startLift(program)
                 leavingSheet(startSession)
             },
+            onOpenSettings = { openSettings() },
         )
     }
     HistoryScreen(state, actions, modifier, selectedWorkout, selectedLift)
@@ -172,6 +177,7 @@ class HistoryActions(
     val onOpenLift: (String) -> Unit = {},
     /** Opens Lifting: on a new day of this program, or with null a free session; either way, on one in progress. */
     val onStartLift: (ProgramKey?) -> Unit = {},
+    val onOpenSettings: () -> Unit = {},
 )
 
 /**
@@ -199,24 +205,8 @@ fun HistoryScreen(
     val title = stringResource(Res.string.history_title)
     val titleActions: @Composable RowScope.() -> Unit = {
         IconAction(IntervalIcons.Plan, stringResource(Res.string.history_plan_cd), actions.onPlan)
-        IntervalMenu(
-            expanded = menu,
-            onExpandedChange = { menu = it },
-            items = {
-                IntervalMenuItem(
-                    stringResource(Res.string.history_clear_menu),
-                    onClick = { confirming = true },
-                    destructive = true,
-                )
-            },
-        ) {
-            IconAction(
-                IntervalIcons.More,
-                stringResource(Res.string.history_more_options_cd),
-                onClick = { menu = true },
-                enabled = state.sections.isNotEmpty(),
-            )
-        }
+        OverflowMenu(menu, { menu = it }, enabled = state.sections.isNotEmpty(), onClear = { confirming = true })
+        SettingsAction(actions.onOpenSettings)
     }
     val selected = { item: HistoryItem ->
         (item.id != null && item.id == selectedWorkout) || (item.liftUid != null && item.liftUid == selectedLift)
@@ -271,6 +261,32 @@ fun HistoryScreen(
             },
             onDismiss = { confirming = false },
             destructive = true,
+        )
+    }
+}
+
+/** The title bar's overflow button and its menu: clearing the log, while there is one to clear. */
+@Composable
+private fun OverflowMenu(
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    enabled: Boolean,
+    onClear: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    IntervalMenu(
+        expanded = expanded,
+        onExpandedChange = onExpandedChange,
+        items = {
+            IntervalMenuItem(stringResource(Res.string.history_clear_menu), onClick = onClear, destructive = true)
+        },
+        modifier = modifier,
+    ) {
+        IconAction(
+            IntervalIcons.More,
+            stringResource(Res.string.history_more_options_cd),
+            onClick = { onExpandedChange(true) },
+            enabled = enabled,
         )
     }
 }

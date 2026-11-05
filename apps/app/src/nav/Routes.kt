@@ -15,7 +15,10 @@ data object TimerTab : Tab
 @Serializable
 data object HistoryTab : Tab
 
-/** Cues, the get-ready countdown, keep screen on, theme. Pushed from the Timer tab's gear. */
+/**
+ * The set-once preferences, your data and the way to About. Pushed from every tab's gear; beside the Timer on a
+ * wide window when opened from there.
+ */
 @Serializable
 data object Settings : NavKey
 
