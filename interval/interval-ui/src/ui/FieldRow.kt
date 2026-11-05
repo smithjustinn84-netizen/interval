@@ -95,6 +95,60 @@ fun FieldRow(
 }
 
 /**
+ * A setting that isn't one of the workout's values, shown as the compact [FieldRow] shows one: its [title] and
+ * [hint], the [value] in a pill and a chevron. Tapping opens what changes it, which [onClickLabel] names. [dim]
+ * for a value that says the setting is off.
+ */
+@Composable
+fun ValueRow(
+    title: String,
+    hint: String?,
+    value: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onClickLabel: String? = null,
+    dim: Boolean = false,
+) {
+    val palette = IntervalTheme.palette
+    val interaction = remember { MutableInteractionSource() }
+    Row(
+        modifier
+            .fillMaxWidth()
+            .heightIn(min = Sizes.listRow)
+            .clickable(
+                interaction,
+                LocalIndication.current,
+                role = Role.Button,
+                onClickLabel = onClickLabel,
+                onClick = onClick,
+            )
+            // After the ripple, so the content shrinks while the ripple keeps the card's full width.
+            .pressScale(interaction)
+            .padding(start = Spacing.space16),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+    ) {
+        Column(Modifier.weight(1f).padding(vertical = Spacing.space8)) {
+            Text(title, style = IntervalTheme.type.label, color = palette.text)
+            if (hint != null) Text(hint, style = IntervalTheme.type.meta, color = palette.textDim)
+        }
+        ValuePill(
+            value,
+            color = if (dim) palette.textDim else palette.text,
+            tint = palette.surfaceVariant,
+            height = IntervalSizes.valuePillSmall,
+            style = IntervalTheme.type.value,
+        )
+        Icon(
+            IntervalIcons.Chevron,
+            contentDescription = null,
+            tint = palette.textDim,
+            modifier = Modifier.padding(end = Spacing.space12).size(Sizes.icon),
+        )
+    }
+}
+
+/**
  * A field card's phase colour down its start edge. Drawn rather than laid out, so it stays on the card's
  * edge while the content shrinks under a press; the content is padded clear of it by [IntervalSizes.stripe].
  */

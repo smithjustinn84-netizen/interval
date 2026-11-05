@@ -27,6 +27,7 @@ import dev.justinsmith.interval.settings.resources.settings_cues_all_off
 import dev.justinsmith.interval.settings.resources.settings_data
 import dev.justinsmith.interval.settings.resources.settings_effort_hint
 import dev.justinsmith.interval.settings.resources.settings_export
+import dev.justinsmith.interval.settings.resources.settings_export_action
 import dev.justinsmith.interval.settings.resources.settings_export_hint
 import dev.justinsmith.interval.settings.resources.settings_halfway
 import dev.justinsmith.interval.settings.resources.settings_halfway_hint
@@ -35,16 +36,20 @@ import dev.justinsmith.interval.settings.resources.settings_health_install_hint
 import dev.justinsmith.interval.settings.resources.settings_health_off_hint
 import dev.justinsmith.interval.settings.resources.settings_health_on_hint
 import dev.justinsmith.interval.settings.resources.settings_import
+import dev.justinsmith.interval.settings.resources.settings_import_action
 import dev.justinsmith.interval.settings.resources.settings_import_hint
 import dev.justinsmith.interval.settings.resources.settings_keep_screen_on
 import dev.justinsmith.interval.settings.resources.settings_keep_screen_on_hint
 import dev.justinsmith.interval.settings.resources.settings_sound
 import dev.justinsmith.interval.settings.resources.settings_sound_hint
+import dev.justinsmith.interval.settings.resources.settings_value_off
 import dev.justinsmith.interval.settings.resources.settings_vibrate
 import dev.justinsmith.interval.settings.resources.settings_vibrate_hint
 import dev.justinsmith.interval.settings.resources.settings_voice
 import dev.justinsmith.interval.settings.resources.settings_voice_hint
 import dev.justinsmith.interval.settings.resources.settings_weight
+import dev.justinsmith.interval.settings.resources.settings_weight_edit
+import dev.justinsmith.interval.settings.resources.settings_weight_hint
 import dev.justinsmith.interval.settings.resources.settings_weight_unset
 import dev.justinsmith.interval.settings.resources.settings_weight_value
 import dev.justinsmith.interval.settings.resources.settings_workout
@@ -63,6 +68,7 @@ import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ToggleRow
+import dev.justinsmith.interval.ui.ValueRow
 import dev.justinsmith.interval.ui.enterExpanding
 import dev.justinsmith.interval.ui.exitShrinking
 import org.jetbrains.compose.resources.StringResource
@@ -121,12 +127,14 @@ internal fun settingsGroups(
                 stringResource(Res.string.settings_export),
                 stringResource(Res.string.settings_export_hint),
                 onClick = onExport,
+                onClickLabel = stringResource(Res.string.settings_export_action),
             )
             RowDivider()
             LinkRow(
                 stringResource(Res.string.settings_import),
                 stringResource(Res.string.settings_import_hint),
                 onClick = onImport,
+                onClickLabel = stringResource(Res.string.settings_import_action),
             )
             if (state.health != HealthStatus.Unavailable) {
                 RowDivider()
@@ -248,14 +256,19 @@ private fun CaloriesCard(
     val weight = state.weight
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         ListCard {
-            LinkRow(
+            ValueRow(
                 stringResource(Res.string.settings_weight),
-                if (weight == null) {
-                    stringResource(Res.string.settings_weight_unset)
+                stringResource(
+                    if (weight == null) Res.string.settings_weight_unset else Res.string.settings_weight_hint,
+                ),
+                value = if (weight == null) {
+                    stringResource(Res.string.settings_value_off)
                 } else {
                     stringResource(Res.string.settings_weight_value, weight, stringResource(state.body.unit.labelRes))
                 },
                 onClick = onEditWeight,
+                onClickLabel = stringResource(Res.string.settings_weight_edit),
+                dim = weight == null,
             )
         }
         SegmentedPicker(Effort.entries, state.body.effort, label = { stringResource(it.labelRes) }, onSetEffort)

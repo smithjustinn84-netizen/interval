@@ -80,18 +80,31 @@ fun RowDivider(modifier: Modifier = Modifier) {
 }
 
 /**
- * A row that leads to another screen: a [title] with an optional [subtitle], and a chevron saying so.
- * The row itself is the button; the chevron is drawn, not read.
+ * A row that leads on, to another screen, a sheet or the system's own (its share sheet, a file picker): a
+ * [title] with an optional [subtitle], and a chevron saying so. The row itself is the button, which
+ * [onClickLabel] names where the title alone doesn't say what a tap does; the chevron is drawn, not read.
  */
 @Composable
-fun LinkRow(title: String, subtitle: String?, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun LinkRow(
+    title: String,
+    subtitle: String?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onClickLabel: String? = null,
+) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
     Row(
         modifier
             .fillMaxWidth()
             .heightIn(min = Sizes.listRow)
-            .clickable(interaction, LocalIndication.current, role = Role.Button, onClick = onClick)
+            .clickable(
+                interaction,
+                LocalIndication.current,
+                role = Role.Button,
+                onClickLabel = onClickLabel,
+                onClick = onClick,
+            )
             // After the ripple, so the content shrinks while the ripple keeps the card's full width.
             .pressScale(interaction)
             .padding(start = Spacing.space16, end = Spacing.space12, top = Spacing.space8, bottom = Spacing.space8),

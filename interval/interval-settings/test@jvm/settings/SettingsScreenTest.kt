@@ -196,7 +196,7 @@ class SettingsScreenTest {
     @Test
     fun `with calories off the row asks for a weight and Done sets the default`() = runUiTest {
         setThemedContent { Screen(caloriesOff) }
-        onNodeWithText("Off. Set it to see calorie estimates").performScrollTo().performClick()
+        onNodeWithText("Set it to see calorie estimates").performScrollTo().performClick()
         onNodeWithText("Turn off calorie estimates").assertDoesNotExist()
         onNodeWithText("Done").performClick()
         assertEquals(listOf<Any>("weight ${WeightUnit.Kg.default}"), calls)
@@ -257,7 +257,7 @@ class SettingsScreenTest {
                 },
             )
         }
-        onNodeWithText("Off. Set it to see calorie estimates").performScrollTo().performClick()
+        onNodeWithText("Set it to see calorie estimates").performScrollTo().performClick()
         onNodeWithContentDescription("More weight").performClick()
         onNodeWithText("Turn off calorie estimates").assertDoesNotExist()
         onNodeWithText("Done").performClick()

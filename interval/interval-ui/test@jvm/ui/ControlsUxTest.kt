@@ -9,12 +9,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
@@ -59,6 +64,20 @@ class ControlsUxTest {
         onNode(hasSetTextAction()).performClick()
         onNode(hasSetTextAction()).performImeAction()
         assertEquals(1, doneCount)
+    }
+
+    @Test
+    fun `ValueRow shows its value beside its title and says what a tap does`() = runUiTest {
+        var taps = 0
+        setThemedContent {
+            ValueRow("Body weight", "For the calorie estimates", "82 kg", onClick = { taps++ }, onClickLabel = "Edit")
+        }
+        val row = onNode(hasText("Body weight") and hasText("82 kg") and hasClickAction())
+        row.assert(
+            SemanticsMatcher("its tap is named") { it.config.getOrNull(SemanticsActions.OnClick)?.label == "Edit" },
+        )
+        row.performClick()
+        assertEquals(1, taps)
     }
 
     @Test
