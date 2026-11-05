@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="cues_two_hand_swing">
-        <item>Hinge at the hips, not the knees, and hike the bell back high between your legs</item>
-        <item>Snap the hips forward and squeeze the glutes; the arms only guide it</item>
-        <item>Let it float to chest height, then hinge as it falls</item>
+        <item>Set the bell a foot in front, hinge at the hips and hike it high between your legs</item>
+        <item>Snap the hips into a crisp standing plank, glutes tight, ribs down and wrists straight</item>
+        <item>Let it float to chest height, then wait until your upper arms touch your ribs to hinge</item>
     </string-array>
     <string-array name="cues_one_hand_swing">
         <item>Hike the bell back with one hand, the other arm free</item>
@@ -11,24 +11,24 @@
         <item>Stay square: don’t let the bell twist your torso</item>
     </string-array>
     <string-array name="cues_clean">
-        <item>Keep the bell close and let it travel up the body, not around it</item>
-        <item>Drive with the hips and tame the arc so the bell rolls softly onto the forearm</item>
-        <item>Finish in the rack: wrist straight, elbow tucked to the ribs</item>
+        <item>Keep the bell close and zip it up the body, not out in a wide arc</item>
+        <item>Loosen your grip as it rises so the handle rolls smoothly around the wrist without a bang</item>
+        <item>Land in a tight rack, wrist straight and elbow tucked, and regrip as you cast it down</item>
     </string-array>
     <string-array name="cues_press">
-        <item>Start from a tight rack, glutes and abs braced</item>
-        <item>Press up and slightly out, the forearm vertical under the bell</item>
-        <item>Lock out with the biceps by the ear, then pull it back down to the rack</item>
+        <item>Root your feet, squeeze the glutes and brace from a tight rack</item>
+        <item>Press up with the forearm vertical, without leaning away from the bell</item>
+        <item>Lock out with the biceps by the ear, then pull the bell back down into the rack</item>
     </string-array>
     <string-array name="cues_snatch">
-        <item>Swing it back high, then drive the hips and pull the elbow back</item>
-        <item>Punch the hand through at the top so the bell lands without a bang</item>
-        <item>Lock out overhead and pause before the drop</item>
+        <item>Hike the bell high, drive the hips and pull the elbow back to keep the arc close</item>
+        <item>Open the hand near the top and punch through so the bell settles softly overhead</item>
+        <item>Pause locked out, then let the handle turn in a loose hook grip into the next swing</item>
     </string-array>
     <string-array name="cues_get_up">
-        <item>Keep your eyes on the bell and the arm locked the whole way</item>
-        <item>Roll to the elbow, then the hand, and bridge the hips high</item>
-        <item>Sweep the leg through to a kneel, then stand; reverse each step back down</item>
+        <item>Keep your eyes on the bell, the arm locked and the wrist straight; if it wavers, slow down</item>
+        <item>Roll to the elbow, then the hand, and bridge the hips only enough to sweep the leg</item>
+        <item>Square the lunge, stand tall, and reverse each step under control back to the floor</item>
     </string-array>
     <string-array name="cues_goblet_squat">
         <item>Hold the bell by the horns at your chest, elbows down</item>
@@ -81,9 +81,9 @@
         <item>Drive through the front foot to stand</item>
     </string-array>
     <string-array name="cues_windmill">
-        <item>Press the bell up, eyes on it, feet turned away</item>
-        <item>Push the hip out and slide the free hand down the front leg</item>
-        <item>Keep the top arm locked, then rise slowly</item>
+        <item>Lock the bell overhead, eyes on it, and turn both feet forty-five degrees away</item>
+        <item>Push the back hip out and hinge there; never round your spine just to touch the floor</item>
+        <item>Stop where the hip allows, keep the top arm vertical, and drive the hip through to stand</item>
     </string-array>
     <string-array name="cues_bottoms_up_press">
         <item>Hold the bell upside down, the grip crushing the handle</item>
@@ -104,6 +104,36 @@
         <item>Hold the bell at the chest by the horns, or rack a pair</item>
         <item>Sit into a full squat with the chest up</item>
         <item>Drive up hard and carry the momentum straight into a press overhead</item>
+    </string-array>
+    <string-array name="cues_half_snatch">
+        <item>Drive the hips and punch the hand through at the top to lock out overhead</item>
+        <item>Pull the bell down into a tight rack instead of dropping straight into the swing</item>
+        <item>Cast it from the rack into the next hike, saving your palms on long sets</item>
+    </string-array>
+    <string-array name="cues_push_press">
+        <item>Start in a tight rack, wrist straight and feet under the hips</item>
+        <item>Dip a few inches with the knees, torso vertical and heels glued down</item>
+        <item>Drive hard through the legs to launch the bell and lock out overhead</item>
+    </string-array>
+    <string-array name="cues_farmers_walk">
+        <item>Deadlift a bell in each hand and stand tall, shoulders down and back</item>
+        <item>Brace your ribs over your hips and walk with short, steady steps</item>
+        <item>Hinge to set the bells down before your grip gives way</item>
+    </string-array>
+    <string-array name="cues_suitcase_carry">
+        <item>Hold one bell at your side like a briefcase, shoulders and hips level</item>
+        <item>Walk tall and resist leaning away or letting the bell pull you down</item>
+        <item>Look the same from behind as you would empty-handed, then switch sides</item>
+    </string-array>
+    <string-array name="cues_rack_carry">
+        <item>Clean the bell into a tight rack, fist under the chin and elbow tucked</item>
+        <item>Breathe behind a braced trunk without letting the ribs flare</item>
+        <item>Walk slowly and stay tall until you set the bell down</item>
+    </string-array>
+    <string-array name="cues_bottoms_up_carry">
+        <item>Clean the bell upside down and crush the handle, wrist straight and elbow at ninety degrees</item>
+        <item>Stiffen your trunk and walk slowly, eyes forward</item>
+        <item>Lower it under control the moment the bell starts to tip</item>
     </string-array>
     <string-array name="cues_barbell_snatch">
         <item>Start with a wide grip and the hips higher than the knees</item>

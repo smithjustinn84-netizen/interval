@@ -94,4 +94,14 @@ val builtInPresets: List<Preset> = listOf(
         IntervalConfig(prepSeconds = 10, workSeconds = 10, restSeconds = 50, rounds = 6, activity = Activity.Climbing),
     ),
     Preset("Long efforts", IntervalConfig(prepSeconds = 5, workSeconds = 45, restSeconds = 15, rounds = 12)),
+    Preset(
+        "15:15 MVO2",
+        IntervalConfig(
+            prepSeconds = 10,
+            workSeconds = 15,
+            restSeconds = 15,
+            rounds = 40,
+            activity = Activity.Kettlebell,
+        ),
+    ),
 )

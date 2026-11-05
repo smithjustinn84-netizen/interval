@@ -40,6 +40,7 @@ import dev.justinsmith.lift.ui.resources.cues_barbell_snatch
 import dev.justinsmith.lift.ui.resources.cues_barbell_snatch_balance
 import dev.justinsmith.lift.ui.resources.cues_barbell_snatch_pull
 import dev.justinsmith.lift.ui.resources.cues_bench_dip
+import dev.justinsmith.lift.ui.resources.cues_bottoms_up_carry
 import dev.justinsmith.lift.ui.resources.cues_bottoms_up_press
 import dev.justinsmith.lift.ui.resources.cues_bulgarian_split_squat
 import dev.justinsmith.lift.ui.resources.cues_burpee
@@ -51,10 +52,12 @@ import dev.justinsmith.lift.ui.resources.cues_criss_cross
 import dev.justinsmith.lift.ui.resources.cues_dead_bug
 import dev.justinsmith.lift.ui.resources.cues_deadlift
 import dev.justinsmith.lift.ui.resources.cues_double_leg_stretch
+import dev.justinsmith.lift.ui.resources.cues_farmers_walk
 import dev.justinsmith.lift.ui.resources.cues_front_squat
 import dev.justinsmith.lift.ui.resources.cues_get_up
 import dev.justinsmith.lift.ui.resources.cues_glute_bridge
 import dev.justinsmith.lift.ui.resources.cues_goblet_squat
+import dev.justinsmith.lift.ui.resources.cues_half_snatch
 import dev.justinsmith.lift.ui.resources.cues_halo
 import dev.justinsmith.lift.ui.resources.cues_high_pull
 import dev.justinsmith.lift.ui.resources.cues_hollow_hold
@@ -71,7 +74,9 @@ import dev.justinsmith.lift.ui.resources.cues_pike_push_up
 import dev.justinsmith.lift.ui.resources.cues_plank
 import dev.justinsmith.lift.ui.resources.cues_press
 import dev.justinsmith.lift.ui.resources.cues_pull_up
+import dev.justinsmith.lift.ui.resources.cues_push_press
 import dev.justinsmith.lift.ui.resources.cues_push_up
+import dev.justinsmith.lift.ui.resources.cues_rack_carry
 import dev.justinsmith.lift.ui.resources.cues_racked_lunge
 import dev.justinsmith.lift.ui.resources.cues_reverse_lunge
 import dev.justinsmith.lift.ui.resources.cues_roll_up
@@ -91,6 +96,7 @@ import dev.justinsmith.lift.ui.resources.cues_snatch
 import dev.justinsmith.lift.ui.resources.cues_spine_stretch_forward
 import dev.justinsmith.lift.ui.resources.cues_split_squat
 import dev.justinsmith.lift.ui.resources.cues_step_up
+import dev.justinsmith.lift.ui.resources.cues_suitcase_carry
 import dev.justinsmith.lift.ui.resources.cues_swan
 import dev.justinsmith.lift.ui.resources.cues_swimming
 import dev.justinsmith.lift.ui.resources.cues_teaser
@@ -124,6 +130,12 @@ fun BuiltInExercise.cues(): StringArrayResource = when (this) {
     BuiltInExercise.IronCardio -> Res.array.cues_iron_cardio
     BuiltInExercise.CleanAndPress -> Res.array.cues_clean_and_press
     BuiltInExercise.Thruster -> Res.array.cues_thruster
+    BuiltInExercise.HalfSnatch -> Res.array.cues_half_snatch
+    BuiltInExercise.PushPress -> Res.array.cues_push_press
+    BuiltInExercise.FarmersWalk -> Res.array.cues_farmers_walk
+    BuiltInExercise.SuitcaseCarry -> Res.array.cues_suitcase_carry
+    BuiltInExercise.RackCarry -> Res.array.cues_rack_carry
+    BuiltInExercise.BottomsUpCarry -> Res.array.cues_bottoms_up_carry
     BuiltInExercise.BarbellSnatch -> Res.array.cues_barbell_snatch
     BuiltInExercise.BarbellCleanAndJerk -> Res.array.cues_barbell_clean_and_jerk
     BuiltInExercise.BarbellClean -> Res.array.cues_barbell_clean

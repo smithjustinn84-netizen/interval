@@ -6,11 +6,11 @@
   </description>
   <actions>
     <action>Tap the "Lift" tab, then the "Exercises" card</action>
-    <action>Verify that a page titled "Exercises" shows "Search exercises", the chips "Kettlebell", "Barbell", "Bodyweight", "Band" and "Mat", "96 exercises" and "Filters" with a chevron, a "New exercise" button in the title bar, and cards headed "Kettlebell · 21" and "Barbell · 20" (side by side on a tablet)</action>
+    <action>Verify that a page titled "Exercises" shows "Search exercises", the chips "Kettlebell", "Barbell", "Bodyweight", "Band" and "Mat", "102 exercises" and "Filters" with a chevron, a "New exercise" button in the title bar, and cards headed "Kettlebell · 27" and "Barbell · 20" (side by side on a tablet)</action>
     <action>Type "PUSHUP" into "Search exercises"</action>
     <action>Verify that "3 exercises" is shown with "Push-up", "Incline push-up" and "Pike push-up", in a card headed "Bodyweight · 3", each over "Reps · Upper body", and a "Clear" button</action>
     <action>Tap "Clear"</action>
-    <action>Verify that the search is empty and "96 exercises" is shown</action>
+    <action>Verify that the search is empty and "102 exercises" is shown</action>
     <action>Tap the "Mat" chip</action>
     <action>Verify that "18 exercises" is shown, starting with "The hundred"</action>
     <action>Tap "Filters"</action>
@@ -18,7 +18,7 @@
     <action>Tap "Time" under "Measured by"</action>
     <action>Verify that "1 exercise" is shown, "Swimming", and the button reads "Filters · 1"</action>
     <action>Tap "Clear"</action>
-    <action>Verify that "96 exercises" is shown and the button reads "Filters"</action>
+    <action>Verify that "102 exercises" is shown and the button reads "Filters"</action>
     <action>Type "Copenhagen plank" into "Search exercises"</action>
     <action>Verify that "No exercise matches “Copenhagen plank”" is shown with "Check the spelling, or clear a filter." and a button "Add “Copenhagen plank” as an exercise"</action>
     <action>Tap "Add “Copenhagen plank” as an exercise"</action>

@@ -7,6 +7,14 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.4.0] — Unreleased
 
 ### Added
+- Loaded carries and kettlebell sport lifts in Lift: Farmer's walk (always two bells), Suitcase carry, Rack carry and
+  Bottoms-up carry, timed as holds with their bell ("24 kg · 0:30 · Left", "2 × 24 kg · 0:45") and setting heaviest
+  and longest records ("Heaviest 24 kg · 0:30 · longest 1:00 at 16 kg"); Half snatch and kettlebell Push press (with
+  the barbell's now named "Barbell push press"); and the 18, 22, 26 and 30 kg competition bells in the bell rack.
+- Lift: "One-stop shop" under Dan John, pairing 125 two-hand swings with press, row, deadlift, goblet squat and
+  suitcase carry three days a week for six weeks.
+- "15:15 MVO2" among the Timer's presets: 15s on and 15s off for 40 rounds as a Kettlebell workout, after Kenneth Jay's
+  snatch protocol, and read by Describe ("15:15 mvo2").
 - Sets of rounds, with a longer rest between them: a "Sets" chip under the Timer's rows, whose sheet takes the rest
   between them once there is more than one (the chip then reads "4 · 1m"), and rows for both in the editor
   ("20s on · 10s off · ×8 · 4 sets · 1m between"). The workout says
@@ -27,6 +35,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 - The home-screen widget's preview in Android's widget picker, drawn over a sample week (Android 15 and up).
 
 ### Changed
+- Lift's Dan John programs and kettlebell cues: Armor Building Formula alternates the 20-minute ABC EMOM and five
+  double-bell press ladders of 2-3-5-10 across eight weeks; Easy Strength finishes with a suitcase carry; 10,000 Swings
+  rotates press, goblet squat, chin-up and bench dip across four days; and the swing, clean, press, snatch, get-up and
+  windmill cues tighten the hinge, J-hook, crush grip and vertical forearm.
 - The Timer's chips are one quiet row under Work, Rest and Rounds: the sets, the warm-up and the cool-down, each a
   small name over its value, with no wash, border or stripe, so the three rows keep the colour and the height.
 

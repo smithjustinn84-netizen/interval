@@ -177,8 +177,50 @@ class TrainingTest {
         assertEquals(true, BuiltInExercise.Clean.doubled(requested = true))
         assertEquals(false, BuiltInExercise.GetUp.doubled(requested = true))
         assertEquals(true, BuiltInExercise.ArmorBuildingComplex.doubled(requested = false))
+        assertEquals(true, BuiltInExercise.FarmersWalk.doubled(requested = false))
+        assertEquals(false, BuiltInExercise.SuitcaseCarry.doubled(requested = true))
         assertEquals(false, BuiltInExercise.Press.sided(double = true))
         assertEquals(true, BuiltInExercise.Press.sided(double = false))
+    }
+
+    @Test
+    fun `a weighted carry sets a record by its heaviest bell and its longest hold`() {
+        val carry = { kg: Double, seconds: Int, double: Boolean ->
+            SetLog.of(nextId++, BuiltInExercise.RackCarry, kg, 0, null, nextId, double = double, seconds = seconds)
+        }
+        val light = carry(16.0, 60, false)
+        val heavy = carry(24.0, 30, false)
+        val doubled = carry(20.0, 45, true)
+        assertEquals(
+            listOf(
+                PersonalRecord.Held(
+                    BuiltInExercise.RackCarry,
+                    longestSeconds = 60,
+                    double = false,
+                    heaviestKg = 24.0,
+                    secondsAtHeaviest = 30,
+                    longestKg = 16.0,
+                ),
+                PersonalRecord.Held(
+                    BuiltInExercise.RackCarry,
+                    longestSeconds = 45,
+                    double = true,
+                    heaviestKg = 20.0,
+                    secondsAtHeaviest = 45,
+                    longestKg = 20.0,
+                ),
+            ),
+            personalRecords(listOf(light, heavy, doubled)),
+        )
+        assertEquals(
+            setOf(light.id, heavy.id),
+            recordSetIds(listOf(carry(16.0, 45, false)), listOf(light, heavy, doubled)),
+        )
+        assertEquals(emptyList(), newRecords(listOf(light, heavy), session(carry(24.0, 30, false))))
+        assertEquals(
+            listOf(BuiltInExercise.RackCarry),
+            newRecords(listOf(light, heavy), session(carry(28.0, 20, false))).map { it.exercise },
+        )
     }
 
     @Test
@@ -187,7 +229,8 @@ class TrainingTest {
             listOf(
                 "TwoHandSwing", "OneHandSwing", "Clean", "Press", "Snatch", "GetUp", "GobletSquat", "Row", "Jerk",
                 "LongCycle", "Halo", "FrontSquat", "ArmorBuildingComplex", "Deadlift", "HighPull", "RackedLunge",
-                "Windmill", "BottomsUpPress", "IronCardio", "CleanAndPress", "Thruster",
+                "Windmill", "BottomsUpPress", "IronCardio", "CleanAndPress", "Thruster", "HalfSnatch", "PushPress",
+                "FarmersWalk", "SuitcaseCarry", "RackCarry", "BottomsUpCarry",
             ),
             kettlebellLifts.map { it.key },
         )
@@ -218,10 +261,10 @@ class TrainingTest {
     }
 
     @Test
-    fun `the starter catalogue has 96 exercises across five kinds of equipment`() {
+    fun `the starter catalogue has 102 exercises across five kinds of equipment`() {
         assertEquals(
             mapOf(
-                Equipment.Kettlebell to 21,
+                Equipment.Kettlebell to 27,
                 Equipment.Barbell to 20,
                 Equipment.Bodyweight to 22,
                 Equipment.Band to 15,
@@ -229,8 +272,9 @@ class TrainingTest {
             ),
             BuiltInExercise.entries.groupingBy { it.equipment }.eachCount(),
         )
-        assertEquals(BuiltInExercise.entries.take(21), kettlebellLifts)
-        assertEquals(BuiltInExercise.entries.drop(21).take(20), barbellLifts)
+        assertEquals(BuiltInExercise.entries.take(27), kettlebellLifts)
+        assertEquals(BuiltInExercise.entries.drop(27).take(20), barbellLifts)
+        assertTrue(standardBells.containsAll((8..32 step 2).map { it.toDouble() }))
     }
 
     @Test
@@ -255,9 +299,13 @@ class TrainingTest {
     }
 
     @Test
-    fun `holds are the exercises measured in time`() {
+    fun `holds and carries are the exercises measured in time`() {
         assertEquals(
             listOf(
+                BuiltInExercise.FarmersWalk,
+                BuiltInExercise.SuitcaseCarry,
+                BuiltInExercise.RackCarry,
+                BuiltInExercise.BottomsUpCarry,
                 BuiltInExercise.WallSit,
                 BuiltInExercise.Plank,
                 BuiltInExercise.SidePlank,

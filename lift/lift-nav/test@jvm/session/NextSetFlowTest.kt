@@ -62,12 +62,12 @@ class NextSetFlowTest {
         onNodeWithText("Start session").performClick()
         waitForText("Next set")
         onNodeWithContentDescription("Heavier").performClick()
-        waitForText("20 kg")
+        waitForText("18 kg")
         onNodeWithContentDescription("More reps").performClick()
         waitForText("× 11")
         onNodeWithText("Log set").performClick()
-        waitForText("20 kg × 11")
-        assertEquals(20.0 to 11, app.storage.sessions.sets.value.single().let { it.bellKg to it.reps })
+        waitForText("18 kg × 11")
+        assertEquals(18.0 to 11, app.storage.sessions.sets.value.single().let { it.bellKg to it.reps })
     }
 
     @Test
@@ -144,11 +144,11 @@ class NextSetFlowTest {
         onNodeWithText("Start session").performClick()
         waitForText("Next set")
         onNodeWithContentDescription("Heavier").performClick()
-        waitForText("20 kg")
+        waitForText("18 kg")
         onNodeWithContentDescription("Add set or EMOM").performClick()
         waitForText("Reps")
         // The sheet's stepper reads what the card set.
-        onAllNodesWithText("20 kg").assertCountEquals(2)
+        onAllNodesWithText("18 kg").assertCountEquals(2)
         onAllNodesWithContentDescription("More reps").onLast().performScrollTo().performClick()
         app.back()
         waitForText("× 11")

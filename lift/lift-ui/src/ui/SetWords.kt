@@ -73,7 +73,6 @@ import dev.justinsmith.lift.ui.resources.muscle_upper_back
 import dev.justinsmith.lift.ui.resources.plates_plus
 import dev.justinsmith.lift.ui.resources.set_line
 import dev.justinsmith.lift.ui.resources.set_line_added
-import dev.justinsmith.lift.ui.resources.set_line_added_held
 import dev.justinsmith.lift.ui.resources.set_line_band
 import dev.justinsmith.lift.ui.resources.set_line_double
 import dev.justinsmith.lift.ui.resources.set_line_reps
@@ -85,24 +84,26 @@ fun setLine(set: SetLog): String = setLine(set.load, set.reps, set.side, set.sec
 
 /**
  * A set in words, by its [load]: a bell "24 kg × 10", two "2 × 16 kg × 5"; a bar "62.5 kg × 3"; bodyweight
- * "× 15", or "+10 kg × 6" with weight added; a band "Medium × 20"; the mat "× 10"; a hold "0:45", or
- * "+10 kg · 0:45". A one-sided set adds its side: "24 kg × 10 · Left".
+ * "× 15", or "+10 kg × 6" with weight added; a band "Medium × 20"; the mat "× 10"; a hold or carry "0:45",
+ * "24 kg · 0:30", "2 × 24 kg · 0:45" or "+10 kg · 0:45". A one-sided set adds its side: "24 kg × 10 · Left".
  */
 @Composable
 fun setLine(load: Load, reps: Int, side: Side?, seconds: Int? = null): String {
-    val added = (load as? Load.Bodyweight)?.kg?.takeIf { it > 0 }
-    val line = when {
-        seconds != null && added != null -> stringResource(
-            Res.string.set_line_added_held,
-            formatKg(added),
-            formatClock(seconds),
-        )
-
-        seconds != null -> formatClock(seconds)
-
-        else -> repsLine(load, reps)
+    val line = if (seconds != null) {
+        heldLoadLine(load)?.let { stringResource(Res.string.common_joined, it, formatClock(seconds)) }
+            ?: formatClock(seconds)
+    } else {
+        repsLine(load, reps)
     }
     return if (side == null) line else stringResource(Res.string.common_joined, line, sideName(side))
+}
+
+@Composable
+private fun heldLoadLine(load: Load): String? = when (load) {
+    is Load.Bell, is Load.Bar -> loadLine(load).takeIf { load.kg > 0 }
+    is Load.Bodyweight -> if (load.kg > 0) stringResource(Res.string.load_added, formatKg(load.kg)) else null
+    is Load.Banded -> loadLine(load)
+    Load.Mat -> null
 }
 
 @Composable

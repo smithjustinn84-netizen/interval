@@ -20,7 +20,7 @@ class TabletTest {
         setThemedContent(dark = true) {
             ExerciseLibraryScreen(LibraryList(offeredExercises(emptyList())), onFilters = {}, onBack = {})
         }
-        val bells = onNodeWithText("Kettlebell · 21").assertIsDisplayed().getUnclippedBoundsInRoot()
+        val bells = onNodeWithText("Kettlebell · 27").assertIsDisplayed().getUnclippedBoundsInRoot()
         val bars = onNodeWithText("Barbell · 20").assertIsDisplayed().getUnclippedBoundsInRoot()
         assertTrue(bars.left >= bells.right)
         assertTrue(bars.top < bells.bottom)

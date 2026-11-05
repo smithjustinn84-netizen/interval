@@ -67,8 +67,8 @@ private val BuiltInExercise.builtInMove: HealthMove
         BuiltInExercise.Deadlift, BuiltInExercise.BarbellDeadlift, BuiltInExercise.BarbellRomanianDeadlift,
         -> HealthMove.Deadlift
 
-        BuiltInExercise.Press, BuiltInExercise.BottomsUpPress, BuiltInExercise.BarbellOverheadPress,
-        BuiltInExercise.BarbellPushPress, BuiltInExercise.BandOverheadPress,
+        BuiltInExercise.Press, BuiltInExercise.PushPress, BuiltInExercise.BottomsUpPress,
+        BuiltInExercise.BarbellOverheadPress, BuiltInExercise.BarbellPushPress, BuiltInExercise.BandOverheadPress,
         -> HealthMove.ShoulderPress
 
         BuiltInExercise.BarbellBenchPress, BuiltInExercise.BandChestPress -> HealthMove.BenchPress

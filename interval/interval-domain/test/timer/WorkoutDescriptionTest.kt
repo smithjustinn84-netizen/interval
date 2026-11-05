@@ -203,4 +203,13 @@ class WorkoutDescriptionTest {
         // The Timer is at 30 s × 8: a fall of 10 a round from it would not fit, from 60 s × 5 it does.
         assertEquals(Triple(60, -10, 5), ladder("60 on, 10 off, 5 rounds, down 10 a round"))
     }
+
+    @Test
+    fun `15 15 MVO2 reads as the kettlebell snatch protocol`() {
+        val mvo2 = read("15:15 mvo2")!!
+        assertEquals(Triple(15, 15, 40), shape("15:15 mvo2"))
+        assertEquals(Activity.Kettlebell, mvo2.config.activity)
+        // A bare clock without the preset's name is still a duration.
+        assertEquals(915, read("work 15:15")!!.config.workSeconds)
+    }
 }

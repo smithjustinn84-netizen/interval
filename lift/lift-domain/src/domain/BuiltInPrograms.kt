@@ -29,6 +29,7 @@ enum class ProgramId(val family: ProgramFamily = ProgramFamily.Classic) {
     ArmorBuildingFormula(ProgramFamily.DanJohn),
     TenThousandSwings(ProgramFamily.DanJohn),
     SwingSquatCountdown(ProgramFamily.DanJohn),
+    OneStopShop(ProgramFamily.DanJohn),
     SimpleAndSinister,
     ProgramMinimum,
     RiteOfPassage,
@@ -138,7 +139,7 @@ val builtInPrograms: List<Program> = listOf(
         daysPerWeek = 2,
         weeks = 4,
     ),
-    // The 40-day workout: the same few lifts, light and easy, five days a week.
+    // The 40-day workout: the basic human moves, carries among them, light and easy five days a week.
     builtIn(
         ProgramId.EasyStrength,
         days = listOf(
@@ -148,26 +149,31 @@ val builtInPrograms: List<Program> = listOf(
                 Block(BuiltInExercise.GobletSquat, rounds = 2, reps = 5),
                 Block(BuiltInExercise.TwoHandSwing, rounds = 3, reps = 15),
                 Block(BuiltInExercise.GetUp, rounds = 1, reps = 1),
+                Block(BuiltInExercise.SuitcaseCarry, rounds = 1, reps = 30),
             ),
         ),
         daysPerWeek = 5,
         weeks = 8,
     ),
-    // The complex on two days of three; press ladders of 2-3-5 and swings between them.
+    // Alternating the Armor Building Complex and double press ladders of 2-3-5-10 across eight weeks.
     builtIn(
         ProgramId.ArmorBuildingFormula,
         days = listOf(
             listOf(armorBuildingComplex),
             listOf(
-                Block(BuiltInExercise.Press, rounds = 5, kind = BlockKind.Ladder, rungs = listOf(2, 3, 5)),
-                Block(BuiltInExercise.TwoHandSwing, rounds = 10, reps = 10),
+                Block(
+                    BuiltInExercise.Press,
+                    rounds = 5,
+                    kind = BlockKind.Ladder,
+                    rungs = listOf(2, 3, 5, 10),
+                    double = true,
+                ),
             ),
-            listOf(armorBuildingComplex),
         ),
         daysPerWeek = 3,
-        weeks = 6,
+        weeks = 8,
     ),
-    // 500 swings a session for 20 sessions, with a strength move in small ladders.
+    // 500 swings a session for 20 sessions, rotating the four classic strength pairings in ladders.
     builtIn(
         ProgramId.TenThousandSwings,
         days = listOf(
@@ -178,6 +184,14 @@ val builtInPrograms: List<Program> = listOf(
             listOf(
                 fiveHundredSwings,
                 Block(BuiltInExercise.GobletSquat, rounds = 5, kind = BlockKind.Ladder, rungs = listOf(1, 2, 3)),
+            ),
+            listOf(
+                fiveHundredSwings,
+                Block(BuiltInExercise.ChinUp, rounds = 5, kind = BlockKind.Ladder, rungs = listOf(1, 2, 3)),
+            ),
+            listOf(
+                fiveHundredSwings,
+                Block(BuiltInExercise.BenchDip, rounds = 5, kind = BlockKind.Ladder, rungs = listOf(2, 3, 5)),
             ),
         ),
         daysPerWeek = 5,
@@ -194,6 +208,22 @@ val builtInPrograms: List<Program> = listOf(
         ),
         daysPerWeek = 3,
         weeks = 4,
+    ),
+    // Every basic human move in one session, with sets of 25 swings: push, pull, hinge, squat and carry.
+    builtIn(
+        ProgramId.OneStopShop,
+        days = listOf(
+            listOf(
+                Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 25),
+                Block(BuiltInExercise.Press, rounds = 2, reps = 5).upTo(8),
+                Block(BuiltInExercise.Row, rounds = 2, reps = 8).upTo(12),
+                Block(BuiltInExercise.Deadlift, rounds = 2, reps = 8).upTo(12),
+                Block(BuiltInExercise.GobletSquat, rounds = 2, reps = 8).upTo(12),
+                Block(BuiltInExercise.SuitcaseCarry, rounds = 2, reps = 30),
+            ),
+        ),
+        daysPerWeek = 3,
+        weeks = 6,
     ),
     // 100 one-arm swings and 10 get-ups, every training day.
     builtIn(

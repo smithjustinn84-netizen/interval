@@ -119,28 +119,62 @@ class ProgramsTest {
     }
 
     @Test
-    fun `ten thousand swings is 500 swings a session for 20 sessions`() {
+    fun `ten thousand swings is 500 swings a session for 20 sessions across four strength pairings`() {
         val swings = program(ProgramId.TenThousandSwings)
         assertEquals(20, swings.totalDays)
         swings.days.forEach { day -> assertEquals(500, day[0].totalReps) }
-        assertEquals(BuiltInExercise.GobletSquat, swings.dayAfter(1)?.blocks?.get(1)?.exercise)
+        assertEquals(
+            listOf(
+                BuiltInExercise.Press,
+                BuiltInExercise.GobletSquat,
+                BuiltInExercise.ChinUp,
+                BuiltInExercise.BenchDip,
+            ),
+            swings.days.map { it[1].exercise },
+        )
     }
 
     @Test
-    fun `the armor building formula presses on the second day of three`() {
+    fun `the armor building formula alternates the complex and double press ladders`() {
         val abf = program(ProgramId.ArmorBuildingFormula)
         assertEquals(BuiltInExercise.ArmorBuildingComplex, abf.dayAfter(0)?.blocks?.single()?.exercise)
-        assertEquals(BuiltInExercise.Press, abf.dayAfter(1)?.blocks?.first()?.exercise)
-        assertEquals(20, abf.dayAfter(2)?.plannedSets()?.size)
-        assertEquals(18, abf.totalDays)
+        val press = abf.dayAfter(1)?.blocks?.single()
+        assertEquals(BuiltInExercise.Press, press?.exercise)
+        assertEquals(true, press?.double)
+        assertEquals(listOf(2, 3, 5, 10), press?.rungs)
+        assertEquals(BuiltInExercise.ArmorBuildingComplex, abf.dayAfter(2)?.blocks?.single()?.exercise)
+        // Week two opens with the press day so both days get six sessions apiece every four weeks.
+        assertEquals(BuiltInExercise.Press, abf.dayAfter(3)?.blocks?.single()?.exercise)
+        assertEquals(24, abf.totalDays)
     }
 
     @Test
-    fun `easy strength is 40 days and the countdown 55 squats`() {
-        assertEquals(40, program(ProgramId.EasyStrength).totalDays)
+    fun `easy strength is 40 days ending in a carry and the countdown is 55 squats`() {
+        val easy = program(ProgramId.EasyStrength)
+        assertEquals(40, easy.totalDays)
+        assertEquals(BuiltInExercise.SuitcaseCarry, easy.days.single().last().exercise)
         val countdown = assertNotNullDay(program(ProgramId.SwingSquatCountdown).dayAfter(0))
         assertEquals(55, countdown.blocks[0].totalReps)
         assertEquals(150, countdown.blocks[1].totalReps)
+    }
+
+    @Test
+    fun `one stop shop pairs 125 swings with the five basic movements`() {
+        val shop = program(ProgramId.OneStopShop)
+        assertEquals(18, shop.totalDays)
+        val blocks = shop.days.single()
+        assertEquals(125, blocks.first().totalReps)
+        assertEquals(
+            listOf(
+                BuiltInExercise.TwoHandSwing,
+                BuiltInExercise.Press,
+                BuiltInExercise.Row,
+                BuiltInExercise.Deadlift,
+                BuiltInExercise.GobletSquat,
+                BuiltInExercise.SuitcaseCarry,
+            ),
+            blocks.map { it.exercise },
+        )
     }
 
     @Test

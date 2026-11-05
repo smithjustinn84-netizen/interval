@@ -40,6 +40,7 @@ import dev.justinsmith.lift.ui.resources.exercise_barbell_snatch
 import dev.justinsmith.lift.ui.resources.exercise_barbell_snatch_balance
 import dev.justinsmith.lift.ui.resources.exercise_barbell_snatch_pull
 import dev.justinsmith.lift.ui.resources.exercise_bench_dip
+import dev.justinsmith.lift.ui.resources.exercise_bottoms_up_carry
 import dev.justinsmith.lift.ui.resources.exercise_bottoms_up_press
 import dev.justinsmith.lift.ui.resources.exercise_bulgarian_split_squat
 import dev.justinsmith.lift.ui.resources.exercise_burpee
@@ -51,10 +52,12 @@ import dev.justinsmith.lift.ui.resources.exercise_criss_cross
 import dev.justinsmith.lift.ui.resources.exercise_dead_bug
 import dev.justinsmith.lift.ui.resources.exercise_deadlift
 import dev.justinsmith.lift.ui.resources.exercise_double_leg_stretch
+import dev.justinsmith.lift.ui.resources.exercise_farmers_walk
 import dev.justinsmith.lift.ui.resources.exercise_front_squat
 import dev.justinsmith.lift.ui.resources.exercise_get_up
 import dev.justinsmith.lift.ui.resources.exercise_glute_bridge
 import dev.justinsmith.lift.ui.resources.exercise_goblet_squat
+import dev.justinsmith.lift.ui.resources.exercise_half_snatch
 import dev.justinsmith.lift.ui.resources.exercise_halo
 import dev.justinsmith.lift.ui.resources.exercise_high_pull
 import dev.justinsmith.lift.ui.resources.exercise_hollow_hold
@@ -71,7 +74,9 @@ import dev.justinsmith.lift.ui.resources.exercise_pike_push_up
 import dev.justinsmith.lift.ui.resources.exercise_plank
 import dev.justinsmith.lift.ui.resources.exercise_press
 import dev.justinsmith.lift.ui.resources.exercise_pull_up
+import dev.justinsmith.lift.ui.resources.exercise_push_press
 import dev.justinsmith.lift.ui.resources.exercise_push_up
+import dev.justinsmith.lift.ui.resources.exercise_rack_carry
 import dev.justinsmith.lift.ui.resources.exercise_racked_lunge
 import dev.justinsmith.lift.ui.resources.exercise_reverse_lunge
 import dev.justinsmith.lift.ui.resources.exercise_roll_up
@@ -91,6 +96,7 @@ import dev.justinsmith.lift.ui.resources.exercise_snatch
 import dev.justinsmith.lift.ui.resources.exercise_spine_stretch_forward
 import dev.justinsmith.lift.ui.resources.exercise_split_squat
 import dev.justinsmith.lift.ui.resources.exercise_step_up
+import dev.justinsmith.lift.ui.resources.exercise_suitcase_carry
 import dev.justinsmith.lift.ui.resources.exercise_swan
 import dev.justinsmith.lift.ui.resources.exercise_swimming
 import dev.justinsmith.lift.ui.resources.exercise_teaser
@@ -124,6 +130,12 @@ internal fun BuiltInExercise.label(): StringResource = when (this) {
     BuiltInExercise.IronCardio -> Res.string.exercise_iron_cardio
     BuiltInExercise.CleanAndPress -> Res.string.exercise_clean_and_press
     BuiltInExercise.Thruster -> Res.string.exercise_thruster
+    BuiltInExercise.HalfSnatch -> Res.string.exercise_half_snatch
+    BuiltInExercise.PushPress -> Res.string.exercise_push_press
+    BuiltInExercise.FarmersWalk -> Res.string.exercise_farmers_walk
+    BuiltInExercise.SuitcaseCarry -> Res.string.exercise_suitcase_carry
+    BuiltInExercise.RackCarry -> Res.string.exercise_rack_carry
+    BuiltInExercise.BottomsUpCarry -> Res.string.exercise_bottoms_up_carry
     BuiltInExercise.BarbellSnatch -> Res.string.exercise_barbell_snatch
     BuiltInExercise.BarbellCleanAndJerk -> Res.string.exercise_barbell_clean_and_jerk
     BuiltInExercise.BarbellClean -> Res.string.exercise_barbell_clean

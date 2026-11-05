@@ -20,8 +20,12 @@ import dev.justinsmith.lift.ui.resources.common_joined
 import dev.justinsmith.lift.ui.resources.kg_value
 import dev.justinsmith.lift.ui.resources.record_added_kg
 import dev.justinsmith.lift.ui.resources.record_heaviest
+import dev.justinsmith.lift.ui.resources.record_heaviest_held
 import dev.justinsmith.lift.ui.resources.record_longest
+import dev.justinsmith.lift.ui.resources.record_longest_at
+import dev.justinsmith.lift.ui.resources.record_longest_none_added
 import dev.justinsmith.lift.ui.resources.record_most_added
+import dev.justinsmith.lift.ui.resources.record_most_added_held
 import dev.justinsmith.lift.ui.resources.record_most_reps
 import dev.justinsmith.lift.ui.resources.record_most_reps_at
 import dev.justinsmith.lift.ui.resources.record_most_reps_none_added
@@ -53,12 +57,13 @@ fun RecordRow(record: PersonalRecord, modifier: Modifier = Modifier, tagged: Boo
 
 /**
  * A record in words, in the terms its sets are counted: "Heaviest 20 kg × 5 · most reps 12 at 12 kg",
- * "Most added +8 kg × 6", "Heaviest Heavy × 10 · most reps 20 with Light", "Most reps 20", "Longest 1:30".
- * The most reps are told apart only when they were not done at the heaviest.
+ * "Most added +8 kg × 6", "Heaviest Heavy × 10 · most reps 20 with Light", "Most reps 20", "Longest 1:30",
+ * "Heaviest 24 kg · 0:30 · longest 1:00 at 16 kg". The most reps or longest hold are told apart only when they
+ * were not done at the heaviest.
  */
 @Composable
 fun recordLine(record: PersonalRecord): String = when (record) {
-    is PersonalRecord.Held -> stringResource(Res.string.record_longest, formatClock(record.longestSeconds))
+    is PersonalRecord.Held -> heldLine(record)
 
     is PersonalRecord.Banded -> {
         val heaviest = stringResource(Res.string.record_heaviest, bandName(record.heaviest), record.repsAtHeaviest)
@@ -71,6 +76,40 @@ fun recordLine(record: PersonalRecord): String = when (record) {
     }
 
     is PersonalRecord.Weighted -> weightedLine(record)
+}
+
+@Composable
+private fun heldLine(record: PersonalRecord.Held): String {
+    if (record.heaviestKg == 0.0) return stringResource(Res.string.record_longest, formatClock(record.longestSeconds))
+    val added = record.exercise.equipment == Equipment.Bodyweight
+    val atHeaviest = formatClock(record.secondsAtHeaviest)
+    val heaviest = if (added) {
+        stringResource(Res.string.record_most_added_held, formatKg(record.heaviestKg), atHeaviest)
+    } else {
+        stringResource(
+            Res.string.record_heaviest_held,
+            stringResource(Res.string.kg_value, formatKg(record.heaviestKg)),
+            atHeaviest,
+        )
+    }
+    if (record.longestSeconds <= record.secondsAtHeaviest) return heaviest
+    val longestTime = formatClock(record.longestSeconds)
+    val longest = when {
+        record.longestKg == 0.0 -> stringResource(Res.string.record_longest_none_added, longestTime)
+
+        added -> stringResource(
+            Res.string.record_longest_at,
+            longestTime,
+            stringResource(Res.string.record_added_kg, formatKg(record.longestKg)),
+        )
+
+        else -> stringResource(
+            Res.string.record_longest_at,
+            longestTime,
+            stringResource(Res.string.kg_value, formatKg(record.longestKg)),
+        )
+    }
+    return stringResource(Res.string.common_joined, heaviest, longest)
 }
 
 @Composable

@@ -74,6 +74,8 @@ import dev.justinsmith.lift.ui.resources.program_long_cycle_name
 import dev.justinsmith.lift.ui.resources.program_long_cycle_summary
 import dev.justinsmith.lift.ui.resources.program_olympic_foundations_name
 import dev.justinsmith.lift.ui.resources.program_olympic_foundations_summary
+import dev.justinsmith.lift.ui.resources.program_one_stop_shop_name
+import dev.justinsmith.lift.ui.resources.program_one_stop_shop_summary
 import dev.justinsmith.lift.ui.resources.program_program_minimum_name
 import dev.justinsmith.lift.ui.resources.program_program_minimum_summary
 import dev.justinsmith.lift.ui.resources.program_rite_of_passage_name
@@ -124,6 +126,7 @@ fun programName(id: ProgramId): String = stringResource(
         ProgramId.ArmorBuildingFormula -> Res.string.program_abf_name
         ProgramId.TenThousandSwings -> Res.string.program_ten_thousand_name
         ProgramId.SwingSquatCountdown -> Res.string.program_countdown_name
+        ProgramId.OneStopShop -> Res.string.program_one_stop_shop_name
         ProgramId.SimpleAndSinister -> Res.string.program_simple_sinister_name
         ProgramId.ProgramMinimum -> Res.string.program_program_minimum_name
         ProgramId.RiteOfPassage -> Res.string.program_rite_of_passage_name
@@ -175,6 +178,7 @@ private fun programSummary(id: ProgramId): String = stringResource(
         ProgramId.ArmorBuildingFormula -> Res.string.program_abf_summary
         ProgramId.TenThousandSwings -> Res.string.program_ten_thousand_summary
         ProgramId.SwingSquatCountdown -> Res.string.program_countdown_summary
+        ProgramId.OneStopShop -> Res.string.program_one_stop_shop_summary
         ProgramId.SimpleAndSinister -> Res.string.program_simple_sinister_summary
         ProgramId.ProgramMinimum -> Res.string.program_program_minimum_summary
         ProgramId.RiteOfPassage -> Res.string.program_rite_of_passage_summary

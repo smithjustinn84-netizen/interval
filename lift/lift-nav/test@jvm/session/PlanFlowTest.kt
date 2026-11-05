@@ -255,13 +255,13 @@ class PlanFlowTest {
         startDay()
         onNodeWithText("16 kg").assertExists()
         onNodeWithContentDescription("Heavier").performScrollTo().performClick()
-        waitForText("20 kg")
+        waitForText("18 kg")
         onNodeWithText("Log set").performClick()
         waitForText("Up next · 2 of 9 sets")
         // The next set of the block goes on at the new bell.
-        onNodeWithText("20 kg").assertExists()
-        assertEquals(20.0, app.storage.sessions.sets.value.single().bellKg)
-        assertTrue(app.storage.sessions.sessions.value.single().plan.orEmpty().contains("\"kg\":20.0"))
+        onNodeWithText("18 kg").assertExists()
+        assertEquals(18.0, app.storage.sessions.sets.value.single().bellKg)
+        assertTrue(app.storage.sessions.sessions.value.single().plan.orEmpty().contains("\"kg\":18.0"))
         onNodeWithText("Today's plan").performScrollTo().performClick()
         waitForText("Changed")
     }

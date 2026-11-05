@@ -456,4 +456,20 @@ class SessionFlowTest {
         waitForText("Up next · 2 of 5 sets")
         assertEquals(15, app.storage.sessions.sets.value.single().seconds)
     }
+
+    @Test
+    fun `a weighted carry logs its bell and time and sets a heaviest record`() = liftAppTest { app ->
+        onNodeWithText("Start session").performClick()
+        waitForText("Log set")
+        onNodeWithContentDescription("Add set or EMOM").performClick()
+        pick("Suitcase carry", search = "suitcase")
+        waitForText("Held")
+        onAllNodesWithText("Log set").onLast().performScrollTo().performClick()
+        waitForText("16 kg · 0:30 · Left")
+        val set = app.storage.sessions.sets.value.single()
+        assertEquals(Triple("SuitcaseCarry", 16.0, 30), Triple(set.exercise, set.bellKg, set.seconds))
+        onNodeWithText("Finish").performClick()
+        waitForText("New records")
+        onNodeWithText("Heaviest 16 kg · 0:30").assertExists()
+    }
 }

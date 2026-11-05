@@ -30,16 +30,25 @@ sealed interface PersonalRecord {
         override val double: Boolean get() = false
     }
 
-    /** Holds: the longest, in seconds. */
-    data class Held(override val exercise: Exercise, val longestSeconds: Int, override val double: Boolean = false) :
-        PersonalRecord
+    /**
+     * Holds and carries: the [longestSeconds] held (and [longestKg], the weight it was held at), and when done
+     * with a weight ([heaviestKg] > 0), the heaviest and [secondsAtHeaviest], the longest hold at it.
+     */
+    data class Held(
+        override val exercise: Exercise,
+        val longestSeconds: Int,
+        override val double: Boolean = false,
+        val heaviestKg: Double = 0.0,
+        val secondsAtHeaviest: Int = longestSeconds,
+        val longestKg: Double = 0.0,
+    ) : PersonalRecord
 }
 
 /**
  * Each exercise's [PersonalRecord] over [sets], one bell and two kept apart, in the catalogue's order: a
- * hold by its length, a band set by its band (lightest to heaviest in the user's order of them), any other by its
- * weight and reps. Weight added to bodyweight is the bodyweight exercise's, never a bell's. Sets of an
- * exercise this build doesn't know set none.
+ * hold by its weight and length, a band set by its band (lightest to heaviest in the user's order of them), any
+ * other by its weight and reps. Weight added to bodyweight is the bodyweight exercise's, never a bell's. Sets of
+ * an exercise this build doesn't know set none.
  */
 fun personalRecords(sets: List<SetLog>): List<PersonalRecord> = sets
     .filter { it.exercise !is UnknownExercise }
@@ -47,7 +56,7 @@ fun personalRecords(sets: List<SetLog>): List<PersonalRecord> = sets
     .map { (lift, done) ->
         val exercise = done.first().exercise
         when (lift.third) {
-            RecordKind.Held -> PersonalRecord.Held(exercise, done.maxOf { it.seconds ?: 0 }, lift.second)
+            RecordKind.Held -> held(exercise, done, lift.second)
             RecordKind.Banded -> banded(exercise, done)
             RecordKind.Weighted -> weighted(exercise, done, lift.second)
         }
@@ -137,6 +146,24 @@ private fun banded(exercise: Exercise, done: List<SetLog>): PersonalRecord.Bande
     )
 }
 
+private fun held(exercise: Exercise, done: List<SetLog>, double: Boolean): PersonalRecord.Held {
+    val heaviest = done.maxOf { it.load.kg }
+    val longest = done.maxWith(compareBy<SetLog> { it.seconds ?: 0 }.thenBy { it.load.kg })
+    val longestSeconds = longest.seconds ?: 0
+    return PersonalRecord.Held(
+        exercise = exercise,
+        longestSeconds = longestSeconds,
+        double = double,
+        heaviestKg = heaviest,
+        secondsAtHeaviest = if (heaviest > 0.0) {
+            done.filter { it.load.kg == heaviest }.maxOf { it.seconds ?: 0 }
+        } else {
+            longestSeconds
+        },
+        longestKg = longest.load.kg,
+    )
+}
+
 /** Whether this record is better than [was], a record of the same exercise and kind. */
 private fun PersonalRecord.beats(was: PersonalRecord): Boolean = when {
     this is PersonalRecord.Weighted && was is PersonalRecord.Weighted ->
@@ -149,7 +176,10 @@ private fun PersonalRecord.beats(was: PersonalRecord): Boolean = when {
             (heaviest.id == was.heaviest.id && repsAtHeaviest > was.repsAtHeaviest) ||
             mostReps > was.mostReps
 
-    this is PersonalRecord.Held && was is PersonalRecord.Held -> longestSeconds > was.longestSeconds
+    this is PersonalRecord.Held && was is PersonalRecord.Held ->
+        heaviestKg > was.heaviestKg ||
+            (heaviestKg == was.heaviestKg && secondsAtHeaviest > was.secondsAtHeaviest) ||
+            longestSeconds > was.longestSeconds
 
     else -> false
 }

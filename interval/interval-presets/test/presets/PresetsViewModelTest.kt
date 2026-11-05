@@ -75,16 +75,16 @@ class PresetsViewModelTest : MainDispatcherTest() {
         repository.settings.updateConfig { builtInPresets.first().config }
         val state = viewModel.state.value
         val longest = state.builtIn.maxBy { it.share }
-        assertEquals("Long efforts", longest.preset.name)
+        assertEquals("15:15 MVO2", longest.preset.name)
         assertEquals(1f, longest.share)
-        // Tabata, 4:00 with its countdown, against Long efforts' 11:55.
-        assertEquals(240f / 715f, state.builtIn.first().share)
+        // Tabata, 4:00 with its countdown, against 15:15 MVO2's 19:55.
+        assertEquals(240f / 1195f, state.builtIn.first().share)
     }
 
     @Test
     fun `unsaved settings longer than every preset set the scale`() {
         repository.settings.updateConfig {
-            IntervalConfig(prepSeconds = 10, workSeconds = 60, restSeconds = 30, rounds = 12)
+            IntervalConfig(prepSeconds = 10, workSeconds = 60, restSeconds = 30, rounds = 15)
         }
         val state = viewModel.state.value
         assertTrue(state.canSaveCurrent)

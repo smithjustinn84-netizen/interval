@@ -147,6 +147,26 @@ enum class BuiltInExercise(
     /** A front squat driven straight into a press overhead; with one bell, held by the horns at the chest. */
     Thruster(Equipment.Kettlebell, perSide = false, Focus.FullBody),
 
+    /**
+     * A snatch lowered to the rack before the next swing, to spare the hands; with two bells, the double half snatch.
+     */
+    HalfSnatch(Equipment.Kettlebell, perSide = true, Focus.FullBody),
+
+    /** A press driven off a short dip of the knees, locked out standing tall; with two bells, both racked. */
+    PushPress(Equipment.Kettlebell, perSide = true, Focus.UpperBody),
+
+    /** Walking tall with a heavy bell in each hand at your sides. */
+    FarmersWalk(Equipment.Kettlebell, perSide = false, Focus.FullBody, Measure.Time, Doubles.Always),
+
+    /** Walking tall with one bell at your side, staying level against the pull. */
+    SuitcaseCarry(Equipment.Kettlebell, perSide = true, Focus.Core, Measure.Time, Doubles.Never),
+
+    /** Walking with the bell in the rack, elbow tucked; with two bells, both racked. */
+    RackCarry(Equipment.Kettlebell, perSide = true, Focus.Core, Measure.Time),
+
+    /** Walking with the bell held upside down at shoulder height, crushing the handle. */
+    BottomsUpCarry(Equipment.Kettlebell, perSide = true, Focus.Core, Measure.Time, Doubles.Never),
+
     // Barbell: the Olympic lifts and their pulls and squats, then the strength lifts. Prefixed, so a key never
     // clashes with a bell lift's.
     BarbellSnatch(Equipment.Barbell, perSide = false, Focus.FullBody),
@@ -354,8 +374,10 @@ data class LiftSession(
 fun List<LiftSession>.setsOldestFirst(): List<SetLog> = asReversed().flatMap { it.sets }
 
 /** The bell sizes Lift offers, in kilograms: the common competition and cast-iron steps. */
-val standardBells: List<Double> =
-    listOf(4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 20.0, 24.0, 28.0, 32.0, 36.0, 40.0, 44.0, 48.0)
+val standardBells: List<Double> = listOf(
+    4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0,
+    24.0, 26.0, 28.0, 30.0, 32.0, 36.0, 40.0, 44.0, 48.0,
+)
 
 /**
  * A weight as Lift writes it, to the hundredth and no further than it needs: "24", "1.5", or a change plate's
