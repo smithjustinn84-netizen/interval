@@ -15,6 +15,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -74,9 +75,26 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         ui.waitForIdle()
     }
 
-    fun seeLiftTab() {
+    /** Train's Strength pillar, Lift's side: where a session starts. */
+    fun seeLiftTab() = seeStrength()
+
+    fun seeStrength() {
         see("Start session")
-        ui.tab("Lift").assertIsSelected()
+        seePillar("Strength")
+    }
+
+    /** Train's Conditioning pillar: the presets. */
+    fun seeConditioning() {
+        see("Built-in")
+        seePillar("Conditioning")
+    }
+
+    /** Train's other pillar, by the picker under its title. */
+    fun pickPillar(name: String) = tap(hasText(name) and isSelectable())
+
+    private fun seePillar(name: String) {
+        see(hasText(name) and isSelectable() and isSelected())
+        ui.tab("Train").assertIsSelected()
     }
 
     /** A Lift session is stored as in progress: started by whatever opened its page, not by the page. */

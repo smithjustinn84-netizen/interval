@@ -6,7 +6,7 @@
     until one is turned on. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
-    <action>Tap the "Lift" tab, then "Follow a program"</action>
+    <action>Tap the "Train" tab, which opens on "Strength", then "Follow a program"</action>
     <action>Tap "Goblet squat and row", then "Follow this program"</action>
     <action>Tap "Start day 1"</action>
     <action>Verify that the session shows "Up next · 1 of 9 sets", "Goblet squat", "16 kg × 10", "Change", "Skip" and "Today's plan", with "Log set" at the bottom</action>

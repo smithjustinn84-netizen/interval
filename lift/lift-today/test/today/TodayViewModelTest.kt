@@ -15,7 +15,6 @@ import dev.justinsmith.lift.domain.MuscleGroup
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.barbellLifts
-import dev.justinsmith.lift.fakes.FakeIntervalActivity
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import dev.justinsmith.lift.fakes.logSet
 import kotlinx.coroutines.CoroutineDispatcher
@@ -61,7 +60,6 @@ class TodayViewModelTest {
         repository.programs,
         repository.gear,
         repository.sets,
-        FakeIntervalActivity(),
         FixedTimestampFormatter,
         clock,
         computation = computation,
@@ -82,20 +80,21 @@ class TodayViewModelTest {
     }
 
     @Test
-    fun `the week and its today move on at midnight with the screen open`() = runTest {
+    fun `the last session's today moves on at midnight with the screen open`() = runTest {
         val main = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(main)
-        // Sunday night, epoch day 3 (a Sunday), then Monday: a new week.
+        // Finished on epoch day 3: said by its time while that is today, by its date after.
+        finished("last", day = 3, BuiltInExercise.GobletSquat)
+        val finishedAt = 3 * DAY_MILLIS + 61_000
         var now = 4 * DAY_MILLIS - 1_000
         val today =
             today(clock = { now }, main)
-        assertEquals(3L, today.state.value.week.single { it.today }.epochDay)
+        assertEquals("at $finishedAt", today.state.value.lastWhen)
 
         now = 4 * DAY_MILLIS
         advanceTimeBy(DAY_CHECK_MILLIS + 1)
 
-        assertEquals(4L, today.state.value.week.single { it.today }.epochDay)
-        assertEquals(4L, today.state.value.week.first().epochDay)
+        assertEquals("day 3", today.state.value.lastWhen)
         today.viewModelScope.cancel()
     }
 

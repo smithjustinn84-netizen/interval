@@ -5,7 +5,7 @@
     (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
-    <action>Tap the "Lift" tab, then the "Exercises" card</action>
+    <action>Tap the "Train" tab, which opens on "Strength", then the "Exercises" card</action>
     <action>Verify that a page titled "Exercises" shows "Search exercises", the chips "Kettlebell", "Barbell", "Bodyweight", "Band" and "Mat", "102 exercises" and "Filters" with a chevron, a "New exercise" button in the title bar, and cards headed "Kettlebell · 27" and "Barbell · 20" (side by side on a tablet)</action>
     <action>Type "PUSHUP" into "Search exercises"</action>
     <action>Verify that "3 exercises" is shown with "Push-up", "Incline push-up" and "Pike push-up", in a card headed "Bodyweight · 3", each over "Reps · Upper body", and a "Clear" button</action>
@@ -34,7 +34,7 @@
     <action>Tap "Back" to close the sheet</action>
     <action>Tap "New exercise" in the title bar, type "copenhagen PLANK" into the "Name" field</action>
     <action>Verify that "One of yours already has this name." is shown and "Save exercise" is disabled</action>
-    <action>Tap "Back" to close the sheet, then "Back" to return to the Lift tab</action>
+    <action>Tap "Back" to close the sheet, then "Back" to return to Train's Strength pillar</action>
     <action>Tap "Start session", then "Add set or EMOM" in the title bar, then "Change" on the exercise card</action>
     <action>Type "copen" into "Search exercises" and tap "Copenhagen plank"</action>
     <action>Verify that the exercise card reads "Copenhagen plank" over "Bodyweight · Time a side · Core" with "Top knee on the bench" under it, and "Held" reads "0:30"</action>
@@ -50,6 +50,6 @@
     <action>Tap "Back" to close the sheet</action>
     <action>Clear the search and tap "Goblet squat"</action>
     <action>Verify that its page shows "Goblet squat" over "Kettlebell · Reps · Lower body", no "Edit" button, and "Not logged yet. Its sets will show here."</action>
-    <action>Tap "Back" to close the sheet, then "Back" to return to the Lift tab</action>
+    <action>Tap "Back" to close the sheet, then "Back" to return to Train's Strength pillar</action>
   </actions>
 </journey>

@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
@@ -62,7 +63,7 @@ class AppNavigationTest {
     @Test
     fun `switching tabs fades through rather than sliding`() = appTest {
         mainClock.autoAdvance = false
-        tab("Lift").performClick()
+        tab("Train").performClick()
         mainClock.advanceTimeBy(Motion.PAGE_MILLIS / 2L)
         val moving = onNodeWithText("Start session").fetchSemanticsNode().boundsInRoot
         mainClock.advanceTimeBy(Motion.PAGE_MILLIS * 2L)
@@ -72,81 +73,101 @@ class AppNavigationTest {
 
     @Test
     fun `switching tabs keeps the bar put`() = appTest {
-        val before = tab("Lift").fetchSemanticsNode().boundsInRoot
+        val before = tab("Train").fetchSemanticsNode().boundsInRoot
         mainClock.autoAdvance = false
-        tab("Lift").performClick()
+        tab("Train").performClick()
         mainClock.advanceTimeBy(Motion.PAGE_MILLIS / 2L)
-        val during = tab("Lift").fetchSemanticsNode().boundsInRoot
+        val during = tab("Train").fetchSemanticsNode().boundsInRoot
         mainClock.advanceTimeBy(Motion.PAGE_MILLIS * 2L)
-        val after = tab("Lift").fetchSemanticsNode().boundsInRoot
+        val after = tab("Train").fetchSemanticsNode().boundsInRoot
         assertTrue(abs(during.top - before.top) < SETTLED_SLACK, "the bar held still: $during vs $before")
         assertTrue(abs(after.top - before.top) < SETTLED_SLACK, "the bar is where it was: $after vs $before")
     }
 
     @Test
     fun `pushing a page from Lift leaves the tab where it was as it goes`() = appTest {
-        tab("Lift").performClick()
+        tab("Train").performClick()
         val startBefore = onNodeWithText("Start session").fetchSemanticsNode().boundsInRoot
-        val titleBefore = pageTitle("Lift").fetchSemanticsNode().boundsInRoot
+        val titleBefore = pageTitle("Train").fetchSemanticsNode().boundsInRoot
         mainClock.autoAdvance = false
         onNodeWithContentDescription(EQUIPMENT).performClick()
         mainClock.advanceTimeBy(Motion.PAGE_MILLIS / 4L)
         // Vertically only: the leaving page drifts sideways by design.
         val start = onNodeWithText("Start session").fetchSemanticsNode().boundsInRoot
-        val title = pageTitle("Lift").fetchSemanticsNode().boundsInRoot
+        val title = pageTitle("Train").fetchSemanticsNode().boundsInRoot
         assertTrue(abs(start.bottom - startBefore.bottom) < SETTLED_SLACK, "Start held: $start vs $startBefore")
         assertTrue(abs(title.top - titleBefore.top) < SETTLED_SLACK, "the title held its place: $title vs $titleBefore")
     }
 
     @Test
     fun `the bar slides away with the push and comes back with the pop`() = appTest {
-        tab("Lift").performClick()
-        val before = tab("Lift").fetchSemanticsNode().boundsInRoot
+        tab("Train").performClick()
+        val before = tab("Train").fetchSemanticsNode().boundsInRoot
         mainClock.autoAdvance = false
         onNodeWithContentDescription(EQUIPMENT).performClick()
         mainClock.advanceTimeBy(Motion.PAGE_MILLIS / 4L)
-        val leaving = tab("Lift").fetchSemanticsNode().boundsInRoot
+        val leaving = tab("Train").fetchSemanticsNode().boundsInRoot
         assertTrue(leaving.top > before.top + SETTLED_SLACK, "sliding down, not gone at once: $leaving vs $before")
         mainClock.advanceTimeBy(Motion.PAGE_MILLIS * 2L)
-        tab("Lift").assertDoesNotExist()
+        tab("Train").assertDoesNotExist()
         onNodeWithContentDescription("Back").performClick()
         mainClock.advanceTimeBy(Motion.PAGE_MILLIS / 4L)
-        val returning = tab("Lift").fetchSemanticsNode().boundsInRoot
+        val returning = tab("Train").fetchSemanticsNode().boundsInRoot
         assertTrue(returning.top > before.top + SETTLED_SLACK, "sliding back up: $returning vs $before")
         mainClock.advanceTimeBy(Motion.PAGE_MILLIS * 2L)
-        val settled = tab("Lift").fetchSemanticsNode().boundsInRoot
+        val settled = tab("Train").fetchSemanticsNode().boundsInRoot
         assertTrue(abs(settled.top - before.top) < SETTLED_SLACK, "back in its place: $settled vs $before")
     }
 
     @Test
     fun `a back swipe toward Lift brings the bar in with the finger and lets it go again`() = appTest { app ->
         val input = app.backInput
-        tab("Lift").performClick()
-        val before = tab("Lift").fetchSemanticsNode().boundsInRoot
+        tab("Train").performClick()
+        val before = tab("Train").fetchSemanticsNode().boundsInRoot
         onNodeWithContentDescription(EQUIPMENT).performClick()
         waitForIdle()
-        tab("Lift").assertDoesNotExist()
+        tab("Train").assertDoesNotExist()
         input.backStarted(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT))
         input.backProgressed(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT, progress = 0.5f))
         waitForIdle()
-        val halfway = tab("Lift").fetchSemanticsNode().boundsInRoot
+        val halfway = tab("Train").fetchSemanticsNode().boundsInRoot
         assertTrue(halfway.top > before.top + SETTLED_SLACK, "on its way in, not in place: $halfway vs $before")
         input.backCancelled()
         waitForIdle()
-        tab("Lift").assertDoesNotExist()
+        tab("Train").assertDoesNotExist()
         input.backStarted(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT))
         input.backProgressed(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT, progress = 0.5f))
         input.backCompleted()
         waitForIdle()
-        val settled = tab("Lift").fetchSemanticsNode().boundsInRoot
+        val settled = tab("Train").fetchSemanticsNode().boundsInRoot
         assertTrue(abs(settled.top - before.top) < SETTLED_SLACK, "back in its place: $settled vs $before")
     }
 
     @Test
+    fun `switching Train's pillars swaps the cards under a title that stays where it is`() = appTest {
+        tab("Train").performClick()
+        waitForIdle()
+        val before = pageTitle("Train").fetchSemanticsNode().boundsInRoot
+        mainClock.autoAdvance = false
+        onNode(hasText("Conditioning") and isSelectable()).performClick()
+        mainClock.advanceTimeBy(Motion.EXIT_MILLIS / 2L)
+        // Mid-swap both pillars are drawn, each with its title where the other's is.
+        val titles = onAllNodes(hasText("Train") and !hasClickAction()).fetchSemanticsNodes()
+        assertTrue(titles.size == 2, "both pillars on screen mid-swap: ${titles.size}")
+        titles.forEach { title ->
+            assertTrue(title.boundsInRoot == before, "the title held its place: ${title.boundsInRoot} vs $before")
+        }
+        mainClock.advanceTimeBy(Motion.PAGE_MILLIS * 2L)
+        onNodeWithText("Built-in").assertExists()
+        onNodeWithText("Start session").assertDoesNotExist()
+        tab("Train").assertIsSelected()
+    }
+
+    @Test
     fun `the tabs switch screens`() = appTest {
-        tab("Lift").performClick()
+        tab("Train").performClick()
         onNodeWithText("Start session").assertExists()
-        tab("Lift").assertIsSelected()
+        tab("Train").assertIsSelected()
 
         tab("History").performClick()
         onNodeWithText("Train to a plan").assertExists()
@@ -344,7 +365,7 @@ class AppNavigationTest {
 
     @Test
     fun `on a tablet settings opened from Lift is a page of its own`() = appTest(Window.Tablet) {
-        tab("Lift").performClick()
+        tab("Train").performClick()
         onNodeWithContentDescription("Settings").performClick()
         onNodeWithText("Cues").assertExists()
         onNodeWithText("Start session").assertDoesNotExist()
@@ -352,7 +373,7 @@ class AppNavigationTest {
 
         onNodeWithContentDescription("Back").performClick()
         onNodeWithText("Start session").assertExists()
-        tab("Lift").assertIsSelected()
+        tab("Train").assertIsSelected()
     }
 
     @Test

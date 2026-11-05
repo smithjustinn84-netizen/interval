@@ -5,7 +5,7 @@
     Run with the emulator's volume up, notifications allowed (lift-rest-alert.xml asks).
   </description>
   <actions>
-    <action>Tap the "Lift" tab, then "Start session" (or "Resume session")</action>
+    <action>Tap the "Train" tab, which opens on "Strength", then "Start session" (or "Resume session")</action>
     <action>Tap "Log set" and verify that a rest counts down</action>
     <action>Tap "Add set or EMOM" in the title bar, then "An EMOM", set "Minutes" to 3, and tap "Start EMOM"</action>
     <action>Verify that the EMOM's screen shows "Get ready" and that the session's rest is gone</action>

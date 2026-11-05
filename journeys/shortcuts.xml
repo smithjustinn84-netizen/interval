@@ -19,6 +19,6 @@
     <action>Press Home, long-press the app's icon and tap "Start a Lift session"</action>
     <action>Verify that the session shows "Log set"</action>
     <action>Press the system back button and tap "Leave" in the dialog</action>
-    <action>Verify that the Lift tab is shown with "Start session"</action>
+    <action>Verify that Train's Strength pillar is shown with "Start session"</action>
   </actions>
 </journey>

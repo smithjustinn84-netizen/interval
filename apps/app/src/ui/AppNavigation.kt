@@ -17,26 +17,31 @@ import dev.justinsmith.interval.nav.TimerTab
 import dev.justinsmith.interval.nav.TodayTab
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.nav_history
-import dev.justinsmith.interval.resources.nav_lift
 import dev.justinsmith.interval.resources.nav_timer
 import dev.justinsmith.interval.resources.nav_today
-import dev.justinsmith.lift.nav.LiftTab
+import dev.justinsmith.interval.resources.nav_train
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
-private data class TabSpec(val tab: Tab, val label: StringResource, val icon: ImageVector)
+/** A destination of the bar: one tab, or several the bar shows as one (Train's pillars). */
+private data class TabSpec(val tabs: List<Tab>, val label: StringResource, val icon: ImageVector) {
+    constructor(tab: Tab, label: StringResource, icon: ImageVector) : this(listOf(tab), label, icon)
+}
 
 private val Tabs = listOf(
     TabSpec(TodayTab, Res.string.nav_today, IntervalIcons.Today),
     TabSpec(TimerTab, Res.string.nav_timer, IntervalIcons.Timer),
-    TabSpec(LiftTab, Res.string.nav_lift, IntervalIcons.Bell),
+    TabSpec(TrainPillars, Res.string.nav_train, IntervalIcons.Bell),
     TabSpec(HistoryTab, Res.string.nav_history, IntervalIcons.History),
 )
 
-/** The tabs as navigation suite items, for whichever bar or rail [type] is showing. */
+/**
+ * The tabs as navigation suite items, for whichever bar or rail [type] is showing. Train opens on [pillar], the
+ * one of its pillars last shown.
+ */
 @Suppress("detekt.MultipleEmitters", "detekt.ModifierMissing") // The scaffold's item slot: one item per tab.
 @Composable
-fun NavigationItems(current: Tab, type: NavigationSuiteType, onSelect: (Tab) -> Unit) {
+fun NavigationItems(current: Tab, type: NavigationSuiteType, pillar: Tab, onSelect: (Tab) -> Unit) {
     val palette = IntervalTheme.palette
     val colors = ShortNavigationBarItemDefaults.colors(
         selectedIconColor = palette.onAccent,
@@ -47,11 +52,12 @@ fun NavigationItems(current: Tab, type: NavigationSuiteType, onSelect: (Tab) -> 
     )
     val haptics = LocalHapticFeedback.current
     Tabs.forEach { spec ->
+        val selected = current in spec.tabs
         NavigationSuiteItem(
-            selected = spec.tab == current,
+            selected = selected,
             onClick = {
-                if (spec.tab != current) haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                onSelect(spec.tab)
+                if (!selected) haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                onSelect(spec.tabs.singleOrNull() ?: pillar)
             },
             icon = { Icon(spec.icon, contentDescription = null, modifier = Modifier.size(Sizes.icon)) },
             label = { Text(stringResource(spec.label), style = IntervalTheme.type.caption) },

@@ -86,7 +86,8 @@ fun SettingsAction(onClick: () -> Unit, modifier: Modifier = Modifier) {
  * the safe area, though its cards scroll on under the gesture bar rather than stopping above it; under a tab the
  * scene has taken the system's and the navigation bar's share already, so nothing is left to keep out of.
  * [bottomBar] stays pinned under the grid, over the same lanes, for an action that must never scroll away
- * (Lift's Start).
+ * (Lift's Start). [header] sits across the grid under the title, for what a tab shares with its neighbours
+ * (Train's pillars).
  */
 @Composable
 fun TabGrid(
@@ -95,6 +96,7 @@ fun TabGrid(
     navigation: (@Composable () -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
     bottomBar: (@Composable () -> Unit)? = null,
+    header: (@Composable () -> Unit)? = null,
     content: LazyStaggeredGridScope.() -> Unit,
 ) {
     val safe = WindowInsets.safeDrawing
@@ -120,6 +122,7 @@ fun TabGrid(
                 item(key = "title", span = StaggeredGridItemSpan.FullLine) {
                     TitleBar(title, navigation = navigation ?: {}, actions = actions)
                 }
+                header?.let { item(key = "tab-header", span = StaggeredGridItemSpan.FullLine) { it() } }
                 content()
             }
             bottomBar?.invoke()

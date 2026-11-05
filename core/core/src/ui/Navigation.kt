@@ -3,6 +3,7 @@ package dev.justinsmith.interval.ui
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection
 import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -15,9 +16,7 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteDefaul
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.Dp
-import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.scene.Scene
-import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.ui.defaultPopTransitionSpec
 import androidx.navigation3.ui.defaultTransitionSpec
 import dev.justinsmith.interval.platform.platformPageTransitions
@@ -38,6 +37,8 @@ fun navigationSuiteType(width: Dp, height: Dp): NavigationSuiteType {
  *   drifts away under it, the page beneath fading out quickly before the new one fades in;
  * - the workout, a mode of its own rather than a page, rises over the app as the app sinks back;
  * - from one tab to another the old fades out, then the new fades in a touch larger;
+ * - between two tabs of one group (Train's pillars, which share a title and a picker) the new fades in over
+ *   the old, so what they share stands still, on every platform;
  * - Settings opening beside the Timer slides in from the end as the Timer, the same entry in both
  *   scenes, narrows to make room (NavDisplay moves it as a shared element); a pair of panes to or from
  *   anything else crossfades.
@@ -46,6 +47,7 @@ fun navigationSuiteType(width: Dp, height: Dp): NavigationSuiteType {
  */
 fun <T : Any> pageTransition(): AnimatedContentTransitionScope<Scene<T>>.() -> ContentTransform = {
     when {
+        pillarChange -> pillarSwap()
         workoutChange -> workoutRise()
         besideChange -> paneOpen()
         platformPageTransitions -> defaultTransitionSpec<T>()(this)
@@ -56,6 +58,7 @@ fun <T : Any> pageTransition(): AnimatedContentTransitionScope<Scene<T>>.() -> C
 /** NavDisplay's `popTransitionSpec`: the reverse of [pageTransition], the leaving page staying on top. */
 fun <T : Any> pagePopTransition(): AnimatedContentTransitionScope<Scene<T>>.() -> ContentTransform = {
     when {
+        pillarChange -> pillarSwap()
         workoutChange -> workoutDrop()
         besideChange -> paneClose()
         platformPageTransitions -> defaultPopTransitionSpec<T>()(this)
@@ -93,42 +96,6 @@ private fun <T : Any> appPagePopTransition(): AnimatedContentTransitionScope<Sce
     }
 }
 
-/**
- * What kind of page an entry is, which decides how it moves. Pages one level deeper need no kind:
- * they are the default. An entry's key is private to it, so the kind travels in its metadata.
- */
-enum class PageKind {
-    /** A destination of the navigation bar or rail. */
-    Tab,
-
-    /** A mode of its own over the app (the workout), rather than a page one level deeper. */
-    Mode,
-
-    /** A page that opens beside the one under it on a wide window (Settings beside the Timer). */
-    Beside,
-}
-
-/** The metadata marking an entry as [kind], for `entry<X>(metadata = …)`. */
-fun pageKind(kind: PageKind): Map<String, Any> = mapOf(PAGE_KIND to kind)
-
-private const val PAGE_KIND = "dev.justinsmith.interval.pageKind"
-
-/** Whether this entry is a [PageKind.Tab]: a destination of the navigation bar or rail. */
-internal val NavEntry<*>.isTab: Boolean get() = metadata[PAGE_KIND] == PageKind.Tab
-
-/**
- * This strategy, asked only while a [PageKind.Beside] page is on top. Material's supporting-pane strategy
- * would also take the page under it on its own, as a scaffold scene with the same key as the pair's; opening
- * the pair would then be no change of scene, and nothing would move.
- */
-fun <T : Any> SceneStrategy<T>.onlyBeside(): SceneStrategy<T> = SceneStrategy { entries ->
-    if (entries.lastOrNull()?.metadata?.get(PAGE_KIND) == PageKind.Beside) {
-        with(this@onlyBeside) { calculateScene(entries) }
-    } else {
-        null
-    }
-}
-
 private val Scene<*>.topKind: Any?
     get() = entries.lastOrNull()?.metadata?.get(PAGE_KIND)
 
@@ -153,6 +120,20 @@ private fun <T : Any> AnimatedContentTransitionScope<Scene<T>>.workoutDrop(): Co
         },
     targetContentZIndex = -1f,
 )
+
+private val Scene<*>.topGroup: Any?
+    get() = entries.lastOrNull()?.metadata?.get(TAB_GROUP)
+
+/** Both scenes are tabs of one group: a part of the same destination picked on its page. */
+private val <T : Any> AnimatedContentTransitionScope<Scene<T>>.pillarChange: Boolean
+    get() = tabChange && targetState.topGroup != null && targetState.topGroup == initialState.topGroup
+
+/**
+ * The new part fades in over the old, which stays until it has: the title and the picker they share are drawn
+ * the same by both, so they stand still while the cards under them change.
+ */
+private fun pillarSwap(): ContentTransform =
+    ContentTransform(fadeIn(tween(Motion.EXIT_MILLIS)), fadeOut(snap(delayMillis = Motion.EXIT_MILLIS)))
 
 /** Both scenes are single tabs: the bar's own switch, not a push. */
 private val <T : Any> AnimatedContentTransitionScope<Scene<T>>.tabChange: Boolean

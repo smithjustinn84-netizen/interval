@@ -2,11 +2,11 @@
   <description>
     One free session logging a kettlebell set, a band set, a timed hold on one side and a bodyweight set
     with weight added. Each set is checked in its own words, Moved is checked to count only the weighed
-    load, and the session is finished. A second session of one goblet squat then makes two, and the Lift tab's
+    load, and the session is finished. A second session of one goblet squat then makes two, and Strength's
     balance counts their sets per muscle group. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
-    <action>Tap the "Lift" tab</action>
+    <action>Tap the "Train" tab, which opens on "Strength"</action>
     <action>Verify that "No sessions yet" is shown and an "Exercises" card says "Bells, barbells, bodyweight, bands and the mat"</action>
     <action>Tap "Start session"</action>
     <action>Verify that the session screen is shown with "Time", "Moved" at "0 kg", "Next set" with "Two-hand swing", "Add set or EMOM" in the title bar, and "Log set" at the bottom</action>
@@ -42,7 +42,7 @@
     <action>Tap "Finish"</action>
     <action>Verify that the summary shows "Done", "Counts toward your week and your goal", and under "New records" all four in their own words, in any order: "Two-hand swing" with "Heaviest 16 kg × 10", "Band pull-apart" with "Heaviest Heavy × 10", "Side plank" with "Longest 0:45" and "Push-up" with "Most added +8 kg × 10"</action>
     <action>Tap "Done"</action>
-    <action>Verify that the Lift tab shows "Last session" with "Two-hand swing and 3 more", "4 sets" and "240 kg"</action>
+    <action>Verify that Strength shows "Last session" with "Two-hand swing and 3 more", "4 sets" and "240 kg"</action>
     <action>Scroll down to "Exercises" and verify that no "Balance" card is shown: one session is not enough</action>
     <action>Tap "Start session", then "Add set or EMOM" in the title bar, then "Change" on the exercise card</action>
     <action>Type "goblet" into "Search exercises" and tap "Goblet squat"</action>

@@ -1,42 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="today_title">Lift</string>
+    <string name="today_title">Train</string>
     <string name="kg_pair">2 × %1$s kg</string>
     <plurals name="sets_count">
         <item quantity="one">%1$d set</item>
         <item quantity="other">%1$d sets</item>
     </plurals>
-    <string name="today_this_week">This week</string>
-    <plurals name="today_week_count">
-        <item quantity="one">%1$d workout · %2$d on the Timer</item>
-        <item quantity="other">%1$d workouts · %2$d on the Timer</item>
-    </plurals>
-    <plurals name="today_week_workouts">
-        <item quantity="one">%1$d workout</item>
-        <item quantity="other">%1$d workouts</item>
-    </plurals>
-    <plurals name="today_goal_left">
-        <item quantity="one">%1$d more to hit %2$d</item>
-        <item quantity="other">%1$d more to hit %2$d</item>
-    </plurals>
-    <string name="today_legend_bells">Lifts</string>
-    <string name="today_legend_interval">Timer</string>
     <string name="today_bells_cd">Your equipment and records</string>
     <string name="today_last">Last session</string>
     <string name="today_none_title">No sessions yet</string>
     <string name="today_none_text">Start one, log each set as you go, and it lands in your history.</string>
     <string name="today_start">Start session</string>
     <string name="today_resume">Resume session</string>
-    <string name="weekday_initial_1">M</string>
-    <string name="weekday_initial_2">T</string>
-    <string name="weekday_initial_3">W</string>
-    <string name="weekday_initial_4">T</string>
-    <string name="weekday_initial_5">F</string>
-    <string name="weekday_initial_6">S</string>
-    <string name="weekday_initial_7">S</string>
-    <string name="weekday_cd">%1$s: %2$s</string>
-    <string name="weekday_counts">%1$d lifting, %2$d on the Timer</string>
-    <string name="weekday_rest">rest</string>
     <string name="library_entry_text">Bells, barbells, bodyweight, bands and the mat</string>
     <string name="bells_title">Your equipment</string>
     <string name="bells_owned">Your bells</string>
@@ -76,7 +51,6 @@
     <string name="library_title">Exercises</string>
     <string name="program_finished">Finished</string>
     <string name="session_leave_title">Leave the session?</string>
-    <string name="today_goal_met">Goal met this week</string>
     <string name="today_balance_span">Sets, last 4 weeks</string>
     <string name="today_balance_untrained">Not trained in four weeks: %1$s</string>
 </resources>

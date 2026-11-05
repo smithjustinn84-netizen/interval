@@ -128,7 +128,7 @@ interval/
 │   ├── lift-platform/   # Beeper, rest alert service, platform Koin module
 │   ├── lift-ui/         # Lift widgets, exercise formatters, cues mapping
 │   ├── lift-testing/    # FakeLiftStorage, RecordingBeeper, fake DAOs
-│   ├── lift-today/      # Lift tab, gear inventory (bells, bar, bands, records)
+│   ├── lift-today/      # Train's Strength pillar, gear inventory (bells, bar, bands, records)
 │   ├── lift-session/    # Active session logger, rest clocks, programs & progress
 │   ├── lift-library/    # Exercise library, search, filters, exercise editor
 │   └── lift-nav/        # Lift's route keys and nav entries

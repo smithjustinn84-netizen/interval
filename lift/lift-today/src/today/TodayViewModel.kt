@@ -6,12 +6,7 @@ import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.days
-import dev.justinsmith.interval.timer.DAYS_PER_WEEK
-import dev.justinsmith.interval.timer.weekStartOf
-import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.lift.data.GearStore
-import dev.justinsmith.lift.data.IntervalActivity
-import dev.justinsmith.lift.data.IntervalWorkout
 import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.data.SetStore
@@ -40,18 +35,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 
-/** One day of this week: how many sessions each app logged on it. */
-data class WeekDay(
-    val epochDay: Long,
-    val weekday: Int,
-    val bells: Int,
-    val interval: Int,
-    val today: Boolean,
-    val date: String,
-)
-
 data class TodayUiState(
-    val week: List<WeekDay> = emptyList(),
     val last: LiftSession? = null,
     /** When [last] finished: "7:42 AM" today, else its date. */
     val lastWhen: String = "",
@@ -66,26 +50,21 @@ data class TodayUiState(
      * last used for it so.
      */
     val bells: Map<Pair<Exercise, Boolean>, Double> = emptyMap(),
-    /** Workouts a week the user aims for, lifts and intervals alike, as set on Plan; null for none. */
-    val weeklyGoal: Int? = null,
     /** Sets per muscle group over the last [BALANCE_DAYS] days; null until two sessions finished in them. */
     val balance: MuscleBalance? = null,
     /** The rest between sets, which [dayMinutes] is estimated with. */
     val restSeconds: Int = RestClock.DEFAULT_SECONDS,
 ) {
-    val weekCount: Int get() = week.sumOf { it.bells + it.interval }
-
     /** About how long [programDay] takes, in minutes; null with none to do. */
     val dayMinutes: Int? get() = programDay?.estimatedMinutes(restSeconds)
 
     /** The load to show beside [block]: the plan's, else the one last used for its lift, else where it starts. */
     fun suggestedKg(block: Block): Double =
         block.load?.kg ?: bells[block.exercise to block.double] ?: startingLoadKg(block.exercise)
-    val intervalCount: Int get() = week.sumOf { it.interval }
 }
 
 /**
- * This week's lifts and intervals, the last session, and whether one is in progress. Each state is built on
+ * The program's day, the last session, the balance, and whether a session is in progress. Each state is built on
  * [computation], off the main thread: the suggested load for every lift scans the whole history, and the state
  * is built again on each set logged (the session under way changes with it). Only the first is built on the caller.
  */
@@ -94,41 +73,31 @@ class TodayViewModel(
     private val programStore: ProgramStore,
     private val gearStore: GearStore,
     setStore: SetStore,
-    private val intervals: IntervalActivity,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
     dayCheckMillis: Long = DAY_CHECK_MILLIS,
     computation: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
-    // Read again each midnight, so the week strip and its "today" move on with the screen open.
+    // Read again each midnight, so the last session's "today" and the balance's weeks move on with the screen open.
     val state: StateFlow<TodayUiState> =
         combine(
             sessionStore.sessions,
-            intervals.workouts,
             sessionStore.active,
             gearStore.bar,
             clock.days(timestamps, dayCheckMillis),
-        ) { sessions, interval, active, bar, _ -> build(sessions, interval, active, bar) }
+        ) { sessions, active, bar, _ -> build(sessions, active, bar) }
             .combine(
-                combine(programStore.following, programStore.programDay, intervals.weeklyGoal, ::Triple),
-            ) { state, (following, day, goal) ->
-                state.copy(following = following, programDay = day, weeklyGoal = goal)
-            }.combine(setStore.restSeconds) { state, rest -> state.copy(restSeconds = rest) }
-            .flowOn(computation).stateIn(
+                combine(programStore.following, programStore.programDay, setStore.restSeconds, ::Triple),
+            ) { state, (following, day, rest) ->
+                state.copy(following = following, programDay = day, restSeconds = rest)
+            }.flowOn(computation).stateIn(
                 viewModelScope,
                 SharingStarted.Eagerly,
-                build(
-                    sessionStore.sessions.value,
-                    intervals.workouts.value,
-                    sessionStore.active.value,
-                    gearStore.bar.value,
-                )
-                    .copy(
-                        following = programStore.following.value,
-                        programDay = programStore.programDay.value,
-                        weeklyGoal = intervals.weeklyGoal.value,
-                        restSeconds = setStore.restSeconds.value,
-                    ),
+                build(sessionStore.sessions.value, sessionStore.active.value, gearStore.bar.value).copy(
+                    following = programStore.following.value,
+                    programDay = programStore.programDay.value,
+                    restSeconds = setStore.restSeconds.value,
+                ),
             )
 
     /** Starts the session about to open: [program]'s next day, or a free one with null; none with one in progress. */
@@ -142,29 +111,11 @@ class TodayViewModel(
         sessionStore.startSession(program)
     }
 
-    private fun build(
-        sessions: List<LiftSession>,
-        interval: List<IntervalWorkout>,
-        active: LiftSession?,
-        bar: Double?,
-    ): TodayUiState {
+    private fun build(sessions: List<LiftSession>, active: LiftSession?, bar: Double?): TodayUiState {
         val today = timestamps.dayNumber(clock.nowMillis())
-        val bellsDays = sessions.mapNotNull { it.finishedAtEpochMillis?.let(timestamps::dayNumber) }
         val balanceFrom = today - BALANCE_DAYS + 1
-        val intervalDays = interval.map { timestamps.dayNumber(it.finishedAtEpochMillis) }
-        val start = weekStartOf(today)
         val last = sessions.firstOrNull()
         return TodayUiState(
-            week = (start until start + DAYS_PER_WEEK).map { day ->
-                WeekDay(
-                    epochDay = day,
-                    weekday = weekdayOf(day),
-                    bells = bellsDays.count { it == day },
-                    interval = intervalDays.count { it == day },
-                    today = day == today,
-                    date = timestamps.dateOfDay(day),
-                )
-            },
             last = last,
             lastWhen = last?.finishedAtEpochMillis?.let { at ->
                 if (timestamps.dayNumber(at) == today) timestamps.time(at) else timestamps.date(at)

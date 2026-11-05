@@ -208,7 +208,7 @@ several core issues:
   straight. Its state is built from the stores' flows (`SessionInputs.kt`): the sets before this session are flattened on a
   computation dispatcher as the sessions change, and the records and recent lifts worked out as a set is logged,
   not at each tap on the sheet, which shows at once. It starts no session: whatever opens its page does
-  (`SessionStore.startSession`: the Lift tab, History, the launcher shortcut), and a page restored with no session
+  (`SessionStore.startSession`: Train's Strength pillar, History, the launcher shortcut), and a page restored with no session
   behind it closes (`sessionGone`).
 
 New code should not add to what these resolved: inject the stores it uses rather than a repository, keep new
@@ -236,7 +236,7 @@ Each module applies a reusable template from `templates/`:
 | **Interval Domain & Data** | `interval-domain`, `interval-data`, `interval-platform-api`, `interval-platform` | Timer calculation engine, Room database, DataStore preferences, audio/speech cues, Android Foreground Service, iOS notifications. |
 | **Interval Features** | `interval-timer`, `interval-workout`, `interval-presets`, `interval-history`, `interval-settings`, `interval-ui` | Timer tab, active workout screen, preset management, the Today tab, history calendar & routines plan, settings, shared workout components. |
 | **Lift Domain & Data** | `lift-domain`, `lift-api`, `lift-data`, `lift-platform` | Kettlebell exercises, training programs, EMOM/hold timers, the ports to the interval side (`lift-api`), Room database; the EMOM beeper and rest alert services in `lift-platform`. |
-| **Lift Features** | `lift-nav`, `lift-today`, `lift-session`, `lift-library`, `lift-ui` | Lift navigation registry, Lift tab & gear, active session logger & timers, exercise library & editor, shared Lift UI. |
+| **Lift Features** | `lift-nav`, `lift-today`, `lift-session`, `lift-library`, `lift-ui` | Lift navigation registry, Train's Strength pillar (Lift's tab) & gear, active session logger & timers, exercise library & editor, shared Lift UI. |
 | **Test Fakes** | `interval-testing`, `lift-testing` | In-memory storage, recording cue players, fake DAOs, and mock platform services for tests. |
 | **Toolchain Plugins** | `lint-plugin`, `detekt-plugin` | Kotlin Toolchain task plugins for ktlint formatting and Detekt static analysis. |
 
@@ -249,7 +249,7 @@ The application uses Jetpack Navigation 3 with a single, unified back stack host
 ### Key Elements:
 
 1. **Type-Safe Keys (`NavKey`)**:
-   - Every destination is a `@Serializable` class or object implementing `NavKey` (e.g. `TodayTab`, `TimerTab`, `Settings`, `Workout(id)`). `TodayTab` is the start destination and the root of the back stack: Back from any other tab returns to it.
+   - Every destination is a `@Serializable` class or object implementing `NavKey` (e.g. `TodayTab`, `TimerTab`, `Settings`, `Workout(id)`). `TodayTab` is the start destination and the root of the back stack: Back from any other tab returns to it. Train is one item of the bar over two tabs, its pillars: Lift's `LiftTab` (Strength) and `ConditioningTab` (the presets), each under the title "Train" and the picker between them (`apps/app/src/ui/Train.kt`).
    - Lift keys live in `lift/lift-nav/src/nav/LiftRoutes.kt` (e.g. `LiftTab`, `Lifting`, `LiftDetail(uid)`).
    - Tabs implement the `Tab` interface (`core/core/src/nav/Tab.kt`), which provides the `push` helper.
 2. **Polymorphic Serialization**:
@@ -413,7 +413,7 @@ flowchart TD
   - `MuscleBalance` (`lift-domain`) analyzes logged lifting sessions across a rolling 28-day window, aggregating sets
     into seven major muscle groups (chest, shoulders, back, arms, core, glutes & hamstrings, quads & calves).
   - Differentiates primary working sets from assisting sets (`Opacity.LIGHT_SHARE`) and identifies unworked muscle groups
-    in `BalanceBars` (`lift-ui`), which the Lift tab's `BalanceCard` (`lift-today`) and a program's sheet draw.
+    in `BalanceBars` (`lift-ui`), which Strength's `BalanceCard` (`lift-today`) and a program's sheet draw.
   - `MuscleBalance.ofSets` folds any sets, so `Program.weekBalance()` counts what a week of a program plans the same
     way; `ProgramCoverageTest` holds what each built-in leaves untrained.
 - **Audio & Cues**:

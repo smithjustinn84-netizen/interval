@@ -13,7 +13,6 @@ import dev.justinsmith.lift.data.SessionEntity
 import dev.justinsmith.lift.data.SetEntity
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.ProgramId
-import dev.justinsmith.lift.fakes.FakeIntervalActivity
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import dev.justinsmith.lift.ui.liftAppTest
 import kotlin.test.Test
@@ -58,13 +57,6 @@ class TodayFlowTest {
         onNodeWithText("Leave the session?").assertDoesNotExist()
         val open = app.storage.sessions.sessions.value.single { it.finishedAtEpochMillis == null }
         assertEquals(ProgramId.GobletSquatRow.name, open.programId)
-    }
-
-    @Test
-    fun `the goal set on Plan reaches Today`() = liftAppTest(
-        intervals = FakeIntervalActivity().apply { weeklyGoal.value = 4 },
-    ) {
-        waitForText("4 more to hit 4")
     }
 
     @Test

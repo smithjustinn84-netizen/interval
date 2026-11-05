@@ -293,6 +293,7 @@ adb shell pm clear dev.justinsmith.interval      # Most journeys expect a fresh 
 | Journey | Covers | In CI as |
 |---|---|---|
 | `today.xml` | The app opens on Today: with nothing planned it leads to the plan, a preset that fits five minutes starts from "Or pick by time", a session planned for today is up next and starts from it, the followed program's next day is up next with about how long it takes | `TodayAcceptanceTest` |
+| `train.xml` | Train's pillars: it opens on Strength, Conditioning lists the presets under the same title and picker, the bar reopens the pillar last shown, Back returns to Today | `TrainAcceptanceTest` |
 | `start-workout.xml` | Edit work time via the sheet, start, pause/resume, skip, end with nothing saved | `StartWorkoutAcceptanceTest` |
 | `history.xml` | Set a weekly goal from the first run, end after a round, find it in History and open it, see it on the month, clear History | `HistoryAcceptanceTest` |
 | `plan-lift.xml` | Plan a session on Lift for today, start it from Up next, log a set and finish, find the plan done | `PlanLiftAcceptanceTest` |
@@ -302,7 +303,7 @@ adb shell pm clear dev.justinsmith.interval      # Most journeys expect a fresh 
 | `widget.xml` | Place the week widget, see the count and goal and the streak, start a workout and a Lift session from it, a running workout kept; resize it | `WeekStandingSourceTest` (the count); the widget itself only on a device |
 | `sequence.xml` | Add a block from the Timer's Sets sheet, shape it and the rest between blocks in the editor, run into the second block (the notification says it), save it as a preset | `SequenceAcceptanceTest` (a seeded preset of two blocks run through; a block added on the Timer and run) |
 | `system-back.xml` | System back from Settings or a tab returns to Today; during a workout it pauses and asks | `SystemBackAcceptanceTest` |
-| `lift-equipment.xml` | A Lift session logging a bell, a band, a hold on one side and bodyweight with weight added, each in its own words, Moved counting only the weighed load, then the summary; a second session, and the Lift tab's balance of the two | `LiftEquipmentAcceptanceTest` |
+| `lift-equipment.xml` | A Lift session logging a bell, a band, a hold on one side and bodyweight with weight added, each in its own words, Moved counting only the weighed load, then the summary; a second session, and Strength's balance of the two | `LiftEquipmentAcceptanceTest` |
 | `lift-barbell.xml` | A barbell lift: the bar chosen, plates a side, and the set logged with its load | `LiftBarbellAcceptanceTest` |
 | `lift-programs.xml` | A program's sheet: what a week of it works and what it leaves out, about how long each day takes; a built-in followed part way made yours in the editor and followed on from its day | `LiftProgramsAcceptanceTest` |
 | `lift-plan-changes.xml` | A program's day with a change to its plan: kept for the session, for the program, or in a copy | `LiftPlanChangesAcceptanceTest` |

@@ -16,6 +16,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   estimated from the day's sets and reps, each lift's pace, the minutes of anything on the minute and the rest
   between sets set on Lift, so a longer rest makes a longer day; a day that is all on the minute says its
   minutes exactly, any other is rounded to five.
+- Train, in place of the Lift tab: one tab for what there is to train, in two pillars picked under its title.
+  Strength is what the Lift tab was (the program's day, the last session, the balance, the exercises and the
+  equipment, with Start session pinned under them); Conditioning lists the presets, each started or put on the
+  Timer from its sheet. The tab reopens on the pillar last shown.
 - Sequences: a workout of blocks run one after another, each block a shape of its own (work, rest, rounds, sets
   and ladder) with a rest between blocks. The workout says "Block 2 of 3 · Round 1 of 8", "Rest between blocks"
   and "Next: block 2 of 3 · 0:40", the voice "Rest before block 2" and "Block 2. Work", and the notification the
@@ -25,6 +29,9 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   each block is a card of its own rows that moves up or down or goes, and "Between blocks" sets the rest between
   them. A sequence on the Timer shows its blocks on one card, which opens the editor ("Edit blocks"); Done puts it
   back on the Timer without saving a preset, and "Save as preset" names it. The Timeline draws every block.
+
+### Changed
+- The week's marks and the weekly goal no longer show on Lift's side: Today shows the week, for both sides.
 
 ## [0.4.0] — 2026-11-05
 

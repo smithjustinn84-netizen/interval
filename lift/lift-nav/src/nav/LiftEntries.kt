@@ -4,6 +4,7 @@ package dev.justinsmith.lift.nav
 
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
+import androidx.compose.runtime.Composable
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
@@ -23,16 +24,21 @@ import dev.justinsmith.lift.today.TodayRoute
 /**
  * The screen for each Lift key, and what each screen's actions do to the [backStack]. A finished session
  * opened from History sits in [historyScene]'s detail pane, beside the log when [twoPane]. [onOpenSettings] is the
- * Lift tab's gear: Settings is the app's page, not Lift's, so the app says what opens it.
+ * Lift tab's gear: Settings is the app's page, not Lift's, so the app says what opens it. The app also says what
+ * the tab is part of: [tabMetadata] joins it to the app's other tabs (Train's pillars are one group), and
+ * [tabHeader] is drawn under its title (the picker between them).
  */
 fun EntryProviderScope<NavKey>.liftEntries(
     backStack: NavBackStack<NavKey>,
     twoPane: Boolean,
     historyScene: String,
     onOpenSettings: () -> Unit,
+    tabMetadata: Map<String, Any> = emptyMap(),
+    tabHeader: (@Composable () -> Unit)? = null,
 ) {
-    entry<LiftTab>(metadata = pageKind(PageKind.Tab)) {
+    entry<LiftTab>(metadata = pageKind(PageKind.Tab) + tabMetadata) {
         TodayRoute(
+            header = tabHeader,
             onStartSession = { backStack.push(Lifting) },
             onChooseProgram = { backStack.push(Programs) },
             onOpenBells = { backStack.push(OwnedBells) },

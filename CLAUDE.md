@@ -123,7 +123,8 @@ interval/            the interval timer
                      `RecordingPlanReminders`, `fakePlatformModule`/`fakeStorageModule`, the presets tests lean on
   interval-timer     the Timer tab and its describe sheet (package `dev.justinsmith.interval.home`)
   interval-workout   the running workout, its readout, controls and summary
-  interval-presets   the Presets page, sheet and editor (`PresetEditorHost`, `PresetDraft`)
+  interval-presets   the presets, sheet and editor (`PresetEditorHost`, `PresetDraft`): a page pushed from the
+                     Timer, and Train's Conditioning pillar as a tab's page (`PresetsTab`)
   interval-settings  Settings (its groups in `SettingsGroups.kt`), the weight sheet, export and import
                      (`DataExporter`, `DataImporter`, the review sheet); opened by every tab's gear
   interval-history   History (log, calendar, summaries, a finished workout) and Plan: one module, each needs
@@ -154,8 +155,8 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
   lift-testing       `FakeLiftStorage` and the fake DAOs, `FakeIntervalActivity`, `RecordingBeeper`,
                      `RecordingKeepAlive`, `LiftTestClock` (the wall clock and the timers' time, moved together),
                      `liftTestKoin`
-  lift-today         the Lift tab (with the balance, `MuscleBalance` in lift-domain) and the gear (bells, bar,
-                     bands, records)
+  lift-today         Train's Strength pillar, Lift's tab (`TodayRoute`: the program's day, the last session, the
+                     balance, `MuscleBalance` in lift-domain) and the gear (bells, bar, bands, records)
   lift-session       the session (log sheet, EMOM, hold and rest timers under `SessionTimers`, plan sheets,
                      summary), the programs
                      and their editor and progress (they share the block editor), a finished session's page
@@ -208,10 +209,15 @@ toolchain (`$compose.*`).
   2. `subclass(X::class)` in `navConfiguration` (App.kt; a Lift key in `liftRoutes()`). Without it saving the
      back stack fails on iOS/desktop.
   3. `entry<X> { XRoute() }` in the `entryProvider` (App.kt; a Lift page in `liftEntries`, `lift/lift-nav/src/nav/LiftEntries.kt`)
-  `TodayTab` is the start destination and the back stack's root: Back from Timer, Lift or History returns to it
+  `TodayTab` is the start destination and the back stack's root: Back from Timer, Train or History returns to it
   (`selectTab`), and a stack saved by a build that opened on the Timer gets it put underneath (`rootAtToday`).
   A tab implements core's `Tab` (`core/core/src/nav/Tab.kt`, with the `push` helper every entry uses), and its
   title bar ends in core's `SettingsAction`; Lift's takes what it opens through `liftEntries`.
+  Train is one destination of the bar in two tabs, its pillars (`apps/app/src/ui/Train.kt`): Strength is Lift's
+  `LiftTab`, Conditioning the app's `ConditioningTab` (the presets). Each is a `TabGrid` titled "Train" whose
+  `header` the app fills with `PillarPicker`; their entries share a `tabGroup`, so moving between them fades the
+  new one in over the old with the title and picker standing still (`pillarSwap`, `Navigation.kt`), and the bar
+  reopens the pillar last shown (`rememberTrainPillar`).
 - **Screens** are split into `XRoute()` (resolves the ViewModel with `koinViewModel<XViewModel>()`, and a
   route's key with `{ parametersOf(id) }`; anything else with `koinInject()`; collects state) and a stateless
   `XScreen(state, callbacks)` that previews and tests can drive directly. Each feature declares its ViewModels in
@@ -299,7 +305,7 @@ toolchain (`$compose.*`).
   (`WorkoutEngine.upcomingChanges`, pure, through `ActiveWorkout.upcomingChanges`) as the app leaves the screen,
   and drops them on return; its actual says why not background audio. Desktop keeps nothing.
   Lift's timers go the same way. A session is started by whatever pushes `Lifting` (`SessionStore.startSession`:
-  the Lift tab, History, the shortcut in `App.kt`), never by `SessionViewModel`, which only reads; its page
+  Train's Strength pillar, History, the shortcut in `App.kt`), never by `SessionViewModel`, which only reads; its page
   restored with no session behind it closes (`sessionGone`). The rest, an EMOM and a hold are `SessionTimers`
   (`lift-session`, a Koin single), not `SessionViewModel`, which starts them and shows their `state`. They time by `realElapsedTime` (core's
   `corePlatformModule` binds it for both sides), tick only while one runs, beep and log as they go, and end with

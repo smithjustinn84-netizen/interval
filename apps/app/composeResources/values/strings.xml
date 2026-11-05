@@ -16,7 +16,9 @@
     <!-- Navigation -->
     <string name="nav_today">Today</string>
     <string name="nav_timer">Timer</string>
-    <string name="nav_lift">Lift</string>
+    <string name="nav_train">Train</string>
+    <string name="train_strength">Strength</string>
+    <string name="train_conditioning">Conditioning</string>
     <string name="nav_history">History</string>
 
     <!-- About -->

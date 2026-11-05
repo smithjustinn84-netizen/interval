@@ -18,6 +18,13 @@ data object TodayTab : Tab
 @Serializable
 data object TimerTab : Tab
 
+/**
+ * Train's Conditioning pillar: the presets, as a tab's page. Train is one destination of the bar in two parts,
+ * each a tab of its own picked on its page; the other, Strength, is Lift's `LiftTab`.
+ */
+@Serializable
+data object ConditioningTab : Tab
+
 /** The training log: what was done, what is planned, and the weekly goal. */
 @Serializable
 data object HistoryTab : Tab

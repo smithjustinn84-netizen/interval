@@ -64,6 +64,7 @@ import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.MiniTimeline
 import dev.justinsmith.interval.ui.NoticeAction
 import dev.justinsmith.interval.ui.PreviewFormFactors
+import dev.justinsmith.interval.ui.SettingsAction
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
@@ -78,15 +79,24 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
- * Resolves the tab's ViewModel and binds it to [PresetsScreen]. A preset goes on the Timer either way;
- * Start workout then opens the workout, Put on Timer shows the Timer tab.
+ * The presets as a tab's page rather than one pushed with a Back: Train's Conditioning pillar. It goes under the
+ * tab's [title], with [header] across the top (the picker of Train's pillars), and its actions end in the gear,
+ * [onOpenSettings], as every tab's do.
+ */
+class PresetsTab(val title: String, val onOpenSettings: () -> Unit, val header: @Composable () -> Unit)
+
+/**
+ * Resolves the ViewModel and binds it to [PresetsScreen]. A preset goes on the Timer either way;
+ * Start workout then opens the workout, Put on Timer shows the Timer. Pushed, it has a Back ([onBack]); as a
+ * tab's page ([tab]) it has none.
  */
 @Composable
 fun PresetsRoute(
-    onBack: () -> Unit,
     onShowTimer: () -> Unit,
     onStartWorkout: () -> Unit,
     modifier: Modifier = Modifier,
+    onBack: (() -> Unit)? = null,
+    tab: PresetsTab? = null,
 ) {
     val viewModel = koinViewModel<PresetsViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -106,6 +116,7 @@ fun PresetsRoute(
         onRestore = viewModel::restore,
         modifier = modifier,
         onBack = onBack,
+        tab = tab,
     )
 }
 
@@ -129,6 +140,7 @@ fun PresetsScreen(
     modifier: Modifier = Modifier,
     onRestore: (Preset) -> Unit = {},
     onBack: (() -> Unit)? = null,
+    tab: PresetsTab? = null,
 ) {
     var open by rememberSaveable(stateSaver = PresetSaver) { mutableStateOf<Preset?>(null) }
     val notices = LocalNotices.current
@@ -142,6 +154,7 @@ fun PresetsScreen(
         onSaveCurrent = { draft = PresetDraft.saveCurrent(state.current) },
         modifier = modifier,
         onBack = onBack,
+        tab = tab,
     )
     // The sheet follows its preset through the state, so one edited or deleted elsewhere closes it.
     val openRow = open?.let { preset -> state.rows.firstOrNull { it.preset == preset } }
@@ -196,7 +209,7 @@ fun PresetsScreen(
 
 /**
  * The title bar with + ([onNew]), the unsaved settings with their Save ([onSaveCurrent]) when there
- * are any, then the two groups of cards.
+ * are any, then the two groups of cards. As a [tab]'s page it takes the tab's title, header and gear.
  */
 @Composable
 private fun PresetsList(
@@ -206,13 +219,18 @@ private fun PresetsList(
     onSaveCurrent: () -> Unit,
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
+    tab: PresetsTab? = null,
 ) {
     // One column on a phone; wider windows put the two groups side by side.
     TabGrid(
-        stringResource(Res.string.presets_title),
+        tab?.title ?: stringResource(Res.string.presets_title),
         modifier,
         navigation = onBack?.let { back -> { BackAction(back) } },
-        actions = { IconAction(IntervalIcons.Add, stringResource(Res.string.presets_new_cd), onClick = onNew) },
+        actions = {
+            IconAction(IntervalIcons.Add, stringResource(Res.string.presets_new_cd), onClick = onNew)
+            tab?.let { SettingsAction(it.onOpenSettings) }
+        },
+        header = tab?.header,
     ) {
         // Keyed, so the card fades and the groups slide as the current shape stops or starts matching a preset.
         if (state.canSaveCurrent) {

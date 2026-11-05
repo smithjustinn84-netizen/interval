@@ -23,9 +23,13 @@ import androidx.compose.material3.adaptive.navigation3.rememberSupportingPaneSce
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -56,6 +60,7 @@ import dev.justinsmith.interval.history.WorkoutDetailRoute
 import dev.justinsmith.interval.home.TimerRoute
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.nav.About
+import dev.justinsmith.interval.nav.ConditioningTab
 import dev.justinsmith.interval.nav.HistoryTab
 import dev.justinsmith.interval.nav.Licenses
 import dev.justinsmith.interval.nav.Plan
@@ -76,7 +81,9 @@ import dev.justinsmith.interval.platform.SystemBarIcons
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.materialBackPreview
 import dev.justinsmith.interval.presets.PresetsRoute
+import dev.justinsmith.interval.presets.PresetsTab
 import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.nav_train
 import dev.justinsmith.interval.resources.save_failed
 import dev.justinsmith.interval.settings.SettingsRoute
 import dev.justinsmith.interval.splash.WithIntro
@@ -89,7 +96,10 @@ import dev.justinsmith.interval.ui.NavigationItems
 import dev.justinsmith.interval.ui.NoticeHost
 import dev.justinsmith.interval.ui.Notices
 import dev.justinsmith.interval.ui.PageKind
+import dev.justinsmith.interval.ui.PillarPicker
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.TRAIN_GROUP
+import dev.justinsmith.interval.ui.TrainPillars
 import dev.justinsmith.interval.ui.WatchForIdle
 import dev.justinsmith.interval.ui.backPreviewCorners
 import dev.justinsmith.interval.ui.backPreviewTransition
@@ -100,6 +110,7 @@ import dev.justinsmith.interval.ui.pagePopTransition
 import dev.justinsmith.interval.ui.pageTransition
 import dev.justinsmith.interval.ui.rememberNavigationArea
 import dev.justinsmith.interval.ui.rememberNotices
+import dev.justinsmith.interval.ui.tabGroup
 import dev.justinsmith.interval.ui.tabScenes
 import dev.justinsmith.interval.workout.WorkoutRoute
 import dev.justinsmith.lift.data.LiftRepository
@@ -133,6 +144,7 @@ internal val navConfiguration = SavedStateConfiguration {
             subclass(TodayTab::class)
             subclass(TimerTab::class)
             subclass(LiftTab::class)
+            subclass(ConditioningTab::class)
             subclass(HistoryTab::class)
             subclass(Settings::class)
             subclass(Workout::class)
@@ -245,6 +257,7 @@ private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
         else -> null
     }
     val selectTab = { tab: Tab -> backStack.selectTab(tab) }
+    val pillar = rememberTrainPillar(backStack)
     val palette = IntervalTheme.palette
     BoxWithConstraints(Modifier.fillMaxSize()) {
         // The bar or rail is decided by the window alone and lies over the pages: NavDisplay fills the window
@@ -299,7 +312,7 @@ private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
                     visible = currentTab != null,
                     Modifier.align(if (area.bar) Alignment.BottomCenter else Alignment.TopStart),
                 ) {
-                    NavigationItems(shown.tab, area.type, selectTab)
+                    NavigationItems(shown.tab, area.type, pillar, selectTab)
                 }
                 NoticeHost(
                     notices,
@@ -317,6 +330,19 @@ private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
             }
         }
     }
+}
+
+/**
+ * The pillar Train opens on from the bar: the one last shown, Strength before either was. It follows the tab over
+ * Today however it got there (the picker, a shortcut, a restored stack), pages pushed over it or not.
+ */
+@Composable
+private fun rememberTrainPillar(backStack: List<NavKey>): Tab {
+    // A Boolean, which every platform can save; a key can't be.
+    var conditioningLast by rememberSaveable { mutableStateOf(false) }
+    val shown = backStack.getOrNull(1).takeIf { it in TrainPillars }
+    SideEffect { if (shown != null) conditioningLast = shown == ConditioningTab }
+    return if (conditioningLast) ConditioningTab else LiftTab
 }
 
 /** The tab the navigation area names: the one on top, or the last one while the area leaves. */
@@ -397,7 +423,7 @@ private fun appEntries(
             onStartWorkout = { backStack.startWorkout(clock) },
         )
     }
-    liftEntries(backStack, twoPane, HISTORY_SCENE, onOpenSettings = { backStack.push(Settings) })
+    trainEntries(backStack, twoPane, selectTab, clock)
     entry<HistoryTab>(
         metadata = ListDetailSceneStrategy.listPane(HISTORY_SCENE, detailPlaceholder = { HistoryPlaceholder() }) +
             ListDetailSceneStrategy.preferredPaneSize(width = AppSizes.listPane) +
@@ -456,6 +482,37 @@ private fun appEntries(
     }
     entry<Licenses> { LicensesRoute(onBack = { backStack.removeLastOrNull() }) }
     entry<Privacy> { PrivacyScreen(onBack = { backStack.removeLastOrNull() }) }
+}
+
+/**
+ * Train's pillars, each a tab of its own in one group, under the same title and the picker between them:
+ * Strength is Lift's tab with every page of Lift's, Conditioning the presets as a tab's page.
+ */
+private fun EntryProviderScope<NavKey>.trainEntries(
+    backStack: NavBackStack<NavKey>,
+    twoPane: Boolean,
+    selectTab: (Tab) -> Unit,
+    clock: WallClock,
+) {
+    val pillars = tabGroup(TRAIN_GROUP)
+    liftEntries(
+        backStack,
+        twoPane,
+        HISTORY_SCENE,
+        onOpenSettings = { backStack.push(Settings) },
+        tabMetadata = pillars,
+        tabHeader = { PillarPicker(LiftTab, selectTab) },
+    )
+    entry<ConditioningTab>(metadata = pageKind(PageKind.Tab) + pillars) {
+        val tab = PresetsTab(stringResource(Res.string.nav_train), onOpenSettings = { backStack.push(Settings) }) {
+            PillarPicker(ConditioningTab, selectTab)
+        }
+        PresetsRoute(
+            onShowTimer = { selectTab(TimerTab) },
+            onStartWorkout = { backStack.startWorkout(clock) },
+            tab = tab,
+        )
+    }
 }
 
 /**

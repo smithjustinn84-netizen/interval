@@ -25,7 +25,7 @@ private const val STATE_TIMEOUT_MILLIS = 5_000L
 class LiftFlowTest {
     @Test
     fun `a session logged on Lift lands in History and the week`() = appTest { app ->
-        tab("Lift").performClick()
+        tab("Train").performClick()
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
@@ -45,13 +45,6 @@ class LiftFlowTest {
     }
 
     @Test
-    fun `the goal set on Plan shows on Lift`() = appTest { app ->
-        app.repository.settings.updateAppSettings { it.copy(weeklyGoal = 3) }
-        tab("Lift").performClick()
-        waitForText("3 more to hit 3")
-    }
-
-    @Test
     fun `on a tablet a session opens beside History but on a page of its own from Lift`() = appTest(
         Window.Tablet,
         lift = FakeLiftStorage().apply { finished("b1", "Swings", startedAt = 0, finishedAt = 600_000, 24.0 to 10) },
@@ -63,7 +56,7 @@ class LiftFlowTest {
         onNodeWithText("Week").assertExists()
         tab("History").assertIsSelected()
 
-        tab("Lift").performClick()
+        tab("Train").performClick()
         waitForText("Last session")
         onNode(hasText("Swings") and hasClickAction()).performClick()
         waitForText("Two-hand swing")
@@ -97,10 +90,10 @@ class LiftFlowTest {
 
     @Test
     fun `Lift opens the bells owned and Back returns`() = appTest {
-        tab("Lift").performClick()
+        tab("Train").performClick()
         onNodeWithContentDescription("Your equipment and records").performClick()
         onNodeWithText("Your bells").assertExists()
-        tab("Lift").assertDoesNotExist()
+        tab("Train").assertDoesNotExist()
         onNodeWithContentDescription("Back").performClick()
         onNodeWithText("Start session").assertExists()
     }
@@ -109,12 +102,12 @@ class LiftFlowTest {
     fun `the last session on Lift opens its page`() = appTest(
         lift = FakeLiftStorage().apply { finished("b1", "Swings", startedAt = 0, finishedAt = 600_000, 24.0 to 10) },
     ) {
-        tab("Lift").performClick()
+        tab("Train").performClick()
         waitForText("Swings")
         onNode(hasText("Swings") and hasClickAction()).performClick()
         waitForText("24 kg × 10")
         onNodeWithContentDescription("More options").assertExists()
-        tab("Lift").assertDoesNotExist()
+        tab("Train").assertDoesNotExist()
     }
 
     @Test
@@ -127,7 +120,7 @@ class LiftFlowTest {
             )
         },
     ) {
-        tab("Lift").performClick()
+        tab("Train").performClick()
         waitForText("Day 2 of 8 · week 1")
         onNodeWithText("Day 2 of 8 · week 1").performClick()
         waitForText("Days left")

@@ -17,7 +17,7 @@ class SettingsAcceptanceTest {
         goBack()
         seeTimer()
 
-        openTab("Lift")
+        openTab("Train")
         seeLiftTab()
         openSettings()
         goBack()

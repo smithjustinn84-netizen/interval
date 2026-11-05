@@ -1,14 +1,9 @@
 package dev.justinsmith.lift.today
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,10 +20,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -36,21 +28,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.ConfirmDialog
-import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EmptyState
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
-import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.SettingsAction
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
-import dev.justinsmith.interval.ui.StandardEasing
 import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.lift.domain.Equipment
@@ -77,33 +66,15 @@ import dev.justinsmith.lift.today.resources.session_leave_title
 import dev.justinsmith.lift.today.resources.sets_count
 import dev.justinsmith.lift.today.resources.today_bells_cd
 import dev.justinsmith.lift.today.resources.today_free_session
-import dev.justinsmith.lift.today.resources.today_goal_left
-import dev.justinsmith.lift.today.resources.today_goal_met
 import dev.justinsmith.lift.today.resources.today_last
 import dev.justinsmith.lift.today.resources.today_last_open_cd
-import dev.justinsmith.lift.today.resources.today_legend_bells
-import dev.justinsmith.lift.today.resources.today_legend_interval
 import dev.justinsmith.lift.today.resources.today_none_text
 import dev.justinsmith.lift.today.resources.today_none_title
 import dev.justinsmith.lift.today.resources.today_resume
 import dev.justinsmith.lift.today.resources.today_start
 import dev.justinsmith.lift.today.resources.today_start_day
 import dev.justinsmith.lift.today.resources.today_start_day_over_text
-import dev.justinsmith.lift.today.resources.today_this_week
 import dev.justinsmith.lift.today.resources.today_title
-import dev.justinsmith.lift.today.resources.today_week_count
-import dev.justinsmith.lift.today.resources.today_week_workouts
-import dev.justinsmith.lift.today.resources.weekday_cd
-import dev.justinsmith.lift.today.resources.weekday_counts
-import dev.justinsmith.lift.today.resources.weekday_initial_1
-import dev.justinsmith.lift.today.resources.weekday_initial_2
-import dev.justinsmith.lift.today.resources.weekday_initial_3
-import dev.justinsmith.lift.today.resources.weekday_initial_4
-import dev.justinsmith.lift.today.resources.weekday_initial_5
-import dev.justinsmith.lift.today.resources.weekday_initial_6
-import dev.justinsmith.lift.today.resources.weekday_initial_7
-import dev.justinsmith.lift.today.resources.weekday_rest
-import dev.justinsmith.lift.ui.Legend
 import dev.justinsmith.lift.ui.blockLine
 import dev.justinsmith.lift.ui.estimateLine
 import dev.justinsmith.lift.ui.liftName
@@ -122,6 +93,7 @@ fun TodayRoute(
     onOpenExercises: () -> Unit = {},
     onOpenProgram: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
+    header: (@Composable () -> Unit)? = null,
 ) {
     val viewModel = koinViewModel<TodayViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -145,14 +117,15 @@ fun TodayRoute(
         onOpenExercises = onOpenExercises,
         onOpenProgram = onOpenProgram,
         onOpenSettings = onOpenSettings,
+        header = header,
     )
 }
 
 /**
- * The Lift tab: the week, lifts and intervals alike, the program's day (what's next before what's past), the
- * last session (a tap opens it) and the exercises. Start (or Resume) session stays pinned under them, however
- * long the day, as Start workout does. On a wider window the week is a column's card like the others, so its
- * days sit close and what's next sits beside it.
+ * Train's Strength pillar, Lift's side: the program's day (what's next before what's past), the last session (a
+ * tap opens it) and the exercises. Start (or Resume) session stays pinned under them, however long the day, as
+ * Start workout does. The week is Today's to show. [header] sits under the title: the app's picker of Train's
+ * pillars.
  */
 @Composable
 fun TodayScreen(
@@ -165,6 +138,7 @@ fun TodayScreen(
     onOpenExercises: () -> Unit = {},
     onOpenProgram: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
+    header: (@Composable () -> Unit)? = null,
 ) {
     val palette = IntervalTheme.palette
     val card = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4)
@@ -176,8 +150,8 @@ fun TodayScreen(
             SettingsAction(onOpenSettings)
         },
         bottomBar = { StartRow(state, onStartSession, Modifier.widthIn(max = Sizes.content)) },
+        header = header,
     ) {
-        item(key = "week") { WeekCard(state, card) }
         item(key = "program") { ProgramCard(state, onChooseProgram, onOpenProgram, card) }
         item(key = "last") { LastCard(state, onOpenSession, card) }
         state.balance?.let { balance -> item(key = "balance") { BalanceCard(balance, card) } }
@@ -255,57 +229,6 @@ private fun LastCard(state: TodayUiState, onOpenSession: (uid: String) -> Unit, 
         }
     }
 }
-
-/** A day of the week strip: filled in the accent for a kettlebell session, in the work mark for intervals only. */
-@Composable
-private fun DayMark(day: WeekDay) {
-    val palette = IntervalTheme.palette
-    val fill: Color? = when {
-        day.bells > 0 -> palette.accent
-        day.interval > 0 -> palette.workMark
-        else -> null
-    }
-    val counts = if (day.bells + day.interval == 0) {
-        stringResource(Res.string.weekday_rest)
-    } else {
-        stringResource(Res.string.weekday_counts, day.bells, day.interval)
-    }
-    val description = stringResource(Res.string.weekday_cd, day.date, counts)
-    // A day's dot takes its colour as the first workout lands, rather than switching.
-    val dot by animateColorAsState(
-        fill ?: palette.surfaceVariant,
-        tween(Motion.STATE_MILLIS, easing = StandardEasing),
-        label = "day",
-    )
-    Column(
-        Modifier.clearAndSetSemantics { contentDescription = description },
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(Spacing.space4),
-    ) {
-        Box(
-            Modifier
-                .size(Sizes.weekBarMark)
-                .clip(Corners.full)
-                .background(dot)
-                .then(if (day.today) Modifier.border(Sizes.border, palette.text, Corners.full) else Modifier),
-        )
-        Text(
-            stringResource(weekdayInitials[day.weekday - 1]),
-            style = IntervalTheme.type.caption,
-            color = if (day.today) palette.text else palette.textDim,
-        )
-    }
-}
-
-private val weekdayInitials = listOf(
-    Res.string.weekday_initial_1,
-    Res.string.weekday_initial_2,
-    Res.string.weekday_initial_3,
-    Res.string.weekday_initial_4,
-    Res.string.weekday_initial_5,
-    Res.string.weekday_initial_6,
-    Res.string.weekday_initial_7,
-)
 
 /**
  * The program day to do, with each block's lift, shape and suggested bell; or the way to pick a program. A tap
@@ -416,62 +339,6 @@ private fun ProgramHeader(following: Program, day: ProgramDay?, minutes: Int?, o
             tint = palette.textDim,
             modifier = Modifier.size(Sizes.icon),
         )
-    }
-}
-
-/**
- * This week, lifts and intervals alike: a mark a day, and the count. The Timer's share of the count, and the
- * legend saying which mark is which, wait until there is something for them to tell apart.
- */
-@Composable
-private fun WeekCard(state: TodayUiState, modifier: Modifier = Modifier) {
-    val palette = IntervalTheme.palette
-    ListCard(modifier) {
-        Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space12)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    stringResource(Res.string.today_this_week),
-                    style = IntervalTheme.type.caption,
-                    color = palette.textDim,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    if (state.intervalCount > 0) {
-                        pluralStringResource(
-                            Res.plurals.today_week_count,
-                            state.weekCount,
-                            state.weekCount,
-                            state.intervalCount,
-                        )
-                    } else {
-                        pluralStringResource(Res.plurals.today_week_workouts, state.weekCount, state.weekCount)
-                    },
-                    style = IntervalTheme.type.meta,
-                    color = palette.textDim,
-                )
-            }
-            state.weeklyGoal?.let { goal ->
-                val left = goal - state.weekCount
-                Text(
-                    if (left <= 0) {
-                        stringResource(Res.string.today_goal_met)
-                    } else {
-                        pluralStringResource(Res.plurals.today_goal_left, left, left, goal)
-                    },
-                    style = IntervalTheme.type.title,
-                    color = palette.text,
-                )
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                state.week.forEach { day -> DayMark(day) }
-            }
-            if (state.weekCount > 0) {
-                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space16)) {
-                    Legend(palette.accent, stringResource(Res.string.today_legend_bells))
-                    Legend(palette.workMark, stringResource(Res.string.today_legend_interval))
-                }
-            }
-        }
     }
 }
 
