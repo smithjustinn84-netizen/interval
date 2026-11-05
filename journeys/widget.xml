@@ -22,7 +22,7 @@
     <action>Tap "Lift" on the widget</action>
     <action>Verify that the session shows "Log set"</action>
     <action>Press the system back button and tap "Leave" in the dialog, then press Home</action>
-    <action>Run adb shell am force-stop dev.justinsmith.interval, then tap "Workout" on the widget</action>
+    <action>End the app's process for a cold start (adb root, then adb shell kill -9 on its pid; not force-stop, after which Android's first tap only lifts the stopped state), then tap "Workout" on the widget</action>
     <action>Verify that the workout screen shows "Get ready": the widget starts the app's container before it opens the workout</action>
     <action>Press the system back button, tap "End workout", press Home, long-press the widget and resize it to two cells by one</action>
     <action>Verify that the widget shows the ring with its figure and both buttons in one row</action>

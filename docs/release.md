@@ -110,11 +110,17 @@ To change one later (a new password, say), run its command again: `gh secret set
    adb -s emulator-5554 install build/tasks/_androidApp_buildAndroidRelease/gradle-project-release.apk
    ```
    then `journeys/start-workout.xml` and `journeys/lift-equipment.xml`. A crash here wants a rule in
-   `apps/androidApp/proguard-rules.pro`.
+   `apps/androidApp/proguard-rules.pro`. After editing that file, delete
+   `build/tasks/_androidApp_buildAndroidRelease` before building again: the toolchain doesn't take the rules as an
+   input, so R8 otherwise runs on the old copy and the APK comes out unchanged (check the rule appears in
+   `gradle-project/build/_apps_androidApp/outputs/mapping/release/configuration.txt`).
    **Done 2026-10-29, no rules needed.** On amper-37 (phone) the release APK passed start-workout,
    lift-equipment, settings (the exported JSON read back whole), system-back, history and presets, and a
    process killed while backgrounded (`kill -9` as root, after the task's state was saved) brought back a
    running workout and the Presets page.
+   **0.4.0, 2026-11-05:** every `journeys/*.xml` on the release APK. `widget.xml` found the one rule the app
+   needs: Glance's WorkManager 2.7.1 keeps its input mergers' classes but not their constructors under R8's full
+   mode, so the widget never drew (0.3.0 shipped so). Run `widget.xml` on every release build.
 3. **On-device checks CI cannot run.**
    - `journeys/settings.xml`: Export opens the share sheet with `interval-<date>.json`.
    - `journeys/lift-rest-alert.xml`: a rest keeps counting on the lock screen and beeps as it ends.

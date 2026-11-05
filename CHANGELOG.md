@@ -50,6 +50,7 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   small name over its value, with no wash, border or stripe, so the three rows keep the colour and the height.
 
 ### Fixed
+- The home-screen widget in the Play build stayed on its loading spinner and never drew the week: the release's minifier stripped a part WorkManager makes for it by name. A rule keeps it.
 - A Lift session that Android brings back after the app was closed on its summary returns to the Lift tab,
   rather than opening a new, empty session.
 - A program's block planned with a band you added shows that band's name on the Programs list and the Lift tab,

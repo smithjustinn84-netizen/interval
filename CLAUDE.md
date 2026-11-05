@@ -390,6 +390,8 @@ Strategy, commands and limits: [docs/testing.md](docs/testing.md).
   `@Suppress("detekt.RuleName")`. HTML/SARIF reports land in `build/tasks/_<module>_detekt@detekt-plugin/`.
   Its package rule takes `dev.justinsmith.interval` as the root and excludes `lift-*` (Lift's root is `dev.justinsmith.lift`).
 - **The lint plugin needs `slf4j-nop`**: ktlint's rules bind kotlin-logging to slf4j at class-init time.
+- **An edit to `apps/androidApp/proguard-rules.pro` doesn't rerun R8**: the release task doesn't take the file as an
+  input. Delete `build/tasks/_androidApp_buildAndroidRelease` and build again (docs/release.md, the R8 smoke test).
 - `./kotlin clean` deletes the tracked `apps/iosApp/module.xcodeproj/xcshareddata/xcschemes/app.xcscheme`; the next
   iOS build fails once, regenerates it unchanged, then passes.
 - iOS `ViewController()` is PascalCase on purpose (Swift calls it by that name) and is suppressed for ktlint.
