@@ -49,7 +49,9 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
 
     @BeforeTest
     fun setUp() {
-        repository.updateConfig { IntervalConfig(prepSeconds = 0, workSeconds = 5, restSeconds = 5, rounds = 2) }
+        repository.settings.updateConfig {
+            IntervalConfig(prepSeconds = 0, workSeconds = 5, restSeconds = 5, rounds = 2)
+        }
     }
 
     @AfterTest
@@ -61,14 +63,20 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
     /** The process's session over [repository]; a new one stands for the process started again. */
     private fun TestScope.workoutSession(repository: IntervalRepository = this@WorkoutViewModelTest.repository) =
         WorkoutSession(
-            repository,
-            repository,
+            repository.settings,
+            repository.settings,
             RecordingCuePlayer(),
             { 7L },
             background,
-            WorkoutRecorder(repository, repository, repository, lifts.sessions, FixedTimestampFormatter, {
-                7L
-            }, health),
+            WorkoutRecorder(
+                repository.history,
+                repository.presets,
+                repository.settings,
+                lifts.sessions,
+                FixedTimestampFormatter,
+                { 7L },
+                health,
+            ),
             WorkoutTicker(testScheduler.timeSource, tickerScope()).also { tickers += it },
         )
 
@@ -76,7 +84,7 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
         session: WorkoutSession,
         repository: IntervalRepository = this.repository,
         id: Long = WORKOUT_ID,
-    ) = WorkoutViewModel(id, session, repository).also { viewModels += it }
+    ) = WorkoutViewModel(id, session, repository.presets).also { viewModels += it }
 
     /**
      * Where a ticker ticks: on the test's scheduler, under its background scope, so a workout still running as the
@@ -109,7 +117,9 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
     fun `a preset saved from the summary shows there once its write lands`() = runTest(dispatcher) {
         val repository = FakeStorage().repository(scope = deferredStorageScope())
         runCurrent()
-        repository.updateConfig { IntervalConfig(prepSeconds = 0, workSeconds = 5, restSeconds = 5, rounds = 2) }
+        repository.settings.updateConfig {
+            IntervalConfig(prepSeconds = 0, workSeconds = 5, restSeconds = 5, rounds = 2)
+        }
         val viewModel = workoutViewModel(workoutSession(repository), repository)
         repeat(3) { viewModel.skip() }
         runCurrent()
@@ -129,7 +139,7 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
         runCurrent()
         val reshaped = viewModel.state.value.config.copy(workSeconds = 50)
         viewModel.saveAsPreset(Preset("Longer", reshaped))
-        assertEquals(50, repository.config.value.workSeconds)
+        assertEquals(50, repository.settings.config.value.workSeconds)
     }
 
     @Test
@@ -144,7 +154,7 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
 
         assertEquals(PerceivedEffort.Hard, viewModel.state.value.effort)
         assertEquals("  Felt strong ", viewModel.state.value.note)
-        val entry = repository.history.value.single()
+        val entry = repository.history.history.value.single()
         assertEquals(PerceivedEffort.Hard, entry.effort)
         assertEquals("Felt strong", entry.note)
     }
@@ -167,7 +177,7 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
         runCurrent()
 
         assertEquals(HeartRate(150, 176), viewModel.state.value.heartRate)
-        assertEquals(150, repository.history.value.single().averageBpm)
+        assertEquals(150, repository.history.history.value.single().averageBpm)
         viewModel.readHeartRate()
         runCurrent()
         assertEquals(2, health.heartRateReads.size)
@@ -192,7 +202,7 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
         // Still the same entry: what changes now lands on it, not on a new one.
         restored.setEffort(PerceivedEffort.AllOut)
         runCurrent()
-        assertEquals(PerceivedEffort.AllOut, repository.history.value.single().effort)
+        assertEquals(PerceivedEffort.AllOut, repository.history.history.value.single().effort)
     }
 
     @Test
@@ -218,6 +228,6 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
 
         assertTrue(background.kept)
         assertEquals("0:03", assertNotNull(session.state.value).toUiState(emptyList()).elapsed)
-        assertEquals(WORKOUT_ID, repository.workoutProgress.value?.id)
+        assertEquals(WORKOUT_ID, repository.settings.workoutProgress.value?.id)
     }
 }

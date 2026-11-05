@@ -54,10 +54,10 @@ class HistoryViewModelTest : MainDispatcherTest() {
     private val bells = lift.repository(now = { clock })
     private val viewModel by lazy {
         HistoryViewModel(
-            repository,
-            repository,
-            repository,
-            repository,
+            repository.history,
+            repository.presets,
+            repository.plans,
+            repository.settings,
             bells.sessions,
             FixedTimestampFormatter,
             clock = { clock },
@@ -72,13 +72,13 @@ class HistoryViewModelTest : MainDispatcherTest() {
     @Test
     fun `workouts are grouped by day newest first and name their preset`() {
         // Calories are covered below; off here, the rows compare whole.
-        repository.updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
+        repository.settings.updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
         val custom = IntervalConfig(prepSeconds = 0, workSeconds = 25, restSeconds = 5, rounds = 4)
         at(TODAY - 10)
-        repository.recordWorkout(tabata, tabata.totalSeconds)
+        repository.history.recordWorkout(tabata, tabata.totalSeconds)
         at(TODAY - 1)
-        repository.recordWorkout(custom, custom.totalSeconds)
-        repository.recordWorkout(tabata, elapsedSeconds = 90, endedEarly = true)
+        repository.history.recordWorkout(custom, custom.totalSeconds)
+        repository.history.recordWorkout(tabata, elapsedSeconds = 90, endedEarly = true)
         at(TODAY)
 
         val sections = viewModel.state.value.sections
@@ -92,9 +92,9 @@ class HistoryViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `kettlebell sessions are listed with the interval workouts and counted in the week`() {
-        repository.updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
+        repository.settings.updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
         at(TODAY)
-        repository.recordWorkout(tabata, tabata.totalSeconds)
+        repository.history.recordWorkout(tabata, tabata.totalSeconds)
         val finished = TODAY * DAY_MILLIS + DAY_MILLIS / 4
         lift.finished("b1", "Swings and get-ups", finished - 1_570_000, finished, 24.0 to 10)
 
@@ -119,17 +119,17 @@ class HistoryViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `today's workouts are headed Today`() {
-        repository.recordWorkout(tabata, tabata.totalSeconds)
+        repository.history.recordWorkout(tabata, tabata.totalSeconds)
         assertEquals(listOf(HistoryDay.Today), viewModel.state.value.sections.map { it.day })
     }
 
     @Test
     fun `the week runs Monday to Sunday and counts only its own days`() {
         at(MONDAY - 1)
-        repository.recordWorkout(tabata, tabata.totalSeconds)
+        repository.history.recordWorkout(tabata, tabata.totalSeconds)
         at(MONDAY)
-        repository.recordWorkout(tabata, tabata.totalSeconds)
-        repository.recordWorkout(tabata, elapsedSeconds = 60)
+        repository.history.recordWorkout(tabata, tabata.totalSeconds)
+        repository.history.recordWorkout(tabata, elapsedSeconds = 60)
         at(TODAY)
 
         val state = viewModel.state.value
@@ -143,12 +143,12 @@ class HistoryViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `calories show only with a weight`() {
-        repository.updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
-        repository.recordWorkout(tabata, tabata.totalSeconds, workSeconds = 160)
+        repository.settings.updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
+        repository.history.recordWorkout(tabata, tabata.totalSeconds, workSeconds = 160)
         assertNull(viewModel.state.value.summary.calories)
         assertNull(viewModel.state.value.sections.single().items.single().calories)
 
-        repository.updateAppSettings { it.copy(body = BodySettings(weightKg = 70.0, effort = Effort.Hard)) }
+        repository.settings.updateAppSettings { it.copy(body = BodySettings(weightKg = 70.0, effort = Effort.Hard)) }
         val expected = estimateCalories(160, tabata.totalSeconds - 160, 70.0, Effort.Hard)
         assertEquals(expected, viewModel.state.value.sections.single().items.single().calories)
         assertEquals(expected, viewModel.state.value.summary.calories)
@@ -157,7 +157,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
     @Test
     fun `a weekly plan is up next and its workout reads as planned once done`() {
         at(MONDAY)
-        repository.planWeekly(hiit.asPlan(), setOf(4, 5))
+        repository.plans.planWeekly(hiit.asPlan(), setOf(4, 5))
         at(TODAY)
         val before = viewModel.state.value
         assertEquals(listOf(TODAY, TODAY + 1), before.upNext.map { it.epochDay })
@@ -166,7 +166,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
         assertTrue(before.hasPlans)
         assertTrue(!before.isEmpty)
 
-        repository.recordWorkout(hiit.config, hiit.config.totalSeconds)
+        repository.history.recordWorkout(hiit.config, hiit.config.totalSeconds)
         val after = viewModel.state.value
         assertEquals(listOf(TODAY + 1), after.upNext.map { it.epochDay })
         assertTrue(after.sections.single().items.single().planned)
@@ -206,7 +206,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
     @Test
     fun `plans of the program's next day are up next with the days the program comes to`() {
         bells.programs.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
-        repository.planWeekly(PlanWorkout.Lift.ProgramDay, setOf(4, 5))
+        repository.plans.planWeekly(PlanWorkout.Lift.ProgramDay, setOf(4, 5))
 
         val upNext = viewModel.state.value.upNext
         assertEquals(listOf(TODAY, TODAY + 1), upNext.map { it.epochDay })
@@ -215,7 +215,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `a session on Lift does the day's plan of one`() {
-        repository.planOnce(PlanWorkout.Lift.AnySession, TODAY)
+        repository.plans.planOnce(PlanWorkout.Lift.AnySession, TODAY)
         assertNull(assertIs<UpNextItem.Lift>(viewModel.state.value.upNext.single()).programDay)
 
         lift.finished("b1", "Swings", noonOf(TODAY) - 600_000, noonOf(TODAY), 24.0 to 10)
@@ -229,7 +229,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `the program day comes before an interval plan on the same day`() {
-        repository.planOnce(hiit.asPlan(), TODAY)
+        repository.plans.planOnce(hiit.asPlan(), TODAY)
         bells.programs.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
 
         val upNext = viewModel.state.value.upNext
@@ -262,13 +262,13 @@ class HistoryViewModelTest : MainDispatcherTest() {
     @Test
     fun `the goal and streak show once a goal is set`() {
         at(MONDAY - 7)
-        repository.recordWorkout(tabata, tabata.totalSeconds)
+        repository.history.recordWorkout(tabata, tabata.totalSeconds)
         at(TODAY)
-        repository.recordWorkout(tabata, tabata.totalSeconds)
+        repository.history.recordWorkout(tabata, tabata.totalSeconds)
         assertNull(viewModel.state.value.goal)
         assertNull(viewModel.state.value.streak)
 
-        repository.updateAppSettings { it.copy(weeklyGoal = 1) }
+        repository.settings.updateAppSettings { it.copy(weeklyGoal = 1) }
         assertEquals(1, viewModel.state.value.goal)
         assertEquals(Streak(current = 2, best = 2), viewModel.state.value.streak)
     }
@@ -276,9 +276,9 @@ class HistoryViewModelTest : MainDispatcherTest() {
     @Test
     fun `the month moves back and forth and its range sums its days`() {
         at(epochDayOf(2026, 9, 30))
-        repository.recordWorkout(tabata, elapsedSeconds = 60)
+        repository.history.recordWorkout(tabata, elapsedSeconds = 60)
         at(TODAY)
-        repository.recordWorkout(tabata, elapsedSeconds = 120)
+        repository.history.recordWorkout(tabata, elapsedSeconds = 120)
         viewModel.setRange(TrainingRange.Month)
         val october = viewModel.state.value
         assertEquals("10/2026", october.month.title)
@@ -299,7 +299,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `a day opens with its plans and a one-off can be removed`() {
-        repository.planOnce(hiit.asPlan(), TODAY + 2)
+        repository.plans.planOnce(hiit.asPlan(), TODAY + 2)
         viewModel.openDay(TODAY + 2)
         val sheet = requireNotNull(viewModel.state.value.daySheet)
         assertEquals(HistoryDay.On("day ${TODAY + 2}"), sheet.day)
@@ -309,7 +309,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
 
         viewModel.removePlanned(plan.planId)
         assertEquals(emptyList(), viewModel.state.value.daySheet?.plans)
-        assertEquals(emptyList(), repository.planned.value.filter { it.schedule == PlanSchedule.Once(TODAY + 2) })
+        assertEquals(emptyList(), repository.plans.planned.value.filter { it.schedule == PlanSchedule.Once(TODAY + 2) })
         viewModel.openDay(null)
         assertNull(viewModel.state.value.daySheet)
     }
@@ -319,10 +319,10 @@ class HistoryViewModelTest : MainDispatcherTest() {
         val saved = SavedStateHandle()
         fun history() =
             HistoryViewModel(
-                repository,
-                repository,
-                repository,
-                repository,
+                repository.history,
+                repository.presets,
+                repository.plans,
+                repository.settings,
                 bells.sessions,
                 FixedTimestampFormatter,
                 clock = { clock },
@@ -344,13 +344,13 @@ class HistoryViewModelTest : MainDispatcherTest() {
     @Test
     fun `starting a plan puts its shape on the Timer`() {
         viewModel.putOnTimer(hiit.name, hiit.config)
-        assertEquals(hiit.config.workSeconds, repository.config.value.workSeconds)
-        assertEquals(hiit.config.rounds, repository.config.value.rounds)
+        assertEquals(hiit.config.workSeconds, repository.settings.config.value.workSeconds)
+        assertEquals(hiit.config.rounds, repository.settings.config.value.rounds)
     }
 
     @Test
     fun `clearing empties the history`() {
-        repository.recordWorkout(IntervalConfig(), elapsedSeconds = 60)
+        repository.history.recordWorkout(IntervalConfig(), elapsedSeconds = 60)
         viewModel.clear()
         assertTrue(viewModel.state.value.isEmpty)
     }
@@ -362,13 +362,13 @@ class HistoryViewModelTest : MainDispatcherTest() {
         // Sunday night, then Monday: a new week.
         val sunday = MONDAY + 6
         clock = sunday * DAY_MILLIS + DAY_MILLIS - 1_000
-        repository.recordWorkout(tabata, tabata.totalSeconds)
+        repository.history.recordWorkout(tabata, tabata.totalSeconds)
         val viewModel =
             HistoryViewModel(
-                repository,
-                repository,
-                repository,
-                repository,
+                repository.history,
+                repository.presets,
+                repository.plans,
+                repository.settings,
                 bells.sessions,
                 FixedTimestampFormatter,
                 clock = { clock },
@@ -389,14 +389,14 @@ class HistoryViewModelTest : MainDispatcherTest() {
     @Test
     fun `the screen starts from loading until the first state is built`() = runTest {
         Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
-        repository.recordWorkout(tabata, tabata.totalSeconds)
+        repository.history.recordWorkout(tabata, tabata.totalSeconds)
         val computation = StandardTestDispatcher(testScheduler)
         val viewModel =
             HistoryViewModel(
-                repository,
-                repository,
-                repository,
-                repository,
+                repository.history,
+                repository.presets,
+                repository.plans,
+                repository.settings,
                 bells.sessions,
                 FixedTimestampFormatter,
                 clock = { clock },
@@ -414,14 +414,14 @@ class HistoryViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `a Timer step changes the choices and rebuilds nothing else`() {
-        repository.recordWorkout(tabata, tabata.totalSeconds)
+        repository.history.recordWorkout(tabata, tabata.totalSeconds)
         val before = viewModel.state.value
 
-        repository.updateConfig { it.copy(workSeconds = it.workSeconds + 5) }
+        repository.settings.updateConfig { it.copy(workSeconds = it.workSeconds + 5) }
 
         val after = viewModel.state.value
         assertSame(before.sections, after.sections)
         assertSame(before.week, after.week)
-        assertEquals(repository.config.value, after.choices.first().preset.config)
+        assertEquals(repository.settings.config.value, after.choices.first().preset.config)
     }
 }

@@ -23,7 +23,6 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.onClose
 import org.koin.core.module.dsl.withOptions
 import org.koin.core.qualifier.named
-import org.koin.dsl.binds
 import org.koin.dsl.module
 
 /**
@@ -67,13 +66,14 @@ val storageModule: Module = module {
 }
 
 /**
- * The repository over [storageModule], bound as each of its stores too ([SettingsStore], [PresetStore], …) for the
- * screens that take one. The wall clock and the ids it takes are core's (`corePlatformModule`).
+ * [IntervalRepository] over [storageModule], and each of its repositories as the store its screens take
+ * ([SettingsStore] and [WorkoutProgressStore] the settings, [PresetStore], [HistoryStore], [PlanStore]). The wall
+ * clock and the ids it takes are core's (`corePlatformModule`).
  */
 val dataModule: Module = module {
     single {
         IntervalRepository(
-            settings = get(),
+            preferences = get(),
             historyDao = get(),
             presetDao = get(),
             plannedDao = get(),
@@ -82,13 +82,10 @@ val dataModule: Module = module {
             clock = get(),
             ids = get(),
         )
-    }.binds(
-        arrayOf(
-            SettingsStore::class,
-            PresetStore::class,
-            HistoryStore::class,
-            PlanStore::class,
-            WorkoutProgressStore::class,
-        ),
-    )
+    }
+    single<SettingsStore> { get<IntervalRepository>().settings }
+    single<WorkoutProgressStore> { get<IntervalRepository>().settings }
+    single<PresetStore> { get<IntervalRepository>().presets }
+    single<HistoryStore> { get<IntervalRepository>().history }
+    single<PlanStore> { get<IntervalRepository>().plans }
 }

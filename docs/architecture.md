@@ -182,8 +182,8 @@ several core issues:
   (the ticker, cues, course, checkpoint and the service's lifetime); `WorkoutService` and iOS's keeper reach it as
   the `ActiveWorkout` port, and `WorkoutViewModel` only maps its state. It ends when its page leaves the back stack.
 
-- **Resolved — Narrow ports (C3)**: each repository plays roles a consumer takes one by one, bound in Koin as the
-  same single: the interval side's `SettingsStore`, `PresetStore`, `HistoryStore`, `PlanStore` and
+- **Resolved — Narrow ports (C3)**: each side's storage plays roles a consumer takes one by one, each a
+  repository of its own bound in Koin (C1, C2): the interval side's `SettingsStore`, `PresetStore`, `HistoryStore`, `PlanStore` and
   `WorkoutProgressStore` (`interval-data`'s `Stores.kt`), Lift's `SessionStore`, `SetStore`, `ProgramStore`,
   `ExerciseStore` and `GearStore` (`lift-data`'s). What only the app does (`ready`, `writeErrors`, `importAll`,
   `close`) stays on the repository, which the app shell, export, import and `PlanReminderScheduler` (it waits on
@@ -194,6 +194,11 @@ several core issues:
   `ExerciseRepository` and `GearRepository`, sharing one `SerialWriter` so writes of different kinds keep their
   order, with the mappers in `LiftMappers.kt`. `LiftRepository` is their root, what the app alone takes for `ready`,
   `writeErrors`, `importAll` and `close`; Koin binds each store to its repository.
+
+- **Resolved — `IntervalRepository`, split (C2)**: the same shape on the interval side: `SettingsRepository` (the
+  DataStore's settings and the workout under way), `PresetRepository`, `HistoryRepository` and `PlanRepository`,
+  sharing one `SerialWriter`, with the mappers in `IntervalMappers.kt`. `IntervalRepository` is their root, for
+  `ready`, `writeErrors`, `importAll` and `close`.
 
 - **Resolved — `SessionViewModel`, split (D1, D3, F2; D4 in part)**: the Log sheet's draft is `SetDraftEditor`
   (pure: what it goes by is a function it reads at each change), today's plan `TodayPlanEditor`, and the finish and

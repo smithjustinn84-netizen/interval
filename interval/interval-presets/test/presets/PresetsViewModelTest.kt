@@ -19,12 +19,12 @@ import kotlin.test.assertTrue
 
 class PresetsViewModelTest : MainDispatcherTest() {
     private val repository = FakeStorage().repository(now = { 0L })
-    private val viewModel by lazy { PresetsViewModel(repository, repository) }
+    private val viewModel by lazy { PresetsViewModel(repository.presets, repository.settings) }
 
     @Test
     fun `the user's own come first and apart from the built-ins`() {
         val morning = IntervalConfig(prepSeconds = 0, workSeconds = 25, restSeconds = 10, rounds = 8)
-        repository.updateConfig { morning }
+        repository.settings.updateConfig { morning }
         viewModel.save(Preset("Morning", morning))
         val state = viewModel.state.value
         assertEquals(builtInPresets, state.builtIn.map { it.preset })
@@ -37,7 +37,7 @@ class PresetsViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `totals include the user's get-ready countdown`() {
-        repository.updateConfig { IntervalConfig(prepSeconds = 0) }
+        repository.settings.updateConfig { IntervalConfig(prepSeconds = 0) }
         // Tabata without its 10s countdown: 8 × 20s work and 7 × 10s rest.
         assertEquals("3:50", viewModel.state.value.builtIn.first().total)
     }
@@ -46,8 +46,8 @@ class PresetsViewModelTest : MainDispatcherTest() {
     fun `applying selects a preset and deleting removes it`() {
         viewModel.putOnTimer(hiitPreset)
         assertEquals(hiitPreset, viewModel.state.value.builtIn.single { it.selected }.preset)
-        repository.updateConfig { IntervalConfig(workSeconds = 33) }
-        viewModel.save(Preset("Odd", repository.config.value))
+        repository.settings.updateConfig { IntervalConfig(workSeconds = 33) }
+        viewModel.save(Preset("Odd", repository.settings.config.value))
         viewModel.delete(viewModel.state.value.custom.single().preset)
         assertTrue(viewModel.state.value.custom.isEmpty())
         assertTrue(viewModel.state.value.canSaveCurrent)
@@ -72,7 +72,7 @@ class PresetsViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `timelines are scaled to the longest workout on the screen`() {
-        repository.updateConfig { builtInPresets.first().config }
+        repository.settings.updateConfig { builtInPresets.first().config }
         val state = viewModel.state.value
         val longest = state.builtIn.maxBy { it.share }
         assertEquals("Long efforts", longest.preset.name)
@@ -83,7 +83,9 @@ class PresetsViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `unsaved settings longer than every preset set the scale`() {
-        repository.updateConfig { IntervalConfig(prepSeconds = 10, workSeconds = 60, restSeconds = 30, rounds = 12) }
+        repository.settings.updateConfig {
+            IntervalConfig(prepSeconds = 10, workSeconds = 60, restSeconds = 30, rounds = 12)
+        }
         val state = viewModel.state.value
         assertTrue(state.canSaveCurrent)
         assertEquals(1f, state.currentShare)
@@ -101,12 +103,12 @@ class PresetsViewModelTest : MainDispatcherTest() {
     @Test
     fun `editing the preset on the Timer puts its new shape there`() {
         val morning = IntervalConfig(prepSeconds = 5, workSeconds = 25, restSeconds = 10, rounds = 8)
-        repository.updateConfig { morning }
+        repository.settings.updateConfig { morning }
         viewModel.save(Preset("Morning", morning))
         val saved = viewModel.state.value.custom.single().preset
         viewModel.save(saved.copy(config = saved.config.copy(rounds = 10)))
-        assertEquals(10, repository.config.value.rounds)
-        assertEquals(5, repository.config.value.prepSeconds)
+        assertEquals(10, repository.settings.config.value.rounds)
+        assertEquals(5, repository.settings.config.value.prepSeconds)
         assertFalse(viewModel.state.value.canSaveCurrent)
         assertTrue(viewModel.state.value.custom.single().selected)
     }
@@ -117,38 +119,38 @@ class PresetsViewModelTest : MainDispatcherTest() {
         viewModel.save(Preset("Odd", IntervalConfig(workSeconds = 33)))
         val saved = viewModel.state.value.custom.single().preset
         viewModel.save(saved.copy(config = saved.config.copy(rounds = 3)))
-        assertEquals(builtInPresets.first().config.rounds, repository.config.value.rounds)
+        assertEquals(builtInPresets.first().config.rounds, repository.settings.config.value.rounds)
     }
 
     @Test
     fun `saving the Timer's settings with a new shape keeps that shape on the Timer`() {
-        repository.updateConfig { IntervalConfig(workSeconds = 33) }
+        repository.settings.updateConfig { IntervalConfig(workSeconds = 33) }
         viewModel.saveCurrent(Preset("Sprints", IntervalConfig(workSeconds = 33, rounds = 4)))
-        assertEquals(4, repository.config.value.rounds)
+        assertEquals(4, repository.settings.config.value.rounds)
         assertEquals("Sprints", viewModel.state.value.custom.single { it.selected }.preset.name)
     }
 
     @Test
     fun `each preset estimates its calories with the user's get-ready countdown`() {
-        repository.updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
+        repository.settings.updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
         assertTrue(viewModel.state.value.rows.all { it.calories == null })
-        repository.updateConfig { it.copy(prepSeconds = 30) }
+        repository.settings.updateConfig { it.copy(prepSeconds = 30) }
         val body = BodySettings(weightKg = 80.0, effort = Effort.Max)
-        repository.updateAppSettings { it.copy(body = body) }
+        repository.settings.updateAppSettings { it.copy(body = body) }
         val tabata = viewModel.state.value.builtIn.first()
         assertEquals(body.plannedCalories(tabata.preset.config.copy(prepSeconds = 30)), tabata.calories)
-        assertEquals(body.plannedCalories(repository.config.value), viewModel.state.value.currentCalories)
+        assertEquals(body.plannedCalories(repository.settings.config.value), viewModel.state.value.currentCalories)
     }
 
     @Test
     fun `a preset is estimated as it would run from the Timer`() {
-        repository.updateAppSettings { it.copy(body = BodySettings(weightKg = 70.0)) }
-        repository.updateConfig { it.copy(activity = Activity.Bike) }
+        repository.settings.updateAppSettings { it.copy(body = BodySettings(weightKg = 70.0)) }
+        repository.settings.updateConfig { it.copy(activity = Activity.Bike) }
         val rows = viewModel.state.value.builtIn.associateBy { it.preset.name }
         val tabata = rows.getValue("Tabata")
         val hangboard = rows.getValue("Hangboard")
-        val body = repository.appSettings.value.body
-        val prep = repository.config.value.prepSeconds
+        val body = repository.settings.appSettings.value.body
+        val prep = repository.settings.config.value.prepSeconds
         // Tabata names no activity, so it would run as the Timer's; Hangboard names its own.
         assertEquals(
             body.plannedCalories(tabata.preset.config.copy(prepSeconds = prep, activity = Activity.Bike)),
@@ -159,7 +161,7 @@ class PresetsViewModelTest : MainDispatcherTest() {
         assertEquals(Activity.Bike, tabata.estimatedAs)
         assertEquals(null, hangboard.estimatedAs)
 
-        repository.updateConfig { it.copy(activity = Activity.General) }
+        repository.settings.updateConfig { it.copy(activity = Activity.General) }
         assertEquals(null, viewModel.state.value.builtIn.first { it.preset.name == "Tabata" }.estimatedAs)
     }
 }

@@ -46,7 +46,7 @@ class LiftFlowTest {
 
     @Test
     fun `the goal set on Plan shows on Lift`() = appTest { app ->
-        app.repository.updateAppSettings { it.copy(weeklyGoal = 3) }
+        app.repository.settings.updateAppSettings { it.copy(weeklyGoal = 3) }
         tab("Lift").performClick()
         waitForText("3 more to hit 3")
     }

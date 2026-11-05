@@ -41,9 +41,9 @@ class AppDataImporter(
         val liftImport = if (withSettings) plan.lift.copy(restSeconds = plan.settings.restSeconds) else plan.lift
         lift.importAll(liftImport)
         if (withSettings) {
-            intervals.updateAppSettings { plan.settings.app }
-            intervals.updateCueSettings { plan.settings.cues }
-            intervals.updateConfig { plan.settings.timer }
+            intervals.settings.updateAppSettings { plan.settings.app }
+            intervals.settings.updateCueSettings { plan.settings.cues }
+            intervals.settings.updateConfig { plan.settings.timer }
         }
         return plan.added
     }
@@ -55,9 +55,9 @@ class AppDataImporter(
 
     /** What both sides hold right now, taken on the caller's thread as the repositories' flows stand. */
     private fun holdings() = Holdings(
-        history = intervals.history.value,
-        presets = intervals.presets.value,
-        planned = intervals.planned.value,
+        history = intervals.history.history.value,
+        presets = intervals.presets.presets.value,
+        planned = intervals.plans.planned.value,
         sessions = lift.sessions.sessions.value,
         exercises = lift.exercises.customExercises.value,
         programs = lift.programs.customPrograms.value,

@@ -176,7 +176,7 @@ internal fun AppContent(
         // Saved settings take milliseconds to read. Until then the window background shows, rather than
         // screens built from defaults or a flash of the wrong theme.
         if (!ready) return@KoinIsolatedContext
-        val settings by repository.appSettings.collectAsStateWithLifecycle()
+        val settings by repository.settings.appSettings.collectAsStateWithLifecycle()
         val dark = when (settings.theme) {
             ThemeMode.System -> isSystemInDarkTheme()
             ThemeMode.Light -> false

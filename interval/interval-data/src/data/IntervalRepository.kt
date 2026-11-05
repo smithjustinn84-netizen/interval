@@ -1,162 +1,68 @@
 package dev.justinsmith.interval.data
 
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.emptyPreferences
 import co.touchlab.kermit.Logger
-import dev.justinsmith.interval.model.AppSettings
-import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.HistoryEntry
-import dev.justinsmith.interval.model.PerceivedEffort
-import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
-import dev.justinsmith.interval.model.WorkoutProgress
-import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.IdGenerator
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.storage.SerialWriter
 import dev.justinsmith.interval.storage.StorageError
-import dev.justinsmith.interval.storage.orEmptyOnError
-import dev.justinsmith.interval.timer.DAYS_PER_WEEK
-import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
-import dev.justinsmith.interval.timer.builtInPresets
-import dev.justinsmith.interval.timer.matching
-import dev.justinsmith.interval.timer.storedName
-import dev.justinsmith.interval.timer.withPreset
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * The app's saved state: the current setup, cue toggles, app settings, custom presets, workout history and
- * planned workouts.
- *
- * Settings live in [settings] (DataStore) and collections in Room ([historyDao], [presetDao], [plannedDao]).
- * Everything is read once into memory, after which [ready] turns true and every [StateFlow] holds what was
- * stored. Settings then change in memory first, synchronously, so a value set a moment ago is what the next
- * screen reads. Collections follow the database. Writes run in the background on [scope], one at a time in
- * the order they were made.
+ * The interval side's saved state, the one way into storage: a repository per kind of thing kept, [settings] (the
+ * settings DataStore: the Timer's setup, cues, app settings and the workout under way), [presets], [history] and
+ * [plans] (Room), each the store its screens take. Their writes go through one queue, on [scope], in the order
+ * they were made, so a save of one kind can't overtake an earlier one of another: a preset applied and saved
+ * lands as it was made. Everything is read into memory before [ready] turns true. What only the app does is here:
+ * [importAll], [writeErrors] and [close].
  */
-// The one way into storage, so every collection's reads and writes are here, side by side.
-@Suppress("detekt.TooManyFunctions")
 class IntervalRepository(
-    private val settings: DataStore<Preferences>,
-    private val historyDao: HistoryDao,
-    private val presetDao: PresetDao,
-    private val plannedDao: PlannedDao,
+    preferences: DataStore<Preferences>,
+    historyDao: HistoryDao,
+    presetDao: PresetDao,
+    plannedDao: PlannedDao,
     private val importDao: ImportDao,
-    private val scope: CoroutineScope,
+    scope: CoroutineScope,
     private val clock: WallClock,
     private val ids: IdGenerator = IdGenerator.Random,
-) : SettingsStore, PresetStore, HistoryStore, PlanStore, WorkoutProgressStore {
+) {
     private val log = Logger.withTag("IntervalRepository")
     private val writer = SerialWriter(scope, log)
 
     /** Each save that failed, as it fails, for the app to say so: the write itself is dropped. */
     val writeErrors: SharedFlow<StorageError> get() = writer.errors
 
+    /** The Timer's setup, the cue toggles, the app's settings and the workout under way. */
+    val settings = SettingsRepository(preferences, writer, scope)
+
+    /** The built-in presets and the user's own. */
+    val presets = PresetRepository(presetDao, settings, writer, scope)
+
+    /** The finished workouts. */
+    val history = HistoryRepository(historyDao, writer, clock, ids, scope)
+
+    /** The planned workouts. */
+    val plans = PlanRepository(plannedDao, writer, clock, scope)
+
     private val _ready = MutableStateFlow(false)
 
-    /** True once every value below has been read from disk. Until then they hold defaults. */
+    /** True once every repository has read what it keeps. Until then their values hold defaults. */
     val ready: StateFlow<Boolean> = _ready.asStateFlow()
 
-    private val _config = MutableStateFlow(IntervalConfig())
-    override val config: StateFlow<IntervalConfig> = _config.asStateFlow()
-
-    private val _cueSettings = MutableStateFlow(CueSettings())
-    override val cueSettings: StateFlow<CueSettings> = _cueSettings.asStateFlow()
-
-    private val _appSettings = MutableStateFlow(AppSettings())
-    override val appSettings: StateFlow<AppSettings> = _appSettings.asStateFlow()
-
-    private val _presets = MutableStateFlow(builtInPresets)
-
-    /** Every preset the lists show: the built-ins, then the user's. Read before [ready] turns true. */
-    override val presets: StateFlow<List<Preset>> = _presets.asStateFlow()
-
-    /**
-     * The user's presets, in the order they were saved: [presets] without the built-ins, worked out from it, so
-     * the two never disagree. It can trail [presets] for a moment after a change, never the other way.
-     */
-    override val customPresets: StateFlow<List<Preset>> =
-        presets.map { all -> all.filter { it.custom } }.stateIn(scope, SharingStarted.Eagerly, emptyList())
-
-    private val _history = MutableStateFlow(emptyList<HistoryEntry>())
-
-    /** Newest first. */
-    override val history: StateFlow<List<HistoryEntry>> = _history.asStateFlow()
-
-    private val _planned = MutableStateFlow(emptyList<PlannedWorkout>())
-
-    /** In the order they were planned. */
-    override val planned: StateFlow<List<PlannedWorkout>> = _planned.asStateFlow()
-
-    private val _workoutProgress = MutableStateFlow<WorkoutProgress?>(null)
-
-    /** The workout under way or just over, as it last stood, or null when none is: see [WorkoutProgress]. */
-    override val workoutProgress: StateFlow<WorkoutProgress?> = _workoutProgress.asStateFlow()
-
     init {
-        // Each list is mapped upstream of its fallback, so a row that fails to map counts as a failed read.
         scope.launch {
-            val presetsLoaded = CompletableDeferred<Unit>()
-            val historyLoaded = CompletableDeferred<Unit>()
-            val plannedLoaded = CompletableDeferred<Unit>()
-            launch {
-                presetDao.observeAll()
-                    .map { rows -> rows.map { it.toDomain() } }
-                    .orEmptyOnError("presets", log)
-                    .collect { custom ->
-                        _presets.value = builtInPresets + custom
-                        presetsLoaded.complete(Unit)
-                    }
-            }
-            launch {
-                historyDao.observeAll()
-                    .map { rows -> rows.map { it.toDomain() } }
-                    .orEmptyOnError("history", log)
-                    .collect { entries ->
-                        _history.value = entries
-                        historyLoaded.complete(Unit)
-                    }
-            }
-            launch {
-                plannedDao.observeAll()
-                    .map { rows -> rows.mapNotNull { it.toDomain() } }
-                    .orEmptyOnError("plans", log)
-                    .collect { plans ->
-                        _planned.value = plans
-                        plannedLoaded.complete(Unit)
-                    }
-            }
-            // An unreadable settings file falls back to the defaults rather than keeping the app from starting.
-            val stored = settings.data
-                .catch { e ->
-                    log.e(e) { "Couldn't read settings" }
-                    emit(emptyPreferences())
-                }
-                .first()
-            _config.value = stored.toConfig()
-            _cueSettings.value = stored.toCueSettings()
-            _appSettings.value = stored.toAppSettings()
-            _workoutProgress.value = stored.toWorkoutProgress()
-            presetsLoaded.await()
-            historyLoaded.await()
-            plannedLoaded.await()
+            listOf(settings.ready, presets.ready, history.ready, plans.ready).forEach { read -> read.first { it } }
             _ready.value = true
         }
     }
@@ -167,153 +73,6 @@ class IntervalRepository(
      */
     suspend fun close() {
         writer.close()
-    }
-
-    override fun updateConfig(transform: (IntervalConfig) -> IntervalConfig) {
-        updateSetting(_config, transform) { prefs, config -> prefs.write(config) }
-    }
-
-    override fun updateCueSettings(transform: (CueSettings) -> CueSettings) {
-        updateSetting(_cueSettings, transform) { prefs, cues -> prefs.write(cues) }
-    }
-
-    override fun updateAppSettings(transform: (AppSettings) -> AppSettings) {
-        updateSetting(_appSettings, transform) { prefs, app -> prefs.write(app) }
-    }
-
-    /** Keeps [progress] as the workout under way, for a restart to pick up; null once there is none. */
-    override fun saveWorkoutProgress(progress: WorkoutProgress?) {
-        updateSetting(_workoutProgress, { progress }) { prefs, saved -> prefs.write(saved) }
-    }
-
-    // In memory at once, so the next read sees it; on disk in the background, the value as it is then.
-    private fun <T> updateSetting(
-        value: MutableStateFlow<T>,
-        transform: (T) -> T,
-        write: (MutablePreferences, T) -> Unit,
-    ) {
-        value.update(transform)
-        writer.persist { settings.edit { write(it, value.value) } }
-    }
-
-    /** Puts [preset] on the Timer, keeping the user's get-ready countdown and, mostly, activity: see [withPreset]. */
-    override fun applyPreset(preset: Preset) {
-        updateConfig { it.withPreset(preset) }
-    }
-
-    /**
-     * Saves [preset] as a new one of the user's own, under its [storedName]: a blank name becomes its
-     * shape's ("40/20 ×6"), and one another preset has gets a number ("Tabata 2").
-     */
-    override fun savePreset(preset: Preset) {
-        writer.persist { presetDao.insert(preset.copy(id = null).named().toEntity()) }
-    }
-
-    /** Saves [preset] as a new one of the user's own and puts its shape on the Timer. */
-    override fun saveAndApplyPreset(preset: Preset) {
-        applyPreset(preset)
-        savePreset(preset)
-    }
-
-    /**
-     * Rewrites one of the user's own presets, found by its id: its name (kept unique among the others) and
-     * shape. When it is the preset on the Timer the new shape goes there too, so the two stay in step
-     * rather than leaving the old shape on the Timer, unsaved.
-     */
-    override fun updatePreset(preset: Preset) {
-        if (preset.id == null) return
-        // Asked now: once the write lands, the list already holds the new shape.
-        val onTimer = _presets.value.matching(_config.value)?.id == preset.id
-        writer.persist { presetDao.update(preset.named().toEntity()) }
-        if (onTimer) applyPreset(preset)
-    }
-
-    /** Removes one of the user's own presets. Built-ins have no id and are left alone. */
-    override fun deletePreset(preset: Preset) {
-        val id = preset.id ?: return
-        writer.persist { presetDao.delete(id) }
-    }
-
-    /**
-     * Puts a preset [deletePreset] removed back under its own id, so it returns to its place in the
-     * list and any plan made from it finds it again: Undo. Its name is kept unique as on a save.
-     */
-    override fun restorePreset(preset: Preset) {
-        if (preset.id == null) return
-        writer.persist { presetDao.insert(preset.named().toEntity()) }
-    }
-
-    // Named inside the write against what is stored, not against [presets]: that follows the database, so
-    // two saves in a row would both miss the other and take the same name.
-    private suspend fun Preset.named(): Preset =
-        copy(name = storedName(builtInPresets + presetDao.all().map { it.toDomain() }))
-
-    /**
-     * Records a workout that ran for [elapsedSeconds], [workSeconds] of them working; [endedEarly] when it
-     * stopped before the last round. Returns the uid it is stored under, for [reflectOnWorkout].
-     */
-    override fun recordWorkout(
-        config: IntervalConfig,
-        elapsedSeconds: Int,
-        endedEarly: Boolean,
-        workSeconds: Int?,
-        startedAtEpochMillis: Long?,
-    ): String {
-        val now = clock.nowMillis()
-        val uid = ids.newId()
-        val entry =
-            HistoryEntry(
-                now,
-                config,
-                elapsedSeconds,
-                endedEarly,
-                workSeconds,
-                startedAtEpochMillis = startedAtEpochMillis,
-            )
-        writer.persist { historyDao.insert(entry.toEntity(uid = uid, updatedAtEpochMillis = now)) }
-        return uid
-    }
-
-    /**
-     * Keeps how the workout [uid] felt, as said on its summary: [effort] and a [note], blank for none. In order
-     * after the write that recorded it, so it never lands first.
-     */
-    override fun reflectOnWorkout(uid: String, effort: PerceivedEffort?, note: String) {
-        val now = clock.nowMillis()
-        val kept = note.trim().take(PerceivedEffort.NOTE_MAX_LENGTH).ifEmpty { null }
-        writer.persist { historyDao.reflect(uid, effort?.level, kept, now) }
-    }
-
-    /** In order after the write that recorded the workout, so it never lands first. */
-    override fun keepHeartRate(uid: String, heartRate: HeartRate) {
-        val now = clock.nowMillis()
-        writer.persist { historyDao.keepHeartRate(uid, heartRate.averageBpm, heartRate.peakBpm, now) }
-    }
-
-    override fun keepHeartRateOf(id: Long, heartRate: HeartRate) {
-        val now = clock.nowMillis()
-        writer.persist { historyDao.keepHeartRateOf(id, heartRate.averageBpm, heartRate.peakBpm, now) }
-    }
-
-    /**
-     * Removes one workout from the history, by the id it is stored under. Its row stays behind, marked
-     * deleted.
-     */
-    override fun deleteWorkout(id: Long) {
-        val now = clock.nowMillis()
-        writer.persist { historyDao.delete(id, now) }
-    }
-
-    /** Brings back a workout [deleteWorkout] removed: Undo. Its row was only marked, so nothing is lost. */
-    override fun restoreWorkout(id: Long) {
-        val now = clock.nowMillis()
-        writer.persist { historyDao.restore(id, now) }
-    }
-
-    /** Removes every workout from the history, leaving each row marked deleted as [deleteWorkout] does. */
-    override fun clearHistory() {
-        val now = clock.nowMillis()
-        writer.persist { historyDao.clear(now) }
     }
 
     /**
@@ -329,32 +88,4 @@ class IntervalRepository(
         val names = planned.map { (it.workout as? PlanWorkout.Interval)?.takeIf { w -> w.presetId == null }?.name }
         writer.await { importDao.importAll(rows, presetRows, planRows, names) }
     }
-
-    /** Plans [workout] for every week on each of [weekdays] (1 for Monday through 7): one plan per day. */
-    override fun planWeekly(workout: PlanWorkout, weekdays: Set<Int>) {
-        val days = weekdays.filter { it in 1..DAYS_PER_WEEK }.sorted()
-        if (days.isEmpty()) return
-        writer.persist { plannedDao.insert(days.map { workout.planned(PlanSchedule.Weekly(it)).toEntity() }) }
-    }
-
-    /** Plans [workout] once, on [epochDay]. */
-    override fun planOnce(workout: PlanWorkout, epochDay: Long) {
-        writer.persist { plannedDao.insert(listOf(workout.planned(PlanSchedule.Once(epochDay)).toEntity())) }
-    }
-
-    override fun removePlanned(id: Long) {
-        writer.persist { plannedDao.delete(id) }
-    }
-
-    /** Puts a plan [removePlanned] took off back as it was, its id and the day it was made included: Undo. */
-    override fun restorePlanned(plan: PlannedWorkout) {
-        writer.persist { plannedDao.insert(listOf(plan.toEntity())) }
-    }
-
-    private fun PlanWorkout.planned(schedule: PlanSchedule) = PlannedWorkout(
-        id = 0,
-        workout = this,
-        schedule = schedule,
-        createdAtEpochMillis = clock.nowMillis(),
-    )
 }

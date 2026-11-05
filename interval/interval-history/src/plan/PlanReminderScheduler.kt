@@ -51,10 +51,10 @@ class PlanReminderScheduler(
         scope.launch {
             awaitReady()
             combine(
-                repository.planned,
-                repository.history,
+                repository.plans.planned,
+                repository.history.history,
                 lift.sessions,
-                repository.appSettings,
+                repository.settings.appSettings,
                 clock.days(timestamps, dayCheckMillis),
             ) { planned, history, sessions, app, today ->
                 remindersFrom(log(planned, history, sessions, today), app, today)
@@ -64,7 +64,7 @@ class PlanReminderScheduler(
 
     override suspend fun reminderOn(epochDay: Long): PlanReminder? {
         awaitReady()
-        val minute = repository.appSettings.value.reminderMinuteOfDay ?: return null
+        val minute = repository.settings.appSettings.value.reminderMinuteOfDay ?: return null
         return reminderOn(logNow(), minute, epochDay)
     }
 
@@ -72,7 +72,7 @@ class PlanReminderScheduler(
     // waits on it, and a set the same as before still needs setting again after the clock moves.
     override suspend fun reschedule() {
         awaitReady()
-        scheduleLogged(remindersFrom(logNow(), repository.appSettings.value, today()))
+        scheduleLogged(remindersFrom(logNow(), repository.settings.appSettings.value, today()))
     }
 
     private suspend fun awaitReady() {
@@ -86,7 +86,7 @@ class PlanReminderScheduler(
         }.orEmpty()
 
     private fun logNow(): TrainingLog =
-        log(repository.planned.value, repository.history.value, lift.sessions.value, today())
+        log(repository.plans.planned.value, repository.history.history.value, lift.sessions.value, today())
 
     private fun log(
         planned: List<PlannedWorkout>,

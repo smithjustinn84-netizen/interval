@@ -54,11 +54,11 @@ class AppDataExporter(
     fun bundle(now: Long): ExportBundle = ExportBundle(
         version = appInfo.version,
         exportedAtEpochMillis = now,
-        settings = intervals.appSettings.value.export(intervals.cueSettings.value),
-        timer = intervals.config.value.export(),
-        presets = intervals.customPresets.value.map { it.export() },
-        history = intervals.history.value.map { it.export() },
-        plan = intervals.planned.value.map { it.export() },
+        settings = intervals.settings.appSettings.value.export(intervals.settings.cueSettings.value),
+        timer = intervals.settings.config.value.export(),
+        presets = intervals.presets.customPresets.value.map { it.export() },
+        history = intervals.history.history.value.map { it.export() },
+        plan = intervals.plans.planned.value.map { it.export() },
         lift = LiftExport(
             bellsKg = lift.gear.bells.value,
             barKg = lift.gear.bar.value,

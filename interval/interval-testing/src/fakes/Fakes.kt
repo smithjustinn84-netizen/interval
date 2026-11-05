@@ -203,7 +203,7 @@ fun TestScope.deferredStorageScope(): CoroutineScope =
 
 /** Saves the Timer's current settings under [name], as the save buttons do. */
 fun IntervalRepository.saveCurrentAsPreset(name: String) {
-    savePreset(Preset(name, config.value))
+    presets.savePreset(Preset(name, settings.config.value))
 }
 
 /** Stands in for the real `storageModule`, which opens files on disk. */

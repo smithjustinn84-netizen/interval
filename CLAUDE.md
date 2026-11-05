@@ -104,8 +104,11 @@ interval/            the interval timer
                      describe parser, `AppSettings`, `HistoryEntry`, `PlannedWorkout`, `LiftWorkout`,
                      `WorkoutProgress`; over `core-time` alone, neither `core` nor anything of Lift's (History
                      makes a `LiftWorkout` from a Lift session, `asLiftWorkouts` in interval-history)
-  interval-data      `IntervalRepository`, `AppDatabase` (Room, KSP, `schemas/`), the settings DataStore,
-                     `PlatformStorage`, `storageModule`/`dataModule` (di/)
+  interval-data      `IntervalRepository`, the root of a repository per store (`SettingsRepository`, the
+                     DataStore's settings and the workout under way; `PresetRepository`, `HistoryRepository`,
+                     `PlanRepository`, over one `SerialWriter`; the mappers in `IntervalMappers.kt`), `AppDatabase`
+                     (Room, KSP, `schemas/`), the settings DataStore, `PlatformStorage`, `storageModule`/`dataModule`
+                     (di/)
   interval-platform-api  what the features ask of the platform, over `interval-domain` and no Compose:
                      `CuePlayer` (`Beep`, `Speech`, `Haptic`), `playCue`, `ActiveWorkout`, `BackgroundWorkout`,
                      `WorkoutStatus`, `StatusColors` (the notification's ARGB), `PlanReminders`, `PlanReminderSource`
@@ -227,10 +230,11 @@ toolchain (`$compose.*`).
   `AppContent`. Neither side's modules
   bind anything the other needs. Add a module per domain or feature. Constructor-inject everything; keep platform calls (the clock, cues, storage) behind
   injected interfaces (`WallClock`, `IdGenerator`, `CuePlayer`, `PlatformStorage`) so tests can fake them.
-- **Storage**: `IntervalRepository` (`interval/interval-data/src/data/`) is the only thing that touches it. A screen
-  takes the roles it plays rather than the repository: `SettingsStore`, `PresetStore`, `HistoryStore`, `PlanStore`,
-  `WorkoutProgressStore` (`Stores.kt` beside it; Lift's `SessionStore`, `SetStore`, `ProgramStore`, `ExerciseStore`,
-  `GearStore` beside `LiftRepository`, each a repository of its own under it), each bound to its single; `InMemory*Store` fakes stand in for one. What it stores
+- **Storage**: `IntervalRepository` (`interval/interval-data/src/data/`) and its repositories are the only things
+  that touch it. A screen takes the store it uses rather than a repository: `SettingsStore`, `PresetStore`,
+  `HistoryStore`, `PlanStore`, `WorkoutProgressStore` (`Stores.kt` beside it; Lift's `SessionStore`, `SetStore`,
+  `ProgramStore`, `ExerciseStore`, `GearStore` beside `LiftRepository`), each a repository of its own under its
+  side's root (`repository.settings`, `repository.history`, …) and bound to it; `InMemory*Store` fakes stand in for one. What it stores
   is described by plain models in `interval/interval-domain/src/model/` (`AppSettings`, `HistoryEntry`, `PlannedWorkout`,
   `LiftWorkout`, `LoggedWorkout`); Room entities and DataStore keys stay in `data/`, behind its mappers. Settings live
   in DataStore Preferences (`SettingsPreferences.kt`); history and custom presets in Room

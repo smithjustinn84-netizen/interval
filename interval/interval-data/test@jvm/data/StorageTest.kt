@@ -59,8 +59,8 @@ class StorageTest {
 
     @Test
     fun `a change is readable straight away, before it reaches disk`() = withApp { repository ->
-        repository.updateConfig { it.copy(workSeconds = 50) }
-        assertEquals(50, repository.config.value.workSeconds)
+        repository.settings.updateConfig { it.copy(workSeconds = 50) }
+        assertEquals(50, repository.settings.config.value.workSeconds)
     }
 
     @Test
@@ -78,52 +78,53 @@ class StorageTest {
             workStepSeconds = 15,
         )
         withApp { repository ->
-            repository.updateConfig { config }
-            repository.planOnce(Preset("Long", config).asPlan(), epochDay = 20_744)
-            repository.updateCueSettings { it.copy(halfway = false) }
-            repository.updateAppSettings {
+            repository.settings.updateConfig { config }
+            repository.plans.planOnce(Preset("Long", config).asPlan(), epochDay = 20_744)
+            repository.settings.updateCueSettings { it.copy(halfway = false) }
+            repository.settings.updateAppSettings {
                 AppSettings(theme = ThemeMode.Light, keepScreenOn = false, reminderMinuteOfDay = 450)
             }
             repository.saveCurrentAsPreset("Long")
-            repository.recordWorkout(config, elapsedSeconds = 300, endedEarly = true)
+            repository.history.recordWorkout(config, elapsedSeconds = 300, endedEarly = true)
             settled(repository) {
-                it.customPresets.value.size == 1 && it.history.value.size == 1 && it.planned.value.size == 1
+                it.presets.customPresets.value.size == 1 && it.history.history.value.size == 1 &&
+                    it.plans.planned.value.size == 1
             }
             settledOnDisk { it.toConfig() == config && !it.toCueSettings().halfway && !it.toAppSettings().keepScreenOn }
         }
         withApp { repository ->
             // Ready means every value is the stored one, not a default.
             assertTrue(repository.ready.value)
-            assertEquals(config, repository.config.value)
-            assertEquals(CueSettings(halfway = false), repository.cueSettings.value)
+            assertEquals(config, repository.settings.config.value)
+            assertEquals(CueSettings(halfway = false), repository.settings.cueSettings.value)
             assertEquals(
                 AppSettings(theme = ThemeMode.Light, keepScreenOn = false, reminderMinuteOfDay = 450),
-                repository.appSettings.value,
+                repository.settings.appSettings.value,
             )
-            assertEquals(Preset("Long", config, id = 1), repository.customPresets.value.single())
+            assertEquals(Preset("Long", config, id = 1), repository.presets.customPresets.value.single())
             assertEquals(
                 HistoryEntry(NOW, config, elapsedSeconds = 300, endedEarly = true, id = 1),
-                repository.history.value.single(),
+                repository.history.history.value.single(),
             )
-            assertEquals(Preset("Long", config).asPlan(), repository.planned.value.single().workout)
+            assertEquals(Preset("Long", config).asPlan(), repository.plans.planned.value.single().workout)
         }
     }
 
     @Test
     fun `after many quick changes the last one is what's saved`() {
         withApp { repository ->
-            repeat(40) { repository.updateConfig { it.stepped(ConfigField.Rounds, +1) } }
+            repeat(40) { repository.settings.updateConfig { it.stepped(ConfigField.Rounds, +1) } }
             val expected = IntervalConfig().rounds + 40
-            assertEquals(expected, repository.config.value.rounds)
+            assertEquals(expected, repository.settings.config.value.rounds)
             settledOnDisk { it.toConfig().rounds == expected }
         }
-        withApp { repository -> assertEquals(IntervalConfig().rounds + 40, repository.config.value.rounds) }
+        withApp { repository -> assertEquals(IntervalConfig().rounds + 40, repository.settings.config.value.rounds) }
     }
 
     @Test
     fun `a theme this build doesn't know reads as the default`() {
         withApp { _ -> settings.edit { it[stringPreferencesKey("theme")] = "Sepia" } }
-        withApp { repository -> assertEquals(AppSettings().theme, repository.appSettings.value.theme) }
+        withApp { repository -> assertEquals(AppSettings().theme, repository.settings.appSettings.value.theme) }
     }
 
     @Test
@@ -141,13 +142,13 @@ class StorageTest {
             connection.execSQL("PRAGMA user_version = 1")
         }
         withApp { repository ->
-            val entry = repository.history.value.single()
+            val entry = repository.history.history.value.single()
             assertEquals(IntervalConfig(10, 20, 10, rounds = 8), entry.config)
             assertEquals(null, entry.workActiveSeconds)
-            settled(repository) { it.customPresets.value.isNotEmpty() }
+            settled(repository) { it.presets.customPresets.value.isNotEmpty() }
             assertEquals(
                 Preset("Mine", IntervalConfig(10, 40, 20, rounds = 6), id = 1),
-                repository.customPresets.value.single(),
+                repository.presets.customPresets.value.single(),
             )
         }
     }
@@ -174,11 +175,11 @@ class StorageTest {
             }
         }
         withApp { repository ->
-            assertEquals(1, repository.config.value.rounds)
-            assertEquals(5, repository.config.value.workSeconds)
-            assertEquals(listOf(8, 1), repository.history.value.map { it.config.rounds })
-            settled(repository) { it.customPresets.value.isNotEmpty() }
-            assertEquals(IntervalConfig(10, 5, 20, rounds = 1), repository.customPresets.value.single().config)
+            assertEquals(1, repository.settings.config.value.rounds)
+            assertEquals(5, repository.settings.config.value.workSeconds)
+            assertEquals(listOf(8, 1), repository.history.history.value.map { it.config.rounds })
+            settled(repository) { it.presets.customPresets.value.isNotEmpty() }
+            assertEquals(IntervalConfig(10, 5, 20, rounds = 1), repository.presets.customPresets.value.single().config)
         }
     }
 
@@ -194,10 +195,10 @@ class StorageTest {
             connection.execSQL("PRAGMA user_version = 2")
         }
         withApp { repository ->
-            val entry = repository.history.value.single()
+            val entry = repository.history.history.value.single()
             assertEquals(IntervalConfig(10, 20, 10, rounds = 8, activity = Activity.Rower), entry.config)
             assertEquals(160, entry.workActiveSeconds)
-            assertEquals(emptyList(), repository.planned.value)
+            assertEquals(emptyList(), repository.plans.planned.value)
         }
     }
 
@@ -215,13 +216,13 @@ class StorageTest {
             connection.execSQL("PRAGMA user_version = 3")
         }
         withApp { repository ->
-            assertEquals(listOf(350, 300, 250), repository.history.value.map { it.elapsedSeconds })
+            assertEquals(listOf(350, 300, 250), repository.history.history.value.map { it.elapsedSeconds })
             val rows = database.historyDao().all()
             assertEquals(3, rows.map { it.uid }.toSet().size)
             assertTrue(rows.all { it.uid.length == 32 && !it.deleted && it.updatedAtEpochMillis == 0L })
             // The uid index is in place: a new workout still records beside the old ones.
-            repository.recordWorkout(IntervalConfig(), elapsedSeconds = 1)
-            settled(repository) { it.history.value.size == 4 }
+            repository.history.recordWorkout(IntervalConfig(), elapsedSeconds = 1)
+            settled(repository) { it.history.history.value.size == 4 }
         }
     }
 
@@ -240,7 +241,7 @@ class StorageTest {
             connection.execSQL("PRAGMA user_version = 4")
         }
         withApp { repository ->
-            assertEquals(listOf(240), repository.history.value.map { it.elapsedSeconds })
+            assertEquals(listOf(240), repository.history.history.value.map { it.elapsedSeconds })
         }
         BundledSQLiteDriver().open(directory.resolve(DATABASE_NAME).absolutePath).use { connection ->
             connection.prepare("SELECT name FROM sqlite_master WHERE name = 'sibling_session'").use {
@@ -261,7 +262,7 @@ class StorageTest {
             connection.execSQL("PRAGMA user_version = 5")
         }
         withApp { repository ->
-            val plan = repository.planned.value.single()
+            val plan = repository.plans.planned.value.single()
             assertEquals(PlanSchedule.Weekly(2), plan.schedule)
             assertEquals(PlanWorkout.Interval("Tabata", IntervalConfig(10, 20, 10, rounds = 8)), plan.workout)
         }
@@ -287,9 +288,9 @@ class StorageTest {
         }
         withApp { repository ->
             val configs = listOf(
-                repository.history.value.single().config,
-                repository.customPresets.value.single().config,
-                (repository.planned.value.single().workout as PlanWorkout.Interval).config,
+                repository.history.history.value.single().config,
+                repository.presets.customPresets.value.single().config,
+                (repository.plans.planned.value.single().workout as PlanWorkout.Interval).config,
             )
             configs.forEach {
                 assertEquals(1, it.sets)
@@ -318,12 +319,12 @@ class StorageTest {
             connection.execSQL("PRAGMA user_version = 10")
         }
         withApp { repository ->
-            val history = repository.history.value.single().config
+            val history = repository.history.history.value.single().config
             assertEquals(2 to 60, history.sets to history.setRestSeconds)
             val configs = listOf(
                 history,
-                repository.customPresets.value.single().config,
-                (repository.planned.value.single().workout as PlanWorkout.Interval).config,
+                repository.presets.customPresets.value.single().config,
+                (repository.plans.planned.value.single().workout as PlanWorkout.Interval).config,
             )
             configs.forEach { assertEquals(0, it.workStepSeconds) }
         }
@@ -332,17 +333,17 @@ class StorageTest {
     @Test
     fun `deleted workouts stay on disk as tombstones`() {
         withApp { repository ->
-            repeat(3) { repository.recordWorkout(IntervalConfig(), elapsedSeconds = it + 1) }
-            settled(repository) { it.history.value.size == 3 }
+            repeat(3) { repository.history.recordWorkout(IntervalConfig(), elapsedSeconds = it + 1) }
+            settled(repository) { it.history.history.value.size == 3 }
             clock = 2_000
-            repository.deleteWorkout(requireNotNull(repository.history.value.first().id))
-            settled(repository) { it.history.value.size == 2 }
+            repository.history.deleteWorkout(requireNotNull(repository.history.history.value.first().id))
+            settled(repository) { it.history.history.value.size == 2 }
             clock = 3_000
-            repository.clearHistory()
-            settled(repository) { it.history.value.isEmpty() }
+            repository.history.clearHistory()
+            settled(repository) { it.history.history.value.isEmpty() }
         }
         withApp { repository ->
-            assertEquals(emptyList(), repository.history.value)
+            assertEquals(emptyList(), repository.history.history.value)
             val rows = database.historyDao().all()
             assertTrue(rows.all { it.deleted })
             assertEquals(listOf(3_000L, 3_000L, 2_000L), rows.map { it.updatedAtEpochMillis })
@@ -352,18 +353,18 @@ class StorageTest {
     @Test
     fun `a deleted workout comes back on restore and stays back after a restart`() {
         withApp { repository ->
-            repository.recordWorkout(IntervalConfig(), elapsedSeconds = 240)
-            settled(repository) { it.history.value.size == 1 }
-            val id = requireNotNull(repository.history.value.single().id)
+            repository.history.recordWorkout(IntervalConfig(), elapsedSeconds = 240)
+            settled(repository) { it.history.history.value.size == 1 }
+            val id = requireNotNull(repository.history.history.value.single().id)
             clock = 2_000
-            repository.deleteWorkout(id)
-            settled(repository) { it.history.value.isEmpty() }
+            repository.history.deleteWorkout(id)
+            settled(repository) { it.history.history.value.isEmpty() }
             clock = 3_000
-            repository.restoreWorkout(id)
-            settled(repository) { it.history.value.size == 1 }
+            repository.history.restoreWorkout(id)
+            settled(repository) { it.history.history.value.size == 1 }
         }
         withApp { repository ->
-            assertEquals(listOf(240), repository.history.value.map { it.elapsedSeconds })
+            assertEquals(listOf(240), repository.history.history.value.map { it.elapsedSeconds })
             val row = database.historyDao().all().single()
             assertTrue(!row.deleted && row.updatedAtEpochMillis == 3_000L)
         }
@@ -373,26 +374,26 @@ class StorageTest {
     fun `plans and a deleted workout survive a restart`() {
         val tabata = Preset("Tabata", IntervalConfig(10, 20, 10, rounds = 8))
         withApp { repository ->
-            repository.planWeekly(tabata.asPlan(), setOf(1, 3))
-            repository.planOnce(tabata.asPlan(), epochDay = 20_744)
-            repository.planWeekly(PlanWorkout.Lift.ProgramDay, setOf(5))
-            repository.recordWorkout(tabata.config, elapsedSeconds = 240)
-            repository.recordWorkout(tabata.config, elapsedSeconds = 120)
-            settled(repository) { it.planned.value.size == 4 && it.history.value.size == 2 }
-            repository.deleteWorkout(requireNotNull(repository.history.value.last().id))
-            repository.removePlanned(repository.planned.value.first().id)
-            settled(repository) { it.planned.value.size == 3 && it.history.value.size == 1 }
+            repository.plans.planWeekly(tabata.asPlan(), setOf(1, 3))
+            repository.plans.planOnce(tabata.asPlan(), epochDay = 20_744)
+            repository.plans.planWeekly(PlanWorkout.Lift.ProgramDay, setOf(5))
+            repository.history.recordWorkout(tabata.config, elapsedSeconds = 240)
+            repository.history.recordWorkout(tabata.config, elapsedSeconds = 120)
+            settled(repository) { it.plans.planned.value.size == 4 && it.history.history.value.size == 2 }
+            repository.history.deleteWorkout(requireNotNull(repository.history.history.value.last().id))
+            repository.plans.removePlanned(repository.plans.planned.value.first().id)
+            settled(repository) { it.plans.planned.value.size == 3 && it.history.history.value.size == 1 }
         }
         withApp { repository ->
             assertEquals(
                 listOf(PlanSchedule.Weekly(3), PlanSchedule.Once(20_744), PlanSchedule.Weekly(5)),
-                repository.planned.value.map { it.schedule },
+                repository.plans.planned.value.map { it.schedule },
             )
             assertEquals(
                 listOf(tabata.asPlan(), tabata.asPlan(), PlanWorkout.Lift.ProgramDay),
-                repository.planned.value.map { it.workout },
+                repository.plans.planned.value.map { it.workout },
             )
-            assertEquals(120, repository.history.value.single().elapsedSeconds)
+            assertEquals(120, repository.history.history.value.single().elapsedSeconds)
         }
     }
 
@@ -401,20 +402,20 @@ class StorageTest {
         repository.saveCurrentAsPreset("B")
         repository.saveCurrentAsPreset("A")
         clock = 1
-        repository.recordWorkout(IntervalConfig(), elapsedSeconds = 1)
+        repository.history.recordWorkout(IntervalConfig(), elapsedSeconds = 1)
         clock = 3
-        repository.recordWorkout(IntervalConfig(), elapsedSeconds = 3)
+        repository.history.recordWorkout(IntervalConfig(), elapsedSeconds = 3)
         clock = 2
-        repository.recordWorkout(IntervalConfig(), elapsedSeconds = 2)
-        settled(repository) { it.customPresets.value.size == 2 && it.history.value.size == 3 }
+        repository.history.recordWorkout(IntervalConfig(), elapsedSeconds = 2)
+        settled(repository) { it.presets.customPresets.value.size == 2 && it.history.history.value.size == 3 }
 
-        assertEquals(listOf("B", "A"), repository.customPresets.value.map { it.name })
-        assertEquals(listOf(3, 2, 1), repository.history.value.map { it.elapsedSeconds })
+        assertEquals(listOf("B", "A"), repository.presets.customPresets.value.map { it.name })
+        assertEquals(listOf(3, 2, 1), repository.history.history.value.map { it.elapsedSeconds })
 
-        repository.deletePreset(repository.customPresets.value.first())
-        repository.clearHistory()
-        settled(repository) { it.customPresets.value.size == 1 && it.history.value.isEmpty() }
-        assertEquals(listOf("A"), repository.customPresets.value.map { it.name })
+        repository.presets.deletePreset(repository.presets.customPresets.value.first())
+        repository.history.clearHistory()
+        settled(repository) { it.presets.customPresets.value.size == 1 && it.history.history.value.isEmpty() }
+        assertEquals(listOf("A"), repository.presets.customPresets.value.map { it.name })
     }
 
     private var clock = NOW

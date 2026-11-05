@@ -38,9 +38,9 @@ class WeekStandingSource(
         lift.ready.first { it }
         emitAll(
             combine(
-                repository.history,
+                repository.history.history,
                 lift.sessions,
-                repository.appSettings,
+                repository.settings.appSettings,
                 clock.days(timestamps, dayCheckMillis),
             ) { history, sessions, app, today ->
                 val days = history.map { timestamps.dayNumber(it.finishedAtEpochMillis) } +

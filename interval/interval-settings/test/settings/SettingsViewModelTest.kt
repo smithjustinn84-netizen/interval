@@ -34,7 +34,7 @@ class SettingsViewModelTest : MainDispatcherTest() {
     private val health = RecordingHealthStore()
     private val importer = FakeImporter()
     private val viewModel by lazy {
-        SettingsViewModel(repository, player, { export }, sharer, health, importer, FixedTimestampFormatter)
+        SettingsViewModel(repository.settings, player, { export }, sharer, health, importer, FixedTimestampFormatter)
     }
 
     @Test
@@ -48,7 +48,7 @@ class SettingsViewModelTest : MainDispatcherTest() {
         var failing = true
         val exporter = DataExporter { if (failing) error("disk full") else export }
         val viewModel =
-            SettingsViewModel(repository, player, exporter, sharer, health, importer, FixedTimestampFormatter)
+            SettingsViewModel(repository.settings, player, exporter, sharer, health, importer, FixedTimestampFormatter)
         viewModel.export()
         assertTrue(sharer.files.isEmpty())
         failing = false
@@ -60,7 +60,9 @@ class SettingsViewModelTest : MainDispatcherTest() {
     fun `a second tap while an export is under way exports nothing more`() {
         val built = CompletableDeferred<ShareableFile>()
         val viewModel =
-            SettingsViewModel(repository, player, { built.await() }, sharer, health, importer, FixedTimestampFormatter)
+            SettingsViewModel(repository.settings, player, {
+                built.await()
+            }, sharer, health, importer, FixedTimestampFormatter)
         viewModel.export()
         viewModel.export()
         built.complete(export)
@@ -162,7 +164,7 @@ class SettingsViewModelTest : MainDispatcherTest() {
     fun `theme and keep screen on survive a restart`() {
         viewModel.setTheme(ThemeMode.Dark)
         viewModel.toggleKeepScreenOn()
-        val reloaded = storage.repository().appSettings.value
+        val reloaded = storage.repository().settings.appSettings.value
         assertEquals(ThemeMode.Dark, reloaded.theme)
         assertFalse(reloaded.keepScreenOn)
     }
@@ -181,7 +183,7 @@ class SettingsViewModelTest : MainDispatcherTest() {
         viewModel.setWeightUnit(WeightUnit.Lb)
         viewModel.setWeight(180)
         assertEquals(180, viewModel.state.value.weight)
-        assertEquals(81.6, repository.appSettings.value.body.weightKg!!, absoluteTolerance = 0.1)
+        assertEquals(81.6, repository.settings.appSettings.value.body.weightKg!!, absoluteTolerance = 0.1)
         viewModel.setWeightUnit(WeightUnit.Kg)
         assertEquals(82, viewModel.state.value.weight)
     }
@@ -197,7 +199,7 @@ class SettingsViewModelTest : MainDispatcherTest() {
         viewModel.setWeightUnit(WeightUnit.Lb)
         viewModel.setWeight(150)
         viewModel.setEffort(Effort.Easy)
-        val reloaded = storage.repository().appSettings.value.body
+        val reloaded = storage.repository().settings.appSettings.value.body
         assertEquals(WeightUnit.Lb, reloaded.unit)
         assertEquals(Effort.Easy, reloaded.effort)
         assertEquals(150, WeightUnit.Lb.fromKg(reloaded.weightKg!!))
@@ -228,7 +230,7 @@ class SettingsViewModelTest : MainDispatcherTest() {
         assertEquals(182, viewModel.state.value.healthWeight)
         viewModel.useHealthWeight()
         assertEquals(182, viewModel.state.value.weight)
-        assertEquals(182, WeightUnit.Lb.fromKg(storage.repository().appSettings.value.body.weightKg!!))
+        assertEquals(182, WeightUnit.Lb.fromKg(storage.repository().settings.appSettings.value.body.weightKg!!))
 
         viewModel.setWeightUnit(WeightUnit.Kg)
         assertEquals(viewModel.state.value.healthWeight, viewModel.state.value.weight)

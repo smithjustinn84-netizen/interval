@@ -12,9 +12,10 @@ import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import kotlinx.coroutines.flow.StateFlow
 
-// The roles IntervalRepository plays, one per kind of thing it keeps, so a screen takes only what it reads and
-// writes: the Timer can't clear the history, and a test can hand a ViewModel a store of its own. The repository is
-// each of them; its docs say how each behaves. What only the app does (ready, import, close) stays on it alone.
+// The roles the interval side's storage plays, one per kind of thing it keeps, so a screen takes only what it reads
+// and writes: the Timer can't clear the history, and a test can hand a ViewModel a store of its own. Each is a
+// repository under IntervalRepository (SettingsRepository is two, the settings and the workout under way), whose
+// docs say how it behaves. What only the app does (ready, import, close) stays on IntervalRepository alone.
 
 /** The current setup on the Timer, the cue toggles and the app's settings, each changed with a transform. */
 interface SettingsStore {

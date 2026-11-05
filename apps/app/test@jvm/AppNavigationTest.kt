@@ -160,7 +160,7 @@ class AppNavigationTest {
         onNodeWithText("Put on Timer").performClick()
         onNodeWithText("Start workout").assertExists()
         tab("Timer").assertIsSelected()
-        val config = app.repository.config.value
+        val config = app.repository.settings.config.value
         assertTrue(config.sameShape(builtInPresets.single { it.name == "Hangboard" }.config))
     }
 
@@ -170,7 +170,7 @@ class AppNavigationTest {
         onNodeWithText("Tabata").performClick()
         onNodeWithText("Start workout").performClick()
         onNodeWithContentDescription("End workout").assertExists()
-        assertTrue(app.repository.config.value.sameShape(builtInPresets.first().config))
+        assertTrue(app.repository.settings.config.value.sameShape(builtInPresets.first().config))
 
         onNodeWithContentDescription("End workout").performClick()
         onNodeWithText("End workout").performClick()
@@ -246,7 +246,7 @@ class AppNavigationTest {
     @Test
     fun `on a tablet a finished workout opens beside History and closing it leaves the prompt`() =
         appTest(Window.Tablet) { app ->
-            app.repository.recordWorkout(builtInPresets.first().config, elapsedSeconds = 240)
+            app.repository.history.recordWorkout(builtInPresets.first().config, elapsedSeconds = 240)
             tab("History").performClick()
             onNodeWithText("Pick a workout").assertExists()
 
@@ -267,8 +267,8 @@ class AppNavigationTest {
     fun `on a tablet another workout takes the open one's place`() = appTest(Window.Tablet) { app ->
         val (tabata, hiit) = builtInPresets
         val repository = app.repository
-        repository.recordWorkout(tabata.config, elapsedSeconds = 240)
-        repository.recordWorkout(hiit.config, elapsedSeconds = 600)
+        repository.history.recordWorkout(tabata.config, elapsedSeconds = 240)
+        repository.history.recordWorkout(hiit.config, elapsedSeconds = 600)
         tab("History").performClick()
         onNode(hasText(tabata.name) and hasClickAction()).performClick()
         onNode(hasText(hiit.name) and hasClickAction()).performClick()
@@ -284,7 +284,7 @@ class AppNavigationTest {
 
     @Test
     fun `on a tablet deleting the workout beside History leaves the prompt`() = appTest(Window.Tablet) { app ->
-        app.repository.recordWorkout(builtInPresets.first().config, elapsedSeconds = 240)
+        app.repository.history.recordWorkout(builtInPresets.first().config, elapsedSeconds = 240)
         tab("History").performClick()
         onNode(hasText("Tabata") and hasClickAction()).performClick()
         // History's own menu, then the workout's beside it.
@@ -334,7 +334,7 @@ class AppNavigationTest {
     @Test
     fun `a finished workout opens from History and deleting it goes back`() = appTest { app ->
         val tabata = builtInPresets.first()
-        app.repository.recordWorkout(tabata.config, elapsedSeconds = 240)
+        app.repository.history.recordWorkout(tabata.config, elapsedSeconds = 240)
         tab("History").performClick()
         onNodeWithText("Tabata").performClick()
         onNodeWithText("Repeat now").assertExists()
@@ -350,7 +350,7 @@ class AppNavigationTest {
 
     @Test
     fun `deleting a workout says so and Undo brings it back`() = appTest { app ->
-        app.repository.recordWorkout(builtInPresets.first().config, elapsedSeconds = 240)
+        app.repository.history.recordWorkout(builtInPresets.first().config, elapsedSeconds = 240)
         tab("History").performClick()
         onNodeWithText("Tabata").performClick()
         onNodeWithContentDescription("More options").performClick()
@@ -380,7 +380,7 @@ class AppNavigationTest {
 
     @Test
     fun `a plan taken off a day comes back with Undo`() = appTest { app ->
-        app.repository.planWeekly(builtInPresets.first().asPlan(), setOf(1))
+        app.repository.plans.planWeekly(builtInPresets.first().asPlan(), setOf(1))
         tab("History").performClick()
         onNodeWithContentDescription("Plan").performClick()
         onNodeWithContentDescription("Remove Tabata from Monday").performClick()

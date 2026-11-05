@@ -221,6 +221,14 @@ mutators.
 
 **Recommendation.** Role interfaces first (**C3**); split the class later if it keeps growing.
 
+**Resolved** in sprint 0.4's ticket 4 ("Interval: a repository per store, over one queue of writes"):
+`IntervalRepository` is the root of four, one per kind of thing kept: `SettingsRepository` (the DataStore's config,
+cues, app settings and the workout under way: `SettingsStore` and `WorkoutProgressStore`), `PresetRepository`
+(which puts a preset on the Timer through the settings), `HistoryRepository` and `PlanRepository`, each over the
+DAOs of its kind. They share one `SerialWriter`, so a write of one kind still lands behind an earlier one of
+another, and the mappers are `IntervalMappers.kt`. The root keeps what only the app does (`ready`, `writeErrors`,
+`importAll`, `close`); Koin binds each store to its repository, and its tests are a test per repository.
+
 ### C3 · High · ViewModels take the whole concrete repository (ISP, DIP)
 
 **Resolved** in change `xulqrkos` ("DI: each screen takes the stores it uses, not a repository"): the interval

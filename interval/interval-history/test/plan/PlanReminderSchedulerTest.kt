@@ -50,12 +50,12 @@ class PlanReminderSchedulerTest {
 
         // Off: nothing pending, and a plan changes nothing.
         assertEquals(listOf(emptyList()), reminders.schedules)
-        repository.planWeekly(tabataPreset.asPlan(), setOf(4, 5))
+        repository.plans.planWeekly(tabataPreset.asPlan(), setOf(4, 5))
         runCurrent()
         assertEquals(1, reminders.schedules.size)
 
         // On: Thursday and Friday this week and next, two weeks out.
-        repository.updateAppSettings { it.copy(reminderMinuteOfDay = EVENING) }
+        repository.settings.updateAppSettings { it.copy(reminderMinuteOfDay = EVENING) }
         runCurrent()
         assertEquals(listOf(TODAY, TODAY + 1, TODAY + 7, TODAY + 8), reminders.pending.map { it.epochDay })
         assertTrue(
@@ -66,12 +66,12 @@ class PlanReminderSchedulerTest {
         )
 
         // Today's workout done: today's reminder goes.
-        repository.recordWorkout(tabataPreset.config, elapsedSeconds = 240)
+        repository.history.recordWorkout(tabataPreset.config, elapsedSeconds = 240)
         runCurrent()
         assertEquals(listOf(TODAY + 1, TODAY + 7, TODAY + 8), reminders.pending.map { it.epochDay })
 
         // A session on Lift planned on Saturday is reminded of, and goes once a session is logged that day.
-        repository.planOnce(PlanWorkout.Lift.AnySession, TODAY + 2)
+        repository.plans.planOnce(PlanWorkout.Lift.AnySession, TODAY + 2)
         runCurrent()
         assertEquals(listOf(TODAY + 1, TODAY + 2, TODAY + 7, TODAY + 8), reminders.pending.map { it.epochDay })
         lift.finished("b1", "Swings", noonOf(TODAY + 2), noonOf(TODAY + 2) + 600_000, 24.0 to 10)
@@ -84,7 +84,7 @@ class PlanReminderSchedulerTest {
         assertEquals(listOf(TODAY + 1, TODAY + 7, TODAY + 8, TODAY + 14), reminders.pending.map { it.epochDay })
 
         // Off again: the platform is told to cancel them all.
-        repository.updateAppSettings { it.copy(reminderMinuteOfDay = null) }
+        repository.settings.updateAppSettings { it.copy(reminderMinuteOfDay = null) }
         runCurrent()
         assertTrue(reminders.pending.isEmpty())
         scope.cancel()
@@ -107,8 +107,8 @@ class PlanReminderSchedulerTest {
         runCurrent()
 
         failing = false
-        repository.planWeekly(tabataPreset.asPlan(), setOf(4))
-        repository.updateAppSettings { it.copy(reminderMinuteOfDay = EVENING) }
+        repository.plans.planWeekly(tabataPreset.asPlan(), setOf(4))
+        repository.settings.updateAppSettings { it.copy(reminderMinuteOfDay = EVENING) }
         runCurrent()
         assertEquals(listOf(TODAY, TODAY + 7), recorded.pending.map { it.epochDay })
         scope.cancel()
@@ -123,8 +123,8 @@ class PlanReminderSchedulerTest {
         val lift = FakeLiftStorage().repository(now = { now })
         val scheduler =
             PlanReminderScheduler(repository, lift.sessions, reminders, FixedTimestampFormatter, { now }, scope)
-        repository.planWeekly(tabataPreset.asPlan(), (1..7).toSet())
-        repository.updateAppSettings { it.copy(reminderMinuteOfDay = EVENING) }
+        repository.plans.planWeekly(tabataPreset.asPlan(), (1..7).toSet())
+        repository.settings.updateAppSettings { it.copy(reminderMinuteOfDay = EVENING) }
         runCurrent()
         assertEquals((TODAY..TODAY + 13).toList(), reminders.pending.map { it.epochDay })
 
@@ -150,15 +150,15 @@ class PlanReminderSchedulerTest {
             PlanReminderScheduler(repository, lift.sessions, RecordingPlanReminders(), FixedTimestampFormatter, {
                 now
             }, scope)
-        repository.planWeekly(tabataPreset.asPlan(), setOf(4))
-        repository.updateAppSettings { it.copy(reminderMinuteOfDay = EVENING) }
+        repository.plans.planWeekly(tabataPreset.asPlan(), setOf(4))
+        repository.settings.updateAppSettings { it.copy(reminderMinuteOfDay = EVENING) }
         runCurrent()
 
         // Shown at 19:00, past its time, it is still today's.
         assertEquals(tabataPreset.asPlan(), scheduler.reminderOn(TODAY)?.plans?.single()?.workout)
-        repository.recordWorkout(tabataPreset.config, elapsedSeconds = 240)
+        repository.history.recordWorkout(tabataPreset.config, elapsedSeconds = 240)
         assertNull(scheduler.reminderOn(TODAY))
-        repository.updateAppSettings { it.copy(reminderMinuteOfDay = null) }
+        repository.settings.updateAppSettings { it.copy(reminderMinuteOfDay = null) }
         assertNull(scheduler.reminderOn(TODAY + 7))
         scope.cancel()
     }
@@ -173,8 +173,8 @@ class PlanReminderSchedulerTest {
             PlanReminderScheduler(repository, lift.sessions, RecordingPlanReminders(), FixedTimestampFormatter, {
                 now
             }, scope)
-        repository.planWeekly(tabataPreset.asPlan(), (1..7).toSet())
-        repository.updateAppSettings { it.copy(reminderMinuteOfDay = EVENING) }
+        repository.plans.planWeekly(tabataPreset.asPlan(), (1..7).toSet())
+        repository.settings.updateAppSettings { it.copy(reminderMinuteOfDay = EVENING) }
         runCurrent()
 
         // The clock moved past two weeks with the app closed: every alarm fires at once, each for its own day.

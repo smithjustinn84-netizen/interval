@@ -67,7 +67,9 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
 
     @BeforeTest
     fun setUp() {
-        repository.updateConfig { IntervalConfig(prepSeconds = 0, workSeconds = 5, restSeconds = 5, rounds = 2) }
+        repository.settings.updateConfig {
+            IntervalConfig(prepSeconds = 0, workSeconds = 5, restSeconds = 5, rounds = 2)
+        }
     }
 
     // Stops every ticker, so none outlives its test on the shared scheduler.
@@ -80,11 +82,10 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
         timeSource: TimeSource.WithComparableMarks = testScheduler.timeSource,
     ): WorkoutSession {
         val ticker = WorkoutTicker(timeSource, tickerScope()).also { tickers += it }
-        val recorder =
-            WorkoutRecorder(repository, repository, repository, lifts.sessions, FixedTimestampFormatter, {
-                now
-            }, health)
-        return WorkoutSession(repository, repository, player, { now }, background, recorder, ticker)
+        val recorder = with(repository) {
+            WorkoutRecorder(history, presets, settings, lifts.sessions, FixedTimestampFormatter, { now }, health)
+        }
+        return WorkoutSession(repository.settings, repository.settings, player, { now }, background, recorder, ticker)
     }
 
     /**
@@ -164,7 +165,7 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
         )
         assertEquals(listOf(Haptic.Work, Haptic.Rest, Haptic.Work, Haptic.Finished), player.haptics)
         assertEquals("0:15", state.elapsed)
-        val entry = repository.history.value.single()
+        val entry = repository.history.history.value.single()
         assertEquals(7L, entry.finishedAtEpochMillis)
         assertEquals(15, entry.elapsedSeconds)
         assertFalse(entry.endedEarly)
@@ -172,7 +173,7 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
 
     @Test
     fun `a finished workout goes to the health store with its course`() = runTest(dispatcher) {
-        repository.updateAppSettings { it.copy(body = BodySettings(weightKg = 80.0, effort = Effort.Hard)) }
+        repository.settings.updateAppSettings { it.copy(body = BodySettings(weightKg = 80.0, effort = Effort.Hard)) }
         now = 1_000
         val session = openWorkout()
         now = 6_000
@@ -257,7 +258,7 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
         health.status.value = HealthStatus.Disconnected
         openWorkout()
         run(15_000)
-        assertEquals(1, repository.history.value.size)
+        assertEquals(1, repository.history.history.value.size)
         assertTrue(health.workouts.isEmpty())
     }
 
@@ -275,7 +276,7 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
         session.end()
         assertEquals("0:02", session.ui.elapsed)
         assertEquals(1, session.ui.completedRounds)
-        val entry = repository.history.value.single()
+        val entry = repository.history.history.value.single()
         assertEquals(2, entry.elapsedSeconds)
         assertTrue(entry.endedEarly)
     }
@@ -315,7 +316,7 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
 
     @Test
     fun `cues respect the user's toggles`() = runTest(dispatcher) {
-        repository.updateCueSettings { CueSettings(sound = false, voice = false, vibrate = false) }
+        repository.settings.updateCueSettings { CueSettings(sound = false, voice = false, vibrate = false) }
         val session = openWorkout(repository)
         session.skip()
         session.skip()
@@ -350,8 +351,8 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
         assertFalse(state.running)
         assertEquals(1, state.completedRounds)
         assertEquals("0:06", state.elapsed)
-        assertEquals(6, repository.history.value.single().elapsedSeconds)
-        assertTrue(repository.history.value.single().endedEarly)
+        assertEquals(6, repository.history.history.value.single().elapsedSeconds)
+        assertTrue(repository.history.history.value.single().endedEarly)
 
         session.togglePause()
         assertFalse(session.ui.running)
@@ -359,12 +360,12 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
 
     @Test
     fun `work time counts only work intervals and gives the summary its calories`() = runTest(dispatcher) {
-        repository.updateAppSettings { it.copy(body = BodySettings(weightKg = 80.0, effort = Effort.Hard)) }
+        repository.settings.updateAppSettings { it.copy(body = BodySettings(weightKg = 80.0, effort = Effort.Hard)) }
         val session = openWorkout(repository)
         advanceTimeBy(15_000 + WorkoutTicker.TICK_MILLIS)
         runCurrent()
 
-        val entry = repository.history.value.single()
+        val entry = repository.history.history.value.single()
         assertEquals(10, entry.workActiveSeconds)
         assertEquals(estimateCalories(10, 5, 80.0, Effort.Hard), session.ui.calories)
     }
@@ -376,14 +377,14 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
         advanceTimeBy(10_000 + WorkoutTicker.TICK_MILLIS)
         runCurrent()
 
-        val entry = repository.history.value.single()
+        val entry = repository.history.history.value.single()
         assertEquals(10, entry.elapsedSeconds)
         assertEquals(5, entry.workActiveSeconds)
     }
 
     @Test
     fun `the summary has no calories without a weight`() = runTest(dispatcher) {
-        repository.updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
+        repository.settings.updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
         val session = openWorkout(repository)
         advanceTimeBy(15_000 + WorkoutTicker.TICK_MILLIS)
         runCurrent()
@@ -404,7 +405,7 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
         session.togglePause()
 
         assertEquals(ended, session.state.value)
-        assertEquals(1, repository.history.value.size)
+        assertEquals(1, repository.history.history.value.size)
     }
 
     @Test
@@ -439,7 +440,7 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
         assertTrue(state.isDone)
         assertEquals("0:15", state.elapsed)
         assertEquals(listOf(Speech.Work(lastRound = false), Speech.Finished), player.spoken)
-        val entry = repository.history.value.single()
+        val entry = repository.history.history.value.single()
         assertEquals(15, entry.elapsedSeconds)
         assertEquals(10, entry.workActiveSeconds)
         assertFalse(background.kept)
@@ -512,7 +513,7 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
         assertFalse(state.ended)
         assertEquals("0:15", state.elapsed)
         assertEquals(week, state.week)
-        assertEquals(1, repository.history.value.size)
+        assertEquals(1, repository.history.history.value.size)
         assertTrue(player.spoken.isEmpty())
         assertEquals(0, background.starts)
     }
@@ -531,7 +532,7 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
         assertEquals(1, state.completedRounds)
         assertEquals("0:06", state.elapsed)
         assertEquals(week, state.week)
-        assertEquals(1, repository.history.value.size)
+        assertEquals(1, repository.history.history.value.size)
     }
 
     @Test
@@ -569,28 +570,28 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
         session.open(WORKOUT_ID + 1)
         assertEquals(WORKOUT_ID + 1, session.state.value?.id)
         assertEquals("0:00", session.ui.elapsed)
-        assertEquals(WORKOUT_ID + 1, repository.workoutProgress.value?.id)
+        assertEquals(WORKOUT_ID + 1, repository.settings.workoutProgress.value?.id)
         assertEquals(1, background.stops)
         assertTrue(background.kept)
-        assertTrue(repository.history.value.isEmpty())
+        assertTrue(repository.history.history.value.isEmpty())
     }
 
     @Test
     fun `leaving clears the saved progress and the notification`() = runTest(dispatcher) {
         val session = openWorkout()
         run(2_000)
-        assertEquals(WORKOUT_ID, repository.workoutProgress.value?.id)
+        assertEquals(WORKOUT_ID, repository.settings.workoutProgress.value?.id)
         assertTrue(background.kept)
 
         session.leave()
         assertNull(session.state.value)
         assertNull(session.status.value)
-        assertNull(repository.workoutProgress.value)
+        assertNull(repository.settings.workoutProgress.value)
         assertFalse(background.kept)
 
         // Nothing ticks on: the workout has gone.
         run(15_000)
-        assertTrue(repository.history.value.isEmpty())
+        assertTrue(repository.history.history.value.isEmpty())
     }
 
     @Test
@@ -669,7 +670,7 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
         val state = session.ui
         assertTrue(state.isDone && state.ended)
         assertFalse(state.leaving)
-        assertEquals(1, repository.history.value.size)
+        assertEquals(1, repository.history.history.value.size)
         assertFalse(background.kept)
     }
 
@@ -682,13 +683,13 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
         val state = session.ui
         assertTrue(state.leaving)
         assertFalse(state.running)
-        assertTrue(repository.history.value.isEmpty())
+        assertTrue(repository.history.history.value.isEmpty())
         assertFalse(background.kept)
     }
 
     @Test
     fun `End in the cool-down finishes the workout`() = runTest(dispatcher) {
-        repository.updateConfig { it.copy(coolDownSeconds = 60) }
+        repository.settings.updateConfig { it.copy(coolDownSeconds = 60) }
         val session = openWorkout()
         repeat(3) { session.skip() }
         assertEquals(Phase.CoolDown, session.ui.phase)
@@ -696,7 +697,7 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
         session.end()
         assertTrue(session.ui.isDone)
         assertFalse(session.ui.ended)
-        assertFalse(repository.history.value.single().endedEarly)
+        assertFalse(repository.history.history.value.single().endedEarly)
     }
 
     @Test
@@ -709,10 +710,10 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
 
         assertEquals(PerceivedEffort.Hard, session.ui.effort)
         assertEquals("  Felt strong ", session.ui.note)
-        val entry = repository.history.value.single()
+        val entry = repository.history.history.value.single()
         assertEquals(PerceivedEffort.Hard, entry.effort)
         assertEquals("Felt strong", entry.note)
-        assertEquals(PerceivedEffort.Hard, repository.workoutProgress.value?.effort)
+        assertEquals(PerceivedEffort.Hard, repository.settings.workoutProgress.value?.effort)
     }
 
     @Test

@@ -70,14 +70,14 @@ class AppKoinStorageTest {
             }
             val repository = koin.koin.get<IntervalRepository>()
             withTimeout(5.seconds) { repository.ready.first { it } }
-            assertEquals(round, repository.config.value.rounds - DEFAULT_ROUNDS)
+            assertEquals(round, repository.settings.config.value.rounds - DEFAULT_ROUNDS)
             // The presets are read by ready; the user's alone follow them a moment after.
-            assertEquals(round, repository.presets.value.count { it.custom })
+            assertEquals(round, repository.presets.presets.value.count { it.custom })
 
-            repository.updateConfig { it.copy(rounds = it.rounds + 1) }
+            repository.settings.updateConfig { it.copy(rounds = it.rounds + 1) }
             repository.saveCurrentAsPreset("Round $round")
             withTimeout(5.seconds) {
-                while (repository.customPresets.value.size != round + 1) delay(10.milliseconds)
+                while (repository.presets.customPresets.value.size != round + 1) delay(10.milliseconds)
             }
             // Lands the writes, as desktop does before its container closes, and waits for the DataStore to let
             // go of its file, as the end of a process would.

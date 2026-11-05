@@ -64,7 +64,7 @@ class WeekStandingSourceTest {
         val source = source(repository)
         runCurrent()
 
-        repository.recordWorkout(IntervalConfig(), elapsedSeconds = 300)
+        repository.history.recordWorkout(IntervalConfig(), elapsedSeconds = 300)
         lift.finished("b1", "Swings", noonOf(TODAY - 1), noonOf(TODAY - 1) + 600_000, 24.0 to 10)
         lift.finished("b0", "Swings", noonOf(TODAY - 7), noonOf(TODAY - 7) + 600_000, 24.0 to 10)
         runCurrent()
@@ -74,15 +74,15 @@ class WeekStandingSourceTest {
     @Test
     fun `the goal set on Plan and the streak of weeks that met it`() = runTest {
         val repository = storage.repository(now = { now })
-        repository.updateAppSettings { it.copy(weeklyGoal = 2) }
+        repository.settings.updateAppSettings { it.copy(weeklyGoal = 2) }
         lift.finished("b0", "Swings", noonOf(TODAY - 7), noonOf(TODAY - 7) + 600_000, 24.0 to 10)
         lift.finished("b1", "Swings", noonOf(TODAY - 8), noonOf(TODAY - 8) + 600_000, 24.0 to 10)
         val source = source(repository)
         runCurrent()
         assertEquals(WeekStanding(count = 0, goal = 2, streak = 1), source.standing.value)
 
-        repository.recordWorkout(IntervalConfig(), elapsedSeconds = 300)
-        repository.recordWorkout(IntervalConfig(), elapsedSeconds = 300)
+        repository.history.recordWorkout(IntervalConfig(), elapsedSeconds = 300)
+        repository.history.recordWorkout(IntervalConfig(), elapsedSeconds = 300)
         runCurrent()
         assertEquals(WeekStanding(count = 2, goal = 2, streak = 2), source.standing.value)
     }
@@ -91,7 +91,7 @@ class WeekStandingSourceTest {
     fun `the week turns at Monday's midnight`() = runTest {
         val repository = storage.repository(now = { now })
         val source = source(repository)
-        repository.recordWorkout(IntervalConfig(), elapsedSeconds = 300)
+        repository.history.recordWorkout(IntervalConfig(), elapsedSeconds = 300)
         runCurrent()
         assertEquals(1, source.standing.value?.count)
 
@@ -109,7 +109,7 @@ class WeekStandingSourceTest {
         source.standing.onEach { seen += it }.launchIn(unconfined())
         runCurrent()
 
-        repository.updateAppSettings { it.copy(reminderMinuteOfDay = 600) }
+        repository.settings.updateAppSettings { it.copy(reminderMinuteOfDay = 600) }
         runCurrent()
         assertEquals(listOf(WeekStanding(0, null, 0)), seen.filterNotNull())
     }

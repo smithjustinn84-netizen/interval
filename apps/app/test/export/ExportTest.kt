@@ -32,12 +32,12 @@ class ExportTest {
 
     @Test
     fun `the file is named for the day and holds both sides`() = runTest {
-        intervals.savePreset(
+        intervals.presets.savePreset(
             Preset("Hills", IntervalConfig(workSeconds = 45, warmUpSeconds = 300, coolDownSeconds = 120)),
         )
-        val workout = intervals.recordWorkout(IntervalConfig(rounds = 4), elapsedSeconds = 200)
-        intervals.reflectOnWorkout(workout, PerceivedEffort.Hard, "Felt strong")
-        intervals.updateAppSettings { it.copy(theme = ThemeMode.Light, weeklyGoal = 3) }
+        val workout = intervals.history.recordWorkout(IntervalConfig(rounds = 4), elapsedSeconds = 200)
+        intervals.history.reflectOnWorkout(workout, PerceivedEffort.Hard, "Felt strong")
+        intervals.settings.updateAppSettings { it.copy(theme = ThemeMode.Light, weeklyGoal = 3) }
         bells.sessions.startSession()
         bells.sets.logSet(BuiltInExercise.TwoHandSwing, bellKg = 16.0, reps = 10, side = null)
         bells.sessions.finishSession("Swings")
@@ -87,7 +87,7 @@ class ExportTest {
 
     @Test
     fun `what is written reads back the same`() {
-        intervals.savePreset(Preset("Hills", IntervalConfig(workSeconds = 45)))
+        intervals.presets.savePreset(Preset("Hills", IntervalConfig(workSeconds = 45)))
         val bundle = exporter.bundle(now)
 
         assertEquals(bundle, Json.decodeFromString<ExportBundle>(Json.encodeToString(bundle)))

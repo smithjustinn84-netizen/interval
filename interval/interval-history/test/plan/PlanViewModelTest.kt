@@ -43,10 +43,10 @@ class PlanViewModelTest : MainDispatcherTest() {
     private val bells = FakeLiftStorage().repository(now = { clock })
     private val viewModel by lazy {
         PlanViewModel(
-            repository,
-            repository,
-            repository,
-            repository,
+            repository.plans,
+            repository.history,
+            repository.presets,
+            repository.settings,
             bells.sessions,
             FixedTimestampFormatter,
             clock = { clock },
@@ -64,7 +64,7 @@ class PlanViewModelTest : MainDispatcherTest() {
         viewModel.stepGoal(1)
         assertEquals(3, viewModel.state.value.goal)
         repeat(3) { viewModel.stepGoal(-1) }
-        assertNull(repository.appSettings.value.weeklyGoal)
+        assertNull(repository.settings.appSettings.value.weeklyGoal)
     }
 
     @Test
@@ -78,7 +78,7 @@ class PlanViewModelTest : MainDispatcherTest() {
         )
 
         viewModel.setReminder(450)
-        assertEquals(450, repository.appSettings.value.reminderMinuteOfDay)
+        assertEquals(450, repository.settings.appSettings.value.reminderMinuteOfDay)
         assertEquals(
             ReminderUi(on = true, minuteOfDay = 450, text = "7:30", picks = off.picks),
             viewModel.state.value.reminder,
@@ -142,7 +142,9 @@ class PlanViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `the add sheet offers the Timer's workout first and two weeks of days`() {
-        repository.updateConfig { IntervalConfig(prepSeconds = 5, workSeconds = 40, restSeconds = 20, rounds = 6) }
+        repository.settings.updateConfig {
+            IntervalConfig(prepSeconds = 5, workSeconds = 40, restSeconds = 20, rounds = 6)
+        }
         val state = viewModel.state.value
         val first = state.choices.first()
         assertTrue(first.onTimer)
@@ -181,7 +183,7 @@ class PlanViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `a preset on the Timer is offered under its own name`() {
-        repository.applyPreset(tabata)
+        repository.presets.applyPreset(tabata)
         assertEquals("Tabata", viewModel.state.value.choices.first().preset.name)
     }
 
@@ -190,13 +192,13 @@ class PlanViewModelTest : MainDispatcherTest() {
         val main = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(main)
         var now = noonOf(TODAY)
-        repository.planOnce(hiit.asPlan(), TODAY + 1)
+        repository.plans.planOnce(hiit.asPlan(), TODAY + 1)
         val plan =
             PlanViewModel(
-                repository,
-                repository,
-                repository,
-                repository,
+                repository.plans,
+                repository.history,
+                repository.presets,
+                repository.settings,
                 bells.sessions,
                 FixedTimestampFormatter,
                 clock = { now },
@@ -214,14 +216,14 @@ class PlanViewModelTest : MainDispatcherTest() {
     @Test
     fun `the screen starts from loading until the first state is built`() = runTest {
         Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
-        repository.updateAppSettings { it.copy(reminderMinuteOfDay = 18 * 60) }
+        repository.settings.updateAppSettings { it.copy(reminderMinuteOfDay = 18 * 60) }
         val computation = StandardTestDispatcher(testScheduler)
         val viewModel =
             PlanViewModel(
-                repository,
-                repository,
-                repository,
-                repository,
+                repository.plans,
+                repository.history,
+                repository.presets,
+                repository.settings,
                 bells.sessions,
                 FixedTimestampFormatter,
                 clock = { clock },
@@ -239,15 +241,15 @@ class PlanViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `a Timer step changes the choices and rebuilds nothing else`() {
-        repository.planWeekly(tabataPreset.asPlan(), setOf(1))
+        repository.plans.planWeekly(tabataPreset.asPlan(), setOf(1))
         val before = viewModel.state.value
 
-        repository.updateConfig { it.copy(workSeconds = it.workSeconds + 5) }
+        repository.settings.updateConfig { it.copy(workSeconds = it.workSeconds + 5) }
 
         val after = viewModel.state.value
         assertSame(before.routine, after.routine)
         assertSame(before.days, after.days)
-        assertEquals(repository.config.value, after.choices.first().preset.config)
+        assertEquals(repository.settings.config.value, after.choices.first().preset.config)
     }
 }
 

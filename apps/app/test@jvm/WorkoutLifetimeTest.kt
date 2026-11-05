@@ -38,7 +38,7 @@ class WorkoutLifetimeTest {
 
         waitForIdle()
         assertNull(session.state.value)
-        assertNull(app.repository.workoutProgress.value)
+        assertNull(app.repository.settings.workoutProgress.value)
     }
 
     @Test

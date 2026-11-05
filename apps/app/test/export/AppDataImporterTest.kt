@@ -44,9 +44,9 @@ private class Phone(val now: Long) {
 
     /** What a phone holds, without what only that phone gave it: ids, uids it made, when things changed. */
     fun contents() = listOf(
-        intervals.history.value.map { it.copy(id = null) }.sortedBy { it.finishedAtEpochMillis },
-        intervals.customPresets.value.map { it.copy(id = null) },
-        intervals.planned.value.map {
+        intervals.history.history.value.map { it.copy(id = null) }.sortedBy { it.finishedAtEpochMillis },
+        intervals.presets.customPresets.value.map { it.copy(id = null) },
+        intervals.plans.planned.value.map {
             it.copy(
                 id = 0,
                 workout =
@@ -67,8 +67,8 @@ class AppDataImporterTest {
 
     /** A phone with something of every kind on it. */
     private suspend fun stocked(): Phone = Phone(now).apply {
-        intervals.savePreset(Preset("Hills", IntervalConfig(workSeconds = 45, activity = Activity.Running)))
-        intervals.updateConfig { IntervalConfig(rounds = 4) }
+        intervals.presets.savePreset(Preset("Hills", IntervalConfig(workSeconds = 45, activity = Activity.Running)))
+        intervals.settings.updateConfig { IntervalConfig(rounds = 4) }
         val bookended =
             IntervalConfig(
                 rounds = 4,
@@ -78,18 +78,18 @@ class AppDataImporterTest {
                 setRestSeconds = 45,
                 workStepSeconds = 10,
             )
-        val workout = intervals.recordWorkout(bookended, elapsedSeconds = 200, workSeconds = 120)
-        intervals.reflectOnWorkout(workout, PerceivedEffort.Hard, "Felt strong")
-        intervals.keepHeartRate(workout, HeartRate(averageBpm = 141, peakBpm = 172))
-        intervals.planWeekly(
+        val workout = intervals.history.recordWorkout(bookended, elapsedSeconds = 200, workSeconds = 120)
+        intervals.history.reflectOnWorkout(workout, PerceivedEffort.Hard, "Felt strong")
+        intervals.history.keepHeartRate(workout, HeartRate(averageBpm = 141, peakBpm = 172))
+        intervals.plans.planWeekly(
             PlanWorkout.Interval(
                 "Hills",
                 IntervalConfig(workSeconds = 45, warmUpSeconds = 300, activity = Activity.Running),
             ),
             setOf(2),
         )
-        intervals.planOnce(PlanWorkout.Lift.AnySession, TODAY + 1)
-        intervals.updateAppSettings { it.copy(theme = ThemeMode.Light, weeklyGoal = 3) }
+        intervals.plans.planOnce(PlanWorkout.Lift.AnySession, TODAY + 1)
+        intervals.settings.updateAppSettings { it.copy(theme = ThemeMode.Light, weeklyGoal = 3) }
         lift.gear.setOwned(20.0, owned = true)
         lift.gear.setBar(15.0)
         val press = lift.exercises.saveExercise(null, ExerciseDraft("Landmine press", Equipment.Barbell))
@@ -125,7 +125,7 @@ class AppDataImporterTest {
 
         assertEquals(source.contents(), target.contents())
         // Settings only when asked for.
-        assertEquals(ThemeMode.Dark, target.intervals.appSettings.value.theme)
+        assertEquals(ThemeMode.Dark, target.intervals.settings.appSettings.value.theme)
     }
 
     @Test
@@ -153,9 +153,9 @@ class AppDataImporterTest {
     fun `also settings brings the file's settings with it`() = runTest {
         val target = Phone(now)
         target.importer.import(stocked().file(), withSettings = true)
-        assertEquals(ThemeMode.Light, target.intervals.appSettings.value.theme)
-        assertEquals(3, target.intervals.appSettings.value.weeklyGoal)
-        assertEquals(4, target.intervals.config.value.rounds)
+        assertEquals(ThemeMode.Light, target.intervals.settings.appSettings.value.theme)
+        assertEquals(3, target.intervals.settings.appSettings.value.weeklyGoal)
+        assertEquals(4, target.intervals.settings.config.value.rounds)
     }
 
     @Test
@@ -168,7 +168,7 @@ class AppDataImporterTest {
         assertEquals(ImportCounts(workouts = 2, presets = 1, plans = 1, sessions = 1), review.new)
         target.importer.import(file, withSettings = true)
 
-        val history = target.intervals.history.value
+        val history = target.intervals.history.history.value
         assertEquals(listOf(490, 130), history.map { it.elapsedSeconds })
         assertNull(history.first().effort)
         assertEquals(Activity.Running, history.first().config.activity)
@@ -178,14 +178,14 @@ class AppDataImporterTest {
                 it.config.sets == 1 && it.config.setRestSeconds == 0 && it.config.workStepSeconds == 0
             },
         )
-        val plan = target.intervals.planned.value.single().workout as PlanWorkout.Interval
+        val plan = target.intervals.plans.planned.value.single().workout as PlanWorkout.Interval
         assertEquals("Hills", plan.name)
         // Linked to the preset as it landed here, not to the other phone's id.
-        assertEquals(target.intervals.customPresets.value.single().id, plan.presetId)
+        assertEquals(target.intervals.presets.customPresets.value.single().id, plan.presetId)
         assertEquals(listOf(16.0, 24.0), target.lift.gear.bells.value)
         assertEquals(120, target.lift.sets.restSeconds.value)
         assertEquals(10, target.lift.sessions.sessions.value.single().sets.single().reps)
-        assertEquals(82.0, target.intervals.appSettings.value.body.weightKg)
+        assertEquals(82.0, target.intervals.settings.appSettings.value.body.weightKg)
     }
 
     @Test
@@ -194,7 +194,7 @@ class AppDataImporterTest {
         val file = ShareableFile("new.json", ExportBundle.MIME_TYPE, SCHEMA_5_EXPORT)
         assertEquals(ImportReview.TooNew("0.9.0"), target.importer.review(file))
         assertFailsWith<IllegalArgumentException> { target.importer.import(file, withSettings = true) }
-        assertTrue(target.intervals.history.value.isEmpty())
+        assertTrue(target.intervals.history.history.value.isEmpty())
     }
 
     @Test

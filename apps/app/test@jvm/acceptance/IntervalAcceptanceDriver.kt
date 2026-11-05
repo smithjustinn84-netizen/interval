@@ -111,7 +111,7 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     /** Takes the Timer's rounds down to [rounds] a step at a time, as the − beside them does. */
     fun lowerRoundsTo(rounds: Int) {
-        val now = app.repository.config.value.rounds
+        val now = app.repository.settings.config.value.rounds
         repeat(now - rounds) { tapDescribed("Fewer rounds") }
         see(hasText("×$rounds"))
     }
@@ -121,7 +121,7 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     /** The workout History holds was kept as a ladder of [step] seconds a round. */
     fun workoutKeptAsLadder(step: Int) = waitFor("a workout kept as a ladder of $step s") {
-        app.repository.history.value.any { it.config.workStepSeconds == step }
+        app.repository.history.history.value.any { it.config.workStepSeconds == step }
     }
 
     /** The sets chip under the Timer's rows, then a quick pick on its sheet. */
@@ -208,7 +208,7 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     fun raiseWeeklyGoal() = tapDescribed("Raise the goal")
 
     fun seeWeeklyGoal(goal: Int) {
-        waitFor("a weekly goal of $goal") { app.repository.appSettings.value.weeklyGoal == goal }
+        waitFor("a weekly goal of $goal") { app.repository.settings.appSettings.value.weeklyGoal == goal }
         see(goal.toString())
     }
 
@@ -245,7 +245,7 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         see("No program followed")
         tap(hasText("Add to plan") and hasClickAction())
         waitFor("a session on Lift planned") {
-            app.repository.planned.value.singleOrNull()?.workout == PlanWorkout.Lift.AnySession
+            app.repository.plans.planned.value.singleOrNull()?.workout == PlanWorkout.Lift.AnySession
         }
     }
 
@@ -359,7 +359,7 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     fun seeSaveAsPresetOnTimer() = see(hasContentDescription("Save as preset"))
 
     fun savedPresets(vararg names: String) =
-        assertEquals(names.toList(), app.repository.customPresets.value.map { it.name })
+        assertEquals(names.toList(), app.repository.presets.customPresets.value.map { it.name })
 
     // Settings
 
@@ -398,12 +398,12 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     fun cancelImport() = tap("Cancel")
 
     fun savedPresetsNamed(vararg names: String) =
-        assertEquals(names.toList(), app.repository.customPresets.value.map { it.name })
+        assertEquals(names.toList(), app.repository.presets.customPresets.value.map { it.name })
 
     fun toggleVoice() = tap("Voice")
 
     fun seeVoice(on: Boolean) {
-        waitFor("voice cues ${if (on) "on" else "off"}") { app.repository.cueSettings.value.voice == on }
+        waitFor("voice cues ${if (on) "on" else "off"}") { app.repository.settings.cueSettings.value.voice == on }
         if (on) ui.onNodeWithText("Voice").assertIsOn() else ui.onNodeWithText("Voice").assertIsOff()
     }
 
@@ -437,7 +437,12 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         waitFor("a workout in Health Connect") { healthStore.workouts.size == 1 }
         val workout = healthStore.workouts.single()
         assertEquals(HealthWorkoutKind.Intervals, workout.kind)
-        assertEquals(app.repository.history.value.single().elapsedSeconds, workout.segments.sumOf { it.lengthSeconds })
+        assertEquals(
+            app.repository.history.history.value.single().elapsedSeconds,
+            workout.segments.sumOf {
+                it.lengthSeconds
+            },
+        )
     }
 
     fun seeNothingMoreInHealthConnect() = assertEquals(1, healthStore.workouts.size)
@@ -459,7 +464,7 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     /** A finished workout's page shows its heart rate, average and peak, and History has kept it. */
     fun seeWorkoutHeartRate(average: Int, peak: Int) {
-        waitFor("a heart rate kept in History") { app.repository.history.value.single().averageBpm == average }
+        waitFor("a heart rate kept in History") { app.repository.history.history.value.single().averageBpm == average }
         see("$average bpm")
         see("$peak bpm")
     }
@@ -475,12 +480,12 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     /** Settings' body weight reads [kg] kilograms, and that is what is kept. */
     fun seeBodyWeight(kg: Int) {
-        waitFor("a body weight of $kg kg") { app.repository.appSettings.value.body.weightKg == kg.toDouble() }
+        waitFor("a body weight of $kg kg") { app.repository.settings.appSettings.value.body.weightKg == kg.toDouble() }
         scrollTo("$kg kg")
     }
 
     fun seeTheme(name: String) {
-        waitFor("the $name theme") { app.repository.appSettings.value.theme.name == name }
+        waitFor("the $name theme") { app.repository.settings.appSettings.value.theme.name == name }
         ui.onNode(hasText(name) and hasClickAction()).assertIsSelected()
     }
 
@@ -497,25 +502,25 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     /** The workout History holds was kept with how it felt: an effort of [level], 1 to 5, and its [note]. */
     fun workoutKeptAs(level: Int, note: String) = waitFor("the workout kept as $level, \"$note\"") {
-        app.repository.history.value.any { it.effort?.level == level && it.note == note }
+        app.repository.history.history.value.any { it.effort?.level == level && it.note == note }
     }
 
     /** The workout History holds was kept with its warm-up and cool-down, as part of its shape. */
     fun workoutKeptWithBookends(warmUpSeconds: Int, coolDownSeconds: Int) =
         waitFor("a workout kept with a $warmUpSeconds s warm-up and a $coolDownSeconds s cool-down") {
-            app.repository.history.value.any {
+            app.repository.history.history.value.any {
                 it.config.warmUpSeconds == warmUpSeconds && it.config.coolDownSeconds == coolDownSeconds
             }
         }
 
     /** The one workout History holds ran to its end: every round, not ended early. */
-    fun workoutKeptFinished() = assertEquals(false, app.repository.history.value.single().endedEarly)
+    fun workoutKeptFinished() = assertEquals(false, app.repository.history.history.value.single().endedEarly)
 
-    fun savedWorkouts(count: Int) = assertEquals(count, app.repository.history.value.size)
+    fun savedWorkouts(count: Int) = assertEquals(count, app.repository.history.history.value.size)
 
     /** The workout History holds was kept as [sets] sets of [rounds]. */
     fun workoutKeptWithSets(sets: Int, rounds: Int) = waitFor("a workout kept as $sets sets of $rounds") {
-        app.repository.history.value.any { it.config.sets == sets && it.config.rounds == rounds }
+        app.repository.history.history.value.any { it.config.sets == sets && it.config.rounds == rounds }
     }
 
     /** The voice said [speech]: the workout's cues, as the player was asked for them. */

@@ -36,28 +36,38 @@ class WorkoutDetailViewModelTest : MainDispatcherTest() {
     private val health = RecordingHealthStore(HealthStatus.Connected)
 
     private fun viewModel(id: Long = 1) =
-        WorkoutDetailViewModel(id, repository, repository, repository, repository, FixedTimestampFormatter, {
-            clock
-        }, health)
+        WorkoutDetailViewModel(
+            id,
+            repository.history,
+            repository.presets,
+            repository.plans,
+            repository.settings,
+            FixedTimestampFormatter,
+            { clock },
+            health,
+        )
 
     @Test
     fun `a workout shows its figures and whether it did a plan`() {
-        repository.planOnce(hiit.asPlan(), TODAY)
-        repository.recordWorkout(hiit.config, elapsedSeconds = 580, workSeconds = 300)
+        repository.plans.planOnce(hiit.asPlan(), TODAY)
+        repository.history.recordWorkout(hiit.config, elapsedSeconds = 580, workSeconds = 300)
         val workout = requireNotNull(viewModel().state.value.workout)
         assertEquals("HIIT 30/30", workout.presetName)
         assertEquals(HistoryDay.Today, workout.day)
         assertEquals("9:40", workout.total)
         assertEquals("5:00", workout.work)
         assertTrue(workout.planned)
-        assertEquals(repository.history.value.single().calories(BodySettings()), workout.calories)
-        repository.updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
+        assertEquals(repository.history.history.value.single().calories(BodySettings()), workout.calories)
+        repository.settings.updateAppSettings { it.copy(body = it.body.copy(weightKg = null)) }
         assertNull(viewModel().state.value.workout?.calories)
     }
 
     @Test
     fun `a shape no preset has is named by its shape`() {
-        repository.recordWorkout(IntervalConfig(workSeconds = 25, restSeconds = 5, rounds = 4), elapsedSeconds = 100)
+        repository.history.recordWorkout(
+            IntervalConfig(workSeconds = 25, restSeconds = 5, rounds = 4),
+            elapsedSeconds = 100,
+        )
         val workout = requireNotNull(viewModel().state.value.workout)
         assertNull(workout.presetName)
         assertEquals("25/5 ×4", workout.name)
@@ -66,21 +76,21 @@ class WorkoutDetailViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `deleting it leaves nothing to show`() {
-        repository.recordWorkout(hiit.config, elapsedSeconds = 580)
+        repository.history.recordWorkout(hiit.config, elapsedSeconds = 580)
         val viewModel = viewModel()
         viewModel.delete()
         assertNull(viewModel.state.value.workout)
-        assertTrue(repository.history.value.isEmpty())
+        assertTrue(repository.history.history.value.isEmpty())
     }
 
     @Test
     fun `repeating puts it on the Timer and planning it again adds a plan`() {
-        repository.recordWorkout(hiit.config, elapsedSeconds = 580)
+        repository.history.recordWorkout(hiit.config, elapsedSeconds = 580)
         val viewModel = viewModel()
         viewModel.putOnTimer()
-        assertEquals(hiit.config.workSeconds, repository.config.value.workSeconds)
+        assertEquals(hiit.config.workSeconds, repository.settings.config.value.workSeconds)
         viewModel.planOnce(viewModel.state.value.choices.single().preset.asPlan(), TODAY + 2)
-        assertEquals("HIIT 30/30", (repository.planned.value.single().workout as PlanWorkout.Interval).name)
+        assertEquals("HIIT 30/30", (repository.plans.planned.value.single().workout as PlanWorkout.Interval).name)
     }
 
     @Test
@@ -93,8 +103,18 @@ class WorkoutDetailViewModelTest : MainDispatcherTest() {
         Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
         var now = noonOf(TODAY)
         val shared = FakeStorage().repository(now = { now })
-        shared.recordWorkout(hiit.config, elapsedSeconds = 580)
-        val page = WorkoutDetailViewModel(1, shared, shared, shared, shared, FixedTimestampFormatter, { now }, health)
+        shared.history.recordWorkout(hiit.config, elapsedSeconds = 580)
+        val page =
+            WorkoutDetailViewModel(
+                1,
+                shared.history,
+                shared.presets,
+                shared.plans,
+                shared.settings,
+                FixedTimestampFormatter,
+                { now },
+                health,
+            )
         assertEquals(HistoryDay.Today, page.state.value.workout?.day)
 
         now = noonOf(TODAY + 1)
@@ -107,7 +127,7 @@ class WorkoutDetailViewModelTest : MainDispatcherTest() {
     @Test
     fun `the page reads a watch's heart rate over the workout and keeps it`() {
         val started = clock - 600_000
-        repository.recordWorkout(hiit.config, elapsedSeconds = 580, startedAtEpochMillis = started)
+        repository.history.recordWorkout(hiit.config, elapsedSeconds = 580, startedAtEpochMillis = started)
         health.heartRate = HeartRate(averageBpm = 142, peakBpm = 171)
         val viewModel = viewModel()
         assertNull(viewModel.state.value.workout?.heartRate)
@@ -116,7 +136,7 @@ class WorkoutDetailViewModelTest : MainDispatcherTest() {
 
         assertEquals(listOf(started..clock), health.heartRateReads)
         assertEquals(HeartRate(142, 171), viewModel.state.value.workout?.heartRate)
-        assertEquals(142, repository.history.value.single().averageBpm)
+        assertEquals(142, repository.history.history.value.single().averageBpm)
         // Kept: the next time the page shows, the store isn't asked again.
         viewModel.readHeartRate()
         assertEquals(1, health.heartRateReads.size)
@@ -124,20 +144,20 @@ class WorkoutDetailViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `a workout recorded before its start was kept is read from its finish back`() {
-        repository.recordWorkout(hiit.config, elapsedSeconds = 580)
+        repository.history.recordWorkout(hiit.config, elapsedSeconds = 580)
         viewModel().readHeartRate()
         assertEquals(listOf(clock - 580_000..clock), health.heartRateReads)
     }
 
     @Test
     fun `with none in the store the page shows none and asks again next time`() {
-        repository.recordWorkout(hiit.config, elapsedSeconds = 580)
+        repository.history.recordWorkout(hiit.config, elapsedSeconds = 580)
         health.status.value = HealthStatus.Disconnected
         health.heartRate = HeartRate(142, 171)
         val viewModel = viewModel()
         viewModel.readHeartRate()
         assertNull(viewModel.state.value.workout?.heartRate)
-        assertNull(repository.history.value.single().averageBpm)
+        assertNull(repository.history.history.value.single().averageBpm)
 
         health.status.value = HealthStatus.Connected
         viewModel.readHeartRate()
