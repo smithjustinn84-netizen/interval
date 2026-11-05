@@ -31,6 +31,8 @@ import dev.justinsmith.interval.settings.resources.settings_effort_hint
 import dev.justinsmith.interval.settings.resources.settings_export
 import dev.justinsmith.interval.settings.resources.settings_export_action
 import dev.justinsmith.interval.settings.resources.settings_export_hint
+import dev.justinsmith.interval.settings.resources.settings_goal
+import dev.justinsmith.interval.settings.resources.settings_goal_hint
 import dev.justinsmith.interval.settings.resources.settings_halfway
 import dev.justinsmith.interval.settings.resources.settings_halfway_hint
 import dev.justinsmith.interval.settings.resources.settings_halfway_needs_cue
@@ -43,6 +45,10 @@ import dev.justinsmith.interval.settings.resources.settings_import_action
 import dev.justinsmith.interval.settings.resources.settings_import_hint
 import dev.justinsmith.interval.settings.resources.settings_keep_screen_on
 import dev.justinsmith.interval.settings.resources.settings_keep_screen_on_hint
+import dev.justinsmith.interval.settings.resources.settings_plan
+import dev.justinsmith.interval.settings.resources.settings_plan_open
+import dev.justinsmith.interval.settings.resources.settings_reminder
+import dev.justinsmith.interval.settings.resources.settings_reminder_hint
 import dev.justinsmith.interval.settings.resources.settings_sound
 import dev.justinsmith.interval.settings.resources.settings_sound_hint
 import dev.justinsmith.interval.settings.resources.settings_theme
@@ -86,8 +92,8 @@ internal class SettingsGroup(val key: String, val content: @Composable () -> Uni
 internal class HealthActions(val onConnect: () -> Unit, val onDisconnect: () -> Unit, val onInstall: () -> Unit)
 
 /**
- * The groups in order: cues, the workout, calories, the health store where there is one, appearance, your data
- * and, at the foot with no label, the way to About.
+ * The groups in order: cues, the workout, calories, the health store where there is one, the plan's goal and
+ * reminder, appearance, your data and, at the foot with no label, the way to About.
  */
 @Suppress("detekt.LongParameterList") // One callback per setting, as the screen takes them.
 internal fun settingsGroups(
@@ -101,6 +107,7 @@ internal fun settingsGroups(
     onExport: () -> Unit,
     onImport: () -> Unit,
     health: HealthActions,
+    onShowPlan: () -> Unit,
     onShowAbout: () -> Unit,
 ): List<SettingsGroup> = listOfNotNull(
     SettingsGroup("cues") {
@@ -129,6 +136,10 @@ internal fun settingsGroups(
         GroupLabel(stringResource(Res.string.settings_health))
         ListCard { HealthRow(state.health, health) }
     }.takeIf { state.health != HealthStatus.Unavailable },
+    SettingsGroup("plan") {
+        GroupLabel(stringResource(Res.string.settings_plan))
+        PlanCard(state.app.weeklyGoal, state.reminderTime, onShowPlan)
+    },
     SettingsGroup("appearance") {
         GroupLabel(stringResource(Res.string.settings_appearance))
         ListCard {
@@ -261,6 +272,35 @@ private fun ColumnScope.CueRows(cues: CueSettings, halfwayAudible: Boolean, onTo
         cues.vibrate,
         onToggle = { onToggle(CueToggle.Vibrate) },
     )
+}
+
+/**
+ * The plan's two settings as they stand, the weekly [goal] and the [reminderTime], each "Off" while it has none.
+ * Both are changed on Plan, where they sit with what they are for, so either row leads there.
+ */
+@Composable
+private fun PlanCard(goal: Int?, reminderTime: String?, onShowPlan: () -> Unit, modifier: Modifier = Modifier) {
+    val off = stringResource(Res.string.settings_value_off)
+    val open = stringResource(Res.string.settings_plan_open)
+    ListCard(modifier) {
+        ValueRow(
+            stringResource(Res.string.settings_goal),
+            stringResource(Res.string.settings_goal_hint),
+            value = goal?.toString() ?: off,
+            onClick = onShowPlan,
+            onClickLabel = open,
+            dim = goal == null,
+        )
+        RowDivider()
+        ValueRow(
+            stringResource(Res.string.settings_reminder),
+            stringResource(Res.string.settings_reminder_hint),
+            value = reminderTime ?: off,
+            onClick = onShowPlan,
+            onClickLabel = open,
+            dim = reminderTime == null,
+        )
+    }
 }
 
 /**

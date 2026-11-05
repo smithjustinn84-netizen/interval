@@ -38,6 +38,13 @@ class SettingsViewModelTest : MainDispatcherTest() {
     }
 
     @Test
+    fun `the plan's reminder shows as a time of day and as none while it is off`() {
+        assertNull(viewModel.state.value.reminderTime)
+        repository.settings.updateAppSettings { it.copy(reminderMinuteOfDay = 18 * 60) }
+        assertEquals("18:00", viewModel.state.value.reminderTime)
+    }
+
+    @Test
     fun `export offers the exporter's file to share`() {
         viewModel.export()
         assertEquals(listOf(export), sharer.files)

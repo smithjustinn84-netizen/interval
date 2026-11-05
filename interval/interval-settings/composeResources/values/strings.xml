@@ -18,6 +18,13 @@
     <string name="settings_workout">Workout</string>
     <string name="settings_keep_screen_on">Keep screen on</string>
     <string name="settings_keep_screen_on_hint">While a workout is running</string>
+    <!-- The plan's goal and reminder, shown here and changed on Plan. -->
+    <string name="settings_plan">Plan</string>
+    <string name="settings_goal">Weekly goal</string>
+    <string name="settings_goal_hint">Workouts a week, lifts and intervals alike</string>
+    <string name="settings_reminder">Reminder</string>
+    <string name="settings_reminder_hint">On days with a workout planned</string>
+    <string name="settings_plan_open">Change on Plan</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_theme_hint">System follows your device</string>

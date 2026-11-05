@@ -25,6 +25,22 @@ class SettingsAcceptanceTest {
     }
 
     @Test
+    fun `settings shows the plan's goal and reminder and changes them on the plan`() = acceptanceScenario {
+        openSettings()
+        seeGoalInSettings(null)
+        seeReminderInSettings(null)
+
+        openPlanFromSettings()
+        raiseWeeklyGoal()
+        seeWeeklyGoal(3)
+        remindAt("18:00")
+        goBack()
+
+        seeGoalInSettings(3)
+        seeReminderInSettings("18:00")
+    }
+
+    @Test
     fun `a cue and the theme changed in settings are kept after a restart`() {
         val storage = FakeStorage()
         acceptanceScenario(storage = storage) {

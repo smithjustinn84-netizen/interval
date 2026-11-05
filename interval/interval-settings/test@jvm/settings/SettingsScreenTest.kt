@@ -16,6 +16,7 @@ import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -61,6 +62,7 @@ class SettingsScreenTest {
             onSetTheme = { calls += it },
             onShowAbout = { calls += "about" },
             inPane = inPane,
+            onShowPlan = { calls += "plan" },
             onSetWeight = { calls += "weight $it" },
             onSetWeightUnit = { calls += it },
             onClearWeight = { calls += "clear weight" },
@@ -96,6 +98,20 @@ class SettingsScreenTest {
         state = defaults.copy(health = HealthStatus.NotInstalled)
         onNodeWithText("Health Connect").performClick()
         assertEquals(listOf<Any>("connect health", "disconnect health", "install health"), calls)
+    }
+
+    @Test
+    fun `the plan's goal and reminder show as they stand and both lead to the plan`() = runUiTest {
+        var state by mutableStateOf(defaults)
+        setThemedContent { Screen(state) }
+        scrollToText("Weekly goal")
+        onNode(hasText("Weekly goal") and hasText("Off")).assertExists()
+        onNode(hasText("Reminder") and hasText("Off")).assertExists()
+
+        state = defaults.copy(app = defaults.app.copy(weeklyGoal = 4), reminderTime = "6:15 PM")
+        onNode(hasText("Weekly goal") and hasText("4")).performScrollTo().performClick()
+        onNode(hasText("Reminder") and hasText("6:15 PM")).performScrollTo().performClick()
+        assertEquals(listOf<Any>("plan", "plan"), calls)
     }
 
     @Test

@@ -423,6 +423,7 @@ private fun appEntries(
         SettingsRoute(
             onBack = { backStack.removeLastOrNull() },
             onShowAbout = { backStack.push(About) },
+            onShowPlan = { backStack.push(Plan) },
             inPane = settingsBeside,
         )
     }

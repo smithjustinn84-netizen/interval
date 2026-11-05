@@ -48,6 +48,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun SettingsRoute(
     onBack: () -> Unit,
     onShowAbout: () -> Unit,
+    onShowPlan: () -> Unit,
     modifier: Modifier = Modifier,
     inPane: Boolean = false,
 ) {
@@ -69,6 +70,7 @@ fun SettingsRoute(
         onShowAbout = onShowAbout,
         modifier = modifier,
         inPane = inPane,
+        onShowPlan = onShowPlan,
         onSetWeight = viewModel::setWeight,
         onSetWeightUnit = viewModel::setWeightUnit,
         onClearWeight = viewModel::clearWeight,
@@ -89,8 +91,9 @@ fun SettingsRoute(
 }
 
 /**
- * The set-once preferences, out of the way of the workout itself, and the way to About. [inPane]
- * when it sits beside the Timer tab on a wide window: there it closes rather than going back.
+ * The set-once preferences, out of the way of the workout itself, the plan's goal and reminder as they stand
+ * ([onShowPlan] leads to where they are changed), your data and the way to About. [inPane] when it sits beside
+ * the Timer tab on a wide window: there it closes rather than going back.
  */
 @Composable
 fun SettingsScreen(
@@ -104,6 +107,7 @@ fun SettingsScreen(
     onShowAbout: () -> Unit,
     modifier: Modifier = Modifier,
     inPane: Boolean = false,
+    onShowPlan: () -> Unit = {},
     onSetWeight: (Int) -> Unit = {},
     onSetWeightUnit: (WeightUnit) -> Unit = {},
     onClearWeight: () -> Unit = {},
@@ -129,6 +133,7 @@ fun SettingsScreen(
         onExport,
         imports.onPick,
         HealthActions(onConnectHealth, onDisconnectHealth, onInstallHealth),
+        onShowPlan,
         onShowAbout,
     )
     if (inPane) {

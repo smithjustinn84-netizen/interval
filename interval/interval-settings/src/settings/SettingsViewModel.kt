@@ -52,6 +52,8 @@ data class SettingsUiState(
     val health: HealthStatus = HealthStatus.Unavailable,
     /** The latest weight in the health store, in kilograms, or null for none or none the app may read. */
     val healthWeightKg: Double? = null,
+    /** The plan's reminder as a time of day, "7:00 AM"; null while reminders are off. It is set on Plan. */
+    val reminderTime: String? = null,
 ) {
     val body: BodySettings get() = app.body
 
@@ -91,7 +93,8 @@ enum class CueToggle { Sound, Voice, Halfway, Vibrate }
  * [ImportStep] after another ([import]). The [health] store is shown as it stands
  * and disconnected from here; connecting takes the platform's sheet, which the screen opens. Its latest
  * weight is read each time it connects, and taken only when the user asks ([useHealthWeight]): a weigh-in
- * nobody chose to take would change every estimate silently.
+ * nobody chose to take would change every estimate silently. The weekly goal and the reminder are shown as
+ * they stand and changed on Plan, which the screen leads to.
  */
 @Suppress("detekt.TooManyFunctions") // One function per setting, and export and import beside them.
 class SettingsViewModel(
@@ -280,5 +283,12 @@ class SettingsViewModel(
         app: AppSettings,
         health: HealthStatus,
         healthWeightKg: Double?,
-    ) = SettingsUiState(cues, config.prepSeconds, app, health, healthWeightKg)
+    ) = SettingsUiState(
+        cues,
+        config.prepSeconds,
+        app,
+        health,
+        healthWeightKg,
+        reminderTime = app.reminderMinuteOfDay?.let(timestamps::timeOfDay),
+    )
 }

@@ -395,6 +395,36 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         see("Cues")
     }
 
+    /** Settings' Plan group reads a weekly goal of [goal], or "Off" for none, and that is what is kept. */
+    fun seeGoalInSettings(goal: Int?) {
+        waitFor("a weekly goal of $goal") { app.repository.settings.appSettings.value.weeklyGoal == goal }
+        scrollTo("Weekly goal")
+        see(hasText("Weekly goal") and hasText(goal?.toString() ?: "Off"))
+    }
+
+    /** Settings' Plan group reads a reminder at [time] ("18:00"), or "Off" for none. */
+    fun seeReminderInSettings(time: String?) {
+        scrollTo("Reminder")
+        see(hasText("Reminder") and hasText(time ?: "Off"))
+    }
+
+    /** From Settings' Plan group to the Plan page, where the goal and the reminder are changed. */
+    fun openPlanFromSettings() {
+        scrollTo("Weekly goal")
+        tap(hasText("Weekly goal") and hasClickAction())
+        see(hasContentDescription("Raise the goal"))
+    }
+
+    /** On Plan: opens the reminder's sheet, picks [time] from its quick picks and closes it with Done. */
+    fun remindAt(time: String) {
+        scrollTo("Reminder")
+        tap(hasText("Reminder") and hasClickAction())
+        tap(time)
+        tap("Done")
+        // The sheet has gone, so what comes next acts on the page under it.
+        seeNo("Quick picks")
+    }
+
     /** Under Your data: Import, picking a file that holds [content] in the system's picker. */
     fun importFile(content: String) {
         app.files.next = ShareableFile("interval.json", "application/json", content)
