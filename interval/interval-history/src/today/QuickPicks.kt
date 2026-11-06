@@ -7,6 +7,8 @@ import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.SECONDS_PER_MINUTE
 import dev.justinsmith.interval.timer.builtInFlows
 import dev.justinsmith.interval.timer.withPreset
+import dev.justinsmith.lift.domain.ProgramDay
+import dev.justinsmith.lift.domain.estimatedMinutes
 
 /** The lengths Today offers to pick a workout by, in minutes. */
 val PICK_MINUTES = listOf(5, 10, 15, 20, 30)
@@ -14,7 +16,21 @@ val PICK_MINUTES = listOf(5, 10, 15, 20, 30)
 /** The length picked until another is, by hand or as the session's length in Set up. */
 const val DEFAULT_PICK_MINUTES = 10
 
-private const val PICKS_SHOWN = 3
+/** The presets offered at most, a fewer beside the program's day. */
+const val PICKS_SHOWN = 3
+
+/** The program's next [day], which fits the time picked: about [minutes] long. */
+data class StrengthPick(val day: ProgramDay, val minutes: Int)
+
+/**
+ * The strength there is for [minutes]: the program's next [day] when about as long as it takes ([restSeconds]
+ * between sets) fits them; none with no program followed, or with a session [inProgress], which is Up next's to
+ * resume. Lift has no shorter workouts of its own to offer.
+ */
+fun strengthPick(day: ProgramDay?, restSeconds: Int, minutes: Int, inProgress: Boolean): StrengthPick? {
+    if (day == null || inProgress) return null
+    return day.estimatedMinutes(restSeconds).takeIf { it <= minutes }?.let { StrengthPick(day, it) }
+}
 
 /**
  * A preset that fits the time picked, and how long it runs from the Timer as it stands: [totalSeconds]. A flow is
@@ -27,7 +43,7 @@ data class QuickPick(val preset: Preset, val totalSeconds: Int, val flow: Flow? 
 }
 
 /**
- * The presets that fit [minutes], the longest first and at most three: a few minutes are best spent whole. Each
+ * The presets that fit [minutes], the longest first and at most [shown]: a few minutes are best spent whole. Each
  * is measured as it would run from the Timer [onTimer], whose get-ready time a preset keeps, as the Presets page
  * measures it. One fits by its whole minutes, so 20:10 is a twenty-minute workout. Of two the same length the
  * user's own comes first. After them comes the longest of [flows] that fits, measured after the same get-ready:
@@ -37,12 +53,13 @@ fun List<Preset>.fitting(
     minutes: Int,
     onTimer: IntervalConfig,
     flows: List<Flow> = builtInFlows,
+    shown: Int = PICKS_SHOWN,
 ): List<QuickPick> {
     fun QuickPick.fits() = totalSeconds / SECONDS_PER_MINUTE <= minutes
     val presets = map { QuickPick(it, onTimer.withPreset(it).totalSeconds) }
         .filter { it.fits() }
         .sortedWith(compareByDescending<QuickPick> { it.totalSeconds }.thenByDescending { it.preset.custom })
-        .take(PICKS_SHOWN)
+        .take(shown)
     val flow = flows
         .map { QuickPick(Preset(it.name, it.config), it.config(onTimer.prepSeconds).totalSeconds, it) }
         .filter { it.fits() }

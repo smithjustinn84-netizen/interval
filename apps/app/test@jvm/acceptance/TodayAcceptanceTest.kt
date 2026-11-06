@@ -81,4 +81,19 @@ class TodayAcceptanceTest {
         seeUpNext("15-minute kettlebell plan")
         seeUpNextTakes("about 15 min")
     }
+
+    @Test
+    fun `the program's day is offered by time when it fits and starts from its look`() = acceptanceScenario(
+        lift = FakeLiftStorage().apply {
+            val program = ProgramId.FifteenMinuteKettlebell.name
+            following.row.value = FollowingEntity(programId = program, startedAtEpochMillis = 0)
+        },
+    ) {
+        pickMinutes(10)
+        seeNoStrengthPick(minutes = 15)
+        pickMinutes(15)
+        lookAtStrengthPick(minutes = 15)
+        tap("Start day 1")
+        seeLiftingPage()
+    }
 }

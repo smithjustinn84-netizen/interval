@@ -61,6 +61,8 @@ data class HomeUiState(
     /** Something is planned or a program is followed, whether or not any of it is still to do: not the first run. */
     val hasPlans: Boolean = false,
     val minutes: Int = DEFAULT_PICK_MINUTES,
+    /** The program's next day, first among the picks while it fits the minutes. */
+    val strength: StrengthPick? = null,
     val picks: List<QuickPick> = emptyList(),
     /** Not built yet: the screen waits rather than taking it for a day with nothing planned. */
     val loading: Boolean = false,
@@ -121,17 +123,27 @@ class HomeViewModel(
         flowStore.flows,
         settingsStore.config,
         minutes,
-    ) { presets, flows, onTimer, minutes ->
-        Triple(minutes, presets.fitting(minutes, onTimer, flows), onTimer.prepSeconds)
+        lift.lifting(),
+    ) { presets, flows, onTimer, minutes, lifting ->
+        val strength = strengthPick(lifting.programDay, lifting.restSeconds, minutes, lifting.inProgress)
+        // With the program's day among them, a preset fewer: four rows at most.
+        val shown = if (strength == null) PICKS_SHOWN else PICKS_SHOWN - 1
+        Picked(minutes, strength, presets.fitting(minutes, onTimer, flows, shown), onTimer.prepSeconds)
     }
 
     val state: StateFlow<HomeUiState> =
-        combine(built, picks) { state, (minutes, picks, prepSeconds) ->
+        combine(built, picks) { state, picked ->
             // A flow suggested runs after the get-ready the Timer is set to, as one picked by time does.
             val upNext = state.upNext.map {
-                if (it is UpNextItem.Flow) it.copy(totalSeconds = it.flow.config(prepSeconds).totalSeconds) else it
+                if (it is UpNextItem.Flow) {
+                    it.copy(
+                        totalSeconds = it.flow.config(picked.prepSeconds).totalSeconds,
+                    )
+                } else {
+                    it
+                }
             }
-            state.copy(minutes = minutes, picks = picks, upNext = upNext)
+            state.copy(minutes = picked.minutes, strength = picked.strength, picks = picked.picks, upNext = upNext)
         }
             .flowOn(computation)
             .stateIn(viewModelScope, SharingStarted.Eagerly, HomeUiState.Loading)
@@ -221,3 +233,11 @@ class HomeViewModel(
         )
     }
 }
+
+/** What the minutes picked come to: the strength that fits, the presets and flow, and the Timer's get-ready. */
+private data class Picked(
+    val minutes: Int,
+    val strength: StrengthPick?,
+    val picks: List<QuickPick>,
+    val prepSeconds: Int,
+)

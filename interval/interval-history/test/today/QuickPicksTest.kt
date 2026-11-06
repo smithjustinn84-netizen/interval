@@ -5,8 +5,13 @@ import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInFlows
 import dev.justinsmith.interval.timer.builtInPresets
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.domain.RestClock
+import dev.justinsmith.lift.domain.estimatedMinutes
+import dev.justinsmith.lift.domain.program
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 // The built-ins from a Timer with ten seconds to get ready: Tabata 4:00, Hangboard 5:20, HIIT 30/30 9:40,
@@ -76,5 +81,26 @@ class QuickPicksTest {
         assertEquals(350, picks.single().totalSeconds)
         assertEquals(builtInFlows.first { it.name == "Wrists and fingers" }.config, picks.single().preset.config)
         assertTrue(emptyList<Preset>().fitting(5, onTimer.copy(prepSeconds = 120)).isEmpty())
+    }
+
+    @Test
+    fun `the program's day is the strength pick when it fits the minutes`() {
+        val rest = RestClock.DEFAULT_SECONDS
+        val day = program(ProgramId.FifteenMinuteKettlebell).day(1)
+        val minutes = day.estimatedMinutes(rest)
+
+        assertEquals(StrengthPick(day, minutes), strengthPick(day, rest, minutes, inProgress = false))
+        assertNull(strengthPick(day, rest, minutes - 1, inProgress = false))
+        // A session under way is Up next's to resume, and with no program there is none.
+        assertNull(strengthPick(day, rest, minutes, inProgress = true))
+        assertNull(strengthPick(null, rest, 30, inProgress = false))
+    }
+
+    @Test
+    fun `beside the program's day a preset fewer is offered`() {
+        assertEquals(
+            listOf("15:15 MVO2", "Long efforts"),
+            builtInPresets.fitting(20, onTimer, noFlows, shown = 2).names(),
+        )
     }
 }

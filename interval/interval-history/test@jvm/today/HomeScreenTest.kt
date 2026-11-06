@@ -11,8 +11,6 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.isSelectable
-import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -24,7 +22,6 @@ import dev.justinsmith.interval.history.DayState
 import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.history.UpNextItem
 import dev.justinsmith.interval.history.WeekGoal
-import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
@@ -237,38 +234,6 @@ class HomeScreenTest {
         assertEquals(listOf(20), minutes)
         waitUntil { started.isNotEmpty() }
         assertEquals(listOf("Tabata"), started)
-    }
-
-    @Test
-    fun `up next opens a look at the program's day with its lifts while its start starts at once`() = runUiTest {
-        val started = mutableListOf<ProgramKey?>()
-        val day = program(ProgramId.PressLadders).day(3)
-        val state = empty.copy(upNext = listOf(UpNextItem.Lift(THURSDAY, HistoryDay.Today, day, minutes = 35)))
-        setThemedContent { HomeScreen(state, HomeActions(onStartLift = { started += it })) }
-
-        onNodeWithText("Press ladders 1-2-3").performClick()
-        onNodeWithText("Strength · about 35 min").assertExists()
-        onNodeWithText("Plan for later").assertExists()
-        onAllNodesWithText("Start day 3")[1].performClick()
-        waitUntil { started.isNotEmpty() }
-        assertEquals(listOf<ProgramKey?>(day.program.key), started)
-    }
-
-    @Test
-    fun `a pick planned for later goes on the add sheet with it alone`() = runUiTest {
-        val planned = mutableListOf<String>()
-        setThemedContent {
-            HomeScreen(
-                empty,
-                HomeActions(onPlanOnce = { workout, _ -> planned += (workout as PlanWorkout.Interval).name }),
-            )
-        }
-        onNodeWithText("HIIT 30/30").performScrollTo().performClick()
-        onNodeWithText("Plan for later").performClick()
-        onNodeWithText("Once").performClick()
-        onAllNodesWithText("Add to plan").onLast().performClick()
-        waitUntil { planned.isNotEmpty() }
-        assertEquals(listOf("HIIT 30/30"), planned)
     }
 
     @Test

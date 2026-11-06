@@ -100,6 +100,8 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   ("Strength · about 20 min", "Mobility · 5 moves · 5:00"), what is in it (a session's lifts with their sets, a
   flow's moves, a workout's timeline), Start, and Plan for later, which opens the add sheet on it alone. Up next's
   own Start still starts at once.
+- Strength by time: the program's next day is the first pick by time when about as long as it takes fits the
+  minutes picked ("Strength for the mat", "Day 3 of 16 · week 2", "20 min"), with a preset fewer beside it.
 
 ## [0.4.0] — 2026-11-05
 

@@ -33,3 +33,15 @@ fun IntervalAcceptanceDriver.planForLaterOnce() {
 fun IntervalAcceptanceDriver.plannedOnce(name: String) = waitFor("$name planned") {
     app.repository.plans.planned.value.any { (it.workout as? PlanWorkout.Interval)?.name == name }
 }
+
+/** The program's day among the picks by time: its row, the one with the day and its minutes alone. */
+private fun strengthRow(minutes: Int) =
+    hasText("$minutes min") and hasText("Day 1 of", substring = true) and hasClickAction()
+
+fun IntervalAcceptanceDriver.seeNoStrengthPick(minutes: Int) = seeNo(strengthRow(minutes))
+
+/** The program's day among the picks by time, which opens a look at it. */
+fun IntervalAcceptanceDriver.lookAtStrengthPick(minutes: Int) {
+    tap(strengthRow(minutes))
+    see("Plan for later")
+}

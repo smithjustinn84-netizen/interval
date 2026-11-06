@@ -248,9 +248,14 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, modifier: Modifier = Mo
 private const val LEAD = "lead"
 private const val PICK = "pick:"
 
+/** The program's day among the picks, by the place [Picks] hands on for it. */
+private const val STRENGTH_PLACE = -1
+
 /** What is looked at before Start at [place]: Up next's lead, or a pick by its place in the list. */
 private fun HomeUiState.previewAt(place: String): StartPreview? = when {
     place == LEAD -> agenda.lead?.preview()
+
+    place == "$PICK$STRENGTH_PLACE" -> strength?.let { StartPreview.Lift(it.day, it.minutes) }
 
     place.startsWith(PICK) -> picks.getOrNull(place.removePrefix(PICK).toInt())?.let {
         StartPreview.Workout(it.preset, it.totalSeconds, it.flow)
@@ -413,6 +418,7 @@ private fun NothingDue(actions: HomeActions, modifier: Modifier = Modifier) {
 /** Or pick by time: a length, then the presets that fit it, or the way to the Timer when none does. */
 @Composable
 private fun Picks(state: HomeUiState, actions: HomeActions, onLook: (Int) -> Unit, modifier: Modifier = Modifier) {
+    // The program's day is looked at by a place of its own, before the presets' from 0.
     Column(modifier) {
         GroupLabel(stringResource(Res.string.home_pick_by_time))
         SegmentedPicker(
@@ -423,7 +429,11 @@ private fun Picks(state: HomeUiState, actions: HomeActions, onLook: (Int) -> Uni
             check = false,
         )
         ListCard(Modifier.padding(top = Spacing.space8)) {
-            if (state.picks.isEmpty()) {
+            state.strength?.let { strength ->
+                StrengthRow(strength, onLook = { onLook(STRENGTH_PLACE) })
+                if (state.picks.isNotEmpty()) RowDivider(Modifier.padding(start = Spacing.space4))
+            }
+            if (state.picks.isEmpty() && state.strength == null) {
                 LinkRow(
                     stringResource(Res.string.home_no_pick),
                     stringResource(Res.string.home_no_pick_hint),
@@ -435,6 +445,36 @@ private fun Picks(state: HomeUiState, actions: HomeActions, onLook: (Int) -> Uni
                 PickRow(pick, onLook = { onLook(index) })
             }
         }
+    }
+}
+
+/** The program's next day, which fits: its name over its day, about how long, opening a look at it. */
+@Composable
+private fun StrengthRow(pick: StrengthPick, onLook: () -> Unit, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    val name = programName(pick.day.program)
+    val described = stringResource(Res.string.preview_open_cd, name)
+    Row(
+        modifier
+            .fillMaxWidth()
+            .clickable(onClickLabel = described, onClick = onLook)
+            .heightIn(min = Sizes.listRow)
+            .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+    ) {
+        // The accent, as Lift's sessions are marked everywhere.
+        StripeMark(palette.accent, height = IntervalSizes.historyMarkHeight)
+        Column(Modifier.weight(1f)) {
+            Text(name, style = IntervalTheme.type.label, color = palette.text)
+            Text(programDayLine(pick.day), style = IntervalTheme.type.meta, color = palette.textDim)
+        }
+        Text(
+            stringResource(Res.string.home_minutes, pick.minutes),
+            style = IntervalTheme.type.value,
+            color = palette.text,
+        )
+        Icon(IntervalIcons.Chevron, null, tint = palette.textDim, modifier = Modifier.size(Sizes.chipIcon))
     }
 }
 
