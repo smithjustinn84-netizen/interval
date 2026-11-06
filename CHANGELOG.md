@@ -58,6 +58,15 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   it under "Also today" beside the program's day. Once the flow is done, or the class logged, Today is as it
   was; a workout planned that day still leads. "Or pick by time" offers the longest flow that fits the minutes
   picked, after the presets.
+- Set up: one page that asks what else you train (BJJ, climbing, running, a sport you name, or just the bell), on
+  which days, which bells you own and how long a session is, shows the week those come to, and builds it. The
+  sport goes on its days; a program that one bell and the session's length are enough for is followed (a
+  grappler's for BJJ where one fits, else a beginner's, named with about how long a day takes before anything is
+  built) and its days planned on days without the sport, spread evenly with a rest day left; the bells are kept
+  as your equipment; and the weekly goal is set to the total. Today's "Nothing planned" card leads with it, and
+  Settings has it under Plan, where it opens on what stands and builds again: a program already followed is
+  kept where it is, and workouts you planned yourself stay.
+- The session's length from Set up is the length Today's "Or pick by time" opens on.
 - Exports are schema 7, with the session's length in the settings; a build from before it refuses the file with
   "update the app", and older files read as before.
 

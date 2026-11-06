@@ -45,6 +45,7 @@ class NavKeyRoundTripTest {
             Licenses,
             WorkoutDetail(7),
             Plan,
+            WeekSetup,
             Presets,
             Lifting,
             Programs,

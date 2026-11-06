@@ -75,6 +75,13 @@ data class WorkoutDetail(val id: Long) : NavKey
 data object Plan : NavKey
 
 /**
+ * Set up: what else you train, on which days, which bells you own and how long a session is, and the week those
+ * build. Pushed from Today's card while nothing is planned and from Settings; a new install opens on it, once.
+ */
+@Serializable
+data object WeekSetup : NavKey
+
+/**
  * The presets as a page pushed from the Timer, while the Timer was a tab. They are Train's Conditioning pillar
  * now ([ConditioningTab]) and nothing pushes this; it stays so a back stack saved with it still reads, and
  * `timerUnderTrain` takes it out.

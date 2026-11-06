@@ -15,7 +15,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /** A sport by name, as the picker lists it: "BJJ", "Climbing", "Running", or the user's own. */
 @Composable
-internal fun sportName(sport: Sport): String = when (sport) {
+fun sportName(sport: Sport): String = when (sport) {
     Sport.Bjj -> stringResource(Res.string.sport_bjj)
     Sport.Climbing -> stringResource(Res.string.sport_climbing)
     Sport.Running -> stringResource(Res.string.sport_running)

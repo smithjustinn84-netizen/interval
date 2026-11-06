@@ -61,7 +61,7 @@ open class AcceptanceSteps(protected val ui: DesktopComposeUiTest) {
     }
 
     /** Waits for [condition]; on a timeout, fails saying what was [expected] and what the screen shows instead. */
-    protected fun waitFor(expected: String, condition: () -> Boolean) {
+    fun waitFor(expected: String, condition: () -> Boolean) {
         try {
             ui.waitUntil(timeoutMillis = TIMEOUT_MILLIS, condition = condition)
         } catch (timeout: ComposeTimeoutException) {

@@ -58,4 +58,36 @@
     <string name="license_mit">MIT License</string>
     <string name="license_public_domain">Public domain</string>
 
+
+    <!-- Set up: four answers that build the week -->
+    <string name="setup_title">Set up</string>
+    <string name="setup_intro">Four answers, so Today can pick for you. Change any of them later in Settings.</string>
+    <string name="setup_sport">What else do you train?</string>
+    <string name="setup_sport_another">Another sport</string>
+    <string name="setup_sport_none">Just the bell</string>
+    <string name="setup_sport_name_label">Name of the sport</string>
+    <string name="setup_sport_name_placeholder">Judo, yoga, five-a-side</string>
+    <string name="setup_days">On which days?</string>
+    <string name="setup_bells">Which bells do you own, in kg?</string>
+    <string name="setup_bell_cd">%1$s kg</string>
+    <string name="setup_minutes">How long is a session?</string>
+    <string name="setup_minutes_value">%1$d min</string>
+    <string name="setup_week">Your week</string>
+    <string name="setup_week_empty">Answer above and your week shows here.</string>
+    <!-- Joins two days of a list: "Mon, Wed, Fri". -->
+    <string name="setup_week_days">%1$s, %2$s</string>
+    <string name="setup_week_pick_days">Pick its days</string>
+    <string name="setup_week_name_sport">Name it above</string>
+    <string name="setup_week_no_bell">Tick a bell for strength days</string>
+    <string name="setup_week_no_room">No day left for strength</string>
+    <string name="setup_week_kept">You follow it already</string>
+    <string name="setup_week_no_day">No day free for it</string>
+    <plurals name="setup_goal">
+        <item quantity="one">Goal: %1$d workout a week</item>
+        <item quantity="other">Goal: %1$d workouts a week</item>
+    </plurals>
+    <string name="setup_pick_program">Pick another program</string>
+    <string name="setup_build">Build my week</string>
+    <string name="setup_skip">Skip for now</string>
+    <string name="setup_built">Week built</string>
 </resources>

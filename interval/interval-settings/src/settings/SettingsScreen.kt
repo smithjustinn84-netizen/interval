@@ -51,6 +51,7 @@ fun SettingsRoute(
     onShowPlan: () -> Unit,
     modifier: Modifier = Modifier,
     inPane: Boolean = false,
+    onShowSetup: () -> Unit = {},
 ) {
     val viewModel = koinViewModel<SettingsViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -71,6 +72,7 @@ fun SettingsRoute(
         modifier = modifier,
         inPane = inPane,
         onShowPlan = onShowPlan,
+        onShowSetup = onShowSetup,
         onSetWeight = viewModel::setWeight,
         onSetWeightUnit = viewModel::setWeightUnit,
         onClearWeight = viewModel::clearWeight,
@@ -92,8 +94,8 @@ fun SettingsRoute(
 
 /**
  * The set-once preferences, out of the way of the workout itself, the plan's goal and reminder as they stand
- * ([onShowPlan] leads to where they are changed), your data and the way to About. [inPane] when it sits beside
- * the Timer on a wide window: there it closes rather than going back.
+ * ([onShowPlan] leads to where they are changed, [onShowSetup] to Set up), your data and the way to About.
+ * [inPane] when it sits beside the Timer on a wide window: there it closes rather than going back.
  */
 @Composable
 fun SettingsScreen(
@@ -108,6 +110,7 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     inPane: Boolean = false,
     onShowPlan: () -> Unit = {},
+    onShowSetup: () -> Unit = {},
     onSetWeight: (Int) -> Unit = {},
     onSetWeightUnit: (WeightUnit) -> Unit = {},
     onClearWeight: () -> Unit = {},
@@ -134,6 +137,7 @@ fun SettingsScreen(
         imports.onPick,
         HealthActions(onConnectHealth, onDisconnectHealth, onInstallHealth),
         onShowPlan,
+        onShowSetup,
         onShowAbout,
     )
     if (inPane) {

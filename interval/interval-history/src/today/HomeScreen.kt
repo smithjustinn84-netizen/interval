@@ -49,6 +49,7 @@ import dev.justinsmith.interval.history.resources.home_no_pick
 import dev.justinsmith.interval.history.resources.home_no_pick_hint
 import dev.justinsmith.interval.history.resources.home_pick_by_time
 import dev.justinsmith.interval.history.resources.home_resume_session
+import dev.justinsmith.interval.history.resources.home_setup
 import dev.justinsmith.interval.history.resources.home_start_day
 import dev.justinsmith.interval.history.resources.home_start_pick_cd
 import dev.justinsmith.interval.history.resources.home_start_session
@@ -69,6 +70,7 @@ import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.NoticeAction
+import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.SegmentedPicker
@@ -93,7 +95,8 @@ import org.koin.compose.viewmodel.koinViewModel
  * The Today tab, the app's first: this week, what is up next with its Start, and the presets that fit a few
  * minutes. [onStartWorkout] opens the workout the Timer was just handed, or the flow it names, which the Timer
  * is not handed, and [onStartSession] the session Lift
- * was just told to start; the rest lead to the plan, Lift's programs, the History tab, the Timer and Settings.
+ * was just told to start; the rest lead to the plan, Lift's programs, the History tab, the Timer, Settings and
+ * Set up, which [onSetup] opens.
  */
 @Composable
 fun HomeRoute(
@@ -105,6 +108,7 @@ fun HomeRoute(
     onOpenTimer: () -> Unit,
     modifier: Modifier = Modifier,
     onOpenSettings: () -> Unit = {},
+    onSetup: () -> Unit = {},
 ) {
     val viewModel = koinViewModel<HomeViewModel>()
     val locale = Locale.current.toLanguageTag()
@@ -118,6 +122,7 @@ fun HomeRoute(
     val openHistory by rememberUpdatedState(onOpenHistory)
     val openTimer by rememberUpdatedState(onOpenTimer)
     val openSettings by rememberUpdatedState(onOpenSettings)
+    val setup by rememberUpdatedState(onSetup)
     val notices = LocalNotices.current
     val undo = stringResource(Res.string.notice_undo)
     val actions = remember(viewModel, notices, undo) {
@@ -147,6 +152,7 @@ fun HomeRoute(
             onOpenHistory = { openHistory() },
             onOpenTimer = { openTimer() },
             onOpenSettings = { openSettings() },
+            onSetup = { setup() },
         )
     }
     HomeScreen(state, actions, modifier)
@@ -169,6 +175,8 @@ class HomeActions(
     val onOpenHistory: () -> Unit = {},
     val onOpenTimer: () -> Unit = {},
     val onOpenSettings: () -> Unit = {},
+    /** Opens Set up, which builds a week from four answers. */
+    val onSetup: () -> Unit = {},
 )
 
 /**
@@ -295,7 +303,7 @@ private fun upNextDetail(next: UpNextItem): String = when (next) {
     )
 }
 
-/** Nothing up next: what Today is waiting for, and the two ways to give it one. */
+/** Nothing up next: what Today is waiting for, and the ways to give it one, Set up's four answers first. */
 @Composable
 private fun NothingPlanned(actions: HomeActions, modifier: Modifier = Modifier) {
     ListCard(modifier) {
@@ -308,11 +316,12 @@ private fun NothingPlanned(actions: HomeActions, modifier: Modifier = Modifier) 
             Modifier.padding(start = Spacing.space16, end = Spacing.space16, bottom = Spacing.space16),
             verticalArrangement = Arrangement.spacedBy(Spacing.space8),
         ) {
-            AccentButton(stringResource(Res.string.history_empty_plan), actions.onPlan, Modifier.fillMaxWidth())
-            SecondaryButton(
+            AccentButton(stringResource(Res.string.home_setup), actions.onSetup, Modifier.fillMaxWidth())
+            SecondaryButton(stringResource(Res.string.history_empty_plan), actions.onPlan, Modifier.fillMaxWidth())
+            QuietTextButton(
                 stringResource(Res.string.home_follow_program),
                 actions.onPrograms,
-                Modifier.fillMaxWidth(),
+                Modifier.align(Alignment.CenterHorizontally),
             )
         }
     }

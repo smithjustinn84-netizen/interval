@@ -1,8 +1,5 @@
 package dev.justinsmith.interval.plan
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -15,7 +12,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,13 +25,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextAlign
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.common_joined
 import dev.justinsmith.interval.history.resources.history_kind_interval
@@ -61,18 +53,18 @@ import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.Corners
+import dev.justinsmith.interval.ui.DayToggle
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
-import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.WeekdayForm
+import dev.justinsmith.interval.ui.WeekdayPicker
 import dev.justinsmith.interval.ui.joined
-import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.interval.ui.weekdayText
 import dev.justinsmith.interval.ui.workoutDescription
@@ -370,27 +362,6 @@ private fun ChoiceRow(choice: PlanChoice, selected: Boolean, onPick: () -> Unit)
     )
 }
 
-/**
- * Monday to Sunday as toggles over [weekdays], a bit per day (Monday is bit 0). At least one day stays
- * picked, so Add always has somewhere to put the workout.
- */
-@Composable
-private fun WeekdayPicker(weekdays: Int, onChange: (Int) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space4)) {
-        for (weekday in 1..DAYS_PER_WEEK) {
-            val bit = 1 shl (weekday - 1)
-            DayToggle(
-                label = weekdayText(weekday, WeekdayForm.Initial),
-                description = weekdayText(weekday),
-                on = weekdays and bit != 0,
-                onToggle = { onChange((weekdays xor bit).takeIf { it != 0 } ?: weekdays) },
-                role = Role.Checkbox,
-                modifier = Modifier.weight(1f),
-            )
-        }
-    }
-}
-
 /** [days] a week to a row, the [picked] one accent; a short last row keeps the columns. */
 @Composable
 private fun DayPicker(days: List<DayChoice>, picked: Long, onPick: (Long) -> Unit) {
@@ -416,38 +387,5 @@ private fun DayPicker(days: List<DayChoice>, picked: Long, onPick: (Long) -> Uni
                 repeat(DAYS_PER_WEEK - week.size) { Spacer(Modifier.weight(1f)) }
             }
         }
-    }
-}
-
-/** A day to pick: accent when [on], following its state's colour. */
-@Composable
-private fun DayToggle(
-    label: String,
-    description: String,
-    on: Boolean,
-    onToggle: () -> Unit,
-    role: Role,
-    modifier: Modifier = Modifier,
-) {
-    val palette = IntervalTheme.palette
-    val haptics = LocalHapticFeedback.current
-    val fill by animateColorAsState(if (on) palette.accent else palette.surfaceVariant, tween(Motion.STATE_MILLIS))
-    val ink by animateColorAsState(if (on) palette.onAccent else palette.text, tween(Motion.STATE_MILLIS))
-    val interaction = remember { MutableInteractionSource() }
-    Box(
-        modifier
-            .heightIn(min = Sizes.segment)
-            .pressScale(interaction)
-            .clip(Corners.radius12)
-            .background(fill)
-            .toggleable(on, interaction, LocalIndication.current, role = role) {
-                haptics.performHapticFeedback(HapticFeedbackType.Confirm)
-                onToggle()
-            }
-            .semantics { contentDescription = description }
-            .padding(vertical = Spacing.space8),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(label, style = IntervalTheme.type.label, color = ink, textAlign = TextAlign.Center)
     }
 }

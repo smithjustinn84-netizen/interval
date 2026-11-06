@@ -63,6 +63,7 @@ class SettingsScreenTest {
             onShowAbout = { calls += "about" },
             inPane = inPane,
             onShowPlan = { calls += "plan" },
+            onShowSetup = { calls += "set up" },
             onSetWeight = { calls += "weight $it" },
             onSetWeightUnit = { calls += it },
             onClearWeight = { calls += "clear weight" },
@@ -112,6 +113,16 @@ class SettingsScreenTest {
         onNode(hasText("Weekly goal") and hasText("4")).performScrollTo().performClick()
         onNode(hasText("Reminder") and hasText("6:15 PM")).performScrollTo().performClick()
         assertEquals(listOf<Any>("plan", "plan"), calls)
+    }
+
+    @Test
+    fun `set up is a row under the plan's and opens it`() = runUiTest {
+        setThemedContent { Screen() }
+        scrollToText("Set up")
+        onNode(hasText("Set up") and hasText("Your sport, its days, your bells and how long a session is"))
+            .performScrollTo()
+            .performClick()
+        assertEquals(listOf<Any>("set up"), calls)
     }
 
     @Test

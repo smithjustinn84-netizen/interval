@@ -191,7 +191,8 @@
     <string name="notice_workout_deleted">Workout deleted</string>
     <string name="home_title">Today</string>
     <string name="home_empty_title">Nothing planned</string>
-    <string name="home_empty_text">Plan your week or follow a program, and what's next waits here.</string>
+    <string name="home_empty_text">Answer four questions and Today picks for you, or plan the week yourself.</string>
+    <string name="home_setup">Set up your week</string>
     <string name="home_follow_program">Follow a program</string>
     <string name="home_done_title">Nothing more due</string>
     <string name="home_done_text">What's planned for the next seven days is done. Pick by time, or add to the plan.</string>

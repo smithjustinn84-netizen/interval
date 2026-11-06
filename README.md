@@ -97,7 +97,7 @@ Interval is designed around modern multiplatform architecture principles, cleanl
 ```
 interval/
 ├── apps/                # The app and its hosts
-│   ├── app/             # Composition root: Navigation 3 back stack, AppKoin, About, export
+│   ├── app/             # Composition root: Navigation 3 back stack, AppKoin, About, export, Set up
 │   ├── androidApp/      # Android host & manifest
 │   ├── desktopApp/      # Desktop JVM host (Compose Hot Reload ready)
 │   └── iosApp/          # iOS Swift host & Xcode wrapper

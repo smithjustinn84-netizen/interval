@@ -14,6 +14,7 @@ import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.fakes.tabataPreset
 import dev.justinsmith.interval.history.DayCell
@@ -46,17 +47,25 @@ private fun option(text: String): SemanticsMatcher = hasText(text) and isSelecta
 
 class HomeScreenTest {
     @Test
-    fun `nothing planned leads to the plan and to the programs`() = runUiTest {
+    fun `nothing planned leads to set up first then to the plan and to the programs`() = runUiTest {
         val calls = mutableListOf<String>()
         setThemedContent {
-            HomeScreen(empty, HomeActions(onPlan = { calls += "plan" }, onPrograms = { calls += "programs" }))
+            HomeScreen(
+                empty,
+                HomeActions(
+                    onPlan = { calls += "plan" },
+                    onPrograms = { calls += "programs" },
+                    onSetup = { calls += "set up" },
+                ),
+            )
         }
 
         onNode(hasText("Today") and isHeading()).assertIsDisplayed()
         onNodeWithText("Nothing planned").assertIsDisplayed()
+        onNodeWithText("Set up your week").performClick()
         onNodeWithText("Plan your week").performClick()
         onNodeWithText("Follow a program").performClick()
-        assertEquals(listOf("plan", "programs"), calls)
+        assertEquals(listOf("set up", "plan", "programs"), calls)
     }
 
     @Test
@@ -66,6 +75,7 @@ class HomeScreenTest {
 
         onNodeWithText("Nothing more due").assertIsDisplayed()
         onNodeWithText("Nothing planned").assertDoesNotExist()
+        onNodeWithText("Set up your week").assertDoesNotExist()
         onNodeWithText("Plan your week").assertDoesNotExist()
         onNodeWithText("Edit plan").performClick()
         assertEquals(1, plans)
@@ -216,7 +226,8 @@ class HomeScreenTest {
         onNode(option("10 min")).assertIsSelected()
         onNode(option("20 min")).performClick()
         onNodeWithText("HIIT 30/30").assertIsDisplayed()
-        onNodeWithContentDescription("Start Tabata").performClick()
+        // Under the card's three ways to a plan, the third pick is below a phone's first screen.
+        onNodeWithContentDescription("Start Tabata").performScrollTo().performClick()
         assertEquals(listOf(20), minutes)
         assertEquals(listOf("Tabata"), started)
     }

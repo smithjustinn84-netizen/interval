@@ -7,6 +7,7 @@ import dev.justinsmith.interval.export.AppDataExporter
 import dev.justinsmith.interval.export.AppDataImporter
 import dev.justinsmith.interval.settings.DataExporter
 import dev.justinsmith.interval.settings.DataImporter
+import dev.justinsmith.interval.weeksetup.WeekSetupViewModel
 import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.data.LiftRepository
 import dev.justinsmith.lift.di.liftFeatureModules
@@ -17,6 +18,7 @@ import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.core.module.Module
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 import kotlin.time.Duration.Companion.seconds
 
@@ -48,14 +50,16 @@ private val intervalFeatureModules =
 
 /**
  * What only the app can build, seeing both sides: the export and the import, over both sides' storage, what
- * Lift reads of the interval side (the workouts for its week, and the goal set on Plan), and the week as the
- * home-screen widget shows it (built on first use: only Android's host asks for it).
+ * Lift reads of the interval side (the workouts for its week, and the goal set on Plan), the week as the
+ * home-screen widget shows it (built on first use: only Android's host asks for it), and Set up, which writes the
+ * plan, the settings, Lift's gear and the program followed (its answers in its entry's `SavedStateHandle`).
  */
 private val appModule = module {
     single<DataExporter> { AppDataExporter(get(), get(), get(), get(), get()) }
     single<DataImporter> { AppDataImporter(get(), get()) }
     single<IntervalActivity> { RepositoryIntervalActivity(get(), get(), get(StorageScope)) }
     single { WeekStandingSource(get(), get(), get(), get(), get(StorageScope)) }
+    viewModel { WeekSetupViewModel(get(), get(), get(), get(), get(), get()) }
 }
 
 /**

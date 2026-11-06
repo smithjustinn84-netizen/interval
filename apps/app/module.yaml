@@ -1,6 +1,6 @@
-# The app itself: its navigation and container over every feature, and the About pages. What the three app
+# The app itself: its navigation and container over every feature, the About pages and Set up. What the three app
 # shells (`androidApp`, `iosApp`, `desktopApp`) depend on.
-description: "The app: back stack, DI container, About, export; what the platform hosts run"
+description: "The app: back stack, DI container, About, export, Set up; what the platform hosts run"
 product:
   type: kmp/lib
   platforms: [android, iosArm64, iosSimulatorArm64, jvm]
@@ -43,6 +43,9 @@ dependencies:
   - $libs.androidx.navigation3.ui
   - $libs.koin.core
   - $libs.koin.compose
+  # Set up's ViewModel, the one the app itself declares: it writes both sides' stores.
+  - $libs.koin.core.viewmodel
+  - $libs.koin.compose.viewmodel
   - $libs.kermit
 
 test-dependencies:

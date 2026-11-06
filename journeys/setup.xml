@@ -1,0 +1,28 @@
+<journey name="Set up">
+  <description>
+    Set up asks four things (what else you train, on which days, which bells you own, how long a session is),
+    shows the week they come to, and builds it: the sport on its days, a program one bell and the time are enough
+    for on the days between, the bells and a goal. Today's card offers it while nothing is planned, and Settings
+    always has it, where it shows what stands and builds again without starting the program over. Run on a fresh
+    install (adb shell pm clear dev.justinsmith.interval), on a Thursday or with the days below moved to suit.
+  </description>
+  <actions>
+    <action>On Today, verify that the card says "Nothing planned" with "Set up your week" over "Plan your week" and "Follow a program"</action>
+    <action>Tap "Set up your week"</action>
+    <action>Verify that "Set up" asks "What else do you train?", "Which bells do you own, in kg?" and "How long is a session?" with "15 min" picked, that "Your week" says "Answer above and your week shows here.", and that "Build my week" is dimmed</action>
+    <action>Tap "BJJ" and verify that "On which days?" appears under it with M T W T F S S, none picked, and that "Your week" says "BJJ" over "Pick its days"</action>
+    <action>Tap M, W and F; tap "16"; leave "15 min"</action>
+    <action>Verify that "Your week" reads "BJJ" over "Mon, Wed, Fri", "Your first 100 swings" over "about 15 min · Tue, Thu, Sat" and "Goal: 6 workouts a week", with "Pick another program" under the card</action>
+    <action>Tap "Just the bell" and verify that the days go and the week is the program alone on Mon, Wed, Fri; tap "BJJ" again and verify that M, W and F are still picked</action>
+    <action>Tap "30 min" and verify that the program becomes "Round conditioning" on two days; tap "15 min" again</action>
+    <action>Tap "Build my week"</action>
+    <action>Verify that Today is shown with the notice "Week built", the week strip naming "BJJ" under Monday, Wednesday and Friday, "15 min" picked under "Or pick by time", and (on a Tuesday, Thursday or Saturday) "Your first 100 swings" up next with "about 15 min" and "Start day 1"</action>
+    <action>Tap the "Train" tab, then "Your equipment" on Strength, and verify that 16 kg alone is picked; go back</action>
+    <action>Open Settings from the gear and verify that the Plan group reads "Weekly goal" 6 with a "Set up" row under "Reminder"</action>
+    <action>Tap "Set up" and verify that it opens on BJJ with M, W and F picked, 16 ticked and "15 min", and that the week says "Your first 100 swings" over "You follow it already · Tue, Thu, Sat"</action>
+    <action>Tap T (Tuesday) and "24", and verify that the program's days move to suit and the goal reads 6 still</action>
+    <action>Tap "Build my week" and verify that Today is shown with "Week built" and "BJJ" under four days of the week</action>
+    <action>Tap the "History" tab, then "Edit plan" or the plan's row, and verify that the plan lists BJJ on four days and the program's day on two, each once, and that the program on Train is still on day 1 of the same week it started</action>
+    <action>Open Settings, tap "Set up", then "Skip for now", and verify that Settings is shown again with nothing changed</action>
+  </actions>
+</journey>

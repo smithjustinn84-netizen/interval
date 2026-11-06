@@ -49,6 +49,8 @@ import dev.justinsmith.interval.settings.resources.settings_plan
 import dev.justinsmith.interval.settings.resources.settings_plan_open
 import dev.justinsmith.interval.settings.resources.settings_reminder
 import dev.justinsmith.interval.settings.resources.settings_reminder_hint
+import dev.justinsmith.interval.settings.resources.settings_setup
+import dev.justinsmith.interval.settings.resources.settings_setup_hint
 import dev.justinsmith.interval.settings.resources.settings_sound
 import dev.justinsmith.interval.settings.resources.settings_sound_hint
 import dev.justinsmith.interval.settings.resources.settings_theme
@@ -108,6 +110,7 @@ internal fun settingsGroups(
     onImport: () -> Unit,
     health: HealthActions,
     onShowPlan: () -> Unit,
+    onShowSetup: () -> Unit,
     onShowAbout: () -> Unit,
 ): List<SettingsGroup> = listOfNotNull(
     SettingsGroup("cues") {
@@ -138,7 +141,7 @@ internal fun settingsGroups(
     }.takeIf { state.health != HealthStatus.Unavailable },
     SettingsGroup("plan") {
         GroupLabel(stringResource(Res.string.settings_plan))
-        PlanCard(state.app.weeklyGoal, state.reminderTime, onShowPlan)
+        PlanCard(state.app.weeklyGoal, state.reminderTime, onShowPlan, onShowSetup)
     },
     SettingsGroup("appearance") {
         GroupLabel(stringResource(Res.string.settings_appearance))
@@ -276,10 +279,17 @@ private fun ColumnScope.CueRows(cues: CueSettings, halfwayAudible: Boolean, onTo
 
 /**
  * The plan's two settings as they stand, the weekly [goal] and the [reminderTime], each "Off" while it has none.
- * Both are changed on Plan, where they sit with what they are for, so either row leads there.
+ * Both are changed on Plan, where they sit with what they are for, so either row leads there. Under them, the way
+ * back to Set up, whose four answers build the week again.
  */
 @Composable
-private fun PlanCard(goal: Int?, reminderTime: String?, onShowPlan: () -> Unit, modifier: Modifier = Modifier) {
+private fun PlanCard(
+    goal: Int?,
+    reminderTime: String?,
+    onShowPlan: () -> Unit,
+    onShowSetup: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val off = stringResource(Res.string.settings_value_off)
     val open = stringResource(Res.string.settings_plan_open)
     ListCard(modifier) {
@@ -299,6 +309,12 @@ private fun PlanCard(goal: Int?, reminderTime: String?, onShowPlan: () -> Unit, 
             onClick = onShowPlan,
             onClickLabel = open,
             dim = reminderTime == null,
+        )
+        RowDivider()
+        LinkRow(
+            stringResource(Res.string.settings_setup),
+            stringResource(Res.string.settings_setup_hint),
+            onClick = onShowSetup,
         )
     }
 }

@@ -120,7 +120,7 @@ interval/            the interval timer
                      `platformModule` with its storage, player, `WorkoutService` and `PlanReminderReceiver`
                      (android). Over `core-platform`, not `core`; only `app` depends on it
   interval-ui        the workout's shared words and widgets (`ConfigText`, `FieldRow`, `ValueSheet`, `Timeline`,
-                     `WeekdayForm`, `ActivitySheet`, `StartButton`, `DescribeHint`), `PhaseColorsOf`, the intro
+                     `WeekdayForm`, `WeekdayPicker`, `ActivitySheet`, `StartButton`, `DescribeHint`), `PhaseColorsOf`, the intro
                      (splash/: `WithIntro`, `IntervalMark`)
   interval-testing   `FakeStorage` and the fake DAOs, `RecordingCuePlayer`, `RecordingBackgroundWorkout`,
                      `RecordingPlanReminders`, `fakePlatformModule`/`fakeStorageModule`, the presets tests lean on
@@ -144,7 +144,8 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      sessions, a set's `Load` (sealed: bell, bar, bodyweight, band, mat) and a block's (null
                      for none named; `Load.named`, `Block.withLoad`), records,
                      `EmomClock`/`HoldClock`/`RestClock`, suggestions, about how long a program's day takes
-                     (`Estimate.kt`, from its sets, each lift's pace and the rest between sets). No dependencies
+                     (`Estimate.kt`, from its sets, each lift's pace and the rest between sets), the program to
+                     start someone on with one bell (`StarterProgram.kt`). No dependencies
   lift-api           the ports between the sides, package `dev.justinsmith.lift.data`: `IntervalActivity` (what
                      Lift reads of the interval side, the days a sport was logged on among it; `app` binds it),
                      `LiftActivity` (what the interval side reads of Lift; `SessionRepository` is it). Over
@@ -176,7 +177,8 @@ apps/
                      it: `selectTab`, `showTimer`, a shortcut's `open`, the fix-ups for a stack an older build saved), `di/AppKoin.kt` (`appModules`,
                      `initAppKoin`, the `IntervalActivity` Lift reads, over `IntervalRepository`, and the
                      `WeekStandingSource` the widget shows, over both sides' stores; `data/`),
-                     `nav/Routes.kt` (the app's own keys), `ui/AppNavigation.kt`, about/, export/,
+                     `nav/Routes.kt` (the app's own keys), `ui/AppNavigation.kt`, about/, export/, weeksetup/
+                     (Set up, the one page that writes both sides' stores, so the one feature the app holds),
                      `app_name` and `app_icon`. What `androidApp`, `iosApp` and `desktopApp` depend on
   androidApp         Android host application: `IntervalApplication` (starts the container, and keeps the widget
                      drawn), AndroidManifest.xml, res/, launch theme, ProGuard rules, keystore, `ShortcutActivity`,
@@ -361,6 +363,21 @@ toolchain (`$compose.*`).
   the Today and History routes ask before they put anything on the Timer). Today offers the longest flow that fits
   the minutes picked after the presets (`fitting`), and on a day with a sport still to log leads with the one for
   before it (`flowBefore`).
+- **Set up**: one page (`apps/app/src/weeksetup/`, the `WeekSetup` key) that asks what else you train, on which
+  days, which bells you own and how long a session is, shows the week those come to and builds it. It lives in
+  `app` because building writes four stores across both sides (`PlanStore`, `SettingsStore`, Lift's `GearStore`
+  and `ProgramStore`), which no feature may reach together. Its two decisions are pure: `starterProgram`
+  (`lift-domain`, `StarterProgram.kt`) picks among the built-ins one bell is enough for (`Program.oneBell`: no
+  lift with two bells, none under a bar or against a band, none that needs a bar to hang from or a bench;
+  `StarterProgramTest` pins the set, so a new built-in says which side it is on) those whose longest day fits the
+  session, a grappler's first for BJJ, then a beginner's, then any; `buildWeek` (`BuiltWeek.kt`) puts the sport
+  on its days and the program's on the free ones, spread evenly with a rest day left, and says which plans a
+  rebuild takes off first (the weekly days of the sport it opened with and of the program; everything else
+  planned stays and its weekdays are taken). `WeekSetupViewModel` keeps the answers in its entry's
+  `SavedStateHandle`, opens on what stands, and builds once: it never calls `ProgramStore.follow` while a program
+  is followed, since following restarts it. The session's length is `AppSettings.sessionMinutes`, which Today's
+  pick by time opens on (`HomeViewModel`, until a length is picked by hand). Today's empty card and Settings'
+  Plan group open it.
 - **Health Connect**: `HealthStore.record` takes a `HealthWorkout` (core-platform's `Health.kt`): `WorkoutViewModel`
   builds one from the course it keeps (`CourseSpan`s in `WorkoutProgress`, so a restart loses none) as the workout
   ends, `FinishSession` (`lift-session`) from the session's sets (`HealthWorkouts.kt` in each); each is written

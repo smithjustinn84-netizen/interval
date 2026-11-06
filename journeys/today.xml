@@ -1,12 +1,12 @@
 <journey name="Today">
   <description>
-    The app opens on Today. With nothing planned it leads to the plan; a session planned for today is up next
+    The app opens on Today. With nothing planned it leads to Set up and to the plan; a session planned for today is up next
     there and starts from it; a preset that fits a few minutes starts from "Or pick by time", and so does the
     flow that fits; and a program followed puts its next day up next, saying about how long it takes. Run on a fresh install
     (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
-    <action>Verify that the Today tab is shown and selected, with "This week" and "Nothing planned"</action>
+    <action>Verify that the Today tab is shown and selected, with "This week" and "Nothing planned" over "Set up your week", "Plan your week" and "Follow a program"</action>
     <action>Tap "5 min" under "Or pick by time"</action>
     <action>Verify that "Tabata" is listed with its length and a "Start", and under the presets "Wrists and fingers" with "5 moves · 5:00"</action>
     <action>Tap the "Start" on the "Tabata" row</action>

@@ -81,6 +81,7 @@ import dev.justinsmith.interval.nav.Shortcut
 import dev.justinsmith.interval.nav.Tab
 import dev.justinsmith.interval.nav.Timer
 import dev.justinsmith.interval.nav.TodayTab
+import dev.justinsmith.interval.nav.WeekSetup
 import dev.justinsmith.interval.nav.Workout
 import dev.justinsmith.interval.nav.WorkoutDetail
 import dev.justinsmith.interval.nav.push
@@ -122,6 +123,7 @@ import dev.justinsmith.interval.ui.rememberNavigationArea
 import dev.justinsmith.interval.ui.rememberNotices
 import dev.justinsmith.interval.ui.tabGroup
 import dev.justinsmith.interval.ui.tabScenes
+import dev.justinsmith.interval.weeksetup.WeekSetupRoute
 import dev.justinsmith.interval.workout.WorkoutRoute
 import dev.justinsmith.lift.data.LiftRepository
 import dev.justinsmith.lift.nav.LiftDetail
@@ -165,6 +167,7 @@ internal val navConfiguration = SavedStateConfiguration {
             subclass(WorkoutDetail::class)
             subclass(Plan::class)
             subclass(Presets::class)
+            subclass(WeekSetup::class)
             liftRoutes()
         }
     }
@@ -454,6 +457,7 @@ private fun appEntries(
             onBack = { backStack.removeLastOrNull() },
             onShowAbout = { backStack.push(About) },
             onShowPlan = { backStack.push(Plan) },
+            onShowSetup = { backStack.push(WeekSetup) },
             // Beside the Timer its start is the Timer's edge, not the window's.
             modifier = if (settingsBeside) {
                 Modifier.consumeWindowInsets(safeDrawingAt(WindowInsetsSides.Start))
@@ -484,6 +488,22 @@ private fun appEntries(
     }
     entry<Licenses> { LicensesRoute(onBack = { backStack.removeLastOrNull() }) }
     entry<Privacy> { PrivacyScreen(onBack = { backStack.removeLastOrNull() }) }
+    setupEntry(backStack, selectTab)
+}
+
+/**
+ * Set up, pushed over Today or Settings. Back and Skip leave it as it was found; a week built shows on Today,
+ * whatever it was opened from; and its link to Lift's programs opens them over it, so one followed there is the
+ * one its week keeps.
+ */
+private fun EntryProviderScope<NavKey>.setupEntry(backStack: NavBackStack<NavKey>, selectTab: (Tab) -> Unit) {
+    entry<WeekSetup> {
+        WeekSetupRoute(
+            onBack = { backStack.removeLastOrNull() },
+            onShowWeek = { selectTab(TodayTab) },
+            onPrograms = { backStack.push(Programs) },
+        )
+    }
 }
 
 /**
@@ -582,6 +602,7 @@ private fun EntryProviderScope<NavKey>.todayEntry(
             onOpenHistory = { selectTab(HistoryTab) },
             onOpenTimer = { backStack.showTimer() },
             onOpenSettings = { backStack.push(Settings) },
+            onSetup = { backStack.push(WeekSetup) },
         )
     }
 }

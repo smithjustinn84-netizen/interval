@@ -25,6 +25,8 @@
     <string name="settings_reminder">Reminder</string>
     <string name="settings_reminder_hint">On days with a workout planned</string>
     <string name="settings_plan_open">Change on Plan</string>
+    <string name="settings_setup">Set up</string>
+    <string name="settings_setup_hint">Your sport, its days, your bells and how long a session is</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_theme_hint">System follows your device</string>
