@@ -8,4 +8,54 @@
     <string name="mobility_sheet_note">Each move is named and counted as you go, with a few seconds to change sides and to get into the next.</string>
     <string name="mobility_move_time_sides">%1$s a side</string>
     <string name="mobility_start">Start</string>
+    <string name="mobility_own">On your own</string>
+    <string name="mobility_build">Build a flow</string>
+    <string name="mobility_build_hint">From the mat exercises and timed holds, or moves of your own</string>
+    <string name="mobility_make_yours">Make it yours</string>
+    <string name="mobility_edit">Edit</string>
+    <string name="flow_saved">Flow saved</string>
+    <string name="flow_deleted">Flow deleted</string>
+    <string name="flow_undo">Undo</string>
+    <!-- The flow editor -->
+    <string name="flow_new_title">Build a flow</string>
+    <string name="flow_edit_title">Edit flow</string>
+    <string name="flow_name_label">Name of the flow</string>
+    <string name="flow_name_placeholder">Morning hips</string>
+    <string name="flow_use">When it is for</string>
+    <string name="flow_use_before">Before training</string>
+    <string name="flow_use_after">After, or on a day off</string>
+    <string name="flow_note_label">A note on it</string>
+    <string name="flow_note_placeholder">no bell, on the mat</string>
+    <string name="flow_moves">Moves</string>
+    <string name="flow_no_moves">No moves yet: add the first.</string>
+    <string name="flow_add_move">Add a move</string>
+    <string name="flow_total">%1$s in all, with the change-overs</string>
+    <string name="flow_clash">Same moves and times as %1$s: change a time to keep both.</string>
+    <string name="flow_save">Save flow</string>
+    <string name="flow_delete">Delete flow</string>
+    <string name="flow_copy_name">%1$s (yours)</string>
+    <string name="flow_move_unnamed">Name this move</string>
+    <!-- Adding a move -->
+    <string name="move_library">From the library</string>
+    <string name="move_own">Your own</string>
+    <string name="move_type">Type a move</string>
+    <string name="move_type_hint">Its name, how it is done and how long</string>
+    <!-- A move's sheet -->
+    <string name="move_title">Your move</string>
+    <string name="move_name_label">Name of the move</string>
+    <string name="move_name_placeholder">Dead bug</string>
+    <string name="move_cue_label">How it is done</string>
+    <string name="move_cue_placeholder">One line, said as it starts</string>
+    <string name="move_time">Time</string>
+    <string name="move_time_side">Time, a side</string>
+    <string name="move_less_cd">Five seconds less</string>
+    <string name="move_more_cd">Five seconds more</string>
+    <string name="move_sided">A side at a time</string>
+    <string name="move_sided_hint">Left, then right, with five seconds to switch</string>
+    <string name="move_held">Held still</string>
+    <string name="move_held_hint">The screen says Hold; off, it says Move</string>
+    <string name="move_up">Move up</string>
+    <string name="move_down">Move down</string>
+    <string name="move_remove">Remove</string>
+    <string name="move_done">Done</string>
 </resources>

@@ -65,11 +65,14 @@ import dev.justinsmith.interval.history.HistoryPlaceholder
 import dev.justinsmith.interval.history.HistoryRoute
 import dev.justinsmith.interval.history.WorkoutDetailRoute
 import dev.justinsmith.interval.home.TimerRoute
+import dev.justinsmith.interval.mobility.FlowEditorRoute
+import dev.justinsmith.interval.mobility.MobilityActions
 import dev.justinsmith.interval.mobility.MobilityPage
 import dev.justinsmith.interval.mobility.MobilityRoute
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.nav.About
 import dev.justinsmith.interval.nav.ConditioningTab
+import dev.justinsmith.interval.nav.FlowEditor
 import dev.justinsmith.interval.nav.HistoryTab
 import dev.justinsmith.interval.nav.Licenses
 import dev.justinsmith.interval.nav.MobilityTab
@@ -171,6 +174,7 @@ internal val navConfiguration = SavedStateConfiguration {
             subclass(Plan::class)
             subclass(Presets::class)
             subclass(WeekSetup::class)
+            subclass(FlowEditor::class)
             liftRoutes()
         }
     }
@@ -506,6 +510,9 @@ private fun appEntries(
     entry<Licenses> { LicensesRoute(onBack = { backStack.removeLastOrNull() }) }
     entry<Privacy> { PrivacyScreen(onBack = { backStack.removeLastOrNull() }) }
     setupEntry(backStack, selectTab)
+    entry<FlowEditor> { key ->
+        FlowEditorRoute(key.id, key.copyOf, onDone = { backStack.removeLastOrNull() })
+    }
 }
 
 /**
@@ -597,7 +604,15 @@ private fun EntryProviderScope<NavKey>.trainEntries(
             stringResource(Res.string.nav_train),
             onOpenSettings = { backStack.push(Settings) },
         ) { PillarPicker(MobilityTab, selectTab) }
-        MobilityRoute(page, onStartFlow = { backStack.startWorkout(clock, flow = it) })
+        MobilityRoute(
+            page,
+            MobilityActions(
+                onStart = { backStack.startWorkout(clock, flow = it) },
+                onBuild = { backStack.push(FlowEditor()) },
+                onCopy = { backStack.push(FlowEditor(copyOf = it)) },
+                onEdit = { backStack.push(FlowEditor(id = it)) },
+            ),
+        )
     }
 }
 

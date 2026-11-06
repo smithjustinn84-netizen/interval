@@ -18,6 +18,7 @@ data class FlowDraft(
     fun toFlow(): Flow? {
         val named = name.trim().take(Flow.NAME_MAX_LENGTH)
         if (named.isEmpty() || moves.isEmpty() || moves.size > Flow.MAX_MOVES) return null
+        if (moves.any { it.name.isBlank() }) return null
         return Flow(
             key = id?.let(::ownFlowKey) ?: NEW_KEY,
             name = named,

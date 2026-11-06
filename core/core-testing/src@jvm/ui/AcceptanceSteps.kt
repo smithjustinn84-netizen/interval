@@ -15,10 +15,12 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasScrollToNodeAction
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTextReplacement
 
 /**
  * What an acceptance driver builds its operations from: seeing and tapping by what a person reads, each
@@ -52,6 +54,12 @@ open class AcceptanceSteps(protected val ui: DesktopComposeUiTest) {
         val node = ui.onAllNodes(matcher).onLast()
         if (hasAnyAncestor(hasScrollAction()).matches(node.fetchSemanticsNode())) node.performScrollTo()
         node.performClick()
+    }
+
+    /** Types [text] in the field read out as [label], in place of what it holds. */
+    fun typeInto(label: String, text: String) {
+        see(hasSetTextAction() and hasContentDescription(label))
+        ui.onNode(hasSetTextAction() and hasContentDescription(label)).performTextReplacement(text)
     }
 
     /** Scrolls the page's list or grid, which composes only what is in view, until [text] is among what it shows. */

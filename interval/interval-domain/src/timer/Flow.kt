@@ -88,7 +88,9 @@ data class Flow(
 
         /** The most moves a flow has: a move a block. */
         const val MAX_MOVES = IntervalConfig.MAX_BLOCKS
-        const val NAME_MAX_LENGTH = Preset.MAX_NAME_LENGTH
+
+        /** Room for a shipped flow's name and " (yours)" after it. */
+        const val NAME_MAX_LENGTH = 32
         const val NOTE_MAX_LENGTH = 32
     }
 }

@@ -129,7 +129,7 @@ interval/
 │   ├── interval-timer/        # Precision Timer page and natural language describe sheet
 │   ├── interval-workout/      # Live workout & flow screen, circular countdown readout, summaries
 │   ├── interval-presets/      # Train's Conditioning pillar: presets, sequence block editor, custom cards
-│   ├── interval-mobility/     # Train's Mobility pillar: built-in flows & move preview sheets
+│   ├── interval-mobility/     # Train's Mobility pillar: the flows, their sheets, and the editor of your own
 │   ├── interval-history/      # Today home tab, History calendar & training log, routine & sport day planner
 │   └── interval-settings/     # Settings page (from every tab), Health Connect / Apple Health, export & import
 │

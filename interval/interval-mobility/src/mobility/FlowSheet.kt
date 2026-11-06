@@ -7,11 +7,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.interval.mobility.resources.Res
+import dev.justinsmith.interval.mobility.resources.mobility_edit
 import dev.justinsmith.interval.mobility.resources.mobility_kind
+import dev.justinsmith.interval.mobility.resources.mobility_make_yours
 import dev.justinsmith.interval.mobility.resources.mobility_move_time_sides
 import dev.justinsmith.interval.mobility.resources.mobility_prep_line
 import dev.justinsmith.interval.mobility.resources.mobility_sheet_note
@@ -21,6 +24,7 @@ import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StartButton
@@ -30,10 +34,17 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * One flow before it starts: how long it takes, then its moves in order, each with its time ("0:30 a side") and
- * how it is done, so none is met for the first time on the floor. Start, over them, runs it.
+ * how it is done, so none is met for the first time on the floor. Start, over them, runs it; under them, [onChange]
+ * leads to a copy of a shipped flow ("Make it yours") or the editor of one of the user's own ("Edit").
  */
 @Composable
-internal fun FlowSheet(item: FlowItem, prepSeconds: Int, onStart: () -> Unit, onDismiss: () -> Unit) {
+internal fun FlowSheet(
+    item: FlowItem,
+    prepSeconds: Int,
+    onStart: () -> Unit,
+    onChange: () -> Unit,
+    onDismiss: () -> Unit,
+) {
     val palette = IntervalTheme.palette
     val flow = item.flow
     IntervalSheet(title = flow.name, onDismiss = onDismiss) {
@@ -75,6 +86,11 @@ internal fun FlowSheet(item: FlowItem, prepSeconds: Int, onStart: () -> Unit, on
                 MoveRow(move)
             }
         }
+        QuietTextButton(
+            stringResource(if (flow.custom) Res.string.mobility_edit else Res.string.mobility_make_yours),
+            onChange,
+            Modifier.align(Alignment.CenterHorizontally),
+        )
     }
 }
 

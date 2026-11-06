@@ -39,7 +39,6 @@ import dev.justinsmith.interval.tab
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
-import dev.justinsmith.interval.timer.builtInFlows
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.ui.AcceptanceSteps
@@ -126,7 +125,7 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         see("Saved to history")
         see(hasText("$name · Mobility · $moves moves"))
         val kept = app.repository.history.history.value.last()
-        assertEquals(name to false, builtInFlows.matching(kept.config)?.name to kept.endedEarly)
+        assertEquals(name to false, app.repository.flows.flows.value.matching(kept.config)?.name to kept.endedEarly)
     }
 
     /** A flow leaves the Timer's own settings alone, where a preset replaces them. */

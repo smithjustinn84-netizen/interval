@@ -129,8 +129,9 @@ interval/            the interval timer
   interval-workout   the running workout, its readout, controls and summary
   interval-presets   the presets, sheet and editor (`PresetEditorHost`, `PresetDraft`): Train's Conditioning
                      pillar, a tab's page (`PresetsTab`), with the row that opens the Timer
-  interval-mobility  the flows by when each is for, and a flow's sheet (its moves, then Start): Train's Mobility
-                     pillar, a tab's page (`MobilityPage`)
+  interval-mobility  the flows by when each is for, a flow's sheet (its moves, then Start), and the editor of the
+                     user's own (`FlowEditorScreen`, the library's moves in `LibraryMoves.kt`, over `lift-ui`'s names
+                     and cues): Train's Mobility pillar, a tab's page (`MobilityPage`)
   interval-settings  Settings (its groups in `SettingsGroups.kt`), the weight sheet, export and import
                      (`DataExporter`, `DataImporter`, the review sheet); opened by every tab's gear
   interval-history   History (log, calendar, summaries, a finished workout) and Plan: one module, each needs
@@ -349,11 +350,18 @@ toolchain (`$compose.*`).
 - **Mobility flows**: a `Flow` (`interval-domain`, `timer/Flow.kt`) is a list of `Move`s, each named, timed, with
   a one-line cue, done on each side in turn when `sided`. It runs on the interval engine as the sequence
   `Flow.config` is (a move a block, a side a round, `Flow.SIDE_CHANGE_SECONDS` between sides and
-  `MOVE_CHANGE_SECONDS` between moves), so nothing about one is stored: the `Workout` key carries the flow's key
+  `MOVE_CHANGE_SECONDS` between moves), so nothing about a run is stored: the `Workout` key carries the flow's key
   for a new one (`WorkoutSession.open(id, flow)`, which leaves the Timer's settings alone), and everything after
-  knows it again by its shape and its `Activity.Mobility` (`builtInFlows.matching(config)`: the screen's
-  `WorkoutUiState.flow`, the cues, the notification's `WorkoutStatus.flow`, a finished one's name through
-  `nameOf`, `configDescription`'s "6 moves"). So no two flows may share a shape (`FlowTest`). A flow's words are
+  knows it again by its shape and its `Activity.Mobility` among the flows `FlowStore.flows` holds, the shipped ones
+  (`BuiltInFlows.kt`) then the user's own (`flows.matching(config)`: the screen's `WorkoutUiState.flow`, the cues,
+  the notification's `WorkoutStatus.flow`, a finished one's name through `nameOf(config, flows)` and History's
+  `WorkoutNames`, the starts that run one as itself through `flowKeyOf`). `configDescription`'s "6 moves" goes by
+  the shape alone (`isFlowShaped`), so a deleted flow's workouts still read as mobility. So no two flows may share
+  a shape: `FlowTest` holds it of the shipped ones, and the editor refuses to save a draft that clashes with any
+  flow or preset (`FlowDraft.clash`). A flow the user builds (`FlowRepository`, the `flow` table, its moves one JSON
+  column) carries the `id` it is stored under and a key made of it (`ownFlowKey`); it is built in `FlowEditor` (an
+  app key: new, `copyOf` a shipped one's key, or `id`) from the library's mat moves and floor holds, their name and
+  first cue copied in as text, or moves typed in, and is exported (schema 8) and matched by name on import. A flow's words are
   data, like a built-in preset's name, so they can be spoken: `playCue` takes the `FlowStep` and says "Next:
   Cat-cow", "Left side", "Switch sides" (`Speech.NextMove` and the rest), with no halfway. The screen's part is
   `WorkoutFlow.kt`; the notifications' is `FlowStatusText.kt` (`interval-platform`). It is written to the health

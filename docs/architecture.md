@@ -91,6 +91,7 @@ graph TD
     intervalHistory --> intervalPlatformApi
     intervalHistory --> liftApi
     intervalMobility --> intervalUi
+    intervalMobility --> liftUi
     intervalMobility --> intervalData
     intervalPresets --> intervalUi
     intervalPresets --> intervalData

@@ -23,10 +23,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.mobility.resources.Res
 import dev.justinsmith.interval.mobility.resources.mobility_after
 import dev.justinsmith.interval.mobility.resources.mobility_before
+import dev.justinsmith.interval.mobility.resources.mobility_build
+import dev.justinsmith.interval.mobility.resources.mobility_build_hint
 import dev.justinsmith.interval.mobility.resources.mobility_open_cd
+import dev.justinsmith.interval.mobility.resources.mobility_own
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SettingsAction
@@ -46,23 +50,36 @@ import org.koin.compose.viewmodel.koinViewModel
  */
 class MobilityPage(val title: String, val onOpenSettings: () -> Unit, val header: @Composable () -> Unit)
 
-/** Resolves the ViewModel and binds it to [MobilityScreen]. [onStartFlow] runs the flow a key names. */
+/**
+ * What the page's flows lead to: [onStart] runs the flow a key names; [onBuild] opens the editor on a new flow,
+ * [onCopy] on a copy of the shipped one a key names, [onEdit] on the user's own by its id.
+ */
+class MobilityActions(
+    val onStart: (String) -> Unit = {},
+    val onBuild: () -> Unit = {},
+    val onCopy: (String) -> Unit = {},
+    val onEdit: (Long) -> Unit = {},
+)
+
+/** Resolves the ViewModel and binds it to [MobilityScreen]. */
 @Composable
-fun MobilityRoute(page: MobilityPage, onStartFlow: (String) -> Unit, modifier: Modifier = Modifier) {
+fun MobilityRoute(page: MobilityPage, actions: MobilityActions, modifier: Modifier = Modifier) {
     val viewModel = koinViewModel<MobilityViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
-    MobilityScreen(state, page, onStartFlow, modifier)
+    MobilityScreen(state, page, actions, modifier)
 }
 
 /**
- * The flows in two groups, by when each is for: a row is its name, its moves and what it takes ("6 moves · no
- * bell"), and how long it runs. Tapping one opens its [FlowSheet], which lists its moves and starts it.
+ * The flows in two groups, by when each is for, the user's own after the shipped ones: a row is its name, its moves
+ * and what it takes ("6 moves · no bell"), and how long it runs. Tapping one opens its [FlowSheet], which lists its
+ * moves and starts it, and leads to a copy of a shipped one or the editor of one's own. Under them, "On your own"
+ * leads to a new one.
  */
 @Composable
 fun MobilityScreen(
     state: MobilityUiState,
     page: MobilityPage,
-    onStartFlow: (String) -> Unit,
+    actions: MobilityActions,
     modifier: Modifier = Modifier,
 ) {
     // The key rather than the flow: it is what saves, and the sheet follows the get-ready as it changes.
@@ -79,6 +96,7 @@ fun MobilityScreen(
         item(key = "after") {
             FlowGroup(stringResource(Res.string.mobility_after), state.after, onOpen = { openKey = it })
         }
+        item(key = "own") { OwnGroup(actions.onBuild) }
     }
     state.item(openKey)?.let { open ->
         FlowSheet(
@@ -86,7 +104,12 @@ fun MobilityScreen(
             prepSeconds = state.prepSeconds,
             onStart = {
                 openKey = null
-                onStartFlow(open.flow.key)
+                actions.onStart(open.flow.key)
+            },
+            onChange = {
+                openKey = null
+                val id = open.flow.id
+                if (id == null) actions.onCopy(open.flow.key) else actions.onEdit(id)
             },
             onDismiss = { openKey = null },
         )
@@ -105,6 +128,20 @@ private fun FlowGroup(label: String, flows: List<FlowItem>, onOpen: (String) -> 
                 if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
                 FlowRow(item, onOpen = { onOpen(item.flow.key) })
             }
+        }
+    }
+}
+
+/** "On your own": the way to a flow of the user's making. */
+@Composable
+private fun OwnGroup(onBuild: () -> Unit, modifier: Modifier = Modifier) {
+    Column(
+        modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4),
+        verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+    ) {
+        GroupLabel(stringResource(Res.string.mobility_own))
+        ListCard {
+            LinkRow(stringResource(Res.string.mobility_build), stringResource(Res.string.mobility_build_hint), onBuild)
         }
     }
 }

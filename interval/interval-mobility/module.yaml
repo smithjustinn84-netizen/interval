@@ -1,6 +1,6 @@
-# Mobility: the flows followed along on the workout screen, listed by when each is for, and the sheet that says
-# what is in one before it starts. Train's third pillar.
-description: "Mobility page and a flow's sheet"
+# Mobility: the flows followed along on the workout screen, listed by when each is for, the sheet that says
+# what is in one before it starts, and the editor of the user's own. Train's third pillar.
+description: "Mobility page, a flow's sheet and the flow editor"
 product:
   type: kmp/lib
   platforms: [android, iosArm64, iosSimulatorArm64, jvm]
@@ -11,6 +11,9 @@ apply:
 dependencies:
   - //interval/interval-data: exported
   - //interval/interval-ui: exported
+  # The library's mat moves and holds, by their names and cues, for a flow built by hand.
+  - //lift/lift-domain
+  - //lift/lift-ui
 
 test-dependencies:
   - //interval/interval-testing
@@ -19,3 +22,6 @@ settings:
   compose:
     resources:
       packageName: dev.justinsmith.interval.mobility.resources
+  kotlin:
+    # A draft flow is kept in its editor's SavedStateHandle as JSON.
+    serialization: json

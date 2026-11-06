@@ -7,6 +7,8 @@ import dev.justinsmith.interval.fakes.fakeCorePlatformModule
 import dev.justinsmith.interval.fakes.fakePlatformModule
 import dev.justinsmith.interval.fakes.fakeStorageModule
 import dev.justinsmith.interval.history.WorkoutDetailViewModel
+import dev.justinsmith.interval.mobility.FlowCopy
+import dev.justinsmith.interval.mobility.FlowEditorViewModel
 import dev.justinsmith.interval.workout.WorkoutViewModel
 import dev.justinsmith.lift.fakes.fakeLiftPlatformModule
 import dev.justinsmith.lift.fakes.fakeLiftStorageModule
@@ -49,6 +51,7 @@ class VerifyAppModulesTest {
             injections = injectedParameters(
                 definition<WorkoutViewModel>(Long::class, String::class),
                 definition<WorkoutDetailViewModel>(Long::class),
+                definition<FlowEditorViewModel>(Long::class, FlowCopy::class),
                 definition<LiftDetailViewModel>(String::class),
                 definition<ProgramEditorViewModel>(String::class, ProgramCopy::class),
                 definition<ExerciseEditorViewModel>(String::class),

@@ -5,7 +5,6 @@ import dev.justinsmith.interval.storage.SerialWriter
 import dev.justinsmith.interval.storage.orEmptyOnError
 import dev.justinsmith.interval.timer.Flow
 import dev.justinsmith.interval.timer.builtInFlows
-import dev.justinsmith.interval.timer.uniquePresetName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -83,5 +82,10 @@ class FlowRepository(
 }
 
 /** [name] as a flow can be stored beside [taken]: itself, else with " 2", " 3"… within [Flow.NAME_MAX_LENGTH]. */
-internal fun uniqueFlowName(name: String, taken: Collection<String>): String =
-    uniquePresetName(name.trim().take(Flow.NAME_MAX_LENGTH), taken)
+internal fun uniqueFlowName(name: String, taken: Collection<String>): String {
+    val wanted = name.trim().take(Flow.NAME_MAX_LENGTH)
+    if (wanted !in taken) return wanted
+    return generateSequence(2) { it + 1 }
+        .map { number -> "${wanted.take(Flow.NAME_MAX_LENGTH - " $number".length).trimEnd()} $number" }
+        .first { it !in taken }
+}

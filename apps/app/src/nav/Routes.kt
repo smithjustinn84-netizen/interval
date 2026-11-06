@@ -82,6 +82,13 @@ data object Plan : NavKey
 data object WeekSetup : NavKey
 
 /**
+ * A mobility flow being built, pushed from Train's Mobility pillar: one of the user's by its [id], a copy of the
+ * shipped flow [copyOf] names by its key, or with neither a new one.
+ */
+@Serializable
+data class FlowEditor(val id: Long? = null, val copyOf: String? = null) : NavKey
+
+/**
  * The presets as a page pushed from the Timer, while the Timer was a tab. They are Train's Conditioning pillar
  * now ([ConditioningTab]) and nothing pushes this; it stays so a back stack saved with it still reads, and
  * `timerUnderTrain` takes it out.

@@ -12,6 +12,11 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import dev.justinsmith.interval.timer.Flow
+import dev.justinsmith.interval.timer.FlowUse
+import dev.justinsmith.interval.timer.Move
+import dev.justinsmith.interval.timer.builtInFlows
+import dev.justinsmith.interval.timer.ownFlowKey
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
@@ -21,10 +26,16 @@ import kotlin.test.assertEquals
 class MobilityScreenTest {
     private val calls = mutableListOf<String>()
     private val page = MobilityPage("Train", onOpenSettings = { calls += "settings" }) { Text("Pillars") }
+    private val actions = MobilityActions(
+        onStart = { calls += "start $it" },
+        onBuild = { calls += "build" },
+        onCopy = { calls += "copy $it" },
+        onEdit = { calls += "edit $it" },
+    )
 
     @Test
     fun `the flows are listed in two groups under the tab's title and header`() = runUiTest {
-        setThemedContent { MobilityScreen(mobilityState(prepSeconds = 10), page, { calls += "start $it" }) }
+        setThemedContent { MobilityScreen(mobilityState(prepSeconds = 10), page, actions) }
         onNodeWithText("Train").assertExists()
         onNodeWithText("Pillars").assertExists()
         onNodeWithText("Before training").assertExists()
@@ -38,7 +49,7 @@ class MobilityScreenTest {
 
     @Test
     fun `a flow opens on what is in it and starts from there`() = runUiTest {
-        setThemedContent { MobilityScreen(mobilityState(prepSeconds = 10), page, { calls += "start $it" }) }
+        setThemedContent { MobilityScreen(mobilityState(prepSeconds = 10), page, actions) }
         onNode(hasText("Wrists and fingers") and hasClickAction()).performClick()
         waitForIdle()
 
@@ -57,7 +68,7 @@ class MobilityScreenTest {
 
     @Test
     fun `a move with sides says its time a side and no get-ready says none`() = runUiTest(Window.Tablet) {
-        setThemedContent { MobilityScreen(mobilityState(prepSeconds = 0), page, { calls += "start $it" }) }
+        setThemedContent { MobilityScreen(mobilityState(prepSeconds = 0), page, actions) }
         onNode(hasText("Hips and shoulders") and hasClickAction()).performClick()
         waitForIdle()
 
@@ -67,5 +78,32 @@ class MobilityScreenTest {
         // The lunge, and the world's greatest stretch after it.
         onAllNodesWithText("0:40 a side").assertCountEquals(2)
         onNodeWithText("to get ready", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `on your own leads to a new flow and a shipped one's sheet to a copy of it`() = runUiTest {
+        setThemedContent { MobilityScreen(mobilityState(prepSeconds = 10), page, actions) }
+        onNodeWithText("On your own").performScrollTo()
+        onNode(hasText("Build a flow") and hasClickAction()).performScrollTo().performClick()
+        onNode(hasText("Hips and shoulders") and hasClickAction()).performScrollTo().performClick()
+        waitForIdle()
+        onNodeWithText("Edit").assertDoesNotExist()
+        onNode(hasText("Make it yours") and hasClickAction()).performScrollTo().performClick()
+        waitForIdle()
+
+        assertEquals(listOf("build", "copy hips-shoulders"), calls)
+    }
+
+    @Test
+    fun `a flow of the user's is listed in its group and its sheet leads to its editor`() = runUiTest {
+        val mine = Flow(ownFlowKey(7), "Floor core", FlowUse.Before, listOf(Move("Plank", 30, "Long line.")), id = 7)
+        setThemedContent { MobilityScreen(mobilityState(prepSeconds = 10, builtInFlows + mine), page, actions) }
+        onNode(hasText("Floor core") and hasText("1 move") and hasClickAction()).performScrollTo().performClick()
+        waitForIdle()
+        onNodeWithText("Make it yours").assertDoesNotExist()
+        onNode(hasText("Edit") and hasClickAction()).performScrollTo().performClick()
+        waitForIdle()
+
+        assertEquals(listOf("edit 7"), calls)
     }
 }

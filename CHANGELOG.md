@@ -72,6 +72,15 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 - The session's length from Set up is the length Today's "Or pick by time" opens on.
 - Exports are schema 7, with the session's length in the settings; a build from before it refuses the file with
   "update the app", and older files read as before.
+- Build a flow: your own mobility flows, from "On your own" on Train's Mobility pillar. A flow is named, said to be
+  for before training or after, and made of moves picked from the library (the mat's Pilates moves, and the plank,
+  side plank, hollow hold and wall sit, each with its name and first line of how it is done) or typed in, each
+  with its time in steps of five seconds, done a side at a time or not, held still or moved through. A shipped
+  flow's sheet has "Make it yours", a copy to change. Your flows are listed with the shipped ones by when each is
+  for, run on the workout screen as they do (the voice and the notification name your moves), count toward the
+  week, are named in History and offered by time on Today, and can be edited or deleted, with Undo. A flow with
+  the same moves and times as another, or as a preset, is refused until a time is changed, since a finished
+  workout is known by its shape.
 - Exports are schema 8, with the mobility flows you build; a build from before it refuses the file with "update
   the app", and older files read as before.
 

@@ -2,6 +2,7 @@ package dev.justinsmith.interval.nav
 
 import androidx.navigation3.runtime.NavKey
 import dev.justinsmith.interval.nav.About
+import dev.justinsmith.interval.nav.FlowEditor
 import dev.justinsmith.interval.nav.Licenses
 import dev.justinsmith.interval.nav.MobilityTab
 import dev.justinsmith.interval.navConfiguration
@@ -46,6 +47,9 @@ class NavKeyRoundTripTest {
             WorkoutDetail(7),
             Plan,
             WeekSetup,
+            FlowEditor(),
+            FlowEditor(id = 3),
+            FlowEditor(copyOf = "hips-shoulders"),
             Presets,
             Lifting,
             Programs,
