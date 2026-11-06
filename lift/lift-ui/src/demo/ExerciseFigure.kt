@@ -147,24 +147,27 @@ private fun DrawScope.drawFigure(
         val behind = Offset(-Rig.FAR_LEG_OFFSET, 0f)
         val farLeg = listOf(figure.farToe + behind, figure.farHeel + behind, figure.farAnkle + behind)
         drawLimb(farLeg + listOf(figure.farKnee + behind, figure.hip), colors.farLeg, Rig.FAR_LEG)
-        if (demo.bells != Bells.BothHands) drawFarArm(figure, demo.bells == Bells.Pair, bell, colors.farLeg)
+        if (demo.hold == Hold.NearHand || demo.hold == Hold.Pair) {
+            drawFarArm(figure, demo.hold == Hold.Pair, bell, colors.farLeg)
+        }
         val behindHead = figure.bell.x < figure.shoulder.x && figure.bell.y < figure.shoulder.y
-        if (behindHead) drawArmAndBell(figure, demo.bells, bell, colors.body)
+        if (behindHead) drawArmAndBell(figure, demo.hold, bell, colors.body)
         drawLine(colors.body, figure.hip, figure.shoulder, Rig.TRUNK, StrokeCap.Round)
         drawCircle(colors.body, Rig.HEAD, figure.head)
         when {
             behindHead -> drawNearLeg(figure, colors.body)
 
             figure.bell.y > figure.hip.y -> {
-                drawArmAndBell(figure, demo.bells, bell, colors.body)
+                drawArmAndBell(figure, demo.hold, bell, colors.body)
                 drawNearLeg(figure, colors.body)
             }
 
             else -> {
                 drawNearLeg(figure, colors.body)
-                drawArmAndBell(figure, demo.bells, bell, colors.body)
+                drawArmAndBell(figure, demo.hold, bell, colors.body)
             }
         }
+        if (demo.hold == Hold.Bar) drawPlate(figure.hand, bell)
     }
 }
 
@@ -196,8 +199,13 @@ private fun DrawScope.drawTrail(trail: List<Offset>, color: Color) {
  * resting on the back of the forearm (the rack, a lockout) goes over it, on the side nearer the eye, unless
  * both hands hold it by the horns.
  */
-private fun DrawScope.drawArmAndBell(figure: Figure, bells: Bells, bell: Color, body: Color) {
-    val resting = bells != Bells.BothHands && rests(figure.elbow, figure.hand, figure.bell)
+private fun DrawScope.drawArmAndBell(figure: Figure, hold: Hold, bell: Color, body: Color) {
+    if (hold == Hold.Bar) {
+        drawLimb(listOf(figure.shoulder, figure.elbow, figure.hand), body, Rig.ARM)
+        drawCircle(body, Rig.HAND, figure.hand)
+        return
+    }
+    val resting = hold != Hold.BothHands && rests(figure.elbow, figure.hand, figure.bell)
     if (!resting) drawBell(figure.hand, figure.bell, bell)
     drawLimb(listOf(figure.shoulder, figure.elbow, figure.hand), body, Rig.ARM)
     drawCircle(body, Rig.HAND, figure.hand)
@@ -222,6 +230,12 @@ private fun DrawScope.drawBell(hand: Offset, body: Offset, color: Color) {
     val sides = along * Rig.HANDLE_SIDES
     drawLimb(listOf(hand + across + sides, hand + across, hand - across, hand - across + sides), color, Rig.HANDLE)
     drawCircle(color, Rig.BELL, body)
+}
+
+/** A barbell seen end on, nearest of everything: the plate's rim round the sleeve at [sleeve]. */
+private fun DrawScope.drawPlate(sleeve: Offset, color: Color) {
+    drawCircle(color, Rig.PLATE - Rig.PLATE_RIM / 2, sleeve, style = Stroke(Rig.PLATE_RIM))
+    drawCircle(color, Rig.SLEEVE, sleeve)
 }
 
 /** A bench under the figure, its top and a leg at each end. */

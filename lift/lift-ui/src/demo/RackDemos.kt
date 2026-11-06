@@ -39,7 +39,7 @@ val CleanDemo: ExerciseDemo = ExerciseDemo(
         DemoPhase(until = 0.38f, beat = DemoBeat.Ease, cue = 1),
         DemoPhase(until = 1f, beat = DemoBeat.Set, cue = 2),
     ),
-    bells = Bells.NearHand,
+    hold = Hold.NearHand,
     secondsPerRep = 2.4f,
     still = 0.46f,
     bellLag = 0.03f,
@@ -79,7 +79,7 @@ val PushPressDemo: ExerciseDemo = ExerciseDemo(
         DemoPhase(until = 0.58f, beat = DemoBeat.Drive, cue = 2),
         DemoPhase(until = 1f, beat = DemoBeat.Ease, cue = 0),
     ),
-    bells = Bells.NearHand,
+    hold = Hold.NearHand,
     secondsPerRep = 2.4f,
     still = 0.5f,
 )
@@ -109,7 +109,7 @@ val JerkDemo: ExerciseDemo = run {
             DemoPhase(until = 0.7f, beat = DemoBeat.Set, cue = 2),
             DemoPhase(until = 1f, beat = DemoBeat.Ease, cue = 2),
         ),
-        bells = Bells.NearHand,
+        hold = Hold.NearHand,
         secondsPerRep = 2.6f,
         still = 0.44f,
     )
@@ -136,7 +136,7 @@ val FrontSquatDemo: ExerciseDemo = ExerciseDemo(
         DemoPhase(until = 0.92f, beat = DemoBeat.Drive, cue = 2),
         DemoPhase(until = 1f, beat = DemoBeat.Set, cue = 0),
     ),
-    bells = Bells.NearHand,
+    hold = Hold.NearHand,
     secondsPerRep = 3f,
     still = 0.54f,
 )
@@ -168,7 +168,7 @@ val ThrusterDemo: ExerciseDemo = run {
             DemoPhase(until = 0.74f, beat = DemoBeat.Drive, cue = 2),
             DemoPhase(until = 1f, beat = DemoBeat.Ease, cue = 0),
         ),
-        bells = Bells.BothHands,
+        hold = Hold.BothHands,
         secondsPerRep = 2.8f,
         still = 0.68f,
     )
@@ -196,7 +196,7 @@ private fun pressDemo(bottomsUp: Boolean): ExerciseDemo {
             DemoPhase(until = 0.46f, beat = DemoBeat.Drive, cue = 1),
             DemoPhase(until = 1f, beat = DemoBeat.Ease, cue = 2),
         ),
-        bells = Bells.NearHand,
+        hold = Hold.NearHand,
         secondsPerRep = if (bottomsUp) 4f else 2.8f,
         still = 0.53f,
     )

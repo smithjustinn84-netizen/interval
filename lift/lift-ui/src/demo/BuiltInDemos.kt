@@ -25,7 +25,7 @@ val TwoHandSwingDemo: ExerciseDemo = run {
             DemoPhase(until = 0.66f, beat = DemoBeat.Ease, cue = 2),
             DemoPhase(until = 1f, beat = DemoBeat.Set, cue = 0),
         ),
-        bells = Bells.BothHands,
+        hold = Hold.BothHands,
         secondsPerRep = 1.8f,
         still = 0.46f,
         bellLag = 0.03f,
@@ -63,7 +63,7 @@ val GobletSquatDemo: ExerciseDemo = run {
             DemoPhase(until = 0.92f, beat = DemoBeat.Drive, cue = 2),
             DemoPhase(until = 1f, beat = DemoBeat.Set, cue = 0),
         ),
-        bells = Bells.BothHands,
+        hold = Hold.BothHands,
         secondsPerRep = 3f,
         still = 0.56f,
     )

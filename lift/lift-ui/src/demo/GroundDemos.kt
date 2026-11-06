@@ -52,7 +52,7 @@ val RackedLungeDemo: ExerciseDemo = run {
             DemoPhase(until = 0.92f, beat = DemoBeat.Drive, cue = 2),
             DemoPhase(until = 1f, beat = DemoBeat.Set, cue = 0),
         ),
-        bells = Bells.NearHand,
+        hold = Hold.NearHand,
         secondsPerRep = 3.4f,
         still = 0.52f,
     )
@@ -87,7 +87,7 @@ val RowDemo: ExerciseDemo = run {
             DemoPhase(until = 0.5f, beat = DemoBeat.Drive, cue = 1),
             DemoPhase(until = 1f, beat = DemoBeat.Ease, cue = 2),
         ),
-        bells = Bells.NearHand,
+        hold = Hold.NearHand,
         secondsPerRep = 2.8f,
         still = 0.45f,
         bench = Bench(from = 236f, to = 340f, height = 78f),
@@ -117,7 +117,7 @@ val WindmillDemo: ExerciseDemo = run {
             DemoPhase(until = 0.6f, beat = DemoBeat.Ease, cue = 1),
             DemoPhase(until = 1f, beat = DemoBeat.Drive, cue = 2),
         ),
-        bells = Bells.NearHand,
+        hold = Hold.NearHand,
         secondsPerRep = 4f,
         still = 0.55f,
     )
@@ -142,7 +142,7 @@ val HaloDemo: ExerciseDemo = run {
             DemoPhase(until = 0.7f, beat = DemoBeat.Drive, cue = 1),
             DemoPhase(until = 1f, beat = DemoBeat.Ease, cue = 2),
         ),
-        bells = Bells.BothHands,
+        hold = Hold.BothHands,
         secondsPerRep = 3f,
         still = 0.45f,
     )

@@ -5,36 +5,36 @@ import dev.justinsmith.lift.ui.demo.KettlebellPoses.rack
 
 /** The farmer's walk: a bell hanging at each side, walking tall with short, steady steps. */
 val FarmersWalkDemo: ExerciseDemo = walk(
-    hold = Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 0f, forearm = 0f),
-    bells = Bells.Pair,
+    holding = Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 0f, forearm = 0f),
+    hold = Hold.Pair,
     swingFreeArm = false,
 )
 
 /** The suitcase carry: one bell at the side like a briefcase, the free arm swinging as in any walk. */
 val SuitcaseCarryDemo: ExerciseDemo = walk(
-    hold = Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 0f, forearm = 0f),
-    bells = Bells.NearHand,
+    holding = Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 0f, forearm = 0f),
+    hold = Hold.NearHand,
     swingFreeArm = true,
 )
 
 /** The rack carry: the bell in the rack, fist under the chin, walking slowly and tall. */
-val RackCarryDemo: ExerciseDemo = walk(hold = rack, bells = Bells.NearHand, swingFreeArm = true)
+val RackCarryDemo: ExerciseDemo = walk(holding = rack, hold = Hold.NearHand, swingFreeArm = true)
 
 /** The bottoms-up carry: the bell upside down at shoulder height over an upright forearm. */
 val BottomsUpCarryDemo: ExerciseDemo = walk(
-    hold = rack.copy(upperArm = 32f, forearm = 178f, bell = BOTTOMS_UP),
-    bells = Bells.NearHand,
+    holding = rack.copy(upperArm = 32f, forearm = 178f, bell = BOTTOMS_UP),
+    hold = Hold.NearHand,
     swingFreeArm = true,
 )
 
 /**
  * A walk on the spot (the hips stay put while the floor goes by underfoot), a stride a rep, with the arms as
- * [hold] has them and the free arm swinging opposite the near leg if [swingFreeArm]. Its phases are each step,
+ * [holding] has them and the free arm swinging opposite the near leg if [swingFreeArm]. Its phases are each step,
  * under the cue to walk tall (1).
  */
-private fun walk(hold: Pose, bells: Bells, swingFreeArm: Boolean): ExerciseDemo {
+private fun walk(holding: Pose, hold: Hold, swingFreeArm: Boolean): ExerciseDemo {
     fun step(legs: Pose, swing: Float): Pose {
-        val stepping = hold.standingAs(legs)
+        val stepping = holding.standingAs(legs)
         return if (swingFreeArm) stepping.copy(farUpperArm = swing, farForearm = swing + ARM_BEND) else stepping
     }
     val nearStrikes = step(
@@ -74,7 +74,7 @@ private fun walk(hold: Pose, bells: Bells, swingFreeArm: Boolean): ExerciseDemo 
             DemoPhase(until = 0.5f, beat = DemoBeat.Drive, cue = 1),
             DemoPhase(until = 1f, beat = DemoBeat.Ease, cue = 1),
         ),
-        bells = bells,
+        hold = hold,
         secondsPerRep = STRIDE_SECONDS,
         still = 0.25f,
         root = Root.Hips,

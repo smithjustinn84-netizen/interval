@@ -78,10 +78,11 @@ data class Pose(
 }
 
 /**
- * Which hands hold a bell: [BothHands] one bell between them, the far arm hidden behind the near one; [NearHand]
- * one bell in the near hand, the far arm free; [Pair] a bell in each.
+ * What the hands hold: [BothHands] one bell between them, the far arm hidden behind the near one; [NearHand]
+ * one bell in the near hand, the far arm free; [Pair] a bell in each; [Bar] a barbell, both hands on it, seen
+ * end on as the near plate, its sleeve in the hands.
  */
-enum class Bells { BothHands, NearHand, Pair }
+enum class Hold { BothHands, NearHand, Pair, Bar }
 
 /**
  * What stays put on the floor: [Ankle] the near ankle, for a lift done on the spot; [Hips] the hips, over
@@ -105,7 +106,7 @@ data class Bench(val from: Float, val to: Float, val height: Float)
  * One exercise drawn as a figure doing it: [keyframes] from 0 to 1, the last the same as the first (give or
  * take whole turns) so the rep loops; [phases] to 1, each naming one of the exercise's cues. A rep takes
  * [secondsPerRep]; a still picture of it (reduced motion, or a list) shows it at [still]. It is drawn in [view]
- * (in [Rig] units), held as [bells] says and grounded as [root] says, with [bench] under it if it leans on one.
+ * (in [Rig] units), held as [hold] says and grounded as [root] says, with [bench] under it if it leans on one.
  *
  * Each joint follows a smooth curve through its keyframes (a monotone cubic, which the loop closes): it keeps
  * its speed through a pose it only passes, comes to rest where it turns round, stays put between two
@@ -118,7 +119,7 @@ data class Bench(val from: Float, val to: Float, val height: Float)
 class ExerciseDemo(
     val keyframes: List<Keyframe>,
     val phases: List<DemoPhase>,
-    val bells: Bells,
+    val hold: Hold,
     val secondsPerRep: Float,
     val still: Float,
     val bellLag: Float = 0f,
@@ -170,11 +171,12 @@ class ExerciseDemo(
     /** The phase [progress] (0 to 1) is in. */
     fun phaseAt(progress: Float): DemoPhase = phases.first { progress < it.until || it === phases.last() }
 
-    /** The figure at [progress], its bells hanging where they were a moment before. */
+    /** The figure at [progress], its bells hanging where they were a moment before, or a bar's sleeve in the hands. */
     fun figureAt(progress: Float): Figure {
         val pose = poseAt(progress)
         val before = if (bellLag == 0f) pose else poseAt(looped(progress - bellLag))
-        return pose.figure(root, hangs = before.bell, farHangs = before.farBell)
+        val figure = pose.figure(root, hangs = before.bell, farHangs = before.farBell)
+        return if (hold == Hold.Bar) figure.copy(bell = figure.hand) else figure
     }
 
     /** Where the bell was over the last [trail] of a rep before [progress], oldest first; empty with no trail. */
@@ -281,6 +283,11 @@ object Rig {
     const val HANDLE_HALF = 9f
     const val HANDLE_SIDES = 12f
     const val HANDLE = 5f
+
+    /** A barbell's plate, seen end on: its radius (a 45 cm plate at this scale), its rim and its sleeve. */
+    const val PLATE = 40f
+    const val PLATE_RIM = 7f
+    const val SLEEVE = 6f
 
     /** A trail's dots, from the oldest to the one just behind the bell. */
     const val TRAIL_DOT_OLDEST = 2f

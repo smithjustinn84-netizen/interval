@@ -88,7 +88,7 @@ val GetUpDemo: ExerciseDemo = run {
             DemoPhase(until = 0.54f, beat = DemoBeat.Drive, cue = 2),
             DemoPhase(until = 1f, beat = DemoBeat.Ease, cue = 2),
         ),
-        bells = Bells.NearHand,
+        hold = Hold.NearHand,
         secondsPerRep = 14f,
         still = 0.1f,
         view = Rect(left = -80f, top = -40f, right = 330f, bottom = 380f),

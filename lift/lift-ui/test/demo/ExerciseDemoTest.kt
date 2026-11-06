@@ -12,11 +12,11 @@ class ExerciseDemoTest {
     private val demos = BuiltInExercise.entries.mapNotNull { it.demo }
 
     @Test
-    fun `every bell lift is drawn and nothing else yet`() {
+    fun `every bell and bar lift is drawn and nothing else yet`() {
         assertSame(TwoHandSwingDemo, BuiltInExercise.TwoHandSwing.demo)
         assertSame(GobletSquatDemo, BuiltInExercise.GobletSquat.demo)
         BuiltInExercise.entries.forEach { exercise ->
-            val drawn = exercise.equipment == Equipment.Kettlebell
+            val drawn = exercise.equipment == Equipment.Kettlebell || exercise.equipment == Equipment.Barbell
             assertEquals(drawn, exercise.demo != null, "$exercise is drawn: ${exercise.demo != null}")
         }
     }
@@ -89,10 +89,11 @@ class ExerciseDemoTest {
             (0..100).forEach { step ->
                 val at = "$exercise at ${step / 100f}"
                 val figure = demo.figureAt(step / 100f)
-                val drawn = if (demo.bells == Bells.Pair) figure.joints else figure.joints - figure.farBell
+                val drawn = if (demo.hold == Hold.Pair) figure.joints else figure.joints - figure.farBell
                 drawn.forEach { joint -> assertTrue(demo.view.contains(joint), "$at: $joint is outside the view") }
                 drawn.forEach { joint -> assertTrue(joint.y <= Rig.FLOOR + 0.5f, "$at: $joint is through the floor") }
-                assertTrue(figure.bell.y + Rig.BELL <= Rig.FLOOR + 0.5f, "$at: the bell is through the floor")
+                val weight = if (demo.hold == Hold.Bar) Rig.PLATE else Rig.BELL
+                assertTrue(figure.bell.y + weight <= Rig.FLOOR + 0.5f, "$at: the weight is through the floor")
                 val feet = listOf(figure.toe, figure.heel, figure.farToe, figure.farHeel)
                 assertTrue(feet.any { abs(it.y - Rig.FLOOR) < 0.5f }, "$at: no foot is on the floor")
                 if (demo.root == Root.Ankle) assertEquals(Rig.FLOOR, figure.ankle.y)

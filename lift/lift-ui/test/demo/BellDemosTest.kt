@@ -101,7 +101,7 @@ class BellDemosTest {
     @Test
     fun `the armor building complex squats three times with a bell in each hand`() {
         val demo = ArmorBuildingComplexDemo
-        assertEquals(Bells.Pair, demo.bells)
+        assertEquals(Hold.Pair, demo.hold)
         val deep = (0..800).map { demo.figureAt(it / 800f).hip.y > demo.figureAt(it / 800f).knee.y }
         assertEquals(3, deep.zipWithNext().count { (was, now) -> !was && now }, "The squats in a rep")
         val top = demo.figureAt(demo.still)
