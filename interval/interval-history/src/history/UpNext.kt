@@ -105,4 +105,5 @@ internal fun TimestampFormatter.dayCell(day: TrainingDay, inMonth: Boolean = tru
     liftSeconds = day.liftWorkouts.sumOf { it.elapsedSeconds },
     sport = day.sport,
     sportLogged = day.sports.isNotEmpty(),
+    sportPassed = day.sports.isEmpty() && day.plans.any { it.state == PlanState.Passed },
 )

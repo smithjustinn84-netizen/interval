@@ -12,6 +12,7 @@ import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.fakes.tabataPreset
 import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -125,6 +126,23 @@ class PlanViewModelTest : MainDispatcherTest() {
         assertEquals(listOf(1), state.routine[3].plans.map { it.programDay })
         assertEquals(listOf(2), state.routine[4].plans.map { it.programDay })
         assertEquals(listOf(null), state.routine[1].plans.map { it.programDay })
+    }
+
+    @Test
+    fun `sport days are on the routine and counted apart from the workouts`() {
+        viewModel.planWeekly(PlanWorkout.SportDay(Sport.Bjj), setOf(2, 4))
+        viewModel.planWeekly(tabata.asPlan(), setOf(4))
+        viewModel.planOnce(PlanWorkout.SportDay(Sport.Climbing), TODAY + 2)
+
+        val state = viewModel.state.value
+        assertEquals(2, state.routineSports)
+        assertEquals(1, state.routineIntervals)
+        assertEquals(0, state.routineLifts)
+        assertEquals(
+            listOf(PlanWorkout.SportDay(Sport.Bjj), tabata.asPlan()),
+            state.routine[3].plans.map { it.workout },
+        )
+        assertEquals(listOf<PlanWorkout>(PlanWorkout.SportDay(Sport.Climbing)), state.oneOffs.map { it.entry.workout })
     }
 
     @Test

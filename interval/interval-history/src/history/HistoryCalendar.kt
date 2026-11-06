@@ -30,10 +30,15 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.history_day_cd
 import dev.justinsmith.interval.history.resources.history_kind_interval
 import dev.justinsmith.interval.history.resources.history_kind_lift
+import dev.justinsmith.interval.history.resources.history_kind_sport
+import dev.justinsmith.interval.history.resources.history_sport_logged_cd
+import dev.justinsmith.interval.history.resources.history_sport_passed_cd
+import dev.justinsmith.interval.history.resources.history_sport_planned_cd
 import dev.justinsmith.interval.history.resources.history_state_done_cd
 import dev.justinsmith.interval.history.resources.history_state_missed
 import dev.justinsmith.interval.history.resources.history_state_missed_cd
@@ -41,6 +46,8 @@ import dev.justinsmith.interval.history.resources.history_state_planned
 import dev.justinsmith.interval.history.resources.history_state_planned_cd
 import dev.justinsmith.interval.history.resources.history_state_rest_cd
 import dev.justinsmith.interval.history.resources.history_today
+import dev.justinsmith.interval.plan.sportName
+import dev.justinsmith.interval.plan.sportShort
 import dev.justinsmith.interval.platform.prefersReducedMotion
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.ui.Corners
@@ -60,12 +67,15 @@ import org.jetbrains.compose.resources.stringResource
  * Monday to Sunday: a bar for each day worked, as tall as its time against the longest and split by kind, Lift's
  * sessions in the accent under the interval workouts in the work mark; an outlined block for a day still
  * planned, a filled one for a missed day, and a short bar for a rest day. The bars grow
- * up from the baseline as the tab opens, one after another. Each day is a button that opens it.
+ * up from the baseline as the tab opens, one after another. A day of a sport has it named under its initial
+ * ("BJJ", "Climb"), brighter once logged, and a day that holds nothing else is a dim block when it is; a week with
+ * any sport keeps that line under every day, so the bars stay level. Each day is a button that opens it.
  */
 @Composable
 internal fun WeekStrip(week: List<DayCell>, onDay: (Long) -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val max = week.maxOfOrNull { it.seconds } ?: 0
+    val sports = week.any { it.sport != null }
     Row(
         modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
@@ -91,11 +101,25 @@ internal fun WeekStrip(week: List<DayCell>, onDay: (Long) -> Unit, modifier: Mod
                     ) {
                         DayBar(day, if (max > 0) day.seconds.toFloat() / max else 0f, index)
                     }
-                    Text(
-                        weekdayText(day.weekday, WeekdayForm.Initial),
-                        style = IntervalTheme.type.caption,
-                        color = if (day.today) palette.accent else palette.textDim,
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            weekdayText(day.weekday, WeekdayForm.Initial),
+                            style = IntervalTheme.type.caption,
+                            color = if (day.today) palette.accent else palette.textDim,
+                        )
+                        if (sports) {
+                            // Empty on a day with no sport: the line keeps its height, and the bars their level.
+                            Text(
+                                day.sport?.let { sportShort(it) }.orEmpty(),
+                                style = IntervalTheme.type.caption,
+                                color = if (day.sportLogged) palette.text else palette.textDim,
+                                maxLines = 1,
+                                softWrap = false,
+                                // A name wider than its day's column runs into the gap beside it, not off its end.
+                                overflow = TextOverflow.Visible,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -106,6 +130,15 @@ internal fun WeekStrip(week: List<DayCell>, onDay: (Long) -> Unit, modifier: Mod
 private fun DayBar(day: DayCell, share: Float, index: Int) {
     val palette = IntervalTheme.palette
     when (day.state) {
+        // A sport logged and nothing timed: it has no length to draw, so a block, in the dim a sport is marked in.
+        DayState.Done if day.seconds == 0 && day.sportLogged -> Box(
+            Modifier
+                .fillMaxWidth()
+                .height(Sizes.weekBarMark)
+                .clip(Corners.radius12)
+                .background(palette.textDim),
+        )
+
         DayState.Done -> {
             val reducedMotion = prefersReducedMotion()
             val grown = remember { Animatable(if (reducedMotion) share else 0f) }
@@ -166,11 +199,14 @@ private fun DayBar(day: DayCell, share: Float, index: Int) {
     }
 }
 
-/** The key under the week strip, for sighted users: the strip reads its days' states aloud itself. */
+/**
+ * The key under the week strip, for sighted users: the strip reads its days' states aloud itself. With [sport],
+ * the block a sport day logged is drawn as joins it.
+ */
 @Composable
-internal fun Legend(modifier: Modifier = Modifier) {
+internal fun Legend(modifier: Modifier = Modifier, sport: Boolean = false) {
     val palette = IntervalTheme.palette
-    // Four keys: on a narrow column they wrap rather than run off the card.
+    // Four keys or five: on a narrow column they wrap rather than run off the card.
     FlowRow(
         modifier.clearAndSetSemantics {},
         horizontalArrangement = Arrangement.spacedBy(Spacing.space16),
@@ -181,6 +217,11 @@ internal fun Legend(modifier: Modifier = Modifier) {
         }
         LegendItem(stringResource(Res.string.history_kind_lift)) {
             Box(Modifier.size(Sizes.legendSwatch).clip(Corners.radius12).background(palette.accent))
+        }
+        if (sport) {
+            LegendItem(stringResource(Res.string.history_kind_sport)) {
+                Box(Modifier.size(Sizes.legendSwatch).clip(Corners.radius12).background(palette.textDim))
+            }
         }
         LegendItem(stringResource(Res.string.history_state_planned)) {
             Box(Modifier.size(Sizes.legendSwatch).border(Sizes.border, palette.accent, Corners.radius12))
@@ -256,7 +297,10 @@ private fun CalendarDay(cell: DayCell, onClick: () -> Unit, modifier: Modifier =
     }
 }
 
-/** A day and its state for screen readers: "Monday, done". */
+/**
+ * A day and its state for screen readers: "Monday, done". A day of a sport says which and how it stands after it,
+ * "Today, done, BJJ logged", and in place of "no workout" when the sport is all the day holds, "Today, BJJ planned".
+ */
 @Composable
 private fun dayDescription(name: String, cell: DayCell): String {
     val state = stringResource(
@@ -267,5 +311,17 @@ private fun dayDescription(name: String, cell: DayCell): String {
             DayState.Rest -> Res.string.history_state_rest_cd
         },
     )
-    return stringResource(Res.string.history_day_cd, name, state)
+    val sport = cell.sport?.let {
+        val standing = when {
+            cell.sportLogged -> Res.string.history_sport_logged_cd
+            cell.sportPassed -> Res.string.history_sport_passed_cd
+            else -> Res.string.history_sport_planned_cd
+        }
+        stringResource(standing, sportName(it))
+    }
+    return when {
+        sport == null -> stringResource(Res.string.history_day_cd, name, state)
+        cell.state == DayState.Rest -> stringResource(Res.string.history_day_cd, name, sport)
+        else -> stringResource(Res.string.history_day_cd, stringResource(Res.string.history_day_cd, name, state), sport)
+    }
 }

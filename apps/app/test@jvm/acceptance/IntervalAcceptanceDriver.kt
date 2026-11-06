@@ -368,6 +368,23 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         }
     }
 
+    /** On Plan: a weekday's + and the add sheet's Sport side, one of the sports it names, then Add to plan. */
+    fun planSportEvery(sport: String, weekday: String) {
+        tapDescribed("Add a workout every $weekday")
+        tap(hasText("Sport") and isSelectable())
+        tap(hasText(sport) and isSelectable())
+        tap(hasText("Add to plan") and hasClickAction())
+        waitFor("a sport day planned") {
+            app.repository.plans.planned.value.any { it.workout is PlanWorkout.SportDay }
+        }
+    }
+
+    /** The day's chip on Plan, by the name the plan gives the sport's day. */
+    fun seeSportPlannedOn(name: String, weekday: String) = see(hasContentDescription("Remove $name from $weekday"))
+
+    /** A day of the week strip as it is read out, its sport after its state: "Today, BJJ planned". */
+    fun seeSportOnTheWeek(day: String) = see(hasContentDescription(day))
+
     fun seeLiftSessionPlannedOn(weekday: String) = see(hasContentDescription("Remove Any lift session from $weekday"))
 
     fun seeUpNext(name: String) {

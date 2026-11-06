@@ -247,6 +247,7 @@ fun HistoryScreen(
             weekday = weekdayOf(day),
             epochDay = day,
             lift = LiftChoices(state.programDay),
+            sports = true,
         )
     }
     if (confirming) {

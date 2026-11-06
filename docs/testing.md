@@ -292,6 +292,7 @@ adb shell pm clear dev.justinsmith.interval      # Most journeys expect a fresh 
 | Journey | Covers | In CI as |
 |---|---|---|
 | `today.xml` | The app opens on Today: with nothing planned it leads to the plan, a preset that fits five minutes starts from "Or pick by time", a session planned for today is up next and starts from it, the followed program's next day is up next with about how long it takes | `TodayAcceptanceTest` |
+| `sport-days.xml` | A class trained away from the app goes on the plan from the add sheet's Sport side and is named under its day on the week | `SportDaysAcceptanceTest` |
 | `train.xml` | Train's pillars: it opens on Strength, Conditioning lists the presets under the same title and picker, the bar reopens the pillar last shown, Back returns to Today | `TrainAcceptanceTest` |
 | `start-workout.xml` | Edit work time via the sheet, start, pause/resume, skip, end with nothing saved | `StartWorkoutAcceptanceTest` |
 | `history.xml` | Set a weekly goal from the first run, end after a round, find it in History and open it, see it on the month, clear History | `HistoryAcceptanceTest` |

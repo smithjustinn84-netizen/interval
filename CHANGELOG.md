@@ -30,6 +30,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   them. A sequence on the Timer shows its blocks on one card, which opens the editor ("Edit blocks"); Done puts it
   back on the Timer without saving a preset, and "Save as preset" names it. The Timeline draws every block.
 
+- Sport days: a class or a day on the wall, trained away from the app, goes on the plan. "Add to plan" has a
+  Sport side beside Interval and Lift, with BJJ, Climbing, Running or a sport you name, every week on the days
+  picked or once on a date. The week names it under its day ("BJJ", "Climb") on Today and History, the plan shows
+  it as a chip with a pennant, and it is never counted as a workout missed.
 - Exports are schema 6, with the sport days planned and logged; a build from before them refuses the file with
   "update the app", and older files read as before.
 

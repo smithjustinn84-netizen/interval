@@ -19,6 +19,7 @@ import dev.justinsmith.interval.history.DayState
 import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.history.UpNextItem
 import dev.justinsmith.interval.history.WeekGoal
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.ui.Window
@@ -85,6 +86,22 @@ class HomeScreenTest {
         onNodeWithText("Then Tomorrow · Tabata").assertIsDisplayed()
         onNodeWithText("Start workout").performClick()
         assertEquals(listOf("HIIT 30/30"), started)
+    }
+
+    @Test
+    fun `a class today is named under its day and leads up next with nothing to start`() = runUiTest {
+        val state = empty.copy(
+            week = restWeek.map { if (it.today) it.copy(sport = Sport.Bjj) else it },
+            upNext = listOf(UpNextItem.SportDay(1, THURSDAY, HistoryDay.Today, Sport.Bjj)),
+            hasPlans = true,
+        )
+        setThemedContent { HomeScreen(state, HomeActions()) }
+
+        onNodeWithContentDescription("Today, BJJ planned").assertExists()
+        onNodeWithText("BJJ", useUnmergedTree = true).assertExists()
+        onNodeWithText("BJJ class").assertIsDisplayed()
+        onNodeWithText("Counts toward your week").assertIsDisplayed()
+        onNodeWithText("Start workout").assertDoesNotExist()
     }
 
     @Test

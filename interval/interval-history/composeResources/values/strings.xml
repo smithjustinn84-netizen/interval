@@ -98,6 +98,7 @@
         <item quantity="other">%1$d sport days</item>
     </plurals>
     <string name="history_kind_interval">Interval</string>
+    <string name="history_kind_sport">Sport</string>
     <string name="history_kind_lift">Lift</string>
     <string name="history_lift_session">Lift session</string>
     <string name="history_lift_any">Any session on Lift</string>
@@ -210,6 +211,14 @@
     <string name="sport_running_title">Run</string>
     <string name="sport_climbing_short">Climb</string>
     <string name="sport_running_short">Run</string>
+    <string name="sport_other">Something else</string>
+    <string name="plan_sport_which">Which sport</string>
+    <string name="plan_sport_text">Trained away from the app. Log it on its day and it counts toward your week.</string>
+    <string name="plan_sport_name_label">Name of the sport</string>
+    <string name="plan_sport_name_placeholder">Judo, yoga, five-a-side</string>
+    <string name="history_sport_planned_cd">%1$s planned</string>
+    <string name="history_sport_logged_cd">%1$s logged</string>
+    <string name="history_sport_passed_cd">%1$s not logged</string>
     <string name="sport_counts">Counts toward your week</string>
     <string name="sport_state_passed">Not logged</string>
 </resources>

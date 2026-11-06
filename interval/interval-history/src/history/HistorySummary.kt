@@ -135,7 +135,7 @@ internal fun WeekSummary(
             state.summary.calories?.let { Stat(stringResource(Res.string.history_calories), it.toString(), it) }
         }
         WeekStrip(state.week, onDay)
-        Legend()
+        Legend(sport = state.week.any { it.sportLogged })
     }
 }
 

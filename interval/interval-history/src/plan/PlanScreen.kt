@@ -211,6 +211,7 @@ fun PlanScreen(
             repeat = if (adding == ADD_ON_DATE) PlanRepeat.Once else PlanRepeat.Weekly,
             weekday = if (adding == ADD_ON_DATE) state.todayWeekday else adding,
             lift = LiftChoices(state.programDay),
+            sports = true,
         )
     }
     if (describing) DescribeRoutineSheet(state, onPlanRoutine, onDismiss = { describing = false })

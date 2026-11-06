@@ -6,10 +6,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -18,6 +20,7 @@ import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.fakes.tabataPreset
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
@@ -148,6 +151,43 @@ class HistoryScreenTest {
         onNodeWithText("Planned · 20s on · 10s off · ×8 · ended early · 7:42 PM").assertExists()
         onNodeWithText("25s on · 5s off · ×4").assertExists()
         onNodeWithText("6:15 PM").assertExists()
+    }
+
+    @Test
+    fun `a day of a sport is named under its day and read out with how it stands`() = runUiTest {
+        val days = week(
+            DayState.Done,
+            DayState.Rest,
+            DayState.Done,
+            DayState.Rest,
+            DayState.Rest,
+            DayState.Rest,
+            DayState.Planned,
+        )
+        val state = oneWorkout.copy(
+            // A class logged on a day with a workout, one that went by, one logged alone, one to come.
+            week = days.mapIndexed { index, day ->
+                when (index) {
+                    0 -> day.copy(sport = Sport.Bjj, sportLogged = true)
+                    1 -> day.copy(sport = Sport.Bjj, sportPassed = true)
+                    2 -> day.copy(seconds = 0, sport = Sport.Custom("Swimming"), sportLogged = true)
+                    3 -> day.copy(sport = Sport.Climbing)
+                    else -> day
+                }
+            },
+        )
+        setThemedContent { HistoryScreen(state, actions) }
+
+        onNodeWithContentDescription("Monday, done, BJJ logged").assertExists()
+        onNodeWithContentDescription("Tuesday, BJJ not logged").assertExists()
+        onNodeWithContentDescription("Wednesday, done, Swimming logged").assertExists()
+        onNodeWithContentDescription("Today, Climbing planned").assertExists()
+        onNodeWithContentDescription("Friday, no workout").assertExists()
+        // The names under the days, short enough for their columns, and the block's key.
+        onAllNodesWithText("BJJ", useUnmergedTree = true).assertCountEquals(2)
+        onNodeWithText("Swimm", useUnmergedTree = true).assertExists()
+        onNodeWithText("Climb", useUnmergedTree = true).assertExists()
+        onNodeWithText("Sport", useUnmergedTree = true).assertExists()
     }
 
     @Test

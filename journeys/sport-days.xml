@@ -1,0 +1,19 @@
+<journey name="Sport days">
+  <description>
+    A class trained away from the app goes on the plan and shows on the week. Run on a fresh install
+    (adb shell pm clear dev.justinsmith.interval).
+  </description>
+  <actions>
+    <action>Verify that the app opens on the "Today" tab with "Nothing planned"</action>
+    <action>Tap "Plan your week"</action>
+    <action>Tap the "+" on today's weekday row in "Routine"</action>
+    <action>In the "Add to plan" sheet, tap "Sport"</action>
+    <action>Verify that the sheet lists "BJJ", "Climbing", "Running" and "Something else", with "BJJ" picked</action>
+    <action>Tap "Add to plan"</action>
+    <action>Verify that today's row shows a "BJJ class" chip with a pennant beside it</action>
+    <action>Verify that the "Routine" heading reads "Every week · 1 sport day"</action>
+    <action>Tap "Back"</action>
+    <action>Verify that "BJJ" is written under today on the week strip, whose bar is the short one of a rest day</action>
+    <action>Verify that "Up next · Today" shows "BJJ class" and "Counts toward your week"</action>
+  </actions>
+</journey>

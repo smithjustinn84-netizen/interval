@@ -14,10 +14,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -41,6 +40,7 @@ import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.common_joined
 import dev.justinsmith.interval.history.resources.history_kind_interval
 import dev.justinsmith.interval.history.resources.history_kind_lift
+import dev.justinsmith.interval.history.resources.history_kind_sport
 import dev.justinsmith.interval.history.resources.notice_plan_added
 import dev.justinsmith.interval.history.resources.plan_add_confirm
 import dev.justinsmith.interval.history.resources.plan_add_title
@@ -61,7 +61,6 @@ import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.Corners
-import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
@@ -86,16 +85,17 @@ import org.jetbrains.compose.resources.stringResource
 /** Whether a new plan repeats every week or falls once. */
 enum class PlanRepeat { Weekly, Once }
 
-/** The two kinds of plan the sheet offers. */
-private enum class PlanKind { Interval, Lift }
+/** The kinds of plan the sheet offers. */
+private enum class PlanKind { Interval, Lift, Sport }
 
 /** What the add sheet offers on Lift's side: the next day of the program followed, when one is. */
 data class LiftChoices(val programDay: ProgramDay?)
 
 /**
- * Plans a workout: one of [choices], or with [lift] a session on Lift, then every week on the weekdays picked or
- * once on one of [days]. It opens on [repeat] with [weekday] or [epochDay] picked, so the way in (a weekday's +,
- * a date) is already chosen. Without [lift] it plans only an interval workout, as a workout's page does.
+ * Plans a workout: one of [choices], with [lift] a session on Lift, or with [sports] a day of a sport, then every
+ * week on the weekdays picked or once on one of [days]. It opens on [repeat] with [weekday] or [epochDay] picked,
+ * so the way in (a weekday's +, a date) is already chosen. Without [lift] or [sports] it plans only an interval
+ * workout, as a workout's page does.
  */
 @Composable
 fun AddToPlanSheet(
@@ -108,6 +108,7 @@ fun AddToPlanSheet(
     weekday: Int = 1,
     epochDay: Long = days.firstOrNull()?.epochDay ?: 0,
     lift: LiftChoices? = null,
+    sports: Boolean = false,
 ) {
     val palette = IntervalTheme.palette
     // The first choice is the Timer's; a preset is the likelier pick when there is one.
@@ -120,6 +121,15 @@ fun AddToPlanSheet(
     // The weekdays picked, as bits: Monday is bit 0.
     var weekdays by rememberSaveable { mutableIntStateOf(1 shl (weekday - 1)) }
     var day by rememberSaveable { mutableLongStateOf(epochDay) }
+    var sport by rememberSaveable { mutableIntStateOf(0) }
+    val sportName = rememberTextFieldState()
+    val kinds = PlanKind.entries.filter {
+        when (it) {
+            PlanKind.Interval -> true
+            PlanKind.Lift -> lift != null
+            PlanKind.Sport -> sports
+        }
+    }
     val title = stringResource(Res.string.plan_add_title)
     IntervalSheet(title = title, onDismiss = onDismiss) { hide ->
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space16)) {
@@ -129,10 +139,11 @@ fun AddToPlanSheet(
                 color = palette.text,
                 modifier = Modifier.semantics { heading() },
             )
-            if (lift != null) KindPicker(kind, onPick = { kind = it })
+            if (kinds.size > 1) KindPicker(kinds, kind, onPick = { kind = it })
             when (kind) {
                 PlanKind.Interval -> IntervalChoiceList(choices, picked, onPick = { picked = it })
                 PlanKind.Lift -> LiftChoiceList(programDay, ofProgram = ofProgram, onPick = { ofProgram = it })
+                PlanKind.Sport -> SportChoiceList(sport, sportName, onPick = { sport = it })
             }
             // The program's days a week, offered spread over the week while its next day is the pick.
             val pace = programDay?.program?.daysPerWeek
@@ -147,49 +158,60 @@ fun AddToPlanSheet(
                 onDay = { day = it },
                 pace = pace?.let { it to spreadWeekdays(weekday, it) },
             )
-            val notices = LocalNotices.current
-            val added = stringResource(Res.string.notice_plan_added)
-            val canAdd = kind == PlanKind.Lift || choices.isNotEmpty()
-            AccentButton(
-                stringResource(Res.string.plan_add_confirm),
-                onClick = {
-                    if (!canAdd) return@AccentButton
-                    val workout = when (kind) {
-                        PlanKind.Interval -> choices[picked.coerceIn(choices.indices)].preset.asPlan()
-                        PlanKind.Lift -> liftPlan(ofProgram && programDay != null)
-                    }
-                    when (mode) {
-                        PlanRepeat.Weekly -> onPlanWeekly(
-                            workout,
-                            (1..DAYS_PER_WEEK).filter { weekdays and (1 shl (it - 1)) != 0 }.toSet(),
-                        )
+            // Null while there is nothing to plan: no workout to pick from, or a sport still to be named.
+            val workout: PlanWorkout? = when (kind) {
+                PlanKind.Interval -> choices.getOrNull(picked.coerceAtMost(choices.lastIndex))?.preset?.asPlan()
+                PlanKind.Lift -> liftPlan(ofProgram && programDay != null)
+                PlanKind.Sport -> pickedSport(sport, sportName.text.toString())?.let(PlanWorkout::SportDay)
+            }
+            AddButton(workout) {
+                when (mode) {
+                    PlanRepeat.Weekly -> onPlanWeekly(
+                        it,
+                        (1..DAYS_PER_WEEK).filter { weekday -> weekdays and (1 shl (weekday - 1)) != 0 }.toSet(),
+                    )
 
-                        PlanRepeat.Once -> onPlanOnce(workout, day)
-                    }
-                    notices.show(added)
-                    hide()
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = canAdd,
-            )
+                    PlanRepeat.Once -> onPlanOnce(it, day)
+                }
+                hide()
+            }
         }
     }
+}
+
+/** Add to plan: plans [workout] through [onAdd] and says so; off while there is none to plan. */
+@Composable
+private fun AddButton(workout: PlanWorkout?, onAdd: (PlanWorkout) -> Unit) {
+    val notices = LocalNotices.current
+    val added = stringResource(Res.string.notice_plan_added)
+    AccentButton(
+        stringResource(Res.string.plan_add_confirm),
+        onClick = {
+            if (workout != null) {
+                onAdd(workout)
+                notices.show(added)
+            }
+        },
+        modifier = Modifier.fillMaxWidth(),
+        enabled = workout != null,
+    )
 }
 
 /** The session on Lift planned: the program's next day when [ofProgram], else any session. */
 private fun liftPlan(ofProgram: Boolean): PlanWorkout.Lift =
     if (ofProgram) PlanWorkout.Lift.ProgramDay else PlanWorkout.Lift.AnySession
 
-/** Interval or Lift. */
+/** Interval, Lift or Sport: the [kinds] this sheet offers. */
 @Composable
-private fun KindPicker(kind: PlanKind, onPick: (PlanKind) -> Unit) {
+private fun KindPicker(kinds: List<PlanKind>, kind: PlanKind, onPick: (PlanKind) -> Unit) {
     SegmentedPicker(
-        options = PlanKind.entries,
+        options = kinds,
         selected = kind,
         label = {
             when (it) {
                 PlanKind.Interval -> stringResource(Res.string.history_kind_interval)
                 PlanKind.Lift -> stringResource(Res.string.history_kind_lift)
+                PlanKind.Sport -> stringResource(Res.string.history_kind_sport)
             }
         },
         onSelect = onPick,
@@ -338,11 +360,6 @@ private fun ProgramPace(pace: Int, suggested: Set<Int>, weekdays: Int, onUse: (I
 }
 
 @Composable
-private fun Caption(text: String) {
-    Text(text, style = IntervalTheme.type.caption, color = IntervalTheme.palette.textDim)
-}
-
-@Composable
 private fun ChoiceRow(choice: PlanChoice, selected: Boolean, onPick: () -> Unit) {
     val shape = workoutDescription(choice.preset.config)
     PickRow(
@@ -351,31 +368,6 @@ private fun ChoiceRow(choice: PlanChoice, selected: Boolean, onPick: () -> Unit)
         selected = selected,
         onPick = onPick,
     )
-}
-
-/** One choice of a group: its [name] over a line of [detail], checked when [selected]. */
-@Composable
-private fun PickRow(name: String, detail: String, selected: Boolean, onPick: () -> Unit) {
-    val palette = IntervalTheme.palette
-    val interaction = remember { MutableInteractionSource() }
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = Sizes.listRow)
-            .selectable(selected, interaction, LocalIndication.current, role = Role.RadioButton, onClick = onPick)
-            .pressScale(interaction)
-            .padding(horizontal = Spacing.space16, vertical = Spacing.space8),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
-    ) {
-        Box(Modifier.size(Sizes.icon), contentAlignment = Alignment.Center) {
-            if (selected) Icon(IntervalIcons.Check, null, tint = palette.accent, modifier = Modifier.size(Sizes.icon))
-        }
-        Column(Modifier.weight(1f)) {
-            Text(name, style = IntervalTheme.type.label, color = palette.text)
-            Text(detail, style = IntervalTheme.type.meta, color = palette.textDim)
-        }
-    }
 }
 
 /**
