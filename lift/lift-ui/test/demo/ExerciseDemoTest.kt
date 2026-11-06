@@ -37,12 +37,14 @@ class ExerciseDemoTest {
 
     @Test
     fun `the figure moves smoothly through the rep`() {
-        demos.forEach { demo ->
-            val steps = 800
+        BuiltInExercise.entries.forEach { exercise ->
+            val demo = exercise.demo ?: return@forEach
+            // A frame at 120 a second: no faster than a hard-swung bell, about 7 metres a second at this scale.
+            val steps = (demo.secondsPerRep * FRAMES_PER_SECOND).toInt()
             (0 until steps).forEach { i ->
                 val a = demo.figureAt(i / steps.toFloat()).bell
                 val b = demo.figureAt((i + 1) / steps.toFloat()).bell
-                assertTrue((a - b).getDistance() < 6f, "The bell jumps at ${i / steps.toFloat()}")
+                assertTrue((a - b).getDistance() < 16f, "$exercise's bell jumps at ${i / steps.toFloat()}")
             }
         }
     }
@@ -151,3 +153,5 @@ class ExerciseDemoTest {
         demos.forEach { demo -> assertEquals(demo.phases.last(), demo.phaseAt(1f)) }
     }
 }
+
+private const val FRAMES_PER_SECOND = 120

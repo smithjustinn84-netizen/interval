@@ -55,7 +55,10 @@ internal object KettlebellPoses {
     val snatchDrop = swingPose(shin = 0f, thigh = 0f, torso = -3f, arm = 115f).turned()
 
     /** Casting the bell off the rack: the arm unfolding, the bell falling off the forearm to hang. */
-    val castPose = Pose(shin = 0f, thigh = 0f, torso = -2f, upperArm = 15f, forearm = 45f)
+    val castPose = Pose(shin = 0f, thigh = 0f, torso = -2f, upperArm = 15f, forearm = 45f, bell = RESTING)
+
+    /** Dropped under a bell driven off the rack, the knees bent again and the arm already locked. */
+    val underTheBell = lockout.standingAs(Pose(shin = 18f, thigh = -28f, torso = 0f, upperArm = 0f, forearm = 0f))
 
     /** A swing's pose: the arm straight, [arm] from hanging, the bell along it. */
     fun swingPose(shin: Float, thigh: Float, torso: Float, arm: Float) =
@@ -79,7 +82,7 @@ internal fun Pose.freeHand(sway: Float = FREE_SWAY) = copy(
 )
 
 /** This pose with the far arm hanging still at the side, as in a strict lift. */
-internal fun Pose.stillHand() = freeHand(sway = 0f)
+internal fun Pose.stillHand() = copy(farUpperArm = 0f, farForearm = FREE_BEND)
 
 /** This pose with the far arm held out in front for balance, as in a one-bell squat. */
 internal fun Pose.balancing() = copy(farUpperArm = BALANCE_ARM, farForearm = BALANCE_FOREARM)

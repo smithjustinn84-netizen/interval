@@ -23,5 +23,9 @@ private val builtInDemos: Map<Exercise, ExerciseDemo> by lazy {
         BuiltInExercise.Jerk to JerkDemo,
         BuiltInExercise.FrontSquat to FrontSquatDemo,
         BuiltInExercise.Thruster to ThrusterDemo,
+        BuiltInExercise.CleanAndPress to CleanAndPressDemo,
+        BuiltInExercise.LongCycle to LongCycleDemo,
+        BuiltInExercise.IronCardio to IronCardioDemo,
+        BuiltInExercise.ArmorBuildingComplex to ArmorBuildingComplexDemo,
     )
 }

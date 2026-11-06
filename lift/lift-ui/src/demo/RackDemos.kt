@@ -11,6 +11,7 @@ import dev.justinsmith.lift.ui.demo.KettlebellPoses.lockout
 import dev.justinsmith.lift.ui.demo.KettlebellPoses.pressing
 import dev.justinsmith.lift.ui.demo.KettlebellPoses.rack
 import dev.justinsmith.lift.ui.demo.KettlebellPoses.squat
+import dev.justinsmith.lift.ui.demo.KettlebellPoses.underTheBell
 import dev.justinsmith.lift.ui.demo.KettlebellPoses.zip
 
 /** Halfway down a squat, and halfway back up it, the torso a little more upright on the way up. */
@@ -29,7 +30,7 @@ val CleanDemo: ExerciseDemo = ExerciseDemo(
         Keyframe(at = 0.26f, pose = zip.freeHand()),
         Keyframe(at = 0.38f, pose = rack.freeHand()),
         Keyframe(at = 0.56f, pose = rack.freeHand()),
-        Keyframe(at = 0.68f, pose = castPose.copy(bell = RESTING).freeHand()),
+        Keyframe(at = 0.68f, pose = castPose.freeHand()),
         Keyframe(at = 0.82f, pose = hinge.freeHand()),
         Keyframe(at = 1f, pose = hike.freeHand()),
     ),
@@ -89,15 +90,14 @@ val PushPressDemo: ExerciseDemo = ExerciseDemo(
  * tall (2).
  */
 val JerkDemo: ExerciseDemo = run {
-    val under = lockout.standingAs(Pose(shin = 18f, thigh = -28f, torso = 0f, upperArm = 0f, forearm = 0f))
     ExerciseDemo(
         keyframes = listOf(
             Keyframe(at = 0f, pose = rack.stillHand()),
             Keyframe(at = 0.1f, pose = rack.stillHand()),
             Keyframe(at = 0.22f, pose = dip.stillHand()),
             Keyframe(at = 0.31f, pose = rack.copy(upperArm = 60f, forearm = 170f).stillHand()),
-            Keyframe(at = 0.4f, pose = under.stillHand()),
-            Keyframe(at = 0.48f, pose = under.stillHand()),
+            Keyframe(at = 0.4f, pose = underTheBell.stillHand()),
+            Keyframe(at = 0.48f, pose = underTheBell.stillHand()),
             Keyframe(at = 0.6f, pose = lockout.stillHand()),
             Keyframe(at = 0.7f, pose = lockout.stillHand()),
             Keyframe(at = 0.86f, pose = pressing.stillHand()),

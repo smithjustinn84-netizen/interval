@@ -87,6 +87,27 @@ class BellDemosTest {
         assertTrue(top.hand.y < top.head.y, "The thruster's press stops at ${top.hand}")
     }
 
+    @Test
+    fun `the complexes press and squat between their cleans`() {
+        listOf(CleanAndPressDemo, LongCycleDemo, IronCardioDemo, ArmorBuildingComplexDemo).forEach { demo ->
+            val figures = (0..200).map { demo.figureAt(it / 200f) }
+            assertTrue(figures.any { it.hand.y < it.head.y - Rig.HEAD }, "A complex never locks out overhead")
+            assertTrue(figures.any { rests(it) }, "A complex never racks the bell")
+        }
+        val squats = (0..400).map { IronCardioDemo.figureAt(it / 400f).hip.y > Rig.FLOOR - Rig.SHIN - 10f }
+        assertTrue(squats.any { it }, "Iron Cardio never squats")
+    }
+
+    @Test
+    fun `the armor building complex squats three times with a bell in each hand`() {
+        val demo = ArmorBuildingComplexDemo
+        assertEquals(Bells.Pair, demo.bells)
+        val deep = (0..800).map { demo.figureAt(it / 800f).hip.y > demo.figureAt(it / 800f).knee.y }
+        assertEquals(3, deep.zipWithNext().count { (was, now) -> !was && now }, "The squats in a rep")
+        val top = demo.figureAt(demo.still)
+        assertTrue((top.farBell - top.bell).getDistance() < 2 * Rig.FAR_ARM_OFFSET, "The far bell lags the near one")
+    }
+
     /** Whether the bell lies back along the forearm, as in the rack, rather than past the fist. */
     private fun rests(figure: Figure): Boolean {
         val forearm = figure.hand - figure.elbow
