@@ -458,7 +458,7 @@ private fun appEntries(
     }
     entry<Plan> { PlanRoute(onBack = { backStack.removeLastOrNull() }) }
     entry<Workout>(metadata = pageKind(PageKind.Mode)) { key ->
-        WorkoutRoute(id = key.id, onExit = { backStack.removeLastOrNull() })
+        WorkoutRoute(id = key.id, onExit = { backStack.removeLastOrNull() }, flow = key.flow)
     }
     entry<About> {
         AboutRoute(

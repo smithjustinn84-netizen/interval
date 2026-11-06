@@ -2,6 +2,7 @@ package dev.justinsmith.interval.platform
 
 import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.platform.resources.Res
+import dev.justinsmith.interval.platform.resources.cue_begin
 import dev.justinsmith.interval.platform.resources.cue_block_rest
 import dev.justinsmith.interval.platform.resources.cue_block_work
 import dev.justinsmith.interval.platform.resources.cue_cool_down
@@ -9,11 +10,16 @@ import dev.justinsmith.interval.platform.resources.cue_finished
 import dev.justinsmith.interval.platform.resources.cue_get_ready
 import dev.justinsmith.interval.platform.resources.cue_halfway
 import dev.justinsmith.interval.platform.resources.cue_last_round_work
+import dev.justinsmith.interval.platform.resources.cue_left_side
+import dev.justinsmith.interval.platform.resources.cue_next_move
 import dev.justinsmith.interval.platform.resources.cue_rest
+import dev.justinsmith.interval.platform.resources.cue_right_side
 import dev.justinsmith.interval.platform.resources.cue_set_rest
 import dev.justinsmith.interval.platform.resources.cue_set_work
+import dev.justinsmith.interval.platform.resources.cue_switch_sides
 import dev.justinsmith.interval.platform.resources.cue_warm_up
 import dev.justinsmith.interval.platform.resources.cue_work
+import dev.justinsmith.interval.timer.FlowSide
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -54,6 +60,14 @@ internal suspend fun Speech.text(): String = when (this) {
     Speech.Halfway -> getString(Res.string.cue_halfway)
 
     Speech.Finished -> getString(Res.string.cue_finished)
+
+    is Speech.NextMove -> getString(Res.string.cue_next_move, name)
+
+    is Speech.Side -> getString(if (side == FlowSide.Left) Res.string.cue_left_side else Res.string.cue_right_side)
+
+    Speech.Begin -> getString(Res.string.cue_begin)
+
+    Speech.SwitchSides -> getString(Res.string.cue_switch_sides)
 }
 
 /**

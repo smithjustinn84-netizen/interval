@@ -9,7 +9,8 @@ import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Phase
 
 /**
- * A finished interval workout as the health store takes it: one high-intensity session from
+ * A finished interval workout as the health store takes it: one high-intensity session (a stretching one, of
+ * [Activity.Mobility]) from
  * [startedAtEpochMillis] to [endedAtEpochMillis], named for its preset when it had one, with a segment
  * per work interval in the words of [activity], per rest, and per pause. Get ready is time in the
  * session with no segment. Spans outside the session, or of no length, are left out, and one that
@@ -36,7 +37,7 @@ internal fun healthWorkout(
     }
     return HealthWorkout(
         id = "interval-$startedAtEpochMillis",
-        kind = HealthWorkoutKind.Intervals,
+        kind = if (activity == Activity.Mobility) HealthWorkoutKind.Mobility else HealthWorkoutKind.Intervals,
         title = presetName,
         startedAtEpochMillis = startedAtEpochMillis,
         endedAtEpochMillis = endedAtEpochMillis,
@@ -65,5 +66,6 @@ internal val Activity.healthMove: HealthMove
         Activity.JumpRope -> HealthMove.JumpRope
         Activity.Kettlebell -> HealthMove.KettlebellSwing
         Activity.Barbell -> HealthMove.Weightlifting
+        Activity.Mobility -> HealthMove.Stretching
         Activity.General, Activity.SkiErg, Activity.Bodyweight, Activity.Climbing -> HealthMove.Work
     }

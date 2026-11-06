@@ -51,6 +51,7 @@ import platform.HealthKit.HKStatisticsQuery
 import platform.HealthKit.HKUnit
 import platform.HealthKit.HKWorkoutActivity
 import platform.HealthKit.HKWorkoutActivityType
+import platform.HealthKit.HKWorkoutActivityTypeFlexibility
 import platform.HealthKit.HKWorkoutActivityTypeHighIntensityIntervalTraining
 import platform.HealthKit.HKWorkoutActivityTypeTraditionalStrengthTraining
 import platform.HealthKit.HKWorkoutBuilder
@@ -331,4 +332,5 @@ private val HealthWorkoutKind.activityType: HKWorkoutActivityType
     get() = when (this) {
         HealthWorkoutKind.Intervals -> HKWorkoutActivityTypeHighIntensityIntervalTraining
         HealthWorkoutKind.Strength -> HKWorkoutActivityTypeTraditionalStrengthTraining
+        HealthWorkoutKind.Mobility -> HKWorkoutActivityTypeFlexibility
     }

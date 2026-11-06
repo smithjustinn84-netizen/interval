@@ -44,9 +44,12 @@ internal fun NavBackStack<NavKey>.open(shortcut: Shortcut, clock: WallClock, sta
     }
 }
 
-/** Starts a workout now, by [clock], unless one is on top already: a double tap on Start must not stack two. */
-internal fun NavBackStack<NavKey>.startWorkout(clock: WallClock) {
-    if (lastOrNull() !is Workout) add(Workout(clock.nowMillis()))
+/**
+ * Starts a workout now, by [clock], unless one is on top already: a double tap on Start must not stack two. It is
+ * the Timer's own, or the mobility flow [flow] names, which leaves the Timer as it is.
+ */
+internal fun NavBackStack<NavKey>.startWorkout(clock: WallClock, flow: String? = null) {
+    if (lastOrNull() !is Workout) add(Workout(clock.nowMillis(), flow))
 }
 
 /** Settings pairs with the Timer alone: over another tab it is a page of its own, whatever the window. */

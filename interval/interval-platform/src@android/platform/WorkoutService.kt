@@ -13,6 +13,7 @@ import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.platform.resources.Res
+import dev.justinsmith.interval.platform.resources.common_joined
 import dev.justinsmith.interval.platform.resources.notification_channel_workout
 import dev.justinsmith.interval.platform.resources.notification_channel_workout_description
 import dev.justinsmith.interval.platform.resources.notification_round
@@ -174,7 +175,15 @@ class WorkoutService :
         )
         // The warm-up and cool-down are outside the rounds: no "Round 1 of 8" under them.
         val bookend = status.phase == Phase.WarmUp || status.phase == Phase.CoolDown
+        val step = status.step
         val text = when {
+            // A flow says its move, and where it is among them, in place of the phase and the round.
+            step != null -> getString(
+                Res.string.common_joined,
+                if (status.paused) phase else flowTitle(status.phase, step),
+                flowCount(step),
+            )
+
             bookend -> phase
 
             // A workout of blocks says the block, then the set and round as the screen does.

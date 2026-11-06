@@ -85,7 +85,8 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
         session: WorkoutSession,
         repository: IntervalRepository = this.repository,
         id: Long = WORKOUT_ID,
-    ) = WorkoutViewModel(id, session, repository.presets).also { viewModels += it }
+        flow: String? = null,
+    ) = WorkoutViewModel(id, flow, session, repository.presets).also { viewModels += it }
 
     /**
      * Where a ticker ticks: on the test's scheduler, under its background scope, so a workout still running as the

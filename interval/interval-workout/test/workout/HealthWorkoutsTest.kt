@@ -94,5 +94,18 @@ class HealthWorkoutsTest {
         assertEquals(HealthMove.KettlebellSwing, Activity.Kettlebell.healthMove)
         assertEquals(HealthMove.Weightlifting, Activity.Barbell.healthMove)
         assertEquals(HealthMove.Work, Activity.Climbing.healthMove)
+        assertEquals(HealthMove.Stretching, Activity.Mobility.healthMove)
+    }
+
+    @Test
+    fun `mobility is a stretching session rather than a high-intensity one`() {
+        val spans = listOf(CourseSpan(Phase.Work, 0, 5_000), CourseSpan(Phase.SetRest, 5_000, 8_000))
+        val workout = healthWorkout(Activity.Mobility, "Full reset", 0, 8_000, spans, calories = null)
+
+        assertEquals(HealthWorkoutKind.Mobility, workout.kind)
+        assertEquals(
+            listOf(HealthSegment(0, 5_000, HealthMove.Stretching), HealthSegment(5_000, 8_000, HealthMove.Rest)),
+            workout.segments,
+        )
     }
 }

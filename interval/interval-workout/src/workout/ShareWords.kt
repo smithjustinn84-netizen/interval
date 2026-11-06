@@ -9,6 +9,7 @@ import dev.justinsmith.interval.workout.resources.common_joined
 import dev.justinsmith.interval.workout.resources.share_workout
 import dev.justinsmith.interval.workout.resources.share_workout_calories
 import dev.justinsmith.interval.workout.resources.share_workout_figures
+import dev.justinsmith.interval.workout.resources.share_workout_moves
 import dev.justinsmith.interval.workout.resources.workout_stat_rounds_value
 import org.jetbrains.compose.resources.stringResource
 
@@ -23,8 +24,12 @@ internal fun workoutShareText(state: WorkoutUiState): String {
         presetNameOrCustom(state.presetName),
         workoutDescription(state.config),
     )
-    val rounds = stringResource(Res.string.workout_stat_rounds_value, state.completedRounds, state.rounds)
-    val figures = stringResource(Res.string.share_workout_figures, rounds, formatClock(state.elapsedSeconds))
+    val counted = stringResource(Res.string.workout_stat_rounds_value, state.countDone, state.countOf)
+    val figures = stringResource(
+        if (state.flow != null) Res.string.share_workout_moves else Res.string.share_workout_figures,
+        counted,
+        formatClock(state.elapsedSeconds),
+    )
     val line = state.calories?.let { stringResource(Res.string.share_workout_calories, figures, it) } ?: figures
     val text = stringResource(Res.string.share_workout, shape, line)
     val note = state.note.trim()

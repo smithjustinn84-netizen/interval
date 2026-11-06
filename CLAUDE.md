@@ -104,8 +104,10 @@ interval/            the interval timer
                      round, which `WorkoutEngine` walks), calories, the
                      describe parser, `AppSettings`, `HistoryEntry`, `PlannedWorkout`, `LiftWorkout`,
                      `WorkoutProgress`, `Sport` (a class or a day on the wall, trained away from the app: planned as
-                     `PlanWorkout.SportDay`, logged as a `LoggedSport`); over `core-time` alone, neither `core` nor anything of Lift's (History
-                     makes a `LiftWorkout` from a Lift session, `asLiftWorkouts` in interval-history)
+                     `PlanWorkout.SportDay`, logged as a `LoggedSport`), `Flow` (a mobility session followed along,
+                     `Flow.kt`, and the five shipped, `BuiltInFlows.kt`); over `core-time` alone, neither `core` nor
+                     anything of Lift's (History makes a `LiftWorkout` from a Lift session, `asLiftWorkouts` in
+                     interval-history)
   interval-data      `IntervalRepository`, the root of a repository per store (`SettingsRepository`, the
                      DataStore's settings and the workout under way; `PresetRepository`, `HistoryRepository`,
                      `PlanRepository`, over one `SerialWriter`; the mappers in `IntervalMappers.kt`), `AppDatabase`
@@ -336,6 +338,18 @@ toolchain (`$compose.*`).
   dropped, never played out); it does so from the screen because only an app on show may start the service. The
   Log sheet's draft is in the entry's `SavedStateHandle`. The notification helpers both services share are
   `core/core-platform/src@android/platform/Notifications.kt`.
+- **Mobility flows**: a `Flow` (`interval-domain`, `timer/Flow.kt`) is a list of `Move`s, each named, timed, with
+  a one-line cue, done on each side in turn when `sided`. It runs on the interval engine as the sequence
+  `Flow.config` is (a move a block, a side a round, `Flow.SIDE_CHANGE_SECONDS` between sides and
+  `MOVE_CHANGE_SECONDS` between moves), so nothing about one is stored: the `Workout` key carries the flow's key
+  for a new one (`WorkoutSession.open(id, flow)`, which leaves the Timer's settings alone), and everything after
+  knows it again by its shape and its `Activity.Mobility` (`builtInFlows.matching(config)`: the screen's
+  `WorkoutUiState.flow`, the cues, the notification's `WorkoutStatus.flow`, a finished one's name through
+  `nameOf`, `configDescription`'s "6 moves"). So no two flows may share a shape (`FlowTest`). A flow's words are
+  data, like a built-in preset's name, so they can be spoken: `playCue` takes the `FlowStep` and says "Next:
+  Cat-cow", "Left side", "Switch sides" (`Speech.NextMove` and the rest), with no halfway. The screen's part is
+  `WorkoutFlow.kt`; the notifications' is `FlowStatusText.kt` (`interval-platform`). It is written to the health
+  store as stretching (`HealthWorkoutKind.Mobility`).
 - **Health Connect**: `HealthStore.record` takes a `HealthWorkout` (core-platform's `Health.kt`): `WorkoutViewModel`
   builds one from the course it keeps (`CourseSpan`s in `WorkoutProgress`, so a restart loses none) as the workout
   ends, `FinishSession` (`lift-session`) from the session's sets (`HealthWorkouts.kt` in each); each is written

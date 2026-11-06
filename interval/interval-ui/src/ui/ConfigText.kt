@@ -3,8 +3,11 @@ package dev.justinsmith.interval.ui
 import androidx.compose.runtime.Composable
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Block
+import dev.justinsmith.interval.timer.Flow
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.ShortDuration
+import dev.justinsmith.interval.timer.builtInFlows
+import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.shortDuration
 import dev.justinsmith.interval.ui.resources.Res
 import dev.justinsmith.interval.ui.resources.common_custom
@@ -22,6 +25,7 @@ import dev.justinsmith.interval.ui.resources.config_then
 import dev.justinsmith.interval.ui.resources.config_warm_up
 import dev.justinsmith.interval.ui.resources.duration_short_minutes
 import dev.justinsmith.interval.ui.resources.duration_short_seconds
+import dev.justinsmith.interval.ui.resources.flow_moves
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.abs
@@ -31,10 +35,12 @@ import kotlin.math.abs
  * with its sets when it has more than one ("20s on · 10s off · ×8 · 4 sets · 1m between") and a warm-up and
  * cool-down either side when it has them: "5m warm-up · 20s on · 10s off · ×8 · 3m cool-down". A sequence says
  * its blocks one after another, then the rest between them: "20s on · 10s off · ×8, then 1m on · 30s off · ×5 ·
- * 2m between blocks".
+ * 2m between blocks". A flow says its moves instead: "6 moves".
  */
 @Composable
 fun configDescription(config: IntervalConfig): String {
+    val flow = builtInFlows.matching(config)
+    if (flow != null) return movesText(flow)
     val blocks = config.blocks.map { blockDescription(it) }
         .reduce { all, block -> stringResource(Res.string.config_then, all, block) }
     val rounds = if (config.isSequence && config.blockRestSeconds > 0) {
@@ -117,13 +123,25 @@ private fun setsText(block: Block): String {
     )
 }
 
-/** The shape, then the activity unless it is General: "20s on · 10s off · ×8 · Bike". */
+/**
+ * The shape, then the activity unless it is General: "20s on · 10s off · ×8 · Bike". A flow is what it is, then
+ * its moves: "Mobility · 6 moves".
+ */
 @Composable
 fun workoutDescription(config: IntervalConfig): String {
     val shape = configDescription(config)
     if (config.activity == Activity.General) return shape
-    return stringResource(Res.string.common_joined, shape, stringResource(config.activity.labelRes))
+    val activity = stringResource(config.activity.labelRes)
+    return if (builtInFlows.matching(config) != null) {
+        stringResource(Res.string.common_joined, activity, shape)
+    } else {
+        stringResource(Res.string.common_joined, shape, activity)
+    }
 }
+
+/** How many moves [flow] has: "6 moves". */
+@Composable
+fun movesText(flow: Flow): String = pluralStringResource(Res.plurals.flow_moves, flow.moves.size, flow.moves.size)
 
 /** [parts] in one line, each joined to the next as [Res.string.common_joined] joins two: "Planned · 7:05 AM". */
 @Composable

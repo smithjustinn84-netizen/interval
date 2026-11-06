@@ -43,8 +43,8 @@ data class HeartRate(val averageBpm: Int, val peakBpm: Int) {
     }
 }
 
-/** An interval workout, or a Lift session. */
-enum class HealthWorkoutKind { Intervals, Strength }
+/** An interval workout, a Lift session, or stretching and mat work followed along. */
+enum class HealthWorkoutKind { Intervals, Strength, Mobility }
 
 /** One stretch of a [HealthWorkout]: what it was spent on, and for a set of a lift, how many reps. */
 data class HealthSegment(
@@ -80,6 +80,7 @@ enum class HealthMove {
     Lunge,
     MountainClimber,
     HipThrust,
+    Stretching,
     Other,
 }
 

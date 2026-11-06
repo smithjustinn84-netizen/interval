@@ -74,6 +74,7 @@ import dev.justinsmith.interval.workout.resources.workout_paused
 import dev.justinsmith.interval.workout.resources.workout_status
 import dev.justinsmith.interval.workout.resources.workout_status_block
 import dev.justinsmith.interval.workout.resources.workout_status_left
+import dev.justinsmith.interval.workout.resources.workout_status_move
 import dev.justinsmith.interval.workout.resources.workout_status_set
 import dev.justinsmith.interval.workout.resources.workout_tap_pause
 import dev.justinsmith.interval.workout.resources.workout_tap_resume
@@ -82,13 +83,16 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * "Round 3 of 8 · 4:03 left", with the set first in a workout of sets ("Set 2 of 4 · Round 3 of 8 · 4:03 left");
- * in the warm-up and cool-down, outside the rounds, "12:03 left".
+ * in the warm-up and cool-down, outside the rounds, "12:03 left". A flow counts its moves: "Move 3 of 6 · 5:10 left".
  */
 @Composable
 internal fun RoundStatus(state: WorkoutUiState, modifier: Modifier = Modifier) {
     if (state.isDone) return
     val bookend = state.phase == Phase.WarmUp || state.phase == Phase.CoolDown
+    val step = state.flow?.step
     val rounds = when {
+        step != null -> stringResource(Res.string.workout_status_move, step.number, step.of, state.sessionLeft)
+
         bookend -> stringResource(Res.string.workout_status_left, state.sessionLeft)
 
         state.sets > 1 -> stringResource(
@@ -103,7 +107,7 @@ internal fun RoundStatus(state: WorkoutUiState, modifier: Modifier = Modifier) {
         else -> stringResource(Res.string.workout_status, state.round, state.setRounds, state.sessionLeft)
     }
     Text(
-        if (state.blocks > 1 && !bookend) {
+        if (state.blocks > 1 && !bookend && step == null) {
             stringResource(Res.string.workout_status_block, state.block + 1, state.blocks, rounds)
         } else {
             rounds
@@ -119,21 +123,21 @@ internal fun RoundStatus(state: WorkoutUiState, modifier: Modifier = Modifier) {
  * A short bar per round of the set: finished ones filled, the round being worked in the phase colour ([accent]),
  * the rest dim, each crossfading as its turn comes. Bars narrow to share a tight row. On the summary
  * no round is being worked any more, so it shows only what was finished, and nothing for a workout of sets,
- * whose lines say it. Past [MAX_ROUND_MARKS] rounds they would be too thin to read, so it draws nothing.
+ * whose lines say it, nor for a flow. Past [MAX_ROUND_MARKS] rounds they would be too thin to read, so it draws
+ * nothing. A flow has a bar a move.
  */
 @Composable
 internal fun RoundDots(state: WorkoutUiState, accent: Color, modifier: Modifier = Modifier) {
-    if (state.setRounds > MAX_ROUND_MARKS || (state.isDone && state.sets > 1)) return
-    val active = state.activeRound.takeUnless { state.isDone }
+    val marks = roundMarks(state) ?: return
     Row(
         modifier.clearAndSetSemantics {},
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8, Alignment.CenterHorizontally),
     ) {
-        repeat(state.setRounds) { index ->
+        repeat(marks.count) { index ->
             val round = index + 1
             val target = when {
-                round == active -> accent
-                round <= state.completedSetRounds -> IntervalTheme.workout.onGround
+                round == marks.active -> accent
+                round <= marks.completed -> IntervalTheme.workout.onGround
                 else -> IntervalTheme.workout.upcoming
             }
             val color by animateColorAsState(target, tween(Motion.STATE_MILLIS, easing = StandardEasing), label = "dot")
@@ -147,6 +151,22 @@ internal fun RoundDots(state: WorkoutUiState, accent: Color, modifier: Modifier 
     }
 }
 
+/** The bars [RoundDots] draws: how many, how many are behind, and the one being worked. */
+private class RoundMarks(val count: Int, val completed: Int, val active: Int?)
+
+/** A flow's moves, the one held and those behind it; else the rounds of the set; null where none are drawn. */
+private fun roundMarks(state: WorkoutUiState): RoundMarks? {
+    val flow = state.flow
+    return when {
+        flow != null -> RoundMarks(flow.of, flow.done, flow.step?.number?.takeIf { state.phase == Phase.Work })
+            .takeUnless { state.isDone }
+
+        state.setRounds > MAX_ROUND_MARKS || (state.isDone && state.sets > 1) -> null
+
+        else -> RoundMarks(state.setRounds, state.completedSetRounds, state.activeRound.takeUnless { state.isDone })
+    }
+}
+
 /** The ring with the phase word, clock and next up inside it, [diameter] across. */
 @Composable
 internal fun RingReadout(state: WorkoutUiState, accent: Color, diameter: Dp, modifier: Modifier = Modifier) {
@@ -155,7 +175,7 @@ internal fun RingReadout(state: WorkoutUiState, accent: Color, diameter: Dp, mod
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             PhaseLabel(state, accent)
             Clock(state, accent, ringClockSize(diameter, state.clock.length, IntervalTheme.type.clock.fontSize))
-            val nextText = nextUpText(state.next)
+            val nextText = nextText(state)
             if (nextText.isNotEmpty()) {
                 Text(
                     nextText,
@@ -186,9 +206,10 @@ internal fun LandscapeReadout(
             ProgressRing(state.progress, accent, Modifier.fillMaxSize())
             Clock(state, accent, ringClockSize(diameter, state.clock.length, IntervalTheme.type.clock.fontSize))
         }
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+        Column(Modifier.weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+            state.flow?.step?.let { FlowHeading(it, accent, centered = false) }
             PhaseLabel(state, accent)
-            val nextText = nextUpText(state.next)
+            val nextText = nextText(state)
             if (nextText.isNotEmpty()) {
                 Text(nextText, style = IntervalTheme.type.label, color = IntervalTheme.workout.onGroundDim)
             }
@@ -205,6 +226,8 @@ private fun PhaseLabel(state: WorkoutUiState, accent: Color) {
     val reducedMotion = prefersReducedMotion()
     val label: StringResource = when {
         state.paused -> Res.string.workout_paused
+
+        state.flow != null -> flowPhaseWord(state.phase, state.flow.step)
 
         else -> when (state.phase) {
             Phase.Prep -> Res.string.phase_get_ready
@@ -245,6 +268,11 @@ private fun PhaseLabel(state: WorkoutUiState, accent: Color) {
         )
     }
 }
+
+/** The line under the clock: what follows, in a flow's words for a flow. */
+@Composable
+private fun nextText(state: WorkoutUiState): String =
+    state.flow?.let { flowNextText(state.phase, it) } ?: nextUpText(state.next)
 
 /** "Next: rest 0:15", "Last round — finish strong"; nothing once the workout is done. */
 @Composable

@@ -32,6 +32,15 @@
     <string name="workout_status_set">Set %1$d of %2$d · Round %3$d of %4$d · %5$s left</string>
     <string name="workout_status_block">Block %1$d of %2$d · %3$s</string>
     <string name="workout_status_left">%1$s left</string>
+    <string name="workout_status_move">Move %1$d of %2$d · %3$s left</string>
+    <string name="flow_hold">Hold</string>
+    <string name="flow_move">Move</string>
+    <string name="flow_switch_sides">Switch sides</string>
+    <string name="flow_left_side">Left side</string>
+    <string name="flow_right_side">Right side</string>
+    <string name="next_right_side">Next: right side</string>
+    <string name="next_move">Next: %1$s</string>
+    <string name="next_last_move">Last move</string>
     <string name="workout_tap_pause">Tap anywhere to pause</string>
     <string name="workout_tap_resume">Tap anywhere to resume</string>
     <string name="workout_pause">Pause</string>
@@ -49,6 +58,10 @@
         <item quantity="one">%1$d of %2$d round done. What you finished is saved to history.</item>
         <item quantity="other">%1$d of %2$d rounds done. What you finished is saved to history.</item>
     </plurals>
+    <plurals name="workout_end_progress_moves">
+        <item quantity="one">%1$d of %2$d move done. What you finished is saved to history.</item>
+        <item quantity="other">%1$d of %2$d moves done. What you finished is saved to history.</item>
+    </plurals>
     <string name="workout_end_nothing">No round is finished yet, so nothing is saved.</string>
     <string name="workout_end_confirm">End workout</string>
     <string name="workout_done">Done</string>
@@ -61,6 +74,15 @@
         <item quantity="one">%1$d of %2$d round · %3$s</item>
         <item quantity="other">%1$d of %2$d rounds · %3$s</item>
     </plurals>
+    <plurals name="workout_summary_moves">
+        <item quantity="one">%1$d move · %2$s total</item>
+        <item quantity="other">%1$d moves · %2$s total</item>
+    </plurals>
+    <plurals name="workout_summary_moves_ended">
+        <item quantity="one">%1$d of %2$d move · %3$s</item>
+        <item quantity="other">%1$d of %2$d moves · %3$s</item>
+    </plurals>
+    <string name="workout_stat_moves">Moves</string>
     <string name="workout_stat_time">Time</string>
     <string name="workout_stat_rounds">Rounds</string>
     <string name="workout_stat_calories">kcal</string>
@@ -83,6 +105,7 @@
     <string name="workout_share">Share</string>
     <string name="share_workout">%1$s\n%2$s</string>
     <string name="share_workout_figures">%1$s rounds · %2$s</string>
+    <string name="share_workout_moves">%1$s moves · %2$s</string>
     <string name="share_workout_calories">%1$s · %2$d kcal</string>
     <string name="workout_save_preset">Save as preset</string>
 </resources>

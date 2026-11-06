@@ -18,7 +18,7 @@ import org.koin.dsl.module
 /**
  * The running workout, one per process: its [WorkoutSession], which the platform's off-screen keepers reach as the
  * [ActiveWorkout], with its clock and its recorder; the [StatusColors] they show it in, the phases' own; and the
- * page's ViewModel, for the route's id (`parametersOf(id)`).
+ * page's ViewModel, for the route's id and the flow it names, if any (`parametersOf(id, flow)`).
  */
 val workoutModule: Module = module {
     single { WorkoutTicker(get()) }.withOptions {
@@ -31,5 +31,5 @@ val workoutModule: Module = module {
             StatusColors(prep.toArgb(), work.toArgb(), rest.toArgb(), done.toArgb(), paused.toArgb(), setRest.toArgb())
         }
     }
-    viewModel { (id: Long) -> WorkoutViewModel(id, get(), get()) }
+    viewModel { (id: Long, flow: String?) -> WorkoutViewModel(id, flow, get(), get()) }
 }

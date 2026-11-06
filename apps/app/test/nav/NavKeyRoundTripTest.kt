@@ -38,6 +38,7 @@ class NavKeyRoundTripTest {
             HistoryTab,
             Settings,
             Workout(1_700_000_000_000),
+            Workout(1_700_000_000_001, flow = "hips-shoulders"),
             About,
             Licenses,
             WorkoutDetail(7),
@@ -76,6 +77,12 @@ class NavKeyRoundTripTest {
     fun `the timer saved as a tab restores as the timer`() {
         val saved = """{"type":"dev.justinsmith.interval.nav.TimerTab"}"""
         assertEquals<NavKey>(Timer, json.decodeFromString(serializer, saved))
+    }
+
+    @Test
+    fun `a workout saved before there were flows restores as the timer's own`() {
+        val saved = """{"type":"dev.justinsmith.interval.nav.Workout","id":7}"""
+        assertEquals<NavKey>(Workout(7), json.decodeFromString(serializer, saved))
     }
 
     @Test

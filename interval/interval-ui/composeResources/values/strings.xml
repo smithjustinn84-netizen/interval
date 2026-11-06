@@ -11,6 +11,10 @@
         <item quantity="other">%1$d sets</item>
     </plurals>
     <string name="config_set_rest">%1$s between</string>
+    <plurals name="flow_moves">
+        <item quantity="one">%1$d move</item>
+        <item quantity="other">%1$d moves</item>
+    </plurals>
     <string name="config_then">%1$s, then %2$s</string>
     <string name="config_block_rest">%1$s between blocks</string>
     <string name="config_ladder">%1$s on, %2$s a round · %3$s off · ×%4$d</string>
@@ -100,6 +104,8 @@
     <string name="activity_barbell_hint">Olympic lifts, squats, deadlifts</string>
     <string name="activity_climbing">Climbing</string>
     <string name="activity_climbing_hint">Hangboard, bouldering, climbing</string>
+    <string name="activity_mobility">Mobility</string>
+    <string name="activity_mobility_hint">Stretching, mat work, yoga</string>
     <string name="common_start_workout">Start workout</string>
     <string name="weekday_1">Monday</string>
     <string name="weekday_2">Tuesday</string>

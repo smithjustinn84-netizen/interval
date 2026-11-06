@@ -22,11 +22,13 @@ import kotlinx.coroutines.launch
 class WorkoutViewModel(
     /** The route's: the workout this page shows, and the saved progress it picks up after the process died. */
     private val id: Long,
+    /** The route's: the flow a new workout runs, null for the Timer's own. */
+    flow: String?,
     private val session: WorkoutSession,
     private val presetStore: PresetStore,
 ) : ViewModel() {
     init {
-        session.open(id)
+        session.open(id, flow)
     }
 
     // Followed rather than read once: a preset saved from the summary lands later, and the summary must then

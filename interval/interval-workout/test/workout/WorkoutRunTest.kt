@@ -47,6 +47,24 @@ class WorkoutRunTest {
     }
 
     @Test
+    fun `work that runs straight into the next block's work turns the course`() {
+        val backToBack = IntervalConfig(
+            prepSeconds = 0,
+            workSeconds = 5,
+            restSeconds = 0,
+            rounds = 1,
+            then = listOf(Block(workSeconds = 5, restSeconds = 0, rounds = 1)),
+        )
+        val first = begun.copy(engine = WorkoutEngine.start(backToBack).state)
+        val second = first.stepped(WorkoutEngine.tick(first.engine, 5_000), now = 6_000)
+
+        // The same phase and round, in the next block: a new stretch all the same.
+        assertEquals(Phase.Work to 1, second.engine.phase to second.engine.block)
+        assertTrue(second.turnedFrom(first.engine))
+        assertEquals(listOf(CourseSpan(Phase.Work, 1_000, 6_000)), second.spans)
+    }
+
+    @Test
     fun `a step to the end stops the timer and leaves the course for the finish to close`() {
         val done = begun.stepped(WorkoutEngine.tick(begun.engine, 60_000), now = 61_000)
 

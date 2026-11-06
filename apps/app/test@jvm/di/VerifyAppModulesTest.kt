@@ -47,7 +47,7 @@ class VerifyAppModulesTest {
             extraTypes = listOf(Long::class, CoroutineDispatcher::class, SavedStateHandle::class),
             // What each Route passes with `parametersOf`.
             injections = injectedParameters(
-                definition<WorkoutViewModel>(Long::class),
+                definition<WorkoutViewModel>(Long::class, String::class),
                 definition<WorkoutDetailViewModel>(Long::class),
                 definition<LiftDetailViewModel>(String::class),
                 definition<ProgramEditorViewModel>(String::class, ProgramCopy::class),

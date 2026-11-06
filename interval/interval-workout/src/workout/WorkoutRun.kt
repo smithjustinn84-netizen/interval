@@ -14,7 +14,10 @@ import dev.justinsmith.interval.timer.Step
 import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.timer.WorkoutOutline
 import dev.justinsmith.interval.timer.WorkoutState
+import dev.justinsmith.interval.timer.builtInFlows
 import dev.justinsmith.interval.timer.matching
+import dev.justinsmith.interval.timer.nameOf
+import dev.justinsmith.interval.timer.stepAt
 
 /**
  * One workout as it stands in [WorkoutSession]: where the engine is, whether the timer runs, the time it has run,
@@ -95,8 +98,12 @@ data class WorkoutRun(
         }
     }
 
-    /** A new interval or round since [before]: a change of course, which the clock running down within one is not. */
-    fun turnedFrom(before: WorkoutState): Boolean = engine.phase != before.phase || engine.round != before.round
+    /**
+     * A new interval since [before]: a change of course, which the clock running down within one is not. Another
+     * round, set or block counts too, since work can run straight into work.
+     */
+    fun turnedFrom(before: WorkoutState): Boolean = engine.phase != before.phase || engine.round != before.round ||
+        engine.set != before.set || engine.block != before.block
 
     /** Where it stands at [now], saved for a process killed before the next change to come back to. */
     fun toProgress(now: Long): WorkoutProgress = WorkoutProgress(
@@ -118,6 +125,7 @@ data class WorkoutRun(
     /** What the notification shows of it: the phase, whether it is paused, the clock, the round and the bar. */
     fun status(): WorkoutStatus {
         val shown = engine.toUiState(running = running, ended = ended)
+        val flow = builtInFlows.matching(config)
         return WorkoutStatus(
             shown.phase,
             shown.paused,
@@ -130,14 +138,16 @@ data class WorkoutRun(
             shown.block,
             engine.config.blocks.takeIf { it.size > 1 }.orEmpty(),
             shown.inBlockRest,
+            flow,
+            flow?.stepAt(engine),
         )
     }
 
-    /** The screen's view of it, its shape named after the one of [presets] it matches. */
+    /** The screen's view of it, its shape named after the one of [presets] it matches, or the flow it is. */
     fun toUiState(presets: List<Preset>): WorkoutUiState = engine.toUiState(
         running = running,
         ended = ended,
-        presetName = presets.matching(config)?.name,
+        presetName = presets.nameOf(config),
         elapsedSeconds = activeSeconds,
         presets = presets,
         keepScreenOn = keepScreenOn,

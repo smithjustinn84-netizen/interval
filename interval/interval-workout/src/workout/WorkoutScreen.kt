@@ -74,6 +74,7 @@ import dev.justinsmith.interval.workout.resources.Res
 import dev.justinsmith.interval.workout.resources.workout_end_confirm
 import dev.justinsmith.interval.workout.resources.workout_end_nothing
 import dev.justinsmith.interval.workout.resources.workout_end_progress
+import dev.justinsmith.interval.workout.resources.workout_end_progress_moves
 import dev.justinsmith.interval.workout.resources.workout_end_title
 import dev.justinsmith.interval.workout.resources.workout_pause
 import dev.justinsmith.interval.workout.resources.workout_resume
@@ -99,9 +100,9 @@ internal class WorkoutActions(
  * the route's, by which the ViewModel knows its own saved progress from an older workout's.
  */
 @Composable
-fun WorkoutRoute(id: Long, onExit: () -> Unit, modifier: Modifier = Modifier) {
+fun WorkoutRoute(id: Long, onExit: () -> Unit, modifier: Modifier = Modifier, flow: String? = null) {
     val sharer = koinInject<Sharer>()
-    val viewModel = koinViewModel<WorkoutViewModel> { parametersOf(id) }
+    val viewModel = koinViewModel<WorkoutViewModel> { parametersOf(id, flow) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     if (state.running && state.keepScreenOn) KeepScreenOn()
     if (!state.isDone) AskToShowNotifications()
@@ -207,12 +208,7 @@ fun WorkoutScreen(
         ConfirmDialog(
             title = stringResource(Res.string.workout_end_title),
             text = if (state.hasProgress) {
-                pluralStringResource(
-                    Res.plurals.workout_end_progress,
-                    state.rounds,
-                    state.completedRounds,
-                    state.rounds,
-                )
+                endProgressText(state)
             } else {
                 stringResource(Res.string.workout_end_nothing)
             },
@@ -230,6 +226,12 @@ fun WorkoutScreen(
         )
     }
 }
+
+/** How far the workout got, as the End dialog says it: its rounds, or a flow's moves. */
+@Composable
+private fun endProgressText(state: WorkoutUiState): String = state.flow?.let {
+    pluralStringResource(Res.plurals.workout_end_progress_moves, it.of, it.done, it.of)
+} ?: pluralStringResource(Res.plurals.workout_end_progress, state.rounds, state.completedRounds, state.rounds)
 
 /**
  * The phase colour, crossfading as the phase changes: grey while paused, blue once done. For the
@@ -295,6 +297,9 @@ private fun PortraitWorkout(
             .padding(vertical = Spacing.space16),
     ) {
         TopBar(state, actions)
+        state.flow?.step?.let {
+            FlowHeading(it, accent, Modifier.fillMaxWidth().padding(top = Spacing.space16))
+        }
         BoxWithConstraints(
             Modifier
                 .weight(1f)

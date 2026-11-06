@@ -86,11 +86,14 @@ import dev.justinsmith.interval.workout.resources.workout_save_preset
 import dev.justinsmith.interval.workout.resources.workout_saved
 import dev.justinsmith.interval.workout.resources.workout_share
 import dev.justinsmith.interval.workout.resources.workout_stat_calories
+import dev.justinsmith.interval.workout.resources.workout_stat_moves
 import dev.justinsmith.interval.workout.resources.workout_stat_rounds
 import dev.justinsmith.interval.workout.resources.workout_stat_rounds_value
 import dev.justinsmith.interval.workout.resources.workout_stat_time
 import dev.justinsmith.interval.workout.resources.workout_summary_ended
 import dev.justinsmith.interval.workout.resources.workout_summary_finished
+import dev.justinsmith.interval.workout.resources.workout_summary_moves
+import dev.justinsmith.interval.workout.resources.workout_summary_moves_ended
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -311,9 +314,10 @@ private fun SummaryDetails(
                     stringResource(Res.string.workout_stat_time),
                     Modifier.weight(1f),
                 )
+                val counted = if (state.flow != null) Res.string.workout_stat_moves else Res.string.workout_stat_rounds
                 Stat(
-                    stringResource(Res.string.workout_stat_rounds_value, countUp(state.completedRounds), state.rounds),
-                    stringResource(Res.string.workout_stat_rounds),
+                    stringResource(Res.string.workout_stat_rounds_value, countUp(state.countDone), state.countOf),
+                    stringResource(counted),
                     Modifier.weight(1f),
                 )
                 state.calories?.let { calories ->
@@ -498,21 +502,36 @@ private fun ColumnScope.SummaryTitle(state: WorkoutUiState, entrance: MutableTra
     }
 }
 
-/** "8 rounds · 5:55 total" (or how far an ended workout got) over the workout's name and shape. */
+/**
+ * "8 rounds · 5:55 total" (or how far an ended workout got) over the workout's name and shape; a flow counts its
+ * moves.
+ */
 @Composable
 private fun SummaryLines(state: WorkoutUiState, modifier: Modifier = Modifier) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        val flow = state.flow
         Text(
-            if (state.ended) {
-                pluralStringResource(
+            when {
+                flow != null && state.ended -> pluralStringResource(
+                    Res.plurals.workout_summary_moves_ended,
+                    flow.of,
+                    flow.done,
+                    flow.of,
+                    state.elapsed,
+                )
+
+                flow != null -> pluralStringResource(Res.plurals.workout_summary_moves, flow.of, flow.of, state.total)
+
+                state.ended -> pluralStringResource(
                     Res.plurals.workout_summary_ended,
                     state.rounds,
                     state.completedRounds,
                     state.rounds,
                     state.elapsed,
                 )
-            } else {
-                pluralStringResource(Res.plurals.workout_summary_finished, state.rounds, state.rounds, state.total)
+
+                else ->
+                    pluralStringResource(Res.plurals.workout_summary_finished, state.rounds, state.rounds, state.total)
             },
             style = IntervalTheme.type.section,
             color = IntervalTheme.workout.onGround,

@@ -44,10 +44,11 @@ data object Settings : NavKey
 
 /**
  * The running timer, full screen, and its summary when it ends. [id] is the moment it was started, which
- * tells its saved progress from an older workout's when a killed process comes back to it.
+ * tells its saved progress from an older workout's when a killed process comes back to it. [flow] is the key of
+ * the mobility flow it runs, null for the Timer's own workout (and in a stack saved before there were flows).
  */
 @Serializable
-data class Workout(val id: Long) : NavKey
+data class Workout(val id: Long, val flow: String? = null) : NavKey
 
 /** The app's mark, version and maker, and the way to its licences. Pushed from Settings. */
 @Serializable

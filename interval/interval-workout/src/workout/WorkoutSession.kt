@@ -3,7 +3,6 @@ package dev.justinsmith.interval.workout
 import dev.justinsmith.interval.data.SettingsStore
 import dev.justinsmith.interval.data.WorkoutProgressStore
 import dev.justinsmith.interval.model.BodySettings
-import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.platform.ActiveWorkout
 import dev.justinsmith.interval.platform.BackgroundWorkout
@@ -18,6 +17,11 @@ import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.Step
 import dev.justinsmith.interval.timer.UpcomingChange
 import dev.justinsmith.interval.timer.WorkoutEngine
+import dev.justinsmith.interval.timer.WorkoutState
+import dev.justinsmith.interval.timer.builtInFlows
+import dev.justinsmith.interval.timer.keyed
+import dev.justinsmith.interval.timer.matching
+import dev.justinsmith.interval.timer.stepAt
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -68,16 +72,19 @@ class WorkoutSession(
 
     /**
      * The Workout page [id] is open: the workout it shows, if this is it already; else the one saved under [id]
-     * picked up where it stood (a process killed under it); else a new one from the Timer's configuration. A new
-     * one ends whatever workout was held before.
+     * picked up where it stood (a process killed under it); else a new one: the flow the route's [flow] names, after
+     * the user's own get-ready countdown, or, with none, the Timer's configuration. A new one ends whatever workout
+     * was held before.
      */
-    fun open(id: Long) {
+    fun open(id: Long, flow: String? = null) {
         if (run?.id == id) return
         val saved = progressStore.workoutProgress.value?.takeIf { it.id == id }
         leave()
         val settings = settingsStore.appSettings.value
         if (saved == null) {
-            begin(id, settingsStore.config.value, settings.keepScreenOn, settings.body)
+            val onTimer = settingsStore.config.value
+            val config = builtInFlows.keyed(flow)?.config(onTimer.prepSeconds) ?: onTimer
+            begin(id, config, settings.keepScreenOn, settings.body)
             return
         }
         run = WorkoutRun.restored(saved, settings.keepScreenOn, settings.body)
@@ -217,7 +224,7 @@ class WorkoutSession(
                 body = body,
             )
         hold(keep = true)
-        player.play(start.cues, settingsStore.cueSettings.value)
+        play(start.cues, start.state)
         ticker.start(tick)
         checkpoint()
     }
@@ -225,7 +232,7 @@ class WorkoutSession(
     private fun applyStep(step: Step) {
         val before = run ?: return
         val next = before.stepped(step, clock.nowMillis())
-        player.play(step.cues, settingsStore.cueSettings.value)
+        play(step.cues, next.engine)
         if (next.engine.isDone) {
             ticker.stop()
             val finished = recorder.finished(next.turned(phase = null, clock.nowMillis()), endedEarly = false)
@@ -236,6 +243,13 @@ class WorkoutSession(
         }
         // A new interval is a change of course; the clock running down within one is not.
         if (next.turnedFrom(before.engine)) checkpoint()
+    }
+
+    /** Plays [cues] as the user has them switched on; in a flow, in the words of the move [state] has reached. */
+    private fun play(cues: List<Cue>, state: WorkoutState) {
+        if (cues.isEmpty()) return
+        val step = builtInFlows.matching(state.config)?.stepAt(state)
+        cues.forEach { playCue(it, settingsStore.cueSettings.value, player, step) }
     }
 
     /** Keeps the workout going and in view off screen, or lets it go; the platform hears of each once. */
@@ -252,5 +266,3 @@ class WorkoutSession(
         progressStore.saveWorkoutProgress(current.toProgress(clock.nowMillis()))
     }
 }
-
-private fun CuePlayer.play(cues: List<Cue>, settings: CueSettings) = cues.forEach { playCue(it, settings, this) }

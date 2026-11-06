@@ -40,6 +40,8 @@ import dev.justinsmith.interval.ui.resources.activity_jump_rope
 import dev.justinsmith.interval.ui.resources.activity_jump_rope_hint
 import dev.justinsmith.interval.ui.resources.activity_kettlebell
 import dev.justinsmith.interval.ui.resources.activity_kettlebell_hint
+import dev.justinsmith.interval.ui.resources.activity_mobility
+import dev.justinsmith.interval.ui.resources.activity_mobility_hint
 import dev.justinsmith.interval.ui.resources.activity_rower
 import dev.justinsmith.interval.ui.resources.activity_rower_hint
 import dev.justinsmith.interval.ui.resources.activity_running
@@ -123,6 +125,7 @@ val Activity.labelRes: StringResource
         Activity.Kettlebell -> Res.string.activity_kettlebell
         Activity.Barbell -> Res.string.activity_barbell
         Activity.Climbing -> Res.string.activity_climbing
+        Activity.Mobility -> Res.string.activity_mobility
     }
 
 /** The line under an activity's name in the picker, saying what it covers. */
@@ -138,4 +141,5 @@ private val Activity.hintRes: StringResource
         Activity.Kettlebell -> Res.string.activity_kettlebell_hint
         Activity.Barbell -> Res.string.activity_barbell_hint
         Activity.Climbing -> Res.string.activity_climbing_hint
+        Activity.Mobility -> Res.string.activity_mobility_hint
     }

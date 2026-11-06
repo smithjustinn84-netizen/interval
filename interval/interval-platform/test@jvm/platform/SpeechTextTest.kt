@@ -1,5 +1,9 @@
 package dev.justinsmith.interval.platform
 
+import dev.justinsmith.interval.timer.FlowSide
+import dev.justinsmith.interval.timer.FlowStep
+import dev.justinsmith.interval.timer.Move
+import dev.justinsmith.interval.timer.Phase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -26,8 +30,25 @@ class SpeechTextTest {
             Speech.CoolDown to "Cool down",
             Speech.Halfway to "Halfway",
             Speech.Finished to "Done. Nice work",
+            Speech.NextMove("90/90 hip switch") to "Next: 90/90 hip switch",
+            Speech.Side(FlowSide.Left) to "Left side",
+            Speech.Side(FlowSide.Right) to "Right side",
+            Speech.Begin to "Begin",
+            Speech.SwitchSides to "Switch sides",
         )
         for ((speech, words) in lines) assertEquals(words, speech.text())
+    }
+
+    @Test
+    fun `a flow's interval is its move in a notification`() = runBlocking {
+        val pigeon = FlowStep(Move("Pigeon", seconds = 60, cue = "Fold forward.", sided = true), 4, 10, FlowSide.Right)
+        val squat = FlowStep(Move("Deep squat", seconds = 60, cue = "Heels down."), 5, 10, side = null)
+        assertEquals("Pigeon · Right side", flowTitle(Phase.Work, pigeon))
+        assertEquals("Deep squat", flowTitle(Phase.Work, squat))
+        assertEquals("Switch sides", flowTitle(Phase.Rest, pigeon))
+        assertEquals("Next: Deep squat", flowTitle(Phase.SetRest, squat))
+        assertEquals("Next: Pigeon", flowTitle(Phase.Prep, pigeon))
+        assertEquals("Move 4 of 10", flowCount(pigeon))
     }
 
     @Test

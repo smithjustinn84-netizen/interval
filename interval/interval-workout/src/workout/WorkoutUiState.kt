@@ -3,14 +3,20 @@ package dev.justinsmith.interval.workout
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.timer.Course
+import dev.justinsmith.interval.timer.Flow
+import dev.justinsmith.interval.timer.FlowStep
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.timer.WorkoutState
+import dev.justinsmith.interval.timer.builtInFlows
 import dev.justinsmith.interval.timer.ceilSeconds
 import dev.justinsmith.interval.timer.formatClock
+import dev.justinsmith.interval.timer.matching
+import dev.justinsmith.interval.timer.stepAfter
+import dev.justinsmith.interval.timer.stepAt
 
 /** What the line under the clock says comes next. */
 sealed interface NextUp {
@@ -44,6 +50,13 @@ sealed interface NextUp {
     /** This work interval is the last one. */
     data object LastRound : NextUp
 }
+
+/**
+ * A flow as it stands on the workout screen: its [name], how many [of] its moves there are and how many are
+ * [done], both sides of one with sides; the [step] held or, in a change-over, about to start (null once it is
+ * over); and, while one is held, the step [next] after it, null in the last.
+ */
+data class FlowNow(val name: String, val of: Int, val done: Int, val step: FlowStep?, val next: FlowStep?)
 
 data class WorkoutUiState(
     val phase: Phase,
@@ -98,7 +111,13 @@ data class WorkoutUiState(
     val block: Int = 0,
     /** In the rest between one block and the next. */
     val inBlockRest: Boolean = false,
+    /** The flow the workout is, by its shape, with where it stands; null for any other workout. */
+    val flow: FlowNow? = null,
 ) {
+    /** What the summary counts, done and in all: a flow's moves, any other workout's rounds. */
+    val countDone: Int get() = flow?.done ?: completedRounds
+    val countOf: Int get() = flow?.of ?: rounds
+
     /** Offer "Save as preset" on the summary: no preset has this shape yet. */
     val canSavePreset: Boolean get() = presetName == null
 
@@ -177,6 +196,20 @@ fun WorkoutState.toUiState(
         set = set,
         block = block,
         inBlockRest = inBlockRest,
+        flow = builtInFlows.matching(config)?.let { flowNow(it) },
+    )
+}
+
+/** Where this state stands in [flow]: the move held or coming, and the moves behind it. */
+private fun WorkoutState.flowNow(flow: Flow): FlowNow {
+    val step = flow.stepAt(this)
+    return FlowNow(
+        name = flow.name,
+        of = flow.moves.size,
+        // The step held, or coming, has every move before it done; with none left, all are.
+        done = step?.let { it.number - 1 } ?: flow.moves.size,
+        step = step,
+        next = step?.takeIf { phase == Phase.Work }?.let(flow::stepAfter),
     )
 }
 

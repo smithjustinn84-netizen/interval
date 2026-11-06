@@ -2,6 +2,9 @@ package dev.justinsmith.interval.platform
 
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.timer.Block
+import dev.justinsmith.interval.timer.Flow
+import dev.justinsmith.interval.timer.FlowSide
+import dev.justinsmith.interval.timer.FlowStep
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.UpcomingChange
 import dev.justinsmith.interval.timer.WorkoutOutline
@@ -41,6 +44,18 @@ sealed interface Speech {
     data object Halfway : Speech
 
     data object Finished : Speech
+
+    /** A flow's next move, as its change-over starts: "Next: Cat-cow". [name] is the move's own, said as it is. */
+    data class NextMove(val name: String) : Speech
+
+    /** The side a move with sides starts on: "Left side". */
+    data class Side(val side: FlowSide) : Speech
+
+    /** A move with no sides starts: "Begin". */
+    data object Begin : Speech
+
+    /** Between a move's two sides: "Switch sides". */
+    data object SwitchSides : Speech
 }
 
 /** Plays workout feedback. Implementations swallow platform failures: a missing cue must never crash a workout. */
@@ -75,6 +90,9 @@ data class WorkoutStatus(
     val blocks: List<Block> = emptyList(),
     /** In the rest between one block and the next. */
     val blockRest: Boolean = false,
+    /** The flow the workout is, null for any other, and the move it is in or about to start ([Flow.stepAt]). */
+    val flow: Flow? = null,
+    val step: FlowStep? = null,
 )
 
 /**

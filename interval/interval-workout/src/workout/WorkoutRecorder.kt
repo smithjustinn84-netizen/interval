@@ -9,7 +9,7 @@ import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.WeekStanding
-import dev.justinsmith.interval.timer.matching
+import dev.justinsmith.interval.timer.nameOf
 import dev.justinsmith.interval.timer.weekStanding
 import dev.justinsmith.lift.data.LiftActivity
 
@@ -72,9 +72,12 @@ class WorkoutRecorder(
         health.record(workout.copy(notes = run.healthNotes, version = clock.nowMillis()))
     }
 
-    /** [run] as it ran, to [endedAt], as the health store takes it, named for the preset its shape now matches. */
+    /**
+     * [run] as it ran, to [endedAt], as the health store takes it, named for the preset its shape now matches or
+     * the flow it is.
+     */
     private fun healthWorkout(run: WorkoutRun, endedAt: Long): HealthWorkout {
-        val presetName = presetStore.presets.value.matching(run.config)?.name
+        val presetName = presetStore.presets.value.nameOf(run.config)
         return healthWorkout(run.config.activity, presetName, run.startedAt, endedAt, run.spans, run.calories)
     }
 

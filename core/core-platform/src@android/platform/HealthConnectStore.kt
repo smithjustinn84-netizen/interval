@@ -214,6 +214,7 @@ private val HealthWorkoutKind.exerciseType: Int
     get() = when (this) {
         HealthWorkoutKind.Intervals -> ExerciseSessionRecord.EXERCISE_TYPE_HIGH_INTENSITY_INTERVAL_TRAINING
         HealthWorkoutKind.Strength -> ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING
+        HealthWorkoutKind.Mobility -> ExerciseSessionRecord.EXERCISE_TYPE_STRETCHING
     }
 
 private fun HealthSegment.toSegment() = ExerciseSegment(
@@ -225,7 +226,8 @@ private fun HealthSegment.toSegment() = ExerciseSegment(
 
 /**
  * The store's word for each move. An interval workout is a high-intensity session, which takes any
- * segment; a Lift session is strength training, which takes every lift here and the rests and pauses.
+ * segment; a Lift session is strength training, which takes every lift here and the rests and pauses; a
+ * stretching session takes stretching, which any session does, with its rests and pauses.
  */
 private val HealthMove.segmentType: Int
     get() = when (this) {
@@ -249,6 +251,7 @@ private val HealthMove.segmentType: Int
         HealthMove.Lunge -> ExerciseSegment.EXERCISE_SEGMENT_TYPE_LUNGE
         HealthMove.MountainClimber -> ExerciseSegment.EXERCISE_SEGMENT_TYPE_MOUNTAIN_CLIMBER
         HealthMove.HipThrust -> ExerciseSegment.EXERCISE_SEGMENT_TYPE_HIP_THRUST
+        HealthMove.Stretching -> ExerciseSegment.EXERCISE_SEGMENT_TYPE_STRETCHING
         HealthMove.Other -> ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT
     }
 

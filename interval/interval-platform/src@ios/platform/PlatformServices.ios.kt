@@ -21,6 +21,7 @@ import dev.justinsmith.interval.platform.resources.phase_work
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.UpcomingChange
+import dev.justinsmith.interval.timer.stepFor
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -163,8 +164,11 @@ private class IosBackgroundWorkout(private val active: Lazy<ActiveWorkout>) : Ba
     private suspend fun schedule(changes: List<UpcomingChange>, shown: WorkoutStatus, mine: Int) {
         for ((index, change) in changes.withIndex()) {
             if (mine != generation) return
-            val title = getString(title(change, shown))
-            val body = body(change, shown)
+            // A flow's change is its move, and where it is among them; its end has no more to say.
+            val flow = shown.flow
+            val step = flow?.stepFor(change.phase, change.block, change.round)
+            val title = step?.let { flowTitle(change.phase, it) } ?: getString(title(change, shown))
+            val body = if (flow == null) body(change, shown) else step?.let { flowCount(it) }
             val content = UNMutableNotificationContent().apply {
                 setTitle(title)
                 body?.let(::setBody)

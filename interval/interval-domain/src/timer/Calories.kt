@@ -50,6 +50,9 @@ enum class Activity(
      * the Compendium's rock climbing entries for a low-to-moderate traverse, a hard ascent, and general.
      */
     Climbing(easy = 4.0, steady = 5.8, hard = 7.5, max = 8.0),
+
+    /** Stretching, mat Pilates and yoga, as a [Flow] is: 02101, 02105, 02180 (sun salutations), 02160. */
+    Mobility(easy = 2.3, steady = 2.8, hard = 3.5, max = 4.0),
     ;
 
     fun met(effort: Effort): Double = when (effort) {
