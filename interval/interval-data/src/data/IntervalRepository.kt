@@ -11,6 +11,7 @@ import dev.justinsmith.interval.platform.IdGenerator
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.storage.SerialWriter
 import dev.justinsmith.interval.storage.StorageError
+import dev.justinsmith.interval.timer.Flow
 import dev.justinsmith.interval.timer.Preset
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,9 +23,9 @@ import kotlinx.coroutines.launch
 
 /**
  * The interval side's saved state, the one way into storage: a repository per kind of thing kept, [settings] (the
- * settings DataStore: the Timer's setup, cues, app settings and the workout under way), [presets], [history] and
- * [plans] (Room), each the store its screens take. Their writes go through one queue, on [scope], in the order
- * they were made, so a save of one kind can't overtake an earlier one of another: a preset applied and saved
+ * settings DataStore: the Timer's setup, cues, app settings and the workout under way), [presets], [flows],
+ * [history] and [plans] (Room), each the store its screens take. Their writes go through one queue, on [scope], in
+ * the order they were made, so a save of one kind can't overtake an earlier one of another: a preset applied and saved
  * lands as it was made. Everything is read into memory before [ready] turns true. What only the app does is here:
  * [importAll], [writeErrors] and [close].
  */
@@ -34,6 +35,7 @@ class IntervalRepository(
     presetDao: PresetDao,
     plannedDao: PlannedDao,
     sportLogDao: SportLogDao,
+    flowDao: FlowDao,
     private val importDao: ImportDao,
     scope: CoroutineScope,
     private val clock: WallClock,
@@ -51,6 +53,9 @@ class IntervalRepository(
     /** The built-in presets and the user's own. */
     val presets = PresetRepository(presetDao, settings, writer, scope)
 
+    /** The shipped mobility flows and the user's own. */
+    val flows = FlowRepository(flowDao, writer, scope)
+
     /** The finished workouts and the sport days logged. */
     val history = HistoryRepository(historyDao, sportLogDao, writer, clock, ids, scope)
 
@@ -64,7 +69,9 @@ class IntervalRepository(
 
     init {
         scope.launch {
-            listOf(settings.ready, presets.ready, history.ready, plans.ready).forEach { read -> read.first { it } }
+            listOf(settings.ready, presets.ready, flows.ready, history.ready, plans.ready).forEach { read ->
+                read.first { it }
+            }
             _ready.value = true
         }
     }
@@ -81,13 +88,15 @@ class IntervalRepository(
      * Adds what an import brings, all of it or none (one transaction), behind every write before it, and returns
      * once it has landed; a failure is thrown, nothing having been written. Each workout gets a uid of its own;
      * a plan naming a preset by [PlanWorkout.Interval.name] of one added here, or already here, links to it; a
-     * sport logged on its day already stays as it is.
+     * sport logged on its day already stays as it is. [flows] are added as new ones of the user's, under the names
+     * they bring: the import has left out any whose name is here already.
      */
     suspend fun importAll(
         history: List<HistoryEntry>,
         presets: List<Preset>,
         planned: List<PlannedWorkout>,
         sportDays: List<LoggedSport> = emptyList(),
+        flows: List<Flow> = emptyList(),
     ) {
         val now = clock.nowMillis()
         val rows = history.map { it.copy(id = null).toEntity(uid = ids.newId(), now) }
@@ -95,6 +104,7 @@ class IntervalRepository(
         val planRows = planned.map { it.copy(id = 0).toEntity() }
         val names = planned.map { (it.workout as? PlanWorkout.Interval)?.takeIf { w -> w.presetId == null }?.name }
         val sportRows = sportDays.map { it.copy(id = 0).toEntity() }
-        writer.await { importDao.importAll(rows, presetRows, planRows, names, sportRows) }
+        val flowRows = flows.map { it.copy(id = null).toEntity() }
+        writer.await { importDao.importAll(rows, presetRows, planRows, names, sportRows, flowRows) }
     }
 }

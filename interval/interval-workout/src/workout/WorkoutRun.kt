@@ -6,6 +6,7 @@ import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.WorkoutProgress
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.WorkoutStatus
+import dev.justinsmith.interval.timer.Flow
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
 import dev.justinsmith.interval.timer.Phase
@@ -14,7 +15,6 @@ import dev.justinsmith.interval.timer.Step
 import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.timer.WorkoutOutline
 import dev.justinsmith.interval.timer.WorkoutState
-import dev.justinsmith.interval.timer.builtInFlows
 import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.nameOf
 import dev.justinsmith.interval.timer.stepAt
@@ -122,10 +122,13 @@ data class WorkoutRun(
         note = note,
     )
 
-    /** What the notification shows of it: the phase, whether it is paused, the clock, the round and the bar. */
-    fun status(): WorkoutStatus {
+    /**
+     * What the notification shows of it: the phase, whether it is paused, the clock, the round and the bar, and the
+     * move, when it is one of [flows].
+     */
+    fun status(flows: List<Flow>): WorkoutStatus {
         val shown = engine.toUiState(running = running, ended = ended)
-        val flow = builtInFlows.matching(config)
+        val flow = flows.matching(config)
         return WorkoutStatus(
             shown.phase,
             shown.paused,
@@ -143,11 +146,12 @@ data class WorkoutRun(
         )
     }
 
-    /** The screen's view of it, its shape named after the one of [presets] it matches, or the flow it is. */
-    fun toUiState(presets: List<Preset>): WorkoutUiState = engine.toUiState(
+    /** The screen's view of it, its shape named after the one of [presets] it matches, or the one of [flows] it is. */
+    fun toUiState(presets: List<Preset>, flows: List<Flow>): WorkoutUiState = engine.toUiState(
         running = running,
         ended = ended,
-        presetName = presets.nameOf(config),
+        presetName = presets.nameOf(config, flows),
+        flows = flows,
         elapsedSeconds = activeSeconds,
         presets = presets,
         keepScreenOn = keepScreenOn,

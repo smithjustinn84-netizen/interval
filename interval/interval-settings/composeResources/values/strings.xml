@@ -91,6 +91,10 @@
         <item quantity="one">%1$d preset</item>
         <item quantity="other">%1$d presets</item>
     </plurals>
+    <plurals name="import_flows">
+        <item quantity="one">%1$d mobility flow</item>
+        <item quantity="other">%1$d mobility flows</item>
+    </plurals>
     <plurals name="import_plans">
         <item quantity="one">%1$d plan</item>
         <item quantity="other">%1$d plans</item>

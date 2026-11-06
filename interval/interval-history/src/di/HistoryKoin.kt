@@ -23,8 +23,8 @@ val historyModule: Module = module {
     single(createdAtStart = true) {
         PlanReminderScheduler(get(), get(), get(), get(), get(), get(StorageScope))
     } bind PlanReminderSource::class
-    viewModel { HistoryViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
-    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { HistoryViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { PlanViewModel(get(), get(), get(), get(), get(), get(), get()) }
-    viewModel { (id: Long) -> WorkoutDetailViewModel(id, get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { (id: Long) -> WorkoutDetailViewModel(id, get(), get(), get(), get(), get(), get(), get(), get()) }
 }

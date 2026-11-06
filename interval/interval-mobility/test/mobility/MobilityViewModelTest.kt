@@ -31,7 +31,7 @@ class MobilityViewModelTest : MainDispatcherTest() {
     @Test
     fun `the totals follow the get-ready countdown as it is set`() {
         repository.settings.updateConfig { it.copy(prepSeconds = 0) }
-        val viewModel = MobilityViewModel(repository.settings)
+        val viewModel = MobilityViewModel(repository.settings, repository.flows)
 
         assertEquals(0, viewModel.state.value.prepSeconds)
         assertEquals("7:50", viewModel.state.value.before.first().total)

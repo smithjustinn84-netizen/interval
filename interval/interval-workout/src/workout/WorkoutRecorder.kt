@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.workout
 
+import dev.justinsmith.interval.data.FlowStore
 import dev.justinsmith.interval.data.HistoryStore
 import dev.justinsmith.interval.data.PresetStore
 import dev.justinsmith.interval.data.SettingsStore
@@ -21,6 +22,7 @@ import dev.justinsmith.lift.data.LiftActivity
 class WorkoutRecorder(
     private val historyStore: HistoryStore,
     private val presetStore: PresetStore,
+    private val flowStore: FlowStore,
     private val settingsStore: SettingsStore,
     private val bells: LiftActivity,
     private val timestamps: TimestampFormatter,
@@ -77,7 +79,7 @@ class WorkoutRecorder(
      * the flow it is.
      */
     private fun healthWorkout(run: WorkoutRun, endedAt: Long): HealthWorkout {
-        val presetName = presetStore.presets.value.nameOf(run.config)
+        val presetName = presetStore.presets.value.nameOf(run.config, flowStore.flows.value)
         return healthWorkout(run.config.activity, presetName, run.startedAt, endedAt, run.spans, run.calories)
     }
 

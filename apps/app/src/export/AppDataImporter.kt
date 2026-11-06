@@ -37,7 +37,7 @@ class AppDataImporter(
     override suspend fun import(file: ShareableFile, withSettings: Boolean): ImportCounts {
         val plan =
             (read(file) as? ImportReading.Ready)?.plan ?: throw IllegalArgumentException("Not an export to import")
-        intervals.importAll(plan.history, plan.presets, plan.planned, plan.sportDays)
+        intervals.importAll(plan.history, plan.presets, plan.planned, plan.sportDays, plan.flows)
         val liftImport = if (withSettings) plan.lift.copy(restSeconds = plan.settings.restSeconds) else plan.lift
         lift.importAll(liftImport)
         if (withSettings) {
@@ -58,6 +58,7 @@ class AppDataImporter(
     private fun holdings() = Holdings(
         history = intervals.history.history.value,
         presets = intervals.presets.presets.value,
+        flows = intervals.flows.flows.value,
         planned = intervals.plans.planned.value,
         sportDays = intervals.history.sportDays.value,
         sessions = lift.sessions.sessions.value,

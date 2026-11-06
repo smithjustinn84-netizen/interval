@@ -9,7 +9,7 @@ import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.fixtures.DAMAGED_EXPORT
 import dev.justinsmith.interval.fixtures.FOREIGN_JSON
 import dev.justinsmith.interval.fixtures.SCHEMA_1_EXPORT
-import dev.justinsmith.interval.fixtures.SCHEMA_8_EXPORT
+import dev.justinsmith.interval.fixtures.SCHEMA_9_EXPORT
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.Sport
@@ -19,7 +19,10 @@ import dev.justinsmith.interval.platform.ShareableFile
 import dev.justinsmith.interval.settings.ImportCounts
 import dev.justinsmith.interval.settings.ImportReview
 import dev.justinsmith.interval.timer.Activity
+import dev.justinsmith.interval.timer.Flow
+import dev.justinsmith.interval.timer.FlowUse
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.Move
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.lift.data.LiftRepository
 import dev.justinsmith.lift.domain.BandColour
@@ -61,6 +64,7 @@ private class Phone(val now: Long) {
             )
         },
         intervals.history.sportDays.value.map { it.copy(id = 0) }.sortedBy { it.epochDay },
+        intervals.flows.customFlows.value.map { it.copy(id = null, key = "") },
         lift.sessions.sessions.value.map { session -> session.copy(sets = session.sets.map { it.copy(id = 0) }) },
         lift.exercises.customExercises.value,
         lift.programs.customPrograms.value,
@@ -76,6 +80,15 @@ class AppDataImporterTest {
     /** A phone with something of every kind on it. */
     private suspend fun stocked(): Phone = Phone(now).apply {
         intervals.presets.savePreset(Preset("Hills", IntervalConfig(workSeconds = 45, activity = Activity.Running)))
+        intervals.flows.saveFlow(
+            Flow(
+                "new",
+                "Floor core",
+                FlowUse.Before,
+                listOf(Move("Plank", 30, "Long line."), Move("Side plank", 20, "Hips high.", sided = true)),
+                note = "on the mat",
+            ),
+        )
         intervals.settings.updateConfig { IntervalConfig(rounds = 4) }
         val bookended =
             IntervalConfig(
@@ -153,7 +166,7 @@ class AppDataImporterTest {
 
         val review = assertIs<ImportReview.Ready>(target.importer.review(source.file()))
         assertEquals(
-            ImportCounts(workouts = 1, presets = 1, plans = 2, sessions = 1, exercises = 1, programs = 1),
+            ImportCounts(workouts = 1, presets = 1, plans = 2, sessions = 1, exercises = 1, programs = 1, flows = 1),
             review.new,
         )
         assertEquals(0, review.alreadyHere)
@@ -171,7 +184,7 @@ class AppDataImporterTest {
 
         val review = assertIs<ImportReview.Ready>(phone.importer.review(phone.file()))
         assertEquals(ImportCounts(), review.new)
-        assertEquals(7, review.alreadyHere)
+        assertEquals(8, review.alreadyHere)
         phone.importer.import(phone.file(), withSettings = false)
         assertEquals(before, phone.contents())
     }
@@ -277,7 +290,7 @@ class AppDataImporterTest {
     @Test
     fun `a newer file says so and changes nothing`() = runTest {
         val target = Phone(now)
-        val file = ShareableFile("new.json", ExportBundle.MIME_TYPE, SCHEMA_8_EXPORT)
+        val file = ShareableFile("new.json", ExportBundle.MIME_TYPE, SCHEMA_9_EXPORT)
         assertEquals(ImportReview.TooNew("0.9.0"), target.importer.review(file))
         assertFailsWith<IllegalArgumentException> { target.importer.import(file, withSettings = true) }
         assertTrue(target.intervals.history.history.value.isEmpty())

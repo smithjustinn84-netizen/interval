@@ -38,6 +38,7 @@ class HomeViewModelTest : MainDispatcherTest() {
     private fun viewModel() = HomeViewModel(
         repository.history,
         repository.presets,
+        repository.flows,
         repository.plans,
         repository.settings,
         bells.sessions,

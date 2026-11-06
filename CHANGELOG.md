@@ -72,6 +72,8 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 - The session's length from Set up is the length Today's "Or pick by time" opens on.
 - Exports are schema 7, with the session's length in the settings; a build from before it refuses the file with
   "update the app", and older files read as before.
+- Exports are schema 8, with the mobility flows you build; a build from before it refuses the file with "update
+  the app", and older files read as before.
 
 ### Changed
 - The Timer is no longer a tab: it is a page over Train's Conditioning pillar, opened by the "Timer" row at the

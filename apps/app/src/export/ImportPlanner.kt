@@ -14,6 +14,7 @@ import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.settings.ImportCounts
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Effort
+import dev.justinsmith.interval.timer.Flow
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.WeightUnit
@@ -52,6 +53,8 @@ data class Holdings(
     val history: List<HistoryEntry> = emptyList(),
     /** Every preset, the built-ins too: a file's preset of a name already here is not added. */
     val presets: List<Preset> = emptyList(),
+    /** Every flow, the shipped ones too: a file's flow of a name already here is not added. */
+    val flows: List<Flow> = emptyList(),
     val planned: List<PlannedWorkout> = emptyList(),
     val sportDays: List<LoggedSport> = emptyList(),
     /** Lift's finished sessions. */
@@ -86,6 +89,8 @@ data class ImportPlan(
     /** The sport days logged, which the sheet counts among the workouts. */
     val sportDays: List<LoggedSport>,
     val lift: LiftImport,
+    /** The flows the user built, of names not here yet. */
+    val flows: List<Flow> = emptyList(),
     val settings: ImportedSettings,
     val added: ImportCounts,
     val alreadyHere: Int,
@@ -143,6 +148,9 @@ private fun plan(bundle: ExportBundle, holdings: Holdings): ImportPlan {
     val newPlans = planned.filter { plansHere.add(it.key) }
     val sportsHere = holdings.sportDays.map { it.key }.toMutableSet()
     val newSports = sportDays.filter { sportsHere.add(it.key) }
+    val flows = bundle.flows.map { it.toDomain() }
+    val flowNames = holdings.flows.map { it.name }.toMutableSet()
+    val newFlows = flows.filter { flowNames.add(it.name) }
 
     val added = ImportCounts(
         workouts = newHistory.size + newSports.size,
@@ -151,9 +159,10 @@ private fun plan(bundle: ExportBundle, holdings: Holdings): ImportPlan {
         sessions = lift.sessions.size,
         exercises = lift.exercises.size,
         programs = lift.programs.size,
+        flows = newFlows.size,
     )
     val inFile = history.size + sportDays.size + presets.size + planned.size + bundle.lift.sessions.size +
-        bundle.lift.exercises.size + lift.customProgramsInFile
+        bundle.lift.exercises.size + lift.customProgramsInFile + flows.size
     return ImportPlan(
         exportedAtEpochMillis = bundle.exportedAtEpochMillis,
         version = bundle.version,
@@ -162,6 +171,7 @@ private fun plan(bundle: ExportBundle, holdings: Holdings): ImportPlan {
         planned = newPlans,
         sportDays = newSports,
         lift = lift.import,
+        flows = newFlows,
         settings = ImportedSettings(
             bundle.settings.toDomain(),
             bundle.settings.cues.let { CueSettings(it.sound, it.voice, it.halfway, it.vibrate) },

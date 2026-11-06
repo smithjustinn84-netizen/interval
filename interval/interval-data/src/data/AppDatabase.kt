@@ -42,11 +42,17 @@ import kotlinx.coroutines.flow.Flow
  * ([HistoryEntity.workStepSeconds]), none in rows from before; version 12 the blocks of a sequence after its first
  * and the rest between them ([HistoryEntity.thenBlocks], [HistoryEntity.blockRestSeconds]), one block in rows from
  * before; version 13 let a plan be a day of a sport ([PlannedEntity.sport]) and added the sport days logged
- * ([SportLogEntity]).
+ * ([SportLogEntity]); version 14 the mobility flows the user built ([FlowEntity]).
  */
 @Database(
-    entities = [HistoryEntity::class, PresetEntity::class, PlannedEntity::class, SportLogEntity::class],
-    version = 13,
+    entities = [
+        HistoryEntity::class,
+        PresetEntity::class,
+        PlannedEntity::class,
+        SportLogEntity::class,
+        FlowEntity::class,
+    ],
+    version = 14,
     // 3 to 4 and 4 to 5 are MIGRATION_3_4 and MIGRATION_4_5, added by buildAppDatabase.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -59,6 +65,7 @@ import kotlinx.coroutines.flow.Flow
         AutoMigration(from = 10, to = 11),
         AutoMigration(from = 11, to = 12),
         AutoMigration(from = 12, to = 13),
+        AutoMigration(from = 13, to = 14),
     ],
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -70,6 +77,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun plannedDao(): PlannedDao
 
     abstract fun sportLogDao(): SportLogDao
+
+    abstract fun flowDao(): FlowDao
 
     abstract fun importDao(): ImportDao
 }
@@ -202,7 +211,7 @@ interface SportLogDao {
     suspend fun clear()
 }
 
-/** What an import adds, all of it or none: one transaction over the four tables. */
+/** What an import adds, all of it or none: one transaction over the five tables. */
 @Dao
 interface ImportDao {
     @Insert
@@ -218,8 +227,11 @@ interface ImportDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertSports(rows: List<SportLogEntity>)
 
+    @Insert
+    suspend fun insertFlows(rows: List<FlowEntity>)
+
     /**
-     * Adds [history], [presets], [planned] and [sports] together. A plan naming a preset added here by
+     * Adds [history], [presets], [planned], [sports] and [flows] together. A plan naming a preset added here by
      * [presetNames] (in step with [planned]) takes the id it was just stored under.
      */
     @Transaction
@@ -229,9 +241,11 @@ interface ImportDao {
         planned: List<PlannedEntity>,
         presetNames: List<String?>,
         sports: List<SportLogEntity>,
+        flows: List<FlowEntity>,
     ) {
         insertHistory(history)
         insertSports(sports)
+        insertFlows(flows)
         val ids = presets.map { it.name }.zip(insertPresets(presets)).toMap()
         insertPlanned(
             planned.zip(presetNames) { row, name ->
@@ -240,6 +254,27 @@ interface ImportDao {
             },
         )
     }
+}
+
+@Dao
+interface FlowDao {
+    /** In the order they were saved. */
+    @Query("SELECT * FROM flow ORDER BY id")
+    fun observeAll(): Flow<List<FlowEntity>>
+
+    /** What is stored now, in save order: for a write that must see every write before it. */
+    @Query("SELECT * FROM flow ORDER BY id")
+    suspend fun all(): List<FlowEntity>
+
+    @Insert
+    suspend fun insert(flow: FlowEntity): Long
+
+    /** Rewrites the row with [flow]'s id. */
+    @Update
+    suspend fun update(flow: FlowEntity)
+
+    @Query("DELETE FROM flow WHERE id = :id")
+    suspend fun delete(id: Long)
 }
 
 @Dao
@@ -387,4 +422,17 @@ data class SportLogEntity(
     val sport: String,
     val name: String,
     @ColumnInfo(name = "logged_at") val loggedAtEpochMillis: Long,
+)
+
+/**
+ * A mobility flow the user built: [use] is a [dev.justinsmith.interval.timer.FlowUse]'s name, [moves] the moves in
+ * order as one JSON list (`FlowsJson.kt`), each its name, seconds, sides, hold and cue.
+ */
+@Entity(tableName = "flow")
+data class FlowEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val use: String,
+    val note: String? = null,
+    val moves: String,
 )

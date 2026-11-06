@@ -10,6 +10,7 @@ import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.WorkoutProgress
 import dev.justinsmith.interval.platform.HeartRate
+import dev.justinsmith.interval.timer.Flow
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +31,24 @@ interface SettingsStore {
     fun updateCueSettings(transform: (CueSettings) -> CueSettings)
 
     fun updateAppSettings(transform: (AppSettings) -> AppSettings)
+}
+
+/**
+ * The mobility flows, the shipped ones first and the user's after ([flows]), the user's alone in [customFlows]. A
+ * flow is saved under a name no other flow has, " 2" added where it would; its [Flow.id] is what it is edited,
+ * deleted and put back by.
+ */
+interface FlowStore {
+    val flows: StateFlow<List<Flow>>
+    val customFlows: StateFlow<List<Flow>>
+
+    fun saveFlow(flow: Flow)
+
+    fun updateFlow(flow: Flow)
+
+    fun deleteFlow(flow: Flow)
+
+    fun restoreFlow(flow: Flow)
 }
 
 /** The presets, built-ins first, the user's after; applying one puts its shape on the Timer. */

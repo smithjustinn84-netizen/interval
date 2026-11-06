@@ -16,6 +16,16 @@ data class Move(
 ) {
     /** The time it takes in all: both sides and the change between them, of one with sides. */
     val totalSeconds: Int get() = if (sided) 2 * seconds + Flow.SIDE_CHANGE_SECONDS else seconds
+
+    companion object {
+        /** How long a move (a side of one) may be, in seconds: what a flow built by hand offers. */
+        val SECONDS_RANGE = 10..300
+
+        /** How far a move's seconds step in the editor. */
+        const val SECONDS_STEP = 5
+        const val NAME_MAX_LENGTH = 32
+        const val CUE_MAX_LENGTH = 100
+    }
 }
 
 /** When a flow is for: before training, or after it and on a day off. */
@@ -28,7 +38,8 @@ enum class FlowSide { Left, Right }
  * A mobility session followed along: [moves] one after another, each for its time, with a few seconds to change
  * sides and to get into the next. It runs on the workout screen as the sequence [config] is, a block a move and a
  * round a side, and a finished one is known again by that shape ([matching]). [key] names it on a route; [name]
- * and [note] ("no bell") are its words, data like a built-in preset's.
+ * and [note] ("no bell") are its words, data like a built-in preset's. One the user built carries the [id] it is
+ * stored under, and a key made of it ([ownFlowKey]); the shipped ones have none.
  */
 data class Flow(
     val key: String,
@@ -36,7 +47,11 @@ data class Flow(
     val use: FlowUse,
     val moves: List<Move>,
     val note: String? = null,
+    val id: Long? = null,
 ) {
+    /** One of the user's own, which can be edited and deleted; the shipped ones have no [id]. */
+    val custom: Boolean get() = id != null
+
     init {
         require(moves.size in 1..IntervalConfig.MAX_BLOCKS) { "${moves.size} moves" }
     }
@@ -70,6 +85,11 @@ data class Flow(
         /** The seconds to change sides in, and to get into the next move. */
         const val SIDE_CHANGE_SECONDS = 5
         const val MOVE_CHANGE_SECONDS = 10
+
+        /** The most moves a flow has: a move a block. */
+        const val MAX_MOVES = IntervalConfig.MAX_BLOCKS
+        const val NAME_MAX_LENGTH = Preset.MAX_NAME_LENGTH
+        const val NOTE_MAX_LENGTH = 32
     }
 }
 
@@ -106,9 +126,27 @@ fun Flow.stepAfter(step: FlowStep): FlowStep? = when {
     else -> null
 }
 
-/** The name [config] goes by: the preset of these with its shape, else the flow it is, else none. */
-fun List<Preset>.nameOf(config: IntervalConfig): String? =
-    matching(config)?.name ?: builtInFlows.matching(config)?.name
+/** The name [config] goes by: the preset of these with its shape, else the one of [flows] it is, else none. */
+fun List<Preset>.nameOf(config: IntervalConfig, flows: List<Flow>): String? =
+    matching(config)?.name ?: flows.matching(config)?.name
+
+/** The key a flow the user built goes by, on a route: its stored [id]'s. */
+fun ownFlowKey(id: Long): String = "$OWN_KEY_PREFIX$id"
+
+/**
+ * Whether [config] is laid out as a flow runs, whichever flow it is: mobility, a block a move, each once or twice
+ * with the change of sides between, the change of moves between blocks. What says "6 moves" of a workout, a flow of
+ * the user's since deleted included.
+ */
+val IntervalConfig.isFlowShaped: Boolean
+    get() = activity == Activity.Mobility && warmUpSeconds == 0 && coolDownSeconds == 0 &&
+        (blocks.size == 1 || blockRestSeconds == Flow.MOVE_CHANGE_SECONDS) && blocks.all { it.isMoveShaped }
+
+private val Block.isMoveShaped: Boolean
+    get() = sets == 1 && workStepSeconds == 0 &&
+        ((rounds == 1 && restSeconds == 0) || (rounds == 2 && restSeconds == Flow.SIDE_CHANGE_SECONDS))
+
+private const val OWN_KEY_PREFIX = "own-"
 
 /** The flow to do before a day of [sport]: the wrists before the wall, the hips and shoulders before the rest. */
 fun flowBefore(sport: Sport): Flow =

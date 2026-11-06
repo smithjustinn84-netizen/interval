@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import dev.justinsmith.interval.data.AppDatabase
+import dev.justinsmith.interval.data.FlowStore
 import dev.justinsmith.interval.data.HistoryStore
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.data.PlanStore
@@ -56,6 +57,7 @@ val storageModule: Module = module {
     single { get<AppDatabase>().presetDao() }
     single { get<AppDatabase>().plannedDao() }
     single { get<AppDatabase>().sportLogDao() }
+    single { get<AppDatabase>().flowDao() }
     single { get<AppDatabase>().importDao() }
     single<CoroutineScope>(PreferencesScope) { CoroutineScope(SupervisorJob() + Dispatchers.IO) }.withOptions {
         onClose { it?.cancel() }
@@ -68,8 +70,8 @@ val storageModule: Module = module {
 
 /**
  * [IntervalRepository] over [storageModule], and each of its repositories as the store its screens take
- * ([SettingsStore] and [WorkoutProgressStore] the settings, [PresetStore], [HistoryStore], [PlanStore]). The wall
- * clock and the ids it takes are core's (`corePlatformModule`).
+ * ([SettingsStore] and [WorkoutProgressStore] the settings, [PresetStore], [FlowStore], [HistoryStore],
+ * [PlanStore]). The wall clock and the ids it takes are core's (`corePlatformModule`).
  */
 val dataModule: Module = module {
     single {
@@ -79,6 +81,7 @@ val dataModule: Module = module {
             presetDao = get(),
             plannedDao = get(),
             sportLogDao = get(),
+            flowDao = get(),
             importDao = get(),
             scope = get(StorageScope),
             clock = get(),
@@ -88,6 +91,7 @@ val dataModule: Module = module {
     single<SettingsStore> { get<IntervalRepository>().settings }
     single<WorkoutProgressStore> { get<IntervalRepository>().settings }
     single<PresetStore> { get<IntervalRepository>().presets }
+    single<FlowStore> { get<IntervalRepository>().flows }
     single<HistoryStore> { get<IntervalRepository>().history }
     single<PlanStore> { get<IntervalRepository>().plans }
 }

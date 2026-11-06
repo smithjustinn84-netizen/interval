@@ -24,12 +24,12 @@ val workoutModule: Module = module {
     single { WorkoutTicker(get()) }.withOptions {
         onClose { it?.close() }
     }
-    single { WorkoutRecorder(get(), get(), get(), get(), get(), get(), get()) }
-    single { WorkoutSession(get(), get(), get(), get(), get(), get(), get()) } bind ActiveWorkout::class
+    single { WorkoutRecorder(get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { WorkoutSession(get(), get(), get(), get(), get(), get(), get(), get()) } bind ActiveWorkout::class
     single {
         with(PhaseColors) {
             StatusColors(prep.toArgb(), work.toArgb(), rest.toArgb(), done.toArgb(), paused.toArgb(), setRest.toArgb())
         }
     }
-    viewModel { (id: Long, flow: String?) -> WorkoutViewModel(id, flow, get(), get()) }
+    viewModel { (id: Long, flow: String?) -> WorkoutViewModel(id, flow, get(), get(), get()) }
 }

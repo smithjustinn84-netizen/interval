@@ -63,6 +63,11 @@ class AppMigrationTest {
             val added = PresetEntity(0, "Rowing", 5, 60, 30, 4, activity = "Rowing")
             val id = database.presetDao().insert(added)
             assertEquals(added.copy(id = id), database.presetDao().all().last())
+            // Version 14's table of the user's flows is there, empty, and takes one.
+            assertEquals(emptyList(), database.flowDao().all())
+            val flow = FlowEntity(name = "Mine", use = "After", moves = "[{\"name\":\"Plank\",\"seconds\":30}]")
+            val flowId = database.flowDao().insert(flow)
+            assertEquals(listOf(flow.copy(id = flowId)), database.flowDao().all())
         } finally {
             database.close()
         }

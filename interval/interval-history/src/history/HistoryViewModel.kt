@@ -3,6 +3,7 @@ package dev.justinsmith.interval.history
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.justinsmith.interval.data.FlowStore
 import dev.justinsmith.interval.data.HistoryStore
 import dev.justinsmith.interval.data.PlanStore
 import dev.justinsmith.interval.data.PresetStore
@@ -27,7 +28,6 @@ import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.monthStartAfter
 import dev.justinsmith.interval.timer.monthStartOf
-import dev.justinsmith.interval.timer.nameOf
 import dev.justinsmith.lift.data.LiftActivity
 import dev.justinsmith.lift.domain.ProgramKey
 import kotlinx.coroutines.CoroutineDispatcher
@@ -83,6 +83,7 @@ private data class HistoryView(
 class HistoryViewModel(
     private val historyStore: HistoryStore,
     private val presetStore: PresetStore,
+    private val flowStore: FlowStore,
     private val planStore: PlanStore,
     private val settingsStore: SettingsStore,
     private val bells: LiftActivity,
@@ -103,10 +104,10 @@ class HistoryViewModel(
     private val built = combine(
         combine(historyStore.history, historyStore.sportDays, lifting, ::Logged),
         planStore.planned,
-        presetStore.presets,
+        combine(presetStore.presets, flowStore.flows, ::WorkoutNames),
         settingsStore.appSettings,
         combine(days, view) { _, view -> view },
-    ) { logged, planned, presets, app, view -> buildState(logged, planned, presets, app, view) }
+    ) { logged, planned, names, app, view -> buildState(logged, planned, names, app, view) }
 
     private val choices = combine(presetStore.presets, settingsStore.config, ::planChoices).distinctUntilChanged()
 
@@ -187,7 +188,7 @@ class HistoryViewModel(
     private fun buildState(
         logged: Logged,
         planned: List<PlannedWorkout>,
-        presets: List<Preset>,
+        names: WorkoutNames,
         app: AppSettings,
         view: HistoryView,
     ): HistoryUiState {
@@ -199,7 +200,7 @@ class HistoryViewModel(
         val week = log.week()
 
         val sections = timestamps.sections(loggedWorkouts(history, lifts), sports, log, today) { workout, plans ->
-            timestamps.item(workout, presets, body, plans)
+            timestamps.item(workout, names, body, plans)
         }
 
         val monthOf = monthStartAfter(today, view.monthOffset)
@@ -231,7 +232,7 @@ class HistoryViewModel(
             ),
             weeks = log.weeklyCounts(WEEKS_SHOWN),
             mostDone = log.mostDone(MOST_DONE_SHOWN).map { tally ->
-                ShapeRow(presets.nameOf(tally.config), tally.config, tally.count, tally.seconds)
+                ShapeRow(names.of(tally.config), tally.config, tally.count, tally.seconds)
             },
             // Led as Today leads it: on a day with a sport, the program's day stands back behind it.
             // The flow suggested before a day's sport is Today's to offer: History lists what is planned.
@@ -241,7 +242,7 @@ class HistoryViewModel(
             daySheet = view.openDay?.let { day ->
                 val training = log.day(day)
                 daySheet(training, timestamps.heading(day, today), past = day < today) {
-                    timestamps.item(it, presets, body, training.plans)
+                    timestamps.item(it, names, body, training.plans)
                 }
             },
         )
@@ -256,14 +257,14 @@ class HistoryViewModel(
 /** [workout]'s row, [HistoryItem.planned] when it did one of its day's [plans]. */
 private fun TimestampFormatter.item(
     workout: LoggedWorkout,
-    presets: List<Preset>,
+    names: WorkoutNames,
     body: BodySettings,
     plans: List<DayPlan>,
 ) =
     when (workout) {
         is LoggedWorkout.Interval -> workout.entry.let { entry ->
             HistoryItem(
-                presetName = presets.nameOf(entry.config),
+                presetName = names.of(entry.config),
                 config = entry.config,
                 endedEarly = entry.endedEarly,
                 time = time(entry.finishedAtEpochMillis),

@@ -6,8 +6,7 @@ import dev.justinsmith.interval.timer.Block
 import dev.justinsmith.interval.timer.Flow
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.ShortDuration
-import dev.justinsmith.interval.timer.builtInFlows
-import dev.justinsmith.interval.timer.matching
+import dev.justinsmith.interval.timer.isFlowShaped
 import dev.justinsmith.interval.timer.shortDuration
 import dev.justinsmith.interval.ui.resources.Res
 import dev.justinsmith.interval.ui.resources.common_custom
@@ -39,8 +38,7 @@ import kotlin.math.abs
  */
 @Composable
 fun configDescription(config: IntervalConfig): String {
-    val flow = builtInFlows.matching(config)
-    if (flow != null) return movesText(flow)
+    if (config.isFlowShaped) return movesText(config.blocks.size)
     val blocks = config.blocks.map { blockDescription(it) }
         .reduce { all, block -> stringResource(Res.string.config_then, all, block) }
     val rounds = if (config.isSequence && config.blockRestSeconds > 0) {
@@ -132,7 +130,7 @@ fun workoutDescription(config: IntervalConfig): String {
     val shape = configDescription(config)
     if (config.activity == Activity.General) return shape
     val activity = stringResource(config.activity.labelRes)
-    return if (builtInFlows.matching(config) != null) {
+    return if (config.isFlowShaped) {
         stringResource(Res.string.common_joined, activity, shape)
     } else {
         stringResource(Res.string.common_joined, shape, activity)
@@ -141,7 +139,11 @@ fun workoutDescription(config: IntervalConfig): String {
 
 /** How many moves [flow] has: "6 moves". */
 @Composable
-fun movesText(flow: Flow): String = pluralStringResource(Res.plurals.flow_moves, flow.moves.size, flow.moves.size)
+fun movesText(flow: Flow): String = movesText(flow.moves.size)
+
+/** [count] moves: "6 moves". */
+@Composable
+fun movesText(count: Int): String = pluralStringResource(Res.plurals.flow_moves, count, count)
 
 /** [parts] in one line, each joined to the next as [Res.string.common_joined] joins two: "Planned · 7:05 AM". */
 @Composable

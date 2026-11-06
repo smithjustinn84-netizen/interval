@@ -55,7 +55,7 @@ class WorkoutFlowScreenTest {
 
     @Test
     fun `get ready names the first move and how it is done`() = runUiTest {
-        setThemedContent { Screen(getReady.toUiState(running = true)) }
+        setThemedContent { Screen(getReady.toUiState(running = true, flows = builtInFlows)) }
         onNodeWithText("Get ready").assertExists()
         onNodeWithText("90/90 hip switch").assertExists()
         onNodeWithText("Sit with both knees bent square. Swing them over to the other side and sit tall.")
@@ -65,7 +65,7 @@ class WorkoutFlowScreenTest {
 
     @Test
     fun `a move worked through says what is next`() = runUiTest {
-        setThemedContent { Screen(hipSwitch.toUiState(running = true)) }
+        setThemedContent { Screen(hipSwitch.toUiState(running = true, flows = builtInFlows)) }
         onNodeWithText("90/90 hip switch").assertExists()
         onNodeWithText("Move").assertExists()
         onNodeWithText("Next: Hip flexor lunge").assertExists()
@@ -74,7 +74,7 @@ class WorkoutFlowScreenTest {
 
     @Test
     fun `a change-over shows the move coming`() = runUiTest {
-        setThemedContent { Screen(toLunge.toUiState(running = true)) }
+        setThemedContent { Screen(toLunge.toUiState(running = true, flows = builtInFlows)) }
         onNodeWithText("Get ready").assertExists()
         onNodeWithText("Hip flexor lunge").assertExists()
         onNodeWithText("Left side").assertExists()
@@ -83,7 +83,7 @@ class WorkoutFlowScreenTest {
 
     @Test
     fun `a hold with sides says its side and then the other`() = runUiTest {
-        setThemedContent { Screen(lungeLeft.toUiState(running = true)) }
+        setThemedContent { Screen(lungeLeft.toUiState(running = true, flows = builtInFlows)) }
         onNodeWithText("Hold").assertExists()
         onNodeWithText("Left side").assertExists()
         onNodeWithText("Next: right side").assertExists()
@@ -91,7 +91,7 @@ class WorkoutFlowScreenTest {
 
     @Test
     fun `between the sides it says to switch and the right follows`() = runUiTest(Window.PhoneSideways) {
-        setThemedContent { Screen(switchSides.toUiState(running = true)) }
+        setThemedContent { Screen(switchSides.toUiState(running = true, flows = builtInFlows)) }
         onNodeWithText("Switch sides").assertExists()
         onNodeWithText("Right side").assertExists()
         onNodeWithText("Hip flexor lunge").assertExists()
@@ -99,21 +99,21 @@ class WorkoutFlowScreenTest {
 
     @Test
     fun `the right side says the move after it and the last move says so`() = runUiTest {
-        setThemedContent { Screen(lungeRight.toUiState(running = true)) }
+        setThemedContent { Screen(lungeRight.toUiState(running = true, flows = builtInFlows)) }
         onNodeWithText("Right side").assertExists()
         onNodeWithText("Next: Deep squat").assertExists()
     }
 
     @Test
     fun `the last move's last side says it is the last`() = runUiTest {
-        setThemedContent { Screen(lastMove.toUiState(running = true)) }
+        setThemedContent { Screen(lastMove.toUiState(running = true, flows = builtInFlows)) }
         onNodeWithText("Shoulder circles").assertExists()
         onNodeWithText("Last move").assertExists()
     }
 
     @Test
     fun `the controls work as in any workout`() = runUiTest {
-        setThemedContent { Screen(lungeLeft.toUiState(running = true)) }
+        setThemedContent { Screen(lungeLeft.toUiState(running = true, flows = builtInFlows)) }
         onNodeWithText("Pause").performClick()
         onNodeWithContentDescription("Skip to next interval").performClick()
         onNodeWithContentDescription("Back to previous interval").performClick()
@@ -123,14 +123,14 @@ class WorkoutFlowScreenTest {
 
     @Test
     fun `ending early counts the moves done`() = runUiTest {
-        setThemedContent { Screen(lungeLeft.toUiState(running = true)) }
+        setThemedContent { Screen(lungeLeft.toUiState(running = true, flows = builtInFlows)) }
         onNodeWithContentDescription("End workout").performClick()
         onNodeWithText("1 of 6 moves done. What you finished is saved to history.").assertExists()
     }
 
     @Test
     fun `the summary counts its moves and names the flow with nothing to save`() = runUiTest {
-        val state = done.toUiState(running = false, presetName = hips.name, elapsedSeconds = 480)
+        val state = done.toUiState(running = false, presetName = hips.name, elapsedSeconds = 480, flows = builtInFlows)
         setThemedContent { Screen(state) }
         onNodeWithText("6 moves · 8:00 total").assertExists()
         onNodeWithText("Hips and shoulders · Mobility · 6 moves").assertExists()

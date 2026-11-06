@@ -59,6 +59,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
         HistoryViewModel(
             repository.history,
             repository.presets,
+            repository.flows,
             repository.plans,
             repository.settings,
             bells.sessions,
@@ -324,6 +325,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
             HistoryViewModel(
                 repository.history,
                 repository.presets,
+                repository.flows,
                 repository.plans,
                 repository.settings,
                 bells.sessions,
@@ -370,6 +372,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
             HistoryViewModel(
                 repository.history,
                 repository.presets,
+                repository.flows,
                 repository.plans,
                 repository.settings,
                 bells.sessions,
@@ -398,6 +401,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
             HistoryViewModel(
                 repository.history,
                 repository.presets,
+                repository.flows,
                 repository.plans,
                 repository.settings,
                 bells.sessions,

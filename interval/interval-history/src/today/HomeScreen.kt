@@ -19,6 +19,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.intl.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.justinsmith.interval.data.FlowStore
 import dev.justinsmith.interval.history.GoalRow
 import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.history.StartPill
@@ -89,6 +90,7 @@ import dev.justinsmith.lift.ui.programDayLifts
 import dev.justinsmith.lift.ui.programDayLine
 import dev.justinsmith.lift.ui.programName
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -111,6 +113,8 @@ fun HomeRoute(
     onSetup: () -> Unit = {},
 ) {
     val viewModel = koinViewModel<HomeViewModel>()
+    // Read as a start is tapped: a flow of the user's starts as itself, as a shipped one does.
+    val flows = koinInject<FlowStore>()
     val locale = Locale.current.toLanguageTag()
     LaunchedEffect(locale) { viewModel.setLocale(locale) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -128,12 +132,12 @@ fun HomeRoute(
     val actions = remember(viewModel, notices, undo) {
         HomeActions(
             onStart = { name, config ->
-                val flow = flowKeyOf(config)
+                val flow = flowKeyOf(config, flows.flows.value)
                 if (flow == null) viewModel.putOnTimer(name, config)
                 startWorkout(flow)
             },
             onStartPick = { pick ->
-                val flow = flowKeyOf(pick.preset.config)
+                val flow = flowKeyOf(pick.preset.config, flows.flows.value)
                 if (flow == null) viewModel.putOnTimer(pick)
                 startWorkout(flow)
             },

@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.intl.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.justinsmith.interval.data.FlowStore
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.common_cancel
 import dev.justinsmith.interval.history.resources.history_clear_confirm
@@ -84,6 +85,7 @@ import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.program
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -107,6 +109,7 @@ fun HistoryRoute(
     onOpenSettings: () -> Unit = {},
 ) {
     val viewModel = koinViewModel<HistoryViewModel>()
+    val flows = koinInject<FlowStore>()
     val locale = Locale.current.toLanguageTag()
     LaunchedEffect(locale) { viewModel.setLocale(locale) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -132,7 +135,7 @@ fun HistoryRoute(
             onShiftMonth = viewModel::shiftMonth,
             onOpenDay = viewModel::openDay,
             onStart = { name, config ->
-                val flow = flowKeyOf(config)
+                val flow = flowKeyOf(config, flows.flows.value)
                 if (flow == null) viewModel.putOnTimer(name, config)
                 leavingSheet { startWorkout(flow) }
             },

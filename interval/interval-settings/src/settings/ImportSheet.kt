@@ -21,6 +21,7 @@ import dev.justinsmith.interval.settings.resources.import_counts_joined
 import dev.justinsmith.interval.settings.resources.import_done
 import dev.justinsmith.interval.settings.resources.import_done_nothing
 import dev.justinsmith.interval.settings.resources.import_exercises
+import dev.justinsmith.interval.settings.resources.import_flows
 import dev.justinsmith.interval.settings.resources.import_from
 import dev.justinsmith.interval.settings.resources.import_from_version
 import dev.justinsmith.interval.settings.resources.import_new
@@ -133,12 +134,13 @@ internal fun importedText(added: ImportCounts): String =
         stringResource(Res.string.import_done, countsText(added))
     }
 
-/** The kinds with something in them, in words, one after another: "12 workouts, 3 presets, 1 Lift session". */
+/** The kinds with something in them, in words, one after another: "12 workouts, 3 presets, 2 flows, 1 Lift session". */
 @Composable
 private fun countsText(counts: ImportCounts): String = listOfNotNull(
     counts.workouts.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.import_workouts, it, it) },
     counts.sessions.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.import_sessions, it, it) },
     counts.presets.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.import_presets, it, it) },
+    counts.flows.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.import_flows, it, it) },
     counts.plans.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.import_plans, it, it) },
     counts.exercises.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.import_exercises, it, it) },
     counts.programs.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.import_programs, it, it) },

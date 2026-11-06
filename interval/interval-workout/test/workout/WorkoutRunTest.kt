@@ -6,6 +6,7 @@ import dev.justinsmith.interval.timer.Block
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.WorkoutEngine
+import dev.justinsmith.interval.timer.builtInFlows
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -95,13 +96,13 @@ class WorkoutRunTest {
             blockRestSeconds = 20,
         )
         val started = begun.copy(engine = WorkoutEngine.start(sequence).state)
-        assertEquals(emptyList(), begun.status().blocks)
-        assertEquals(sequence.blocks, started.status().blocks)
+        assertEquals(emptyList(), begun.status(builtInFlows).blocks)
+        assertEquals(sequence.blocks, started.status(builtInFlows).blocks)
         // Work, rest, work, then the rest before the second block, and its first work.
         val states = generateSequence(started.engine) { WorkoutEngine.advance(it).state }.take(5).toList()
-        val blockRest = started.copy(engine = states[3]).status()
+        val blockRest = started.copy(engine = states[3]).status(builtInFlows)
         assertEquals(Phase.SetRest to true, blockRest.phase to blockRest.blockRest)
-        val second = started.copy(engine = states[4]).status()
+        val second = started.copy(engine = states[4]).status(builtInFlows)
         assertEquals(Triple(1, 1, 3), Triple(second.block, second.round, second.rounds))
         assertFalse(second.blockRest)
     }

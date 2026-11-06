@@ -3,6 +3,8 @@ package dev.justinsmith.interval.fakes
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
+import dev.justinsmith.interval.data.FlowDao
+import dev.justinsmith.interval.data.FlowEntity
 import dev.justinsmith.interval.data.HistoryDao
 import dev.justinsmith.interval.data.HistoryEntity
 import dev.justinsmith.interval.data.ImportDao
@@ -186,12 +188,37 @@ class FakePresetDao : PresetDao {
     }
 }
 
+/** A [FlowDao] over a list, in save order like the real query. */
+class FakeFlowDao : FlowDao {
+    val rows = MutableStateFlow(emptyList<FlowEntity>())
+    private val ids = AutoIds()
+
+    override fun observeAll(): Flow<List<FlowEntity>> = rows
+
+    override suspend fun all(): List<FlowEntity> = rows.value
+
+    override suspend fun insert(flow: FlowEntity): Long {
+        val id = ids.assign(flow.id)
+        rows.update { all -> (all + flow.copy(id = id)).sortedBy { it.id } }
+        return id
+    }
+
+    override suspend fun update(flow: FlowEntity) {
+        rows.update { all -> all.map { if (it.id == flow.id) flow else it } }
+    }
+
+    override suspend fun delete(id: Long) {
+        rows.update { all -> all.filterNot { it.id == id } }
+    }
+}
+
 /** An [ImportDao] over the other fakes: its transaction is [ImportDao.importAll]'s own, without the rollback. */
 class FakeImportDao(
     private val history: FakeHistoryDao,
     private val presets: FakePresetDao,
     private val planned: FakePlannedDao,
     private val sports: FakeSportLogDao,
+    private val flows: FakeFlowDao = FakeFlowDao(),
 ) : ImportDao {
     override suspend fun insertHistory(rows: List<HistoryEntity>) = rows.forEach { history.insert(it) }
 
@@ -200,6 +227,8 @@ class FakeImportDao(
     override suspend fun insertPlanned(rows: List<PlannedEntity>) = planned.insert(rows)
 
     override suspend fun insertSports(rows: List<SportLogEntity>) = sports.insert(rows)
+
+    override suspend fun insertFlows(rows: List<FlowEntity>) = rows.forEach { flows.insert(it) }
 }
 
 /**
@@ -212,7 +241,8 @@ class FakeStorage {
     val presets = FakePresetDao()
     val planned = FakePlannedDao()
     val sports = FakeSportLogDao()
-    val imports = FakeImportDao(history, presets, planned, sports)
+    val flows = FakeFlowDao()
+    val imports = FakeImportDao(history, presets, planned, sports, flows)
 
     /**
      * A repository over this storage. By default its writes run unconfined and the fakes never suspend, so
@@ -225,7 +255,8 @@ class FakeStorage {
         now: WallClock = WallClock { 0L },
         scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
         ids: IdGenerator = IdGenerator.Random,
-    ): IntervalRepository = IntervalRepository(settings, history, presets, planned, sports, imports, scope, now, ids)
+    ): IntervalRepository =
+        IntervalRepository(settings, history, presets, planned, sports, flows, imports, scope, now, ids)
 }
 
 /**
@@ -250,6 +281,7 @@ fun fakeStorageModule(storage: FakeStorage = FakeStorage()): Module = module {
     single<PresetDao> { storage.presets }
     single<PlannedDao> { storage.planned }
     single<SportLogDao> { storage.sports }
+    single<FlowDao> { storage.flows }
     single<ImportDao> { storage.imports }
 }
 

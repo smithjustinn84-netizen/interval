@@ -45,6 +45,7 @@ data class ImportCounts(
     val sessions: Int = 0,
     val exercises: Int = 0,
     val programs: Int = 0,
+    val flows: Int = 0,
 ) {
-    val total: Int get() = workouts + presets + plans + sessions + exercises + programs
+    val total: Int get() = workouts + presets + plans + sessions + exercises + programs + flows
 }

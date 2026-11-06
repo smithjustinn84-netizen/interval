@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.justinsmith.interval.data.FlowStore
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.common_cancel
 import dev.justinsmith.interval.history.resources.common_joined
@@ -83,6 +84,7 @@ fun WorkoutDetailRoute(
     inPane: Boolean = false,
 ) {
     val sharer = koinInject<Sharer>()
+    val flows = koinInject<FlowStore>()
     val viewModel = koinViewModel<WorkoutDetailViewModel>(key = "workout-$id") { parametersOf(id) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     // Each time the page comes into view without a heart rate: a watch may have synced since the summary.
@@ -101,7 +103,7 @@ fun WorkoutDetailRoute(
         state = state,
         onBack = onBack,
         onRepeat = {
-            val flow = state.workout?.config?.let(::flowKeyOf)
+            val flow = state.workout?.config?.let { flowKeyOf(it, flows.flows.value) }
             if (flow == null) viewModel.putOnTimer()
             onStartWorkout(flow)
         },

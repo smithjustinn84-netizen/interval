@@ -3,6 +3,7 @@ package dev.justinsmith.interval.today
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.justinsmith.interval.data.FlowStore
 import dev.justinsmith.interval.data.HistoryStore
 import dev.justinsmith.interval.data.PlanStore
 import dev.justinsmith.interval.data.PresetStore
@@ -84,6 +85,7 @@ data class HomeUiState(
 class HomeViewModel(
     private val historyStore: HistoryStore,
     private val presetStore: PresetStore,
+    flowStore: FlowStore,
     planStore: PlanStore,
     settingsStore: SettingsStore,
     private val lift: LiftActivity,
@@ -113,8 +115,13 @@ class HomeViewModel(
         combine(clock.days(timestamps, dayCheckMillis), locale) { day, _ -> day },
     ) { (history, sports, lifting), planned, app, _ -> buildState(history, sports, lifting, planned, app) }
 
-    private val picks = combine(presetStore.presets, settingsStore.config, minutes) { presets, onTimer, minutes ->
-        Triple(minutes, presets.fitting(minutes, onTimer), onTimer.prepSeconds)
+    private val picks = combine(
+        presetStore.presets,
+        flowStore.flows,
+        settingsStore.config,
+        minutes,
+    ) { presets, flows, onTimer, minutes ->
+        Triple(minutes, presets.fitting(minutes, onTimer, flows), onTimer.prepSeconds)
     }
 
     val state: StateFlow<HomeUiState> =

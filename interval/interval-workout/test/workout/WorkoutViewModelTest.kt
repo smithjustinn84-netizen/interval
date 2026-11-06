@@ -72,6 +72,7 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
             WorkoutRecorder(
                 repository.history,
                 repository.presets,
+                repository.flows,
                 repository.settings,
                 lifts.sessions,
                 FixedTimestampFormatter,
@@ -79,6 +80,7 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
                 health,
             ),
             WorkoutTicker(testScheduler.timeSource, tickerScope()).also { tickers += it },
+            repository.flows,
         )
 
     private fun workoutViewModel(
@@ -86,7 +88,7 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
         repository: IntervalRepository = this.repository,
         id: Long = WORKOUT_ID,
         flow: String? = null,
-    ) = WorkoutViewModel(id, flow, session, repository.presets).also { viewModels += it }
+    ) = WorkoutViewModel(id, flow, session, repository.presets, repository.flows).also { viewModels += it }
 
     /**
      * Where a ticker ticks: on the test's scheduler, under its background scope, so a workout still running as the
@@ -241,7 +243,7 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
         run(1_000)
 
         assertTrue(background.kept)
-        assertEquals("0:03", assertNotNull(session.state.value).toUiState(emptyList()).elapsed)
+        assertEquals("0:03", assertNotNull(session.state.value).toUiState(emptyList(), emptyList()).elapsed)
         assertEquals(WORKOUT_ID, repository.settings.workoutProgress.value?.id)
     }
 }

@@ -2,6 +2,7 @@ package dev.justinsmith.interval.mobility
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.justinsmith.interval.data.FlowStore
 import dev.justinsmith.interval.data.SettingsStore
 import dev.justinsmith.interval.timer.Flow
 import dev.justinsmith.interval.timer.FlowUse
@@ -9,7 +10,7 @@ import dev.justinsmith.interval.timer.builtInFlows
 import dev.justinsmith.interval.timer.formatClock
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
 /** A flow as the page lists it: with its [total] as a clock, the user's get-ready countdown in it. */
@@ -26,13 +27,17 @@ data class MobilityUiState(
 }
 
 /**
- * The Mobility page: the flows the app ships with. They are not stored, so all it reads is the get-ready
+ * The Mobility page: the flows the app ships with and the user's own, each in its group, and the get-ready
  * countdown, which every workout starts after and a flow's total counts.
  */
-class MobilityViewModel(settingsStore: SettingsStore) : ViewModel() {
-    val state: StateFlow<MobilityUiState> = settingsStore.config
-        .map { mobilityState(it.prepSeconds) }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, mobilityState(settingsStore.config.value.prepSeconds))
+class MobilityViewModel(settingsStore: SettingsStore, flowStore: FlowStore) : ViewModel() {
+    val state: StateFlow<MobilityUiState> =
+        combine(settingsStore.config, flowStore.flows) { config, flows -> mobilityState(config.prepSeconds, flows) }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.Eagerly,
+                mobilityState(settingsStore.config.value.prepSeconds, flowStore.flows.value),
+            )
 }
 
 internal fun mobilityState(prepSeconds: Int, flows: List<Flow> = builtInFlows): MobilityUiState {

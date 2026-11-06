@@ -83,9 +83,11 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
     ): WorkoutSession {
         val ticker = WorkoutTicker(timeSource, tickerScope()).also { tickers += it }
         val recorder = with(repository) {
-            WorkoutRecorder(history, presets, settings, lifts.sessions, FixedTimestampFormatter, { now }, health)
+            WorkoutRecorder(history, presets, flows, settings, lifts.sessions, FixedTimestampFormatter, { now }, health)
         }
-        return WorkoutSession(repository.settings, repository.settings, player, { now }, background, recorder, ticker)
+        return with(repository) {
+            WorkoutSession(settings, settings, player, { now }, background, recorder, ticker, flows)
+        }
     }
 
     /**
@@ -134,7 +136,7 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
         return statuses
     }
 
-    private val WorkoutSession.ui: WorkoutUiState get() = checkNotNull(state.value).toUiState(emptyList())
+    private val WorkoutSession.ui: WorkoutUiState get() = checkNotNull(state.value).toUiState(emptyList(), emptyList())
 
     private fun WorkoutSession.pause() {
         if (ui.running) togglePause()

@@ -13,8 +13,11 @@ import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.HealthWorkoutKind
 import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.timer.Activity
+import dev.justinsmith.interval.timer.Flow
 import dev.justinsmith.interval.timer.FlowSide
+import dev.justinsmith.interval.timer.FlowUse
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.Move
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.builtInFlows
 import dev.justinsmith.lift.fakes.FakeLiftStorage
@@ -60,14 +63,25 @@ class FlowSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
             CoroutineScope(backgroundScope.coroutineContext + SupervisorJob(backgroundScope.coroutineContext.job))
         val ticker = WorkoutTicker(testScheduler.timeSource, scope).also { tickers += it }
         val recorder = with(repository) {
-            WorkoutRecorder(history, presets, settings, lifts.sessions, FixedTimestampFormatter, { 7L }, health)
+            WorkoutRecorder(history, presets, flows, settings, lifts.sessions, FixedTimestampFormatter, { 7L }, health)
         }
         val background = RecordingBackgroundWorkout()
-        return WorkoutSession(repository.settings, repository.settings, player, { 7L }, background, recorder, ticker)
+        return WorkoutSession(
+            repository.settings,
+            repository.settings,
+            player,
+            { 7L },
+            background,
+            recorder,
+            ticker,
+            repository.flows,
+        )
             .apply { open(1, key) }
     }
 
-    private val WorkoutSession.ui: WorkoutUiState get() = checkNotNull(state.value).toUiState(emptyList())
+    private val WorkoutSession.ui: WorkoutUiState get() = checkNotNull(
+        state.value,
+    ).toUiState(emptyList(), repository.flows.flows.value)
 
     private fun TestScope.run(seconds: Int) {
         advanceTimeBy(seconds * 1_000L + WorkoutTicker.TICK_MILLIS)
@@ -208,5 +222,25 @@ class FlowSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
         assertEquals(onTimer, session.ui.config)
         assertNull(session.ui.flow)
         assertEquals(Speech.GetReady, player.spoken.single())
+    }
+
+    @Test
+    fun `a flow the user built runs as itself and is spoken and named like a shipped one`() = runTest(dispatcher) {
+        val plank = Move("Plank", seconds = 20, cue = "Long line.")
+        val bridge = Move("Shoulder bridge", seconds = 15, cue = "Hips up.", sided = true, held = false)
+        repository.flows.saveFlow(Flow("new", "Floor core", FlowUse.After, listOf(plank, bridge)))
+        val mine = repository.flows.customFlows.value.single()
+
+        val session = openFlow(mine.key)
+        assertEquals("Floor core", session.ui.presetName)
+        assertEquals(mine.config(prepSeconds = 5), session.ui.config)
+        assertEquals("Plank", session.ui.flow?.step?.move?.name)
+        assertTrue(Speech.NextMove("Plank") in player.spoken)
+        assertEquals(mine, session.status.value?.flow)
+
+        run(mine.config(prepSeconds = 5).totalSeconds)
+        assertTrue(session.ui.isDone)
+        assertEquals("Floor core", health.workouts.single().title)
+        assertEquals(onTimer, repository.settings.config.value)
     }
 }

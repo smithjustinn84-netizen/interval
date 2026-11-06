@@ -62,10 +62,10 @@ class FlowTest {
         assertEquals(hips, builtInFlows.matching(hips.config(prepSeconds = 3)))
         assertNull(builtInFlows.matching(hips.config.copy(activity = Activity.General)))
         assertNull(builtInFlows.matching(IntervalConfig()))
-        assertEquals("Hips and shoulders", emptyList<Preset>().nameOf(hips.config))
+        assertEquals("Hips and shoulders", emptyList<Preset>().nameOf(hips.config, builtInFlows))
         // A preset of the user's with the same shape names it first, as it names any workout.
-        assertEquals("Mine", listOf(Preset("Mine", hips.config, id = 1)).nameOf(hips.config))
-        assertEquals("Tabata", builtInPresets.nameOf(builtInPresets.first().config))
+        assertEquals("Mine", listOf(Preset("Mine", hips.config, id = 1)).nameOf(hips.config, builtInFlows))
+        assertEquals("Tabata", builtInPresets.nameOf(builtInPresets.first().config, builtInFlows))
     }
 
     @Test

@@ -515,6 +515,7 @@ class StorageTest {
                 database.presetDao(),
                 database.plannedDao(),
                 database.sportLogDao(),
+                database.flowDao(),
                 database.importDao(),
                 scope,
                 clock = { clock },

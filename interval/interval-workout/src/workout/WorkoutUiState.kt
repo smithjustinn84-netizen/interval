@@ -11,7 +11,6 @@ import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.timer.WorkoutState
-import dev.justinsmith.interval.timer.builtInFlows
 import dev.justinsmith.interval.timer.ceilSeconds
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
@@ -153,7 +152,8 @@ data class WorkoutUiState(
 
 /**
  * The screen's view of an engine state. [ended] marks a workout stopped early; [presetName] is the
- * preset matching its shape, if any, among [presets]; [elapsedSeconds] is the time the timer has run.
+ * preset matching its shape, if any, among [presets]; [elapsedSeconds] is the time the timer has run. The flow it is,
+ * if it is one of [flows], says the move.
  */
 fun WorkoutState.toUiState(
     running: Boolean,
@@ -167,6 +167,7 @@ fun WorkoutState.toUiState(
     leaving: Boolean = false,
     effort: PerceivedEffort? = null,
     note: String = "",
+    flows: List<Flow> = emptyList(),
 ): WorkoutUiState {
     val secondsLeft = ceilSeconds(remainingMillis)
     return WorkoutUiState(
@@ -196,7 +197,7 @@ fun WorkoutState.toUiState(
         set = set,
         block = block,
         inBlockRest = inBlockRest,
-        flow = builtInFlows.matching(config)?.let { flowNow(it) },
+        flow = flows.matching(config)?.let { flowNow(it) },
     )
 }
 

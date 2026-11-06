@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.workout
 
+import dev.justinsmith.interval.data.FlowStore
 import dev.justinsmith.interval.data.SettingsStore
 import dev.justinsmith.interval.data.WorkoutProgressStore
 import dev.justinsmith.interval.model.BodySettings
@@ -18,7 +19,6 @@ import dev.justinsmith.interval.timer.Step
 import dev.justinsmith.interval.timer.UpcomingChange
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.timer.WorkoutState
-import dev.justinsmith.interval.timer.builtInFlows
 import dev.justinsmith.interval.timer.keyed
 import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.stepAt
@@ -48,6 +48,7 @@ class WorkoutSession(
     private val background: BackgroundWorkout,
     private val recorder: WorkoutRecorder,
     private val ticker: WorkoutTicker,
+    private val flowStore: FlowStore,
 ) : ActiveWorkout {
     private val _state = MutableStateFlow<WorkoutRun?>(null)
     private val _status = MutableStateFlow<WorkoutStatus?>(null)
@@ -60,7 +61,7 @@ class WorkoutSession(
         get() = _state.value
         set(value) {
             _state.value = value
-            if (kept && value != null) _status.value = value.status()
+            if (kept && value != null) _status.value = value.status(flowStore.flows.value)
         }
 
     private val tick: (Long) -> Unit = { elapsed -> run?.let { applyStep(WorkoutEngine.tick(it.engine, elapsed)) } }
@@ -83,7 +84,7 @@ class WorkoutSession(
         val settings = settingsStore.appSettings.value
         if (saved == null) {
             val onTimer = settingsStore.config.value
-            val config = builtInFlows.keyed(flow)?.config(onTimer.prepSeconds) ?: onTimer
+            val config = flowStore.flows.value.keyed(flow)?.config(onTimer.prepSeconds) ?: onTimer
             begin(id, config, settings.keepScreenOn, settings.body)
             return
         }
@@ -248,7 +249,7 @@ class WorkoutSession(
     /** Plays [cues] as the user has them switched on; in a flow, in the words of the move [state] has reached. */
     private fun play(cues: List<Cue>, state: WorkoutState) {
         if (cues.isEmpty()) return
-        val step = builtInFlows.matching(state.config)?.stepAt(state)
+        val step = flowStore.flows.value.matching(state.config)?.stepAt(state)
         cues.forEach { playCue(it, settingsStore.cueSettings.value, player, step) }
     }
 
@@ -256,7 +257,7 @@ class WorkoutSession(
     private fun hold(keep: Boolean) {
         if (keep == kept) return
         kept = keep
-        _status.value = if (keep) run?.status() else null
+        _status.value = if (keep) run?.status(flowStore.flows.value) else null
         if (keep) background.start() else background.stop()
     }
 

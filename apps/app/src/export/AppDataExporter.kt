@@ -12,6 +12,7 @@ import dev.justinsmith.interval.platform.ShareableFile
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.settings.DataExporter
+import dev.justinsmith.interval.timer.Flow
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.lift.data.LiftRepository
@@ -61,6 +62,7 @@ class AppDataExporter(
         history = intervals.history.history.value.map { it.export() },
         plan = intervals.plans.planned.value.map { it.export() },
         sportDays = intervals.history.sportDays.value.map { it.export() },
+        flows = intervals.flows.customFlows.value.map { it.export() },
         lift = LiftExport(
             bellsKg = lift.gear.bells.value,
             barKg = lift.gear.bar.value,
@@ -104,6 +106,13 @@ private fun IntervalConfig.export() = ConfigExport(
 )
 
 private fun Preset.export() = PresetExport(id, name, config.export())
+
+private fun Flow.export() = FlowExport(
+    name,
+    use.name,
+    note,
+    moves.map { MoveExport(it.name, it.seconds, it.cue, it.sided, it.held) },
+)
 
 private fun HistoryEntry.export() =
     WorkoutExport(

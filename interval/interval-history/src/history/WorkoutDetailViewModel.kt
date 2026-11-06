@@ -2,6 +2,7 @@ package dev.justinsmith.interval.history
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.justinsmith.interval.data.FlowStore
 import dev.justinsmith.interval.data.HistoryStore
 import dev.justinsmith.interval.data.PlanStore
 import dev.justinsmith.interval.data.PresetStore
@@ -24,7 +25,6 @@ import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.defaultPresetName
 import dev.justinsmith.interval.timer.formatClock
-import dev.justinsmith.interval.timer.nameOf
 import dev.justinsmith.interval.timer.weekdayOf
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -74,6 +74,7 @@ class WorkoutDetailViewModel(
     private val id: Long,
     private val historyStore: HistoryStore,
     private val presetStore: PresetStore,
+    private val flowStore: FlowStore,
     private val planStore: PlanStore,
     private val settingsStore: SettingsStore,
     private val timestamps: TimestampFormatter,
@@ -86,24 +87,24 @@ class WorkoutDetailViewModel(
         combine(
             historyStore.history,
             planStore.planned,
-            presetStore.presets,
+            combine(presetStore.presets, flowStore.flows, ::WorkoutNames),
             settingsStore.appSettings,
             clock.days(timestamps, dayCheckMillis),
         ) {
                 history,
                 planned,
-                presets,
+                names,
                 app,
                 _,
             ->
-            buildState(history, planned, presets, app)
+            buildState(history, planned, names, app)
         }.stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
             buildState(
                 historyStore.history.value,
                 planStore.planned.value,
-                presetStore.presets.value,
+                WorkoutNames(presetStore.presets.value, flowStore.flows.value),
                 settingsStore.appSettings.value,
             ),
         )
@@ -146,7 +147,7 @@ class WorkoutDetailViewModel(
     private fun buildState(
         history: List<HistoryEntry>,
         planned: List<PlannedWorkout>,
-        presets: List<Preset>,
+        names: WorkoutNames,
         app: AppSettings,
     ): WorkoutDetailUiState {
         val today = timestamps.dayNumber(clock.nowMillis())
@@ -155,7 +156,7 @@ class WorkoutDetailViewModel(
             val log = TrainingLog(history, planned, today, dayOf = timestamps::dayNumber)
             FinishedWorkout(
                 id = id,
-                presetName = presets.nameOf(entry.config),
+                presetName = names.of(entry.config),
                 config = entry.config,
                 day = timestamps.heading(day, today),
                 time = timestamps.time(entry.finishedAtEpochMillis),

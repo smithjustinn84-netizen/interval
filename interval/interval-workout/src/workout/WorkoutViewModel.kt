@@ -2,6 +2,7 @@ package dev.justinsmith.interval.workout
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.justinsmith.interval.data.FlowStore
 import dev.justinsmith.interval.data.PresetStore
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.timer.Preset
@@ -26,6 +27,7 @@ class WorkoutViewModel(
     flow: String?,
     private val session: WorkoutSession,
     private val presetStore: PresetStore,
+    private val flowStore: FlowStore,
 ) : ViewModel() {
     init {
         session.open(id, flow)
@@ -36,11 +38,12 @@ class WorkoutViewModel(
     val state: StateFlow<WorkoutUiState> = combine(
         session.state.filterNotNull().filter { it.id == id },
         presetStore.presets,
-    ) { run, presets -> run.toUiState(presets) }
+        flowStore.flows,
+    ) { run, presets, flows -> run.toUiState(presets, flows) }
         .stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
-            checkNotNull(session.state.value).toUiState(presetStore.presets.value),
+            checkNotNull(session.state.value).toUiState(presetStore.presets.value, flowStore.flows.value),
         )
 
     fun togglePause() = session.togglePause()
