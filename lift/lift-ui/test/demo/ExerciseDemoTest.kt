@@ -80,13 +80,17 @@ class ExerciseDemoTest {
 
     @Test
     fun `every pose stays in its view with a foot on the floor and nothing through it`() {
-        demos.forEach { demo ->
-            (0..100).map { demo.figureAt(it / 100f) }.forEach { figure ->
-                figure.joints.forEach { joint -> assertTrue(demo.view.contains(joint), "$joint is outside the view") }
-                assertTrue(figure.joints.all { it.y <= Rig.FLOOR + 0.5f }, "A joint goes through the floor")
-                assertTrue(figure.bell.y + Rig.BELL <= Rig.FLOOR + 0.5f, "The bell goes through the floor")
+        BuiltInExercise.entries.forEach { exercise ->
+            val demo = exercise.demo ?: return@forEach
+            (0..100).forEach { step ->
+                val at = "$exercise at ${step / 100f}"
+                val figure = demo.figureAt(step / 100f)
+                val drawn = if (demo.bells == Bells.Pair) figure.joints else figure.joints - figure.farBell
+                drawn.forEach { joint -> assertTrue(demo.view.contains(joint), "$at: $joint is outside the view") }
+                drawn.forEach { joint -> assertTrue(joint.y <= Rig.FLOOR + 0.5f, "$at: $joint is through the floor") }
+                assertTrue(figure.bell.y + Rig.BELL <= Rig.FLOOR + 0.5f, "$at: the bell is through the floor")
                 val feet = listOf(figure.toe, figure.heel, figure.farToe, figure.farHeel)
-                assertTrue(feet.any { abs(it.y - Rig.FLOOR) < 0.5f }, "No foot is on the floor")
+                assertTrue(feet.any { abs(it.y - Rig.FLOOR) < 0.5f }, "$at: no foot is on the floor")
                 if (demo.root == Root.Ankle) assertEquals(Rig.FLOOR, figure.ankle.y)
             }
         }

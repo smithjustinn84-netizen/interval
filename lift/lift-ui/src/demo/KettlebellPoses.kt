@@ -36,6 +36,12 @@ internal object KettlebellPoses {
     /** Standing with the bell locked out overhead, the arm by the ear. */
     val lockout = Pose(shin = 0f, thigh = 0f, torso = -2f, upperArm = 178f, forearm = 178f, bell = RESTING)
 
+    /** Zipping the bell up close on the way to the rack, the elbow in, the bell about to roll round the wrist. */
+    val zip = Pose(shin = 0f, thigh = 0f, torso = -4f, upperArm = 20f, forearm = 70f, bell = 15f)
+
+    /** Halfway through a press, the elbow forward at the shoulder and the forearm upright. */
+    val pressing = Pose(shin = 0f, thigh = 0f, torso = -3f, upperArm = 95f, forearm = 175f, bell = RESTING)
+
     /** A short dip of the knees with the torso upright, before a drive. */
     val dip = Pose(shin = 16f, thigh = -22f, torso = 0f, upperArm = 15f, forearm = 165f, bell = RESTING)
 
@@ -72,6 +78,12 @@ internal fun Pose.freeHand(sway: Float = FREE_SWAY) = copy(
     farForearm = upperArm.coerceIn(-FREE_REACH, FREE_REACH) * sway + FREE_BEND,
 )
 
+/** This pose with the far arm hanging still at the side, as in a strict lift. */
+internal fun Pose.stillHand() = freeHand(sway = 0f)
+
+/** This pose with the far arm held out in front for balance, as in a one-bell squat. */
+internal fun Pose.balancing() = copy(farUpperArm = BALANCE_ARM, farForearm = BALANCE_FOREARM)
+
 /** This pose with its bell turned [by] degrees further round, as a bell that went over the hand is. */
 internal fun Pose.turned(by: Float = FULL_TURN) = copy(bell = bell + by, farBell = farBell + by)
 
@@ -80,3 +92,5 @@ private const val FREE_SWAY = 0.35f
 private const val FREE_REACH = 90f
 private const val FREE_BEND = 10f
 private const val FULL_TURN = 360f
+private const val BALANCE_ARM = 70f
+private const val BALANCE_FOREARM = 80f
