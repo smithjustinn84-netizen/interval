@@ -5,10 +5,12 @@ import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -26,6 +28,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.justinsmith.interval.platform.prefersReducedMotion
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSheet
@@ -52,6 +55,9 @@ import dev.justinsmith.lift.library.resources.Res
 import dev.justinsmith.lift.library.resources.common_joined
 import dev.justinsmith.lift.library.resources.detail_also
 import dev.justinsmith.lift.library.resources.detail_best
+import dev.justinsmith.lift.library.resources.detail_demo
+import dev.justinsmith.lift.library.resources.detail_demo_pause
+import dev.justinsmith.lift.library.resources.detail_demo_play
 import dev.justinsmith.lift.library.resources.detail_done
 import dev.justinsmith.lift.library.resources.detail_edit
 import dev.justinsmith.lift.library.resources.detail_history
@@ -63,8 +69,12 @@ import dev.justinsmith.lift.library.resources.detail_works
 import dev.justinsmith.lift.library.resources.exercise_archived_note
 import dev.justinsmith.lift.library.resources.exercise_cues
 import dev.justinsmith.lift.library.resources.exercise_editor_edit
+import dev.justinsmith.lift.ui.LiftSizes
 import dev.justinsmith.lift.ui.RecordRow
 import dev.justinsmith.lift.ui.cues
+import dev.justinsmith.lift.ui.demo.ExerciseDemo
+import dev.justinsmith.lift.ui.demo.ExerciseFigure
+import dev.justinsmith.lift.ui.demo.demo
 import dev.justinsmith.lift.ui.exerciseFacts
 import dev.justinsmith.lift.ui.exerciseName
 import dev.justinsmith.lift.ui.muscleName
@@ -185,6 +195,7 @@ private fun ColumnScope.ExerciseHead(exercise: Exercise, onEdit: (() -> Unit)?) 
     }
     when (exercise) {
         is BuiltInExercise -> {
+            exercise.demo?.let { Demonstration(it, exerciseName(exercise)) }
             Cues(stringArrayResource(exercise.cues()))
             Works(exercise.muscles)
         }
@@ -196,6 +207,32 @@ private fun ColumnScope.ExerciseHead(exercise: Exercise, onEdit: (() -> Unit)?) 
         }
 
         is UnknownExercise -> Unit
+    }
+}
+
+/**
+ * A figure doing the exercise over and over, in a card, with Pause and Play in its corner: moving content that
+ * runs on is something a user must be able to stop. With reduced motion it stands still and offers neither.
+ */
+@Composable
+private fun Demonstration(demo: ExerciseDemo, name: String) {
+    var playing by rememberSaveable { mutableStateOf(true) }
+    ListCard(fill = IntervalTheme.palette.surfaceVariant) {
+        Box(Modifier.fillMaxWidth()) {
+            ExerciseFigure(
+                demo,
+                contentDescription = stringResource(Res.string.detail_demo, name),
+                modifier = Modifier.fillMaxWidth().height(LiftSizes.exerciseDemo).padding(Spacing.space8),
+                playing = playing,
+            )
+            if (!prefersReducedMotion()) {
+                QuietTextButton(
+                    stringResource(if (playing) Res.string.detail_demo_pause else Res.string.detail_demo_play),
+                    onClick = { playing = !playing },
+                    modifier = Modifier.align(Alignment.TopEnd),
+                )
+            }
+        }
     }
 }
 

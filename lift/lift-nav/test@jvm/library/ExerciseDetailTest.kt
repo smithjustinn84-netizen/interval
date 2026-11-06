@@ -125,9 +125,9 @@ class ExerciseDetailTest {
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
         onNodeWithText("Goblet squat").performClick()
-        waitForText("Your history")
+        waitForText("Kettlebell · Reps · Lower body")
         val library = onNodeWithText("Search exercises").assertIsDisplayed().getUnclippedBoundsInRoot()
-        val page = onNodeWithText("Your history").assertIsDisplayed().getUnclippedBoundsInRoot()
+        val page = onNodeWithText("Kettlebell · Reps · Lower body").assertIsDisplayed().getUnclippedBoundsInRoot()
         assertTrue(page.left > library.left)
     }
 

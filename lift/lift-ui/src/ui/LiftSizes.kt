@@ -15,4 +15,7 @@ object LiftSizes {
 
     /** A muscle group's bar on the Lift tab's balance: thin, so seven of them and their names fit a phone's card. */
     val balanceBar = 8.dp
+
+    /** A figure showing how an exercise goes, on its page: tall enough to read a swing's arc on a phone. */
+    val exerciseDemo = 220.dp
 }

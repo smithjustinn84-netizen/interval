@@ -1,0 +1,61 @@
+package dev.justinsmith.lift.ui.demo
+
+/**
+ * The two-hand swing: hike the bell back between the legs, snap the hips to stand, let it float to the chest,
+ * wait for the arms to meet the ribs, hinge. Its phases are its cues: Hike (0), Snap (1), Float (2).
+ */
+val TwoHandSwingDemo: ExerciseDemo = run {
+    val hike = swingPose(shin = 12f, thigh = -55f, torso = 65f, arm = -40f)
+    ExerciseDemo(
+        keyframes = listOf(
+            Keyframe(at = 0f, pose = hike),
+            Keyframe(at = 0.30f, pose = swingPose(shin = 0f, thigh = 0f, torso = -3f, arm = 45f)),
+            Keyframe(at = 0.48f, pose = swingPose(shin = 0f, thigh = 0f, torso = -3f, arm = 88f)),
+            Keyframe(at = 0.68f, pose = swingPose(shin = 0f, thigh = 0f, torso = -2f, arm = 18f)),
+            Keyframe(at = 0.82f, pose = swingPose(shin = 8f, thigh = -35f, torso = 40f, arm = -6f)),
+            Keyframe(at = 1f, pose = hike),
+        ),
+        phases = listOf(
+            DemoPhase(until = 0.30f, beat = DemoBeat.Drive, cue = 1),
+            DemoPhase(until = 0.68f, beat = DemoBeat.Ease, cue = 2),
+            DemoPhase(until = 1f, beat = DemoBeat.Set, cue = 0),
+        ),
+        hold = BellHold.Swung,
+        secondsPerRep = 1.8f,
+        still = 0.48f,
+    )
+}
+
+/**
+ * The goblet squat: stand braced with the bell at the chest, sit down between the heels, hold the bottom a
+ * moment, drive up. Its phases are its cues: Brace (0), Sit (1), Drive (2).
+ */
+val GobletSquatDemo: ExerciseDemo = run {
+    val stand = Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 10f, forearm = 155f)
+    val bottom = Pose(shin = 32f, thigh = -100f, torso = 22f, upperArm = 15f, forearm = 150f)
+    ExerciseDemo(
+        keyframes = listOf(
+            Keyframe(at = 0f, pose = stand),
+            Keyframe(at = 0.08f, pose = stand),
+            Keyframe(at = 0.30f, pose = Pose(shin = 18f, thigh = -55f, torso = 25f, upperArm = 12f, forearm = 152f)),
+            Keyframe(at = 0.52f, pose = bottom),
+            Keyframe(at = 0.60f, pose = bottom),
+            Keyframe(at = 0.78f, pose = Pose(shin = 14f, thigh = -40f, torso = 20f, upperArm = 12f, forearm = 153f)),
+            Keyframe(at = 0.92f, pose = stand),
+            Keyframe(at = 1f, pose = stand),
+        ),
+        phases = listOf(
+            DemoPhase(until = 0.08f, beat = DemoBeat.Set, cue = 0),
+            DemoPhase(until = 0.60f, beat = DemoBeat.Ease, cue = 1),
+            DemoPhase(until = 0.92f, beat = DemoBeat.Drive, cue = 2),
+            DemoPhase(until = 1f, beat = DemoBeat.Set, cue = 0),
+        ),
+        hold = BellHold.AtChest,
+        secondsPerRep = 3f,
+        still = 0.56f,
+    )
+}
+
+/** A swing's pose: the arms straight, [arm] from hanging. */
+private fun swingPose(shin: Float, thigh: Float, torso: Float, arm: Float) =
+    Pose(shin = shin, thigh = thigh, torso = torso, upperArm = arm, forearm = arm)

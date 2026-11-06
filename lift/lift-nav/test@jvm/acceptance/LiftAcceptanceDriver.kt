@@ -281,6 +281,16 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
         see("Your history")
     }
 
+    /** A figure doing [exercise] moves on its page. */
+    fun seeDemonstration(exercise: String) = see(hasContentDescription("$exercise, shown by a figure"))
+
+    fun seeNoDemonstration() = seeNo(hasContentDescription("shown by a figure", substring = true))
+
+    fun pauseDemonstration() {
+        tap("Pause")
+        see("Play")
+    }
+
     fun customExercises(vararg names: String) =
         assertEquals(names.toList(), app.storage.exercises.rows.value.map { it.name })
 

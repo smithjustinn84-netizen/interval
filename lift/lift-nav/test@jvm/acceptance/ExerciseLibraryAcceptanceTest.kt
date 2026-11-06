@@ -5,7 +5,7 @@ import kotlin.test.Test
 
 /**
  * `journeys/exercise-library.xml`: search and narrow the library, add an exercise from a search that finds
- * nothing, pick it on the Log sheet and log it, then see its equipment locked.
+ * nothing, pick it on the Log sheet and log it, then see its equipment locked, and a built-in shown by a figure.
  */
 class ExerciseLibraryAcceptanceTest {
     @Test
@@ -38,6 +38,7 @@ class ExerciseLibraryAcceptanceTest {
 
         openExercise("Copenhagen plank")
         seeMatches("Top knee on the bench", "Not logged yet. Its sets will show here.")
+        seeNoDemonstration()
         tap("Edit")
         see("Archive exercise")
         pressSystemBack()
@@ -83,5 +84,7 @@ class ExerciseLibraryAcceptanceTest {
         openExercise("Goblet squat")
         seeMatches("Kettlebell · Reps · Lower body", "Not logged yet. Its sets will show here.")
         seeNo("Edit")
+        seeDemonstration("Goblet squat")
+        pauseDemonstration()
     }
 }

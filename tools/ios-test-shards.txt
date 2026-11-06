@@ -1,5 +1,5 @@
 core-time core-platform interval-domain lift-domain
-lift-data lift-library lift-today lift-session
+lift-data lift-library lift-today lift-session lift-ui
 core interval-data interval-platform interval-platform-api
 interval-presets interval-settings interval-timer interval-mobility
 interval-workout interval-history app

@@ -29,7 +29,7 @@
     <action>Tap "Save exercise"</action>
     <action>Verify that the library is shown, the sheet gone, still searching "Copenhagen plank", with "1 exercise": a card headed "Yours · 1" with "Copenhagen plank" over "Bodyweight · Time a side · Core" and a chevron</action>
     <action>Tap "Copenhagen plank"</action>
-    <action>Verify that its page opens in a sheet: "Copenhagen plank" over "Bodyweight · Time a side · Core", "Cues" with "Top knee on the bench", an "Edit" button, and under "Your history" "Not logged yet. Its sets will show here."</action>
+    <action>Verify that its page opens in a sheet: "Copenhagen plank" over "Bodyweight · Time a side · Core", "Cues" with "Top knee on the bench", an "Edit" button, no figure, and under "Your history" "Not logged yet. Its sets will show here."</action>
     <action>Tap "Edit"</action>
     <action>Verify that the same sheet shows "Equipment" and "Measured by" chips, and "Archive exercise"</action>
     <action>Tap "Back" to close the sheet</action>
@@ -51,6 +51,9 @@
     <action>Tap "Back" to close the sheet</action>
     <action>Clear the search and tap "Goblet squat"</action>
     <action>Verify that its page shows "Goblet squat" over "Kettlebell · Reps · Lower body", no "Edit" button, and "Not logged yet. Its sets will show here."</action>
+    <action>Verify that above "Cues" a figure holding a kettlebell at its chest squats down and stands up again and again, its bell changing colour as it goes, with "Pause" in the card's corner</action>
+    <action>Tap "Pause"</action>
+    <action>Verify that the figure stops where it was and the button reads "Play"</action>
     <action>Tap "Back" to close the sheet, then "Back" to return to Train's Strength pillar</action>
   </actions>
 </journey>
