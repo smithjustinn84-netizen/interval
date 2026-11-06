@@ -157,6 +157,18 @@ class BellDemosTest {
         assertTrue(bottomsUp.bell.y < bottomsUp.hand.y - 20f, "The bottoms-up bell tips off the fist")
     }
 
+    @Test
+    fun `the get up rises from the floor to standing under a bell held straight up`() {
+        val lying = GetUpDemo.figureAt(0f)
+        assertTrue(Rig.FLOOR - lying.head.y < 40f, "The get-up starts with the head at ${lying.head}")
+        val tall = GetUpDemo.figureAt(0.5f)
+        assertTrue(tall.head.y < Rig.FLOOR - Rig.SHIN - Rig.THIGH - Rig.TORSO, "The get-up never stands")
+        (0..100).map { GetUpDemo.figureAt(it / 100f) }.forEach { figure ->
+            assertTrue(abs(figure.hand.x - figure.shoulder.x) < 6f, "The bell arm leans at ${figure.hand}")
+            assertTrue(figure.hand.y < figure.shoulder.y - 90f, "The bell arm bends at ${figure.hand}")
+        }
+    }
+
     /** Whether the bell lies back along the forearm, as in the rack, rather than past the fist. */
     private fun rests(figure: Figure): Boolean {
         val forearm = figure.hand - figure.elbow

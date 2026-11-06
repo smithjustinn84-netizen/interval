@@ -35,5 +35,6 @@ private val builtInDemos: Map<Exercise, ExerciseDemo> by lazy {
         BuiltInExercise.SuitcaseCarry to SuitcaseCarryDemo,
         BuiltInExercise.RackCarry to RackCarryDemo,
         BuiltInExercise.BottomsUpCarry to BottomsUpCarryDemo,
+        BuiltInExercise.GetUp to GetUpDemo,
     )
 }

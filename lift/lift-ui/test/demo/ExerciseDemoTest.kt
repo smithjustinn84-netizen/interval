@@ -1,10 +1,10 @@
 package dev.justinsmith.lift.ui.demo
 
 import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.Equipment
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -12,11 +12,13 @@ class ExerciseDemoTest {
     private val demos = BuiltInExercise.entries.mapNotNull { it.demo }
 
     @Test
-    fun `the bell lifts are drawn and nothing else yet`() {
+    fun `every bell lift is drawn and nothing else yet`() {
         assertSame(TwoHandSwingDemo, BuiltInExercise.TwoHandSwing.demo)
         assertSame(GobletSquatDemo, BuiltInExercise.GobletSquat.demo)
-        assertNull(BuiltInExercise.BarbellSnatch.demo)
-        assertNull(BuiltInExercise.PushUp.demo)
+        BuiltInExercise.entries.forEach { exercise ->
+            val drawn = exercise.equipment == Equipment.Kettlebell
+            assertEquals(drawn, exercise.demo != null, "$exercise is drawn: ${exercise.demo != null}")
+        }
     }
 
     @Test
