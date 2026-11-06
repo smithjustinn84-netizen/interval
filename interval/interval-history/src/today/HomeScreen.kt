@@ -35,6 +35,10 @@ import dev.justinsmith.interval.history.resources.history_empty_plan
 import dev.justinsmith.interval.history.resources.history_lift_any
 import dev.justinsmith.interval.history.resources.history_lift_session
 import dev.justinsmith.interval.history.resources.history_up_next
+import dev.justinsmith.interval.history.resources.home_before_class
+import dev.justinsmith.interval.history.resources.home_before_climbing
+import dev.justinsmith.interval.history.resources.home_before_run
+import dev.justinsmith.interval.history.resources.home_before_sport
 import dev.justinsmith.interval.history.resources.home_done_text
 import dev.justinsmith.interval.history.resources.home_done_title
 import dev.justinsmith.interval.history.resources.home_empty_text
@@ -124,8 +128,9 @@ fun HomeRoute(
                 startWorkout(flow)
             },
             onStartPick = { pick ->
-                viewModel.putOnTimer(pick)
-                startWorkout(null)
+                val flow = flowKeyOf(pick.preset.config)
+                if (flow == null) viewModel.putOnTimer(pick)
+                startWorkout(flow)
             },
             onStartLift = { program ->
                 // Lift starts nothing while a session is in progress, so with one under way this resumes it.
@@ -211,11 +216,7 @@ private fun UpNext(next: UpNextItem, later: List<UpNextItem>, actions: HomeActio
     val palette = IntervalTheme.palette
     SummaryCard(modifier) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
-            Text(
-                stringResource(Res.string.history_up_next, dayHeading(next.day)),
-                style = IntervalTheme.type.caption,
-                color = palette.textDim,
-            )
+            Text(upNextCaption(next), style = IntervalTheme.type.caption, color = palette.textDim)
             Text(upNextTitle(next), style = IntervalTheme.type.value, color = palette.text)
             Text(upNextDetail(next), style = IntervalTheme.type.meta, color = palette.textDim)
         }
@@ -238,15 +239,34 @@ private fun UpNext(next: UpNextItem, later: List<UpNextItem>, actions: HomeActio
 
             is UpNextItem.SportDay ->
                 if (next.day == HistoryDay.Today) LogSportButton(next.sport, actions, Modifier.fillMaxWidth())
+
+            // Started as any workout is, and known for the flow it is by its shape.
+            is UpNextItem.Flow ->
+                StartButton({ actions.onStart(next.flow.name, next.flow.config) }, Modifier.fillMaxWidth())
         }
         UpNextLater(later)
     }
 }
 
-/** What leads Up next: the plan's name, the program's, or a session on Lift. */
+/** The line over what leads: the day it is up next on, or, for a flow suggested, the sport it comes before. */
+@Composable
+private fun upNextCaption(next: UpNextItem): String = when (next) {
+    is UpNextItem.Flow -> when (val sport = next.sport) {
+        Sport.Bjj -> stringResource(Res.string.home_before_class)
+        Sport.Climbing -> stringResource(Res.string.home_before_climbing)
+        Sport.Running -> stringResource(Res.string.home_before_run)
+        is Sport.Custom -> stringResource(Res.string.home_before_sport, sport.name)
+    }
+
+    else -> stringResource(Res.string.history_up_next, dayHeading(next.day))
+}
+
+/** What leads Up next: the plan's name, the program's, a session on Lift, a sport's day or a flow. */
 @Composable
 private fun upNextTitle(next: UpNextItem): String = when (next) {
     is UpNextItem.Planned -> next.name
+
+    is UpNextItem.Flow -> next.flow.name
 
     is UpNextItem.Lift -> next.programDay?.let { programName(it.program) }
         ?: stringResource(Res.string.history_lift_session)
@@ -269,6 +289,10 @@ private fun upNextDetail(next: UpNextItem): String = when (next) {
     } ?: stringResource(Res.string.history_lift_any)
 
     is UpNextItem.SportDay -> stringResource(Res.string.sport_counts)
+
+    is UpNextItem.Flow -> joined(
+        listOfNotNull(workoutDescription(next.flow.config), next.flow.note, formatClock(next.totalSeconds)),
+    )
 }
 
 /** Nothing up next: what Today is waiting for, and the two ways to give it one. */
@@ -341,7 +365,7 @@ private fun Picks(state: HomeUiState, actions: HomeActions, modifier: Modifier =
     }
 }
 
-/** A preset that fits: its name over its shape and length, and a Start that says which it starts. */
+/** A preset or a flow that fits: its name over its shape and length, and a Start that says which it starts. */
 @Composable
 private fun PickRow(pick: QuickPick, onStart: () -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
@@ -353,7 +377,8 @@ private fun PickRow(pick: QuickPick, onStart: () -> Unit, modifier: Modifier = M
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
-        StripeMark(palette.workMark, height = IntervalSizes.historyMarkHeight)
+        // A flow takes the rest mark, as mobility does on Train and in History.
+        StripeMark(if (pick.mobility) palette.restMark else palette.workMark, height = IntervalSizes.historyMarkHeight)
         Column(Modifier.weight(1f)) {
             Text(pick.preset.name, style = IntervalTheme.type.label, color = palette.text)
             Text(

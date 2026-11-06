@@ -4,10 +4,12 @@ import dev.justinsmith.lift.data.FollowingEntity
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * `journeys/sport-days.xml`: a class or a day on the wall, trained away from the app, goes on the plan, shows on
- * the week beside the workouts done here, and is logged with one tap, which counts it toward the week.
+ * the week beside the workouts done here, and is logged with one tap, which counts it toward the week. On its day
+ * a flow to do before it leads Today, with the class beside it.
  */
 class SportDaysAcceptanceTest {
     // The app's clock starts on Thursday 1 January 1970.
@@ -20,7 +22,7 @@ class SportDaysAcceptanceTest {
 
         seeTodayTab()
         seeSportOnTheWeek("Today, BJJ planned")
-        seeUpNext("BJJ class")
+        seeAlsoToday("BJJ class")
     }
 
     @Test
@@ -29,7 +31,7 @@ class SportDaysAcceptanceTest {
         planSportEvery("BJJ", weekday = "Thursday")
         goBack()
 
-        seeUpNext("BJJ class")
+        seeAlsoToday("BJJ class")
         logClassFromToday()
         seeSportOnTheWeek("Today, done, BJJ logged")
         seeThisWeekOnToday("1 workout")
@@ -39,7 +41,43 @@ class SportDaysAcceptanceTest {
         undoNotice()
         sportDaysLogged(0)
         seeSportOnTheWeek("Today, BJJ planned")
+        seeAlsoToday("BJJ class")
+    }
+
+    @Test
+    fun `on a class day a flow leads and once it is done the class does`() = acceptanceScenario {
+        openPlanFromToday()
+        planSportEvery("BJJ", weekday = "Thursday")
+        goBack()
+
+        seeFlowLeads("Before class", "Hips and shoulders")
+        seeAlsoToday("BJJ class")
+        startFlowFromToday()
+        seePhase("Get ready")
+        seeMove("90/90 hip switch", "Move 1 of 6")
+        letTimePass(481.seconds)
+        seeFlowSaved("Hips and shoulders", moves = 6)
+        timerIsAsItWas()
+        closeSummary()
+
+        // The flow done, the class is what is left of the day, and leads it.
+        seeTodayTab()
+        seeNoFlowSuggested()
         seeUpNext("BJJ class")
+        logClassFromToday()
+        sportDaysLogged(1)
+        seeThisWeekOnToday("1 mobility · 1 sport day")
+        seeNothingMoreDue()
+    }
+
+    @Test
+    fun `before a day on the wall the wrists lead`() = acceptanceScenario {
+        openPlanFromToday()
+        planSportEvery("Climbing", weekday = "Thursday")
+        goBack()
+
+        seeFlowLeads("Before climbing", "Wrists and fingers")
+        seeAlsoToday("Climbing")
     }
 
     @Test
@@ -58,7 +96,8 @@ class SportDaysAcceptanceTest {
         goBack()
         openTab("Today")
 
-        seeUpNext("BJJ class")
+        seeFlowLeads("Before class", "Hips and shoulders")
+        seeAlsoToday("BJJ class")
         seeAlsoToday("15-minute kettlebell plan")
         seeProgramDayStandsBack()
 
@@ -95,6 +134,7 @@ class SportDaysAcceptanceTest {
 
         seeUpNext("Lift session")
         seeAlsoToday("BJJ class")
+        seeNoFlowSuggested()
         logClassFromToday()
 
         seeSportOnTheWeek("Today, done, BJJ logged")

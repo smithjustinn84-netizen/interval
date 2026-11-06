@@ -138,7 +138,7 @@ class HomeViewModelTest : MainDispatcherTest() {
         repository.plans.planOnce(PlanWorkout.SportDay(Sport.Climbing), TODAY)
 
         val state = viewModel().state.value
-        val next = assertIs<UpNextItem.SportDay>(state.upNext.single())
+        val next = assertIs<UpNextItem.SportDay>(state.upNext.single { it !is UpNextItem.Flow })
         assertEquals(Sport.Climbing, next.sport)
         val today = state.week.single { it.today }
         assertEquals(DayState.Rest, today.state)
@@ -170,8 +170,9 @@ class HomeViewModelTest : MainDispatcherTest() {
         repository.plans.planOnce(PlanWorkout.SportDay(Sport.Bjj), TODAY)
 
         val agenda = viewModel().state.value.agenda
-        assertIs<UpNextItem.SportDay>(agenda.lead)
-        assertIs<UpNextItem.Lift>(agenda.also.single())
+        assertIs<UpNextItem.Flow>(agenda.lead)
+        assertIs<UpNextItem.SportDay>(agenda.also.first())
+        assertIs<UpNextItem.Lift>(agenda.also.last())
 
         repository.history.logSport(Sport.Bjj, TODAY)
         val logged = viewModel().state.value.agenda
@@ -180,16 +181,42 @@ class HomeViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun `the presets offered fit the minutes picked`() {
+    fun `before a day's sport its flow leads until mobility is done or the sport logged`() {
+        repository.plans.planOnce(PlanWorkout.SportDay(Sport.Climbing), TODAY)
+        repository.settings.updateConfig { it.copy(prepSeconds = 30) }
+
+        val lead = assertIs<UpNextItem.Flow>(viewModel().state.value.agenda.lead)
+        assertEquals("Wrists and fingers" to Sport.Climbing, lead.flow.name to lead.sport)
+        // After the Timer's own get-ready, half a minute here, not the flow's ten seconds.
+        assertEquals(290 + 30, lead.totalSeconds)
+
+        repository.history.recordWorkout(lead.flow.config(prepSeconds = 30), elapsedSeconds = 320)
+        val done = viewModel().state.value.agenda
+        assertIs<UpNextItem.SportDay>(done.lead)
+        assertTrue(done.also.isEmpty())
+    }
+
+    @Test
+    fun `a sport on another day suggests nothing today`() {
+        repository.plans.planOnce(PlanWorkout.SportDay(Sport.Bjj), TODAY + 1)
+
+        assertTrue(viewModel().state.value.upNext.none { it is UpNextItem.Flow })
+    }
+
+    @Test
+    fun `the presets offered fit the minutes picked and a flow that fits follows them`() {
         assertEquals(DEFAULT_PICK_MINUTES, viewModel.state.value.minutes)
         assertEquals(
-            listOf("HIIT 30/30", "Hangboard", "Tabata"),
+            listOf("HIIT 30/30", "Hangboard", "Tabata", "Spine and hamstrings"),
             viewModel.state.value.picks.map { it.preset.name },
         )
 
         viewModel.setMinutes(5)
         assertEquals(5, viewModel.state.value.minutes)
-        assertEquals(listOf("Hangboard", "Tabata"), viewModel.state.value.picks.map { it.preset.name })
+        assertEquals(
+            listOf("Hangboard", "Tabata", "Wrists and fingers"),
+            viewModel.state.value.picks.map { it.preset.name },
+        )
 
         // Not one of the lengths offered: nothing changes.
         viewModel.setMinutes(7)

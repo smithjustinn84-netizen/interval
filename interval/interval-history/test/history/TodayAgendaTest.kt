@@ -3,6 +3,7 @@ package dev.justinsmith.interval.history
 import dev.justinsmith.interval.fakes.TODAY
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.flowBefore
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.program
 import kotlin.test.Test
@@ -16,6 +17,9 @@ class TodayAgendaTest {
     private val climbing = UpNextItem.SportDay(2, TODAY, HistoryDay.Today, Sport.Climbing)
     private val tabata = UpNextItem.Planned(3, TODAY, HistoryDay.Today, "Tabata", IntervalConfig())
     private val tomorrow = UpNextItem.Planned(4, TODAY + 1, HistoryDay.Tomorrow, "HIIT", IntervalConfig())
+
+    /** The flow suggested for before the class: no plan, so it only ever leads. */
+    private val flow = UpNextItem.Flow(TODAY, HistoryDay.Today, flowBefore(Sport.Bjj), Sport.Bjj)
 
     /** The followed program's next day with no plan of its own: due every day. */
     private val unplanned = UpNextItem.Lift(TODAY, HistoryDay.Today, programDay, minutes = 15)
@@ -83,6 +87,31 @@ class TodayAgendaTest {
         val agenda = todayAgenda(listOf<UpNextItem>(underWay, bjj))
         assertEquals(underWay, agenda.lead)
         assertEquals(emptyList(), agenda.also)
+        assertEquals(listOf<UpNextItem>(bjj), agenda.later)
+    }
+
+    @Test
+    fun `on a class day the flow before it leads with the class and the program's day beside it`() {
+        val agenda = todayAgenda(listOf<UpNextItem>(unplanned, flow, bjj, tomorrow))
+        assertEquals(flow, agenda.lead)
+        assertEquals(listOf<UpNextItem>(bjj, unplanned), agenda.also)
+        assertEquals(listOf<UpNextItem>(tomorrow), agenda.later)
+    }
+
+    @Test
+    fun `a workout planned leads over the flow which is then not shown`() {
+        val agenda = todayAgenda(listOf<UpNextItem>(flow, tabata, bjj))
+        assertEquals(tabata, agenda.lead)
+        assertEquals(listOf<UpNextItem>(bjj), agenda.also)
+        assertEquals(emptyList(), agenda.later)
+        assertEquals(listOf<UpNextItem>(tabata, bjj), agenda.all)
+    }
+
+    @Test
+    fun `a session under way leads and the flow is not shown`() {
+        val underWay = unplanned.copy(resume = true, minutes = null)
+        val agenda = todayAgenda(listOf<UpNextItem>(underWay, flow, bjj))
+        assertEquals(underWay, agenda.lead)
         assertEquals(listOf<UpNextItem>(bjj), agenda.later)
     }
 

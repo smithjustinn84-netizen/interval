@@ -160,6 +160,13 @@ private fun UpNextLead(next: UpNextItem, actions: HistoryActions, modifier: Modi
                 )
             }
 
+            // Left out of History's list (HistoryViewModel), which is of what is planned: drawn all the same.
+            is UpNextItem.Flow -> {
+                StripeMark(palette.restMark, height = IntervalSizes.historyMarkHeight)
+                UpNextText(next.flow.name, workoutDescription(next.flow.config), Modifier.weight(1f))
+                StartPill(primary = true, onClick = { actions.onStart(next.flow.name, next.flow.config) })
+            }
+
             is UpNextItem.SportDay -> {
                 val name = sportTitle(next.sport)
                 StripeMark(palette.textDim, height = IntervalSizes.historyMarkHeight)
@@ -196,6 +203,8 @@ private fun upNextName(item: UpNextItem): String = when (item) {
         ?: stringResource(Res.string.history_lift_session)
 
     is UpNextItem.SportDay -> sportTitle(item.sport)
+
+    is UpNextItem.Flow -> item.flow.name
 }
 
 /** A group heading's look, inside a card. */

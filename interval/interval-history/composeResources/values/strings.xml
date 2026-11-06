@@ -224,6 +224,10 @@
     <string name="sport_log_it">Log it</string>
     <string name="notice_sport_logged">%1$s logged</string>
     <string name="history_sport_logged">Logged</string>
+    <string name="home_before_class">Before class</string>
+    <string name="home_before_climbing">Before climbing</string>
+    <string name="home_before_run">Before your run</string>
+    <string name="home_before_sport">Before %1$s</string>
     <string name="home_also_today">Also today</string>
     <string name="home_do_it_now">Do it now</string>
     <string name="sport_state_passed">Not logged</string>

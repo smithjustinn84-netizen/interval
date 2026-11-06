@@ -1,18 +1,19 @@
 <journey name="Today">
   <description>
     The app opens on Today. With nothing planned it leads to the plan; a session planned for today is up next
-    there and starts from it; a preset that fits a few minutes starts from "Or pick by time"; and a program
-    followed puts its next day up next, saying about how long it takes. Run on a fresh install
+    there and starts from it; a preset that fits a few minutes starts from "Or pick by time", and so does the
+    flow that fits; and a program followed puts its next day up next, saying about how long it takes. Run on a fresh install
     (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
     <action>Verify that the Today tab is shown and selected, with "This week" and "Nothing planned"</action>
     <action>Tap "5 min" under "Or pick by time"</action>
-    <action>Verify that "Tabata" is listed with its length and a "Start"</action>
+    <action>Verify that "Tabata" is listed with its length and a "Start", and under the presets "Wrists and fingers" with "5 moves · 5:00"</action>
     <action>Tap the "Start" on the "Tabata" row</action>
     <action>Verify that the workout shows "Get ready", then tap "Skip" and verify "Work" and "Round 1 of 8"</action>
     <action>Tap "End", then "End workout" in the dialog</action>
     <action>Verify that the Today tab is shown again</action>
+    <action>Tap the "Start" on the "Wrists and fingers" row and verify that the workout shows "Get ready" with "Wrist circles" and "Move 1 of 5"; tap "End", then "End workout"</action>
     <action>Tap "Plan your week"</action>
     <action>Tap the "+" on today's weekday row in "Routine"</action>
     <action>In the "Add to plan" sheet, tap "Lift", then "Add to plan"</action>

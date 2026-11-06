@@ -7,6 +7,7 @@ import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.lift.domain.ProgramDay
+import dev.justinsmith.interval.timer.Flow as MobilityFlow
 
 data class HistoryItem(
     /** The matching preset's name, or null for a workout no preset has; the row then leads with its shape. */
@@ -97,6 +98,18 @@ sealed interface UpNextItem {
         override val epochDay: Long,
         override val day: HistoryDay,
         val sport: Sport,
+    ) : UpNextItem
+
+    /**
+     * A flow suggested for before [sport], on a day with it still to log and no mobility done: not planned, so it
+     * has no plan to do, and it goes once either is. [totalSeconds] is its length after the get-ready countdown.
+     */
+    data class Flow(
+        override val epochDay: Long,
+        override val day: HistoryDay,
+        val flow: MobilityFlow,
+        val sport: Sport,
+        val totalSeconds: Int = flow.config.totalSeconds,
     ) : UpNextItem
 }
 

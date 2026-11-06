@@ -73,6 +73,13 @@ internal fun AlsoToday(also: List<UpNextItem>, actions: HomeActions, modifier: M
                             formatClock(item.config.totalSeconds),
                         ),
                     ) { StartPill(primary = false, onClick = { actions.onStart(item.name, item.config) }) }
+
+                    // Only ever the lead (todayAgenda): a row all the same, should that change.
+                    is UpNextItem.Flow -> AlsoRow(
+                        IntervalTheme.palette.restMark,
+                        item.flow.name,
+                        workoutDescription(item.flow.config),
+                    ) { StartPill(primary = false, onClick = { actions.onStart(item.flow.name, item.flow.config) }) }
                 }
             }
         }

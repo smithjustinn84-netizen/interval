@@ -104,11 +104,17 @@ class HomeViewModel(
     ) { (history, sports, lifting), planned, app, _ -> buildState(history, sports, lifting, planned, app) }
 
     private val picks = combine(presetStore.presets, settingsStore.config, minutes) { presets, onTimer, minutes ->
-        minutes to presets.fitting(minutes, onTimer)
+        Triple(minutes, presets.fitting(minutes, onTimer), onTimer.prepSeconds)
     }
 
     val state: StateFlow<HomeUiState> =
-        combine(built, picks) { state, (minutes, picks) -> state.copy(minutes = minutes, picks = picks) }
+        combine(built, picks) { state, (minutes, picks, prepSeconds) ->
+            // A flow suggested runs after the get-ready the Timer is set to, as one picked by time does.
+            val upNext = state.upNext.map {
+                if (it is UpNextItem.Flow) it.copy(totalSeconds = it.flow.config(prepSeconds).totalSeconds) else it
+            }
+            state.copy(minutes = minutes, picks = picks, upNext = upNext)
+        }
             .flowOn(computation)
             .stateIn(viewModelScope, SharingStarted.Eagerly, HomeUiState.Loading)
 

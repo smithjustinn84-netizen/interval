@@ -36,6 +36,16 @@ class TodayAcceptanceTest {
         seeTodayTab()
     }
 
+    @Test
+    fun `a flow that fits is offered by time and runs with the timer left alone`() = acceptanceScenario {
+        pickMinutes(5)
+        seePick("Wrists and fingers")
+        startPick("Wrists and fingers")
+        seePhase("Get ready")
+        seeMove("Wrist circles", "Move 1 of 5")
+        timerIsAsItWas()
+    }
+
     // The app's clock starts on Thursday 1 January 1970.
     @Test
     fun `a session planned for today is up next on today and starts from it`() = acceptanceScenario {

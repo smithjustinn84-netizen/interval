@@ -442,6 +442,14 @@ class HistoryViewModelTest : MainDispatcherTest() {
     }
 
     @Test
+    fun `the flow Today suggests before a class is not in History's up next`() {
+        repository.plans.planOnce(PlanWorkout.SportDay(Sport.Bjj), TODAY)
+
+        val upNext = viewModel.state.value.upNext
+        assertIs<UpNextItem.SportDay>(upNext.single())
+    }
+
+    @Test
     fun `a sport logged is a row of its day in the log and on its day's sheet`() {
         repository.history.recordWorkout(tabata, tabata.totalSeconds)
         repository.plans.planOnce(PlanWorkout.SportDay(Sport.Bjj), MONDAY)

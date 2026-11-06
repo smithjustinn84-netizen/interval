@@ -53,6 +53,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   many were mobility ("1 lift · 1 mobility · 1 sport day"). History names it ("Wrists and fingers", "Mobility ·
   5 moves"), "Repeat now" runs the flow again, and Health Connect and Apple Health get it as stretching.
   Mobility is also an activity the Timer can be set to, with its own calorie estimate.
+- Before class: on a day with a sport planned and not yet logged, Today leads with a flow to do before it
+  ("Before class · Hips and shoulders", the wrists before climbing) under one Start, with the class and its Log
+  it under "Also today" beside the program's day. Once the flow is done, or the class logged, Today is as it
+  was; a workout planned that day still leads. "Or pick by time" offers the longest flow that fits the minutes
+  picked, after the presets.
 
 ### Changed
 - The Timer is no longer a tab: it is a page over Train's Conditioning pillar, opened by the "Timer" row at the

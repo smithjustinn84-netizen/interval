@@ -234,7 +234,8 @@ class HistoryViewModel(
                 ShapeRow(presets.nameOf(tally.config), tally.config, tally.count, tally.seconds)
             },
             // Led as Today leads it: on a day with a sport, the program's day stands back behind it.
-            upNext = todayAgenda(timestamps.upNext(log, planned, lifting, today)).all,
+            // The flow suggested before a day's sport is Today's to offer: History lists what is planned.
+            upNext = todayAgenda(timestamps.upNext(log, planned, lifting, today).filter { it !is UpNextItem.Flow }).all,
             hasPlans = planned.isNotEmpty() || lifting.programDay != null,
             programDay = lifting.programDay,
             daySheet = view.openDay?.let { day ->
