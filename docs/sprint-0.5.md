@@ -59,6 +59,7 @@ line is after ticket 5; ticket 4 sits below it.
 - `versionName` 0.5.0 and `versionCode` 5 in `apps/androidApp/module.yaml` and the pbxproj
   (`tools/check_versions.py`), `## [0.5.0] — Unreleased` in the changelog.
 - Done when: `main` says 0.5.0.
+- As built: `8d029060` opened 0.5.0 (`versionCode` 5) across Android and iOS and added `## [0.5.0] — Unreleased`.
 
 **1. The course walks blocks** · M, a pure refactor
 - `Interval` gains `block` (0-based), and `Interval.comparedTo` (`interval-domain/src/timer/Course.kt`) orders by
@@ -72,6 +73,8 @@ line is after ticket 5; ticket 4 sits below it.
 - `StoredProgress` saves `block` with a default of 0, so a workout saved by 0.4 restores.
 - Done when: every existing test and acceptance spec passes unchanged; `CourseTest` pins the order of
   positions across blocks.
+- As built: `2dc2f7af` moved every readout count, set cue, status-bar boundary and Timeline round-mark check onto
+  `Course`, with `StoredProgress.block` defaulting to 0.
 
 **2. Sequences: the domain, the engine and storage** · L — the headline
 - Domain: `Block`, `IntervalConfig.then` (at most 9 blocks after the first), `blockRestSeconds`
@@ -124,7 +127,31 @@ line is after ticket 5; ticket 4 sits below it.
   index (`ConfigField.BlockRest` is the whole workout's), and `withBlockAdded`, `withoutBlock` and
   `withBlockMoved` reshape the list. `RoutineDescription` needed nothing.
 
-**5. The week on iOS's Home Screen** · L
+### Added during the sprint — Today, Train's three pillars, sport days, mobility and Set up
+
+Built on `main` after ticket 3 (`0a1d503e` to `92009e8b`), turning the app's navigation around a weekly training
+agenda:
+- **Today and duration estimates** (`0a1d503e`, `0d28633c`): `TodayTab` (`HomeRoute` in `interval-history`) becomes
+  the first tab and root of the back stack, showing the week against the goal, Up next under one Start, and "Or
+  pick by time" (5–30 min); `Estimate.kt` (`lift-domain`) estimates how long each program day takes from sets, lift
+  pace, EMOM minutes and rest between sets.
+- **Train's pillars and the Timer** (`396cb34c`, `076e25a9`): `Train` replaces the Lift tab as one bar item over
+  Strength (`LiftTab`), Conditioning (`ConditioningTab`, the presets) and Mobility (`MobilityTab`), cross-fading
+  under a steady `PillarPicker` (`pillarSwap`); the `Timer` becomes a page pushed over Conditioning (`showTimer`).
+- **Sport days** (`a152135b`, `0bc794e3`, `db212085`): classes and days trained away from the app (`Sport`: BJJ,
+  Climbing, Running or custom) are planned as `PlanWorkout.SportDay` and logged per day (`SportLogEntity`,
+  `AppDatabase` version 13, `ExportBundle.SCHEMA` 6), counting toward the weekly goal, streak and widget without
+  penalizing unlogged days as missed.
+- **Mobility flows** (`fd4ef544`, `0908404c`, `794dd69e`): five follow-along `Flow`s (`interval-domain` and the new
+  `interval-mobility` module, 32 modules in all) run on the interval engine as multi-block `Activity.Mobility`
+  courses with spoken move/side cues, sync to Health Connect and Apple Health as stretching, offer the longest fit
+  under "Or pick by time", and lead Today before an unlogged sport day (`flowBefore`).
+- **Set up and first run** (`2327d3d2`, `3427da2f`, `92009e8b`): `WeekSetup` (`apps/app/src/weeksetup/`) asks four
+  questions (sport, days, bells owned, session length) to pick a `starterProgram` (`Program.oneBell`), spread
+  strength days via `buildWeek`, save equipment and set the weekly goal (`AppSettings.sessionMinutes`,
+  `ExportBundle.SCHEMA` 7), opening once on a fresh empty install (`FirstRun.kt`).
+
+**5. The week on iOS's Home Screen** · L (open)
 - Spike first, half a day: a second, Swift-only target in `apps/iosApp/module.xcodeproj` beside `app` (the
   toolchain allows one target with its Kotlin phase, and the extension can't link `KotlinModules`), and an App
   Group on the simulator with `DEVELOPMENT_TEAM = ""`. If either fails the ticket drops below the cut line, and

@@ -87,10 +87,10 @@ that depends on the data module.
   - `MainDispatcherTest`: the base class for a ViewModel's test, which stands in a test dispatcher
     for `Dispatchers.Main` (unconfined unless the test passes another).
   - `FixedTimestampFormatter`: time-zone free; `date()` is `"day N"`, `monthTitle()` `"M/YYYY"`.
-  - `FakeAppInfo`, `RecordingSharer`, and the tests' calendar: `TODAY` (Thursday 15 October 2026), `noonOf`,
+  - `FakeAppInfo`, `RecordingSharer`, `RecordingHealthStore`, `RecordingFileOpener`, `SequentialIds` (`IdGenerator`), and the tests' calendar: `TODAY` (Thursday 15 October 2026), `noonOf`,
     `DAY_MILLIS`.
-  - `fakeCorePlatformModule(...)` stands in for core's `corePlatformModule`: a wall clock, the fixed
-    formatter, `FakeAppInfo` and a sharer, for `testKoin` and `liftTestKoin` alike.
+  - `fakeCorePlatformModule(...)` stands in for core's `corePlatformModule`: a wall clock, `IdGenerator`, the fixed
+    formatter, `FakeAppInfo`, a sharer and `RecordingHealthStore`, for `testKoin` and `liftTestKoin` alike.
 - **`core/core-testing/src@jvm/ui/UiTestHarness.kt`**:
   - `runUiTest(Window.Phone | PhoneSideways | Tablet | TabletPortrait | Desktop)`: sized windows that match the previews. The
     window size drives the same layout decisions as on a device (bar vs rail, Settings as a
@@ -102,7 +102,7 @@ that depends on the data module.
   - It exports `$compose.uiTest` and carries Skiko's natives (`$compose.desktop.currentOs`, see KTC-5525)
     and `kotlinx-coroutines-swing` (`Dispatchers.Main` for `viewModelScope` when real routes are composed).
 - **`interval-testing`** (`dev.justinsmith.interval.fakes`):
-  - `FakeStorage`: an `InMemoryDataStore` plus `FakeHistoryDao`, `FakePresetDao` and `FakePlannedDao`. Its
+  - `FakeStorage`: an `InMemoryDataStore` plus `FakeHistoryDao`, `FakePresetDao`, `FakePlannedDao` and `FakeSportLogDao` (alongside narrow `InMemorySettingsStore` and `InMemoryPresetStore` fakes for isolated ViewModel tests). Its
     `repository()` runs writes unconfined over fakes that never suspend, so a write has landed by the
     time the call returns. Two repositories over one `FakeStorage` are the app before and after a
     restart. That hides code that reads repository state back right after writing it, which in the
@@ -115,8 +115,8 @@ that depends on the data module.
   - `fakePlatformModule(...)` binds the player, background workout and reminders for Koin;
     `fakeStorageModule(...)` binds a `FakeStorage` in place of the real `storageModule`.
   - `tabataPreset`, `hiitPreset`, `hangboardPreset`: the built-ins tests lean on, found by name.
-- **`lift-testing`** (`dev.justinsmith.lift.fakes`): `FakeLiftStorage` over the six fake DAOs, with
-  `repository()` and `finished(...)`; `FakeIntervalActivity`; `RecordingBeeper`; `fakeLiftPlatformModule`,
+- **`lift-testing`** (`dev.justinsmith.lift.fakes`): `FakeLiftStorage` over the six fake DAOs (plus `InMemoryGearStore`), with
+  `repository()` and `finished(...)`; `FakeIntervalActivity`; `RecordingBeeper`, `RecordingKeepAlive` and `LiftTestClock` (moving the wall clock and the timers' monotonic time together); `fakeLiftPlatformModule`,
   `fakeLiftStorageModule`; `liftTestKoin(...)`, Lift's part of the container over them.
 - **`testKoin(...)`** (`apps/app/test/fakes/TestKoin.kt`): the app's real container over the fakes of both
   sides, with the `WallClock` fixed at `now` (or following `clock`), and a workout counting `timeSource`
@@ -132,13 +132,13 @@ that depends on the data module.
   straight after closing it, as Android does when the Activity reopens in the same process. All are
   JVM-only because Room's Android in-memory builder needs a `Context`, and common tests also run as
   Android local tests without Robolectric.
-- **`AppContent(koin)`** (`apps/app/src/App.kt`) is `App()` with its container passed in. `App()` stays
+- **`AppContent(koin, ..., offerSetup)`** (`apps/app/src/App.kt`) is `App()` with its container passed in (`offerSetup` defaults to `false`, while `App()` passes `true`). `App()` stays
   parameterless for the entry points.
-- **`appTest(window, storage, lift, now) { app -> }`** (`apps/app/test@jvm/AppHarness.kt`) composes
-  `AppContent` over `testKoin`: real ViewModels, repository and navigation over fake platform services.
+- **`appTest(window, storage, lift, now, timeout, firstRun) { app -> }`** (`apps/app/test@jvm/AppHarness.kt`) composes
+  `AppContent` over `testKoin`: real ViewModels, repository and navigation over fake platform services (`firstRun = true` opts into the first-run `Set up` check).
   It is the one whole-app host, used by `AppNavigationTest`, `LiftFlowTest` and the acceptance specs. Its
   `AppFixture` holds the container and `repository`, both sides' fake storage, the wall `clock`,
-  `advance(duration)` for a running workout's time (which otherwise stands still), and `back()` (or
+  `advance(duration)` for a running workout's time (which otherwise stands still), `files` (`RecordingFileOpener`), `shortcut`, and `back()` (or
   `backInput`, for a gesture step by step), the system back gesture. Two runs over one `storage` are the
   app before and after a restart.
 - **`liftAppTest(...)`** (`lift/lift-nav/test@jvm/ui/LiftUiTestHarness.kt`) hosts Lift's pages on a back stack of
@@ -272,7 +272,8 @@ The specs hold no selectors, and the drivers keep these rules:
    `addARepTo(set)`). A spec may `see` or `tap` the words its journey quotes; anything that needs a
    matcher, a content description or more than one step becomes a driver operation.
 
-The specs drive the app on a phone window. A tablet layout stays in `AppNavigationTest`, and motion is
+The specs drive the app on a phone window (`ImportAcceptanceTest` and `SaveFailedAcceptanceTest` cover flows whose
+file picker or failing disk has no `.xml` journey). A tablet layout stays in `AppNavigationTest`, and motion is
 checked against `mainClock`, outside the drivers.
 
 ## Journeys (on-device end to end)
@@ -300,20 +301,25 @@ what it is about (`setup.xml`). A shortcut never opens it; it waits for the firs
 | `train.xml` | Train's pillars: it opens on Strength, Conditioning lists the presets and Mobility the flows under the same title and picker, the bar reopens the pillar last shown, Back returns to Today | `TrainAcceptanceTest` |
 | `mobility.xml` | A flow opens from Train's Mobility pillar on what is in it and runs on the workout screen move by move, a side at a time, with the Timer left as it was; finished, it counts toward the week as mobility, History names it, and Repeat now runs the flow again | `MobilityAcceptanceTest` |
 | `start-workout.xml` | Edit work time via the sheet, start, pause/resume, skip, end with nothing saved | `StartWorkoutAcceptanceTest` |
+| `warm-up-cool-down.xml` | Set a warm-up and a cool-down on the Timer, run the workout through both, and save its shape as a preset | `WarmUpCoolDownAcceptanceTest` |
+| `sets.xml` | Set two sets of three rounds with a minute between them on the Timer, run through the rest between sets, and verify the notification says the set | `SetsAcceptanceTest` |
+| `ladder.xml` | Set a climbing ladder on the Timer, run into the second round, and see its longer clock | `LadderAcceptanceTest` |
+| `sequence.xml` | Add a block from the Timer's Sets sheet, shape it and the rest between blocks in the editor, run into the second block (the notification says it), save it as a preset | `SequenceAcceptanceTest` (a seeded preset of two blocks run through; a block added on the Timer and run) |
 | `history.xml` | Set a weekly goal from the first run, end after a round, find it in History and open it, see it on the month, clear History | `HistoryAcceptanceTest` |
 | `plan-lift.xml` | Plan a session on Lift for today, start it from Up next, log a set and finish, find the plan done | `PlanLiftAcceptanceTest` |
 | `presets.xml` | On the presets (Train's Conditioning pillar, under the Timer): save the Timer's settings, put a built-in on the Timer and start one from its sheet, edit and delete the saved one, open New preset | `PresetsAcceptanceTest` |
 | `settings.xml` | Settings opens from every tab; the plan's goal and reminder show and lead to Plan; toggle a cue, switch to Light and back, settings persist | `SettingsAcceptanceTest` (not Export's share sheet) |
 | `health-connect.xml` | Connect Health Connect from Settings, take its weight, finish a workout and find it there, disconnect; the policy from the sheet and from About | `HealthConnectAcceptanceTest` (the store stands connected: the sheet is Health Connect's) |
+| `shortcuts.xml` | Long-press the launcher icon for "Start a workout" and "Start a Lift session", keeping a running workout and returning from the notification as a single task | `ShortcutsAcceptanceTest` (routing & active workout kept; launcher menu on a device) |
 | `widget.xml` | Place the week widget, see the count and goal and the streak, start a workout and a Lift session from it, a running workout kept; resize it | `WeekStandingSourceTest` (the count); the widget itself only on a device |
-| `sequence.xml` | Add a block from the Timer's Sets sheet, shape it and the rest between blocks in the editor, run into the second block (the notification says it), save it as a preset | `SequenceAcceptanceTest` (a seeded preset of two blocks run through; a block added on the Timer and run) |
 | `system-back.xml` | System back from Settings or a tab returns to Today, from the Timer to the presets and then Today; during a workout it pauses and asks | `SystemBackAcceptanceTest` |
 | `lift-equipment.xml` | A Lift session logging a bell, a band, a hold on one side and bodyweight with weight added, each in its own words, Moved counting only the weighed load, then the summary; a second session, and Strength's balance of the two | `LiftEquipmentAcceptanceTest` |
 | `lift-barbell.xml` | A barbell lift: the bar chosen, plates a side, and the set logged with its load | `LiftBarbellAcceptanceTest` |
 | `lift-programs.xml` | A program's sheet: what a week of it works and what it leaves out, about how long each day takes; a built-in followed part way made yours in the editor and followed on from its day | `LiftProgramsAcceptanceTest` |
 | `lift-plan-changes.xml` | A program's day with a change to its plan: kept for the session, for the program, or in a copy | `LiftPlanChangesAcceptanceTest` |
-| `lift-rest-alert.xml` | A rest between sets keeps counting on the lock screen and beeps as it ends with the screen off | Device only (the in-app rest: `SessionFlowTest`) |
-| `reminders.xml` | Turn the plan's reminder on, pick a time, see it in the notification settings, turn it off | Device only (the sheet: `PlanScreenTest`) |
+| `lift-rest-alert.xml` | A rest between sets keeps counting on the lock screen, survives process death, and beeps as it ends with the screen off | Device only (the in-app rest: `SessionFlowTest`) |
+| `lift-emom-screen-off.xml` | An EMOM started over a rest keeps counting and beeping each minute with the screen off under a Live Update and wake lock | Device only (the in-app EMOM: `SessionFlowTest`) |
+| `reminders.xml` | Turn the plan's reminder on, pick a time, see it in the notification settings, advance past 14 days and turn it off | Device only (the sheet: `PlanScreenTest`) |
 | `exercise-library.xml` | The library from Lift: search, equipment chips, Filters and Clear; Add from a search that finds nothing, edit, a name already taken; pick your own on the Log sheet; equipment locked once logged | `ExerciseLibraryAcceptanceTest` |
 
 On the `amper-37` image, the first tap into a text field may open Gboard's "Try out your stylus"
