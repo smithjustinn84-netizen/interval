@@ -9,7 +9,7 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ### Added
 - Today, a new first tab and where the app opens: this week against the goal, what is up next (today's plan, or
   the next day of the program followed) under one Start, and "Or pick by time", which offers the presets that fit
-  5, 10, 20 or 30 minutes, each with a Start of its own. With nothing planned it leads to the plan and to Lift's
+  5, 10, 15, 20 or 30 minutes, each with a Start of its own. With nothing planned it leads to the plan and to Lift's
   programs. Train and History are the tabs beside it, and Back from either returns to Today.
 - About how long a program's day takes: "about 20 min" on Lift's program card, on each day of a program's sheet,
   on every program in the list ("about 12–15 min" where its days differ) and on Today's Up next. It is
@@ -58,6 +58,8 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   it under "Also today" beside the program's day. Once the flow is done, or the class logged, Today is as it
   was; a workout planned that day still leads. "Or pick by time" offers the longest flow that fits the minutes
   picked, after the presets.
+- Exports are schema 7, with the session's length in the settings; a build from before it refuses the file with
+  "update the app", and older files read as before.
 
 ### Changed
 - The Timer is no longer a tab: it is a page over Train's Conditioning pillar, opened by the "Timer" row at the

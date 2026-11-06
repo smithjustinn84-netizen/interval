@@ -41,7 +41,8 @@ class AppDataImporter(
         val liftImport = if (withSettings) plan.lift.copy(restSeconds = plan.settings.restSeconds) else plan.lift
         lift.importAll(liftImport)
         if (withSettings) {
-            intervals.settings.updateAppSettings { plan.settings.app }
+            // Whoever imports has the app open already: the file's settings never bring Set up back.
+            intervals.settings.updateAppSettings { plan.settings.app.copy(setupOffered = true) }
             intervals.settings.updateCueSettings { plan.settings.cues }
             intervals.settings.updateConfig { plan.settings.timer }
         }

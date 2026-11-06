@@ -10,7 +10,8 @@ import kotlinx.serialization.Serializable
  * `effort` 1 to 5 and its `note`, every shape's `warmUpSeconds` and `coolDownSeconds`, and a workout's or a
  * session's heart rate, `averageBpm` and `peakBpm`; schema 4 every shape's `sets`, `setRestSeconds` and
  * `workStepSeconds`; schema 5 a sequence's blocks after its first, `then`, and `blockRestSeconds`; schema 6 a plan
- * of a day of a sport, `sport`, and the sport days logged, `sportDays`, all absent from older files). Lift's
+ * of a day of a sport, `sport`, and the sport days logged, `sportDays`; schema 7 the session's length in the settings,
+ * `sessionMinutes`, all absent from older files). Lift's
  * sessions carry their sets but not how a day's plan was changed: the sets are the record.
  */
 @Serializable
@@ -31,7 +32,7 @@ data class ExportBundle(
     val sportDays: List<SportDayExport> = emptyList(),
 ) {
     companion object {
-        const val SCHEMA = 6
+        const val SCHEMA = 7
         const val APP = "interval"
         const val MIME_TYPE = "application/json"
 
@@ -55,6 +56,8 @@ data class SettingsExport(
     val weeklyGoal: Int?,
     val reminderMinuteOfDay: Int?,
     val cues: CuesExport,
+    /** How long a session is, as Set up was answered. */
+    val sessionMinutes: Int? = null,
 )
 
 @Serializable

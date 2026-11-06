@@ -83,6 +83,7 @@ private fun AppSettings.export(cues: CueSettings) = SettingsExport(
     weeklyGoal = weeklyGoal,
     reminderMinuteOfDay = reminderMinuteOfDay,
     cues = CuesExport(cues.sound, cues.voice, cues.halfway, cues.vibrate),
+    sessionMinutes = sessionMinutes,
 )
 
 private fun IntervalConfig.export() = ConfigExport(

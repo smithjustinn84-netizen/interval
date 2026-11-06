@@ -230,6 +230,26 @@ class HomeViewModelTest : MainDispatcherTest() {
     }
 
     @Test
+    fun `the session's length from set up is the length picked until another is`() {
+        repository.settings.updateAppSettings { it.copy(sessionMinutes = 15) }
+        assertEquals(15, viewModel.state.value.minutes)
+
+        viewModel.setMinutes(30)
+        assertEquals(30, viewModel.state.value.minutes)
+        assertEquals(30, viewModel().state.value.minutes)
+    }
+
+    @Test
+    fun `a length answered in set up while today is open takes the place of one picked by hand`() {
+        viewModel.setMinutes(30)
+
+        repository.settings.updateAppSettings { it.copy(sessionMinutes = 20) }
+
+        assertEquals(20, viewModel.state.value.minutes)
+        assertEquals(20, viewModel().state.value.minutes)
+    }
+
+    @Test
     fun `a pick started is put on the timer`() {
         viewModel.setMinutes(5)
         viewModel.putOnTimer(viewModel.state.value.picks.single { it.preset.name == "Tabata" })

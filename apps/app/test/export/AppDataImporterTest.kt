@@ -9,7 +9,7 @@ import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.fixtures.DAMAGED_EXPORT
 import dev.justinsmith.interval.fixtures.FOREIGN_JSON
 import dev.justinsmith.interval.fixtures.SCHEMA_1_EXPORT
-import dev.justinsmith.interval.fixtures.SCHEMA_7_EXPORT
+import dev.justinsmith.interval.fixtures.SCHEMA_8_EXPORT
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.Sport
@@ -101,7 +101,9 @@ class AppDataImporterTest {
             setOf(2),
         )
         intervals.plans.planOnce(PlanWorkout.Lift.AnySession, TODAY + 1)
-        intervals.settings.updateAppSettings { it.copy(theme = ThemeMode.Light, weeklyGoal = 3) }
+        intervals.settings.updateAppSettings {
+            it.copy(theme = ThemeMode.Light, weeklyGoal = 3, sessionMinutes = 15)
+        }
         lift.gear.setOwned(20.0, owned = true)
         lift.gear.setBar(15.0)
         val press = lift.exercises.saveExercise(null, ExerciseDraft("Landmine press", Equipment.Barbell))
@@ -229,7 +231,16 @@ class AppDataImporterTest {
         target.importer.import(stocked().file(), withSettings = true)
         assertEquals(ThemeMode.Light, target.intervals.settings.appSettings.value.theme)
         assertEquals(3, target.intervals.settings.appSettings.value.weeklyGoal)
+        assertEquals(15, target.intervals.settings.appSettings.value.sessionMinutes)
         assertEquals(4, target.intervals.settings.config.value.rounds)
+    }
+
+    @Test
+    fun `settings brought in never bring set up back`() = runTest {
+        val target = Phone(now)
+        target.intervals.settings.updateAppSettings { it.copy(setupOffered = true) }
+        target.importer.import(stocked().file(), withSettings = true)
+        assertTrue(target.intervals.settings.appSettings.value.setupOffered)
     }
 
     @Test
@@ -266,7 +277,7 @@ class AppDataImporterTest {
     @Test
     fun `a newer file says so and changes nothing`() = runTest {
         val target = Phone(now)
-        val file = ShareableFile("new.json", ExportBundle.MIME_TYPE, SCHEMA_7_EXPORT)
+        val file = ShareableFile("new.json", ExportBundle.MIME_TYPE, SCHEMA_8_EXPORT)
         assertEquals(ImportReview.TooNew("0.9.0"), target.importer.review(file))
         assertFailsWith<IllegalArgumentException> { target.importer.import(file, withSettings = true) }
         assertTrue(target.intervals.history.history.value.isEmpty())

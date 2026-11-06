@@ -55,9 +55,22 @@ data class AppSettings(
      * within [REMINDER_RANGE]; null while reminders are off, as they start.
      */
     val reminderMinuteOfDay: Int? = null,
+    /**
+     * How long a session is, in minutes, one of [SESSION_MINUTES]: what Today picks a workout by, and the day
+     * of a program Set up chooses fits. Null until Set up is answered.
+     */
+    val sessionMinutes: Int? = null,
+    /**
+     * Whether Set up has had its turn: the app has opened on it, or had no need to. It opens by itself only on
+     * an install with nothing in it, and only once.
+     */
+    val setupOffered: Boolean = false,
 ) {
     companion object {
         val WEEKLY_GOAL_RANGE = 1..14
+
+        /** The session lengths Set up offers, in minutes. */
+        val SESSION_MINUTES = listOf(10, 15, 20, 30)
         val REMINDER_RANGE = 0 until MINUTES_PER_DAY
 
         /** The reminder's finest step: a quarter of an hour. */

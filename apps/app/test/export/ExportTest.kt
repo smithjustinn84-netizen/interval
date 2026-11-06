@@ -45,7 +45,9 @@ class ExportTest {
         )
         val workout = intervals.history.recordWorkout(IntervalConfig(rounds = 4), elapsedSeconds = 200)
         intervals.history.reflectOnWorkout(workout, PerceivedEffort.Hard, "Felt strong")
-        intervals.settings.updateAppSettings { it.copy(theme = ThemeMode.Light, weeklyGoal = 3) }
+        intervals.settings.updateAppSettings {
+            it.copy(theme = ThemeMode.Light, weeklyGoal = 3, sessionMinutes = 20)
+        }
         bells.sessions.startSession()
         bells.sets.logSet(BuiltInExercise.TwoHandSwing, bellKg = 16.0, reps = 10, side = null)
         bells.sessions.finishSession("Swings")
@@ -61,6 +63,7 @@ class ExportTest {
         assertEquals(now, bundle.exportedAtEpochMillis)
         assertEquals("Light", bundle.settings.theme)
         assertEquals(3, bundle.settings.weeklyGoal)
+        assertEquals(20, bundle.settings.sessionMinutes)
         assertEquals(listOf("Hills"), bundle.presets.map { it.name })
         assertEquals(45, bundle.presets.single().config.workSeconds)
         assertEquals(300, bundle.presets.single().config.warmUpSeconds)

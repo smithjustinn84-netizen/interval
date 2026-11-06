@@ -2,7 +2,7 @@ package dev.justinsmith.interval.acceptance
 
 import dev.justinsmith.interval.fixtures.DAMAGED_EXPORT
 import dev.justinsmith.interval.fixtures.SCHEMA_1_EXPORT
-import dev.justinsmith.interval.fixtures.SCHEMA_7_EXPORT
+import dev.justinsmith.interval.fixtures.SCHEMA_8_EXPORT
 import kotlin.test.Test
 
 /** `journeys/settings.xml`'s Import: a file another phone exported comes in once, and a bad one changes nothing. */
@@ -32,7 +32,7 @@ class ImportAcceptanceTest {
         openSettings()
         importFile(DAMAGED_EXPORT)
         seeImportRefused("isn't an Interval export")
-        importFile(SCHEMA_7_EXPORT)
+        importFile(SCHEMA_8_EXPORT)
         seeImportRefused("from a newer Interval, 0.9.0")
         nothingIsSaved()
     }

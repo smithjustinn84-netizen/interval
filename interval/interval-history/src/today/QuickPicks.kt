@@ -9,9 +9,9 @@ import dev.justinsmith.interval.timer.builtInFlows
 import dev.justinsmith.interval.timer.withPreset
 
 /** The lengths Today offers to pick a workout by, in minutes. */
-val PICK_MINUTES = listOf(5, 10, 20, 30)
+val PICK_MINUTES = listOf(5, 10, 15, 20, 30)
 
-/** The length picked until another is. */
+/** The length picked until another is, by hand or as the session's length in Set up. */
 const val DEFAULT_PICK_MINUTES = 10
 
 private const val PICKS_SHOWN = 3

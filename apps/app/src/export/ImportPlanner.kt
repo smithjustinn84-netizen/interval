@@ -323,12 +323,14 @@ private fun SettingsExport.toDomain(): AppSettings {
     weightKg?.let { require(it in unit.toKg(unit.range.first)..unit.toKg(unit.range.last)) { "weight" } }
     weeklyGoal?.let { require(it in AppSettings.WEEKLY_GOAL_RANGE) { "goal" } }
     reminderMinuteOfDay?.let { require(it in AppSettings.REMINDER_RANGE) { "reminder" } }
+    sessionMinutes?.let { require(it in AppSettings.SESSION_MINUTES) { "session" } }
     return AppSettings(
         theme = enumNamed<ThemeMode>(theme),
         keepScreenOn = keepScreenOn,
         body = BodySettings(weightKg, unit, enumNamed<Effort>(effort)),
         weeklyGoal = weeklyGoal,
         reminderMinuteOfDay = reminderMinuteOfDay,
+        sessionMinutes = sessionMinutes,
     )
 }
 

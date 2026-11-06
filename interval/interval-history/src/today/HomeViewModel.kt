@@ -37,8 +37,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 private const val KEY_MINUTES = "home_minutes"
 
@@ -89,9 +93,15 @@ class HomeViewModel(
     dayCheckMillis: Long = DAY_CHECK_MILLIS,
     computation: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
-    private val minutes = MutableStateFlow(
-        savedState.get<Int>(KEY_MINUTES)?.takeIf { it in PICK_MINUTES } ?: DEFAULT_PICK_MINUTES,
-    )
+    /** The length picked by hand; null until one is, and again once the session's length is set anew. */
+    private val picked = MutableStateFlow(savedState.get<Int>(KEY_MINUTES)?.takeIf { it in PICK_MINUTES })
+
+    /** The session's length from Set up, where it is one Today offers. */
+    private val session = settingsStore.appSettings
+        .map { app -> app.sessionMinutes?.takeIf { it in PICK_MINUTES } }
+        .distinctUntilChanged()
+
+    private val minutes = combine(picked, session) { picked, session -> picked ?: session ?: DEFAULT_PICK_MINUTES }
 
     // The dates are formatted here, which outlives a language change, so they are formatted again when it changes.
     private val locale = MutableStateFlow<String?>(null)
@@ -118,10 +128,21 @@ class HomeViewModel(
             .flowOn(computation)
             .stateIn(viewModelScope, SharingStarted.Eagerly, HomeUiState.Loading)
 
+    init {
+        // This page is alive under Set up: a length answered there is what it shows on the way back, whatever
+        // was picked by hand before.
+        viewModelScope.launch {
+            session.drop(1).collect {
+                picked.value = null
+                savedState.remove<Int>(KEY_MINUTES)
+            }
+        }
+    }
+
     /** Picks the length, one of [PICK_MINUTES], that the presets offered fit. */
     fun setMinutes(length: Int) {
         if (length !in PICK_MINUTES) return
-        minutes.value = length
+        picked.value = length
         savedState[KEY_MINUTES] = length
     }
 

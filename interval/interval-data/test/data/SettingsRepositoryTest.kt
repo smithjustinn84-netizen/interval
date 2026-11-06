@@ -169,4 +169,19 @@ class SettingsRepositoryTest {
         repository().settings.updateAppSettings { it.copy(reminderMinuteOfDay = null) }
         assertEquals(null, repository().settings.appSettings.value.reminderMinuteOfDay)
     }
+
+    @Test
+    fun `the session's length survives a restart and one never offered reads as none`() {
+        repository().settings.updateAppSettings { it.copy(sessionMinutes = 15) }
+        assertEquals(15, repository().settings.appSettings.value.sessionMinutes)
+        repository().settings.updateAppSettings { it.copy(sessionMinutes = 45) }
+        assertEquals(null, repository().settings.appSettings.value.sessionMinutes)
+    }
+
+    @Test
+    fun `set up offered once stays offered after a restart`() {
+        assertEquals(false, repository().settings.appSettings.value.setupOffered)
+        repository().settings.updateAppSettings { it.copy(setupOffered = true) }
+        assertEquals(true, repository().settings.appSettings.value.setupOffered)
+    }
 }
