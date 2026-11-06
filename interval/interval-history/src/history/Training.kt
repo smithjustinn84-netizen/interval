@@ -77,6 +77,9 @@ data class TrainingDay(
     /** Every workout that day, of any kind. */
     val count: Int get() = workouts.size + liftWorkouts.size + sports.size
 
+    /** Of [workouts], the mobility: flows, and anything else timed as it. */
+    val mobility: Int get() = workouts.count { it.config.activity == Activity.Mobility }
+
     val seconds: Int get() = workouts.sumOf { it.elapsedSeconds } + liftWorkouts.sumOf { it.elapsedSeconds }
 
     /** The day's sport, for the label under it: the one logged, else the one planned. */

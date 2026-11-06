@@ -25,9 +25,9 @@ import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.formatClock
-import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.monthStartAfter
 import dev.justinsmith.interval.timer.monthStartOf
+import dev.justinsmith.interval.timer.nameOf
 import dev.justinsmith.lift.data.LiftActivity
 import dev.justinsmith.lift.domain.ProgramKey
 import kotlinx.coroutines.CoroutineDispatcher
@@ -220,6 +220,7 @@ class HistoryViewModel(
             weekCount = week.sumOf { it.count },
             weekLifts = week.sumOf { it.liftWorkouts.size },
             weekSports = week.sumOf { it.sports.size },
+            weekMobility = week.sumOf { it.mobility },
             goal = goal,
             streak = goal?.let(log::streak),
             week = week.map { timestamps.dayCell(it) },
@@ -230,7 +231,7 @@ class HistoryViewModel(
             ),
             weeks = log.weeklyCounts(WEEKS_SHOWN),
             mostDone = log.mostDone(MOST_DONE_SHOWN).map { tally ->
-                ShapeRow(presets.matching(tally.config)?.name, tally.config, tally.count, tally.seconds)
+                ShapeRow(presets.nameOf(tally.config), tally.config, tally.count, tally.seconds)
             },
             // Led as Today leads it: on a day with a sport, the program's day stands back behind it.
             upNext = todayAgenda(timestamps.upNext(log, planned, lifting, today)).all,
@@ -261,7 +262,7 @@ private fun TimestampFormatter.item(
     when (workout) {
         is LoggedWorkout.Interval -> workout.entry.let { entry ->
             HistoryItem(
-                presetName = presets.matching(entry.config)?.name,
+                presetName = presets.nameOf(entry.config),
                 config = entry.config,
                 endedEarly = entry.endedEarly,
                 time = time(entry.finishedAtEpochMillis),

@@ -38,8 +38,11 @@ import dev.justinsmith.interval.platform.ShareableFile
 import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.tab
 import dev.justinsmith.interval.timer.ConfigField
+import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
+import dev.justinsmith.interval.timer.builtInFlows
 import dev.justinsmith.interval.timer.formatClock
+import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.ui.AcceptanceSteps
 import dev.justinsmith.interval.ui.JOURNEY_TIMEOUT
 import dev.justinsmith.interval.ui.Window
@@ -88,6 +91,54 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         see("Built-in")
         seePillar("Conditioning")
     }
+
+    /** Train's Mobility pillar: the flows, by when each is for. */
+    fun seeMobility() {
+        see("Before training")
+        seePillar("Mobility")
+    }
+
+    /** A flow's sheet, from its row on Mobility: what is in it, with its Start. */
+    fun openFlow(name: String) {
+        tap(name)
+        see(hasText("Each move is named and counted as you go", substring = true))
+    }
+
+    fun seeMoveInSheet(move: String, time: String) {
+        see(move)
+        see(time)
+    }
+
+    fun startFlow() = tap("Start")
+
+    /** The move on the workout screen, held or coming, and where it is among the flow's. */
+    fun seeMove(name: String, count: String) {
+        see(name)
+        see(hasText(count, substring = true))
+    }
+
+    fun seeNextMove(name: String) = see("Next: $name")
+
+    fun seeSide(side: String) = see(side)
+
+    /** The flow's summary, and the workout History keeps of it: every move done, as mobility. */
+    fun seeFlowSaved(name: String, moves: Int) {
+        see("Saved to history")
+        see(hasText("$name · Mobility · $moves moves"))
+        val kept = app.repository.history.history.value.last()
+        assertEquals(name to false, builtInFlows.matching(kept.config)?.name to kept.endedEarly)
+    }
+
+    /** A flow leaves the Timer's own settings alone, where a preset replaces them. */
+    fun timerIsAsItWas() = assertEquals(IntervalConfig(), app.repository.settings.config.value)
+
+    fun seeFlowInHistory(name: String, detail: String) {
+        see(name)
+        see(hasText(detail, substring = true))
+    }
+
+    /** From a finished workout's page in History. */
+    fun repeatNow() = tap("Repeat now")
 
     /** Train's other pillar, by the picker under its title. */
     fun pickPillar(name: String) = tap(hasText(name) and isSelectable())

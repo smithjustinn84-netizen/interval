@@ -118,6 +118,7 @@ interval/
 │   ├── interval-timer/    # Timer and natural language describe sheet
 │   ├── interval-workout/  # Live workout screen, circular countdown readout, summaries
 │   ├── interval-presets/  # Preset editor, built-ins, custom preset cards
+│   ├── interval-mobility/ # Mobility flows by when each is for, and a flow's sheet
 │   ├── interval-history/  # History calendar, training log, routine planner & reminders
 │   └── interval-settings/ # Settings sheet, cues toggle, theme selector, data export
 │

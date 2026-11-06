@@ -36,6 +36,7 @@ import dev.justinsmith.interval.history.resources.history_sport_logged
 import dev.justinsmith.interval.history.resources.notice_plan_removed
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.plan.sportTitle
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
@@ -115,6 +116,17 @@ internal fun SportRow(sport: Sport, epochDay: Long, actions: HistoryActions, mod
 }
 
 /**
+ * A row's stripe: kettlebell sessions take the accent, as Lift draws them; mobility the rest mark, as its rows on
+ * Train do; interval workouts, the work mark.
+ */
+@Composable
+private fun markOf(item: HistoryItem): Color = when {
+    item.liftUid != null -> IntervalTheme.palette.accent
+    item.config.activity == Activity.Mobility -> IntervalTheme.palette.restMark
+    else -> IntervalTheme.palette.workMark
+}
+
+/**
  * One finished workout, opening its page with a chevron saying so: an interval workout once stored, a
  * kettlebell session by [onOpenLift]. [selected] while its page is open beside the log, in the accent's tint.
  */
@@ -165,8 +177,7 @@ internal fun HistoryRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
-        // Kettlebell sessions take the accent, as Lift draws them; interval workouts, the work mark.
-        StripeMark(if (lift == null) palette.workMark else palette.accent, height = IntervalSizes.historyMarkHeight)
+        StripeMark(markOf(item), height = IntervalSizes.historyMarkHeight)
         Column(Modifier.weight(1f)) {
             val shape = workoutDescription(item.config)
             val detail = listOfNotNull(

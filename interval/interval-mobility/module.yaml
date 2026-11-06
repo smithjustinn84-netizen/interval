@@ -1,0 +1,21 @@
+# Mobility: the flows followed along on the workout screen, listed by when each is for, and the sheet that says
+# what is in one before it starts. Train's third pillar.
+description: "Mobility page and a flow's sheet"
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/compose-lib.module-template.yaml
+
+dependencies:
+  - //interval/interval-data: exported
+  - //interval/interval-ui: exported
+
+test-dependencies:
+  - //interval/interval-testing
+
+settings:
+  compose:
+    resources:
+      packageName: dev.justinsmith.interval.mobility.resources

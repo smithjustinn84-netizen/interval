@@ -70,6 +70,19 @@ class HomeScreenTest {
     }
 
     @Test
+    fun `the week says how many of its workouts were mobility`() = runUiTest {
+        val state = empty.copy(weekGoal = WeekGoal(count = 4, lifts = 1, sports = 1, mobility = 1))
+        setThemedContent { HomeScreen(state, HomeActions()) }
+        onNodeWithText("1 lift · 1 interval · 1 mobility · 1 sport day").assertIsDisplayed()
+    }
+
+    @Test
+    fun `a week of mobility alone still says what it was`() = runUiTest {
+        setThemedContent { HomeScreen(empty.copy(weekGoal = WeekGoal(count = 2, mobility = 2)), HomeActions()) }
+        onNodeWithText("2 mobility").assertIsDisplayed()
+    }
+
+    @Test
     fun `a planned workout is up next under start workout`() = runUiTest {
         val started = mutableListOf<String>()
         val state = empty.copy(

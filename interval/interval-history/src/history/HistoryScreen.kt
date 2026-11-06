@@ -87,10 +87,10 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
- * Resolves the tab's ViewModel and binds it to [HistoryScreen]. Starting a workout puts it on the Timer,
- * then [onStartWorkout]; [onOpenWorkout] opens one finished workout, [onOpenLift] one kettlebell session,
- * [onPlan] the plan, [onShowTimer] the Timer, [onOpenSettings] Settings. Starting the lift program's day
- * opens [onStartSession].
+ * Resolves the tab's ViewModel and binds it to [HistoryScreen]. Starting a workout puts it on the Timer, then
+ * [onStartWorkout]; a flow starts as itself, by the key [onStartWorkout] is handed, and the Timer is left alone.
+ * [onOpenWorkout] opens one finished workout, [onOpenLift] one kettlebell session, [onPlan] the plan,
+ * [onShowTimer] the Timer, [onOpenSettings] Settings. Starting the lift program's day opens [onStartSession].
  * [selectedWorkout] or [selectedLift] is the one open beside the log, on a wide window.
  */
 @Composable
@@ -98,7 +98,7 @@ fun HistoryRoute(
     onOpenWorkout: (Long) -> Unit,
     onOpenLift: (String) -> Unit,
     onPlan: () -> Unit,
-    onStartWorkout: () -> Unit,
+    onStartWorkout: (flow: String?) -> Unit,
     onShowTimer: () -> Unit,
     onStartSession: () -> Unit,
     modifier: Modifier = Modifier,
@@ -132,8 +132,9 @@ fun HistoryRoute(
             onShiftMonth = viewModel::shiftMonth,
             onOpenDay = viewModel::openDay,
             onStart = { name, config ->
-                viewModel.putOnTimer(name, config)
-                leavingSheet(startWorkout)
+                val flow = flowKeyOf(config)
+                if (flow == null) viewModel.putOnTimer(name, config)
+                leavingSheet { startWorkout(flow) }
             },
             onRemovePlanned = { planId, removedText ->
                 viewModel.removePlanned(planId)?.let { plan ->

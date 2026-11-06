@@ -20,8 +20,10 @@ import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.builtInFlows
 import dev.justinsmith.interval.timer.epochDayOf
 import dev.justinsmith.interval.timer.estimateCalories
+import dev.justinsmith.interval.timer.sameShape
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.fakes.FakeLiftStorage
@@ -424,6 +426,19 @@ class HistoryViewModelTest : MainDispatcherTest() {
         assertSame(before.sections, after.sections)
         assertSame(before.week, after.week)
         assertEquals(repository.settings.config.value, after.choices.first().preset.config)
+    }
+
+    @Test
+    fun `a flow done is named in the log and counted as mobility in the week`() {
+        val flow = builtInFlows.first()
+        repository.history.recordWorkout(tabata, tabata.totalSeconds)
+        repository.history.recordWorkout(flow.config(prepSeconds = 3), elapsedSeconds = 473)
+
+        val state = viewModel.state.value
+        assertEquals(listOf(flow.name, "Tabata"), state.sections.single().items.map { it.presetName })
+        assertEquals(2 to 1, state.weekCount to state.weekMobility)
+        assertEquals(WeekGoal(count = 2, mobility = 1), state.weekGoal)
+        assertEquals(flow.name, state.mostDone.first { it.config.sameShape(flow.config) }.name)
     }
 
     @Test

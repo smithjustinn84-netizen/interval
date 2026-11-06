@@ -101,8 +101,8 @@ sealed interface UpNextItem {
 }
 
 /**
- * This week against the weekly goal: its workouts, [lifts] of them Lift's and [sports] of them sport days logged;
- * [goal] is null until set.
+ * This week against the weekly goal: its workouts, [lifts] of them Lift's, [sports] of them sport days logged and
+ * [mobility] of them mobility; [goal] is null until set.
  */
 data class WeekGoal(
     val count: Int = 0,
@@ -110,6 +110,7 @@ data class WeekGoal(
     val goal: Int? = null,
     val streak: Streak? = null,
     val sports: Int = 0,
+    val mobility: Int = 0,
 )
 
 /** The summary's figures for its range. [time] is a clock, "16:35"; [totalSeconds] is for longer ones. */
@@ -154,12 +155,13 @@ data class HistoryUiState(
     val range: TrainingRange = TrainingRange.Week,
     val summary: RangeSummary = RangeSummary(0, formatClock(0), 0, null, 0, 0),
     /**
-     * This week's workouts against the weekly goal, [weekLifts] of them Lift's and [weekSports] sport days logged;
-     * [goal] is null until set.
+     * This week's workouts against the weekly goal, [weekLifts] of them Lift's, [weekSports] sport days logged and
+     * [weekMobility] mobility; [goal] is null until set.
      */
     val weekCount: Int = 0,
     val weekLifts: Int = 0,
     val weekSports: Int = 0,
+    val weekMobility: Int = 0,
     val goal: Int? = null,
     val streak: Streak? = null,
     /** Monday to Sunday of this week. */
@@ -182,7 +184,7 @@ data class HistoryUiState(
     val isEmpty: Boolean get() = !loading && sections.isEmpty() && !hasPlans
 
     /** This week's count, goal and streak together, as the goal row takes them. */
-    val weekGoal: WeekGoal get() = WeekGoal(weekCount, weekLifts, goal, streak, weekSports)
+    val weekGoal: WeekGoal get() = WeekGoal(weekCount, weekLifts, goal, streak, weekSports, weekMobility)
 
     /** The most workouts in one of [weeks], for scaling its bars; at least the goal, so its line fits. */
     val weeksMax: Int get() = maxOf(weeks.maxOfOrNull { it.count } ?: 0, goal ?: 0, 1)

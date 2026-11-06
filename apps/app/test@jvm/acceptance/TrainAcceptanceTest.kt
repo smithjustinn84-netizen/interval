@@ -3,8 +3,8 @@ package dev.justinsmith.interval.acceptance
 import kotlin.test.Test
 
 /**
- * `journeys/train.xml`: Train holds what there is to train, by pillar: Strength, Lift's side, and Conditioning,
- * the presets. It reopens on the pillar last shown, and Back from either returns to Today.
+ * `journeys/train.xml`: Train holds what there is to train, by pillar: Strength, Lift's side, Conditioning, the
+ * presets, and Mobility, the flows. It reopens on the pillar last shown, and Back from any returns to Today.
  */
 class TrainAcceptanceTest {
     @Test
@@ -15,8 +15,23 @@ class TrainAcceptanceTest {
         pickPillar("Conditioning")
         seeConditioning()
 
+        pickPillar("Mobility")
+        seeMobility()
+
         pickPillar("Strength")
         seeStrength()
+    }
+
+    @Test
+    fun `train reopens on mobility when it was shown last`() = acceptanceScenario {
+        openTab("Train")
+        pickPillar("Mobility")
+        seeMobility()
+
+        openTab("Today")
+        seeTodayTab()
+        openTab("Train")
+        seeMobility()
     }
 
     @Test

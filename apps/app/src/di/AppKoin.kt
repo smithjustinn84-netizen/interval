@@ -43,7 +43,8 @@ fun appModules(
         appModule
 
 /** The ViewModels of the interval side's features; History's are in [historyModule]. */
-private val intervalFeatureModules = listOf(timerModule, presetsModule, workoutModule, settingsModule)
+private val intervalFeatureModules =
+    listOf(timerModule, presetsModule, mobilityModule, workoutModule, settingsModule)
 
 /**
  * What only the app can build, seeing both sides: the export and the import, over both sides' storage, what

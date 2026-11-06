@@ -90,7 +90,7 @@ class PlanScreenTest {
     fun `on a tablet the routine sits beside the goal and the one-offs`() = runUiTest(Window.TabletPortrait) {
         setThemedContent { Screen(state) }
         val goal = onNodeWithText(
-            "Workouts a week: lifts, intervals and sport days · 5-week streak",
+            "Workouts a week: lifts, intervals, mobility and sport days · 5-week streak",
         ).fetchSemanticsNode().boundsInRoot
         val routine = onNodeWithText("Routine").fetchSemanticsNode().boundsInRoot
         val oneOffs = onNodeWithText("One-offs").fetchSemanticsNode().boundsInRoot
@@ -109,7 +109,7 @@ class PlanScreenTest {
     @Test
     fun `the goal steps either way and shows the streak`() = runUiTest {
         setThemedContent { Screen(state) }
-        onNodeWithText("Workouts a week: lifts, intervals and sport days · 5-week streak").assertExists()
+        onNodeWithText("Workouts a week: lifts, intervals, mobility and sport days · 5-week streak").assertExists()
         onNodeWithContentDescription("Raise the goal").performClick()
         onNodeWithContentDescription("Lower the goal").performClick()
         assertEquals(listOf("goal 1", "goal -1"), events)

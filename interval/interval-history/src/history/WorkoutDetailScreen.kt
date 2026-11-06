@@ -71,14 +71,14 @@ import org.koin.core.parameter.parametersOf
 
 /**
  * Resolves the page's ViewModel for the workout stored under [id] and binds it to [WorkoutDetailScreen].
- * Repeating puts it on the Timer, then [onStartWorkout]; once it is gone, deleted here or cleared, [onBack].
+ * Repeating puts it on the Timer, then [onStartWorkout] (a flow, by its key, without the Timer); once it is gone, deleted here or cleared, [onBack].
  * [inPane] when it sits beside History's log.
  */
 @Composable
 fun WorkoutDetailRoute(
     id: Long,
     onBack: () -> Unit,
-    onStartWorkout: () -> Unit,
+    onStartWorkout: (flow: String?) -> Unit,
     modifier: Modifier = Modifier,
     inPane: Boolean = false,
 ) {
@@ -101,8 +101,9 @@ fun WorkoutDetailRoute(
         state = state,
         onBack = onBack,
         onRepeat = {
-            viewModel.putOnTimer()
-            onStartWorkout()
+            val flow = state.workout?.config?.let(::flowKeyOf)
+            if (flow == null) viewModel.putOnTimer()
+            onStartWorkout(flow)
         },
         // The notice outlives this page, which leaves once the workout is gone.
         onDelete = {

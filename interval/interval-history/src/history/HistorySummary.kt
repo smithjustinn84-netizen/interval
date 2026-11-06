@@ -59,6 +59,7 @@ import dev.justinsmith.interval.history.resources.history_time
 import dev.justinsmith.interval.history.resources.history_week_count
 import dev.justinsmith.interval.history.resources.history_week_intervals
 import dev.justinsmith.interval.history.resources.history_week_lifts
+import dev.justinsmith.interval.history.resources.history_week_mobility
 import dev.justinsmith.interval.history.resources.history_week_sports
 import dev.justinsmith.interval.history.resources.history_weeks
 import dev.justinsmith.interval.history.resources.history_weeks_cd
@@ -214,16 +215,17 @@ internal fun GoalRow(week: WeekGoal, onSetGoal: () -> Unit) {
 }
 
 /**
- * This week's workouts by kind, "1 lift · 2 intervals · 1 sport day", once a session on Lift or a sport day is
- * among them.
+ * This week's workouts by kind, "1 lift · 2 intervals · 1 mobility · 1 sport day", once a session on Lift, a
+ * sport day or mobility is among them; a week of intervals alone says nothing more than its count.
  */
 @Composable
 private fun WeekSplit(week: WeekGoal) {
-    if (week.lifts == 0 && week.sports == 0) return
-    val intervals = week.count - week.lifts - week.sports
+    val intervals = week.count - week.lifts - week.sports - week.mobility
+    if (intervals == week.count) return
     val parts = listOfNotNull(
         week.lifts.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.history_week_lifts, it, it) },
         intervals.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.history_week_intervals, it, it) },
+        week.mobility.takeIf { it > 0 }?.let { stringResource(Res.string.history_week_mobility, it) },
         week.sports.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.history_week_sports, it, it) },
     )
     Text(

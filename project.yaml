@@ -17,6 +17,7 @@ modules:
   - interval/interval-data
   - interval/interval-domain
   - interval/interval-history
+  - interval/interval-mobility
   - interval/interval-platform
   - interval/interval-platform-api
   - interval/interval-presets

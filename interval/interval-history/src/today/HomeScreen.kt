@@ -27,6 +27,7 @@ import dev.justinsmith.interval.history.UpNextItem
 import dev.justinsmith.interval.history.UpNextLater
 import dev.justinsmith.interval.history.WeekStrip
 import dev.justinsmith.interval.history.dayHeading
+import dev.justinsmith.interval.history.flowKeyOf
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.common_joined
 import dev.justinsmith.interval.history.resources.history_edit_plan
@@ -86,12 +87,13 @@ import org.koin.compose.viewmodel.koinViewModel
 
 /**
  * The Today tab, the app's first: this week, what is up next with its Start, and the presets that fit a few
- * minutes. [onStartWorkout] opens the workout the Timer was just handed and [onStartSession] the session Lift
+ * minutes. [onStartWorkout] opens the workout the Timer was just handed, or the flow it names, which the Timer
+ * is not handed, and [onStartSession] the session Lift
  * was just told to start; the rest lead to the plan, Lift's programs, the History tab, the Timer and Settings.
  */
 @Composable
 fun HomeRoute(
-    onStartWorkout: () -> Unit,
+    onStartWorkout: (flow: String?) -> Unit,
     onStartSession: () -> Unit,
     onPlan: () -> Unit,
     onPrograms: () -> Unit,
@@ -117,12 +119,13 @@ fun HomeRoute(
     val actions = remember(viewModel, notices, undo) {
         HomeActions(
             onStart = { name, config ->
-                viewModel.putOnTimer(name, config)
-                startWorkout()
+                val flow = flowKeyOf(config)
+                if (flow == null) viewModel.putOnTimer(name, config)
+                startWorkout(flow)
             },
             onStartPick = { pick ->
                 viewModel.putOnTimer(pick)
-                startWorkout()
+                startWorkout(null)
             },
             onStartLift = { program ->
                 // Lift starts nothing while a session is in progress, so with one under way this resumes it.

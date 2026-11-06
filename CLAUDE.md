@@ -129,6 +129,8 @@ interval/            the interval timer
   interval-workout   the running workout, its readout, controls and summary
   interval-presets   the presets, sheet and editor (`PresetEditorHost`, `PresetDraft`): Train's Conditioning
                      pillar, a tab's page (`PresetsTab`), with the row that opens the Timer
+  interval-mobility  the flows by when each is for, and a flow's sheet (its moves, then Start): Train's Mobility
+                     pillar, a tab's page (`MobilityPage`)
   interval-settings  Settings (its groups in `SettingsGroups.kt`), the weight sheet, export and import
                      (`DataExporter`, `DataImporter`, the review sheet); opened by every tab's gear
   interval-history   History (log, calendar, summaries, a finished workout) and Plan: one module, each needs
@@ -219,11 +221,12 @@ toolchain (`$compose.*`).
   (`selectTab`), and a stack saved by a build that opened on the Timer gets it put underneath (`rootAtToday`).
   A tab implements core's `Tab` (`core/core/src/nav/Tab.kt`, with the `push` helper every entry uses), and its
   title bar ends in core's `SettingsAction`; Lift's takes what it opens through `liftEntries`.
-  Train is one destination of the bar in two tabs, its pillars (`apps/app/src/ui/Train.kt`): Strength is Lift's
-  `LiftTab`, Conditioning the app's `ConditioningTab` (the presets). Each is a `TabGrid` titled "Train" whose
-  `header` the app fills with `PillarPicker`; their entries share a `tabGroup`, so moving between them fades the
-  new one in over the old with the title and picker standing still (`pillarSwap`, `Navigation.kt`), and the bar
-  reopens the pillar last shown (`rememberTrainPillar`).
+  Train is one destination of the bar in three tabs, its pillars (`apps/app/src/ui/Train.kt`): Strength is Lift's
+  `LiftTab`, Conditioning the app's `ConditioningTab` (the presets), Mobility its `MobilityTab` (the flows). Each
+  is a `TabGrid` titled "Train" whose `header` the app fills with `PillarPicker`; their entries share a
+  `tabGroup`, so moving between them fades the new one in over the old with the title and picker standing still
+  (`pillarSwap`, `Navigation.kt`), and the bar reopens the pillar last shown (`rememberTrainPillar`, saved as its
+  place among `TrainPillars`).
   The Timer (`Timer`, saved under its old name `TimerTab`) is a page pushed over Conditioning: everything that
   shows it goes through `showTimer` (the presets' Timer row and "Put on Timer", Today, History, the
   `start-workout` shortcut), its Back and presets square through `leaveTimer`, and a stack saved while it was a
@@ -349,7 +352,11 @@ toolchain (`$compose.*`).
   data, like a built-in preset's name, so they can be spoken: `playCue` takes the `FlowStep` and says "Next:
   Cat-cow", "Left side", "Switch sides" (`Speech.NextMove` and the rest), with no halfway. The screen's part is
   `WorkoutFlow.kt`; the notifications' is `FlowStatusText.kt` (`interval-platform`). It is written to the health
-  store as stretching (`HealthWorkoutKind.Mobility`).
+  store as stretching (`HealthWorkoutKind.Mobility`). Train's Mobility pillar (`interval-mobility`) lists them and
+  starts one from its sheet (`startWorkout(clock, flow)`, `BackStack.kt`). A finished flow is an ordinary
+  `HistoryEntry`, so every week count has it already; the week's split says how many were mobility
+  (`WeekGoal.mobility`, by the activity), and one repeated or planned starts as the flow again (`flowKeyOf`, which
+  the Today and History routes ask before they put anything on the Timer).
 - **Health Connect**: `HealthStore.record` takes a `HealthWorkout` (core-platform's `Health.kt`): `WorkoutViewModel`
   builds one from the course it keeps (`CourseSpan`s in `WorkoutProgress`, so a restart loses none) as the workout
   ends, `FinishSession` (`lift-session`) from the session's sets (`HealthWorkouts.kt` in each); each is written

@@ -42,13 +42,24 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   still leads, with the class beside it to log.
 - Exports are schema 6, with the sport days planned and logged; a build from before them refuses the file with
   "update the app", and older files read as before.
+- Mobility, Train's third pillar: five flows to follow along, two for before training (Hips and shoulders, 8
+  minutes; Wrists and fingers, 5) and three for after or a day off (Spine and hamstrings, 10; Core on the mat,
+  18; Full reset, 25). A flow's sheet lists its moves with how long each is ("0:30 a side") and a line on how it
+  is done, and Start runs it on the workout screen: the move, its side and its line over the clock, "Hold" or
+  "Move" in the ring with what comes next, "Move 3 of 6" in the status, ten seconds to get into each move and
+  five to change sides. The voice names the move coming, the side and "Switch sides", and the notification the
+  move. Starting a flow leaves the Timer's settings as they are.
+- A finished flow counts as a workout toward the weekly goal, the streak and the widget, and the week says how
+  many were mobility ("1 lift · 1 mobility · 1 sport day"). History names it ("Wrists and fingers", "Mobility ·
+  5 moves"), "Repeat now" runs the flow again, and Health Connect and Apple Health get it as stretching.
+  Mobility is also an activity the Timer can be set to, with its own calorie estimate.
 
 ### Changed
 - The Timer is no longer a tab: it is a page over Train's Conditioning pillar, opened by the "Timer" row at the
   top of the presets, with a Back to them. The bar is Today · Train · History. "Put on Timer", the "Start a
   workout" shortcut and the widget open it as before, and Back from it returns to the presets, then Today. On a
   wide window Settings still opens beside it.
-- The weekly goal counts sport days logged too, and says so: "Workouts a week: lifts, intervals and sport days".
+- The weekly goal counts sport days logged too, and says so: "Workouts a week: lifts, intervals, mobility and sport days".
 - The week's marks and the weekly goal no longer show on Lift's side: Today shows the week, for both sides.
 
 ## [0.4.0] — 2026-11-05

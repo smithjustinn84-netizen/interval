@@ -28,11 +28,13 @@ import androidx.compose.material3.adaptive.navigation3.rememberSupportingPaneSce
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -63,11 +65,14 @@ import dev.justinsmith.interval.history.HistoryPlaceholder
 import dev.justinsmith.interval.history.HistoryRoute
 import dev.justinsmith.interval.history.WorkoutDetailRoute
 import dev.justinsmith.interval.home.TimerRoute
+import dev.justinsmith.interval.mobility.MobilityPage
+import dev.justinsmith.interval.mobility.MobilityRoute
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.nav.About
 import dev.justinsmith.interval.nav.ConditioningTab
 import dev.justinsmith.interval.nav.HistoryTab
 import dev.justinsmith.interval.nav.Licenses
+import dev.justinsmith.interval.nav.MobilityTab
 import dev.justinsmith.interval.nav.Plan
 import dev.justinsmith.interval.nav.Presets
 import dev.justinsmith.interval.nav.Privacy
@@ -150,6 +155,7 @@ internal val navConfiguration = SavedStateConfiguration {
             subclass(Timer::class)
             subclass(LiftTab::class)
             subclass(ConditioningTab::class)
+            subclass(MobilityTab::class)
             subclass(HistoryTab::class)
             subclass(Settings::class)
             subclass(Workout::class)
@@ -342,12 +348,21 @@ private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
  */
 @Composable
 private fun rememberTrainPillar(backStack: List<NavKey>): Tab {
-    // A Boolean, which every platform can save; a key can't be.
-    var conditioningLast by rememberSaveable { mutableStateOf(false) }
-    val shown = backStack.getOrNull(1).takeIf { it in TrainPillars }
-    SideEffect { if (shown != null) conditioningLast = shown == ConditioningTab }
-    return if (conditioningLast) ConditioningTab else LiftTab
+    // Its place among the pillars, which every platform can save; a key can't be.
+    var last by rememberSaveable(saver = PillarSaver) { mutableIntStateOf(0) }
+    val shown = TrainPillars.indexOf(backStack.getOrNull(1))
+    SideEffect { if (shown >= 0) last = shown }
+    return TrainPillars.getOrElse(last) { TrainPillars.first() }
 }
+
+/**
+ * Saves a pillar's place among [TrainPillars]. A build with two pillars saved a Boolean where this is, true for
+ * Conditioning, which still reads as that pillar.
+ */
+private val PillarSaver = Saver<MutableIntState, Any>(
+    save = { it.intValue },
+    restore = { saved -> mutableIntStateOf(if (saved is Boolean) saved.compareTo(false) else saved as? Int ?: 0) },
+)
 
 /** The tab the navigation area names: the one on top, or the last one while the area leaves. */
 private class ShownTab(var tab: Tab)
@@ -418,7 +433,7 @@ private fun appEntries(
             onOpenWorkout = { backStack.openDetail(WorkoutDetail(it)) },
             onOpenLift = { backStack.openDetail(LiftDetail(it, fromHistory = true)) },
             onPlan = { backStack.push(Plan) },
-            onStartWorkout = { backStack.startWorkout(clock) },
+            onStartWorkout = { backStack.startWorkout(clock, it) },
             onShowTimer = { backStack.showTimer() },
             onStartSession = { backStack.push(Lifting) },
             onOpenSettings = { backStack.push(Settings) },
@@ -452,7 +467,7 @@ private fun appEntries(
         WorkoutDetailRoute(
             id = key.id,
             onBack = { backStack.removeLastOrNull() },
-            onStartWorkout = { backStack.startWorkout(clock) },
+            onStartWorkout = { backStack.startWorkout(clock, it) },
             inPane = twoPane,
         )
     }
@@ -510,7 +525,8 @@ private fun safeDrawingAt(sides: WindowInsetsSides): WindowInsets = WindowInsets
 
 /**
  * Train's pillars, each a tab of its own in one group, under the same title and the picker between them:
- * Strength is Lift's tab with every page of Lift's, Conditioning the presets as a tab's page.
+ * Strength is Lift's tab with every page of Lift's, Conditioning the presets as a tab's page, Mobility the flows,
+ * each started on the workout screen with the Timer left as it is.
  */
 private fun EntryProviderScope<NavKey>.trainEntries(
     backStack: NavBackStack<NavKey>,
@@ -539,6 +555,13 @@ private fun EntryProviderScope<NavKey>.trainEntries(
             tab = tab,
         )
     }
+    entry<MobilityTab>(metadata = pageKind(PageKind.Tab) + pillars) {
+        val page = MobilityPage(
+            stringResource(Res.string.nav_train),
+            onOpenSettings = { backStack.push(Settings) },
+        ) { PillarPicker(MobilityTab, selectTab) }
+        MobilityRoute(page, onStartFlow = { backStack.startWorkout(clock, flow = it) })
+    }
 }
 
 /**
@@ -552,7 +575,7 @@ private fun EntryProviderScope<NavKey>.todayEntry(
 ) {
     entry<TodayTab>(metadata = pageKind(PageKind.Tab)) {
         HomeRoute(
-            onStartWorkout = { backStack.startWorkout(clock) },
+            onStartWorkout = { backStack.startWorkout(clock, it) },
             onStartSession = { backStack.push(Lifting) },
             onPlan = { backStack.push(Plan) },
             onPrograms = { backStack.push(Programs) },

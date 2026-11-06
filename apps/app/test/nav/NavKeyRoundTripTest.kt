@@ -3,6 +3,7 @@ package dev.justinsmith.interval.nav
 import androidx.navigation3.runtime.NavKey
 import dev.justinsmith.interval.nav.About
 import dev.justinsmith.interval.nav.Licenses
+import dev.justinsmith.interval.nav.MobilityTab
 import dev.justinsmith.interval.navConfiguration
 import dev.justinsmith.interval.rootAtToday
 import dev.justinsmith.interval.timerUnderTrain
@@ -35,6 +36,7 @@ class NavKeyRoundTripTest {
             Timer,
             LiftTab,
             ConditioningTab,
+            MobilityTab,
             HistoryTab,
             Settings,
             Workout(1_700_000_000_000),

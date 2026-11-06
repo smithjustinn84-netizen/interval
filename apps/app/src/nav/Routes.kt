@@ -25,11 +25,15 @@ data object Timer : NavKey
 
 /**
  * Train's Conditioning pillar: the presets, as a tab's page, and the way to the [Timer]. Train is one
- * destination of the bar in two parts, each a tab of its own picked on its page; the other, Strength, is Lift's
- * `LiftTab`.
+ * destination of the bar in three parts, each a tab of its own picked on its page: Strength is Lift's `LiftTab`,
+ * and [MobilityTab] the third.
  */
 @Serializable
 data object ConditioningTab : Tab
+
+/** Train's Mobility pillar: the flows followed along on the workout screen, as a tab's page. */
+@Serializable
+data object MobilityTab : Tab
 
 /** The training log: what was done, what is planned, and the weekly goal. */
 @Serializable

@@ -1,0 +1,28 @@
+<journey name="Mobility">
+  <description>
+    Train's Mobility pillar lists the flows by when each is for. A flow opens on a sheet of what is in it, and
+    Start runs it on the workout screen: each move named with how it is done, counted down, a side at a time,
+    with a few seconds to change sides and to get into the next. A finished flow is kept as mobility: it counts
+    toward the week, and History names it. Run on a fresh install (adb shell pm clear dev.justinsmith.interval),
+    with the voice on and the sound up.
+  </description>
+  <actions>
+    <action>Tap the "Train" tab, then "Mobility" in the picker under the title</action>
+    <action>Verify that "Before training" lists "Hips and shoulders" (6 moves · no bell, 8:00) and "Wrists and fingers" (5 moves · before the wall, 5:00), and "After, or on a day off" lists three more with their lengths</action>
+    <action>Tap "Wrists and fingers"</action>
+    <action>Verify that its sheet says "Mobility · 5 moves · before the wall" and "5:00", has "Start" above the moves, and lists "Wrist circles" 0:30 down to "Forearm stretch" 0:30 a side, each with a line on how it is done</action>
+    <action>Tap "Start"</action>
+    <action>Verify that the workout shows "Get ready" with "Wrist circles" and its line over the clock and "Move 1 of 5" in the status, and that the voice says "Next: Wrist circles"</action>
+    <action>Wait for the countdown to end and verify that the ring says "Move", the voice says "Begin", and the line under the clock says "Next: Palms down, fingers back"</action>
+    <action>Tap "Skip" until "Finger pulls" is shown with "Left side" under it; wait out the side and verify "Switch sides" for five seconds, the voice saying so, then "Right side"</action>
+    <action>Tap "+10s" and verify that the clock gains ten seconds; tap "Back" and verify that the side starts again from its full time</action>
+    <action>Turn the screen off for twenty seconds, turn it on, and verify that the notification names the move ("Finger pulls · Right side · Move 4 of 5" or the one it has reached) and that the workout is as far on as the time gone</action>
+    <action>Tap "Skip" until the summary shows</action>
+    <action>Verify that it says "Done", "5 moves" with the total, "Wrists and fingers · Mobility · 5 moves" and "Saved to history", with "Moves" 5/5 and no "Save as preset"; tap "Done"</action>
+    <action>Verify that Train is shown again on "Mobility"</action>
+    <action>Tap the "Train" tab's "Conditioning" pillar, then "Timer", and verify that the Timer's settings are as they were (0:30 work, 0:15 rest, 8 rounds); go back</action>
+    <action>Tap the "Today" tab and verify that the week says "1 workout" and "1 mobility", with today marked done</action>
+    <action>Tap the "History" tab and verify that today lists "Wrists and fingers" with "Mobility · 5 moves"</action>
+    <action>Tap it, then "Repeat now", and verify that the workout shows "Get ready" with "Wrist circles"; tap "End", then "End workout"</action>
+  </actions>
+</journey>

@@ -93,6 +93,7 @@
         <item quantity="one">%1$d interval</item>
         <item quantity="other">%1$d intervals</item>
     </plurals>
+    <string name="history_week_mobility">%1$d mobility</string>
     <plurals name="history_week_sports">
         <item quantity="one">%1$d sport day</item>
         <item quantity="other">%1$d sport days</item>
@@ -104,7 +105,7 @@
     <string name="history_lift_any">Any session on Lift</string>
     <string name="plan_title">Plan</string>
     <string name="plan_goal">Weekly goal</string>
-    <string name="plan_goal_text">Workouts a week: lifts, intervals and sport days</string>
+    <string name="plan_goal_text">Workouts a week: lifts, intervals, mobility and sport days</string>
     <string name="plan_goal_off">Off</string>
     <string name="plan_goal_less_cd">Lower the goal</string>
     <string name="plan_goal_more_cd">Raise the goal</string>

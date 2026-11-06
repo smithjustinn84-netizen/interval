@@ -24,7 +24,7 @@ import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.defaultPresetName
 import dev.justinsmith.interval.timer.formatClock
-import dev.justinsmith.interval.timer.matching
+import dev.justinsmith.interval.timer.nameOf
 import dev.justinsmith.interval.timer.weekdayOf
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -155,7 +155,7 @@ class WorkoutDetailViewModel(
             val log = TrainingLog(history, planned, today, dayOf = timestamps::dayNumber)
             FinishedWorkout(
                 id = id,
-                presetName = presets.matching(entry.config)?.name,
+                presetName = presets.nameOf(entry.config),
                 config = entry.config,
                 day = timestamps.heading(day, today),
                 time = timestamps.time(entry.finishedAtEpochMillis),

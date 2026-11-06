@@ -17,6 +17,7 @@ dependencies:
   - //interval/interval-platform
   - //interval/interval-ui
   - //interval/interval-presets
+  - //interval/interval-mobility
   - //interval/interval-timer
   - //interval/interval-workout
   - //interval/interval-settings
