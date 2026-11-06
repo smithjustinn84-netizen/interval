@@ -48,6 +48,13 @@ object IntervalSizes {
     val todayMarkWidth = 14.dp
     val todayMarkHeight = 3.dp
 
+    /** The name of a kind beside its bar on Log's week, and the room for its "1 of 2". */
+    val kindLabel = 104.dp
+    val kindTally = 48.dp
+
+    /** The day at the start of a row of Log's Coming up: "Today", "Fri". */
+    val comingUpDay = 72.dp
+
     /** The pill of phase colour at the start of a History row. */
     val historyMarkHeight = 40.dp
 

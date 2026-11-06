@@ -156,7 +156,7 @@ class HistoryScreenTest {
     }
 
     @Test
-    fun `a day of a sport is named under its day and read out with how it stands`() = runUiTest {
+    fun `the week strip names a sport under its day and reads out how it stands`() = runUiTest {
         val days = week(
             DayState.Done,
             DayState.Rest,
@@ -178,7 +178,10 @@ class HistoryScreenTest {
                 }
             },
         )
-        setThemedContent { HistoryScreen(state, actions) }
+        setThemedContent {
+            WeekStrip(state.week, onDay = {})
+            Legend(sport = true)
+        }
 
         onNodeWithContentDescription("Monday, done, BJJ logged").assertExists()
         onNodeWithContentDescription("Tuesday, BJJ not logged").assertExists()
@@ -205,7 +208,7 @@ class HistoryScreenTest {
                 DayState.Planned,
             ),
         )
-        setThemedContent { HistoryScreen(state, actions) }
+        setThemedContent { WeekStrip(state.week, onDay = { events += "day $it" }) }
         onNodeWithContentDescription("Monday, done").assertExists()
         onNodeWithContentDescription("Tuesday, missed").assertExists()
         onNodeWithContentDescription("Wednesday, no workout").assertExists()
@@ -233,8 +236,9 @@ class HistoryScreenTest {
     }
 
     @Test
-    fun `up next starts the next plan and lists the ones after`() = runUiTest {
+    fun `the month's up next starts the next plan and lists the ones after`() = runUiTest {
         val state = oneWorkout.copy(
+            range = TrainingRange.Month,
             upNext = listOf(
                 UpNextItem.Planned(1, 20_741, HistoryDay.Today, tabata.name, tabata.config),
                 UpNextItem.Planned(2, 20_742, HistoryDay.Tomorrow, hiit.name, hiit.config),
@@ -254,6 +258,7 @@ class HistoryScreenTest {
         val day = checkNotNull(program(ProgramId.PressLadders).dayAfter(done = 0))
         var state by mutableStateOf(
             oneWorkout.copy(
+                range = TrainingRange.Month,
                 upNext = listOf(
                     UpNextItem.Lift(20_741, HistoryDay.Today, day),
                     UpNextItem.Planned(1, 20_742, HistoryDay.Tomorrow, tabata.name, tabata.config),
@@ -270,6 +275,63 @@ class HistoryScreenTest {
         state = state.copy(upNext = listOf(UpNextItem.Lift(20_741, HistoryDay.Today, day, resume = true)))
         onNodeWithText("Resume").performClick()
         assertEquals(listOf("lift ${day.program.key.stored}", "lift null"), events)
+    }
+
+    @Test
+    fun `the week lists what is coming up a row a day and starts each`() = runUiTest {
+        val day = checkNotNull(program(ProgramId.PressLadders).dayAfter(done = 0))
+        val state = oneWorkout.copy(
+            upNext = listOf(
+                UpNextItem.Lift(20_741, HistoryDay.Today, day),
+                UpNextItem.Planned(2, 20_742, HistoryDay.Tomorrow, hiit.name, hiit.config),
+                UpNextItem.SportDay(3, 20_743, HistoryDay.On("Saturday, Oct 17"), Sport.Bjj),
+            ),
+            hasPlans = true,
+        )
+        setThemedContent { HistoryScreen(state, actions) }
+        onNodeWithText("Coming up").assertExists()
+        onNodeWithText("Up next · Today").assertDoesNotExist()
+        onNodeWithText("Press ladders 1-2-3").assertExists()
+        onNodeWithText("Tomorrow").assertExists()
+        onNodeWithText("Sat").assertExists()
+        onNodeWithText("BJJ class").assertExists()
+        onAllNodesWithText("Start")[1].performClick()
+        onNodeWithText("Edit plan").performClick()
+        assertEquals(listOf("start HIIT 30/30", "plan"), events)
+    }
+
+    @Test
+    fun `the week's bars count each kind against its plan and the log splits this week from earlier`() = runUiTest {
+        val state = oneWorkout.copy(
+            byKind = listOf(
+                KindTally(WorkoutKind.Strength, done = 1, planned = 2),
+                KindTally(WorkoutKind.Sport, done = 1, planned = 3),
+            ),
+            weekStart = 20_738,
+            sections = oneWorkout.sections + HistorySection(
+                HistoryDay.On("Sunday, Oct 11"),
+                dayNumber = 20_737,
+                listOf(HistoryItem("HIIT 30/30", hiit.config, false, "6:00 PM", "9:40", id = 8)),
+            ),
+        )
+        setThemedContent { HistoryScreen(state, actions) }
+        onNodeWithContentDescription("Strength: 1 of 2").assertExists()
+        onNodeWithContentDescription("Sport days: 1 of 3").assertExists()
+        onNodeWithText("Conditioning").assertDoesNotExist()
+        onNodeWithText("Done this week").assertExists()
+        onNodeWithText("Earlier").assertExists()
+        val week = onNodeWithText("Done this week").fetchSemanticsNode().boundsInRoot
+        val earlier = onNodeWithText("Earlier").fetchSemanticsNode().boundsInRoot
+        val old = onNodeWithText("HIIT 30/30").fetchSemanticsNode().boundsInRoot
+        assertTrue(week.top < earlier.top && earlier.top < old.top, "this week, then earlier: $week $earlier $old")
+    }
+
+    @Test
+    fun `plus plans a workout from the title bar`() = runUiTest {
+        val state = oneWorkout.copy(choices = listOf(PlanChoice(tabata)), today = 20_741)
+        setThemedContent { HistoryScreen(state, actions) }
+        onNodeWithContentDescription("Plan a workout").performClick()
+        onNodeWithText("Tabata").assertExists()
     }
 
     @Test

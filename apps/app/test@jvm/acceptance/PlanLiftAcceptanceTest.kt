@@ -2,7 +2,7 @@ package dev.justinsmith.interval.acceptance
 
 import kotlin.test.Test
 
-/** `journeys/plan-lift.xml`: plan a session on Lift, start it from Up next, and find the plan done. */
+/** `journeys/plan-lift.xml`: plan a session on Lift, start it from Coming up, and find the plan done. */
 class PlanLiftAcceptanceTest {
     // The app's clock starts on Thursday 1 January 1970.
     @Test
@@ -13,7 +13,7 @@ class PlanLiftAcceptanceTest {
         seeLiftSessionPlannedOn("Thursday")
         goBack()
 
-        seeUpNext("Lift session")
+        seeComingUp("Lift session")
         startUpNext()
         logASetAndFinish()
 

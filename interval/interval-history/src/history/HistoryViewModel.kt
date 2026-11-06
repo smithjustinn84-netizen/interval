@@ -224,6 +224,9 @@ class HistoryViewModel(
             weekMobility = week.sumOf { it.mobility },
             goal = goal,
             streak = goal?.let(log::streak),
+            byKind = week.byKind(),
+            weekStart = week.first().epochDay,
+            today = today,
             week = week.map { timestamps.dayCell(it) },
             month = MonthView(
                 title = timestamps.monthTitle(monthOf),

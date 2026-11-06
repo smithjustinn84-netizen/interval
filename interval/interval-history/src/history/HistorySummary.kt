@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -44,6 +47,12 @@ import dev.justinsmith.interval.history.resources.history_goal_met
 import dev.justinsmith.interval.history.resources.history_goal_ring
 import dev.justinsmith.interval.history.resources.history_goal_set
 import dev.justinsmith.interval.history.resources.history_hours_minutes
+import dev.justinsmith.interval.history.resources.history_kind_cd
+import dev.justinsmith.interval.history.resources.history_kind_conditioning
+import dev.justinsmith.interval.history.resources.history_kind_mobility
+import dev.justinsmith.interval.history.resources.history_kind_sport_days
+import dev.justinsmith.interval.history.resources.history_kind_strength
+import dev.justinsmith.interval.history.resources.history_kind_tally
 import dev.justinsmith.interval.history.resources.history_last_12_weeks
 import dev.justinsmith.interval.history.resources.history_month_next_cd
 import dev.justinsmith.interval.history.resources.history_month_previous_cd
@@ -77,6 +86,7 @@ import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
+import dev.justinsmith.interval.ui.ProgressBar
 import dev.justinsmith.interval.ui.RollingText
 import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.Sizes
@@ -121,7 +131,10 @@ internal fun SummaryCard(modifier: Modifier = Modifier, content: @Composable Col
     )
 }
 
-/** This week: the goal ring and streak, the time and calories, and a block per day. */
+/**
+ * This week: the goal ring and streak, a bar a kind of what was done against what was planned, the time and
+ * calories, and a block per day, each opening its day.
+ */
 @Composable
 internal fun WeekSummary(
     state: HistoryUiState,
@@ -130,19 +143,73 @@ internal fun WeekSummary(
     modifier: Modifier = Modifier,
 ) {
     SummaryCard(modifier) {
-        GoalRow(state.weekGoal, onSetGoal)
+        GoalRow(state.weekGoal, onSetGoal, split = state.byKind.isEmpty())
+        if (state.byKind.isNotEmpty()) KindBars(state.byKind)
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             Stat(stringResource(Res.string.history_time), state.summary.time, state.summary.totalSeconds, accent = true)
             state.summary.calories?.let { Stat(stringResource(Res.string.history_calories), it.toString(), it) }
         }
         WeekStrip(state.week, onDay)
-        Legend(sport = state.week.any { it.sportLogged })
     }
 }
 
-/** This week against the goal: the ring, what is left of it and the streak, or the count and the way to a goal. */
+/** A row a kind: its name, a bar of what was done of it against the plan, and the two as "1 of 2". */
 @Composable
-internal fun GoalRow(week: WeekGoal, onSetGoal: () -> Unit) {
+private fun KindBars(tallies: List<KindTally>, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+        tallies.forEach { tally ->
+            val name = stringResource(
+                when (tally.kind) {
+                    WorkoutKind.Strength -> Res.string.history_kind_strength
+                    WorkoutKind.Conditioning -> Res.string.history_kind_conditioning
+                    WorkoutKind.Mobility -> Res.string.history_kind_mobility
+                    WorkoutKind.Sport -> Res.string.history_kind_sport_days
+                },
+            )
+            val description = stringResource(Res.string.history_kind_cd, name, tally.done, tally.of)
+            Row(
+                Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+            ) {
+                Text(
+                    name,
+                    style = IntervalTheme.type.meta,
+                    color = palette.text,
+                    modifier = Modifier.width(IntervalSizes.kindLabel),
+                )
+                ProgressBar(tally.done.toFloat() / tally.of, kindColor(tally.kind), Modifier.weight(1f))
+                Text(
+                    stringResource(Res.string.history_kind_tally, tally.done, tally.of),
+                    style = IntervalTheme.type.meta,
+                    color = palette.textDim,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.widthIn(min = IntervalSizes.kindTally),
+                )
+            }
+        }
+    }
+}
+
+/** The mark of a kind, as the log's rows stripe it: the accent for Lift, work, rest for mobility, a sport dim. */
+@Composable
+internal fun kindColor(kind: WorkoutKind): Color {
+    val palette = IntervalTheme.palette
+    return when (kind) {
+        WorkoutKind.Strength -> palette.accent
+        WorkoutKind.Conditioning -> palette.workMark
+        WorkoutKind.Mobility -> palette.restMark
+        WorkoutKind.Sport -> palette.textDim
+    }
+}
+
+/**
+ * This week against the goal: the ring, what is left of it and the streak, or the count and the way to a goal.
+ * With [split] it says the week by kind in a line, where nothing beside it shows them.
+ */
+@Composable
+internal fun GoalRow(week: WeekGoal, onSetGoal: () -> Unit, split: Boolean = true) {
     val palette = IntervalTheme.palette
     val goal = week.goal
     if (goal == null) {
@@ -164,7 +231,7 @@ internal fun GoalRow(week: WeekGoal, onSetGoal: () -> Unit) {
                     style = IntervalTheme.type.title,
                     color = palette.text,
                 )
-                WeekSplit(week)
+                if (split) WeekSplit(week)
             }
             ChipButton(
                 stringResource(Res.string.history_goal_set),
@@ -192,7 +259,7 @@ internal fun GoalRow(week: WeekGoal, onSetGoal: () -> Unit) {
                 style = IntervalTheme.type.title,
                 color = palette.text,
             )
-            WeekSplit(week)
+            if (split) WeekSplit(week)
             week.streak?.current?.takeIf { it > 0 }?.let { weeks ->
                 Row(
                     Modifier
@@ -339,6 +406,7 @@ internal fun MonthSummary(
             }
         }
         MonthCalendar(state.month.cells, onDay)
+        Legend(sport = state.month.cells.any { it.sportLogged })
     }
 }
 

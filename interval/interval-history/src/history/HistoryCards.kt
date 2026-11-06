@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.common_joined
+import dev.justinsmith.interval.history.resources.history_coming_up
 import dev.justinsmith.interval.history.resources.history_edit_plan
 import dev.justinsmith.interval.history.resources.history_lift_any
 import dev.justinsmith.interval.history.resources.history_lift_session
@@ -71,24 +73,66 @@ internal fun UpNextCard(upNext: List<UpNextItem>, actions: HistoryActions, modif
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 GroupLabelText(stringResource(Res.string.history_up_next, dayHeading(next.day)), Modifier.weight(1f))
-                val interaction = remember { MutableInteractionSource() }
-                Box(
-                    Modifier
-                        .heightIn(min = Sizes.pillHeight)
-                        .surfaceButton(interaction, Corners.radius12, palette.surface, actions.onPlan)
-                        .padding(horizontal = Spacing.space12),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        stringResource(Res.string.history_edit_plan),
-                        style = IntervalTheme.type.label,
-                        color = palette.accent,
-                    )
-                }
+                EditPlan(actions.onPlan)
             }
             UpNextLead(next, actions)
             UpNextLater(upNext.drop(1))
         }
+    }
+}
+
+/**
+ * Every plan of the next seven days in a card, a row each: its day, its mark, its name and what it is, and the way
+ * to start it (or log it, a sport on its day); over it, the way to the plan.
+ */
+@Composable
+internal fun ComingUp(upNext: List<UpNextItem>, actions: HistoryActions, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    Column(modifier) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            GroupLabel(stringResource(Res.string.history_coming_up), Modifier.weight(1f))
+            EditPlan(actions.onPlan)
+        }
+        ListCard {
+            upNext.forEachIndexed { index, item ->
+                if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = Sizes.listRow)
+                        .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+                ) {
+                    Text(
+                        shortDay(item.day, item.epochDay),
+                        style = IntervalTheme.type.caption,
+                        color = palette.textDim,
+                        modifier = Modifier.width(IntervalSizes.comingUpDay),
+                    )
+                    UpNextLead(item, actions, Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+/** The quiet button to the plan, beside Up next's heading and Coming up's. */
+@Composable
+private fun EditPlan(onPlan: () -> Unit, modifier: Modifier = Modifier) {
+    val interaction = remember { MutableInteractionSource() }
+    Box(
+        modifier
+            .heightIn(min = Sizes.pillHeight)
+            .surfaceButton(interaction, Corners.radius12, IntervalTheme.palette.surface, onPlan)
+            .padding(horizontal = Spacing.space12),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            stringResource(Res.string.history_edit_plan),
+            style = IntervalTheme.type.label,
+            color = IntervalTheme.palette.accent,
+        )
     }
 }
 

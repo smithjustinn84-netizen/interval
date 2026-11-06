@@ -177,6 +177,12 @@ data class HistoryUiState(
     val weekMobility: Int = 0,
     val goal: Int? = null,
     val streak: Streak? = null,
+    /** This week by kind, done against planned, for its bars. */
+    val byKind: List<KindTally> = emptyList(),
+    /** Monday's epoch day this week: the log's days from it on are this week's. */
+    val weekStart: Long = 0,
+    /** Today's epoch day, which the title bar's + plans from. */
+    val today: Long = 0,
     /** Monday to Sunday of this week. */
     val week: List<DayCell> = emptyList(),
     val month: MonthView = MonthView("", emptyList(), current = true),

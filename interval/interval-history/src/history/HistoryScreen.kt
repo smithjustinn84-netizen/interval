@@ -33,7 +33,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.intl.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.data.FlowStore
@@ -43,11 +45,14 @@ import dev.justinsmith.interval.history.resources.history_clear_confirm
 import dev.justinsmith.interval.history.resources.history_clear_menu
 import dev.justinsmith.interval.history.resources.history_clear_text
 import dev.justinsmith.interval.history.resources.history_clear_title
+import dev.justinsmith.interval.history.resources.history_done_week
+import dev.justinsmith.interval.history.resources.history_earlier
 import dev.justinsmith.interval.history.resources.history_empty
 import dev.justinsmith.interval.history.resources.history_empty_plan
 import dev.justinsmith.interval.history.resources.history_empty_start
 import dev.justinsmith.interval.history.resources.history_empty_title
 import dev.justinsmith.interval.history.resources.history_more_options_cd
+import dev.justinsmith.interval.history.resources.history_plan_add_cd
 import dev.justinsmith.interval.history.resources.history_plan_cd
 import dev.justinsmith.interval.history.resources.history_title
 import dev.justinsmith.interval.history.resources.history_today
@@ -219,8 +224,11 @@ fun HistoryScreen(
     var confirming by rememberSaveable { mutableStateOf(false) }
     // The day the day sheet's Add workout is planning on, while its add sheet is open.
     var addingOn by rememberSaveable { mutableStateOf<Long?>(null) }
+    // Planning from the title bar's +, on any of the next two weeks' days, rather than one day's.
+    var planning by rememberSaveable { mutableStateOf(false) }
     val title = stringResource(Res.string.history_title)
     val titleActions: @Composable RowScope.() -> Unit = {
+        IconAction(IntervalIcons.Add, stringResource(Res.string.history_plan_add_cd), { planning = true })
         IconAction(IntervalIcons.Plan, stringResource(Res.string.history_plan_cd), actions.onPlan)
         OverflowMenu(menu, { menu = it }, enabled = state.sections.isNotEmpty(), onClear = { confirming = true })
         SettingsAction(actions.onOpenSettings)
@@ -241,12 +249,7 @@ fun HistoryScreen(
                 } else if (!state.loading) {
                     summaryItems(state, actions)
                 }
-                state.sections.forEach { section ->
-                    // A day is one cell, its label with its card, so a column never splits a day.
-                    item(key = section.dayNumber) {
-                        DaySection(section, actions, selected, Modifier.animateItem().then(Gutter))
-                    }
-                }
+                logItems(state, actions, selected)
             }
         }
     }
@@ -263,6 +266,18 @@ fun HistoryScreen(
             repeat = PlanRepeat.Once,
             weekday = weekdayOf(day),
             epochDay = day,
+            lift = LiftChoices(state.programDay),
+            sports = true,
+        )
+    }
+    if (planning) {
+        AddToPlanSheet(
+            choices = state.choices,
+            days = dayChoices(state.today),
+            onPlanWeekly = actions.onPlanWeekly,
+            onPlanOnce = actions.onPlanOnce,
+            onDismiss = { planning = false },
+            weekday = weekdayOf(state.today),
             lift = LiftChoices(state.programDay),
             sports = true,
         )
@@ -338,6 +353,7 @@ private fun SummaryBesideLog(
                 ) {
                     RangePicker(state.range, actions.onRange, Gutter.padding(bottom = Spacing.space16))
                     SummaryFor(state, actions, Gutter)
+                    if (state.showsComingUp) ComingUp(state.upNext, actions, Gutter.padding(top = Spacing.space16))
                     if (state.showsUpNext) UpNextCard(state.upNext, actions, Gutter.padding(top = Spacing.space16))
                     if (state.showsMostDone) MostDone(state.mostDone, Gutter)
                 }
@@ -345,10 +361,34 @@ private fun SummaryBesideLog(
                     Modifier.weight(1f, fill = false).widthIn(max = Sizes.content).fillMaxHeight(),
                     contentPadding = PaddingValues(bottom = Spacing.space24),
                 ) {
-                    items(state.sections, key = { it.dayNumber }) { section ->
-                        DaySection(section, actions, selected, Modifier.animateItem().then(Gutter))
+                    state.logGroups().forEach { (heading, sections) ->
+                        heading?.let { item(key = it.name) { LogHeading(it, Modifier.animateItem().then(Gutter)) } }
+                        items(sections, key = { it.dayNumber }) { section ->
+                            DaySection(section, actions, selected, Modifier.animateItem().then(Gutter))
+                        }
                     }
                 }
+            }
+        }
+    }
+}
+
+/** The log's days, in their groups under their headings on the week. */
+private fun LazyStaggeredGridScope.logItems(
+    state: HistoryUiState,
+    actions: HistoryActions,
+    selected: (HistoryItem) -> Boolean,
+) {
+    state.logGroups().forEach { (heading, sections) ->
+        heading?.let {
+            item(key = it.name, span = StaggeredGridItemSpan.FullLine) {
+                LogHeading(it, Modifier.animateItem().then(Gutter))
+            }
+        }
+        sections.forEach { section ->
+            // A day is one cell, its label with its card, so a column never splits a day.
+            item(key = section.dayNumber) {
+                DaySection(section, actions, selected, Modifier.animateItem().then(Gutter))
             }
         }
     }
@@ -365,6 +405,11 @@ private fun LazyStaggeredGridScope.summaryItems(state: HistoryUiState, actions: 
     }
     item(key = "summary", span = StaggeredGridItemSpan.FullLine) {
         SummaryFor(state, actions, Modifier.animateItem().then(Gutter))
+    }
+    if (state.showsComingUp) {
+        item(key = "comingUp", span = StaggeredGridItemSpan.FullLine) {
+            ComingUp(state.upNext, actions, Modifier.animateItem().then(Gutter).padding(top = Spacing.space16))
+        }
     }
     if (state.showsUpNext) {
         item(key = "upNext", span = StaggeredGridItemSpan.FullLine) {
@@ -399,9 +444,45 @@ private fun SummaryFor(state: HistoryUiState, actions: HistoryActions, modifier:
     }
 }
 
-/** Up next shows under the week and the month, while anything is planned. */
+/** The week lists what is coming up, every plan of the next seven days, while anything is planned. */
+private val HistoryUiState.showsComingUp: Boolean
+    get() = upNext.isNotEmpty() && range == TrainingRange.Week
+
+/** The month shows what is up next under its calendar, while anything is planned. */
 private val HistoryUiState.showsUpNext: Boolean
-    get() = upNext.isNotEmpty() && range != TrainingRange.AllTime
+    get() = upNext.isNotEmpty() && range == TrainingRange.Month
+
+/**
+ * The log's days in their groups: on the week, this week's under "Done this week" and the rest under "Earlier";
+ * on the month and all time, every day under no heading, as the summary above already says which.
+ */
+private fun HistoryUiState.logGroups(): List<Pair<LogGroup?, List<HistorySection>>> {
+    if (range != TrainingRange.Week) return listOf(null to sections)
+    val (week, earlier) = sections.partition { it.dayNumber >= weekStart }
+    return listOfNotNull(
+        week.takeIf { it.isNotEmpty() }?.let { LogGroup.ThisWeek to it },
+        earlier.takeIf { it.isNotEmpty() }?.let { LogGroup.Earlier to it },
+    )
+}
+
+/** A group of the log's days on the week. */
+private enum class LogGroup { ThisWeek, Earlier }
+
+/** A heading over a group of the log's days. */
+@Composable
+private fun LogHeading(group: LogGroup, modifier: Modifier = Modifier) {
+    Text(
+        stringResource(
+            when (group) {
+                LogGroup.ThisWeek -> Res.string.history_done_week
+                LogGroup.Earlier -> Res.string.history_earlier
+            },
+        ),
+        style = IntervalTheme.type.section,
+        color = IntervalTheme.palette.text,
+        modifier = modifier.padding(top = Spacing.space16).semantics { heading() },
+    )
+}
 
 /** All time lists the shapes done most, once there are any. */
 private val HistoryUiState.showsMostDone: Boolean

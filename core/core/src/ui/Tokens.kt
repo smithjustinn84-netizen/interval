@@ -81,6 +81,9 @@ object Sizes {
     val pillWidth = 72.dp
     val pillHeight = 48.dp
 
+    /** A progress bar's height: a program's days done, a kind's share of the week. */
+    val progressBar = 6.dp
+
     /** The timeline on a preset chip or card, and the gap between its segments. */
     val timelineMini = 6.dp
     val timelineMiniGap = 1.dp

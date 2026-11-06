@@ -92,6 +92,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 - The weekly goal counts sport days logged too, and says so: "Workouts a week: lifts, intervals, mobility and sport days".
 - The week's marks and the weekly goal no longer show on Lift's side: Today shows the week, for both sides.
 - History is called Log: the tab, its title, "Clear the log" and "Saved to your log". The bar is Today · Train · Log.
+- Log's week shows a bar a kind (Strength, Conditioning, Mobility, Sport days), each what was done of it against
+  what was planned, in place of the line that split the week. Under it, "Coming up" lists every plan of the next
+  seven days, a row each with its day and its Start, then the log's days under "Done this week" and "Earlier". The
+  title bar's + plans a workout; the month keeps Up next under its calendar and gains the calendar's key.
 
 ## [0.4.0] — 2026-11-05
 

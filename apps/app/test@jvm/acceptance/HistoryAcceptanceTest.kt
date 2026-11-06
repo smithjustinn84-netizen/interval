@@ -32,4 +32,20 @@ class HistoryAcceptanceTest {
         seeLogEmpty()
         nothingIsSaved()
     }
+
+    @Test
+    fun `the week's bars count each kind against its plan`() = acceptanceScenario {
+        openTab("Log")
+        openPlanFromEmptyHistory()
+        planSportEvery("BJJ", weekday = "Thursday")
+        goBack()
+        seeKindBar("Sport days", done = 0, of = 1)
+        seeComingUp("BJJ class")
+
+        openTab("Today")
+        logClassFromToday()
+        sportDaysLogged(1)
+        openTab("Log")
+        seeKindBar("Sport days", done = 1, of = 1)
+    }
 }

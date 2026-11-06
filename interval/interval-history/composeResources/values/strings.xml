@@ -232,4 +232,14 @@
     <string name="home_also_today">Also today</string>
     <string name="home_do_it_now">Do it now</string>
     <string name="sport_state_passed">Not logged</string>
+    <string name="history_kind_strength">Strength</string>
+    <string name="history_kind_conditioning">Conditioning</string>
+    <string name="history_kind_mobility">Mobility</string>
+    <string name="history_kind_sport_days">Sport days</string>
+    <string name="history_kind_tally">%1$d of %2$d</string>
+    <string name="history_kind_cd">%1$s: %2$d of %3$d</string>
+    <string name="history_coming_up">Coming up</string>
+    <string name="history_done_week">Done this week</string>
+    <string name="history_earlier">Earlier</string>
+    <string name="history_plan_add_cd">Plan a workout</string>
 </resources>
