@@ -55,18 +55,18 @@ import kotlin.time.Duration
  * something a person does or sees, and the English it matches lives here, not in the specs.
  *
  * The rules: one selector per control, every check waits for the state to arrive (the view models emit on
- * Swing's thread), outcomes are checked in the repository as well as on screen, and time moves only through
- * [AppFixture.advance].
+ * Swing's thread), every tap goes in on that thread, outcomes are checked in the repository as well as on
+ * screen, and time moves only through [AppFixture.advance].
  */
 @Suppress("detekt.TooManyFunctions")
 class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : AcceptanceSteps(ui) {
 
     // Navigation
 
-    fun openTab(name: String) = ui.tab(name).performClick()
+    fun openTab(name: String) = onMainThread { ui.tab(name).performClick() }
 
     fun pressSystemBack() {
-        app.back()
+        onMainThread { app.back() }
         ui.waitForIdle()
     }
 

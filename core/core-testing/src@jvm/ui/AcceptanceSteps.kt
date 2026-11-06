@@ -24,8 +24,8 @@ import androidx.compose.ui.test.performScrollToNode
 /**
  * What an acceptance driver builds its operations from: seeing and tapping by what a person reads, each
  * step waiting for the state to arrive (the real view models emit on Swing's thread, which the test's idling
- * doesn't track). A step that times out fails with what was expected and every text and description on
- * screen instead, so a failing spec says what it found.
+ * doesn't track) and each tap made on that thread ([onMainThread]). A step that times out fails with what was
+ * expected and every text and description on screen instead, so a failing spec says what it found.
  */
 open class AcceptanceSteps(protected val ui: DesktopComposeUiTest) {
     fun see(text: String) = see(hasText(text))
@@ -50,10 +50,22 @@ open class AcceptanceSteps(protected val ui: DesktopComposeUiTest) {
      */
     fun tap(matcher: SemanticsMatcher) {
         see(matcher)
-        val node = ui.onAllNodes(matcher).onLast()
-        if (hasAnyAncestor(hasScrollAction()).matches(node.fetchSemanticsNode())) node.performScrollTo()
-        node.performClick()
+        onMainThread {
+            val node = ui.onAllNodes(matcher).onLast()
+            if (hasAnyAncestor(hasScrollAction()).matches(node.fetchSemanticsNode())) node.performScrollTo()
+            node.performClick()
+        }
     }
+
+    /**
+     * Does [input] on the app's main thread, Swing's, where a device delivers a tap or the back gesture. Compose's
+     * desktop harness composes there, and runs effects and the semantics' actions (typing, scrolling) there, but it
+     * dispatches a pointer event on the thread that asked for it: the test's. What a tap calls would then run
+     * beside the main thread's timers, which the app never has to allow for: a workout's tick that read the
+     * workout as a skip began put the old interval back over the new one, and the skip was lost. Waiting stays
+     * outside, since what a step waits for arrives on this thread.
+     */
+    protected fun <T> onMainThread(input: () -> T): T = ui.runOnUiThread(input)
 
     /** Scrolls the page's list or grid, which composes only what is in view, until [text] is among what it shows. */
     fun scrollTo(text: String) = waitFor("to scroll to \"$text\"") {

@@ -268,7 +268,13 @@ The specs hold no selectors, and the drivers keep these rules:
    "logged" means the fake storage holds the set (`app.repository`, `app.storage`).
 4. **No sleeps.** A workout's time stands still until `app.advance(duration)` moves it. Lift's
    timers follow `app.clock`.
-5. **Domain words.** An operation is named for what a person does (`endWorkoutAfterFirstRound()`,
+5. **Input goes in on the main thread.** Compose's desktop harness composes on Swing's thread, the app's
+   main thread, but dispatches a tap on the thread that asked for it, the test's, where what the tap calls
+   runs beside the view models and the timers: a workout's tick that read the workout as a skip began
+   put the old interval back, and the skip was lost. So `tap` clicks inside `onMainThread`, and so does
+   anything else a driver hands the app directly (the system back gesture). Typing and scrolling are
+   semantics actions, which the harness runs there itself. Waiting stays outside it.
+6. **Domain words.** An operation is named for what a person does (`endWorkoutAfterFirstRound()`,
    `addARepTo(set)`). A spec may `see` or `tap` the words its journey quotes; anything that needs a
    matcher, a content description or more than one step becomes a driver operation.
 
