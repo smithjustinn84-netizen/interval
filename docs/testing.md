@@ -97,6 +97,13 @@ that depends on the data module.
     supporting pane).
   - `setThemedContent { }`: content inside `IntervalTheme`, light (`dark = true` for dark).
   - `waitForText`, `scrollToText`: for whole-app tests, whose ViewModels emit on Swing's thread.
+- **`core/core-testing/src@jvm/ui/MainThreadInput.kt`**: input on the app's main thread, Swing's.
+  - `performClick`: Compose's, made on the main thread. Every test over `appTest` or `liftAppTest` imports
+    `dev.justinsmith.interval.ui.performClick` rather than `androidx.compose.ui.test.performClick` (the
+    whole of `apps/app/test@jvm/` and `lift/lift-nav/test@jvm/` does), so a tap never runs beside the app's
+    timers. Why: driver rule 5, below.
+  - `onMainThread { }`: anything else a test hands the app directly, such as a back gesture driven step by
+    step through `app.backInput`. The fixtures' `back()` already goes in through it. Never wait inside it.
   - `StateRestoration`: saves and restores `rememberSaveable` state. Use it instead of
     `StateRestorationTester`, which throws `NotImplementedError` on desktop.
   - It exports `$compose.uiTest` and carries Skiko's natives (`$compose.desktop.currentOs`, see KTC-5525)
@@ -271,9 +278,10 @@ The specs hold no selectors, and the drivers keep these rules:
 5. **Input goes in on the main thread.** Compose's desktop harness composes on Swing's thread, the app's
    main thread, but dispatches a tap on the thread that asked for it, the test's, where what the tap calls
    runs beside the view models and the timers: a workout's tick that read the workout as a skip began
-   put the old interval back, and the skip was lost. So `tap` clicks inside `onMainThread`, and so does
-   anything else a driver hands the app directly (the system back gesture). Typing and scrolling are
-   semantics actions, which the harness runs there itself. Waiting stays outside it.
+   put the old interval back, and the skip was lost. So `tap`, like every whole-app test, clicks with
+   core-testing's `performClick`, which goes in through `onMainThread`, and so does anything else a test
+   hands the app directly (the fixtures' `back()`). Typing and scrolling are semantics actions, which the
+   harness runs there itself. Waiting stays outside it.
 6. **Domain words.** An operation is named for what a person does (`endWorkoutAfterFirstRound()`,
    `addARepTo(set)`). A spec may `see` or `tap` the words its journey quotes; anything that needs a
    matcher, a content description or more than one step becomes a driver operation.

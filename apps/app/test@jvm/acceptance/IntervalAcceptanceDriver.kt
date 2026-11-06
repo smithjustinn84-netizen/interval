@@ -17,7 +17,6 @@ import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
@@ -46,6 +45,7 @@ import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.ui.AcceptanceSteps
 import dev.justinsmith.interval.ui.JOURNEY_TIMEOUT
 import dev.justinsmith.interval.ui.Window
+import dev.justinsmith.interval.ui.performClick
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlin.test.assertEquals
 import kotlin.time.Duration
@@ -63,10 +63,10 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     // Navigation
 
-    fun openTab(name: String) = onMainThread { ui.tab(name).performClick() }
+    fun openTab(name: String) = ui.tab(name).performClick()
 
     fun pressSystemBack() {
-        onMainThread { app.back() }
+        app.back()
         ui.waitForIdle()
     }
 

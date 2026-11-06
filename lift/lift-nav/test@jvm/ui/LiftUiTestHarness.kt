@@ -27,6 +27,7 @@ import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.NoticeHost
 import dev.justinsmith.interval.ui.UI_TEST_TIMEOUT
 import dev.justinsmith.interval.ui.Window
+import dev.justinsmith.interval.ui.onMainThread
 import dev.justinsmith.interval.ui.rememberNotices
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.lift.di.liftFeatureModules
@@ -57,7 +58,8 @@ class LiftAppFixture(
     val sharer: RecordingSharer,
     private val backInput: DirectNavigationEventInput,
 ) {
-    fun back() {
+    /** The system back gesture, completed, on the main thread as a device delivers it. */
+    fun back() = onMainThread {
         backInput.backStarted(NavigationEvent())
         backInput.backCompleted()
     }

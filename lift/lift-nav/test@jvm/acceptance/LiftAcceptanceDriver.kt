@@ -303,7 +303,7 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
     fun goBack() = tapDescribed("Back")
 
     fun pressSystemBack() {
-        onMainThread { app.back() }
+        app.back()
         ui.waitForIdle()
     }
 }

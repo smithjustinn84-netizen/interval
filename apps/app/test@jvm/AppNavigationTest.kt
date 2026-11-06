@@ -15,7 +15,6 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.navigationevent.NavigationEvent
 import dev.justinsmith.interval.model.asPlan
@@ -23,6 +22,8 @@ import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.sameShape
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.Window
+import dev.justinsmith.interval.ui.onMainThread
+import dev.justinsmith.interval.ui.performClick
 import dev.justinsmith.interval.ui.scrollToText
 import kotlin.math.abs
 import kotlin.test.Test
@@ -127,17 +128,21 @@ class AppNavigationTest {
         onNodeWithContentDescription(EQUIPMENT).performClick()
         waitForIdle()
         tab("Train").assertDoesNotExist()
-        input.backStarted(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT))
-        input.backProgressed(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT, progress = 0.5f))
+        onMainThread {
+            input.backStarted(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT))
+            input.backProgressed(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT, progress = 0.5f))
+        }
         waitForIdle()
         val halfway = tab("Train").fetchSemanticsNode().boundsInRoot
         assertTrue(halfway.top > before.top + SETTLED_SLACK, "on its way in, not in place: $halfway vs $before")
-        input.backCancelled()
+        onMainThread { input.backCancelled() }
         waitForIdle()
         tab("Train").assertDoesNotExist()
-        input.backStarted(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT))
-        input.backProgressed(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT, progress = 0.5f))
-        input.backCompleted()
+        onMainThread {
+            input.backStarted(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT))
+            input.backProgressed(NavigationEvent(swipeEdge = NavigationEvent.EDGE_LEFT, progress = 0.5f))
+            input.backCompleted()
+        }
         waitForIdle()
         val settled = tab("Train").fetchSemanticsNode().boundsInRoot
         assertTrue(abs(settled.top - before.top) < SETTLED_SLACK, "back in its place: $settled vs $before")

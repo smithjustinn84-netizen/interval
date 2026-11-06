@@ -8,10 +8,10 @@ import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import dev.justinsmith.interval.ui.Window
+import dev.justinsmith.interval.ui.performClick
 import dev.justinsmith.interval.ui.scrollToText
 import dev.justinsmith.interval.ui.waitForText
 import dev.justinsmith.lift.data.FollowingEntity

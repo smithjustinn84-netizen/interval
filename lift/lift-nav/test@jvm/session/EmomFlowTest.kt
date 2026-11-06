@@ -6,8 +6,8 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import dev.justinsmith.interval.ui.performClick
 import dev.justinsmith.interval.ui.waitForText
 import dev.justinsmith.lift.domain.EmomClock
 import dev.justinsmith.lift.domain.EmomCue

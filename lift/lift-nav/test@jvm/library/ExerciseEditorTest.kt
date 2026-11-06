@@ -15,11 +15,11 @@ import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import dev.justinsmith.interval.ui.Window
+import dev.justinsmith.interval.ui.performClick
 import dev.justinsmith.interval.ui.waitForText
 import dev.justinsmith.lift.data.CustomExerciseEntity
 import dev.justinsmith.lift.data.SessionEntity

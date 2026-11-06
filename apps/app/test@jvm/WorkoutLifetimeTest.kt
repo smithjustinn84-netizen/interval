@@ -6,7 +6,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventDispatcherOwner
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
@@ -15,6 +14,7 @@ import dev.justinsmith.interval.fakes.fakePlatformModule
 import dev.justinsmith.interval.fakes.testKoin
 import dev.justinsmith.interval.ui.StateRestoration
 import dev.justinsmith.interval.ui.Window
+import dev.justinsmith.interval.ui.performClick
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.workout.WorkoutSession
 import kotlin.test.Test

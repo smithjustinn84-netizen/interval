@@ -6,7 +6,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
+import dev.justinsmith.interval.ui.performClick
 import dev.justinsmith.interval.ui.waitForText
 import dev.justinsmith.lift.data.FollowingEntity
 import dev.justinsmith.lift.data.SessionEntity

@@ -4,7 +4,7 @@ package dev.justinsmith.lift.programs
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
+import dev.justinsmith.interval.ui.performClick
 import dev.justinsmith.interval.ui.scrollToText
 import dev.justinsmith.interval.ui.waitForText
 import dev.justinsmith.lift.data.FollowingEntity

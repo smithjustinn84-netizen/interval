@@ -10,7 +10,6 @@ import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
-import androidx.compose.ui.test.performClick
 import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventDispatcher
@@ -25,6 +24,8 @@ import dev.justinsmith.interval.platform.LocalFileOpener
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.ui.UI_TEST_TIMEOUT
 import dev.justinsmith.interval.ui.Window
+import dev.justinsmith.interval.ui.onMainThread
+import dev.justinsmith.interval.ui.performClick
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import org.koin.core.KoinApplication
@@ -44,7 +45,7 @@ class AppFixture(
     val clock: AtomicLong,
     /** The time a running workout counts, which moves only through [advance]. */
     private val elapsed: TestTimeSource,
-    /** The system back input, for a test that drives a gesture step by step. */
+    /** The system back input, for a test that drives a gesture step by step, each step inside `onMainThread`. */
     val backInput: DirectNavigationEventInput,
 ) {
     /** The system's file picker, as Import opens it: what it hands over is a test's to set. */
@@ -56,8 +57,8 @@ class AppFixture(
     val repository: IntervalRepository
         get() = koin.koin.get()
 
-    /** The system back gesture, completed. */
-    fun back() {
+    /** The system back gesture, completed, on the main thread as a device delivers it. */
+    fun back() = onMainThread {
         backInput.backStarted(NavigationEvent())
         backInput.backCompleted()
     }
