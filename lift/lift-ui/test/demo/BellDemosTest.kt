@@ -108,6 +108,41 @@ class BellDemosTest {
         assertTrue((top.farBell - top.bell).getDistance() < 2 * Rig.FAR_ARM_OFFSET, "The far bell lags the near one")
     }
 
+    @Test
+    fun `the lunge lowers the back knee toward the floor with the front foot planted`() {
+        val bottom = RackedLungeDemo.figureAt(RackedLungeDemo.still)
+        assertTrue(Rig.FLOOR - bottom.farKnee.y < 20f, "The back knee stops at ${bottom.farKnee}")
+        assertTrue(bottom.farAnkle.x < bottom.hip.x - 40f, "The back foot never steps back")
+        assertEquals(Rig.FLOOR, bottom.ankle.y)
+    }
+
+    @Test
+    fun `the row braces the free hand on the bench and pulls the elbow back`() {
+        val bench = RowDemo.bench!!
+        (0..20).map { RowDemo.figureAt(it / 20f) }.forEach { figure ->
+            assertTrue(abs(figure.farHand.y - (Rig.FLOOR - bench.height)) < 6f, "The free hand leaves the bench")
+            assertTrue(figure.farHand.x in bench.from..bench.to, "The free hand misses the bench")
+        }
+        val top = RowDemo.figureAt(RowDemo.still)
+        assertTrue(top.elbow.x < top.shoulder.x - 30f, "The elbow stops at ${top.elbow}")
+    }
+
+    @Test
+    fun `the windmill hinges under a bell held straight up`() {
+        val down = WindmillDemo.figureAt(WindmillDemo.still)
+        assertTrue(down.hand.y < down.shoulder.y - 90f, "The bell arm leans at ${down.hand}")
+        assertTrue(abs(down.hand.x - down.shoulder.x) < 10f, "The bell arm leans at ${down.hand}")
+        assertTrue(down.farHand.y > down.hip.y, "The free hand never reaches down")
+    }
+
+    @Test
+    fun `the halo circles the bell in front of the face and behind the head`() {
+        val places = (0..40).map { HaloDemo.figureAt(it / 40f) }
+        assertTrue(places.any { it.bell.x > it.head.x + Rig.HEAD }, "The bell never passes in front of the face")
+        assertTrue(places.any { it.bell.x < it.head.x }, "The bell never goes behind the head")
+        places.forEach { assertTrue(it.bell.y < it.shoulder.y, "The bell drops to ${it.bell}, under the shoulders") }
+    }
+
     /** Whether the bell lies back along the forearm, as in the rack, rather than past the fist. */
     private fun rests(figure: Figure): Boolean {
         val forearm = figure.hand - figure.elbow
