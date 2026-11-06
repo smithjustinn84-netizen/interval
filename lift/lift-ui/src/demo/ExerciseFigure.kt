@@ -92,7 +92,7 @@ fun ExerciseFigure(
     }
     Canvas(described) {
         val t = progress()
-        drawFigure(demo.figureAt(t), demo.hold, colors.of(demo.phaseAt(t).beat), colors)
+        drawFigure(demo.figureAt(t), demo.trailAt(t), demo.hold, colors.of(demo.phaseAt(t).beat), colors)
     }
 }
 
@@ -120,10 +120,16 @@ private fun rememberRepClock(demo: ExerciseDemo, playing: Boolean): FloatState {
 }
 
 /**
- * Draws [figure] fitted and centred in the canvas, its bell in [bell]: back to front, so a swung bell passes
- * between the legs.
+ * Draws [figure] fitted and centred in the canvas, its bell in [bell] with [trail] behind it: back to front, so
+ * a swung bell passes between the legs and a held one sits behind the arms.
  */
-private fun DrawScope.drawFigure(figure: Figure, hold: BellHold, bell: Color, colors: FigureColors) {
+private fun DrawScope.drawFigure(
+    figure: Figure,
+    trail: List<Offset>,
+    hold: BellHold,
+    bell: Color,
+    colors: FigureColors,
+) {
     val view = Rig.view
     val scale = minOf(size.width / view.width, size.height / view.height)
     val left = (size.width - view.width * scale) / 2
@@ -133,17 +139,8 @@ private fun DrawScope.drawFigure(figure: Figure, hold: BellHold, bell: Color, co
         scale(scale, scale, pivot = Offset.Zero)
         translate(-view.left, -view.top)
     }) {
-        drawOval(
-            colors.shadow,
-            topLeft = Offset(Rig.ANKLE_X - Rig.SHADOW_WIDTH / 2, Rig.FLOOR + Rig.SHADOW_DROP - Rig.SHADOW_HEIGHT / 2),
-            size = Size(Rig.SHADOW_WIDTH, Rig.SHADOW_HEIGHT),
-        )
-        drawLine(
-            colors.floor,
-            Offset(Rig.ANKLE_X - Rig.FLOOR_REACH, Rig.FLOOR),
-            Offset(Rig.ANKLE_X + Rig.FLOOR_REACH_FORWARD, Rig.FLOOR),
-            Rig.FLOOR_LINE,
-        )
+        drawFloor(colors)
+        drawTrail(trail, bell)
         val behind = Offset(-Rig.FAR_LEG_OFFSET, 0f)
         val farLeg = listOf(figure.toe + behind, figure.ankle + behind, figure.knee + behind, figure.hip)
         drawLimb(farLeg, colors.farLeg, Rig.FAR_LEG)
@@ -151,19 +148,59 @@ private fun DrawScope.drawFigure(figure: Figure, hold: BellHold, bell: Color, co
         drawCircle(colors.body, Rig.HEAD, figure.head)
         when (hold) {
             BellHold.Swung -> {
-                drawLimb(listOf(figure.shoulder, figure.elbow, figure.hand), colors.body, Rig.ARM)
-                drawCircle(bell, Rig.GRIP, figure.hand, style = Stroke(Rig.GRIP_STROKE))
-                drawCircle(bell, Rig.BELL, figure.bell)
+                drawArmAndBell(figure, bell, colors.body)
                 drawNearLeg(figure, colors.body)
             }
 
             BellHold.AtChest -> {
                 drawNearLeg(figure, colors.body)
-                drawCircle(bell, Rig.CHEST_BELL, figure.bell)
-                drawLimb(listOf(figure.shoulder, figure.elbow, figure.hand), colors.body, Rig.ARM)
+                drawArmAndBell(figure, bell, colors.body)
             }
         }
     }
+}
+
+private fun DrawScope.drawFloor(colors: FigureColors) {
+    drawOval(
+        colors.shadow,
+        topLeft = Offset(Rig.ANKLE_X - Rig.SHADOW_WIDTH / 2, Rig.FLOOR + Rig.SHADOW_DROP - Rig.SHADOW_HEIGHT / 2),
+        size = Size(Rig.SHADOW_WIDTH, Rig.SHADOW_HEIGHT),
+    )
+    drawLine(
+        colors.floor,
+        Offset(Rig.ANKLE_X - Rig.FLOOR_REACH, Rig.FLOOR),
+        Offset(Rig.ANKLE_X + Rig.FLOOR_REACH_FORWARD, Rig.FLOOR),
+        Rig.FLOOR_LINE,
+    )
+}
+
+/** Where the bell has just been, as dots that grow and darken toward it: the wider apart, the faster it went. */
+private fun DrawScope.drawTrail(trail: List<Offset>, color: Color) {
+    trail.forEachIndexed { i, place ->
+        val share = (i + 1f) / trail.size
+        val radius = Rig.TRAIL_DOT_OLDEST + (Rig.TRAIL_DOT_NEWEST - Rig.TRAIL_DOT_OLDEST) * share
+        drawCircle(color.copy(alpha = TRAIL_ALPHA * share), radius, place)
+    }
+}
+
+/**
+ * The bell hanging from the hands, then the arm, then the fist over the handle it grips: a kettlebell's body
+ * under the handle's bar, which sits across the grip with a side running down to the body from each end.
+ */
+private fun DrawScope.drawArmAndBell(figure: Figure, bell: Color, body: Color) {
+    val along = (figure.bell - figure.hand) / Rig.BELL_REACH
+    val across = Offset(-along.y, along.x) * Rig.HANDLE_HALF
+    val sides = along * Rig.HANDLE_SIDES
+    val handle = listOf(
+        figure.hand + across + sides,
+        figure.hand + across,
+        figure.hand - across,
+        figure.hand - across + sides,
+    )
+    drawLimb(handle, bell, Rig.HANDLE)
+    drawCircle(bell, Rig.BELL, figure.bell)
+    drawLimb(listOf(figure.shoulder, figure.elbow, figure.hand), body, Rig.ARM)
+    drawCircle(body, Rig.HAND, figure.hand)
 }
 
 private fun DrawScope.drawNearLeg(figure: Figure, color: Color) =
@@ -178,3 +215,6 @@ private fun DrawScope.drawLimb(joints: List<Offset>, color: Color, width: Float)
 }
 
 private const val MILLIS_PER_SECOND = 1000f
+
+/** A trail's newest dot is this strong; the older ones fade from it. */
+private const val TRAIL_ALPHA = 0.6f

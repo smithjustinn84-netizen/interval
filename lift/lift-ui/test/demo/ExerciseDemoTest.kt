@@ -43,13 +43,44 @@ class ExerciseDemoTest {
     }
 
     @Test
+    fun `the bell keeps its speed through a keyframe it only passes`() {
+        // The snap is a keyframe on the way up, not a stop: the bell is as quick just after it as just before.
+        val snap = TwoHandSwingDemo.keyframes[2].at
+        val before = (TwoHandSwingDemo.figureAt(snap).bell - TwoHandSwingDemo.figureAt(snap - 0.01f).bell).getDistance()
+        val after = (TwoHandSwingDemo.figureAt(snap + 0.01f).bell - TwoHandSwingDemo.figureAt(snap).bell).getDistance()
+        assertTrue(before > 3f && after > 3f, "The bell stalls at the snap: $before then $after")
+        assertTrue(abs(before - after) < before / 2, "The bell lurches at the snap: $before then $after")
+    }
+
+    @Test
+    fun `no joint swings past the poses it moves between`() {
+        demos.forEach { demo ->
+            val keyed = demo.keyframes.map { it.pose.angles().toList() }
+            (0..400).map { demo.poseAt(it / 400f).angles().toList() }.forEach { angles ->
+                angles.forEachIndexed { joint, angle ->
+                    val low = keyed.minOf { it[joint] }
+                    val high = keyed.maxOf { it[joint] }
+                    assertTrue(angle in low - 0.01f..high + 0.01f, "Joint $joint reaches $angle, past $low..$high")
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `a pose held between two keyframes stays put`() {
+        val bottom = GobletSquatDemo.figureAt(0.52f)
+        val held = GobletSquatDemo.figureAt(0.56f)
+        assertTrue((bottom.hip - held.hip).getDistance() < 0.01f, "The squat's bottom drifts")
+    }
+
+    @Test
     fun `every pose stays in the drawn box with its feet on the floor`() {
         demos.forEach { demo ->
             (0..100).map { demo.figureAt(it / 100f) }.forEach { figure ->
                 listOf(figure.head, figure.hand, figure.bell, figure.hip).forEach { joint ->
                     assertTrue(Rig.view.contains(joint), "$joint is outside the view")
                 }
-                assertTrue(figure.bell.y + Rig.CHEST_BELL <= Rig.FLOOR, "The bell goes through the floor")
+                assertTrue(figure.bell.y + Rig.BELL <= Rig.FLOOR, "The bell goes through the floor")
                 assertEquals(Rig.FLOOR, figure.ankle.y)
             }
         }
@@ -57,7 +88,7 @@ class ExerciseDemoTest {
 
     @Test
     fun `the swing floats the bell to chest height and hikes it behind the knees`() {
-        val float = TwoHandSwingDemo.figureAt(0.48f)
+        val float = TwoHandSwingDemo.figureAt(TwoHandSwingDemo.still)
         val reach = abs(float.bell.y - float.shoulder.y)
         assertTrue(reach < 12f, "The bell floats to ${float.bell}, the shoulder at ${float.shoulder}")
         val hike = TwoHandSwingDemo.figureAt(0f)
@@ -65,8 +96,37 @@ class ExerciseDemoTest {
     }
 
     @Test
+    fun `a swung bell lags the hands and a held one does not`() {
+        val rising = 0.2f
+        val rigid = TwoHandSwingDemo.poseAt(rising).figure(BellHold.Swung)
+        assertTrue(
+            TwoHandSwingDemo.figureAt(rising).bell.y > rigid.bell.y,
+            "The bell is level with the arms on the way up",
+        )
+        val held = GobletSquatDemo.poseAt(rising).figure(BellHold.AtChest)
+        assertEquals(held.bell, GobletSquatDemo.figureAt(rising).bell)
+    }
+
+    @Test
+    fun `the swing's bell leaves a trail that ends just behind it`() {
+        val trail = TwoHandSwingDemo.trailAt(0.3f)
+        assertEquals(ExerciseDemo.TRAIL_STEPS, trail.size)
+        val bell = TwoHandSwingDemo.figureAt(0.3f).bell
+        val gaps = (trail + bell).zipWithNext { a, b -> (a - b).getDistance() }
+        assertTrue(gaps.all { it > 0f && it < 30f }, "The trail's steps are $gaps")
+        assertTrue(GobletSquatDemo.trailAt(0.3f).isEmpty(), "A held bell leaves a trail")
+    }
+
+    @Test
+    fun `a trail at the start of a rep reaches back into the last one`() {
+        val trail = TwoHandSwingDemo.trailAt(0.02f)
+        val lastRep = TwoHandSwingDemo.figureAt(1f - TwoHandSwingDemo.trail + 0.02f).bell
+        assertTrue((lastRep - trail.first()).getDistance() < 0.5f, "The trail starts at ${trail.first()}, not $lastRep")
+    }
+
+    @Test
     fun `the goblet squat sits the hips below the knees and keeps the bell at the chest`() {
-        val bottom = GobletSquatDemo.figureAt(0.56f)
+        val bottom = GobletSquatDemo.figureAt(GobletSquatDemo.still)
         assertTrue(bottom.hip.y > bottom.knee.y, "The hips stop above the knees")
         (0..20).map { GobletSquatDemo.figureAt(it / 20f) }.forEach { figure ->
             assertTrue(figure.bell.y < figure.hip.y, "The bell drops below the hips")

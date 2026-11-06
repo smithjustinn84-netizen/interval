@@ -2,27 +2,32 @@ package dev.justinsmith.lift.ui.demo
 
 /**
  * The two-hand swing: hike the bell back between the legs, snap the hips to stand, let it float to the chest,
- * wait for the arms to meet the ribs, hinge. Its phases are its cues: Hike (0), Snap (1), Float (2).
+ * wait for the arms to meet the ribs, hinge. The hips lead and the bell follows: they are locked out by the
+ * snap with the bell still on its way up, and on the way down the hinge waits for the arms. Its phases are
+ * its cues: Hike (0), Snap (1), Float (2).
  */
 val TwoHandSwingDemo: ExerciseDemo = run {
     val hike = swingPose(shin = 12f, thigh = -55f, torso = 65f, arm = -40f)
     ExerciseDemo(
         keyframes = listOf(
             Keyframe(at = 0f, pose = hike),
-            Keyframe(at = 0.30f, pose = swingPose(shin = 0f, thigh = 0f, torso = -3f, arm = 45f)),
-            Keyframe(at = 0.48f, pose = swingPose(shin = 0f, thigh = 0f, torso = -3f, arm = 88f)),
-            Keyframe(at = 0.68f, pose = swingPose(shin = 0f, thigh = 0f, torso = -2f, arm = 18f)),
-            Keyframe(at = 0.82f, pose = swingPose(shin = 8f, thigh = -35f, torso = 40f, arm = -6f)),
+            Keyframe(at = 0.14f, pose = swingPose(shin = 6f, thigh = -24f, torso = 30f, arm = -14f)),
+            Keyframe(at = 0.26f, pose = swingPose(shin = 0f, thigh = 0f, torso = -4f, arm = 32f)),
+            Keyframe(at = 0.46f, pose = swingPose(shin = 0f, thigh = 0f, torso = -3f, arm = 88f)),
+            Keyframe(at = 0.66f, pose = swingPose(shin = 0f, thigh = 0f, torso = -2f, arm = 16f)),
+            Keyframe(at = 0.80f, pose = swingPose(shin = 8f, thigh = -35f, torso = 40f, arm = -10f)),
             Keyframe(at = 1f, pose = hike),
         ),
         phases = listOf(
-            DemoPhase(until = 0.30f, beat = DemoBeat.Drive, cue = 1),
-            DemoPhase(until = 0.68f, beat = DemoBeat.Ease, cue = 2),
+            DemoPhase(until = 0.26f, beat = DemoBeat.Drive, cue = 1),
+            DemoPhase(until = 0.66f, beat = DemoBeat.Ease, cue = 2),
             DemoPhase(until = 1f, beat = DemoBeat.Set, cue = 0),
         ),
         hold = BellHold.Swung,
         secondsPerRep = 1.8f,
-        still = 0.48f,
+        still = 0.46f,
+        bellLag = 0.03f,
+        trail = 0.16f,
     )
 }
 
