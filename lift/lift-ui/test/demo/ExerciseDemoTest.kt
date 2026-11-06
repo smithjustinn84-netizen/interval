@@ -12,10 +12,11 @@ class ExerciseDemoTest {
     private val demos = BuiltInExercise.entries.mapNotNull { it.demo }
 
     @Test
-    fun `the swing and the goblet squat are drawn and nothing else yet`() {
+    fun `the bell lifts are drawn and nothing else yet`() {
         assertSame(TwoHandSwingDemo, BuiltInExercise.TwoHandSwing.demo)
         assertSame(GobletSquatDemo, BuiltInExercise.GobletSquat.demo)
-        assertNull(BuiltInExercise.Press.demo)
+        assertNull(BuiltInExercise.BarbellSnatch.demo)
+        assertNull(BuiltInExercise.PushUp.demo)
     }
 
     @Test
@@ -37,7 +38,7 @@ class ExerciseDemoTest {
     @Test
     fun `the figure moves smoothly through the rep`() {
         demos.forEach { demo ->
-            val steps = 400
+            val steps = 800
             (0 until steps).forEach { i ->
                 val a = demo.figureAt(i / steps.toFloat()).bell
                 val b = demo.figureAt((i + 1) / steps.toFloat()).bell

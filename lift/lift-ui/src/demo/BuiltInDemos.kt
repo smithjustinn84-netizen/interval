@@ -1,5 +1,7 @@
 package dev.justinsmith.lift.ui.demo
 
+import dev.justinsmith.lift.ui.demo.KettlebellPoses.swingPose
+
 /**
  * The two-hand swing: hike the bell back between the legs, snap the hips to stand, let it float to the chest,
  * wait for the arms to meet the ribs, hinge. The hips lead and the bell follows: they are locked out by the
@@ -66,10 +68,6 @@ val GobletSquatDemo: ExerciseDemo = run {
         still = 0.56f,
     )
 }
-
-/** A swing's pose: the arms straight, [arm] from hanging. */
-private fun swingPose(shin: Float, thigh: Float, torso: Float, arm: Float) =
-    Pose(shin = shin, thigh = thigh, torso = torso, upperArm = arm, forearm = arm)
 
 /** A goblet squat's pose: the bell by the horns under the hands, hanging a little forward, clear of the ribs. */
 private fun gobletPose(shin: Float, thigh: Float, torso: Float, upperArm: Float, forearm: Float) =

@@ -11,5 +11,10 @@ private val builtInDemos: Map<Exercise, ExerciseDemo> by lazy {
     mapOf(
         BuiltInExercise.TwoHandSwing to TwoHandSwingDemo,
         BuiltInExercise.GobletSquat to GobletSquatDemo,
+        BuiltInExercise.OneHandSwing to OneHandSwingDemo,
+        BuiltInExercise.Deadlift to DeadliftDemo,
+        BuiltInExercise.HighPull to HighPullDemo,
+        BuiltInExercise.Snatch to SnatchDemo,
+        BuiltInExercise.HalfSnatch to HalfSnatchDemo,
     )
 }
