@@ -215,8 +215,12 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     fun seePick(name: String) = see(name)
 
-    /** A pick's own Start, told from the others by the preset it starts. */
-    fun startPick(name: String) = tapDescribed("Start $name")
+    /** A pick by time, by its row, which opens a look at it, then its Start. */
+    fun startPick(name: String) {
+        tap(hasText(name) and hasClickAction())
+        see("Plan for later")
+        tap("Start")
+    }
 
     fun startSessionFromToday() = tap("Start session")
 

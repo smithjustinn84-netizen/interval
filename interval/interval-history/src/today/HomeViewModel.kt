@@ -22,6 +22,7 @@ import dev.justinsmith.interval.history.upNext
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.LoggedSport
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
@@ -86,7 +87,7 @@ class HomeViewModel(
     private val historyStore: HistoryStore,
     private val presetStore: PresetStore,
     flowStore: FlowStore,
-    planStore: PlanStore,
+    private val planStore: PlanStore,
     settingsStore: SettingsStore,
     private val lift: LiftActivity,
     private val timestamps: TimestampFormatter,
@@ -158,9 +159,19 @@ class HomeViewModel(
         presetStore.applyPreset(Preset(name, config))
     }
 
-    /** Puts [pick]'s preset on the Timer, for the workout about to start. */
-    fun putOnTimer(pick: QuickPick) {
-        presetStore.applyPreset(pick.preset)
+    /** Puts [preset] on the Timer, for the workout about to start: a pick's, which keeps its id. */
+    fun putOnTimer(preset: Preset) {
+        presetStore.applyPreset(preset)
+    }
+
+    /** Plans [workout] every week on [weekdays], from a look before Start's Plan for later. */
+    fun planWeekly(workout: PlanWorkout, weekdays: Set<Int>) {
+        planStore.planWeekly(workout, weekdays)
+    }
+
+    /** Plans [workout] once, on [epochDay]. */
+    fun planOnce(workout: PlanWorkout, epochDay: Long) {
+        planStore.planOnce(workout, epochDay)
     }
 
     /** Starts the next day of [program], or a free session with none, for the Lifting page about to open. */

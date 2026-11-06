@@ -201,7 +201,6 @@
     <string name="home_resume_session">Resume session</string>
     <string name="home_pick_by_time">Or pick by time</string>
     <string name="home_minutes">%1$d min</string>
-    <string name="home_start_pick_cd">Start %1$s</string>
     <string name="home_no_pick">Nothing that short yet</string>
     <string name="home_no_pick_hint">Set one up on the Timer</string>
 
@@ -242,4 +241,6 @@
     <string name="history_done_week">Done this week</string>
     <string name="history_earlier">Earlier</string>
     <string name="history_plan_add_cd">Plan a workout</string>
+    <string name="preview_plan_later">Plan for later</string>
+    <string name="preview_open_cd">Look at %1$s</string>
 </resources>

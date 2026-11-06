@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.history
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,6 +30,7 @@ import dev.justinsmith.interval.history.resources.history_then
 import dev.justinsmith.interval.history.resources.history_times
 import dev.justinsmith.interval.history.resources.history_up_next
 import dev.justinsmith.interval.history.resources.notice_sport_logged
+import dev.justinsmith.interval.history.resources.preview_open_cd
 import dev.justinsmith.interval.history.resources.sport_counts
 import dev.justinsmith.interval.history.resources.sport_log_it
 import dev.justinsmith.interval.plan.sportTitle
@@ -83,10 +85,16 @@ internal fun UpNextCard(upNext: List<UpNextItem>, actions: HistoryActions, modif
 
 /**
  * Every plan of the next seven days in a card, a row each: its day, its mark, its name and what it is, and the way
- * to start it (or log it, a sport on its day); over it, the way to the plan.
+ * to start it (or log it, a sport on its day); a row opens a look at it ([onLook], by its place). Over the card, the
+ * way to the plan.
  */
 @Composable
-internal fun ComingUp(upNext: List<UpNextItem>, actions: HistoryActions, modifier: Modifier = Modifier) {
+internal fun ComingUp(
+    upNext: List<UpNextItem>,
+    actions: HistoryActions,
+    onLook: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val palette = IntervalTheme.palette
     Column(modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -96,9 +104,18 @@ internal fun ComingUp(upNext: List<UpNextItem>, actions: HistoryActions, modifie
         ListCard {
             upNext.forEachIndexed { index, item ->
                 if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
+                // A row opens a look at it before Start; a sport, which nothing starts, has none.
+                val described = stringResource(Res.string.preview_open_cd, upNextName(item))
                 Row(
                     Modifier
                         .fillMaxWidth()
+                        .then(
+                            if (item.preview() != null) {
+                                Modifier.clickable(onClickLabel = described) { onLook(index) }
+                            } else {
+                                Modifier
+                            },
+                        )
                         .heightIn(min = Sizes.listRow)
                         .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
                     verticalAlignment = Alignment.CenterVertically,

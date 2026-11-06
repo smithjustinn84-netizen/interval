@@ -96,6 +96,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   what was planned, in place of the line that split the week. Under it, "Coming up" lists every plan of the next
   seven days, a row each with its day and its Start, then the log's days under "Done this week" and "Earlier". The
   title bar's + plans a workout; the month keeps Up next under its calendar and gains the calendar's key.
+- A look before Start: a pick by time, Up next on Today, and a row of Log's Coming up open a sheet of what it is
+  ("Strength · about 20 min", "Mobility · 5 moves · 5:00"), what is in it (a session's lifts with their sets, a
+  flow's moves, a workout's timeline), Start, and Plan for later, which opens the add sheet on it alone. Up next's
+  own Start still starts at once.
 
 ## [0.4.0] — 2026-11-05
 

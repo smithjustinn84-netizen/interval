@@ -11,6 +11,8 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -22,6 +24,7 @@ import dev.justinsmith.interval.history.DayState
 import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.history.UpNextItem
 import dev.justinsmith.interval.history.WeekGoal
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
@@ -213,13 +216,13 @@ class HomeScreenTest {
     }
 
     @Test
-    fun `the minutes picked and a pick's own start are handed on`() = runUiTest {
+    fun `the minutes picked are handed on and a pick opens a look at it that starts it`() = runUiTest {
         val minutes = mutableListOf<Int>()
         val started = mutableListOf<String>()
         setThemedContent {
             HomeScreen(
                 empty,
-                HomeActions(onMinutes = { minutes += it }, onStartPick = { started += it.preset.name }),
+                HomeActions(onMinutes = { minutes += it }, onStartPick = { started += it.name }),
             )
         }
 
@@ -227,9 +230,45 @@ class HomeScreenTest {
         onNode(option("20 min")).performClick()
         onNodeWithText("HIIT 30/30").assertIsDisplayed()
         // Under the card's three ways to a plan, the third pick is below a phone's first screen.
-        onNodeWithContentDescription("Start Tabata").performScrollTo().performClick()
+        onNodeWithText("Tabata").performScrollTo().performClick()
+        onNodeWithText("Conditioning · ", substring = true).assertExists()
+        onNodeWithText("Plan for later").assertExists()
+        onNodeWithText("Start").performClick()
         assertEquals(listOf(20), minutes)
+        waitUntil { started.isNotEmpty() }
         assertEquals(listOf("Tabata"), started)
+    }
+
+    @Test
+    fun `up next opens a look at the program's day with its lifts while its start starts at once`() = runUiTest {
+        val started = mutableListOf<ProgramKey?>()
+        val day = program(ProgramId.PressLadders).day(3)
+        val state = empty.copy(upNext = listOf(UpNextItem.Lift(THURSDAY, HistoryDay.Today, day, minutes = 35)))
+        setThemedContent { HomeScreen(state, HomeActions(onStartLift = { started += it })) }
+
+        onNodeWithText("Press ladders 1-2-3").performClick()
+        onNodeWithText("Strength · about 35 min").assertExists()
+        onNodeWithText("Plan for later").assertExists()
+        onAllNodesWithText("Start day 3")[1].performClick()
+        waitUntil { started.isNotEmpty() }
+        assertEquals(listOf<ProgramKey?>(day.program.key), started)
+    }
+
+    @Test
+    fun `a pick planned for later goes on the add sheet with it alone`() = runUiTest {
+        val planned = mutableListOf<String>()
+        setThemedContent {
+            HomeScreen(
+                empty,
+                HomeActions(onPlanOnce = { workout, _ -> planned += (workout as PlanWorkout.Interval).name }),
+            )
+        }
+        onNodeWithText("HIIT 30/30").performScrollTo().performClick()
+        onNodeWithText("Plan for later").performClick()
+        onNodeWithText("Once").performClick()
+        onAllNodesWithText("Add to plan").onLast().performClick()
+        waitUntil { planned.isNotEmpty() }
+        assertEquals(listOf("HIIT 30/30"), planned)
     }
 
     @Test

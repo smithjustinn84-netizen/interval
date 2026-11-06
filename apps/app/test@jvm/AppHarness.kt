@@ -122,5 +122,9 @@ fun DesktopComposeUiTest.openTimer() {
     waitForIdle()
 }
 
-/** A navigation bar or rail item; "Log" alone would also match the Log screen's title. */
-fun DesktopComposeUiTest.tab(label: String): SemanticsNodeInteraction = onNode(hasText(label) and hasClickAction())
+/**
+ * A navigation bar or rail item, which is selectable: "Log" alone would also match the Log screen's title, and
+ * "Today" a row of what is coming up.
+ */
+fun DesktopComposeUiTest.tab(label: String): SemanticsNodeInteraction =
+    onNode(hasText(label) and hasClickAction() and isSelectable())

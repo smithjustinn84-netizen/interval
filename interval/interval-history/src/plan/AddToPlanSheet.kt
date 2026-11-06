@@ -86,8 +86,8 @@ data class LiftChoices(val programDay: ProgramDay?)
 /**
  * Plans a workout: one of [choices], with [lift] a session on Lift, or with [sports] a day of a sport, then every
  * week on the weekdays picked or once on one of [days]. It opens on [repeat] with [weekday] or [epochDay] picked,
- * so the way in (a weekday's +, a date) is already chosen. Without [lift] or [sports] it plans only an interval
- * workout, as a workout's page does.
+ * so the way in (a weekday's +, a date) is already chosen, and on Lift's side with [startOnLift]. Without [lift] or
+ * [sports] it plans only an interval workout, as a workout's page does; without [choices], only the others.
  */
 @Composable
 fun AddToPlanSheet(
@@ -101,11 +101,22 @@ fun AddToPlanSheet(
     epochDay: Long = days.firstOrNull()?.epochDay ?: 0,
     lift: LiftChoices? = null,
     sports: Boolean = false,
+    startOnLift: Boolean = false,
 ) {
     val palette = IntervalTheme.palette
     // The first choice is the Timer's; a preset is the likelier pick when there is one.
     var picked by rememberSaveable { mutableIntStateOf(if (choices.size > 1) 1 else 0) }
-    var kind by rememberSaveable { mutableStateOf(PlanKind.Interval) }
+    var kind by rememberSaveable {
+        mutableStateOf(
+            if (startOnLift &&
+                lift != null
+            ) {
+                PlanKind.Lift
+            } else {
+                PlanKind.Interval
+            },
+        )
+    }
     val programDay = lift?.programDay
     // The program's next day when one is followed, else any session, the only one offered then.
     var ofProgram by rememberSaveable { mutableStateOf(true) }
@@ -117,7 +128,7 @@ fun AddToPlanSheet(
     val sportName = rememberTextFieldState()
     val kinds = PlanKind.entries.filter {
         when (it) {
-            PlanKind.Interval -> true
+            PlanKind.Interval -> choices.isNotEmpty()
             PlanKind.Lift -> lift != null
             PlanKind.Sport -> sports
         }

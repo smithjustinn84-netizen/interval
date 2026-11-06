@@ -128,4 +128,5 @@
     <string name="weekday_initial_5">F</string>
     <string name="weekday_initial_6">S</string>
     <string name="weekday_initial_7">S</string>
+    <string name="flow_move_time_sides">%1$s a side</string>
 </resources>

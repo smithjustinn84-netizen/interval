@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -15,17 +14,14 @@ import dev.justinsmith.interval.mobility.resources.Res
 import dev.justinsmith.interval.mobility.resources.mobility_edit
 import dev.justinsmith.interval.mobility.resources.mobility_kind
 import dev.justinsmith.interval.mobility.resources.mobility_make_yours
-import dev.justinsmith.interval.mobility.resources.mobility_move_time_sides
 import dev.justinsmith.interval.mobility.resources.mobility_prep_line
 import dev.justinsmith.interval.mobility.resources.mobility_sheet_note
 import dev.justinsmith.interval.mobility.resources.mobility_start
-import dev.justinsmith.interval.timer.Move
 import dev.justinsmith.interval.timer.formatClock
+import dev.justinsmith.interval.ui.FlowMoves
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
-import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.QuietTextButton
-import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StartButton
 import dev.justinsmith.interval.ui.joined
@@ -80,34 +76,11 @@ internal fun FlowSheet(
         // Start before the moves: a flow of ten is a long way to scroll for it.
         StartButton(onStart, Modifier.fillMaxWidth(), label = stringResource(Res.string.mobility_start))
         Text(stringResource(Res.string.mobility_sheet_note), style = IntervalTheme.type.meta, color = palette.textDim)
-        ListCard(fill = palette.surfaceVariant) {
-            flow.moves.forEachIndexed { index, move ->
-                if (index > 0) RowDivider()
-                MoveRow(move)
-            }
-        }
+        FlowMoves(flow.moves)
         QuietTextButton(
             stringResource(if (flow.custom) Res.string.mobility_edit else Res.string.mobility_make_yours),
             onChange,
             Modifier.align(Alignment.CenterHorizontally),
         )
-    }
-}
-
-/** A move: its name and time on one line, how it is done under them. */
-@Composable
-private fun MoveRow(move: Move, modifier: Modifier = Modifier) {
-    val palette = IntervalTheme.palette
-    Column(modifier.fillMaxWidth().padding(horizontal = Spacing.space16, vertical = Spacing.space12)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space12)) {
-            Text(move.name, style = IntervalTheme.type.label, color = palette.text, modifier = Modifier.weight(1f))
-            val time = formatClock(move.seconds)
-            Text(
-                if (move.sided) stringResource(Res.string.mobility_move_time_sides, time) else time,
-                style = IntervalTheme.type.label,
-                color = palette.textDim,
-            )
-        }
-        Text(move.cue, style = IntervalTheme.type.meta, color = palette.textDim)
     }
 }

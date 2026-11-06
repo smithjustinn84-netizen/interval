@@ -1,34 +1,40 @@
 package dev.justinsmith.interval.today
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.intl.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.data.FlowStore
 import dev.justinsmith.interval.history.GoalRow
 import dev.justinsmith.interval.history.HistoryDay
-import dev.justinsmith.interval.history.StartPill
+import dev.justinsmith.interval.history.PreviewHost
+import dev.justinsmith.interval.history.StartPreview
 import dev.justinsmith.interval.history.SummaryCard
 import dev.justinsmith.interval.history.UpNextItem
 import dev.justinsmith.interval.history.UpNextLater
 import dev.justinsmith.interval.history.WeekStrip
 import dev.justinsmith.interval.history.dayHeading
 import dev.justinsmith.interval.history.flowKeyOf
+import dev.justinsmith.interval.history.preview
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.common_joined
 import dev.justinsmith.interval.history.resources.history_edit_plan
@@ -52,14 +58,16 @@ import dev.justinsmith.interval.history.resources.home_pick_by_time
 import dev.justinsmith.interval.history.resources.home_resume_session
 import dev.justinsmith.interval.history.resources.home_setup
 import dev.justinsmith.interval.history.resources.home_start_day
-import dev.justinsmith.interval.history.resources.home_start_pick_cd
 import dev.justinsmith.interval.history.resources.home_start_session
 import dev.justinsmith.interval.history.resources.home_title
 import dev.justinsmith.interval.history.resources.notice_undo
+import dev.justinsmith.interval.history.resources.preview_open_cd
 import dev.justinsmith.interval.history.resources.sport_counts
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.plan.sportTitle
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.EmptyState
@@ -136,9 +144,9 @@ fun HomeRoute(
                 if (flow == null) viewModel.putOnTimer(name, config)
                 startWorkout(flow)
             },
-            onStartPick = { pick ->
-                val flow = flowKeyOf(pick.preset.config, flows.flows.value)
-                if (flow == null) viewModel.putOnTimer(pick)
+            onStartPick = { preset ->
+                val flow = flowKeyOf(preset.config, flows.flows.value)
+                if (flow == null) viewModel.putOnTimer(preset)
                 startWorkout(flow)
             },
             onStartLift = { program ->
@@ -151,6 +159,8 @@ fun HomeRoute(
                 notices.show(loggedText, NoticeAction(undo) { viewModel.unlogSport(sport, day) })
             },
             onMinutes = viewModel::setMinutes,
+            onPlanWeekly = viewModel::planWeekly,
+            onPlanOnce = viewModel::planOnce,
             onPlan = { plan() },
             onPrograms = { programs() },
             onOpenHistory = { openHistory() },
@@ -167,13 +177,16 @@ fun HomeRoute(
 class HomeActions(
     /** Starts a planned workout of this name and shape now. */
     val onStart: (String, IntervalConfig) -> Unit = { _, _ -> },
-    /** Starts a preset picked by time now. */
-    val onStartPick: (QuickPick) -> Unit = {},
+    /** Starts a preset picked by time, or a workout looked at before Start, now. */
+    val onStartPick: (Preset) -> Unit = {},
     /** Opens Lifting: on a new day of this program, or with null a free session; either way, on one in progress. */
     val onStartLift: (ProgramKey?) -> Unit = {},
     /** Logs a day of this sport today, with the line saying so ("BJJ class logged"). */
     val onLogSport: (sport: Sport, loggedText: String) -> Unit = { _, _ -> },
     val onMinutes: (Int) -> Unit = {},
+    /** Plans a workout looked at before Start, every week or once. */
+    val onPlanWeekly: (PlanWorkout, Set<Int>) -> Unit = { _, _ -> },
+    val onPlanOnce: (PlanWorkout, Long) -> Unit = { _, _ -> },
     val onPlan: () -> Unit = {},
     val onPrograms: () -> Unit = {},
     val onOpenHistory: () -> Unit = {},
@@ -193,6 +206,8 @@ class HomeActions(
 @Composable
 fun HomeScreen(state: HomeUiState, actions: HomeActions, modifier: Modifier = Modifier) {
     val card = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4)
+    // What is being looked at before Start, by where it is: kept by place, so a rotation keeps it open.
+    var looking by rememberSaveable { mutableStateOf<String?>(null) }
     TabGrid(
         stringResource(Res.string.home_title),
         modifier,
@@ -209,14 +224,39 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, modifier: Modifier = Mo
         val agenda = state.agenda
         item(key = "next") {
             when {
-                agenda.lead != null -> UpNext(agenda.lead, agenda.later, actions, card)
+                agenda.lead != null -> UpNext(agenda.lead, agenda.later, actions, { looking = LEAD }, card)
                 state.hasPlans -> NothingDue(actions, card)
                 else -> NothingPlanned(actions, card)
             }
         }
         if (agenda.also.isNotEmpty()) item(key = "also") { AlsoToday(agenda.also, actions, card) }
-        item(key = "picks") { Picks(state, actions, card) }
+        item(key = "picks") { Picks(state, actions, { looking = "$PICK$it" }, card) }
     }
+    looking?.let { state.previewAt(it) }?.let { preview ->
+        PreviewHost(
+            preview,
+            today = state.week.firstOrNull { it.today }?.epochDay ?: 0,
+            onStartWorkout = actions.onStartPick,
+            onStartLift = { actions.onStartLift(it?.program?.key) },
+            onPlanWeekly = actions.onPlanWeekly,
+            onPlanOnce = actions.onPlanOnce,
+            onDone = { looking = null },
+        )
+    }
+}
+
+private const val LEAD = "lead"
+private const val PICK = "pick:"
+
+/** What is looked at before Start at [place]: Up next's lead, or a pick by its place in the list. */
+private fun HomeUiState.previewAt(place: String): StartPreview? = when {
+    place == LEAD -> agenda.lead?.preview()
+
+    place.startsWith(PICK) -> picks.getOrNull(place.removePrefix(PICK).toInt())?.let {
+        StartPreview.Workout(it.preset, it.totalSeconds, it.flow)
+    }
+
+    else -> null
 }
 
 /**
@@ -224,10 +264,30 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, modifier: Modifier = Mo
  * sport has nothing to start: on its day it is logged, and before it only named.
  */
 @Composable
-private fun UpNext(next: UpNextItem, later: List<UpNextItem>, actions: HomeActions, modifier: Modifier = Modifier) {
+private fun UpNext(
+    next: UpNextItem,
+    later: List<UpNextItem>,
+    actions: HomeActions,
+    onLook: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val palette = IntervalTheme.palette
     SummaryCard(modifier) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+        // What it is opens a look at it; Start, under it, starts it at once.
+        val look = next.preview()?.let { onLook }
+        val described = stringResource(Res.string.preview_open_cd, upNextTitle(next))
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .then(
+                    if (look != null) {
+                        Modifier.clickable(onClickLabel = described, onClick = look)
+                    } else {
+                        Modifier
+                    },
+                ),
+            verticalArrangement = Arrangement.spacedBy(Spacing.space4),
+        ) {
             Text(upNextCaption(next), style = IntervalTheme.type.caption, color = palette.textDim)
             Text(upNextTitle(next), style = IntervalTheme.type.value, color = palette.text)
             Text(upNextDetail(next), style = IntervalTheme.type.meta, color = palette.textDim)
@@ -352,7 +412,7 @@ private fun NothingDue(actions: HomeActions, modifier: Modifier = Modifier) {
 
 /** Or pick by time: a length, then the presets that fit it, or the way to the Timer when none does. */
 @Composable
-private fun Picks(state: HomeUiState, actions: HomeActions, modifier: Modifier = Modifier) {
+private fun Picks(state: HomeUiState, actions: HomeActions, onLook: (Int) -> Unit, modifier: Modifier = Modifier) {
     Column(modifier) {
         GroupLabel(stringResource(Res.string.home_pick_by_time))
         SegmentedPicker(
@@ -372,19 +432,21 @@ private fun Picks(state: HomeUiState, actions: HomeActions, modifier: Modifier =
             }
             state.picks.forEachIndexed { index, pick ->
                 if (index > 0) RowDivider(Modifier.padding(start = Spacing.space4))
-                PickRow(pick, onStart = { actions.onStartPick(pick) })
+                PickRow(pick, onLook = { onLook(index) })
             }
         }
     }
 }
 
-/** A preset or a flow that fits: its name over its shape and length, and a Start that says which it starts. */
+/** A preset or a flow that fits: its name over its shape and length, opening a look at it before Start. */
 @Composable
-private fun PickRow(pick: QuickPick, onStart: () -> Unit, modifier: Modifier = Modifier) {
+private fun PickRow(pick: QuickPick, onLook: () -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
+    val described = stringResource(Res.string.preview_open_cd, pick.preset.name)
     Row(
         modifier
             .fillMaxWidth()
+            .clickable(onClickLabel = described, onClick = onLook)
             .heightIn(min = Sizes.listRow)
             .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
         verticalAlignment = Alignment.CenterVertically,
@@ -395,16 +457,12 @@ private fun PickRow(pick: QuickPick, onStart: () -> Unit, modifier: Modifier = M
         Column(Modifier.weight(1f)) {
             Text(pick.preset.name, style = IntervalTheme.type.label, color = palette.text)
             Text(
-                stringResource(
-                    Res.string.common_joined,
-                    configDescription(pick.preset.config),
-                    formatClock(pick.totalSeconds),
-                ),
+                configDescription(pick.preset.config),
                 style = IntervalTheme.type.meta,
                 color = palette.textDim,
             )
         }
-        val starts = stringResource(Res.string.home_start_pick_cd, pick.preset.name)
-        StartPill(primary = false, onClick = onStart, Modifier.semantics { contentDescription = starts })
+        Text(formatClock(pick.totalSeconds), style = IntervalTheme.type.value, color = palette.text)
+        Icon(IntervalIcons.Chevron, null, tint = palette.textDim, modifier = Modifier.size(Sizes.chipIcon))
     }
 }

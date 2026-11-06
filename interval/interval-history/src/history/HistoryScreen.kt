@@ -226,6 +226,8 @@ fun HistoryScreen(
     var addingOn by rememberSaveable { mutableStateOf<Long?>(null) }
     // Planning from the title bar's +, on any of the next two weeks' days, rather than one day's.
     var planning by rememberSaveable { mutableStateOf(false) }
+    // The row of Coming up looked at before Start, by its place.
+    var looking by rememberSaveable { mutableStateOf<Int?>(null) }
     val title = stringResource(Res.string.history_title)
     val titleActions: @Composable RowScope.() -> Unit = {
         IconAction(IntervalIcons.Add, stringResource(Res.string.history_plan_add_cd), { planning = true })
@@ -238,7 +240,7 @@ fun HistoryScreen(
     }
     BoxWithConstraints(modifier.fillMaxSize()) {
         if (maxWidth >= Sizes.listColumn * 2 && state.sections.isNotEmpty()) {
-            SummaryBesideLog(title, titleActions, state, actions, selected)
+            SummaryBesideLog(title, titleActions, state, actions, selected, onLook = { looking = it })
         } else {
             TabGrid(title, actions = titleActions) {
                 // While loading, neither: no first run's card for a moment, and no summary of nothing.
@@ -247,7 +249,7 @@ fun HistoryScreen(
                         FirstRun(actions, Modifier.animateItem().then(Gutter))
                     }
                 } else if (!state.loading) {
-                    summaryItems(state, actions)
+                    summaryItems(state, actions, onLook = { looking = it })
                 }
                 logItems(state, actions, selected)
             }
@@ -270,18 +272,14 @@ fun HistoryScreen(
             sports = true,
         )
     }
-    if (planning) {
-        AddToPlanSheet(
-            choices = state.choices,
-            days = dayChoices(state.today),
-            onPlanWeekly = actions.onPlanWeekly,
-            onPlanOnce = actions.onPlanOnce,
-            onDismiss = { planning = false },
-            weekday = weekdayOf(state.today),
-            lift = LiftChoices(state.programDay),
-            sports = true,
-        )
-    }
+    LookAndPlanSheets(
+        state,
+        actions,
+        looking = looking,
+        onCloseLook = { looking = null },
+        planning = planning,
+        onClosePlan = { planning = false },
+    )
     if (confirming) {
         ConfirmDialog(
             title = stringResource(Res.string.history_clear_title),
@@ -294,6 +292,41 @@ fun HistoryScreen(
             },
             onDismiss = { confirming = false },
             destructive = true,
+        )
+    }
+}
+
+/** A row of Coming up looked at before Start, by its place, and the title bar's + planning a workout. */
+@Composable
+private fun LookAndPlanSheets(
+    state: HistoryUiState,
+    actions: HistoryActions,
+    looking: Int?,
+    onCloseLook: () -> Unit,
+    planning: Boolean,
+    onClosePlan: () -> Unit,
+) {
+    looking?.let { state.upNext.getOrNull(it)?.preview() }?.let { preview ->
+        PreviewHost(
+            preview,
+            today = state.today,
+            onStartWorkout = { actions.onStart(it.name, it.config) },
+            onStartLift = { actions.onStartLift(it?.program?.key) },
+            onPlanWeekly = actions.onPlanWeekly,
+            onPlanOnce = actions.onPlanOnce,
+            onDone = onCloseLook,
+        )
+    }
+    if (planning) {
+        AddToPlanSheet(
+            choices = state.choices,
+            days = dayChoices(state.today),
+            onPlanWeekly = actions.onPlanWeekly,
+            onPlanOnce = actions.onPlanOnce,
+            onDismiss = onClosePlan,
+            weekday = weekdayOf(state.today),
+            lift = LiftChoices(state.programDay),
+            sports = true,
         )
     }
 }
@@ -338,6 +371,7 @@ private fun SummaryBesideLog(
     state: HistoryUiState,
     actions: HistoryActions,
     selected: (HistoryItem) -> Boolean,
+    onLook: (Int) -> Unit,
 ) {
     Box(Modifier.fillMaxSize().background(IntervalTheme.palette.background), contentAlignment = Alignment.TopCenter) {
         SetupLanes(Modifier.matchParentSize())
@@ -353,7 +387,14 @@ private fun SummaryBesideLog(
                 ) {
                     RangePicker(state.range, actions.onRange, Gutter.padding(bottom = Spacing.space16))
                     SummaryFor(state, actions, Gutter)
-                    if (state.showsComingUp) ComingUp(state.upNext, actions, Gutter.padding(top = Spacing.space16))
+                    if (state.showsComingUp) {
+                        ComingUp(
+                            state.upNext,
+                            actions,
+                            onLook,
+                            Gutter.padding(top = Spacing.space16),
+                        )
+                    }
                     if (state.showsUpNext) UpNextCard(state.upNext, actions, Gutter.padding(top = Spacing.space16))
                     if (state.showsMostDone) MostDone(state.mostDone, Gutter)
                 }
@@ -395,7 +436,11 @@ private fun LazyStaggeredGridScope.logItems(
 }
 
 /** The range picker, its summary card, and Up next or the most done shapes under it. */
-private fun LazyStaggeredGridScope.summaryItems(state: HistoryUiState, actions: HistoryActions) {
+private fun LazyStaggeredGridScope.summaryItems(
+    state: HistoryUiState,
+    actions: HistoryActions,
+    onLook: (Int) -> Unit,
+) {
     item(key = "range", span = StaggeredGridItemSpan.FullLine) {
         RangePicker(
             state.range,
@@ -408,7 +453,12 @@ private fun LazyStaggeredGridScope.summaryItems(state: HistoryUiState, actions: 
     }
     if (state.showsComingUp) {
         item(key = "comingUp", span = StaggeredGridItemSpan.FullLine) {
-            ComingUp(state.upNext, actions, Modifier.animateItem().then(Gutter).padding(top = Spacing.space16))
+            ComingUp(
+                state.upNext,
+                actions,
+                onLook,
+                Modifier.animateItem().then(Gutter).padding(top = Spacing.space16),
+            )
         }
     }
     if (state.showsUpNext) {

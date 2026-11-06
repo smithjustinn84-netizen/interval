@@ -253,7 +253,7 @@ class HomeViewModelTest : MainDispatcherTest() {
     @Test
     fun `a pick started is put on the timer`() {
         viewModel.setMinutes(5)
-        viewModel.putOnTimer(viewModel.state.value.picks.single { it.preset.name == "Tabata" })
+        viewModel.putOnTimer(viewModel.state.value.picks.single { it.preset.name == "Tabata" }.preset)
 
         val onTimer = repository.settings.config.value
         assertEquals(listOf(20, 10, 8), listOf(onTimer.workSeconds, onTimer.restSeconds, onTimer.rounds))

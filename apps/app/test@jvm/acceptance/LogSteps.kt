@@ -1,8 +1,11 @@
 package dev.justinsmith.interval.acceptance
 
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
+import dev.justinsmith.interval.model.PlanWorkout
 
-// Log's week, beside the driver, which is at its size limit.
+// Log's week and the look before Start, beside the driver, which is at its size limit.
 
 /** Log's week bar of [kind], as it is read out: "Sport days: 1 of 1". */
 fun IntervalAcceptanceDriver.seeKindBar(kind: String, done: Int, of: Int) =
@@ -12,4 +15,21 @@ fun IntervalAcceptanceDriver.seeKindBar(kind: String, done: Int, of: Int) =
 fun IntervalAcceptanceDriver.seeComingUp(name: String) {
     see("Coming up")
     see(name)
+}
+
+/** A pick by time's row, which opens a look at it before Start. */
+fun IntervalAcceptanceDriver.lookAtPick(name: String) {
+    tap(hasText(name) and hasClickAction())
+    see("Plan for later")
+}
+
+/** The look's Plan for later, then the add sheet as it opens: once, tomorrow. */
+fun IntervalAcceptanceDriver.planForLaterOnce() {
+    tap("Plan for later")
+    see("Once")
+    tap(hasText("Add to plan") and hasClickAction())
+}
+
+fun IntervalAcceptanceDriver.plannedOnce(name: String) = waitFor("$name planned") {
+    app.repository.plans.planned.value.any { (it.workout as? PlanWorkout.Interval)?.name == name }
 }

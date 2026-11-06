@@ -9,12 +9,13 @@
     <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
     <action>Verify that the Today tab is shown and selected, with "This week" and "Nothing planned" over "Set up your week", "Plan your week" and "Follow a program"</action>
     <action>Tap "5 min" under "Or pick by time"</action>
-    <action>Verify that "Tabata" is listed with its length and a "Start", and under the presets "Wrists and fingers" with "5 moves · 5:00"</action>
-    <action>Tap the "Start" on the "Tabata" row</action>
+    <action>Verify that "Tabata" is listed with its shape and its length, and under the presets "Wrists and fingers" with "5 moves" and "5:00"</action>
+    <action>Tap the "Tabata" row and verify that a sheet opens with "Conditioning" and its length over "Tabata", its timeline, "Start" and "Plan for later"</action>
+    <action>Tap "Start"</action>
     <action>Verify that the workout shows "Get ready", then tap "Skip" and verify "Work" and "Round 1 of 8"</action>
     <action>Tap "End", then "End workout" in the dialog</action>
     <action>Verify that the Today tab is shown again</action>
-    <action>Tap the "Start" on the "Wrists and fingers" row and verify that the workout shows "Get ready" with "Wrist circles" and "Move 1 of 5"; tap "End", then "End workout"</action>
+    <action>Tap the "Wrists and fingers" row, verify that its sheet lists "Wrist circles" to "Forearm stretch", tap "Start" and verify that the workout shows "Get ready" with "Wrist circles" and "Move 1 of 5"; tap "End", then "End workout"</action>
     <action>Tap "Plan your week"</action>
     <action>Tap the "+" on today's weekday row in "Routine"</action>
     <action>In the "Add to plan" sheet, tap "Lift", then "Add to plan"</action>
@@ -27,5 +28,6 @@
     <action>Tap the "Train" tab, which opens on "Strength", tap "Follow a program", scroll to "15-minute kettlebell plan", tap it and tap "Follow this program"</action>
     <action>Tap the "Today" tab</action>
     <action>Verify that Today shows "Up next · Today" with "15-minute kettlebell plan", a line starting "about 15 min" before "Day 1 of 18 · week 1", and a "Start day 1" button</action>
+    <action>Tap the "15-minute kettlebell plan" title and verify that a sheet opens with "Strength · about 15 min", the day's lifts each with its sets, "Start day 1" and "Plan for later"; tap outside it to close it</action>
   </actions>
 </journey>

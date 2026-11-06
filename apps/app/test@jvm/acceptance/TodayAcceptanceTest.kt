@@ -20,6 +20,15 @@ class TodayAcceptanceTest {
     }
 
     @Test
+    fun `a pick looked at before start is planned for later instead`() = acceptanceScenario {
+        pickMinutes(5)
+        lookAtPick("Tabata")
+        planForLaterOnce()
+        plannedOnce("Tabata")
+        seeTodayTab()
+    }
+
+    @Test
     fun `a preset picked by time runs and ends back on today`() = acceptanceScenario {
         pickMinutes(5)
         seePick("Tabata")

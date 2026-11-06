@@ -7,7 +7,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -102,16 +101,19 @@ class HomeFlowScreenTest {
     }
 
     @Test
-    fun `a flow that fits is a pick with its moves and its own start`() = runUiTest {
+    fun `a flow that fits is a pick whose look shows its moves and starts it`() = runUiTest {
         val started = mutableListOf<String>()
         val picks = builtInPresets.fitting(5, IntervalConfig())
         setThemedContent {
-            HomeScreen(empty.copy(minutes = 5, picks = picks), HomeActions(onStartPick = { started += it.preset.name }))
+            HomeScreen(empty.copy(minutes = 5, picks = picks), HomeActions(onStartPick = { started += it.name }))
         }
 
-        onNodeWithText("Wrists and fingers").assertExists()
-        onNodeWithText("5 moves · 5:00").assertExists()
-        onNodeWithContentDescription("Start Wrists and fingers").performScrollTo().performClick()
+        onNodeWithText("5 moves").assertExists()
+        onNodeWithText("Wrists and fingers").performScrollTo().performClick()
+        onNodeWithText("Mobility · 5 moves · 5:00").assertExists()
+        onNodeWithText("Wrist circles").assertExists()
+        onNodeWithText("Start").performClick()
+        waitUntil { started.isNotEmpty() }
         assertEquals(listOf("Wrists and fingers"), started)
     }
 }

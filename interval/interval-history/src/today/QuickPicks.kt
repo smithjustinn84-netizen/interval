@@ -18,9 +18,10 @@ private const val PICKS_SHOWN = 3
 
 /**
  * A preset that fits the time picked, and how long it runs from the Timer as it stands: [totalSeconds]. A flow is
- * one too, under its own name and shape, though it starts as itself rather than from the Timer.
+ * one too, under its own name and shape, though it starts as itself rather than from the Timer: its [flow] is that,
+ * for its moves.
  */
-data class QuickPick(val preset: Preset, val totalSeconds: Int) {
+data class QuickPick(val preset: Preset, val totalSeconds: Int, val flow: Flow? = null) {
     /** Mobility rather than conditioning, which its row is marked as. */
     val mobility: Boolean get() = preset.config.activity == Activity.Mobility
 }
@@ -43,7 +44,7 @@ fun List<Preset>.fitting(
         .sortedWith(compareByDescending<QuickPick> { it.totalSeconds }.thenByDescending { it.preset.custom })
         .take(PICKS_SHOWN)
     val flow = flows
-        .map { QuickPick(Preset(it.name, it.config), it.config(onTimer.prepSeconds).totalSeconds) }
+        .map { QuickPick(Preset(it.name, it.config), it.config(onTimer.prepSeconds).totalSeconds, it) }
         .filter { it.fits() }
         .maxByOrNull { it.totalSeconds }
     return presets + listOfNotNull(flow)
