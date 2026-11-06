@@ -32,7 +32,7 @@ class SetsAcceptanceTest {
         seeRound("Set 2 of 2 · Round 1 of 3")
         heard(Speech.Work(lastRound = false, set = 2))
         letTimePass((3 * 30 + 2 * 15).seconds)
-        see("Saved to history")
+        see("Saved to your log")
         see("6/6")
         workoutKeptWithSets(sets = 2, rounds = 3)
     }

@@ -45,7 +45,7 @@
     <action>Verify that no "On the Timer · not saved" card is shown</action>
     <action>Tap the "Journey" card</action>
     <action>Tap "Delete"</action>
-    <action>Verify that a dialog titled "Delete Journey?" is shown saying "History keeps the workouts you did with it. The Timer keeps its settings."</action>
+    <action>Verify that a dialog titled "Delete Journey?" is shown saying "Your log keeps the workouts you did with it. The Timer keeps its settings."</action>
     <action>Tap "Cancel"</action>
     <action>Verify that the "Journey" sheet is still shown with "Edit" and "Delete"</action>
     <action>Tap "Delete", then "Delete" in the dialog</action>

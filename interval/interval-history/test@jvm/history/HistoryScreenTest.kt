@@ -292,7 +292,7 @@ class HistoryScreenTest {
     @Test
     fun `while loading it shows neither the first run nor a summary`() = runUiTest {
         setThemedContent { HistoryScreen(HistoryUiState.Loading, actions) }
-        onNodeWithText("History").assertExists()
+        onNodeWithText("Log").assertExists()
         onNodeWithText("Train to a plan").assertDoesNotExist()
         onNodeWithText("Month").assertDoesNotExist()
     }
@@ -301,18 +301,18 @@ class HistoryScreenTest {
     fun `clearing asks first`() = runUiTest {
         setThemedContent { HistoryScreen(oneWorkout, actions) }
         onNodeWithContentDescription("More options").performClick()
-        onNodeWithText("Clear history").performClick()
-        onNodeWithText("Clear history?").assertExists()
+        onNodeWithText("Clear the log").performClick()
+        onNodeWithText("Clear the log?").assertExists()
         onNodeWithText("Every finished workout is removed. This can't be undone.").assertExists()
         onNodeWithText("Cancel").performClick()
         assertEquals(emptyList(), events)
 
         onNodeWithContentDescription("More options").performClick()
-        onNodeWithText("Clear history").performClick()
+        onNodeWithText("Clear the log").performClick()
         onNodeWithText("Clear").performClick()
         waitForIdle()
         assertEquals(listOf("clear"), events)
-        onNodeWithText("Clear history?").assertDoesNotExist()
+        onNodeWithText("Clear the log?").assertDoesNotExist()
     }
 
     @Test

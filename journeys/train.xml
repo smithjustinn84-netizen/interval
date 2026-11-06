@@ -14,7 +14,7 @@
     <action>Tap "Tabata", then "Start workout" in its sheet</action>
     <action>Verify that the workout shows "Get ready"; tap "End", then "End workout" in the dialog</action>
     <action>Verify that Train is shown again on "Conditioning", with the "Train" tab selected</action>
-    <action>Tap the "History" tab, then the "Train" tab</action>
+    <action>Tap the "Log" tab, then the "Train" tab</action>
     <action>Verify that Train reopens on "Conditioning"</action>
     <action>Tap "Mobility" and verify that "Before training" lists "Hips and shoulders" with "8:00"</action>
     <action>Tap the "Today" tab, then the "Train" tab, and verify that Train reopens on "Mobility"</action>

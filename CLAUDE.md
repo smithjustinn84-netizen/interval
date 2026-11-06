@@ -134,7 +134,8 @@ interval/            the interval timer
                      and cues): Train's Mobility pillar, a tab's page (`MobilityPage`)
   interval-settings  Settings (its groups in `SettingsGroups.kt`), the weight sheet, export and import
                      (`DataExporter`, `DataImporter`, the review sheet); opened by every tab's gear
-  interval-history   History (log, calendar, summaries, a finished workout) and Plan: one module, each needs
+  interval-history   History (titled "Log" on screen; the code keeps History) (log, calendar, summaries, a finished
+                     workout) and Plan: one module, each needs
                      the other; `PlanReminderScheduler` (`historyModule`, di/) keeps the platform's reminders
                      in step with the plan. And Today, the first tab (`today/`: `HomeRoute`, `HomeViewModel`,
                      named Home since Lift's tab is `TodayRoute`): the week, what is up next and the presets that

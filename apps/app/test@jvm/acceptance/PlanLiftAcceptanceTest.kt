@@ -7,7 +7,7 @@ class PlanLiftAcceptanceTest {
     // The app's clock starts on Thursday 1 January 1970.
     @Test
     fun `a session on Lift planned for today is done by a session logged on Lift`() = acceptanceScenario {
-        openTab("History")
+        openTab("Log")
         openPlanFromEmptyHistory()
         planAnyLiftSessionEvery("Thursday")
         seeLiftSessionPlannedOn("Thursday")
@@ -17,7 +17,7 @@ class PlanLiftAcceptanceTest {
         startUpNext()
         logASetAndFinish()
 
-        openTab("History")
+        openTab("Log")
         openToday()
         seeTodaysPlanDone("Every Thursday")
     }

@@ -19,7 +19,7 @@
     <string name="train_strength">Strength</string>
     <string name="train_conditioning">Conditioning</string>
     <string name="train_mobility">Mobility</string>
-    <string name="nav_history">History</string>
+    <string name="nav_history">Log</string>
 
     <!-- About -->
     <string name="about_title">About</string>

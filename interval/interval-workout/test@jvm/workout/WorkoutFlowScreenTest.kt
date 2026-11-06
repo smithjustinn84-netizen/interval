@@ -125,7 +125,7 @@ class WorkoutFlowScreenTest {
     fun `ending early counts the moves done`() = runUiTest {
         setThemedContent { Screen(lungeLeft.toUiState(running = true, flows = builtInFlows)) }
         onNodeWithContentDescription("End workout").performClick()
-        onNodeWithText("1 of 6 moves done. What you finished is saved to history.").assertExists()
+        onNodeWithText("1 of 6 moves done. What you finished is saved to your log.").assertExists()
     }
 
     @Test

@@ -10,7 +10,7 @@
   </description>
   <actions>
     <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
-    <action>Tap the "History" tab</action>
+    <action>Tap the "Log" tab</action>
     <action>Tap "Plan your week"</action>
     <action>Verify that a "Reminder" row reads "Off. Set a time to be reminded on days with a workout planned"</action>
     <action>Tap "Reminder"</action>
@@ -36,7 +36,7 @@
     <action>Verify with adb shell dumpsys notification --noredact that a notification on the "Planned workouts" channel names the planned workout</action>
     <action>Verify with adb shell dumpsys alarm that the app now holds alarms for 6:15 PM on each of the 13 days after that day, and none for that day itself</action>
     <action>Set the clock back to the host's time (adb shell cmd alarm set-time with the host's epoch millis)</action>
-    <action>Open the app, tap the "History" tab, then "Edit plan"</action>
+    <action>Open the app, tap the "Log" tab, then "Edit plan"</action>
     <action>Tap "Reminder"</action>
     <action>Tap "Turn off reminders"</action>
     <action>Verify that the "Reminder" row reads "Off. Set a time to be reminded on days with a workout planned"</action>

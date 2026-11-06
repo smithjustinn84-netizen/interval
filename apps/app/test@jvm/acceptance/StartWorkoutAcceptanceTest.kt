@@ -42,7 +42,7 @@ class StartWorkoutAcceptanceTest {
         seePhase("Work")
         seeRound("Round 1 of 8")
         letTimePass((10 + 8 * 30 + 7 * 15).seconds)
-        see("Saved to history")
+        see("Saved to your log")
         savedWorkouts(1)
         sayHowItWas("Very hard", "Felt strong")
         workoutKeptAs(4, "Felt strong")

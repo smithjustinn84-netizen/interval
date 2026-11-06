@@ -6,7 +6,7 @@
     wallpaper, then Widgets, then Interval); the "This week" widget is the only one.
   </description>
   <actions>
-    <action>Open the app, tap "Skip for now" on "Set up", which a fresh install opens on, go to History, and set a weekly goal of 3 from its "Set a weekly goal" row</action>
+    <action>Open the app, tap "Skip for now" on "Set up", which a fresh install opens on, go to Log, and set a weekly goal of 3 from its "Set a weekly goal" row</action>
     <action>Open the Timer (the "Train" tab, "Conditioning", then "Timer"), start a workout, let a round finish, press the system back button and tap "End workout", then "Done" on the summary</action>
     <action>Press Home, long-press the wallpaper, tap "Widgets" and find "Interval"</action>
     <action>Verify that its "This week" widget is previewed drawn, with "3/5" in its ring, "2 to go" and "2-week streak" under it, and "Workout" and "Lift" buttons (Android 15 and up; the picker shows the app's icon before)</action>

@@ -2,7 +2,7 @@
   <description>
     A mobility flow of your own, built on Train's Mobility pillar from the library's mat moves and holds and a move
     typed in, or from a copy of a shipped flow ("Make it yours"). It is listed with the shipped flows by when it is
-    for, runs on the workout screen as they do, with its moves named aloud and in the notification, and History
+    for, runs on the workout screen as they do, with its moves named aloud and in the notification, and Log
     names it. Two flows with the same moves and times can't both be kept. Run on a fresh install (adb shell pm clear
     dev.justinsmith.interval), with the voice on and the sound up.
   </description>
@@ -20,7 +20,7 @@
     <action>Tap "Floor core", then "Start"; verify "Get ready" with "Plank" and "Move 1 of 2", and that the voice says "Next: Plank"</action>
     <action>Turn the screen off for fifteen seconds, turn it on, and verify that the notification names "Plank" or "Dead bug" with "Move 1 of 2" or "Move 2 of 2"</action>
     <action>Let it run to the end and verify the summary says "Floor core · Mobility · 2 moves"; tap "Done"</action>
-    <action>Tap the "History" tab and verify that today lists "Floor core" with "Mobility · 2 moves"</action>
+    <action>Tap the "Log" tab and verify that today lists "Floor core" with "Mobility · 2 moves"</action>
     <action>Back on Train's Mobility pillar, tap "Hips and shoulders", then "Make it yours"</action>
     <action>Verify that the editor is named "Hips and shoulders (yours)" with its six moves and says "Same moves and times as Hips and shoulders: change a time to keep both.", with "Save flow" dimmed</action>
     <action>Tap "90/90 hip switch", tap "+" once, tap "Done", and verify the warning has gone; tap "Save flow" and verify both flows are under "Before training"</action>

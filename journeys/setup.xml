@@ -22,7 +22,7 @@
     <action>Tap "Set up" and verify that it opens on BJJ with M, W and F picked, 16 ticked and "15 min", and that the week says "Your first 100 swings" over "You follow it already · Tue, Thu, Sat"</action>
     <action>Tap T (Tuesday) and "24", and verify that the program's days move to suit and the goal reads 6 still</action>
     <action>Tap "Build my week" and verify that Today is shown with "Week built" and "BJJ" under four days of the week</action>
-    <action>Tap the "History" tab, then "Edit plan" or the plan's row, and verify that the plan lists BJJ on four days and the program's day on two, each once, and that the program on Train is still on day 1 of the same week it started</action>
+    <action>Tap the "Log" tab, then "Edit plan" or the plan's row, and verify that the plan lists BJJ on four days and the program's day on two, each once, and that the program on Train is still on day 1 of the same week it started</action>
     <action>Open Settings, tap "Set up", then "Skip for now", and verify that Settings is shown again with nothing changed</action>
     <action>Close the app from Recents and open it from its icon; verify that it opens on Today, not on "Set up"</action>
     <action>Clear the app (adb shell pm clear dev.justinsmith.interval), open it and verify "Set up" again; tap "Skip for now" and verify that Today says "Nothing planned" with "Set up your week" first; close and open the app again and verify that it opens on Today</action>

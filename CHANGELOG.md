@@ -10,7 +10,7 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 - Today, a new first tab and where the app opens: this week against the goal, what is up next (today's plan, or
   the next day of the program followed) under one Start, and "Or pick by time", which offers the presets that fit
   5, 10, 15, 20 or 30 minutes, each with a Start of its own. With nothing planned it leads to the plan and to Lift's
-  programs. Train and History are the tabs beside it, and Back from either returns to Today.
+  programs. Train and Log are the tabs beside it, and Back from either returns to Today.
 - About how long a program's day takes: "about 20 min" on Lift's program card, on each day of a program's sheet,
   on every program in the list ("about 12–15 min" where its days differ) and on Today's Up next. It is
   estimated from the day's sets and reps, each lift's pace, the minutes of anything on the minute and the rest
@@ -86,11 +86,12 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 
 ### Changed
 - The Timer is no longer a tab: it is a page over Train's Conditioning pillar, opened by the "Timer" row at the
-  top of the presets, with a Back to them. The bar is Today · Train · History. "Put on Timer", the "Start a
+  top of the presets, with a Back to them. The bar is Today · Train · Log. "Put on Timer", the "Start a
   workout" shortcut and the widget open it as before, and Back from it returns to the presets, then Today. On a
   wide window Settings still opens beside it.
 - The weekly goal counts sport days logged too, and says so: "Workouts a week: lifts, intervals, mobility and sport days".
 - The week's marks and the weekly goal no longer show on Lift's side: Today shows the week, for both sides.
+- History is called Log: the tab, its title, "Clear the log" and "Saved to your log". The bar is Today · Train · Log.
 
 ## [0.4.0] — 2026-11-05
 

@@ -320,7 +320,7 @@ what it is about (`setup.xml`). A shortcut never opens it; it waits for the firs
 | `sets.xml` | Set two sets of three rounds with a minute between them on the Timer, run through the rest between sets, and verify the notification says the set | `SetsAcceptanceTest` |
 | `ladder.xml` | Set a climbing ladder on the Timer, run into the second round, and see its longer clock | `LadderAcceptanceTest` |
 | `sequence.xml` | Add a block from the Timer's Sets sheet, shape it and the rest between blocks in the editor, run into the second block (the notification says it), save it as a preset | `SequenceAcceptanceTest` (a seeded preset of two blocks run through; a block added on the Timer and run) |
-| `history.xml` | Set a weekly goal from the first run, end after a round, find it in History and open it, see it on the month, clear History | `HistoryAcceptanceTest` |
+| `history.xml` | Set a weekly goal from the first run, end after a round, find it in Log and open it, see it on the month, clear the log | `HistoryAcceptanceTest` |
 | `plan-lift.xml` | Plan a session on Lift for today, start it from Up next, log a set and finish, find the plan done | `PlanLiftAcceptanceTest` |
 | `presets.xml` | On the presets (Train's Conditioning pillar, under the Timer): save the Timer's settings, put a built-in on the Timer and start one from its sheet, edit and delete the saved one, open New preset | `PresetsAcceptanceTest` |
 | `settings.xml` | Settings opens from every tab; the plan's goal and reminder show and lead to Plan; toggle a cue, switch to Light and back, settings persist | `SettingsAcceptanceTest` (not Export's share sheet) |

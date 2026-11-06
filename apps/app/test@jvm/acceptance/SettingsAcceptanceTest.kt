@@ -29,11 +29,11 @@ class SettingsAcceptanceTest {
         seeTimer()
         leaveTimer()
 
-        openTab("History")
-        seeHistoryTab()
+        openTab("Log")
+        seeLogTab()
         openSettings()
         goBack()
-        seeHistoryTab()
+        seeLogTab()
     }
 
     @Test

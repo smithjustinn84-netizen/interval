@@ -60,7 +60,7 @@ class MobilityAcceptanceTest {
         seeThisWeekOnToday("1 mobility")
         seeTodayDoneOnTheWeek()
 
-        openTab("History")
+        openTab("Log")
         seeFlowInHistory("Wrists and fingers", "Mobility · 5 moves")
     }
 
@@ -74,7 +74,7 @@ class MobilityAcceptanceTest {
         letTimePass(FLOW_LENGTH)
         closeSummary()
 
-        openTab("History")
+        openTab("Log")
         openWorkoutUnderToday("Wrists and fingers")
         repeatNow()
         seePhase("Get ready")

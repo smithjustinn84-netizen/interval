@@ -27,7 +27,7 @@ class WarmUpCoolDownAcceptanceTest {
         letTimePass((8 * 30 + 7 * 15).seconds)
         seePhase("Cool-down")
         letTimePass(120.seconds)
-        see("Saved to history")
+        see("Saved to your log")
         workoutKeptWithBookends(warmUpSeconds = 60, coolDownSeconds = 120)
         closeSummary()
 
@@ -45,7 +45,7 @@ class WarmUpCoolDownAcceptanceTest {
         seePhase("Cool-down")
         askToEnd()
         confirmEnd()
-        see("Saved to history")
+        see("Saved to your log")
         savedWorkouts(1)
         workoutKeptFinished()
     }

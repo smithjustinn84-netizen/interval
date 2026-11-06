@@ -174,7 +174,7 @@ class AppNavigationTest {
         onNodeWithText("Start session").assertExists()
         tab("Train").assertIsSelected()
 
-        tab("History").performClick()
+        tab("Log").performClick()
         onNodeWithText("Train to a plan").assertExists()
 
         // The Timer is a page over Train's Conditioning pillar: the bar is away until Back.
@@ -290,14 +290,14 @@ class AppNavigationTest {
     fun `on a tablet a finished workout opens beside History and closing it leaves the prompt`() =
         appTest(Window.Tablet) { app ->
             app.repository.history.recordWorkout(builtInPresets.first().config, elapsedSeconds = 240)
-            tab("History").performClick()
+            tab("Log").performClick()
             onNodeWithText("Pick a workout").assertExists()
 
             onNode(hasText("Tabata") and hasClickAction()).performClick()
             onNodeWithText("Repeat now").assertExists()
             onNodeWithText("Week").assertExists()
             onNodeWithText("Pick a workout").assertDoesNotExist()
-            tab("History").assertIsSelected()
+            tab("Log").assertIsSelected()
             onNode(hasText("Tabata") and hasClickAction()).assertIsSelected()
             onNodeWithContentDescription("Back").assertDoesNotExist()
 
@@ -312,7 +312,7 @@ class AppNavigationTest {
         val repository = app.repository
         repository.history.recordWorkout(tabata.config, elapsedSeconds = 240)
         repository.history.recordWorkout(hiit.config, elapsedSeconds = 600)
-        tab("History").performClick()
+        tab("Log").performClick()
         onNode(hasText(tabata.name) and hasClickAction()).performClick()
         onNode(hasText(hiit.name) and hasClickAction()).performClick()
         // The row, and the page beside it: the Tabata page has gone.
@@ -328,7 +328,7 @@ class AppNavigationTest {
     @Test
     fun `on a tablet deleting the workout beside History leaves the prompt`() = appTest(Window.Tablet) { app ->
         app.repository.history.recordWorkout(builtInPresets.first().config, elapsedSeconds = 240)
-        tab("History").performClick()
+        tab("Log").performClick()
         onNode(hasText("Tabata") and hasClickAction()).performClick()
         // History's own menu, then the workout's beside it.
         onAllNodesWithContentDescription("More options").onLast().performClick()
@@ -336,7 +336,7 @@ class AppNavigationTest {
         onNodeWithText("Delete").performClick()
         onNodeWithText("Train to a plan").assertExists()
         onNodeWithText("Pick a workout").assertExists()
-        tab("History").assertIsSelected()
+        tab("Log").assertIsSelected()
     }
 
     @Test
@@ -387,14 +387,14 @@ class AppNavigationTest {
 
     @Test
     fun `on a tablet settings opened from History is a page of its own`() = appTest(Window.Tablet) {
-        tab("History").performClick()
+        tab("Log").performClick()
         onNodeWithContentDescription("Settings").performClick()
         onNodeWithText("Cues").assertExists()
         onNodeWithContentDescription("Close settings").assertDoesNotExist()
 
         onNodeWithContentDescription("Back").performClick()
         onNodeWithText("Cues").assertDoesNotExist()
-        tab("History").assertIsSelected()
+        tab("Log").assertIsSelected()
     }
 
     @Test
@@ -419,7 +419,7 @@ class AppNavigationTest {
     fun `a finished workout opens from History and deleting it goes back`() = appTest { app ->
         val tabata = builtInPresets.first()
         app.repository.history.recordWorkout(tabata.config, elapsedSeconds = 240)
-        tab("History").performClick()
+        tab("Log").performClick()
         onNodeWithText("Tabata").performClick()
         onNodeWithText("Repeat now").assertExists()
         onNodeWithContentDescription("Back").performClick()
@@ -435,7 +435,7 @@ class AppNavigationTest {
     @Test
     fun `deleting a workout says so and Undo brings it back`() = appTest { app ->
         app.repository.history.recordWorkout(builtInPresets.first().config, elapsedSeconds = 240)
-        tab("History").performClick()
+        tab("Log").performClick()
         onNodeWithText("Tabata").performClick()
         onNodeWithContentDescription("More options").performClick()
         onNodeWithText("Delete workout").performClick()
@@ -466,7 +466,7 @@ class AppNavigationTest {
     @Test
     fun `a plan taken off a day comes back with Undo`() = appTest { app ->
         app.repository.plans.planWeekly(builtInPresets.first().asPlan(), setOf(1))
-        tab("History").performClick()
+        tab("Log").performClick()
         onNodeWithContentDescription("Plan").performClick()
         onNodeWithContentDescription("Remove Tabata from Monday").performClick()
         onNodeWithContentDescription("Remove Tabata from Monday").assertDoesNotExist()
@@ -477,7 +477,7 @@ class AppNavigationTest {
 
     @Test
     fun `the plan opens from History and goes back`() = appTest {
-        tab("History").performClick()
+        tab("Log").performClick()
         onNodeWithContentDescription("Plan").performClick()
         onNodeWithText("Weekly goal").assertExists()
         onNodeWithContentDescription("Back").performClick()

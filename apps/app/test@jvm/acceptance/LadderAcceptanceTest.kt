@@ -29,7 +29,7 @@ class LadderAcceptanceTest {
         seeRound("Round 2 of 3")
         see("0:39")
         letTimePass((39 + 15 + 50).seconds)
-        see("Saved to history")
+        see("Saved to your log")
         workoutKeptAsLadder(step = 10)
     }
 }

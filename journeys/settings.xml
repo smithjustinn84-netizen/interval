@@ -6,7 +6,7 @@
   <actions>
     <action>Tap the "Settings" button in Today's title bar and verify that Settings opens; tap "Back" and verify that the Today tab is shown</action>
     <action>Tap the "Train" tab, which opens on "Strength", then the "Settings" button in its title bar, and verify that Settings opens; tap "Back" and verify that Train's Strength pillar is shown</action>
-    <action>Tap the "History" tab, then the "Settings" button in its title bar, and verify that Settings opens; tap "Back" and verify that the History tab is shown</action>
+    <action>Tap the "Log" tab, then the "Settings" button in its title bar, and verify that Settings opens; tap "Back" and verify that the Log tab is shown</action>
     <action>Tap the "Train" tab, tap "Conditioning", then tap "Timer" at the top of the presets, then the Timer's "Settings" button</action>
     <action>Verify, scrolling down, that the Settings screen shows "Cues", "Workout", "Calories", "Health", "Plan", "Appearance" and "Your data", and "About Interval" at its foot with no heading over it</action>
     <action>Under "Plan", verify that "Weekly goal" and "Reminder" each read "Off" (a fresh install), then tap "Weekly goal" and verify that the Plan page opens</action>

@@ -11,7 +11,7 @@ class SystemBackAcceptanceTest {
         pressSystemBack()
         seeTodayTab()
 
-        openTab("History")
+        openTab("Log")
         see("Train to a plan")
         pressSystemBack()
         seeTodayTab()

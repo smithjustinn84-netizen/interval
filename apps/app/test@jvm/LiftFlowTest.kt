@@ -36,7 +36,7 @@ class LiftFlowTest {
         onAllNodesWithText("Done").onLast().performClick()
         waitForText("Last session")
 
-        tab("History").performClick()
+        tab("Log").performClick()
         val row = hasText("Two-hand swing") and hasClickAction()
         waitUntil(timeoutMillis = STATE_TIMEOUT_MILLIS) { onAllNodes(row).fetchSemanticsNodes().isNotEmpty() }
         onNode(hasText("Kettlebell", substring = true) and hasText("at 90000", substring = true)).assertExists()
@@ -49,12 +49,12 @@ class LiftFlowTest {
         Window.Tablet,
         lift = FakeLiftStorage().apply { finished("b1", "Swings", startedAt = 0, finishedAt = 600_000, 24.0 to 10) },
     ) {
-        tab("History").performClick()
+        tab("Log").performClick()
         onNode(hasText("Swings") and hasClickAction()).performClick()
         waitForText("Two-hand swing")
         onNodeWithContentDescription("Close session").assertExists()
         onNodeWithText("Week").assertExists()
-        tab("History").assertIsSelected()
+        tab("Log").assertIsSelected()
 
         tab("Train").performClick()
         waitForText("Last session")
@@ -69,7 +69,7 @@ class LiftFlowTest {
     fun `a session opens from History and Delete takes it out with Undo`() = appTest(
         lift = FakeLiftStorage().apply { finished("b1", "Swings", startedAt = 0, finishedAt = 600_000, 24.0 to 10) },
     ) { app ->
-        tab("History").performClick()
+        tab("Log").performClick()
         onNode(hasText("Swings") and hasClickAction()).performClick()
         waitForText("Two-hand swing")
         onNodeWithText("24 kg × 10").assertExists()

@@ -46,7 +46,7 @@ class SequenceAcceptanceTest {
         seeRound("Block 2 of 2 · Round 1 of 2")
         heard(Speech.Work(lastRound = false, block = 2))
         letTimePass((2 * 40 + 20).seconds)
-        see("Saved to history")
+        see("Saved to your log")
         see("4/4")
         workoutKeptAsSequence(blocks = 2)
     }

@@ -132,7 +132,7 @@ class WorkoutScreenTest {
     fun `ending after a round keeps what was done`() = runUiTest {
         setThemedContent { Screen(firstRest.toUiState(running = false)) }
         onNodeWithContentDescription("End workout").performClick()
-        onNodeWithText("1 of 8 rounds done. What you finished is saved to history.").assertExists()
+        onNodeWithText("1 of 8 rounds done. What you finished is saved to your log.").assertExists()
         onNodeWithText("End workout").performClick()
         waitForIdle()
         assertEquals(listOf("end early"), calls)
@@ -193,7 +193,7 @@ class WorkoutScreenTest {
     @Test
     fun `a finished workout shows its summary`() = runUiTest {
         setThemedContent { Screen(done.toUiState(running = false)) }
-        onNodeWithText("Saved to history").assertExists()
+        onNodeWithText("Saved to your log").assertExists()
         onNodeWithText("8 rounds · 5:55 total").assertExists()
         onNodeWithText("Custom · 30s on · 15s off · ×8").assertExists()
         onNodeWithText("Repeat").performClick()

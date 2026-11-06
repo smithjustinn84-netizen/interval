@@ -70,7 +70,7 @@
     <string name="exercise_cues_placeholder">What to remember mid-set (optional)</string>
     <string name="exercise_save">Save exercise</string>
     <string name="exercise_archive">Archive exercise</string>
-    <string name="exercise_archive_hint">The Log sheet stops offering it. Its sets stay in your history.</string>
+    <string name="exercise_archive_hint">The set picker stops offering it. Its sets stay in your log.</string>
     <string name="exercise_restore">Restore exercise</string>
     <string name="exercise_archived_note">Archived: the Log sheet doesn’t offer it.</string>
     <string name="notice_exercise_saved">Saved %1$s</string>

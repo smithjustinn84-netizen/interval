@@ -95,7 +95,7 @@
     <string name="changes_kept_copy">Saved as %1$s. You follow it from day %2$d.</string>
     <string name="changes_kept_copy_last">Saved as %1$s, under your programs.</string>
     <string name="history_delete_title">Delete session?</string>
-    <string name="history_delete_text">It leaves your history, your week and your records.</string>
+    <string name="history_delete_text">It leaves your log, your week and your records.</string>
     <string name="history_delete">Delete</string>
     <string name="history_share">Share session</string>
     <string name="history_more_options_cd">More options</string>
@@ -123,7 +123,7 @@
     <string name="program_follow">Follow this program</string>
     <string name="program_replaces">Replaces %1$s · day %2$d of %3$d</string>
     <string name="program_switch_title">Switch to %1$s?</string>
-    <string name="program_switch_text">Day %1$d of %2$s is next. %3$s starts at day 1; past sessions stay in History.</string>
+    <string name="program_switch_text">Day %1$d of %2$s is next. %3$s starts at day 1; past sessions stay in your log.</string>
     <string name="program_switch">Switch</string>
     <string name="program_keep">Keep current</string>
     <string name="program_see_progress">Days done and left</string>
@@ -145,7 +145,7 @@
     <string name="program_records_set">Records set</string>
     <string name="program_follow_again">Follow again</string>
     <string name="program_pick_another">Pick another program</string>
-    <string name="program_follow_again_hint">Starts again at day 1. These sessions stay in History.</string>
+    <string name="program_follow_again_hint">Starts again at day 1. These sessions stay in your log.</string>
     <string name="editor_new_title">New program</string>
     <string name="editor_edit_title">Edit program</string>
     <string name="editor_name_label">Program name</string>
@@ -170,7 +170,7 @@
     <string name="editor_keep_editing">Keep editing</string>
     <string name="editor_delete">Delete program</string>
     <string name="editor_delete_title">Delete program?</string>
-    <string name="editor_delete_text">It leaves your programs. Sessions done stay in your history.</string>
+    <string name="editor_delete_text">It leaves your programs. Sessions done stay in your log.</string>
     <string name="editor_delete_confirm">Delete</string>
     <string name="notice_day_removed">Removed day %1$d</string>
     <string name="notice_block_removed">Removed %1$s</string>

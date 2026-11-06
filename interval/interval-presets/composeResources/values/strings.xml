@@ -27,7 +27,7 @@
     <string name="presets_save_copy">Save a copy</string>
     <string name="preset_copy_name">%1$s copy</string>
     <string name="presets_delete_title">Delete %1$s?</string>
-    <string name="presets_delete_text">History keeps the workouts you did with it. The Timer keeps its settings.</string>
+    <string name="presets_delete_text">Your log keeps the workouts you did with it. The Timer keeps its settings.</string>
     <string name="preset_editor_edit_title">Edit preset</string>
     <string name="preset_editor_new_title">New preset</string>
     <string name="preset_editor_copy_title">Save a copy</string>

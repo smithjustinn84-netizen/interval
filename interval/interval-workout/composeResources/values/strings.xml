@@ -55,12 +55,12 @@
     <string name="workout_add_time_cd">Add ten seconds</string>
     <string name="workout_end_title">End workout?</string>
     <plurals name="workout_end_progress">
-        <item quantity="one">%1$d of %2$d round done. What you finished is saved to history.</item>
-        <item quantity="other">%1$d of %2$d rounds done. What you finished is saved to history.</item>
+        <item quantity="one">%1$d of %2$d round done. What you finished is saved to your log.</item>
+        <item quantity="other">%1$d of %2$d rounds done. What you finished is saved to your log.</item>
     </plurals>
     <plurals name="workout_end_progress_moves">
-        <item quantity="one">%1$d of %2$d move done. What you finished is saved to history.</item>
-        <item quantity="other">%1$d of %2$d moves done. What you finished is saved to history.</item>
+        <item quantity="one">%1$d of %2$d move done. What you finished is saved to your log.</item>
+        <item quantity="other">%1$d of %2$d moves done. What you finished is saved to your log.</item>
     </plurals>
     <string name="workout_end_nothing">No round is finished yet, so nothing is saved.</string>
     <string name="workout_end_confirm">End workout</string>
@@ -88,7 +88,7 @@
     <string name="workout_stat_calories">kcal</string>
     <string name="workout_heart_rate">Heart rate %1$d avg · %2$d peak</string>
     <string name="workout_stat_rounds_value">%1$d/%2$d</string>
-    <string name="workout_saved">Saved to history</string>
+    <string name="workout_saved">Saved to your log</string>
     <string name="summary_how_was_it">How was it?</string>
     <string name="summary_note_placeholder">A note on it</string>
     <string name="effort_easy">Easy</string>

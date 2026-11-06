@@ -122,5 +122,5 @@ fun DesktopComposeUiTest.openTimer() {
     waitForIdle()
 }
 
-/** A navigation bar or rail item; "History" alone would also match the History screen's title. */
+/** A navigation bar or rail item; "Log" alone would also match the Log screen's title. */
 fun DesktopComposeUiTest.tab(label: String): SemanticsNodeInteraction = onNode(hasText(label) and hasClickAction())

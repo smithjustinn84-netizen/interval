@@ -40,8 +40,8 @@ class TrainAcceptanceTest {
         pickPillar("Conditioning")
         seeConditioning()
 
-        openTab("History")
-        seeHistoryTab()
+        openTab("Log")
+        seeLogTab()
         openTab("Train")
         seeConditioning()
 

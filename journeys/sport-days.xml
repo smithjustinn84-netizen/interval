@@ -1,7 +1,7 @@
 <journey name="Sport days">
   <description>
     A class trained away from the app goes on the plan, shows on the week, and is logged with one tap from Today or
-    from its day in History, which counts it toward the week. On its day Today leads with a flow to do before it,
+    from its day in Log, which counts it toward the week. On its day Today leads with a flow to do before it,
     until the flow is done or the class logged. Run on a fresh install
     (adb shell pm clear dev.justinsmith.interval).
   </description>
@@ -27,7 +27,7 @@
     <action>Tap "Start workout" and verify that the workout shows "Get ready" with "90/90 hip switch" and "Move 1 of 6"</action>
     <action>Tap "Skip" until the summary shows "6 moves", then tap "Done"</action>
     <action>Verify that Today now shows "Up next · Today" with "BJJ class" and "Counts toward your week" over a "Log it" button, with no "Before class" and no "Also today", and the week counts "1 workout" and "1 mobility"</action>
-    <action>Tap the "History" tab</action>
+    <action>Tap the "Log" tab</action>
     <action>Tap today on the week strip</action>
     <action>Verify that the day sheet shows "BJJ class" reading "Every" and today's weekday, with "Log it"</action>
     <action>Tap "Log it"</action>

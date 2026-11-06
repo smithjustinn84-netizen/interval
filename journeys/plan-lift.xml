@@ -1,11 +1,11 @@
 <journey name="Plan a session on Lift">
   <description>
-    Plan any session on Lift for today from the first run, start it from History's Up next, log a set and
+    Plan any session on Lift for today from the first run, start it from Log's Up next, log a set and
     finish, then find today's plan done. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
     <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
-    <action>Tap the "History" tab</action>
+    <action>Tap the "Log" tab</action>
     <action>Tap "Plan your week"</action>
     <action>Tap the "+" on today's weekday row in "Routine"</action>
     <action>In the "Add to plan" sheet, tap "Lift"</action>
@@ -18,7 +18,7 @@
     <action>Tap "Log set"</action>
     <action>Tap "Finish"</action>
     <action>Tap "Done"</action>
-    <action>Tap the "History" tab</action>
+    <action>Tap the "Log" tab</action>
     <action>Tap today on the week strip</action>
     <action>Verify that the day sheet shows "Any lift session" reading "Done · Every" and today's weekday</action>
   </actions>

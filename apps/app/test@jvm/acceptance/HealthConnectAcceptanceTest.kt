@@ -52,7 +52,7 @@ class HealthConnectAcceptanceTest {
             seeSummaryHeartRate(average = 142, peak = 171)
             closeSummary()
             leaveTimer()
-            openTab("History")
+            openTab("Log")
             openWorkoutUnderToday("30s on · 15s off · ×8")
             seeWorkoutHeartRate(average = 142, peak = 171)
         }
@@ -69,7 +69,7 @@ class HealthConnectAcceptanceTest {
             closeSummary()
             watchSyncsHeartRate(average = 138, peak = 165)
             leaveTimer()
-            openTab("History")
+            openTab("Log")
             openWorkoutUnderToday("30s on · 15s off · ×8")
             seeWorkoutHeartRate(average = 138, peak = 165)
         }

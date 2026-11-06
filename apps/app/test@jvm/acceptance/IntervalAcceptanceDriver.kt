@@ -122,7 +122,7 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     /** The flow's summary, and the workout History keeps of it: every move done, as mobility. */
     fun seeFlowSaved(name: String, moves: Int) {
-        see("Saved to history")
+        see("Saved to your log")
         see(hasText("$name · Mobility · $moves moves"))
         val kept = app.repository.history.history.value.last()
         assertEquals(name to false, app.repository.flows.flows.value.matching(kept.config)?.name to kept.endedEarly)
@@ -185,9 +185,9 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         see(hasContentDescription("Back") and hasClickAction())
     }
 
-    fun seeHistoryTab() {
+    fun seeLogTab() {
         see(hasContentDescription("Plan"))
-        ui.tab("History").assertIsSelected()
+        ui.tab("Log").assertIsSelected()
     }
 
     // Today
@@ -350,7 +350,7 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     fun seeSummarySaved() {
         see("Ended")
-        see("Saved to history")
+        see("Saved to your log")
     }
 
     fun closeSummary() = tap("Done")
@@ -366,7 +366,7 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     // History and Plan
 
-    fun seeHistoryEmpty() = see("Train to a plan")
+    fun seeLogEmpty() = see("Train to a plan")
 
     fun openPlanFromEmptyHistory() {
         tap("Plan your week")
@@ -481,7 +481,7 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     fun seeThisWeekOnToday(words: String) = see(hasText(words, substring = true))
 
     /** History's Plan action, in its title bar while the log or a plan gives it one. */
-    fun openPlanFromHistory() {
+    fun openPlanFromLog() {
         tapDescribed("Plan")
         see("Weekly goal")
     }
@@ -523,8 +523,8 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     fun clearHistory() {
         tapDescribed("More options")
-        tap("Clear history")
-        see("Clear history?")
+        tap("Clear the log")
+        see("Clear the log?")
         tap(hasText("Clear") and hasAnyAncestor(isDialog()))
     }
 
@@ -589,7 +589,7 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     fun askToDeletePreset(name: String) {
         tap("Delete")
         see("Delete $name?")
-        see("History keeps the workouts you did with it. The Timer keeps its settings.")
+        see("Your log keeps the workouts you did with it. The Timer keeps its settings.")
     }
 
     fun cancelDialog() = tap(hasText("Cancel") and hasAnyAncestor(isDialog()))

@@ -106,7 +106,7 @@ class PresetsScreenTest {
         onNodeWithText("Morning").performClick()
         onNodeWithText("Delete").performClick()
         onNodeWithText("Delete Morning?").assertExists()
-        onNodeWithText("History keeps the workouts you did with it. The Timer keeps its settings.").assertExists()
+        onNodeWithText("Your log keeps the workouts you did with it. The Timer keeps its settings.").assertExists()
         onNodeWithText("Cancel").performClick()
         assertEquals(emptyList(), deleted)
         onNodeWithText("Delete Morning?").assertDoesNotExist()

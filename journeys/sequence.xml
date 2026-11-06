@@ -21,7 +21,7 @@
     <action>Tap "Skip" and verify that the screen shows "Work" with "Block 2 of 2 · Round 1 of 2"</action>
     <action>Press Home and verify that the notification reads "Work · Block 2 of 2 · Round 1 of 2"</action>
     <action>Return to the workout, tap "End", then "End workout" in the dialog</action>
-    <action>Verify that the summary says "Saved to history" and shows 2/4 rounds</action>
+    <action>Verify that the summary says "Saved to your log" and shows 2/4 rounds</action>
     <action>Tap "Done", tap the Timer's block card, then "Save as preset" in the editor</action>
     <action>Verify that the sheet is now "Save as preset" with a name field reading "30/15 ×2, then 1m/15 ×2" as its placeholder, then tap "Save"</action>
     <action>Open "All presets" and verify that "30/15 ×2, then 1m/15 ×2" is under "Yours", reading "30s on · 15s off · ×2, then 1m on · 15s off · ×2 · 30s between blocks"</action>

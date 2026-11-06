@@ -9,7 +9,7 @@
     <string name="today_bells_cd">Your equipment and records</string>
     <string name="today_last">Last session</string>
     <string name="today_none_title">No sessions yet</string>
-    <string name="today_none_text">Start one, log each set as you go, and it lands in your history.</string>
+    <string name="today_none_text">Start one, log each set as you go, and it lands in your log.</string>
     <string name="today_start">Start session</string>
     <string name="today_resume">Resume session</string>
     <string name="library_entry_text">Bells, barbells, bodyweight, bands and the mat</string>

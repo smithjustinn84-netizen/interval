@@ -90,8 +90,8 @@ class SportDaysAcceptanceTest {
         // With no class, the program's next day leads.
         seeUpNext("15-minute kettlebell plan")
         seeProgramDayLeads()
-        openTab("History")
-        openPlanFromHistory()
+        openTab("Log")
+        openPlanFromLog()
         planSportEvery("BJJ", weekday = "Thursday")
         goBack()
         openTab("Today")
@@ -114,8 +114,8 @@ class SportDaysAcceptanceTest {
             following.row.value = FollowingEntity(programId = program, startedAtEpochMillis = 0)
         },
     ) {
-        openTab("History")
-        openPlanFromHistory()
+        openTab("Log")
+        openPlanFromLog()
         planSportEvery("Climbing", weekday = "Thursday")
         goBack()
         openTab("Today")
@@ -148,7 +148,7 @@ class SportDaysAcceptanceTest {
         openPlanFromToday()
         planSportEvery("BJJ", weekday = "Thursday")
         goBack()
-        openTab("History")
+        openTab("Log")
 
         openDayOnTheWeek("Today, BJJ planned")
         logClassFromItsDay()
