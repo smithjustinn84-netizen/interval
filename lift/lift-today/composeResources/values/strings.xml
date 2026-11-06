@@ -53,4 +53,23 @@
     <string name="session_leave_title">Leave the session?</string>
     <string name="today_balance_span">Sets, last 4 weeks</string>
     <string name="today_balance_untrained">Not trained in four weeks: %1$s</string>
+    <string name="today_group_following">Following</string>
+    <string name="today_group_beside">Beside the mat and the wall</string>
+    <string name="today_group_own">On your own</string>
+    <string name="today_group_lately">Lately</string>
+    <string name="today_all_programs">All programs</string>
+    <string name="today_all_programs_hint">Beginner, classics, barbell and your own</string>
+    <string name="today_free_session_hint">Log each set as you go</string>
+    <string name="today_new_program_cd">New program</string>
+    <string name="today_equipment_hint">Bells, bar, bands and records</string>
+    <string name="today_equipment_owned">%1$s · records</string>
+    <string name="today_progress_cd">%1$d of %2$d days done</string>
+    <plurals name="today_days_a_week">
+        <item quantity="one">%1$d day a week</item>
+        <item quantity="other">%1$d days a week</item>
+    </plurals>
+    <plurals name="today_weeks">
+        <item quantity="one">%1$d week</item>
+        <item quantity="other">%1$d weeks</item>
+    </plurals>
 </resources>

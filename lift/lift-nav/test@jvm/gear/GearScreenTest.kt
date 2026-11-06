@@ -5,10 +5,12 @@ package dev.justinsmith.lift.gear
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasSetTextAction
-import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import dev.justinsmith.interval.ui.performClick
 import dev.justinsmith.interval.ui.waitForText
@@ -19,7 +21,9 @@ import kotlin.test.assertEquals
 /** Your equipment: the bells owned, the bar, and the bands, renamed, moved, archived and added. */
 class GearScreenTest {
     private fun DesktopComposeUiTest.openEquipment() {
-        onNodeWithContentDescription("Your equipment and records").performClick()
+        // Its row under On your own, which the grid composes only once it is scrolled to.
+        onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Your equipment"))
+        onNodeWithText("Your equipment").performClick()
         waitForText("Your bands")
     }
 

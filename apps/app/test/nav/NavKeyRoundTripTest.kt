@@ -14,6 +14,7 @@ import dev.justinsmith.lift.nav.LiftTab
 import dev.justinsmith.lift.nav.Lifting
 import dev.justinsmith.lift.nav.OwnedBells
 import dev.justinsmith.lift.nav.ProgramEditor
+import dev.justinsmith.lift.nav.ProgramSheet
 import dev.justinsmith.lift.nav.Programs
 import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.json.Json
@@ -54,6 +55,7 @@ class NavKeyRoundTripTest {
             Lifting,
             Programs,
             ProgramEditor(),
+            ProgramSheet("built-in:GripAndPull"),
             ProgramEditor("p1"),
             OwnedBells,
             ExerciseLibrary,

@@ -6,7 +6,7 @@
   </description>
   <actions>
     <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
-    <action>Tap the "Train" tab, which opens on "Strength", then the "Your equipment and records" button</action>
+    <action>Tap the "Train" tab, which opens on "Strength", then scroll to "Your equipment" under "On your own" and tap it</action>
     <action>Verify that "Your bar" offers "None" selected, "10 kg", "15 kg" and "20 kg", above "Your bands"</action>
     <action>Tap "20 kg" under "Your bar", then go back</action>
     <action>Tap "Follow a program"</action>

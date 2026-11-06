@@ -63,7 +63,8 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
     }
 
     fun openEquipment() {
-        tapDescribed("Your equipment and records")
+        scrollTo("Your equipment")
+        tap("Your equipment")
         see("Your bar")
     }
 
@@ -102,10 +103,10 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
         see("Nothing in a week for: $untrained")
     }
 
-    /** From Today, following a program: Change program, find [name] on the list, and open its sheet. */
+    /** From Today, following a program: All programs, find [name] on the list, and open its sheet. */
     fun openProgramToChange(name: String) {
-        scrollTo("Change program")
-        tap("Change program")
+        scrollTo("All programs")
+        tap("All programs")
         scrollTo(name)
         tap(name)
         see("Day 1")

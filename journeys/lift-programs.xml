@@ -15,7 +15,7 @@
     <action>Swipe the sheet away, scroll to "15-minute kettlebell plan" and verify that its row ends in "about 15 min"; tap it and verify that "Day 1" and "Day 2" each say "about 15 min"</action>
     <action>Swipe the sheet away, scroll to "Goblet squat and row", tap it, then tap "Follow this program"</action>
     <action>Verify that Strength shows "Day 1 of 8 · week 1" with "about 10 min" beside it; tap "Start day 1", log one set, tap "Finish" and then "Done"</action>
-    <action>Verify that Strength shows "Day 2 of 8 · week 1"; tap "Change program", scroll to "Goblet squat and row" and tap it</action>
+    <action>Verify that Strength shows "Day 2 of 8 · week 1"; tap "All programs", scroll to "Goblet squat and row" and tap it</action>
     <action>Verify that the sheet shows "Following" and, under "Days done and left", "Make it yours"; tap "Make it yours"</action>
     <action>Verify that the editor shows "New program", the name "Goblet squat and row (yours)", "You're following it: your copy carries on from day 2." and the blocks "Goblet squat" and "Row" with "(10–15)"</action>
     <action>Tap "+" beside "Weeks" so it reads 5, then tap "Save program"</action>

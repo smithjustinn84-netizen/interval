@@ -75,7 +75,8 @@ class ProgramsPageTest {
     @Test
     fun `switching part way through a program asks first`() = liftAppTest(dayTwoOfGobletSquatRow()) { app ->
         waitForText("Day 2 of 8 · week 1")
-        onNodeWithText("Change program").performScrollTo().performClick()
+        scrollToText("All programs")
+        onNodeWithText("All programs").performClick()
         scrollToText("Easy Strength")
         onNodeWithText("Easy Strength").performClick()
         waitForText("Replaces Goblet squat and row · day 2 of 8")
@@ -96,8 +97,9 @@ class ProgramsPageTest {
 
     @Test
     fun `the program followed shows as Following on its sheet`() = liftAppTest(dayTwoOfGobletSquatRow()) {
-        waitForText("Change program")
-        onNodeWithText("Change program").performScrollTo().performClick()
+        waitForText("Following")
+        scrollToText("All programs")
+        onNodeWithText("All programs").performClick()
         scrollToText("Goblet squat and row")
         onNodeWithText("Goblet squat and row").performClick()
         waitForText("Following")
@@ -142,8 +144,9 @@ class ProgramsPageTest {
 
     @Test
     fun `the program followed opens its days done from its sheet`() = liftAppTest(dayTwoOfGobletSquatRow()) {
-        waitForText("Change program")
-        onNodeWithText("Change program").performScrollTo().performClick()
+        waitForText("Following")
+        scrollToText("All programs")
+        onNodeWithText("All programs").performClick()
         scrollToText("Goblet squat and row")
         onNodeWithText("Goblet squat and row").performClick()
         waitForText("Days done and left")

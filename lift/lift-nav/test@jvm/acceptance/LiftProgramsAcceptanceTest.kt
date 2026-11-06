@@ -12,6 +12,21 @@ import kotlin.test.Test
  */
 class LiftProgramsAcceptanceTest {
     @Test
+    fun `a program beside the mat and the wall opens with its sheet up and follows`() = liftScenario {
+        tap("Strength for the mat")
+        see("Follow this program")
+        tap("Follow this program")
+        see("Following")
+        see("Day 1 of 16 · week 1")
+    }
+
+    @Test
+    fun `plus on the strength pillar starts a new program`() = liftScenario {
+        tapDescribed("New program")
+        see("Save program")
+    }
+
+    @Test
     fun `a program's sheet shows what a week of it works and what it leaves out`() = liftScenario {
         // 100 one-arm swings and 10 get-ups a day, five days a week, a side counting half.
         openProgram("Simple & Sinister")

@@ -37,7 +37,8 @@ private fun DesktopComposeUiTest.pageTitle(title: String): SemanticsNodeInteract
     onNode(hasText(title) and !hasClickAction())
 
 /** The Lift tab's bell, which opens Your equipment. */
-private const val EQUIPMENT = "Your equipment and records"
+// A page pushed from Lift's title bar: a new program's editor.
+private const val NEW_PROGRAM = "New program"
 
 @Suppress("detekt.TooManyFunctions") // One journey per test, side by side.
 class AppNavigationTest {
@@ -91,7 +92,7 @@ class AppNavigationTest {
         val startBefore = onNodeWithText("Start session").fetchSemanticsNode().boundsInRoot
         val titleBefore = pageTitle("Train").fetchSemanticsNode().boundsInRoot
         mainClock.autoAdvance = false
-        onNodeWithContentDescription(EQUIPMENT).performClick()
+        onNodeWithContentDescription(NEW_PROGRAM).performClick()
         mainClock.advanceTimeBy(Motion.PAGE_MILLIS / 4L)
         // Vertically only: the leaving page drifts sideways by design.
         val start = onNodeWithText("Start session").fetchSemanticsNode().boundsInRoot
@@ -105,7 +106,7 @@ class AppNavigationTest {
         tab("Train").performClick()
         val before = tab("Train").fetchSemanticsNode().boundsInRoot
         mainClock.autoAdvance = false
-        onNodeWithContentDescription(EQUIPMENT).performClick()
+        onNodeWithContentDescription(NEW_PROGRAM).performClick()
         mainClock.advanceTimeBy(Motion.PAGE_MILLIS / 4L)
         val leaving = tab("Train").fetchSemanticsNode().boundsInRoot
         assertTrue(leaving.top > before.top + SETTLED_SLACK, "sliding down, not gone at once: $leaving vs $before")
@@ -125,7 +126,7 @@ class AppNavigationTest {
         val input = app.backInput
         tab("Train").performClick()
         val before = tab("Train").fetchSemanticsNode().boundsInRoot
-        onNodeWithContentDescription(EQUIPMENT).performClick()
+        onNodeWithContentDescription(NEW_PROGRAM).performClick()
         waitForIdle()
         tab("Train").assertDoesNotExist()
         onMainThread {

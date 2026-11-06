@@ -5,11 +5,13 @@ package dev.justinsmith.interval
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollToNode
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.performClick
 import dev.justinsmith.interval.ui.waitForText
@@ -91,7 +93,8 @@ class LiftFlowTest {
     @Test
     fun `Lift opens the bells owned and Back returns`() = appTest {
         tab("Train").performClick()
-        onNodeWithContentDescription("Your equipment and records").performClick()
+        onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Your equipment"))
+        onNodeWithText("Your equipment").performClick()
         onNodeWithText("Your bells").assertExists()
         tab("Train").assertDoesNotExist()
         onNodeWithContentDescription("Back").performClick()
@@ -103,7 +106,8 @@ class LiftFlowTest {
         lift = FakeLiftStorage().apply { finished("b1", "Swings", startedAt = 0, finishedAt = 600_000, 24.0 to 10) },
     ) {
         tab("Train").performClick()
-        waitForText("Swings")
+        // Under Lately, below the groups.
+        onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Swings"))
         onNode(hasText("Swings") and hasClickAction()).performClick()
         waitForText("24 kg × 10")
         onNodeWithContentDescription("More options").assertExists()

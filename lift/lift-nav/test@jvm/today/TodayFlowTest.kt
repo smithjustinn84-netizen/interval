@@ -3,9 +3,12 @@
 package dev.justinsmith.lift.today
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.hasScrollToNodeAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollToNode
 import dev.justinsmith.interval.ui.performClick
 import dev.justinsmith.interval.ui.waitForText
 import dev.justinsmith.lift.data.FollowingEntity
@@ -123,7 +126,8 @@ class TodayFlowTest {
             sessions.sets.value = listOf(SetEntity(1, "d2", BuiltInExercise.GobletSquat.key, 16.0, 10, null, 0))
         },
     ) {
-        waitForText("Last session")
+        // Under Lately, below the groups.
+        onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Last session"))
         onNodeWithText("Last session").performClick()
         waitForText("Goblet squat and row · day 2")
     }

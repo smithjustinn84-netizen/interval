@@ -46,20 +46,15 @@ fun EntryProviderScope<NavKey>.liftEntries(
             onOpenExercises = { backStack.push(ExerciseLibrary) },
             onOpenProgram = { backStack.push(ProgramProgress) },
             onOpenSettings = onOpenSettings,
+            onNewProgram = { backStack.push(ProgramEditor()) },
+            onOpenProgramSheet = { backStack.push(ProgramSheet(it.stored)) },
         )
     }
     entry<Lifting>(metadata = pageKind(PageKind.Mode)) {
         SessionRoute(onExit = { backStack.removeLastOrNull() })
     }
-    entry<Programs> {
-        ProgramsRoute(
-            onNew = { backStack.push(ProgramEditor()) },
-            onEdit = { backStack.push(ProgramEditor(it)) },
-            onOpenProgress = { backStack.push(ProgramProgress) },
-            onCopy = { backStack.push(ProgramEditor(copyOf = it.name)) },
-            onBack = { backStack.removeLastOrNull() },
-        )
-    }
+    entry<Programs> { ProgramsEntry(backStack) }
+    entry<ProgramSheet> { key -> ProgramsEntry(backStack, open = key.program) }
     entry<ProgramEditor> { key ->
         ProgramEditorRoute(
             uid = key.uid,
@@ -94,4 +89,17 @@ fun EntryProviderScope<NavKey>.liftEntries(
             inPane = twoPane && key.fromHistory,
         )
     }
+}
+
+/** Programs, with the sheet of the program stored as [open] up when one is. */
+@Composable
+private fun ProgramsEntry(backStack: NavBackStack<NavKey>, open: String? = null) {
+    ProgramsRoute(
+        onNew = { backStack.push(ProgramEditor()) },
+        onEdit = { backStack.push(ProgramEditor(it)) },
+        onOpenProgress = { backStack.push(ProgramProgress) },
+        onCopy = { backStack.push(ProgramEditor(copyOf = it.name)) },
+        onBack = { backStack.removeLastOrNull() },
+        open = open,
+    )
 }

@@ -1,7 +1,7 @@
 <journey name="Train">
   <description>
-    Train holds what there is to train, by pillar: Strength (the program followed, the last session, the
-    exercises and the equipment, with Start session pinned under them), Conditioning (the presets) and Mobility
+    Train holds what there is to train, by pillar: Strength (in groups: the program followed, programs beside
+    the mat and the wall, what there is on your own, and lately; Start session pinned under them), Conditioning (the presets) and Mobility
     (the flows). The picker under the title moves between them, the bar's Train item reopens the one last shown,
     and Back from any returns to Today. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
   </description>
@@ -9,6 +9,8 @@
     <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
     <action>Tap the "Train" tab</action>
     <action>Verify that the page is titled "Train", the picker under the title has "Strength" chosen beside "Conditioning" and "Mobility", and "Start session" is pinned at the bottom</action>
+    <action>Verify that Strength's groups read "Following" (with "Follow a program"), "Beside the mat and the wall" (with "Strength for the mat", "Round conditioning" and "All programs"), "On your own" (with "Free session", "Exercises" and "Your equipment") and "Lately"</action>
+    <action>Tap "Strength for the mat" and verify that Programs opens with its sheet up and "Follow this program"; tap outside the sheet, then "Back"</action>
     <action>Tap "Conditioning"</action>
     <action>Verify that the title and the picker stay where they are while the cards under them change, that "Conditioning" is chosen, and that "Built-in" lists "Tabata" with its length</action>
     <action>Tap "Tabata", then "Start workout" in its sheet</action>

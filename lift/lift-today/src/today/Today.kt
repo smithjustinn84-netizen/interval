@@ -29,12 +29,14 @@ import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.EmptyState
+import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.PreviewFormFactors
+import dev.justinsmith.interval.ui.ProgressBar
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.SettingsAction
@@ -42,6 +44,7 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.interval.ui.pressScale
+import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.LiftSession
@@ -49,32 +52,45 @@ import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.builtInPrograms
+import dev.justinsmith.lift.domain.dayMinutes
 import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.today.resources.Res
+import dev.justinsmith.lift.today.resources.bells_title
 import dev.justinsmith.lift.today.resources.common_cancel
 import dev.justinsmith.lift.today.resources.common_joined
 import dev.justinsmith.lift.today.resources.kg_pair
 import dev.justinsmith.lift.today.resources.kg_value
 import dev.justinsmith.lift.today.resources.library_entry_text
 import dev.justinsmith.lift.today.resources.library_title
-import dev.justinsmith.lift.today.resources.program_change
 import dev.justinsmith.lift.today.resources.program_finished
 import dev.justinsmith.lift.today.resources.program_follow_cta
 import dev.justinsmith.lift.today.resources.program_follow_hint
 import dev.justinsmith.lift.today.resources.program_open_cd
 import dev.justinsmith.lift.today.resources.session_leave_title
 import dev.justinsmith.lift.today.resources.sets_count
-import dev.justinsmith.lift.today.resources.today_bells_cd
+import dev.justinsmith.lift.today.resources.today_all_programs
+import dev.justinsmith.lift.today.resources.today_all_programs_hint
+import dev.justinsmith.lift.today.resources.today_days_a_week
+import dev.justinsmith.lift.today.resources.today_equipment_hint
+import dev.justinsmith.lift.today.resources.today_equipment_owned
 import dev.justinsmith.lift.today.resources.today_free_session
+import dev.justinsmith.lift.today.resources.today_free_session_hint
+import dev.justinsmith.lift.today.resources.today_group_beside
+import dev.justinsmith.lift.today.resources.today_group_following
+import dev.justinsmith.lift.today.resources.today_group_lately
+import dev.justinsmith.lift.today.resources.today_group_own
 import dev.justinsmith.lift.today.resources.today_last
 import dev.justinsmith.lift.today.resources.today_last_open_cd
+import dev.justinsmith.lift.today.resources.today_new_program_cd
 import dev.justinsmith.lift.today.resources.today_none_text
 import dev.justinsmith.lift.today.resources.today_none_title
+import dev.justinsmith.lift.today.resources.today_progress_cd
 import dev.justinsmith.lift.today.resources.today_resume
 import dev.justinsmith.lift.today.resources.today_start
 import dev.justinsmith.lift.today.resources.today_start_day
 import dev.justinsmith.lift.today.resources.today_start_day_over_text
 import dev.justinsmith.lift.today.resources.today_title
+import dev.justinsmith.lift.today.resources.today_weeks
 import dev.justinsmith.lift.ui.blockLine
 import dev.justinsmith.lift.ui.estimateLine
 import dev.justinsmith.lift.ui.liftName
@@ -93,6 +109,8 @@ fun TodayRoute(
     onOpenExercises: () -> Unit = {},
     onOpenProgram: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
+    onNewProgram: () -> Unit = {},
+    onOpenProgramSheet: (ProgramKey) -> Unit = {},
     header: (@Composable () -> Unit)? = null,
 ) {
     val viewModel = koinViewModel<TodayViewModel>()
@@ -117,15 +135,18 @@ fun TodayRoute(
         onOpenExercises = onOpenExercises,
         onOpenProgram = onOpenProgram,
         onOpenSettings = onOpenSettings,
+        onNewProgram = onNewProgram,
+        onOpenProgramSheet = onOpenProgramSheet,
         header = header,
     )
 }
 
 /**
- * Train's Strength pillar, Lift's side: the program's day (what's next before what's past), the last session (a
- * tap opens it) and the exercises. Start (or Resume) session stays pinned under them, however long the day, as
- * Start workout does. The week is Today's to show. [header] sits under the title: the app's picker of Train's
- * pillars.
+ * Train's Strength pillar, Lift's side, in groups: the program followed (where it stands, about how long its day
+ * takes, how far through it is), programs beside the mat and the wall with the way to all of them, then what there
+ * is on one's own (a free session, the exercises, the equipment) and, lately, the last session and the balance.
+ * Start (or Resume) stays pinned under them, as Start workout does. The week is Today's to show. [header] sits under
+ * the title: the app's picker of Train's pillars.
  */
 @Composable
 fun TodayScreen(
@@ -138,32 +159,124 @@ fun TodayScreen(
     onOpenExercises: () -> Unit = {},
     onOpenProgram: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
+    onNewProgram: () -> Unit = {},
+    onOpenProgramSheet: (ProgramKey) -> Unit = {},
     header: (@Composable () -> Unit)? = null,
 ) {
-    val palette = IntervalTheme.palette
-    val card = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4)
+    val group = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4)
     TabGrid(
         stringResource(Res.string.today_title),
         modifier,
         actions = {
-            IconAction(IntervalIcons.Bell, stringResource(Res.string.today_bells_cd), onOpenBells)
+            IconAction(IntervalIcons.Add, stringResource(Res.string.today_new_program_cd), onNewProgram)
             SettingsAction(onOpenSettings)
         },
         bottomBar = { StartRow(state, onStartSession, Modifier.widthIn(max = Sizes.content)) },
         header = header,
     ) {
-        item(key = "program") { ProgramCard(state, onChooseProgram, onOpenProgram, card) }
-        item(key = "last") { LastCard(state, onOpenSession, card) }
-        state.balance?.let { balance -> item(key = "balance") { BalanceCard(balance, card) } }
-        item(key = "exercises") {
-            ListCard(card) {
-                LinkRow(
-                    stringResource(Res.string.library_title),
-                    stringResource(Res.string.library_entry_text),
-                    onOpenExercises,
-                )
+        item(key = "following") {
+            Group(stringResource(Res.string.today_group_following), group) {
+                ProgramCard(state, onChooseProgram, onOpenProgram)
             }
         }
+        item(key = "beside") {
+            Group(stringResource(Res.string.today_group_beside), group) {
+                SuggestedCard(state, onOpenProgramSheet, onChooseProgram)
+            }
+        }
+        item(key = "own") {
+            Group(stringResource(Res.string.today_group_own), group) {
+                OwnCard(state, onStartSession, onOpenExercises, onOpenBells)
+            }
+        }
+        item(key = "lately") {
+            Group(stringResource(Res.string.today_group_lately), group) {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+                    LastCard(state, onOpenSession)
+                    state.balance?.let { BalanceCard(it) }
+                }
+            }
+        }
+    }
+}
+
+/** A group's label over its card. */
+@Composable
+private fun Group(label: String, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Column(modifier) {
+        GroupLabel(label)
+        content()
+    }
+}
+
+/** The grapplers' programs not followed, each opening its sheet, then the way to every program. */
+@Composable
+private fun SuggestedCard(
+    state: TodayUiState,
+    onOpenProgramSheet: (ProgramKey) -> Unit,
+    onChooseProgram: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ListCard(modifier) {
+        state.suggested.forEach { program ->
+            LinkRow(programName(program), programLine(program, state.restSeconds), { onOpenProgramSheet(program.key) })
+            RowDivider()
+        }
+        LinkRow(
+            stringResource(Res.string.today_all_programs),
+            stringResource(Res.string.today_all_programs_hint),
+            onChooseProgram,
+        )
+    }
+}
+
+/** "2 days a week · 6 weeks · about 20 min". */
+@Composable
+private fun programLine(program: Program, restSeconds: Int): String = listOf(
+    pluralStringResource(Res.plurals.today_days_a_week, program.daysPerWeek, program.daysPerWeek),
+    pluralStringResource(Res.plurals.today_weeks, program.weeks, program.weeks),
+    estimateLine(program.dayMinutes(restSeconds)),
+).reduce { joined, part -> stringResource(Res.string.common_joined, joined, part) }
+
+/** A session of one's own, while none is under way; the exercises; and the equipment, with the bells owned. */
+@Composable
+private fun OwnCard(
+    state: TodayUiState,
+    onStartSession: (ProgramKey?) -> Unit,
+    onOpenExercises: () -> Unit,
+    onOpenBells: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ListCard(modifier) {
+        if (!state.inProgress) {
+            LinkRow(
+                stringResource(Res.string.today_free_session),
+                stringResource(Res.string.today_free_session_hint),
+                { onStartSession(null) },
+            )
+            RowDivider()
+        }
+        LinkRow(
+            stringResource(Res.string.library_title),
+            stringResource(Res.string.library_entry_text),
+            onOpenExercises,
+        )
+        RowDivider()
+        val bells = state.ownedBells.map { stringResource(Res.string.kg_value, formatKg(it)) }
+        LinkRow(
+            stringResource(Res.string.bells_title),
+            if (bells.isEmpty()) {
+                stringResource(Res.string.today_equipment_hint)
+            } else {
+                stringResource(
+                    Res.string.today_equipment_owned,
+                    bells.reduce { joined, part ->
+                        stringResource(Res.string.common_joined, joined, part)
+                    },
+                )
+            },
+            onOpenBells,
+        )
     }
 }
 
@@ -231,8 +344,9 @@ private fun LastCard(state: TodayUiState, onOpenSession: (uid: String) -> Unit, 
 }
 
 /**
- * The program day to do, with each block's lift, shape and suggested bell; or the way to pick a program. A tap
- * on the header opens the program: its days done and left, or once it is finished what it came to.
+ * The program followed: where it stands and about how long its day takes, opened by a tap on its days done and
+ * left, a bar of how far through it is, and the day's blocks with the load suggested for each; or the way to pick a
+ * program.
  */
 @Composable
 private fun ProgramCard(
@@ -241,9 +355,7 @@ private fun ProgramCard(
     onOpenProgram: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val palette = IntervalTheme.palette
     val following = state.following
-    val day = state.programDay
     if (following == null) {
         ListCard(modifier) {
             LinkRow(
@@ -255,40 +367,54 @@ private fun ProgramCard(
         return
     }
     ListCard(modifier) {
-        ProgramHeader(following, day, state.dayMinutes, onOpenProgram)
-        day?.blocks?.forEach { block ->
+        ProgramHeader(following, state.programDay, state.dayMinutes, onOpenProgram)
+        val done = state.programDay?.let { it.number - 1 } ?: following.totalDays
+        val described = stringResource(Res.string.today_progress_cd, done, following.totalDays)
+        ProgressBar(
+            state.progress,
+            IntervalTheme.palette.accent,
+            Modifier
+                .padding(start = Spacing.space16, end = Spacing.space16, bottom = Spacing.space16)
+                .semantics { contentDescription = described },
+        )
+        state.programDay?.blocks?.forEach { block ->
             RowDivider()
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .semantics(mergeDescendants = true) {}
-                    .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(liftName(block.exercise, block.double), style = IntervalTheme.type.label, color = palette.text)
-                    // A bell's or a bar's load shows beside it, as planned or as last used.
-                    Text(
-                        blockLine(block, withLoad = !block.exercise.hasSuggestedLoad),
-                        style = IntervalTheme.type.meta,
-                        color = palette.textDim,
-                    )
-                }
-                // Only a bell or a bar has a weight to suggest ahead of the session.
-                if (block.exercise.hasSuggestedLoad) {
-                    Text(
-                        stringResource(
-                            if (block.double) Res.string.kg_pair else Res.string.kg_value,
-                            formatKg(state.suggestedKg(block)),
-                        ),
-                        style = IntervalTheme.type.value,
-                        color = palette.text,
-                    )
-                }
-            }
+            BlockRow(block, state)
         }
-        RowDivider()
-        LinkRow(stringResource(Res.string.program_change), null, onClick = onChooseProgram)
+    }
+}
+
+/** A block of the day: its lift and shape, and beside them the bell or bar suggested for it. */
+@Composable
+private fun BlockRow(block: Block, state: TodayUiState, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    Row(
+        modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) {}
+            .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(liftName(block.exercise, block.double), style = IntervalTheme.type.label, color = palette.text)
+            // A bell's or a bar's load shows beside it, as planned or as last used.
+            Text(
+                blockLine(block, withLoad = !block.exercise.hasSuggestedLoad),
+                style = IntervalTheme.type.meta,
+                color = palette.textDim,
+            )
+        }
+        // Only a bell or a bar has a weight to suggest ahead of the session.
+        if (block.exercise.hasSuggestedLoad) {
+            Text(
+                stringResource(
+                    if (block.double) Res.string.kg_pair else Res.string.kg_value,
+                    formatKg(state.suggestedKg(block)),
+                ),
+                style = IntervalTheme.type.value,
+                color = palette.text,
+            )
+        }
     }
 }
 
@@ -380,16 +506,12 @@ private fun StartRow(state: TodayUiState, onStartSession: (ProgramKey?) -> Unit,
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            day != null -> {
-                SecondaryButton(stringResource(Res.string.today_free_session), {
-                    onStartSession(null)
-                }, Modifier.weight(1f))
-                AccentButton(
-                    stringResource(Res.string.today_start_day, day.number),
-                    onClick = { onStartSession(day.program.key) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
+            // A free session is a row of its own, under On your own.
+            day != null -> AccentButton(
+                stringResource(Res.string.today_start_day, day.number),
+                onClick = { onStartSession(day.program.key) },
+                modifier = Modifier.fillMaxWidth(),
+            )
 
             else -> AccentButton(
                 stringResource(Res.string.today_start),

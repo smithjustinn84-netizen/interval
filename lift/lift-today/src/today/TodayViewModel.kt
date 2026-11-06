@@ -18,10 +18,13 @@ import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.MuscleBalance
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
+import dev.justinsmith.lift.domain.ProgramFamily
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.barbellLifts
+import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.estimatedMinutes
+import dev.justinsmith.lift.domain.family
 import dev.justinsmith.lift.domain.kettlebellLifts
 import dev.justinsmith.lift.domain.setsOldestFirst
 import dev.justinsmith.lift.domain.startingLoadKg
@@ -54,7 +57,19 @@ data class TodayUiState(
     val balance: MuscleBalance? = null,
     /** The rest between sets, which [dayMinutes] is estimated with. */
     val restSeconds: Int = RestClock.DEFAULT_SECONDS,
+    /** Programs for someone who grapples or climbs, other than the one followed: two at most. */
+    val suggested: List<Program> = suggestedPrograms(null),
+    /** The bells owned, in kg, lightest first. */
+    val ownedBells: List<Double> = emptyList(),
 ) {
+    /** How far through the program followed: the days done of all of them, 1 once it is over. */
+    val progress: Float
+        get() {
+            val program = following ?: return 0f
+            val done = programDay?.let { it.number - 1 } ?: program.totalDays
+            return done.toFloat() / program.totalDays
+        }
+
     /** About how long [programDay] takes, in minutes; null with none to do. */
     val dayMinutes: Int? get() = programDay?.estimatedMinutes(restSeconds)
 
@@ -87,16 +102,24 @@ class TodayViewModel(
             clock.days(timestamps, dayCheckMillis),
         ) { sessions, active, bar, _ -> build(sessions, active, bar) }
             .combine(
-                combine(programStore.following, programStore.programDay, setStore.restSeconds, ::Triple),
-            ) { state, (following, day, rest) ->
-                state.copy(following = following, programDay = day, restSeconds = rest)
-            }.flowOn(computation).stateIn(
+                combine(
+                    programStore.following,
+                    programStore.programDay,
+                    setStore.restSeconds,
+                    gearStore.bells,
+                ) { following, day, rest, bells ->
+                    { state: TodayUiState -> state.withProgram(following, day, rest, bells) }
+                },
+            ) { state, with -> with(state) }
+            .flowOn(computation)
+            .stateIn(
                 viewModelScope,
                 SharingStarted.Eagerly,
-                build(sessionStore.sessions.value, sessionStore.active.value, gearStore.bar.value).copy(
-                    following = programStore.following.value,
-                    programDay = programStore.programDay.value,
-                    restSeconds = setStore.restSeconds.value,
+                build(sessionStore.sessions.value, sessionStore.active.value, gearStore.bar.value).withProgram(
+                    programStore.following.value,
+                    programStore.programDay.value,
+                    setStore.restSeconds.value,
+                    gearStore.bells.value,
                 ),
             )
 
@@ -138,3 +161,19 @@ class TodayViewModel(
         )
     }
 }
+
+/** [this] with the program followed, its next [day], the [rest] between sets and the [bells] owned. */
+private fun TodayUiState.withProgram(following: Program?, day: ProgramDay?, rest: Int, bells: List<Double>) = copy(
+    following = following,
+    programDay = day,
+    restSeconds = rest,
+    suggested = suggestedPrograms(following),
+    ownedBells = bells.sorted(),
+)
+
+/** The built-ins for grapplers, which suit a climber's week too, other than [following]: two at most. */
+fun suggestedPrograms(following: Program?): List<Program> = builtInPrograms
+    .filter { it.family == ProgramFamily.Grappling && it.key != following?.key }
+    .take(SUGGESTED_SHOWN)
+
+private const val SUGGESTED_SHOWN = 2

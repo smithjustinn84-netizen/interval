@@ -165,8 +165,10 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
   lift-testing       `FakeLiftStorage` and the fake DAOs, `FakeIntervalActivity`, `RecordingBeeper`,
                      `RecordingKeepAlive`, `LiftTestClock` (the wall clock and the timers' time, moved together),
                      `liftTestKoin`
-  lift-today         Train's Strength pillar, Lift's tab (`TodayRoute`: the program's day, the last session, the
-                     balance, `MuscleBalance` in lift-domain) and the gear (bells, bar, bands, records)
+  lift-today         Train's Strength pillar, Lift's tab (`TodayRoute`, in groups: Following, the program's day
+                     and how far through it; Beside the mat and the wall, `suggestedPrograms`, each opening the
+                     `ProgramSheet` key; On your own; Lately, the last session and the balance, `MuscleBalance` in
+                     lift-domain) and the gear (bells, bar, bands, records)
   lift-session       the session (log sheet, EMOM, hold and rest timers under `SessionTimers`, plan sheets,
                      summary), the programs
                      and their editor and progress (they share the block editor), a finished session's page

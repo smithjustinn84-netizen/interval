@@ -112,6 +112,7 @@ fun ProgramsRoute(
     onBack: () -> Unit,
     onOpenProgress: () -> Unit = {},
     onCopy: (ProgramId) -> Unit = {},
+    open: String? = null,
 ) {
     val viewModel = koinViewModel<ProgramsViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -135,6 +136,7 @@ fun ProgramsRoute(
             onOpenProgress = onOpenProgress,
             onCopy = onCopy,
         ),
+        open = open,
     )
 }
 
@@ -143,7 +145,7 @@ fun ProgramsRoute(
  * program's sheet, its days laid out, from which it is followed from its first day. Following one in place
  * of a program part done asks first: [followingDay] is the followed program's next day, null for none or
  * once it is over. Each program and each of its days says about how long it takes, resting [restSeconds]
- * between sets.
+ * between sets. It opens on the sheet of the program stored as [open], when one is.
  */
 @Composable
 fun ProgramsScreen(
@@ -153,10 +155,11 @@ fun ProgramsScreen(
     modifier: Modifier = Modifier,
     followingDay: ProgramDay? = null,
     restSeconds: Int = RestClock.DEFAULT_SECONDS,
+    open: String? = null,
 ) {
     val families = builtInPrograms.groupBy { (it.key as? ProgramKey.BuiltIn)?.id?.family }
     // Saved by their stored keys: a program is not saveable.
-    var previewing by rememberSaveable { mutableStateOf<String?>(null) }
+    var previewing by rememberSaveable { mutableStateOf(open) }
     var switching by rememberSaveable { mutableStateOf<String?>(null) }
     val programOf = { stored: String? -> (builtInPrograms + custom).firstOrNull { it.key.stored == stored } }
     val notices = LocalNotices.current

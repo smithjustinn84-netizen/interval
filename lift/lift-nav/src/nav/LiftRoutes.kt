@@ -32,6 +32,14 @@ data object Lifting : NavKey
 data object Programs : NavKey
 
 /**
+ * Programs with the sheet of one up, by its stored key: a program suggested on Train's Strength pillar. A key of
+ * its own, so [Programs]'s saved form stays as it was.
+ */
+@Serializable
+@SerialName("dev.justinsmith.lift.nav.ProgramSheet")
+data class ProgramSheet(val program: String) : NavKey
+
+/**
  * The program followed: its days done and left, or once it is over what it came to. Pushed from the Lift
  * tab's program card and from Programs.
  */
@@ -73,6 +81,7 @@ fun PolymorphicModuleBuilder<NavKey>.liftRoutes() {
     subclass(LiftTab::class)
     subclass(Lifting::class)
     subclass(Programs::class)
+    subclass(ProgramSheet::class)
     subclass(ProgramProgress::class)
     subclass(ProgramEditor::class)
     subclass(OwnedBells::class)

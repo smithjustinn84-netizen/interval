@@ -102,6 +102,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   own Start still starts at once.
 - Strength by time: the program's next day is the first pick by time when about as long as it takes fits the
   minutes picked ("Strength for the mat", "Day 3 of 16 · week 2", "20 min"), with a preset fewer beside it.
+- Train's Strength pillar in groups: Following (the program, about how long its day takes, a bar of how far
+  through it is, and the day's lifts with their bells), Beside the mat and the wall (two programs for grapplers,
+  each opening Programs with its sheet up, and All programs), On your own (Free session, Exercises, Your
+  equipment with the bells owned) and Lately (the last session and the balance). The title bar's + starts a new
+  program; the equipment is a row rather than a button, and Change program is All programs.
 
 ## [0.4.0] — 2026-11-05
 
