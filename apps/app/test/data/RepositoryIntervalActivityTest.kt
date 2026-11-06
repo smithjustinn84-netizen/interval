@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.data
 
 import dev.justinsmith.interval.fakes.FakeStorage
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.lift.data.IntervalWorkout
@@ -24,6 +25,18 @@ class RepositoryIntervalActivityTest {
 
         repository.history.recordWorkout(IntervalConfig(), elapsedSeconds = 600)
         assertEquals(setOf(300, 600), activity.workouts.value.map(IntervalWorkout::elapsedSeconds).toSet())
+    }
+
+    @Test
+    fun `Lift sees the days a sport was logged on`() {
+        val repository = storage.repository()
+        repository.history.logSport(Sport.Bjj, epochDay = 20_744)
+        val activity = RepositoryIntervalActivity(repository.history, repository.settings, scope)
+        assertEquals(listOf(20_744L), activity.sportDays.value)
+
+        repository.history.logSport(Sport.Climbing, epochDay = 20_746)
+        repository.history.unlogSport(Sport.Bjj, epochDay = 20_744)
+        assertEquals(listOf(20_746L), activity.sportDays.value)
     }
 
     @Test

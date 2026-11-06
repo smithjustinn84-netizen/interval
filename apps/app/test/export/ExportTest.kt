@@ -6,6 +6,8 @@ import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.TODAY
 import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.model.PerceivedEffort
+import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
@@ -73,6 +75,21 @@ class ExportTest {
         assertEquals(2, session.effort)
         assertNull(session.note)
         assertNull(bundle.lift.following)
+    }
+
+    @Test
+    fun `sport days planned and logged go in the file by name`() = runTest {
+        intervals.plans.planWeekly(PlanWorkout.SportDay(Sport.Custom("Judo")), setOf(2))
+        intervals.history.logSport(Sport.Bjj, epochDay = 20_744)
+
+        val bundle = Json.decodeFromString<ExportBundle>(exporter.export().content)
+
+        val plan = bundle.plan.single()
+        assertEquals("Custom" to "Judo", plan.sport to plan.name)
+        assertNull(plan.lift)
+        assertNull(plan.config)
+        val day = bundle.sportDays.single()
+        assertEquals(Triple(20_744L, "Bjj", null), Triple(day.epochDay, day.sport, day.name))
     }
 
     @Test

@@ -9,9 +9,10 @@ import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.fixtures.DAMAGED_EXPORT
 import dev.justinsmith.interval.fixtures.FOREIGN_JSON
 import dev.justinsmith.interval.fixtures.SCHEMA_1_EXPORT
-import dev.justinsmith.interval.fixtures.SCHEMA_6_EXPORT
+import dev.justinsmith.interval.fixtures.SCHEMA_7_EXPORT
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.ShareableFile
@@ -59,6 +60,7 @@ private class Phone(val now: Long) {
                 (it.workout as? PlanWorkout.Interval)?.copy(presetId = null) ?: it.workout,
             )
         },
+        intervals.history.sportDays.value.map { it.copy(id = 0) }.sortedBy { it.epochDay },
         lift.sessions.sessions.value.map { session -> session.copy(sets = session.sets.map { it.copy(id = 0) }) },
         lift.exercises.customExercises.value,
         lift.programs.customPrograms.value,
@@ -182,6 +184,46 @@ class AppDataImporterTest {
     }
 
     @Test
+    fun `sport days planned and logged come across and none is added twice`() = runTest {
+        val source = Phone(now).apply {
+            intervals.plans.planWeekly(PlanWorkout.SportDay(Sport.Bjj), setOf(2, 4))
+            intervals.plans.planOnce(PlanWorkout.SportDay(Sport.Custom("Judo")), TODAY + 1)
+            intervals.history.logSport(Sport.Bjj, TODAY - 2)
+            intervals.history.logSport(Sport.Custom("Judo"), TODAY)
+        }
+        val target = Phone(now + 1)
+        // One of the two days logged is here already.
+        target.intervals.history.logSport(Sport.Bjj, TODAY - 2)
+
+        val review = assertIs<ImportReview.Ready>(target.importer.review(source.file()))
+        assertEquals(ImportCounts(workouts = 1, plans = 3), review.new)
+        assertEquals(1, review.alreadyHere)
+        target.importer.import(source.file(), withSettings = false)
+
+        assertEquals(
+            source.intervals.plans.planned.value.map { it.workout to it.schedule },
+            target.intervals.plans.planned.value.map { it.workout to it.schedule },
+        )
+        assertEquals(
+            setOf(TODAY - 2 to Sport.Bjj, TODAY to Sport.Custom("Judo")),
+            target.intervals.history.sportDays.value.map { it.epochDay to it.sport }.toSet(),
+        )
+        assertEquals(ImportCounts(), target.importer.import(source.file(), withSettings = false))
+    }
+
+    @Test
+    fun `a sport this build does not know makes the file unreadable`() = runTest {
+        val source = Phone(now).apply { intervals.history.logSport(Sport.Climbing, TODAY) }
+        val file = source.file().content
+        val content = file.replace("\"sport\": \"Climbing\"", "\"sport\": \"Fencing\"")
+        assertTrue(content != file)
+        assertEquals(
+            ImportReview.Unreadable,
+            Phone(now).importer.review(ShareableFile("x.json", "application/json", content)),
+        )
+    }
+
+    @Test
     fun `also settings brings the file's settings with it`() = runTest {
         val target = Phone(now)
         target.importer.import(stocked().file(), withSettings = true)
@@ -224,7 +266,7 @@ class AppDataImporterTest {
     @Test
     fun `a newer file says so and changes nothing`() = runTest {
         val target = Phone(now)
-        val file = ShareableFile("new.json", ExportBundle.MIME_TYPE, SCHEMA_6_EXPORT)
+        val file = ShareableFile("new.json", ExportBundle.MIME_TYPE, SCHEMA_7_EXPORT)
         assertEquals(ImportReview.TooNew("0.9.0"), target.importer.review(file))
         assertFailsWith<IllegalArgumentException> { target.importer.import(file, withSettings = true) }
         assertTrue(target.intervals.history.history.value.isEmpty())

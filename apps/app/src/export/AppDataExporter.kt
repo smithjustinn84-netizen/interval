@@ -60,6 +60,7 @@ class AppDataExporter(
         presets = intervals.presets.customPresets.value.map { it.export() },
         history = intervals.history.history.value.map { it.export() },
         plan = intervals.plans.planned.value.map { it.export() },
+        sportDays = intervals.history.sportDays.value.map { it.export() },
         lift = LiftExport(
             bellsKg = lift.gear.bells.value,
             barKg = lift.gear.bar.value,
@@ -119,9 +120,10 @@ private fun HistoryEntry.export() =
 
 private fun PlannedWorkout.export(): PlannedExport {
     val interval = workout as? PlanWorkout.Interval
+    val sport = (workout as? PlanWorkout.SportDay)?.sport
     return PlannedExport(
         id = id,
-        name = interval?.name,
+        name = interval?.name ?: sport?.exportName,
         config = interval?.config?.export(),
         weekday = (schedule as? PlanSchedule.Weekly)?.weekday,
         epochDay = (schedule as? PlanSchedule.Once)?.epochDay,
@@ -131,7 +133,9 @@ private fun PlannedWorkout.export(): PlannedExport {
             is PlanWorkout.Interval -> null
             PlanWorkout.Lift.ProgramDay -> "ProgramDay"
             PlanWorkout.Lift.AnySession -> "AnySession"
+            is PlanWorkout.SportDay -> null
         },
+        sport = sport?.exportKey,
     )
 }
 

@@ -2,6 +2,7 @@ package dev.justinsmith.interval.history
 
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.formatClock
@@ -36,7 +37,8 @@ data class HistorySection(val day: HistoryDay, val dayNumber: Long, val items: L
 
 /**
  * One day of the week strip or the calendar. [dayOfMonth] is its number on the calendar; of its [seconds],
- * [liftSeconds] were spent on Lift's sessions and the rest on interval workouts.
+ * [liftSeconds] were spent on Lift's sessions and the rest on interval workouts. [sport] is the day's sport,
+ * planned or, with [sportLogged], logged.
  */
 data class DayCell(
     val epochDay: Long,
@@ -50,9 +52,11 @@ data class DayCell(
     /** The day's date, for screen readers: "Wednesday, Oct 14". */
     val date: String = "",
     val liftSeconds: Int = 0,
+    val sport: Sport? = null,
+    val sportLogged: Boolean = false,
 )
 
-/** Something still to do on [day]: an interval plan, or a session on Lift. */
+/** Something still to do on [day]: an interval plan, a session on Lift, or a day of a sport to log. */
 sealed interface UpNextItem {
     val epochDay: Long
     val day: HistoryDay
@@ -80,10 +84,27 @@ sealed interface UpNextItem {
         val planId: Long? = null,
         val minutes: Int? = null,
     ) : UpNextItem
+
+    /** A day of [sport] planned: nothing to start, and logging it on its day does it. */
+    data class SportDay(
+        val planId: Long,
+        override val epochDay: Long,
+        override val day: HistoryDay,
+        val sport: Sport,
+    ) : UpNextItem
 }
 
-/** This week against the weekly goal: its workouts, [lifts] of them Lift's; [goal] is null until set. */
-data class WeekGoal(val count: Int = 0, val lifts: Int = 0, val goal: Int? = null, val streak: Streak? = null)
+/**
+ * This week against the weekly goal: its workouts, [lifts] of them Lift's and [sports] of them sport days logged;
+ * [goal] is null until set.
+ */
+data class WeekGoal(
+    val count: Int = 0,
+    val lifts: Int = 0,
+    val goal: Int? = null,
+    val streak: Streak? = null,
+    val sports: Int = 0,
+)
 
 /** The summary's figures for its range. [time] is a clock, "16:35"; [totalSeconds] is for longer ones. */
 data class RangeSummary(
@@ -125,9 +146,13 @@ data class HistoryUiState(
     val sections: List<HistorySection>,
     val range: TrainingRange = TrainingRange.Week,
     val summary: RangeSummary = RangeSummary(0, formatClock(0), 0, null, 0, 0),
-    /** This week's workouts against the weekly goal, [weekLifts] of them Lift's; [goal] is null until set. */
+    /**
+     * This week's workouts against the weekly goal, [weekLifts] of them Lift's and [weekSports] sport days logged;
+     * [goal] is null until set.
+     */
     val weekCount: Int = 0,
     val weekLifts: Int = 0,
+    val weekSports: Int = 0,
     val goal: Int? = null,
     val streak: Streak? = null,
     /** Monday to Sunday of this week. */
@@ -150,7 +175,7 @@ data class HistoryUiState(
     val isEmpty: Boolean get() = !loading && sections.isEmpty() && !hasPlans
 
     /** This week's count, goal and streak together, as the goal row takes them. */
-    val weekGoal: WeekGoal get() = WeekGoal(weekCount, weekLifts, goal, streak)
+    val weekGoal: WeekGoal get() = WeekGoal(weekCount, weekLifts, goal, streak, weekSports)
 
     /** The most workouts in one of [weeks], for scaling its bars; at least the goal, so its line fits. */
     val weeksMax: Int get() = maxOf(weeks.maxOfOrNull { it.count } ?: 0, goal ?: 0, 1)

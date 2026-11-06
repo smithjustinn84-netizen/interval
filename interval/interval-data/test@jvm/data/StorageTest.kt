@@ -15,6 +15,7 @@ import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.platform.DATABASE_NAME
@@ -368,6 +369,42 @@ class StorageTest {
     }
 
     @Test
+    fun `a version 12 database keeps its plans and takes sport days from then on`() {
+        BundledSQLiteDriver().open(directory.resolve(DATABASE_NAME).absolutePath).use { connection ->
+            V12_SCHEMA.forEach(connection::execSQL)
+            connection.execSQL(
+                "INSERT INTO planned (weekday, epoch_day, name, prep_seconds, work_seconds, rest_seconds, rounds, " +
+                    "activity, preset_id, created_at) VALUES (2, NULL, 'Tabata', 10, 20, 10, 8, 'General', NULL, $NOW)",
+            )
+            connection.execSQL(
+                "INSERT INTO planned (weekday, epoch_day, name, prep_seconds, work_seconds, rest_seconds, rounds, " +
+                    "activity, preset_id, created_at, lift) VALUES (4, NULL, '', 0, 0, 0, 0, NULL, NULL, $NOW, " +
+                    "'program_day')",
+            )
+            connection.execSQL("PRAGMA user_version = 12")
+        }
+        withApp { repository ->
+            val plans = repository.plans.planned.value.map { it.workout }
+            assertEquals("Tabata", (plans.first() as PlanWorkout.Interval).name)
+            assertEquals(PlanWorkout.Lift.ProgramDay, plans.last())
+            assertEquals(emptyList(), repository.history.sportDays.value)
+
+            repository.plans.planWeekly(PlanWorkout.SportDay(Sport.Bjj), setOf(4))
+            repository.history.logSport(Sport.Custom("Judo"), epochDay = 20_744)
+            repository.history.logSport(Sport.Custom("Judo"), epochDay = 20_744)
+            repository.history.logSport(Sport.Bjj, epochDay = 20_744)
+            repository.history.unlogSport(Sport.Bjj, epochDay = 20_744)
+            settled(repository) { it.plans.planned.value.size == 3 && it.history.sportDays.value.size == 1 }
+        }
+        withApp { repository ->
+            assertEquals(PlanWorkout.SportDay(Sport.Bjj), repository.plans.planned.value.last().workout)
+            val logged = repository.history.sportDays.value.single()
+            assertEquals(Sport.Custom("Judo"), logged.sport)
+            assertEquals(20_744L, logged.epochDay)
+        }
+    }
+
+    @Test
     fun `deleted workouts stay on disk as tombstones`() {
         withApp { repository ->
             repeat(3) { repository.history.recordWorkout(IntervalConfig(), elapsedSeconds = it + 1) }
@@ -477,6 +514,7 @@ class StorageTest {
                 database.historyDao(),
                 database.presetDao(),
                 database.plannedDao(),
+                database.sportLogDao(),
                 database.importDao(),
                 scope,
                 clock = { clock },
@@ -663,3 +701,11 @@ private val V11_SCHEMA = listOf(
     "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, " +
         "'c40d90c87a0193c000faf15b659e4cb1')",
 )
+
+/** Version 12 as it shipped (`schemas/.../12.json`): version 11 and the columns Room's migration to 12 adds. */
+private val V12_SCHEMA = V11_SCHEMA.dropLast(1) + listOf("history", "preset", "planned").flatMap { table ->
+    listOf(
+        "ALTER TABLE `$table` ADD COLUMN `then_blocks` TEXT NOT NULL DEFAULT '[]'",
+        "ALTER TABLE `$table` ADD COLUMN `block_rest_seconds` INTEGER NOT NULL DEFAULT 0",
+    )
+} + "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3b0e16ac34a6b1ae62a67e2c86ad1f43')"

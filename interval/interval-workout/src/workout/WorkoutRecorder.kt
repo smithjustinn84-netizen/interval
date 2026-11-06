@@ -78,11 +78,12 @@ class WorkoutRecorder(
         return healthWorkout(run.config.activity, presetName, run.startedAt, endedAt, run.spans, run.calories)
     }
 
-    /** The week as it stands with a workout today in it, both kinds of workout counted as History counts them. */
+    /** The week as it stands with a workout today in it, every kind of workout counted as History counts them. */
     private fun weekWith(): WeekStanding {
         val today = timestamps.dayNumber(clock.nowMillis())
         val days = historyStore.history.value.map { timestamps.dayNumber(it.finishedAtEpochMillis) } +
             bells.sessions.value.mapNotNull { it.finishedAtEpochMillis }.map(timestamps::dayNumber) +
+            historyStore.sportDays.value.map { it.epochDay } +
             today
         return weekStanding(days, today, settingsStore.appSettings.value.weeklyGoal)
     }

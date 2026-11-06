@@ -3,6 +3,7 @@ package dev.justinsmith.interval.platform
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.timer.IntervalConfig
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
@@ -62,6 +63,21 @@ class ReminderTextTest {
         assertEquals(
             ReminderWords("2 workouts planned today", "Tabata · Lift session"),
             reminderWords(PlanReminder(0, 420, listOf(tabata, programDay))),
+        )
+    }
+
+    // The plan's reminders leave a sport day out; one that got here all the same is still worded.
+    @Test
+    fun `a day of a sport says something if it is ever asked for`() = runBlocking {
+        val judo = PlannedWorkout(5, PlanWorkout.SportDay(Sport.Custom("Judo")), PlanSchedule.Once(0))
+        val bjj = PlannedWorkout(6, PlanWorkout.SportDay(Sport.Bjj), PlanSchedule.Once(0))
+        assertEquals(
+            ReminderWords("Judo", "Planned today · Judo"),
+            reminderWords(PlanReminder(0, 420, listOf(judo))),
+        )
+        assertEquals(
+            ReminderWords("2 workouts planned today", "Tabata · Sport day"),
+            reminderWords(PlanReminder(0, 420, listOf(tabata, bjj))),
         )
     }
 }

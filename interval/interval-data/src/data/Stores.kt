@@ -3,9 +3,11 @@ package dev.justinsmith.interval.data
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.HistoryEntry
+import dev.justinsmith.interval.model.LoggedSport
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.WorkoutProgress
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -48,9 +50,12 @@ interface PresetStore {
     fun restorePreset(preset: Preset)
 }
 
-/** The finished workouts, newest first. */
+/** The finished workouts, newest first, and the days of a sport logged beside them. */
 interface HistoryStore {
     val history: StateFlow<List<HistoryEntry>>
+
+    /** The sport days logged, the latest day first. */
+    val sportDays: StateFlow<List<LoggedSport>>
 
     /** Returns the uid the workout is stored under. */
     fun recordWorkout(
@@ -72,6 +77,12 @@ interface HistoryStore {
     fun deleteWorkout(id: Long)
 
     fun restoreWorkout(id: Long)
+
+    /** Logs a day of [sport] on [epochDay]. One of a sport a day: a second changes nothing. */
+    fun logSport(sport: Sport, epochDay: Long)
+
+    /** Takes back [logSport]: Undo, or the day's own remove. */
+    fun unlogSport(sport: Sport, epochDay: Long)
 
     fun clearHistory()
 }

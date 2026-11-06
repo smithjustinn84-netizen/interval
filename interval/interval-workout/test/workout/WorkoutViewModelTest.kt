@@ -13,6 +13,7 @@ import dev.justinsmith.interval.fakes.RecordingCuePlayer
 import dev.justinsmith.interval.fakes.RecordingHealthStore
 import dev.justinsmith.interval.fakes.deferredStorageScope
 import dev.justinsmith.interval.model.PerceivedEffort
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -97,6 +98,18 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
     private fun TestScope.run(millis: Long) {
         advanceTimeBy(millis + WorkoutTicker.TICK_MILLIS)
         runCurrent()
+    }
+
+    @Test
+    fun `a sport day logged this week counts in the week the summary shows`() = runTest(dispatcher) {
+        // The clock stands on day 0: the class today counts beside the workout, last week's does not.
+        repository.history.logSport(Sport.Bjj, epochDay = 0)
+        repository.history.logSport(Sport.Bjj, epochDay = -7)
+        val viewModel = workoutViewModel(workoutSession())
+        repeat(3) { viewModel.skip() }
+        runCurrent()
+
+        assertEquals(2, viewModel.state.value.week?.count)
     }
 
     @Test

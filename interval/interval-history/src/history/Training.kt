@@ -3,9 +3,11 @@ package dev.justinsmith.interval.history
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.LiftWorkout
+import dev.justinsmith.interval.model.LoggedSport
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -17,7 +19,7 @@ import dev.justinsmith.interval.timer.weeksMeetingGoal
 
 /** How one planned workout stands on one day. */
 enum class PlanState {
-    /** A workout of its shape finished that day, or for a session on Lift, any session. */
+    /** A workout of its shape finished that day; for a session on Lift, any session; for a sport, it logged. */
     Done,
 
     /** Its day has gone by without one. */
@@ -25,6 +27,9 @@ enum class PlanState {
 
     /** Today or later, not done yet. */
     Open,
+
+    /** A sport day gone by unlogged: not missed as far as the app can tell, so it counts for nothing either way. */
+    Passed,
 }
 
 /**
@@ -40,23 +45,23 @@ data class DayPlan(
 
 /** What a day comes to, for the week strip and the calendar. */
 enum class DayState {
-    /** At least one workout finished. */
+    /** At least one workout finished, or a sport logged. */
     Done,
 
-    /** Today or later, with a plan still to do. */
+    /** Today or later, with a workout planned and still to do. */
     Planned,
 
     /** Gone by, with a plan not done and no workout at all. */
     Missed,
 
-    /** Nothing done and nothing planned. */
+    /** Nothing done and no workout planned: a sport day not logged is one, its sport named beside it. */
     Rest,
 }
 
 /**
- * One day of training: its plans as they stand and its workouts, oldest first, the interval workouts and
- * then the kettlebell sessions ([liftWorkouts]). Both count toward the day, and each does the plans of its
- * own kind.
+ * One day of training: its plans as they stand and its workouts, oldest first, the interval workouts, then the
+ * kettlebell sessions ([liftWorkouts]) and the sport days logged ([sports]). Each counts toward the day and does
+ * the plans of its own kind. A sport has no length, so it adds nothing to [seconds].
  */
 data class TrainingDay(
     val epochDay: Long,
@@ -64,20 +69,26 @@ data class TrainingDay(
     val plans: List<DayPlan>,
     val workouts: List<HistoryEntry>,
     val liftWorkouts: List<LiftWorkout> = emptyList(),
+    val sports: List<LoggedSport> = emptyList(),
 ) {
     /** 1 for Monday through 7 for Sunday. */
     val weekday: Int get() = weekdayOf(epochDay)
 
-    /** Every workout that day, of either kind. */
-    val count: Int get() = workouts.size + liftWorkouts.size
+    /** Every workout that day, of any kind. */
+    val count: Int get() = workouts.size + liftWorkouts.size + sports.size
 
     val seconds: Int get() = workouts.sumOf { it.elapsedSeconds } + liftWorkouts.sumOf { it.elapsedSeconds }
+
+    /** The day's sport, for the label under it: the one logged, else the one planned. */
+    val sport: Sport?
+        get() = sports.firstOrNull()?.sport
+            ?: plans.firstNotNullOfOrNull { (it.plan.workout as? PlanWorkout.SportDay)?.sport }
 
     val state: DayState
         get() = when {
             count > 0 -> DayState.Done
             plans.any { it.state == PlanState.Missed } -> DayState.Missed
-            plans.isNotEmpty() -> DayState.Planned
+            plans.any { it.state == PlanState.Open && it.plan.workout !is PlanWorkout.SportDay } -> DayState.Planned
             else -> DayState.Rest
         }
 }
@@ -86,8 +97,9 @@ data class TrainingDay(
 enum class TrainingRange { Week, Month, AllTime }
 
 /**
- * A range's totals. [plannedDone] of the [plannedDue] plans whose day has come (today's open ones aside)
- * were done. [firstDay] is the day of the first workout ever, for All time; null without one.
+ * A range's totals. [plannedDone] of the [plannedDue] plans whose day has come (today's open ones aside, and
+ * the sport days that went by unlogged) were done. [firstDay] is the day of the first workout ever, for All time;
+ * null without one.
  */
 data class RangeStats(
     val count: Int,
@@ -122,17 +134,19 @@ data class MonthCell(val day: TrainingDay, val inMonth: Boolean)
  * covers its weekday from the day it was made on, a one-off its one day.
  *
  * An interval plan is done by a workout of the same shape that day, a plan of a session on Lift by any
- * session that day. Each workout does at most one plan, the earliest workout going to the earliest plan, and
- * a workout that matches none is logged all the same.
+ * session that day, a sport day by that sport logged on it. Each workout does at most one plan, the earliest
+ * workout going to the earliest plan, and a workout that matches none is logged all the same.
  *
- * [lifts], the kettlebell sessions, count as workouts everywhere (the days, the totals, the weekly
- * counts and the streak) but have no shape, so they are not among the shapes done most.
+ * [lifts], the kettlebell sessions, and [sports], the sport days logged, count as workouts everywhere (the days,
+ * the weekly counts and the streak) but have no shape, so they are not among the shapes done most; a sport day
+ * has no length either, so it adds to no time or calories.
  */
 class TrainingLog(
     history: List<HistoryEntry>,
     private val planned: List<PlannedWorkout>,
     private val today: Long,
     lifts: List<LiftWorkout> = emptyList(),
+    sports: List<LoggedSport> = emptyList(),
     private val dayOf: (Long) -> Long,
 ) {
     private val byDay: Map<Long, List<HistoryEntry>> = history
@@ -143,9 +157,11 @@ class TrainingLog(
         .sortedBy { it.finishedAtEpochMillis }
         .groupBy { dayOf(it.finishedAtEpochMillis) }
 
+    private val sportsByDay: Map<Long, List<LoggedSport>> = sports.sortedBy { it.id }.groupBy { it.epochDay }
+
     private val madeOn: Map<Long, Long> = planned.associate { it.id to dayOf(it.createdAtEpochMillis) }
 
-    private val firstWorkoutDay: Long? = (byDay.keys + liftsByDay.keys).minOrNull()
+    private val firstWorkoutDay: Long? = (byDay.keys + liftsByDay.keys + sportsByDay.keys).minOrNull()
 
     /** The plans that fall on [epochDay], in the order they were planned. */
     fun plansOn(epochDay: Long): List<PlannedWorkout> = planned.filter { plan ->
@@ -155,7 +171,9 @@ class TrainingLog(
     fun day(epochDay: Long): TrainingDay {
         val workouts = byDay[epochDay].orEmpty()
         val lifts = liftsByDay[epochDay].orEmpty()
-        return TrainingDay(epochDay, epochDay == today, matchPlans(epochDay, workouts, lifts), workouts, lifts)
+        val sports = sportsByDay[epochDay].orEmpty()
+        val plans = matchPlans(epochDay, workouts, lifts, sports)
+        return TrainingDay(epochDay, epochDay == today, plans, workouts, lifts, sports)
     }
 
     /** Monday to Sunday of this week. */
@@ -182,9 +200,10 @@ class TrainingLog(
         val workouts = byDay.filterKeys { it in span }.values.flatten()
         val lifts = liftsByDay.filterKeys { it in span }.values.flatten()
         val dueDays = span.first..minOf(span.last, today)
-        val due = dueDays.flatMap { day(it).plans }.filter { it.state != PlanState.Open }
+        val due = dueDays.flatMap { day(it).plans }
+            .filter { it.state == PlanState.Done || it.state == PlanState.Missed }
         return RangeStats(
-            count = workouts.size + lifts.size,
+            count = workouts.size + lifts.size + sportsByDay.filterKeys { it in span }.values.sumOf { it.size },
             seconds = workouts.sumOf { it.elapsedSeconds } + lifts.sumOf { it.elapsedSeconds },
             calories = body.weightKg?.let {
                 workouts.sumOf { it.calories(body) ?: 0 } + lifts.sumOf { it.calories(body) ?: 0 }
@@ -242,8 +261,9 @@ class TrainingLog(
 
     private fun days(from: Long, count: Int): List<TrainingDay> = (0 until count).map { day(from + it) }
 
-    private fun countInWeek(weekStart: Long): Int =
-        (weekStart until weekStart + DAYS_PER_WEEK).sumOf { (byDay[it]?.size ?: 0) + (liftsByDay[it]?.size ?: 0) }
+    private fun countInWeek(weekStart: Long): Int = (weekStart until weekStart + DAYS_PER_WEEK).sumOf {
+        (byDay[it]?.size ?: 0) + (liftsByDay[it]?.size ?: 0) + (sportsByDay[it]?.size ?: 0)
+    }
 
     // The first day anything happened: a workout, or a plan made or falling due.
     private fun allTimeStart(): Long {
@@ -256,9 +276,15 @@ class TrainingLog(
         return (planDays + listOfNotNull(firstWorkoutDay, today)).min()
     }
 
-    private fun matchPlans(epochDay: Long, workouts: List<HistoryEntry>, lifts: List<LiftWorkout>): List<DayPlan> {
+    private fun matchPlans(
+        epochDay: Long,
+        workouts: List<HistoryEntry>,
+        lifts: List<LiftWorkout>,
+        sports: List<LoggedSport>,
+    ): List<DayPlan> {
         val unused = workouts.toMutableList()
         val unusedLifts = lifts.toMutableList()
+        val unusedSports = sports.toMutableList()
         return plansOn(epochDay).map { plan ->
             val done = when (val workout = plan.workout) {
                 is PlanWorkout.Interval -> unused.firstOrNull { it.config.sameShape(workout.config) }?.let { match ->
@@ -270,11 +296,17 @@ class TrainingLog(
                     unusedLifts.remove(match)
                     DayPlan(plan, PlanState.Done, liftUid = match.uid)
                 }
+
+                is PlanWorkout.SportDay -> unusedSports.firstOrNull { it.sport == workout.sport }?.let { match ->
+                    unusedSports.remove(match)
+                    DayPlan(plan, PlanState.Done)
+                }
             }
             when {
                 done != null -> done
-                epochDay < today -> DayPlan(plan, PlanState.Missed)
-                else -> DayPlan(plan, PlanState.Open)
+                epochDay >= today -> DayPlan(plan, PlanState.Open)
+                plan.workout is PlanWorkout.SportDay -> DayPlan(plan, PlanState.Passed)
+                else -> DayPlan(plan, PlanState.Missed)
             }
         }
     }

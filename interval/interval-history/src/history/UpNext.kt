@@ -1,5 +1,7 @@
 package dev.justinsmith.interval.history
 
+import dev.justinsmith.interval.model.HistoryEntry
+import dev.justinsmith.interval.model.LoggedSport
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.platform.TimestampFormatter
@@ -25,6 +27,9 @@ internal data class Lifting(
     val inProgress: Boolean,
     val restSeconds: Int = RestClock.DEFAULT_SECONDS,
 )
+
+/** Everything done, as History reads it: the interval workouts, the sport days logged and Lift's side. */
+internal data class Logged(val history: List<HistoryEntry>, val sports: List<LoggedSport>, val lifting: Lifting)
 
 /**
  * Lift's side as it changes. Distinct, so a set logged on Lift (which changes `active`) rebuilds nothing: only a
@@ -80,6 +85,8 @@ internal fun TimestampFormatter.upNext(
                 val minutes = ofProgram?.takeUnless { resume }?.estimatedMinutes(lifting.restSeconds)
                 UpNextItem.Lift(next.epochDay, day, ofProgram, resume, next.plan.id, minutes).also { resume = false }
             }
+
+            is PlanWorkout.SportDay -> UpNextItem.SportDay(next.plan.id, next.epochDay, day, workout.sport)
         }
     }
     return (listOfNotNull(unplanned) + plans).sortedBy { it.epochDay }
@@ -96,4 +103,6 @@ internal fun TimestampFormatter.dayCell(day: TrainingDay, inMonth: Boolean = tru
     inMonth = inMonth,
     date = dateOfDay(day.epochDay),
     liftSeconds = day.liftWorkouts.sumOf { it.elapsedSeconds },
+    sport = day.sport,
+    sportLogged = day.sports.isNotEmpty(),
 )

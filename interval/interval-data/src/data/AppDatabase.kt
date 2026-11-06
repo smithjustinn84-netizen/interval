@@ -8,6 +8,7 @@ import androidx.room.Database
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.RoomDatabase
@@ -40,11 +41,12 @@ import kotlinx.coroutines.flow.Flow
  * [HistoryEntity.setRestSeconds]), one set with none in rows from before; version 11 their ladder
  * ([HistoryEntity.workStepSeconds]), none in rows from before; version 12 the blocks of a sequence after its first
  * and the rest between them ([HistoryEntity.thenBlocks], [HistoryEntity.blockRestSeconds]), one block in rows from
- * before.
+ * before; version 13 let a plan be a day of a sport ([PlannedEntity.sport]) and added the sport days logged
+ * ([SportLogEntity]).
  */
 @Database(
-    entities = [HistoryEntity::class, PresetEntity::class, PlannedEntity::class],
-    version = 12,
+    entities = [HistoryEntity::class, PresetEntity::class, PlannedEntity::class, SportLogEntity::class],
+    version = 13,
     // 3 to 4 and 4 to 5 are MIGRATION_3_4 and MIGRATION_4_5, added by buildAppDatabase.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -56,6 +58,7 @@ import kotlinx.coroutines.flow.Flow
         AutoMigration(from = 9, to = 10),
         AutoMigration(from = 10, to = 11),
         AutoMigration(from = 11, to = 12),
+        AutoMigration(from = 12, to = 13),
     ],
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -65,6 +68,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun presetDao(): PresetDao
 
     abstract fun plannedDao(): PlannedDao
+
+    abstract fun sportLogDao(): SportLogDao
 
     abstract fun importDao(): ImportDao
 }
@@ -180,7 +185,24 @@ interface HistoryDao {
     suspend fun clear(now: Long)
 }
 
-/** What an import adds, all of it or none: one transaction over the three tables. */
+@Dao
+interface SportLogDao {
+    /** The sport days logged, the latest day first. */
+    @Query("SELECT * FROM sport_log ORDER BY epoch_day DESC, id DESC")
+    fun observeAll(): Flow<List<SportLogEntity>>
+
+    /** Adds [rows], leaving out any whose sport is logged on its day already. */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(rows: List<SportLogEntity>)
+
+    @Query("DELETE FROM sport_log WHERE epoch_day = :epochDay AND sport = :sport AND name = :name")
+    suspend fun delete(epochDay: Long, sport: String, name: String)
+
+    @Query("DELETE FROM sport_log")
+    suspend fun clear()
+}
+
+/** What an import adds, all of it or none: one transaction over the four tables. */
 @Dao
 interface ImportDao {
     @Insert
@@ -192,9 +214,13 @@ interface ImportDao {
     @Insert
     suspend fun insertPlanned(rows: List<PlannedEntity>)
 
+    /** As [SportLogDao.insert]: a sport logged on its day already stays as it is. */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertSports(rows: List<SportLogEntity>)
+
     /**
-     * Adds [history], [presets] and [planned] together. A plan naming a preset added here by [presetNames] (in
-     * step with [planned]) takes the id it was just stored under.
+     * Adds [history], [presets], [planned] and [sports] together. A plan naming a preset added here by
+     * [presetNames] (in step with [planned]) takes the id it was just stored under.
      */
     @Transaction
     suspend fun importAll(
@@ -202,8 +228,10 @@ interface ImportDao {
         presets: List<PresetEntity>,
         planned: List<PlannedEntity>,
         presetNames: List<String?>,
+        sports: List<SportLogEntity>,
     ) {
         insertHistory(history)
+        insertSports(sports)
         val ids = presets.map { it.name }.zip(insertPresets(presets)).toMap()
         insertPlanned(
             planned.zip(presetNames) { row, name ->
@@ -315,8 +343,9 @@ data class PresetEntity(
 
 /**
  * A [PlannedWorkout]: exactly one of [weekday] (every week) and [epochDay] (once) is set. [lift] names a session
- * on Lift ([LIFT_PROGRAM_DAY] or [LIFT_ANY_SESSION]), whose row leaves the name and the shape empty; null is an
- * interval workout.
+ * on Lift ([LIFT_PROGRAM_DAY] or [LIFT_ANY_SESSION]), whose row leaves the name and the shape empty; [sport] a day
+ * of a sport (see [sportOf]), whose row leaves the shape empty and holds in [name] the user's own name for one they
+ * named. With both null it is an interval workout.
  */
 @Entity(tableName = "planned")
 data class PlannedEntity(
@@ -343,4 +372,19 @@ data class PlannedEntity(
     /** As [HistoryEntity.thenBlocks]. */
     @ColumnInfo(name = "then_blocks", defaultValue = "'[]'") val thenBlocks: String = "[]",
     @ColumnInfo(name = "block_rest_seconds", defaultValue = "0") val blockRestSeconds: Int = 0,
+    /** Null in rows from before version 13, none of which is a sport. */
+    val sport: String? = null,
+)
+
+/**
+ * A day of a sport the user logged: one of a sport a day, which the index keeps. [sport] and [name] are as
+ * [PlannedEntity]'s, the name empty but for a sport the user named.
+ */
+@Entity(tableName = "sport_log", indices = [Index(value = ["epoch_day", "sport", "name"], unique = true)])
+data class SportLogEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @ColumnInfo(name = "epoch_day") val epochDay: Long,
+    val sport: String,
+    val name: String,
+    @ColumnInfo(name = "logged_at") val loggedAtEpochMillis: Long,
 )

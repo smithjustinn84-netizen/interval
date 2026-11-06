@@ -93,6 +93,10 @@
         <item quantity="one">%1$d interval</item>
         <item quantity="other">%1$d intervals</item>
     </plurals>
+    <plurals name="history_week_sports">
+        <item quantity="one">%1$d sport day</item>
+        <item quantity="other">%1$d sport days</item>
+    </plurals>
     <string name="history_kind_interval">Interval</string>
     <string name="history_kind_lift">Lift</string>
     <string name="history_lift_session">Lift session</string>
@@ -197,4 +201,15 @@
     <string name="home_start_pick_cd">Start %1$s</string>
     <string name="home_no_pick">Nothing that short yet</string>
     <string name="home_no_pick_hint">Set one up on the Timer</string>
+
+    <!-- Sport days: a class or a day on the wall, planned and logged beside the workouts -->
+    <string name="sport_bjj">BJJ</string>
+    <string name="sport_climbing">Climbing</string>
+    <string name="sport_running">Running</string>
+    <string name="sport_bjj_title">BJJ class</string>
+    <string name="sport_running_title">Run</string>
+    <string name="sport_climbing_short">Climb</string>
+    <string name="sport_running_short">Run</string>
+    <string name="sport_counts">Counts toward your week</string>
+    <string name="sport_state_passed">Not logged</string>
 </resources>

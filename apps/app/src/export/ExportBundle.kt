@@ -9,9 +9,9 @@ import kotlinx.serialization.Serializable
  * newer one (schema 2 let a plan be a session on Lift; schema 3 added how a workout or a session felt, its
  * `effort` 1 to 5 and its `note`, every shape's `warmUpSeconds` and `coolDownSeconds`, and a workout's or a
  * session's heart rate, `averageBpm` and `peakBpm`; schema 4 every shape's `sets`, `setRestSeconds` and
- * `workStepSeconds`; schema 5 a sequence's blocks after its first, `then`, and `blockRestSeconds`, all absent from
- * older files). Lift's sessions carry their sets but not how a day's plan was
- * changed: the sets are the record.
+ * `workStepSeconds`; schema 5 a sequence's blocks after its first, `then`, and `blockRestSeconds`; schema 6 a plan
+ * of a day of a sport, `sport`, and the sport days logged, `sportDays`, all absent from older files). Lift's
+ * sessions carry their sets but not how a day's plan was changed: the sets are the record.
  */
 @Serializable
 data class ExportBundle(
@@ -27,9 +27,11 @@ data class ExportBundle(
     val history: List<WorkoutExport>,
     val plan: List<PlannedExport>,
     val lift: LiftExport,
+    /** The days of a sport logged. */
+    val sportDays: List<SportDayExport> = emptyList(),
 ) {
     companion object {
-        const val SCHEMA = 5
+        const val SCHEMA = 6
         const val APP = "interval"
         const val MIME_TYPE = "application/json"
 
@@ -111,7 +113,7 @@ data class WorkoutExport(
 @Serializable
 data class PlannedExport(
     val id: Long,
-    /** An interval workout's name and shape; null for a session on Lift. */
+    /** An interval workout's name and shape; null for a session on Lift. A sport the user named has its name here. */
     val name: String?,
     val config: ConfigExport?,
     val weekday: Int?,
@@ -120,6 +122,17 @@ data class PlannedExport(
     val createdAtEpochMillis: Long,
     /** A session on Lift: `ProgramDay`, the program's next day, or `AnySession`; null for an interval workout. */
     val lift: String? = null,
+    /** A day of a sport: `Bjj`, `Climbing`, `Running`, or `Custom` with its name in [name]; null for a workout. */
+    val sport: String? = null,
+)
+
+/** A day of a sport the user logged, on [epochDay]: [sport] and [name] as [PlannedExport]'s. */
+@Serializable
+data class SportDayExport(
+    val epochDay: Long,
+    val sport: String,
+    val name: String? = null,
+    val loggedAtEpochMillis: Long,
 )
 
 @Serializable

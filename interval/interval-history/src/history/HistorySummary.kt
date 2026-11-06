@@ -35,7 +35,6 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import dev.justinsmith.interval.history.resources.Res
-import dev.justinsmith.interval.history.resources.common_joined
 import dev.justinsmith.interval.history.resources.history_best_streak
 import dev.justinsmith.interval.history.resources.history_calories
 import dev.justinsmith.interval.history.resources.history_goal_cd
@@ -60,6 +59,7 @@ import dev.justinsmith.interval.history.resources.history_time
 import dev.justinsmith.interval.history.resources.history_week_count
 import dev.justinsmith.interval.history.resources.history_week_intervals
 import dev.justinsmith.interval.history.resources.history_week_lifts
+import dev.justinsmith.interval.history.resources.history_week_sports
 import dev.justinsmith.interval.history.resources.history_weeks
 import dev.justinsmith.interval.history.resources.history_weeks_cd
 import dev.justinsmith.interval.history.resources.history_workouts
@@ -80,6 +80,7 @@ import dev.justinsmith.interval.ui.RollingText
 import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.joined
 import dev.justinsmith.interval.ui.rememberRising
 import dev.justinsmith.interval.ui.surfaceButton
 import org.jetbrains.compose.resources.pluralStringResource
@@ -212,22 +213,21 @@ internal fun GoalRow(week: WeekGoal, onSetGoal: () -> Unit) {
     }
 }
 
-/** This week's workouts by kind, "1 lift · 2 intervals", once a session on Lift is among them. */
+/**
+ * This week's workouts by kind, "1 lift · 2 intervals · 1 sport day", once a session on Lift or a sport day is
+ * among them.
+ */
 @Composable
 private fun WeekSplit(week: WeekGoal) {
-    if (week.lifts == 0) return
-    val intervals = week.count - week.lifts
-    val lifts = pluralStringResource(Res.plurals.history_week_lifts, week.lifts, week.lifts)
+    if (week.lifts == 0 && week.sports == 0) return
+    val intervals = week.count - week.lifts - week.sports
+    val parts = listOfNotNull(
+        week.lifts.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.history_week_lifts, it, it) },
+        intervals.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.history_week_intervals, it, it) },
+        week.sports.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.history_week_sports, it, it) },
+    )
     Text(
-        if (intervals > 0) {
-            stringResource(
-                Res.string.common_joined,
-                lifts,
-                pluralStringResource(Res.plurals.history_week_intervals, intervals, intervals),
-            )
-        } else {
-            lifts
-        },
+        joined(parts),
         style = IntervalTheme.type.meta,
         color = IntervalTheme.palette.textDim,
     )

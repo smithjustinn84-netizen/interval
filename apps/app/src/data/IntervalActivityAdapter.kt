@@ -20,6 +20,10 @@ class RepositoryIntervalActivity(
         .map { history -> history.map { it.asIntervalWorkout() } }
         .stateIn(scope, SharingStarted.Eagerly, historyStore.history.value.map { it.asIntervalWorkout() })
 
+    override val sportDays: StateFlow<List<Long>> = historyStore.sportDays
+        .map { days -> days.map { it.epochDay } }
+        .stateIn(scope, SharingStarted.Eagerly, historyStore.sportDays.value.map { it.epochDay })
+
     override val weeklyGoal: StateFlow<Int?> = settingsStore.appSettings
         .map { it.weeklyGoal }
         .stateIn(scope, SharingStarted.Eagerly, settingsStore.appSettings.value.weeklyGoal)

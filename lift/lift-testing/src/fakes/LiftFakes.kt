@@ -246,6 +246,7 @@ class FakeBandDao(private val sessions: FakeSessionDao) : BandDao {
 /** The rest of the app as Lift sees it: interval workouts and a weekly goal a test sets. */
 class FakeIntervalActivity : IntervalActivity {
     override val workouts = MutableStateFlow(emptyList<IntervalWorkout>())
+    override val sportDays = MutableStateFlow(emptyList<Long>())
     override val weeklyGoal = MutableStateFlow<Int?>(null)
 
     /** The estimate the app would make, or null as with no body weight set; a test sets it. */

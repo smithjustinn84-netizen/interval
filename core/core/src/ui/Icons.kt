@@ -43,6 +43,9 @@ object IntervalIcons {
 
     /** A kettlebell: its handle and its bell. */
     val Bell: ImageVector = lineIcon("Bell", "M9 9V7a3 3 0 0 1 6 0v2", "M18 15a6 6 0 1 1 -12 0a6 6 0 1 1 12 0")
+
+    /** A pennant on its pole: a day of a sport trained away from the app. */
+    val Sport: ImageVector = lineIcon("Sport", "M6 21V4", "M6 4.5l12 4.25L6 13")
     val Back: ImageVector = lineIcon("Back", "M19 12H5M12 19l-7-7 7-7", autoMirror = true)
     val Close: ImageVector = lineIcon("Close", "M6 6l12 12M18 6L6 18")
     val Chevron: ImageVector = lineIcon("Chevron", "M9 6l6 6-6 6", autoMirror = true)

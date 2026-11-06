@@ -47,6 +47,8 @@ import dev.justinsmith.interval.history.resources.home_start_day
 import dev.justinsmith.interval.history.resources.home_start_pick_cd
 import dev.justinsmith.interval.history.resources.home_start_session
 import dev.justinsmith.interval.history.resources.home_title
+import dev.justinsmith.interval.history.resources.sport_counts
+import dev.justinsmith.interval.plan.sportTitle
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.AccentButton
@@ -212,6 +214,9 @@ private fun UpNext(upNext: List<UpNextItem>, actions: HomeActions, modifier: Mod
                     },
                 )
             }
+
+            // Nothing here starts a sport.
+            is UpNextItem.SportDay -> Unit
         }
         UpNextLater(upNext)
     }
@@ -224,6 +229,8 @@ private fun upNextTitle(next: UpNextItem): String = when (next) {
 
     is UpNextItem.Lift -> next.programDay?.let { programName(it.program) }
         ?: stringResource(Res.string.history_lift_session)
+
+    is UpNextItem.SportDay -> sportTitle(next.sport)
 }
 
 /** The line under it: the workout's shape and length, or about how long the program's day takes, its day and lifts. */
@@ -239,6 +246,8 @@ private fun upNextDetail(next: UpNextItem): String = when (next) {
         // How long comes first: it is what Today is asked.
         joined(listOfNotNull(next.minutes?.let { estimateLine(it) }, programDayLine(day), programDayLifts(day)))
     } ?: stringResource(Res.string.history_lift_any)
+
+    is UpNextItem.SportDay -> stringResource(Res.string.sport_counts)
 }
 
 /** Nothing up next: what Today is waiting for, and the two ways to give it one. */

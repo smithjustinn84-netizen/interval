@@ -7,6 +7,7 @@ import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.TODAY
 import dev.justinsmith.interval.fakes.deferredStorageScope
 import dev.justinsmith.interval.fakes.noonOf
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.WeekStanding
@@ -69,6 +70,22 @@ class WeekStandingSourceTest {
         lift.finished("b0", "Swings", noonOf(TODAY - 7), noonOf(TODAY - 7) + 600_000, 24.0 to 10)
         runCurrent()
         assertEquals(2, source.standing.value?.count)
+    }
+
+    @Test
+    fun `a sport day logged this week counts and comes off again`() = runTest {
+        val repository = storage.repository(now = { now })
+        val source = source(repository)
+        runCurrent()
+
+        repository.history.logSport(Sport.Bjj, TODAY)
+        repository.history.logSport(Sport.Climbing, TODAY - 7)
+        runCurrent()
+        assertEquals(1, source.standing.value?.count)
+
+        repository.history.unlogSport(Sport.Bjj, TODAY)
+        runCurrent()
+        assertEquals(0, source.standing.value?.count)
     }
 
     @Test

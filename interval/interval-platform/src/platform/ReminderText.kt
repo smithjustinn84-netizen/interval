@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.platform
 
 import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.platform.resources.Res
 import dev.justinsmith.interval.platform.resources.common_joined
 import dev.justinsmith.interval.platform.resources.config_cool_down
@@ -12,6 +13,7 @@ import dev.justinsmith.interval.platform.resources.reminder_body_one
 import dev.justinsmith.interval.platform.resources.reminder_lift_any
 import dev.justinsmith.interval.platform.resources.reminder_lift_program_day
 import dev.justinsmith.interval.platform.resources.reminder_lift_title
+import dev.justinsmith.interval.platform.resources.reminder_sport
 import dev.justinsmith.interval.platform.resources.reminder_title_many
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.ShortDuration
@@ -37,6 +39,7 @@ suspend fun reminderWords(reminder: PlanReminder): ReminderWords {
             is PlanWorkout.Interval -> workout.config.description()
             PlanWorkout.Lift.ProgramDay -> getString(Res.string.reminder_lift_program_day)
             PlanWorkout.Lift.AnySession -> getString(Res.string.reminder_lift_any)
+            is PlanWorkout.SportDay -> workout.reminderName()
         }
         ReminderWords(workout.reminderName(), getString(Res.string.reminder_body_one, what))
     } else {
@@ -47,10 +50,14 @@ suspend fun reminderWords(reminder: PlanReminder): ReminderWords {
     }
 }
 
-/** A plan's name in a reminder: an interval workout's own, or a session on Lift. */
+/**
+ * A plan's name in a reminder: an interval workout's own, or a session on Lift. A day of a sport is never
+ * reminded of (`plannedReminders` leaves it out); it is worded all the same, so one that got here says something.
+ */
 private suspend fun PlanWorkout.reminderName(): String = when (this) {
     is PlanWorkout.Interval -> name
     is PlanWorkout.Lift -> getString(Res.string.reminder_lift_title)
+    is PlanWorkout.SportDay -> (sport as? Sport.Custom)?.name ?: getString(Res.string.reminder_sport)
 }
 
 /** The shape as the Presets page words it: "20s on · 10s off · ×8", with any warm-up and cool-down either side. */

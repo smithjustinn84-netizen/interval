@@ -12,6 +12,8 @@ import dev.justinsmith.interval.fakes.tabataPreset
 import dev.justinsmith.interval.history.DayState
 import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.history.UpNextItem
+import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
@@ -115,6 +117,39 @@ class HomeViewModelTest : MainDispatcherTest() {
         assertEquals(1, state.weekGoal.lifts)
         assertEquals(3, state.weekGoal.goal)
         assertEquals(DayState.Done, state.week.single { it.today }.state)
+    }
+
+    @Test
+    fun `a class logged counts in the week and names its day`() {
+        repository.settings.updateAppSettings { it.copy(weeklyGoal = 3) }
+        repository.history.recordWorkout(tabata, tabata.totalSeconds)
+        repository.history.logSport(Sport.Bjj, TODAY)
+
+        val state = viewModel.state.value
+        assertEquals(2, state.weekGoal.count)
+        assertEquals(1, state.weekGoal.sports)
+        val today = state.week.single { it.today }
+        assertEquals(Sport.Bjj, today.sport)
+        assertTrue(today.sportLogged)
+    }
+
+    @Test
+    fun `a class planned is up next to log and its day is no workout to do`() {
+        repository.plans.planOnce(PlanWorkout.SportDay(Sport.Climbing), TODAY)
+
+        val state = viewModel().state.value
+        val next = assertIs<UpNextItem.SportDay>(state.upNext.single())
+        assertEquals(Sport.Climbing, next.sport)
+        val today = state.week.single { it.today }
+        assertEquals(DayState.Rest, today.state)
+        assertEquals(Sport.Climbing, today.sport)
+        assertFalse(today.sportLogged)
+
+        repository.history.logSport(Sport.Climbing, TODAY)
+        val logged = viewModel().state.value
+        assertTrue(logged.upNext.isEmpty())
+        assertTrue(logged.hasPlans)
+        assertEquals(DayState.Done, logged.week.single { it.today }.state)
     }
 
     @Test

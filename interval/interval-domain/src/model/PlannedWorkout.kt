@@ -13,7 +13,7 @@ sealed interface PlanSchedule {
     data class Once(val epochDay: Long) : PlanSchedule
 }
 
-/** What a plan asks for: an interval workout of one shape, or a session on Lift. */
+/** What a plan asks for: an interval workout of one shape, a session on Lift, or a day of a sport. */
 sealed interface PlanWorkout {
     /**
      * [name] in [config]'s shape, its own copy of the preset's, so editing or deleting that preset later leaves
@@ -30,6 +30,12 @@ sealed interface PlanWorkout {
         /** Any session at all. */
         data object AnySession : Lift
     }
+
+    /**
+     * A day of [sport], trained away from the app: nothing here starts it, and logging it that day does it. One
+     * gone by unlogged was not missed, as far as the app can tell.
+     */
+    data class SportDay(val sport: Sport) : PlanWorkout
 }
 
 /**

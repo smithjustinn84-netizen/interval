@@ -137,6 +137,7 @@ class FinishSession(
         val today = timestamps.dayNumber(clock.nowMillis())
         val days = sessionStore.sessions.value.mapNotNull { it.finishedAtEpochMillis }.map(timestamps::dayNumber) +
             intervals.workouts.value.map { timestamps.dayNumber(it.finishedAtEpochMillis) } +
+            intervals.sportDays.value +
             today
         return weekStanding(days, today, intervals.weeklyGoal.value)
     }

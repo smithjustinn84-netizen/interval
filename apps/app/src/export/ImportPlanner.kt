@@ -4,6 +4,7 @@ import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.HistoryEntry
+import dev.justinsmith.interval.model.LoggedSport
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
@@ -52,6 +53,7 @@ data class Holdings(
     /** Every preset, the built-ins too: a file's preset of a name already here is not added. */
     val presets: List<Preset> = emptyList(),
     val planned: List<PlannedWorkout> = emptyList(),
+    val sportDays: List<LoggedSport> = emptyList(),
     /** Lift's finished sessions. */
     val sessions: List<LiftSession> = emptyList(),
     val exercises: List<CustomExercise> = emptyList(),
@@ -81,6 +83,8 @@ data class ImportPlan(
     val history: List<HistoryEntry>,
     val presets: List<Preset>,
     val planned: List<PlannedWorkout>,
+    /** The sport days logged, which the sheet counts among the workouts. */
+    val sportDays: List<LoggedSport>,
     val lift: LiftImport,
     val settings: ImportedSettings,
     val added: ImportCounts,
@@ -105,7 +109,8 @@ private val json = Json { ignoreUnknownKeys = true }
  * come from one plan. The schema is checked before the rest is decoded, so a newer file says so rather than
  * failing as damaged. Every value goes through the domain's own ranges; one out of them makes the file
  * unreadable, as nothing in a file this app wrote could be. Nothing is matched by the file's ids, which are
- * the other phone's: workouts by when and what they were, presets by name, plans by day and what they hold,
+ * the other phone's: workouts by when and what they were, sport days by day and sport, presets by name, plans by
+ * day and what they hold,
  * Lift's sessions, exercises and programs by uid, bands by id, bells by weight.
  */
 fun readImport(content: String, holdings: Holdings): ImportReading {
@@ -127,6 +132,7 @@ private fun plan(bundle: ExportBundle, holdings: Holdings): ImportPlan {
     val history = bundle.history.map { it.toDomain() }
     val presets = bundle.presets.map { it.toDomain() }
     val planned = bundle.plan.map { it.toDomain(holdings.presets) }
+    val sportDays = bundle.sportDays.map { it.toDomain() }
     val lift = LiftPlan(bundle.lift, holdings)
 
     val historyHere = holdings.history.map { it.key }.toMutableSet()
@@ -135,16 +141,18 @@ private fun plan(bundle: ExportBundle, holdings: Holdings): ImportPlan {
     val newPresets = presets.filter { presetNames.add(it.name) }
     val plansHere = holdings.planned.map { it.key }.toMutableSet()
     val newPlans = planned.filter { plansHere.add(it.key) }
+    val sportsHere = holdings.sportDays.map { it.key }.toMutableSet()
+    val newSports = sportDays.filter { sportsHere.add(it.key) }
 
     val added = ImportCounts(
-        workouts = newHistory.size,
+        workouts = newHistory.size + newSports.size,
         presets = newPresets.size,
         plans = newPlans.size,
         sessions = lift.sessions.size,
         exercises = lift.exercises.size,
         programs = lift.programs.size,
     )
-    val inFile = history.size + presets.size + planned.size + bundle.lift.sessions.size +
+    val inFile = history.size + sportDays.size + presets.size + planned.size + bundle.lift.sessions.size +
         bundle.lift.exercises.size + lift.customProgramsInFile
     return ImportPlan(
         exportedAtEpochMillis = bundle.exportedAtEpochMillis,
@@ -152,6 +160,7 @@ private fun plan(bundle: ExportBundle, holdings: Holdings): ImportPlan {
         history = newHistory,
         presets = newPresets,
         planned = newPlans,
+        sportDays = newSports,
         lift = lift.import,
         settings = ImportedSettings(
             bundle.settings.toDomain(),
@@ -285,8 +294,10 @@ private fun PlannedExport.toDomain(presets: List<Preset>): PlannedWorkout {
         epochDay != null -> PlanSchedule.Once(epochDay)
         else -> throw IllegalArgumentException("schedule")
     }
-    val workout = when (lift) {
-        null -> {
+    val workout = when {
+        sport != null -> PlanWorkout.SportDay(sportNamed(sport, name))
+
+        lift == null -> {
             val name = requireNotNull(name) { "name" }
             PlanWorkout.Interval(
                 name,
@@ -298,9 +309,9 @@ private fun PlannedExport.toDomain(presets: List<Preset>): PlannedWorkout {
             )
         }
 
-        "ProgramDay" -> PlanWorkout.Lift.ProgramDay
+        lift == "ProgramDay" -> PlanWorkout.Lift.ProgramDay
 
-        "AnySession" -> PlanWorkout.Lift.AnySession
+        lift == "AnySession" -> PlanWorkout.Lift.AnySession
 
         else -> throw IllegalArgumentException("lift")
     }

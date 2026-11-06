@@ -39,6 +39,7 @@ import dev.justinsmith.interval.history.resources.history_kind_lift
 import dev.justinsmith.interval.history.resources.history_streak
 import dev.justinsmith.interval.history.resources.history_week_intervals
 import dev.justinsmith.interval.history.resources.history_week_lifts
+import dev.justinsmith.interval.history.resources.history_week_sports
 import dev.justinsmith.interval.history.resources.notice_plan_removed
 import dev.justinsmith.interval.history.resources.notice_plan_removed_on
 import dev.justinsmith.interval.history.resources.notice_undo
@@ -454,14 +455,19 @@ private fun PlanChip(plan: PlanEntry, description: String, onRemove: () -> Unit)
 private fun chipName(workout: PlanWorkout): String =
     if (workout == PlanWorkout.Lift.ProgramDay) stringResource(Res.string.history_kind_lift) else planName(workout)
 
-/** The routine's caption: "Every week", then what it plans by kind once it holds a lift, "3 lifts · 2 intervals". */
+/**
+ * The routine's caption: "Every week", then what it plans by kind once it holds more than interval workouts,
+ * "3 lifts · 2 intervals · 2 sport days".
+ */
 @Composable
 private fun routineCaption(state: PlanUiState): String {
+    val mixed = state.routineLifts > 0 || state.routineSports > 0
     val parts = listOfNotNull(
         stringResource(Res.string.plan_every_week),
         state.routineLifts.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.history_week_lifts, it, it) },
-        state.routineIntervals.takeIf { it > 0 && state.routineLifts > 0 }
+        state.routineIntervals.takeIf { it > 0 && mixed }
             ?.let { pluralStringResource(Res.plurals.history_week_intervals, it, it) },
+        state.routineSports.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.history_week_sports, it, it) },
     )
     return joined(parts)
 }
@@ -486,6 +492,7 @@ private fun OneOffRow(oneOff: OneOff, onRemove: (Long, String) -> Unit) {
             val what = when (workout) {
                 is PlanWorkout.Interval -> workoutDescription(workout.config)
                 is PlanWorkout.Lift -> oneOff.entry.programDay?.let { stringResource(Res.string.plan_lift_day, it) }
+                is PlanWorkout.SportDay -> null
             }
             Text(
                 joined(listOfNotNull(dayHeading(oneOff.day), what)),

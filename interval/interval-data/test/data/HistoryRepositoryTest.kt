@@ -7,6 +7,7 @@ import dev.justinsmith.interval.fakes.SequentialIds
 import dev.justinsmith.interval.fakes.saveCurrentAsPreset
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.HistoryEntry
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Effort
@@ -177,5 +178,60 @@ class HistoryRepositoryTest {
         assertEquals(20, uids.toSet().size)
         assertTrue(uids.all { it.length == 32 && it.all { c -> c in "0123456789abcdef" } })
         assertEquals(rows.map { it.finishedAtEpochMillis }, rows.map { it.updatedAtEpochMillis })
+    }
+
+    @Test
+    fun `a sport is logged once a day and comes off again`() {
+        val repository = repository()
+        repository.history.logSport(Sport.Bjj, epochDay = 20_744)
+        clock += 500
+        repository.history.logSport(Sport.Bjj, epochDay = 20_744)
+        repository.history.logSport(Sport.Custom("Judo"), epochDay = 20_744)
+        repository.history.logSport(Sport.Custom("Yoga"), epochDay = 20_744)
+
+        val logged = repository().history.sportDays.value
+        assertEquals(setOf(Sport.Bjj, Sport.Custom("Judo"), Sport.Custom("Yoga")), logged.map { it.sport }.toSet())
+        // The first log of the day stands: the second changed nothing.
+        assertEquals(1_000L, logged.single { it.sport == Sport.Bjj }.loggedAtEpochMillis)
+
+        repository.history.unlogSport(Sport.Custom("Judo"), epochDay = 20_744)
+        repository.history.unlogSport(Sport.Bjj, epochDay = 20_745)
+        assertEquals(
+            setOf(Sport.Bjj, Sport.Custom("Yoga")),
+            repository.history.sportDays.value.map { it.sport }.toSet(),
+        )
+    }
+
+    @Test
+    fun `sport days are the latest day first whenever they were logged`() {
+        val repository = repository()
+        repository.history.logSport(Sport.Climbing, epochDay = 20_746)
+        repository.history.logSport(Sport.Bjj, epochDay = 20_744)
+        repository.history.logSport(Sport.Running, epochDay = 20_745)
+
+        assertEquals(listOf(20_746L, 20_745L, 20_744L), repository.history.sportDays.value.map { it.epochDay })
+    }
+
+    @Test
+    fun `clearing the history clears the sport days with it`() {
+        val repository = repository()
+        repository.history.recordWorkout(IntervalConfig(), elapsedSeconds = 1)
+        repository.history.logSport(Sport.Bjj, epochDay = 20_744)
+        repository.history.clearHistory()
+
+        assertEquals(emptyList(), repository().history.sportDays.value)
+        assertEquals(emptyList(), repository().history.history.value)
+    }
+
+    @Test
+    fun `a sport day of a sport this build does not know is left out`() = runTest {
+        storage.sports.insert(
+            listOf(
+                SportLogEntity(epochDay = 20_744, sport = "fencing", name = "", loggedAtEpochMillis = 1),
+                SportLogEntity(epochDay = 20_744, sport = "custom", name = " ", loggedAtEpochMillis = 1),
+                SportLogEntity(epochDay = 20_744, sport = "climbing", name = "", loggedAtEpochMillis = 1),
+            ),
+        )
+        assertEquals(listOf(Sport.Climbing), repository().history.sportDays.value.map { it.sport })
     }
 }

@@ -30,6 +30,9 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   them. A sequence on the Timer shows its blocks on one card, which opens the editor ("Edit blocks"); Done puts it
   back on the Timer without saving a preset, and "Save as preset" names it. The Timeline draws every block.
 
+- Exports are schema 6, with the sport days planned and logged; a build from before them refuses the file with
+  "update the app", and older files read as before.
+
 ### Changed
 - The Timer is no longer a tab: it is a page over Train's Conditioning pillar, opened by the "Timer" row at the
   top of the presets, with a Back to them. The bar is Today · Train · History. "Put on Timer", the "Start a

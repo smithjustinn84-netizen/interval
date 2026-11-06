@@ -93,7 +93,7 @@ class PlanReminderScheduler(
         history: List<HistoryEntry>,
         sessions: List<LiftSession>,
         today: Long,
-    ) = TrainingLog(history, planned, today, sessions.asLiftWorkouts(), timestamps::dayNumber)
+    ) = TrainingLog(history, planned, today, sessions.asLiftWorkouts(), dayOf = timestamps::dayNumber)
 
     private fun today(): Long = timestamps.dayNumber(clock.nowMillis())
 

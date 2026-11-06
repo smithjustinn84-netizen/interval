@@ -30,11 +30,13 @@ class FinishSessionTest {
     private val repository = FakeLiftStorage().repository { now }
     private val health = RecordingHealthStore(HealthStatus.Connected)
 
+    private val intervals = FakeIntervalActivity()
+
     private fun finishing(scope: CoroutineScope) = FinishSession(
         repository.sessions,
         repository.programs,
         repository.gear,
-        FakeIntervalActivity(),
+        intervals,
         FixedTimestampFormatter,
         { now },
         SessionHealth(health, { now }, scope, settleMillis = SETTLE),
@@ -58,6 +60,18 @@ class FinishSessionTest {
         assertNull(repository.sessions.active.value)
         assertEquals("Squats", repository.sessions.sessions.value.single().title)
         assertEquals(1, health.workouts.size)
+    }
+
+    @Test
+    fun `a sport day logged this week counts in the week the summary shows`() = runTest {
+        logged()
+        // The clock stands on day 0: the class today counts, last week's does not.
+        intervals.sportDays.value = listOf(0L, -7L)
+        val finishing = finishing(backgroundScope)
+
+        assertTrue(finishing.finish("Squats"))
+
+        assertEquals(2, finishing.finished.value?.week?.count)
     }
 
     @Test

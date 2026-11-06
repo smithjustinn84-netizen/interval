@@ -9,7 +9,6 @@ import dev.justinsmith.interval.data.PresetStore
 import dev.justinsmith.interval.data.SettingsStore
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.BodySettings
-import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.LoggedWorkout
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
@@ -100,14 +99,12 @@ class HistoryViewModel(
     private val lifting = bells.lifting()
 
     private val built = combine(
-        combine(historyStore.history, lifting) { history, lifting -> history to lifting },
+        combine(historyStore.history, historyStore.sportDays, lifting, ::Logged),
         planStore.planned,
         presetStore.presets,
         settingsStore.appSettings,
         combine(days, view) { _, view -> view },
-    ) { (history, lifting), planned, presets, app, view ->
-        buildState(history, lifting, planned, presets, app, view)
-    }
+    ) { logged, planned, presets, app, view -> buildState(logged, planned, presets, app, view) }
 
     private val choices = combine(presetStore.presets, settingsStore.config, ::planChoices).distinctUntilChanged()
 
@@ -177,16 +174,16 @@ class HistoryViewModel(
     }
 
     private fun buildState(
-        history: List<HistoryEntry>,
-        lifting: Lifting,
+        logged: Logged,
         planned: List<PlannedWorkout>,
         presets: List<Preset>,
         app: AppSettings,
         view: HistoryView,
     ): HistoryUiState {
+        val (history, sports, lifting) = logged
         val today = timestamps.dayNumber(clock.nowMillis())
         val lifts = lifting.sessions.asLiftWorkouts()
-        val log = TrainingLog(history, planned, today, lifts, timestamps::dayNumber)
+        val log = TrainingLog(history, planned, today, lifts, sports, timestamps::dayNumber)
         val body = app.body
         val week = log.week()
 
@@ -221,6 +218,7 @@ class HistoryViewModel(
             ),
             weekCount = week.sumOf { it.count },
             weekLifts = week.sumOf { it.liftWorkouts.size },
+            weekSports = week.sumOf { it.sports.size },
             goal = goal,
             streak = goal?.let(log::streak),
             week = week.map { timestamps.dayCell(it) },

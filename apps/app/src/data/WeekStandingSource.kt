@@ -19,11 +19,11 @@ import kotlinx.coroutines.flow.stateIn
 
 /**
  * The week as it stands, for what shows it off screen (Android's home-screen widget): this week's workouts of
- * both kinds counted as History counts them, against the goal set on Plan, with the streak. Null until both
- * sides have read their storage, so nothing shows a zero from the defaults; then kept current on [scope] as a
- * workout is recorded, a session finished, the goal changed or the day turns (by [dayCheckMillis], the week
- * turning at Monday's midnight). `WorkoutRecorder` and `FinishSession` work the same standing out for a summary,
- * with the workout being finished counted before its write lands.
+ * every kind counted as History counts them (a sport day logged among them), against the goal set on Plan, with
+ * the streak. Null until both sides have read their storage, so nothing shows a zero from the defaults; then kept
+ * current on [scope] as a workout is recorded, a session finished, a sport logged, the goal changed or the day
+ * turns (by [dayCheckMillis], the week turning at Monday's midnight). `WorkoutRecorder` and `FinishSession` work
+ * the same standing out for a summary, with the workout being finished counted before its write lands.
  */
 class WeekStandingSource(
     repository: IntervalRepository,
@@ -39,12 +39,14 @@ class WeekStandingSource(
         emitAll(
             combine(
                 repository.history.history,
+                repository.history.sportDays,
                 lift.sessions,
                 repository.settings.appSettings,
                 clock.days(timestamps, dayCheckMillis),
-            ) { history, sessions, app, today ->
+            ) { history, sports, sessions, app, today ->
                 val days = history.map { timestamps.dayNumber(it.finishedAtEpochMillis) } +
-                    sessions.mapNotNull { it.finishedAtEpochMillis }.map(timestamps::dayNumber)
+                    sessions.mapNotNull { it.finishedAtEpochMillis }.map(timestamps::dayNumber) +
+                    sports.map { it.epochDay }
                 weekStanding(days, today, app.weeklyGoal)
             },
         )

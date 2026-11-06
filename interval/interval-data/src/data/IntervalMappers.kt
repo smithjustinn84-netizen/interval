@@ -1,10 +1,12 @@
 package dev.justinsmith.interval.data
 
 import dev.justinsmith.interval.model.HistoryEntry
+import dev.justinsmith.interval.model.LoggedSport
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
@@ -43,6 +45,43 @@ private fun intervalConfig(
 
 internal const val LIFT_PROGRAM_DAY = "program_day"
 internal const val LIFT_ANY_SESSION = "any_session"
+
+private const val SPORT_BJJ = "bjj"
+private const val SPORT_CLIMBING = "climbing"
+private const val SPORT_RUNNING = "running"
+private const val SPORT_CUSTOM = "custom"
+
+/** The sport a row's [key] and [name] hold; null for a key this build doesn't know, or a named one with no name. */
+internal fun sportOf(key: String, name: String): Sport? = when (key) {
+    SPORT_BJJ -> Sport.Bjj
+    SPORT_CLIMBING -> Sport.Climbing
+    SPORT_RUNNING -> Sport.Running
+    SPORT_CUSTOM -> Sport.custom(name)
+    else -> null
+}
+
+internal val Sport.key: String
+    get() = when (this) {
+        Sport.Bjj -> SPORT_BJJ
+        Sport.Climbing -> SPORT_CLIMBING
+        Sport.Running -> SPORT_RUNNING
+        is Sport.Custom -> SPORT_CUSTOM
+    }
+
+/** What a row's name column holds for it: the user's own name for one they named, nothing for the rest. */
+internal val Sport.storedName: String get() = (this as? Sport.Custom)?.name.orEmpty()
+
+/** A row of a sport this build doesn't know is unreadable: null, and left out. */
+internal fun SportLogEntity.toDomain(): LoggedSport? =
+    sportOf(sport, name)?.let { LoggedSport(id, it, epochDay, loggedAtEpochMillis) }
+
+internal fun LoggedSport.toEntity() = SportLogEntity(
+    id = id,
+    epochDay = epochDay,
+    sport = sport.key,
+    name = sport.storedName,
+    loggedAtEpochMillis = loggedAtEpochMillis,
+)
 
 internal fun HistoryEntity.toDomain() = HistoryEntry(
     finishedAtEpochMillis = finishedAtEpochMillis,
@@ -136,14 +175,18 @@ internal fun Preset.toEntity() = PresetEntity(
 )
 
 /**
- * A row with neither a weekday nor a day, or a kind of Lift session this build doesn't know, is unreadable: null,
- * and left out.
+ * A row with neither a weekday nor a day, or a kind of Lift session or a sport this build doesn't know, is
+ * unreadable: null, and left out.
  */
 internal fun PlannedEntity.toDomain(): PlannedWorkout? {
     val schedule = when {
         weekday != null -> PlanSchedule.Weekly(weekday)
         epochDay != null -> PlanSchedule.Once(epochDay)
         else -> return null
+    }
+    if (sport != null) {
+        val day = PlanWorkout.SportDay(sportOf(sport, name) ?: return null)
+        return PlannedWorkout(id, day, schedule, createdAtEpochMillis)
     }
     val workout = when (lift) {
         null -> PlanWorkout.Interval(
@@ -177,11 +220,12 @@ internal fun PlannedEntity.toDomain(): PlannedWorkout? {
 internal fun PlannedWorkout.toEntity(): PlannedEntity {
     val interval = workout as? PlanWorkout.Interval
     val config = interval?.config
+    val sport = (workout as? PlanWorkout.SportDay)?.sport
     return PlannedEntity(
         id = id,
         weekday = (schedule as? PlanSchedule.Weekly)?.weekday,
         epochDay = (schedule as? PlanSchedule.Once)?.epochDay,
-        name = interval?.name.orEmpty(),
+        name = interval?.name ?: sport?.storedName.orEmpty(),
         prepSeconds = config?.prepSeconds ?: 0,
         workSeconds = config?.workSeconds ?: 0,
         restSeconds = config?.restSeconds ?: 0,
@@ -200,6 +244,8 @@ internal fun PlannedWorkout.toEntity(): PlannedEntity {
             is PlanWorkout.Interval -> null
             PlanWorkout.Lift.ProgramDay -> LIFT_PROGRAM_DAY
             PlanWorkout.Lift.AnySession -> LIFT_ANY_SESSION
+            is PlanWorkout.SportDay -> null
         },
+        sport = sport?.key,
     )
 }

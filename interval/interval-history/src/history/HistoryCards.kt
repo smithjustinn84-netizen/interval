@@ -26,6 +26,8 @@ import dev.justinsmith.interval.history.resources.history_start
 import dev.justinsmith.interval.history.resources.history_then
 import dev.justinsmith.interval.history.resources.history_times
 import dev.justinsmith.interval.history.resources.history_up_next
+import dev.justinsmith.interval.history.resources.sport_counts
+import dev.justinsmith.interval.plan.sportTitle
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.interval.ui.Corners
@@ -156,6 +158,11 @@ private fun UpNextLead(next: UpNextItem, actions: HistoryActions, modifier: Modi
                     label = stringResource(if (next.resume) Res.string.history_resume else Res.string.history_start),
                 )
             }
+
+            is UpNextItem.SportDay -> {
+                StripeMark(palette.textDim, height = IntervalSizes.historyMarkHeight)
+                UpNextText(sportTitle(next.sport), stringResource(Res.string.sport_counts), Modifier.weight(1f))
+            }
         }
     }
 }
@@ -176,6 +183,8 @@ private fun upNextName(item: UpNextItem): String = when (item) {
 
     is UpNextItem.Lift -> item.programDay?.let { programName(it.program) }
         ?: stringResource(Res.string.history_lift_session)
+
+    is UpNextItem.SportDay -> sportTitle(item.sport)
 }
 
 /** A group heading's look, inside a card. */

@@ -2,7 +2,9 @@ package dev.justinsmith.interval.data
 
 import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.model.HistoryEntry
+import dev.justinsmith.interval.model.LoggedSport
 import dev.justinsmith.interval.model.PerceivedEffort
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.IdGenerator
 import dev.justinsmith.interval.platform.WallClock
@@ -13,16 +15,19 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
- * The finished workouts, which follow the database: the [HistoryStore]. Each is stored under a uid from [ids]; a
- * deleted one stays behind as a tombstone. Written through [writer], the queue every interval repository shares,
- * so how a workout felt never lands before the workout.
+ * The finished workouts and the sport days logged, which follow the database: the [HistoryStore]. Each workout is
+ * stored under a uid from [ids]; a deleted one stays behind as a tombstone. A sport day is a row that comes and
+ * goes. Written through [writer], the queue every interval repository shares, so how a workout felt never lands
+ * before the workout.
  */
 class HistoryRepository(
     private val historyDao: HistoryDao,
+    private val sportLogDao: SportLogDao,
     private val writer: SerialWriter,
     private val clock: WallClock,
     private val ids: IdGenerator,
@@ -40,16 +45,24 @@ class HistoryRepository(
     /** Newest first. */
     override val history: StateFlow<List<HistoryEntry>> = _history.asStateFlow()
 
+    private val _sportDays = MutableStateFlow(emptyList<LoggedSport>())
+
+    override val sportDays: StateFlow<List<LoggedSport>> = _sportDays.asStateFlow()
+
     init {
         // Mapped upstream of its fallback, so a row that fails to map counts as a failed read.
+        val workouts = historyDao.observeAll()
+            .map { rows -> rows.map { it.toDomain() } }
+            .orEmptyOnError("history", log)
+        val sports = sportLogDao.observeAll()
+            .map { rows -> rows.mapNotNull { it.toDomain() } }
+            .orEmptyOnError("sport days", log)
         scope.launch {
-            historyDao.observeAll()
-                .map { rows -> rows.map { it.toDomain() } }
-                .orEmptyOnError("history", log)
-                .collect { entries ->
-                    _history.value = entries
-                    _ready.value = true
-                }
+            combine(workouts, sports) { entries, days -> entries to days }.collect { (entries, days) ->
+                _history.value = entries
+                _sportDays.value = days
+                _ready.value = true
+            }
         }
     }
 
@@ -115,9 +128,24 @@ class HistoryRepository(
         writer.persist { historyDao.restore(id, now) }
     }
 
-    /** Removes every workout from the history, leaving each row marked deleted as [deleteWorkout] does. */
+    override fun logSport(sport: Sport, epochDay: Long) {
+        val row = LoggedSport(id = 0, sport, epochDay, loggedAtEpochMillis = clock.nowMillis()).toEntity()
+        writer.persist { sportLogDao.insert(listOf(row)) }
+    }
+
+    override fun unlogSport(sport: Sport, epochDay: Long) {
+        writer.persist { sportLogDao.delete(epochDay, sport.key, sport.storedName) }
+    }
+
+    /**
+     * Removes every workout from the history, leaving each row marked deleted as [deleteWorkout] does, and every
+     * sport day logged.
+     */
     override fun clearHistory() {
         val now = clock.nowMillis()
-        writer.persist { historyDao.clear(now) }
+        writer.persist {
+            historyDao.clear(now)
+            sportLogDao.clear()
+        }
     }
 }

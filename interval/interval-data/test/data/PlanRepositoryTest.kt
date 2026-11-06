@@ -6,10 +6,12 @@ import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.saveCurrentAsPreset
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.timer.builtInPresets
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -81,5 +83,36 @@ class PlanRepositoryTest {
             planned.map { it.workout },
         )
         assertEquals(PlanSchedule.Once(20_744), planned.last().schedule)
+    }
+
+    @Test
+    fun `a sport day planned keeps its sport and a named one its name`() {
+        val repository = repository()
+        repository.plans.planWeekly(PlanWorkout.SportDay(Sport.Bjj), setOf(2, 4))
+        repository.plans.planOnce(PlanWorkout.SportDay(Sport.Custom("Judo")), epochDay = 20_744)
+
+        val planned = repository().plans.planned.value
+        assertEquals(
+            listOf(
+                PlanWorkout.SportDay(Sport.Bjj),
+                PlanWorkout.SportDay(Sport.Bjj),
+                PlanWorkout.SportDay(Sport.Custom("Judo")),
+            ),
+            planned.map { it.workout },
+        )
+        assertEquals(
+            listOf(PlanSchedule.Weekly(2), PlanSchedule.Weekly(4), PlanSchedule.Once(20_744)),
+            planned.map { it.schedule },
+        )
+    }
+
+    @Test
+    fun `a plan of a sport this build does not know is left out`() = runTest {
+        val repository = repository()
+        repository.plans.planOnce(PlanWorkout.SportDay(Sport.Climbing), epochDay = 20_744)
+        val row = storage.planned.observeAll().first().single()
+        storage.planned.insert(listOf(row.copy(id = 0, sport = "fencing")))
+
+        assertEquals(listOf(PlanWorkout.SportDay(Sport.Climbing)), repository().plans.planned.value.map { it.workout })
     }
 }

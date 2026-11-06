@@ -4,9 +4,11 @@ import dev.justinsmith.interval.fakes.DAY_MILLIS
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.LiftWorkout
+import dev.justinsmith.interval.model.LoggedSport
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.epochDayOf
 import kotlin.test.Test
@@ -257,6 +259,83 @@ class TrainingTest {
         val plans = listOf(liftOnce(monday), liftOnce(monday, PlanWorkout.Lift.AnySession))
         val log = TrainingLog(emptyList(), plans, today, listOf(bells(monday))) { it.floorDiv(DAY_MILLIS) }
         assertEquals(listOf(PlanState.Done, PlanState.Missed), log.day(monday).plans.map { it.state })
+    }
+
+    private fun sportOnce(day: Long, sport: Sport = Sport.Bjj) =
+        PlannedWorkout(nextId++, PlanWorkout.SportDay(sport), PlanSchedule.Once(day))
+
+    private fun logged(day: Long, sport: Sport = Sport.Bjj) = LoggedSport(nextId++, sport, day, day * DAY_MILLIS)
+
+    private fun sportLog(
+        planned: List<PlannedWorkout>,
+        sports: List<LoggedSport>,
+        history: List<HistoryEntry> = emptyList(),
+    ) = TrainingLog(history, planned, today, sports = sports) { it.floorDiv(DAY_MILLIS) }
+
+    @Test
+    fun `a sport day is done by that sport logged on its day`() {
+        val bjj = sportOnce(monday)
+        val climbing = sportOnce(monday, Sport.Climbing)
+        val day = sportLog(listOf(bjj, climbing), listOf(logged(monday))).day(monday)
+
+        assertEquals(listOf(PlanState.Done, PlanState.Passed), day.plans.map { it.state })
+        assertEquals(DayState.Done, day.state)
+        assertEquals(1, day.count)
+        assertEquals(0, day.seconds)
+        assertEquals(Sport.Bjj, day.sport)
+    }
+
+    @Test
+    fun `a sport day gone by unlogged is not missed and is not counted as due`() {
+        val log = sportLog(listOf(sportOnce(monday), sportOnce(monday + 1), once(monday + 2)), listOf(logged(monday)))
+
+        assertEquals(PlanState.Passed, log.day(monday + 1).plans.single().state)
+        assertEquals(DayState.Rest, log.day(monday + 1).state)
+        assertEquals(DayState.Missed, log.day(monday + 2).state)
+        val week = log.stats(TrainingRange.Week, BodySettings())
+        // The class logged and the workout missed; the class that went by is neither.
+        assertEquals(1, week.plannedDone)
+        assertEquals(2, week.plannedDue)
+        assertEquals(1, week.count)
+    }
+
+    @Test
+    fun `a day with only a sport planned is no workout to do but names its sport`() {
+        val log = sportLog(listOf(sportOnce(today), sportOnce(today + 1, Sport.Climbing)), emptyList())
+
+        assertEquals(DayState.Rest, log.day(today).state)
+        assertEquals(PlanState.Open, log.day(today).plans.single().state)
+        assertEquals(Sport.Bjj, log.day(today).sport)
+        assertEquals(Sport.Climbing, log.day(today + 1).sport)
+        assertEquals(listOf(today, today + 1), log.upNext().map { it.epochDay })
+    }
+
+    @Test
+    fun `a workout planned beside a sport still makes the day planned`() {
+        val log = sportLog(listOf(sportOnce(today), once(today)), emptyList())
+        assertEquals(DayState.Planned, log.day(today).state)
+    }
+
+    @Test
+    fun `a sport logged counts in the week and toward the streak with no plan at all`() {
+        val log = sportLog(
+            emptyList(),
+            listOf(logged(monday), logged(monday, Sport.Climbing), logged(monday - 7)),
+            history = listOf(workout(today)),
+        )
+
+        assertEquals(2, log.day(monday).count)
+        assertEquals(3, log.stats(TrainingRange.Week, BodySettings()).count)
+        assertEquals(240, log.stats(TrainingRange.Week, BodySettings()).seconds)
+        assertEquals(listOf(1, 3), log.weeklyCounts(2).map { it.count })
+        assertEquals(Streak(current = 2, best = 2), log.streak(goal = 1))
+        assertEquals(monday - 7, log.stats(TrainingRange.AllTime, BodySettings()).firstDay)
+    }
+
+    @Test
+    fun `a sport logged does no workout's plan and another sport's neither`() {
+        val log = sportLog(listOf(once(monday), sportOnce(monday, Sport.Running)), listOf(logged(monday)))
+        assertEquals(listOf(PlanState.Missed, PlanState.Passed), log.day(monday).plans.map { it.state })
     }
 
     private companion object {

@@ -7,6 +7,7 @@ import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.platform.PlanReminder
 import dev.justinsmith.interval.timer.IntervalConfig
 import kotlin.test.Test
@@ -87,6 +88,18 @@ class RemindersTest {
     fun `a reminder looked up as it shows is none once the day's workouts are done`() {
         val plans = listOf(weekly(4))
         val log = TrainingLog(listOf(workout(TODAY)), plans, TODAY) { it.floorDiv(DAY_MILLIS) }
+        assertNull(reminderOn(log, EVENING, TODAY))
+    }
+
+    @Test
+    fun `a day of a sport is never reminded of`() {
+        val classes = PlannedWorkout(nextId++, PlanWorkout.SportDay(Sport.Bjj), PlanSchedule.Weekly(4))
+        val sunday = once(TODAY + 3)
+        val reminders = reminders(listOf(classes, sunday))
+        assertEquals(listOf(TODAY + 3), reminders.map { it.epochDay })
+        assertEquals(listOf(listOf(sunday)), reminders.map { it.plans })
+
+        val log = TrainingLog(emptyList(), listOf(classes), TODAY) { it.floorDiv(DAY_MILLIS) }
         assertNull(reminderOn(log, EVENING, TODAY))
     }
 

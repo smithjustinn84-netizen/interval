@@ -25,6 +25,7 @@ import dev.justinsmith.interval.history.resources.history_routine_note
 import dev.justinsmith.interval.history.resources.history_state_done
 import dev.justinsmith.interval.history.resources.history_state_missed
 import dev.justinsmith.interval.history.resources.notice_plan_removed
+import dev.justinsmith.interval.history.resources.sport_state_passed
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.plan.planMark
 import dev.justinsmith.interval.plan.planName
@@ -158,6 +159,7 @@ private fun PlanRow(plan: SheetPlan, sheet: DaySheet, programDay: ProgramDay?, a
                 PlanState.Done -> stringResource(Res.string.history_state_done)
                 PlanState.Missed -> stringResource(Res.string.history_state_missed)
                 PlanState.Open -> null
+                PlanState.Passed -> stringResource(Res.string.sport_state_passed)
             }
             val shape = (workout as? PlanWorkout.Interval)?.let { workoutDescription(it.config) }
             Text(
@@ -166,18 +168,14 @@ private fun PlanRow(plan: SheetPlan, sheet: DaySheet, programDay: ProgramDay?, a
                 color = palette.textDim,
             )
         }
-        if (plan.state == PlanState.Open) {
-            StartPill(
-                primary = false,
-                onClick = {
-                    when (workout) {
-                        is PlanWorkout.Interval -> actions.onStart(workout.name, workout.config)
-                        PlanWorkout.Lift.ProgramDay -> actions.onStartLift(programDay?.program?.key)
-                        PlanWorkout.Lift.AnySession -> actions.onStartLift(null)
-                    }
-                },
-            )
+        // Nothing here starts a sport.
+        val start: (() -> Unit)? = when (workout) {
+            is PlanWorkout.Interval -> ({ actions.onStart(workout.name, workout.config) })
+            PlanWorkout.Lift.ProgramDay -> ({ actions.onStartLift(programDay?.program?.key) })
+            PlanWorkout.Lift.AnySession -> ({ actions.onStartLift(null) })
+            is PlanWorkout.SportDay -> null
         }
+        if (plan.state == PlanState.Open && start != null) StartPill(primary = false, onClick = start)
         if (!plan.weekly && plan.state != PlanState.Done) {
             val removed = stringResource(Res.string.notice_plan_removed, name)
             IconAction(

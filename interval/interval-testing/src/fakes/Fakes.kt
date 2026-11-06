@@ -11,6 +11,8 @@ import dev.justinsmith.interval.data.PlannedDao
 import dev.justinsmith.interval.data.PlannedEntity
 import dev.justinsmith.interval.data.PresetDao
 import dev.justinsmith.interval.data.PresetEntity
+import dev.justinsmith.interval.data.SportLogDao
+import dev.justinsmith.interval.data.SportLogEntity
 import dev.justinsmith.interval.di.StorageScope
 import dev.justinsmith.interval.platform.BackgroundWorkout
 import dev.justinsmith.interval.platform.Beep
@@ -113,6 +115,34 @@ class FakeHistoryDao : HistoryDao {
     }
 }
 
+/** A [SportLogDao] over a list, the latest day first like the real query. */
+class FakeSportLogDao : SportLogDao {
+    private val rows = MutableStateFlow(emptyList<SportLogEntity>())
+    private val ids = AutoIds()
+
+    override fun observeAll(): Flow<List<SportLogEntity>> = rows.map { all ->
+        all.sortedWith(compareByDescending<SportLogEntity> { it.epochDay }.thenByDescending { it.id })
+    }
+
+    // As the unique index with IGNORE does: a sport logged on its day already is left as it is.
+    override suspend fun insert(rows: List<SportLogEntity>) {
+        for (row in rows) {
+            this.rows.update { all ->
+                val there = all.any { it.epochDay == row.epochDay && it.sport == row.sport && it.name == row.name }
+                if (there) all else all + row.copy(id = ids.assign(row.id))
+            }
+        }
+    }
+
+    override suspend fun delete(epochDay: Long, sport: String, name: String) {
+        rows.update { all -> all.filterNot { it.epochDay == epochDay && it.sport == sport && it.name == name } }
+    }
+
+    override suspend fun clear() {
+        rows.value = emptyList()
+    }
+}
+
 /** A [PlannedDao] over a list, in the order planned like the real query. */
 class FakePlannedDao : PlannedDao {
     private val rows = MutableStateFlow(emptyList<PlannedEntity>())
@@ -161,12 +191,15 @@ class FakeImportDao(
     private val history: FakeHistoryDao,
     private val presets: FakePresetDao,
     private val planned: FakePlannedDao,
+    private val sports: FakeSportLogDao,
 ) : ImportDao {
     override suspend fun insertHistory(rows: List<HistoryEntity>) = rows.forEach { history.insert(it) }
 
     override suspend fun insertPresets(rows: List<PresetEntity>): List<Long> = rows.map { presets.insert(it) }
 
     override suspend fun insertPlanned(rows: List<PlannedEntity>) = planned.insert(rows)
+
+    override suspend fun insertSports(rows: List<SportLogEntity>) = sports.insert(rows)
 }
 
 /**
@@ -178,7 +211,8 @@ class FakeStorage {
     val history = FakeHistoryDao()
     val presets = FakePresetDao()
     val planned = FakePlannedDao()
-    val imports = FakeImportDao(history, presets, planned)
+    val sports = FakeSportLogDao()
+    val imports = FakeImportDao(history, presets, planned, sports)
 
     /**
      * A repository over this storage. By default its writes run unconfined and the fakes never suspend, so
@@ -191,7 +225,7 @@ class FakeStorage {
         now: WallClock = WallClock { 0L },
         scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
         ids: IdGenerator = IdGenerator.Random,
-    ): IntervalRepository = IntervalRepository(settings, history, presets, planned, imports, scope, now, ids)
+    ): IntervalRepository = IntervalRepository(settings, history, presets, planned, sports, imports, scope, now, ids)
 }
 
 /**
@@ -215,6 +249,7 @@ fun fakeStorageModule(storage: FakeStorage = FakeStorage()): Module = module {
     single<HistoryDao> { storage.history }
     single<PresetDao> { storage.presets }
     single<PlannedDao> { storage.planned }
+    single<SportLogDao> { storage.sports }
     single<ImportDao> { storage.imports }
 }
 

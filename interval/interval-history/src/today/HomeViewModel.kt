@@ -18,6 +18,7 @@ import dev.justinsmith.interval.history.lifting
 import dev.justinsmith.interval.history.upNext
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.HistoryEntry
+import dev.justinsmith.interval.model.LoggedSport
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.platform.TimestampFormatter
@@ -90,11 +91,11 @@ class HomeViewModel(
     private val locale = MutableStateFlow<String?>(null)
 
     private val built = combine(
-        combine(historyStore.history, lift.lifting()) { history, lifting -> history to lifting },
+        combine(historyStore.history, historyStore.sportDays, lift.lifting(), ::Triple),
         planStore.planned,
         settingsStore.appSettings,
         combine(clock.days(timestamps, dayCheckMillis), locale) { day, _ -> day },
-    ) { (history, lifting), planned, app, _ -> buildState(history, lifting, planned, app) }
+    ) { (history, sports, lifting), planned, app, _ -> buildState(history, sports, lifting, planned, app) }
 
     private val picks = combine(presetStore.presets, settingsStore.config, minutes) { presets, onTimer, minutes ->
         minutes to presets.fitting(minutes, onTimer)
@@ -134,12 +135,13 @@ class HomeViewModel(
 
     private fun buildState(
         history: List<HistoryEntry>,
+        sports: List<LoggedSport>,
         lifting: Lifting,
         planned: List<PlannedWorkout>,
         app: AppSettings,
     ): HomeUiState {
         val today = timestamps.dayNumber(clock.nowMillis())
-        val log = TrainingLog(history, planned, today, lifting.sessions.asLiftWorkouts(), timestamps::dayNumber)
+        val log = TrainingLog(history, planned, today, lifting.sessions.asLiftWorkouts(), sports, timestamps::dayNumber)
         val week = log.week()
         val goal = app.weeklyGoal
         return HomeUiState(
@@ -149,6 +151,7 @@ class HomeViewModel(
                 lifts = week.sumOf { it.liftWorkouts.size },
                 goal = goal,
                 streak = goal?.let(log::streak),
+                sports = week.sumOf { it.sports.size },
             ),
             upNext = timestamps.upNext(log, planned, lifting, today),
             hasPlans = planned.isNotEmpty() || lifting.programDay != null,

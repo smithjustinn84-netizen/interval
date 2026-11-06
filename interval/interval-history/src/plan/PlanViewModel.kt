@@ -13,6 +13,7 @@ import dev.justinsmith.interval.history.heading
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.LiftWorkout
+import dev.justinsmith.interval.model.LoggedSport
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
@@ -77,6 +78,7 @@ data class PlanUiState(
     /** The routine's sessions on Lift a week, and its interval workouts. */
     val routineLifts: Int = 0,
     val routineIntervals: Int = 0,
+    val routineSports: Int = 0,
     /** Not built yet: the screen waits rather than drawing an empty plan. */
     val loading: Boolean = false,
 ) {
@@ -96,6 +98,9 @@ data class PlanUiState(
         )
     }
 }
+
+/** Everything done that the streak counts: the interval workouts, Lift's sessions and the sport days logged. */
+private class Done(val history: List<HistoryEntry>, val lifts: List<LiftWorkout>, val sports: List<LoggedSport>)
 
 /**
  * The plan: the weekly goal, the routine for each weekday, and one-offs on dates to come. Adding goes
@@ -122,15 +127,14 @@ class PlanViewModel(
         settingsStore.appSettings,
         combine(
             historyStore.history,
+            historyStore.sportDays,
             bells.sessions,
             bells.programDay,
             clock.days(timestamps, dayCheckMillis),
-        ) { history, sessions, programDay, _ ->
-            Triple(history, sessions.asLiftWorkouts(), programDay)
+        ) { history, sports, sessions, programDay, _ ->
+            Done(history, sessions.asLiftWorkouts(), sports) to programDay
         },
-    ) { planned, app, (history, lifts, programDay) ->
-        buildState(planned, app, history, lifts, programDay)
-    }
+    ) { planned, app, (done, programDay) -> buildState(planned, app, done, programDay) }
 
     private val choices = combine(presetStore.presets, settingsStore.config, ::planChoices).distinctUntilChanged()
 
@@ -180,12 +184,11 @@ class PlanViewModel(
     private fun buildState(
         planned: List<PlannedWorkout>,
         app: AppSettings,
-        history: List<HistoryEntry>,
-        lifts: List<LiftWorkout>,
+        done: Done,
         programDay: ProgramDay?,
     ): PlanUiState {
         val today = timestamps.dayNumber(clock.nowMillis())
-        val log = TrainingLog(history, planned, today, lifts, timestamps::dayNumber)
+        val log = TrainingLog(done.history, planned, today, done.lifts, done.sports, timestamps::dayNumber)
         val days = programDays(log, programDay)
         val entries = planned.associateWith { PlanEntry(it.id, it.workout, days[it.id]) }
         val weekly = planned.filter { it.schedule is PlanSchedule.Weekly }
@@ -219,6 +222,7 @@ class PlanViewModel(
                 .size,
             routineLifts = weekly.count { it.workout is PlanWorkout.Lift },
             routineIntervals = weekly.count { it.workout is PlanWorkout.Interval },
+            routineSports = weekly.count { it.workout is PlanWorkout.SportDay },
         )
     }
 
