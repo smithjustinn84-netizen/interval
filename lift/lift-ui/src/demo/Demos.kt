@@ -31,5 +31,9 @@ private val builtInDemos: Map<Exercise, ExerciseDemo> by lazy {
         BuiltInExercise.Row to RowDemo,
         BuiltInExercise.Windmill to WindmillDemo,
         BuiltInExercise.Halo to HaloDemo,
+        BuiltInExercise.FarmersWalk to FarmersWalkDemo,
+        BuiltInExercise.SuitcaseCarry to SuitcaseCarryDemo,
+        BuiltInExercise.RackCarry to RackCarryDemo,
+        BuiltInExercise.BottomsUpCarry to BottomsUpCarryDemo,
     )
 }

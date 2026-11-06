@@ -143,6 +143,20 @@ class BellDemosTest {
         places.forEach { assertTrue(it.bell.y < it.shoulder.y, "The bell drops to ${it.bell}, under the shoulders") }
     }
 
+    @Test
+    fun `a carry walks on the spot with each foot in front in turn`() {
+        listOf(FarmersWalkDemo, SuitcaseCarryDemo, RackCarryDemo, BottomsUpCarryDemo).forEach { demo ->
+            val figures = (0..40).map { demo.figureAt(it / 40f) }
+            figures.forEach { assertEquals(Rig.ANKLE_X, it.hip.x, 0.01f) }
+            assertTrue(figures.any { it.ankle.x > it.farAnkle.x + 30f }, "The near foot never leads")
+            assertTrue(figures.any { it.farAnkle.x > it.ankle.x + 30f }, "The far foot never leads")
+        }
+        val farmer = FarmersWalkDemo.figureAt(0f)
+        assertTrue(farmer.farBell.y > farmer.hip.y - 30f, "The farmer's far bell isn't at the side")
+        val bottomsUp = BottomsUpCarryDemo.figureAt(0.3f)
+        assertTrue(bottomsUp.bell.y < bottomsUp.hand.y - 20f, "The bottoms-up bell tips off the fist")
+    }
+
     /** Whether the bell lies back along the forearm, as in the rack, rather than past the fist. */
     private fun rests(figure: Figure): Boolean {
         val forearm = figure.hand - figure.elbow
