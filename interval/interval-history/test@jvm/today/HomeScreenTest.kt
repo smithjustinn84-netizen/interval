@@ -89,19 +89,87 @@ class HomeScreenTest {
     }
 
     @Test
-    fun `a class today is named under its day and leads up next with nothing to start`() = runUiTest {
+    fun `a class today is named under its day and leads up next to be logged`() = runUiTest {
+        val logged = mutableListOf<String>()
         val state = empty.copy(
             week = restWeek.map { if (it.today) it.copy(sport = Sport.Bjj) else it },
             upNext = listOf(UpNextItem.SportDay(1, THURSDAY, HistoryDay.Today, Sport.Bjj)),
             hasPlans = true,
         )
-        setThemedContent { HomeScreen(state, HomeActions()) }
+        setThemedContent { HomeScreen(state, HomeActions(onLogSport = { sport, text -> logged += "$sport: $text" })) }
 
         onNodeWithContentDescription("Today, BJJ planned").assertExists()
         onNodeWithText("BJJ", useUnmergedTree = true).assertExists()
         onNodeWithText("BJJ class").assertIsDisplayed()
         onNodeWithText("Counts toward your week").assertIsDisplayed()
         onNodeWithText("Start workout").assertDoesNotExist()
+        onNodeWithText("Also today").assertDoesNotExist()
+        onNodeWithText("Log it").performClick()
+        assertEquals(listOf("Bjj: BJJ class logged"), logged)
+    }
+
+    @Test
+    fun `a class to come is named up next with nothing to log yet`() = runUiTest {
+        val state = empty.copy(
+            upNext = listOf(UpNextItem.SportDay(1, THURSDAY + 1, HistoryDay.Tomorrow, Sport.Custom("Judo"))),
+            hasPlans = true,
+        )
+        setThemedContent { HomeScreen(state, HomeActions()) }
+
+        onNodeWithText("Up next · Tomorrow").assertIsDisplayed()
+        onNodeWithText("Judo").assertIsDisplayed()
+        onNodeWithText("Log it").assertDoesNotExist()
+    }
+
+    @Test
+    fun `on a class day the program's day sits beside the class and starts from there`() = runUiTest {
+        val started = mutableListOf<ProgramKey?>()
+        val day = program(ProgramId.PressLadders).day(3)
+        val state = empty.copy(
+            upNext = listOf(
+                UpNextItem.Lift(THURSDAY, HistoryDay.Today, day, minutes = 35),
+                UpNextItem.SportDay(1, THURSDAY, HistoryDay.Today, Sport.Climbing),
+            ),
+            hasPlans = true,
+        )
+        setThemedContent { HomeScreen(state, HomeActions(onStartLift = { started += it })) }
+
+        // The class leads, to be logged; the program's day is a row under "Also today", with no Start of its own.
+        onNodeWithText("Climbing").assertIsDisplayed()
+        onNodeWithText("Log it").assertIsDisplayed()
+        onNodeWithText("Also today").assertIsDisplayed()
+        onNodeWithText("Press ladders 1-2-3").assertIsDisplayed()
+        onNodeWithText("about 35 min · Day 3 of", substring = true).assertIsDisplayed()
+        onNodeWithText("Start day 3").assertDoesNotExist()
+        onNodeWithText("Do it now").performClick()
+        assertEquals(listOf<ProgramKey?>(day.program.key), started)
+    }
+
+    @Test
+    fun `a workout planned on a class day leads and the class is logged from beside it`() = runUiTest {
+        val events = mutableListOf<String>()
+        val state = empty.copy(
+            upNext = listOf(
+                UpNextItem.Planned(1, THURSDAY, HistoryDay.Today, hiitPreset.name, hiitPreset.config),
+                UpNextItem.SportDay(2, THURSDAY, HistoryDay.Today, Sport.Bjj),
+            ),
+            hasPlans = true,
+        )
+        setThemedContent {
+            HomeScreen(
+                state,
+                HomeActions(
+                    onStart = { name, _ -> events += "start $name" },
+                    onLogSport = { _, text -> events += text },
+                ),
+            )
+        }
+
+        onNodeWithText("Also today").assertIsDisplayed()
+        onNodeWithText("Counts toward your week").assertIsDisplayed()
+        onNodeWithText("Log it").performClick()
+        onNodeWithText("Start workout").performClick()
+        assertEquals(listOf("BJJ class logged", "start HIIT 30/30"), events)
     }
 
     @Test

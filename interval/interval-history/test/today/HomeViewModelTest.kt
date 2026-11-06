@@ -153,6 +153,33 @@ class HomeViewModelTest : MainDispatcherTest() {
     }
 
     @Test
+    fun `a class logged from today goes on today and comes off by its day`() {
+        repository.plans.planOnce(PlanWorkout.SportDay(Sport.Bjj), TODAY)
+
+        val day = viewModel.logSport(Sport.Bjj)
+        assertEquals(TODAY, day)
+        assertEquals(listOf(TODAY to Sport.Bjj), repository.history.sportDays.value.map { it.epochDay to it.sport })
+
+        viewModel.unlogSport(Sport.Bjj, day)
+        assertTrue(repository.history.sportDays.value.isEmpty())
+    }
+
+    @Test
+    fun `on a class day the program's next day stands beside the class until it is logged`() {
+        bells.programs.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
+        repository.plans.planOnce(PlanWorkout.SportDay(Sport.Bjj), TODAY)
+
+        val agenda = viewModel().state.value.agenda
+        assertIs<UpNextItem.SportDay>(agenda.lead)
+        assertIs<UpNextItem.Lift>(agenda.also.single())
+
+        repository.history.logSport(Sport.Bjj, TODAY)
+        val logged = viewModel().state.value.agenda
+        assertIs<UpNextItem.Lift>(logged.lead)
+        assertTrue(logged.also.isEmpty())
+    }
+
+    @Test
     fun `the presets offered fit the minutes picked`() {
         assertEquals(DEFAULT_PICK_MINUTES, viewModel.state.value.minutes)
         assertEquals(

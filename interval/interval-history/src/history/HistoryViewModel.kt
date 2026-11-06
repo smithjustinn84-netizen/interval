@@ -9,10 +9,12 @@ import dev.justinsmith.interval.data.PresetStore
 import dev.justinsmith.interval.data.SettingsStore
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.BodySettings
+import dev.justinsmith.interval.model.LoggedSport
 import dev.justinsmith.interval.model.LoggedWorkout
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.loggedWorkouts
 import dev.justinsmith.interval.plan.planChoices
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
@@ -156,6 +158,15 @@ class HistoryViewModel(
         planStore.restorePlanned(plan)
     }
 
+    /** Logs a day of [sport] on [epochDay]: today's from Up next, or a day's own from its sheet. */
+    fun logSport(sport: Sport, epochDay: Long) {
+        historyStore.logSport(sport, epochDay)
+    }
+
+    fun unlogSport(sport: Sport, epochDay: Long) {
+        historyStore.unlogSport(sport, epochDay)
+    }
+
     fun clear() {
         historyStore.clearHistory()
     }
@@ -187,19 +198,9 @@ class HistoryViewModel(
         val body = app.body
         val week = log.week()
 
-        // Newest first, so grouping keeps both the days and the rows within them in order.
-        val sections = loggedWorkouts(history, lifts)
-            .groupBy { timestamps.dayNumber(it.finishedAtEpochMillis) }
-            .map { (dayNumber, workouts) ->
-                val plans = log.day(dayNumber).plans
-                HistorySection(
-                    timestamps.heading(dayNumber, today),
-                    dayNumber,
-                    workouts.map {
-                        item(it, presets, body, plans)
-                    },
-                )
-            }
+        val sections = timestamps.sections(loggedWorkouts(history, lifts), sports, log, today) { workout, plans ->
+            timestamps.item(workout, presets, body, plans)
+        }
 
         val monthOf = monthStartAfter(today, view.monthOffset)
         val stats = log.stats(view.range, body, monthOf)
@@ -231,66 +232,98 @@ class HistoryViewModel(
             mostDone = log.mostDone(MOST_DONE_SHOWN).map { tally ->
                 ShapeRow(presets.matching(tally.config)?.name, tally.config, tally.count, tally.seconds)
             },
-            upNext = timestamps.upNext(log, planned, lifting, today),
+            // Led as Today leads it: on a day with a sport, the program's day stands back behind it.
+            upNext = todayAgenda(timestamps.upNext(log, planned, lifting, today)).all,
             hasPlans = planned.isNotEmpty() || lifting.programDay != null,
             programDay = lifting.programDay,
             daySheet = view.openDay?.let { day ->
                 val training = log.day(day)
-                DaySheet(
-                    epochDay = day,
-                    day = timestamps.heading(day, today),
-                    weekday = training.weekday,
-                    plans = training.plans.map { plan ->
-                        SheetPlan(
-                            plan.plan.id,
-                            plan.plan.workout,
-                            weekly = plan.plan.schedule is PlanSchedule.Weekly,
-                            state = plan.state,
-                        )
-                    },
-                    workouts = loggedWorkouts(training.workouts, training.liftWorkouts).map {
-                        item(it, presets, body, training.plans)
-                    },
-                    past = day < today,
-                )
+                daySheet(training, timestamps.heading(day, today), past = day < today) {
+                    timestamps.item(it, presets, body, training.plans)
+                }
             },
         )
     }
-
-    /** [workout]'s row, [HistoryItem.planned] when it did one of its day's [plans]. */
-    private fun item(workout: LoggedWorkout, presets: List<Preset>, body: BodySettings, plans: List<DayPlan>) =
-        when (workout) {
-            is LoggedWorkout.Interval -> workout.entry.let { entry ->
-                HistoryItem(
-                    presetName = presets.matching(entry.config)?.name,
-                    config = entry.config,
-                    endedEarly = entry.endedEarly,
-                    time = timestamps.time(entry.finishedAtEpochMillis),
-                    total = formatClock(entry.elapsedSeconds),
-                    calories = entry.calories(body),
-                    id = entry.id,
-                    planned = plans.any { it.workoutId != null && it.workoutId == entry.id },
-                    effort = entry.effort,
-                    note = entry.note,
-                )
-            }
-
-            is LoggedWorkout.Lift -> workout.workout.let { lift ->
-                HistoryItem(
-                    presetName = lift.title,
-                    config = IntervalConfig(activity = Activity.Kettlebell),
-                    endedEarly = false,
-                    time = timestamps.time(lift.finishedAtEpochMillis),
-                    total = formatClock(lift.elapsedSeconds),
-                    calories = lift.calories(body),
-                    planned = plans.any { it.liftUid == lift.uid },
-                    liftUid = lift.uid,
-                )
-            }
-        }
 
     private companion object {
         const val WEEKS_SHOWN = 12
         const val MOST_DONE_SHOWN = 3
     }
 }
+
+/** [workout]'s row, [HistoryItem.planned] when it did one of its day's [plans]. */
+private fun TimestampFormatter.item(
+    workout: LoggedWorkout,
+    presets: List<Preset>,
+    body: BodySettings,
+    plans: List<DayPlan>,
+) =
+    when (workout) {
+        is LoggedWorkout.Interval -> workout.entry.let { entry ->
+            HistoryItem(
+                presetName = presets.matching(entry.config)?.name,
+                config = entry.config,
+                endedEarly = entry.endedEarly,
+                time = time(entry.finishedAtEpochMillis),
+                total = formatClock(entry.elapsedSeconds),
+                calories = entry.calories(body),
+                id = entry.id,
+                planned = plans.any { it.workoutId != null && it.workoutId == entry.id },
+                effort = entry.effort,
+                note = entry.note,
+            )
+        }
+
+        is LoggedWorkout.Lift -> workout.workout.let { lift ->
+            HistoryItem(
+                presetName = lift.title,
+                config = IntervalConfig(activity = Activity.Kettlebell),
+                endedEarly = false,
+                time = time(lift.finishedAtEpochMillis),
+                total = formatClock(lift.elapsedSeconds),
+                calories = lift.calories(body),
+                planned = plans.any { it.liftUid == lift.uid },
+                liftUid = lift.uid,
+            )
+        }
+    }
+
+/**
+ * The log by day, the latest first: each day's workouts as [item] makes its row, given the day's plans, and the
+ * sports logged on it. A day with only a sport logged is a day of the log too. [workouts] are newest first, so
+ * the rows within a day keep that order.
+ */
+private fun TimestampFormatter.sections(
+    workouts: List<LoggedWorkout>,
+    sports: List<LoggedSport>,
+    log: TrainingLog,
+    today: Long,
+    item: (LoggedWorkout, plans: List<DayPlan>) -> HistoryItem,
+): List<HistorySection> {
+    val byDay = workouts.groupBy { dayNumber(it.finishedAtEpochMillis) }
+    val sportsByDay = sports.groupBy { it.epochDay }
+    return (byDay.keys + sportsByDay.keys).sortedDescending().map { day ->
+        val plans = log.day(day).plans
+        HistorySection(
+            heading(day, today),
+            day,
+            byDay[day].orEmpty().map { item(it, plans) },
+            // As logged, the first of the day first.
+            sportsByDay[day].orEmpty().sortedBy { it.id }.map { it.sport },
+        )
+    }
+}
+
+/** The sheet of [day]: its plans as they stand, what was done on it, each workout as [item] makes its row. */
+private fun daySheet(day: TrainingDay, heading: HistoryDay, past: Boolean, item: (LoggedWorkout) -> HistoryItem) =
+    DaySheet(
+        epochDay = day.epochDay,
+        day = heading,
+        weekday = day.weekday,
+        plans = day.plans.map { plan ->
+            SheetPlan(plan.plan.id, plan.plan.workout, weekly = plan.plan.schedule is PlanSchedule.Weekly, plan.state)
+        },
+        workouts = loggedWorkouts(day.workouts, day.liftWorkouts).map(item),
+        past = past,
+        sports = day.sports.map { it.sport },
+    )

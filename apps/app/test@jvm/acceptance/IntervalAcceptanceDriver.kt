@@ -385,6 +385,56 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     /** A day of the week strip as it is read out, its sport after its state: "Today, BJJ planned". */
     fun seeSportOnTheWeek(day: String) = see(hasContentDescription(day))
 
+    /** Today's Log it: the class's own when it leads, or its row's under "Also today". */
+    fun logClassFromToday() = tap("Log it")
+
+    /** What stands beside the lead on a class day, under its own heading. */
+    fun seeAlsoToday(name: String) {
+        see("Also today")
+        see(name)
+    }
+
+    /** The program's day as Today's lead: its Start is the big one, by the day's number. */
+    fun seeProgramDayLeads() = see(hasText("Start day", substring = true))
+
+    /** The program's day stood back beside the class: no Start of its own, only "Do it now". */
+    fun seeProgramDayStandsBack() {
+        seeNo(hasText("Start day", substring = true))
+        see("Do it now")
+    }
+
+    fun doProgramDayNow() = tap("Do it now")
+
+    /** Lifting is open on a session, with a set to log. */
+    fun seeLiftingPage() = see("Log set")
+
+    /** A notice's Undo, while it shows. */
+    fun undoNotice() = tap("Undo")
+
+    fun sportDaysLogged(count: Int) = waitFor("$count sport day(s) logged") {
+        app.repository.history.sportDays.value.size == count
+    }
+
+    /** Today's count against the goal, in the week card's own words. */
+    fun seeThisWeekOnToday(words: String) = see(hasText(words, substring = true))
+
+    /** History's Plan action, in its title bar while the log or a plan gives it one. */
+    fun openPlanFromHistory() {
+        tapDescribed("Plan")
+        see("Weekly goal")
+    }
+
+    /** A day of the week strip, by how it is read out, which opens its sheet. */
+    fun openDayOnTheWeek(day: String) = tap(hasContentDescription(day))
+
+    /** The day sheet's Log it, on the class planned that day. */
+    fun logClassFromItsDay() = tap("Log it")
+
+    /** The day sheet lists the class among what was done, with the way to take it back. */
+    fun seeClassLoggedOnItsDay(name: String) = see(hasContentDescription("Remove $name") and hasClickAction())
+
+    fun removeLoggedClass(name: String) = tapDescribed("Remove $name")
+
     fun seeLiftSessionPlannedOn(weekday: String) = see(hasContentDescription("Remove Any lift session from $weekday"))
 
     fun seeUpNext(name: String) {

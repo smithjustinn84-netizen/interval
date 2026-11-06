@@ -21,7 +21,7 @@
     <!-- The plan's goal and reminder, shown here and changed on Plan. -->
     <string name="settings_plan">Plan</string>
     <string name="settings_goal">Weekly goal</string>
-    <string name="settings_goal_hint">Workouts a week, lifts and intervals alike</string>
+    <string name="settings_goal_hint">Workouts a week: lifts, intervals and sport days</string>
     <string name="settings_reminder">Reminder</string>
     <string name="settings_reminder_hint">On days with a workout planned</string>
     <string name="settings_plan_open">Change on Plan</string>

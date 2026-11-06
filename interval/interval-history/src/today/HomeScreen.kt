@@ -20,6 +20,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.intl.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.history.GoalRow
+import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.history.StartPill
 import dev.justinsmith.interval.history.SummaryCard
 import dev.justinsmith.interval.history.UpNextItem
@@ -47,7 +48,9 @@ import dev.justinsmith.interval.history.resources.home_start_day
 import dev.justinsmith.interval.history.resources.home_start_pick_cd
 import dev.justinsmith.interval.history.resources.home_start_session
 import dev.justinsmith.interval.history.resources.home_title
+import dev.justinsmith.interval.history.resources.notice_undo
 import dev.justinsmith.interval.history.resources.sport_counts
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.plan.sportTitle
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.formatClock
@@ -59,6 +62,8 @@ import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.LocalNotices
+import dev.justinsmith.interval.ui.NoticeAction
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.SegmentedPicker
@@ -107,7 +112,9 @@ fun HomeRoute(
     val openHistory by rememberUpdatedState(onOpenHistory)
     val openTimer by rememberUpdatedState(onOpenTimer)
     val openSettings by rememberUpdatedState(onOpenSettings)
-    val actions = remember(viewModel) {
+    val notices = LocalNotices.current
+    val undo = stringResource(Res.string.notice_undo)
+    val actions = remember(viewModel, notices, undo) {
         HomeActions(
             onStart = { name, config ->
                 viewModel.putOnTimer(name, config)
@@ -121,6 +128,10 @@ fun HomeRoute(
                 // Lift starts nothing while a session is in progress, so with one under way this resumes it.
                 viewModel.startLift(program)
                 startSession()
+            },
+            onLogSport = { sport, loggedText ->
+                val day = viewModel.logSport(sport)
+                notices.show(loggedText, NoticeAction(undo) { viewModel.unlogSport(sport, day) })
             },
             onMinutes = viewModel::setMinutes,
             onPlan = { plan() },
@@ -142,6 +153,8 @@ class HomeActions(
     val onStartPick: (QuickPick) -> Unit = {},
     /** Opens Lifting: on a new day of this program, or with null a free session; either way, on one in progress. */
     val onStartLift: (ProgramKey?) -> Unit = {},
+    /** Logs a day of this sport today, with the line saying so ("BJJ class logged"). */
+    val onLogSport: (sport: Sport, loggedText: String) -> Unit = { _, _ -> },
     val onMinutes: (Int) -> Unit = {},
     val onPlan: () -> Unit = {},
     val onPrograms: () -> Unit = {},
@@ -152,9 +165,10 @@ class HomeActions(
 
 /**
  * Today: the week against the goal, then what is up next under the one raised Start, or the ways to a plan
- * while there is none, or a word that the plan is done for now; under them the presets that fit the minutes
- * picked, each with a Start of its own. A grid of cards as Lift's tab is, so a wide window sets them side by
- * side. Nothing shows until the first state is built.
+ * while there is none, or a word that the plan is done for now; on a day with a sport, what else the day holds
+ * beside what leads it ([AlsoToday]); under them the presets that fit the minutes picked, each with a Start of its
+ * own. A grid of cards as Lift's tab is, so a wide window sets them side by side. Nothing shows until the first
+ * state is built.
  */
 @Composable
 fun HomeScreen(state: HomeUiState, actions: HomeActions, modifier: Modifier = Modifier) {
@@ -172,22 +186,26 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, modifier: Modifier = Mo
                 WeekStrip(state.week, onDay = { actions.onOpenHistory() })
             }
         }
+        val agenda = state.agenda
         item(key = "next") {
             when {
-                state.upNext.isNotEmpty() -> UpNext(state.upNext, actions, card)
+                agenda.lead != null -> UpNext(agenda.lead, agenda.later, actions, card)
                 state.hasPlans -> NothingDue(actions, card)
                 else -> NothingPlanned(actions, card)
             }
         }
+        if (agenda.also.isNotEmpty()) item(key = "also") { AlsoToday(agenda.also, actions, card) }
         item(key = "picks") { Picks(state, actions, card) }
     }
 }
 
-/** What is up next, by its day: its name over what it is, its Start, and the two after it in a line. */
+/**
+ * What is up next, by its day: its name over what it is, its Start, and the two [later] in a line. A day of a
+ * sport has nothing to start: on its day it is logged, and before it only named.
+ */
 @Composable
-private fun UpNext(upNext: List<UpNextItem>, actions: HomeActions, modifier: Modifier = Modifier) {
+private fun UpNext(next: UpNextItem, later: List<UpNextItem>, actions: HomeActions, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
-    val next = upNext.first()
     SummaryCard(modifier) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
             Text(
@@ -215,10 +233,10 @@ private fun UpNext(upNext: List<UpNextItem>, actions: HomeActions, modifier: Mod
                 )
             }
 
-            // Nothing here starts a sport.
-            is UpNextItem.SportDay -> Unit
+            is UpNextItem.SportDay ->
+                if (next.day == HistoryDay.Today) LogSportButton(next.sport, actions, Modifier.fillMaxWidth())
         }
-        UpNextLater(upNext)
+        UpNextLater(later)
     }
 }
 

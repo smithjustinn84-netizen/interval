@@ -9,17 +9,20 @@ import dev.justinsmith.interval.data.PresetStore
 import dev.justinsmith.interval.data.SettingsStore
 import dev.justinsmith.interval.history.DayCell
 import dev.justinsmith.interval.history.Lifting
+import dev.justinsmith.interval.history.TodayAgenda
 import dev.justinsmith.interval.history.TrainingLog
 import dev.justinsmith.interval.history.UpNextItem
 import dev.justinsmith.interval.history.WeekGoal
 import dev.justinsmith.interval.history.asLiftWorkouts
 import dev.justinsmith.interval.history.dayCell
 import dev.justinsmith.interval.history.lifting
+import dev.justinsmith.interval.history.todayAgenda
 import dev.justinsmith.interval.history.upNext
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.LoggedSport
 import dev.justinsmith.interval.model.PlannedWorkout
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
@@ -47,7 +50,7 @@ data class HomeUiState(
     /** Monday to Sunday of this week. */
     val week: List<DayCell> = emptyList(),
     val weekGoal: WeekGoal = WeekGoal(),
-    /** What is still to do, soonest first: the first leads the tab, with its Start. Empty with nothing planned. */
+    /** What is still to do, soonest first; [agenda] is how the tab leads with it. Empty with nothing planned. */
     val upNext: List<UpNextItem> = emptyList(),
     /** Something is planned or a program is followed, whether or not any of it is still to do: not the first run. */
     val hasPlans: Boolean = false,
@@ -56,6 +59,9 @@ data class HomeUiState(
     /** Not built yet: the screen waits rather than taking it for a day with nothing planned. */
     val loading: Boolean = false,
 ) {
+    /** What leads the tab, with its Start or its Log it, what else today holds beside it, and what comes after. */
+    val agenda: TodayAgenda = todayAgenda(upNext)
+
     companion object {
         /** What the screen shows until the first state is built. */
         val Loading = HomeUiState(loading = true)
@@ -72,7 +78,7 @@ data class HomeUiState(
  * Up next does.
  */
 class HomeViewModel(
-    historyStore: HistoryStore,
+    private val historyStore: HistoryStore,
     private val presetStore: PresetStore,
     planStore: PlanStore,
     settingsStore: SettingsStore,
@@ -126,6 +132,17 @@ class HomeViewModel(
     /** Starts the next day of [program], or a free session with none, for the Lifting page about to open. */
     fun startLift(program: ProgramKey?) {
         lift.startSession(program)
+    }
+
+    /** Logs a day of [sport] today. Returns the day it went on, for Undo to take off ([unlogSport]). */
+    fun logSport(sport: Sport): Long {
+        val today = timestamps.dayNumber(clock.nowMillis())
+        historyStore.logSport(sport, today)
+        return today
+    }
+
+    fun unlogSport(sport: Sport, epochDay: Long) {
+        historyStore.unlogSport(sport, epochDay)
     }
 
     /** The app's locale, as a language tag: the days are named again when it changes. */

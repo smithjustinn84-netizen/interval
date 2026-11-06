@@ -81,6 +81,8 @@ class HistoryScreenTest {
         onOpenDay = { events += "day $it" },
         onStart = { name, _ -> events += "start $name" },
         onRemovePlanned = { id, _ -> events += "remove $id" },
+        onLogSport = { sport, day, text -> events += "log $sport $day: $text" },
+        onUnlogSport = { sport, day, text -> events += "unlog $sport $day: $text" },
         onPlanOnce = { workout, day -> events += "once ${(workout as? PlanWorkout.Interval)?.name ?: workout} $day" },
         onOpenWorkout = { events += "open $it" },
         onPlan = { events += "plan" },
@@ -408,6 +410,72 @@ class HistoryScreenTest {
         onNodeWithContentDescription("Remove HIIT 30/30").assertDoesNotExist()
         onNodeWithContentDescription("Remove Hangboard").performClick()
         assertEquals(listOf("remove 2"), events)
+    }
+
+    @Test
+    fun `a class is logged from its day's sheet and one logged comes off there`() = runUiTest {
+        val planned = SheetPlan(1, PlanWorkout.SportDay(Sport.Bjj), weekly = true, state = PlanState.Open)
+        val today = DaySheet(20_741, HistoryDay.Today, weekday = 4, listOf(planned), emptyList(), past = false)
+        var state by mutableStateOf(oneWorkout.copy(daySheet = today))
+        setThemedContent { HistoryScreen(state, actions) }
+
+        onNodeWithText("Start").assertDoesNotExist()
+        onNodeWithText("Log it").performClick()
+        assertEquals(listOf("log Bjj 20741: BJJ class logged"), events)
+
+        // Logged: the plan is done, and the class sits among what the day holds, with its remove.
+        state = state.copy(
+            daySheet = today.copy(plans = listOf(planned.copy(state = PlanState.Done)), sports = listOf(Sport.Bjj)),
+        )
+        onNodeWithText("Done · Every Thursday").assertExists()
+        onNodeWithText("Log it").assertDoesNotExist()
+        onNodeWithText("Logged").assertExists()
+        onNodeWithContentDescription("Remove BJJ class").performClick()
+        assertEquals("unlog Bjj 20741: Removed BJJ class", events.last())
+    }
+
+    @Test
+    fun `a class that went by is logged late from its day and one to come is not`() = runUiTest {
+        val passed = SheetPlan(1, PlanWorkout.SportDay(Sport.Climbing), weekly = true, state = PlanState.Passed)
+        val day = HistoryDay.On("Monday, Oct 12")
+        val monday = DaySheet(20_738, day, weekday = 1, listOf(passed), emptyList(), past = true)
+        var state by mutableStateOf(oneWorkout.copy(daySheet = monday))
+        setThemedContent { HistoryScreen(state, actions) }
+
+        onNodeWithText("Not logged · Every Monday").assertExists()
+        onNodeWithText("Log it").performClick()
+        assertEquals(listOf("log Climbing 20738: Climbing logged"), events)
+
+        state = state.copy(
+            daySheet = DaySheet(
+                20_743,
+                HistoryDay.On("Saturday, Oct 17"),
+                weekday = 6,
+                listOf(passed.copy(state = PlanState.Open)),
+                emptyList(),
+                past = false,
+            ),
+        )
+        onNodeWithText("Every Saturday").assertExists()
+        onNodeWithText("Log it").assertDoesNotExist()
+    }
+
+    @Test
+    fun `a sport logged is a row of its day in the log with its own remove`() = runUiTest {
+        val state = oneWorkout.copy(
+            sections = oneWorkout.sections.map { it.copy(sports = listOf(Sport.Custom("Judo"))) } +
+                HistorySection(HistoryDay.Yesterday, dayNumber = 20_740, emptyList(), listOf(Sport.Bjj)),
+        )
+        setThemedContent { HistoryScreen(state, actions) }
+
+        onNodeWithText("Judo").assertExists()
+        onNodeWithText("BJJ class").assertExists()
+        onNodeWithContentDescription("Remove Judo").performClick()
+        onNodeWithContentDescription("Remove BJJ class").performClick()
+        assertEquals(
+            listOf("unlog Custom(name=Judo) 20741: Removed Judo", "unlog Bjj 20740: Removed BJJ class"),
+            events,
+        )
     }
 
     @Test

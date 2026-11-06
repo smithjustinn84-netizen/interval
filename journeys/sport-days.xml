@@ -1,6 +1,7 @@
 <journey name="Sport days">
   <description>
-    A class trained away from the app goes on the plan and shows on the week. Run on a fresh install
+    A class trained away from the app goes on the plan, shows on the week, and is logged with one tap from Today or
+    from its day in History, which counts it toward the week. Run on a fresh install
     (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
@@ -14,6 +15,26 @@
     <action>Verify that the "Routine" heading reads "Every week · 1 sport day"</action>
     <action>Tap "Back"</action>
     <action>Verify that "BJJ" is written under today on the week strip, whose bar is the short one of a rest day</action>
-    <action>Verify that "Up next · Today" shows "BJJ class" and "Counts toward your week"</action>
+    <action>Verify that "Up next · Today" shows "BJJ class" and "Counts toward your week" over a "Log it" button</action>
+    <action>Tap "Log it"</action>
+    <action>Verify that a notice says "BJJ class logged" with "Undo"</action>
+    <action>Verify that today on the week strip is a filled block, the week card counts "1 workout" and the card under it says "Nothing more due"</action>
+    <action>Tap "Undo"</action>
+    <action>Verify that "Up next · Today" shows "BJJ class" with "Log it" again and today's bar is the short one</action>
+    <action>Tap the "History" tab</action>
+    <action>Tap today on the week strip</action>
+    <action>Verify that the day sheet shows "BJJ class" reading "Every" and today's weekday, with "Log it"</action>
+    <action>Tap "Log it"</action>
+    <action>Verify that the plan reads "Done" and a "BJJ class" row reading "Logged" has an "×"</action>
+    <action>Close the sheet</action>
+    <action>Verify that the log lists "BJJ class" under "Today" and the week's legend has a "Sport" key</action>
+    <action>Tap the "×" on the "BJJ class" row</action>
+    <action>Verify that a notice says "Removed BJJ class" with "Undo", and the row is gone</action>
+    <action>Tap the "Train" tab, then "Programs", and follow "15-minute kettlebell plan"</action>
+    <action>Tap the "Today" tab</action>
+    <action>Verify that "Up next · Today" still leads with "BJJ class" and "Log it"</action>
+    <action>Verify that "Also today" lists "15-minute kettlebell plan" with "about 15 min" and "Do it now", and no "Start day 1" shows</action>
+    <action>Tap "Log it"</action>
+    <action>Verify that "Up next · Today" now shows "15-minute kettlebell plan" with "Start day 1" and "Also today" is gone</action>
   </actions>
 </journey>

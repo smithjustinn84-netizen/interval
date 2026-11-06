@@ -26,7 +26,9 @@ import dev.justinsmith.interval.history.resources.history_start
 import dev.justinsmith.interval.history.resources.history_then
 import dev.justinsmith.interval.history.resources.history_times
 import dev.justinsmith.interval.history.resources.history_up_next
+import dev.justinsmith.interval.history.resources.notice_sport_logged
 import dev.justinsmith.interval.history.resources.sport_counts
+import dev.justinsmith.interval.history.resources.sport_log_it
 import dev.justinsmith.interval.plan.sportTitle
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.weekdayOf
@@ -85,17 +87,16 @@ internal fun UpNextCard(upNext: List<UpNextItem>, actions: HistoryActions, modif
                 }
             }
             UpNextLead(next, actions)
-            UpNextLater(upNext)
+            UpNextLater(upNext.drop(1))
         }
     }
 }
 
-/** The two plans after the first of [upNext], in a line: "Then Fri · Tabata · Sat · Lift session". None, nothing. */
+/** The first two of [later], what comes after the lead, in a line: "Then Fri · Tabata · Sat · Lift session". */
 @Composable
-internal fun UpNextLater(upNext: List<UpNextItem>, modifier: Modifier = Modifier) {
-    val later = upNext.drop(1).take(2)
+internal fun UpNextLater(later: List<UpNextItem>, modifier: Modifier = Modifier) {
     if (later.isEmpty()) return
-    val parts = later.map {
+    val parts = later.take(2).map {
         stringResource(Res.string.common_joined, shortDay(it.day, it.epochDay), upNextName(it))
     }
     Text(
@@ -160,8 +161,18 @@ private fun UpNextLead(next: UpNextItem, actions: HistoryActions, modifier: Modi
             }
 
             is UpNextItem.SportDay -> {
+                val name = sportTitle(next.sport)
                 StripeMark(palette.textDim, height = IntervalSizes.historyMarkHeight)
-                UpNextText(sportTitle(next.sport), stringResource(Res.string.sport_counts), Modifier.weight(1f))
+                UpNextText(name, stringResource(Res.string.sport_counts), Modifier.weight(1f))
+                // Nothing starts a sport: on its day it is logged, and before it only named.
+                if (next.day == HistoryDay.Today) {
+                    val logged = stringResource(Res.string.notice_sport_logged, name)
+                    StartPill(
+                        primary = false,
+                        onClick = { actions.onLogSport(next.sport, next.epochDay, logged) },
+                        label = stringResource(Res.string.sport_log_it),
+                    )
+                }
             }
         }
     }

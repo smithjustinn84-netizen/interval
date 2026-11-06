@@ -104,7 +104,7 @@
     <string name="history_lift_any">Any session on Lift</string>
     <string name="plan_title">Plan</string>
     <string name="plan_goal">Weekly goal</string>
-    <string name="plan_goal_text">Workouts a week, lifts and intervals alike</string>
+    <string name="plan_goal_text">Workouts a week: lifts, intervals and sport days</string>
     <string name="plan_goal_off">Off</string>
     <string name="plan_goal_less_cd">Lower the goal</string>
     <string name="plan_goal_more_cd">Raise the goal</string>
@@ -220,5 +220,10 @@
     <string name="history_sport_logged_cd">%1$s logged</string>
     <string name="history_sport_passed_cd">%1$s not logged</string>
     <string name="sport_counts">Counts toward your week</string>
+    <string name="sport_log_it">Log it</string>
+    <string name="notice_sport_logged">%1$s logged</string>
+    <string name="history_sport_logged">Logged</string>
+    <string name="home_also_today">Also today</string>
+    <string name="home_do_it_now">Do it now</string>
     <string name="sport_state_passed">Not logged</string>
 </resources>

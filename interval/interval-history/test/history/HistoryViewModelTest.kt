@@ -15,6 +15,7 @@ import dev.justinsmith.interval.fakes.tabataPreset
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Effort
@@ -423,5 +424,41 @@ class HistoryViewModelTest : MainDispatcherTest() {
         assertSame(before.sections, after.sections)
         assertSame(before.week, after.week)
         assertEquals(repository.settings.config.value, after.choices.first().preset.config)
+    }
+
+    @Test
+    fun `a sport logged is a row of its day in the log and on its day's sheet`() {
+        repository.history.recordWorkout(tabata, tabata.totalSeconds)
+        repository.plans.planOnce(PlanWorkout.SportDay(Sport.Bjj), MONDAY)
+        viewModel.logSport(Sport.Bjj, MONDAY)
+        viewModel.logSport(Sport.Climbing, TODAY)
+        viewModel.openDay(MONDAY)
+
+        val state = viewModel.state.value
+        assertEquals(listOf(TODAY, MONDAY), state.sections.map { it.dayNumber })
+        assertEquals(listOf(listOf(Sport.Climbing), listOf(Sport.Bjj)), state.sections.map { it.sports })
+        assertEquals(listOf(1, 0), state.sections.map { it.items.size })
+        assertEquals(3, state.weekCount)
+        assertEquals(2, state.weekSports)
+        val sheet = requireNotNull(state.daySheet)
+        assertEquals(listOf(Sport.Bjj), sheet.sports)
+        assertEquals(PlanState.Done, sheet.plans.single().state)
+
+        viewModel.unlogSport(Sport.Bjj, MONDAY)
+        val after = requireNotNull(viewModel.state.value.daySheet)
+        assertEquals(emptyList(), after.sports)
+        // Gone by unlogged, it is not missed.
+        assertEquals(PlanState.Passed, after.plans.single().state)
+        assertEquals(listOf(TODAY), viewModel.state.value.sections.map { it.dayNumber })
+    }
+
+    @Test
+    fun `on a class day up next leads with the class and the program's day follows`() {
+        bells.programs.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
+        repository.plans.planOnce(PlanWorkout.SportDay(Sport.Bjj), TODAY)
+
+        val upNext = viewModel.state.value.upNext
+        assertIs<UpNextItem.SportDay>(upNext.first())
+        assertIs<UpNextItem.Lift>(upNext.last())
     }
 }

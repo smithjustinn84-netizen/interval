@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -30,7 +31,13 @@ import dev.justinsmith.interval.history.resources.activity_kettlebell
 import dev.justinsmith.interval.history.resources.history_calories_value
 import dev.justinsmith.interval.history.resources.history_ended_early
 import dev.justinsmith.interval.history.resources.history_planned
+import dev.justinsmith.interval.history.resources.history_remove_cd
+import dev.justinsmith.interval.history.resources.history_sport_logged
+import dev.justinsmith.interval.history.resources.notice_plan_removed
+import dev.justinsmith.interval.model.Sport
+import dev.justinsmith.interval.plan.sportTitle
 import dev.justinsmith.interval.ui.GroupLabel
+import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -46,7 +53,10 @@ import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.interval.ui.workoutDescription
 import org.jetbrains.compose.resources.stringResource
 
-/** A day's heading over its card of workouts, each opening its page; the one open beside the log shows it. */
+/**
+ * A day's heading over its card of workouts, each opening its page; the one open beside the log shows it. The
+ * sports logged that day follow them, each with the way to take it off.
+ */
 @Composable
 internal fun DaySection(
     section: HistorySection,
@@ -61,7 +71,46 @@ internal fun DaySection(
                 if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
                 HistoryRow(item, actions.onOpenWorkout, onOpenLift = actions.onOpenLift, selected = selected(item))
             }
+            section.sports.forEachIndexed { index, sport ->
+                if (index > 0 || section.items.isNotEmpty()) RowDivider(Modifier.padding(start = Spacing.space20))
+                SportRow(sport, section.dayNumber, actions)
+            }
         }
+    }
+}
+
+/**
+ * A day of a sport logged: its name, that it was logged, and the × that takes it off again. It has no page to
+ * open: there is nothing more to it than the day.
+ */
+@Composable
+internal fun SportRow(sport: Sport, epochDay: Long, actions: HistoryActions, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    val name = sportTitle(sport)
+    val removed = stringResource(Res.string.notice_plan_removed, name)
+    Row(
+        modifier
+            .fillMaxWidth()
+            .heightIn(min = Sizes.listRow)
+            .padding(start = Spacing.space16, end = Spacing.space4, top = Spacing.space8, bottom = Spacing.space8),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+    ) {
+        StripeMark(palette.textDim, height = IntervalSizes.historyMarkHeight)
+        Column(Modifier.weight(1f)) {
+            Text(name, style = IntervalTheme.type.label, color = palette.text)
+            Text(
+                stringResource(Res.string.history_sport_logged),
+                style = IntervalTheme.type.meta,
+                color = palette.textDim,
+            )
+        }
+        IconAction(
+            IntervalIcons.Close,
+            stringResource(Res.string.history_remove_cd, name),
+            { actions.onUnlogSport(sport, epochDay, removed) },
+            haptic = HapticFeedbackType.SegmentTick,
+        )
     }
 }
 

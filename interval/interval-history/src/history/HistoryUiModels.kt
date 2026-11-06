@@ -32,8 +32,13 @@ data class HistoryItem(
     val note: String? = null,
 )
 
-/** One day's workouts. [dayNumber] is its epoch day. */
-data class HistorySection(val day: HistoryDay, val dayNumber: Long, val items: List<HistoryItem>)
+/** One day's workouts, and the sports logged on it. [dayNumber] is its epoch day. */
+data class HistorySection(
+    val day: HistoryDay,
+    val dayNumber: Long,
+    val items: List<HistoryItem>,
+    val sports: List<Sport> = emptyList(),
+)
 
 /**
  * One day of the week strip or the calendar. [dayOfMonth] is its number on the calendar; of its [seconds],
@@ -133,7 +138,7 @@ data class SheetPlan(
     val state: PlanState,
 )
 
-/** The day sheet: the day a tap opened, with its plans and its workouts. */
+/** The day sheet: the day a tap opened, with its plans, its workouts and the [sports] logged on it. */
 data class DaySheet(
     val epochDay: Long,
     val day: HistoryDay,
@@ -141,6 +146,7 @@ data class DaySheet(
     val plans: List<SheetPlan>,
     val workouts: List<HistoryItem>,
     val past: Boolean,
+    val sports: List<Sport> = emptyList(),
 )
 
 data class HistoryUiState(

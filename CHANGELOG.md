@@ -34,6 +34,12 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   Sport side beside Interval and Lift, with BJJ, Climbing, Running or a sport you name, every week on the days
   picked or once on a date. The week names it under its day ("BJJ", "Climb") on Today and History, the plan shows
   it as a chip with a pennant, and it is never counted as a workout missed.
+- Log it: one tap on a class's day logs it, from Today's Up next or from its day in History (a day gone by too,
+  logged late). A class logged counts as a workout toward the weekly goal, the streak and the widget, fills its
+  day on the week and is listed in History's log; the notice's Undo, or the × on its row, takes it off again.
+- On a class day the class leads Today, and the followed program's next day stands back under "Also today" with
+  "Do it now" in place of the big Start, until the class is logged. A workout or a lift you planned for that day
+  still leads, with the class beside it to log.
 - Exports are schema 6, with the sport days planned and logged; a build from before them refuses the file with
   "update the app", and older files read as before.
 
@@ -42,6 +48,7 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   top of the presets, with a Back to them. The bar is Today · Train · History. "Put on Timer", the "Start a
   workout" shortcut and the widget open it as before, and Back from it returns to the presets, then Today. On a
   wide window Settings still opens beside it.
+- The weekly goal counts sport days logged too, and says so: "Workouts a week: lifts, intervals and sport days".
 - The week's marks and the weekly goal no longer show on Lift's side: Today shows the week, for both sides.
 
 ## [0.4.0] — 2026-11-05

@@ -54,6 +54,7 @@ import dev.justinsmith.interval.history.resources.history_tomorrow
 import dev.justinsmith.interval.history.resources.history_yesterday
 import dev.justinsmith.interval.history.resources.notice_undo
 import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.plan.AddToPlanSheet
 import dev.justinsmith.interval.plan.LiftChoices
 import dev.justinsmith.interval.plan.PlanRepeat
@@ -139,6 +140,14 @@ fun HistoryRoute(
                     notices.show(removedText, NoticeAction(undo) { viewModel.restorePlanned(plan) })
                 }
             },
+            onLogSport = { sport, day, loggedText ->
+                viewModel.logSport(sport, day)
+                notices.show(loggedText, NoticeAction(undo) { viewModel.unlogSport(sport, day) })
+            },
+            onUnlogSport = { sport, day, removedText ->
+                viewModel.unlogSport(sport, day)
+                notices.show(removedText, NoticeAction(undo) { viewModel.logSport(sport, day) })
+            },
             onPlanWeekly = viewModel::planWeekly,
             onPlanOnce = viewModel::planOnce,
             onOpenWorkout = { leavingSheet { openWorkout(it) } },
@@ -168,6 +177,10 @@ class HistoryActions(
     val onStart: (String, IntervalConfig) -> Unit = { _, _ -> },
     /** Takes a one-off off the plan, with the line saying so ("Removed Tabata"). */
     val onRemovePlanned: (planId: Long, removedText: String) -> Unit = { _, _ -> },
+    /** Logs a day of this sport on an epoch day, with the line saying so ("BJJ class logged"). */
+    val onLogSport: (sport: Sport, epochDay: Long, loggedText: String) -> Unit = { _, _, _ -> },
+    /** Takes a day of this sport logged off its day, with the line saying so ("Removed BJJ class"). */
+    val onUnlogSport: (sport: Sport, epochDay: Long, removedText: String) -> Unit = { _, _, _ -> },
     val onPlanWeekly: (PlanWorkout, Set<Int>) -> Unit = { _, _ -> },
     val onPlanOnce: (PlanWorkout, Long) -> Unit = { _, _ -> },
     val onOpenWorkout: (Long) -> Unit = {},

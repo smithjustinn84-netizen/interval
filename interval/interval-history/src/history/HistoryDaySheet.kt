@@ -25,6 +25,8 @@ import dev.justinsmith.interval.history.resources.history_routine_note
 import dev.justinsmith.interval.history.resources.history_state_done
 import dev.justinsmith.interval.history.resources.history_state_missed
 import dev.justinsmith.interval.history.resources.notice_plan_removed
+import dev.justinsmith.interval.history.resources.notice_sport_logged
+import dev.justinsmith.interval.history.resources.sport_log_it
 import dev.justinsmith.interval.history.resources.sport_state_passed
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.plan.planMark
@@ -48,10 +50,10 @@ import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * One day, opened from the week strip or the calendar: its plans, each startable and a one-off removable,
- * and the workouts done on it. A day still to come can have a workout added on it ([onAddWorkout]). A
- * weekly plan is changed in Plan, for every week, as the sheet says. A plan of the program's next day starts
- * [programDay]'s program.
+ * One day, opened from the week strip or the calendar: its plans, each startable (a sport's, on its day or
+ * after, logged) and a one-off removable, and the workouts done and the sports logged on it. A day still to come
+ * can have a workout added on it ([onAddWorkout]). A weekly plan is changed in Plan, for every week, as the sheet
+ * says. A plan of the program's next day starts [programDay]'s program.
  */
 @Composable
 internal fun DaySheetContent(
@@ -79,7 +81,7 @@ internal fun DaySheetContent(
                     )
                 }
             }
-            if (sheet.plans.isEmpty() && sheet.workouts.isEmpty()) {
+            if (sheet.plans.isEmpty() && sheet.workouts.isEmpty() && sheet.sports.isEmpty()) {
                 Text(
                     stringResource(Res.string.history_day_nothing),
                     style = IntervalTheme.type.body,
@@ -101,11 +103,16 @@ internal fun DaySheetContent(
                     )
                 }
             }
-            if (sheet.workouts.isNotEmpty()) {
+            if (sheet.workouts.isNotEmpty() || sheet.sports.isNotEmpty()) {
                 ListCard {
                     sheet.workouts.forEachIndexed { index, item ->
                         if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
                         HistoryRow(item, actions.onOpenWorkout, onOpenLift = actions.onOpenLift)
+                    }
+                    sheet.sports.forEachIndexed { index, sport ->
+                        val first = index == 0 && sheet.workouts.isEmpty()
+                        if (!first) RowDivider(Modifier.padding(start = Spacing.space20))
+                        SportRow(sport, sheet.epochDay, actions)
                     }
                 }
             }
@@ -176,6 +183,16 @@ private fun PlanRow(plan: SheetPlan, sheet: DaySheet, programDay: ProgramDay?, a
             is PlanWorkout.SportDay -> null
         }
         if (plan.state == PlanState.Open && start != null) StartPill(primary = false, onClick = start)
+        // A sport is logged on its day or after, never ahead of it.
+        val sport = (workout as? PlanWorkout.SportDay)?.sport?.takeIf { sheet.past || sheet.day == HistoryDay.Today }
+        if (sport != null && plan.state != PlanState.Done) {
+            val logged = stringResource(Res.string.notice_sport_logged, name)
+            StartPill(
+                primary = false,
+                onClick = { actions.onLogSport(sport, sheet.epochDay, logged) },
+                label = stringResource(Res.string.sport_log_it),
+            )
+        }
         if (!plan.weekly && plan.state != PlanState.Done) {
             val removed = stringResource(Res.string.notice_plan_removed, name)
             IconAction(
