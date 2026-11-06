@@ -124,6 +124,9 @@ import dev.justinsmith.interval.ui.rememberNotices
 import dev.justinsmith.interval.ui.tabGroup
 import dev.justinsmith.interval.ui.tabScenes
 import dev.justinsmith.interval.weeksetup.WeekSetupRoute
+import dev.justinsmith.interval.weeksetup.isSetupTurn
+import dev.justinsmith.interval.weeksetup.nothingYet
+import dev.justinsmith.interval.weeksetup.opensOnSetup
 import dev.justinsmith.interval.workout.WorkoutRoute
 import dev.justinsmith.lift.data.LiftRepository
 import dev.justinsmith.lift.nav.LiftDetail
@@ -183,12 +186,14 @@ internal val navConfiguration = SavedStateConfiguration {
 fun App(shortcut: Shortcut? = null, onShortcutOpen: () -> Unit = {}) {
     val koin = remember { processKoin() }
     val ready by remember(koin) { storageReady(koin.koin.get(), koin.koin.get()) }.collectAsStateWithLifecycle(false)
-    WithIntro(ready) { introPlaying -> AppContent(koin, introPlaying, shortcut, onShortcutOpen) }
+    WithIntro(ready) { introPlaying -> AppContent(koin, introPlaying, shortcut, onShortcutOpen, offerSetup = true) }
 }
 
 /**
  * [App] with its container passed in, so tests can run the whole app over fake platform services.
- * While [introPlaying], the system bar icons suit the intro over it rather than the app.
+ * While [introPlaying], the system bar icons suit the intro over it rather than the app. With [offerSetup], as
+ * the app itself runs, a new install's first plain open (no shortcut) lands on Set up over Today, once: a test
+ * leaves it off unless that is what it is about, so the app opens on Today whatever its storage holds.
  */
 @Composable
 internal fun AppContent(
@@ -196,6 +201,7 @@ internal fun AppContent(
     introPlaying: Boolean = false,
     shortcut: Shortcut? = null,
     onShortcutOpen: () -> Unit = {},
+    offerSetup: Boolean = false,
 ) {
     KoinIsolatedContext(context = koin) {
         val repository = koinInject<IntervalRepository>()
@@ -214,7 +220,18 @@ internal fun AppContent(
             ThemeMode.Dark -> true
         }
         IntervalTheme(darkTheme = dark) {
-            val backStack = rememberNavBackStack(navConfiguration, TodayTab)
+            // Set up's turn is this open's, if it is a plain one: decided once, as storage stands on arrival, and
+            // marked taken whether or not it opens, so someone with the app already never meets it unasked.
+            val setupTurn = remember { isSetupTurn(offerSetup, shortcut != null, settings.setupOffered) }
+            val start = remember {
+                val onSetup = opensOnSetup(setupTurn, nothingYet(repository, lift))
+                if (onSetup) arrayOf<NavKey>(TodayTab, WeekSetup) else arrayOf<NavKey>(TodayTab)
+            }
+            LaunchedEffect(setupTurn) {
+                if (setupTurn) repository.settings.updateAppSettings { it.copy(setupOffered = true) }
+            }
+            // A stack restored takes the place of [start]: the page left open is the one that comes back.
+            val backStack = rememberNavBackStack(navConfiguration, *start)
             // Once, before anything reads it: a stack saved by a build that opened on the Timer, or had it as a tab.
             remember(backStack) {
                 backStack.rootAtToday()

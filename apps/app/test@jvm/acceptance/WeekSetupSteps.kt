@@ -85,8 +85,15 @@ fun IntervalAcceptanceDriver.weekHolds(
     assertEquals(goal, app.repository.settings.appSettings.value.weeklyGoal)
 }
 
-fun IntervalAcceptanceDriver.sessionLengthKept(minutes: Int) =
+/** The session's length is kept, and Today's pick by time stands on it. */
+fun IntervalAcceptanceDriver.seeMinutesPicked(minutes: Int) {
+    see(hasText("$minutes min") and isSelected())
     assertEquals(minutes, app.repository.settings.appSettings.value.sessionMinutes)
+}
 
-/** Today's pick by time stands on [minutes]. */
-fun IntervalAcceptanceDriver.seeMinutesPicked(minutes: Int) = see(hasText("$minutes min") and isSelected())
+/** Whether Set up has had its turn, which keeps it from opening by itself again. */
+fun IntervalAcceptanceDriver.setUpOffered(offered: Boolean) = waitFor("Set up offered: $offered") {
+    app.repository.settings.appSettings.value.setupOffered == offered
+}
+
+fun IntervalAcceptanceDriver.seeNoSetUp() = seeNo("What else do you train?")

@@ -5,6 +5,7 @@
     (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
+    <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
     <action>Tap the "Train" tab, which opens on "Strength", then the "Exercises" card</action>
     <action>Verify that a page titled "Exercises" shows "Search exercises", the chips "Kettlebell", "Barbell", "Bodyweight", "Band" and "Mat", "102 exercises" and "Filters" with a chevron, a "New exercise" button in the title bar, and cards headed "Kettlebell · 27" and "Barbell · 20" (side by side on a tablet)</action>
     <action>Type "PUSHUP" into "Search exercises"</action>

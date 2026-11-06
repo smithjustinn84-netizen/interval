@@ -6,6 +6,7 @@
     until one is turned on. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
+    <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
     <action>Tap the "Train" tab, which opens on "Strength", then "Follow a program"</action>
     <action>Tap "Goblet squat and row", then "Follow this program"</action>
     <action>Tap "Start day 1"</action>

@@ -4,6 +4,7 @@
     open it, then clear History. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
+    <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
     <action>Tap the "History" tab</action>
     <action>Verify that the screen shows "Train to a plan"</action>
     <action>Tap "Plan your week"</action>

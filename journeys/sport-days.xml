@@ -6,6 +6,7 @@
     (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
+    <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
     <action>Verify that the app opens on the "Today" tab with "Nothing planned"</action>
     <action>Tap "Plan your week"</action>
     <action>Tap the "+" on today's weekday row in "Routine"</action>

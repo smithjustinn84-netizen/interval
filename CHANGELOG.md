@@ -66,6 +66,9 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   as your equipment; and the weekly goal is set to the total. Today's "Nothing planned" card leads with it, and
   Settings has it under Plan, where it opens on what stands and builds again: a program already followed is
   kept where it is, and workouts you planned yourself stay.
+- A new install opens on Set up, once, with "Skip for now" under it. Anyone who has the app already (a workout,
+  a plan, a program, a bell, a goal or a preset of their own) opens on Today as before, and so does a launch
+  from a shortcut or the widget.
 - The session's length from Set up is the length Today's "Or pick by time" opens on.
 - Exports are schema 7, with the session's length in the settings; a build from before it refuses the file with
   "update the app", and older files read as before.

@@ -851,11 +851,15 @@ private val HealthSegment.lengthSeconds: Int
 
 /**
  * An acceptance test: the whole app over fakes in [window], driven through [IntervalAcceptanceDriver]. Two
- * scenarios over one [storage] are the app before and after a restart.
+ * scenarios over one [storage] are the app before and after a restart. It opens on Today, as an app does that
+ * has been opened before; with [firstRun] it opens as a new install does, on Set up while there is nothing in it.
  */
 fun acceptanceScenario(
     window: Window = Window.Phone,
     storage: FakeStorage = FakeStorage(),
     lift: FakeLiftStorage = FakeLiftStorage(),
+    firstRun: Boolean = false,
     scenario: suspend IntervalAcceptanceDriver.() -> Unit,
-) = appTest(window, storage, lift, timeout = JOURNEY_TIMEOUT) { app -> IntervalAcceptanceDriver(this, app).scenario() }
+) = appTest(window, storage, lift, timeout = JOURNEY_TIMEOUT, firstRun = firstRun) { app ->
+    IntervalAcceptanceDriver(this, app).scenario()
+}

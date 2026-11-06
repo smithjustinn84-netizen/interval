@@ -4,6 +4,7 @@
     finish, then find today's plan done. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
+    <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
     <action>Tap the "History" tab</action>
     <action>Tap "Plan your week"</action>
     <action>Tap the "+" on today's weekday row in "Routine"</action>

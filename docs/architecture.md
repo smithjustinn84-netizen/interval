@@ -253,7 +253,7 @@ The application uses Jetpack Navigation 3 with a single, unified back stack host
 ### Key Elements:
 
 1. **Type-Safe Keys (`NavKey`)**:
-   - Every destination is a `@Serializable` class or object implementing `NavKey` (e.g. `TodayTab`, `Timer`, `Settings`, `Workout(id)`). `TodayTab` is the start destination and the root of the back stack: Back from any other tab returns to it. Train is one item of the bar over three tabs, its pillars: Lift's `LiftTab` (Strength), `ConditioningTab` (the presets) and `MobilityTab` (the flows), each under the title "Train" and the picker between them (`apps/app/src/ui/Train.kt`). The Timer is a page pushed over Conditioning (`showTimer`), no longer a tab.
+   - Every destination is a `@Serializable` class or object implementing `NavKey` (e.g. `TodayTab`, `Timer`, `Settings`, `Workout(id)`). `TodayTab` is the start destination and the root of the back stack: Back from any other tab returns to it. A new install's first plain open starts with `WeekSetup` (Set up) over it, once. Train is one item of the bar over three tabs, its pillars: Lift's `LiftTab` (Strength), `ConditioningTab` (the presets) and `MobilityTab` (the flows), each under the title "Train" and the picker between them (`apps/app/src/ui/Train.kt`). The Timer is a page pushed over Conditioning (`showTimer`), no longer a tab.
    - Lift keys live in `lift/lift-nav/src/nav/LiftRoutes.kt` (e.g. `LiftTab`, `Lifting`, `LiftDetail(uid)`).
    - Tabs implement the `Tab` interface (`core/core/src/nav/Tab.kt`), which provides the `push` helper.
 2. **Polymorphic Serialization**:

@@ -6,6 +6,7 @@
     (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
+    <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
     <action>Verify that the Today tab is shown and selected, with "This week" and "Nothing planned" over "Set up your week", "Plan your week" and "Follow a program"</action>
     <action>Tap "5 min" under "Or pick by time"</action>
     <action>Verify that "Tabata" is listed with its length and a "Start", and under the presets "Wrists and fingers" with "5 moves · 5:00"</action>

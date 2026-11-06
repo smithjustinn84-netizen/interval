@@ -1,16 +1,21 @@
 package dev.justinsmith.interval.acceptance
 
+import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.tabataPreset
 import dev.justinsmith.interval.model.asPlan
+import dev.justinsmith.interval.nav.Shortcut
+import dev.justinsmith.lift.data.FollowingEntity
 import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
  * `journeys/setup.xml`: Set up asks what else you train, on which days, which bells you own and how long a
  * session is, and builds the week from the answers: the sport on its days, a program that one bell and the time
- * are enough for on the days between, the bells and a goal. It is offered while Today has nothing planned, and is
- * always in Settings, where it shows what stands and builds again without starting the program over.
+ * are enough for on the days between, the bells and a goal. A new install opens on it, once; after that it is
+ * offered while Today has nothing planned, and is always in Settings, where it shows what stands and builds again
+ * without starting the program over.
  */
 class WeekSetupAcceptanceTest {
     // The app's clock starts on Thursday 1 January 1970.
@@ -35,7 +40,6 @@ class WeekSetupAcceptanceTest {
             bells = listOf(16.0),
             goal = 6,
         )
-        sessionLengthKept(15)
         // Thursday is one of the program's days: its first leads, and says about how long it takes.
         seeUpNext("Your first 100 swings")
         seeUpNextTakes("about 15 min")
@@ -116,4 +120,63 @@ class WeekSetupAcceptanceTest {
             assertEquals(started, app.lift.following.row.value?.startedAtEpochMillis)
             assertEquals(1, app.repository.plans.planned.value.count { it.workout == tabataPreset.asPlan() })
         }
+
+    @Test
+    fun `a new install opens on set up and skipping leaves today offering it`() {
+        val storage = FakeStorage()
+        acceptanceScenario(storage = storage, firstRun = true) {
+            seeSetUp()
+            setUpOffered(true)
+            tap("Skip for now")
+
+            seeTodayTab()
+            seeNothingPlanned()
+            openSetUpFromToday()
+            pressSystemBack()
+            seeTodayTab()
+        }
+        // Opened again with nothing in it still, it goes to Today: Set up has had its turn.
+        acceptanceScenario(storage = storage, firstRun = true) {
+            seeTodayTab()
+            seeNoSetUp()
+            seeNothingPlanned()
+        }
+    }
+
+    @Test
+    fun `a week built on the first open shows on today`() = acceptanceScenario(firstRun = true) {
+        seeSetUp()
+        answerSport("Climbing")
+        trainOn("Thursday")
+        ownBells(12)
+        sessionOf(20)
+        seeYourWeek("Kettlebell foundations", "Mon, Wed, Fri")
+        buildMyWeek()
+
+        weekHolds(1, programDays = 3, program = ProgramId.KettlebellFoundations, bells = listOf(12.0), goal = 4)
+        // Thursday is the wall's day: the wrists come first, with the day to log beside them.
+        seeFlowLeads("Before climbing", "Wrists and fingers")
+        seeAlsoToday("Climbing")
+    }
+
+    @Test
+    fun `someone following a program opens on today`() = acceptanceScenario(
+        lift = FakeLiftStorage().apply {
+            following.row.value = FollowingEntity(programId = ProgramId.ProgramMinimum.name, startedAtEpochMillis = 0)
+        },
+        firstRun = true,
+    ) {
+        seeTodayTab()
+        seeNoSetUp()
+        setUpOffered(true)
+    }
+
+    @Test
+    fun `a shortcut taken while set up shows goes where it asks`() = acceptanceScenario(firstRun = true) {
+        seeSetUp()
+        launchFrom(Shortcut.StartWorkout)
+        seePhase("Get ready")
+        // Set up has had its turn: it is on Today's card and in Settings from here on.
+        setUpOffered(true)
+    }
 }

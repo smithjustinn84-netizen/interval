@@ -7,6 +7,7 @@
     with the voice on and the sound up.
   </description>
   <actions>
+    <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
     <action>Tap the "Train" tab, then "Mobility" in the picker under the title</action>
     <action>Verify that "Before training" lists "Hips and shoulders" (6 moves · no bell, 8:00) and "Wrists and fingers" (5 moves · before the wall, 5:00), and "After, or on a day off" lists three more with their lengths</action>
     <action>Tap "Wrists and fingers"</action>

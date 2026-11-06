@@ -6,6 +6,7 @@
     (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
+    <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
     <action>Tap the "Train" tab, which opens on "Strength"</action>
     <action>Tap "Follow a program", scroll to "Simple &amp; Sinister" and tap it</action>
     <action>Verify that the sheet shows "Simple &amp; Sinister", its summary, and under it "Balance" with "Sets in a week"</action>

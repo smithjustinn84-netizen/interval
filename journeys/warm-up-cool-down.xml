@@ -4,6 +4,7 @@
     Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
+    <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
     <action>Tap the "Train" tab, tap "Conditioning", then tap "Timer" at the top of the presets, and verify that the Timer is shown with a "Start workout" button and a "Warm-up" and a "Cool-down" chip reading "Off"</action>
     <action>Tap the "Warm-up" chip</action>
     <action>Verify that a sheet titled "Warm-up" is shown with "Quick picks"</action>

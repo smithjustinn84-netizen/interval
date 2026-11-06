@@ -71,7 +71,8 @@ class AppFixture(
 /**
  * The whole app, `AppContent` with real ViewModels, repository and navigation, over fake platform services
  * and the given storage, in a [window]. The wall clock starts at [now]; a workout's time stands still until
- * the test advances it.
+ * the test advances it. With [firstRun] the app may open on Set up, as the real one does on a new install; without,
+ * it opens on Today whatever the storage holds, which is what nearly every test is about.
  */
 fun appTest(
     window: Window = Window.Phone,
@@ -79,6 +80,7 @@ fun appTest(
     lift: FakeLiftStorage = FakeLiftStorage(),
     now: Long = 0L,
     timeout: Duration = UI_TEST_TIMEOUT,
+    firstRun: Boolean = false,
     block: suspend DesktopComposeUiTest.(AppFixture) -> Unit,
 ) = runUiTest(window, timeout) {
     val clock = AtomicLong(now)
@@ -96,7 +98,12 @@ fun appTest(
                 LocalNavigationEventDispatcherOwner provides owner,
                 LocalFileOpener provides fixture.files,
             ) {
-                AppContent(koin, shortcut = fixture.shortcut.value, onShortcutOpen = { fixture.shortcut.value = null })
+                AppContent(
+                    koin,
+                    shortcut = fixture.shortcut.value,
+                    onShortcutOpen = { fixture.shortcut.value = null },
+                    offerSetup = firstRun,
+                )
             }
         }
         block(fixture)
