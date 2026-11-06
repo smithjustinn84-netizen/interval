@@ -2,9 +2,8 @@ package dev.justinsmith.lift.ui.demo
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import dev.justinsmith.lift.domain.BuiltInExercise
-import dev.justinsmith.lift.domain.Exercise
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -14,23 +13,81 @@ import kotlin.math.sin
  * from straight down. Positive is toward the way the figure faces, so a hinge is a negative [thigh] (the
  * hips back) under a positive [torso]. A straight arm has the same [upperArm] and [forearm]; a forearm
  * folded up past the horizontal is over 90.
+ *
+ * [bell] is where the bell sits from the hand, from straight down like an arm: along the forearm unless said
+ * otherwise, so a swung bell hangs past the grip. A bell in the rack or locked out rests on the back of the
+ * forearm, and a bottoms-up one stands over the fist (180). It turns as the joints do, so a clean rolls it
+ * around the wrist; and a bell that goes right round the hand in a rep, as a snatch's does, ends it a whole
+ * turn (360) on from where it started.
+ *
+ * The far side: [farShin] and [farThigh] are the far leg's, standing on [farFoot] (the foot's pitch, positive
+ * with the toes down, as on the back foot of a lunge); [farUpperArm], [farForearm] and [farBell] the far arm's
+ * and the bell in it, when it has one. Each is the near side's unless said otherwise.
  */
-data class Pose(val shin: Float, val thigh: Float, val torso: Float, val upperArm: Float, val forearm: Float) {
-    internal fun angles(): FloatArray = floatArrayOf(shin, thigh, torso, upperArm, forearm)
+data class Pose(
+    val shin: Float,
+    val thigh: Float,
+    val torso: Float,
+    val upperArm: Float,
+    val forearm: Float,
+    val bell: Float = forearm,
+    val farShin: Float = shin,
+    val farThigh: Float = thigh,
+    val farFoot: Float = 0f,
+    val farUpperArm: Float = upperArm,
+    val farForearm: Float = forearm,
+    val farBell: Float = bell,
+) {
+    internal fun angles(): FloatArray = floatArrayOf(
+        shin,
+        thigh,
+        torso,
+        upperArm,
+        forearm,
+        bell,
+        farShin,
+        farThigh,
+        farFoot,
+        farUpperArm,
+        farForearm,
+        farBell,
+    )
 
     internal companion object {
-        const val JOINTS = 5
+        const val JOINTS = 12
 
         /** The pose whose joints are [angles], in the order [Pose.angles] gives them. */
         fun of(angles: FloatArray): Pose {
             val joint = angles.iterator()
-            return Pose(joint.next(), joint.next(), joint.next(), joint.next(), joint.next())
+            return Pose(
+                shin = joint.next(),
+                thigh = joint.next(),
+                torso = joint.next(),
+                upperArm = joint.next(),
+                forearm = joint.next(),
+                bell = joint.next(),
+                farShin = joint.next(),
+                farThigh = joint.next(),
+                farFoot = joint.next(),
+                farUpperArm = joint.next(),
+                farForearm = joint.next(),
+                farBell = joint.next(),
+            )
         }
     }
 }
 
-/** How the bell is held: [Swung] on straight arms, hanging past the grip; [AtChest] by the horns, under the hands. */
-enum class BellHold { Swung, AtChest }
+/**
+ * Which hands hold a bell: [BothHands] one bell between them, the far arm hidden behind the near one; [NearHand]
+ * one bell in the near hand, the far arm free; [Pair] a bell in each.
+ */
+enum class Bells { BothHands, NearHand, Pair }
+
+/**
+ * What stays put on the floor: [Ankle] the near ankle, for a lift done on the spot; [Hips] the hips, over
+ * whichever foot is lowest, for a walk.
+ */
+enum class Root { Ankle, Hips }
 
 /** What a stretch of the rep is, which the bell's colour says: setting up, driving the bell, or easing it back. */
 enum class DemoBeat { Set, Drive, Ease }
@@ -41,31 +98,38 @@ data class DemoPhase(val until: Float, val beat: DemoBeat, val cue: Int)
 /** The figure's [pose] [at] this share of the rep. */
 data class Keyframe(val at: Float, val pose: Pose)
 
+/** Something the figure leans on, drawn under it: a bench whose top is [height] off the floor from [from] to [to]. */
+data class Bench(val from: Float, val to: Float, val height: Float)
+
 /**
- * One exercise drawn as a figure doing it: [keyframes] from 0 to 1, the last the same as the first so the rep
- * loops; [phases] to 1, each naming one of the exercise's cues. A rep takes [secondsPerRep]; a still picture
- * of it (reduced motion, or a list) shows it at [still].
+ * One exercise drawn as a figure doing it: [keyframes] from 0 to 1, the last the same as the first (give or
+ * take whole turns) so the rep loops; [phases] to 1, each naming one of the exercise's cues. A rep takes
+ * [secondsPerRep]; a still picture of it (reduced motion, or a list) shows it at [still]. It is drawn in [view]
+ * (in [Rig] units), held as [bells] says and grounded as [root] says, with [bench] under it if it leans on one.
  *
  * Each joint follows a smooth curve through its keyframes (a monotone cubic, which the loop closes): it keeps
  * its speed through a pose it only passes, comes to rest where it turns round, stays put between two
  * keyframes that hold one pose, and never swings past the poses it moves between.
  *
- * A swung bell hangs from the hands rather than standing on them: it points where the arms did [bellLag] of
- * a rep ago, so it trails them up and floats on after them. It leaves a trail [trail] of a rep long (none
+ * A swung bell hangs from the hands rather than standing on them: it points where it would have [bellLag] of
+ * a rep ago, so it trails the arms up and floats on after them. It leaves a trail [trail] of a rep long (none
  * for 0), whose spacing shows its speed.
  */
 class ExerciseDemo(
     val keyframes: List<Keyframe>,
     val phases: List<DemoPhase>,
-    val hold: BellHold,
+    val bells: Bells,
     val secondsPerRep: Float,
     val still: Float,
     val bellLag: Float = 0f,
     val trail: Float = 0f,
+    val root: Root = Root.Ankle,
+    val view: Rect = Rig.view,
+    val bench: Bench? = null,
 ) {
     init {
         require(keyframes.first().at == 0f && keyframes.last().at == 1f) { "A rep runs from 0 to 1" }
-        require(keyframes.first().pose == keyframes.last().pose) { "A rep ends as it starts" }
+        require(sameStance(keyframes.first().pose, keyframes.last().pose)) { "A rep ends as it starts" }
         require(keyframes.zipWithNext().all { (a, b) -> a.at < b.at }) { "Keyframes out of order" }
         require(phases.last().until >= 1f) { "Phases stop short of the rep's end" }
     }
@@ -106,11 +170,11 @@ class ExerciseDemo(
     /** The phase [progress] (0 to 1) is in. */
     fun phaseAt(progress: Float): DemoPhase = phases.first { progress < it.until || it === phases.last() }
 
-    /** The figure at [progress], its bell hanging where the arms were a moment before. */
+    /** The figure at [progress], its bells hanging where they were a moment before. */
     fun figureAt(progress: Float): Figure {
         val pose = poseAt(progress)
-        val hangs = if (bellLag == 0f) pose.forearm else poseAt(looped(progress - bellLag)).forearm
-        return pose.figure(hold, hangs)
+        val before = if (bellLag == 0f) pose else poseAt(looped(progress - bellLag))
+        return pose.figure(root, hangs = before.bell, farHangs = before.farBell)
     }
 
     /** Where the bell was over the last [trail] of a rep before [progress], oldest first; empty with no trail. */
@@ -130,7 +194,7 @@ class ExerciseDemo(
     }
 }
 
-/** The figure's joints in [Rig] units, for drawing. */
+/** The figure's joints in [Rig] units, for drawing: the near side's, then the far side's. */
 data class Figure(
     val toe: Offset,
     val heel: Offset,
@@ -142,7 +206,41 @@ data class Figure(
     val elbow: Offset,
     val hand: Offset,
     val bell: Offset,
-)
+    val farToe: Offset,
+    val farHeel: Offset,
+    val farAnkle: Offset,
+    val farKnee: Offset,
+    val farElbow: Offset,
+    val farHand: Offset,
+    val farBell: Offset,
+) {
+    /** Every place drawn, to check a figure fits its view and stays off the floor. */
+    val joints: List<Offset>
+        get() = listOf(
+            toe, heel, ankle, knee, hip, shoulder, head, elbow, hand, bell,
+            farToe, farHeel, farAnkle, farKnee, farElbow, farHand, farBell,
+        )
+
+    internal fun moved(by: Offset) = Figure(
+        toe = toe + by,
+        heel = heel + by,
+        ankle = ankle + by,
+        knee = knee + by,
+        hip = hip + by,
+        shoulder = shoulder + by,
+        head = head + by,
+        elbow = elbow + by,
+        hand = hand + by,
+        bell = bell + by,
+        farToe = farToe + by,
+        farHeel = farHeel + by,
+        farAnkle = farAnkle + by,
+        farKnee = farKnee + by,
+        farElbow = farElbow + by,
+        farHand = farHand + by,
+        farBell = farBell + by,
+    )
+}
 
 /**
  * The figure's proportions, in the units of a [view] it is drawn in: the ankle on the floor at [ANKLE_X],
@@ -164,14 +262,12 @@ object Rig {
     /** From the hands on the bell's handle to the middle of its body. */
     const val BELL_REACH = 26f
 
-    /** A bell held at the chest hangs this far forward of straight down, clear of the ribs. */
-    const val CHEST_BELL_ANGLE = 12f
-
     const val ANKLE_X = 205f
     const val FLOOR = 360f
 
-    /** The far leg, a step behind the near one. */
+    /** The far leg, a step behind the near one, and the far arm, a little behind the near one. */
     const val FAR_LEG_OFFSET = 9f
+    const val FAR_ARM_OFFSET = 7f
 
     const val LEG = 14f
     const val FAR_LEG = 13f
@@ -201,26 +297,35 @@ object Rig {
     const val FLOOR_REACH = 121f
     const val FLOOR_REACH_FORWARD = 171f
 
-    /** The box every pose of every demo fits in, with room for the bell at the top of a swing. */
-    val view = Rect(left = 70f, top = 30f, right = 390f, bottom = 380f)
+    /** A bench's top and legs. */
+    const val BENCH_TOP = 8f
+    const val BENCH_LEG = 5f
+
+    /**
+     * The box every standing lift is drawn in, so they all share a scale: room for a bell held bottoms-up
+     * overhead, and for a lunge's back foot.
+     */
+    val view = Rect(left = 20f, top = -70f, right = 390f, bottom = 380f)
 }
 
 /**
- * Where this pose puts each joint, holding the bell as [hold] says. A swung bell hangs from the hands at
- * [hangs] from straight down, which is along the arms unless the demo says it lags them.
+ * Where this pose puts each joint, grounded as [root] says. The bells hang from the hands at [hangs] and
+ * [farHangs], which are the pose's own unless the demo says they lag it.
  */
-fun Pose.figure(hold: BellHold, hangs: Float = forearm): Figure {
+fun Pose.figure(root: Root = Root.Ankle, hangs: Float = bell, farHangs: Float = farBell): Figure {
     val ankle = Offset(Rig.ANKLE_X, Rig.FLOOR)
     val knee = ankle.up(Rig.SHIN, shin)
     val hip = knee.up(Rig.THIGH, thigh)
     val shoulder = hip.up(Rig.TORSO, torso)
     val elbow = shoulder.down(Rig.UPPER_ARM, upperArm)
     val hand = elbow.down(Rig.FOREARM, forearm)
-    val bell = when (hold) {
-        BellHold.Swung -> hand.down(Rig.BELL_REACH, hangs)
-        BellHold.AtChest -> hand.down(Rig.BELL_REACH, Rig.CHEST_BELL_ANGLE)
-    }
-    return Figure(
+    val farKnee = hip.down(Rig.THIGH, -farThigh)
+    val farAnkle = farKnee.down(Rig.SHIN, -farShin)
+    val farFoot = Offset(cos(farFoot.radians()), sin(farFoot.radians()))
+    val farShoulder = shoulder - Offset(Rig.FAR_ARM_OFFSET, 0f)
+    val farElbow = farShoulder.down(Rig.UPPER_ARM, farUpperArm)
+    val farHand = farElbow.down(Rig.FOREARM, farForearm)
+    val figure = Figure(
         toe = ankle + Offset(Rig.FOOT, 0f),
         heel = ankle - Offset(Rig.HEEL, 0f),
         ankle = ankle,
@@ -230,17 +335,30 @@ fun Pose.figure(hold: BellHold, hangs: Float = forearm): Figure {
         head = shoulder.up(Rig.NECK, torso - Rig.HEAD_TILT),
         elbow = elbow,
         hand = hand,
-        bell = bell,
+        bell = hand.down(Rig.BELL_REACH, hangs),
+        farToe = farAnkle + farFoot * Rig.FOOT,
+        farHeel = farAnkle - farFoot * Rig.HEEL,
+        farAnkle = farAnkle,
+        farKnee = farKnee,
+        farElbow = farElbow,
+        farHand = farHand,
+        farBell = farHand.down(Rig.BELL_REACH, farHangs),
     )
+    return when (root) {
+        Root.Ankle -> figure
+
+        Root.Hips -> {
+            val lowest = maxOf(figure.toe.y, figure.heel.y, figure.farToe.y, figure.farHeel.y)
+            figure.moved(Offset(Rig.ANKLE_X - hip.x, Rig.FLOOR - lowest))
+        }
+    }
 }
 
-/** The demo drawn for this exercise, or null for one not drawn yet. */
-val Exercise.demo: ExerciseDemo?
-    get() = when (this) {
-        BuiltInExercise.TwoHandSwing -> TwoHandSwingDemo
-        BuiltInExercise.GobletSquat -> GobletSquatDemo
-        else -> null
-    }
+/** Whether two poses are one stance: each joint the same, give or take whole turns. */
+internal fun sameStance(a: Pose, b: Pose): Boolean = a.angles().zip(b.angles()).all { (x, y) ->
+    val off = abs(x - y) % FULL_TURN
+    off < SAME_ANGLE || FULL_TURN - off < SAME_ANGLE
+}
 
 private fun Offset.up(length: Float, degrees: Float): Offset {
     val angle = degrees.radians()
@@ -255,7 +373,7 @@ private fun Offset.down(length: Float, degrees: Float): Offset {
 private fun Float.radians(): Float = (this * PI / HALF_TURN).toFloat()
 
 /** [progress] brought into a rep, so a moment before its start is one near the end of the rep before. */
-private fun looped(progress: Float): Float = ((progress % 1f) + 1f) % 1f
+internal fun looped(progress: Float): Float = ((progress % 1f) + 1f) % 1f
 
 /**
  * A joint's speed at a keyframe it reaches at [slopeIn] over [spanIn] and leaves at [slopeOut] over [spanOut]:
@@ -280,4 +398,6 @@ private fun hermite(from: Float, leaving: Float, to: Float, arriving: Float, sha
 }
 
 private const val HALF_TURN = 180.0
+private const val FULL_TURN = 360f
+private const val SAME_ANGLE = 0.01f
 private const val THREE = 3f

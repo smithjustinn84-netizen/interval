@@ -23,7 +23,7 @@ val TwoHandSwingDemo: ExerciseDemo = run {
             DemoPhase(until = 0.66f, beat = DemoBeat.Ease, cue = 2),
             DemoPhase(until = 1f, beat = DemoBeat.Set, cue = 0),
         ),
-        hold = BellHold.Swung,
+        bells = Bells.BothHands,
         secondsPerRep = 1.8f,
         still = 0.46f,
         bellLag = 0.03f,
@@ -36,16 +36,22 @@ val TwoHandSwingDemo: ExerciseDemo = run {
  * moment, drive up. Its phases are its cues: Brace (0), Sit (1), Drive (2).
  */
 val GobletSquatDemo: ExerciseDemo = run {
-    val stand = Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 10f, forearm = 155f)
-    val bottom = Pose(shin = 32f, thigh = -100f, torso = 22f, upperArm = 15f, forearm = 150f)
+    val stand = gobletPose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 10f, forearm = 155f)
+    val bottom = gobletPose(shin = 32f, thigh = -100f, torso = 22f, upperArm = 15f, forearm = 150f)
     ExerciseDemo(
         keyframes = listOf(
             Keyframe(at = 0f, pose = stand),
             Keyframe(at = 0.08f, pose = stand),
-            Keyframe(at = 0.30f, pose = Pose(shin = 18f, thigh = -55f, torso = 25f, upperArm = 12f, forearm = 152f)),
+            Keyframe(
+                at = 0.30f,
+                pose = gobletPose(shin = 18f, thigh = -55f, torso = 25f, upperArm = 12f, forearm = 152f),
+            ),
             Keyframe(at = 0.52f, pose = bottom),
             Keyframe(at = 0.60f, pose = bottom),
-            Keyframe(at = 0.78f, pose = Pose(shin = 14f, thigh = -40f, torso = 20f, upperArm = 12f, forearm = 153f)),
+            Keyframe(
+                at = 0.78f,
+                pose = gobletPose(shin = 14f, thigh = -40f, torso = 20f, upperArm = 12f, forearm = 153f),
+            ),
             Keyframe(at = 0.92f, pose = stand),
             Keyframe(at = 1f, pose = stand),
         ),
@@ -55,7 +61,7 @@ val GobletSquatDemo: ExerciseDemo = run {
             DemoPhase(until = 0.92f, beat = DemoBeat.Drive, cue = 2),
             DemoPhase(until = 1f, beat = DemoBeat.Set, cue = 0),
         ),
-        hold = BellHold.AtChest,
+        bells = Bells.BothHands,
         secondsPerRep = 3f,
         still = 0.56f,
     )
@@ -64,3 +70,9 @@ val GobletSquatDemo: ExerciseDemo = run {
 /** A swing's pose: the arms straight, [arm] from hanging. */
 private fun swingPose(shin: Float, thigh: Float, torso: Float, arm: Float) =
     Pose(shin = shin, thigh = thigh, torso = torso, upperArm = arm, forearm = arm)
+
+/** A goblet squat's pose: the bell by the horns under the hands, hanging a little forward, clear of the ribs. */
+private fun gobletPose(shin: Float, thigh: Float, torso: Float, upperArm: Float, forearm: Float) =
+    Pose(shin = shin, thigh = thigh, torso = torso, upperArm = upperArm, forearm = forearm, bell = CHEST_BELL)
+
+private const val CHEST_BELL = 12f

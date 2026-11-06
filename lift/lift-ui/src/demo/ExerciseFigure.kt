@@ -92,7 +92,7 @@ fun ExerciseFigure(
     }
     Canvas(described) {
         val t = progress()
-        drawFigure(demo.figureAt(t), demo.trailAt(t), demo.hold, colors.of(demo.phaseAt(t).beat), colors)
+        drawFigure(demo, demo.figureAt(t), demo.trailAt(t), colors.of(demo.phaseAt(t).beat), colors)
     }
 }
 
@@ -120,17 +120,19 @@ private fun rememberRepClock(demo: ExerciseDemo, playing: Boolean): FloatState {
 }
 
 /**
- * Draws [figure] fitted and centred in the canvas, its bell in [bell] with [trail] behind it: back to front, so
- * a swung bell passes between the legs and a held one sits behind the arms.
+ * Draws [demo]'s [figure] fitted and centred in the canvas, its bell in [bell] with [trail] behind it. Back to
+ * front: the bench, the far limbs, the trunk, then the near arm and leg in whichever order keeps a bell low
+ * between the legs behind the near one and a bell held high in front of it. A bell circled behind the head
+ * goes behind the trunk.
  */
 private fun DrawScope.drawFigure(
+    demo: ExerciseDemo,
     figure: Figure,
     trail: List<Offset>,
-    hold: BellHold,
     bell: Color,
     colors: FigureColors,
 ) {
-    val view = Rig.view
+    val view = demo.view
     val scale = minOf(size.width / view.width, size.height / view.height)
     val left = (size.width - view.width * scale) / 2
     val top = (size.height - view.height * scale) / 2
@@ -140,21 +142,27 @@ private fun DrawScope.drawFigure(
         translate(-view.left, -view.top)
     }) {
         drawFloor(colors)
+        demo.bench?.let { drawBench(it, colors.farLeg) }
         drawTrail(trail, bell)
         val behind = Offset(-Rig.FAR_LEG_OFFSET, 0f)
-        val farLeg = listOf(figure.toe + behind, figure.ankle + behind, figure.knee + behind, figure.hip)
-        drawLimb(farLeg, colors.farLeg, Rig.FAR_LEG)
+        val farLeg = listOf(figure.farToe + behind, figure.farHeel + behind, figure.farAnkle + behind)
+        drawLimb(farLeg + listOf(figure.farKnee + behind, figure.hip), colors.farLeg, Rig.FAR_LEG)
+        if (demo.bells != Bells.BothHands) drawFarArm(figure, demo.bells == Bells.Pair, bell, colors.farLeg)
+        val behindHead = figure.bell.x < figure.shoulder.x && figure.bell.y < figure.shoulder.y
+        if (behindHead) drawArmAndBell(figure, demo.bells, bell, colors.body)
         drawLine(colors.body, figure.hip, figure.shoulder, Rig.TRUNK, StrokeCap.Round)
         drawCircle(colors.body, Rig.HEAD, figure.head)
-        when (hold) {
-            BellHold.Swung -> {
-                drawArmAndBell(figure, bell, colors.body)
+        when {
+            behindHead -> drawNearLeg(figure, colors.body)
+
+            figure.bell.y > figure.hip.y -> {
+                drawArmAndBell(figure, demo.bells, bell, colors.body)
                 drawNearLeg(figure, colors.body)
             }
 
-            BellHold.AtChest -> {
+            else -> {
                 drawNearLeg(figure, colors.body)
-                drawArmAndBell(figure, bell, colors.body)
+                drawArmAndBell(figure, demo.bells, bell, colors.body)
             }
         }
     }
@@ -184,23 +192,52 @@ private fun DrawScope.drawTrail(trail: List<Offset>, color: Color) {
 }
 
 /**
- * The bell hanging from the hands, then the arm, then the fist over the handle it grips: a kettlebell's body
- * under the handle's bar, which sits across the grip with a side running down to the body from each end.
+ * The near arm and its bell. A bell that hangs past the grip goes under the arm, the fist over its handle; one
+ * resting on the back of the forearm (the rack, a lockout) goes over it, on the side nearer the eye, unless
+ * both hands hold it by the horns.
  */
-private fun DrawScope.drawArmAndBell(figure: Figure, bell: Color, body: Color) {
-    val along = (figure.bell - figure.hand) / Rig.BELL_REACH
-    val across = Offset(-along.y, along.x) * Rig.HANDLE_HALF
-    val sides = along * Rig.HANDLE_SIDES
-    val handle = listOf(
-        figure.hand + across + sides,
-        figure.hand + across,
-        figure.hand - across,
-        figure.hand - across + sides,
-    )
-    drawLimb(handle, bell, Rig.HANDLE)
-    drawCircle(bell, Rig.BELL, figure.bell)
+private fun DrawScope.drawArmAndBell(figure: Figure, bells: Bells, bell: Color, body: Color) {
+    val resting = bells != Bells.BothHands && rests(figure.elbow, figure.hand, figure.bell)
+    if (!resting) drawBell(figure.hand, figure.bell, bell)
     drawLimb(listOf(figure.shoulder, figure.elbow, figure.hand), body, Rig.ARM)
     drawCircle(body, Rig.HAND, figure.hand)
+    if (resting) drawBell(figure.hand, figure.bell, bell)
+}
+
+/** The far arm, behind the trunk, with its own bell in a [pair]. */
+private fun DrawScope.drawFarArm(figure: Figure, pair: Boolean, bell: Color, far: Color) {
+    val behind = Offset(-Rig.FAR_ARM_OFFSET, 0f)
+    if (pair) drawBell(figure.farHand, figure.farBell, bell)
+    drawLimb(listOf(figure.shoulder + behind, figure.farElbow, figure.farHand), far, Rig.ARM)
+    drawCircle(far, Rig.HAND, figure.farHand)
+}
+
+/**
+ * A kettlebell held at [hand], its body at [body]: the body under the handle's bar, which sits across the grip
+ * with a side running down to the body from each end.
+ */
+private fun DrawScope.drawBell(hand: Offset, body: Offset, color: Color) {
+    val along = (body - hand) / Rig.BELL_REACH
+    val across = Offset(-along.y, along.x) * Rig.HANDLE_HALF
+    val sides = along * Rig.HANDLE_SIDES
+    drawLimb(listOf(hand + across + sides, hand + across, hand - across, hand - across + sides), color, Rig.HANDLE)
+    drawCircle(color, Rig.BELL, body)
+}
+
+/** A bench under the figure, its top and a leg at each end. */
+private fun DrawScope.drawBench(bench: Bench, color: Color) {
+    val top = Rig.FLOOR - bench.height
+    drawLine(color, Offset(bench.from, top), Offset(bench.to, top), Rig.BENCH_TOP, StrokeCap.Round)
+    listOf(bench.from, bench.to).forEach { x ->
+        drawLine(color, Offset(x, top), Offset(x, Rig.FLOOR), Rig.BENCH_LEG)
+    }
+}
+
+/** Whether a bell at [bell] lies back along the forearm from [elbow] to [hand], rather than past the grip. */
+private fun rests(elbow: Offset, hand: Offset, bell: Offset): Boolean {
+    val forearm = hand - elbow
+    val reach = bell - hand
+    return forearm.x * reach.x + forearm.y * reach.y < 0f
 }
 
 private fun DrawScope.drawNearLeg(figure: Figure, color: Color) =

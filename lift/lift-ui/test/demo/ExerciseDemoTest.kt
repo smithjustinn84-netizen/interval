@@ -9,7 +9,7 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class ExerciseDemoTest {
-    private val demos = listOf(TwoHandSwingDemo, GobletSquatDemo)
+    private val demos = BuiltInExercise.entries.mapNotNull { it.demo }
 
     @Test
     fun `the swing and the goblet squat are drawn and nothing else yet`() {
@@ -20,7 +20,11 @@ class ExerciseDemoTest {
 
     @Test
     fun `a rep ends where it starts so it loops without a jump`() {
-        demos.forEach { demo -> assertEquals(demo.poseAt(0f), demo.poseAt(1f)) }
+        demos.forEach { demo ->
+            demo.figureAt(0f).joints.zip(demo.figureAt(1f).joints).forEach { (start, end) ->
+                assertTrue((start - end).getDistance() < 0.01f, "The rep ends at $end, not $start")
+            }
+        }
     }
 
     @Test
@@ -74,14 +78,15 @@ class ExerciseDemoTest {
     }
 
     @Test
-    fun `every pose stays in the drawn box with its feet on the floor`() {
+    fun `every pose stays in its view with a foot on the floor and nothing through it`() {
         demos.forEach { demo ->
             (0..100).map { demo.figureAt(it / 100f) }.forEach { figure ->
-                listOf(figure.head, figure.hand, figure.bell, figure.hip).forEach { joint ->
-                    assertTrue(Rig.view.contains(joint), "$joint is outside the view")
-                }
-                assertTrue(figure.bell.y + Rig.BELL <= Rig.FLOOR, "The bell goes through the floor")
-                assertEquals(Rig.FLOOR, figure.ankle.y)
+                figure.joints.forEach { joint -> assertTrue(demo.view.contains(joint), "$joint is outside the view") }
+                assertTrue(figure.joints.all { it.y <= Rig.FLOOR + 0.5f }, "A joint goes through the floor")
+                assertTrue(figure.bell.y + Rig.BELL <= Rig.FLOOR + 0.5f, "The bell goes through the floor")
+                val feet = listOf(figure.toe, figure.heel, figure.farToe, figure.farHeel)
+                assertTrue(feet.any { abs(it.y - Rig.FLOOR) < 0.5f }, "No foot is on the floor")
+                if (demo.root == Root.Ankle) assertEquals(Rig.FLOOR, figure.ankle.y)
             }
         }
     }
@@ -98,12 +103,12 @@ class ExerciseDemoTest {
     @Test
     fun `a swung bell lags the hands and a held one does not`() {
         val rising = 0.2f
-        val rigid = TwoHandSwingDemo.poseAt(rising).figure(BellHold.Swung)
+        val rigid = TwoHandSwingDemo.poseAt(rising).figure()
         assertTrue(
             TwoHandSwingDemo.figureAt(rising).bell.y > rigid.bell.y,
             "The bell is level with the arms on the way up",
         )
-        val held = GobletSquatDemo.poseAt(rising).figure(BellHold.AtChest)
+        val held = GobletSquatDemo.poseAt(rising).figure()
         assertEquals(held.bell, GobletSquatDemo.figureAt(rising).bell)
     }
 
