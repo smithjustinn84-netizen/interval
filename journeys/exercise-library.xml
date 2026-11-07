@@ -51,9 +51,13 @@
     <action>Tap "Back" to close the sheet</action>
     <action>Clear the search and tap "Goblet squat"</action>
     <action>Verify that its page shows "Goblet squat" over "Kettlebell · Reps · Lower body", no "Edit" button, and "Not logged yet. Its sets will show here."</action>
-    <action>Verify that above "Cues" a figure holding a kettlebell at its chest squats down and stands up again and again, its bell changing colour as it goes, with "Pause" in the card's corner</action>
+    <action>Verify that a card shows a figure holding a kettlebell at its chest squatting down and standing up again and again, its bell changing colour as it goes, with "Pause" in the card's corner; under it a bar in the same colours with a marker moving along it in step; and under that the three cues, the one the figure is doing lit with a bar of the bell's colour and the others dim</action>
     <action>Tap "Pause"</action>
-    <action>Verify that the figure stops where it was and the button reads "Play"</action>
+    <action>Verify that the figure and the marker stop where they were and the button reads "Play"</action>
+    <action>Drag the marker along the bar from left to right</action>
+    <action>Verify that the figure squats down and stands up as the marker is dragged, and the lit cue changes with the bar's colour under the marker</action>
+    <action>Tap "Push the knees out and drive up through the whole foot"</action>
+    <action>Verify that the figure stops at the bottom of the squat about to drive up, the marker where the bar turns to the colour it drives up in, and that cue is lit</action>
     <action>Tap "Back" to close the sheet, then "Back" to return to Train's Strength pillar</action>
   </actions>
 </journey>

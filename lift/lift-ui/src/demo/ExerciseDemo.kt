@@ -218,6 +218,13 @@ class ExerciseDemo(
     /** The phase [progress] (0 to 1) is in. */
     fun phaseAt(progress: Float): DemoPhase = phases.first { progress < it.until || it === phases.last() }
 
+    /** Each phase with where in the rep it starts, in order: the stretches a timeline draws. */
+    val stretches: List<Pair<Float, DemoPhase>>
+        get() = phases.mapIndexed { i, phase -> (if (i == 0) 0f else phases[i - 1].until) to phase }
+
+    /** Where the first stretch that [cue] speaks to starts, or null if none does. */
+    fun startOf(cue: Int): Float? = stretches.firstOrNull { (_, phase) -> phase.cue == cue }?.first
+
     /** The figure at [progress], its bells hanging where they were a moment before, or a bar's sleeve in the hands. */
     fun figureAt(progress: Float): Figure {
         val pose = poseAt(progress)

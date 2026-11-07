@@ -28,6 +28,8 @@
     <string name="detail_demo">%1$s, shown by a figure</string>
     <string name="detail_demo_pause">Pause</string>
     <string name="detail_demo_play">Play</string>
+    <string name="detail_demo_timeline">Where in the rep</string>
+    <string name="detail_demo_cue_jump">Show this part</string>
     <string name="detail_also">Also %1$s</string>
     <string name="detail_history">Your history</string>
     <plurals name="detail_done">

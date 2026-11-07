@@ -159,6 +159,27 @@ class ExerciseDemoTest {
     }
 
     @Test
+    fun `a cue's stretch starts where the figure is doing what it says`() {
+        demos.forEach { demo ->
+            demo.phases.map { it.cue }.distinct().forEach { cue ->
+                val start = assertNotNull(demo.startOf(cue))
+                assertEquals(cue, demo.phaseAt(start).cue)
+            }
+            assertEquals(null, demo.startOf(CUES_NO_DEMO_NAMES))
+        }
+    }
+
+    @Test
+    fun `the stretches run end to end over the whole rep`() {
+        demos.forEach { demo ->
+            val stretches = demo.stretches
+            assertEquals(0f, stretches.first().first)
+            stretches.zipWithNext().forEach { (a, b) -> assertEquals(a.second.until, b.first) }
+            assertTrue(stretches.last().second.until >= 1f)
+        }
+    }
+
+    @Test
     fun `the phases cover the rep and name the cues in their order`() {
         assertEquals(listOf(1, 2, 0), listOf(0.1f, 0.5f, 0.9f).map { TwoHandSwingDemo.phaseAt(it).cue })
         assertEquals(listOf(0, 1, 2, 0), listOf(0.02f, 0.4f, 0.8f, 0.99f).map { GobletSquatDemo.phaseAt(it).cue })
@@ -167,3 +188,6 @@ class ExerciseDemoTest {
 }
 
 private const val FRAMES_PER_SECOND = 120
+
+/** No exercise has this many cues. */
+private const val CUES_NO_DEMO_NAMES = 99

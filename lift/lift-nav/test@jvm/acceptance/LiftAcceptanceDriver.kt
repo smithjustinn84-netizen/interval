@@ -11,6 +11,7 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.performScrollTo
@@ -291,6 +292,15 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
         tap("Pause")
         see("Play")
     }
+
+    /** Taps a cue under the figure, which stops it where the cue starts and lights that cue. */
+    fun showCuePart(cue: String) {
+        tap(cue)
+        see("Play")
+        seeCurrentCue(cue)
+    }
+
+    fun seeCurrentCue(cue: String) = see(hasText(cue) and isSelected())
 
     fun customExercises(vararg names: String) =
         assertEquals(names.toList(), app.storage.exercises.rows.value.map { it.name })

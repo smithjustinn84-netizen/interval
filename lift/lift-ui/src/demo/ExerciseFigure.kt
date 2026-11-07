@@ -1,12 +1,7 @@
 package dev.justinsmith.lift.ui.demo
 
-import androidx.compose.animation.core.withInfiniteAnimationFrameMillis
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.FloatState
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -19,7 +14,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import dev.justinsmith.interval.platform.prefersReducedMotion
 import dev.justinsmith.interval.ui.IntervalTheme
 
 /** The colours a figure is drawn in: the body, the far leg, the floor and its shadow, and each beat's bell. */
@@ -57,20 +51,18 @@ data class FigureColors(
 }
 
 /**
- * [demo] doing its exercise over and over, a rep each [ExerciseDemo.secondsPerRep], while [playing]. Paused, it
- * holds where it is; with reduced motion on it stands still at [ExerciseDemo.still]. [contentDescription] says
- * what it shows, for a screen reader.
+ * [demo] where [player] has it: running on a rep each [ExerciseDemo.secondsPerRep] while it plays, held where it
+ * is paused or dragged. [contentDescription] says what it shows, for a screen reader.
  */
 @Composable
 fun ExerciseFigure(
     demo: ExerciseDemo,
+    player: DemoPlayer,
     contentDescription: String?,
     modifier: Modifier = Modifier,
-    playing: Boolean = true,
     colors: FigureColors = FigureColors.theme(),
 ) {
-    val progress = rememberRepClock(demo, playing)
-    ExerciseFigure(demo, { progress.floatValue }, contentDescription, modifier, colors)
+    ExerciseFigure(demo, { player.progress }, contentDescription, modifier, colors)
 }
 
 /**
@@ -94,29 +86,6 @@ fun ExerciseFigure(
         val t = progress()
         drawFigure(demo, demo.figureAt(t), demo.trailAt(t), colors.of(demo.phaseAt(t).beat), colors)
     }
-}
-
-/**
- * How far through a rep [demo] is, advanced every frame while [playing]. The frames come from an infinite
- * animation, so UI tests (which cancel those) never wait on it. Held while paused and run on from there;
- * at [ExerciseDemo.still] with reduced motion on.
- */
-@Composable
-private fun rememberRepClock(demo: ExerciseDemo, playing: Boolean): FloatState {
-    val progress = remember(demo) { mutableFloatStateOf(demo.still) }
-    val still = prefersReducedMotion()
-    LaunchedEffect(demo, still, playing) {
-        if (still) progress.floatValue = demo.still
-        if (still || !playing) return@LaunchedEffect
-        val repMillis = demo.secondsPerRep * MILLIS_PER_SECOND
-        val from = progress.floatValue
-        val start = withInfiniteAnimationFrameMillis { it }
-        while (true) {
-            val elapsed = withInfiniteAnimationFrameMillis { it } - start
-            progress.floatValue = (from + elapsed / repMillis) % 1f
-        }
-    }
-    return progress
 }
 
 /**
@@ -282,8 +251,6 @@ private fun DrawScope.drawLimb(joints: List<Offset>, color: Color, width: Float)
     }
     drawPath(path, color, style = Stroke(width, cap = StrokeCap.Round, join = StrokeJoin.Round))
 }
-
-private const val MILLIS_PER_SECOND = 1000f
 
 /** A trail's newest dot is this strong; the older ones fade from it. */
 private const val TRAIL_ALPHA = 0.6f

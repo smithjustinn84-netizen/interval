@@ -86,5 +86,7 @@ class ExerciseLibraryAcceptanceTest {
         seeNo("Edit")
         seeDemonstration("Goblet squat")
         pauseDemonstration()
+        showCuePart("Push the knees out and drive up through the whole foot")
+        showCuePart("Sit between your heels with the chest up")
     }
 }

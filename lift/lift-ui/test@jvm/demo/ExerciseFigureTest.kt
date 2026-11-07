@@ -19,7 +19,12 @@ class ExerciseFigureTest {
     @Test
     fun `a moving figure is described for a screen reader`() = runUiTest {
         setThemedContent {
-            ExerciseFigure(TwoHandSwingDemo, contentDescription = "Two-hand swing", modifier = Modifier.size(200.dp))
+            ExerciseFigure(
+                TwoHandSwingDemo,
+                rememberDemoPlayer(TwoHandSwingDemo),
+                contentDescription = "Two-hand swing",
+                modifier = Modifier.size(200.dp),
+            )
         }
         onNodeWithContentDescription("Two-hand swing").assertIsDisplayed()
     }
