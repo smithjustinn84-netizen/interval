@@ -6,6 +6,7 @@ import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.RecordingHealthStore
 import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.HeartRate
+import dev.justinsmith.lift.data.SportDay
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.fakes.FakeIntervalActivity
@@ -66,12 +67,26 @@ class FinishSessionTest {
     fun `a sport day logged this week counts in the week the summary shows`() = runTest {
         logged()
         // The clock stands on day 0: the class today counts, last week's does not.
-        intervals.sportDays.value = listOf(0L, -7L)
+        intervals.sportDays.value = listOf(SportDay(0L, grappling = true), SportDay(-7L, grappling = false))
         val finishing = finishing(backgroundScope)
 
         assertTrue(finishing.finish("Squats"))
 
         assertEquals(2, finishing.finished.value?.week?.count)
+    }
+
+    @Test
+    fun `a hundred snatches says to look after the hands and a first session is no heavy grip day`() = runTest {
+        repository.sessions.startSession(null)
+        repeat(5) { repository.sets.logSet(BuiltInExercise.Snatch, 16.0, 20, null) }
+        val finishing = finishing(backgroundScope)
+
+        assertTrue(finishing.finish("Snatches"))
+
+        val finished = assertNotNull(finishing.finished.value)
+        assertTrue(finished.handCare)
+        // No usual day to weigh it against yet.
+        assertFalse(finished.heavyGrip)
     }
 
     @Test

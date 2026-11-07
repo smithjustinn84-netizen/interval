@@ -47,6 +47,10 @@ data class Finished(
     val toppedOut: List<Block> = emptyList(),
     /** The summary's note as typed; [session] holds it as kept, trimmed. */
     val note: String = "",
+    /** Whether it was a heavy day on the grip: half again a usual day's of the last four weeks. */
+    val heavyGrip: Boolean = false,
+    /** Whether it had enough snatches or one-hand swings to say how to look after the hands. */
+    val handCare: Boolean = false,
 )
 
 /**

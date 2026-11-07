@@ -49,6 +49,8 @@
     <string name="log_more_reps">More reps</string>
     <string name="summary_done">Done</string>
     <string name="summary_how_was_it">How was it?</string>
+    <string name="summary_heavy_grip">A heavy day on the grip: half again your usual. Go lighter on swings and snatches next time</string>
+    <string name="summary_hand_care">Look after your hands: file the calluses down, and loosen your grip as the bell floats</string>
     <string name="summary_note_placeholder">A note on it</string>
     <string name="detail_how_it_went">How it went</string>
     <string name="effort_easy">Easy</string>

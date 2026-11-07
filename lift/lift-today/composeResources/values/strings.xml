@@ -53,6 +53,9 @@
     <string name="session_leave_title">Leave the session?</string>
     <string name="today_balance_span">Sets, last 4 weeks</string>
     <string name="today_balance_untrained">Not trained in four weeks: %1$s</string>
+    <string name="today_grip_week">Grip this week: %1$d</string>
+    <string name="today_grip_thrown">%1$d%% of it swings, cleans and snatches</string>
+    <string name="today_grip_overreached">More than the weeks before carried: spare your grip, go for goblet squats, get-ups and carries done short</string>
     <string name="today_group_following">Following</string>
     <string name="today_group_beside">Beside the mat and the wall</string>
     <string name="today_group_own">On your own</string>

@@ -13,12 +13,14 @@ import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.SaveScope
+import dev.justinsmith.lift.domain.gripLoad
 import dev.justinsmith.lift.domain.newRecords
 import dev.justinsmith.lift.domain.offeredBands
 import dev.justinsmith.lift.domain.planChanges
 import dev.justinsmith.lift.domain.progressions
 import dev.justinsmith.lift.domain.standardBells
 import dev.justinsmith.lift.domain.toppedOut
+import dev.justinsmith.lift.domain.wantsHandCare
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -67,6 +69,13 @@ class FinishSession(
         val pairs = gearStore.pairs.value
         val day = programDay(programStore.programDay.value, session)
         val changes = day?.let { planChanges(it, progressions(it, session.sets, bells, bands, pairs)) }
+        // The weeks before this one: the session is not yet among the finished.
+        val grip = gripLoad(
+            sessionStore.sessions.value.flatMap { it.sets },
+            intervals.sportDays.value.filter { it.grappling }.map { it.epochDay },
+            timestamps.dayNumber(done.finishedAtEpochMillis ?: clock.nowMillis()),
+            timestamps::dayNumber,
+        )
         current.value = Finished(
             done,
             newRecords(sessionStore.sessions.value.flatMap { it.sets }, done),
@@ -76,6 +85,8 @@ class FinishSession(
             bands = gearStore.bands.value,
             lastDayOf = day?.program?.takeIf { day.number >= it.totalDays },
             toppedOut = day?.let { toppedOut(it, session.sets, bells, bands, pairs) }.orEmpty(),
+            heavyGrip = grip.heavyDay(done.gripLoad),
+            handCare = done.wantsHandCare,
         )
         sessionStore.finishSession(title)
         val now = done.finishedAtEpochMillis ?: clock.nowMillis()
@@ -138,7 +149,7 @@ class FinishSession(
         val today = timestamps.dayNumber(clock.nowMillis())
         val days = sessionStore.sessions.value.mapNotNull { it.finishedAtEpochMillis }.map(timestamps::dayNumber) +
             intervals.workouts.value.map { timestamps.dayNumber(it.finishedAtEpochMillis) } +
-            intervals.sportDays.value +
+            intervals.sportDays.value.map { it.epochDay } +
             today
         return weekStanding(days, today, intervals.weeklyGoal.value)
     }

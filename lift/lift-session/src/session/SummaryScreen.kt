@@ -49,6 +49,8 @@ import dev.justinsmith.lift.domain.SaveScope
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_joined
 import dev.justinsmith.lift.session.resources.summary_done
+import dev.justinsmith.lift.session.resources.summary_hand_care
+import dev.justinsmith.lift.session.resources.summary_heavy_grip
 import dev.justinsmith.lift.session.resources.summary_how_was_it
 import dev.justinsmith.lift.session.resources.summary_note_placeholder
 import dev.justinsmith.lift.session.resources.summary_program_finished
@@ -125,7 +127,7 @@ fun SummaryScreen(
                     verticalArrangement = Arrangement.spacedBy(Spacing.space8),
                 ) {
                     Arrival(entrance, STATS_STEP) { SessionStats(session, finished.records, highlight = true) }
-                    Arrival(entrance, CHANGES_STEP) { Column { NextTimeCards(finished, choices, onKeep) } }
+                    Arrival(entrance, CHANGES_STEP) { AfterStats(finished, choices, onKeep) }
                     Arrival(entrance, HOW_STEP) { SummaryHowWasIt(finished, reflection) }
                 }
             }
@@ -147,7 +149,7 @@ fun SummaryScreen(
                         SummaryHeading(session.title, Modifier.padding(top = Spacing.space24, bottom = Spacing.space16))
                     }
                     Arrival(entrance, STATS_STEP) { SessionStats(session, finished.records, highlight = true) }
-                    Arrival(entrance, CHANGES_STEP) { Column { NextTimeCards(finished, choices, onKeep) } }
+                    Arrival(entrance, CHANGES_STEP) { AfterStats(finished, choices, onKeep) }
                     Arrival(entrance, HOW_STEP) { SummaryHowWasIt(finished, reflection) }
                 }
                 Arrival(entrance, FOOTER_STEP) { SummaryFooter(finished, leave, onShare = { onShare(shareText) }) }
@@ -164,6 +166,15 @@ private fun FinishHaptic(finished: Finished) {
         haptics.performHapticFeedback(
             if (finished.records.isEmpty()) HapticFeedbackType.Confirm else HapticFeedbackType.LongPress,
         )
+    }
+}
+
+/** What follows the numbers: the grip's notes, then what to keep for next time. */
+@Composable
+private fun AfterStats(finished: Finished, choices: ChangesChoices, onKeep: (SaveScope, String, Set<Int>) -> Unit) {
+    Column {
+        GripNotes(finished)
+        NextTimeCards(finished, choices, onKeep)
     }
 }
 
@@ -217,6 +228,23 @@ private fun SummaryHowWasIt(finished: Finished, reflection: SummaryReflection) {
         noteMaxLength = PerceivedEffort.NOTE_MAX_LENGTH,
         modifier = Modifier.padding(top = Spacing.space16),
     )
+}
+
+/** A heavy day on the grip, and how to look after the hands after many snatches or one-hand swings. */
+@Composable
+private fun GripNotes(finished: Finished) {
+    val lines = listOfNotNull(
+        Res.string.summary_heavy_grip.takeIf { finished.heavyGrip },
+        Res.string.summary_hand_care.takeIf { finished.handCare },
+    )
+    lines.forEach { line ->
+        Text(
+            stringResource(line),
+            style = IntervalTheme.type.meta,
+            color = IntervalTheme.palette.textDim,
+            modifier = Modifier.padding(vertical = Spacing.space4),
+        )
+    }
 }
 
 /** The effort and the note as one line, "Hard · Felt strong", either alone, or null with neither. */

@@ -9,12 +9,16 @@ import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.lift.data.LiftRepository
 import dev.justinsmith.lift.data.SessionEntity
 import dev.justinsmith.lift.data.SetEntity
+import dev.justinsmith.lift.data.SportDay
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.DEFAULT_BAR_KG
+import dev.justinsmith.lift.domain.GRAPPLING_GRIP_LOAD
 import dev.justinsmith.lift.domain.MuscleGroup
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.Readiness
 import dev.justinsmith.lift.domain.barbellLifts
+import dev.justinsmith.lift.fakes.FakeIntervalActivity
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import dev.justinsmith.lift.fakes.logSet
 import kotlinx.coroutines.CoroutineDispatcher
@@ -36,6 +40,7 @@ import kotlin.test.assertNull
 
 class TodayViewModelTest {
     private val storage = FakeLiftStorage()
+    private val intervals = FakeIntervalActivity()
     private val repository = with(storage) {
         LiftRepository(
             sessions,
@@ -60,6 +65,7 @@ class TodayViewModelTest {
         repository.programs,
         repository.gear,
         repository.sets,
+        intervals,
         FixedTimestampFormatter,
         clock,
         computation = computation,
@@ -96,6 +102,16 @@ class TodayViewModelTest {
 
         assertEquals("day 3", today.state.value.lastWhen)
         today.viewModelScope.cancel()
+    }
+
+    @Test
+    fun `a BJJ day logged counts on the grip and a run does not`() {
+        val today = today(clock = { 1_000L }, main)
+        assertNull(today.state.value.grip)
+
+        intervals.sportDays.value = listOf(SportDay(0, grappling = true), SportDay(-1, grappling = false))
+        assertEquals(GRAPPLING_GRIP_LOAD, today.state.value.grip?.acute)
+        assertEquals(Readiness.Normal, today.state.value.readiness.readiness)
     }
 
     @Test

@@ -5,6 +5,7 @@ import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.lift.data.IntervalWorkout
+import dev.justinsmith.lift.data.SportDay
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlin.test.Test
@@ -32,11 +33,11 @@ class RepositoryIntervalActivityTest {
         val repository = storage.repository()
         repository.history.logSport(Sport.Bjj, epochDay = 20_744)
         val activity = RepositoryIntervalActivity(repository.history, repository.settings, scope)
-        assertEquals(listOf(20_744L), activity.sportDays.value)
+        assertEquals(listOf(SportDay(20_744L, grappling = true)), activity.sportDays.value)
 
         repository.history.logSport(Sport.Climbing, epochDay = 20_746)
         repository.history.unlogSport(Sport.Bjj, epochDay = 20_744)
-        assertEquals(listOf(20_746L), activity.sportDays.value)
+        assertEquals(listOf(SportDay(20_746L, grappling = false)), activity.sportDays.value)
     }
 
     @Test

@@ -25,6 +25,7 @@ import dev.justinsmith.lift.data.RestEntity
 import dev.justinsmith.lift.data.SessionDao
 import dev.justinsmith.lift.data.SessionEntity
 import dev.justinsmith.lift.data.SetEntity
+import dev.justinsmith.lift.data.SportDay
 import dev.justinsmith.lift.di.LiftStorageScope
 import dev.justinsmith.lift.di.liftModules
 import dev.justinsmith.lift.domain.EmomCue
@@ -249,8 +250,9 @@ class FakeBandDao(private val sessions: FakeSessionDao) : BandDao {
 /** The rest of the app as Lift sees it: interval workouts and a weekly goal a test sets. */
 class FakeIntervalActivity : IntervalActivity {
     override val workouts = MutableStateFlow(emptyList<IntervalWorkout>())
-    override val sportDays = MutableStateFlow(emptyList<Long>())
+    override val sportDays = MutableStateFlow(emptyList<SportDay>())
     override val weeklyGoal = MutableStateFlow<Int?>(null)
+    override val bodyWeightKg = MutableStateFlow<Double?>(null)
 
     /** The estimate the app would make, or null as with no body weight set; a test sets it. */
     var caloriesPerSecond: Double? = null

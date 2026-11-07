@@ -7,25 +7,32 @@ import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.days
 import dev.justinsmith.lift.data.GearStore
+import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.data.SetStore
+import dev.justinsmith.lift.data.SportDay
 import dev.justinsmith.lift.domain.BALANCE_DAYS
 import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.DEFAULT_BELL_KG
 import dev.justinsmith.lift.domain.Exercise
+import dev.justinsmith.lift.domain.GripLoad
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.MuscleBalance
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.ProgramFamily
 import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.Readiness
+import dev.justinsmith.lift.domain.ReadinessCheck
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.barbellLifts
 import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.estimatedMinutes
 import dev.justinsmith.lift.domain.family
+import dev.justinsmith.lift.domain.gripLoad
 import dev.justinsmith.lift.domain.kettlebellLifts
+import dev.justinsmith.lift.domain.readiness
 import dev.justinsmith.lift.domain.setsOldestFirst
 import dev.justinsmith.lift.domain.startingLoadKg
 import dev.justinsmith.lift.domain.suggestedBar
@@ -61,6 +68,10 @@ data class TodayUiState(
     val suggested: List<Program> = suggestedPrograms(null),
     /** The bells owned, in kg, lightest first. */
     val ownedBells: List<Double> = emptyList(),
+    /** The grip's load lately, BJJ's logged days in it; null with nothing in the last four weeks. */
+    val grip: GripLoad? = null,
+    /** How ready for today's training, from the last session, the mat and the grip. */
+    val readiness: ReadinessCheck = ReadinessCheck(Readiness.Normal),
 ) {
     /** How far through the program followed: the days done of all of them, 1 once it is over. */
     val progress: Float
@@ -88,6 +99,7 @@ class TodayViewModel(
     private val programStore: ProgramStore,
     private val gearStore: GearStore,
     setStore: SetStore,
+    intervals: IntervalActivity,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
     dayCheckMillis: Long = DAY_CHECK_MILLIS,
@@ -99,8 +111,9 @@ class TodayViewModel(
             sessionStore.sessions,
             sessionStore.active,
             gearStore.bar,
+            intervals.sportDays,
             clock.days(timestamps, dayCheckMillis),
-        ) { sessions, active, bar, _ -> build(sessions, active, bar) }
+        ) { sessions, active, bar, sportDays, _ -> build(sessions, active, bar, sportDays) }
             .combine(
                 combine(
                     programStore.following,
@@ -115,7 +128,12 @@ class TodayViewModel(
             .stateIn(
                 viewModelScope,
                 SharingStarted.Eagerly,
-                build(sessionStore.sessions.value, sessionStore.active.value, gearStore.bar.value).withProgram(
+                build(
+                    sessionStore.sessions.value,
+                    sessionStore.active.value,
+                    gearStore.bar.value,
+                    intervals.sportDays.value,
+                ).withProgram(
                     programStore.following.value,
                     programStore.programDay.value,
                     setStore.restSeconds.value,
@@ -134,11 +152,21 @@ class TodayViewModel(
         sessionStore.startSession(program)
     }
 
-    private fun build(sessions: List<LiftSession>, active: LiftSession?, bar: Double?): TodayUiState {
-        val today = timestamps.dayNumber(clock.nowMillis())
+    private fun build(
+        sessions: List<LiftSession>,
+        active: LiftSession?,
+        bar: Double?,
+        sportDays: List<SportDay>,
+    ): TodayUiState {
+        val now = clock.nowMillis()
+        val today = timestamps.dayNumber(now)
         val balanceFrom = today - BALANCE_DAYS + 1
         val last = sessions.firstOrNull()
+        val grappling = sportDays.filter { it.grappling }.map { it.epochDay }
+        val grip = gripLoad(sessions.flatMap { it.sets }, grappling, today, timestamps::dayNumber)
         return TodayUiState(
+            grip = grip.takeIf { it.chronic > 0 },
+            readiness = readiness(sessions, grappling, grip, now, timestamps::dayNumber),
             last = last,
             lastWhen = last?.finishedAtEpochMillis?.let { at ->
                 if (timestamps.dayNumber(at) == today) timestamps.time(at) else timestamps.date(at)

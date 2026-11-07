@@ -194,6 +194,7 @@ fun TodayScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
                     LastCard(state, onOpenSession)
                     state.balance?.let { BalanceCard(it) }
+                    state.grip?.let { GripCard(it) }
                 }
             }
         }
