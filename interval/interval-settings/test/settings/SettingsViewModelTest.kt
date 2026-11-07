@@ -34,7 +34,9 @@ class SettingsViewModelTest : MainDispatcherTest() {
     private val health = RecordingHealthStore()
     private val importer = FakeImporter()
     private val viewModel by lazy {
-        SettingsViewModel(repository.settings, player, { export }, sharer, health, importer, FixedTimestampFormatter)
+        SettingsViewModel(repository.settings, repository.history, player, {
+            export
+        }, sharer, health, importer, FixedTimestampFormatter)
     }
 
     @Test
@@ -55,7 +57,16 @@ class SettingsViewModelTest : MainDispatcherTest() {
         var failing = true
         val exporter = DataExporter { if (failing) error("disk full") else export }
         val viewModel =
-            SettingsViewModel(repository.settings, player, exporter, sharer, health, importer, FixedTimestampFormatter)
+            SettingsViewModel(
+                repository.settings,
+                repository.history,
+                player,
+                exporter,
+                sharer,
+                health,
+                importer,
+                FixedTimestampFormatter,
+            )
         viewModel.export()
         assertTrue(sharer.files.isEmpty())
         failing = false
@@ -67,7 +78,7 @@ class SettingsViewModelTest : MainDispatcherTest() {
     fun `a second tap while an export is under way exports nothing more`() {
         val built = CompletableDeferred<ShareableFile>()
         val viewModel =
-            SettingsViewModel(repository.settings, player, {
+            SettingsViewModel(repository.settings, repository.history, player, {
                 built.await()
             }, sharer, health, importer, FixedTimestampFormatter)
         viewModel.export()

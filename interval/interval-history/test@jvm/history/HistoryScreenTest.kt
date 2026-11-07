@@ -7,7 +7,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
@@ -78,7 +77,6 @@ class HistoryScreenTest {
     private val events = mutableListOf<String>()
 
     private val actions = HistoryActions(
-        onClear = { events += "clear" },
         onRange = { events += "range $it" },
         onOpenDay = { events += "day $it" },
         onStart = { name, _ -> events += "start $name" },
@@ -377,10 +375,9 @@ class HistoryScreenTest {
     }
 
     @Test
-    fun `the first run offers a plan or a workout and has nothing to clear`() = runUiTest {
+    fun `the first run offers a plan or a workout`() = runUiTest {
         setThemedContent { HistoryScreen(empty, actions) }
         onNodeWithText("Train to a plan").assertExists()
-        onNodeWithContentDescription("More options").assertIsNotEnabled()
         onNodeWithText("Plan your week").performClick()
         onNodeWithText("Start a workout").performClick()
         assertEquals(listOf("plan", "timer"), events)
@@ -392,24 +389,6 @@ class HistoryScreenTest {
         onNodeWithText("Log").assertExists()
         onNodeWithText("Train to a plan").assertDoesNotExist()
         onNodeWithText("Month").assertDoesNotExist()
-    }
-
-    @Test
-    fun `clearing asks first`() = runUiTest {
-        setThemedContent { HistoryScreen(oneWorkout, actions) }
-        onNodeWithContentDescription("More options").performClick()
-        onNodeWithText("Clear the log").performClick()
-        onNodeWithText("Clear the log?").assertExists()
-        onNodeWithText("Every finished workout is removed. This can't be undone.").assertExists()
-        onNodeWithText("Cancel").performClick()
-        assertEquals(emptyList(), events)
-
-        onNodeWithContentDescription("More options").performClick()
-        onNodeWithText("Clear the log").performClick()
-        onNodeWithText("Clear").performClick()
-        waitForIdle()
-        assertEquals(listOf("clear"), events)
-        onNodeWithText("Clear the log?").assertDoesNotExist()
     }
 
     @Test

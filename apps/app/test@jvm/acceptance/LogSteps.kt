@@ -1,8 +1,10 @@
 package dev.justinsmith.interval.acceptance
 
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDialog
 import dev.justinsmith.interval.model.PlanWorkout
 
 // Log's week and the look before Start, beside the driver, which is at its size limit.
@@ -19,6 +21,24 @@ fun IntervalAcceptanceDriver.seeComingUp(name: String) {
 
 /** A row of Coming up, by the day in its column ("Today", "Sat") and its name. */
 fun IntervalAcceptanceDriver.seeComingUpOn(day: String, name: String) = see(hasText(day) and hasText(name))
+
+/** Log's "Edit plan", beside Coming up while anything is planned. */
+fun IntervalAcceptanceDriver.openPlanFromLog() {
+    tap("Edit plan")
+    see("Weekly goal")
+}
+
+/** Clearing the log is Settings' (Your data), opened from Log's gear and left again once it is done. */
+fun IntervalAcceptanceDriver.clearHistory() {
+    openSettings()
+    scrollTo("Clear the log")
+    tap("Clear the log")
+    see("Clear the log?")
+    tap(hasText("Clear") and hasAnyAncestor(isDialog()))
+    // Back is in the title bar, scrolled away with the page's top.
+    scrollTo("Cues")
+    goBack()
+}
 
 /** A pick by time's row, which opens a look at it before Start. */
 fun IntervalAcceptanceDriver.lookAtPick(name: String) {

@@ -30,10 +30,9 @@
     <action>Tap "Back"</action>
     <action>Tap "Month"</action>
     <action>Verify that a calendar of this month shows today marked done</action>
-    <action>Tap "More options"</action>
-    <action>Tap "Clear the log"</action>
+    <action>Tap the "Settings" button in Log's title bar, scroll to "Your data" and tap "Clear the log"</action>
     <action>Verify that a dialog titled "Clear the log?" is shown</action>
-    <action>Tap "Clear"</action>
-    <action>Verify that the screen is back to "Train to a plan": with no workouts and nothing planned, Log starts over</action>
+    <action>Tap "Clear", then "Back"</action>
+    <action>Verify that Log is back to "Train to a plan": with no workouts and nothing planned, it starts over</action>
   </actions>
 </journey>

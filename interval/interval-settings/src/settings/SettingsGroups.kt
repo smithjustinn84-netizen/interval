@@ -23,6 +23,8 @@ import dev.justinsmith.interval.settings.resources.settings_about_app
 import dev.justinsmith.interval.settings.resources.settings_about_app_hint
 import dev.justinsmith.interval.settings.resources.settings_appearance
 import dev.justinsmith.interval.settings.resources.settings_calories
+import dev.justinsmith.interval.settings.resources.settings_clear_log
+import dev.justinsmith.interval.settings.resources.settings_clear_log_hint
 import dev.justinsmith.interval.settings.resources.settings_cues
 import dev.justinsmith.interval.settings.resources.settings_cues_all_off
 import dev.justinsmith.interval.settings.resources.settings_data
@@ -108,6 +110,7 @@ internal fun settingsGroups(
     onSetTheme: (ThemeMode) -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
+    onClearLog: () -> Unit,
     health: HealthActions,
     onShowPlan: () -> Unit,
     onShowSetup: () -> Unit,
@@ -171,6 +174,13 @@ internal fun settingsGroups(
                 stringResource(Res.string.settings_import_hint),
                 onClick = onImport,
                 onClickLabel = stringResource(Res.string.settings_import_action),
+            )
+            RowDivider()
+            // Beside export, the one way back: the screen asks before it clears.
+            LinkRow(
+                stringResource(Res.string.settings_clear_log),
+                stringResource(Res.string.settings_clear_log_hint),
+                onClick = onClearLog,
             )
         }
     },

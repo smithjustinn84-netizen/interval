@@ -23,12 +23,17 @@ import dev.justinsmith.interval.platform.rememberFileOpener
 import dev.justinsmith.interval.platform.rememberHealthConnector
 import dev.justinsmith.interval.settings.resources.Res
 import dev.justinsmith.interval.settings.resources.import_failed
+import dev.justinsmith.interval.settings.resources.settings_cancel
+import dev.justinsmith.interval.settings.resources.settings_clear_log_confirm
+import dev.justinsmith.interval.settings.resources.settings_clear_log_text
+import dev.justinsmith.interval.settings.resources.settings_clear_log_title
 import dev.justinsmith.interval.settings.resources.settings_close_cd
 import dev.justinsmith.interval.settings.resources.settings_title
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.interval.ui.BackAction
+import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -79,6 +84,7 @@ fun SettingsRoute(
         onUseHealthWeight = viewModel::useHealthWeight,
         onSetEffort = viewModel::setEffort,
         onExport = viewModel::export,
+        onClearLog = viewModel::clearLog,
         onConnectHealth = health::connect,
         onDisconnectHealth = viewModel::disconnectHealth,
         onInstallHealth = health::install,
@@ -117,6 +123,7 @@ fun SettingsScreen(
     onUseHealthWeight: () -> Unit = {},
     onSetEffort: (Effort) -> Unit = {},
     onExport: () -> Unit = {},
+    onClearLog: () -> Unit = {},
     onConnectHealth: () -> Unit = {},
     onDisconnectHealth: () -> Unit = {},
     onInstallHealth: () -> Unit = {},
@@ -125,6 +132,7 @@ fun SettingsScreen(
 ) {
     var editingPrep by rememberSaveable { mutableStateOf(false) }
     var editingWeight by rememberSaveable { mutableStateOf(false) }
+    var clearingLog by rememberSaveable { mutableStateOf(false) }
     val groups = settingsGroups(
         state,
         onToggle,
@@ -135,6 +143,7 @@ fun SettingsScreen(
         onSetTheme,
         onExport,
         imports.onPick,
+        onClearLog = { clearingLog = true },
         HealthActions(onConnectHealth, onDisconnectHealth, onInstallHealth),
         onShowPlan,
         onShowSetup,
@@ -172,6 +181,20 @@ fun SettingsScreen(
         )
     }
     ImportProgress(importStep, imports)
+    if (clearingLog) {
+        ConfirmDialog(
+            title = stringResource(Res.string.settings_clear_log_title),
+            text = stringResource(Res.string.settings_clear_log_text),
+            confirm = stringResource(Res.string.settings_clear_log_confirm),
+            dismiss = stringResource(Res.string.settings_cancel),
+            onConfirm = {
+                onClearLog()
+                clearingLog = false
+            },
+            onDismiss = { clearingLog = false },
+            destructive = true,
+        )
+    }
     if (editingWeight) {
         WeightSheet(
             weight = state.weight,

@@ -4,11 +4,6 @@
     <string name="common_joined">%1$s · %2$s</string>
     <string name="history_title">Log</string>
     <string name="history_more_options_cd">More options</string>
-    <string name="history_plan_cd">Plan</string>
-    <string name="history_clear_menu">Clear the log</string>
-    <string name="history_clear_title">Clear the log?</string>
-    <string name="history_clear_text">Every finished workout is removed. This can't be undone.</string>
-    <string name="history_clear_confirm">Clear</string>
     <string name="history_empty_title">Train to a plan</string>
     <string name="history_pick_title">Pick a workout</string>
     <string name="history_pick_text">Its timeline and figures open here.</string>

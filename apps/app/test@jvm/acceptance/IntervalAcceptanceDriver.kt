@@ -185,7 +185,7 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     }
 
     fun seeLogTab() {
-        see(hasContentDescription("Plan"))
+        see(hasContentDescription("Plan a workout"))
         ui.tab("Log").assertIsSelected()
     }
 
@@ -483,12 +483,6 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     /** Today's count against the goal, in the week card's own words. */
     fun seeThisWeekOnToday(words: String) = see(hasText(words, substring = true))
 
-    /** History's Plan action, in its title bar while the log or a plan gives it one. */
-    fun openPlanFromLog() {
-        tapDescribed("Plan")
-        see("Weekly goal")
-    }
-
     /** A day of the week strip, by how it is read out, which opens its sheet. */
     fun openDayOnTheWeek(day: String) = tap(hasContentDescription(day))
 
@@ -523,13 +517,6 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     fun openToday() = tap(hasContentDescription("Today, done"))
 
     fun seeTodaysPlanDone(repeat: String) = see("Done · $repeat")
-
-    fun clearHistory() {
-        tapDescribed("More options")
-        tap("Clear the log")
-        see("Clear the log?")
-        tap(hasText("Clear") and hasAnyAncestor(isDialog()))
-    }
 
     // Presets
 

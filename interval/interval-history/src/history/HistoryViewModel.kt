@@ -168,10 +168,6 @@ class HistoryViewModel(
         historyStore.unlogSport(sport, epochDay)
     }
 
-    fun clear() {
-        historyStore.clearHistory()
-    }
-
     /**
      * The app's locale, as a language tag. The dates and times are formatted in this ViewModel, which
      * outlives a language change, so they are formatted again when it changes.

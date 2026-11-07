@@ -70,6 +70,7 @@ class SettingsScreenTest {
             onUseHealthWeight = { calls += "use health weight" },
             onSetEffort = { calls += it },
             onExport = { calls += "export" },
+            onClearLog = { calls += "clear" },
             onConnectHealth = { calls += "connect health" },
             onDisconnectHealth = { calls += "disconnect health" },
             onInstallHealth = { calls += "install health" },
@@ -140,6 +141,23 @@ class SettingsScreenTest {
         val workout = onNodeWithText("Workout").fetchSemanticsNode().boundsInRoot
         assertEquals(cues.left, workout.left)
         assertTrue(workout.top > cues.bottom, "Workout under Cues: $cues, $workout")
+    }
+
+    @Test
+    fun `clearing the log asks first`() = runUiTest {
+        setThemedContent { Screen() }
+        scrollToText("Clear the log")
+        onNodeWithText("Clear the log").performClick()
+        onNodeWithText("Clear the log?").assertExists()
+        onNodeWithText("Every finished workout is removed. This can't be undone.").assertExists()
+        onNodeWithText("Cancel").performClick()
+        assertEquals(emptyList<Any>(), calls)
+
+        onNodeWithText("Clear the log").performClick()
+        onNodeWithText("Clear").performClick()
+        waitForIdle()
+        assertEquals(listOf<Any>("clear"), calls)
+        onNodeWithText("Clear the log?").assertDoesNotExist()
     }
 
     @Test

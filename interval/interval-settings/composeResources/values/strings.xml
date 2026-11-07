@@ -63,6 +63,12 @@
     <string name="settings_import">Import</string>
     <string name="settings_import_action">Choose a file to import</string>
     <string name="settings_import_hint">Bring back what an export holds, adding to what is here</string>
+    <string name="settings_clear_log">Clear the log</string>
+    <string name="settings_clear_log_hint">Every finished workout and every sport day logged, gone for good</string>
+    <string name="settings_clear_log_title">Clear the log?</string>
+    <string name="settings_clear_log_text">Every finished workout is removed. This can't be undone.</string>
+    <string name="settings_clear_log_confirm">Clear</string>
+    <string name="settings_cancel">Cancel</string>
     <string name="import_title">Import</string>
     <string name="import_counts_joined">%1$s, %2$s</string>
     <string name="import_from">Exported on %1$s</string>

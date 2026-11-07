@@ -5,6 +5,7 @@ package dev.justinsmith.interval.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
+import dev.justinsmith.interval.data.HistoryStore
 import dev.justinsmith.interval.data.SettingsStore
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.BodySettings
@@ -99,6 +100,7 @@ enum class CueToggle { Sound, Voice, Halfway, Vibrate }
 @Suppress("detekt.TooManyFunctions") // One function per setting, and export and import beside them.
 class SettingsViewModel(
     private val settingsStore: SettingsStore,
+    private val historyStore: HistoryStore,
     private val player: CuePlayer,
     private val exporter: DataExporter,
     private val sharer: Sharer,
@@ -204,6 +206,9 @@ class SettingsViewModel(
 
     private val log = Logger.withTag("SettingsViewModel")
     private var exporting: Job? = null
+
+    /** Empties the log: every finished workout and every sport day logged. The screen asks first. */
+    fun clearLog() = historyStore.clearHistory()
 
     /**
      * Builds the export of everything stored and offers it to share or save; a second tap while one is under

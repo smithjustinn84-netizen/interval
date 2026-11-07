@@ -40,20 +40,13 @@ import androidx.compose.ui.text.intl.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.data.FlowStore
 import dev.justinsmith.interval.history.resources.Res
-import dev.justinsmith.interval.history.resources.common_cancel
-import dev.justinsmith.interval.history.resources.history_clear_confirm
-import dev.justinsmith.interval.history.resources.history_clear_menu
-import dev.justinsmith.interval.history.resources.history_clear_text
-import dev.justinsmith.interval.history.resources.history_clear_title
 import dev.justinsmith.interval.history.resources.history_done_week
 import dev.justinsmith.interval.history.resources.history_earlier
 import dev.justinsmith.interval.history.resources.history_empty
 import dev.justinsmith.interval.history.resources.history_empty_plan
 import dev.justinsmith.interval.history.resources.history_empty_start
 import dev.justinsmith.interval.history.resources.history_empty_title
-import dev.justinsmith.interval.history.resources.history_more_options_cd
 import dev.justinsmith.interval.history.resources.history_plan_add_cd
-import dev.justinsmith.interval.history.resources.history_plan_cd
 import dev.justinsmith.interval.history.resources.history_title
 import dev.justinsmith.interval.history.resources.history_today
 import dev.justinsmith.interval.history.resources.history_tomorrow
@@ -69,11 +62,8 @@ import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.interval.ui.AccentButton
-import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
-import dev.justinsmith.interval.ui.IntervalMenu
-import dev.justinsmith.interval.ui.IntervalMenuItem
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.NoticeAction
@@ -135,7 +125,6 @@ fun HistoryRoute(
             go()
         }
         HistoryActions(
-            onClear = viewModel::clear,
             onRange = viewModel::setRange,
             onShiftMonth = viewModel::shiftMonth,
             onOpenDay = viewModel::openDay,
@@ -177,7 +166,6 @@ fun HistoryRoute(
 /** What the History tab's controls do. Each defaults to nothing, so a preview or test sets only its own. */
 @Immutable
 class HistoryActions(
-    val onClear: () -> Unit = {},
     val onRange: (TrainingRange) -> Unit = {},
     val onShiftMonth: (Int) -> Unit = {},
     /** Opens the day sheet on an epoch day, or closes it with null. */
@@ -205,8 +193,8 @@ class HistoryActions(
 /**
  * The training log. A range picker leads to this week (goal, streak and a block per day), a month's
  * calendar, or all time; under it, what is planned next and every finished workout by day. A day opens
- * a sheet of its plans and workouts. Clearing lives in the overflow menu, behind a confirmation. The row of
- * [selectedWorkout] or [selectedLift] shows it is the one open beside the log.
+ * a sheet of its plans and workouts. The title bar's + plans a workout; clearing the log is Settings' (Your data).
+ * The row of [selectedWorkout] or [selectedLift] shows it is the one open beside the log.
  *
  * One column on a phone. With the width for two columns (an upright tablet), the summary keeps a column of
  * its own beside the log, each scrolling by itself, rather than stretching across both over a log that
@@ -220,8 +208,6 @@ fun HistoryScreen(
     selectedWorkout: Long? = null,
     selectedLift: String? = null,
 ) {
-    var menu by rememberSaveable { mutableStateOf(false) }
-    var confirming by rememberSaveable { mutableStateOf(false) }
     // The day the day sheet's Add workout is planning on, while its add sheet is open.
     var addingOn by rememberSaveable { mutableStateOf<Long?>(null) }
     // Planning from the title bar's +, on any of the next two weeks' days, rather than one day's.
@@ -229,10 +215,10 @@ fun HistoryScreen(
     // The row of Coming up looked at before Start, by its place.
     var looking by rememberSaveable { mutableStateOf<Int?>(null) }
     val title = stringResource(Res.string.history_title)
+    // Two actions, as the board draws them: the plan is a tap away in the body ("Edit plan", "Set a weekly
+    // goal", the day sheet's "Open plan"), and clearing the log lives in Settings beside export.
     val titleActions: @Composable RowScope.() -> Unit = {
         IconAction(IntervalIcons.Add, stringResource(Res.string.history_plan_add_cd), { planning = true })
-        IconAction(IntervalIcons.Plan, stringResource(Res.string.history_plan_cd), actions.onPlan)
-        OverflowMenu(menu, { menu = it }, enabled = state.sections.isNotEmpty(), onClear = { confirming = true })
         SettingsAction(actions.onOpenSettings)
     }
     val selected = { item: HistoryItem ->
@@ -280,20 +266,6 @@ fun HistoryScreen(
         planning = planning,
         onClosePlan = { planning = false },
     )
-    if (confirming) {
-        ConfirmDialog(
-            title = stringResource(Res.string.history_clear_title),
-            text = stringResource(Res.string.history_clear_text),
-            confirm = stringResource(Res.string.history_clear_confirm),
-            dismiss = stringResource(Res.string.common_cancel),
-            onConfirm = {
-                actions.onClear()
-                confirming = false
-            },
-            onDismiss = { confirming = false },
-            destructive = true,
-        )
-    }
 }
 
 /** A row of Coming up looked at before Start, by its place, and the title bar's + planning a workout. */
@@ -327,32 +299,6 @@ private fun LookAndPlanSheets(
             weekday = weekdayOf(state.today),
             lift = LiftChoices(state.programDay),
             sports = true,
-        )
-    }
-}
-
-/** The title bar's overflow button and its menu: clearing the log, while there is one to clear. */
-@Composable
-private fun OverflowMenu(
-    expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
-    enabled: Boolean,
-    onClear: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    IntervalMenu(
-        expanded = expanded,
-        onExpandedChange = onExpandedChange,
-        items = {
-            IntervalMenuItem(stringResource(Res.string.history_clear_menu), onClick = onClear, destructive = true)
-        },
-        modifier = modifier,
-    ) {
-        IconAction(
-            IntervalIcons.More,
-            stringResource(Res.string.history_more_options_cd),
-            onClick = { onExpandedChange(true) },
-            enabled = enabled,
         )
     }
 }

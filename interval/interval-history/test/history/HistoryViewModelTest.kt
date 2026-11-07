@@ -354,13 +354,6 @@ class HistoryViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun `clearing empties the history`() {
-        repository.history.recordWorkout(IntervalConfig(), elapsedSeconds = 60)
-        viewModel.clear()
-        assertTrue(viewModel.state.value.isEmpty)
-    }
-
-    @Test
     fun `the headings and the week move on at midnight with the screen open`() = runTest {
         val main = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(main)

@@ -468,7 +468,7 @@ class AppNavigationTest {
     fun `a plan taken off a day comes back with Undo`() = appTest { app ->
         app.repository.plans.planWeekly(builtInPresets.first().asPlan(), setOf(1))
         tab("Log").performClick()
-        onNodeWithContentDescription("Plan").performClick()
+        onNodeWithText("Edit plan").performClick()
         onNodeWithContentDescription("Remove Tabata from Monday").performClick()
         onNodeWithContentDescription("Remove Tabata from Monday").assertDoesNotExist()
         onNodeWithText("Removed Tabata from Monday").assertExists()
@@ -479,7 +479,7 @@ class AppNavigationTest {
     @Test
     fun `the plan opens from History and goes back`() = appTest {
         tab("Log").performClick()
-        onNodeWithContentDescription("Plan").performClick()
+        onNodeWithText("Plan your week").performClick()
         onNodeWithText("Weekly goal").assertExists()
         onNodeWithContentDescription("Back").performClick()
         onNodeWithText("Train to a plan").assertExists()

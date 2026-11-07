@@ -114,6 +114,9 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   alone. The month's key
   reads Done, Planned and Missed, the three marks its calendar draws, in place of the week strip's Interval and
   Lift; All time's best streak shows once there is one.
+- Log's title bar holds two actions, + to plan a workout and the gear, as the board draws it. "Clear the log" is
+  in Settings under Your data, beside export and import, behind the same confirmation; the Plan page opens from
+  "Edit plan" beside Coming up and Up next, "Set a weekly goal", the day sheet's "Open plan" and Settings' Plan.
 - Log's week shows a bar a kind (Strength, Conditioning, Mobility, Sport days), each what was done of it against
   what was planned, in place of the line that split the week. Under it, "Coming up" lists every plan of the next
   seven days, a row each with its day and its Start, then the log's days under "Done this week" and "Earlier". The

@@ -132,7 +132,7 @@ interval/            the interval timer
   interval-mobility  the flows by when each is for, a flow's sheet (its moves, then Start), and the editor of the
                      user's own (`FlowEditorScreen`, the library's moves in `LibraryMoves.kt`, over `lift-ui`'s names
                      and cues): Train's Mobility pillar, a tab's page (`MobilityPage`)
-  interval-settings  Settings (its groups in `SettingsGroups.kt`), the weight sheet, export and import
+  interval-settings  Settings (its groups in `SettingsGroups.kt`), the weight sheet, export, import and clearing the log
                      (`DataExporter`, `DataImporter`, the review sheet); opened by every tab's gear
   interval-history   History (titled "Log" on screen; the code keeps History) (log, calendar, summaries, a finished
                      workout) and Plan: one module, each needs
