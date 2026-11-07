@@ -171,8 +171,9 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      words, and each platform's `liftPlatformModule` (the database builder too); Lift's
                      `interval-platform`
   lift-ui            Lift's words and widgets (`exerciseName`, `setLine`, `programName`, `LoadPicker`, `Stepper`,
-                     `SessionStats`, `BalanceBars`), the built-ins' cues (`cues.xml`, mapped in `ExerciseCues.kt`); most of
-                     Lift's strings
+                     `SessionStats`, `BalanceBars`), the built-ins' cues (`cues.xml`, mapped in `ExerciseCues.kt`), the
+                     figure every built-in is shown by (`demo/`: `ExerciseFigure`, an `ExerciseDemo` a lift through
+                     `Exercise.demo`, `rememberDemoPlayer`, `DemoTimeline`); most of Lift's strings
   lift-testing       `FakeLiftStorage` and the fake DAOs, `FakeIntervalActivity`, `RecordingBeeper`,
                      `RecordingKeepAlive`, `LiftTestClock` (the wall clock and the timers' time, moved together),
                      `liftTestKoin`

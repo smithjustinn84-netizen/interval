@@ -127,7 +127,7 @@ To change one later (a new password, say), run its command again: `gh secret set
    - `journeys/lift-rest-alert.xml` and `journeys/lift-emom-screen-off.xml`: a rest and an EMOM keep counting on the lock screen and beep with the screen off.
    - Backup: `adb shell bmgr backupnow dev.justinsmith.interval`, then `pm clear` and a restore, brings history
      and presets back.
-   - TalkBack's headings navigation reaches every section of Today, Train, History and Settings.
+   - TalkBack's headings navigation reaches every section of Today, Train, Log and Settings.
 4. **Health Connect on Play.** The listing needs a privacy policy URL whose words match the app's Privacy page
    (`apps/app/src/about/PrivacyScreen.kt`): `PRIVACY.md`, at the repository's root, is that text, and its GitHub
    page (https://github.com/smithjustinn84-netizen/interval/blob/main/PRIVACY.md) is the URL to give Play. And

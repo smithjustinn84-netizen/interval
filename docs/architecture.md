@@ -13,7 +13,9 @@ The system is structured around two distinct workout domains unified within a sh
    guided mobility flows, natural language parser, sound/speech cues, `Today` agenda, routine and sport-day planning,
    and foreground execution).
 2. **Lift**: Kettlebell and strength training engine (exercises, sets, EMOMs, hold clocks, rest alerts, built-in
-   programs, session duration estimates, progression, muscle balance, and PR records).
+   programs, session duration estimates, progression, muscle balance, PR records, an animated figure for every
+   built-in lift, and coaching worked out from the sets logged: grip load, readiness, an easier day, density,
+   challenges and lifetime totals).
 
 At the container boundary (`app`), cross-domain features coordinate both sides without coupling them: guided first-run
 and weekly `Set up` (`weeksetup/`), unified JSON export/import (`export/`), and `WeekStandingSource` for the Android and
@@ -244,9 +246,9 @@ Each module applies a reusable template from `templates/`:
 | **Container** | `app` | Application entry (`App.kt`), Navigation 3 routing table and `Train` pillar host, Koin graph assembly, root theme host, `Set up` (`weeksetup/`), `WeekStandingSource`, `About`, and JSON export/import (`export/`). |
 | **Core** | `core`, `core-platform`, `core-time`, `core-testing` | Design tokens (`Spacing`, `Radius`, `Sizes`, `Motion`), `IntervalTheme`, navigation primitives; the clocks, timestamp formatter, `HealthStore`, and storage utilities in `core-platform`, which has no Compose so the data modules (and their Room KSP) don't rebuild on a UI change; calendar and clock maths in `core-time`, which has no dependencies so the domains compile without Compose; UI test harness. |
 | **Interval Domain & Data** | `interval-domain`, `interval-data`, `interval-platform-api`, `interval-platform` | Timer calculation engine, multi-block `Course`, mobility `Flow`s, `Sport` days, Room database (`AppDatabase`), DataStore preferences, audio/speech cues, Android Foreground Service, iOS notifications. |
-| **Interval Features** | `interval-timer`, `interval-workout`, `interval-presets`, `interval-mobility`, `interval-history`, `interval-settings`, `interval-ui` | The Timer, active workout & flow screen, preset & block sequence editor, mobility flows, `Today` home tab, history calendar & routine/sport-day planner, settings, shared workout components. |
-| **Lift Domain & Data** | `lift-domain`, `lift-api`, `lift-data`, `lift-platform` | Kettlebell exercises, training programs, duration estimates, starter program selection, EMOM/hold/rest timers, the ports to the interval side (`lift-api`), Room database (`LiftDatabase`); `Beeper` and `TimerService` keep-alive in `lift-platform`. |
-| **Lift Features** | `lift-nav`, `lift-today`, `lift-session`, `lift-library`, `lift-ui` | Lift navigation registry, Train's Strength pillar (`TodayRoute`) & gear, active session logger & timers, exercise library & editor, shared Lift UI. |
+| **Interval Features** | `interval-timer`, `interval-workout`, `interval-presets`, `interval-mobility`, `interval-history`, `interval-settings`, `interval-ui` | The Timer, active workout & flow screen, preset & block sequence editor, mobility flows, `Today` home tab, the Log (calendar & training log) & routine/sport-day planner, settings, shared workout components. |
+| **Lift Domain & Data** | `lift-domain`, `lift-api`, `lift-data`, `lift-platform` | Kettlebell exercises, training programs, duration estimates, starter program selection, EMOM/hold/rest timers, each lift's `Movement` and the coaching read from it (grip, readiness, autoregulation, density, benchmarks), the ports to the interval side (`lift-api`), Room database (`LiftDatabase`); `Beeper` and `TimerService` keep-alive in `lift-platform`. |
+| **Lift Features** | `lift-nav`, `lift-today`, `lift-session`, `lift-library`, `lift-ui` | Lift navigation registry, Train's Strength pillar (`TodayRoute`) & gear, active session logger & timers, exercise library & editor, shared Lift UI (its words, widgets and the exercise figures in `lift-ui`'s `demo/`). |
 | **Test Fakes** | `interval-testing`, `lift-testing` | In-memory storage, recording cue players, fake DAOs, and mock platform services for tests. |
 | **Toolchain Plugins** | `lint-plugin`, `detekt-plugin` | Kotlin Toolchain task plugins for ktlint formatting and Detekt static analysis. |
 
@@ -323,11 +325,11 @@ Data persistence is split between Room (structured relational records) and DataS
 All disk I/O is encapsulated behind repositories.
 
 ### 1. Relational Storage (Room Multiplatform)
-- **`AppDatabase`** (`interval-data`, version 13):
-  - Stores workout history (`HistoryEntity`, including multi-block `thenBlocks` JSON), custom presets (`PresetEntity`), planned routines and sport days (`PlannedEntity`), and logged sport days (`SportLogEntity`).
+- **`AppDatabase`** (`interval-data`, version 15):
+  - Stores workout history (`HistoryEntity`, including multi-block `thenBlocks` JSON), custom presets (`PresetEntity`, with `alternateHands` since version 15), planned routines and sport days (`PlannedEntity`), logged sport days (`SportLogEntity`), and the user's own mobility flows (`FlowEntity`, the `flow` table since version 14, its moves one JSON column).
   - Uses bundled SQLite (`sqlite-bundled`) and Room KSP generation for common code.
-- **`LiftDatabase`** (`lift-data`, version 16):
-  - Stores logged lifting sessions (including `SavedTimer` checkpoints), set details (`lift_set` with `ON DELETE CASCADE` to `session`), personal records, custom exercises, followed programs, and gear inventory.
+- **`LiftDatabase`** (`lift-data`, version 17):
+  - Stores logged lifting sessions (including `SavedTimer` checkpoints), set details (`lift_set` with `ON DELETE CASCADE` to `session`), personal records, custom exercises, followed programs, and gear inventory (the bells owned, each marked when owned as a pair since version 17).
 - **Migration & Schemas**:
   - Every schema version bumps `@Database(version = N)` and adds a strictly validated migration.
   - Exported schema JSON files reside in `interval/interval-data/schemas/` and `lift/lift-data/schemas/`.
@@ -340,10 +342,11 @@ All disk I/O is encapsulated behind repositories.
 
 ### 3. Backup & JSON Data Portability
 - **Android System Backup**: Full cloud backup and device-to-device migration configured via Android Backup rules.
-- **JSON Export & Import (`ExportBundle.SCHEMA = 7`)**:
-  - **Export**: Settings > Your data > Export bundles the entire database (workouts, multi-block presets, planned routines and sport days, logged sport days, settings including `sessionMinutes`,
+- **JSON Export & Import (`ExportBundle.SCHEMA = 10`)**:
+  - **Export**: Settings > Your data > Export bundles the entire database (workouts, multi-block presets, planned routines and sport days, logged sport days, settings including `sessionMinutes`, the user's own flows (schema 8),
+    presets that switch hands and the bells owned in pairs (schema 9), a program block's own rest (schema 10),
     Lift sessions, programs, exercises, and gear) into a single validated JSON document sharable via system share.
-  - **Import**: Settings > Your data > Import parses exported files across schema versions 1 to 7 via `AppDataImporter`
+  - **Import**: Settings > Your data > Import parses exported files across schema versions 1 to 10 via `AppDataImporter`
     and `ImportPlanner`. It inspects the file, checks schema compatibility, rejects corrupted or newer versions,
     strictly validates all domain ranges, prevents duplicates, assigns clean local IDs, and commits changes in atomic
     Room transactions (`ImportDao`, `SerialWriter.await`). Settings are imported optionally on user confirmation (marking `setupOffered` so an imported backup isn't prompted for first-run setup).
@@ -430,11 +433,11 @@ flowchart TD
     and written as distinct exercise activity spans to Health Connect and Apple Health.
 - **Guided Mobility Flows (`Flow`)**:
   - A `Flow` (`interval-domain`, `timer/Flow.kt`) is an ordered list of timed `Move`s (optional left/right `sided` execution and one-line form cues) that compiles into a multi-block `IntervalConfig` (`Flow.config`, with `Activity.Mobility`, 10s between moves, and 5s between sides).
-  - Because no two `builtInFlows` share a shape, `WorkoutSession`, `SpeechQueue` (`Speech.NextMove`, `LeftSide`, `SwitchSides` with halfway warnings suppressed), `FlowStatusText` notifications, and `History` identify flows directly from their `IntervalConfig` (`builtInFlows.matching(config)`) without separate database tables, and sync them to Health Connect and Apple Health as stretching (`HealthWorkoutKind.Mobility`).
+  - `FlowStore.flows` holds the shipped flows (`builtInFlows`) then the user's own (`FlowRepository`, built in `FlowEditor` from the library's mat moves and floor holds or moves typed in, or copied from a shipped one with "Make it yours"). Because no two flows share a shape (`FlowTest` for the shipped ones, `FlowDraft.clash` refusing a draft that matches any flow or preset), `WorkoutSession`, `SpeechQueue` (`Speech.NextMove`, `LeftSide`, `SwitchSides` with halfway warnings suppressed), `FlowStatusText` notifications, and the Log identify a run from its `IntervalConfig` (`flows.matching(config)`), so nothing about a run is stored, and sync them to Health Connect and Apple Health as stretching (`HealthWorkoutKind.Mobility`).
 - **Sport Days, `Today` Agenda & Guided `Set up`**:
   - Off-app training (`Sport`: BJJ, Climbing, Running, or custom) is planned via `PlanWorkout.SportDay` and logged per calendar day via `HistoryStore.logSport`, counting toward `TrainingLog`, `WeekStandingSource`, and `IntervalActivity.sportDays` without counting unlogged days as missed workouts.
   - `todayAgenda` (`interval-history`) orders what `Today` leads with: on an unlogged sport day with no user-planned workout, it leads with a pre-class mobility flow (`flowBefore`) until mobility is completed that day, then the sport day itself, placing an unplanned followed-program day under `AlsoToday`.
-  - `WeekSetup` (`apps/app/src/weeksetup/`) combines pure `starterProgram` (`lift-domain`, choosing a fitting `Program.oneBell` within `sessionMinutes`) and `buildWeek` (`BuiltWeek.kt`) to populate `PlanStore`, `SettingsStore`, `GearStore`, and `ProgramStore` in one step, offered once on a clean install (`FirstRun.kt`).
+  - `WeekSetup` (`apps/app/src/weeksetup/`) combines pure `starterProgram` (`lift-domain`, choosing a fitting `Program.oneBell`, or with a pair of bells owned `Program.pairOfBells`, within `sessionMinutes`; a grappler's first for BJJ, with a pair `BjjKettlebell`) and `buildWeek` (`BuiltWeek.kt`) to populate `PlanStore`, `SettingsStore`, `GearStore`, and `ProgramStore` in one step, offered once on a clean install (`FirstRun.kt`).
 - **Finish Reflection ("How was it?")**:
   - Finished interval workouts and Lift sessions prompt a lightweight reflection row (`HowWasIt` in `core`): a 5-level
     perceived effort scale (`PerceivedEffort`: Easy, Steady, Hard, Very hard, All out) and an optional note.
@@ -448,6 +451,23 @@ flowchart TD
   - `MuscleBalance.ofSets` folds any sets, so `Program.weekBalance()` counts what a week of a program plans the same
     way; `ProgramCoverageTest` holds what each built-in leaves untrained.
   - `Estimate.kt` (`lift-domain`) estimates each program day's duration from set/rep counts, movement pace, EMOM minutes, a density block's cap, and configured set rest.
+- **Coaching (Lift)**, all in `lift-domain`, all worked out from the sets logged with nothing new stored
+  (the reasoning: [kettlebell-coaching.md](kettlebell-coaching.md)):
+  - `Movement.kt` gives every built-in lift its pattern (hinge, squat, press, …), tempo (ballistic, grind, hold), grip
+    and lifts in a rep; a custom lift's is worked out from its equipment.
+  - `Grip.kt` weighs each set on the hands (ballistic and two-bell sets heavier, a logged BJJ day a fixed load) and
+    compares the week against the four before; `Readiness.kt` reads the last session's effort, BJJ and the grip
+    into Fresh, Normal or Taxed, and `Autoregulate.kt` offers a taxed day an easier plan (`SessionPlan.easier`)
+    or the program's day lighter on the grip (`Program.lighterDayThan`), never imposed.
+  - `Density.kt` reads reps a minute from sets logged as they were done; where the next bell is a big jump, a
+    block's own rest (`Block.rest`) shortens before the bell goes up, and a best pace is a record.
+  - `Benchmarks.kt` works out the challenges (10,000 swings, the snatch test, the ABC's best twenty minutes, a
+    get-up at body weight) shown in `lift-today`'s `ChallengesCard`, and each lift's lifetime reps and milestones.
+- **Exercise figures (Lift)**: `lift-ui`'s `demo/` draws every built-in lift as a figure seen from the side
+  (`ExerciseFigure`, joint angles per `ExerciseDemo` pose, the bell turning with the hand), keyed by `Exercise.demo`.
+  `rememberDemoPlayer` sets up once then loops the reps, standing still under `prefersReducedMotion()`;
+  `DemoTimeline` scrubs a rep's parts beside its cues on an exercise's page (`lift-library`), and the session's
+  set card shows the next lift's (`lift-session`).
 - **Audio & Cues**:
   - Audio cues are managed by `CuePlayer` (interval) and `Beeper` (Lift).
   - Voice is one `Speaker` per process (`core-platform`: Android's text-to-speech, iOS's speech synthesizer, none on

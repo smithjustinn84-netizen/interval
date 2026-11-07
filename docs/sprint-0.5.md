@@ -127,9 +127,9 @@ line is after ticket 5; ticket 4 sits below it.
   index (`ConfigField.BlockRest` is the whole workout's), and `withBlockAdded`, `withoutBlock` and
   `withBlockMoved` reshape the list. `RoutineDescription` needed nothing.
 
-### Added during the sprint — Today, Train's three pillars, sport days, mobility and Set up
+### Added during the sprint — Today, Train's three pillars, sport days, mobility, Set up and Lift's coaching
 
-Built on `main` after ticket 3 (`0a1d503e` to `92009e8b`), turning the app's navigation around a weekly training
+Built on `main` after ticket 3 (`0a1d503e` to `310a617f`), turning the app's navigation around a weekly training
 agenda:
 - **Today and duration estimates** (`0a1d503e`, `0d28633c`): `TodayTab` (`HomeRoute` in `interval-history`) becomes
   the first tab and root of the back stack, showing the week against the goal, Up next under one Start, and "Or
@@ -150,6 +150,27 @@ agenda:
   questions (sport, days, bells owned, session length) to pick a `starterProgram` (`Program.oneBell`), spread
   strength days via `buildWeek`, save equipment and set the weekly goal (`AppSettings.sessionMinutes`,
   `ExportBundle.SCHEMA` 7), opening once on a fresh empty install (`FirstRun.kt`).
+- **Your own flows** (`a5f320d4`, `68ee54c9`): flows the user builds, stored beside the shipped ones (`FlowRepository`,
+  the `flow` table, `AppDatabase` version 14, `ExportBundle.SCHEMA` 8), from the library's mat moves and floor holds
+  or moves typed in, with "Make it yours" on a shipped one; a draft that shares a shape with any flow or preset is
+  refused (`FlowDraft.clash`).
+- **The Log and a look before Start** (`51c237c8` to `1f2c0c86`): History is called Log on screen; its week shows
+  each kind done against its plan, Coming up as a schedule and the week done in one card, and clearing the log
+  moved to Settings. A pick by time, Up next and a plan coming up open a sheet of what it is before it runs
+  (`b2dc1ff3`); the program's next day leads the picks when it fits the minutes (`52c13de9`); Today's week is a
+  dot a day against the goal (`75e07fe1`).
+- **Train's pillars, reworked** (`14c702d6`, `c4fbe888` to `6e7b19a4`): Strength in groups (Following, Beside the mat
+  and the wall, On your own, Lately); Conditioning's presets as rows, shortest first, with a Timer row saying what is
+  on the Timer.
+- **Exercise figures** (`edc0c842` to `58bd605c`): every built-in lift is shown by an animated figure (`lift-ui`'s
+  `demo/`) on its page, scrubbable beside its cues, and on the session's set card.
+- **Pairs of bells and a grappler's week** (`8b4fdd17` to `82c19900`): a preset can switch hands (15:15 MVO2 does;
+  `AppDatabase` version 15), bells are owned in pairs (`LiftDatabase` version 17, `ExportBundle.SCHEMA` 9), *20
+  minutes beside BJJ* joins the Grappling programs, and Set up builds a grappler's week with it and 15:15 MVO2.
+- **Lift's coaching** (`c7d0c5e3` to `310a617f`, [kettlebell-coaching.md](kettlebell-coaching.md)): each lift's
+  `Movement`, the grip's load with BJJ days in it, readiness and an easier day offered on a taxed one, density before
+  a big jump in bell (a block's own rest, `ExportBundle.SCHEMA` 10) and the best pace, and challenges, lifetime totals
+  and new bests. Section 2 of that doc, Lift's timers speaking cues, is still planned.
 
 **5. The week on iOS's Home Screen** · L
 - Spike first, half a day: a second, Swift-only target in `apps/iosApp/module.xcodeproj` beside `app` (the

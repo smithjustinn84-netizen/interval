@@ -23,7 +23,7 @@ A custom lift's movement is worked out from its equipment and how it is measured
 
 **Readiness** (`Readiness.kt`): Fresh, Normal or Taxed. It is worked out from what is logged:
 - the last session's effort;
-- BJJ days logged today or yesterday, which come through `IntervalActivity` with their sport;
+- BJJ logged today or yesterday on top of a grip above the weeks before; the days come through `IntervalActivity` with their sport;
 - the grip load.
 
 A class that is planned but not yet logged doesn't count.
@@ -101,7 +101,7 @@ All of these are worked out from the logged sets, with nothing new stored (`Benc
 **Lifetime totals** for each lift appear on the lift's page, with milestones at 1,000, 5,000, 10,000 and 25,000 named on the summary.
 
 **Where it shows:**
-- A Challenges card on Lift's Following group, with a ring for each challenge under way.
+- A Challenges card under the program on Train's Strength pillar (`ChallengesCard`, `lift-today`), a bar for each challenge under way.
 - The summary names a new snatch test or ABC best.
 
 **The weekly streak** stays by the week, so a rest day never breaks it.
