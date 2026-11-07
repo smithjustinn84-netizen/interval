@@ -24,7 +24,7 @@
     <string name="exercise_clean">Clean</string>
     <string name="exercise_press">Press</string>
     <string name="exercise_snatch">Snatch</string>
-    <string name="exercise_get_up">Get-up</string>
+    <string name="exercise_get_up">Turkish get-up</string>
     <string name="exercise_goblet_squat">Goblet squat</string>
     <string name="exercise_row">Row</string>
     <string name="exercise_jerk">Jerk</string>
@@ -94,7 +94,7 @@
     <string name="exercise_band_seated_row">Seated row</string>
     <string name="exercise_band_lat_pulldown">Lat pulldown</string>
     <string name="exercise_band_chest_press">Chest press</string>
-    <string name="exercise_band_overhead_press">Overhead press</string>
+    <string name="exercise_band_overhead_press">Band overhead press</string>
     <string name="exercise_band_biceps_curl">Biceps curl</string>
     <string name="exercise_band_triceps_pushdown">Triceps pushdown</string>
     <string name="exercise_band_pallof_press">Pallof press</string>

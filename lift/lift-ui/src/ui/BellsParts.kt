@@ -84,7 +84,7 @@ fun sideName(side: Side): String = stringResource(
 )
 
 /**
- * A session's name from the lifts in it, in the order done: "Press", "Two-hand swing and Get-up",
+ * A session's name from the lifts in it, in the order done: "Press", "Two-hand swing and Turkish get-up",
  * "Clean and 2 more". Empty for a session with none.
  */
 @Composable
