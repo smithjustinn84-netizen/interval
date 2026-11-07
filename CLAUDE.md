@@ -11,14 +11,19 @@ what no sprint holds yet, and why: [docs/backlog.md](docs/backlog.md). Finished 
 ## Commands
 
 ```sh
-./kotlin build                      # Everything. The only build that links iOS. Run before calling work done
+./kotlin build                      # Everything. The only build that links iOS. Once per piece of work, before
+                                    # calling it done; never per iteration
 ./kotlin build -p jvm               # Fast compile loop (common + JVM)
-./kotlin test -p jvm                # Fast test loop (logic + Compose UI tests)
 ./kotlin test -m lift-session -p jvm # One module's tests (a feature's, a domain's, Lift's flows in `lift-nav`)
+./kotlin test -m lift-domain -p jvm --include-classes 'dev.justinsmith.lift.domain.DensityTest'
+                                    # One class (or a `*` pattern); the loop while iterating, about 12 s
+./kotlin test -p jvm --exclude-classes '*AcceptanceTest'   # Every module's tests but the journey specs
+./kotlin test -p jvm                # Everything on the JVM (logic, Compose UI, flows, acceptance): before a commit
 ./kotlin check lint                 # ktlint over every module
 ./kotlin do format                  # ktlint auto-format
 ./kotlin check detekt               # detekt + Compose rules over every module (config: detekt.yml)
-./kotlin check lint detekt && ./kotlin test -p jvm -p android   # Local check (~3 min): what CI runs on Linux
+./kotlin check lint detekt          # ktlint + detekt, before a commit
+./kotlin test -p android -m <module>    # Only when `src@android/` or an Android dependency changed; CI runs it all
 ./kotlin test -p iosSimulatorArm64 -m interval-domain   # iOS tests (Debug) for the modules you touched
 ./kotlin check                      # All checks; avoid locally: it also links every module's iOS tests
                                     # in Release (~12 min a link, 19 at once), which CI never runs
@@ -470,6 +475,14 @@ toolchain (`$compose.*`).
 ## Testing
 
 Strategy, commands and limits: [docs/testing.md](docs/testing.md).
+- **Run only what the change can break.** While iterating, one class: `./kotlin test -m <module> -p jvm
+  --include-classes '<fqn or pattern>'` (or `--include-test` for one method). Before a commit, the modules you
+  touched and those that depend on them (`./kotlin show dependencies`), `-m` each, then
+  `./kotlin check lint detekt`. The whole JVM run (`./kotlin test -p jvm`) and `./kotlin build` come once, when
+  the piece of work is done, not after every edit. `-p android` repeats every common test on a second JVM and
+  `./kotlin build` links iOS for minutes, so neither is a loop: CI runs both on every push. The acceptance
+  specs are the slow half of the JVM run (`--exclude-classes '*AcceptanceTest'` leaves them out, or run only
+  the journey's own spec with `--include-classes`).
 - A test lives in the module of what it tests: logic and ViewModel tests in its `test/`, which runs on JVM,
   Android and iOS. Kotlin/Native rejects
   a backticked test name with a comma in it ("name contains illegal characters"), and only the full
@@ -494,7 +507,7 @@ Strategy, commands and limits: [docs/testing.md](docs/testing.md).
 - **CI's iOS tests are tiered**: a push links only the quick shard (line 1 of `tools/ios-test-shards.txt`,
   the pure domains); every shard runs nightly, on tags, on `gh workflow run CI --ref <bookmark>`, and on a
   push touching `src@ios/` or the build (`tools/ios_test_plan.py`). So a native-only failure in a feature
-  module's common tests can surface a night late: run `./kotlin build` before calling work done.
+  module's common tests can surface a night late: run `./kotlin build` once before calling work done.
 
 ## Gotchas
 

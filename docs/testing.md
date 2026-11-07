@@ -37,21 +37,35 @@ the same common UI code.
 ## Commands
 
 ```sh
-./kotlin test -p jvm                         # Logic + Compose UI + navigation, the fast loop
+./kotlin test -m lift-domain -p jvm --include-classes 'dev.justinsmith.lift.domain.DensityTest'
+                                             # One class, the loop while iterating (about 12 s, mostly startup);
+                                             # `*` and `?` wildcards match across packages, `--include-test` one method
 ./kotlin test -m interval-history -p jvm     # One feature's logic and screen tests
 ./kotlin test -m lift-domain -p jvm          # A pure domain's, in seconds
 ./kotlin test -m lift-nav -p jvm             # Lift's flows
 ./kotlin test -m app -p jvm                  # The app's navigation and container
-./kotlin test -p android                     # Common tests as Android local tests
+./kotlin test -m app -p jvm --include-classes '*TodayAcceptanceTest'   # One journey's spec
+./kotlin test -p jvm --exclude-classes '*AcceptanceTest'   # Everything on the JVM but the specs, the slow half
+./kotlin test -p jvm                         # Logic + Compose UI + navigation + acceptance: before a commit
+./kotlin test -p android -m <module>         # Common tests as Android local tests; only for a change under
+                                             # `src@android/`, since CI runs them all on every push
 ./kotlin test -p iosSimulatorArm64           # Common tests in the iOS simulator (macOS)
 ./kotlin check lint detekt                   # ktlint + detekt
 ./kotlin check                               # Every check, but slow: see below
 ./kotlin build                               # Full build incl. the iOS link; catches opt-in leaks
 ```
 
-**Check locally with `./kotlin check lint detekt` and `./kotlin test -p jvm -p android`** (about 3 minutes),
-plus `./kotlin test -p iosSimulatorArm64 -m <module>` for the modules whose common or `src@ios/` code you
-changed, and `./kotlin build` before calling work done. A bare `./kotlin check` takes 15 minutes or more: its
+**Run only what the change can break, and widen as the work settles.** While iterating, the class under
+work with `--include-classes` (a module's tests recompile and run in seconds; the toolchain reruns only the
+modules whose inputs changed, so `-m` costs nothing it needn't). Before a commit, `-m` each module touched and
+each that depends on one (`./kotlin show dependencies -m <module>` lists what it pulls in; the reverse is the
+layering in CLAUDE.md: a feature's change touches `app`, a domain's its side), then `./kotlin check lint detekt`.
+Once, when the piece of work is done: `./kotlin test -p jvm` whole, `./kotlin test -p iosSimulatorArm64 -m <module>`
+for the modules whose common or `src@ios/` code changed, and `./kotlin build`. Not in the loop: `-p android`
+(every common test again on a second JVM; CI runs it on every push, so only a change under `src@android/`
+needs it locally, `-m` that module) and `./kotlin build` (links iOS for minutes). A filter that leaves a module
+with no test fails the run ("no tests were discovered", exit code 2), so pair `--include-classes` with the `-m`
+of the module that holds the class. A bare `./kotlin check` takes 15 minutes or more: its
 `tests` check has no platform option and tests iOS in both variants, and the Release links (full
 optimization, no cache) take about 12 minutes each, all at once. `./kotlin test` tests Debug only, as CI does.
 
