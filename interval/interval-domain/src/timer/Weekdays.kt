@@ -15,8 +15,11 @@ fun spreadWeekdays(free: Set<Int>, count: Int, including: Int? = null): Set<Int>
     val wanted = if (pinned == null) count else count.coerceAtLeast(1)
     return when {
         wanted <= 0 || days.isEmpty() -> emptySet()
+
         wanted >= days.size -> days.toSet()
+
         pinned == null -> combinations(days, wanted).minByOrNull(::unevenness).orEmpty().toSet()
+
         else -> combinations(days.drop(1), wanted - 1).map { listOf(pinned) + it }.minByOrNull(::unevenness)
             .orEmpty().toSet()
     }

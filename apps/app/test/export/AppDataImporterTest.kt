@@ -8,8 +8,8 @@ import dev.justinsmith.interval.fakes.TODAY
 import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.fixtures.DAMAGED_EXPORT
 import dev.justinsmith.interval.fixtures.FOREIGN_JSON
-import dev.justinsmith.interval.fixtures.SCHEMA_1_EXPORT
 import dev.justinsmith.interval.fixtures.SCHEMA_10_EXPORT
+import dev.justinsmith.interval.fixtures.SCHEMA_1_EXPORT
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.Sport
@@ -70,6 +70,7 @@ private class Phone(val now: Long) {
         lift.programs.customPrograms.value,
         lift.gear.bands.value,
         lift.gear.bells.value,
+        lift.gear.pairs.value,
         lift.gear.bar.value,
     )
 }
@@ -79,7 +80,10 @@ class AppDataImporterTest {
 
     /** A phone with something of every kind on it. */
     private suspend fun stocked(): Phone = Phone(now).apply {
-        intervals.presets.savePreset(Preset("Hills", IntervalConfig(workSeconds = 45, activity = Activity.Running)))
+        // Called a hand at a time, which comes across with it.
+        intervals.presets.savePreset(
+            Preset("Hills", IntervalConfig(workSeconds = 45, activity = Activity.Running), alternateHands = true),
+        )
         intervals.flows.saveFlow(
             Flow(
                 "new",
@@ -118,6 +122,7 @@ class AppDataImporterTest {
             it.copy(theme = ThemeMode.Light, weeklyGoal = 3, sessionMinutes = 15)
         }
         lift.gear.setOwned(20.0, owned = true)
+        lift.gear.setPair(20.0, pair = true)
         lift.gear.setBar(15.0)
         val press = lift.exercises.saveExercise(null, ExerciseDraft("Landmine press", Equipment.Barbell))
         lift.sessions.startSession(null)

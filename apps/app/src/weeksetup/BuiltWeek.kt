@@ -88,7 +88,9 @@ fun buildWeek(
     val standing = weekly - remove.toSet()
     val taken = standing.map { (it.schedule as PlanSchedule.Weekly).weekday }.toSet() + sportDays
     val free = (1..DAYS_PER_WEEK).toSet() - taken
-    val liftDays = wanted?.let { spreadWeekdays(free, minOf(it.daysPerWeek, MOST_TRAINING_DAYS - taken.size)) }.orEmpty()
+    val liftDays = wanted?.let {
+        spreadWeekdays(free, minOf(it.daysPerWeek, MOST_TRAINING_DAYS - taken.size))
+    }.orEmpty()
     val program = wanted?.takeIf { followed != null || liftDays.isNotEmpty() }
     val conditioningDay = (free - liftDays).takeIf {
         grappler && liftDays.size == 2 && sportDays.size <= MOST_SPORT_DAYS_FOR_INTERVALS &&
@@ -109,7 +111,12 @@ fun buildWeek(
 
 /** Of these weekdays, the one furthest round the week from the nearest of [days]; of two as far, the earlier. */
 private fun Set<Int>.furthestFrom(days: Set<Int>): Int? = sorted().maxByOrNull { day ->
-    days.minOf { other -> minOf((day - other + DAYS_PER_WEEK) % DAYS_PER_WEEK, (other - day + DAYS_PER_WEEK) % DAYS_PER_WEEK) }
+    days.minOf { other ->
+        minOf(
+            (day - other + DAYS_PER_WEEK) % DAYS_PER_WEEK,
+            (other - day + DAYS_PER_WEEK) % DAYS_PER_WEEK,
+        )
+    }
 }
 
 private fun starter(answers: WeekAnswers, restSeconds: Int): Program? {

@@ -302,7 +302,9 @@ toolchain (`$compose.*`).
   domain code expose typed data (enums, sealed types like `NextUp`/`HistoryDay`, numbers, clock strings
   like `"0:30"`); screens put it into words with `stringResource`/`pluralStringResource`. Spoken cues are
   the one non-composable path: `CuePlayer.speak(Speech)`, worded by `SpeechQueue` with `getString`
-  (`interval-platform`). Preset
+  (`interval-platform`). A preset that `alternateHands` (15:15 MVO2, or a kettlebell preset with the editor's
+  switch on) has every work after the first said as "Switch hands. Work": `WorkoutSession` reads the flag from the
+  preset the workout `matching`s as each cue plays, so nothing beside the workout stores it. Preset
   names are stored data, not labels: the built-ins' names live in `builtInPresets`. Never load a resource
   from a common `test/`: common tests also run as Android local tests.
 - **Theme**: `IntervalTheme` in `core/core/src/ui/Theme.kt` (`PhaseColors.of(phase)` in `interval/interval-ui/src/ui/PhaseColorsOf.kt`). Fixed tokens (`Spacing`, `Radius`, `Sizes`, `Opacity`,
@@ -381,11 +383,14 @@ toolchain (`$compose.*`).
   and `ProgramStore`), which no feature may reach together. Its two decisions are pure: `starterProgram`
   (`lift-domain`, `StarterProgram.kt`) picks among the built-ins one bell is enough for (`Program.oneBell`: no
   lift with two bells, none under a bar or against a band, none that needs a bar to hang from or a bench;
-  `StarterProgramTest` pins the set, so a new built-in says which side it is on) those whose longest day fits the
-  session, a grappler's first for BJJ, then a beginner's, then any; `buildWeek` (`BuiltWeek.kt`) puts the sport
-  on its days and the program's on the free ones, spread evenly with a rest day left, and says which plans a
-  rebuild takes off first (the weekly days of the sport it opened with and of the program; everything else
-  planned stays and its weekdays are taken). `WeekSetupViewModel` keeps the answers in its entry's
+  `StarterProgramTest` pins the set, so a new built-in says which side it is on), or with a pair of bells owned
+  (`GearStore.pairs`, asked under the bells) those two are enough for (`Program.pairOfBells`), those whose longest
+  day fits the session, a grappler's first for BJJ (with a pair, `BjjKettlebell` once it fits), then a beginner's,
+  then any; `buildWeek` (`BuiltWeek.kt`) puts the sport on its days and the program's on the free ones, spread
+  evenly with a rest day left (`spreadWeekdays`, interval-domain, the Plan sheet's too), beside `BjjKettlebell`
+  with the sport on two days or fewer the 15:15 preset (`snatchIntervals`) on a third (`conditioningDay`), and
+  says which plans a rebuild takes off first (the weekly days of the sport it opened with and of the program, and
+  beside that program the weekly 15:15; everything else planned stays and its weekdays are taken). `WeekSetupViewModel` keeps the answers in its entry's
   `SavedStateHandle`, opens on what stands, and builds once: it never calls `ProgramStore.follow` while a program
   is followed, since following restarts it. The session's length is `AppSettings.sessionMinutes`, which Today's
   pick by time opens on (`HomeViewModel`, until a length is picked by hand). Today's empty card and Settings'

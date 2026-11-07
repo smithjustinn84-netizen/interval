@@ -23,7 +23,7 @@
     <action>Tap T (Tuesday) and "24", and verify that the program's days move to suit and the goal reads 6 still</action>
     <action>Tap "Build my week" and verify that Today is shown with "Week built" and "BJJ" under four days of the week</action>
     <action>Tap the "Log" tab, then "Edit plan" or the plan's row, and verify that the plan lists BJJ on four days and the program's day on two, each once, and that the program on Train is still on day 1 of the same week it started</action>
-    <action>In Set up, tap T and T (Tuesday and Thursday) for BJJ only, tick "24", then under "Which do you have two of?" tick "24", and pick "20 min"; verify that "Your week" reads "20 minutes beside BJJ" over its minutes and "Mon, Fri", "15:15 MVO2" over "Wed" and "Goal: 5 workouts a week"; tap "Build my week"</action>
+    <action>Open Settings and tap "Set up"; tap M, W, F off and the second T (Thursday) on, so BJJ is on Tuesday and Thursday only; with 16 and 24 still ticked, under "Which do you have two of?" tick "24", and pick "20 min"; verify that "Your week" reads "20 minutes beside BJJ" over its minutes and "Mon, Fri", "15:15 MVO2" over "Wed" and "Goal: 5 workouts a week"; tap "Build my week"</action>
     <action>Start "15:15 MVO2" from Today on Wednesday (or from Conditioning) with the voice on, and verify that the first work says "Work" and the second "Switch hands. Work"; end it</action>
     <action>Open Settings, tap "Set up", then "Skip for now", and verify that Settings is shown again with nothing changed</action>
     <action>Close the app from Recents and open it from its icon; verify that it opens on Today, not on "Set up"</action>

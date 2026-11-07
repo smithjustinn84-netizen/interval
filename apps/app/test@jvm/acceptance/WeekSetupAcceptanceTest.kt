@@ -51,8 +51,7 @@ class WeekSetupAcceptanceTest {
         openSetUpFromToday()
         answerSport("BJJ")
         trainOn("Tuesday", "Thursday")
-        ownBells(24)
-        ownTwoOf(24)
+        ownBells(24, twoOf = listOf(24))
         sessionOf(20)
 
         seeYourWeek("20 minutes beside BJJ", "Mon, Fri")
@@ -60,8 +59,15 @@ class WeekSetupAcceptanceTest {
         seeGoalToBe(5)
         buildMyWeek()
 
-        weekHolds(sportDays = 2, programDays = 2, program = ProgramId.BjjKettlebell, bells = listOf(24.0), goal = 5)
-        pairsAndIntervalsHeld(setOf(24.0), intervalDays = 1)
+        weekHolds(
+            sportDays = 2,
+            programDays = 2,
+            program = ProgramId.BjjKettlebell,
+            bells = listOf(24.0),
+            goal = 5,
+            pairs = setOf(24.0),
+            intervalDays = 1,
+        )
     }
 
     @Test

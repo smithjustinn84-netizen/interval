@@ -40,14 +40,10 @@ fun IntervalAcceptanceDriver.trainOn(vararg weekdays: String) = weekdays.forEach
     tap(hasContentDescription(it) and isToggleable())
 }
 
-/** The third: each bell of [kg] tapped, which turns it on or off. */
-fun IntervalAcceptanceDriver.ownBells(vararg kg: Int) = kg.forEach {
-    tap(hasContentDescription("$it kg") and isToggleable())
-}
-
-/** Of the bells owned, each of [kg] tapped as owned two of, which turns it on or off. */
-fun IntervalAcceptanceDriver.ownTwoOf(vararg kg: Int) = kg.forEach {
-    tap(hasContentDescription("Two of $it kg") and isToggleable())
+/** The third: each bell of [kg] tapped, which turns it on or off; then each of [twoOf] tapped as owned two of. */
+fun IntervalAcceptanceDriver.ownBells(vararg kg: Int, twoOf: List<Int> = emptyList()) {
+    kg.forEach { tap(hasContentDescription("$it kg") and isToggleable()) }
+    twoOf.forEach { tap(hasContentDescription("Two of $it kg") and isToggleable()) }
 }
 
 /** The fourth: how long a session is. */
@@ -73,32 +69,27 @@ fun IntervalAcceptanceDriver.buildMyWeek() {
     seeTodayTab()
 }
 
-/** What building left in both sides' stores. */
+/** What building left in both sides' stores: with [pairs], the bells owned two of, and the days of intervals. */
 fun IntervalAcceptanceDriver.weekHolds(
     sportDays: Int,
     programDays: Int,
     program: ProgramId?,
     bells: List<Double>,
     goal: Int?,
+    pairs: Set<Double> = emptySet(),
+    intervalDays: Int = 0,
 ) {
     val lift = app.koin.koin.get<LiftRepository>()
     waitFor("$sportDays sport and $programDays program days planned, following $program") {
         val planned = app.repository.plans.planned.value.map { it.workout }
         planned.count { it is PlanWorkout.SportDay } == sportDays &&
             planned.count { it == PlanWorkout.Lift.ProgramDay } == programDays &&
+            planned.count { it == snatchIntervals.asPlan() } == intervalDays &&
             lift.programs.followed.value?.program?.key == program?.let { ProgramKey.BuiltIn(it) }
     }
     assertEquals(bells, lift.gear.bells.value)
+    assertEquals(pairs, lift.gear.pairs.value)
     assertEquals(goal, app.repository.settings.appSettings.value.weeklyGoal)
-}
-
-/** The bells of [kg] kept as owned two of, and the intervals beside the program planned on [intervalDays] days. */
-fun IntervalAcceptanceDriver.pairsAndIntervalsHeld(kg: Set<Double>, intervalDays: Int) {
-    val lift = app.koin.koin.get<LiftRepository>()
-    waitFor("pairs $kg and $intervalDays days of intervals") {
-        lift.gear.pairs.value == kg &&
-            app.repository.plans.planned.value.count { it.workout == snatchIntervals.asPlan() } == intervalDays
-    }
 }
 
 /** The session's length is kept, and Today's pick by time stands on it. */

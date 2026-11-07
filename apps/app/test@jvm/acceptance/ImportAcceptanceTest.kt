@@ -1,8 +1,8 @@
 package dev.justinsmith.interval.acceptance
 
 import dev.justinsmith.interval.fixtures.DAMAGED_EXPORT
-import dev.justinsmith.interval.fixtures.SCHEMA_1_EXPORT
 import dev.justinsmith.interval.fixtures.SCHEMA_10_EXPORT
+import dev.justinsmith.interval.fixtures.SCHEMA_1_EXPORT
 import kotlin.test.Test
 
 /** `journeys/settings.xml`'s Import: a file another phone exported comes in once, and a bad one changes nothing. */

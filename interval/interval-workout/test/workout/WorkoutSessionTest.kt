@@ -24,7 +24,6 @@ import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.OutlinedInterval
 import dev.justinsmith.interval.timer.Phase
-import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.UpcomingChange
 import dev.justinsmith.interval.timer.WorkoutOutline
 import dev.justinsmith.interval.timer.estimateCalories
@@ -172,21 +171,6 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
         assertEquals(7L, entry.finishedAtEpochMillis)
         assertEquals(15, entry.elapsedSeconds)
         assertFalse(entry.endedEarly)
-    }
-
-    @Test
-    fun `a preset worked a hand at a time calls every work after the first a change of hands`() = runTest(dispatcher) {
-        repository.presets.savePreset(Preset("One hand", repository.settings.config.value, alternateHands = true))
-        runCurrent()
-        openWorkout(repository)
-
-        advanceTimeBy(15_000 + WorkoutTicker.TICK_MILLIS)
-        runCurrent()
-
-        assertEquals(
-            listOf(Speech.Work(lastRound = false), Speech.Work(lastRound = true, switchHands = true)),
-            player.spoken.filterIsInstance<Speech.Work>(),
-        )
     }
 
     @Test

@@ -19,6 +19,7 @@ import dev.justinsmith.interval.timer.FlowUse
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Move
 import dev.justinsmith.interval.timer.Phase
+import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInFlows
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlinx.coroutines.CoroutineScope
@@ -243,5 +244,21 @@ class FlowSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
         assertTrue(session.ui.isDone)
         assertEquals("Floor core", health.workouts.single().title)
         assertEquals(onTimer, repository.settings.config.value)
+    }
+
+    // Not a flow, but the other move a workout calls by name: a preset worked a hand at a time.
+    @Test
+    fun `a preset worked a hand at a time calls every work after the first a change of hands`() = runTest {
+        repository.presets.savePreset(Preset("One hand", onTimer, alternateHands = true))
+        runCurrent()
+        openFlow(key = null)
+
+        advanceTimeBy(20_000 + WorkoutTicker.TICK_MILLIS)
+        runCurrent()
+
+        assertEquals(
+            listOf(Speech.Work(lastRound = false), Speech.Work(lastRound = true, switchHands = true)),
+            player.spoken.filterIsInstance<Speech.Work>(),
+        )
     }
 }

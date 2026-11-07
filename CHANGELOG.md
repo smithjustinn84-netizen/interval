@@ -87,8 +87,21 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   workout is known by its shape.
 - Exports are schema 8, with the mobility flows you build; a build from before it refuses the file with "update
   the app", and older files read as before.
+- 20 minutes beside BJJ, a Grappling program: the Armor Building Complex with a pair of bells on the minute for 15
+  minutes one day; get-ups, a bottoms-up carry, windmills and dead bugs, slow, the next.
+- Switch hands: a kettlebell preset can call every work after the first "Switch hands. Work" (a switch in the
+  preset's editor). 15:15 MVO2 does, wherever it is started from.
+- Set up asks which of your bells you have two of. With a pair and BJJ it starts 20 minutes beside BJJ, and with
+  BJJ on two days or fewer also plans 15:15 MVO2 weekly on the free day furthest from the program's two; on three
+  or more days of the mat the program's two are enough.
+- Exports are schema 9, with the presets that switch hands and the bells you have two of; a build from before it
+  refuses the file with "update the app", and older files read as before.
 
 ### Changed
+- The get-up is named the Turkish get-up, and the band's overhead press "Band overhead press". Program summaries
+  say what their days do: Armor Building Formula no longer promises 30 complexes, Rite of Passage's ladders are
+  presses starting at five, and Your first 100 swings rotates 5, 8 and 10 a minute within each week.
+- The Plan sheet's "spread over the week" for a program's days picks as evenly as Set up does, from the day picked.
 - The Timer is no longer a tab: it is a page over Train's Conditioning pillar, opened by the "Timer" row at the
   top of the presets, with a Back to them. The bar is Today · Train · Log. "Put on Timer", the "Start a
   workout" shortcut and the widget open it as before, and Back from it returns to the presets, then Today. On a

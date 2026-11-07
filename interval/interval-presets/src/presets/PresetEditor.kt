@@ -116,6 +116,14 @@ data class PresetDraft(
         /** A new, unnamed preset in [config]'s shape, to save the settings on the Timer. */
         fun saveCurrent(config: IntervalConfig) = PresetDraft(EditorMode.SaveCurrent, name = "", config = config)
 
+        /** [preset], one of the user's own, to edit in place. */
+        fun edit(preset: Preset) =
+            PresetDraft(EditorMode.Edit, preset.name, preset.config, preset.id, preset.alternateHands)
+
+        /** A copy of [preset] to save under [name]. */
+        fun copy(preset: Preset, name: String) =
+            PresetDraft(EditorMode.Copy, name, preset.config, alternateHands = preset.alternateHands)
+
         /** The workout on the Timer, [config], to shape in place. */
         fun timer(config: IntervalConfig) = PresetDraft(EditorMode.Timer, name = "", config = config)
     }
