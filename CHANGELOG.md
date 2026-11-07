@@ -4,6 +4,8 @@ Notable changes to Interval, newest first. The format follows [Keep a Changelog]
 The version is `versionName` in `androidApp/module.yaml`; the iOS marketing version must match, and
 `tools/check_versions.py` fails CI when the two drift apart.
 
+## [0.6.0] — Unreleased
+
 ## [0.5.0] — Unreleased
 
 ### Added

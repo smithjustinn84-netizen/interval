@@ -28,15 +28,15 @@ Both Android and iOS versions must be bumped in unison. CI will fail via `tools/
    In `apps/androidApp/module.yaml`:
    ```yaml
    android:
-     versionName: "0.5.0"
-     versionCode: 5
+     versionName: "0.6.0"
+     versionCode: 6
    ```
 2. **Update iOS**:
    In `apps/iosApp/module.xcodeproj/project.pbxproj`:
    Update all occurrences of:
    ```pbxproj
-   MARKETING_VERSION = 0.5.0;
-   CURRENT_PROJECT_VERSION = 5;
+   MARKETING_VERSION = 0.6.0;
+   CURRENT_PROJECT_VERSION = 6;
    ```
 3. **Verify parity**:
    ```sh
