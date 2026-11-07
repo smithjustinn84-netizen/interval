@@ -37,6 +37,9 @@ import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.common_joined
 import dev.justinsmith.interval.history.resources.history_edit_plan
 import dev.justinsmith.interval.history.resources.history_empty_plan
+import dev.justinsmith.interval.history.resources.history_kind_conditioning
+import dev.justinsmith.interval.history.resources.history_kind_mobility
+import dev.justinsmith.interval.history.resources.history_kind_strength
 import dev.justinsmith.interval.history.resources.history_lift_any
 import dev.justinsmith.interval.history.resources.history_lift_session
 import dev.justinsmith.interval.history.resources.history_start
@@ -426,12 +429,14 @@ private fun Picks(state: HomeUiState, actions: HomeActions, onLook: (Int) -> Uni
     // The program's day is looked at by a place of its own, before the presets' from 0.
     Column(modifier) {
         GroupLabel(stringResource(Res.string.home_pick_by_time))
+        // Five lengths on a phone's width: at a large font a label breaks over two lines rather than losing "min".
         SegmentedPicker(
             options = PICK_MINUTES,
             selected = state.minutes,
             label = { stringResource(Res.string.home_minutes, it) },
             onSelect = actions.onMinutes,
             check = false,
+            maxLines = 2,
         )
         ListCard(Modifier.padding(top = Spacing.space8)) {
             state.strength?.let { strength ->
@@ -453,12 +458,16 @@ private fun Picks(state: HomeUiState, actions: HomeActions, onLook: (Int) -> Uni
     }
 }
 
-/** The program's next day, which fits: its name over its day, about how long, opening a look at it. */
+/**
+ * The program's next day, which fits: its name over its kind and day ("Strength · Day 3 of 16 · week 2"), about
+ * how long, opening a look at it.
+ */
 @Composable
 private fun StrengthRow(pick: StrengthPick, onLook: () -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val name = programName(pick.day.program)
     val described = stringResource(Res.string.preview_open_cd, name)
+    val detail = joined(listOf(stringResource(Res.string.history_kind_strength), programDayLine(pick.day)))
     Row(
         modifier
             .fillMaxWidth()
@@ -472,7 +481,7 @@ private fun StrengthRow(pick: StrengthPick, onLook: () -> Unit, modifier: Modifi
         StripeMark(palette.accent, height = IntervalSizes.historyMarkHeight)
         Column(Modifier.weight(1f)) {
             Text(name, style = IntervalTheme.type.label, color = palette.text)
-            Text(programDayLine(pick.day), style = IntervalTheme.type.meta, color = palette.textDim)
+            Text(detail, style = IntervalTheme.type.meta, color = palette.textDim)
         }
         Text(
             stringResource(Res.string.home_minutes, pick.minutes),
@@ -483,11 +492,18 @@ private fun StrengthRow(pick: StrengthPick, onLook: () -> Unit, modifier: Modifi
     }
 }
 
-/** A preset or a flow that fits: its name over its shape and length, opening a look at it before Start. */
+/**
+ * A preset or a flow that fits: its name over its kind and shape ("Conditioning · 20s on · 10s off · ×8",
+ * "Mobility · 6 moves") and its length, opening a look at it before Start. The kind is written, not left to the
+ * stripe's colour alone.
+ */
 @Composable
 private fun PickRow(pick: QuickPick, onLook: () -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val described = stringResource(Res.string.preview_open_cd, pick.preset.name)
+    val kind = stringResource(
+        if (pick.mobility) Res.string.history_kind_mobility else Res.string.history_kind_conditioning,
+    )
     Row(
         modifier
             .fillMaxWidth()
@@ -502,7 +518,7 @@ private fun PickRow(pick: QuickPick, onLook: () -> Unit, modifier: Modifier = Mo
         Column(Modifier.weight(1f)) {
             Text(pick.preset.name, style = IntervalTheme.type.label, color = palette.text)
             Text(
-                configDescription(pick.preset.config),
+                joined(listOf(kind, configDescription(pick.preset.config))),
                 style = IntervalTheme.type.meta,
                 color = palette.textDim,
             )

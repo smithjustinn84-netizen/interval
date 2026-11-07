@@ -9,7 +9,7 @@
     <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
     <action>Verify that the Today tab is shown and selected, with "This week" and "Nothing planned" over "Set up your week", "Plan your week" and "Follow a program"</action>
     <action>Tap "5 min" under "Or pick by time"</action>
-    <action>Verify that "Tabata" is listed with its shape and its length, and under the presets "Wrists and fingers" with "5 moves" and "5:00"</action>
+    <action>Verify that "Tabata" is listed over "Conditioning · 20s on · 10s off · ×8" and "4:00", and under the presets "Wrists and fingers" over "Mobility · 5 moves" and "5:00"</action>
     <action>Tap the "Tabata" row and verify that a sheet opens with "Conditioning" and its length over "Tabata", its timeline, "Start" and "Plan for later"</action>
     <action>Tap "Start"</action>
     <action>Verify that the workout shows "Get ready", then tap "Skip" and verify "Work" and "Round 1 of 8"</action>
@@ -29,6 +29,6 @@
     <action>Tap the "Today" tab</action>
     <action>Verify that Today shows "Up next · Today" with "15-minute kettlebell plan", a line starting "about 15 min" before "Day 1 of 18 · week 1", and a "Start day 1" button</action>
     <action>Tap the "15-minute kettlebell plan" title and verify that a sheet opens with "Strength · about 15 min", the day's lifts each with its sets, "Start day 1" and "Plan for later"; tap outside it to close it</action>
-    <action>Tap "15 min" under "Or pick by time" and verify that "15-minute kettlebell plan" leads the picks with "Day 1 of 18 · week 1" and "15 min"; tap "10 min" and verify that it is gone</action>
+    <action>Tap "15 min" under "Or pick by time" and verify that "15-minute kettlebell plan" leads the picks with "Strength · Day 1 of 18 · week 1" and "15 min"; tap "10 min" and verify that it is gone</action>
   </actions>
 </journey>

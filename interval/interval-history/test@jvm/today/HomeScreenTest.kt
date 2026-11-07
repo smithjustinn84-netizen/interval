@@ -12,6 +12,8 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -267,9 +269,13 @@ class HomeScreenTest {
         onNode(option("10 min")).assertIsSelected()
         onNode(option("20 min")).performClick()
         onNodeWithText("HIIT 30/30").assertIsDisplayed()
+        // Each row says its kind before its shape, and a flow's its moves.
+        onNodeWithText("Conditioning · 30s on · 30s off", substring = true).assertIsDisplayed()
+        onNodeWithText("Mobility · ", substring = true).assertExists()
         // Under the card's three ways to a plan, the third pick is below a phone's first screen.
         onNodeWithText("Tabata").performScrollTo().performClick()
-        onNodeWithText("Conditioning · ", substring = true).assertExists()
+        // The look's own caption, under the rows' kinds.
+        onAllNodesWithText("Conditioning · ", substring = true).onLast().assertExists()
         onNodeWithText("Plan for later").assertExists()
         onNodeWithText("Start").performClick()
         assertEquals(listOf(20), minutes)

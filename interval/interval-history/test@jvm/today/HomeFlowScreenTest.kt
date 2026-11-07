@@ -94,7 +94,7 @@ class HomeFlowScreenTest {
             HomeScreen(empty.copy(minutes = 5, picks = picks), HomeActions(onStartPick = { started += it.name }))
         }
 
-        onNodeWithText("5 moves").assertExists()
+        onNodeWithText("Mobility · 5 moves").assertExists()
         onNodeWithText("Wrists and fingers").performScrollTo().performClick()
         onNodeWithText("Mobility · 5 moves · 5:00").assertExists()
         onNodeWithText("Wrist circles").assertExists()

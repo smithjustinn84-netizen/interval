@@ -98,6 +98,9 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 - Today's Up next says "Start" over a planned workout or a flow, as the card names what it starts ("Start day 3",
   "Start session" and "Resume session" as before), and "Then tomorrow · Tabata" names the next plan alone, in
   lower case mid-sentence on Log too; Log's Coming up has the rest.
+- Today's picks say their kind before their shape ("Conditioning · 20s on · 10s off · ×8", "Mobility · 6 moves",
+  "Strength · Day 3 of 16"), not only by their stripe's colour, and at a large font a minute label breaks over
+  two lines rather than losing "min".
 - Log's week shows a bar a kind (Strength, Conditioning, Mobility, Sport days), each what was done of it against
   what was planned, in place of the line that split the week. Under it, "Coming up" lists every plan of the next
   seven days, a row each with its day and its Start, then the log's days under "Done this week" and "Earlier". The
