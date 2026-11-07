@@ -80,6 +80,21 @@
         <item>Step back and lower the back knee towards the floor</item>
         <item>Drive through the front foot to stand</item>
     </string-array>
+    <string-array name="cues_walking_lunge">
+        <item>Hold the bell at your side, shoulders level</item>
+        <item>Step forward and lower the back knee towards the floor</item>
+        <item>Drive up and bring the back foot through into the next step</item>
+    </string-array>
+    <string-array name="cues_renegade_row">
+        <item>Hold a plank on two bells, feet wide, hips square to the floor</item>
+        <item>Row one bell to the hip without twisting the hips</item>
+        <item>Set it down quietly and row the other</item>
+    </string-array>
+    <string-array name="cues_kettlebell_dead_bug">
+        <item>Lie back, the bell held up over the chest in both hands, knees over the hips</item>
+        <item>Reach one leg long, the bell still and the lower back down</item>
+        <item>Bring it back in and reach the other</item>
+    </string-array>
     <string-array name="cues_windmill">
         <item>Lock the bell overhead, eyes on it, and turn both feet forty-five degrees away</item>
         <item>Push the back hip out and hinge there; never round your spine just to touch the floor</item>

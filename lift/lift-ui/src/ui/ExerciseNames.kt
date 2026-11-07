@@ -66,6 +66,7 @@ import dev.justinsmith.lift.ui.resources.exercise_incline_push_up
 import dev.justinsmith.lift.ui.resources.exercise_inverted_row
 import dev.justinsmith.lift.ui.resources.exercise_iron_cardio
 import dev.justinsmith.lift.ui.resources.exercise_jerk
+import dev.justinsmith.lift.ui.resources.exercise_kettlebell_dead_bug
 import dev.justinsmith.lift.ui.resources.exercise_leg_pull_front
 import dev.justinsmith.lift.ui.resources.exercise_long_cycle
 import dev.justinsmith.lift.ui.resources.exercise_mountain_climber
@@ -78,6 +79,7 @@ import dev.justinsmith.lift.ui.resources.exercise_push_press
 import dev.justinsmith.lift.ui.resources.exercise_push_up
 import dev.justinsmith.lift.ui.resources.exercise_rack_carry
 import dev.justinsmith.lift.ui.resources.exercise_racked_lunge
+import dev.justinsmith.lift.ui.resources.exercise_renegade_row
 import dev.justinsmith.lift.ui.resources.exercise_reverse_lunge
 import dev.justinsmith.lift.ui.resources.exercise_roll_up
 import dev.justinsmith.lift.ui.resources.exercise_rolling_like_a_ball
@@ -102,6 +104,7 @@ import dev.justinsmith.lift.ui.resources.exercise_swimming
 import dev.justinsmith.lift.ui.resources.exercise_teaser
 import dev.justinsmith.lift.ui.resources.exercise_thruster
 import dev.justinsmith.lift.ui.resources.exercise_two_hand_swing
+import dev.justinsmith.lift.ui.resources.exercise_walking_lunge
 import dev.justinsmith.lift.ui.resources.exercise_wall_sit
 import dev.justinsmith.lift.ui.resources.exercise_windmill
 import org.jetbrains.compose.resources.StringResource
@@ -125,6 +128,9 @@ internal fun BuiltInExercise.label(): StringResource = when (this) {
     BuiltInExercise.Deadlift -> Res.string.exercise_deadlift
     BuiltInExercise.HighPull -> Res.string.exercise_high_pull
     BuiltInExercise.RackedLunge -> Res.string.exercise_racked_lunge
+    BuiltInExercise.WalkingLunge -> Res.string.exercise_walking_lunge
+    BuiltInExercise.RenegadeRow -> Res.string.exercise_renegade_row
+    BuiltInExercise.KettlebellDeadBug -> Res.string.exercise_kettlebell_dead_bug
     BuiltInExercise.Windmill -> Res.string.exercise_windmill
     BuiltInExercise.BottomsUpPress -> Res.string.exercise_bottoms_up_press
     BuiltInExercise.IronCardio -> Res.string.exercise_iron_cardio

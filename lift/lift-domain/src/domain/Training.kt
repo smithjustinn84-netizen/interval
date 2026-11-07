@@ -135,6 +135,18 @@ enum class BuiltInExercise(
 
     /** A reverse lunge with the bell in the rack, a side at a time; with two bells, both racked. */
     RackedLunge(Equipment.Kettlebell, perSide = true, Focus.LowerBody),
+
+    /** Lunging forward a step at a time across the floor, the bell at your side; with two bells, one in each hand. */
+    WalkingLunge(Equipment.Kettlebell, perSide = true, Focus.LowerBody),
+
+    /** A push-up plank on two bells, rowing one up to the hip while the other holds you. */
+    RenegadeRow(Equipment.Kettlebell, perSide = true, Focus.UpperBody, doubles = Doubles.Always),
+
+    /**
+     * On the back, one bell held up over the chest in both hands, a leg reaching out at a time; the bodyweight
+     * dead bug is [DeadBug].
+     */
+    KettlebellDeadBug(Equipment.Kettlebell, perSide = true, Focus.Core, doubles = Doubles.Never),
     Windmill(Equipment.Kettlebell, perSide = true, Focus.Core, doubles = Doubles.Never),
     BottomsUpPress(Equipment.Kettlebell, perSide = true, Focus.UpperBody, doubles = Doubles.Never),
 

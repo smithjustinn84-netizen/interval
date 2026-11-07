@@ -11,11 +11,11 @@ class ExerciseLibraryAcceptanceTest {
     @Test
     fun `an exercise added from an empty search is logged and then keeps its equipment`() = liftScenario {
         openExerciseLibrary()
-        seeMatches("102 exercises", "Kettlebell · 27")
+        seeMatches("105 exercises", "Kettlebell · 30")
         searchFor("PUSHUP")
         seeMatches("3 exercises", "Bodyweight · 3", "Push-up", "Incline push-up", "Pike push-up")
         tap("Clear")
-        see("102 exercises")
+        see("105 exercises")
 
         choose("Mat")
         seeMatches("18 exercises", "The hundred")
@@ -24,7 +24,7 @@ class ExerciseLibraryAcceptanceTest {
         choose("Time")
         seeMatches("1 exercise", "Swimming", "Filters · 1")
         tap("Clear")
-        seeMatches("102 exercises", "Filters")
+        seeMatches("105 exercises", "Filters")
 
         searchFor("Copenhagen plank")
         addSearchedExercise("Copenhagen plank")

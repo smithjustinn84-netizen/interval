@@ -84,7 +84,7 @@ internal val Exercise.secondsPerRep: Int
         BuiltInExercise.HalfSnatch, BuiltInExercise.Clean, BuiltInExercise.HighPull, BuiltInExercise.Jerk,
         -> 2
 
-        BuiltInExercise.Thruster, BuiltInExercise.BottomsUpPress -> 4
+        BuiltInExercise.Thruster, BuiltInExercise.BottomsUpPress, BuiltInExercise.RenegadeRow -> 4
 
         BuiltInExercise.LongCycle, BuiltInExercise.CleanAndPress -> 5
 

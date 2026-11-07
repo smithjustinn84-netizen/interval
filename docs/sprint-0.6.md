@@ -182,6 +182,19 @@ Exercise in Health Connect. Check it before the next release. Ticket 4 of 0.5 mo
   - `VariationsTest` pins the table;
   - `journeys/lift-plan-changes.xml` sees the first rung on the device.
 
+**8. Three more bell lifts** (added during the sprint) · S
+- The library checked against a hardstyle list (the Big 6, carries, anti-movement core, pulls and lunges). It held
+  every lift but three, which are now built-ins:
+  - `WalkingLunge`: the bell at the side, two with a pair.
+  - `RenegadeRow`: a plank on two bells, so always a pair, and never in a one-bell program.
+  - `KettlebellDeadBug`: one bell held over the chest. The bodyweight `DeadBug` keeps its key.
+- Each has its movement, muscles, name, cues and figure.
+- Done when:
+  - the library reads 105 exercises and "Kettlebell · 30" (`ExerciseLibraryAcceptanceTest`,
+    `journeys/exercise-library.xml`);
+  - `TrainingTest` pins the keys;
+  - `BellDemosTest` holds the renegade row's far bell on the floor and the dead bug's bell still.
+
 --- cut line ---
 
 **6. Describe reads "then"** (0.5's ticket 4, unchanged) · S

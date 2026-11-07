@@ -117,6 +117,25 @@ class BellDemosTest {
     }
 
     @Test
+    fun `the renegade row rows one bell off the floor while the other holds the plank`() {
+        val figures = (0..20).map { RenegadeRowDemo.figureAt(it / 20f) }
+        figures.forEach { figure ->
+            assertTrue(abs(figures.first().farBell.y - figure.farBell.y) < 1f, "The far bell leaves the floor")
+            assertTrue(figure.farBell.y < Rig.FLOOR, "The far bell sinks through the floor at ${figure.farBell}")
+        }
+        val rowed = RenegadeRowDemo.figureAt(RenegadeRowDemo.still)
+        assertTrue(rowed.bell.y < figures.first().bell.y - 20f, "The near bell stays down at ${rowed.bell}")
+    }
+
+    @Test
+    fun `the kettlebell dead bug holds the bell still over the chest as the legs reach`() {
+        val held = KettlebellDeadBugDemo.figureAt(0f).bell
+        (0..20).map { KettlebellDeadBugDemo.figureAt(it / 20f) }.forEach { figure ->
+            assertTrue((figure.bell - held).getDistance() < 1f, "The bell moves to ${figure.bell}")
+        }
+    }
+
+    @Test
     fun `the row braces the free hand on the bench and pulls the elbow back`() {
         val bench = RowDemo.props.single() as Bench
         (0..20).map { RowDemo.figureAt(it / 20f) }.forEach { figure ->

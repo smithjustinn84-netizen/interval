@@ -35,6 +35,9 @@
     <string name="exercise_deadlift">Deadlift</string>
     <string name="exercise_high_pull">High pull</string>
     <string name="exercise_racked_lunge">Racked reverse lunge</string>
+    <string name="exercise_walking_lunge">Walking lunge</string>
+    <string name="exercise_renegade_row">Renegade row</string>
+    <string name="exercise_kettlebell_dead_bug">Kettlebell dead bug</string>
     <string name="exercise_windmill">Windmill</string>
     <string name="exercise_bottoms_up_press">Bottoms-up press</string>
     <string name="exercise_iron_cardio">Iron Cardio</string>

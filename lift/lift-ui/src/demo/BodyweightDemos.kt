@@ -15,6 +15,11 @@ private const val DIP_BENCH = 62f
 private const val ROW_BAR = 140f
 private const val STEP = 80f
 
+/** The renegade row's plank, higher than a push-up's for the bells under the hands, and where its toes stand. */
+private const val RENEGADE_LEAN = 62f
+private const val RENEGADE_FOOT = 69f
+private const val RENEGADE_TOES = 60f
+
 /** A leg lifted off the floor behind, the heel folded up, before its knee drives in under the hips. */
 private const val LIFTED = 70f
 private const val FOLDED = 140f
@@ -377,6 +382,55 @@ val DeadBugDemo: ExerciseDemo = run {
         root = Root.Hips,
         anchor = Offset(170f, Rig.FLOOR),
         view = supineView,
+    )
+}
+
+/** The kettlebell dead bug: the dead bug with one bell held up over the chest in both hands, only the legs reaching. */
+val KettlebellDeadBugDemo: ExerciseDemo = run {
+    val rest = supine(torso = -82f, nearLeg = 0f, farLeg = 0f, arms = 180f).tableTop()
+    val farLeg = rest.copy(farShin = -110f, farThigh = -110f)
+    val nearLeg = rest.copy(shin = 250f, thigh = 250f)
+    ExerciseDemo(
+        keyframes = listOf(
+            Keyframe(at = 0f, pose = rest),
+            Keyframe(at = 0.25f, pose = farLeg),
+            Keyframe(at = 0.5f, pose = rest),
+            Keyframe(at = 0.75f, pose = nearLeg),
+            Keyframe(at = 1f, pose = rest),
+        ),
+        phases = phases(0.5f to 1, 1f to 2),
+        hold = Hold.BothHands,
+        secondsPerRep = 4f,
+        still = 0.25f,
+        root = Root.Hips,
+        anchor = Offset(170f, Rig.FLOOR),
+        view = supineView,
+    )
+}
+
+/**
+ * The renegade row: a push-up plank with the hands on two bells, the near one rowed to the hip and set down, the
+ * far arm and the toes holding the body square.
+ */
+val RenegadeRowDemo: ExerciseDemo = run {
+    val plank = plank(lean = RENEGADE_LEAN, foot = RENEGADE_FOOT, upperArm = -5.5f, forearm = 10.1f)
+    val rowed = plank.copy(upperArm = -70f, forearm = 10f, bell = 10f)
+    ExerciseDemo(
+        keyframes = listOf(
+            Keyframe(at = 0f, pose = plank),
+            Keyframe(at = 0.1f, pose = plank),
+            Keyframe(at = 0.4f, pose = rowed),
+            Keyframe(at = 0.5f, pose = rowed),
+            Keyframe(at = 0.9f, pose = plank),
+            Keyframe(at = 1f, pose = plank),
+        ),
+        phases = phases(0.1f to 0, 0.5f to 1, 1f to 2),
+        hold = Hold.Pair,
+        secondsPerRep = 3f,
+        still = 0.45f,
+        root = Root.Toe,
+        anchor = Offset(RENEGADE_TOES, Rig.FLOOR),
+        view = plankView,
     )
 }
 

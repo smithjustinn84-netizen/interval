@@ -59,6 +59,22 @@ val RackedLungeDemo: ExerciseDemo = run {
 }
 
 /**
+ * The walking lunge: the racked lunge's stride with the bell hanging at the side, the hips kept over the spot as the
+ * floor goes by, as in a carry.
+ */
+val WalkingLungeDemo: ExerciseDemo = run {
+    val atSide = Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 0f, forearm = 0f).stillHand()
+    ExerciseDemo(
+        keyframes = RackedLungeDemo.keyframes.map { it.copy(pose = atSide.standingAs(it.pose)) },
+        phases = RackedLungeDemo.phases,
+        hold = Hold.NearHand,
+        secondsPerRep = RackedLungeDemo.secondsPerRep,
+        still = RackedLungeDemo.still,
+        root = Root.Hips,
+    )
+}
+
+/**
  * The row: hinged over a flat back with the free hand braced on a bench, pull the elbow back to the hip and
  * lower to a long arm. Its phases are its cues: Brace (0), Pull (1), Lower (2).
  */

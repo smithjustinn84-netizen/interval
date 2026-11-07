@@ -67,6 +67,7 @@ import dev.justinsmith.lift.ui.resources.cues_incline_push_up
 import dev.justinsmith.lift.ui.resources.cues_inverted_row
 import dev.justinsmith.lift.ui.resources.cues_iron_cardio
 import dev.justinsmith.lift.ui.resources.cues_jerk
+import dev.justinsmith.lift.ui.resources.cues_kettlebell_dead_bug
 import dev.justinsmith.lift.ui.resources.cues_leg_pull_front
 import dev.justinsmith.lift.ui.resources.cues_long_cycle
 import dev.justinsmith.lift.ui.resources.cues_mountain_climber
@@ -79,6 +80,7 @@ import dev.justinsmith.lift.ui.resources.cues_push_press
 import dev.justinsmith.lift.ui.resources.cues_push_up
 import dev.justinsmith.lift.ui.resources.cues_rack_carry
 import dev.justinsmith.lift.ui.resources.cues_racked_lunge
+import dev.justinsmith.lift.ui.resources.cues_renegade_row
 import dev.justinsmith.lift.ui.resources.cues_reverse_lunge
 import dev.justinsmith.lift.ui.resources.cues_roll_up
 import dev.justinsmith.lift.ui.resources.cues_rolling_like_a_ball
@@ -103,6 +105,7 @@ import dev.justinsmith.lift.ui.resources.cues_swimming
 import dev.justinsmith.lift.ui.resources.cues_teaser
 import dev.justinsmith.lift.ui.resources.cues_thruster
 import dev.justinsmith.lift.ui.resources.cues_two_hand_swing
+import dev.justinsmith.lift.ui.resources.cues_walking_lunge
 import dev.justinsmith.lift.ui.resources.cues_wall_sit
 import dev.justinsmith.lift.ui.resources.cues_windmill
 import dev.justinsmith.lift.ui.resources.fault_bent_wrist
@@ -131,6 +134,9 @@ fun BuiltInExercise.cues(): StringArrayResource = when (this) {
     BuiltInExercise.Deadlift -> Res.array.cues_deadlift
     BuiltInExercise.HighPull -> Res.array.cues_high_pull
     BuiltInExercise.RackedLunge -> Res.array.cues_racked_lunge
+    BuiltInExercise.WalkingLunge -> Res.array.cues_walking_lunge
+    BuiltInExercise.RenegadeRow -> Res.array.cues_renegade_row
+    BuiltInExercise.KettlebellDeadBug -> Res.array.cues_kettlebell_dead_bug
     BuiltInExercise.Windmill -> Res.array.cues_windmill
     BuiltInExercise.BottomsUpPress -> Res.array.cues_bottoms_up_press
     BuiltInExercise.IronCardio -> Res.array.cues_iron_cardio

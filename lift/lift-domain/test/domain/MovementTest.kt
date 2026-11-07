@@ -19,6 +19,9 @@ class MovementTest {
             .forEach { assertEquals(Tempo.Hold, it.movement.tempo, "$it") }
         assertEquals(Pattern.Hinge, BuiltInExercise.TwoHandSwing.movement.pattern)
         assertEquals(Pattern.Squat, BuiltInExercise.GobletSquat.movement.pattern)
+        assertEquals(Pattern.Lunge, BuiltInExercise.WalkingLunge.movement.pattern)
+        assertEquals(Pattern.Pull, BuiltInExercise.RenegadeRow.movement.pattern)
+        assertEquals(Pattern.Core, BuiltInExercise.KettlebellDeadBug.movement.pattern)
     }
 
     @Test

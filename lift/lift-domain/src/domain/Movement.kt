@@ -64,6 +64,7 @@ import dev.justinsmith.lift.domain.BuiltInExercise.InclinePushUp
 import dev.justinsmith.lift.domain.BuiltInExercise.InvertedRow
 import dev.justinsmith.lift.domain.BuiltInExercise.IronCardio
 import dev.justinsmith.lift.domain.BuiltInExercise.Jerk
+import dev.justinsmith.lift.domain.BuiltInExercise.KettlebellDeadBug
 import dev.justinsmith.lift.domain.BuiltInExercise.LegPullFront
 import dev.justinsmith.lift.domain.BuiltInExercise.LongCycle
 import dev.justinsmith.lift.domain.BuiltInExercise.MountainClimber
@@ -76,6 +77,7 @@ import dev.justinsmith.lift.domain.BuiltInExercise.PushPress
 import dev.justinsmith.lift.domain.BuiltInExercise.PushUp
 import dev.justinsmith.lift.domain.BuiltInExercise.RackCarry
 import dev.justinsmith.lift.domain.BuiltInExercise.RackedLunge
+import dev.justinsmith.lift.domain.BuiltInExercise.RenegadeRow
 import dev.justinsmith.lift.domain.BuiltInExercise.ReverseLunge
 import dev.justinsmith.lift.domain.BuiltInExercise.RollUp
 import dev.justinsmith.lift.domain.BuiltInExercise.RollingLikeABall
@@ -100,6 +102,7 @@ import dev.justinsmith.lift.domain.BuiltInExercise.Swimming
 import dev.justinsmith.lift.domain.BuiltInExercise.Teaser
 import dev.justinsmith.lift.domain.BuiltInExercise.Thruster
 import dev.justinsmith.lift.domain.BuiltInExercise.TwoHandSwing
+import dev.justinsmith.lift.domain.BuiltInExercise.WalkingLunge
 import dev.justinsmith.lift.domain.BuiltInExercise.WallSit
 import dev.justinsmith.lift.domain.BuiltInExercise.Windmill
 
@@ -181,11 +184,13 @@ val BuiltInExercise.movement: Movement
 
         RackedLunge -> grind(Pattern.Lunge, grip = 1)
 
-        Row, BarbellRow -> grind(Pattern.Pull, grip = 2)
+        WalkingLunge -> grind(Pattern.Lunge, grip = 2)
+
+        Row, RenegadeRow, BarbellRow -> grind(Pattern.Pull, grip = 2)
 
         GetUp -> grind(Pattern.GetUp, grip = 1)
 
-        Windmill -> grind(Pattern.Core, grip = 1)
+        Windmill, KettlebellDeadBug -> grind(Pattern.Core, grip = 1)
 
         Halo -> grind(Pattern.Press, grip = 1)
 

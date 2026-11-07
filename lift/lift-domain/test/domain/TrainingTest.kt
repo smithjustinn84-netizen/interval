@@ -179,6 +179,10 @@ class TrainingTest {
         assertEquals(true, BuiltInExercise.ArmorBuildingComplex.doubled(requested = false))
         assertEquals(true, BuiltInExercise.FarmersWalk.doubled(requested = false))
         assertEquals(false, BuiltInExercise.SuitcaseCarry.doubled(requested = true))
+        assertEquals(true, BuiltInExercise.RenegadeRow.doubled(requested = false))
+        assertEquals(false, BuiltInExercise.KettlebellDeadBug.doubled(requested = true))
+        assertEquals(true, BuiltInExercise.WalkingLunge.doubled(requested = true))
+        assertEquals(false, BuiltInExercise.WalkingLunge.sided(double = true))
         assertEquals(false, BuiltInExercise.Press.sided(double = true))
         assertEquals(true, BuiltInExercise.Press.sided(double = false))
     }
@@ -229,7 +233,8 @@ class TrainingTest {
             listOf(
                 "TwoHandSwing", "OneHandSwing", "Clean", "Press", "Snatch", "GetUp", "GobletSquat", "Row", "Jerk",
                 "LongCycle", "Halo", "FrontSquat", "ArmorBuildingComplex", "Deadlift", "HighPull", "RackedLunge",
-                "Windmill", "BottomsUpPress", "IronCardio", "CleanAndPress", "Thruster", "HalfSnatch", "PushPress",
+                "WalkingLunge", "RenegadeRow", "KettlebellDeadBug", "Windmill", "BottomsUpPress", "IronCardio",
+                "CleanAndPress", "Thruster", "HalfSnatch", "PushPress",
                 "FarmersWalk", "SuitcaseCarry", "RackCarry", "BottomsUpCarry",
             ),
             kettlebellLifts.map { it.key },
@@ -261,10 +266,10 @@ class TrainingTest {
     }
 
     @Test
-    fun `the starter catalogue has 102 exercises across five kinds of equipment`() {
+    fun `the starter catalogue has 105 exercises across five kinds of equipment`() {
         assertEquals(
             mapOf(
-                Equipment.Kettlebell to 27,
+                Equipment.Kettlebell to 30,
                 Equipment.Barbell to 20,
                 Equipment.Bodyweight to 22,
                 Equipment.Band to 15,
@@ -272,8 +277,8 @@ class TrainingTest {
             ),
             BuiltInExercise.entries.groupingBy { it.equipment }.eachCount(),
         )
-        assertEquals(BuiltInExercise.entries.take(27), kettlebellLifts)
-        assertEquals(BuiltInExercise.entries.drop(27).take(20), barbellLifts)
+        assertEquals(BuiltInExercise.entries.take(30), kettlebellLifts)
+        assertEquals(BuiltInExercise.entries.drop(30).take(20), barbellLifts)
         assertTrue(standardBells.containsAll((8..32 step 2).map { it.toDouble() }))
     }
 
