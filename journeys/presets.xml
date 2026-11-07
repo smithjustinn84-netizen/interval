@@ -21,7 +21,7 @@
     <action>Tap "Save" at the bottom of the sheet</action>
     <action>Verify that a "Yours" card has appeared above "Built-in" with a "Journey" row captioned "On the Timer", that the Timer row now reads "Journey", and that the "Save as preset" row is gone</action>
     <action>Tap the "Tabata" row</action>
-    <action>Verify that a sheet is shown with "Built-in", "Tabata", "20s on · 10s off · ×8", "≈ 33 kcal", "Start workout", "Put on Timer" and "Save a copy"</action>
+    <action>Verify that a sheet is shown with "Built-in", "Tabata", "20s on · 10s off · ×8", "≈ 33 kcal", a filled "Start workout" button, and "Put on Timer" and "Save a copy" as plain text buttons side by side under it</action>
     <action>Tap "Put on Timer"</action>
     <action>Verify that the Timer is shown, its total labelled "Tabata · Total", with no "Save as preset" button in the title bar</action>
     <action>Tap "All presets"</action>

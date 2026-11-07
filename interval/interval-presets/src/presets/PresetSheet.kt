@@ -24,7 +24,6 @@ import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.QuietTextButton
-import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StartButton
 import dev.justinsmith.interval.ui.Timeline
@@ -35,11 +34,10 @@ import org.jetbrains.compose.resources.stringResource
 /**
  * What one preset leads to, in a sheet over the list: its group and name, its total with the user's
  * get-ready countdown over a full-width timeline, its shape and the calories it is estimated to burn, then
- * Start workout and Put on Timer.
- * Put on Timer is left out for the preset already there. When [replacesUnsaved], the Timer holds
- * settings no preset has, and a line over the buttons says either one replaces them. One of the
- * user's own ends with Edit and Delete; a built-in with Save a copy, which opens the editor on a copy
- * named after it.
+ * Start workout, the one filled button, over a row of quiet ones: Put on Timer (left out for the preset
+ * already there), then Edit and Delete for one of the user's own, or Save a copy for a built-in, which opens
+ * the editor on a copy named after it. When [replacesUnsaved], the Timer holds settings no preset has, and
+ * a line over Start says that it or Put on Timer replaces them.
  */
 @Composable
 internal fun PresetSheet(
@@ -94,12 +92,13 @@ internal fun PresetSheet(
                 )
             }
             StartButton(onStart, Modifier.fillMaxWidth())
-            if (!row.selected) {
-                SecondaryButton(stringResource(Res.string.presets_put_on_timer), onPutOnTimer, Modifier.fillMaxWidth())
-            }
         }
-        if (preset.custom) {
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+        // Start is the one filled button, as on a flow's sheet; the rest are quiet, in one row.
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+            if (!row.selected) {
+                QuietTextButton(stringResource(Res.string.presets_put_on_timer), onPutOnTimer, Modifier.weight(1f))
+            }
+            if (preset.custom) {
                 QuietTextButton(
                     stringResource(Res.string.presets_edit),
                     onClick = { onEdit(PresetDraft(EditorMode.Edit, preset.name, preset.config, preset.id)) },
@@ -111,13 +110,13 @@ internal fun PresetSheet(
                     Modifier.weight(1f),
                     destructive = true,
                 )
+            } else {
+                QuietTextButton(
+                    stringResource(Res.string.presets_save_copy),
+                    onClick = { onEdit(PresetDraft(EditorMode.Copy, copyName, preset.config)) },
+                    modifier = Modifier.weight(1f),
+                )
             }
-        } else {
-            QuietTextButton(
-                stringResource(Res.string.presets_save_copy),
-                onClick = { onEdit(PresetDraft(EditorMode.Copy, copyName, preset.config)) },
-                modifier = Modifier.fillMaxWidth(),
-            )
         }
     }
 }
