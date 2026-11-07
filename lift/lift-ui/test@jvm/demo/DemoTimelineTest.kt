@@ -4,6 +4,7 @@ package dev.justinsmith.lift.ui.demo
 
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.click
@@ -31,6 +32,27 @@ class DemoTimelineTest {
         assertEquals(1f, player.progress)
         player.toggle()
         assertTrue(player.playing)
+    }
+
+    @Test
+    fun `a player that sets up goes back to it and plays on`() {
+        val player = DemoPlayer(progress = 0.4f, playing = false, earliest = ExerciseDemo.SETTING_UP)
+        player.seek(-3f)
+        assertEquals(-1f, player.progress)
+        player.seek(0.4f)
+        player.replaySetUp()
+        assertEquals(-1f, player.progress)
+        assertTrue(player.playing)
+    }
+
+    @Test
+    fun `tapping a timeline's set-up shows the set-up`() = runUiTest {
+        val goblet = GobletSquatDemo.settingUp()
+        val player = DemoPlayer(progress = 0.5f, playing = true, earliest = goblet.earliest)
+        setThemedContent { DemoTimeline(goblet, player, "Where in the rep", Modifier.width(400.dp)) }
+        onNodeWithContentDescription("Where in the rep").performTouchInput { click(centerLeft + Offset(4f, 0f)) }
+        assertTrue(player.progress < 0f, "The tap lands at ${player.progress}, past the set-up")
+        assertEquals(goblet.setUp?.cue, goblet.phaseAt(player.progress).cue)
     }
 
     @Test

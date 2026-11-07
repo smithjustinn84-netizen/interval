@@ -3,11 +3,43 @@ package dev.justinsmith.lift.ui.demo
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.Exercise
 
-/** The demo drawn for this exercise: every built-in has one, and one of the user's own has none. */
+/**
+ * The demo drawn for this exercise: every built-in has one, and one of the user's own has none. A lift whose
+ * first cue is taken once before the reps (a grip, a stance, an anchor, lying down) is set up with it first; one
+ * whose first cue is part of every rep (a swing's hike, a clean's zip) loops from the start.
+ */
 val Exercise.demo: ExerciseDemo?
     get() = builtInDemos[this]
 
+/** The built-ins whose first cue is part of every rep, so their demos have no set-up. */
+internal val loopsFromTheStart: Set<BuiltInExercise> = setOf(
+    BuiltInExercise.ArmorBuildingComplex,
+    BuiltInExercise.BarbellClean,
+    BuiltInExercise.BarbellCleanAndJerk,
+    BuiltInExercise.BarbellJerk,
+    BuiltInExercise.Burpee,
+    BuiltInExercise.Clean,
+    BuiltInExercise.CleanAndPress,
+    BuiltInExercise.GetUp,
+    BuiltInExercise.HalfSnatch,
+    BuiltInExercise.HighPull,
+    BuiltInExercise.IronCardio,
+    BuiltInExercise.Jerk,
+    BuiltInExercise.LongCycle,
+    BuiltInExercise.OneHandSwing,
+    BuiltInExercise.ReverseLunge,
+    BuiltInExercise.ShoulderBridge,
+    BuiltInExercise.Snatch,
+    BuiltInExercise.Teaser,
+    BuiltInExercise.TwoHandSwing,
+)
+
 private val builtInDemos: Map<Exercise, ExerciseDemo> by lazy {
+    drawnLifts.mapValues { (exercise, demo) -> if (exercise in loopsFromTheStart) demo else demo.settingUp() }
+}
+
+/** Each built-in's demo as it loops, before any set-up. */
+private val drawnLifts: Map<Exercise, ExerciseDemo> by lazy {
     mapOf(
         BuiltInExercise.TwoHandSwing to TwoHandSwingDemo,
         BuiltInExercise.GobletSquat to GobletSquatDemo,

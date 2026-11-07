@@ -107,6 +107,17 @@ enum class DemoBeat { Set, Drive, Ease }
 /** A stretch of the rep up to [until] (a share of it), which the exercise's [cue]th cue speaks to. */
 data class DemoPhase(val until: Float, val beat: DemoBeat, val cue: Int)
 
+/**
+ * What is done once before the reps: the figure holds the rep's first pose for [seconds] while the exercise's
+ * [cue]th cue (taking the bell, anchoring the band, lying down) is lit, and the reps loop after it.
+ */
+data class SetUp(val cue: Int, val seconds: Float = SECONDS) {
+    companion object {
+        /** Long enough to read a cue's line. */
+        const val SECONDS = 1.6f
+    }
+}
+
 /** The figure's [pose] [at] this share of the rep. */
 data class Keyframe(val at: Float, val pose: Pose)
 
@@ -161,6 +172,10 @@ sealed interface BandEnd {
  * A swung bell hangs from the hands rather than standing on them: it points where it would have [bellLag] of
  * a rep ago, so it trails the arms up and floats on after them. It leaves a trail [trail] of a rep long (none
  * for 0), whose spacing shows its speed.
+ *
+ * With a [setUp], the demo starts with it before the first rep: a place in the demo from -1 to 0 is setting up
+ * (the figure still in the rep's first pose, the set-up's cue lit), from 0 to 1 a rep. No phase of the rep names
+ * the set-up's cue, so it is lit only while setting up.
  */
 class ExerciseDemo(
     val keyframes: List<Keyframe>,
@@ -174,12 +189,48 @@ class ExerciseDemo(
     val view: Rect = Rig.view,
     val props: List<Prop> = emptyList(),
     val anchor: Offset = Offset(Rig.ANKLE_X, Rig.FLOOR),
+    val setUp: SetUp? = null,
 ) {
     init {
         require(keyframes.first().at == 0f && keyframes.last().at == 1f) { "A rep runs from 0 to 1" }
         require(sameStance(keyframes.first().pose, keyframes.last().pose)) { "A rep ends as it starts" }
         require(keyframes.zipWithNext().all { (a, b) -> a.at < b.at }) { "Keyframes out of order" }
         require(phases.last().until >= 1f) { "Phases stop short of the rep's end" }
+        require(phases.none { it.cue == setUp?.cue }) { "The set-up's cue is lit in the rep" }
+    }
+
+    /** Where the demo can be: from -1 with a set-up, else from the rep's start, to its end. */
+    val earliest: Float get() = if (setUp == null) 0f else SETTING_UP
+
+    /**
+     * This demo, set up first with its [cue]th cue for [seconds]: each phase of the rep that named that cue gives
+     * its stretch to the one before it (the first, to the one after), and a rep left with a set-up's beat in it
+     * takes Drive then Ease in turn, as a rep after a set-up does.
+     */
+    fun settingUp(cue: Int = 0, seconds: Float = SetUp.SECONDS): ExerciseDemo {
+        val kept = mutableListOf<DemoPhase>()
+        phases.forEach { phase ->
+            when {
+                phase.cue != cue -> kept += phase
+                kept.isNotEmpty() -> kept[kept.lastIndex] = kept.last().copy(until = phase.until)
+            }
+        }
+        val rep = if (kept.none { it.beat == DemoBeat.Set }) {
+            kept
+        } else {
+            kept.mapIndexed { i, phase -> phase.copy(beat = if (i == 0) DemoBeat.Drive else DemoBeat.Ease) }
+        }
+        return ExerciseDemo(
+            keyframes, rep, hold, secondsPerRep, still, bellLag, trail, root, view, props, anchor, SetUp(cue, seconds),
+        )
+    }
+
+    /** Where the demo is [seconds] after [from], played on: through what is left of the set-up, then rep after rep. */
+    fun after(from: Float, seconds: Float): Float {
+        val setUp = setUp
+        if (from >= 0f || setUp == null) return looped(from.coerceAtLeast(0f) + seconds / secondsPerRep)
+        val left = -from * setUp.seconds
+        return if (seconds < left) from + seconds / setUp.seconds else looped((seconds - left) / secondsPerRep)
     }
 
     private val times = FloatArray(keyframes.size) { keyframes[it].at }
@@ -215,20 +266,26 @@ class ExerciseDemo(
         )
     }
 
-    /** The phase [progress] (0 to 1) is in. */
-    fun phaseAt(progress: Float): DemoPhase = phases.first { progress < it.until || it === phases.last() }
+    /** The phase [progress] (0 to 1) is in; while setting up, the set-up's. */
+    fun phaseAt(progress: Float): DemoPhase {
+        val setUp = setUp
+        if (progress < 0f && setUp != null) return DemoPhase(until = 0f, beat = DemoBeat.Set, cue = setUp.cue)
+        return phases.first { progress < it.until || it === phases.last() }
+    }
 
     /** Each phase with where in the rep it starts, in order: the stretches a timeline draws. */
     val stretches: List<Pair<Float, DemoPhase>>
         get() = phases.mapIndexed { i, phase -> (if (i == 0) 0f else phases[i - 1].until) to phase }
 
-    /** Where the first stretch that [cue] speaks to starts, or null if none does. */
-    fun startOf(cue: Int): Float? = stretches.firstOrNull { (_, phase) -> phase.cue == cue }?.first
+    /** Where the first stretch that [cue] speaks to starts (-1 for the set-up's), or null if none does. */
+    fun startOf(cue: Int): Float? =
+        if (cue == setUp?.cue) SETTING_UP else stretches.firstOrNull { (_, phase) -> phase.cue == cue }?.first
 
     /** The figure at [progress], its bells hanging where they were a moment before, or a bar's sleeve in the hands. */
     fun figureAt(progress: Float): Figure {
         val pose = poseAt(progress)
-        val before = if (bellLag == 0f) pose else poseAt(looped(progress - bellLag))
+        // Setting up, the figure stands still: nothing swings, so no bell lags.
+        val before = if (bellLag == 0f || progress < 0f) pose else poseAt(looped(progress - bellLag))
         val figure = pose.figure(root, anchor, hangs = before.bell, farHangs = before.farBell)
         return when (hold) {
             Hold.Bar, Hold.Free -> figure.copy(bell = figure.hand, farBell = figure.farHand)
@@ -238,7 +295,7 @@ class ExerciseDemo(
 
     /** Where the bell was over the last [trail] of a rep before [progress], oldest first; empty with no trail. */
     fun trailAt(progress: Float): List<Offset> {
-        if (trail == 0f) return emptyList()
+        if (trail == 0f || progress < 0f) return emptyList()
         return (TRAIL_STEPS downTo 1).map { step -> figureAt(looped(progress - trail * step / TRAIL_STEPS)).bell }
     }
 
@@ -248,6 +305,9 @@ class ExerciseDemo(
         (angles[stretch + 1][joint] - angles[stretch][joint]) / span(stretch)
 
     companion object {
+        /** Where a set-up starts, before the rep's 0. */
+        const val SETTING_UP = -1f
+
         /** How many places a trail remembers. */
         const val TRAIL_STEPS = 9
     }

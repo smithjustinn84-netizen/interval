@@ -5,6 +5,7 @@ import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -14,7 +15,6 @@ class ExerciseDemoTest {
     @Test
     fun `every built-in lift is drawn`() {
         assertSame(TwoHandSwingDemo, BuiltInExercise.TwoHandSwing.demo)
-        assertSame(GobletSquatDemo, BuiltInExercise.GobletSquat.demo)
         BuiltInExercise.entries.forEach { exercise -> assertNotNull(exercise.demo, "$exercise is not drawn") }
     }
 
@@ -167,6 +167,53 @@ class ExerciseDemoTest {
             }
             assertEquals(null, demo.startOf(CUES_NO_DEMO_NAMES))
         }
+    }
+
+    @Test
+    fun `a lift is set up once unless its first cue is part of every rep`() {
+        BuiltInExercise.entries.forEach { exercise ->
+            val setUp = exercise.demo?.setUp
+            if (exercise in loopsFromTheStart) {
+                assertNull(setUp, "$exercise sets up")
+            } else {
+                assertEquals(0, setUp?.cue, "$exercise doesn't set up with its first cue")
+            }
+        }
+    }
+
+    @Test
+    fun `setting up holds the rep's first pose with only the set-up lit`() {
+        demos.filter { it.setUp != null }.forEach { demo ->
+            val setUp = assertNotNull(demo.setUp)
+            listOf(-1f, -0.5f, -0.01f).forEach { at ->
+                assertEquals(demo.figureAt(0f).hip, demo.figureAt(at).hip)
+                assertEquals(setUp.cue, demo.phaseAt(at).cue)
+                assertEquals(DemoBeat.Set, demo.phaseAt(at).beat)
+                assertTrue(demo.trailAt(at).isEmpty(), "A trail while setting up")
+            }
+            assertTrue(demo.phases.none { it.cue == setUp.cue }, "The rep lights the set-up's cue")
+            assertTrue(demo.phases.none { it.beat == DemoBeat.Set }, "The rep sets up again")
+            assertEquals(ExerciseDemo.SETTING_UP, demo.startOf(setUp.cue))
+        }
+    }
+
+    @Test
+    fun `played on a demo sets up once then loops its reps`() {
+        val goblet = assertNotNull(BuiltInExercise.GobletSquat.demo)
+        val setUp = assertNotNull(goblet.setUp)
+        assertEquals(-0.5f, goblet.after(-1f, setUp.seconds / 2), 0.001f)
+        assertEquals(0.25f, goblet.after(-1f, setUp.seconds + goblet.secondsPerRep / 4), 0.001f)
+        assertEquals(0.25f, goblet.after(0.75f, goblet.secondsPerRep / 2), 0.001f)
+        assertEquals(0.1f, TwoHandSwingDemo.after(0f, TwoHandSwingDemo.secondsPerRep * 0.1f), 0.001f)
+    }
+
+    @Test
+    fun `a set-up takes the rep's set-up stretches into the stretches beside them`() {
+        val goblet = GobletSquatDemo.settingUp()
+        assertEquals(listOf(1, 2), goblet.phases.map { it.cue })
+        assertEquals(listOf(0.6f, 1f), goblet.phases.map { it.until })
+        val held = PlankDemo.settingUp()
+        assertEquals(listOf(DemoBeat.Drive, DemoBeat.Ease), held.phases.map { it.beat })
     }
 
     @Test

@@ -14,11 +14,12 @@ import dev.justinsmith.interval.platform.prefersReducedMotion
 
 /**
  * Where a demo is in its rep and whether it runs on: what its figure, its timeline and its cues all read, so
- * dragging along the timeline or picking a cue moves the figure with them.
+ * dragging along the timeline or picking a cue moves the figure with them. It goes no earlier than [earliest]:
+ * a demo's [ExerciseDemo.earliest], -1 when it sets up first.
  */
 @Stable
-class DemoPlayer(progress: Float, playing: Boolean) {
-    /** How far through the rep it is, 0 to 1. */
+class DemoPlayer(progress: Float, playing: Boolean, private val earliest: Float = 0f) {
+    /** How far through the rep it is, 0 to 1; below 0, how far through setting up, from -1. */
     var progress by mutableFloatStateOf(progress)
         private set
 
@@ -29,7 +30,13 @@ class DemoPlayer(progress: Float, playing: Boolean) {
     /** Stops it [at] this share of the rep, as a drag along the timeline or a picked cue does. */
     fun seek(at: Float) {
         playing = false
-        progress = at.coerceIn(0f, 1f)
+        progress = at.coerceIn(earliest, 1f)
+    }
+
+    /** Sets up again from the start and plays on into the reps. */
+    fun replaySetUp() {
+        progress = earliest
+        playing = true
     }
 
     fun toggle() {
@@ -43,14 +50,15 @@ class DemoPlayer(progress: Float, playing: Boolean) {
 
     internal companion object {
         val Saver = listSaver<DemoPlayer, Any>(
-            save = { listOf(it.progress, it.playing) },
-            restore = { DemoPlayer(progress = it[0] as Float, playing = it[1] as Boolean) },
+            save = { listOf(it.progress, it.playing, it.earliest) },
+            restore = { DemoPlayer(progress = it[0] as Float, playing = it[1] as Boolean, earliest = it[2] as Float) },
         )
     }
 }
 
 /**
- * A player for [demo], kept across a rotation, advancing a rep each [ExerciseDemo.secondsPerRep] while it plays.
+ * A player for [demo], kept across a rotation, setting up first if the demo does, then advancing a rep each
+ * [ExerciseDemo.secondsPerRep] while it plays.
  * The frames come from an infinite animation, so UI tests (which cancel those) never wait on it. With reduced
  * motion it stands at [ExerciseDemo.still] and never runs by itself; it still moves where it is dragged.
  */
@@ -58,16 +66,15 @@ class DemoPlayer(progress: Float, playing: Boolean) {
 fun rememberDemoPlayer(demo: ExerciseDemo): DemoPlayer {
     val still = prefersReducedMotion()
     val player = rememberSaveable(demo, saver = DemoPlayer.Saver) {
-        DemoPlayer(progress = demo.still, playing = !still)
+        DemoPlayer(progress = if (still) demo.still else demo.earliest, playing = !still, earliest = demo.earliest)
     }
     LaunchedEffect(player, still, player.playing) {
         if (still || !player.playing) return@LaunchedEffect
-        val repMillis = demo.secondsPerRep * MILLIS_PER_SECOND
         val from = player.progress
         val start = withInfiniteAnimationFrameMillis { it }
         while (true) {
             val elapsed = withInfiniteAnimationFrameMillis { it } - start
-            player.runTo((from + elapsed / repMillis) % 1f)
+            player.runTo(demo.after(from, elapsed / MILLIS_PER_SECOND))
         }
     }
     return player

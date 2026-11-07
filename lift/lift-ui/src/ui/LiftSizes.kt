@@ -24,4 +24,8 @@ object LiftSizes {
     val demoMarkerHeight = 16.dp
     val demoStretchGap = 2.dp
     val cueBar = 6.dp
+
+    /** A set-up's stretch at its narrowest on a demo's timeline, and the gap that keeps it apart from the rep. */
+    val demoSetUpLeast = 36.dp
+    val demoSetUpGap = 12.dp
 }

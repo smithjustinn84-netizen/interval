@@ -302,6 +302,16 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
 
     fun seeCurrentCue(cue: String) = see(hasText(cue) and isSelected())
 
+    /** The figure's cues grouped: what is done once before the reps, then what each rep does. */
+    fun seeSetUpThenEachRep() = seeMatches("Set up", "Each rep")
+
+    /** Taps the set-up's cue, which plays the set-up again and lights it. */
+    fun showSetUp(cue: String) {
+        tap(cue)
+        see("Pause")
+        seeCurrentCue(cue)
+    }
+
     fun customExercises(vararg names: String) =
         assertEquals(names.toList(), app.storage.exercises.rows.value.map { it.name })
 

@@ -88,5 +88,7 @@ class ExerciseLibraryAcceptanceTest {
         pauseDemonstration()
         showCuePart("Push the knees out and drive up through the whole foot")
         showCuePart("Sit between your heels with the chest up")
+        seeSetUpThenEachRep()
+        showSetUp("Hold the bell by the horns at your chest, elbows down")
     }
 }

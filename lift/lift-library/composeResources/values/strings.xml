@@ -30,6 +30,9 @@
     <string name="detail_demo_play">Play</string>
     <string name="detail_demo_timeline">Where in the rep</string>
     <string name="detail_demo_cue_jump">Show this part</string>
+    <string name="detail_demo_set_up">Set up</string>
+    <string name="detail_demo_each_rep">Each rep</string>
+    <string name="detail_demo_set_up_jump">Show the set-up</string>
     <string name="detail_also">Also %1$s</string>
     <string name="detail_history">Your history</string>
     <plurals name="detail_done">

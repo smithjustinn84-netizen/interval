@@ -51,13 +51,15 @@
     <action>Tap "Back" to close the sheet</action>
     <action>Clear the search and tap "Goblet squat"</action>
     <action>Verify that its page shows "Goblet squat" over "Kettlebell · Reps · Lower body", no "Edit" button, and "Not logged yet. Its sets will show here."</action>
-    <action>Verify that a card shows a figure holding a kettlebell at its chest squatting down and standing up again and again, its bell changing colour as it goes, with "Pause" in the card's corner; under it a bar in the same colours with a marker moving along it in step; and under that the three cues, the one the figure is doing lit with a bar of the bell's colour and the others dim</action>
+    <action>Verify that a card shows a figure holding a kettlebell at its chest: first standing still a moment with "Hold the bell by the horns at your chest, elbows down" lit under "Set up", then squatting down and standing up again and again, its bell changing colour as it goes, with "Pause" in the card's corner; under it a bar whose short first stretch (the set-up) stands apart from the rest, with a marker moving along it in step and staying in the rep once the set-up is done; and under "Each rep" the other two cues, the one the figure is doing lit with a bar of the bell's colour and the others dim</action>
     <action>Tap "Pause"</action>
     <action>Verify that the figure and the marker stop where they were and the button reads "Play"</action>
     <action>Drag the marker along the bar from left to right</action>
     <action>Verify that the figure squats down and stands up as the marker is dragged, and the lit cue changes with the bar's colour under the marker</action>
     <action>Tap "Push the knees out and drive up through the whole foot"</action>
     <action>Verify that the figure stops at the bottom of the squat about to drive up, the marker where the bar turns to the colour it drives up in, and that cue is lit</action>
+    <action>Tap "Hold the bell by the horns at your chest, elbows down"</action>
+    <action>Verify that the button reads "Pause", the marker goes back to the set-up's stretch with that cue lit, and after a moment the figure squats again, the marker carrying on into the rep</action>
     <action>Tap "Back" to close the sheet, then "Back" to return to Train's Strength pillar</action>
   </actions>
 </journey>

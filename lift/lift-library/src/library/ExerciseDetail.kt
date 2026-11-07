@@ -70,8 +70,11 @@ import dev.justinsmith.lift.library.resources.detail_also
 import dev.justinsmith.lift.library.resources.detail_best
 import dev.justinsmith.lift.library.resources.detail_demo
 import dev.justinsmith.lift.library.resources.detail_demo_cue_jump
+import dev.justinsmith.lift.library.resources.detail_demo_each_rep
 import dev.justinsmith.lift.library.resources.detail_demo_pause
 import dev.justinsmith.lift.library.resources.detail_demo_play
+import dev.justinsmith.lift.library.resources.detail_demo_set_up
+import dev.justinsmith.lift.library.resources.detail_demo_set_up_jump
 import dev.justinsmith.lift.library.resources.detail_demo_timeline
 import dev.justinsmith.lift.library.resources.detail_done
 import dev.justinsmith.lift.library.resources.detail_edit
@@ -242,6 +245,7 @@ private fun Demonstration(demo: ExerciseDemo, name: String, cues: List<String>) 
     val colors = FigureColors.theme()
     // Read as the phase changes, not every frame the figure moves.
     val phase by remember(demo, player) { derivedStateOf { demo.phaseAt(player.progress) } }
+    val still = prefersReducedMotion()
     ListCard(fill = IntervalTheme.palette.surfaceVariant) {
         Box(Modifier.fillMaxWidth()) {
             ExerciseFigure(
@@ -251,7 +255,7 @@ private fun Demonstration(demo: ExerciseDemo, name: String, cues: List<String>) 
                 modifier = Modifier.fillMaxWidth().height(LiftSizes.exerciseDemo).padding(Spacing.space8),
                 colors = colors,
             )
-            if (!prefersReducedMotion()) {
+            if (!still) {
                 QuietTextButton(
                     stringResource(if (player.playing) Res.string.detail_demo_pause else Res.string.detail_demo_play),
                     onClick = player::toggle,
@@ -266,24 +270,56 @@ private fun Demonstration(demo: ExerciseDemo, name: String, cues: List<String>) 
             modifier = Modifier.padding(horizontal = Spacing.space16),
             colors = colors,
         )
-        cues.forEachIndexed { i, line ->
-            RowDivider()
-            CueRow(
-                line,
-                current = i == phase.cue,
-                lit = colors.of(phase.beat),
-                onShow = demo.startOf(i)?.let { start -> { player.seek(start) } },
-            )
+        val setUp = demo.setUp?.cue?.takeIf { it in cues.indices }
+
+        @Composable
+        fun cue(i: Int) = CueRow(
+            cues[i],
+            current = i == phase.cue,
+            lit = colors.of(phase.beat),
+            onShow = when {
+                i == setUp && still -> { -> player.seek(SET_UP_STILL) }
+                i == setUp -> player::replaySetUp
+                else -> demo.startOf(i)?.let { start -> { player.seek(start) } }
+            },
+            showLabel = stringResource(
+                if (i == setUp) Res.string.detail_demo_set_up_jump else Res.string.detail_demo_cue_jump,
+            ),
+        )
+        if (setUp == null) {
+            cues.indices.forEach { i ->
+                RowDivider()
+                cue(i)
+            }
+        } else {
+            CueGroupLabel(stringResource(Res.string.detail_demo_set_up))
+            cue(setUp)
+            CueGroupLabel(stringResource(Res.string.detail_demo_each_rep))
+            cues.indices.filter { it != setUp }.forEachIndexed { n, i ->
+                if (n > 0) RowDivider()
+                cue(i)
+            }
         }
     }
 }
 
+/** What the cues under it are in a figure's card: the set-up, or each rep. */
+@Composable
+private fun CueGroupLabel(text: String) {
+    Text(
+        text,
+        style = IntervalTheme.type.meta,
+        color = IntervalTheme.palette.textDim,
+        modifier = Modifier.padding(start = Spacing.space16, end = Spacing.space16, top = Spacing.space12),
+    )
+}
+
 /**
- * A cue under a figure: a bar beside it in [lit] while it is [current], dim otherwise; tapping it stops the
- * figure where the cue starts, through [onShow], when the figure has a stretch for it.
+ * A cue under a figure: a bar beside it in [lit] while it is [current], dim otherwise; tapping it ([showLabel])
+ * moves the figure to where the cue starts, through [onShow], when the figure has a stretch for it.
  */
 @Composable
-private fun CueRow(line: String, current: Boolean, lit: Color, onShow: (() -> Unit)?) {
+private fun CueRow(line: String, current: Boolean, lit: Color, onShow: (() -> Unit)?, showLabel: String) {
     val palette = IntervalTheme.palette
     val bar by animateColorAsState(if (current) lit else palette.line, label = "cue bar")
     val ink by animateColorAsState(if (current) palette.text else palette.textDim, label = "cue ink")
@@ -300,7 +336,7 @@ private fun CueRow(line: String, current: Boolean, lit: Color, onShow: (() -> Un
                         shape = RectangleShape,
                         fill = Color.Transparent,
                         onClick = onShow,
-                        onClickLabel = stringResource(Res.string.detail_demo_cue_jump),
+                        onClickLabel = showLabel,
                         haptic = HapticFeedbackType.SegmentTick,
                     )
                 },
@@ -314,6 +350,9 @@ private fun CueRow(line: String, current: Boolean, lit: Color, onShow: (() -> Un
         Text(line, style = IntervalTheme.type.body, color = ink)
     }
 }
+
+/** With reduced motion a picked set-up shows still, halfway through it. */
+private const val SET_UP_STILL = -0.5f
 
 /** How to do it, a line each, in a card. */
 @Composable
