@@ -40,7 +40,8 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * In a free session: the set to log next, composed on the spot from the sheet's draft and logged from the
- * session's foot. The lift with How to and Change (the library, as a sheet), its load a tap lighter or heavier,
+ * session's foot. A figure doing the lift over it ([NextFigure]), then the lift with How to and Change (the
+ * library, as a sheet), its load a tap lighter or heavier,
  * its reps (or a hold's length, with Time it), the side of a one-sided lift, Two bells when the lift can be
  * doubled, and what was lifted last time. Once logged it stays, the side flipped, for the next set.
  */
@@ -53,6 +54,7 @@ internal fun DraftSetCard(
 ) {
     val draft = state.draft
     ListCard(Modifier.padding(top = Spacing.space8)) {
+        NextFigure(draft.exercise, draft.doubled, actions.onOpenExercise)
         Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
             Text(
                 stringResource(Res.string.next_free_title),

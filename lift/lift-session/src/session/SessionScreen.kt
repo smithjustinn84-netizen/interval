@@ -396,7 +396,7 @@ fun SessionScreen(
                 actions = { IconAction(IntervalIcons.Add, stringResource(Res.string.session_add_cd), openSheet) },
             )
         },
-        tiles = { wide -> SessionTiles(state, clocks, actions, wide) },
+        tiles = { wide -> SessionTiles(state, clocks, wide) },
         plan = {
             SessionPlanContent(
                 state = state,
@@ -409,9 +409,10 @@ fun SessionScreen(
                 onLog = { logging = true },
             )
         },
-        buttons = {
-            SessionButtons(
+        foot = {
+            SessionFoot(
                 state,
+                clocks,
                 actions,
                 onFinish = { if (state.session?.sets.isNullOrEmpty()) leaving = true else actions.onFinish() },
                 onOpenSheet = openSheet,
@@ -561,13 +562,14 @@ private class SessionParts(
     /** The session's numbers, in one row when [wide] and two otherwise. */
     val tiles: @Composable (wide: Boolean) -> Unit,
     val plan: @Composable ColumnScope.() -> Unit,
-    val buttons: @Composable () -> Unit,
+    /** The rest counting down, while one does, over Finish and Log set. */
+    val foot: @Composable () -> Unit,
 )
 
 /**
- * Upright, one column: the title, then the clock, what is next and what is done scrolling, then Log set; on a
- * tablet ([isWideUpright]) the column widens and the numbers sit in one row. On its side, the title, the clock
- * and Log set on the left, and what is next and what is done on the right.
+ * Upright, one column: the title, then the clock, what is next and what is done scrolling, then the rest and Log
+ * set; on a tablet ([isWideUpright]) the column widens and the numbers sit in one row. On its side, the title,
+ * the clock, the rest and Log set on the left, and what is next and what is done on the right.
  */
 @Composable
 private fun SessionLayout(parts: SessionParts, modifier: Modifier = Modifier) {
@@ -584,7 +586,7 @@ private fun SessionLayout(parts: SessionParts, modifier: Modifier = Modifier) {
                     Column(
                         Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Spacing.space16),
                     ) { parts.tiles(false) }
-                    parts.buttons()
+                    parts.foot()
                 }
                 Column(
                     Modifier
@@ -615,18 +617,18 @@ private fun SessionLayout(parts: SessionParts, modifier: Modifier = Modifier) {
                     parts.tiles(wide)
                     parts.plan(this)
                 }
-                parts.buttons()
+                parts.foot()
             }
         }
     }
 }
 
 /**
- * The session's time and weight moved, and the rest counting down or else how long since the last set: in one
- * row when [wide].
+ * The session's time and weight moved, and from the first set on how long since the last: in one row when
+ * [wide]. The rest counts down at the foot ([SessionFoot]), so the tiles keep one shape as it comes and goes.
  */
 @Composable
-private fun SessionTiles(state: SessionUiState, clocks: () -> SessionClocks, actions: SessionActions, wide: Boolean) {
+private fun SessionTiles(state: SessionUiState, clocks: () -> SessionClocks, wide: Boolean) {
     val moved = state.session?.tonnageKg ?: 0.0
     val now = clocks()
     val time = @Composable { modifier: Modifier ->
@@ -640,25 +642,16 @@ private fun SessionTiles(state: SessionUiState, clocks: () -> SessionClocks, act
             rank = moved.toInt(),
         )
     }
-    val since = now.sinceLast
-    val rest = now.rest
-    val third = when {
-        rest != null -> @Composable { modifier: Modifier ->
-            RestTile(rest, actions.onStepRest, actions.onSkipRest, modifier)
-        }
-
-        since != null -> @Composable { modifier: Modifier ->
+    val third = now.sinceLast?.let { since ->
+        @Composable { modifier: Modifier ->
             StatTile(stringResource(Res.string.session_since_last), since, modifier)
         }
-
-        else -> null
     }
     if (wide) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             time(Modifier.weight(1f))
             weight(Modifier.weight(1f))
-            // The rest's buttons need more room than a figure.
-            third?.invoke(Modifier.weight(if (rest != null) 2f else 1f))
+            third?.invoke(Modifier.weight(1f))
         }
     } else {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
@@ -672,8 +665,31 @@ private fun SessionTiles(state: SessionUiState, clocks: () -> SessionClocks, act
 }
 
 /**
- * The session's foot: Finish beside Log set (or Start EMOM when an EMOM block is up next); once a program day's
- * sets are done, Extra set beside Finish in the accent.
+ * The session's foot: the rest counting down while one does ([RestBand]), read from [clocks] here so each tick
+ * redraws only the band, over the buttons ([SessionButtons]).
+ */
+@Composable
+private fun SessionFoot(
+    state: SessionUiState,
+    clocks: () -> SessionClocks,
+    actions: SessionActions,
+    onFinish: () -> Unit,
+    onOpenSheet: () -> Unit,
+) {
+    Column {
+        RestBand(
+            clocks().rest,
+            actions.onStepRest,
+            actions.onSkipRest,
+            Modifier.padding(start = Spacing.space16, end = Spacing.space16, top = Spacing.space8),
+        )
+        SessionButtons(state, actions, onFinish, onOpenSheet)
+    }
+}
+
+/**
+ * Finish beside Log set (or Start EMOM when an EMOM block is up next); once a program day's sets are done, Extra
+ * set beside Finish in the accent.
  */
 @Composable
 private fun SessionButtons(

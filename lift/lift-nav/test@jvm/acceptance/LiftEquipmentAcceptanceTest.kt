@@ -19,6 +19,8 @@ class LiftEquipmentAcceptanceTest {
         logFromSheet()
         seeSet("16 kg × 10")
         seeMoved("160 kg")
+        seeResting("1:30")
+        skipRest()
 
         openLogSheet()
         openLibraryOnSheet()

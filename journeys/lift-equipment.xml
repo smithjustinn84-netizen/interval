@@ -10,12 +10,12 @@
     <action>Tap the "Train" tab, which opens on "Strength"</action>
     <action>Verify that "No sessions yet" is shown and an "Exercises" card says "Bells, barbells, bodyweight, bands and the mat"</action>
     <action>Tap "Start session"</action>
-    <action>Verify that the session screen is shown with "Time", "Moved" at "0 kg", "Next set" with "Two-hand swing", "Add set or EMOM" in the title bar, and "Log set" at the bottom</action>
+    <action>Verify that the session screen is shown with "Time", "Moved" at "0 kg", "Next set" with a figure doing the two-hand swing over "Two-hand swing", "Add set or EMOM" in the title bar, and "Log set" at the bottom</action>
     <action>Tap "Add set or EMOM" in the title bar</action>
     <action>Verify that the sheet shows "A set" and "An EMOM", and an exercise card reading "Two-hand swing" over "Kettlebell · Reps · Full body", with "Change"</action>
     <action>Verify that "Bell" chips are shown, "16" selected, and "Reps" reads "10"</action>
     <action>Tap "Log set" at the bottom of the sheet</action>
-    <action>Verify that the session shows "Two-hand swing" with a set "16 kg × 10", and "Moved" reads "160 kg"</action>
+    <action>Verify that the session shows "Two-hand swing" with a set "16 kg × 10", "Moved" reads "160 kg", and a rest counts down from "1:30" just above "Log set"; tap "Skip" on it</action>
     <action>Tap "Add set or EMOM" in the title bar, then "Change" on the exercise card</action>
     <action>Verify that the sheet shows "Search exercises", the chips "Kettlebell", "Barbell", "Bodyweight", "Band" and "Mat", and "Recent" listing "Two-hand swing"</action>
     <action>Tap the "Band" chip</action>

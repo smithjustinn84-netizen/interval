@@ -150,6 +150,17 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
     /** Logs the set the session's Next set card offers. */
     fun logNextSet() = tap("Log set")
 
+    /** A figure doing [exercise] on the card about the next set. */
+    fun seeNextLiftShown(exercise: String) = see(hasContentDescription("A figure doing $exercise"))
+
+    /** The rest after a set counting down, [left] on it. */
+    fun seeResting(left: String) {
+        see("Rest")
+        see(left)
+    }
+
+    fun skipRest() = tap("Skip")
+
     fun seeSet(set: String) = see(set)
 
     fun seeMoved(kg: String) = see(kg)

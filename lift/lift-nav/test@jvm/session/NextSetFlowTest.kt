@@ -168,6 +168,8 @@ class NextSetFlowTest {
         waitForText("Copenhagen plank")
         onNodeWithText("Log set").assertExists()
         onNodeWithText("Search exercises").assertDoesNotExist()
+        // One of the user's own has no figure to show; the swing's went with the swing.
+        onNodeWithContentDescription("A figure doing", substring = true).assertDoesNotExist()
     }
 
     @Test

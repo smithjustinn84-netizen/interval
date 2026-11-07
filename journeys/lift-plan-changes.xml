@@ -10,7 +10,7 @@
     <action>Tap the "Train" tab, which opens on "Strength", then "Follow a program"</action>
     <action>Tap "Goblet squat and row", then "Follow this program"</action>
     <action>Tap "Start day 1"</action>
-    <action>Verify that the session shows "Up next · 1 of 9 sets", "Goblet squat", "16 kg × 10", "Change", "Skip" and "Today's plan", with "Log set" at the bottom</action>
+    <action>Verify that the session shows "Up next · 1 of 9 sets", a figure doing the goblet squat over "Goblet squat", "16 kg × 10", "Change", "Skip" and "Today's plan", with "Log set" at the bottom</action>
     <action>Tap "Change" on the Up next card</action>
     <action>Verify that a sheet shows an exercise card "Goblet squat" with "Change", "Bell" chips with "Last time" selected, "How it runs", "Sets" at "3" and "Reps" at "10"</action>
     <action>Tap "24", then "Done"</action>

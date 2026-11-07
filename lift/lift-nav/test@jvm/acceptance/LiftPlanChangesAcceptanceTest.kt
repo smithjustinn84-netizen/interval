@@ -16,6 +16,7 @@ class LiftPlanChangesAcceptanceTest {
         startProgramDay(1)
         see("Up next · 1 of 9 sets")
         see("16 kg")
+        seeNextLiftShown("Goblet squat")
 
         changeUpNext("24")
         see("24 kg")

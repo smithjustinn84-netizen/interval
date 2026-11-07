@@ -322,6 +322,14 @@ class PlanFlowTest {
     }
 
     @Test
+    fun `the figure on Up next does the lift and opens its page on a tap`() = liftAppTest(followed()) {
+        startDay()
+        onNodeWithContentDescription("A figure doing Goblet squat").assertIsDisplayed().performClick()
+        waitForText("Sit between your heels with the chest up")
+        onNodeWithText("Edit").assertDoesNotExist()
+    }
+
+    @Test
     fun `How to on the Log sheet shows the page in place and goes back to the set`() = liftAppTest(followed()) {
         startDay()
         onNodeWithContentDescription("Add set or EMOM").performClick()

@@ -37,12 +37,13 @@ class TabletTest {
         onNodeWithText("Log set").performClick()
         waitForText("16 kg × 10")
         val time = onNodeWithText("Time").assertIsDisplayed().getUnclippedBoundsInRoot()
-        // Straight after a set, its rest counts down where Since last set stands.
-        val since = onNodeWithText("Rest").assertIsDisplayed().getUnclippedBoundsInRoot()
+        val since = onNodeWithText("Since last set").assertIsDisplayed().getUnclippedBoundsInRoot()
         val set = onNodeWithText("16 kg × 10").assertIsDisplayed().getUnclippedBoundsInRoot()
+        // Straight after a set, its rest counts down at the foot, just over Log set.
+        val rest = onNodeWithText("Rest").assertIsDisplayed().getUnclippedBoundsInRoot()
         val log = onNodeWithText("Log set").assertIsDisplayed().getUnclippedBoundsInRoot()
-        // The numbers in one row, the sets under them and Log set at the foot, not a column of each.
+        // The numbers in one row, the sets under them and the rest and Log set at the foot, not a column of each.
         assertTrue(since.top == time.top && since.left > time.right)
-        assertTrue(set.top > time.bottom && log.top > set.bottom)
+        assertTrue(set.top > time.bottom && rest.top > set.bottom && log.top >= rest.bottom)
     }
 }

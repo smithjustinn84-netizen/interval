@@ -8,7 +8,7 @@
   <actions>
     <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
     <action>Tap the "Train" tab, which opens on "Strength", then "Start session"</action>
-    <action>Tap "Log set" and verify that a rest counts down from "1:30" with − and + beside it</action>
+    <action>Tap "Log set" and verify that a rest counts down from "1:30" with − and + beside it, just above "Log set"</action>
     <action>Verify that the system asks to allow notifications (Android 13+, the first rest only), and tap "Allow"</action>
     <action>Tap "−" four times and verify that the rest reads "0:30" or less</action>
     <action>Press Home and verify that the status bar shows a chip with the rest's time left (Android 16+)</action>

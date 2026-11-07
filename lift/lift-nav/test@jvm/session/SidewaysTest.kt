@@ -30,6 +30,10 @@ class SidewaysTest {
         waitForText("Reps")
         onAllNodesWithText("Log set").onLast().assertIsDisplayed().performClick()
         waitForText("16 kg × 10")
+        // The rest's band at the foot leaves Log set and Finish in view.
+        onNodeWithText("Rest").assertIsDisplayed()
+        onNodeWithText("Log set").assertIsDisplayed()
+        onNodeWithText("Finish").assertIsDisplayed()
         app.clock.set(90_000)
         onNodeWithText("Finish").performClick()
         waitForText("Counts toward your week and your goal")

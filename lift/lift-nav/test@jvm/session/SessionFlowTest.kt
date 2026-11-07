@@ -199,7 +199,8 @@ class SessionFlowTest {
         onNodeWithText("Log set").performClick()
         waitForText("Rest")
         onNodeWithText("1:30").assertExists()
-        onNodeWithText("Since last set").assertDoesNotExist()
+        // The tiles keep their shape: the rest counts down at the foot, not in Since last set's place.
+        onNodeWithText("Since last set").assertExists()
         onNodeWithContentDescription("Rest 15 seconds more").performClick()
         waitForText("1:45")
         assertEquals(105, app.storage.bells.rest.value?.seconds)

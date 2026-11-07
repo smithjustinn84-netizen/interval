@@ -19,6 +19,9 @@ object LiftSizes {
     /** A figure showing how an exercise goes, on its page: tall enough to read a swing's arc on a phone. */
     val exerciseDemo = 220.dp
 
+    /** The same figure on the session's card about the next set, a band across its top: a swing's arc still reads. */
+    val nextFigure = 140.dp
+
     /** The marker on a demo's timeline, the gap between its stretches, and the bar beside a cue it lights. */
     val demoMarkerWidth = 4.dp
     val demoMarkerHeight = 16.dp

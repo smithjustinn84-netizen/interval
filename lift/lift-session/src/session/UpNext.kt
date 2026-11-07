@@ -34,9 +34,10 @@ import dev.justinsmith.lift.ui.liftName
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * In a program day: the next planned set, its load a tap a step lighter or heavier for the rest of its block,
- * and what was lifted last time; the session's foot logs the set or starts its EMOM. How to opens the exercise's
- * page; Change opens its block to change for today, Skip skips the rest of it, and Today's plan lists every block.
+ * In a program day: the next planned set under a figure doing its lift ([NextFigure]), its load a tap a step
+ * lighter or heavier for the rest of its block, and what was lifted last time; the session's foot logs the set or
+ * starts its EMOM. How to (or a tap on the figure) opens the exercise's page; Change opens its block to change for
+ * today, Skip skips the rest of it, and Today's plan lists every block.
  */
 @Composable
 internal fun UpNextCard(
@@ -90,6 +91,7 @@ private fun NextSetCard(
     val undo = stringResource(Res.string.session_undo)
     val skipped = stringResource(Res.string.notice_block_skipped, liftName(set.exercise, set.double))
     ListCard(Modifier.padding(top = Spacing.space8)) {
+        NextFigure(set.exercise, set.double, actions.onOpenExercise)
         Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
             Text(
                 stringResource(
