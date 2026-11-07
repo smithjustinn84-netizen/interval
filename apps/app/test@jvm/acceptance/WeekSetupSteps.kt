@@ -8,6 +8,8 @@ import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.isToggleable
 import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.asPlan
+import dev.justinsmith.interval.timer.snatchIntervals
 import dev.justinsmith.lift.data.LiftRepository
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
@@ -41,6 +43,11 @@ fun IntervalAcceptanceDriver.trainOn(vararg weekdays: String) = weekdays.forEach
 /** The third: each bell of [kg] tapped, which turns it on or off. */
 fun IntervalAcceptanceDriver.ownBells(vararg kg: Int) = kg.forEach {
     tap(hasContentDescription("$it kg") and isToggleable())
+}
+
+/** Of the bells owned, each of [kg] tapped as owned two of, which turns it on or off. */
+fun IntervalAcceptanceDriver.ownTwoOf(vararg kg: Int) = kg.forEach {
+    tap(hasContentDescription("Two of $it kg") and isToggleable())
 }
 
 /** The fourth: how long a session is. */
@@ -83,6 +90,15 @@ fun IntervalAcceptanceDriver.weekHolds(
     }
     assertEquals(bells, lift.gear.bells.value)
     assertEquals(goal, app.repository.settings.appSettings.value.weeklyGoal)
+}
+
+/** The bells of [kg] kept as owned two of, and the intervals beside the program planned on [intervalDays] days. */
+fun IntervalAcceptanceDriver.pairsAndIntervalsHeld(kg: Set<Double>, intervalDays: Int) {
+    val lift = app.koin.koin.get<LiftRepository>()
+    waitFor("pairs $kg and $intervalDays days of intervals") {
+        lift.gear.pairs.value == kg &&
+            app.repository.plans.planned.value.count { it.workout == snatchIntervals.asPlan() } == intervalDays
+    }
 }
 
 /** The session's length is kept, and Today's pick by time stands on it. */

@@ -47,6 +47,24 @@ class WeekSetupAcceptanceTest {
     }
 
     @Test
+    fun `a grappler with a pair gets twenty minutes beside the mat and the intervals between`() = acceptanceScenario {
+        openSetUpFromToday()
+        answerSport("BJJ")
+        trainOn("Tuesday", "Thursday")
+        ownBells(24)
+        ownTwoOf(24)
+        sessionOf(20)
+
+        seeYourWeek("20 minutes beside BJJ", "Mon, Fri")
+        seeYourWeek("15:15 MVO2", "Wed")
+        seeGoalToBe(5)
+        buildMyWeek()
+
+        weekHolds(sportDays = 2, programDays = 2, program = ProgramId.BjjKettlebell, bells = listOf(24.0), goal = 5)
+        pairsAndIntervalsHeld(setOf(24.0), intervalDays = 1)
+    }
+
+    @Test
     fun `just the bell asks for no days and plans strength alone`() = acceptanceScenario {
         openSetUpFromToday()
         answerSport("BJJ")

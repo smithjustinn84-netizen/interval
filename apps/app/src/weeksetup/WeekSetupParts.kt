@@ -29,6 +29,8 @@ import dev.justinsmith.interval.resources.setup_days
 import dev.justinsmith.interval.resources.setup_goal
 import dev.justinsmith.interval.resources.setup_minutes
 import dev.justinsmith.interval.resources.setup_minutes_value
+import dev.justinsmith.interval.resources.setup_pair_cd
+import dev.justinsmith.interval.resources.setup_pairs
 import dev.justinsmith.interval.resources.setup_pick_program
 import dev.justinsmith.interval.resources.setup_sport
 import dev.justinsmith.interval.resources.setup_sport_another
@@ -44,6 +46,7 @@ import dev.justinsmith.interval.resources.setup_week_no_bell
 import dev.justinsmith.interval.resources.setup_week_no_day
 import dev.justinsmith.interval.resources.setup_week_no_room
 import dev.justinsmith.interval.resources.setup_week_pick_days
+import dev.justinsmith.interval.timer.snatchIntervals
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
@@ -128,6 +131,30 @@ internal fun BellsQuestion(state: WeekSetupUiState, onToggle: (Double) -> Unit) 
     }
 }
 
+/** Which of the bells owned there are two of: a pair opens the programs done with both hands full. */
+@Composable
+internal fun PairsQuestion(state: WeekSetupUiState, onToggle: (Double) -> Unit) {
+    Column {
+        GroupLabel(stringResource(Res.string.setup_pairs))
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+            verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+        ) {
+            state.bellChoices.filter { it in state.bells }.forEach { kg ->
+                val size = formatKg(kg)
+                val described = stringResource(Res.string.setup_pair_cd, size)
+                Choice(
+                    size,
+                    kg in state.pairs,
+                    onClick = { onToggle(kg) },
+                    modifier = Modifier.semantics { contentDescription = described },
+                    role = Role.Checkbox,
+                )
+            }
+        }
+    }
+}
+
 /** How long a session is. */
 @Composable
 internal fun MinutesQuestion(minutes: Int, onPick: (Int) -> Unit) {
@@ -164,6 +191,10 @@ internal fun YourWeek(state: WeekSetupUiState, onPrograms: () -> Unit) {
                 RowDivider()
             }
             StrengthLine(state)
+            week.conditioningDay?.let { day ->
+                RowDivider()
+                WeekLine(snatchIntervals.name, weekdayText(day, WeekdayForm.Short))
+            }
             week.goal?.let { goal ->
                 RowDivider()
                 WeekLine(pluralStringResource(Res.plurals.setup_goal, goal, goal))

@@ -70,6 +70,8 @@
     <string name="setup_days">On which days?</string>
     <string name="setup_bells">Which bells do you own, in kg?</string>
     <string name="setup_bell_cd">%1$s kg</string>
+    <string name="setup_pairs">Which do you have two of?</string>
+    <string name="setup_pair_cd">Two of %1$s kg</string>
     <string name="setup_minutes">How long is a session?</string>
     <string name="setup_minutes_value">%1$d min</string>
     <string name="setup_week">Your week</string>

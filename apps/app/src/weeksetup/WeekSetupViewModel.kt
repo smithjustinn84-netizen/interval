@@ -10,6 +10,8 @@ import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.Sport
+import dev.justinsmith.interval.model.asPlan
+import dev.justinsmith.interval.timer.snatchIntervals
 import dev.justinsmith.interval.ui.weekdayMask
 import dev.justinsmith.interval.ui.weekdaysOf
 import dev.justinsmith.lift.data.GearStore
@@ -47,6 +49,7 @@ data class WeekSetupUiState(
     val weekdays: Int = 0,
     val bellChoices: List<Double> = SETUP_BELLS,
     val bells: Set<Double> = emptySet(),
+    val pairs: Set<Double> = emptySet(),
     val minutes: Int = DEFAULT_SESSION_MINUTES,
     val week: BuiltWeek = BuiltWeek(),
     val programMinutes: IntRange? = null,
@@ -68,6 +71,7 @@ private const val KEY_SPORT = "setup_sport"
 private const val KEY_NAME = "setup_sport_name"
 private const val KEY_DAYS = "setup_days"
 private const val KEY_BELLS = "setup_bells"
+private const val KEY_PAIRS = "setup_pairs"
 private const val KEY_MINUTES = "setup_minutes"
 
 /**
@@ -111,8 +115,19 @@ class WeekSetupViewModel(
     /** The days the sport is on, a bit per day. */
     fun setWeekdays(weekdays: Int) = answer { it.copy(weekdays = weekdayMask(weekdaysOf(weekdays))) }
 
-    /** Ticks or unticks the bell of [kg]. */
-    fun toggleBell(kg: Double) = answer { it.copy(bells = if (kg in it.bells) it.bells - kg else it.bells + kg) }
+    /** Ticks or unticks the bell of [kg]; one unticked is no longer a pair either. */
+    fun toggleBell(kg: Double) = answer {
+        if (kg in it.bells) it.copy(bells = it.bells - kg, pairs = it.pairs - kg) else it.copy(bells = it.bells + kg)
+    }
+
+    /** Ticks or unticks owning two of the bell of [kg], one of those owned. */
+    fun togglePair(kg: Double) = answer {
+        when {
+            kg in it.pairs -> it.copy(pairs = it.pairs - kg)
+            kg in it.bells -> it.copy(pairs = it.pairs + kg)
+            else -> it
+        }
+    }
 
     /** How long a session is, one of [AppSettings.SESSION_MINUTES]. */
     fun setMinutes(minutes: Int) {
@@ -122,8 +137,8 @@ class WeekSetupViewModel(
     /**
      * Builds the week as [state] shows it; true if it did, false with nothing to build or once built. The plans
      * it made the last time go first, then the sport and the program's days are planned, the program taken up
-     * unless one is followed, the bells ticked and unticked owned or not, and the goal and the session's length
-     * kept.
+     * unless one is followed, the intervals planned beside a grappler's program, the bells ticked and unticked
+     * owned or not and those owned two of a pair, and the goal and the session's length kept.
      */
     fun build(): Boolean {
         val state = state.value
@@ -133,9 +148,12 @@ class WeekSetupViewModel(
         week.remove.forEach(planStore::removePlanned)
         week.sport?.let { planStore.planWeekly(PlanWorkout.SportDay(it), week.sportDays) }
         if (week.liftDays.isNotEmpty()) planStore.planWeekly(PlanWorkout.Lift.ProgramDay, week.liftDays)
+        week.conditioningDay?.let { planStore.planWeekly(snatchIntervals.asPlan(), setOf(it)) }
         week.program?.takeIf { !week.keepsProgram }?.let { programStore.follow(it.key) }
         val owned = gearStore.bells.value.toSet()
         chips.filter { (it in owned) != (it in state.bells) }.forEach { gearStore.setOwned(it, it in state.bells) }
+        val pairs = gearStore.pairs.value
+        state.bells.filter { (it in pairs) != (it in state.pairs) }.forEach { gearStore.setPair(it, it in state.pairs) }
         settingsStore.updateAppSettings {
             it.copy(weeklyGoal = week.goal ?: it.weeklyGoal, sessionMinutes = state.minutes, setupOffered = true)
         }
@@ -149,6 +167,7 @@ class WeekSetupViewModel(
         savedState[KEY_NAME] = next.sportName
         savedState[KEY_DAYS] = next.weekdays
         savedState[KEY_BELLS] = next.bells.sorted().joinToString(BELL_SEPARATOR)
+        savedState[KEY_PAIRS] = next.pairs.sorted().joinToString(BELL_SEPARATOR)
         savedState[KEY_MINUTES] = next.minutes
     }
 
@@ -159,10 +178,8 @@ class WeekSetupViewModel(
             sport = sport,
             sportName = savedState.get<String>(KEY_NAME).orEmpty(),
             weekdays = savedState.get<Int>(KEY_DAYS) ?: 0,
-            bells = savedState.get<String>(KEY_BELLS).orEmpty()
-                .split(BELL_SEPARATOR)
-                .mapNotNull { it.toDoubleOrNull() }
-                .toSet(),
+            bells = savedState.get<String>(KEY_BELLS).bellsSaved(),
+            pairs = savedState.get<String>(KEY_PAIRS).bellsSaved(),
             minutes = savedState.get<Int>(KEY_MINUTES) ?: DEFAULT_SESSION_MINUTES,
         )
     }
@@ -182,6 +199,7 @@ class WeekSetupViewModel(
             sportName = (was as? Sport.Custom)?.name.orEmpty(),
             weekdays = if (was == null) 0 else weekdayMask(days.toSet()),
             bells = gearStore.bells.value.toSet(),
+            pairs = gearStore.pairs.value intersect gearStore.bells.value.toSet(),
             minutes = settingsStore.appSettings.value.sessionMinutes ?: DEFAULT_SESSION_MINUTES,
         )
     }
@@ -198,15 +216,26 @@ class WeekSetupViewModel(
             weekdays = answers.weekdays,
             bellChoices = chips,
             bells = answers.bells,
+            pairs = answers.pairs,
             minutes = answers.minutes,
         )
-        val asked = WeekAnswers(state.answeredSport, weekdaysOf(answers.weekdays), answers.bells, answers.minutes)
+        val asked = WeekAnswers(
+            state.answeredSport,
+            weekdaysOf(answers.weekdays),
+            answers.bells,
+            answers.minutes,
+            answers.pairs,
+        )
         val week = buildWeek(asked, planned, following, restSeconds, was)
         return state.copy(week = week, programMinutes = week.program?.dayMinutes(restSeconds))
     }
 }
 
 private const val BELL_SEPARATOR = ","
+
+/** Bells saved as their kg joined by [BELL_SEPARATOR]. */
+private fun String?.bellsSaved(): Set<Double> =
+    orEmpty().split(BELL_SEPARATOR).mapNotNull { it.toDoubleOrNull() }.toSet()
 
 /** The answers as given, in the shapes they are saved in. */
 private data class Answers(
@@ -215,6 +244,7 @@ private data class Answers(
     val weekdays: Int,
     val bells: Set<Double>,
     val minutes: Int,
+    val pairs: Set<Double> = emptySet(),
 )
 
 /** The sport planned every week, the first of them when there are several; null with none. */

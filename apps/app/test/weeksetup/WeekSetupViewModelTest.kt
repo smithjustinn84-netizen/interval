@@ -8,6 +8,7 @@ import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.asPlan
+import dev.justinsmith.interval.timer.snatchIntervals
 import dev.justinsmith.interval.ui.weekdayMask
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
@@ -99,6 +100,34 @@ class WeekSetupViewModelTest : MainDispatcherTest() {
         assertEquals(6, app.weeklyGoal)
         assertEquals(15, app.sessionMinutes)
         assertTrue(app.setupOffered)
+    }
+
+    @Test
+    fun `a grappler with a pair builds the program around the mat with the intervals and keeps the pair`() {
+        viewModel.pickSport(Sport.named.indexOf(Sport.Bjj))
+        viewModel.setWeekdays(weekdayMask(setOf(TUE, THU)))
+        viewModel.toggleBell(24.0)
+        viewModel.togglePair(24.0)
+        viewModel.setMinutes(20)
+
+        assertTrue(viewModel.build())
+
+        assertEquals(ProgramId.BjjKettlebell, followed)
+        assertEquals(setOf(MON, FRI), weekly(PlanWorkout.Lift.ProgramDay))
+        assertEquals(setOf(WED), weekly(snatchIntervals.asPlan()))
+        assertEquals(setOf(24.0), lift.gear.pairs.value)
+        assertEquals(5, repository.settings.appSettings.value.weeklyGoal)
+    }
+
+    @Test
+    fun `a bell not owned can't be a pair and one unticked stops being one`() {
+        viewModel.togglePair(16.0)
+        assertTrue(viewModel.state.value.pairs.isEmpty())
+        viewModel.toggleBell(16.0)
+        viewModel.togglePair(16.0)
+        assertEquals(setOf(16.0), viewModel.state.value.pairs)
+        viewModel.toggleBell(16.0)
+        assertTrue(viewModel.state.value.pairs.isEmpty())
     }
 
     @Test

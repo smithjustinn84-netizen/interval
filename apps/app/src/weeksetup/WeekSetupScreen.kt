@@ -50,6 +50,7 @@ fun WeekSetupRoute(onBack: () -> Unit, onShowWeek: () -> Unit, onPrograms: () ->
             onSportName = viewModel::nameSport,
             onWeekdays = viewModel::setWeekdays,
             onBell = viewModel::toggleBell,
+            onPair = viewModel::togglePair,
             onMinutes = viewModel::setMinutes,
             onPrograms = { programs() },
             onBuild = {
@@ -75,6 +76,8 @@ class WeekSetupActions(
     val onWeekdays: (Int) -> Unit = {},
     /** Ticks or unticks a bell, by its kg. */
     val onBell: (Double) -> Unit = {},
+    /** Ticks or unticks owning two of a bell, by its kg. */
+    val onPair: (Double) -> Unit = {},
     val onMinutes: (Int) -> Unit = {},
     val onPrograms: () -> Unit = {},
     val onBuild: () -> Unit = {},
@@ -97,6 +100,7 @@ fun WeekSetupScreen(state: WeekSetupUiState, actions: WeekSetupActions, modifier
         SportQuestion(state, actions)
         AnimatedVisibility(state.asksDays) { DaysQuestion(state.weekdays, actions.onWeekdays) }
         BellsQuestion(state, actions.onBell)
+        AnimatedVisibility(state.bells.isNotEmpty()) { PairsQuestion(state, actions.onPair) }
         MinutesQuestion(state.minutes, actions.onMinutes)
         YourWeek(state, actions.onPrograms)
         AccentButton(

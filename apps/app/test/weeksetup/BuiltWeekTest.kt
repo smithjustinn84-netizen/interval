@@ -4,7 +4,9 @@ import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.Sport
+import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.snatchIntervals
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.RestClock
@@ -168,5 +170,59 @@ class BuiltWeekTest {
         // a rest day left, and of Monday, Wednesday and Thursday the two furthest apart are taken.
         assertEquals(setOf(MON, THU), week.liftDays)
         assertEquals(6, week.goal)
+    }
+
+    private val pair = setOf(24.0)
+
+    private fun intervals(id: Long, weekday: Int) = weekly(id, snatchIntervals.asPlan(), weekday)
+
+    @Test
+    fun `a grappler with a pair on the mat twice gets the program's two days and the intervals on a third`() {
+        val week = build(WeekAnswers(Sport.Bjj, setOf(TUE, THU), pair, minutes = 20, pairs = pair))
+        assertEquals(ProgramId.BjjKettlebell, week.programId)
+        assertEquals(setOf(MON, FRI), week.liftDays)
+        assertEquals(WED, week.conditioningDay)
+        assertEquals(5, week.goal)
+    }
+
+    @Test
+    fun `on the mat three days the grappler's program keeps to its two`() {
+        val week = build(WeekAnswers(Sport.Bjj, setOf(MON, WED, FRI), pair, minutes = 20, pairs = pair))
+        assertEquals(ProgramId.BjjKettlebell, week.programId)
+        assertEquals(2, week.liftDays.size)
+        assertNull(week.conditioningDay)
+        assertEquals(5, week.goal)
+    }
+
+    @Test
+    fun `without a pair a grappler is started as before and gets no intervals`() {
+        val week = build(WeekAnswers(Sport.Bjj, setOf(TUE, THU), pair, minutes = 30))
+        assertEquals(ProgramId.RoundConditioning, week.programId)
+        assertNull(week.conditioningDay)
+    }
+
+    @Test
+    fun `building again takes the intervals it planned off first and plans the same week`() {
+        val answers = WeekAnswers(Sport.Bjj, setOf(TUE, THU), pair, minutes = 20, pairs = pair)
+        val planned = listOf(
+            weekly(1, PlanWorkout.SportDay(Sport.Bjj), TUE),
+            weekly(2, PlanWorkout.SportDay(Sport.Bjj), THU),
+            weekly(3, PlanWorkout.Lift.ProgramDay, MON),
+            weekly(4, PlanWorkout.Lift.ProgramDay, FRI),
+            intervals(5, WED),
+        )
+        val again = build(answers, planned, followed = ProgramId.BjjKettlebell, was = Sport.Bjj)
+        assertEquals(listOf(1L, 2L, 3L, 4L, 5L), again.remove)
+        assertEquals(setOf(MON, FRI), again.liftDays)
+        assertEquals(WED, again.conditioningDay)
+        assertEquals(5, again.goal)
+    }
+
+    @Test
+    fun `intervals planned beside another program stay`() {
+        val planned = listOf(intervals(5, SAT))
+        val week = build(WeekAnswers(Sport.Bjj, setOf(TUE, THU), bell, minutes = 30), planned)
+        assertTrue(week.remove.isEmpty())
+        assertFalse(SAT in week.liftDays)
     }
 }

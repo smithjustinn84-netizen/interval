@@ -94,6 +94,16 @@ fun IntervalConfig.withPreset(preset: Preset): IntervalConfig {
 }
 
 /**
+ * 15 seconds of snatches and 15 of rest, 40 times, a hand at a time: the kettlebell's VO2 max intervals, which Set
+ * up plans beside a grappler's program.
+ */
+val snatchIntervals: Preset = Preset(
+    "15:15 MVO2",
+    IntervalConfig(prepSeconds = 10, workSeconds = 15, restSeconds = 15, rounds = 40, activity = Activity.Kettlebell),
+    alternateHands = true,
+)
+
+/**
  * The presets the app ships with. Their names are stored names, like a user's own or
  * [defaultPresetName]'s, not labels, so they are data here rather than strings.xml text.
  */
@@ -105,15 +115,5 @@ val builtInPresets: List<Preset> = listOf(
         IntervalConfig(prepSeconds = 10, workSeconds = 10, restSeconds = 50, rounds = 6, activity = Activity.Climbing),
     ),
     Preset("Long efforts", IntervalConfig(prepSeconds = 5, workSeconds = 45, restSeconds = 15, rounds = 12)),
-    Preset(
-        "15:15 MVO2",
-        IntervalConfig(
-            prepSeconds = 10,
-            workSeconds = 15,
-            restSeconds = 15,
-            rounds = 40,
-            activity = Activity.Kettlebell,
-        ),
-        alternateHands = true,
-    ),
+    snatchIntervals,
 )
