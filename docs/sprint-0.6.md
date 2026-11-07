@@ -3,16 +3,17 @@
 Two weeks, 2026-11-09 to 2026-11-20, one developer and Claude Code, ten working days. The goal is a shippable
 0.6.0 that finishes what [kettlebell-coaching.md](kettlebell-coaching.md) still plans. Section 4 plans two
 things: the Armor Building Complex's second protocol, as many rounds as you can in a time cap; and 15:15's
-snatches, done on the interval side, counting toward Lift's snatch totals, snatch test, pace and grip. Before
-either, 0.5.0 is released. What landed before and how a release goes: [release.md](release.md) and
-[CHANGELOG.md](../CHANGELOG.md).
+snatches, done on the interval side, counting toward Lift's snatch totals, snatch test, pace and grip. A
+release (a tag, the release journeys, a dated changelog) happens only when the user asks for one, never as a
+ticket. What landed before and how a release goes: [release.md](release.md) and [CHANGELOG.md](../CHANGELOG.md).
 
 ## Context
 
 0.5's tickets 0, 1, 2, 3 and 5 are built, and so is everything listed under its "Added during the sprint". Ticket 4
 (Describe reads "then") was below the cut line and carries over here. "Lift speaks" (coaching section 2:
-one `Speaker` in `core-platform`, cues at an EMOM's count-in and at the end of a rest, faults after a set) is to
-land on `main` before the tag, so it ships in 0.5.0. Nothing is tagged after `v0.4.0`.
+one `Speaker` in `core-platform`, cues at an EMOM's count-in and at the end of a rest, faults after a set) is on
+`main` (`6549a89d`) under 0.5.0, with CI green. Nothing is tagged after `v0.4.0`; 0.5.0 is tagged when the user
+asks for the release.
 
 **A density block.** `BlockKind` is `Sets`, `Emom` or `Ladder` (`lift-domain`, `Programs.kt`). An EMOM is
 a set each minute for N minutes; the ABC's other protocol caps the time and counts the rounds instead. The
@@ -56,21 +57,17 @@ shape is the EMOM's own, turned around:
   from "Planned" to built in `kettlebell-coaching.md`.
 - One commit per ticket on `main` (`jj`), its message in the repo's `Area: what changed` style, with linear history.
 
-Sizes: XS ≤ half a day, S ≈ 1 day, M ≈ 2 days, L ≈ 3 days. Tickets 0 to 5 come to nine and a half days. The cut
+Sizes: XS ≤ half a day, S ≈ 1 day, M ≈ 2 days, L ≈ 3 days. Tickets 1 to 5 come to eight and a half days. The cut
 line is after ticket 5; ticket 6 sits below it.
 
 ## The backlog, in order
 
-### Week 1 — release 0.5.0, then rounds against the clock
+### Week 1 — rounds against the clock
 
-**0. Release 0.5.0** · S
-- First, "Lift speaks" (`uurvvksw`) lands on `main`, rebased onto it, with its fault list taken from `Movement`.
-  Its own session does that.
-- Then 0.5's "Verification of the sprint as a whole": CI green, and every `journeys/*.xml` on the release build on
-  `amper-37`, including `sequence.xml`, `widget.xml` and `lift-voice.xml`. The R8 smoke test follows
-  `release.md`.
-- The changelog's `[0.5.0]` gets its date. Tag `v0.5.0`. Ticket 4 of 0.5 moves here as ticket 6.
-- Done when: `v0.5.0` is tagged with CI green and the AAB attached.
+**0. (Dropped) Release 0.5.0.** Releases are not sprint tickets; one happens when the user asks. "Lift speaks"
+landed on `main` and CI passed. An R8 smoke run of 28 journeys on the minified build (2026-11-07) found no crash
+and no R8 signature; the one open question is `health-connect.xml`, whose finished workout didn't show under
+Exercise in Health Connect. Check it before the next release. Ticket 4 of 0.5 moves here as ticket 6.
 
 **1. Open 0.6.0** · XS
 - `versionName` 0.6.0 and `versionCode` 6 in `apps/androidApp/module.yaml` and the pbxproj (both targets,
@@ -197,15 +194,14 @@ Also below it:
 
 | Day | Tickets |
 |---|---|
-| 1 | 0 release 0.5.0, 1 open 0.6.0 |
+| 1 | 1 open 0.6.0 |
 | 2–3 | 2 the density block's domain |
 | 4–5 | 3 its session and editor |
 | 6 | 4 the ABC either way |
 | 7–9 | 5 snatches from 15:15 |
-| 10 | full `./kotlin build`, every journey on the release build, tag `v0.6.0`; 6 if a day is left |
+| 10 | full `./kotlin build` and the journeys the sprint touched; 6 if a day is left. No tag unless asked |
 
 The order follows the dependencies:
-- 0 comes first because a sprint's features shouldn't sit on top of a release that hasn't gone out.
 - 2 comes before 3 because the screen runs what the domain keeps.
 - 4 needs the kind.
 - 5 touches neither of the others, but it is the one with a Room migration, so it goes last, when the schema bump
@@ -230,10 +226,10 @@ The order follows the dependencies:
 
 ## Verification of the sprint as a whole
 
-1. `./kotlin check lint detekt`, `./kotlin test -p jvm -p android` and `./kotlin build` are green on `main`. CI
-   is green on `v0.6.0` with the AAB attached.
-2. The release build on `amper-37` passes every `journeys/*.xml`, including `lift-density.xml` and
-   `lift-challenges.xml`.
+1. `./kotlin check lint detekt`, `./kotlin test -p jvm -p android` and `./kotlin build` are green on `main`, and
+   CI is green on it.
+2. `amper-37` passes the journeys the sprint added or touched, including `lift-density.xml`,
+   `lift-plan-changes.xml` and `lift-challenges.xml`.
 3. A 0.5 export imports with nothing lost. A 0.6 export imports again and adds nothing. A 0.6 file on a 0.5 build
    is refused with "update the app".
 4. The ABC run as "As many as you can" for 20 minutes logs its rounds, says the best, and moves the ABC challenge.
