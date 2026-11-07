@@ -14,8 +14,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 /**
- * A [SavedTimer] as [SessionEntity.timer] stores it: its [kind] (`rest`, `emom` or `hold`), the lift by key, the
- * side by name and the band by id, with only the fields that kind uses.
+ * A [SavedTimer] as [SessionEntity.timer] stores it: its [kind] (`rest`, `emom`, `density` or `hold`), the lift by
+ * key, the side by name and the band by id, with only the fields that kind uses.
  */
 @Serializable
 internal data class StoredTimer(
@@ -33,6 +33,7 @@ internal data class StoredTimer(
     val band: String? = null,
     val done: List<Int> = emptyList(),
     val firstSide: Boolean = true,
+    val rounds: Int = 0,
 )
 
 private val json = Json { ignoreUnknownKeys = true }
@@ -40,6 +41,7 @@ private val log = Logger.withTag("StoredTimer")
 
 private const val REST = "rest"
 private const val EMOM = "emom"
+private const val DENSITY = "density"
 private const val HOLD = "hold"
 
 /** [timer] as [SessionEntity.timer] holds it. */
@@ -58,6 +60,19 @@ internal fun encodeTimer(timer: SavedTimer): String = json.encodeToString(
             double = timer.load.double,
             band = timer.load.band?.id,
             done = timer.done.sorted(),
+        )
+
+        is SavedTimer.Density -> StoredTimer(
+            DENSITY,
+            timer.startedAtEpochMillis,
+            exercise = timer.exercise.key,
+            bellKg = timer.load.kg,
+            reps = timer.reps,
+            minutes = timer.minutes,
+            side = timer.firstSide.name,
+            double = timer.load.double,
+            band = timer.load.band?.id,
+            rounds = timer.rounds,
         )
 
         is SavedTimer.Hold -> StoredTimer(
@@ -100,6 +115,16 @@ internal fun decodeTimer(stored: String, made: List<CustomExercise>, bands: List
             timer.minutes,
             side,
             timer.done.toSet(),
+        ).takeIf { timer.minutes > 0 }
+
+        DENSITY -> SavedTimer.Density(
+            timer.startedAt,
+            exercise,
+            Load.of(exercise.equipment, timer.bellKg, timer.double, timer.band?.let { bandOf(it, bands) }),
+            timer.reps,
+            timer.minutes,
+            timer.rounds.coerceAtLeast(0),
+            side,
         ).takeIf { timer.minutes > 0 }
 
         HOLD -> SavedTimer.Hold(

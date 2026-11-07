@@ -278,6 +278,7 @@
         <item quantity="one">%2$d every minute for %1$d minute</item>
         <item quantity="other">%2$d every minute for %1$d minutes</item>
     </plurals>
+    <string name="block_density">As many rounds as you can in %1$d min · %2$d a round</string>
     <plurals name="block_ladder">
         <item quantity="one">%1$d ladder of %2$s</item>
         <item quantity="other">%1$d ladders of %2$s</item>

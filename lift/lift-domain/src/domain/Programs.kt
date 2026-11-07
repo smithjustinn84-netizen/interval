@@ -1,16 +1,20 @@
 package dev.justinsmith.lift.domain
 
-/** How a block's sets run: one after another, every minute on the minute, or in ladders of rising reps. */
-enum class BlockKind { Sets, Emom, Ladder }
+/**
+ * How a block's sets run: one after another, every minute on the minute, in ladders of rising reps, or as many
+ * rounds as can be done in a time cap.
+ */
+enum class BlockKind { Sets, Emom, Ladder, Density }
 
 /**
  * One part of a program day. [Sets]: [rounds] sets of [reps]. [Emom]: [rounds] minutes, [reps] at the top
- * of each. [Ladder]: [rounds] ladders, each climbing [rungs]. A one-sided lift does each set on both sides,
- * unless it is done with two bells ([double]). For a hold ([Measure.Time]), [reps] counts the seconds held,
- * and a hold is only ever sets. Its [load], when the plan names one, is a [Load] as a set's is: of its lift's
- * equipment, a bell's with as many bells as the block ([withLoad] keeps it so); null leaves it to what was used
- * last time. Sets or an EMOM of a counted lift can build within a [range]: [reps] is then where it stands, and
- * the load goes up only once every set reaches the top (see [nextStep]).
+ * of each. [Ladder]: [rounds] ladders, each climbing [rungs]. [Density]: as many rounds of [reps] as can be done in
+ * [rounds] minutes, its cap ([DensityClock.MIN_MINUTES] to [DensityClock.MAX_MINUTES]). A one-sided lift does
+ * each set on both sides, unless it is done with two bells ([double]). For a hold ([Measure.Time]), [reps] counts
+ * the seconds held, and a hold is only ever sets. Its [load], when the plan names one, is a [Load] as a set's is: of
+ * its lift's equipment, a bell's with as many bells as the block ([withLoad] keeps it so); null leaves it to what was
+ * used last time. Sets or an EMOM of a counted lift can build within a [range]: [reps] is then where it stands, and the
+ * load goes up only once every set reaches the top (see [nextStep]).
  */
 data class Block(
     val exercise: Exercise,
@@ -27,10 +31,17 @@ data class Block(
      */
     val rest: Int? = null,
 ) {
-    /** The [range] it builds within: none for a ladder or a hold, which never take one. */
-    val ranged: RepRange? get() = range?.takeIf { kind != BlockKind.Ladder && exercise.measure == Measure.Reps }
+    /** The [range] it builds within: none for a ladder, a density block or a hold, which never take one. */
+    val ranged: RepRange?
+        get() = range?.takeIf {
+            kind != BlockKind.Ladder && kind != BlockKind.Density && exercise.measure == Measure.Reps
+        }
 
-    /** The sets it comes to, in order: one-sided lifts left then right, except an EMOM, which alternates by minute. */
+    /**
+     * The sets it comes to, in order: one-sided lifts left then right, except an EMOM, which alternates by minute.
+     * A density block's count is open, so it plans its first round alone, one that also takes every round of its
+     * lift logged within its cap ([PlannedSet.capMinutes]).
+     */
     fun plannedSets(): List<PlannedSet> = when (kind) {
         BlockKind.Sets -> (1..rounds).flatMap { sides(reps) }
 
@@ -40,6 +51,10 @@ data class Block(
         }
 
         BlockKind.Ladder -> (1..rounds).flatMap { rungs.flatMap { rung -> sides(rung) } }
+
+        BlockKind.Density -> listOf(
+            PlannedSet(exercise, reps, Side.Left.takeIf { exercise.sided(double) }, double, load, capMinutes = rounds),
+        )
     }
 
     /** The reps it comes to in all. */
@@ -87,6 +102,11 @@ data class PlannedSet(
     val load: Load? = null,
     /** The rest after it, its block's own ([Block.rest]); null for the rest set on Lift. */
     val rest: Int? = null,
+    /**
+     * A density block's first round: the minutes of its cap, within which every set of its lift logged after it
+     * is another of its rounds. Null for any other set.
+     */
+    val capMinutes: Int? = null,
 ) {
     /** Whether it is a hold, timed rather than counted. */
     val held: Boolean get() = exercise.measure == Measure.Time

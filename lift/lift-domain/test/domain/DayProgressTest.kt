@@ -92,4 +92,71 @@ class DayProgressTest {
         assertEquals(Load.Banded(light), plannedLoad(pulls, before, null, withoutHeavy, 16.0, medium))
         assertEquals(Load.Banded(medium), plannedLoad(pulls, emptyList(), null, withoutHeavy, 16.0, medium))
     }
+
+    private val abcs = Block(
+        BuiltInExercise.ArmorBuildingComplex,
+        rounds = 20,
+        reps = 1,
+        kind = BlockKind.Density,
+        double = true,
+    )
+
+    private fun round(at: Long) =
+        SetLog.of(at, BuiltInExercise.ArmorBuildingComplex, 24.0, 1, null, at, double = true)
+
+    @Test
+    fun `a density block plans its first round which opens it for its cap`() {
+        assertEquals(1, abcs.plannedSets().size)
+        val next = day(swings, abcs).nextSet(logged(BuiltInExercise.TwoHandSwing, 3))
+        assertEquals(1, next?.block)
+        assertEquals(20, next?.densityMinutes)
+        assertNull(next?.emomMinutes)
+    }
+
+    @Test
+    fun `rounds past the first within the cap are the density block's and never a later block's`() {
+        val more = Block(BuiltInExercise.ArmorBuildingComplex, rounds = 2, reps = 1, double = true)
+        val rounds = (0 until 12).map { round(100_000L + it * 90_000L) }
+        val rows = day(abcs, more).planRows(rounds)
+        assertEquals(1 to 1, rows[0].done to rows[0].total)
+        // Twelve rounds inside twenty minutes leave the sets after it still to do.
+        assertEquals(0, rows[1].done)
+        assertEquals(1, day(abcs, more).nextSet(rounds)?.block)
+        // A set of it done after the cap is the next block's.
+        val after = round(100_000L + 21 * 60_000L)
+        assertEquals(1, day(abcs, more).planRows(rounds + after)[1].done)
+    }
+
+    @Test
+    fun `a one-sided density block takes its rounds on either side`() {
+        val snatches = Block(BuiltInExercise.Snatch, rounds = 10, reps = 5, kind = BlockKind.Density)
+        assertEquals(Side.Left, snatches.plannedSets().single().side)
+        val rounds = (0 until 6).map {
+            SetLog.of(it.toLong(), BuiltInExercise.Snatch, 16.0, 5, Side.entries[it % 2], 1_000L + it * 30_000L)
+        }
+        val matched = plannedRounds(snatches.plannedSets(), rounds)
+        assertEquals(6, matched.single().size)
+    }
+
+    @Test
+    fun `a one-sided density block begun on the right keeps its first round`() {
+        val snatches = Block(BuiltInExercise.Snatch, rounds = 10, reps = 5, kind = BlockKind.Density)
+        val after = Block(BuiltInExercise.Snatch, rounds = 1, reps = 5)
+        val rounds = (0 until 6).map {
+            SetLog.of(it.toLong(), BuiltInExercise.Snatch, 16.0, 5, Side.entries[(it + 1) % 2], 1_000L + it * 30_000L)
+        }
+        val rows = day(snatches, after).planRows(rounds)
+        assertEquals(6, plannedRounds(snatches.plannedSets(), rounds).single().size)
+        assertEquals(1 to 0, rows[0].done to rows[1].done)
+    }
+
+    @Test
+    fun `the cap is counted from when the first round began`() {
+        // The first round of an ABC was logged 20 seconds after it began, so the cap ends 20 seconds earlier.
+        val more = Block(BuiltInExercise.ArmorBuildingComplex, rounds = 1, reps = 1, double = true)
+        val first = round(20_000L)
+        val past = round(20 * 60_000L + 10_000L)
+        assertEquals(1, plannedRounds(abcs.plannedSets(), listOf(first, past)).single().size)
+        assertEquals(1, day(abcs, more).planRows(listOf(first, past))[1].done)
+    }
 }

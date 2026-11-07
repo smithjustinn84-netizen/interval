@@ -80,7 +80,18 @@ class FinishSession(
         val pairs = gearStore.pairs.value
         val day = programDay(programStore.programDay.value, session)
         val changes = day?.let {
-            planChanges(it, progressions(it, session.sets, bells, bands, pairs, setStore.restSeconds.value))
+            planChanges(
+                it,
+                progressions(
+                    it,
+                    session.sets,
+                    bells,
+                    bands,
+                    pairs,
+                    setStore.restSeconds.value,
+                    before = sessionStore.sessions.value,
+                ),
+            )
         }
         // The weeks before this one: the session is not yet among the finished.
         val grip = gripLoad(

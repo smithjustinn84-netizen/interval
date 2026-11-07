@@ -12,8 +12,8 @@ import kotlinx.serialization.Serializable
  * `workStepSeconds`; schema 5 a sequence's blocks after its first, `then`, and `blockRestSeconds`; schema 6 a plan
  * of a day of a sport, `sport`, and the sport days logged, `sportDays`; schema 7 the session's length in the settings,
  * `sessionMinutes`; schema 8 the mobility flows the user built, `flows`; schema 9 whether a preset switches hands,
- * `alternateHands`, and the bells owned two of, `pairsKg`; schema 10 a block's own rest, `rest`, all absent from
- * older files). Lift's
+ * `alternateHands`, and the bells owned two of, `pairsKg`; schema 10 a block's own rest, `rest`; schema 11 a block
+ * of a kind an older build would drop, `kind` "Density", the rest absent from older files). Lift's
  * sessions carry their sets but not how a day's plan was changed: the sets are the record.
  */
 @Serializable
@@ -36,7 +36,7 @@ data class ExportBundle(
     val flows: List<FlowExport> = emptyList(),
 ) {
     companion object {
-        const val SCHEMA = 10
+        const val SCHEMA = 11
         const val APP = "interval"
         const val MIME_TYPE = "application/json"
 

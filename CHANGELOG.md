@@ -6,6 +6,13 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 
 ## [0.6.0] — Unreleased
 
+### Added
+- A density block in a Lift program: as many rounds of one lift as fit a time cap of 5 to 30 minutes (the domain and
+  storage; the editor offers it once the session can run one). Its rounds are counted from the sets of that lift
+  logged within the cap, either side, from when the first began; the day's estimate takes its cap, an easier day
+  cuts it by a quarter (never under 5 minutes), the grip counts it as an EMOM a round a minute, and a round's reps
+  go up by one once the last two sessions each beat the best before them. Exports are schema 11.
+
 ## [0.5.0] — Unreleased
 
 ### Added

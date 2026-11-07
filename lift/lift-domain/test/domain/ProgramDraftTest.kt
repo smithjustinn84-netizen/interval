@@ -3,6 +3,7 @@ package dev.justinsmith.lift.domain
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ProgramDraftTest {
@@ -93,5 +94,16 @@ class ProgramDraftTest {
         val sets = Block(BuiltInExercise.Press, rounds = 2, reps = 5, load = Load.Bell(16.0)).plannedSets()
         assertEquals(listOf<Load?>(Load.Bell(16.0)), sets.map { it.load }.distinct())
         assertEquals(4, sets.size)
+    }
+
+    @Test
+    fun `a density block caps its minutes and builds within no range and a hold can't be one`() {
+        val swings = Block(BuiltInExercise.TwoHandSwing, rounds = 3, reps = 10, range = RepRange(10, 15))
+        val capped = swings.asKind(BlockKind.Density)
+        assertEquals(BlockKind.Density to DensityClock.MIN_MINUTES, capped.kind to capped.rounds)
+        assertNull(capped.range)
+        assertEquals(DensityClock.MAX_MINUTES, swings.copy(rounds = 60).asKind(BlockKind.Density).rounds)
+        val planks = Block(BuiltInExercise.Plank, rounds = 3, reps = 30)
+        assertEquals(planks, planks.asKind(BlockKind.Density))
     }
 }

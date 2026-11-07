@@ -13,6 +13,7 @@ import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.ui.resources.Res
+import dev.justinsmith.lift.ui.resources.block_density
 import dev.justinsmith.lift.ui.resources.block_emom
 import dev.justinsmith.lift.ui.resources.block_hold
 import dev.justinsmith.lift.ui.resources.block_hold_sided
@@ -290,4 +291,6 @@ private fun blockShape(block: Block): String = when (block.kind) {
         block.rounds,
         block.rungs.joinToString("-"),
     )
+
+    BlockKind.Density -> stringResource(Res.string.block_density, block.rounds, block.reps)
 }

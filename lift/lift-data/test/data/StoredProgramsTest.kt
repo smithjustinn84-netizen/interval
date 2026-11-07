@@ -39,6 +39,14 @@ class StoredProgramsTest {
                 Block(BuiltInExercise.BarbellBackSquat, rounds = 5, reps = 5, load = Load.Bar(62.5)),
                 Block(BuiltInExercise.TwoHandSwing, rounds = 10, reps = 10, kind = BlockKind.Emom),
                 Block(
+                    BuiltInExercise.ArmorBuildingComplex,
+                    rounds = 20,
+                    reps = 1,
+                    kind = BlockKind.Density,
+                    double = true,
+                    load = Load.Bell(24.0, double = true),
+                ),
+                Block(
                     BuiltInExercise.GobletSquat,
                     rounds = 3,
                     reps = 12,

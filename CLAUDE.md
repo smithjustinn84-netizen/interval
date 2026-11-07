@@ -146,7 +146,9 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
   lift-domain        Lift's pure domain (`dev.justinsmith.lift.domain`): exercises, programs, sets and
                      sessions, a set's `Load` (sealed: bell, bar, bodyweight, band, mat) and a block's (null
                      for none named; `Load.named`, `Block.withLoad`), records,
-                     `EmomClock`/`HoldClock`/`RestClock`, suggestions, about how long a program's day takes
+                     `EmomClock`/`HoldClock`/`RestClock`/`DensityClock` (a density block, `BlockKind.Density`:
+                     as many rounds as fit a cap, planned as its first round, which takes every round logged within
+                     the cap, `plannedRounds`, and steps a rep a round by `densityStep`), suggestions, about how long a program's day takes
                      (`Estimate.kt`, from its sets, each lift's pace and the rest between sets), the program to
                      start someone on with one bell (`StarterProgram.kt`). The coaching (docs/kettlebell-coaching.md):
                      how each lift moves (`Movement.kt`: pattern, tempo ballistic/grind/hold, grip, lifts in a rep),

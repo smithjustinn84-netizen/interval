@@ -220,6 +220,9 @@ class SessionTimers(
             is SavedTimer.Hold -> HoldRun(timer.draft(), startedAt, timer.firstSide, timer.startedAtEpochMillis)
                 .takeUnless { it.clock.at(elapsed).phase == HoldPhase.Done }
                 ?.let(holds::resume)
+
+            // Nothing runs a density block yet, so there is none to go on with.
+            is SavedTimer.Density -> Unit
         }
         changed()
     }

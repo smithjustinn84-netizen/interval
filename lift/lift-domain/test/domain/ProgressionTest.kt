@@ -6,6 +6,7 @@ import kotlin.test.assertNull
 
 /** A grind's shortest rest: a block resting so steps to the next bell, however big the jump. */
 private const val FLOOR = 60
+private const val DAY = 86_400_000L
 
 class ProgressionTest {
     private val bells = listOf(16.0, 24.0, 28.0)
@@ -285,5 +286,47 @@ class ProgressionTest {
         val swings = Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 15, load = Load.Bell(16.0), rest = 45)
         val swung = sets(5) { set(BuiltInExercise.TwoHandSwing, 16.0, reps = 15) }
         assertEquals(swings.copy(rest = 30), nextStep(swings, swung, bells, bands, rest = 90))
+    }
+
+    private val abcs = Block(
+        BuiltInExercise.ArmorBuildingComplex,
+        rounds = 20,
+        reps = 1,
+        kind = BlockKind.Density,
+        double = true,
+    )
+    private val abcProgram = Program(ProgramKey.Custom("abc"), listOf(listOf(abcs)), daysPerWeek = 3, weeks = 4)
+
+    private fun abcRounds(n: Int, from: Long = 0) = List(n) {
+        SetLog.of(0, BuiltInExercise.ArmorBuildingComplex, 24.0, 1, null, from + 30_000L + it * 80_000L, double = true)
+    }
+
+    private fun abcSession(n: Int, at: Long) =
+        LiftSession("s$at", at, at + 1_500_000, "", abcRounds(n, at), program = abcProgram.key, day = 1)
+
+    @Test
+    fun `a density block counts its rounds across the sessions of it`() {
+        val before = listOf(abcSession(12, 2 * DAY), abcSession(10, DAY))
+        assertEquals(listOf(10, 12), densityRounds(abcs, abcProgram, before))
+        assertEquals(12, densityBest(abcs, abcProgram, before))
+        // One of another cap is another block.
+        assertEquals(emptyList(), densityRounds(abcs.copy(rounds = 15), abcProgram, before))
+    }
+
+    @Test
+    fun `two sessions that beat the best by a round add a rep to a round and the bell waits`() {
+        val day = abcProgram.day(1)
+        val before = listOf(abcSession(10, DAY), abcSession(11, 2 * DAY))
+        val change = progressions(day, abcRounds(11, 3 * DAY), bells, bands, before = before).single()
+        assertEquals(abcs.copy(reps = 2), change.to)
+        // One that only matched the best earns nothing, nor do two sessions with no best before them.
+        assertEquals(emptyList(), progressions(day, abcRounds(10, 3 * DAY), bells, bands, before = before))
+        assertEquals(emptyList(), progressions(day, abcRounds(12, 3 * DAY), bells, bands, before = before.drop(1)))
+    }
+
+    @Test
+    fun `a density block never steps by the EMOM's minute or the load`() {
+        assertNull(nextStep(abcs, abcRounds(1), bells, bands))
+        assertNull(densityStep(abcs, listOf(null), listOf(8, 10, 10)))
     }
 }

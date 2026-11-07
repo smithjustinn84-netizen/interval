@@ -78,4 +78,14 @@ class BenchmarksTest {
         assertTrue(challenges(few, now, null, null, null).isEmpty())
         assertTrue(challenges(emptyList(), now, null, null, null).isEmpty())
     }
+
+    @Test
+    fun `a density block's rounds count toward the ABC challenge`() {
+        // Fourteen rounds in twenty minutes, one tapped every eighty-five seconds.
+        val rounds = (0 until 14).map {
+            SetLog.of(0, BuiltInExercise.ArmorBuildingComplex, 24.0, 1, null, 30_000L + it * 85_000L, double = true)
+        }
+        val abc = challenges(listOf(session("abc", *rounds.toTypedArray())), 40 * DAY, null, null, null)
+        assertEquals(Challenge.ArmorBuilding(14), abc.single())
+    }
 }

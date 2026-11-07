@@ -18,6 +18,7 @@ import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.BlockKind
 import dev.justinsmith.lift.domain.CustomExercise
+import dev.justinsmith.lift.domain.DensityClock
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.ExerciseFilters
 import dev.justinsmith.lift.domain.Load
@@ -43,6 +44,7 @@ import dev.justinsmith.lift.session.SetDraft
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.block_add_rung
 import dev.justinsmith.lift.session.resources.block_kind
+import dev.justinsmith.lift.session.resources.block_kind_density
 import dev.justinsmith.lift.session.resources.block_kind_emom
 import dev.justinsmith.lift.session.resources.block_kind_ladder
 import dev.justinsmith.lift.session.resources.block_kind_sets
@@ -53,6 +55,7 @@ import dev.justinsmith.lift.session.resources.block_range_top
 import dev.justinsmith.lift.session.resources.block_remove_rung
 import dev.justinsmith.lift.session.resources.block_reps
 import dev.justinsmith.lift.session.resources.block_reps_now
+import dev.justinsmith.lift.session.resources.block_rounds_density
 import dev.justinsmith.lift.session.resources.block_rounds_emom
 import dev.justinsmith.lift.session.resources.block_rounds_ladder
 import dev.justinsmith.lift.session.resources.block_rounds_sets
@@ -151,7 +154,8 @@ internal fun BlockCounts(
     val held = block.exercise.measure == Measure.Time
     if (!held && !lockKind) {
         GroupLabel(stringResource(Res.string.block_kind))
-        SegmentedPicker(BlockKind.entries, block.kind, { kindName(it) }, { k -> onChange { it.asKind(k) } })
+        val kinds = if (block.kind in offeredKinds) offeredKinds else offeredKinds + block.kind
+        SegmentedPicker(kinds, block.kind, { kindName(it) }, { k -> onChange { it.asKind(k) } })
     }
     StepperRow(
         roundsName(block.kind),
@@ -291,6 +295,7 @@ private fun kindName(kind: BlockKind): String = stringResource(
         BlockKind.Sets -> Res.string.block_kind_sets
         BlockKind.Emom -> Res.string.block_kind_emom
         BlockKind.Ladder -> Res.string.block_kind_ladder
+        BlockKind.Density -> Res.string.block_kind_density
     },
 )
 
@@ -300,9 +305,22 @@ private fun roundsName(kind: BlockKind): String = stringResource(
         BlockKind.Sets -> Res.string.block_rounds_sets
         BlockKind.Emom -> Res.string.block_rounds_emom
         BlockKind.Ladder -> Res.string.block_rounds_ladder
+        BlockKind.Density -> Res.string.block_rounds_density
     },
 )
 
-/** An EMOM runs no longer than the timer allows; sets and ladders stop at [ProgramDraft.MAX_ROUNDS]. */
-private fun maxRounds(kind: BlockKind): Int =
-    if (kind == BlockKind.Emom) SetDraft.MAX_MINUTES else ProgramDraft.MAX_ROUNDS
+/**
+ * The kinds a block can be made: not yet a density block, until a session can run one. One already a density block
+ * still shows its kind.
+ */
+private val offeredKinds = listOf(BlockKind.Sets, BlockKind.Emom, BlockKind.Ladder)
+
+/**
+ * An EMOM runs no longer than the timer allows and a density block's cap no longer than
+ * [DensityClock.MAX_MINUTES]; sets and ladders stop at [ProgramDraft.MAX_ROUNDS].
+ */
+private fun maxRounds(kind: BlockKind): Int = when (kind) {
+    BlockKind.Emom -> SetDraft.MAX_MINUTES
+    BlockKind.Density -> DensityClock.MAX_MINUTES
+    BlockKind.Sets, BlockKind.Ladder -> ProgramDraft.MAX_ROUNDS
+}

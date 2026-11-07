@@ -61,13 +61,25 @@ data class ProgramDraft(
     }
 }
 
-/** This block run as [kind]: a ladder gets rungs and sets or an EMOM reps if it had none. */
-fun Block.asKind(kind: BlockKind): Block = copy(
-    kind = kind,
-    rungs = if (kind == BlockKind.Ladder && rungs.isEmpty()) ProgramDraft.NEW_RUNGS else rungs,
-    reps = if (kind != BlockKind.Ladder && reps < 1) ProgramDraft.NEW_REPS else reps,
-    range = range.takeIf { kind != BlockKind.Ladder },
-)
+/**
+ * This block run as [kind]: a ladder gets rungs and sets or an EMOM reps if it had none. A density block caps its
+ * minutes within [DensityClock.MIN_MINUTES] to [DensityClock.MAX_MINUTES] and builds within no range; a hold can't
+ * be one, and stays as it is.
+ */
+fun Block.asKind(kind: BlockKind): Block {
+    if (kind == BlockKind.Density && exercise.measure == Measure.Time) return this
+    return copy(
+        kind = kind,
+        rounds = if (kind == BlockKind.Density) {
+            rounds.coerceIn(DensityClock.MIN_MINUTES, DensityClock.MAX_MINUTES)
+        } else {
+            rounds
+        },
+        rungs = if (kind == BlockKind.Ladder && rungs.isEmpty()) ProgramDraft.NEW_RUNGS else rungs,
+        reps = if (kind != BlockKind.Ladder && reps < 1) ProgramDraft.NEW_REPS else reps,
+        range = range.takeIf { kind != BlockKind.Ladder && kind != BlockKind.Density },
+    )
+}
 
 /**
  * This block of [exercise]: still with two bells if it was and [exercise] can be, and with them if it must. Its

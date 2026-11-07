@@ -4,9 +4,29 @@ package dev.justinsmith.lift.domain
  * Of [planned], the set [logged] did each, or null for one not done: the n-th planned set of a lift (and side)
  * by the n-th logged one, as [nextPlanned] counts them.
  */
-fun plannedMatches(planned: List<PlannedSet>, logged: List<SetLog>): List<SetLog?> {
+fun plannedMatches(planned: List<PlannedSet>, logged: List<SetLog>): List<SetLog?> =
+    plannedRounds(planned, logged).map { it.firstOrNull() }
+
+/**
+ * Of [planned], the sets [logged] did each: one at most, as [plannedMatches] has it, except a density block's first
+ * round ([PlannedSet.capMinutes]). That is the first set of its lift left on either side, and it takes every later
+ * one logged within the cap from when that round began (its reps at its lift's pace before it was logged), so a
+ * round done past the first never counts toward a block after it. Empty for one not done.
+ */
+fun plannedRounds(planned: List<PlannedSet>, logged: List<SetLog>): List<List<SetLog>> {
     val byKey = logged.groupBy { it.exercise.key to it.side }.mapValues { (_, sets) -> ArrayDeque(sets) }
-    return planned.map { set -> byKey[set.exercise.key to set.side]?.removeFirstOrNull() }
+    return planned.map { set ->
+        val cap = set.capMinutes
+            ?: return@map listOfNotNull(byKey[set.exercise.key to set.side]?.removeFirstOrNull())
+        val ofLift = byKey.filterKeys { (key, _) -> key == set.exercise.key }.values
+        val first = ofLift.mapNotNull { it.firstOrNull() }.minByOrNull { it.loggedAtEpochMillis }
+            ?: return@map emptyList()
+        val began = first.loggedAtEpochMillis - first.reps * first.exercise.secondsPerRep * EmomClock.SECOND_MILLIS
+        val until = began + cap * EmomClock.MINUTE_MILLIS
+        ofLift.flatMap { sets ->
+            sets.filter { it.loggedAtEpochMillis in first.loggedAtEpochMillis..until }.also { sets.removeAll(it) }
+        }.sortedBy { it.loggedAtEpochMillis }
+    }
 }
 
 /** What weight added to bodyweight goes up by. */
@@ -36,7 +56,8 @@ private const val EMOM_MAX_MINUTES = 60
  * - a barbell lift, [BAR_KG_STEP] more on the bar;
  * - weight added to bodyweight, [ADDED_KG_STEP] more; bodyweight without, and the mat, a rep more;
  * - a band, the next of [bands] heavier; with none, a rep more;
- * - a hold, five seconds more; an EMOM, a minute more; a ladder, nothing.
+ * - a hold, five seconds more; an EMOM, a minute more; a ladder, nothing;
+ * - a density block, nothing here: it steps by its rounds, which [progressions] counts across sessions.
  *
  * Bells come in fixed sizes. Where a bell lift in sets would step to a bell more than a fifth heavier, it is done
  * denser first: its rest ([Block.rest], else the [rest] set on Lift) [RestClock.STEP_SECONDS] shorter each time, down
@@ -53,7 +74,7 @@ fun nextStep(
     pairs: Set<Double> = emptySet(),
     rest: Int = RestClock.DEFAULT_SECONDS,
 ): Block? {
-    if (block.kind == BlockKind.Ladder) return null
+    if (block.kind == BlockKind.Ladder || block.kind == BlockKind.Density) return null
     val sets = doneInFull(block, done) ?: return null
     return stepUp(block, loadDone(block, sets, bands) ?: return null, bellsFor(block, bells, pairs), bands, rest)
 }
@@ -130,7 +151,7 @@ private fun heavier(block: Block, at: Load, bells: List<Double>, bands: List<Ban
 }
 
 /** The sets [done] for [block], when every one was done and met its plan; else null. */
-private fun doneInFull(block: Block, done: List<SetLog?>): List<SetLog>? =
+internal fun doneInFull(block: Block, done: List<SetLog?>): List<SetLog>? =
     done.filterNotNull().takeIf { it.isNotEmpty() && it.size == done.size && metPlan(block, it) }
 
 /** Whether every one of [sets] was at [block]'s reps (a hold's seconds) or more, and its load or more. */
@@ -152,8 +173,10 @@ private fun bandUsed(block: Block, sets: List<SetLog>, bands: List<Band>): Band?
 
 /**
  * The step up each of [day]'s blocks earned, done as [logged]: one for each block of today's plan done in full
- * at its plan, as [nextStep] has it, from the block as it was done. A block swapped part way earns none.
+ * at its plan, as [nextStep] has it, from the block as it was done. A block swapped part way earns none. A density
+ * block steps by [densityStep], its rounds today after those in the sessions [before] this one.
  */
+@Suppress("detekt.LongParameterList") // What a step up goes by.
 fun progressions(
     day: ProgramDay,
     logged: List<SetLog>,
@@ -161,9 +184,16 @@ fun progressions(
     bands: List<Band>,
     pairs: Set<Double> = emptySet(),
     rest: Int = RestClock.DEFAULT_SECONDS,
+    before: List<LiftSession> = emptyList(),
 ): List<BlockChange> =
-    blocksDone(day, logged).mapNotNull { (i, block, done) ->
-        nextStep(block, done, bells, bands, pairs, rest)?.let { BlockChange(i, block, it) }
+    blocksDone(day, logged).mapNotNull { done ->
+        val block = done.block
+        val next = if (block.kind == BlockKind.Density) {
+            densityStep(block, done.done, densityRounds(block, day.program, before) + done.rounds)
+        } else {
+            nextStep(block, done.done, bells, bands, pairs, rest)
+        }
+        next?.let { BlockChange(done.index, block, it) }
     }
 
 /**
@@ -186,17 +216,21 @@ fun toppedOut(
         block.takeIf { heavier(block, at, bellsFor(block, bells, pairs), bands) == null }
     }
 
-/** Block [index] of a day's plan, and the set logged for each of its planned sets, null for one not done. */
-private data class BlockDone(val index: Int, val block: Block, val done: List<SetLog?>)
+/**
+ * Block [index] of a day's plan, the set logged for each of its planned sets (null for one not done), and the
+ * [rounds] it came to: the sets logged for it, a density block's every round.
+ */
+internal data class BlockDone(val index: Int, val block: Block, val done: List<SetLog?>, val rounds: Int)
 
 /** Each block of today's plan neither swapped part way nor skipped, with what was done of it. */
-private fun blocksDone(day: ProgramDay, logged: List<SetLog>): List<BlockDone> {
+internal fun blocksDone(day: ProgramDay, logged: List<SetLog>): List<BlockDone> {
     val sets = day.blockSets()
-    val matches = plannedMatches(sets.flatten(), logged)
+    val matches = plannedRounds(sets.flatten(), logged)
     var start = 0
     return day.today.blocks.mapIndexedNotNull { i, entry ->
         val done = matches.subList(start, start + sets[i].size)
         start += sets[i].size
-        BlockDone(i, entry.block, done).takeIf { entry.before == null && !entry.skipped }
+        BlockDone(i, entry.block, done.map { it.firstOrNull() }, done.sumOf { it.size })
+            .takeIf { entry.before == null && !entry.skipped }
     }
 }

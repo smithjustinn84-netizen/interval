@@ -447,7 +447,7 @@ flowchart TD
     in `BalanceBars` (`lift-ui`), which Strength's `BalanceCard` (`lift-today`) and a program's sheet draw.
   - `MuscleBalance.ofSets` folds any sets, so `Program.weekBalance()` counts what a week of a program plans the same
     way; `ProgramCoverageTest` holds what each built-in leaves untrained.
-  - `Estimate.kt` (`lift-domain`) estimates each program day's duration from set/rep counts, movement pace, EMOM minutes, and configured set rest.
+  - `Estimate.kt` (`lift-domain`) estimates each program day's duration from set/rep counts, movement pace, EMOM minutes, a density block's cap, and configured set rest.
 - **Audio & Cues**:
   - Audio cues are managed by `CuePlayer` (interval) and `Beeper` (Lift).
   - Voice is one `Speaker` per process (`core-platform`: Android's text-to-speech, iOS's speech synthesizer, none on

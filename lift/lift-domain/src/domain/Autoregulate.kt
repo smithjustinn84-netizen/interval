@@ -5,7 +5,7 @@ import kotlin.math.roundToInt
 
 // An easier day, offered when the lifter is taxed: leave something in the tank, and come back stronger.
 
-/** A taxed day's EMOM of ballistics keeps this share of its minutes: 20 become 15. */
+/** A taxed day's EMOM or density block of ballistics keeps this share of its minutes: 20 become 15. */
 private const val EASIER_EMOM_SHARE = 0.75
 
 /** A taxed day's ballistic sets lose a round when they have more than this many. */
@@ -36,8 +36,9 @@ fun restFor(block: Block, base: Int): Int {
 /**
  * [block] made easier for a taxed day: a grind a bell lighter than [at], the load it would be done at (of
  * [pairs], the bells owned two of, with two bells once any are known; else of [bells]), or the bar a step lighter,
- * no lighter than the user's [bar]; a ballistic EMOM a quarter of its minutes shorter, ballistic sets a round
- * fewer; every block but an EMOM resting by its tempo ([restFor]) against the [baseRest] set on Lift.
+ * no lighter than the user's [bar]; a ballistic EMOM or density block a quarter of its minutes shorter (a cap no
+ * shorter than [DensityClock.MIN_MINUTES]), ballistic sets a round fewer; every block but those on the clock resting
+ * by its tempo ([restFor]) against the [baseRest] set on Lift.
  */
 @Suppress("detekt.LongParameterList") // What an easier block goes by.
 fun Block.easier(at: Load?, bells: List<Double>, pairs: Set<Double>, bar: Double?, baseRest: Int): Block {
@@ -46,13 +47,15 @@ fun Block.easier(at: Load?, bells: List<Double>, pairs: Set<Double>, bar: Double
     val rounds = when {
         tempo != Tempo.Ballistic -> rounds
         kind == BlockKind.Emom -> ceil(rounds * EASIER_EMOM_SHARE).toInt().coerceAtLeast(1)
+        kind == BlockKind.Density -> ceil(rounds * EASIER_EMOM_SHARE).toInt().coerceAtLeast(DensityClock.MIN_MINUTES)
         kind == BlockKind.Sets && rounds > EASIER_MIN_ROUNDS -> rounds - 1
         else -> rounds
     }
+    val onTheClock = kind == BlockKind.Emom || kind == BlockKind.Density
     return copy(
         load = lighter ?: load,
-        rounds = rounds,
-        rest = if (kind == BlockKind.Emom) rest else restFor(this, baseRest),
+        rounds = rounds.coerceAtMost(this.rounds),
+        rest = if (onTheClock) rest else restFor(this, baseRest),
     )
 }
 
@@ -92,10 +95,14 @@ fun SessionPlan.easier(
     return easier.takeIf { it != this }
 }
 
-/** What a day of a program asks of the grip, as planned: every set's, its reps or a hold's seconds. */
+/**
+ * What a day of a program asks of the grip, as planned: every set's, its reps or a hold's seconds. A density block's
+ * count is open, so it is planned as its EMOM would be, a round a minute.
+ */
 val List<Block>.plannedGripLoad: Double
     get() = sumOf { block ->
-        block.plannedSets().sumOf { set ->
+        val planned = if (block.kind == BlockKind.Density) block.copy(kind = BlockKind.Emom) else block
+        planned.plannedSets().sumOf { set ->
             val held = set.exercise.measure == Measure.Time
             val load = Load.of(set.exercise.equipment, 0.0, set.double)
             SetLog(0, set.exercise, load, if (held) 0 else set.reps, set.side, 0, seconds = set.reps.takeIf { held })

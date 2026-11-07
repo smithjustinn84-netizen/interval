@@ -104,4 +104,20 @@ class EstimateTest {
         }.filter { (_, minutes) -> minutes !in 5..75 }
         assertTrue(outside.isEmpty(), "Outside 5 to 75 minutes: $outside")
     }
+
+    @Test
+    fun `a density block lasts its cap and its count-in with no rest after it`() {
+        val abcs = Block(
+            BuiltInExercise.ArmorBuildingComplex,
+            rounds = 20,
+            reps = 1,
+            kind = BlockKind.Density,
+            double = true,
+        )
+        assertEquals(20 * 60 + 10, day(abcs).estimatedSeconds(rest))
+        assertEquals(20 * 60 + 10 + 15 * 3 + 3 * 90, day(squats, abcs).estimatedSeconds(rest))
+        // All on the clock, it is its minutes exactly.
+        assertEquals(20, day(abcs).estimatedMinutes(rest))
+        assertEquals(30, day(abcs, swingsOnTheMinute).estimatedMinutes(rest))
+    }
 }

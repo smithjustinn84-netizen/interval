@@ -192,9 +192,11 @@
     <string name="block_kind_sets">Sets</string>
     <string name="block_kind_emom">EMOM</string>
     <string name="block_kind_ladder">Ladder</string>
+    <string name="block_kind_density">Rounds in a time cap</string>
     <string name="block_rounds_sets">Sets</string>
     <string name="block_rounds_emom">Minutes</string>
     <string name="block_rounds_ladder">Ladders</string>
+    <string name="block_rounds_density">Minutes</string>
     <string name="block_reps">Reps</string>
     <string name="block_reps_now">Reps now</string>
     <string name="block_range">Build reps first</string>

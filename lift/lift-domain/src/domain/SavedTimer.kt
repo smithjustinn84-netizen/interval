@@ -21,6 +21,20 @@ sealed interface SavedTimer {
         val done: Set<Int>,
     ) : SavedTimer
 
+    /**
+     * A density block of a lift, its load and a round's reps, capped at [minutes], with the [rounds] done so far, a
+     * one-sided lift's rounds turning sides from [firstSide].
+     */
+    data class Density(
+        override val startedAtEpochMillis: Long,
+        val exercise: Exercise,
+        val load: Load,
+        val reps: Int,
+        val minutes: Int,
+        val rounds: Int,
+        val firstSide: Side,
+    ) : SavedTimer
+
     /** A hold of [seconds], the set it logs as the Log sheet had it, and whether it is the [firstSide]. */
     data class Hold(
         override val startedAtEpochMillis: Long,

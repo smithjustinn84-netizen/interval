@@ -2,9 +2,17 @@ package dev.justinsmith.lift.domain
 
 /**
  * The next set of a program day: the [index]-th (from 0) of its [total], in its [block]-th block (from 0),
- * and, when it opens an EMOM, the [emomMinutes] the EMOM runs for.
+ * and, when it opens an EMOM, the [emomMinutes] the EMOM runs for; when it opens a density block, the
+ * [densityMinutes] of its cap.
  */
-data class NextSet(val set: PlannedSet, val index: Int, val total: Int, val block: Int, val emomMinutes: Int?)
+data class NextSet(
+    val set: PlannedSet,
+    val index: Int,
+    val total: Int,
+    val block: Int,
+    val emomMinutes: Int?,
+    val densityMinutes: Int? = null,
+)
 
 /**
  * One of the day's blocks as today's plan has it: [done] of its [total] sets done, and whether the session
@@ -31,7 +39,9 @@ fun ProgramDay.nextSet(logged: List<SetLog>): NextSet? {
     } else {
         null
     }
-    return NextSet(planned[index], index, planned.size, block, emomMinutes)
+    // A density block plans its first round alone, which opens it.
+    val densityMinutes = planned[index].capMinutes
+    return NextSet(planned[index], index, planned.size, block, emomMinutes, densityMinutes)
 }
 
 /** The day's blocks as today's plan has them, with the sets of each [logged] has done. */

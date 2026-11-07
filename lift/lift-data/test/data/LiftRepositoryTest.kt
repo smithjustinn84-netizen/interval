@@ -106,6 +106,16 @@ class LiftRepositoryTest {
             SavedTimer.Rest(500, 90),
             SavedTimer.Emom(500, BuiltInExercise.Press, Load.Bell(16.0, double = true), 5, 10, Side.Right, setOf(1, 3)),
             SavedTimer.Emom(500, BuiltInExercise.BandPullApart, Load.Banded(heavy), 12, 5, Side.Left, emptySet()),
+            SavedTimer.Density(
+                500,
+                BuiltInExercise.ArmorBuildingComplex,
+                Load.Bell(24.0, double = true),
+                1,
+                20,
+                7,
+                Side.Left,
+            ),
+            SavedTimer.Density(500, BuiltInExercise.Snatch, Load.Bell(16.0), 5, 10, 0, Side.Right),
             SavedTimer.Hold(500, BuiltInExercise.Plank, 0.0, 10.0, 20.0, Side.Left, false, 45, Band.Default, false),
         )
         repository.sessions.startSession()

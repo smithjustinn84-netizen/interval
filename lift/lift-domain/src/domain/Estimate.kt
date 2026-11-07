@@ -7,20 +7,25 @@ import kotlin.math.roundToInt
 
 /**
  * About how long this plan takes, in seconds, resting [restSeconds] between sets, or a block's own rest. An EMOM
- * lasts its minutes and its count-in, with no rest inside. A hold lasts its seconds and its count-in. Any other set
- * takes its reps at its lift's pace ([secondsPerRep]). A rest follows each set that isn't on the minute, a
- * one-sided lift's two sides sharing one (the rest timer offers one after each side, which few take), and none
- * follows the last set of the day. A skipped block counts for the sets it kept.
+ * lasts its minutes and its count-in, with no rest inside, and a density block its cap and its count-in. A hold
+ * lasts its seconds and its count-in. Any other set takes its reps at its lift's pace ([secondsPerRep]). A rest
+ * follows each set that isn't on the clock, a one-sided lift's two sides sharing one (the rest timer offers one
+ * after each side, which few take), and none follows the last set of the day. A skipped block counts for the sets
+ * it kept.
  */
 fun SessionPlan.estimatedSeconds(restSeconds: Int): Int {
     val parts = blocks.map { it.block to it.plannedSets() }.filter { (_, sets) -> sets.isNotEmpty() }
     val work = parts.sumOf { (block, sets) ->
-        if (block.kind == BlockKind.Emom) emomSeconds(sets) else setsSeconds(sets)
+        when {
+            block.kind == BlockKind.Emom -> emomSeconds(sets.size)
+            block.kind == BlockKind.Density -> emomSeconds(block.rounds)
+            else -> setsSeconds(sets)
+        }
     }
     // Each block rests its own, when it keeps one ([Block.rest]), else the user's.
-    val resting = parts.filter { (block, _) -> block.kind != BlockKind.Emom }
+    val resting = parts.filter { (block, _) -> !block.onTheClock }
     val rested = resting.sumOf { (block, sets) -> rests(sets) * (block.rest ?: restSeconds) }
-    val last = parts.lastOrNull()?.first?.takeIf { it.kind != BlockKind.Emom }
+    val last = parts.lastOrNull()?.first?.takeIf { !it.onTheClock }
     return work + (rested - (last?.let { it.rest ?: restSeconds } ?: 0)).coerceAtLeast(0)
 }
 
@@ -28,13 +33,14 @@ fun SessionPlan.estimatedSeconds(restSeconds: Int): Int {
 fun ProgramDay.estimatedSeconds(restSeconds: Int): Int = today.estimatedSeconds(restSeconds)
 
 /**
- * About how long this day takes, in minutes, to say: a day that is all on the minute is its minutes exactly
- * ("12 minutes of swings" is 12); any other is rounded to the nearest five, and never less than five.
+ * About how long this day takes, in minutes, to say: a day that is all on the clock is its minutes exactly
+ * ("12 minutes of swings" is 12, "20 minutes of ABCs" 20); any other is rounded to the nearest five, and never less
+ * than five.
  */
 fun ProgramDay.estimatedMinutes(restSeconds: Int): Int {
     val blocks = today.blocks.filter { it.plannedSets().isNotEmpty() }
-    return if (blocks.isNotEmpty() && blocks.all { it.block.kind == BlockKind.Emom }) {
-        blocks.sumOf { it.plannedSets().size }
+    return if (blocks.isNotEmpty() && blocks.all { it.block.onTheClock }) {
+        blocks.sumOf { if (it.block.kind == BlockKind.Density) it.block.rounds else it.plannedSets().size }
     } else {
         val minutes = estimatedSeconds(restSeconds) / SECONDS_PER_MINUTE.toDouble()
         ((minutes / ROUND_TO_MINUTES).roundToInt() * ROUND_TO_MINUTES).coerceAtLeast(ROUND_TO_MINUTES)
@@ -47,9 +53,12 @@ fun Program.dayMinutes(restSeconds: Int): IntRange {
     return minutes.min()..minutes.max()
 }
 
-/** An EMOM's minutes, one a set, after its count-in. */
-private fun emomSeconds(sets: List<PlannedSet>): Int =
-    sets.size * SECONDS_PER_MINUTE + (EmomClock.COUNT_IN_MILLIS / MILLIS_PER_SECOND).toInt()
+/** Whether its time is the clock's, an EMOM's or a density block's, with no rest of the user's between its sets. */
+private val Block.onTheClock: Boolean get() = kind == BlockKind.Emom || kind == BlockKind.Density
+
+/** [minutes] on the clock, an EMOM's (one a set) or a density block's cap, after the count-in. */
+private fun emomSeconds(minutes: Int): Int =
+    minutes * SECONDS_PER_MINUTE + (EmomClock.COUNT_IN_MILLIS / MILLIS_PER_SECOND).toInt()
 
 private fun setsSeconds(sets: List<PlannedSet>): Int = sets.sumOf { set ->
     if (set.held) {

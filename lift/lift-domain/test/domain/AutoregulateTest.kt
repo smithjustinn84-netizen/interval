@@ -69,4 +69,31 @@ class AutoregulateTest {
         assertNull(bjj.lighterDayThan(2))
         assertNull(program(ProgramId.SimpleAndSinister).lighterDayThan(1))
     }
+
+    @Test
+    fun `a ballistic density block loses a quarter of its cap and no shorter than five minutes`() {
+        val abcs = Block(
+            BuiltInExercise.ArmorBuildingComplex,
+            rounds = 20,
+            reps = 1,
+            kind = BlockKind.Density,
+            double = true,
+        )
+        val easier = abcs.easier(Load.Bell(24.0, double = true), bells, emptySet(), bar = null, baseRest = 90)
+        assertEquals(15, easier.rounds)
+        assertNull(easier.rest)
+        assertEquals(5, abcs.copy(rounds = 5).easier(null, bells, emptySet(), null, 90).rounds)
+    }
+
+    @Test
+    fun `a density block asks of the grip as its EMOM would at a round a minute`() {
+        val abcs = Block(
+            BuiltInExercise.ArmorBuildingComplex,
+            rounds = 20,
+            reps = 1,
+            kind = BlockKind.Density,
+            double = true,
+        )
+        assertEquals(listOf(abcs.copy(kind = BlockKind.Emom)).plannedGripLoad, listOf(abcs).plannedGripLoad)
+    }
 }

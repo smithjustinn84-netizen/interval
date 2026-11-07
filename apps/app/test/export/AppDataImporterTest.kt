@@ -8,7 +8,7 @@ import dev.justinsmith.interval.fakes.TODAY
 import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.fixtures.DAMAGED_EXPORT
 import dev.justinsmith.interval.fixtures.FOREIGN_JSON
-import dev.justinsmith.interval.fixtures.SCHEMA_11_EXPORT
+import dev.justinsmith.interval.fixtures.SCHEMA_12_EXPORT
 import dev.justinsmith.interval.fixtures.SCHEMA_1_EXPORT
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
@@ -27,6 +27,7 @@ import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.lift.data.LiftRepository
 import dev.justinsmith.lift.domain.BandColour
 import dev.justinsmith.lift.domain.Block
+import dev.justinsmith.lift.domain.BlockKind
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.ExerciseDraft
@@ -140,7 +141,8 @@ class AppDataImporterTest {
             lift.sessions.sessions.value.single().uid,
             HeartRate(averageBpm = 118, peakBpm = 149),
         )
-        // A program whose blocks name each kind of load: a pair of bells, a band of the user's own, and none.
+        // A program whose blocks name each kind of load (a pair of bells, a band of the user's own, and none), and a
+        // density block, schema 11's.
         val loop = lift.gear.addBand("Door loop", BandColour.Purple)
         lift.programs.saveProgram(
             null,
@@ -153,6 +155,7 @@ class AppDataImporterTest {
                         Block(BuiltInExercise.BandPullApart, rounds = 3, reps = 15)
                             .withLoad(Load.Banded(lift.gear.bands.value.single { it.id == loop })),
                         Block(BuiltInExercise.PushUp, rounds = 3, reps = 10, rest = 60),
+                        Block(BuiltInExercise.ArmorBuildingComplex, 20, 1, BlockKind.Density, double = true),
                     ),
                 ),
                 daysPerWeek = 3,
@@ -295,7 +298,7 @@ class AppDataImporterTest {
     @Test
     fun `a newer file says so and changes nothing`() = runTest {
         val target = Phone(now)
-        val file = ShareableFile("new.json", ExportBundle.MIME_TYPE, SCHEMA_11_EXPORT)
+        val file = ShareableFile("new.json", ExportBundle.MIME_TYPE, SCHEMA_12_EXPORT)
         assertEquals(ImportReview.TooNew("0.9.0"), target.importer.review(file))
         assertFailsWith<IllegalArgumentException> { target.importer.import(file, withSettings = true) }
         assertTrue(target.intervals.history.history.value.isEmpty())
