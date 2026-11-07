@@ -16,6 +16,13 @@ const val ADDED_KG_STEP = 2.5
 private const val HOLD_STEP = 5
 private const val HOLD_MAX = 600
 
+/** The next bell this much heavier is a big jump: the rest shortens first, the same work done denser. */
+private const val BIG_JUMP = 1.2
+
+/** The shortest a denser block rests: a thrown lift's, and any other's. */
+private const val BALLISTIC_REST_FLOOR = 30
+private const val GRIND_REST_FLOOR = 60
+
 /** An EMOM runs no longer than an hour, as the Log sheet allows. */
 private const val EMOM_MAX_MINUTES = 60
 
@@ -31,6 +38,10 @@ private const val EMOM_MAX_MINUTES = 60
  * - a band, the next of [bands] heavier; with none, a rep more;
  * - a hold, five seconds more; an EMOM, a minute more; a ladder, nothing.
  *
+ * Bells come in fixed sizes. Where a bell lift in sets would step to a bell more than a fifth heavier, it is done
+ * denser first: its rest ([Block.rest], else the [rest] set on Lift) [RestClock.STEP_SECONDS] shorter each time, down
+ * to 30 seconds for a thrown lift and 60 for any other; only then the bell, its rest back to Lift's.
+ *
  * A block done with two bells steps only to a weight of [pairs], the bells owned two of, once the user has said
  * which those are; with none said, to any of [bells].
  */
@@ -40,10 +51,11 @@ fun nextStep(
     bells: List<Double>,
     bands: List<Band>,
     pairs: Set<Double> = emptySet(),
+    rest: Int = RestClock.DEFAULT_SECONDS,
 ): Block? {
     if (block.kind == BlockKind.Ladder) return null
     val sets = doneInFull(block, done) ?: return null
-    return stepUp(block, loadDone(block, sets, bands) ?: return null, bellsFor(block, bells, pairs), bands)
+    return stepUp(block, loadDone(block, sets, bands) ?: return null, bellsFor(block, bells, pairs), bands, rest)
 }
 
 /** The bells [block] can step to: for two bells, only those owned two of, once any are; else any of [bells]. */
@@ -64,12 +76,12 @@ private fun loadDone(block: Block, sets: List<SetLog>, bands: List<Band>): Load?
 }
 
 /** [block] a step up from [at], the load it was done at, as [nextStep] lays the steps out. */
-private fun stepUp(block: Block, at: Load, bells: List<Double>, bands: List<Band>): Block? {
+private fun stepUp(block: Block, at: Load, bells: List<Double>, bands: List<Band>, rest: Int): Block? {
     block.ranged?.let { range ->
         return if (block.reps < range.top) {
             block.copy(reps = block.reps + 1)
         } else {
-            heavier(block, at, bells, bands)?.copy(reps = range.bottom)
+            denser(block, at, bells, rest) ?: heavier(block, at, bells, bands)?.copy(reps = range.bottom, rest = null)
         }
     }
     return when {
@@ -79,8 +91,22 @@ private fun stepUp(block: Block, at: Load, bells: List<Double>, bands: List<Band
         block.kind == BlockKind.Emom ->
             block.copy(rounds = (block.rounds + 1).coerceAtMost(EMOM_MAX_MINUTES)).takeIf { it != block }
 
-        else -> heavier(block, at, bells, bands) ?: block.copy(reps = block.reps + 1)
+        else -> denser(block, at, bells, rest)
+            ?: heavier(block, at, bells, bands)?.copy(rest = null)
+            ?: block.copy(reps = block.reps + 1)
     }
+}
+
+/**
+ * [block], a bell lift in sets, resting [RestClock.STEP_SECONDS] less than it does now (its own, else [rest]), when
+ * the next of [bells] after [at] is a big jump and the rest is above its floor; else null.
+ */
+private fun denser(block: Block, at: Load, bells: List<Double>, rest: Int): Block? {
+    if (block.kind != BlockKind.Sets || at !is Load.Bell) return null
+    val next = bells.filter { it > at.kg }.minOrNull() ?: return null
+    if (next <= at.kg * BIG_JUMP) return null
+    val floor = if (block.exercise.movement.tempo == Tempo.Ballistic) BALLISTIC_REST_FLOOR else GRIND_REST_FLOOR
+    return ((block.rest ?: rest) - RestClock.STEP_SECONDS).takeIf { it >= floor }?.let { block.copy(rest = it) }
 }
 
 /**
@@ -134,9 +160,10 @@ fun progressions(
     bells: List<Double>,
     bands: List<Band>,
     pairs: Set<Double> = emptySet(),
+    rest: Int = RestClock.DEFAULT_SECONDS,
 ): List<BlockChange> =
     blocksDone(day, logged).mapNotNull { (i, block, done) ->
-        nextStep(block, done, bells, bands, pairs)?.let { BlockChange(i, block, it) }
+        nextStep(block, done, bells, bands, pairs, rest)?.let { BlockChange(i, block, it) }
     }
 
 /**

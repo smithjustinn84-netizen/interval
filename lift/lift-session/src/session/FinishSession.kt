@@ -11,9 +11,11 @@ import dev.justinsmith.lift.data.GearStore
 import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
+import dev.justinsmith.lift.data.SetStore
 import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.SaveScope
 import dev.justinsmith.lift.domain.gripLoad
+import dev.justinsmith.lift.domain.newPaces
 import dev.justinsmith.lift.domain.newRecords
 import dev.justinsmith.lift.domain.offeredBands
 import dev.justinsmith.lift.domain.planChanges
@@ -41,6 +43,7 @@ class FinishSession(
     private val sessionStore: SessionStore,
     private val programStore: ProgramStore,
     private val gearStore: GearStore,
+    private val setStore: SetStore,
     private val intervals: IntervalActivity,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
@@ -68,7 +71,9 @@ class FinishSession(
         val bands = offeredBands(gearStore.bands.value)
         val pairs = gearStore.pairs.value
         val day = programDay(programStore.programDay.value, session)
-        val changes = day?.let { planChanges(it, progressions(it, session.sets, bells, bands, pairs)) }
+        val changes = day?.let {
+            planChanges(it, progressions(it, session.sets, bells, bands, pairs, setStore.restSeconds.value))
+        }
         // The weeks before this one: the session is not yet among the finished.
         val grip = gripLoad(
             sessionStore.sessions.value.flatMap { it.sets },
@@ -87,6 +92,7 @@ class FinishSession(
             toppedOut = day?.let { toppedOut(it, session.sets, bells, bands, pairs) }.orEmpty(),
             heavyGrip = grip.heavyDay(done.gripLoad),
             handCare = done.wantsHandCare,
+            paces = newPaces(sessionStore.sessions.value, done),
         )
         sessionStore.finishSession(title)
         val now = done.finishedAtEpochMillis ?: clock.nowMillis()

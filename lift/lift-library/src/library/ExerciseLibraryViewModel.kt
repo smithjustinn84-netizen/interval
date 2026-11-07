@@ -12,6 +12,7 @@ import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.ExerciseFilters
 import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.bestPaceOf
 import dev.justinsmith.lift.domain.exerciseHistory
 import dev.justinsmith.lift.domain.exerciseTrend
 import dev.justinsmith.lift.domain.offeredExercises
@@ -91,5 +92,6 @@ fun exerciseDetail(
         lastDone = history.lastDoneAtEpochMillis?.let(timestamps::date).orEmpty(),
         recent = history.recent.map { DatedSession(it, timestamps.date(it.startedAtEpochMillis)) },
         trend = exerciseTrend(exercise, history.recent),
+        bestPace = bestPaceOf(exercise, sessions),
     )
 }

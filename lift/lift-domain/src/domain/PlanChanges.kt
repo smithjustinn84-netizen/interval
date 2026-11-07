@@ -79,6 +79,7 @@ private fun BlockChange.carryCounts(block: Block): Block {
     if (to.reps != from.reps && block.reps == from.reps) carried = carried.copy(reps = to.reps)
     if (to.rungs != from.rungs && block.rungs == from.rungs) carried = carried.copy(rungs = to.rungs)
     if (to.range != from.range && block.range == from.range) carried = carried.copy(range = to.range)
+    if (to.rest != from.rest && block.rest == from.rest) carried = carried.copy(rest = to.rest)
     return carried
 }
 

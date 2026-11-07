@@ -46,6 +46,8 @@ import dev.justinsmith.interval.ui.isLandscape
 import dev.justinsmith.interval.ui.rememberEntrance
 import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.SaveScope
+import dev.justinsmith.lift.domain.formatKg
+import dev.justinsmith.lift.domain.formatPace
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_joined
 import dev.justinsmith.lift.session.resources.summary_done
@@ -53,6 +55,7 @@ import dev.justinsmith.lift.session.resources.summary_hand_care
 import dev.justinsmith.lift.session.resources.summary_heavy_grip
 import dev.justinsmith.lift.session.resources.summary_how_was_it
 import dev.justinsmith.lift.session.resources.summary_note_placeholder
+import dev.justinsmith.lift.session.resources.summary_pace
 import dev.justinsmith.lift.session.resources.summary_program_finished
 import dev.justinsmith.lift.session.resources.summary_share
 import dev.justinsmith.lift.session.resources.summary_shared
@@ -60,6 +63,7 @@ import dev.justinsmith.lift.session.resources.summary_streak
 import dev.justinsmith.lift.session.resources.summary_week_count
 import dev.justinsmith.lift.session.resources.summary_week_of_goal
 import dev.justinsmith.lift.session.resources.today_goal_met
+import dev.justinsmith.lift.ui.liftName
 import dev.justinsmith.lift.ui.programName
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -230,16 +234,27 @@ private fun SummaryHowWasIt(finished: Finished, reflection: SummaryReflection) {
     )
 }
 
-/** A heavy day on the grip, and how to look after the hands after many snatches or one-hand swings. */
+/**
+ * The lifts done faster than ever, a heavy day on the grip, and how to look after the hands after many snatches or
+ * one-hand swings.
+ */
 @Composable
 private fun GripNotes(finished: Finished) {
-    val lines = listOfNotNull(
+    val paces = finished.paces.map { pace ->
+        stringResource(
+            Res.string.summary_pace,
+            liftName(pace.exercise, pace.double),
+            formatPace(pace.perMinute),
+            formatKg(pace.kg),
+        )
+    }
+    val lines = paces + listOfNotNull(
         Res.string.summary_heavy_grip.takeIf { finished.heavyGrip },
         Res.string.summary_hand_care.takeIf { finished.handCare },
-    )
+    ).map { stringResource(it) }
     lines.forEach { line ->
         Text(
-            stringResource(line),
+            line,
             style = IntervalTheme.type.meta,
             color = IntervalTheme.palette.textDim,
             modifier = Modifier.padding(vertical = Spacing.space4),

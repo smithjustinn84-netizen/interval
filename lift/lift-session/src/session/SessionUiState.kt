@@ -8,6 +8,7 @@ import dev.justinsmith.lift.domain.EmomState
 import dev.justinsmith.lift.domain.HoldState
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.Load
+import dev.justinsmith.lift.domain.Pace
 import dev.justinsmith.lift.domain.PersonalRecord
 import dev.justinsmith.lift.domain.PlanChanges
 import dev.justinsmith.lift.domain.PlanRow
@@ -51,6 +52,8 @@ data class Finished(
     val heavyGrip: Boolean = false,
     /** Whether it had enough snatches or one-hand swings to say how to look after the hands. */
     val handCare: Boolean = false,
+    /** The lifts it did faster than ever at the same weight, from sets logged as they were done. */
+    val paces: List<Pace> = emptyList(),
 )
 
 /**

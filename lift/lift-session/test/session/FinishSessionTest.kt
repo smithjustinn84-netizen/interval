@@ -37,6 +37,7 @@ class FinishSessionTest {
         repository.sessions,
         repository.programs,
         repository.gear,
+        repository.sets,
         intervals,
         FixedTimestampFormatter,
         { now },

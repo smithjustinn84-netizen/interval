@@ -19,6 +19,7 @@ import dev.justinsmith.lift.ui.resources.block_hold_sided
 import dev.justinsmith.lift.ui.resources.block_in_range
 import dev.justinsmith.lift.ui.resources.block_ladder
 import dev.justinsmith.lift.ui.resources.block_ladder_sided
+import dev.justinsmith.lift.ui.resources.block_rest
 import dev.justinsmith.lift.ui.resources.block_sets
 import dev.justinsmith.lift.ui.resources.block_sets_sided
 import dev.justinsmith.lift.ui.resources.common_joined
@@ -224,13 +225,15 @@ private fun programSummary(id: ProgramId): String = stringResource(
 
 /**
  * A block's shape: "10 × 10", "5 × 1 a side", "3 × 0:30" for a hold, "10 every minute for 10 minutes",
- * "3 ladders of 1-2-3 a side", "5 ladders of 10-15-25-50", "3 × 11 (10–15)" building within a range; then the
- * load it names, if it does: "5 × 10 · 24 kg", "3 × 15 · Medium", unless not [withLoad]. [bands] are the user's,
- * to name a band by.
+ * "3 ladders of 1-2-3 a side", "5 ladders of 10-15-25-50", "3 × 11 (10–15)" building within a range; its own
+ * rest, "75 s rest", when it keeps one; then the load it names, if it does: "5 × 10 · 24 kg", "3 × 15 · Medium",
+ * unless not [withLoad]. [bands] are the user's, to name a band by.
  */
 @Composable
 fun blockLine(block: Block, bands: List<Band> = emptyList(), withLoad: Boolean = true): String {
-    val line = blockCount(block)
+    val count = blockCount(block)
+    val rest = block.rest?.let { stringResource(Res.string.block_rest, it) }
+    val line = rest?.let { stringResource(Res.string.common_joined, count, it) } ?: count
     val load = blockLoad(block, bands)?.takeIf { withLoad } ?: return line
     return stringResource(Res.string.common_joined, line, load)
 }

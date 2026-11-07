@@ -59,15 +59,19 @@ import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.ExerciseHistory
 import dev.justinsmith.lift.domain.Muscle
 import dev.justinsmith.lift.domain.Muscles
+import dev.justinsmith.lift.domain.Pace
 import dev.justinsmith.lift.domain.PastSession
 import dev.justinsmith.lift.domain.Trend
 import dev.justinsmith.lift.domain.UnknownExercise
 import dev.justinsmith.lift.domain.collapsedSets
+import dev.justinsmith.lift.domain.formatKg
+import dev.justinsmith.lift.domain.formatPace
 import dev.justinsmith.lift.domain.muscles
 import dev.justinsmith.lift.library.resources.Res
 import dev.justinsmith.lift.library.resources.common_joined
 import dev.justinsmith.lift.library.resources.detail_also
 import dev.justinsmith.lift.library.resources.detail_best
+import dev.justinsmith.lift.library.resources.detail_best_pace
 import dev.justinsmith.lift.library.resources.detail_demo
 import dev.justinsmith.lift.library.resources.detail_demo_cue_jump
 import dev.justinsmith.lift.library.resources.detail_demo_each_rep
@@ -118,6 +122,8 @@ data class ExerciseDetailUiState(
     val recent: List<DatedSession> = emptyList(),
     /** Its best each session, once there are two to compare. */
     val trend: Trend? = null,
+    /** Its fastest, reps a minute at a weight, from sets logged as they were done; null with none. */
+    val bestPace: Pace? = null,
 )
 
 /**
@@ -423,6 +429,13 @@ private fun ColumnScope.History(state: ExerciseDetailUiState, onOpen: ((uid: Str
                 RecordRow(record, named = history.records.size > 1)
             }
         }
+    }
+    state.bestPace?.let { pace ->
+        Text(
+            stringResource(Res.string.detail_best_pace, formatPace(pace.perMinute), formatKg(pace.kg)),
+            style = IntervalTheme.type.meta,
+            color = palette.textDim,
+        )
     }
     state.trend?.let { TrendCard(it) }
     state.recent.forEach { dated -> PastSessionCard(dated, onOpen) }

@@ -56,6 +56,7 @@
     <string name="session_easier_what">Presses and squats a bell lighter, swings and snatches shorter, rests by the lift</string>
     <string name="session_easier_lighter_day">Day %1$d of this program is the lighter one on the grip</string>
     <string name="session_easier_use">Use it</string>
+    <string name="summary_pace">New best pace, %1$s: %2$s a minute at %3$s kg</string>
     <string name="summary_heavy_grip">A heavy day on the grip: half again your usual. Go lighter on swings and snatches next time</string>
     <string name="summary_hand_care">Look after your hands: file the calluses down, and loosen your grip as the bell floats</string>
     <string name="summary_note_placeholder">A note on it</string>

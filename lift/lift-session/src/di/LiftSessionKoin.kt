@@ -36,7 +36,7 @@ val liftSessionModule: Module = module {
         onClose { it?.close() }
     }
     factory { TodayPlanEditor(get(), get(), get()) }
-    factory { FinishSession(get(), get(), get(), get(), get(), get(), get()) }
+    factory { FinishSession(get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { EasierDay(get(), get(), get(), get(), get(), get(), get()) }
     viewModel {
         SessionViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())

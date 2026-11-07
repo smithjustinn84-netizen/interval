@@ -271,6 +271,7 @@
     <string name="block_sets">%1$d × %2$d</string>
     <string name="block_sets_sided">%1$d × %2$d a side</string>
     <string name="block_in_range">%1$s (%2$d–%3$d)</string>
+    <string name="block_rest">%1$d s rest</string>
     <string name="block_hold">%1$d × %2$s</string>
     <string name="block_hold_sided">%1$d × %2$s a side</string>
     <plurals name="block_emom">
