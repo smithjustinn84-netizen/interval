@@ -5,6 +5,7 @@ import dev.justinsmith.interval.model.LoggedSport
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.platform.TimestampFormatter
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.dateOfEpochDay
 import dev.justinsmith.interval.timer.flowBefore
 import dev.justinsmith.lift.data.LiftActivity
@@ -109,6 +110,7 @@ internal fun TimestampFormatter.dayCell(day: TrainingDay, inMonth: Boolean = tru
     inMonth = inMonth,
     date = dateOfDay(day.epochDay),
     liftSeconds = day.liftWorkouts.sumOf { it.elapsedSeconds },
+    mobilitySeconds = day.workouts.filter { it.config.activity == Activity.Mobility }.sumOf { it.elapsedSeconds },
     sport = day.sport,
     sportLogged = day.sports.isNotEmpty(),
     sportPassed = day.sports.isEmpty() && day.plans.any { it.state == PlanState.Passed },

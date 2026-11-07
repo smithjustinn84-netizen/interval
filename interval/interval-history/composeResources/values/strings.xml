@@ -203,6 +203,8 @@
     <string name="home_minutes">%1$d min</string>
     <string name="home_no_pick">Nothing that short yet</string>
     <string name="home_no_pick_hint">Set one up on the Timer</string>
+    <string name="home_week_done">%1$d of %2$d done</string>
+    <string name="home_week_goal_met">Goal met</string>
 
     <!-- Sport days: a class or a day on the wall, planned and logged beside the workouts -->
     <string name="sport_bjj">BJJ</string>

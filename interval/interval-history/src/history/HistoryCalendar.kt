@@ -302,7 +302,7 @@ private fun CalendarDay(cell: DayCell, onClick: () -> Unit, modifier: Modifier =
  * "Today, done, BJJ logged", and in place of "no workout" when the sport is all the day holds, "Today, BJJ planned".
  */
 @Composable
-private fun dayDescription(name: String, cell: DayCell): String {
+internal fun dayDescription(name: String, cell: DayCell): String {
     val state = stringResource(
         when (cell.state) {
             DayState.Done -> Res.string.history_state_done_cd

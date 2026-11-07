@@ -3,6 +3,7 @@
 package dev.justinsmith.interval.today
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
@@ -20,6 +21,7 @@ import dev.justinsmith.interval.fakes.tabataPreset
 import dev.justinsmith.interval.history.DayCell
 import dev.justinsmith.interval.history.DayState
 import dev.justinsmith.interval.history.HistoryDay
+import dev.justinsmith.interval.history.Streak
 import dev.justinsmith.interval.history.UpNextItem
 import dev.justinsmith.interval.history.WeekGoal
 import dev.justinsmith.interval.model.Sport
@@ -82,6 +84,44 @@ class HomeScreenTest {
     }
 
     @Test
+    fun `the week says how it stands against the goal and leads to one while there is none`() = runUiTest {
+        var opened = 0
+        var state by mutableStateOf(empty.copy(weekGoal = WeekGoal(count = 2)))
+        setThemedContent { HomeScreen(state, HomeActions(onPlan = { opened++ })) }
+
+        onNodeWithText("2 workouts").assertIsDisplayed()
+        onNodeWithText("Set a weekly goal").performClick()
+        assertEquals(1, opened)
+
+        state = empty.copy(weekGoal = WeekGoal(count = 3, goal = 3, streak = Streak(current = 2, best = 2)))
+        onNodeWithText("Goal met").assertIsDisplayed()
+        onNodeWithText("2-week streak").assertIsDisplayed()
+        onNodeWithText("Set a weekly goal").assertDoesNotExist()
+    }
+
+    @Test
+    fun `each day of the week is a dot read by its state that opens the log`() = runUiTest {
+        var opened = 0
+        val week = restWeek.mapIndexed { i, day ->
+            when (i) {
+                0 -> day.copy(state = DayState.Done, seconds = 480, mobilitySeconds = 480)
+                1 -> day.copy(state = DayState.Missed)
+                3 -> day.copy(state = DayState.Done, seconds = 0, sport = Sport.Bjj, sportLogged = true)
+                5 -> day.copy(state = DayState.Planned)
+                else -> day
+            }
+        }
+        setThemedContent { HomeScreen(empty.copy(week = week), HomeActions(onOpenHistory = { opened++ })) }
+
+        onNodeWithContentDescription("Monday, done").assertIsDisplayed()
+        onNodeWithContentDescription("Tuesday, missed").assertIsDisplayed()
+        onNodeWithContentDescription("Today, done, BJJ logged").performClick()
+        onNodeWithContentDescription("Saturday, planned").assertIsDisplayed()
+        onNodeWithText("BJJ", useUnmergedTree = true).assertExists()
+        assertEquals(1, opened)
+    }
+
+    @Test
     fun `a planned workout is up next under start workout`() = runUiTest {
         val started = mutableListOf<String>()
         val state = empty.copy(
@@ -94,7 +134,7 @@ class HomeScreenTest {
         setThemedContent { HomeScreen(state, HomeActions(onStart = { name, _ -> started += name })) }
 
         onNodeWithText("Up next · Today").assertIsDisplayed()
-        onNodeWithText("2 more to hit 3").assertIsDisplayed()
+        onNodeWithText("1 of 3 done").assertIsDisplayed()
         onNodeWithText("Then Tomorrow · Tabata").assertIsDisplayed()
         onNodeWithText("Start workout").performClick()
         assertEquals(listOf("HIIT 30/30"), started)

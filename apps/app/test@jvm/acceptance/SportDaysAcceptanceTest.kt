@@ -66,7 +66,7 @@ class SportDaysAcceptanceTest {
         seeUpNext("BJJ class")
         logClassFromToday()
         sportDaysLogged(1)
-        seeThisWeekOnToday("1 mobility · 1 sport day")
+        seeSportOnTheWeek("Today, done, BJJ logged")
         seeNothingMoreDue()
     }
 

@@ -57,7 +57,6 @@ class MobilityAcceptanceTest {
 
         seeMobility()
         openTab("Today")
-        seeThisWeekOnToday("1 mobility")
         seeTodayDoneOnTheWeek()
 
         openTab("Log")

@@ -24,14 +24,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.intl.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.data.FlowStore
-import dev.justinsmith.interval.history.GoalRow
 import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.history.PreviewHost
 import dev.justinsmith.interval.history.StartPreview
 import dev.justinsmith.interval.history.SummaryCard
 import dev.justinsmith.interval.history.UpNextItem
 import dev.justinsmith.interval.history.UpNextLater
-import dev.justinsmith.interval.history.WeekStrip
 import dev.justinsmith.interval.history.dayHeading
 import dev.justinsmith.interval.history.flowKeyOf
 import dev.justinsmith.interval.history.preview
@@ -197,7 +195,7 @@ class HomeActions(
 )
 
 /**
- * Today: the week against the goal, then what is up next under the one raised Start, or the ways to a plan
+ * Today: the week in a line and a dot a day, then what is up next under the one raised Start, or the ways to a plan
  * while there is none, or a word that the plan is done for now; on a day with a sport, what else the day holds
  * beside what leads it ([AlsoToday]); under them the presets that fit the minutes picked, each with a Start of its
  * own. A grid of cards as Lift's tab is, so a wide window sets them side by side. Nothing shows until the first
@@ -216,9 +214,9 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, modifier: Modifier = Mo
         if (state.loading) return@TabGrid
         item(key = "week") {
             SummaryCard(card) {
-                GoalRow(state.weekGoal, actions.onPlan)
+                WeekHeader(state.weekGoal, actions.onPlan)
                 // A day leads to the log, where its sheet opens.
-                WeekStrip(state.week, onDay = { actions.onOpenHistory() })
+                WeekDots(state.week, onDay = { actions.onOpenHistory() })
             }
         }
         val agenda = state.agenda

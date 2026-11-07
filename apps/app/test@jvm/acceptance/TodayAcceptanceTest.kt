@@ -60,14 +60,18 @@ class TodayAcceptanceTest {
     fun `a session planned for today is up next on today and starts from it`() = acceptanceScenario {
         openPlanFromToday()
         planAnyLiftSessionEvery("Thursday")
+        raiseWeeklyGoal()
+        seeWeeklyGoal(3)
         goBack()
 
         seeUpNext("Lift session")
+        seeThisWeekOnToday("0 of 3 done")
         startSessionFromToday()
         logASetAndFinish()
 
         seeTodayTab()
         seeTodayDoneOnTheWeek()
+        seeThisWeekOnToday("1 of 3 done")
         seeNothingMoreDue()
     }
 

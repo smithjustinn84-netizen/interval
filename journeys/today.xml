@@ -23,7 +23,7 @@
     <action>Verify that Today shows "Up next · Today" with "Lift session" and a "Start session" button</action>
     <action>Tap "Start session"</action>
     <action>Tap "Log set", then "Finish", then "Done"</action>
-    <action>Verify that the Today tab is shown, today's block on the week strip is filled, and the card under it says "Nothing more due" with "Edit plan", not "Nothing planned"</action>
+    <action>Verify that the Today tab is shown, "This week" reads "1 workout" with today's dot filled and checked in the accent, and the card under it says "Nothing more due" with "Edit plan", not "Nothing planned"</action>
     <action>Tap "Edit plan", remove "Lift session" from today's weekday row in "Routine" (its "Remove" button), then tap "Back"</action>
     <action>Tap the "Train" tab, which opens on "Strength", tap "Follow a program", scroll to "15-minute kettlebell plan", tap it and tap "Follow this program"</action>
     <action>Tap the "Today" tab</action>

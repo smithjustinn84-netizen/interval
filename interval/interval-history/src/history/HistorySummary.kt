@@ -260,24 +260,29 @@ internal fun GoalRow(week: WeekGoal, onSetGoal: () -> Unit, split: Boolean = tru
                 color = palette.text,
             )
             if (split) WeekSplit(week)
-            week.streak?.current?.takeIf { it > 0 }?.let { weeks ->
-                Row(
-                    Modifier
-                        .clip(Corners.full)
-                        .background(palette.surfaceVariant)
-                        .padding(horizontal = Spacing.space12, vertical = Spacing.space4),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
-                ) {
-                    Icon(IntervalIcons.Streak, null, tint = palette.prepMark, modifier = Modifier.size(Sizes.chipIcon))
-                    Text(
-                        pluralStringResource(Res.plurals.history_streak, weeks, weeks),
-                        style = IntervalTheme.type.caption,
-                        color = palette.text,
-                    )
-                }
-            }
+            week.streak?.current?.takeIf { it > 0 }?.let { StreakChip(it) }
         }
+    }
+}
+
+/** The streak as a small chip: a flame and "3-week streak". */
+@Composable
+internal fun StreakChip(weeks: Int, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    Row(
+        modifier
+            .clip(Corners.full)
+            .background(palette.surfaceVariant)
+            .padding(horizontal = Spacing.space12, vertical = Spacing.space4),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+    ) {
+        Icon(IntervalIcons.Streak, null, tint = palette.prepMark, modifier = Modifier.size(Sizes.chipIcon))
+        Text(
+            pluralStringResource(Res.plurals.history_streak, weeks, weeks),
+            style = IntervalTheme.type.caption,
+            color = palette.text,
+        )
     }
 }
 
@@ -505,7 +510,7 @@ private fun WeekBars(state: HistoryUiState, modifier: Modifier = Modifier) {
 
 /** A pill-shaped quiet action, such as "Set a weekly goal". */
 @Composable
-private fun ChipButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+internal fun ChipButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val interaction = remember { MutableInteractionSource() }
     Box(
         modifier

@@ -14,7 +14,6 @@ import dev.justinsmith.interval.history.DayCell
 import dev.justinsmith.interval.history.DayState
 import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.history.UpNextItem
-import dev.justinsmith.interval.history.WeekGoal
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
@@ -33,21 +32,8 @@ private val empty = HomeUiState(
     picks = builtInPresets.fitting(10, IntervalConfig()),
 )
 
-/** Today's part in mobility: the week's split, the flow before a day's sport, and the flow among the picks. */
+/** Today's part in mobility: the flow before a day's sport, and the flow among the picks. */
 class HomeFlowScreenTest {
-    @Test
-    fun `the week says how many of its workouts were mobility`() = runUiTest {
-        val state = empty.copy(weekGoal = WeekGoal(count = 4, lifts = 1, sports = 1, mobility = 1))
-        setThemedContent { HomeScreen(state, HomeActions()) }
-        onNodeWithText("1 lift · 1 interval · 1 mobility · 1 sport day").assertIsDisplayed()
-    }
-
-    @Test
-    fun `a week of mobility alone still says what it was`() = runUiTest {
-        setThemedContent { HomeScreen(empty.copy(weekGoal = WeekGoal(count = 2, mobility = 2)), HomeActions()) }
-        onNodeWithText("2 mobility").assertIsDisplayed()
-    }
-
     @Test
     fun `before a class its flow leads with the class to log beside it`() = runUiTest {
         val started = mutableListOf<String>()

@@ -43,8 +43,8 @@ data class HistorySection(
 
 /**
  * One day of the week strip or the calendar. [dayOfMonth] is its number on the calendar; of its [seconds],
- * [liftSeconds] were spent on Lift's sessions and the rest on interval workouts. [sport] is the day's sport:
- * logged with [sportLogged], gone by unlogged with [sportPassed], else still planned.
+ * [liftSeconds] were spent on Lift's sessions, [mobilitySeconds] on mobility and the rest on interval workouts.
+ * [sport] is the day's sport: logged with [sportLogged], gone by unlogged with [sportPassed], else still planned.
  */
 data class DayCell(
     val epochDay: Long,
@@ -58,6 +58,7 @@ data class DayCell(
     /** The day's date, for screen readers: "Wednesday, Oct 14". */
     val date: String = "",
     val liftSeconds: Int = 0,
+    val mobilitySeconds: Int = 0,
     val sport: Sport? = null,
     val sportLogged: Boolean = false,
     val sportPassed: Boolean = false,
