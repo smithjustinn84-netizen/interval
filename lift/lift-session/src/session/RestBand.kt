@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -18,8 +19,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.Corners
+import dev.justinsmith.interval.ui.CountdownClock
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RepeatButton
@@ -39,7 +43,8 @@ import org.jetbrains.compose.resources.stringResource
 /**
  * The rest after a set, counting down just above Log set while it runs, where the hand is: what is left, −/+
  * to make it and every rest after shorter or longer, Skip, and a bar running out along its foot. It opens as a
- * rest starts and closes as it ends, keeping its last words while it goes.
+ * rest starts and closes as it ends, keeping its last words while it goes. Its last seconds pop in the rest
+ * colour with a tick under the thumb, in step with the beeps, as the workout's clock does.
  */
 @Composable
 internal fun RestBand(rest: RestState?, onStep: (Int) -> Unit, onSkip: () -> Unit, modifier: Modifier = Modifier) {
@@ -53,6 +58,11 @@ internal fun RestBand(rest: RestState?, onStep: (Int) -> Unit, onSkip: () -> Uni
 @Composable
 private fun RestBandContent(rest: RestState, onStep: (Int) -> Unit, onSkip: () -> Unit) {
     val palette = IntervalTheme.palette
+    val countingDown = rest.secondsLeft in 1..RestClock.COUNTDOWN
+    val haptics = LocalHapticFeedback.current
+    LaunchedEffect(rest.secondsLeft) {
+        if (countingDown) haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+    }
     Column(
         Modifier
             .fillMaxWidth()
@@ -75,7 +85,14 @@ private fun RestBandContent(rest: RestState, onStep: (Int) -> Unit, onSkip: () -
                     style = IntervalTheme.type.caption,
                     color = palette.textDim,
                 )
-                Text(formatClock(rest.secondsLeft), style = IntervalTheme.type.stat, color = palette.text)
+                CountdownClock(
+                    formatClock(rest.secondsLeft),
+                    intervalKey = Unit,
+                    countingDown = countingDown,
+                    accent = palette.restMark,
+                    style = IntervalTheme.type.stat,
+                    ink = palette.text,
+                )
             }
             RepeatButton(
                 "−",

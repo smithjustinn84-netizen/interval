@@ -29,6 +29,7 @@ import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.timer.WorkoutState
+import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
@@ -107,6 +108,17 @@ class WorkoutScreenTest {
         onNodeWithContentDescription("Back to previous interval").performClick()
         onNodeWithContentDescription("Add ten seconds").performClick()
         assertEquals(listOf("toggle pause", "skip", "back", "add time"), calls)
+    }
+
+    @Test
+    fun `a change of phase brings the new word in over its ring`() = runUiTest {
+        var state by mutableStateOf(firstWork.toUiState(running = true))
+        setThemedContent { Screen(state) }
+        onNodeWithText("Work").assertExists()
+        state = firstRest.toUiState(running = true)
+        mainClock.advanceTimeBy(Motion.BURST_MILLIS.toLong() + Motion.CONTENT_MILLIS)
+        onNodeWithText("Rest").assertExists()
+        onNodeWithText("Work").assertDoesNotExist()
     }
 
     @Test
@@ -246,7 +258,11 @@ class WorkoutScreenTest {
         setThemedContent { Screen(state) }
         onNodeWithText("3 of 4 this week").assertExists()
         state = done.toUiState(running = false, week = WeekStanding(4, goal = 4, streak = 2))
-        onNodeWithText("Goal met this week · 2-week streak").assertExists()
+        onNodeWithText("Goal met this week").assertExists()
+        // The streak grew with this workout: its badge arrives a week short and rolls up.
+        onNodeWithText("1-week streak").assertExists()
+        mainClock.advanceTimeBy(Motion.ENTER_MILLIS + Motion.CONTENT_MILLIS + Motion.EXIT_MILLIS.toLong())
+        onNodeWithText("2-week streak").assertExists()
         state = done.toUiState(running = false, week = WeekStanding(3, goal = null, streak = 0))
         onNodeWithText("3 workouts this week").assertExists()
     }

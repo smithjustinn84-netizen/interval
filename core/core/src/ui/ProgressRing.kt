@@ -20,7 +20,8 @@ import kotlin.math.abs
  * A ring filling clockwise from 12 o'clock to [progress] (0 to 1) in [accent], over a track in the
  * workout's control colour: the interval going by, or an EMOM's minute. It [glide]s to each new value
  * over [glideMillis] (the time between the ticks that drive it) so it turns rather than steps; a
- * change past [Motion.RING_SNAP_SHARE] of the ring is a new interval, which snaps.
+ * change past [Motion.RING_SNAP_SHARE] of the ring is a new interval, which snaps. Its stroke is
+ * [Sizes.ring] times [strokeScale], which the workout swells on an interval's last seconds.
  */
 @Composable
 fun ProgressRing(
@@ -29,6 +30,7 @@ fun ProgressRing(
     modifier: Modifier = Modifier,
     glide: Boolean = true,
     glideMillis: Int = Motion.RING_GLIDE_MILLIS,
+    strokeScale: Float = 1f,
 ) {
     val shown = remember { Animatable(progress) }
     LaunchedEffect(progress, glide) {
@@ -40,7 +42,7 @@ fun ProgressRing(
     }
     val track = IntervalTheme.workout.control
     Canvas(modifier.clearAndSetSemantics {}) {
-        val stroke = Sizes.ring.toPx()
+        val stroke = Sizes.ring.toPx() * strokeScale
         val diameter = size.minDimension - stroke
         val topLeft = Offset((size.width - diameter) / 2, (size.height - diameter) / 2)
         val arc = Size(diameter, diameter)

@@ -276,10 +276,14 @@ private class IosCuePlayer(speaker: Speaker) : CuePlayer {
         this.speech.speak(speech)
     }
 
-    // As on Android, each can be told apart without looking: one firm tap to work, a light one to rest,
-    // and the success pattern at the end.
+    // As on Android, each can be told apart without looking: a sharp tick on each last second, one firm tap
+    // to work, a light one to rest, and the success pattern at the end.
     override fun vibrate(haptic: Haptic) {
         when (haptic) {
+            Haptic.Countdown -> UIImpactFeedbackGenerator(
+                UIImpactFeedbackStyle.UIImpactFeedbackStyleRigid,
+            ).impactOccurred()
+
             Haptic.Work -> UIImpactFeedbackGenerator(UIImpactFeedbackStyle.UIImpactFeedbackStyleHeavy).impactOccurred()
 
             Haptic.Rest -> UIImpactFeedbackGenerator(UIImpactFeedbackStyle.UIImpactFeedbackStyleLight).impactOccurred()

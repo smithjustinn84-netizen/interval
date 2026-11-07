@@ -3,7 +3,6 @@ package dev.justinsmith.interval.workout
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -27,7 +26,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -51,6 +49,7 @@ import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.Burst
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EnterEasing
+import dev.justinsmith.interval.ui.FinishHaptic
 import dev.justinsmith.interval.ui.HowWasIt
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSizes
@@ -60,6 +59,8 @@ import dev.justinsmith.interval.ui.ProgressRing
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.StreakBadge
+import dev.justinsmith.interval.ui.countUp
 import dev.justinsmith.interval.ui.presetNameOrCustom
 import dev.justinsmith.interval.ui.rememberEntrance
 import dev.justinsmith.interval.ui.risingEnter
@@ -119,6 +120,7 @@ internal fun SummaryLayout(
     val shareText = workoutShareText(state)
     val share = { onShare(shareText) }
     val entrance = rememberEntrance()
+    FinishHaptic(firm = state.week?.justMet == true)
     val padding = Modifier
         .fillMaxSize()
         .safeDrawingPadding()
@@ -351,13 +353,7 @@ private fun SummaryDetails(
         }
         state.week?.let { week ->
             AnimatedVisibility(entrance, enter = risingEnter(Motion.STAGGER_MILLIS * WEEK_STEP)) {
-                Text(
-                    weekText(week),
-                    style = IntervalTheme.type.meta,
-                    color = IntervalTheme.workout.onGround,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = Spacing.space8),
-                )
+                WeekLine(week, Modifier.padding(top = Spacing.space8))
             }
         }
         AnimatedVisibility(entrance, enter = risingEnter(Motion.STAGGER_MILLIS * HOW_STEP)) {
@@ -426,41 +422,44 @@ internal fun healthNotes(state: WorkoutUiState): String? {
     }
 }
 
-/** "3 of 4 this week", "Goal met this week · 3-week streak", or with no goal set, the count. */
+/**
+ * Where the week stands with the workout in it, "Goal met this week", and beside it the streak as a badge
+ * once it is two weeks or more, rolling up a week when this workout is the one that grew it.
+ */
+@Composable
+private fun WeekLine(week: WeekStanding, modifier: Modifier = Modifier) {
+    Row(
+        modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+    ) {
+        Text(
+            weekText(week),
+            style = IntervalTheme.type.meta,
+            color = IntervalTheme.workout.onGround,
+            textAlign = TextAlign.Center,
+        )
+        if (week.streak > 1) {
+            StreakBadge(
+                week.streak,
+                label = { pluralStringResource(Res.plurals.history_streak, it, it) },
+                grew = week.justMet,
+                fill = IntervalTheme.workout.control,
+                ink = IntervalTheme.workout.onGround,
+            )
+        }
+    }
+}
+
+/** "3 of 4 this week", "Goal met this week", or with no goal set, the count. */
 @Composable
 private fun weekText(week: WeekStanding): String {
     val goal = week.goal
-    val standing = when {
+    return when {
         goal == null -> pluralStringResource(Res.plurals.summary_week_count, week.count, week.count)
         week.goalMet -> stringResource(Res.string.history_goal_met)
         else -> stringResource(Res.string.summary_week_of_goal, week.count, goal)
     }
-    return if (week.streak > 1) {
-        stringResource(
-            Res.string.common_joined,
-            standing,
-            pluralStringResource(Res.plurals.history_streak, week.streak, week.streak),
-        )
-    } else {
-        standing
-    }
-}
-
-/**
- * [value] counted up from nothing as the summary arrives, over the time its ring takes to close; at
- * once under reduced motion, where a running number would be the one thing that moved.
- */
-@Composable
-private fun countUp(value: Int): Int {
-    val reduced = prefersReducedMotion()
-    var started by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { started = true }
-    val shown by animateIntAsState(
-        if (started || reduced) value else 0,
-        tween(Motion.SUMMARY_RING_MILLIS, easing = EnterEasing),
-        label = "countUp",
-    )
-    return shown
 }
 
 /**

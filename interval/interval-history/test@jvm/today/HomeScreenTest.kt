@@ -29,6 +29,7 @@ import dev.justinsmith.interval.history.WeekGoal
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
+import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
@@ -49,6 +50,7 @@ private val empty = HomeUiState(week = restWeek, picks = builtInPresets.fitting(
 
 private fun option(text: String): SemanticsMatcher = hasText(text) and isSelectable()
 
+@Suppress("detekt.TooManyFunctions") // One behaviour per test, side by side.
 class HomeScreenTest {
     @Test
     fun `nothing planned leads to set up first then to the plan and to the programs`() = runUiTest {
@@ -99,6 +101,17 @@ class HomeScreenTest {
         onNodeWithText("Goal met").assertIsDisplayed()
         onNodeWithText("2-week streak").assertIsDisplayed()
         onNodeWithText("Set a weekly goal").assertDoesNotExist()
+    }
+
+    @Test
+    fun `a day turning done draws its mark on and reads done throughout`() = runUiTest {
+        var week by mutableStateOf(restWeek)
+        setThemedContent { HomeScreen(empty.copy(week = week), HomeActions()) }
+        onNodeWithContentDescription("Monday, no workout").assertIsDisplayed()
+        week = restWeek.mapIndexed { i, day -> if (i == 0) day.copy(state = DayState.Done, seconds = 480) else day }
+        onNodeWithContentDescription("Monday, done").assertIsDisplayed()
+        mainClock.advanceTimeBy(Motion.ENTER_MILLIS + Motion.STATE_MILLIS.toLong())
+        onNodeWithContentDescription("Monday, done").assertIsDisplayed()
     }
 
     @Test

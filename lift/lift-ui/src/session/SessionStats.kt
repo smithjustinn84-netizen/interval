@@ -11,6 +11,7 @@ import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.countUp
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.PersonalRecord
 import dev.justinsmith.lift.domain.formatKg
@@ -26,11 +27,12 @@ import dev.justinsmith.lift.ui.resources.session_time
 import dev.justinsmith.lift.ui.resources.summary_records
 import dev.justinsmith.lift.ui.resources.summary_reps
 import org.jetbrains.compose.resources.stringResource
+import kotlin.math.roundToInt
 
 /**
  * A finished session's numbers: its time and reps, the weight moved, its heart rate once read from the health
  * store, then the [records] it set, if any, each tagged when [highlight]. The summary shows them as a session
- * ends, and its page in History afterwards.
+ * ends, counting the three up from nothing as they arrive ([countUp]); its page in History shows them at once.
  */
 @Composable
 fun SessionStats(
@@ -38,19 +40,30 @@ fun SessionStats(
     records: List<PersonalRecord>,
     modifier: Modifier = Modifier,
     highlight: Boolean = false,
+    countUp: Boolean = false,
 ) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             StatTile(
                 stringResource(Res.string.session_time),
-                formatClock(session.elapsedSeconds(0)),
+                formatClock(countUp(session.elapsedSeconds(0), countUp)),
                 Modifier.weight(1f),
             )
-            StatTile(stringResource(Res.string.summary_reps), session.reps.toString(), Modifier.weight(1f))
+            StatTile(
+                stringResource(Res.string.summary_reps),
+                countUp(session.reps, countUp).toString(),
+                Modifier.weight(1f),
+            )
         }
+        // The kilograms count up whole, and read to the half once they have landed.
+        val wholeKg = session.tonnageKg.roundToInt()
+        val countedKg = countUp(wholeKg, countUp)
         StatTile(
             stringResource(Res.string.session_moved),
-            stringResource(Res.string.kg_value, formatKg(session.tonnageKg)),
+            stringResource(
+                Res.string.kg_value,
+                formatKg(if (countedKg == wholeKg) session.tonnageKg else countedKg.toDouble()),
+            ),
             Modifier.fillMaxWidth(),
         )
         val average = session.averageBpm

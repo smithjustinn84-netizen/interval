@@ -35,6 +35,7 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StandardEasing
 import dev.justinsmith.interval.ui.rememberRising
+import dev.justinsmith.interval.ui.stampIn
 import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.CustomExercise
@@ -136,15 +137,20 @@ fun Choice(
     }
 }
 
-/** The tag on a set, or a record on the summary, that beat a record standing: "Record" on the accent's tint. */
+/**
+ * The tag on a set, or a record on the summary, that beat a record standing: "Record" on the accent's tint.
+ * On a set logged while the session is up it [stamp]s in, once the row has risen into place; a record
+ * already standing as the screen opened is simply tagged.
+ */
 @Composable
-fun RecordTag(modifier: Modifier = Modifier) {
+fun RecordTag(modifier: Modifier = Modifier, stamp: Boolean = false) {
     val palette = IntervalTheme.palette
     Text(
         stringResource(Res.string.record_tag),
         style = IntervalTheme.type.caption,
         color = palette.accent,
         modifier = modifier
+            .stampIn(stamp, delayMillis = Motion.ENTER_MILLIS)
             .clip(Corners.full)
             .background(palette.accentTint)
             .padding(horizontal = Spacing.space8, vertical = Spacing.space4),

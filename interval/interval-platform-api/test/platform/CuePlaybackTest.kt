@@ -50,7 +50,7 @@ class CuePlaybackTest {
         with(played(Cue.Countdown(2), on)) {
             assertEquals(listOf(Beep.Countdown), beeps)
             assertEquals(listOf<Speech>(Speech.Countdown(2)), spoken)
-            assertTrue(haptics.isEmpty())
+            assertEquals(listOf(Haptic.Countdown), haptics)
         }
         with(played(Cue.PhaseStarted(Phase.Work, lastRound = true), on)) {
             assertEquals(listOf(Beep.Work), beeps)

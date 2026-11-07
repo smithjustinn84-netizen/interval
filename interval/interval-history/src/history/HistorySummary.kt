@@ -18,19 +18,23 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -90,7 +94,9 @@ import dev.justinsmith.interval.ui.RollingText
 import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.StreakBadge
 import dev.justinsmith.interval.ui.joined
+import dev.justinsmith.interval.ui.popOnce
 import dev.justinsmith.interval.ui.rememberRising
 import dev.justinsmith.interval.ui.surfaceButton
 import org.jetbrains.compose.resources.pluralStringResource
@@ -278,22 +284,7 @@ internal fun GoalRow(week: WeekGoal, onSetGoal: () -> Unit, split: Boolean = tru
 /** The streak as a small chip: a flame and "3-week streak". */
 @Composable
 internal fun StreakChip(weeks: Int, modifier: Modifier = Modifier) {
-    val palette = IntervalTheme.palette
-    Row(
-        modifier
-            .clip(Corners.full)
-            .background(palette.surfaceVariant)
-            .padding(horizontal = Spacing.space12, vertical = Spacing.space4),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
-    ) {
-        Icon(IntervalIcons.Streak, null, tint = palette.prepMark, modifier = Modifier.size(Sizes.chipIcon))
-        Text(
-            pluralStringResource(Res.plurals.history_streak, weeks, weeks),
-            style = IntervalTheme.type.caption,
-            color = palette.text,
-        )
-    }
+    StreakBadge(weeks, label = { pluralStringResource(Res.plurals.history_streak, it, it) }, modifier)
 }
 
 /**
@@ -322,14 +313,25 @@ private fun WeekSplit(week: WeekGoal) {
 private fun GoalRing(count: Int, goal: Int, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val share = remember { Animatable(0f) }
+    val met = count >= goal
+    // Closed on the goal: set as the sweep lands, so the ring ignites and pops as it comes round, not before.
+    var closed by remember { mutableStateOf(met) }
     LaunchedEffect(count, goal) {
         share.animateTo((count.toFloat() / goal).coerceAtMost(1f), tween(Motion.ENTER_MILLIS, easing = EnterEasing))
+        closed = met
     }
     val description = stringResource(Res.string.history_goal_cd, count, goal)
     Box(
-        modifier.size(IntervalSizes.goalRing).clearAndSetSemantics { contentDescription = description },
+        modifier
+            .size(IntervalSizes.goalRing)
+            .popOnce(closed, Motion.RING_CLOSE_POP_SCALE)
+            .clearAndSetSemantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
+        // Met, the ring wears the three phase colours round: the intro's ripple, and the summary's.
+        val metBrush = Brush.sweepGradient(
+            listOf(palette.prepMark, palette.workMark, palette.restMark, palette.prepMark),
+        )
         Canvas(Modifier.size(IntervalSizes.goalRing)) {
             val stroke = IntervalSizes.goalRingStroke.toPx()
             val inset = stroke / 2
@@ -343,7 +345,19 @@ private fun GoalRing(count: Int, goal: Int, modifier: Modifier = Modifier) {
                 arcSize,
                 style = Stroke(stroke),
             )
-            if (share.value > 0f) {
+            if (share.value > 0f && closed) {
+                rotate(Angles.TWELVE_O_CLOCK) {
+                    drawArc(
+                        metBrush,
+                        0f,
+                        Angles.FULL_TURN * share.value,
+                        false,
+                        Offset(inset, inset),
+                        arcSize,
+                        style = Stroke(stroke, cap = StrokeCap.Round),
+                    )
+                }
+            } else if (share.value > 0f) {
                 drawArc(
                     palette.accent,
                     Angles.TWELVE_O_CLOCK,

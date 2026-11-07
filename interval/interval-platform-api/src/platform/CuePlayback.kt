@@ -24,6 +24,7 @@ private fun SwitchedPlayer.playWorkoutCue(cue: Cue, switchHands: Boolean = false
     when (cue) {
         is Cue.Countdown -> {
             beep(Beep.Countdown)
+            buzz(Haptic.Countdown)
             say(Speech.Countdown(cue.secondsLeft))
         }
 

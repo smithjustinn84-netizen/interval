@@ -55,6 +55,8 @@ class RestClock(val seconds: Int) {
         const val MIN_SECONDS = 15
         const val MAX_SECONDS = 600
         private const val SECOND_MILLIS = 1_000L
-        private const val COUNTDOWN = 3
+
+        /** Its last seconds are counted down, 3-2-1, as an EMOM's minute is. */
+        const val COUNTDOWN = 3
     }
 }

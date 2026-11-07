@@ -178,6 +178,9 @@ object Sizes {
     val burstGap = 18.dp
     val burstStroke = 14.dp
 
+    /** A [Burst] inside a list row, such as a record's, starts from a thinner stroke. */
+    val rowBurstStroke = 6.dp
+
     /** The tinted ring round an [EmptyState]'s icon. */
     val emptyIconRing = 56.dp
 
@@ -308,6 +311,22 @@ object Motion {
     /** The resume hint breathes while paused: a cycle this long, down to this alpha. */
     const val BREATH_MILLIS = 1600
     const val BREATH_MIN_ALPHA = 0.5f
+
+    /** A tag stamping in (Record): it lands from this scale, on a spring with this much give. */
+    const val STAMP_SCALE = 1.4f
+    const val STAMP_DAMPING = 0.5f
+
+    /** The ring thickens to this on each of an interval's last seconds, with the clock's pop. */
+    const val COUNTDOWN_RING_SCALE = 1.35f
+
+    /** A record's two beats under the thumb are this far apart. */
+    const val RECORD_BEAT_GAP_MILLIS = 140L
+
+    /** The streak's flame flares to this as the streak grows. */
+    const val FLAME_POP_SCALE = 1.25f
+
+    /** The goal ring pops to this as it closes on the week's goal. */
+    const val RING_CLOSE_POP_SCALE = 1.06f
 
     /** A Setup comet covers this much lane a second. */
     const val COMET_SPEED_DP_PER_SECOND = 150

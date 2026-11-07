@@ -461,9 +461,17 @@ The visual identity is defined in `core/core/src/ui/`:
 - **Dynamic Theming** (`Theme.kt`, `PhaseColorsOf.kt`):
   - `IntervalTheme`: Supports Light, Dark, and System default modes.
   - `PhaseColors`: Semantic colors representing workout states (Get Ready = Amber, Work = Coral/Red, Rest = Mint/Green).
-- **Motion System** (`Motion.kt`):
+- **Motion System** (`Motion.kt`, `Entrance.kt`, `Burst.kt`, `CountdownClock.kt`, `StreakBadge.kt`, `FinishHaptic.kt`):
   - Micro-interactions: `pressScale` for button presses, `enterRising` for list item entry, `RollingText` for animated number transitions.
-  - Accessibility: `prefersReducedMotion()` is respected for all looping animations and particle effects.
+  - Moments: `stampIn` (a Record tag landing on its set, with a `Burst` of the accent behind the row and two
+    beats under the thumb), `rememberCountdownPulse` (an interval's last seconds: the clock pops and the ring's
+    stroke swells with each beep, a `Haptic.Countdown` tick with them; Lift's rest band the same), a `Burst`
+    of the new phase's colour from the clock on each change of interval, `countUp` for both summaries' numbers,
+    `FinishHaptic` as a summary lands (firmer for a record or the week's goal), `StreakBadge` rolling up a week
+    as the streak grows, Today's week dots drawing a day on as it turns done, and the Log's goal ring igniting
+    in the three phase colours with a `popOnce` as it closes on the goal.
+  - Accessibility: `prefersReducedMotion()` is respected for all looping animations and particle effects; the
+    one-shot moments snap or fade under it, and haptics are untouched by it.
 - **Assets & Icons**:
   - Adaptive app icons and launch marks are generated via `tools/generate_icons.py`, matching the vector geometry of
     `IntervalMark.kt` in the launch splash screen.

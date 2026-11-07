@@ -52,6 +52,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TestTimeSource
 import kotlin.time.TimeSource
 
+@Suppress("detekt.LargeClass") // One journey per test, each with every cue it plays.
 class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
     private val repository = FakeStorage().repository(now = { 7L })
     private val lifts = FakeLiftStorage().repository()
@@ -165,7 +166,11 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
                 Speech.Work(lastRound = true) + countdown + Speech.Finished,
             player.spoken,
         )
-        assertEquals(listOf(Haptic.Work, Haptic.Rest, Haptic.Work, Haptic.Finished), player.haptics)
+        val ticks = List(3) { Haptic.Countdown }
+        assertEquals(
+            listOf(Haptic.Work) + ticks + Haptic.Rest + ticks + Haptic.Work + ticks + Haptic.Finished,
+            player.haptics,
+        )
         assertEquals("0:15", state.elapsed)
         val entry = repository.history.history.value.single()
         assertEquals(7L, entry.finishedAtEpochMillis)

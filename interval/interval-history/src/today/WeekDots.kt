@@ -1,5 +1,7 @@
 package dev.justinsmith.interval.today
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -13,8 +15,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,6 +30,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextOverflow
@@ -39,14 +48,20 @@ import dev.justinsmith.interval.history.resources.history_week_count
 import dev.justinsmith.interval.history.resources.home_week_done
 import dev.justinsmith.interval.history.resources.home_week_goal_met
 import dev.justinsmith.interval.plan.sportShort
+import dev.justinsmith.interval.platform.prefersReducedMotion
+import dev.justinsmith.interval.ui.Angles
 import dev.justinsmith.interval.ui.Corners
+import dev.justinsmith.interval.ui.EnterEasing
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.WeekdayForm
+import dev.justinsmith.interval.ui.pressSpring
 import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.interval.ui.weekdayText
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -94,14 +109,19 @@ internal fun WeekHeader(week: WeekGoal, onSetGoal: () -> Unit, modifier: Modifie
  * the accent while planned, a dim fill with a slash once missed, and the surface for a rest day; today's is
  * ringed in the text colour. Under each is its initial, and its sport's short name ("BJJ", "Climb") where the
  * week has any, kept level across the days. Each day is a button that opens it, read as the strip on Log is:
- * "Today, done, BJJ logged".
+ * "Today, done, BJJ logged". A day done since Today last drew the week (a workout finished and come back
+ * from, a class logged) draws its mark on, the fill sweeping round and the check landing; the days done as
+ * Today opens are simply done. What was drawn is kept with the entry, so coming back from the workout counts.
  */
 @Composable
 internal fun WeekDots(week: List<DayCell>, onDay: (Long) -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val sports = week.any { it.sport != null }
+    val doneNow = week.filter { it.state == DayState.Done }.map { it.epochDay }
+    var doneDrawn by rememberSaveable(stateSaver = doneDaysSaver) { mutableStateOf(doneNow.toSet()) }
+    LaunchedEffect(doneNow) { doneDrawn = doneNow.toSet() }
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-        week.forEach { day ->
+        week.forEachIndexed { index, day ->
             key(day.epochDay) {
                 val interaction = remember { MutableInteractionSource() }
                 val name = if (day.today) stringResource(Res.string.history_today) else weekdayText(day.weekday)
@@ -114,7 +134,11 @@ internal fun WeekDots(week: List<DayCell>, onDay: (Long) -> Unit, modifier: Modi
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(Spacing.space8),
                 ) {
-                    DayDot(day)
+                    DayDot(
+                        day,
+                        drawOn = day.state == DayState.Done && day.epochDay !in doneDrawn,
+                        delayMillis = Motion.STAGGER_MILLIS * index,
+                    )
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             weekdayText(day.weekday, WeekdayForm.Initial),
@@ -139,20 +163,50 @@ internal fun WeekDots(week: List<DayCell>, onDay: (Long) -> Unit, modifier: Modi
     }
 }
 
-/** One day's dot, by its state; today's wears a ring whatever its state. */
+/** The days drawn done, kept across the entry's recreation: a `Set<Long>` saved as a list. */
+private val doneDaysSaver = listSaver<Set<Long>, Long>(save = { it.toList() }, restore = { it.toSet() })
+
+/**
+ * One day's dot, by its state; today's wears a ring whatever its state. A done day told to [drawOn] sweeps
+ * its fill round from twelve over [Motion.ENTER_MILLIS], after [delayMillis], and lands its check on a
+ * spring; at once under reduced motion.
+ */
 @Composable
-private fun DayDot(day: DayCell, modifier: Modifier = Modifier) {
+private fun DayDot(day: DayCell, drawOn: Boolean, delayMillis: Int, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
+    val reducedMotion = prefersReducedMotion()
+    // Latched as the day turns done: the strip marks it drawn right after, which must not cut the sweep short.
+    val play = remember(day.state == DayState.Done) { drawOn && !reducedMotion }
+    val sweep = remember { Animatable(1f) }
+    val check = remember { Animatable(1f) }
+    LaunchedEffect(play) {
+        if (play) {
+            sweep.snapTo(0f)
+            check.snapTo(0f)
+            delay(delayMillis.toLong())
+            sweep.animateTo(1f, tween(Motion.ENTER_MILLIS, easing = EnterEasing))
+            check.animateTo(1f, pressSpring())
+        } else {
+            sweep.snapTo(1f)
+            check.snapTo(1f)
+        }
+    }
     val ring = if (day.today) Modifier.border(Sizes.border, palette.text, CircleShape) else Modifier
+    val fill = doneColor(day)
     Box(
         modifier
             .size(Sizes.weekBarMark)
             .clip(CircleShape)
             .then(
                 when (day.state) {
-                    DayState.Done -> Modifier.background(doneColor(day))
+                    DayState.Done -> Modifier.drawBehind {
+                        drawArc(fill, Angles.TWELVE_O_CLOCK, Angles.FULL_TURN * sweep.value, useCenter = true)
+                    }
+
                     DayState.Planned -> Modifier.border(Sizes.border, palette.accent, CircleShape)
+
                     DayState.Missed -> Modifier.background(palette.surfaceVariant).missedSlash(palette.textDim)
+
                     DayState.Rest -> Modifier.background(palette.surfaceVariant)
                 },
             )
@@ -160,7 +214,15 @@ private fun DayDot(day: DayCell, modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         if (day.state == DayState.Done) {
-            Icon(IntervalIcons.Check, null, tint = palette.onAccent, modifier = Modifier.size(Sizes.chipIcon))
+            Icon(
+                IntervalIcons.Check,
+                null,
+                tint = palette.onAccent,
+                modifier = Modifier.size(Sizes.chipIcon).graphicsLayer {
+                    scaleX = check.value
+                    scaleY = check.value
+                },
+            )
         }
     }
 }

@@ -1,5 +1,6 @@
 package dev.justinsmith.lift.session
 
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -24,8 +25,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -36,12 +35,14 @@ import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.Arrival
 import dev.justinsmith.interval.ui.Burst
+import dev.justinsmith.interval.ui.FinishHaptic
 import dev.justinsmith.interval.ui.HowWasIt
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.StreakBadge
 import dev.justinsmith.interval.ui.isLandscape
 import dev.justinsmith.interval.ui.rememberEntrance
 import dev.justinsmith.lift.domain.PerceivedEffort
@@ -50,23 +51,19 @@ import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.domain.formatPace
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_joined
-import dev.justinsmith.lift.session.resources.summary_abc_best
 import dev.justinsmith.lift.session.resources.summary_done
 import dev.justinsmith.lift.session.resources.summary_hand_care
 import dev.justinsmith.lift.session.resources.summary_heavy_grip
 import dev.justinsmith.lift.session.resources.summary_how_was_it
-import dev.justinsmith.lift.session.resources.summary_milestone
 import dev.justinsmith.lift.session.resources.summary_note_placeholder
 import dev.justinsmith.lift.session.resources.summary_pace
 import dev.justinsmith.lift.session.resources.summary_program_finished
 import dev.justinsmith.lift.session.resources.summary_share
 import dev.justinsmith.lift.session.resources.summary_shared
-import dev.justinsmith.lift.session.resources.summary_snatch_test
 import dev.justinsmith.lift.session.resources.summary_streak
 import dev.justinsmith.lift.session.resources.summary_week_count
 import dev.justinsmith.lift.session.resources.summary_week_of_goal
 import dev.justinsmith.lift.session.resources.today_goal_met
-import dev.justinsmith.lift.ui.exerciseName
 import dev.justinsmith.lift.ui.liftName
 import dev.justinsmith.lift.ui.programName
 import org.jetbrains.compose.resources.pluralStringResource
@@ -107,7 +104,10 @@ fun SummaryScreen(
             onDone()
         })
     }
-    FinishHaptic(finished)
+    FinishHaptic(
+        firm = finished.records.isNotEmpty() || finished.week?.justMet == true,
+        delayMillis = Motion.ENTER_MILLIS,
+    )
     BoxWithConstraints(modifier.fillMaxSize().background(palette.background), contentAlignment = Alignment.TopCenter) {
         burstColors(finished)?.let { Burst(it, Modifier.matchParentSize(), delayMillis = Motion.ENTER_MILLIS) }
         if (isLandscape) {
@@ -134,9 +134,7 @@ fun SummaryScreen(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(Spacing.space8),
                 ) {
-                    Arrival(entrance, STATS_STEP) { SessionStats(session, finished.records, highlight = true) }
-                    Arrival(entrance, CHANGES_STEP) { AfterStats(finished, choices, onKeep) }
-                    Arrival(entrance, HOW_STEP) { SummaryHowWasIt(finished, reflection) }
+                    SummaryBody(finished, entrance, choices, onKeep, reflection)
                 }
             }
         } else {
@@ -156,9 +154,7 @@ fun SummaryScreen(
                     Arrival(entrance, HEADING_STEP) {
                         SummaryHeading(session.title, Modifier.padding(top = Spacing.space24, bottom = Spacing.space16))
                     }
-                    Arrival(entrance, STATS_STEP) { SessionStats(session, finished.records, highlight = true) }
-                    Arrival(entrance, CHANGES_STEP) { AfterStats(finished, choices, onKeep) }
-                    Arrival(entrance, HOW_STEP) { SummaryHowWasIt(finished, reflection) }
+                    SummaryBody(finished, entrance, choices, onKeep, reflection)
                 }
                 Arrival(entrance, FOOTER_STEP) { SummaryFooter(finished, leave, onShare = { onShare(shareText) }) }
             }
@@ -166,15 +162,21 @@ fun SummaryScreen(
     }
 }
 
-/** The finish lands under the thumb: firmer when a record fell. */
+/** The numbers counting up, the bests, what follows them and "How was it?", arriving in turn in either layout. */
 @Composable
-private fun FinishHaptic(finished: Finished) {
-    val haptics = LocalHapticFeedback.current
-    LaunchedEffect(Unit) {
-        haptics.performHapticFeedback(
-            if (finished.records.isEmpty()) HapticFeedbackType.Confirm else HapticFeedbackType.LongPress,
-        )
+private fun SummaryBody(
+    finished: Finished,
+    entrance: MutableTransitionState<Boolean>,
+    choices: ChangesChoices,
+    onKeep: (SaveScope, String, Set<Int>) -> Unit,
+    reflection: SummaryReflection,
+) {
+    Arrival(entrance, STATS_STEP) {
+        SessionStats(finished.session, finished.records, highlight = true, countUp = true)
     }
+    Arrival(entrance, BESTS_STEP) { BestsCard(finished) }
+    Arrival(entrance, CHANGES_STEP) { AfterStats(finished, choices, onKeep) }
+    Arrival(entrance, HOW_STEP) { SummaryHowWasIt(finished, reflection) }
 }
 
 /** What follows the numbers: the grip's notes, then what to keep for next time. */
@@ -202,7 +204,7 @@ private fun burstColors(finished: Finished): List<Color>? = when {
         IntervalTheme.workout.rest,
     )
 
-    finished.records.isNotEmpty() -> listOf(IntervalTheme.palette.accent)
+    finished.records.isNotEmpty() || finished.hasBests -> listOf(IntervalTheme.palette.accent)
 
     else -> null
 }
@@ -210,6 +212,7 @@ private fun burstColors(finished: Finished): List<Color>? = when {
 /** The summary's parts arrive in this order, each [Motion.STAGGER_MILLIS] steps after the heading. */
 private const val HEADING_STEP = 0
 private const val STATS_STEP = 2
+private const val BESTS_STEP = 3
 private const val CHANGES_STEP = 4
 private const val HOW_STEP = 5
 private const val FOOTER_STEP = 6
@@ -252,13 +255,7 @@ private fun GripNotes(finished: Finished) {
             formatKg(pace.kg),
         )
     }
-    val bests = listOfNotNull(
-        finished.snatchTest?.let { stringResource(Res.string.summary_snatch_test, it) },
-        finished.armorBuilding?.let { stringResource(Res.string.summary_abc_best, it) },
-    ) + finished.milestones.map { (exercise, count) ->
-        stringResource(Res.string.summary_milestone, count, exerciseName(exercise))
-    }
-    val lines = bests + paces + listOfNotNull(
+    val lines = paces + listOfNotNull(
         Res.string.summary_heavy_grip.takeIf { finished.heavyGrip },
         Res.string.summary_hand_care.takeIf { finished.handCare },
     ).map { stringResource(it) }
@@ -316,6 +313,14 @@ private fun SummaryFooter(finished: Finished, onDone: () -> Unit, onShare: () ->
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
+            if (week.streak > 1) {
+                StreakBadge(
+                    week.streak,
+                    label = { pluralStringResource(Res.plurals.summary_streak, it, it) },
+                    Modifier.align(Alignment.CenterHorizontally),
+                    grew = week.justMet,
+                )
+            }
         }
         finished.lastDayOf?.let { program ->
             Text(
@@ -338,22 +343,13 @@ private fun SummaryFooter(finished: Finished, onDone: () -> Unit, onShare: () ->
     }
 }
 
-/** "3 of 4 this week", "Goal met this week · 3-week streak", or with no goal set, the count. */
+/** "3 of 4 this week", "Goal met this week", or with no goal set, the count; the streak is a [StreakBadge] under it. */
 @Composable
 private fun weekText(week: WeekStanding): String {
     val goal = week.goal
-    val standing = when {
+    return when {
         goal == null -> pluralStringResource(Res.plurals.summary_week_count, week.count, week.count)
         week.goalMet -> stringResource(Res.string.today_goal_met)
         else -> stringResource(Res.string.summary_week_of_goal, week.count, goal)
-    }
-    return if (week.streak > 1) {
-        stringResource(
-            Res.string.common_joined,
-            standing,
-            pluralStringResource(Res.plurals.summary_streak, week.streak, week.streak),
-        )
-    } else {
-        standing
     }
 }

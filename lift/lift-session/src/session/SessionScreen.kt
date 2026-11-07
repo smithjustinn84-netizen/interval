@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.Column
@@ -48,6 +49,7 @@ import dev.justinsmith.interval.platform.AskToShowNotifications
 import dev.justinsmith.interval.platform.KeepScreenOn
 import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.ui.AccentButton
+import dev.justinsmith.interval.ui.Burst
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
@@ -110,6 +112,7 @@ import dev.justinsmith.lift.ui.liftName
 import dev.justinsmith.lift.ui.programName
 import dev.justinsmith.lift.ui.sessionTitle
 import dev.justinsmith.lift.ui.setLine
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -532,8 +535,9 @@ private fun ExercisePageSheet(state: SessionUiState, actions: SessionActions, on
 }
 
 /**
- * A set logged while the screen is up that beat a record is announced once, under the thumb and in a
- * notice; a record already standing when the screen opened (a session resumed) is not.
+ * A set logged while the screen is up that beat a record is announced once, under the thumb (two beats,
+ * [Motion.RECORD_BEAT_GAP_MILLIS] apart, which no other moment has) and in a notice; a record already
+ * standing when the screen opened (a session resumed) is not.
  */
 @Composable
 private fun AnnounceRecord(state: SessionUiState, notices: Notices) {
@@ -545,6 +549,8 @@ private fun AnnounceRecord(state: SessionUiState, notices: Notices) {
         if (latest != null && latest.id != seenAtOpen && recordText != null) {
             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
             notices.show(recordText)
+            delay(Motion.RECORD_BEAT_GAP_MILLIS)
+            haptics.performHapticFeedback(HapticFeedbackType.Confirm)
         }
     }
 }
@@ -733,7 +739,9 @@ private class SetActions(val onRemove: (SetLog, removedText: String) -> Unit, va
 @Composable
 private fun LoggedSets(state: SessionUiState, actions: SetActions) {
     val sets = state.session?.sets.orEmpty()
-    // The sets on show when the screen opened stand still; one logged since rises into its card.
+    // The sets on show when the screen opened stand still; one logged since rises into its card, and one that
+    // beat a record has its tag stamp in and the accent ring out from behind it. (A set edited into a record
+    // keeps its id, so it is tagged without the ceremony.)
     val atOpen = remember { sets.map { it.id }.toSet() }
     sets.groupBy { it.exercise to it.double }.forEach { (lift, done) ->
         GroupLabel(liftName(lift.first, lift.second))
@@ -743,9 +751,11 @@ private fun LoggedSets(state: SessionUiState, actions: SetActions) {
                     AnimatedVisibility(rememberArrival(set.id !in atOpen), enter = risingEnter()) {
                         Column {
                             if (i > 0) RowDivider()
+                            val record = set.id in state.recordSetIds
                             SetRow(
                                 set,
-                                record = set.id in state.recordSetIds,
+                                record = record,
+                                stamp = record && set.id !in atOpen,
                                 onRemove = { actions.onRemove(set, it) },
                                 onEdit = { actions.onEdit(set) },
                             )
@@ -757,29 +767,59 @@ private fun LoggedSets(state: SessionUiState, actions: SetActions) {
     }
 }
 
-/** A set logged: a tap opens it to change, × removes it; one that set a [record] is tagged. */
+/**
+ * A set logged: a tap opens it to change, × removes it; one that set a [record] is tagged, and one that set
+ * it just now ([stamp]) has the tag stamp in over a ring of the accent, clipped to its card by design.
+ */
 @Composable
-private fun SetRow(set: SetLog, record: Boolean, onRemove: (removedText: String) -> Unit, onEdit: () -> Unit) {
+private fun SetRow(
+    set: SetLog,
+    record: Boolean,
+    stamp: Boolean,
+    onRemove: (removedText: String) -> Unit,
+    onEdit: () -> Unit,
+) {
     val line = setLine(set)
     val edit = stringResource(Res.string.session_edit_set_cd, line)
     val removed = stringResource(Res.string.session_set_removed, line)
     val interaction = remember { MutableInteractionSource() }
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = Sizes.listRow)
-            .clickable(interaction, LocalIndication.current, onClickLabel = edit, role = Role.Button, onClick = onEdit)
-            .pressScale(interaction)
-            .padding(start = Spacing.space16, end = Spacing.space4, top = Spacing.space8, bottom = Spacing.space8),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(line, style = IntervalTheme.type.label, color = IntervalTheme.palette.text, modifier = Modifier.weight(1f))
-        if (record) RecordTag(Modifier.padding(end = Spacing.space8))
-        IconAction(
-            IntervalIcons.Close,
-            stringResource(Res.string.session_remove_set_cd, line),
-            onClick = { onRemove(removed) },
-            haptic = HapticFeedbackType.SegmentTick,
-        )
+    Box {
+        if (stamp) {
+            Burst(
+                listOf(IntervalTheme.palette.accent),
+                Modifier.matchParentSize(),
+                delayMillis = Motion.ENTER_MILLIS,
+                stroke = Sizes.rowBurstStroke,
+            )
+        }
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = Sizes.listRow)
+                .clickable(
+                    interaction,
+                    LocalIndication.current,
+                    onClickLabel = edit,
+                    role = Role.Button,
+                    onClick = onEdit,
+                )
+                .pressScale(interaction)
+                .padding(start = Spacing.space16, end = Spacing.space4, top = Spacing.space8, bottom = Spacing.space8),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                line,
+                style = IntervalTheme.type.label,
+                color = IntervalTheme.palette.text,
+                modifier = Modifier.weight(1f),
+            )
+            if (record) RecordTag(Modifier.padding(end = Spacing.space8), stamp = stamp)
+            IconAction(
+                IntervalIcons.Close,
+                stringResource(Res.string.session_remove_set_cd, line),
+                onClick = { onRemove(removed) },
+                haptic = HapticFeedbackType.SegmentTick,
+            )
+        }
     }
 }

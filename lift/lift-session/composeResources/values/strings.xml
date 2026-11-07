@@ -56,6 +56,7 @@
     <string name="session_easier_what">Presses and squats a bell lighter, swings and snatches shorter, rests by the lift</string>
     <string name="session_easier_lighter_day">Day %1$d of this program is the lighter one on the grip</string>
     <string name="session_easier_use">Use it</string>
+    <string name="summary_bests">Bests</string>
     <string name="summary_snatch_test">Snatch test: %1$d in 5 minutes, your best</string>
     <string name="summary_abc_best">Armor Building Complex: %1$d in 20 minutes, your best</string>
     <string name="summary_milestone">%1$d in all: %2$s</string>

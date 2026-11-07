@@ -50,8 +50,8 @@ val ExitEasing: Easing = CubicBezierEasing(0.3f, 0f, 0.8f, 0.15f)
 /** For content changing in place, and for colours. */
 val StandardEasing: Easing = FastOutSlowInEasing
 
-/** The spring under a pressed control: stiff, with just enough give to feel physical. */
-private fun pressSpring(): SpringSpec<Float> = spring(dampingRatio = PRESS_DAMPING, stiffness = PRESS_STIFFNESS)
+/** The spring under a pressed control: stiff, with just enough give to feel physical. Pops ride it too. */
+fun pressSpring(): SpringSpec<Float> = spring(dampingRatio = PRESS_DAMPING, stiffness = PRESS_STIFFNESS)
 
 /** A selection indicator sliding to its new option: quick, settling without a bounce. */
 fun <T> settleSpring(): SpringSpec<T> = spring(dampingRatio = SETTLE_DAMPING, stiffness = Spring.StiffnessMedium)

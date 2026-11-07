@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.unit.Dp
 import dev.justinsmith.interval.platform.prefersReducedMotion
 import kotlinx.coroutines.delay
 import kotlin.math.hypot
@@ -19,10 +20,11 @@ import kotlin.math.hypot
  * A moment marked: rings of [colors], the first outermost, ride an edge that opens from the centre to
  * past the corners over [Motion.BURST_MILLIS], thinning and fading as they go, as the intro's ripple
  * does onto the app. Once, [delayMillis] after it is composed, behind whatever it marks; nothing at
- * all under reduced motion.
+ * all under reduced motion. The rings start [stroke] wide: a screen's at [Sizes.burstStroke], a row's at
+ * [Sizes.rowBurstStroke].
  */
 @Composable
-fun Burst(colors: List<Color>, modifier: Modifier = Modifier, delayMillis: Int = 0) {
+fun Burst(colors: List<Color>, modifier: Modifier = Modifier, delayMillis: Int = 0, stroke: Dp = Sizes.burstStroke) {
     if (prefersReducedMotion()) return
     val opened = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
@@ -35,7 +37,7 @@ fun Burst(colors: List<Color>, modifier: Modifier = Modifier, delayMillis: Int =
         val gap = Sizes.burstGap.toPx()
         val reach = hypot(size.width, size.height) / 2 + gap * colors.size
         val edge = reach * t
-        val width = Sizes.burstStroke.toPx() * (1 - t)
+        val width = stroke.toPx() * (1 - t)
         colors.forEachIndexed { i, color ->
             val radius = edge - gap * i
             // Not until it is wider than its stroke, which would otherwise fill it in.

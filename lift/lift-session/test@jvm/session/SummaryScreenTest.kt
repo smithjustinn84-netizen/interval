@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
 import dev.justinsmith.lift.domain.BlockChange
@@ -65,6 +66,27 @@ class SummaryScreenTest {
     }
 
     @Test
+    fun `the summary puts a session's bests on a card of their own`() = runUiTest {
+        val finished = Finished(
+            session,
+            emptyList(),
+            milestones = listOf(BuiltInExercise.TwoHandSwing to 1000),
+            snatchTest = 100,
+        )
+        setThemedContent(dark = true) { SummaryScreen(finished, onDone = {}) }
+        onNodeWithText("Bests").performScrollTo()
+        onNodeWithText("Snatch test: 100 in 5 minutes, your best").assertExists()
+        onNodeWithText("1000 in all: Two-hand swing").assertExists()
+    }
+
+    @Test
+    fun `a session with no bests has no card for them`() = runUiTest {
+        setThemedContent(dark = true) { SummaryScreen(Finished(session, emptyList()), onDone = {}) }
+        onNodeWithText("How was it?").performScrollTo()
+        onNodeWithText("Bests").assertDoesNotExist()
+    }
+
+    @Test
     fun `a day that felt all out leaves its steps up off until one is turned on`() = runUiTest {
         val program = program(ProgramId.GobletSquatRow)
         val squats = program.days[0][0]
@@ -89,6 +111,28 @@ class SummaryScreenTest {
         onNodeWithText("It felt very hard", substring = true).assertDoesNotExist()
         onNodeWithText("Save as Goblet squat and row (yours)").performScrollTo().performClick()
         assertEquals(listOf(setOf(1)), kept)
+    }
+
+    @Test
+    fun `the summary's numbers count up as it arrives`() = runUiTest {
+        mainClock.autoAdvance = false
+        setThemedContent(dark = true) { SummaryScreen(Finished(session, emptyList()), onDone = {}) }
+        mainClock.advanceTimeByFrame()
+        onNodeWithText("0:00").assertExists()
+        onNodeWithText("10:00").assertDoesNotExist()
+        mainClock.advanceTimeBy(Motion.SUMMARY_RING_MILLIS + Motion.ENTER_MILLIS.toLong())
+        onNodeWithText("10:00").assertExists()
+        onNodeWithText("240 kg").assertExists()
+    }
+
+    @Test
+    fun `a session's page shows its numbers at once`() = runUiTest {
+        mainClock.autoAdvance = false
+        setThemedContent(dark = true) {
+            LiftDetailScreen(LiftDetailUiState(session, "Saturday", "1:21 PM"), onDelete = {}, onBack = {})
+        }
+        mainClock.advanceTimeByFrame()
+        onNodeWithText("10:00").assertExists()
     }
 
     @Test

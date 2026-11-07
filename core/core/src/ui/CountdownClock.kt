@@ -19,9 +19,10 @@ import androidx.compose.ui.unit.TextUnit
 import dev.justinsmith.interval.platform.prefersReducedMotion
 
 /**
- * A countdown's digits ([text]) on the workout's ground. The clock pops as a new interval starts (a
- * change of [intervalKey]) and, smaller, on each of its last seconds while [countingDown], in step
- * with the beeps, when its colour also goes to the [accent]; otherwise it reads in the ground's ink.
+ * A countdown's digits ([text]) on the workout's ground, or in [ink] on a surface. The clock pops as a new
+ * interval starts (a change of [intervalKey]) and, smaller, on each of its last seconds while [countingDown]
+ * (the [rememberCountdownPulse] the ring swells to), in step with the beeps, when its colour also goes to
+ * the [accent]; otherwise it reads in the ink.
  */
 @Composable
 fun CountdownClock(
@@ -31,6 +32,7 @@ fun CountdownClock(
     accent: Color,
     style: TextStyle,
     modifier: Modifier = Modifier,
+    ink: Color = IntervalTheme.workout.onGround,
 ) {
     val reducedMotion = prefersReducedMotion()
     val scale = remember { Animatable(1f) }
@@ -42,14 +44,9 @@ fun CountdownClock(
             scale.snapTo(1f)
         }
     }
-    LaunchedEffect(text, countingDown, reducedMotion) {
-        if (countingDown && !reducedMotion) {
-            scale.snapTo(Motion.COUNTDOWN_POP_SCALE)
-            scale.animateTo(1f, tween(Motion.CLOCK_POP_MILLIS))
-        }
-    }
+    val pulse = rememberCountdownPulse(text, countingDown)
     val color by animateColorAsState(
-        if (countingDown) accent else IntervalTheme.workout.onGround,
+        if (countingDown) accent else ink,
         tween(Motion.STATE_MILLIS, easing = StandardEasing),
         label = "clock",
     )
@@ -60,10 +57,29 @@ fun CountdownClock(
         maxLines = 1,
         softWrap = false,
         modifier = modifier.graphicsLayer {
-            scaleX = scale.value
-            scaleY = scale.value
+            val popped = scale.value * (1f + pulse * (Motion.COUNTDOWN_POP_SCALE - 1f))
+            scaleX = popped
+            scaleY = popped
         },
     )
+}
+
+/**
+ * The pop of an interval's last seconds, which [CountdownClock] and the ring round it share: 1 as each
+ * second of [text] arrives while [countingDown], falling to 0 over [Motion.CLOCK_POP_MILLIS]; 0 at rest,
+ * and always under reduced motion.
+ */
+@Composable
+fun rememberCountdownPulse(text: String, countingDown: Boolean): Float {
+    val reducedMotion = prefersReducedMotion()
+    val pulse = remember { Animatable(0f) }
+    LaunchedEffect(text, countingDown, reducedMotion) {
+        if (countingDown && !reducedMotion) {
+            pulse.snapTo(1f)
+            pulse.animateTo(0f, tween(Motion.CLOCK_POP_MILLIS))
+        }
+    }
+    return pulse.value
 }
 
 /**

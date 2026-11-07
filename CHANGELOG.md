@@ -16,6 +16,16 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.5.0] — Unreleased
 
 ### Added
+- The moments that matter, marked: a set that beats a record has its Record tag stamp in over a ring of the
+  accent, with two beats under the thumb, and a session's lifetime bests (a snatch test or Armor Building
+  Complex best, a milestone of reps crossed) stand on a Bests card of their own on the summary rather than in
+  its small print. An interval's last three seconds thicken the ring with each beep and tick on the wrist
+  (under the Vibrate switch, with the screen off too), a change of phase sends a ring of the new colour out
+  from the clock, and Lift's rest counts its last seconds down the same way. A finished workout lands under the
+  thumb as its ring closes, firmer when it brings the week to its goal; Lift's summary counts its time, reps
+  and kilograms up as the interval summary does; a streak that grew rolls up a week on both, its flame flaring;
+  on Today a day turning done draws its fill round and lands its check; and the Log's goal ring, closing on the
+  goal, pops and wears the three phase colours.
 - Today, a new first tab and where the app opens: this week against the goal, what is up next (today's plan, or
   the next day of the program followed) under one Start, and "Or pick by time", which offers the presets that fit
   5, 10, 15, 20 or 30 minutes, each with a Start of its own. With nothing planned it leads to the plan and to Lift's

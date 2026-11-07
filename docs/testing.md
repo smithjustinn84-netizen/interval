@@ -97,6 +97,8 @@ that depends on the data module.
     supporting pane).
   - `setThemedContent { }`: content inside `IntervalTheme`, light (`dark = true` for dark).
   - `waitForText`, `scrollToText`: for whole-app tests, whose ViewModels emit on Swing's thread.
+- **`core/core-testing/src@jvm/ui/RecordingHaptics.kt`**: `RecordingHaptics` records what a screen performs through
+  `LocalHapticFeedback`, provided by `WithHaptics(haptics) { … }` round the content under test.
 - **`core/core-testing/src@jvm/ui/MainThreadInput.kt`**: input on the app's main thread, Swing's.
   - `performClick`: Compose's, made on the main thread. Every test over `appTest` or `liftAppTest` imports
     `dev.justinsmith.interval.ui.performClick` rather than `androidx.compose.ui.test.performClick` (the

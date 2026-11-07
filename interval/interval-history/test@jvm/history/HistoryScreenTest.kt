@@ -25,6 +25,7 @@ import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.formatClock
+import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
@@ -248,6 +249,9 @@ class HistoryScreenTest {
 
         state = state.copy(weekCount = 4)
         onNodeWithText("Goal met").assertExists()
+        // The ring closes on the goal, ignites and pops; the figure still reads.
+        mainClock.advanceTimeBy(Motion.ENTER_MILLIS + Motion.CONTENT_MILLIS.toLong())
+        onNodeWithContentDescription("4 of 4 workouts this week").assertExists()
 
         state = oneWorkout
         onNodeWithText("1 workout").assertExists()

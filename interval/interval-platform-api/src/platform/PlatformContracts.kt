@@ -13,8 +13,11 @@ import kotlinx.coroutines.flow.StateFlow
 /** The sounds the app plays. Each platform maps them to tones it has. */
 enum class Beep { Countdown, Halfway, Start, Work, Rest, Finished }
 
-/** Vibration patterns, distinct enough to tell apart without looking. */
-enum class Haptic { Work, Rest, Finished }
+/**
+ * Vibration patterns, distinct enough to tell apart without looking: a tick on each of an interval's last
+ * seconds, with its beep, then the change itself.
+ */
+enum class Haptic { Countdown, Work, Rest, Finished }
 
 /** A line spoken during a workout. Players put it into words from the app's strings ([text]). */
 sealed interface Speech {

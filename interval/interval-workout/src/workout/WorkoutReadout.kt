@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -38,6 +40,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import dev.justinsmith.interval.platform.prefersReducedMotion
 import dev.justinsmith.interval.timer.Phase
+import dev.justinsmith.interval.ui.Burst
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.CountdownClock
 import dev.justinsmith.interval.ui.EnterEasing
@@ -48,6 +51,8 @@ import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.ProgressRing
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StandardEasing
+import dev.justinsmith.interval.ui.of
+import dev.justinsmith.interval.ui.rememberCountdownPulse
 import dev.justinsmith.interval.ui.ringClockSize
 import dev.justinsmith.interval.workout.resources.Res
 import dev.justinsmith.interval.workout.resources.next_block
@@ -171,7 +176,8 @@ private fun roundMarks(state: WorkoutUiState): RoundMarks? {
 @Composable
 internal fun RingReadout(state: WorkoutUiState, accent: Color, diameter: Dp, modifier: Modifier = Modifier) {
     Box(modifier.size(diameter), contentAlignment = Alignment.Center) {
-        ProgressRing(state.progress, accent, Modifier.fillMaxSize())
+        PhaseBurst(state, Modifier.matchParentSize())
+        ProgressRing(state.progress, accent, Modifier.fillMaxSize(), strokeScale = ringSwell(state))
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             PhaseLabel(state, accent)
             Clock(state, accent, ringClockSize(diameter, state.clock.length, IntervalTheme.type.clock.fontSize))
@@ -203,7 +209,8 @@ internal fun LandscapeReadout(
         horizontalArrangement = Arrangement.spacedBy(Spacing.space32, Alignment.CenterHorizontally),
     ) {
         Box(ringModifier.size(diameter), contentAlignment = Alignment.Center) {
-            ProgressRing(state.progress, accent, Modifier.fillMaxSize())
+            PhaseBurst(state, Modifier.matchParentSize())
+            ProgressRing(state.progress, accent, Modifier.fillMaxSize(), strokeScale = ringSwell(state))
             Clock(state, accent, ringClockSize(diameter, state.clock.length, IntervalTheme.type.clock.fontSize))
         }
         Column(Modifier.weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
@@ -217,6 +224,26 @@ internal fun LandscapeReadout(
             RoundDots(state, accent, Modifier.padding(top = Spacing.space4))
             TapHint(state)
         }
+    }
+}
+
+/** The ring thickens with the clock's pop on each of an interval's last seconds: [rememberCountdownPulse]. */
+@Composable
+private fun ringSwell(state: WorkoutUiState): Float =
+    1f + rememberCountdownPulse(state.clock, state.countingDown) * (Motion.COUNTDOWN_RING_SCALE - 1f)
+
+/**
+ * A change of interval sends one ring of the new phase's colour out from the clock as the ground crossfades
+ * to it: the colour the ground is going to, not the one it is passing through. Not the interval the screen
+ * opened on (the workout rising into place marks a start, and a workout restored is already under way), nor
+ * Done, which the summary marks itself. [Burst] draws nothing under reduced motion.
+ */
+@Composable
+private fun PhaseBurst(state: WorkoutUiState, modifier: Modifier = Modifier) {
+    val interval = state.phase to state.completedRounds
+    val opened = remember { interval }
+    if (interval != opened && !state.isDone) {
+        key(interval) { Burst(listOf(IntervalTheme.workout.of(state.phase)), modifier) }
     }
 }
 

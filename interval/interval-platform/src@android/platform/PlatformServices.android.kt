@@ -80,6 +80,7 @@ private class AndroidCuePlayer(context: Context, speaker: Speaker) : CuePlayer {
 
     override fun vibrate(haptic: Haptic) {
         val timings = when (haptic) {
+            Haptic.Countdown -> longArrayOf(0, 30)
             Haptic.Work -> longArrayOf(0, 150)
             Haptic.Rest -> longArrayOf(0, 70, 60, 70)
             Haptic.Finished -> longArrayOf(0, 250, 100, 250)
