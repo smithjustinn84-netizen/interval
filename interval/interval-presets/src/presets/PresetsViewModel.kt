@@ -39,10 +39,6 @@ data class PresetsUiState(
     val canSaveCurrent: Boolean,
     /** The settings on the Timer: shown to save when they match no preset, and the shape a new preset starts from. */
     val current: IntervalConfig,
-    /** The current settings' length as a share of the longest on the screen, as [PresetRowItem.share]. */
-    val currentShare: Float = 1f,
-    /** The current settings' estimated calories, as [PresetRowItem.calories]. */
-    val currentCalories: Int? = null,
 ) {
     /** Every row the screen shows, the user's own first. */
     val rows: List<PresetRowItem> get() = custom + builtIn
@@ -96,9 +92,6 @@ class PresetsViewModel(private val presetStore: PresetStore, private val setting
         fun totalOf(preset: Preset) = asRun(preset).totalSeconds
         val onTimer = presets.matching(config)
         val canSaveCurrent = onTimer == null
-        val longest = (presets.map { totalOf(it) } + if (canSaveCurrent) config.totalSeconds else 0)
-            .max()
-            .coerceAtLeast(1)
         val rows = presets.sortedBy { totalOf(it) }.map { preset ->
             PresetRowItem(
                 preset = preset,
@@ -115,8 +108,6 @@ class PresetsViewModel(private val presetStore: PresetStore, private val setting
             builtIn = rows.filterNot { it.preset.custom },
             canSaveCurrent = canSaveCurrent,
             current = config,
-            currentShare = config.totalSeconds.toFloat() / longest,
-            currentCalories = app.body.plannedCalories(config),
         )
     }
 }

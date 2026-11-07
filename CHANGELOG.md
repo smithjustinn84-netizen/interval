@@ -20,8 +20,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   Strength is what the Lift tab was (the program's day, the last session, the balance, the exercises and the
   equipment, with Start session pinned under them); Conditioning lists the presets as rows of one card a group
   (the user's own, only once there is one, then the built-ins), each shortest first with its shape and its
-  length, started or put on the Timer from its sheet, which also carries the calorie estimate, under a row that
-  opens the Timer; Mobility lists the flows. The tab reopens on the pillar last shown.
+  length, started or put on the Timer from its sheet, which also carries the calorie estimate, under the Timer
+  row, which says what is on the Timer (the preset's name, or the shape with "Save as preset" under it while no
+  preset has that shape); Mobility lists the flows. The tab reopens on the pillar
+  last shown.
 - Sequences: a workout of blocks run one after another, each block a shape of its own (work, rest, rounds, sets
   and ladder) with a rest between blocks. The workout says "Block 2 of 3 · Round 1 of 8", "Rest between blocks"
   and "Next: block 2 of 3 · 0:40", the voice "Rest before block 2" and "Block 2. Work", and the notification the

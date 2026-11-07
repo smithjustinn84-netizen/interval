@@ -83,16 +83,6 @@ class PresetsViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun `unsaved settings longer than every preset set the scale`() {
-        repository.settings.updateConfig {
-            IntervalConfig(prepSeconds = 10, workSeconds = 60, restSeconds = 30, rounds = 15)
-        }
-        val state = viewModel.state.value
-        assertTrue(state.canSaveCurrent)
-        assertEquals(1f, state.currentShare)
-    }
-
-    @Test
     fun `a preset of the user's own with a built-in's shape is the one on the Timer`() {
         viewModel.putOnTimer(builtInPresets.first())
         viewModel.save(Preset("My Tabata", builtInPresets.first().config))
@@ -139,7 +129,6 @@ class PresetsViewModelTest : MainDispatcherTest() {
         repository.settings.updateAppSettings { it.copy(body = body) }
         val tabata = viewModel.state.value.builtIn.first()
         assertEquals(body.plannedCalories(tabata.preset.config.copy(prepSeconds = 30)), tabata.calories)
-        assertEquals(body.plannedCalories(repository.settings.config.value), viewModel.state.value.currentCalories)
     }
 
     @Test

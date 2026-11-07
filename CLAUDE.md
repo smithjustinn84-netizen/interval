@@ -128,7 +128,7 @@ interval/            the interval timer
                      `dev.justinsmith.interval.home`)
   interval-workout   the running workout, its readout, controls and summary
   interval-presets   the presets, sheet and editor (`PresetEditorHost`, `PresetDraft`): Train's Conditioning
-                     pillar, a tab's page (`PresetsTab`), with the row that opens the Timer
+                     pillar, a tab's page (`PresetsTab`), with the row that opens the Timer, saying what is on it
   interval-mobility  the flows by when each is for, a flow's sheet (its moves, then Start), and the editor of the
                      user's own (`FlowEditorScreen`, the library's moves in `LibraryMoves.kt`, over `lift-ui`'s names
                      and cues): Train's Mobility pillar, a tab's page (`MobilityPage`)

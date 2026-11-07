@@ -32,7 +32,7 @@ class WarmUpCoolDownAcceptanceTest {
         closeSummary()
 
         openAllPresets()
-        seeUnsavedTimerCard("1m warm-up · 30s on · 15s off · ×8 · 2m cool-down")
+        seeTimerUnsaved("1m warm-up · 30s on · 15s off · ×8 · 2m cool-down")
     }
 
     @Test

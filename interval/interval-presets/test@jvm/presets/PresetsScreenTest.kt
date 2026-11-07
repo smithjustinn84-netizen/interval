@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithText
@@ -121,8 +122,7 @@ class PresetsScreenTest {
     @Test
     fun `the row on the Timer says so`() = runUiTest {
         setThemedContent { Screen(state(selected = morning, canSaveCurrent = false)) }
-        onNodeWithText("On the Timer").assertExists()
-        onNodeWithText("On the Timer · not saved").assertDoesNotExist()
+        onNode(hasText("Morning") and hasText("On the Timer")).assertExists()
     }
 
     @Test

@@ -25,13 +25,13 @@ import dev.justinsmith.interval.ui.setThemedContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-/** The editor over [PresetsScreen], opened from a card's sheet, the + or the unsaved card's Save. */
+/** The editor over [PresetsScreen], opened from a row's sheet, the + or the Timer card's "Save as preset". */
 class PresetEditorTest {
     private val saved = mutableListOf<Preset>()
     private val savedCurrent = mutableListOf<Preset>()
 
     @Composable
-    private fun Screen(state: PresetsUiState = state()) {
+    private fun Screen(state: PresetsUiState = state(), tab: PresetsTab? = null) {
         PresetsScreen(
             state = state,
             onStart = {},
@@ -39,6 +39,7 @@ class PresetEditorTest {
             onSave = { saved += it },
             onSaveCurrent = { savedCurrent += it },
             onDelete = {},
+            tab = tab,
         )
     }
 
@@ -92,12 +93,11 @@ class PresetEditorTest {
     }
 
     @Test
-    fun `the unsaved settings card opens the editor on them`() = runUiTest {
-        setThemedContent { Screen() }
-        onNodeWithText("On the Timer · not saved").assertExists()
+    fun `the Timer card's Save as preset opens the editor on the Timer's settings`() = runUiTest {
+        setThemedContent { Screen(tab = PresetsTab("Train", onOpenSettings = {}, onOpenTimer = {}) {}) }
         onNodeWithText("40s on · 20s off · ×6").assertExists()
-        onNodeWithText("Save").performClick()
-        onNodeWithText("Save as preset").assertExists()
+        onNodeWithText("Save as preset").performClick()
+        inSheet("Save as preset").assertExists()
         onNode(hasSetTextAction()).performTextInput("Evening")
         saveInEditor()
         // Saved as the Timer's own settings, so it stays on the Timer; + leaves the Timer alone.

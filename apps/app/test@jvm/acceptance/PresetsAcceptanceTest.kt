@@ -12,7 +12,8 @@ class PresetsAcceptanceTest {
         openTimer()
         seeTimerTotalFor("Custom")
         openAllPresets()
-        seeUnsavedTimerCard("30s on · 15s off · ×8")
+        seeTimerRow("30s on · 15s off · ×8")
+        seeTimerUnsaved("30s on · 15s off · ×8")
         seeNoPresetsOfYours()
 
         startSavingTimerSettings()
@@ -23,7 +24,8 @@ class PresetsAcceptanceTest {
         seeNameCount("7 / 24")
         savePresetSheet()
         seePresetOnTimer("Journey")
-        seeNoUnsavedTimerCard()
+        seeTimerRow("Journey")
+        seeTimerSaved()
         savedPresets("Journey")
 
         openPreset("Tabata")
@@ -31,6 +33,7 @@ class PresetsAcceptanceTest {
         seeTimerTotalFor("Tabata")
         openAllPresets()
         seePresetOnTimer("Tabata")
+        seeTimerRow("Tabata")
         openPreset("Tabata")
         seeNoPutOnTimer()
         dismissSheet()
@@ -47,7 +50,7 @@ class PresetsAcceptanceTest {
         editPresetRounds(12)
         seePresetReading("Journey", "30s on · 15s off · ×12")
         seePresetOnTimer("Journey")
-        seeNoUnsavedTimerCard()
+        seeTimerSaved()
 
         openPreset("Journey")
         askToDeletePreset("Journey")
@@ -56,7 +59,7 @@ class PresetsAcceptanceTest {
         askToDeletePreset("Journey")
         confirmDelete()
         seeNoPresetsOfYours()
-        seeUnsavedTimerCard("30s on · 15s off · ×12")
+        seeTimerUnsaved("30s on · 15s off · ×12")
         savedPresets()
 
         openNewPreset(placeholder = "30/15 ×12")

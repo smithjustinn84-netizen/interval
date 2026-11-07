@@ -6,14 +6,14 @@ import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,31 +28,26 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.presets.resources.Res
-import dev.justinsmith.interval.presets.resources.common_calories_estimate
 import dev.justinsmith.interval.presets.resources.common_cancel
-import dev.justinsmith.interval.presets.resources.common_joined
-import dev.justinsmith.interval.presets.resources.common_save
 import dev.justinsmith.interval.presets.resources.notice_preset_deleted
 import dev.justinsmith.interval.presets.resources.notice_undo
+import dev.justinsmith.interval.presets.resources.preset_save_title
 import dev.justinsmith.interval.presets.resources.presets_built_in
-import dev.justinsmith.interval.presets.resources.presets_current_unsaved
 import dev.justinsmith.interval.presets.resources.presets_delete
 import dev.justinsmith.interval.presets.resources.presets_delete_text
 import dev.justinsmith.interval.presets.resources.presets_delete_title
 import dev.justinsmith.interval.presets.resources.presets_new_cd
 import dev.justinsmith.interval.presets.resources.presets_on_timer
 import dev.justinsmith.interval.presets.resources.presets_open_cd
+import dev.justinsmith.interval.presets.resources.presets_save_current_hint
 import dev.justinsmith.interval.presets.resources.presets_timer
-import dev.justinsmith.interval.presets.resources.presets_timer_text
 import dev.justinsmith.interval.presets.resources.presets_title
 import dev.justinsmith.interval.presets.resources.presets_yours
-import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.ConfirmDialog
-import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
@@ -61,7 +56,6 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
-import dev.justinsmith.interval.ui.MiniTimeline
 import dev.justinsmith.interval.ui.NoticeAction
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
@@ -73,8 +67,6 @@ import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.interval.ui.rememberArrival
 import dev.justinsmith.interval.ui.risingEnter
-import dev.justinsmith.interval.ui.selectableCard
-import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.interval.ui.workoutDescription
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -131,10 +123,11 @@ fun PresetsRoute(
  * Every preset as a row of its group's card, shortest first, the user's own group over the built-ins'
  * (and left out while it is empty): a name over its shape, its total at the end. Tapping one opens its
  * [PresetSheet]: start it, put it on the Timer, and for the user's own, edit or delete it (after asking).
- * Settings that match no preset sit on top with Save, which opens the [PresetEditor] on them and keeps
- * whatever it saves on the Timer ([onSaveCurrent]); + in the title bar starts a new preset from them
- * instead, leaving the Timer alone ([onSave]). While those settings are unsaved, a preset's sheet says
- * that starting or loading it replaces them. A deleted preset is offered back for a moment ([onRestore]).
+ * The Timer row on top says what is on the Timer; settings that match no preset put "Save as preset" under
+ * it, which opens the [PresetEditor] on them and keeps whatever it saves on the Timer ([onSaveCurrent]); +
+ * in the title bar starts a new preset from them instead, leaving the Timer alone ([onSave]). While those
+ * settings are unsaved, a preset's sheet says that starting or loading it replaces them. A deleted preset
+ * is offered back for a moment ([onRestore]).
  */
 @Composable
 fun PresetsScreen(
@@ -215,8 +208,9 @@ fun PresetsScreen(
 }
 
 /**
- * The title bar with + ([onNew]), the unsaved settings with their Save ([onSaveCurrent]) when there
- * are any, then a card a group. As a [tab]'s page it takes the tab's title, header and gear.
+ * The title bar with + ([onNew]), the Timer card (with Save as preset, [onSaveCurrent], while the settings
+ * on it are no preset's), then a card a group. As a [tab]'s page it takes the tab's title, header and gear;
+ * pushed, it has no Timer card, since the Timer is what pushed it.
  */
 @Composable
 private fun PresetsList(
@@ -241,27 +235,11 @@ private fun PresetsList(
     ) {
         tab?.let {
             item(key = "timer", span = StaggeredGridItemSpan.FullLine) {
-                ListCard(Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4)) {
-                    LinkRow(
-                        stringResource(Res.string.presets_timer),
-                        stringResource(Res.string.presets_timer_text),
-                        onClick = it.onOpenTimer,
-                    )
-                }
-            }
-        }
-        // Keyed, so the card fades and the groups slide as the current shape stops or starts matching a preset.
-        if (state.canSaveCurrent) {
-            item(key = "current", span = StaggeredGridItemSpan.FullLine) {
-                CurrentCard(
-                    config = state.current,
-                    share = state.currentShare,
-                    calories = state.currentCalories,
-                    onSave = onSaveCurrent,
-                    modifier = Modifier
-                        .animateItem()
-                        .padding(horizontal = Spacing.space16)
-                        .padding(bottom = Spacing.space4),
+                TimerCard(
+                    state = state,
+                    onOpenTimer = it.onOpenTimer,
+                    onSaveCurrent = onSaveCurrent,
+                    modifier = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4),
                 )
             }
         }
@@ -370,69 +348,67 @@ private fun PresetRow(item: PresetRowItem, onClick: () -> Unit, modifier: Modifi
     }
 }
 
-/** The settings on the Timer when they match no preset: their total, shape and a button to save them. */
+/**
+ * The way to the Timer, saying what is on it: the preset's name when a preset is on it, else the shape. While
+ * the shape is no preset's, a second row offers to save it ([onSaveCurrent]), since settings nothing holds
+ * are a tap from being lost; the card grows and shrinks with it.
+ */
 @Composable
-private fun CurrentCard(
-    config: IntervalConfig,
-    share: Float,
-    calories: Int?,
-    onSave: () -> Unit,
+private fun TimerCard(
+    state: PresetsUiState,
+    onOpenTimer: () -> Unit,
+    onSaveCurrent: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val palette = IntervalTheme.palette
-    Column(
-        modifier
-            .fillMaxWidth()
-            .selectableCard(selected = false, announceSelection = false)
-            .padding(start = Spacing.space16, end = Spacing.space16, top = Spacing.space12, bottom = Spacing.space16),
-        verticalArrangement = Arrangement.spacedBy(Spacing.space8),
-    ) {
-        Text(
-            stringResource(Res.string.presets_current_unsaved),
-            style = IntervalTheme.type.caption,
-            color = palette.textDim,
-        )
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(formatClock(config.totalSeconds), style = IntervalTheme.type.stat, color = palette.text)
-                Text(
-                    shapeWithCalories(config, calories),
-                    style = IntervalTheme.type.meta,
-                    color = palette.textDim,
-                )
-            }
-            SaveButton(onSave)
+    ListCard(modifier.animateContentSize()) {
+        TimerRow(state, onOpenTimer)
+        if (state.canSaveCurrent) {
+            RowDivider()
+            LinkRow(
+                stringResource(Res.string.preset_save_title),
+                stringResource(Res.string.presets_save_current_hint),
+                onClick = onSaveCurrent,
+            )
         }
-        MiniTimeline(config, Modifier.fillMaxWidth(share))
     }
 }
 
-/** "20s on · 10s off · ×8", then "≈ 32 kcal" once a body weight gives an estimate. */
+/**
+ * "Timer" over what is on it: the preset's name when a preset is (its shape is on its own row below), else the
+ * shape, which can run to two lines with a warm-up or sets; its total at the end, then a chevron.
+ */
 @Composable
-private fun shapeWithCalories(config: IntervalConfig, calories: Int?): String {
-    val shape = workoutDescription(config)
-    if (calories == null) return shape
-    val estimate = stringResource(Res.string.common_calories_estimate, calories)
-    return stringResource(Res.string.common_joined, shape, estimate)
-}
-
-/** The accent pill that takes the current settings to the editor. */
-@Composable
-private fun SaveButton(onClick: () -> Unit) {
+private fun TimerRow(state: PresetsUiState, onOpen: () -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
-    Box(
-        Modifier
-            .heightIn(min = Sizes.pillHeight)
-            .widthIn(min = Sizes.pillWidth)
-            .surfaceButton(interaction, Corners.radius12, palette.accent, onClick)
-            .padding(horizontal = Spacing.space20),
-        contentAlignment = Alignment.Center,
+    val onTimer = state.rows.firstOrNull { it.selected }?.preset?.name
+    Row(
+        modifier
+            .fillMaxWidth()
+            .heightIn(min = Sizes.listRow)
+            .clickable(interaction, LocalIndication.current, role = Role.Button, onClick = onOpen)
+            .pressScale(interaction)
+            .padding(start = Spacing.space16, end = Spacing.space12, top = Spacing.space8, bottom = Spacing.space8),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
-        Text(stringResource(Res.string.common_save), style = IntervalTheme.type.label, color = palette.onAccent)
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(Res.string.presets_timer), style = IntervalTheme.type.label, color = palette.text)
+            Text(
+                onTimer ?: workoutDescription(state.current),
+                style = IntervalTheme.type.meta,
+                color = palette.textDim,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Text(formatClock(state.current.totalSeconds), style = IntervalTheme.type.value, color = palette.text)
+        Icon(
+            IntervalIcons.Chevron,
+            contentDescription = null,
+            tint = palette.textDim,
+            modifier = Modifier.size(Sizes.icon),
+        )
     }
 }
 
@@ -443,7 +419,6 @@ private fun SaveButton(onClick: () -> Unit) {
 @Composable
 private fun PresetsScreenPreview() {
     val current = builtInPresets.first().config.copy(workSeconds = 25)
-    val longest = builtInPresets.maxOf { it.config.totalSeconds }.toFloat()
     fun row(preset: Preset, selected: Boolean = false) =
         PresetRowItem(preset, formatClock(preset.config.totalSeconds), selected)
     IntervalTheme {
@@ -455,8 +430,8 @@ private fun PresetsScreenPreview() {
                 builtIn = builtInPresets.sortedBy { it.config.totalSeconds }.map { row(it) },
                 canSaveCurrent = true,
                 current = current,
-                currentShare = current.totalSeconds / longest,
             ),
+            tab = PresetsTab("Train", onOpenSettings = {}, onOpenTimer = {}) {},
             onStart = {},
             onPutOnTimer = {},
             onSave = {},

@@ -19,6 +19,6 @@
     <action>Tap "Skip" and verify that the screen shows "Cool-down"</action>
     <action>Tap "End", then "End workout" in the dialog</action>
     <action>Verify that the summary says "Saved to your log" and shows 8/8 rounds</action>
-    <action>Tap "Done", open "All presets" and verify that the unsaved card reads "1m warm-up · 30s on · 15s off · ×8 · 2m cool-down · ≈ 59 kcal"</action>
+    <action>Tap "Done", open "All presets" and verify that the Timer row reads "1m warm-up · 30s on · 15s off · ×8 · 2m cool-down" with a "Save as preset" row under it</action>
   </actions>
 </journey>

@@ -527,20 +527,22 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         see("Built-in")
     }
 
-    fun seeUnsavedTimerCard(reading: String) {
-        see("On the Timer · not saved")
+    /** The Timer row reads [reading], settings no preset has, and the row under it offers to save them. */
+    fun seeTimerUnsaved(reading: String) {
+        see("Save as preset")
         see(hasText(reading, substring = true))
     }
 
-    fun seeNoUnsavedTimerCard() = seeNo("On the Timer · not saved")
+    /** What is on the Timer is a preset, so nothing offers to save it. */
+    fun seeTimerSaved() = seeNo("Save as preset")
 
     /** With no preset of the user's own there is no "Yours" group, only the built-ins. */
     fun seeNoPresetsOfYours() = seeNo("Yours")
 
-    /** Opens Save as preset from the unsaved card at the top of Presets. */
+    /** Opens the editor from the Timer card's "Save as preset" row on Conditioning. */
     fun startSavingTimerSettings() {
-        tap("Save")
-        see("Save as preset")
+        tap("Save as preset")
+        see(hasText("Save as preset") and hasAnyAncestor(isDialog()))
     }
 
     fun namePreset(name: String) = ui.onNode(hasSetTextAction()).performTextReplacement(name)

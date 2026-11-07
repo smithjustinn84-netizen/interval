@@ -227,10 +227,10 @@ class AppNavigationTest {
         tab("Train").performClick()
         onNode(hasText("Conditioning") and isSelectable()).performClick()
         onNodeWithContentDescription("New preset").performClick()
-        // The unsaved card's own Save pill stays in the tree under the editor, drawn first.
         onAllNodesWithText("Save").onLast().performScrollTo().performClick()
-        onNodeWithText("30/15 ×8").assertExists()
-        onNode(hasText("Timer") and hasClickAction()).performClick()
+        // The new preset has the Timer's shape, so it is the one on the Timer, which the Timer row names too.
+        onNode(hasText("30/15 ×8") and hasText("On the Timer")).assertExists()
+        onNode(hasText("Timer") and hasText("30/15 ×8") and hasClickAction()).performClick()
         onNodeWithText("30/15 ×8 · Total").assertExists()
     }
 
@@ -455,13 +455,13 @@ class AppNavigationTest {
         onNodeWithContentDescription("New preset").performClick()
         onAllNodesWithText("Save").onLast().performScrollTo().performClick()
         onNodeWithText("Saved as 30/15 ×8").assertExists()
-        onNodeWithText("30/15 ×8").performClick()
+        onNode(hasText("30/15 ×8") and hasText("On the Timer")).performClick()
         onNodeWithText("Delete").performClick()
         onAllNodesWithText("Delete").onLast().performClick()
         onNodeWithText("Deleted 30/15 ×8").assertExists()
         onNodeWithText("Yours").assertDoesNotExist()
         onNodeWithText("Undo").performClick()
-        onNodeWithText("30/15 ×8").assertExists()
+        onNode(hasText("30/15 ×8") and hasText("On the Timer")).assertExists()
     }
 
     @Test
