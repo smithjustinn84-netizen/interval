@@ -38,6 +38,8 @@ data class WorkoutProgress(
     val effort: PerceivedEffort? = null,
     /** The summary's note as typed so far, kept as it stands. */
     val note: String = "",
+    /** About how many snatches a set, as counted on the summary so far; null until counted. */
+    val snatches: SnatchCount? = null,
 )
 
 /**

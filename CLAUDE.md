@@ -109,7 +109,8 @@ interval/            the interval timer
   interval-domain    packages `.timer` and `.model`: `IntervalConfig` (its `blocks` of rounds,
                      `Block`), `Preset`, `Course` (every interval a config runs through, by block, set and
                      round, which `WorkoutEngine` walks), calories, the
-                     describe parser, `AppSettings`, `HistoryEntry`, `PlannedWorkout`, `LiftWorkout`,
+                     describe parser, `AppSettings`, `HistoryEntry` (its `SnatchCount`, 15:15's snatches as
+                     counted, and `workEnds`), `PlannedWorkout`, `LiftWorkout`,
                      `WorkoutProgress`, `Sport` (a class or a day on the wall, trained away from the app: planned as
                      `PlanWorkout.SportDay`, logged as a `LoggedSport`), `Flow` (a mobility session followed along,
                      `Flow.kt`, and the five shipped, `BuiltInFlows.kt`); over `core-time` alone, neither `core` nor
@@ -127,8 +128,9 @@ interval/            the interval timer
                      `platformModule` with its storage, player, `WorkoutService` and `PlanReminderReceiver`
                      (android). Over `core-platform`, not `core`; only `app` depends on it
   interval-ui        the workout's shared words and widgets (`ConfigText`, `FieldRow`, `ValueSheet`, `Timeline`,
-                     `WeekdayForm`, `WeekdayPicker`, `ActivitySheet`, `StartButton`, `DescribeHint`), `PhaseColorsOf`, the intro
-                     (splash/: `WithIntro`, `IntervalMark`)
+                     `WeekdayForm`, `WeekdayPicker`, `ActivitySheet`, `StartButton`, `DescribeHint`, `SnatchQuestion`:
+                     "About how many snatches a set?", the summary's and the Log page's, over `lift-domain`'s bell
+                     sizes), `PhaseColorsOf`, the intro (splash/: `WithIntro`, `IntervalMark`)
   interval-testing   `FakeStorage` and the fake DAOs, `RecordingCuePlayer`, `RecordingBackgroundWorkout`,
                      `RecordingPlanReminders`, `fakePlatformModule`/`fakeStorageModule`, the presets tests lean on
   interval-timer     the Timer, a page pushed over Train's Conditioning pillar, and its describe sheet (package
@@ -166,8 +168,10 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      logged, nothing stored. No dependencies
   lift-api           the ports between the sides, package `dev.justinsmith.lift.data`: `IntervalActivity` (what
                      Lift reads of the interval side, the days a sport was logged on among it, each a `SportDay`
-                     saying whether it was grappling, and the body weight; `app` binds it),
-                     `LiftActivity` (what the interval side reads of Lift; `SessionRepository` is it). Over
+                     saying whether it was grappling, each workout's snatches as counted (`IntervalSnatches`, read as
+                     sets by `snatchSets`), and the body weight; `app` binds it),
+                     `LiftActivity` (what the interval side reads of Lift, the bells owned among it;
+                     `SessionRepository` is it). Over
                      `lift-domain` alone
   lift-data          `LiftRepository`, the root of a repository per store (`SessionRepository`, `SetRepository`,
                      `ProgramRepository`, `ExerciseRepository`, `GearRepository`, over one `SerialWriter`; the
@@ -303,7 +307,12 @@ toolchain (`$compose.*`).
   `LiftWorkout`, `LoggedWorkout`, `LoggedSport`); Room entities and DataStore keys stay in `data/`, behind its mappers.
   `HistoryStore` keeps the sport days logged beside the workouts (`logSport`, one of a sport a day, on the day itself
   rather than a moment): each counts as a workout in the week wherever one is counted (`TrainingLog`, the summaries'
-  `weekStanding`, the widget's `WeekStandingSource`, Lift through `IntervalActivity.sportDays`). A sport day is
+  `weekStanding`, the widget's `WeekStandingSource`, Lift through `IntervalActivity.sportDays`). A workout of
+  kettlebell intervals that switches hands (`asksSnatches`: 15:15 MVO2, or one of the user's with the switch on) is
+  asked on its summary, or later on its page in the Log, about how many snatches a set and the bell
+  (`HistoryStore.countSnatches`, `SnatchCount`); Lift reads each counted one as a set of snatches a work interval
+  done (`intervalSets`, `lift-domain`) beside its own sets wherever they are counted (the snatch test, reps in all,
+  pace, grip), never storing them, so nothing is counted twice. A sport day is
   planned from `AddToPlanSheet`'s Sport side (`plan/PlanChoices.kt`) and worded by `plan/SportWords.kt`; the week
   strip names it under its day (`DayCell.sport`). It is logged from Today (`HomeViewModel.logSport`) or from its
   day in History, each with Undo. `todayAgenda` (`history/TodayAgenda.kt`) is how Today and History lead with what

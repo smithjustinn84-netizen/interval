@@ -13,9 +13,11 @@ import dev.justinsmith.interval.fakes.RecordingCuePlayer
 import dev.justinsmith.interval.fakes.RecordingHealthStore
 import dev.justinsmith.interval.fakes.deferredStorageScope
 import dev.justinsmith.interval.model.PerceivedEffort
+import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.HeartRate
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.lift.fakes.FakeLiftStorage
@@ -89,7 +91,8 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
         repository: IntervalRepository = this.repository,
         id: Long = WORKOUT_ID,
         flow: String? = null,
-    ) = WorkoutViewModel(id, flow, session, repository.presets, repository.flows).also { viewModels += it }
+    ) = WorkoutViewModel(id, flow, session, repository.presets, repository.flows, repository.history, lifts.sessions)
+        .also { viewModels += it }
 
     /**
      * Where a ticker ticks: on the test's scheduler, under its background scope, so a workout still running as the
@@ -174,6 +177,66 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
         val entry = repository.history.history.value.single()
         assertEquals(PerceivedEffort.Hard, entry.effort)
         assertEquals("Felt strong", entry.note)
+    }
+
+    /** The Timer set to a short workout of kettlebell snatches, a hand a work, saved as a preset of the user's. */
+    private fun snatchWorkout() {
+        val config =
+            IntervalConfig(
+                prepSeconds = 0,
+                workSeconds = 5,
+                restSeconds = 5,
+                rounds = 2,
+                activity = Activity.Kettlebell,
+            )
+        repository.presets.savePreset(Preset("Snatches", config, alternateHands = true))
+        repository.settings.updateConfig { config }
+    }
+
+    @Test
+    fun `only a workout of kettlebell snatches asks how many a set`() = runTest(dispatcher) {
+        val viewModel = workoutViewModel(workoutSession())
+        run(15_000)
+        assertTrue(viewModel.state.value.isDone)
+        assertNull(viewModel.state.value.snatches)
+    }
+
+    @Test
+    fun `the snatches counted on the summary are kept in History and opened on next time`() = runTest(dispatcher) {
+        snatchWorkout()
+        runCurrent()
+        val first = workoutViewModel(workoutSession())
+        // Not asked while it runs.
+        assertNull(first.state.value.snatches)
+        run(15_000)
+
+        val asked = assertNotNull(first.state.value.snatches)
+        assertNull(asked.count)
+        assertEquals(SnatchCount(SnatchCount.USUAL_PER_SET, SnatchCount.USUAL_BELL_KG), asked.opensOn)
+        assertNull(repository.history.history.value.single().snatches)
+
+        first.countSnatches(SnatchCount(9, 20.0))
+        runCurrent()
+        assertEquals(SnatchCount(9, 20.0), first.state.value.snatches?.count)
+        assertEquals(SnatchCount(9, 20.0), repository.history.history.value.single().snatches)
+        first.countSnatches(null)
+        runCurrent()
+        assertNull(repository.history.history.value.single().snatches)
+        first.countSnatches(SnatchCount(9, 20.0))
+        runCurrent()
+        tickers.forEach(WorkoutTicker::close)
+
+        // The process dies on the summary: the count comes back with it.
+        val restored = workoutViewModel(workoutSession())
+        runCurrent()
+        assertEquals(SnatchCount(9, 20.0), restored.state.value.snatches?.count)
+
+        // The next one opens on it, counting nothing until said.
+        restored.restart()
+        run(15_000)
+        val next = assertNotNull(restored.state.value.snatches)
+        assertNull(next.count)
+        assertEquals(SnatchCount(9, 20.0), next.opensOn)
     }
 
     @Test

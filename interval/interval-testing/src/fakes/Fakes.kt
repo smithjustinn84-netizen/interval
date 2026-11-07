@@ -100,6 +100,27 @@ class FakeHistoryDao : HistoryDao {
     override suspend fun keepHeartRateOf(id: Long, average: Int, peak: Int, now: Long) =
         keepHeartRateWhere(average, peak, now) { it.id == id }
 
+    override suspend fun countSnatches(uid: String, perSet: Int?, bellKg: Double?, now: Long) =
+        countSnatchesWhere(perSet, bellKg, now) { it.uid == uid }
+
+    override suspend fun countSnatchesOf(id: Long, perSet: Int?, bellKg: Double?, now: Long) =
+        countSnatchesWhere(perSet, bellKg, now) { it.id == id }
+
+    private fun countSnatchesWhere(perSet: Int?, bellKg: Double?, now: Long, which: (HistoryEntity) -> Boolean) {
+        rows.update { all ->
+            all.map {
+                if (which(
+                        it,
+                    )
+                ) {
+                    it.copy(snatchesPerSet = perSet, snatchBellKg = bellKg, updatedAtEpochMillis = now)
+                } else {
+                    it
+                }
+            }
+        }
+    }
+
     private fun keepHeartRateWhere(average: Int, peak: Int, now: Long, which: (HistoryEntity) -> Boolean) {
         rows.update { all ->
             all.map {

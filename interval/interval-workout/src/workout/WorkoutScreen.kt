@@ -125,7 +125,12 @@ fun WorkoutRoute(id: Long, onExit: () -> Unit, modifier: Modifier = Modifier, fl
         onExit = onExit,
         modifier = modifier,
         onShare = sharer::shareText,
-        reflection = SummaryReflection(viewModel::setEffort, viewModel::setNote, viewModel::describeForHealth),
+        reflection = SummaryReflection(
+            viewModel::setEffort,
+            viewModel::setNote,
+            viewModel::describeForHealth,
+            viewModel::countSnatches,
+        ),
     )
 }
 

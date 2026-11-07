@@ -8,10 +8,12 @@ import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.days
 import dev.justinsmith.lift.data.GearStore
 import dev.justinsmith.lift.data.IntervalActivity
+import dev.justinsmith.lift.data.IntervalWorkout
 import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.data.SetStore
 import dev.justinsmith.lift.data.SportDay
+import dev.justinsmith.lift.data.snatchSets
 import dev.justinsmith.lift.domain.BALANCE_DAYS
 import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.Challenge
@@ -36,6 +38,7 @@ import dev.justinsmith.lift.domain.family
 import dev.justinsmith.lift.domain.gripLoad
 import dev.justinsmith.lift.domain.kettlebellLifts
 import dev.justinsmith.lift.domain.readiness
+import dev.justinsmith.lift.domain.sets
 import dev.justinsmith.lift.domain.setsOldestFirst
 import dev.justinsmith.lift.domain.startingLoadKg
 import dev.justinsmith.lift.domain.suggestedBar
@@ -116,9 +119,9 @@ class TodayViewModel(
             sessionStore.sessions,
             sessionStore.active,
             gearStore.bar,
-            intervals.sportDays,
+            combine(intervals.sportDays, intervals.workouts, ::Pair),
             clock.days(timestamps, dayCheckMillis),
-        ) { sessions, active, bar, sportDays, _ -> build(sessions, active, bar, sportDays) }
+        ) { sessions, active, bar, (sportDays, workouts), _ -> build(sessions, active, bar, sportDays, workouts) }
             .combine(
                 combine(
                     programStore.following,
@@ -130,8 +133,15 @@ class TodayViewModel(
                 },
             ) { state, with -> with(state) }
             .combine(
-                combine(sessionStore.sessions, programStore.followed, intervals.bodyWeightKg, ::Triple),
-            ) { state, (sessions, followed, weight) -> state.withChallenges(sessions, followed, weight) }
+                combine(sessionStore.sessions, programStore.followed, intervals.bodyWeightKg, intervals.workouts) {
+                        sessions,
+                        followed,
+                        weight,
+                        workouts,
+                    ->
+                    { state: TodayUiState -> state.withChallenges(sessions, followed, weight, workouts) }
+                },
+            ) { state, with -> with(state) }
             .flowOn(computation)
             .stateIn(
                 viewModelScope,
@@ -141,6 +151,7 @@ class TodayViewModel(
                     sessionStore.active.value,
                     gearStore.bar.value,
                     intervals.sportDays.value,
+                    intervals.workouts.value,
                 ).withProgram(
                     programStore.following.value,
                     programStore.programDay.value,
@@ -150,11 +161,20 @@ class TodayViewModel(
                     sessionStore.sessions.value,
                     programStore.followed.value,
                     intervals.bodyWeightKg.value,
+                    intervals.workouts.value,
                 ),
             )
 
-    /** [state] with the challenges under way over [sessions], the program [followed], and the body [weight]. */
-    private fun TodayUiState.withChallenges(sessions: List<LiftSession>, followed: Followed?, weight: Double?) = copy(
+    /**
+     * [state] with the challenges under way over [sessions] and the interval [workouts]' snatches, the program
+     * [followed], and the body [weight].
+     */
+    private fun TodayUiState.withChallenges(
+        sessions: List<LiftSession>,
+        followed: Followed?,
+        weight: Double?,
+        workouts: List<IntervalWorkout>,
+    ) = copy(
         challenges = challenges(
             sessions,
             clock.nowMillis(),
@@ -162,6 +182,7 @@ class TodayViewModel(
             followed?.startedAtEpochMillis,
             weight,
             builtInPrograms + programStore.customPrograms.value,
+            intervals = workouts.snatchSets,
         ),
     )
 
@@ -181,13 +202,16 @@ class TodayViewModel(
         active: LiftSession?,
         bar: Double?,
         sportDays: List<SportDay>,
+        workouts: List<IntervalWorkout>,
     ): TodayUiState {
         val now = clock.nowMillis()
         val today = timestamps.dayNumber(now)
         val balanceFrom = today - BALANCE_DAYS + 1
         val last = sessions.firstOrNull()
         val grappling = sportDays.filter { it.grappling }.map { it.epochDay }
-        val grip = gripLoad(sessions.flatMap { it.sets }, grappling, today, timestamps::dayNumber)
+        // 15:15's snatches load the grip as Lift's own sets do.
+        val lifted = sessions.flatMap { it.sets } + workouts.snatchSets.sets
+        val grip = gripLoad(lifted, grappling, today, timestamps::dayNumber)
         return TodayUiState(
             grip = grip.takeIf { it.chronic > 0 },
             readiness = readiness(sessions, grappling, grip, now, timestamps::dayNumber),

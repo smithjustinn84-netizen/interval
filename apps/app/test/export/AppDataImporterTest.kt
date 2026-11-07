@@ -12,6 +12,7 @@ import dev.justinsmith.interval.fixtures.SCHEMA_12_EXPORT
 import dev.justinsmith.interval.fixtures.SCHEMA_1_EXPORT
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.HeartRate
@@ -84,6 +85,7 @@ class AppDataImporterTest {
         Block(BuiltInExercise.PushUp, rounds = 3, reps = 10, rest = 60, origin = Block(BuiltInExercise.PushUp, 3, 8))
 
     /** A phone with something of every kind on it. */
+    @Suppress("detekt.LongMethod") // One of every kind, each a line or two.
     private suspend fun stocked(): Phone = Phone(now).apply {
         // Called a hand at a time, which comes across with it.
         intervals.presets.savePreset(
@@ -115,6 +117,7 @@ class AppDataImporterTest {
         val workout = intervals.history.recordWorkout(bookended, elapsedSeconds = 200, workSeconds = 120)
         intervals.history.reflectOnWorkout(workout, PerceivedEffort.Hard, "Felt strong")
         intervals.history.keepHeartRate(workout, HeartRate(averageBpm = 141, peakBpm = 172))
+        intervals.history.countSnatches(workout, SnatchCount(perSet = 8, bellKg = 16.0))
         intervals.plans.planWeekly(
             PlanWorkout.Interval(
                 "Hills",
@@ -334,6 +337,18 @@ class AppDataImporterTest {
         val source = stocked()
         val file = source.file().content
         val content = file.replace("\"peakBpm\": 172", "\"peakBpm\": 900")
+        assertTrue(content != file)
+        assertEquals(
+            ImportReview.Unreadable,
+            Phone(now).importer.review(ShareableFile("x.json", "application/json", content)),
+        )
+    }
+
+    @Test
+    fun `a snatch count without its bell makes the file unreadable`() = runTest {
+        val source = stocked()
+        val file = source.file().content
+        val content = file.replace(Regex(",\\s*\"snatchBellKg\": 16.0"), "")
         assertTrue(content != file)
         assertEquals(
             ImportReview.Unreadable,

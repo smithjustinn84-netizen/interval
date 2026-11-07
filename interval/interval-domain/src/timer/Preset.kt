@@ -34,6 +34,13 @@ fun List<Preset>.matching(config: IntervalConfig): Preset? {
 fun List<Preset>.alternateHands(config: IntervalConfig): Boolean = matching(config)?.alternateHands == true
 
 /**
+ * Whether a finished workout of [config] is asked about how many snatches a set it held: kettlebell intervals that
+ * switch hands, 15:15 MVO2 or one of the user's own with the switch on, which Lift counts as snatches.
+ */
+fun List<Preset>.asksSnatches(config: IntervalConfig): Boolean =
+    config.activity == Activity.Kettlebell && alternateHands(config)
+
+/**
  * The name a preset gets when the user gives it none: its shape, "40/20 ×6", with a whole number of
  * minutes as "1m", a ladder's first and last work, "20→60/10 ×5" ("1m→3m" when both are whole minutes), and
  * its sets when it has more than one, "20/10 ×8, 4 sets"; a sequence its blocks one after another,

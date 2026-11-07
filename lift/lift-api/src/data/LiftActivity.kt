@@ -27,6 +27,9 @@ interface LiftActivity {
     /** How long a rest between sets lasts, in seconds: what a day's length is estimated with. */
     val restSeconds: StateFlow<Int>
 
+    /** The bells owned, in kilograms, lightest first: what 15:15's snatches are counted at. */
+    val bells: StateFlow<List<Double>>
+
     /** Starts a session, a day of [program] or a free one, unless one is in progress already. */
     fun startSession(program: ProgramKey?)
 }

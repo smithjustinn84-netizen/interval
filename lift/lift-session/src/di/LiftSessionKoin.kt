@@ -45,7 +45,9 @@ val liftSessionModule: Module = module {
     factory { FinishSession(get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { EasierDay(get(), get(), get(), get(), get(), get(), get()) }
     viewModel {
-        SessionViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
+        SessionViewModel(
+            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
+        )
     }
     viewModelOf(::ProgramsViewModel)
     viewModel { (uid: String?, copy: ProgramCopy?) ->

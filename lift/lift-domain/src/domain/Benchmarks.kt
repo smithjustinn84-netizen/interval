@@ -46,8 +46,12 @@ fun mostInWindow(exercise: Exercise, sessions: List<LiftSession>, minutes: Int):
     sessions.mapNotNull { mostInWindow(exercise, it, minutes) }.maxOrNull()
 
 /** The most reps of [exercise] in any [minutes] of [session], as [mostInWindow] counts them; null with none. */
-private fun mostInWindow(exercise: Exercise, session: LiftSession, minutes: Int): Int? {
-    val sets = session.sets.filter { it.exercise.key == exercise.key && it.seconds == null && it.reps > 0 }
+private fun mostInWindow(exercise: Exercise, session: LiftSession, minutes: Int): Int? =
+    mostInWindowOf(exercise, session.sets, minutes)
+
+/** The most reps of [exercise] in any [minutes] of [sets], one session's or one interval workout's; null with none. */
+private fun mostInWindowOf(exercise: Exercise, logged: List<SetLog>, minutes: Int): Int? {
+    val sets = logged.filter { it.exercise.key == exercise.key && it.seconds == null && it.reps > 0 }
         .sortedBy { it.loggedAtEpochMillis }
     if (sets.isEmpty() || !loggedAsDone(sets)) return null
     val window = minutes * MILLIS_PER_MINUTE
@@ -76,8 +80,11 @@ sealed interface Challenge {
         val done: Boolean get() = swings >= TEN_THOUSAND
     }
 
-    /** The most snatches in any five minutes of a session, toward [SNATCH_TEST_REPS]. */
-    data class SnatchTest(val best: Int) : Challenge {
+    /**
+     * The most snatches in any five minutes of a session, or of an interval workout's snatches ([fromIntervals],
+     * done on the preset [preset], null for one no preset has now), toward [SNATCH_TEST_REPS].
+     */
+    data class SnatchTest(val best: Int, val fromIntervals: Boolean = false, val preset: String? = null) : Challenge {
         val done: Boolean get() = best >= SNATCH_TEST_REPS
     }
 
@@ -94,10 +101,33 @@ sealed interface Challenge {
 }
 
 /**
+ * The snatch test's best over [sessions] and the snatches of the interval workouts, [intervals]: the most in any
+ * [SNATCH_TEST_MINUTES] of either, a session's when they tie; null with none counted.
+ */
+fun snatchTest(sessions: List<LiftSession>, intervals: List<IntervalSetGroup>): Challenge.SnatchTest? {
+    val lifted = mostInWindow(BuiltInExercise.Snatch, sessions, SNATCH_TEST_MINUTES)
+    val intervalBest = intervals
+        .mapNotNull { group ->
+            mostInWindowOf(BuiltInExercise.Snatch, group.sets, SNATCH_TEST_MINUTES)?.let {
+                group to
+                    it
+            }
+        }
+        .maxByOrNull { it.second }
+    return when {
+        intervalBest != null && intervalBest.second > (lifted ?: 0) ->
+            Challenge.SnatchTest(intervalBest.second, fromIntervals = true, preset = intervalBest.first.source)
+
+        else -> lifted?.let { Challenge.SnatchTest(it) }
+    }
+}
+
+/**
  * The challenges under way over [sessions] by [nowMillis]: 10,000 Swings with [SWING_CHALLENGE_FROM] swings in its
  * window (or while its program, [following], is followed, from [followedSince]), the snatch test and the ABC once
- * either has been done as it was logged (the ABC's by the protocol of its best, its day found among [programs]), and
- * the bodyweight get-up once there is a get-up and a [bodyWeightKg].
+ * either has been done as it was logged (the ABC's by the protocol of its best, its day found among [programs]; the
+ * snatch test's from the [intervals]' snatches too), and the bodyweight get-up once there is a get-up and a
+ * [bodyWeightKg].
  */
 @Suppress("detekt.LongParameterList") // What the challenges are counted from.
 fun challenges(
@@ -107,6 +137,7 @@ fun challenges(
     followedSince: Long?,
     bodyWeightKg: Double?,
     programs: List<Program> = builtInPrograms,
+    intervals: List<IntervalSetGroup> = emptyList(),
 ): List<Challenge> {
     val ofProgram = following == ProgramKey.BuiltIn(ProgramId.TenThousandSwings) && followedSince != null
     val since = if (ofProgram) followedSince else nowMillis - SWING_CHALLENGE_DAYS * MILLIS_PER_DAY
@@ -115,7 +146,7 @@ fun challenges(
     val getUps = sets.filter { it.exercise == BuiltInExercise.GetUp }
     return listOfNotNull(
         Challenge.TenThousandSwings(swung, ofProgram).takeIf { swung >= SWING_CHALLENGE_FROM || ofProgram },
-        mostInWindow(BuiltInExercise.Snatch, sessions, SNATCH_TEST_MINUTES)?.let(Challenge::SnatchTest),
+        snatchTest(sessions, intervals),
         armorBuildingBest(sessions, programs),
         bodyWeightKg?.takeIf { it > 0 }?.let { weight ->
             getUps.maxOfOrNull { it.load.kg }?.takeIf { it > 0 }?.let { Challenge.BodyweightGetUp(it, it / weight) }

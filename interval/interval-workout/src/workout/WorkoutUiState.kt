@@ -16,6 +16,7 @@ import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.stepAfter
 import dev.justinsmith.interval.timer.stepAt
+import dev.justinsmith.interval.ui.SnatchAsk
 
 /** What the line under the clock says comes next. */
 sealed interface NextUp {
@@ -104,6 +105,8 @@ data class WorkoutUiState(
     val note: String = "",
     /** Its heart rate as a watch recorded it, for the summary; null without one. */
     val heartRate: HeartRate? = null,
+    /** "About how many snatches a set?" on the summary, for a workout of kettlebell snatches; null for any other. */
+    val snatches: SnatchAsk? = null,
     /** 1-based, the set [round] is in. */
     val set: Int = 1,
     /** 0-based, the block of the config that [set] is in. */

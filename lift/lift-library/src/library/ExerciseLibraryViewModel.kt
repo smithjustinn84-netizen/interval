@@ -8,9 +8,12 @@ import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.lift.data.ExerciseFilterStore
 import dev.justinsmith.lift.data.ExerciseStore
 import dev.justinsmith.lift.data.GearStore
+import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.data.SessionStore
+import dev.justinsmith.lift.data.snatchSets
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.ExerciseFilters
+import dev.justinsmith.lift.domain.IntervalSetGroup
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.bestPaceOf
 import dev.justinsmith.lift.domain.exerciseHistory
@@ -19,6 +22,7 @@ import dev.justinsmith.lift.domain.lifetimeReps
 import dev.justinsmith.lift.domain.offeredExercises
 import dev.justinsmith.lift.domain.ownedEquipment
 import dev.justinsmith.lift.domain.recentExercises
+import dev.justinsmith.lift.domain.sets
 import dev.justinsmith.lift.domain.setsOldestFirst
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -40,6 +44,7 @@ class ExerciseLibraryViewModel(
     sessionStore: SessionStore,
     exerciseStore: ExerciseStore,
     gearStore: GearStore,
+    intervals: IntervalActivity,
     private val filters: ExerciseFilterStore,
     private val timestamps: TimestampFormatter,
     private val savedState: SavedStateHandle = SavedStateHandle(),
@@ -59,8 +64,13 @@ class ExerciseLibraryViewModel(
     }
 
     // The exercise open, by its key; null while none is, or once it is gone.
-    private val detail = combine(opened, sessionStore.sessions, exerciseStore.customExercises) { key, sessions, made ->
-        key?.let { Exercise.parse(it, made) }?.let { exerciseDetail(it, sessions, timestamps) }
+    private val detail = combine(
+        opened,
+        sessionStore.sessions,
+        exerciseStore.customExercises,
+        intervals.workouts,
+    ) { key, sessions, made, workouts ->
+        key?.let { Exercise.parse(it, made) }?.let { exerciseDetail(it, sessions, timestamps, workouts.snatchSets) }
     }
 
     val state: StateFlow<ExerciseLibraryUiState> = combine(list, detail, ::ExerciseLibraryUiState)
@@ -80,11 +90,15 @@ class ExerciseLibraryViewModel(
     }
 }
 
-/** [exercise]'s page: the user's history with it in [sessions], each day as [timestamps] words it. */
+/**
+ * [exercise]'s page: the user's history with it in [sessions], each day as [timestamps] words it, its pace and reps in
+ * all counting the interval workouts' snatches, [intervals], too.
+ */
 fun exerciseDetail(
     exercise: Exercise,
     sessions: List<LiftSession>,
     timestamps: TimestampFormatter,
+    intervals: List<IntervalSetGroup> = emptyList(),
 ): ExerciseDetailUiState {
     val history = exerciseHistory(exercise, sessions)
     return ExerciseDetailUiState(
@@ -93,7 +107,7 @@ fun exerciseDetail(
         lastDone = history.lastDoneAtEpochMillis?.let(timestamps::date).orEmpty(),
         recent = history.recent.map { DatedSession(it, timestamps.date(it.startedAtEpochMillis)) },
         trend = exerciseTrend(exercise, history.recent),
-        bestPace = bestPaceOf(exercise, sessions),
-        lifetime = lifetimeReps(exercise, sessions.flatMap { it.sets }),
+        bestPace = bestPaceOf(exercise, sessions, intervals),
+        lifetime = lifetimeReps(exercise, sessions.flatMap { it.sets } + intervals.sets),
     )
 }

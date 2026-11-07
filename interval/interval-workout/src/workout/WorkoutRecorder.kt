@@ -53,6 +53,12 @@ class WorkoutRecorder(
         historyStore.reflectOnWorkout(uid, run.effort, run.note)
     }
 
+    /** Keeps the snatches the summary of [run] counts, in History at once. Nothing before the workout is recorded. */
+    fun countSnatches(run: WorkoutRun) {
+        val uid = run.entryUid ?: return
+        historyStore.countSnatches(uid, run.snatches)
+    }
+
     /**
      * The heart rate over the finished [run], read from the health store and kept in History with it; null when there
      * is none to read yet. Read from the screen: the store answers only an app on show.

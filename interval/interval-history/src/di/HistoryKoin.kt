@@ -26,5 +26,7 @@ val historyModule: Module = module {
     viewModel { HistoryViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { PlanViewModel(get(), get(), get(), get(), get(), get(), get()) }
-    viewModel { (id: Long) -> WorkoutDetailViewModel(id, get(), get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { (id: Long) ->
+        WorkoutDetailViewModel(id, get(), get(), get(), get(), get(), get(), get(), get(), get())
+    }
 }

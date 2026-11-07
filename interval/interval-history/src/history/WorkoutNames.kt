@@ -3,6 +3,7 @@ package dev.justinsmith.interval.history
 import dev.justinsmith.interval.timer.Flow
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.timer.asksSnatches
 import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.nameOf
 
@@ -13,6 +14,9 @@ import dev.justinsmith.interval.timer.nameOf
 internal class WorkoutNames(private val presets: List<Preset>, private val flows: List<Flow>) {
     /** The name [config] goes by, or null for one that is none of them. */
     fun of(config: IntervalConfig): String? = presets.nameOf(config, flows)
+
+    /** Whether a workout of [config] is one of kettlebell snatches, asked how many a set: [asksSnatches]. */
+    fun asksSnatches(config: IntervalConfig): Boolean = presets.asksSnatches(config)
 }
 
 /**

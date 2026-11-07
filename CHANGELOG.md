@@ -28,6 +28,15 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   lift and the shape it started at. Ladders step now too. The summary's Next time says why each step is the one it
   is ("Denser first: the same work in less rest", "Same bell, harder lift", "Back to where it started, at 20 kg"),
   and Top of the range shows only once every step at the bell is done.
+- 15:15's snatches count in Lift. At the end of 15:15 MVO2, or any kettlebell preset of yours that switches hands,
+  the summary asks "About how many snatches a set?", opening on the last count said, with the bell picked from those
+  you own (or the usual sizes). A step or a bell counts the workout, "Not counted" takes it back, and leaving it
+  alone counts nothing; a finished workout's page in the Log can count it later. Lift then reads it as a set of that
+  many snatches at that bell for every work interval done, a hand at a time, toward the snatch's reps in all and
+  their milestones, the snatch test (ten sets of eight in five minutes is 80, "Best: 80 in 5 minutes, from 15:15
+  MVO2"), its best pace, and the grip's load, and through it how ready you are. Nothing is copied into Lift's log, so
+  an edit or a second import never counts them twice. A lift's page shows its reps in all and pace with only 15:15's
+  snatches behind them. Exports carry the count (schema 11).
 - Start launches: pressed, it sends one ring of the accent out from its centre across the page as the workout
   rises, so the workout's ring reads as what the button sent up.
 

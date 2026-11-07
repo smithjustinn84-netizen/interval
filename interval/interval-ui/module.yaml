@@ -11,6 +11,8 @@ apply:
 
 dependencies:
   - //interval/interval-domain: exported
+  # Lift's bell sizes and its way of writing a weight, for the snatches counted under 15:15.
+  - //lift/lift-domain
 
 settings:
   compose:

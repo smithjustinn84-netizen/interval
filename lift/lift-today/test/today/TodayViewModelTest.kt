@@ -6,13 +6,16 @@ import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.lift.data.IntervalWorkout
 import dev.justinsmith.lift.data.LiftRepository
 import dev.justinsmith.lift.data.SessionEntity
 import dev.justinsmith.lift.data.SetEntity
 import dev.justinsmith.lift.data.SportDay
 import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.Challenge
 import dev.justinsmith.lift.domain.DEFAULT_BAR_KG
 import dev.justinsmith.lift.domain.GRAPPLING_GRIP_LOAD
+import dev.justinsmith.lift.domain.IntervalSnatches
 import dev.justinsmith.lift.domain.MuscleGroup
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
@@ -112,6 +115,22 @@ class TodayViewModelTest {
         intervals.sportDays.value = listOf(SportDay(0, grappling = true), SportDay(-1, grappling = false))
         assertEquals(GRAPPLING_GRIP_LOAD, today.state.value.grip?.acute)
         assertEquals(Readiness.Normal, today.state.value.readiness.readiness)
+    }
+
+    @Test
+    fun `15-15's counted snatches load the grip and set the snatch test's best`() {
+        val today = today(clock = { 1_200_000L }, main)
+        val ends = List(40) { 25_000L + it * 30_000L }
+
+        intervals.workouts.value = listOf(
+            IntervalWorkout("1", ends.last(), 1_195, IntervalSnatches(8, 16.0, ends, "15:15 MVO2")),
+        )
+
+        assertEquals(1_440.0, today.state.value.grip?.acute)
+        assertEquals(
+            Challenge.SnatchTest(80, fromIntervals = true, preset = "15:15 MVO2"),
+            today.state.value.challenges.filterIsInstance<Challenge.SnatchTest>().single(),
+        )
     }
 
     @Test

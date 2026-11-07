@@ -3,9 +3,16 @@ package dev.justinsmith.interval.workout
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.data.FlowStore
+import dev.justinsmith.interval.data.HistoryStore
 import dev.justinsmith.interval.data.PresetStore
+import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.PerceivedEffort
+import dev.justinsmith.interval.model.SnatchCount
+import dev.justinsmith.interval.timer.Flow
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.timer.asksSnatches
+import dev.justinsmith.interval.ui.SnatchAsk
+import dev.justinsmith.lift.data.LiftActivity
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -28,6 +35,8 @@ class WorkoutViewModel(
     private val session: WorkoutSession,
     private val presetStore: PresetStore,
     private val flowStore: FlowStore,
+    private val historyStore: HistoryStore,
+    private val lift: LiftActivity,
 ) : ViewModel() {
     init {
         session.open(id, flow)
@@ -39,12 +48,32 @@ class WorkoutViewModel(
         session.state.filterNotNull().filter { it.id == id },
         presetStore.presets,
         flowStore.flows,
-    ) { run, presets, flows -> run.toUiState(presets, flows) }
+        historyStore.history,
+        lift.bells,
+    ) { run, presets, flows, history, bells -> run.shown(presets, flows, history, bells) }
         .stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
-            checkNotNull(session.state.value).toUiState(presetStore.presets.value, flowStore.flows.value),
+            checkNotNull(session.state.value).shown(
+                presetStore.presets.value,
+                flowStore.flows.value,
+                historyStore.history.value,
+                lift.bells.value,
+            ),
         )
+
+    /** [WorkoutRun.toUiState], with the snatch question once it is over and the workout is one of snatches. */
+    private fun WorkoutRun.shown(
+        presets: List<Preset>,
+        flows: List<Flow>,
+        history: List<HistoryEntry>,
+        bells: List<Double>,
+    ): WorkoutUiState {
+        val shown = toUiState(presets, flows)
+        if (entryUid == null || !presets.asksSnatches(config)) return shown
+        // Its own entry, in History by now, holds this count or none, so the last one said stands either way.
+        return shown.copy(snatches = SnatchAsk.of(snatches, history, bells))
+    }
 
     fun togglePause() = session.togglePause()
 
@@ -76,6 +105,9 @@ class WorkoutViewModel(
 
     /** The summary's note as typed; kept in History with the workout at once, trimmed. */
     fun setNote(note: String) = session.reflect(session.state.value?.effort, note)
+
+    /** About how many snatches a set the finished workout held, from the summary; null takes the count away. */
+    fun countSnatches(count: SnatchCount?) = session.countSnatches(count)
 
     /**
      * Reads the finished workout's heart rate for the summary, as it comes into view: each time, until one is

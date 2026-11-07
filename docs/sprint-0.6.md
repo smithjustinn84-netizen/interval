@@ -165,6 +165,11 @@ Exercise in Health Connect. Check it before the next release. Ticket 4 of 0.5 mo
   - `StorageTest` reads a version-15 database at 16.
   - The import round-trips the count.
   - `journeys/lift-challenges.xml` gains the step.
+- As built: the type that crosses is `IntervalSnatches` (`lift-domain`, so `lift-api`'s `IntervalWorkout` carries
+  it), with each work interval's end (`HistoryEntry.workEnds`) and the preset's name. The snatch test names that
+  preset ("from 15:15 MVO2"). The Log page and the session's exercise sheet count them too, and a lift's page shows
+  its reps in all with only 15:15's snatches behind them. The question lives in `interval-ui` (`SnatchQuestion`),
+  which now depends on `lift-domain` for the bell sizes.
 
 **7. The bell waits** (added during the sprint) · M
 - Fixed bell sizes, in one ordered ladder ([kettlebell-coaching.md](kettlebell-coaching.md), section 4):

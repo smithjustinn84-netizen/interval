@@ -57,7 +57,7 @@ private val intervalFeatureModules =
 private val appModule = module {
     single<DataExporter> { AppDataExporter(get(), get(), get(), get(), get()) }
     single<DataImporter> { AppDataImporter(get(), get()) }
-    single<IntervalActivity> { RepositoryIntervalActivity(get(), get(), get(StorageScope)) }
+    single<IntervalActivity> { RepositoryIntervalActivity(get(), get(), get(), get(StorageScope)) }
     single { WeekStandingSource(get(), get(), get(), get(), get(StorageScope)) }
     viewModel { WeekSetupViewModel(get(), get(), get(), get(), get(), get()) }
 }

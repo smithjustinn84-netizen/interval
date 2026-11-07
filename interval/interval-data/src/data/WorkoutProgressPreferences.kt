@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.model.CourseSpan
 import dev.justinsmith.interval.model.PerceivedEffort
+import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.model.WorkoutProgress
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -65,6 +66,9 @@ private class StoredProgress(
     val entryUid: String? = null,
     val effort: Int? = null,
     val note: String = "",
+    /** Since 0.6: about how many snatches a set and the bell, as counted on the summary; neither until then. */
+    val snatchesPerSet: Int? = null,
+    val snatchBellKg: Double? = null,
     /** Since 0.4: a workout saved by 0.3 is in its one set, of one, with no rest between and no ladder. */
     val set: Int = 1,
     val sets: Int = 1,
@@ -115,6 +119,7 @@ private class StoredProgress(
             entryUid = entryUid,
             effort = PerceivedEffort.of(effort),
             note = note,
+            snatches = SnatchCount.of(snatchesPerSet, snatchBellKg),
         )
     }
 }
@@ -153,6 +158,8 @@ private fun WorkoutProgress.stored() = StoredProgress(
     entryUid = entryUid,
     effort = effort?.level,
     note = note,
+    snatchesPerSet = snatches?.perSet,
+    snatchBellKg = snatches?.bellKg,
     set = state.set,
     sets = state.config.sets,
     setRestSeconds = state.config.setRestSeconds,

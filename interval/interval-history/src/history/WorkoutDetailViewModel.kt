@@ -12,6 +12,7 @@ import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
+import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.plan.DayChoice
 import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.plan.dayChoices
@@ -26,6 +27,8 @@ import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.defaultPresetName
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.weekdayOf
+import dev.justinsmith.interval.ui.SnatchAsk
+import dev.justinsmith.lift.data.LiftActivity
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -53,6 +56,8 @@ data class FinishedWorkout(
     val note: String? = null,
     /** Its heart rate as a watch recorded it, average and peak in beats a minute; null until read. */
     val heartRate: HeartRate? = null,
+    /** "About how many snatches a set?", for a workout of kettlebell snatches; null for any other. */
+    val snatches: SnatchAsk? = null,
 ) {
     /** What it is planned or repeated as: its preset's name, or its shape's. */
     val name: String get() = presetName ?: config.defaultPresetName()
@@ -80,6 +85,7 @@ class WorkoutDetailViewModel(
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
     private val health: HealthStore,
+    private val lift: LiftActivity,
     dayCheckMillis: Long = DAY_CHECK_MILLIS,
 ) : ViewModel() {
     // Read again each midnight, so "Today" turns to "Yesterday" with the page open.
@@ -88,16 +94,16 @@ class WorkoutDetailViewModel(
             historyStore.history,
             planStore.planned,
             combine(presetStore.presets, flowStore.flows, ::WorkoutNames),
-            settingsStore.appSettings,
+            combine(settingsStore.appSettings, lift.bells, ::Pair),
             clock.days(timestamps, dayCheckMillis),
         ) {
                 history,
                 planned,
                 names,
-                app,
+                (app, bells),
                 _,
             ->
-            buildState(history, planned, names, app)
+            buildState(history, planned, names, app, bells)
         }.stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
@@ -106,6 +112,7 @@ class WorkoutDetailViewModel(
                 planStore.planned.value,
                 WorkoutNames(presetStore.presets.value, flowStore.flows.value),
                 settingsStore.appSettings.value,
+                lift.bells.value,
             ),
         )
 
@@ -125,6 +132,11 @@ class WorkoutDetailViewModel(
             val heartRate = health.heartRate(entry.startedAt, entry.finishedAtEpochMillis) ?: return@launch
             historyStore.keepHeartRateOf(id, heartRate)
         }
+    }
+
+    /** About how many snatches a set it held and the bell, set here after its summary; null takes the count away. */
+    fun countSnatches(count: SnatchCount?) {
+        historyStore.countSnatchesOf(id, count)
     }
 
     /** Undo on [delete]. */
@@ -149,6 +161,7 @@ class WorkoutDetailViewModel(
         planned: List<PlannedWorkout>,
         names: WorkoutNames,
         app: AppSettings,
+        bells: List<Double>,
     ): WorkoutDetailUiState {
         val today = timestamps.dayNumber(clock.nowMillis())
         val workout = history.firstOrNull { it.id == id }?.let { entry ->
@@ -168,6 +181,7 @@ class WorkoutDetailViewModel(
                 effort = entry.effort,
                 note = entry.note,
                 heartRate = entry.averageBpm?.let { average -> entry.peakBpm?.let { HeartRate(average, it) } },
+                snatches = if (names.asksSnatches(entry.config)) SnatchAsk.of(entry.snatches, history, bells) else null,
             )
         }
         return WorkoutDetailUiState(workout, dayChoices(today), weekdayOf(today))

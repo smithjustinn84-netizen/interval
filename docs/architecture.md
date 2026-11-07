@@ -117,6 +117,7 @@ graph TD
     core --> corePlatform
     intervalUi --> core
     intervalUi --> intervalDomain
+    intervalUi --> liftDomain
     liftUi --> core
     liftUi --> liftDomain
 
@@ -155,7 +156,10 @@ disagree; `--write-diagram` puts the current one here. The module table below sa
    Where cross-domain interaction is needed (e.g. History counting Lift sessions or Today showing workout recaps),
    it is mediated via minimal interfaces in `lift-api`: `IntervalActivity` (what Lift reads of the interval side,
    implemented in `app`) and `LiftActivity` (what History, Plan and the workout read of Lift, implemented by
-   `SessionRepository`). The interval side depends on `lift-api`, never on `lift-data`.
+   `SessionRepository`). The interval side depends on `lift-api`, never on `lift-data`. Data crosses as values, never
+   as writes: 15:15's snatches, counted on the interval side's `HistoryEntry` (`SnatchCount`), reach Lift as an
+   `IntervalWorkout`'s `IntervalSnatches` and are read as sets (`intervalSets`, `lift-domain`) at every read, so
+   neither side writes the other's store and nothing is counted twice.
    The same goes for the platform: the interval features take `interval-platform-api` (the cue player, the
    workout off screen, the plan's reminders), and only `app` sees `interval-platform`, which implements it. The
    platform draws nothing of the design system: the workout's notification takes its colours as ARGB
@@ -387,6 +391,7 @@ flowchart TD
   - `FlowStore.flows` holds the shipped flows (`builtInFlows`) then the user's own (`FlowRepository`, built in `FlowEditor` from the library's mat moves and floor holds or moves typed in, or copied from a shipped one with "Make it yours"). Because no two flows share a shape (`FlowTest` for the shipped ones, `FlowDraft.clash` refusing a draft that matches any flow or preset), `WorkoutSession`, `SpeechQueue` (`Speech.NextMove`, `LeftSide`, `SwitchSides` with halfway warnings suppressed), `FlowStatusText` notifications, and the Log identify a run from its `IntervalConfig` (`flows.matching(config)`), so nothing about a run is stored, and sync them to Health Connect and Apple Health as stretching (`HealthWorkoutKind.Mobility`).
 - **Sport Days, `Today` Agenda & Guided `Set up`**:
   - Off-app training (`Sport`: BJJ, Climbing, Running, or custom) is planned via `PlanWorkout.SportDay` and logged per calendar day via `HistoryStore.logSport`, counting toward `TrainingLog`, `WeekStandingSource`, and `IntervalActivity.sportDays` without counting unlogged days as missed workouts.
+  - A kettlebell preset that switches hands (`asksSnatches`) asks on its summary, or its page in the Log, about how many snatches a set and the bell (`SnatchQuestion`, `interval-ui`; the bells from `LiftActivity.bells`). Lift counts them toward the snatch test (named by the preset), reps in all, pace and grip through `IntervalActivity.workouts`.
   - `todayAgenda` (`interval-history`) orders what `Today` leads with: on an unlogged sport day with no user-planned workout, it leads with a pre-class mobility flow (`flowBefore`) until mobility is completed that day, then the sport day itself, placing an unplanned followed-program day under `AlsoToday`.
   - `WeekSetup` (`apps/app/src/weeksetup/`) combines pure `starterProgram` (`lift-domain`, choosing a fitting `Program.oneBell`, or with a pair of bells owned `Program.pairOfBells`, within `sessionMinutes`; a grappler's first for BJJ, with a pair `BjjKettlebell`) and `buildWeek` (`BuiltWeek.kt`) to populate `PlanStore`, `SettingsStore`, `GearStore`, and `ProgramStore` in one step, offered once on a clean install (`FirstRun.kt`).
 - **Finish Reflection ("How was it?")**:

@@ -7,6 +7,7 @@ import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.data.SetStore
+import dev.justinsmith.lift.data.snatchSets
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.DEFAULT_BELL_KG
 import dev.justinsmith.lift.domain.LiftSession
@@ -14,12 +15,14 @@ import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.Readiness
 import dev.justinsmith.lift.domain.ReadinessReason
 import dev.justinsmith.lift.domain.SessionPlan
+import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.easier
 import dev.justinsmith.lift.domain.gripLoad
 import dev.justinsmith.lift.domain.lighterDayThan
 import dev.justinsmith.lift.domain.offeredBands
 import dev.justinsmith.lift.domain.plannedLoad
 import dev.justinsmith.lift.domain.readiness
+import dev.justinsmith.lift.domain.sets
 import dev.justinsmith.lift.domain.standardBells
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -33,8 +36,8 @@ data class EasierOffer(val reason: ReadinessReason, val lighterDay: Int? = null)
 /**
  * The easier day a program day's session is offered before its first set, while its plan is as programmed: how
  * ready the lifter is comes from the sessions finished, the BJJ logged ([IntervalActivity.sportDays]) and the
- * grip; [use] makes today's plan easier ([SessionPlan.easier]): grinds a bell down, ballistics shorter, rests by
- * tempo. Once used, or once a set is logged, it is offered no more.
+ * grip, 15:15's snatches in it; [use] makes today's plan easier ([SessionPlan.easier]): grinds a bell down,
+ * ballistics shorter, rests by tempo. Once used, or once a set is logged, it is offered no more.
  */
 class EasierDay(
     private val sessionStore: SessionStore,
@@ -49,11 +52,11 @@ class EasierDay(
     val offer: Flow<EasierOffer?> = combine(
         sessionStore.active,
         sessionStore.sessions,
-        intervals.sportDays,
+        combine(intervals.sportDays, intervals.workouts, ::Pair),
         programStore.programDay,
         gearStore.bells,
-    ) { active, sessions, sportDays, day, _ ->
-        offerFor(active, sessions, sportDays.filter { it.grappling }.map { it.epochDay }, day)
+    ) { active, sessions, (sportDays, workouts), day, _ ->
+        offerFor(active, sessions, workouts.snatchSets.sets, sportDays.filter { it.grappling }.map { it.epochDay }, day)
     }
 
     /** Makes today's plan easier, as offered. */
@@ -67,12 +70,14 @@ class EasierDay(
     private fun offerFor(
         active: LiftSession?,
         sessions: List<LiftSession>,
+        alongside: List<SetLog>,
         grappling: List<Long>,
         day: ProgramDay?,
     ): EasierOffer? {
         val today = dayToEase(active, day) ?: return null
         val now = clock.nowMillis()
-        val grip = gripLoad(sessions.flatMap { it.sets }, grappling, timestamps.dayNumber(now), timestamps::dayNumber)
+        val lifted = sessions.flatMap { it.sets } + alongside
+        val grip = gripLoad(lifted, grappling, timestamps.dayNumber(now), timestamps::dayNumber)
         val check = readiness(sessions, grappling, grip, now, timestamps::dayNumber)
         val reason = check.reason?.takeIf { check.readiness == Readiness.Taxed } ?: return null
         eased(today, sessions) ?: return null

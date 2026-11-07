@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
 class SessionRepository(
     private val sessionDao: SessionDao,
     exercises: ExerciseRepository,
-    gear: GearRepository,
+    private val gear: GearRepository,
     private val programs: ProgramRepository,
     private val writer: SerialWriter,
     private val clock: WallClock,
@@ -39,6 +39,8 @@ class SessionRepository(
     override val restSeconds: StateFlow<Int>,
 ) : LiftActivity, SessionStore {
     private val log = Logger.withTag("SessionRepository")
+
+    override val bells: StateFlow<List<Double>> get() = gear.bells
 
     private val _ready = MutableStateFlow(false)
 

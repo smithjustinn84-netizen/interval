@@ -46,6 +46,7 @@ import dev.justinsmith.interval.history.resources.history_more_options_cd
 import dev.justinsmith.interval.history.resources.notice_undo
 import dev.justinsmith.interval.history.resources.notice_workout_deleted
 import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.plan.AddToPlanSheet
 import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.ui.AccentButton
@@ -62,6 +63,7 @@ import dev.justinsmith.interval.ui.NoticeAction
 import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
+import dev.justinsmith.interval.ui.SnatchQuestion
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.Timeline
 import dev.justinsmith.interval.ui.workoutDescription
@@ -117,6 +119,7 @@ fun WorkoutDetailRoute(
         modifier = modifier,
         inPane = inPane,
         onShare = sharer::shareText,
+        onCountSnatches = viewModel::countSnatches,
     )
 }
 
@@ -137,6 +140,7 @@ fun WorkoutDetailScreen(
     modifier: Modifier = Modifier,
     inPane: Boolean = false,
     onShare: (String) -> Unit = {},
+    onCountSnatches: (SnatchCount?) -> Unit = {},
 ) {
     val workout = state.workout ?: return
     var menu by rememberSaveable { mutableStateOf(false) }
@@ -178,6 +182,7 @@ fun WorkoutDetailScreen(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space16)) {
             DetailFigures(workout)
+            workout.snatches?.let { ask -> SummaryCard { SnatchQuestion(ask, onCountSnatches) } }
             AccentButton(stringResource(Res.string.detail_repeat), onRepeat, Modifier.fillMaxWidth())
             SecondaryButton(stringResource(Res.string.detail_plan_again), { planning = true }, Modifier.fillMaxWidth())
         }

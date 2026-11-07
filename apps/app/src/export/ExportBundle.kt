@@ -14,7 +14,8 @@ import kotlinx.serialization.Serializable
  * `sessionMinutes`; schema 8 the mobility flows the user built, `flows`; schema 9 whether a preset switches hands,
  * `alternateHands`, and the bells owned two of, `pairsKg`; schema 10 a block's own rest, `rest`; schema 11 a block
  * of a kind an older build would drop, `kind` "Density", and the block a stepped one goes back to at the next
- * bell, `origin`, the rest absent from older files). Lift's
+ * bell, `origin`, and about how many snatches a set a workout held and the bell, `snatchesPerSet` and `snatchBellKg`,
+ * the rest absent from older files). Lift's
  * sessions carry their sets but not how a day's plan was changed: the sets are the record.
  */
 @Serializable
@@ -134,6 +135,9 @@ data class WorkoutExport(
     /** Its heart rate as a watch recorded it, average and peak in beats a minute; null for none, and in older files. */
     val averageBpm: Int? = null,
     val peakBpm: Int? = null,
+    /** About how many snatches a set and the bell, both or neither; null for none, and in files before schema 11. */
+    val snatchesPerSet: Int? = null,
+    val snatchBellKg: Double? = null,
 )
 
 /** A planned workout: [weekday] (1 Monday to 7 Sunday) when weekly, [epochDay] when once. */

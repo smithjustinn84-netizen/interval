@@ -60,6 +60,10 @@ class AppMigrationTest {
             database.historyDao().keepHeartRateOf(workout.id, 140, 170, 2000)
             database.historyDao().keepHeartRateOf(workout.id, 100, 120, 3000)
             assertEquals(140 to 170, database.historyDao().all().single().let { it.averageBpm to it.peakBpm })
+            // Version 16's snatch count starts empty on an old row and takes one.
+            assertNull(workout.snatchesPerSet)
+            database.historyDao().countSnatchesOf(workout.id, 8, 16.0, 4000)
+            assertEquals(8 to 16.0, database.historyDao().all().single().let { it.snatchesPerSet to it.snatchBellKg })
             val added = PresetEntity(0, "Rowing", 5, 60, 30, 4, activity = "Rowing")
             val id = database.presetDao().insert(added)
             assertEquals(added.copy(id = id), database.presetDao().all().last())

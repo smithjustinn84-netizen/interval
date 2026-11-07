@@ -132,8 +132,14 @@ minutes, one minute, then time and the rounds), never a word mid-round. The roun
 the cap; a round's reps go up by one once the last two sessions each beat the best before them, and the bell waits.
 The summary says the rounds, and "New best: 15 rounds in 20 min" when it beat the block's best.
 
-**Planned:**
-- Counting snatches in 15:15. At the end of a 15:15 workout, the lifter gives about how many a set (7–9 is the target), so the interval side's 15:15 counts toward snatch totals and density.
+**15:15's snatches** (`SnatchCount` on the interval side's `HistoryEntry`, `IntervalSnatches` across
+`IntervalActivity`, `intervalSets` in `IntervalSnatches.kt`): at the end of 15:15 MVO2, or any kettlebell preset of
+the user's that switches hands, the summary asks "About how many snatches a set?" (7–9 is the target), with the bell,
+picked from those owned. A finished workout's page in the Log can set it later. Nothing is counted until the lifter
+says. Lift reads each counted workout as a set of that many snatches at that bell per work interval done, a hand at a
+time, logged as the interval ended, at every read and never stored, so a second import or an edit can't double them.
+They count toward the lifetime total and its milestones, the snatch test (ten sets of eight in five minutes is 80,
+named "from 15:15 MVO2"), the pace, and the grip's load, and through it readiness and the easier day.
 
 ## 5. Benchmarks and engagement
 
@@ -141,7 +147,8 @@ All of these are worked out from the logged sets, with nothing new stored (`Benc
 
 **Challenges:**
 - **10,000 Swings**: one- and two-hand swings counted over 28 days, or over the run while the program is followed.
-- **Snatch test**: the most snatches in any five minutes of a session, against 100.
+- **Snatch test**: the most snatches in any five minutes of a session, or of 15:15's snatches as counted, against
+  100; a best from 15:15 names the preset ("Best: 80 in 5 minutes, from 15:15 MVO2").
 - **Armor Building Complex**: the most complexes in any twenty minutes, a personal best, and which protocol it came
   from: on the minute, or as many as you can (`AbcProtocol`, from the session's plan or its program's day). A
   program's ABC on the minute can be taken the other way for a day from today's plan ("As many as you can", the

@@ -58,6 +58,9 @@
     <string name="today_challenge_swings_program">%1$d since you started the program</string>
     <string name="today_challenge_snatch">Snatch test: 100 in 5 minutes</string>
     <string name="today_challenge_snatch_best">Best: %1$d in 5 minutes</string>
+    <!-- The best came from snatches counted on an interval preset, named here: "from 15:15 MVO2". -->
+    <string name="today_challenge_snatch_best_from">Best: %1$d in 5 minutes, from %2$s</string>
+    <string name="today_challenge_snatch_best_from_intervals">Best: %1$d in 5 minutes, from intervals</string>
     <string name="today_challenge_abc">Armor Building Complex</string>
     <string name="today_challenge_abc_best">Best: %1$d complexes in 20 minutes</string>
     <string name="today_challenge_abc_best_on_the_minute">Best: %1$d complexes in 20 minutes, on the minute</string>

@@ -3,6 +3,7 @@ package dev.justinsmith.interval.workout
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.CourseSpan
 import dev.justinsmith.interval.model.PerceivedEffort
+import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.model.WorkoutProgress
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.WorkoutStatus
@@ -49,6 +50,8 @@ data class WorkoutRun(
     val entryUid: String? = null,
     val effort: PerceivedEffort? = null,
     val note: String = "",
+    /** About how many snatches a set, as counted on the summary; null until counted. */
+    val snatches: SnatchCount? = null,
     /** The summary's words for the health store's note, as the screen put them. */
     val healthNotes: String? = null,
     /** Its heart rate as a watch recorded it in the health store, once read there: not saved, it is read again. */
@@ -120,6 +123,7 @@ data class WorkoutRun(
         entryUid = entryUid,
         effort = effort,
         note = note,
+        snatches = snatches,
     )
 
     /**
@@ -184,6 +188,7 @@ data class WorkoutRun(
                 entryUid = saved.entryUid,
                 effort = saved.effort,
                 note = saved.note,
+                snatches = saved.snatches,
                 keepScreenOn = keepScreenOn,
                 body = body,
             )

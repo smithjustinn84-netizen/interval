@@ -9,6 +9,7 @@ import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
+import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.settings.ImportCounts
@@ -277,6 +278,8 @@ private fun PresetExport.toDomain(): Preset {
 private fun WorkoutExport.toDomain(): HistoryEntry {
     require(elapsedSeconds >= 0 && (workActiveSeconds ?: 0) >= 0) { "time" }
     requireHeartRate(averageBpm, peakBpm)
+    val snatches = SnatchCount.of(snatchesPerSet, snatchBellKg)
+    require((snatchesPerSet == null && snatchBellKg == null) || snatches != null) { "snatches" }
     return HistoryEntry(
         finishedAtEpochMillis,
         config.toDomain(),
@@ -287,6 +290,7 @@ private fun WorkoutExport.toDomain(): HistoryEntry {
         note = note?.take(PerceivedEffort.NOTE_MAX_LENGTH)?.ifBlank { null },
         averageBpm = averageBpm,
         peakBpm = peakBpm,
+        snatches = snatches,
     )
 }
 

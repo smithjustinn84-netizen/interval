@@ -406,23 +406,27 @@ private fun joined(muscles: List<Muscle>): String =
     muscles.map { muscleName(it) }.reduce { line, name -> stringResource(Res.string.common_joined, line, name) }
 
 /**
- * The user's history with it: how often and when last, their best, and its recent sessions, each a card of
- * its sets under its date that opens the session on [onOpen], if given; or that it is not logged yet.
+ * The user's history with it: how often and when last, their best, its reps in all and pace (15:15's snatches
+ * counted in them), and its recent sessions, each a card of its sets under its date that opens the session on
+ * [onOpen], if given; or that it is not logged yet.
  */
 @Composable
 private fun ColumnScope.History(state: ExerciseDetailUiState, onOpen: ((uid: String) -> Unit)?) {
     val palette = IntervalTheme.palette
     val history = state.history
     GroupLabel(stringResource(Res.string.detail_history))
-    if (history.timesDone == 0) {
+    // Snatches counted on 15:15 count in its reps in all and pace with no session of it logged here.
+    if (history.timesDone == 0 && state.lifetime == 0) {
         Text(stringResource(Res.string.detail_never), style = IntervalTheme.type.meta, color = palette.textDim)
         return
     }
-    Text(
-        pluralStringResource(Res.plurals.detail_done, history.timesDone, history.timesDone, state.lastDone),
-        style = IntervalTheme.type.meta,
-        color = palette.textDim,
-    )
+    if (history.timesDone > 0) {
+        Text(
+            pluralStringResource(Res.plurals.detail_done, history.timesDone, history.timesDone, state.lastDone),
+            style = IntervalTheme.type.meta,
+            color = palette.textDim,
+        )
+    }
     if (history.records.isNotEmpty()) {
         GroupLabel(stringResource(Res.string.detail_best))
         ListCard(fill = IntervalTheme.palette.surfaceVariant) {

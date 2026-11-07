@@ -7,6 +7,7 @@ import dev.justinsmith.interval.model.LoggedSport
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
+import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.WorkoutProgress
 import dev.justinsmith.interval.platform.HeartRate
@@ -92,6 +93,12 @@ interface HistoryStore {
 
     /** As [keepHeartRate], for the workout stored under [id]. */
     fun keepHeartRateOf(id: Long, heartRate: HeartRate)
+
+    /** Sets about how many snatches a set the workout [uid] held and the bell; null takes the count away. */
+    fun countSnatches(uid: String, count: SnatchCount?)
+
+    /** As [countSnatches], for the workout stored under [id]: from its page in the Log. */
+    fun countSnatchesOf(id: Long, count: SnatchCount?)
 
     fun deleteWorkout(id: Long)
 

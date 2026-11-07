@@ -11,6 +11,6 @@ import org.koin.dsl.module
  * name (`parametersOf(uid, name)`). Both keep their state in their entry's `SavedStateHandle`.
  */
 val liftLibraryModule: Module = module {
-    viewModel { ExerciseLibraryViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { ExerciseLibraryViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { (uid: String?, name: String) -> ExerciseEditorViewModel(get(), get(), get(), uid, name) }
 }

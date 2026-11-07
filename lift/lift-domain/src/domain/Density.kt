@@ -37,21 +37,32 @@ fun density(sets: List<SetLog>): Double? {
 data class Pace(val exercise: Exercise, val kg: Double, val double: Boolean, val perMinute: Double)
 
 /** The paces [session] set, one for each lift and weight it did twice or more as it was logged. */
-fun paces(session: LiftSession): List<Pace> = session.sets
+fun paces(session: LiftSession): List<Pace> = paces(session.sets)
+
+/** The paces [logged] set, one session's or one interval workout's sets, as [paces] counts a session's. */
+fun paces(logged: List<SetLog>): List<Pace> = logged
     .filter { it.exercise !is UnknownExercise }
     .groupBy { Triple(it.exercise.key, it.load.kg, it.double) }
     .mapNotNull { (lift, sets) ->
         density(sets)?.let { Pace(sets.first().exercise, lift.second, lift.third, it) }
     }
 
-/** The best [Pace] of each lift and weight over [sessions]. */
-fun bestPaces(sessions: List<LiftSession>): List<Pace> = sessions.flatMap(::paces)
-    .groupBy { Triple(it.exercise.key, it.kg, it.double) }
-    .map { (_, paces) -> paces.maxBy { it.perMinute } }
+/** The best [Pace] of each lift and weight over [sessions] and the interval workouts' snatches, [intervals]. */
+fun bestPaces(sessions: List<LiftSession>, intervals: List<IntervalSetGroup> = emptyList()): List<Pace> =
+    (sessions.flatMap(::paces) + intervals.flatMap { paces(it.sets) })
+        .groupBy { Triple(it.exercise.key, it.kg, it.double) }
+        .map { (_, paces) -> paces.maxBy { it.perMinute } }
 
-/** The paces [session] set that beat the best of [before] at the same lift and weight; a first time sets none. */
-fun newPaces(before: List<LiftSession>, session: LiftSession): List<Pace> {
-    val best = bestPaces(before).associateBy { Triple(it.exercise.key, it.kg, it.double) }
+/**
+ * The paces [session] set that beat the best of [before] (and of the interval workouts' [intervals]) at the same lift
+ * and weight; a first time sets none.
+ */
+fun newPaces(
+    before: List<LiftSession>,
+    session: LiftSession,
+    intervals: List<IntervalSetGroup> = emptyList(),
+): List<Pace> {
+    val best = bestPaces(before, intervals).associateBy { Triple(it.exercise.key, it.kg, it.double) }
     return paces(session).filter { pace ->
         best[Triple(pace.exercise.key, pace.kg, pace.double)]?.let { pace.perMinute > it.perMinute } == true
     }
@@ -60,6 +71,10 @@ fun newPaces(before: List<LiftSession>, session: LiftSession): List<Pace> {
 /** A pace as Lift writes it, to the tenth: "9.4". */
 fun formatPace(perMinute: Double): String = formatKg((perMinute * TENTHS).roundToInt().toDouble() / TENTHS)
 
-/** [exercise]'s best pace at any weight over [sessions]; null with none timed. */
-fun bestPaceOf(exercise: Exercise, sessions: List<LiftSession>): Pace? =
-    bestPaces(sessions).filter { it.exercise.key == exercise.key }.maxByOrNull { it.perMinute }
+/** [exercise]'s best pace at any weight over [sessions] and the interval workouts' [intervals]; null with none. */
+fun bestPaceOf(
+    exercise: Exercise,
+    sessions: List<LiftSession>,
+    intervals: List<IntervalSetGroup> = emptyList(),
+): Pace? =
+    bestPaces(sessions, intervals).filter { it.exercise.key == exercise.key }.maxByOrNull { it.perMinute }

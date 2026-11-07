@@ -127,6 +127,8 @@ private fun HistoryEntry.export() =
         note,
         averageBpm,
         peakBpm,
+        snatches?.perSet,
+        snatches?.bellKg,
     )
 
 private fun PlannedWorkout.export(): PlannedExport {

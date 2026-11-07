@@ -1,12 +1,16 @@
 <journey name="Lift: challenges and totals">
   <description>
     The benchmarks under way show under the program on Lift's Today, worked out from the sets logged; a lift's page
-    says its reps in all; the summary names a new best and a milestone crossed. Run with a bell owned.
+    says its reps in all; the summary names a new best and a milestone crossed; 15:15's snatches, counted on its
+    summary, count toward them. Run with a bell owned.
   </description>
   <actions>
     <action>Start a session and log a set of 100 two-hand swings; finish it and verify that the summary says "1000 in all" only once the swings ever pass 1,000</action>
     <action>On Lift's Today once a thousand swings are logged in four weeks, verify that under the program a "10,000 swings" row says how many in the last four weeks, with a bar</action>
     <action>Start a session, log ten sets of 10 snatches about a minute apart, finish it, and verify that the summary says "Snatch test: 50 in 5 minutes, your best" (or as many as five minutes held), and that Today shows "Snatch test: 100 in 5 minutes" with that best</action>
     <action>Open Exercises, then Snatch, and verify that it says its reps in all</action>
+    <action>On Train's Conditioning pillar, start 15:15 MVO2 and end it after five work intervals; on its summary, verify that it asks "About how many snatches a set?", pick the bell owned and step to 10 a set, and close it</action>
+    <action>On Train's Strength pillar, verify that the snatch test's best is unchanged unless 15:15's five minutes beat it (then it says "from 15:15 MVO2"), and on Exercises, Snatch, that its reps in all grew by 50</action>
+    <action>In Log, open that 15:15 workout and verify that its page shows the count, 10 a set, with Not counted to take it back</action>
   </actions>
 </journey>

@@ -23,6 +23,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.pressKey
 import dev.justinsmith.interval.model.PerceivedEffort
+import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
@@ -30,6 +31,7 @@ import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.timer.WorkoutState
 import dev.justinsmith.interval.ui.Motion
+import dev.justinsmith.interval.ui.SnatchAsk
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
@@ -71,6 +73,7 @@ class WorkoutScreenTest {
                 onEffortChange = { calls += "effort $it" },
                 onNoteChange = { calls += "note $it" },
                 onDescribeForHealth = { healthNotes += it },
+                onCountSnatches = { calls += "snatches ${it?.perSet} at ${it?.bellKg}" },
             ),
         )
     }
@@ -90,6 +93,34 @@ class WorkoutScreenTest {
         state = state.copy(effort = PerceivedEffort.Hard, note = "Felt strong")
         waitForIdle()
         assertEquals("Hard · Felt strong", healthNotes.last())
+    }
+
+    @Test
+    fun `a summary of snatches asks how many a set and counts them on a step or a bell`() = runUiTest {
+        val asked = SnatchAsk(count = null, opensOn = SnatchCount(8, 16.0), bells = listOf(12.0, 16.0, 20.0))
+        var state by mutableStateOf(done.toUiState(running = false).copy(snatches = asked))
+        setThemedContent { Screen(state) }
+        onNodeWithText("About how many snatches a set?").performScrollTo().assertExists()
+        onNodeWithText("8 a set").assertExists()
+        onNodeWithText("Pick the bell to count them").assertExists()
+
+        onNodeWithText("20 kg").performScrollTo().performClick()
+        onNodeWithContentDescription("More snatches").performClick()
+        waitForIdle()
+        assertEquals(listOf("snatches 8 at 20.0", "snatches 9 at 16.0"), calls)
+
+        state = state.copy(snatches = asked.copy(count = SnatchCount(9, 20.0)))
+        onNodeWithText("9 a set").assertExists()
+        onNodeWithText("Not counted").performScrollTo().performClick()
+        waitForIdle()
+        assertEquals("snatches null at null", calls.last())
+    }
+
+    @Test
+    fun `a summary of anything else asks nothing of snatches`() = runUiTest {
+        setThemedContent { Screen(done.toUiState(running = false)) }
+        onNodeWithText("How was it?").assertExists()
+        onNodeWithText("About how many snatches a set?").assertDoesNotExist()
     }
 
     @Test

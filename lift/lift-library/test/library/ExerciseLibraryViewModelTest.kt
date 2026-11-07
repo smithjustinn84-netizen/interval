@@ -5,9 +5,12 @@ import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.MainDispatcherTest
 import dev.justinsmith.lift.data.ExerciseFilterStore
+import dev.justinsmith.lift.data.IntervalWorkout
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.ExerciseDraft
+import dev.justinsmith.lift.domain.IntervalSnatches
+import dev.justinsmith.lift.fakes.FakeIntervalActivity
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlinx.coroutines.cancel
 import kotlin.test.Test
@@ -18,12 +21,14 @@ import kotlin.test.assertTrue
 class ExerciseLibraryViewModelTest : MainDispatcherTest() {
     private val repository = FakeLiftStorage().repository()
     private val filters = ExerciseFilterStore()
+    private val intervals = FakeIntervalActivity()
 
     private fun library(saved: SavedStateHandle = SavedStateHandle()) =
         ExerciseLibraryViewModel(
             repository.sessions,
             repository.exercises,
             repository.gear,
+            intervals,
             filters,
             FixedTimestampFormatter,
             saved,
@@ -54,6 +59,17 @@ class ExerciseLibraryViewModelTest : MainDispatcherTest() {
         assertEquals(BuiltInExercise.Press, state.value.detail?.exercise)
         open(null)
         assertNull(state.value.detail)
+    }
+
+    @Test
+    fun `snatches counted on 15-15 count in the snatch's reps in all and its pace`() = library().use {
+        val ends = List(40) { 25_000L + it * 30_000L }
+        intervals.workouts.value = listOf(
+            IntervalWorkout("1", ends.last(), 1_195, IntervalSnatches(8, 16.0, ends, "15:15 MVO2")),
+        )
+        open(BuiltInExercise.Snatch.key)
+        assertEquals(320, state.value.detail?.lifetime)
+        assertEquals(16.0, state.value.detail?.bestPace?.kg)
     }
 
     @Test

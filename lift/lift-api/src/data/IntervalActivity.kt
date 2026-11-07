@@ -1,5 +1,8 @@
 package dev.justinsmith.lift.data
 
+import dev.justinsmith.lift.domain.IntervalSetGroup
+import dev.justinsmith.lift.domain.IntervalSnatches
+import dev.justinsmith.lift.domain.intervalSets
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -8,8 +11,19 @@ import kotlinx.coroutines.flow.StateFlow
  */
 data class SportDay(val epochDay: Long, val grappling: Boolean)
 
-/** One of the app's interval workouts, as Lift counts it in the week. */
-data class IntervalWorkout(val uid: String, val finishedAtEpochMillis: Long, val elapsedSeconds: Int)
+/**
+ * One of the app's interval workouts, as Lift counts it in the week, and its [snatches] as the lifter counted them,
+ * null for a workout of none or one not counted.
+ */
+data class IntervalWorkout(
+    val uid: String,
+    val finishedAtEpochMillis: Long,
+    val elapsedSeconds: Int,
+    val snatches: IntervalSnatches? = null,
+)
+
+/** The sets of snatches these workouts' counts come to, a group a workout counted: [intervalSets]. */
+val List<IntervalWorkout>.snatchSets: List<IntervalSetGroup> get() = intervalSets(mapNotNull { it.snatches })
 
 /**
  * What Lift reads of the rest of the app, which it can't see: the interval workouts, newest first, the days of a

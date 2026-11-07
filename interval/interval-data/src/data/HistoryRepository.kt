@@ -4,6 +4,7 @@ import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.LoggedSport
 import dev.justinsmith.interval.model.PerceivedEffort
+import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.IdGenerator
@@ -111,6 +112,17 @@ class HistoryRepository(
     override fun keepHeartRateOf(id: Long, heartRate: HeartRate) {
         val now = clock.nowMillis()
         writer.persist { historyDao.keepHeartRateOf(id, heartRate.averageBpm, heartRate.peakBpm, now) }
+    }
+
+    /** In order after the write that recorded the workout, as [keepHeartRate] is. */
+    override fun countSnatches(uid: String, count: SnatchCount?) {
+        val now = clock.nowMillis()
+        writer.persist { historyDao.countSnatches(uid, count?.perSet, count?.bellKg, now) }
+    }
+
+    override fun countSnatchesOf(id: Long, count: SnatchCount?) {
+        val now = clock.nowMillis()
+        writer.persist { historyDao.countSnatchesOf(id, count?.perSet, count?.bellKg, now) }
     }
 
     /**

@@ -129,4 +129,13 @@
     <string name="weekday_initial_6">S</string>
     <string name="weekday_initial_7">S</string>
     <string name="flow_move_time_sides">%1$s a side</string>
+    <!-- About how many snatches a set, under a workout of kettlebell intervals that switch hands. -->
+    <string name="snatch_question">About how many snatches a set?</string>
+    <string name="snatch_per_set">%1$d a set</string>
+    <string name="snatch_fewer_cd">Fewer snatches</string>
+    <string name="snatch_more_cd">More snatches</string>
+    <string name="snatch_step_hint">Counted toward Lift's snatch test and totals</string>
+    <string name="snatch_bell">%1$s kg</string>
+    <string name="snatch_uncounted_hint">Pick the bell to count them</string>
+    <string name="snatch_not_counted">Not counted</string>
 </resources>

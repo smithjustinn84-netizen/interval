@@ -108,4 +108,46 @@ class BenchmarksTest {
             challenges(listOf(onTheMinute), 40 * DAY, null, null, null).single(),
         )
     }
+
+    /** 15:15 MVO2 run out from the epoch: forty work intervals, the first ending 25 s in, thirty seconds apart. */
+    private val fifteenFifteen = List(40) { 25_000L + it * 30_000L }
+
+    @Test
+    fun `15-15 counted at 8 a set is forty sets of 8 a hand at a time`() {
+        val group = intervalSets(listOf(IntervalSnatches(8, 16.0, fifteenFifteen, "15:15 MVO2"))).single()
+
+        assertEquals("15:15 MVO2", group.source)
+        assertEquals(40, group.sets.size)
+        assertTrue(group.sets.all { it.exercise == BuiltInExercise.Snatch && it.reps == 8 && it.load.kg == 16.0 })
+        assertEquals(listOf(Side.Left, Side.Right, Side.Left), group.sets.take(3).map { it.side })
+        assertEquals(40, group.sets.map { it.id }.distinct().size)
+        assertTrue(group.sets.all { it.id < 0 })
+        assertTrue(loggedAsDone(group.sets))
+        assertEquals(320, lifetimeReps(BuiltInExercise.Snatch, group.sets))
+    }
+
+    @Test
+    fun `the snatch test takes an interval workout's snatches and names where its best came from`() {
+        val intervals = intervalSets(listOf(IntervalSnatches(8, 16.0, fifteenFifteen, "15:15 MVO2")))
+        // Ten sets of 10 a minute apart in a session: 50 in five minutes, under 15:15's 80.
+        val lifted = session("a", *Array(10) { set(BuiltInExercise.Snatch, 10, (it + 1) * MINUTE) })
+
+        assertEquals(
+            Challenge.SnatchTest(80, fromIntervals = true, preset = "15:15 MVO2"),
+            snatchTest(listOf(lifted), intervals),
+        )
+        assertEquals(Challenge.SnatchTest(50), snatchTest(listOf(lifted), emptyList()))
+        val unnamed = intervalSets(listOf(IntervalSnatches(8, 16.0, fifteenFifteen, source = null)))
+        assertEquals(Challenge.SnatchTest(80, fromIntervals = true), snatchTest(emptyList(), unnamed))
+        val challenges = challenges(emptyList(), 40 * DAY, null, null, null, intervals = intervals)
+        assertEquals(listOf(Challenge.SnatchTest(80, fromIntervals = true, preset = "15:15 MVO2")), challenges)
+    }
+
+    @Test
+    fun `a session's best stands when an interval workout only ties it`() {
+        val intervals = intervalSets(listOf(IntervalSnatches(5, 16.0, fifteenFifteen, "15:15 MVO2")))
+        val lifted = session("a", *Array(10) { set(BuiltInExercise.Snatch, 10, (it + 1) * MINUTE) })
+
+        assertEquals(Challenge.SnatchTest(50), snatchTest(listOf(lifted), intervals))
+    }
 }

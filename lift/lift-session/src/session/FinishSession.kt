@@ -12,6 +12,7 @@ import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.data.SetStore
+import dev.justinsmith.lift.data.snatchSets
 import dev.justinsmith.lift.domain.ABC_MINUTES
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.Exercise
@@ -19,6 +20,7 @@ import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.SNATCH_TEST_MINUTES
 import dev.justinsmith.lift.domain.SaveScope
+import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.crossedMilestone
 import dev.justinsmith.lift.domain.densityDone
 import dev.justinsmith.lift.domain.gripLoad
@@ -29,6 +31,8 @@ import dev.justinsmith.lift.domain.newRecords
 import dev.justinsmith.lift.domain.offeredBands
 import dev.justinsmith.lift.domain.planChanges
 import dev.justinsmith.lift.domain.progressions
+import dev.justinsmith.lift.domain.sets
+import dev.justinsmith.lift.domain.snatchTest
 import dev.justinsmith.lift.domain.standardBells
 import dev.justinsmith.lift.domain.toppedOut
 import dev.justinsmith.lift.domain.wantsHandCare
@@ -94,9 +98,11 @@ class FinishSession(
                 ),
             )
         }
+        // 15:15's snatches, counted on the interval side, count beside the sessions' sets.
+        val alongside = intervals.workouts.value.snatchSets
         // The weeks before this one: the session is not yet among the finished.
         val grip = gripLoad(
-            sessionStore.sessions.value.flatMap { it.sets },
+            sessionStore.sessions.value.flatMap { it.sets } + alongside.sets,
             intervals.sportDays.value.filter { it.grappling }.map { it.epochDay },
             timestamps.dayNumber(done.finishedAtEpochMillis ?: clock.nowMillis()),
             timestamps::dayNumber,
@@ -114,9 +120,14 @@ class FinishSession(
             }.orEmpty(),
             heavyGrip = grip.heavyDay(done.gripLoad),
             handCare = done.wantsHandCare,
-            paces = newPaces(sessionStore.sessions.value, done),
-            milestones = milestonesIn(sessionStore.sessions.value, done),
-            snatchTest = newBest(BuiltInExercise.Snatch, SNATCH_TEST_MINUTES, done),
+            paces = newPaces(sessionStore.sessions.value, done, alongside),
+            milestones = milestonesIn(sessionStore.sessions.value, done, alongside.sets),
+            snatchTest = newBest(
+                BuiltInExercise.Snatch,
+                SNATCH_TEST_MINUTES,
+                done,
+                before = snatchTest(sessionStore.sessions.value, alongside)?.best,
+            ),
             armorBuilding = newBest(BuiltInExercise.ArmorBuildingComplex, ABC_MINUTES, done),
             densities = day?.let { densityDone(it, session.sets, sessionStore.sessions.value) }.orEmpty(),
         )
@@ -176,11 +187,18 @@ class FinishSession(
         sessionStore.reflectOnSession(done.session.uid, done.session.effort, done.note)
     }
 
-    /** The most reps of [exercise] in any [minutes] of [done], when it beat every session before; else null. */
-    private fun newBest(exercise: Exercise, minutes: Int, done: LiftSession): Int? {
+    /**
+     * The most reps of [exercise] in any [minutes] of [done], when it beat the best [before] it (every session's, by
+     * default); else null.
+     */
+    private fun newBest(
+        exercise: Exercise,
+        minutes: Int,
+        done: LiftSession,
+        before: Int? = mostInWindow(exercise, sessionStore.sessions.value, minutes),
+    ): Int? {
         val now = mostInWindow(exercise, listOf(done), minutes) ?: return null
-        val before = mostInWindow(exercise, sessionStore.sessions.value, minutes) ?: 0
-        return now.takeIf { it > before }
+        return now.takeIf { it > (before ?: 0) }
     }
 
     /** The week as it stands with this session in it, the interval workouts counted too, as Lift's week card counts. */
@@ -240,9 +258,16 @@ class SessionHealth(
     }
 }
 
-/** The lifts of [done] whose reps ever crossed a milestone in it over the [before] sessions, a swing's once. */
-private fun milestonesIn(before: List<LiftSession>, done: LiftSession): List<Pair<Exercise, Int>> {
-    val earlier = before.flatMap { it.sets }
+/**
+ * The lifts of [done] whose reps ever crossed a milestone in it over the [before] sessions and the sets [alongside]
+ * them (15:15's snatches), a swing's once.
+ */
+private fun milestonesIn(
+    before: List<LiftSession>,
+    done: LiftSession,
+    alongside: List<SetLog>,
+): List<Pair<Exercise, Int>> {
+    val earlier = before.flatMap { it.sets } + alongside
     return done.sets.map { it.exercise }.distinctBy {
         if (it ==
             BuiltInExercise.OneHandSwing

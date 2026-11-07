@@ -38,6 +38,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
 import dev.justinsmith.interval.model.PerceivedEffort
+import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.prefersReducedMotion
 import dev.justinsmith.interval.presets.PresetDraft
@@ -58,6 +59,7 @@ import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.ProgressRing
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.Sizes
+import dev.justinsmith.interval.ui.SnatchQuestion
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StreakBadge
 import dev.justinsmith.interval.ui.countUp
@@ -295,7 +297,10 @@ private fun RingOverDetails(viewport: Int, ring: @Composable () -> Unit, details
     }
 }
 
-/** Under the title: the shape, the stats, that it was saved, the week, and "How was it?", rising in turn. */
+/**
+ * Under the title: the shape, the stats, that it was saved, the week, how many snatches a set for a workout of them,
+ * and "How was it?", rising in turn.
+ */
 @Composable
 private fun SummaryDetails(
     state: WorkoutUiState,
@@ -356,6 +361,15 @@ private fun SummaryDetails(
                 WeekLine(week, Modifier.padding(top = Spacing.space8))
             }
         }
+        state.snatches?.let { ask ->
+            AnimatedVisibility(entrance, enter = risingEnter(Motion.STAGGER_MILLIS * SNATCH_STEP)) {
+                SnatchQuestion(
+                    ask,
+                    onCount = reflection.onCountSnatches,
+                    modifier = Modifier.padding(top = Spacing.space24).widthIn(max = Sizes.content),
+                )
+            }
+        }
         AnimatedVisibility(entrance, enter = risingEnter(Motion.STAGGER_MILLIS * HOW_STEP)) {
             HowWasIt(
                 title = stringResource(Res.string.summary_how_was_it),
@@ -397,6 +411,8 @@ class SummaryReflection(
     val onNoteChange: (String) -> Unit = {},
     /** The effort and note in words for the health store's note, null with neither said. */
     val onDescribeForHealth: (String?) -> Unit = {},
+    /** About how many snatches a set, from "About how many snatches a set?"; null takes the count away. */
+    val onCountSnatches: (SnatchCount?) -> Unit = {},
 )
 
 /** The word for [effort]: "Easy" through "All out". */
@@ -551,8 +567,9 @@ private const val LINES_STEP = 2
 private const val STATS_STEP = 4
 private const val SAVED_STEP = 6
 private const val WEEK_STEP = 7
-private const val HOW_STEP = 8
-private const val ACTIONS_STEP = 9
+private const val SNATCH_STEP = 8
+private const val HOW_STEP = 9
+private const val ACTIONS_STEP = 10
 
 @Composable
 private fun Stat(value: String, label: String, modifier: Modifier = Modifier) {

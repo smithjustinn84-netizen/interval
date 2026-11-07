@@ -64,4 +64,15 @@ class GripTest {
         assertTrue(snatches.wantsHandCare)
         assertFalse(snatches.copy(sets = snatches.sets.drop(1)).wantsHandCare)
     }
+
+    @Test
+    fun `an interval workout's snatches load the grip as sets logged do`() {
+        val ends = List(40) { 3 * DAY + it * 30_000L }
+        val intervals = intervalSets(listOf(IntervalSnatches(8, 16.0, ends, "15:15 MVO2")))
+        val grip = gripLoad(intervals.sets, emptyList(), today = 3, dayOf = dayOf)
+
+        // 320 snatches at 4.5 a rep, all of them ballistic.
+        assertEquals(1_440.0, grip.acute)
+        assertEquals(1_440.0, grip.ballistic)
+    }
 }

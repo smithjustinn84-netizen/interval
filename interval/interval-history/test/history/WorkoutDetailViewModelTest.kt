@@ -12,11 +12,14 @@ import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.snatchIntervals
+import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -34,6 +37,7 @@ class WorkoutDetailViewModelTest : MainDispatcherTest() {
     private val repository = FakeStorage().repository(now = { clock })
     private val hiit = hiitPreset
     private val health = RecordingHealthStore(HealthStatus.Connected)
+    private val lifts = FakeLiftStorage().repository()
 
     private fun viewModel(id: Long = 1) =
         WorkoutDetailViewModel(
@@ -46,6 +50,7 @@ class WorkoutDetailViewModelTest : MainDispatcherTest() {
             FixedTimestampFormatter,
             { clock },
             health,
+            lifts.sessions,
         )
 
     @Test
@@ -100,6 +105,21 @@ class WorkoutDetailViewModelTest : MainDispatcherTest() {
     }
 
     @Test
+    fun `a workout of snatches can be counted from its page and one of anything else cannot`() {
+        repository.history.recordWorkout(snatchIntervals.config, elapsedSeconds = 1_195)
+        repository.history.recordWorkout(hiit.config, elapsedSeconds = 580)
+        val snatches = viewModel(id = 1)
+        val asked = requireNotNull(snatches.state.value.workout?.snatches)
+        assertNull(asked.count)
+        assertNull(viewModel(id = 2).state.value.workout?.snatches)
+
+        snatches.countSnatches(SnatchCount(8, 16.0))
+
+        assertEquals(SnatchCount(8, 16.0), snatches.state.value.workout?.snatches?.count)
+        assertEquals(SnatchCount(8, 16.0), repository.history.history.value.first { it.id == 1L }.snatches)
+    }
+
+    @Test
     fun `a workout of today is of yesterday once midnight passes with the page open`() = runTest {
         Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
         var now = noonOf(TODAY)
@@ -116,6 +136,7 @@ class WorkoutDetailViewModelTest : MainDispatcherTest() {
                 FixedTimestampFormatter,
                 { now },
                 health,
+                lifts.sessions,
             )
         assertEquals(HistoryDay.Today, page.state.value.workout?.day)
 

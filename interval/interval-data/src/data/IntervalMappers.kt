@@ -6,6 +6,7 @@ import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
+import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -108,6 +109,7 @@ internal fun HistoryEntity.toDomain() = HistoryEntry(
     startedAtEpochMillis = startedAtEpochMillis,
     averageBpm = averageBpm,
     peakBpm = peakBpm,
+    snatches = SnatchCount.of(snatchesPerSet, snatchBellKg),
 )
 
 internal fun HistoryEntry.toEntity(uid: String, updatedAtEpochMillis: Long) = HistoryEntity(
@@ -135,6 +137,8 @@ internal fun HistoryEntry.toEntity(uid: String, updatedAtEpochMillis: Long) = Hi
     startedAtEpochMillis = startedAtEpochMillis,
     averageBpm = averageBpm,
     peakBpm = peakBpm,
+    snatchesPerSet = snatches?.perSet,
+    snatchBellKg = snatches?.bellKg,
 )
 
 internal fun PresetEntity.toDomain() =

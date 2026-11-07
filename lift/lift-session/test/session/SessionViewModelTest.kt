@@ -152,6 +152,7 @@ class SessionViewModelTest {
             { now },
         ),
         timers,
+        intervals,
         FixedTimestampFormatter,
         { now },
         savedState,

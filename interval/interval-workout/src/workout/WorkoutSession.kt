@@ -6,6 +6,7 @@ import dev.justinsmith.interval.data.SettingsStore
 import dev.justinsmith.interval.data.WorkoutProgressStore
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.PerceivedEffort
+import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.platform.ActiveWorkout
 import dev.justinsmith.interval.platform.BackgroundWorkout
 import dev.justinsmith.interval.platform.CuePlayer
@@ -178,6 +179,16 @@ class WorkoutSession(
         run = reflected
         if (reflected.entryUid == null) return
         recorder.reflect(reflected)
+        checkpoint()
+    }
+
+    /** About how many snatches a set the finished workout held, from the summary: kept in History with it at once. */
+    fun countSnatches(count: SnatchCount?) {
+        val current = run ?: return
+        val counted = current.copy(snatches = count)
+        run = counted
+        if (counted.entryUid == null) return
+        recorder.countSnatches(counted)
         checkpoint()
     }
 

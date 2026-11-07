@@ -8,9 +8,11 @@ import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.lift.data.ExerciseFilterStore
 import dev.justinsmith.lift.data.ExerciseStore
 import dev.justinsmith.lift.data.GearStore
+import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.data.SetStore
+import dev.justinsmith.lift.data.snatchSets
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.Side
@@ -54,6 +56,7 @@ class SessionViewModel(
     val summary: FinishSession,
     val easierDay: EasierDay,
     private val timers: SessionTimers,
+    intervals: IntervalActivity,
     timestamps: TimestampFormatter,
     clock: WallClock,
     private val savedState: SavedStateHandle = SavedStateHandle(),
@@ -101,8 +104,13 @@ class SessionViewModel(
     private val opened = MutableStateFlow<String?>(null)
 
     private val detail: Flow<ExerciseDetailUiState?> =
-        combine(opened, sessionStore.sessions, exerciseStore.customExercises) { key, sessions, made ->
-            key?.let { Exercise.parse(it, made) }?.let { exerciseDetail(it, sessions, timestamps) }
+        combine(opened, sessionStore.sessions, exerciseStore.customExercises, intervals.workouts) {
+                key,
+                sessions,
+                made,
+                workouts,
+            ->
+            key?.let { Exercise.parse(it, made) }?.let { exerciseDetail(it, sessions, timestamps, workouts.snatchSets) }
         }
 
     // The records and the lifts done lately scan every set ever logged: worked out again as a set is logged, not

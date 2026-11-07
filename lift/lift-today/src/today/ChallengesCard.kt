@@ -25,6 +25,8 @@ import dev.justinsmith.lift.today.resources.today_challenge_get_up
 import dev.justinsmith.lift.today.resources.today_challenge_get_up_best
 import dev.justinsmith.lift.today.resources.today_challenge_snatch
 import dev.justinsmith.lift.today.resources.today_challenge_snatch_best
+import dev.justinsmith.lift.today.resources.today_challenge_snatch_best_from
+import dev.justinsmith.lift.today.resources.today_challenge_snatch_best_from_intervals
 import dev.justinsmith.lift.today.resources.today_challenge_swings
 import dev.justinsmith.lift.today.resources.today_challenge_swings_count
 import dev.justinsmith.lift.today.resources.today_challenge_swings_program
@@ -56,7 +58,7 @@ internal fun ChallengesCard(challenges: List<Challenge>, modifier: Modifier = Mo
 
                 is Challenge.SnatchTest -> ChallengeRow(
                     Res.string.today_challenge_snatch,
-                    stringResource(Res.string.today_challenge_snatch_best, challenge.best),
+                    snatchBest(challenge),
                     share = challenge.best.toFloat() / SNATCH_TEST_REPS,
                 )
 
@@ -94,5 +96,16 @@ private fun ChallengeRow(title: StringResource, detail: String, share: Float?) {
         Text(stringResource(title), style = IntervalTheme.type.label, color = palette.text)
         Text(detail, style = IntervalTheme.type.meta, color = palette.textDim)
         share?.let { ProgressBar(it.coerceIn(0f, 1f), palette.accent) }
+    }
+}
+
+/** The snatch test's best, and where it came from when that was an interval workout's snatches. */
+@Composable
+private fun snatchBest(challenge: Challenge.SnatchTest): String {
+    val preset = challenge.preset
+    return when {
+        !challenge.fromIntervals -> stringResource(Res.string.today_challenge_snatch_best, challenge.best)
+        preset != null -> stringResource(Res.string.today_challenge_snatch_best_from, challenge.best, preset)
+        else -> stringResource(Res.string.today_challenge_snatch_best_from_intervals, challenge.best)
     }
 }

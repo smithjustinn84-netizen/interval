@@ -43,7 +43,9 @@ import kotlinx.coroutines.flow.Flow
  * and the rest between them ([HistoryEntity.thenBlocks], [HistoryEntity.blockRestSeconds]), one block in rows from
  * before; version 13 let a plan be a day of a sport ([PlannedEntity.sport]) and added the sport days logged
  * ([SportLogEntity]); version 14 the mobility flows the user built ([FlowEntity]); version 15 whether a preset
- * switches hands each work ([PresetEntity.alternateHands]), not in rows from before.
+ * switches hands each work ([PresetEntity.alternateHands]), not in rows from before; version 16 about how many
+ * snatches a set a workout held and the bell ([HistoryEntity.snatchesPerSet], [HistoryEntity.snatchBellKg]), none
+ * in rows from before.
  */
 @Database(
     entities = [
@@ -53,7 +55,7 @@ import kotlinx.coroutines.flow.Flow
         SportLogEntity::class,
         FlowEntity::class,
     ],
-    version = 15,
+    version = 16,
     // 3 to 4 and 4 to 5 are MIGRATION_3_4 and MIGRATION_4_5, added by buildAppDatabase.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -68,6 +70,7 @@ import kotlinx.coroutines.flow.Flow
         AutoMigration(from = 12, to = 13),
         AutoMigration(from = 13, to = 14),
         AutoMigration(from = 14, to = 15),
+        AutoMigration(from = 15, to = 16),
     ],
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -190,6 +193,20 @@ interface HistoryDao {
             "WHERE id = :id AND average_bpm IS NULL",
     )
     suspend fun keepHeartRateOf(id: Long, average: Int, peak: Int, now: Long)
+
+    /** Sets about how many snatches a set the workout [uid] held and the bell, at [now]; both null for none. */
+    @Query(
+        "UPDATE history SET snatches_per_set = :perSet, snatch_bell_kg = :bellKg, updated_at = :now " +
+            "WHERE uid = :uid",
+    )
+    suspend fun countSnatches(uid: String, perSet: Int?, bellKg: Double?, now: Long)
+
+    /** As [countSnatches], for the workout stored under [id]. */
+    @Query(
+        "UPDATE history SET snatches_per_set = :perSet, snatch_bell_kg = :bellKg, updated_at = :now " +
+            "WHERE id = :id",
+    )
+    suspend fun countSnatchesOf(id: Long, perSet: Int?, bellKg: Double?, now: Long)
 
     /** Marks every workout not yet deleted as deleted at [now]. */
     @Query("UPDATE history SET deleted = 1, updated_at = :now WHERE deleted = 0")
@@ -354,6 +371,9 @@ data class HistoryEntity(
     /** A sequence's blocks after its first, a JSON list ([encodeBlocks]); "[]", one block, in rows from before 12. */
     @ColumnInfo(name = "then_blocks", defaultValue = "'[]'") val thenBlocks: String = "[]",
     @ColumnInfo(name = "block_rest_seconds", defaultValue = "0") val blockRestSeconds: Int = 0,
+    /** About how many snatches a set and the bell, as the lifter counted them; both null until counted. */
+    @ColumnInfo(name = "snatches_per_set") val snatchesPerSet: Int? = null,
+    @ColumnInfo(name = "snatch_bell_kg") val snatchBellKg: Double? = null,
 )
 
 @Entity(tableName = "preset")

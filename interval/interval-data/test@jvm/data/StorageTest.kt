@@ -15,6 +15,7 @@ import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.model.asPlan
@@ -405,6 +406,33 @@ class StorageTest {
     }
 
     @Test
+    fun `a version 15 database keeps its workouts uncounted and counts them from then on`() {
+        BundledSQLiteDriver().open(directory.resolve(DATABASE_NAME).absolutePath).use { connection ->
+            V15_SCHEMA.forEach(connection::execSQL)
+            connection.execSQL(
+                "INSERT INTO history (finished_at, prep_seconds, work_seconds, rest_seconds, rounds, " +
+                    "elapsed_seconds, ended_early, activity, uid, updated_at) " +
+                    "VALUES ($NOW, 10, 15, 15, 40, 1195, 0, 'Kettlebell', 'w', $NOW)",
+            )
+            connection.execSQL("PRAGMA user_version = 15")
+        }
+        withApp { repository ->
+            val workout = repository.history.history.value.single()
+            assertEquals(null, workout.snatches)
+
+            repository.history.countSnatches("w", SnatchCount(8, 16.0))
+            settled(repository) { it.history.history.value.single().snatches != null }
+        }
+        withApp { repository ->
+            val workout = repository.history.history.value.single()
+            assertEquals(SnatchCount(8, 16.0), workout.snatches)
+
+            repository.history.countSnatchesOf(requireNotNull(workout.id), null)
+            settled(repository) { it.history.history.value.single().snatches == null }
+        }
+    }
+
+    @Test
     fun `deleted workouts stay on disk as tombstones`() {
         withApp { repository ->
             repeat(3) { repository.history.recordWorkout(IntervalConfig(), elapsedSeconds = it + 1) }
@@ -710,3 +738,45 @@ private val V12_SCHEMA = V11_SCHEMA.dropLast(1) + listOf("history", "preset", "p
         "ALTER TABLE `$table` ADD COLUMN `block_rest_seconds` INTEGER NOT NULL DEFAULT 0",
     )
 } + "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3b0e16ac34a6b1ae62a67e2c86ad1f43')"
+
+/** Version 15 as it shipped (`schemas/.../15.json`), whole: no step since 12 had a test of its own. */
+private val V15_SCHEMA = listOf(
+    "CREATE TABLE IF NOT EXISTS `history` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+        "`finished_at` INTEGER NOT NULL, `prep_seconds` INTEGER NOT NULL, " +
+        "`work_seconds` INTEGER NOT NULL, `rest_seconds` INTEGER NOT NULL, `rounds` INTEGER NOT NULL, " +
+        "`elapsed_seconds` INTEGER NOT NULL, `ended_early` INTEGER NOT NULL, " +
+        "`work_active_seconds` INTEGER, `activity` TEXT, `uid` TEXT NOT NULL DEFAULT '', " +
+        "`updated_at` INTEGER NOT NULL DEFAULT 0, `deleted` INTEGER NOT NULL DEFAULT 0, `effort` INTEGER, " +
+        "`note` TEXT, `warm_up_seconds` INTEGER NOT NULL DEFAULT 0, " +
+        "`cool_down_seconds` INTEGER NOT NULL DEFAULT 0, `started_at` INTEGER, `average_bpm` INTEGER, " +
+        "`peak_bpm` INTEGER, `sets` INTEGER NOT NULL DEFAULT 1, " +
+        "`set_rest_seconds` INTEGER NOT NULL DEFAULT 0, `work_step_seconds` INTEGER NOT NULL DEFAULT 0, " +
+        "`then_blocks` TEXT NOT NULL DEFAULT '[]', `block_rest_seconds` INTEGER NOT NULL DEFAULT 0)",
+    "CREATE INDEX IF NOT EXISTS `index_history_finished_at` ON `history` (`finished_at`)",
+    "CREATE UNIQUE INDEX IF NOT EXISTS `index_history_uid` ON `history` (`uid`)",
+    "CREATE TABLE IF NOT EXISTS `preset` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+        "`name` TEXT NOT NULL, `prep_seconds` INTEGER NOT NULL, `work_seconds` INTEGER NOT NULL, " +
+        "`rest_seconds` INTEGER NOT NULL, `rounds` INTEGER NOT NULL, `activity` TEXT, " +
+        "`warm_up_seconds` INTEGER NOT NULL DEFAULT 0, `cool_down_seconds` INTEGER NOT NULL DEFAULT 0, " +
+        "`sets` INTEGER NOT NULL DEFAULT 1, `set_rest_seconds` INTEGER NOT NULL DEFAULT 0, " +
+        "`work_step_seconds` INTEGER NOT NULL DEFAULT 0, `then_blocks` TEXT NOT NULL DEFAULT '[]', " +
+        "`block_rest_seconds` INTEGER NOT NULL DEFAULT 0, `alternate_hands` INTEGER NOT NULL DEFAULT 0)",
+    "CREATE TABLE IF NOT EXISTS `planned` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+        "`weekday` INTEGER, `epoch_day` INTEGER, `name` TEXT NOT NULL, `prep_seconds` INTEGER NOT NULL, " +
+        "`work_seconds` INTEGER NOT NULL, `rest_seconds` INTEGER NOT NULL, `rounds` INTEGER NOT NULL, " +
+        "`activity` TEXT, `preset_id` INTEGER, `created_at` INTEGER NOT NULL, `lift` TEXT, " +
+        "`warm_up_seconds` INTEGER NOT NULL DEFAULT 0, `cool_down_seconds` INTEGER NOT NULL DEFAULT 0, " +
+        "`sets` INTEGER NOT NULL DEFAULT 1, `set_rest_seconds` INTEGER NOT NULL DEFAULT 0, " +
+        "`work_step_seconds` INTEGER NOT NULL DEFAULT 0, `then_blocks` TEXT NOT NULL DEFAULT '[]', " +
+        "`block_rest_seconds` INTEGER NOT NULL DEFAULT 0, `sport` TEXT)",
+    "CREATE TABLE IF NOT EXISTS `sport_log` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+        "`epoch_day` INTEGER NOT NULL, `sport` TEXT NOT NULL, `name` TEXT NOT NULL, " +
+        "`logged_at` INTEGER NOT NULL)",
+    "CREATE UNIQUE INDEX IF NOT EXISTS `index_sport_log_epoch_day_sport_name` ON `sport_log` (`epoch_day`, " +
+        "`sport`, `name`)",
+    "CREATE TABLE IF NOT EXISTS `flow` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+        "`name` TEXT NOT NULL, `use` TEXT NOT NULL, `note` TEXT, `moves` TEXT NOT NULL)",
+    "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+    "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, " +
+        "'6b9d2f9ff87e13df65aa44eb8a746024')",
+)

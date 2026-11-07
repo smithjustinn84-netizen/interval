@@ -31,5 +31,5 @@ val workoutModule: Module = module {
             StatusColors(prep.toArgb(), work.toArgb(), rest.toArgb(), done.toArgb(), paused.toArgb(), setRest.toArgb())
         }
     }
-    viewModel { (id: Long, flow: String?) -> WorkoutViewModel(id, flow, get(), get(), get()) }
+    viewModel { (id: Long, flow: String?) -> WorkoutViewModel(id, flow, get(), get(), get(), get(), get()) }
 }

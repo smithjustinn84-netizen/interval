@@ -2,6 +2,7 @@ package dev.justinsmith.lift.domain
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -52,5 +53,17 @@ class DensityTest {
         assertEquals(24.0, best.kg)
         assertTrue(newPaces(listOf(fast), slow).isEmpty())
         assertEquals(best, bestPaceOf(BuiltInExercise.TwoHandSwing, listOf(slow, fast)))
+    }
+
+    @Test
+    fun `an interval workout's snatches set a pace beside the sessions'`() {
+        val ends = List(40) { 25_000L + it * 30_000L }
+        val intervals = intervalSets(listOf(IntervalSnatches(8, 16.0, ends, "15:15 MVO2")))
+
+        val pace = assertNotNull(bestPaceOf(BuiltInExercise.Snatch, emptyList(), intervals))
+        // 320 snatches from the first set's start, 9 s in, to the last one's end at 19:55.
+        assertEquals(16.19, pace.perMinute, 0.01)
+        assertEquals(16.0, pace.kg)
+        assertNull(bestPaceOf(BuiltInExercise.Snatch, emptyList()))
     }
 }
