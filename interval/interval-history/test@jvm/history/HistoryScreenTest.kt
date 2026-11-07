@@ -247,7 +247,7 @@ class HistoryScreenTest {
         )
         setThemedContent { HistoryScreen(state, actions) }
         onNodeWithText("Up next · Today").assertExists()
-        onNodeWithText("Then Tomorrow · HIIT 30/30").assertExists()
+        onNodeWithText("Then tomorrow · HIIT 30/30").assertExists()
         onNodeWithText("Start").performClick()
         onNodeWithText("Edit plan").performClick()
         assertEquals(listOf("start Tabata", "plan"), events)
@@ -269,7 +269,7 @@ class HistoryScreenTest {
         setThemedContent { HistoryScreen(state, actions) }
         onNodeWithText("Press ladders 1-2-3").assertExists()
         onNode(hasText("Day 1 of", substring = true)).assertExists()
-        onNodeWithText("Then Tomorrow · Tabata").assertExists()
+        onNodeWithText("Then tomorrow · Tabata").assertExists()
         onNodeWithText("Start").performClick()
 
         state = state.copy(upNext = listOf(UpNextItem.Lift(20_741, HistoryDay.Today, day, resume = true)))

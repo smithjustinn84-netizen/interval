@@ -122,21 +122,22 @@ class HomeScreenTest {
     }
 
     @Test
-    fun `a planned workout is up next under start workout`() = runUiTest {
+    fun `a planned workout is up next under start with the one thing after it`() = runUiTest {
         val started = mutableListOf<String>()
         val state = empty.copy(
             weekGoal = WeekGoal(count = 1, goal = 3),
             upNext = listOf(
                 UpNextItem.Planned(1, THURSDAY, HistoryDay.Today, hiitPreset.name, hiitPreset.config),
                 UpNextItem.Planned(2, THURSDAY + 1, HistoryDay.Tomorrow, tabataPreset.name, tabataPreset.config),
+                UpNextItem.Planned(3, THURSDAY + 2, HistoryDay.On("Sat"), hiitPreset.name, hiitPreset.config),
             ),
         )
         setThemedContent { HomeScreen(state, HomeActions(onStart = { name, _ -> started += name })) }
 
         onNodeWithText("Up next · Today").assertIsDisplayed()
         onNodeWithText("1 of 3 done").assertIsDisplayed()
-        onNodeWithText("Then Tomorrow · Tabata").assertIsDisplayed()
-        onNodeWithText("Start workout").performClick()
+        onNodeWithText("Then tomorrow · Tabata").assertIsDisplayed()
+        onNodeWithText("Start").performClick()
         assertEquals(listOf("HIIT 30/30"), started)
     }
 
@@ -154,7 +155,7 @@ class HomeScreenTest {
         onNodeWithText("BJJ", useUnmergedTree = true).assertExists()
         onNodeWithText("BJJ class").assertIsDisplayed()
         onNodeWithText("Counts toward your week").assertIsDisplayed()
-        onNodeWithText("Start workout").assertDoesNotExist()
+        onNodeWithText("Start").assertDoesNotExist()
         onNodeWithText("Also today").assertDoesNotExist()
         onNodeWithText("Log it").performClick()
         assertEquals(listOf("Bjj: BJJ class logged"), logged)
@@ -220,7 +221,7 @@ class HomeScreenTest {
         onNodeWithText("Also today").assertIsDisplayed()
         onNodeWithText("Counts toward your week").assertIsDisplayed()
         onNodeWithText("Log it").performClick()
-        onNodeWithText("Start workout").performClick()
+        onNodeWithText("Start").performClick()
         assertEquals(listOf("BJJ class logged", "start HIIT 30/30"), events)
     }
 

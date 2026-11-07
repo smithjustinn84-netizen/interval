@@ -448,17 +448,17 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         see(name)
     }
 
-    /** A flow to do before the day's sport, leading Today under what it is before. */
+    /** A flow to do before the day's sport, leading Today under what it is before, with the lead's own Start. */
     fun seeFlowLeads(before: String, name: String) {
         see(before)
         see(name)
-        see("Start workout")
+        see("Start")
     }
 
     fun seeNoFlowSuggested() = seeNo(hasText("Before ", substring = true))
 
     /** The lead's own Start: the flow runs, with the Timer left as it is. */
-    fun startFlowFromToday() = tap("Start workout")
+    fun startFlowFromToday() = tap("Start")
 
     /** The program's day as Today's lead: its Start is the big one, by the day's number. */
     fun seeProgramDayLeads() = see(hasText("Start day", substring = true))

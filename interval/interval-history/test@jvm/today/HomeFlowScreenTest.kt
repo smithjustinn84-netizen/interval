@@ -58,7 +58,7 @@ class HomeFlowScreenTest {
         onNodeWithText("Mobility · 6 moves · no bell · 8:00").assertIsDisplayed()
         onNodeWithText("Also today").assertIsDisplayed()
         onNodeWithText("BJJ class").assertIsDisplayed()
-        onNodeWithText("Start workout").performClick()
+        onNodeWithText("Start").performClick()
         onNodeWithText("Log it").performClick()
         assertEquals(listOf("Hips and shoulders true"), started)
         assertEquals(listOf("Bjj"), logged)

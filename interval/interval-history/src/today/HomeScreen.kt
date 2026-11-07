@@ -39,6 +39,7 @@ import dev.justinsmith.interval.history.resources.history_edit_plan
 import dev.justinsmith.interval.history.resources.history_empty_plan
 import dev.justinsmith.interval.history.resources.history_lift_any
 import dev.justinsmith.interval.history.resources.history_lift_session
+import dev.justinsmith.interval.history.resources.history_start
 import dev.justinsmith.interval.history.resources.history_up_next
 import dev.justinsmith.interval.history.resources.home_before_class
 import dev.justinsmith.interval.history.resources.home_before_climbing
@@ -263,8 +264,8 @@ private fun HomeUiState.previewAt(place: String): StartPreview? = when {
 }
 
 /**
- * What is up next, by its day: its name over what it is, its Start, and the two [later] in a line. A day of a
- * sport has nothing to start: on its day it is logged, and before it only named.
+ * What is up next, by its day: its name over what it is, its Start, and the first of [later] in a line. A day of
+ * a sport has nothing to start: on its day it is logged, and before it only named.
  */
 @Composable
 private fun UpNext(
@@ -295,9 +296,11 @@ private fun UpNext(
             Text(upNextTitle(next), style = IntervalTheme.type.value, color = palette.text)
             Text(upNextDetail(next), style = IntervalTheme.type.meta, color = palette.textDim)
         }
+        // The card names what it starts, so its Start says no more: "Start", "Start day 3", "Resume session".
+        val start = stringResource(Res.string.history_start)
         when (next) {
             is UpNextItem.Planned ->
-                StartButton({ actions.onStart(next.name, next.config) }, Modifier.fillMaxWidth())
+                StartButton({ actions.onStart(next.name, next.config) }, Modifier.fillMaxWidth(), label = start)
 
             is UpNextItem.Lift -> {
                 val day = next.programDay
@@ -316,10 +319,14 @@ private fun UpNext(
                 if (next.day == HistoryDay.Today) LogSportButton(next.sport, actions, Modifier.fillMaxWidth())
 
             // Started as any workout is, and known for the flow it is by its shape.
-            is UpNextItem.Flow ->
-                StartButton({ actions.onStart(next.flow.name, next.flow.config) }, Modifier.fillMaxWidth())
+            is UpNextItem.Flow -> StartButton(
+                { actions.onStart(next.flow.name, next.flow.config) },
+                Modifier.fillMaxWidth(),
+                label = start,
+            )
         }
-        UpNextLater(later)
+        // The next thing alone: Log's Coming up has the rest.
+        UpNextLater(later, count = 1)
     }
 }
 

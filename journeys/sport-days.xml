@@ -16,19 +16,19 @@
     <action>Verify that today's row shows a "BJJ class" chip with a pennant beside it</action>
     <action>Verify that the "Routine" heading reads "Every week · 1 sport day"</action>
     <action>Tap "Back"</action>
-    <action>Verify that "BJJ" is written under today on the week strip, whose bar is the short one of a rest day</action>
-    <action>Verify that the card under the week reads "Before class" over "Hips and shoulders" and "Mobility · 6 moves · no bell · 8:00", with a "Start workout" button</action>
+    <action>Verify that "BJJ" is written under today's dot on the week, which is the plain one of a rest day</action>
+    <action>Verify that the card under the week reads "Before class" over "Hips and shoulders" and "Mobility · 6 moves · no bell · 8:00", with a "Start" button</action>
     <action>Verify that "Also today" lists "BJJ class" with "Counts toward your week" and "Log it"</action>
     <action>Tap "Log it"</action>
     <action>Verify that a notice says "BJJ class logged" with "Undo"</action>
-    <action>Verify that today on the week strip is a filled block, the week card counts "1 workout" and the card under it says "Nothing more due"</action>
+    <action>Verify that today's dot on the week is filled and checked, the week card counts "1 workout" and the card under it says "Nothing more due"</action>
     <action>Tap "Undo"</action>
-    <action>Verify that "Before class" leads again with "BJJ class" and its "Log it" under "Also today", and today's bar is the short one</action>
-    <action>Tap "Start workout" and verify that the workout shows "Get ready" with "90/90 hip switch" and "Move 1 of 6"</action>
+    <action>Verify that "Before class" leads again with "BJJ class" and its "Log it" under "Also today", and today's dot is the plain one again</action>
+    <action>Tap "Start" and verify that the workout shows "Get ready" with "90/90 hip switch" and "Move 1 of 6"</action>
     <action>Tap "Skip" until the summary shows "6 moves", then tap "Done"</action>
     <action>Verify that Today now shows "Up next · Today" with "BJJ class" and "Counts toward your week" over a "Log it" button, with no "Before class" and no "Also today", and the week counts "1 workout" and "1 mobility"</action>
     <action>Tap the "Log" tab</action>
-    <action>Tap today on the week strip</action>
+    <action>Tap today's dot on the week</action>
     <action>Verify that the day sheet shows "BJJ class" reading "Every" and today's weekday, with "Log it"</action>
     <action>Tap "Log it"</action>
     <action>Verify that the plan reads "Done" and a "BJJ class" row reading "Logged" has an "×"</action>

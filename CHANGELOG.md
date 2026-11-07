@@ -95,6 +95,9 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 - Today's week is one glance: "This week" over "2 of 4 done" (or "Goal met", the streak beside it; with no goal,
   the count and "Set a weekly goal"), then a dot a day, filled and checked in its kind's colour once done,
   outlined while planned, slashed when missed, today's ringed. The ring and the time bars by day stay on Log.
+- Today's Up next says "Start" over a planned workout or a flow, as the card names what it starts ("Start day 3",
+  "Start session" and "Resume session" as before), and "Then tomorrow · Tabata" names the next plan alone, in
+  lower case mid-sentence on Log too; Log's Coming up has the rest.
 - Log's week shows a bar a kind (Strength, Conditioning, Mobility, Sport days), each what was done of it against
   what was planned, in place of the line that split the week. Under it, "Coming up" lists every plan of the next
   seven days, a row each with its day and its Start, then the log's days under "Done this week" and "Earlier". The

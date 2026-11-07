@@ -147,12 +147,15 @@ private fun EditPlan(onPlan: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
-/** The first two of [later], what comes after the lead, in a line: "Then Fri · Tabata · Sat · Lift session". */
+/**
+ * The first [count] of [later], what comes after the lead, in a line: "Then tomorrow · Tabata · Sat · Lift
+ * session".
+ */
 @Composable
-internal fun UpNextLater(later: List<UpNextItem>, modifier: Modifier = Modifier) {
+internal fun UpNextLater(later: List<UpNextItem>, modifier: Modifier = Modifier, count: Int = 2) {
     if (later.isEmpty()) return
-    val parts = later.take(2).map {
-        stringResource(Res.string.common_joined, shortDay(it.day, it.epochDay), upNextName(it))
+    val parts = later.take(count).map {
+        stringResource(Res.string.common_joined, shortDay(it.day, it.epochDay, midSentence = true), upNextName(it))
     }
     Text(
         stringResource(Res.string.history_then, joined(parts)),
@@ -331,9 +334,11 @@ internal fun MostDone(rows: List<ShapeRow>, modifier: Modifier = Modifier) {
     }
 }
 
-/** A day in a line of them: "Today", "Tomorrow", else its weekday, "Fri". */
+/** A day in a line of them: "Today", "Tomorrow", else its weekday, "Fri"; [midSentence], after "Then", "tomorrow". */
 @Composable
-private fun shortDay(day: HistoryDay, epochDay: Long): String = when (day) {
-    HistoryDay.Today, HistoryDay.Tomorrow, HistoryDay.Yesterday -> dayHeading(day)
+private fun shortDay(day: HistoryDay, epochDay: Long, midSentence: Boolean = false): String = when (day) {
+    HistoryDay.Today, HistoryDay.Tomorrow, HistoryDay.Yesterday ->
+        dayHeading(day).let { if (midSentence) it.replaceFirstChar { first -> first.lowercase() } else it }
+
     is HistoryDay.On -> weekdayText(weekdayOf(epochDay), WeekdayForm.Short)
 }
