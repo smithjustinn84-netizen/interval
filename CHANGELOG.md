@@ -96,11 +96,27 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   or more days of the mat the program's two are enough.
 - Exports are schema 9, with the presets that switch hands and the bells you have two of; a build from before it
   refuses the file with "update the app", and older files read as before.
+- Lift weighs your grip: each set by its reps, how hard the lift is on the hands and whether it was thrown, and a
+  logged BJJ day too. Lately shows the week's load and how much of it was swings, cleans and snatches, and warns
+  when it is well past the weeks before. The summary says when it was a heavy grip day, and after a hundred
+  snatches or three hundred one-hand swings, how to look after your hands.
+- Easier today: after a session that felt very hard, BJJ on top of a heavy grip week, or a grip overreached, a
+  program day offers before its first set to go easier: presses and squats a bell lighter (a pair for two bells),
+  swings and snatches shorter, rests by the lift, and it names the program's day lighter on the grip.
+- Density before a bigger bell: where the next bell is more than a fifth heavier, a lift done in full rests 15 s less
+  next time, down to 30 s for swings and snatches or 60 s otherwise, before the bell goes up. A block's line says its
+  own rest. Your best pace (reps a minute at a weight) is on a lift's page, and a new one on the summary; only sets
+  logged as they were done count.
+- Challenges under the program on Lift's Today: 10,000 swings, the snatch test (100 in 5 minutes), the Armor
+  Building Complex's best twenty minutes, and a get-up at your body weight. A lift's page says its reps in all, and
+  the summary names a new best and a milestone crossed.
+- Exports are schema 10, with a block's own rest.
 
 ### Changed
 - The get-up is named the Turkish get-up, and the band's overhead press "Band overhead press". Program summaries
   say what their days do: Armor Building Formula no longer promises 30 complexes, Rite of Passage's ladders are
   presses starting at five, and Your first 100 swings rotates 5, 8 and 10 a minute within each week.
+- Two bells step up only to a weight you own two of, once you have said which.
 - The Plan sheet's "spread over the week" for a program's days picks as evenly as Set up does, from the day picked.
 - The Timer is no longer a tab: it is a page over Train's Conditioning pillar, opened by the "Timer" row at the
   top of the presets, with a Back to them. The bar is Today · Train · Log. "Put on Timer", the "Start a

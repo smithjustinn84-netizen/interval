@@ -147,9 +147,15 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      for none named; `Load.named`, `Block.withLoad`), records,
                      `EmomClock`/`HoldClock`/`RestClock`, suggestions, about how long a program's day takes
                      (`Estimate.kt`, from its sets, each lift's pace and the rest between sets), the program to
-                     start someone on with one bell (`StarterProgram.kt`). No dependencies
+                     start someone on with one bell (`StarterProgram.kt`). The coaching (docs/kettlebell-coaching.md):
+                     how each lift moves (`Movement.kt`: pattern, tempo ballistic/grind/hold, grip, lifts in a rep),
+                     the grip's load (`Grip.kt`, BJJ days in it) and how ready the lifter is (`Readiness.kt`), a
+                     taxed day's easier plan (`Autoregulate.kt`), density and pace (`Density.kt`, only from sets
+                     logged as done) and the challenges and totals (`Benchmarks.kt`), all worked out from sets
+                     logged, nothing stored. No dependencies
   lift-api           the ports between the sides, package `dev.justinsmith.lift.data`: `IntervalActivity` (what
-                     Lift reads of the interval side, the days a sport was logged on among it; `app` binds it),
+                     Lift reads of the interval side, the days a sport was logged on among it, each a `SportDay`
+                     saying whether it was grappling, and the body weight; `app` binds it),
                      `LiftActivity` (what the interval side reads of Lift; `SessionRepository` is it). Over
                      `lift-domain` alone
   lift-data          `LiftRepository`, the root of a repository per store (`SessionRepository`, `SetRepository`,

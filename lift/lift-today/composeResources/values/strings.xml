@@ -61,9 +61,9 @@
     <string name="today_challenge_abc">Armor Building Complex</string>
     <string name="today_challenge_abc_best">Best: %1$d complexes in 20 minutes</string>
     <string name="today_challenge_get_up">A get-up at your body weight</string>
-    <string name="today_challenge_get_up_best">Heaviest: %1$s kg, %2$d%% of your weight</string>
+    <string name="today_challenge_get_up_best">Heaviest: %1$s kg, %2$d% of your weight</string>
     <string name="today_grip_week">Grip this week: %1$d</string>
-    <string name="today_grip_thrown">%1$d%% of it swings, cleans and snatches</string>
+    <string name="today_grip_thrown">%1$d% of it swings, cleans and snatches</string>
     <string name="today_grip_overreached">More than the weeks before carried: spare your grip, go for goblet squats, get-ups and carries done short</string>
     <string name="today_group_following">Following</string>
     <string name="today_group_beside">Beside the mat and the wall</string>
