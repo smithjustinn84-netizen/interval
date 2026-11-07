@@ -55,9 +55,6 @@ object IntervalSizes {
     /** The swatch of a kind's colour over a look before Start. */
     val kindSwatch = 16.dp
 
-    /** The day at the start of a row of Log's Coming up: "Today", "Fri". */
-    val comingUpDay = 72.dp
-
     /** The pill of phase colour at the start of a History row. */
     val historyMarkHeight = 40.dp
 

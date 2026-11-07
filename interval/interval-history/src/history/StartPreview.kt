@@ -109,10 +109,23 @@ fun StartPreviewSheet(preview: StartPreview, actions: PreviewActions, onDismiss:
                 modifier = Modifier.semantics { heading() },
             )
         }
-        when (preview) {
-            is StartPreview.Lift -> LiftContents(preview.day)
-            is StartPreview.Workout -> preview.flow?.let { FlowMoves(it.moves) } ?: WorkoutContents(preview)
+        // A flow's moves follow its Start, as on the Mobility pillar: ten of them are a long way to scroll for it.
+        val flow = (preview as? StartPreview.Workout)?.flow
+        if (flow == null) {
+            when (preview) {
+                is StartPreview.Lift -> LiftContents(preview.day)
+                is StartPreview.Workout -> WorkoutContents(preview)
+            }
         }
+        PreviewButtons(preview, actions, hide)
+        flow?.let { FlowMoves(it.moves) }
+    }
+}
+
+/** Start, then Plan for later, each closing the sheet first. */
+@Composable
+private fun PreviewButtons(preview: StartPreview, actions: PreviewActions, hide: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         StartButton(
             onClick = {
                 hide()

@@ -19,13 +19,14 @@ import kotlin.test.assertTrue
 /** The Lift tab and the gear on a tablet: their cards side by side. */
 class TabletTest {
     @Test
-    fun `Today puts the last session beside the program`() = runUiTest(Window.Tablet) {
-        val state = TodayUiState(following = program(ProgramId.GobletSquatRow))
+    fun `Strength sets its groups in two columns`() = runUiTest(Window.Tablet) {
+        val program = program(ProgramId.GobletSquatRow)
+        val state = TodayUiState(following = program, programDay = program.dayAfter(0))
         setThemedContent(dark = true) { TodayScreen(state, onStartSession = {}, onChooseProgram = {}) }
-        // What's next leads, the last session beside it.
-        val last = onNodeWithText("No sessions yet").assertIsDisplayed().getUnclippedBoundsInRoot()
+        // The program followed leads, the programs beside the mat and the wall beside it.
         val following = onNodeWithText("Goblet squat and row").assertIsDisplayed().getUnclippedBoundsInRoot()
-        assertTrue(last.left >= following.right)
+        val beside = onNodeWithText("Beside the mat and the wall").assertIsDisplayed().getUnclippedBoundsInRoot()
+        assertTrue(beside.left >= following.right)
     }
 
     @Test

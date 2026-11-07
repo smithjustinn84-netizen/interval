@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -106,7 +105,7 @@ internal fun ComingUp(
                 if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
                 // A row opens a look at it before Start; a sport, which nothing starts, has none.
                 val described = stringResource(Res.string.preview_open_cd, upNextName(item))
-                Row(
+                Column(
                     Modifier
                         .fillMaxWidth()
                         .then(
@@ -118,16 +117,11 @@ internal fun ComingUp(
                         )
                         .heightIn(min = Sizes.listRow)
                         .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.space4),
                 ) {
-                    Text(
-                        shortDay(item.day, item.epochDay),
-                        style = IntervalTheme.type.caption,
-                        color = palette.textDim,
-                        modifier = Modifier.width(IntervalSizes.comingUpDay),
-                    )
-                    UpNextLead(item, actions, Modifier.weight(1f))
+                    // Its day over it, so the name and what it is keep the row's width.
+                    Text(shortDay(item.day, item.epochDay), style = IntervalTheme.type.caption, color = palette.textDim)
+                    UpNextLead(item, actions)
                 }
             }
         }

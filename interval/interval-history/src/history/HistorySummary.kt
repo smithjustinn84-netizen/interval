@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -177,7 +176,8 @@ private fun KindBars(tallies: List<KindTally>, modifier: Modifier = Modifier) {
                     name,
                     style = IntervalTheme.type.meta,
                     color = palette.text,
-                    modifier = Modifier.width(IntervalSizes.kindLabel),
+                    // At its width at least, so the bars line up; wider with a large font, rather than wrapping.
+                    modifier = Modifier.widthIn(min = IntervalSizes.kindLabel),
                 )
                 ProgressBar(tally.done.toFloat() / tally.of, kindColor(tally.kind), Modifier.weight(1f))
                 Text(
