@@ -153,8 +153,6 @@ Current and past sprints:
 
 - **Wear OS**: a platform project of its own. `HealthStore` (`core-platform`) writes workouts and reads body weight
   and a connected watch's heart rate through Health Connect and Apple Health.
-- **iOS Home Screen widget**: a Swift-only WidgetKit extension fed by `WeekStandingSource`, tracked as ticket 5 in
-  [sprint-0.5.md](sprint-0.5.md) (the Android Glance widget shipped in 0.3).
 - **AppFunctions**: `androidx.appfunctions` is still alpha; deferred until stable, over the start routes the
   widget and launcher shortcuts already use.
 - **Localisation**: the built-in presets' and mobility flows' names are stored/spoken data by design, and both text

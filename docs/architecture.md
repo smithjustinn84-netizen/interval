@@ -16,8 +16,8 @@ The system is structured around two distinct workout domains unified within a sh
    programs, session duration estimates, progression, muscle balance, and PR records).
 
 At the container boundary (`app`), cross-domain features coordinate both sides without coupling them: guided first-run
-and weekly `Set up` (`weeksetup/`), unified JSON export/import (`export/`), and `WeekStandingSource` for the Android
-home-screen widget.
+and weekly `Set up` (`weeksetup/`), unified JSON export/import (`export/`), and `WeekStandingSource` for the Android and
+iOS home-screen widgets.
 
 ```mermaid
 graph TD
@@ -173,7 +173,7 @@ modularity, and data-correctness guidelines. [sprint-architecture.md](sprint-arc
 several core issues:
 
 - **Resolved — Container lifetime (A1)**: `initAppKoin` starts one Koin container per process from Android's `IntervalApplication`,
-  desktop's `main`, and iOS's first frame. `KoinHolder`, main-thread `runBlocking`, and global DataStore maps have been eliminated;
+  desktop's `main`, and iOS's `AppDelegate` at launch (through `startWidgetFeed`). `KoinHolder`, main-thread `runBlocking`, and global DataStore maps have been eliminated;
   databases stay open across Activity restarts.
 - **Resolved — ViewModels in Koin (C4)**: ViewModels are declared in their respective feature Koin modules (`<feature>/src/di/`)
   and resolved with `koinViewModel { parametersOf(id) }`. Positional `scope.get()` calls are removed, and `VerifyAppModulesTest`
@@ -240,7 +240,7 @@ Each module applies a reusable template from `templates/`:
 
 | Layer | Modules | Responsibilities |
 |---|---|---|
-| **App Targets** | `androidApp`, `iosApp`, `desktopApp` | Platform entry points, manifests, splash/launch assets, packaging; Android's home-screen widget (Glance, `androidApp/src/widget/`) and launcher shortcuts; iOS Home Screen quick actions. |
+| **App Targets** | `androidApp`, `iosApp`, `desktopApp` | Platform entry points, manifests, splash/launch assets, packaging; Android's home-screen widget (Glance, `androidApp/src/widget/`) and launcher shortcuts; iOS Home Screen quick actions and widget (`iosApp/widget/`). |
 | **Container** | `app` | Application entry (`App.kt`), Navigation 3 routing table and `Train` pillar host, Koin graph assembly, root theme host, `Set up` (`weeksetup/`), `WeekStandingSource`, `About`, and JSON export/import (`export/`). |
 | **Core** | `core`, `core-platform`, `core-time`, `core-testing` | Design tokens (`Spacing`, `Radius`, `Sizes`, `Motion`), `IntervalTheme`, navigation primitives; the clocks, timestamp formatter, `HealthStore`, and storage utilities in `core-platform`, which has no Compose so the data modules (and their Room KSP) don't rebuild on a UI change; calendar and clock maths in `core-time`, which has no dependencies so the domains compile without Compose; UI test harness. |
 | **Interval Domain & Data** | `interval-domain`, `interval-data`, `interval-platform-api`, `interval-platform` | Timer calculation engine, multi-block `Course`, mobility `Flow`s, `Sport` days, Room database (`AppDatabase`), DataStore preferences, audio/speech cues, Android Foreground Service, iOS notifications. |
@@ -399,6 +399,13 @@ flowchart TD
   - Rather than maintaining power-draining background audio sessions, iOS schedules local notifications (`UNUserNotificationCenter`)
     in advance for each upcoming interval or rest expiration. Returning to the app cancels remaining scheduled alerts.
   - Plan reminders display in-app banner alerts if due while the app is foregrounded (`UNUserNotificationCenterDelegate` in `iosApp.swift`).
+  - **Home Screen widget (`WeekWidget.swift`)**: a Swift-only WidgetKit extension, the Xcode project's second target
+    (`apps/iosApp/widget/`; the toolchain allows one target with its Kotlin build phase, so the extension links no
+    Kotlin). The app writes each `WeekStandingSource` standing as a `WeekSnapshot` JSON (`apps/app/src/data/`) to the
+    App Group `group.dev.justinsmith.interval` (`WidgetFeed.kt`, iosApp) and has `WidgetCenter` redraw; the widget's
+    timeline turns the week at Monday's midnight itself. Its Workout and Lift links (`interval://shortcut/<id>`) go
+    through `SceneDelegate` to `openShortcut`, as the quick actions do. Both targets carry the same version
+    (`tools/check_versions.py`).
 - **Plan Reminders (`PlanReminderScheduler`)**:
   - Recomputes the next 14 days with open plans (`plannedReminders` from `TrainingLog.upNext`) on plan/history changes and at midnight.
   - Android arms one inexact alarm per day (`PlanAlarms`), and `PlanReminderReceiver` words the notification at delivery (`PlanReminderSource`) and extends the 14-day window even when the app hasn't been opened (as well as across reboots and clock changes); iOS schedules calendar-triggered local notifications while reserving slots for active workout alerts.

@@ -151,7 +151,7 @@ agenda:
   strength days via `buildWeek`, save equipment and set the weekly goal (`AppSettings.sessionMinutes`,
   `ExportBundle.SCHEMA` 7), opening once on a fresh empty install (`FirstRun.kt`).
 
-**5. The week on iOS's Home Screen** · L (open)
+**5. The week on iOS's Home Screen** · L
 - Spike first, half a day: a second, Swift-only target in `apps/iosApp/module.xcodeproj` beside `app` (the
   toolchain allows one target with its Kotlin phase, and the extension can't link `KotlinModules`), and an App
   Group on the simulator with `DEVELOPMENT_TEAM = ""`. If either fails the ticket drops below the cut line, and
@@ -169,6 +169,17 @@ agenda:
   workout running is kept, as the quick actions do.
 - Done when: checked on the simulator (`run-on-device`): the widget shows the week and follows a finished
   workout, both taps work cold and warm, a workout running is kept; a Kotlin test pins the snapshot's JSON.
+- As built: the spike passed on iOS 27 with Xcode 27.2. The toolchain's rule is one target *with its Kotlin phase*;
+  a second, Swift-only `widget` target (its own synchronized `widget/` folder, embedded by an "Embed Foundation
+  Extensions" phase and a target dependency on `app`) builds through `./kotlin build`, which runs the `app` scheme,
+  and the toolchain leaves the pbxproj alone. The App Group works with `DEVELOPMENT_TEAM = ""` on a Mac signed in to
+  Xcode (its simulated entitlements carry that account's prefix): the app's write lands in the group container and
+  the widget's process reads it. CI's iOS build, on a runner with no account, is the test of a Mac without one. The snapshot carries the week's Monday
+  (`WeekSnapshot.weekStart`), so the Swift timeline empties the week at its turn, keeping the streak one turn only
+  if the week met its goal. `Link` works in the small family too, so both sizes have both buttons. Checked on the
+  simulator: the widget follows a finished Lift session, Lift and Workout open cold and warm, and a running workout
+  is kept. No journey changed: `journeys/widget.xml` is Android's, and `journeys/` run on `amper-37` alone. On iOS the
+  container now starts in the `AppDelegate` (`startWidgetFeed`), not at the first `App()`.
 
 --- cut line ---
 

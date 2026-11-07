@@ -1,6 +1,7 @@
 import KotlinModules
 import UIKit
 import UserNotifications
+import WidgetKit
 
 // UIKit rather than SwiftUI: iOS takes the status bar style from the window's root controller, and the
 // app sets it to suit each screen (`StatusBarHost`). SwiftUI's own root would ignore it.
@@ -19,6 +20,8 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
             delegate.show(in: scene)
         }
         UNUserNotificationCenter.current().delegate = self
+        // The Home Screen widget's week, kept current from here on (`WidgetFeed.kt`): WidgetKit is Swift alone.
+        WidgetFeedKt.startWidgetFeed { WidgetCenter.shared.reloadTimelines(ofKind: weekWidgetKind) }
         return true
     }
 
@@ -34,6 +37,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
     }
 }
 
+/// `WeekWidget.swift`'s kind.
+private let weekWidgetKind = "WeekWidget"
+
 /// `PlanReminders.ios.kt`'s `REQUEST_PREFIX`: each plan reminder's identifier starts with it.
 private let planReminderPrefix = "plan-reminder-"
 
@@ -47,6 +53,23 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         if let item = connectionOptions.shortcutItem {
             _ = ViewControllerKt.openShortcut(type: item.type)
         }
+        // Launched by the widget's Workout or Lift: the same, by its link.
+        if let url = connectionOptions.urlContexts.first?.url {
+            open(url)
+        }
+    }
+
+    // The widget's Workout or Lift tapped while the app runs.
+    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        if let url = URLContexts.first?.url {
+            open(url)
+        }
+    }
+
+    /// `interval://shortcut/<id>`, Android's form: the quick action whose type is the id.
+    private func open(_ url: URL) {
+        guard url.scheme == "interval", url.host == "shortcut" else { return }
+        _ = ViewControllerKt.openShortcut(type: url.lastPathComponent)
     }
 
     // A quick action chosen while the app runs, in the background or on screen. Its type is a `Shortcut.id`.

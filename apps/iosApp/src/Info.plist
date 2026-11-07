@@ -22,6 +22,18 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<!-- The Home Screen widget's links (interval://shortcut/<Shortcut.id>), which SceneDelegate opens. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>dev.justinsmith.interval</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>interval</string>
+			</array>
+		</dict>
+	</array>
 	<!-- Apple Health (HealthKitStore, in core-platform): what its permission sheet says the app reads and writes. -->
 	<key>NSHealthShareUsageDescription</key>
 	<string>Interval reads your latest body weight, to offer it for the calorie estimate, and your heart rate during a workout you finished, to show on its summary.</string>

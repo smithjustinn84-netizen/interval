@@ -112,6 +112,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   the summary names a new best and a milestone crossed.
 - Exports are schema 10, with a block's own rest.
 
+- The week on iOS's Home Screen, as Android's widget shows it: small and medium widgets with the week's ring
+  ("3/5", or the count alone with no goal), "2 to go" or "Goal met this week", the streak, and Workout and Lift,
+  which open the app as its quick actions do, a workout already running kept. It follows a workout or session as it
+  is finished and empties at Monday's midnight without the app.
+
 ### Changed
 - The get-up is named the Turkish get-up, and the band's overhead press "Band overhead press". Program summaries
   say what their days do: Armor Building Formula no longer promises 30 complexes, Rite of Passage's ladders are

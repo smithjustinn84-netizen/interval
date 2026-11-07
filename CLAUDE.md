@@ -197,8 +197,11 @@ apps/
                      publishing the picker's preview once a version on Android 15+; its words in
                      `res/values/strings.xml`)
   desktopApp         Desktop host application: main.kt entry point, Swing integration, window sizing
-  iosApp             iOS host application: ViewController.kt (and `openShortcut`, the quick actions'), iosApp.swift,
-                     Xcode project, Info.plist (the quick actions, as `UIApplicationShortcutItems`), Assets
+  iosApp             iOS host application: ViewController.kt (and `openShortcut`, the quick actions' and the widget's
+                     links'), iosApp.swift, Xcode project, Info.plist (the quick actions, as `UIApplicationShortcutItems`;
+                     the `interval://` scheme), Assets, and the Home Screen widget: `widget/WeekWidget.swift`, a Swift-only
+                     WidgetKit target beside `app` (the toolchain allows one target with its Kotlin phase), fed the week by
+                     `WidgetFeed.kt` as a `WeekSnapshot` (app's `data/`) JSON in the App Group's defaults
 
 tooling/
   detekt-plugin      Toolchain task plugin: runs detekt with Compose rules across modules (`./kotlin check detekt`)
@@ -270,7 +273,8 @@ toolchain (`$compose.*`).
   platform modules: core's `corePlatformModule` (what both sides take: the clock, ids, formatter, `AppInfo`, `Sharer`),
   `interval-platform`'s `platformModule` and `lift-platform`'s `liftPlatformModule`, plain functions (Android's of a
   `Context`). `initAppKoin` starts it (`startKoin`, once): Android's `IntervalApplication.onCreate`, desktop's
-  `main` (which drains both repositories and stops it as the window closes), iOS's first `App()`. It is never
+  `main` (which drains both repositories and stops it as the window closes), iOS's `AppDelegate` at launch
+  (through `startWidgetFeed`, the widget's feed; the first `App()` otherwise, as Hot Reload's entry point has it). It is never
   closed on Android or iOS, so services and receivers can reach it. Only `apps/` may import `startKoin`,
   `stopKoin` or `GlobalContext` (detekt's `ForbiddenImport`); tests build their own with `testKoin()` and pass it to
   `AppContent`. Neither side's modules
