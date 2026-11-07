@@ -142,6 +142,7 @@ To change one later (a new password, say), run its command again: `gh secret set
 ## Sprint History & Backlog
 
 Current and past sprints:
+- [Sprint 0.6](sprint-0.6.md): Release 0.5.0, a density block (rounds in a time cap) and the ABC either way, and 15:15's snatches counted in Lift.
 - [Sprint 0.5](sprint-0.5.md): Multi-block sequences, Today, Train's three pillars, sport days, mobility flows, first-run Set up, and the iOS Home Screen widget.
 - [Sprint 0.4](sprint-0.4.md): Precomputed courses, sets of rounds, ladders, per-store `IntervalRepository` split, iOS quick actions, and Android 15+ widget picker preview (`v0.4.0`).
 - [Architecture Sprint](sprint-architecture.md): Process-scoped Koin container, `WorkoutSession` and `SessionTimers` process owners, narrow store ports, and `SessionViewModel`/`LiftRepository` splits.

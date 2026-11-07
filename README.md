@@ -274,7 +274,7 @@ For testing architecture, harnesses, and test fakes, see [docs/testing.md](./doc
 - [Testing Strategy](./docs/testing.md): Compose UI desktop harness, fakes, and on-device journeys.
 - [Kettlebell Coaching](./docs/kettlebell-coaching.md): How Lift weighs the grip and readiness, eases a taxed day, and works out density, pace and challenges.
 - [Release Guide](./docs/release.md): Release preparation, R8 optimization, keystore setup, and deployment checklist.
-- [Sprint 0.5](./docs/sprint-0.5.md): The current sprint's tickets, order and definition of done; [Sprint 0.4](./docs/sprint-0.4.md), [Sprint 0.3](./docs/sprint-0.3.md) and the [architecture sprint](./docs/sprint-architecture.md) before it.
+- [Sprint 0.6](./docs/sprint-0.6.md): The current sprint's tickets, order and definition of done; [Sprint 0.5](./docs/sprint-0.5.md), [Sprint 0.4](./docs/sprint-0.4.md), [Sprint 0.3](./docs/sprint-0.3.md) and the [architecture sprint](./docs/sprint-architecture.md) before it.
 - [Developer Guide (CLAUDE.md)](./CLAUDE.md): Code conventions, architecture invariants, and toolchain command reference.
 - [Changelog](./CHANGELOG.md): History of notable changes and milestone releases.
 
