@@ -34,6 +34,8 @@ import dev.justinsmith.lift.ui.resources.program_beginner_full_body_name
 import dev.justinsmith.lift.ui.resources.program_beginner_full_body_summary
 import dev.justinsmith.lift.ui.resources.program_bells_bodyweight_name
 import dev.justinsmith.lift.ui.resources.program_bells_bodyweight_summary
+import dev.justinsmith.lift.ui.resources.program_bjj_kettlebell_name
+import dev.justinsmith.lift.ui.resources.program_bjj_kettlebell_summary
 import dev.justinsmith.lift.ui.resources.program_bodyweight_basics_name
 import dev.justinsmith.lift.ui.resources.program_bodyweight_basics_summary
 import dev.justinsmith.lift.ui.resources.program_bodyweight_emom_name
@@ -152,6 +154,7 @@ fun programName(id: ProgramId): String = stringResource(
         ProgramId.RoundConditioning -> Res.string.program_rounds_name
         ProgramId.GripAndPull -> Res.string.program_grip_pull_name
         ProgramId.ShoulderArmor -> Res.string.program_shoulder_armor_name
+        ProgramId.BjjKettlebell -> Res.string.program_bjj_kettlebell_name
         ProgramId.KettlebellFoundations -> Res.string.program_foundations_name
         ProgramId.FirstHundredSwings -> Res.string.program_first_hundred_name
         ProgramId.BeginnerFullBody -> Res.string.program_beginner_full_body_name
@@ -204,6 +207,7 @@ private fun programSummary(id: ProgramId): String = stringResource(
         ProgramId.RoundConditioning -> Res.string.program_rounds_summary
         ProgramId.GripAndPull -> Res.string.program_grip_pull_summary
         ProgramId.ShoulderArmor -> Res.string.program_shoulder_armor_summary
+        ProgramId.BjjKettlebell -> Res.string.program_bjj_kettlebell_summary
         ProgramId.KettlebellFoundations -> Res.string.program_foundations_summary
         ProgramId.FirstHundredSwings -> Res.string.program_first_hundred_summary
         ProgramId.BeginnerFullBody -> Res.string.program_beginner_full_body_summary

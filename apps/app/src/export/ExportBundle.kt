@@ -12,7 +12,7 @@ import kotlinx.serialization.Serializable
  * `workStepSeconds`; schema 5 a sequence's blocks after its first, `then`, and `blockRestSeconds`; schema 6 a plan
  * of a day of a sport, `sport`, and the sport days logged, `sportDays`; schema 7 the session's length in the settings,
  * `sessionMinutes`; schema 8 the mobility flows the user built, `flows`; schema 9 whether a preset switches hands,
- * `alternateHands`, all absent from older files). Lift's
+ * `alternateHands`, and the bells owned two of, `pairsKg`, all absent from older files). Lift's
  * sessions carry their sets but not how a day's plan was changed: the sets are the record.
  */
 @Serializable
@@ -163,6 +163,8 @@ data class SportDayExport(
 @Serializable
 data class LiftExport(
     val bellsKg: List<Double>,
+    /** Of [bellsKg], those owned two of; none, and in schema 1 to 8. */
+    val pairsKg: List<Double> = emptyList(),
     val barKg: Double?,
     val restSeconds: Int,
     val bands: List<BandExport>,

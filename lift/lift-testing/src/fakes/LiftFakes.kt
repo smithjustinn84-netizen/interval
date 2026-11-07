@@ -165,6 +165,9 @@ class FakeBellDao : BellDao {
 
     override suspend fun delete(kg: Double) = rows.update { all -> all.filterNot { it.kg == kg } }
 
+    override suspend fun setPair(kg: Double, pair: Boolean) =
+        rows.update { all -> all.map { if (it.kg == kg) it.copy(pair = pair) else it } }
+
     val bar = MutableStateFlow<BarEntity?>(null)
 
     override fun observeBar(): Flow<BarEntity?> = bar

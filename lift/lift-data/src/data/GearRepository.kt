@@ -50,6 +50,11 @@ class GearRepository(
     /** The bells the user owns, lightest first. */
     override val bells: StateFlow<List<Double>> = _bells.asStateFlow()
 
+    private val _pairs = MutableStateFlow(emptySet<Double>())
+
+    /** The bells the user owns two of. */
+    override val pairs: StateFlow<Set<Double>> = _pairs.asStateFlow()
+
     private val _bar = MutableStateFlow<Double?>(null)
 
     /** What the user's barbell weighs empty, or null until they say they have one. */
@@ -73,6 +78,7 @@ class GearRepository(
             launch {
                 bellDao.observeAll().orEmptyOnError("bells", log).collect { rows ->
                     _bells.value = rows.map { it.kg }
+                    _pairs.value = rows.filter { it.pair }.map { it.kg }.toSet()
                     bellsLoaded.complete(Unit)
                 }
             }
@@ -97,6 +103,10 @@ class GearRepository(
 
     override fun setOwned(kg: Double, owned: Boolean) {
         writer.persist { if (owned) bellDao.upsert(BellEntity(kg)) else bellDao.delete(kg) }
+    }
+
+    override fun setPair(kg: Double, pair: Boolean) {
+        writer.persist { bellDao.setPair(kg, pair) }
     }
 
     /** Sets the user's barbell to one weighing [kg] empty, or to none. */

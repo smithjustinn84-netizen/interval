@@ -107,10 +107,16 @@ interface ExerciseStore {
 /** The bells the user owns, their bar and their bands. */
 interface GearStore {
     val bells: StateFlow<List<Double>>
+
+    /** The bells, of [bells], the user owns two of. */
+    val pairs: StateFlow<Set<Double>>
     val bar: StateFlow<Double?>
     val bands: StateFlow<List<Band>>
 
     fun setOwned(kg: Double, owned: Boolean)
+
+    /** Whether the user owns two of the bell of [kg]; nothing for one they don't own. */
+    fun setPair(kg: Double, pair: Boolean)
 
     fun setBar(kg: Double?)
 

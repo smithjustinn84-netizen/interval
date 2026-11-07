@@ -20,13 +20,20 @@ import kotlin.uuid.Uuid
  */
 class InMemoryGearStore(private val usedBands: Set<String> = emptySet()) : GearStore {
     override val bells = MutableStateFlow(emptyList<Double>())
+    override val pairs = MutableStateFlow(emptySet<Double>())
     override val bar = MutableStateFlow<Double?>(null)
     private val changed = MutableStateFlow(emptyList<Band>())
     private val all = MutableStateFlow(bands(emptyList()))
     override val bands: StateFlow<List<Band>> get() = all
 
-    override fun setOwned(kg: Double, owned: Boolean) =
+    override fun setOwned(kg: Double, owned: Boolean) {
         bells.update { (if (owned) it + kg else it - kg).distinct().sorted() }
+        pairs.update { it - kg }
+    }
+
+    override fun setPair(kg: Double, pair: Boolean) {
+        if (kg in bells.value) pairs.update { if (pair) it + kg else it - kg }
+    }
 
     override fun setBar(kg: Double?) {
         bar.value = kg

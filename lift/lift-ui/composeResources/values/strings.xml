@@ -234,6 +234,8 @@
     <string name="program_grip_pull_name">Grip and pull</string>
     <string name="program_grip_pull_summary">Rows, high pulls, cleans and one-arm swings a side, for grips that hold · 2 days a week for 6 weeks</string>
     <string name="program_shoulder_armor_name">Shoulder armor</string>
+    <string name="program_bjj_kettlebell_name">20 minutes beside BJJ</string>
+    <string name="program_bjj_kettlebell_summary">The Armor Building Complex with a pair, on the minute for 15 minutes, one day; get-ups, a bottoms-up carry, windmills and dead bugs the next. Add 15:15 snatches from the Timer on a third · 2 days a week for 6 weeks</string>
     <string name="program_shoulder_armor_summary">Halos, get-ups, windmills and bottoms-up presses, for shoulders that hold up under frames and locks · 3 days a week for 6 weeks</string>
     <string name="program_foundations_name">Kettlebell foundations</string>
     <string name="program_foundations_summary">Deadlifts, goblet squats and halos one day; swings, push-ups and get-ups the next. Learn each lift light · 3 days a week for 4 weeks</string>

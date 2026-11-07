@@ -91,7 +91,7 @@ class LiftRepository(
             exercises = import.exercises.map { it.toEntity(now) },
             programs = import.programs.mapNotNull { it.importRow(now) },
             bands = import.bands.map { it.toEntity(now) },
-            bells = import.bellsKg.map(::BellEntity),
+            bells = import.bellsKg.map { BellEntity(it, pair = it in import.pairsKg) },
             bar = import.barKg?.let { BarEntity(kg = it) },
             following = import.following?.let {
                 FollowingEntity(

@@ -17,6 +17,8 @@ data class LiftImport(
     val programs: List<Program> = emptyList(),
     val bands: List<Band> = emptyList(),
     val bellsKg: List<Double> = emptyList(),
+    /** Of [bellsKg], those owned two of. */
+    val pairsKg: Set<Double> = emptySet(),
     val barKg: Double? = null,
     val following: Followed? = null,
     val restSeconds: Int? = null,

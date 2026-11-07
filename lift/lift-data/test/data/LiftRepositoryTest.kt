@@ -247,6 +247,18 @@ class LiftRepositoryTest {
     }
 
     @Test
+    fun `a bell owned two of is a pair until it is no longer owned`() = runTest {
+        repository.gear.setOwned(24.0, owned = true)
+        repository.gear.setOwned(16.0, owned = true)
+        repository.gear.setPair(24.0, pair = true)
+        assertEquals(setOf(24.0), repository.gear.pairs.value)
+        repository.gear.setPair(32.0, pair = true)
+        assertEquals(setOf(24.0), repository.gear.pairs.value)
+        repository.gear.setOwned(24.0, owned = false)
+        assertTrue(repository.gear.pairs.value.isEmpty())
+    }
+
+    @Test
     fun `the bar is kept until it is set to none`() = runTest {
         assertNull(repository.gear.bar.value)
         repository.gear.setBar(15.0)

@@ -65,6 +65,7 @@ class AppDataExporter(
         flows = intervals.flows.customFlows.value.map { it.export() },
         lift = LiftExport(
             bellsKg = lift.gear.bells.value,
+            pairsKg = lift.gear.pairs.value.sorted(),
             barKg = lift.gear.bar.value,
             restSeconds = lift.sets.restSeconds.value,
             bands = lift.gear.bands.value.map { it.export() },

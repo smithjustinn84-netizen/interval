@@ -9,8 +9,8 @@ import kotlin.test.assertTrue
 class StarterProgramTest {
     private val rest = RestClock.DEFAULT_SECONDS
 
-    private fun pick(minutes: Int, prefer: ProgramFamily? = null, rest: Int = this.rest): ProgramId? =
-        (starterProgram(minutes, rest, prefer)?.key as? ProgramKey.BuiltIn)?.id
+    private fun pick(minutes: Int, prefer: ProgramFamily? = null, rest: Int = this.rest, pair: Boolean = false) =
+        (starterProgram(minutes, rest, prefer, pair)?.key as? ProgramKey.BuiltIn)?.id
 
     /** A new built-in lands on one side or the other here: say which before it can be picked for someone. */
     @Test
@@ -21,6 +21,7 @@ class StarterProgramTest {
             ProgramId.ArmorBuildingFormula,
             ProgramId.FifteenMinuteKettlebell,
             ProgramId.GrapplerStrength,
+            ProgramId.BjjKettlebell,
             // A bar to hang from, or a bench.
             ProgramId.TenThousandSwings,
             ProgramId.BellsAndBodyweight,
@@ -58,6 +59,26 @@ class StarterProgramTest {
     fun `a grappler gets a grappler's program once one fits`() {
         assertEquals(ProgramId.RoundConditioning, pick(30, ProgramFamily.Grappling))
         assertEquals(ProgramId.KettlebellFoundations, pick(20, ProgramFamily.Grappling))
+    }
+
+    @Test
+    fun `a grappler with a pair is started on the program built around the mat once it fits`() {
+        val bjj = builtInPrograms.single { it.key == ProgramKey.BuiltIn(ProgramId.BjjKettlebell) }
+        assertEquals(15..20, bjj.dayMinutes(RestClock.DEFAULT_SECONDS))
+        assertEquals(ProgramId.BjjKettlebell, pick(20, ProgramFamily.Grappling, pair = true))
+        assertEquals(ProgramId.BjjKettlebell, pick(30, ProgramFamily.Grappling, pair = true))
+        // Too short for its longer day: the grappler's one-bell picks as before.
+        assertEquals(pick(15, ProgramFamily.Grappling), pick(15, ProgramFamily.Grappling, pair = true))
+    }
+
+    @Test
+    fun `a pair opens the programs done with two and the others stay`() {
+        val abf = builtInPrograms.single { it.key == ProgramKey.BuiltIn(ProgramId.ArmorBuildingFormula) }
+        val bars = builtInPrograms.single { it.key == ProgramKey.BuiltIn(ProgramId.BodyweightBasics) }
+        assertFalse(abf.oneBell)
+        assertTrue(abf.pairOfBells)
+        assertFalse(bars.pairOfBells)
+        assertTrue(builtInPrograms.filter { it.oneBell }.all { it.pairOfBells })
     }
 
     @Test

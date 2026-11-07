@@ -256,6 +256,7 @@ class ProgramsTest {
                 ProgramId.RoundConditioning,
                 ProgramId.GripAndPull,
                 ProgramId.ShoulderArmor,
+                ProgramId.BjjKettlebell,
             ),
             ProgramId.entries.filter { it.family == ProgramFamily.Grappling },
         )

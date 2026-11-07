@@ -33,7 +33,8 @@ import kotlinx.coroutines.flow.Flow
  * user rests between sets, [RestEntity]; version 13 how a session felt ([SessionEntity.effort], [SessionEntity.note]);
  * version 14 the timer running in the session in progress, [SessionEntity.timer]; version 15 a finished session's
  * heart rate ([SessionEntity.averageBpm], [SessionEntity.peakBpm]); version 16 a set's session as a foreign key,
- * so a set goes with its session ([MIGRATION_15_16]).
+ * so a set goes with its session ([MIGRATION_15_16]); version 17 which bells the user owns two of
+ * ([BellEntity.pair]), none in rows from before.
  * Every version adds; none rewrites a row, and only 16 drops one: a set whose session was already gone.
  */
 @Database(
@@ -48,7 +49,7 @@ import kotlinx.coroutines.flow.Flow
         BarEntity::class,
         RestEntity::class,
     ],
-    version = 16,
+    version = 17,
     // 3 to 4 and 15 to 16 are by hand, [LIFT_MIGRATIONS], added in liftStorageModule.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -64,6 +65,7 @@ import kotlinx.coroutines.flow.Flow
         AutoMigration(from = 12, to = 13),
         AutoMigration(from = 13, to = 14),
         AutoMigration(from = 14, to = 15),
+        AutoMigration(from = 16, to = 17),
     ],
 )
 @ConstructedBy(LiftDatabaseConstructor::class)
@@ -365,6 +367,9 @@ interface BellDao {
     @Query("DELETE FROM bell WHERE kg = :kg")
     suspend fun delete(kg: Double)
 
+    @Query("UPDATE bell SET pair = :pair WHERE kg = :kg")
+    suspend fun setPair(kg: Double, pair: Boolean)
+
     @Query("SELECT * FROM bar WHERE id = 0")
     fun observeBar(): Flow<BarEntity?>
 
@@ -490,9 +495,9 @@ data class BandEntity(
     @ColumnInfo(name = "updated_at") val updatedAtEpochMillis: Long,
 )
 
-/** A bell the user owns. */
+/** A bell the user owns, and whether they own a [pair] of it, two of the same. */
 @Entity(tableName = "bell")
-data class BellEntity(@PrimaryKey val kg: Double)
+data class BellEntity(@PrimaryKey val kg: Double, @ColumnInfo(defaultValue = "0") val pair: Boolean = false)
 
 /** The user's barbell, by what it weighs empty: one row at most, [id] 0. */
 @Entity(tableName = "bar")

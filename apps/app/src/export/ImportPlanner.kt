@@ -221,6 +221,7 @@ private class LiftPlan(file: LiftExport, holdings: Holdings) {
         programs = programs,
         bands = bands,
         bellsKg = file.bellsKg.filter { it > 0 && it !in holdings.bellsKg }.distinct(),
+        pairsKg = file.pairsKg.toSet(),
         barKg = file.barKg?.takeIf { holdings.barKg == null && it > 0 },
         following = following,
     )

@@ -41,6 +41,7 @@ enum class ProgramId(val family: ProgramFamily = ProgramFamily.Classic) {
     RoundConditioning(ProgramFamily.Grappling),
     GripAndPull(ProgramFamily.Grappling),
     ShoulderArmor(ProgramFamily.Grappling),
+    BjjKettlebell(ProgramFamily.Grappling),
     KettlebellFoundations(ProgramFamily.Beginner),
     FirstHundredSwings(ProgramFamily.Beginner),
     BeginnerFullBody(ProgramFamily.Beginner),
@@ -61,9 +62,9 @@ internal fun builtIn(id: ProgramId, days: List<List<Block>>, daysPerWeek: Int, w
 private val fiveHundredSwings =
     Block(BuiltInExercise.TwoHandSwing, rounds = 5, kind = BlockKind.Ladder, rungs = listOf(10, 15, 25, 50))
 
-/** Twenty minutes of the Armor Building Complex, one every minute. */
-private val armorBuildingComplex =
-    Block(BuiltInExercise.ArmorBuildingComplex, rounds = 20, reps = 1, kind = BlockKind.Emom, double = true)
+/** [minutes] of the Armor Building Complex, one every minute: twenty for ABF. */
+private fun armorBuildingComplex(minutes: Int = 20) =
+    Block(BuiltInExercise.ArmorBuildingComplex, rounds = minutes, reps = 1, kind = BlockKind.Emom, double = true)
 
 /** [ladders] press ladders of 1 up to [top], a side. */
 private fun pressLadders(ladders: Int, top: Int) =
@@ -159,7 +160,7 @@ val builtInPrograms: List<Program> = listOf(
     builtIn(
         ProgramId.ArmorBuildingFormula,
         days = listOf(
-            listOf(armorBuildingComplex),
+            listOf(armorBuildingComplex()),
             listOf(
                 Block(
                     BuiltInExercise.Press,
@@ -378,6 +379,23 @@ val builtInPrograms: List<Program> = listOf(
             ),
         ),
         daysPerWeek = 3,
+        weeks = 6,
+    ),
+    // Twenty minutes beside BJJ, leaving something in the tank: the Armor Building Complex with a pair on the
+    // minute one day; get-ups, a bottoms-up carry, windmills and dead bugs the next, slow, for the trunk and the
+    // shoulder. The third session, 15:15 snatches, is the interval side's preset, which Set up plans beside it.
+    builtIn(
+        ProgramId.BjjKettlebell,
+        days = listOf(
+            listOf(armorBuildingComplex(minutes = 15)),
+            listOf(
+                Block(BuiltInExercise.GetUp, rounds = 2, reps = 2),
+                Block(BuiltInExercise.BottomsUpCarry, rounds = 2, reps = 30),
+                Block(BuiltInExercise.Windmill, rounds = 2, reps = 5).upTo(8),
+                Block(BuiltInExercise.DeadBug, rounds = 2, reps = 8),
+            ),
+        ),
+        daysPerWeek = 2,
         weeks = 6,
     ),
     // The hinge, the squat and the get-up, before anything fast.
