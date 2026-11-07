@@ -12,11 +12,11 @@ class ExerciseDemoTest {
     private val demos = BuiltInExercise.entries.mapNotNull { it.demo }
 
     @Test
-    fun `every bell and bar lift is drawn and nothing else yet`() {
+    fun `every bell bar and bodyweight lift is drawn and nothing else yet`() {
         assertSame(TwoHandSwingDemo, BuiltInExercise.TwoHandSwing.demo)
         assertSame(GobletSquatDemo, BuiltInExercise.GobletSquat.demo)
         BuiltInExercise.entries.forEach { exercise ->
-            val drawn = exercise.equipment == Equipment.Kettlebell || exercise.equipment == Equipment.Barbell
+            val drawn = exercise.equipment in setOf(Equipment.Kettlebell, Equipment.Barbell, Equipment.Bodyweight)
             assertEquals(drawn, exercise.demo != null, "$exercise is drawn: ${exercise.demo != null}")
         }
     }
@@ -83,7 +83,7 @@ class ExerciseDemoTest {
     }
 
     @Test
-    fun `every pose stays in its view with a foot on the floor and nothing through it`() {
+    fun `every pose stays in its view resting on the floor and nothing through it`() {
         BuiltInExercise.entries.forEach { exercise ->
             val demo = exercise.demo ?: return@forEach
             (0..100).forEach { step ->
@@ -92,11 +92,20 @@ class ExerciseDemoTest {
                 val drawn = if (demo.hold == Hold.Pair) figure.joints else figure.joints - figure.farBell
                 drawn.forEach { joint -> assertTrue(demo.view.contains(joint), "$at: $joint is outside the view") }
                 drawn.forEach { joint -> assertTrue(joint.y <= Rig.FLOOR + 0.5f, "$at: $joint is through the floor") }
-                val weight = if (demo.hold == Hold.Bar) Rig.PLATE else Rig.BELL
+                val weight = when (demo.hold) {
+                    Hold.Bar -> Rig.PLATE
+                    Hold.Free -> Rig.HAND
+                    else -> Rig.BELL
+                }
                 assertTrue(figure.bell.y + weight <= Rig.FLOOR + 0.5f, "$at: the weight is through the floor")
-                val feet = listOf(figure.toe, figure.heel, figure.farToe, figure.farHeel)
-                assertTrue(feet.any { abs(it.y - Rig.FLOOR) < 0.5f }, "$at: no foot is on the floor")
-                if (demo.root == Root.Ankle) assertEquals(Rig.FLOOR, figure.ankle.y)
+                if (demo.root != Root.Hand) {
+                    // It rests on the floor, or on the box or bench it stands on.
+                    val surfaces =
+                        listOf(Rig.FLOOR) + demo.props.filterIsInstance<Bench>().map { Rig.FLOOR - it.height }
+                    val resting = drawn.any { joint -> surfaces.any { it - joint.y in -0.5f..Rig.TRUNK } }
+                    assertTrue(resting, "$at: the figure floats off the floor")
+                }
+                if (demo.root == Root.Ankle) assertEquals(demo.anchor, figure.ankle)
             }
         }
     }

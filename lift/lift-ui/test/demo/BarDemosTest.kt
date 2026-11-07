@@ -91,7 +91,9 @@ class BarDemosTest {
             chest.hand.y < chest.shoulder.y && chest.hand.y > chest.shoulder.y - 35f,
             "The bar stops at ${chest.hand}",
         )
-        frames(demo).forEach { assertTrue(it.hip.y < Rig.FLOOR - demo.bench!!.height, "The hips sink into the bench") }
+        frames(demo).forEach {
+            assertTrue(it.hip.y < Rig.FLOOR - (demo.props.single() as Bench).height, "The hips sink into the bench")
+        }
     }
 
     @Test

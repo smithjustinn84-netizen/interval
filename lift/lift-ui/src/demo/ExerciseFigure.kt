@@ -142,12 +142,12 @@ private fun DrawScope.drawFigure(
         translate(-view.left, -view.top)
     }) {
         drawFloor(colors)
-        demo.bench?.let { drawBench(it, colors.farLeg) }
+        demo.props.filter { it !is Rail }.forEach { drawProp(it, colors.farLeg) }
         drawTrail(trail, bell)
         val behind = Offset(-Rig.FAR_LEG_OFFSET, 0f)
         val farLeg = listOf(figure.farToe + behind, figure.farHeel + behind, figure.farAnkle + behind)
         drawLimb(farLeg + listOf(figure.farKnee + behind, figure.hip), colors.farLeg, Rig.FAR_LEG)
-        if (demo.hold == Hold.NearHand || demo.hold == Hold.Pair) {
+        if (demo.hold == Hold.NearHand || demo.hold == Hold.Pair || demo.hold == Hold.Free) {
             drawFarArm(figure, demo.hold == Hold.Pair, bell, colors.farLeg)
         }
         val behindHead = figure.bell.x < figure.shoulder.x && figure.bell.y < figure.shoulder.y
@@ -168,6 +168,8 @@ private fun DrawScope.drawFigure(
             }
         }
         if (demo.hold == Hold.Bar) drawPlate(figure.hand, bell)
+        // A bar to hang from goes over the fists that grip it.
+        demo.props.filterIsInstance<Rail>().forEach { drawProp(it, colors.farLeg) }
     }
 }
 
@@ -200,7 +202,7 @@ private fun DrawScope.drawTrail(trail: List<Offset>, color: Color) {
  * both hands hold it by the horns.
  */
 private fun DrawScope.drawArmAndBell(figure: Figure, hold: Hold, bell: Color, body: Color) {
-    if (hold == Hold.Bar) {
+    if (hold == Hold.Bar || hold == Hold.Free) {
         drawLimb(listOf(figure.shoulder, figure.elbow, figure.hand), body, Rig.ARM)
         drawCircle(body, Rig.HAND, figure.hand)
         return
@@ -238,7 +240,13 @@ private fun DrawScope.drawPlate(sleeve: Offset, color: Color) {
     drawCircle(color, Rig.SLEEVE, sleeve)
 }
 
-/** A bench under the figure, its top and a leg at each end. */
+/** A prop behind the figure: a bench's top and legs, a wall, a bar seen end on. */
+private fun DrawScope.drawProp(prop: Prop, color: Color) = when (prop) {
+    is Bench -> drawBench(prop, color)
+    is Wall -> drawLine(color, Offset(prop.x, Rig.FLOOR), Offset(prop.x, Rig.view.top), Rig.WALL)
+    is Rail -> drawCircle(color, Rig.RAIL, prop.at)
+}
+
 private fun DrawScope.drawBench(bench: Bench, color: Color) {
     val top = Rig.FLOOR - bench.height
     drawLine(color, Offset(bench.from, top), Offset(bench.to, top), Rig.BENCH_TOP, StrokeCap.Round)

@@ -118,7 +118,7 @@ class BellDemosTest {
 
     @Test
     fun `the row braces the free hand on the bench and pulls the elbow back`() {
-        val bench = RowDemo.bench!!
+        val bench = RowDemo.props.single() as Bench
         (0..20).map { RowDemo.figureAt(it / 20f) }.forEach { figure ->
             assertTrue(abs(figure.farHand.y - (Rig.FLOOR - bench.height)) < 6f, "The free hand leaves the bench")
             assertTrue(figure.farHand.x in bench.from..bench.to, "The free hand misses the bench")

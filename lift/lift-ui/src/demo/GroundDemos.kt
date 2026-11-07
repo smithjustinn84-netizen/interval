@@ -90,7 +90,7 @@ val RowDemo: ExerciseDemo = run {
         hold = Hold.NearHand,
         secondsPerRep = 2.8f,
         still = 0.45f,
-        bench = Bench(from = 236f, to = 340f, height = 78f),
+        props = listOf(Bench(from = 236f, to = 340f, height = 78f)),
     )
 }
 

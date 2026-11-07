@@ -209,7 +209,7 @@ val BarbellBenchPressDemo: ExerciseDemo = run {
         secondsPerRep = 2.8f,
         still = 0.12f,
         view = Rect(left = -60f, top = 60f, right = 300f, bottom = 380f),
-        bench = Bench(from = -30f, to = 135f, height = 62f),
+        props = listOf(Bench(from = -30f, to = 135f, height = 62f)),
     )
 }
 
@@ -302,7 +302,7 @@ private fun barLift(
 )
 
 /** Phases to each share of the rep, each speaking to its cue: the first sets up, the second drives, the rest ease. */
-private fun phases(vararg until: Pair<Float, Int>): List<DemoPhase> = until.mapIndexed { i, (end, cue) ->
+internal fun phases(vararg until: Pair<Float, Int>): List<DemoPhase> = until.mapIndexed { i, (end, cue) ->
     val beat = when (i) {
         0 -> DemoBeat.Set
         1 -> DemoBeat.Drive
