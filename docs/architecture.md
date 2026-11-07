@@ -171,7 +171,7 @@ disagree; `--write-diagram` puts the current one here. The module table below sa
 ### Known architectural debt & resolutions
 
 The 2026-10-31 review ([architecture-review.md](architecture-review.md)) audited the architecture against lifecycle,
-modularity, and data-correctness guidelines. [sprint-architecture.md](sprint-architecture.md) and sprint 0.3 resolved
+modularity, and data-correctness guidelines. [sprint-architecture.md](archive/sprint-architecture.md) and sprint 0.3 resolved
 several core issues:
 
 - **Resolved — Container lifetime (A1)**: `initAppKoin` starts one Koin container per process from Android's `IntervalApplication`,

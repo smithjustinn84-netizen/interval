@@ -5,7 +5,7 @@ shippable 0.4.0 on Android whose headline is what an interval timer is most aske
 sets of rounds with a longer rest between them, and ladders whose work climbs or falls a step each round. It
 comes after the architecture sprint on purpose: that sprint moved the running workout out of its ViewModel
 (`WorkoutSession`, `WorkoutRun`), so the engine can change under one owner. What landed before and how a release
-goes: [release.md](release.md) and [CHANGELOG.md](../CHANGELOG.md).
+goes: [release.md](../release.md) and [CHANGELOG.md](../../CHANGELOG.md).
 
 ## Context
 
@@ -49,7 +49,7 @@ after ticket 4.
 **0. Release 0.3.0** · S, mostly the user
 - The four repository secrets, the hosted privacy policy URL (`PRIVACY.md`'s GitHub page), the Play Console's
   Health apps declaration (exercise and total calories burned written; body weight and heart rate read),
-  `git tag v0.3.0 && git push origin v0.3.0`, upload the AAB to internal testing. Steps: [release.md](release.md).
+  `git tag v0.3.0 && git push origin v0.3.0`, upload the AAB to internal testing. Steps: [release.md](../release.md).
   Both `## [0.2.0]` and `## [0.3.0]` get the tag's date: 0.2.0 was never tagged, so this is its first release too.
 - Claude Code meanwhile runs every `journeys/*.xml` on `amper-37` against the release build (R8 on), then bumps
   `versionName` to `0.4.0` and `versionCode` to 4 in `apps/androidApp/module.yaml` and the pbxproj, and opens

@@ -8,7 +8,7 @@ the week the Android widget shows, on iOS's Home Screen. What landed before and 
 
 ## Context
 
-Every ticket of [sprint-0.4.md](sprint-0.4.md) is built, the cut line's too, and 0.4.0 is tagged (`v0.4.0`). Every finding of the 2026-10-31 review is resolved but E5, the documented trade-off.
+Every ticket of [sprint-0.4.md](archive/sprint-0.4.md) is built, the cut line's too, and 0.4.0 is tagged (`v0.4.0`). Every finding of the 2026-10-31 review is resolved but E5, the documented trade-off.
 
 0.4 gave the engine a course to walk: `Course.of(config)` lays out every interval, prep to cool-down, and
 `WorkoutEngine`, the outline, the totals, the calories and the Timeline read it. A sequence is a longer course,

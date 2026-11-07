@@ -4,8 +4,8 @@ Two weeks, 2026-11-16 to 2026-11-27, one developer and Claude Code, about ten wo
 comes before 0.4's richer interval shapes on purpose: those change `IntervalConfig`, `WorkoutEngine` and the
 workout's ViewModel, and this sprint first moves the running workout out of that ViewModel.
 
-The findings come from [architecture-review.md](architecture-review.md); each ticket cites their ids (**A1**,
-**E1**, …). The architecture as it stands is in [architecture.md](architecture.md).
+The findings come from [architecture-review.md](../architecture-review.md); each ticket cites their ids (**A1**,
+**E1**, …). The architecture as it stands is in [architecture.md](../architecture.md).
 
 ## Context
 

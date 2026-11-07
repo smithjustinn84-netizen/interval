@@ -3,7 +3,7 @@
 Two weeks, 2026-11-02 to 2026-11-13, one developer and Claude Code, about ten working days. The goal is
 a shippable 0.3.0 on Android that carries the rest of what the 2026-10-31 review found worth doing, now
 that Health Connect's write side is in. iOS keeps building and testing in CI; nothing here needs an Apple
-team. What landed in 0.2 and how a release goes: [release.md](release.md) and [CHANGELOG.md](../CHANGELOG.md).
+team. What landed in 0.2 and how a release goes: [release.md](../release.md) and [CHANGELOG.md](../../CHANGELOG.md).
 
 ## Context
 
@@ -36,7 +36,7 @@ Sizes: XS ≤ half a day, S ≈ 1 day, M ≈ 2 days, L ≈ 3 days. The cut line 
 **0. Release 0.2.0** · S, mostly the user
 - The four repository secrets, the hosted privacy policy URL (the text of
   `apps/app/src/about/PrivacyScreen.kt`), the Play Console's Health apps declaration (exercise, total
-  calories burned), `git tag v0.2.0`, upload the AAB to internal testing. Steps: [release.md](release.md).
+  calories burned), `git tag v0.2.0`, upload the AAB to internal testing. Steps: [release.md](../release.md).
 - Claude Code meanwhile runs `journeys/health-connect.xml` on `amper-37` (Android 14+ has Health Connect
   built in) against the release build, then bumps `versionName` to `0.3.0` and `versionCode` to 3 in
   `apps/androidApp/module.yaml` and the pbxproj, and opens `## [0.3.0] — Unreleased` in the changelog.

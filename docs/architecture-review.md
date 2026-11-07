@@ -2,7 +2,7 @@
 
 A review of the whole codebase (29 modules, about 57k lines of Kotlin) against SOLID, Android's lifecycle and
 platform guidance, and data-layer correctness. The work it calls for is planned in
-[sprint-architecture.md](sprint-architecture.md); the architecture as it stands is [architecture.md](architecture.md).
+[sprint-architecture.md](archive/sprint-architecture.md); the architecture as it stands is [architecture.md](architecture.md).
 
 Line numbers are as of commit `09a932a2` and will drift; the symbol named beside each is the stable reference.
 Each finding has an id (**A1**, **S3**, …) that the sprint's tickets cite.
