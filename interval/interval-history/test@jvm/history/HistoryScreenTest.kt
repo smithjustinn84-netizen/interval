@@ -12,6 +12,7 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -24,6 +25,7 @@ import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
+import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
@@ -278,24 +280,37 @@ class HistoryScreenTest {
     }
 
     @Test
-    fun `the week lists what is coming up a row a day and starts each`() = runUiTest {
+    fun `the week lists what is coming up a row a day with Start on today's and a look at the rest`() = runUiTest {
         val day = checkNotNull(program(ProgramId.PressLadders).dayAfter(done = 0))
         val state = oneWorkout.copy(
             upNext = listOf(
                 UpNextItem.Lift(20_741, HistoryDay.Today, day),
                 UpNextItem.Planned(2, 20_742, HistoryDay.Tomorrow, hiit.name, hiit.config),
                 UpNextItem.SportDay(3, 20_743, HistoryDay.On("Saturday, Oct 17"), Sport.Bjj),
+                UpNextItem.Lift(20_744, HistoryDay.On("Sunday, Oct 18"), day, minutes = 15),
             ),
             hasPlans = true,
         )
         setThemedContent { HistoryScreen(state, actions) }
         onNodeWithText("Coming up").assertExists()
         onNodeWithText("Up next · Today").assertDoesNotExist()
-        onNodeWithText("Press ladders 1-2-3").assertExists()
-        onNodeWithText("Tomorrow").assertExists()
+        // Each row keyed by its day: today by name, the rest by weekday, tomorrow too.
+        onNode(hasText("Today") and hasText("Press ladders 1-2-3")).assertExists()
+        onNodeWithText("Tomorrow").assertDoesNotExist()
+        onNodeWithText("Fri").assertExists()
         onNodeWithText("Sat").assertExists()
-        onNodeWithText("BJJ class").assertExists()
-        onAllNodesWithText("Start")[1].performClick()
+        onNodeWithText("Sun").assertExists()
+        // One line each, led by its kind, with its length as the figure on a later row.
+        onAllNodes(hasText("Strength · Day 1 of", substring = true)).assertCountEquals(2)
+        onNodeWithText("Conditioning · 30s on · 30s off · ×10").assertExists()
+        onNodeWithText("Sport day · Counts toward your week").assertExists()
+        onNodeWithText(formatClock(hiit.config.totalSeconds)).assertExists()
+        onNodeWithText("15 min").assertExists()
+        // Start on today's row alone; a later row opens the look, where Start is.
+        onAllNodesWithText("Start").assertCountEquals(1)
+        onNodeWithText("HIIT 30/30").performClick()
+        onNodeWithText("Plan for later").assertExists()
+        onAllNodesWithText("Start").onLast().performClick()
         onNodeWithText("Edit plan").performClick()
         assertEquals(listOf("start HIIT 30/30", "plan"), events)
     }
@@ -442,7 +457,7 @@ class HistoryScreenTest {
         val upNext = listOf(UpNextItem.Lift(20_742, HistoryDay.Today, programDay = null, planId = 1))
         setThemedContent { HistoryScreen(oneWorkout.copy(upNext = upNext, hasPlans = true), actions) }
         onNodeWithText("Lift session").assertExists()
-        onNodeWithText("Any session on Lift").assertExists()
+        onNodeWithText("Strength · Any session on Lift").assertExists()
         onNodeWithText("Start").performClick()
         assertEquals(listOf("lift null"), events)
     }

@@ -237,6 +237,7 @@
     <string name="history_kind_conditioning">Conditioning</string>
     <string name="history_kind_mobility">Mobility</string>
     <string name="history_kind_sport_days">Sport days</string>
+    <string name="history_kind_sport_day">Sport day</string>
     <string name="history_kind_tally">%1$d of %2$d</string>
     <string name="history_kind_cd">%1$s: %2$d of %3$d</string>
     <string name="history_coming_up">Coming up</string>

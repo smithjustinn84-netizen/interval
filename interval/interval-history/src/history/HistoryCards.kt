@@ -16,12 +16,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.common_joined
 import dev.justinsmith.interval.history.resources.history_coming_up
 import dev.justinsmith.interval.history.resources.history_edit_plan
-import dev.justinsmith.interval.history.resources.history_lift_any
-import dev.justinsmith.interval.history.resources.history_lift_session
 import dev.justinsmith.interval.history.resources.history_most_done
 import dev.justinsmith.interval.history.resources.history_resume
 import dev.justinsmith.interval.history.resources.history_start
@@ -30,10 +31,8 @@ import dev.justinsmith.interval.history.resources.history_times
 import dev.justinsmith.interval.history.resources.history_up_next
 import dev.justinsmith.interval.history.resources.notice_sport_logged
 import dev.justinsmith.interval.history.resources.preview_open_cd
-import dev.justinsmith.interval.history.resources.sport_counts
 import dev.justinsmith.interval.history.resources.sport_log_it
 import dev.justinsmith.interval.plan.sportTitle
-import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.GroupLabel
@@ -51,10 +50,6 @@ import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.interval.ui.weekdayText
 import dev.justinsmith.interval.ui.workoutDescription
 import dev.justinsmith.lift.domain.program
-import dev.justinsmith.lift.ui.estimateLine
-import dev.justinsmith.lift.ui.programDayLifts
-import dev.justinsmith.lift.ui.programDayLine
-import dev.justinsmith.lift.ui.programName
 import org.jetbrains.compose.resources.stringResource
 
 /** The next plan with a way to start it, the two after it in a line, and the way to the plan. */
@@ -83,9 +78,8 @@ internal fun UpNextCard(upNext: List<UpNextItem>, actions: HistoryActions, modif
 }
 
 /**
- * Every plan of the next seven days in a card, a row each: its day, its mark, its name and what it is, and the way
- * to start it (or log it, a sport on its day); a row opens a look at it ([onLook], by its place). Over the card, the
- * way to the plan.
+ * Every plan of the next seven days in a card, a schedule: a row each, keyed by its day in a column. Over the card,
+ * the way to the plan. A row opens a look at it ([onLook], by its place).
  */
 @Composable
 internal fun ComingUp(
@@ -94,7 +88,6 @@ internal fun ComingUp(
     onLook: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val palette = IntervalTheme.palette
     Column(modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             GroupLabel(stringResource(Res.string.history_coming_up), Modifier.weight(1f))
@@ -103,39 +96,70 @@ internal fun ComingUp(
         ListCard {
             upNext.forEachIndexed { index, item ->
                 if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
-                // A row opens a look at it before Start; a sport, which nothing starts, has none.
-                val described = stringResource(Res.string.preview_open_cd, upNextName(item))
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .then(
-                            if (item.preview() != null) {
-                                Modifier.clickable(onClickLabel = described) { onLook(index) }
-                            } else {
-                                Modifier
-                            },
-                        )
-                        .heightIn(min = Sizes.listRow)
-                        .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.space4),
-                ) {
-                    // Its day over it, so the name and what it is keep the row's width.
-                    Text(shortDay(item.day, item.epochDay), style = IntervalTheme.type.caption, color = palette.textDim)
-                    UpNextLead(item, actions)
-                }
+                ComingUpRow(item, actions, onLook = { onLook(index) })
             }
         }
     }
 }
 
-/** The quiet button to the plan, beside Up next's heading and Coming up's. */
+/**
+ * One plan coming up: its day in the column ("Today", "Sat"), its kind's mark, its name over one line of what it
+ * is, and on today's rows the way to do it (Start, Resume, Log it). A later row shows its length instead and
+ * opens a look at it before Start, where Start is; a sport, which nothing starts, has no look to open.
+ */
+@Composable
+private fun ComingUpRow(item: UpNextItem, actions: HistoryActions, onLook: () -> Unit, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    val today = item.day == HistoryDay.Today
+    val figure = upNextFigure(item)
+    val looks = item.preview() != null
+    val described = stringResource(Res.string.preview_open_cd, upNextName(item))
+    Row(
+        modifier
+            .fillMaxWidth()
+            .then(
+                if (looks) {
+                    Modifier.clickable(onClickLabel = described, onClick = onLook)
+                } else {
+                    // Read as one row all the same.
+                    Modifier.semantics(mergeDescendants = true) {}
+                },
+            )
+            .heightIn(min = Sizes.listRow)
+            .padding(start = Spacing.space16, end = Spacing.space12, top = Spacing.space12, bottom = Spacing.space12),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+    ) {
+        DayLabel(dayColumn(item.day, item.epochDay), today)
+        StripeMark(kindColor(upNextKind(item)), height = IntervalSizes.historyMarkHeight)
+        // Today's row has the pill where the figure would stand, so its length goes into the line, which may
+        // take a second beside the pill's height; a later row's keeps to one.
+        val meta = if (today && figure != null) joined(listOf(upNextMeta(item), figure)) else upNextMeta(item)
+        UpNextText(upNextName(item), meta, Modifier.weight(1f), maxLines = if (today) 2 else 1)
+        if (today) {
+            UpNextAction(item, actions)
+        } else {
+            figure?.let { Text(it, style = IntervalTheme.type.value, color = palette.text) }
+            if (looks) {
+                Icon(
+                    IntervalIcons.Chevron,
+                    null,
+                    tint = palette.textDim,
+                    modifier = Modifier.size(Sizes.chipIcon),
+                )
+            }
+        }
+    }
+}
+
+/** The quiet action to the plan, beside Up next's heading and Coming up's: accent words, no fill of its own. */
 @Composable
 private fun EditPlan(onPlan: () -> Unit, modifier: Modifier = Modifier) {
     val interaction = remember { MutableInteractionSource() }
     Box(
         modifier
             .heightIn(min = Sizes.pillHeight)
-            .surfaceButton(interaction, Corners.radius12, IntervalTheme.palette.surface, onPlan)
+            .surfaceButton(interaction, Corners.radius12, Color.Transparent, onPlan)
             .padding(horizontal = Spacing.space12),
         contentAlignment = Alignment.Center,
     ) {
@@ -165,104 +189,63 @@ internal fun UpNextLater(later: List<UpNextItem>, modifier: Modifier = Modifier,
     )
 }
 
+/** Up next's lead: its kind's mark, its name over what it is and its length, and the way to do it. */
 @Composable
 private fun UpNextLead(next: UpNextItem, actions: HistoryActions, modifier: Modifier = Modifier) {
-    val palette = IntervalTheme.palette
     Row(
         modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
-        when (next) {
-            is UpNextItem.Planned -> {
-                StripeMark(palette.workMark, height = IntervalSizes.historyMarkHeight)
-                UpNextText(
-                    next.name,
-                    stringResource(
-                        Res.string.common_joined,
-                        workoutDescription(next.config),
-                        formatClock(next.config.totalSeconds),
-                    ),
-                    Modifier.weight(1f),
-                )
-                StartPill(primary = true, onClick = { actions.onStart(next.name, next.config) })
-            }
+        StripeMark(kindColor(upNextKind(next)), height = IntervalSizes.historyMarkHeight)
+        UpNextText(upNextName(next), joined(listOfNotNull(upNextMeta(next), upNextFigure(next))), Modifier.weight(1f))
+        UpNextAction(next, actions)
+    }
+}
 
-            is UpNextItem.Lift -> {
-                // The accent, as Lift and History's rows mark kettlebell sessions.
-                StripeMark(palette.accent, height = IntervalSizes.historyMarkHeight)
-                val day = next.programDay
-                if (day != null) {
-                    UpNextText(
-                        programName(day.program),
-                        joined(
-                            listOfNotNull(
-                                programDayLine(day),
-                                programDayLifts(day),
-                                next.minutes?.let { estimateLine(it) },
-                            ),
-                        ),
-                        Modifier.weight(1f),
-                    )
-                } else {
-                    UpNextText(
-                        stringResource(Res.string.history_lift_session),
-                        stringResource(Res.string.history_lift_any),
-                        Modifier.weight(1f),
-                    )
-                }
-                StartPill(
-                    primary = true,
-                    onClick = { actions.onStartLift(day?.program?.key.takeUnless { next.resume }) },
-                    label = stringResource(if (next.resume) Res.string.history_resume else Res.string.history_start),
-                )
-            }
+/**
+ * The way to do what is up next: Start on a plan or a flow, Start or Resume on a session on Lift, Log it on a
+ * sport's own day. Nothing starts a sport: before its day it is only named.
+ */
+@Composable
+private fun UpNextAction(item: UpNextItem, actions: HistoryActions) {
+    when (item) {
+        is UpNextItem.Planned -> StartPill(primary = true, onClick = { actions.onStart(item.name, item.config) })
 
-            // Left out of History's list (HistoryViewModel), which is of what is planned: drawn all the same.
-            is UpNextItem.Flow -> {
-                StripeMark(palette.restMark, height = IntervalSizes.historyMarkHeight)
-                UpNextText(next.flow.name, workoutDescription(next.flow.config), Modifier.weight(1f))
-                StartPill(primary = true, onClick = { actions.onStart(next.flow.name, next.flow.config) })
-            }
+        is UpNextItem.Lift -> StartPill(
+            primary = true,
+            // Lift starts nothing while a session is in progress, so with one under way this resumes it.
+            onClick = { actions.onStartLift(item.programDay?.program?.key.takeUnless { item.resume }) },
+            label = stringResource(if (item.resume) Res.string.history_resume else Res.string.history_start),
+        )
 
-            is UpNextItem.SportDay -> {
-                val name = sportTitle(next.sport)
-                StripeMark(palette.textDim, height = IntervalSizes.historyMarkHeight)
-                UpNextText(name, stringResource(Res.string.sport_counts), Modifier.weight(1f))
-                // Nothing starts a sport: on its day it is logged, and before it only named.
-                if (next.day == HistoryDay.Today) {
-                    val logged = stringResource(Res.string.notice_sport_logged, name)
-                    StartPill(
-                        primary = false,
-                        onClick = { actions.onLogSport(next.sport, next.epochDay, logged) },
-                        label = stringResource(Res.string.sport_log_it),
-                    )
-                }
-            }
+        // Left out of History's list (HistoryViewModel), which is of what is planned: drawn all the same.
+        is UpNextItem.Flow -> StartPill(primary = true, onClick = { actions.onStart(item.flow.name, item.flow.config) })
+
+        is UpNextItem.SportDay -> if (item.day == HistoryDay.Today) {
+            val logged = stringResource(Res.string.notice_sport_logged, sportTitle(item.sport))
+            StartPill(
+                primary = false,
+                onClick = { actions.onLogSport(item.sport, item.epochDay, logged) },
+                label = stringResource(Res.string.sport_log_it),
+            )
         }
     }
 }
 
-/** Up next's headline: its name over a line of what it is. */
+/** Up next's headline: its name over a line of what it is, cut to [maxLines] where the row has no room for more. */
 @Composable
-private fun UpNextText(name: String, detail: String, modifier: Modifier = Modifier) {
+private fun UpNextText(name: String, detail: String, modifier: Modifier = Modifier, maxLines: Int = Int.MAX_VALUE) {
     Column(modifier) {
         Text(name, style = IntervalTheme.type.label, color = IntervalTheme.palette.text)
-        Text(detail, style = IntervalTheme.type.meta, color = IntervalTheme.palette.textDim)
+        Text(
+            detail,
+            style = IntervalTheme.type.meta,
+            color = IntervalTheme.palette.textDim,
+            maxLines = maxLines,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
-}
-
-/** What a later item in Up next is called: the plan's name, the program's, or a session on Lift. */
-@Composable
-private fun upNextName(item: UpNextItem): String = when (item) {
-    is UpNextItem.Planned -> item.name
-
-    is UpNextItem.Lift -> item.programDay?.let { programName(it.program) }
-        ?: stringResource(Res.string.history_lift_session)
-
-    is UpNextItem.SportDay -> sportTitle(item.sport)
-
-    is UpNextItem.Flow -> item.flow.name
 }
 
 /** A group heading's look, inside a card. */

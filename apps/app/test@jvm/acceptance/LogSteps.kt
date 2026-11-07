@@ -17,6 +17,9 @@ fun IntervalAcceptanceDriver.seeComingUp(name: String) {
     see(name)
 }
 
+/** A row of Coming up, by the day in its column ("Today", "Sat") and its name. */
+fun IntervalAcceptanceDriver.seeComingUpOn(day: String, name: String) = see(hasText(day) and hasText(name))
+
 /** A pick by time's row, which opens a look at it before Start. */
 fun IntervalAcceptanceDriver.lookAtPick(name: String) {
     tap(hasText(name) and hasClickAction())

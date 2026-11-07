@@ -38,14 +38,18 @@ class HistoryAcceptanceTest {
         openTab("Log")
         openPlanFromEmptyHistory()
         planSportEvery("BJJ", weekday = "Thursday")
+        planSportEvery("BJJ", weekday = "Saturday")
         goBack()
-        seeKindBar("Sport days", done = 0, of = 1)
+        seeKindBar("Sport days", done = 0, of = 2)
         seeComingUp("BJJ class")
+        // Today's row is logged from here; Saturday's is only named, under its day.
+        seeComingUpOn("Today", "BJJ class")
+        seeComingUpOn("Sat", "BJJ class")
 
         openTab("Today")
         logClassFromToday()
         sportDaysLogged(1)
         openTab("Log")
-        seeKindBar("Sport days", done = 1, of = 1)
+        seeKindBar("Sport days", done = 1, of = 2)
     }
 }

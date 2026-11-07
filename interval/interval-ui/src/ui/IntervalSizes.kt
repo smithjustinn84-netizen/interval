@@ -58,6 +58,9 @@ object IntervalSizes {
     /** The pill of phase colour at the start of a History row. */
     val historyMarkHeight = 40.dp
 
+    /** The column a row's day stands in on Log's lists: room for "Today" at caption size, no more. */
+    val dayColumn = 44.dp
+
     /** The stripe beside a value sheet's title, as tall as the title and its hint. */
     val sheetHeaderStripe = 48.dp
 
