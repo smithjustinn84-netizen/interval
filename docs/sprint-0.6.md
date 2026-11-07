@@ -183,12 +183,10 @@ Also below it:
 - The iOS widget's Lock Screen (accessory) sizes.
 - A density block for the interval side, the Timer's own "as many rounds as you can".
 
-## Explicitly not this sprint (0.7's candidates)
+## Explicitly not this sprint
 
-- **AppFunctions** ("start a Tabata", "log a set"). `androidx.appfunctions` was still alpha (1.0.0-alpha10) on
-  Jetpack's last listing, so it stays out until it is stable.
-- **E5, import across the two stores**, stays the documented trade-off.
-- **Localisation**, **Wear OS**, **iOS signing and an Apple team**: as in 0.5.
+Everything waiting for a sprint is in [backlog.md](backlog.md), each item with why it waits and what would bring
+it in: AppFunctions, iOS signing, E5, localisation, Wear OS, and Lift's safety lines.
 
 ## Suggested order and calendar
 
