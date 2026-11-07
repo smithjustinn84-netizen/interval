@@ -24,8 +24,6 @@ import dev.justinsmith.interval.timer.UpcomingChange
 import dev.justinsmith.interval.timer.stepFor
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.addressOf
-import kotlinx.cinterop.usePinned
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
@@ -40,18 +38,12 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.onClose
 import org.koin.core.module.dsl.withOptions
 import org.koin.dsl.module
-import platform.AVFAudio.AVAudioPlayer
-import platform.AVFAudio.AVAudioSession
-import platform.AVFAudio.AVAudioSessionCategoryAmbient
-import platform.AVFAudio.setActive
 import platform.Foundation.NSApplicationSupportDirectory
-import platform.Foundation.NSData
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
 import platform.Foundation.NSURL
 import platform.Foundation.NSUserDomainMask
-import platform.Foundation.create
 import platform.UIKit.UIApplicationDidEnterBackgroundNotification
 import platform.UIKit.UIApplicationWillEnterForegroundNotification
 import platform.UIKit.UIImpactFeedbackGenerator
@@ -67,7 +59,7 @@ import platform.UserNotifications.UNUserNotificationCenter
 /** The interval side's services on iOS. */
 fun platformModule(): Module = module {
     single<PlatformStorage> { IosStorage() }
-    single<CuePlayer> { IosCuePlayer(get()) }.withOptions {
+    single<CuePlayer> { IosCuePlayer(get(), get()) }.withOptions {
         onClose { it?.release() }
     }
     // Lazily: the workout it reads is the workout feature's session, which takes this keeper in turn.
@@ -262,34 +254,12 @@ private class IosStorage : PlatformStorage {
 }
 
 /**
- * [ToneSynth]'s tones through an [AVAudioPlayer] each, built from the tone as a WAV in memory the first time it
- * plays and kept; core's [Speaker] (the speech synthesizer) for voice, and the feedback generators for haptics. The
- * audio session is Ambient, set here as the speaker sets it: cues mix over the user's music rather than stopping
- * it, and follow the ringer switch as the system's own sounds do.
+ * Core's [TonePlayer] for the beeps (AVAudio on the Ambient session, mixed over the user's music), core's [Speaker]
+ * (the speech synthesizer) for voice, and the feedback generators for haptics.
  */
-private class IosCuePlayer(speaker: Speaker) : CuePlayer {
-    private val log = Logger.withTag("IosCuePlayer")
-    private val players = mutableMapOf<Beep, AVAudioPlayer>()
-
-    init {
-        AVAudioSession.sharedInstance().run {
-            setCategory(AVAudioSessionCategoryAmbient, error = null)
-            setActive(true, error = null)
-        }
-    }
-
+private class IosCuePlayer(speaker: Speaker, private val tones: TonePlayer) : CuePlayer {
     override fun beep(beep: Beep) {
-        val player = players[beep] ?: player(beep)?.also { players[beep] = it } ?: return
-        player.setCurrentTime(0.0)
-        player.play()
-    }
-
-    private fun player(beep: Beep): AVAudioPlayer? {
-        val wav = ToneSynth.wav(beep)
-        val data = wav.usePinned { NSData.create(bytes = it.addressOf(0), length = wav.size.toULong()) }
-        return runCatching { AVAudioPlayer(data = data, error = null).apply { prepareToPlay() } }
-            .onFailure { log.w(it) { "No player for $beep; the cue goes unheard" } }
-            .getOrNull()
+        tones.play(beep.tone)
     }
 
     private val speech = SpeechQueue(say = speaker::speak)
@@ -315,9 +285,8 @@ private class IosCuePlayer(speaker: Speaker) : CuePlayer {
         }
     }
 
+    // The tones are the process's, core's, and outlive this player as the voice does.
     override fun release() {
         speech.close()
-        players.values.forEach { it.stop() }
-        players.clear()
     }
 }

@@ -2,23 +2,15 @@ package dev.justinsmith.interval.platform
 
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.data.AppDatabase
 import org.koin.core.module.Module
-import org.koin.core.module.dsl.onClose
-import org.koin.core.module.dsl.withOptions
 import org.koin.dsl.module
-import java.io.ByteArrayInputStream
 import java.io.File
-import javax.sound.sampled.AudioSystem
-import javax.sound.sampled.Clip
 
 /** The interval side's services on the desktop. */
 fun platformModule(): Module = module {
     single<PlatformStorage> { DesktopStorage() }
-    single<CuePlayer> { DesktopCuePlayer() }.withOptions {
-        onClose { it?.release() }
-    }
+    single<CuePlayer> { DesktopCuePlayer(get()) }
     single<BackgroundWorkout> { NoBackgroundWorkout }
     single<PlanReminders> { NoPlanReminders }
 }
@@ -55,35 +47,16 @@ private class DesktopStorage : PlatformStorage {
     }
 }
 
-/**
- * [ToneSynth]'s tones through a Java Sound [Clip] each, opened from the tone as a WAV in memory the first time it
- * plays and kept; desktops have no speech engine or vibration to drive. A machine with no sound device logs the
- * failure and the cue goes unheard.
- */
-private class DesktopCuePlayer : CuePlayer {
-    private val log = Logger.withTag("DesktopCuePlayer")
-    private val clips = mutableMapOf<Beep, Clip>()
-
+/** Core's [TonePlayer] for the beeps; desktops have no speech engine or vibration to drive. */
+private class DesktopCuePlayer(private val tones: TonePlayer) : CuePlayer {
     override fun beep(beep: Beep) {
-        runCatching {
-            val clip = clips.getOrPut(beep) {
-                AudioSystem.getClip().apply {
-                    open(AudioSystem.getAudioInputStream(ByteArrayInputStream(ToneSynth.wav(beep))))
-                }
-            }
-            // A clip that has played to its end stays there: back to the start before it plays again.
-            clip.stop()
-            clip.framePosition = 0
-            clip.start()
-        }.onFailure { log.w(it) { "Beep failed" } }
+        tones.play(beep.tone)
     }
 
     override fun speak(speech: Speech) = Unit
 
     override fun vibrate(haptic: Haptic) = Unit
 
-    override fun release() {
-        clips.values.forEach { runCatching { it.close() } }
-        clips.clear()
-    }
+    // The tones are the process's, core's, and outlive this player.
+    override fun release() = Unit
 }

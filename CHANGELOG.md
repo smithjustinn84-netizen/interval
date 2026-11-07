@@ -25,7 +25,9 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 - The six sounds are the app's own, the same on Android, iOS and desktop, in place of each platform's stock
   tones: a short high tick for each of the last seconds, one mid note at halfway, one low note for get ready and
   the warm-up, two notes rising into work, two falling into rest, and three rising to the octave at the finish,
-  all under 400 ms, drawn as plain sines in the app and played on the media stream over the user's music.
+  all under 400 ms, drawn as plain sines in the app and played on the media stream over the user's music. Lift's
+  timers sound the same: an EMOM's or a rest's last three seconds tick, its minute or the next set starts on the
+  rising "go", and an EMOM ends on the three-note resolve.
 
 ## [0.5.0] — Unreleased
 

@@ -5,13 +5,11 @@ package dev.justinsmith.lift.platform
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import dev.justinsmith.lift.data.LiftDatabase
-import dev.justinsmith.lift.domain.EmomCue
 import kotlinx.cinterop.ExperimentalForeignApi
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.onClose
 import org.koin.core.module.dsl.withOptions
 import org.koin.dsl.module
-import platform.AudioToolbox.AudioServicesPlaySystemSound
 import platform.Foundation.NSApplicationSupportDirectory
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSUserDomainMask
@@ -29,17 +27,7 @@ fun liftPlatformModule(): Module = module {
         )?.path
         Room.databaseBuilder<LiftDatabase>(name = "${requireNotNull(directory)}/$LIFT_DATABASE")
     }
-    // System sounds, as Interval's cues use.
-    single<Beeper> {
-        Beeper { cue ->
-            val sound: UInt = when (cue) {
-                EmomCue.Countdown -> 1103u
-                EmomCue.Start -> 1005u
-                EmomCue.Finished -> 1025u
-            }
-            AudioServicesPlaySystemSound(sound)
-        }
-    }
+    single<Beeper> { ToneBeeper(get()) }
     single<SessionKeepAlive> { IosSessionKeepAlive(get()) }.withOptions {
         onClose { (it as? IosSessionKeepAlive)?.release() }
     }

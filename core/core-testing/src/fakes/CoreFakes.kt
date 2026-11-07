@@ -7,10 +7,12 @@ import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.HealthWorkout
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.IdGenerator
+import dev.justinsmith.interval.platform.NoTones
 import dev.justinsmith.interval.platform.ShareableFile
 import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.platform.Speaker
 import dev.justinsmith.interval.platform.TimestampFormatter
+import dev.justinsmith.interval.platform.TonePlayer
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.MINUTES_PER_HOUR
 import dev.justinsmith.interval.timer.dateOfEpochDay
@@ -142,8 +144,8 @@ class RecordingSpeaker : Speaker {
 /**
  * Stands in for core's `corePlatformModule`: a [clock] standing at 0 unless a test moves it, real monotonic
  * time unless a test passes a `TestTimeSource` as [timeSource], the [FixedTimestampFormatter], [FakeAppInfo], a
- * [sharer] that records, a [health] store and a [speaker] that do too, and random [ids] unless a test passes
- * [SequentialIds].
+ * [sharer] that records, a [health] store and a [speaker] that do too, random [ids] unless a test passes
+ * [SequentialIds], and [tones] that play nothing.
  */
 fun fakeCorePlatformModule(
     clock: WallClock = WallClock { 0L },
@@ -153,6 +155,7 @@ fun fakeCorePlatformModule(
     timeSource: TimeSource.WithComparableMarks = TimeSource.Monotonic,
     ids: IdGenerator = IdGenerator.Random,
     speaker: Speaker = RecordingSpeaker(),
+    tones: TonePlayer = NoTones,
 ): Module = module {
     single { clock }
     single { timeSource }
@@ -162,4 +165,5 @@ fun fakeCorePlatformModule(
     single { health }
     single { ids }
     single { speaker }
+    single<TonePlayer> { tones }
 }

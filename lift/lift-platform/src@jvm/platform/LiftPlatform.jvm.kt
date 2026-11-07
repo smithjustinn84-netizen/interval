@@ -5,7 +5,6 @@ import androidx.room.RoomDatabase
 import dev.justinsmith.lift.data.LiftDatabase
 import org.koin.core.module.Module
 import org.koin.dsl.module
-import java.awt.Toolkit
 import java.io.File
 
 /** What Lift needs from the desktop. */
@@ -13,8 +12,7 @@ fun liftPlatformModule(): Module = module {
     single<RoomDatabase.Builder<LiftDatabase>> {
         Room.databaseBuilder<LiftDatabase>(name = appDataDirectory().resolve(LIFT_DATABASE).absolutePath)
     }
-    // The system alert sound for every cue; desktops have nothing finer to drive.
-    single<Beeper> { Beeper { runCatching { Toolkit.getDefaultToolkit().beep() } } }
+    single<Beeper> { ToneBeeper(get()) }
     single<SessionKeepAlive> { NoSessionKeepAlive }
 }
 

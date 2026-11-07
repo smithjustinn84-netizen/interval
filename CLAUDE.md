@@ -85,7 +85,8 @@ core/
   core-platform      what the platform gives that isn't drawing, with no Compose: the clocks (`WallClock`,
                      `epochMillisNow`, `realElapsedTime`, `days`), `IdGenerator` (`Ids.kt`), `TimestampFormatter`,
                      `AppInfo`, `Sharer`, `Speaker` (the device's voice, both sides', and `SpokenLines`, which
-                     words a side's lines one at a time), `HealthStore` (`Health.kt`: the workout both sides hand it as they finish;
+                     words a side's lines one at a time), `ToneSynth` and `TonePlayer` (the app's six tones,
+                     both sides', and each platform's player of them), `HealthStore` (`Health.kt`: the workout both sides hand it as they finish;
                      Android's is
                      `HealthConnectStore`, in src@android, writes workouts and reads the weight and the heart rate; iOS's is
                      `HealthKitStore`, Apple Health; desktop's `NoHealthStore`),
@@ -318,11 +319,12 @@ toolchain (`$compose.*`).
   domain code expose typed data (enums, sealed types like `NextUp`/`HistoryDay`, numbers, clock strings
   like `"0:30"`); screens put it into words with `stringResource`/`pluralStringResource`. Spoken cues are
   the one non-composable path: `CuePlayer.speak(Speech)`, worded by `SpeechQueue` with `getString`
-  (`interval-platform`). The six `Beep`s are the app's own tones, not the platform's: `ToneSynth`
-  (`interval-platform-api`) renders each as a few sines with no click at either end, under 400 ms, which each
-  platform's player keeps and plays (Android an `AudioTrack` a tone on the media stream, iOS an `AVAudioPlayer`
-  from a WAV in memory, desktop a `Clip`); a new tone is a `Tone` of `Note`s there, and `ToneSynthTest` holds
-  their shape. A preset that `alternateHands` (15:15 MVO2, or a kettlebell preset with the editor's
+  (`interval-platform`). The six `Beep`s, and Lift's timers' `EmomCue`s, are the app's own tones, not the
+  platform's: `ToneSynth` (`core-platform`) renders each as a few sines with no click at either end, under 400 ms,
+  which core's `TonePlayer`, one per process like the `Speaker`, keeps and plays (Android an `AudioTrack` a tone on
+  the media stream, iOS an `AVAudioPlayer` from a WAV in memory, desktop a `Clip`). Each side says which tone a cue
+  is (`Beep.tone` in `interval-platform`, `EmomCue.tone` in `lift-platform`); a new tone is a `Tone` of `Note`s in
+  `ToneSynth`, and `ToneSynthTest` holds their shape. A preset that `alternateHands` (15:15 MVO2, or a kettlebell preset with the editor's
   switch on) has every work after the first said as "Switch hands. Work": `WorkoutSession` reads the flag from the
   preset the workout `matching`s as each cue plays, so nothing beside the workout stores it. Preset
   names are stored data, not labels: the built-ins' names live in `builtInPresets`. Never load a resource

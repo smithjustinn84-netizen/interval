@@ -14,12 +14,12 @@ data class Tone(val notes: List<Note>) {
 }
 
 /**
- * The app's six sounds, drawn rather than borrowed from the platform, so a workout sounds the same on a phone, an
+ * The app's six sounds, drawn rather than borrowed from the platform, so both sides sound the same on a phone, an
  * iPhone and a desktop: plain sines, each note risen over [ATTACK_MILLIS] and let down over [RELEASE_MILLIS], none
- * longer than [MAX_MILLIS]. A countdown is a short high tick; halfway one mid note; Start (get ready, and the
- * warm-up) one low note; Work two notes rising; Rest two falling, the lower one held; Finished three rising to the
- * octave. The players take [samples] as 16-bit PCM ([pcm16]) or as a WAV file in memory ([wav]), mono at
- * [SAMPLE_RATE].
+ * longer than [MAX_MILLIS]. [countdown] is a short high tick; [halfway] one mid note; [start] one low note; [work]
+ * two notes rising; [rest] two falling, the lower one held; [finished] three rising to the octave. Each side says
+ * which of them its cues are (the interval workout's `Beep`s, Lift's `EmomCue`s); a [TonePlayer] takes [samples] as
+ * 16-bit PCM ([pcm16]) or as a WAV file in memory ([wav]), mono at [SAMPLE_RATE].
  */
 object ToneSynth {
     const val SAMPLE_RATE = 44_100
@@ -38,25 +38,28 @@ object ToneSynth {
     private const val G5 = 783.99
     private const val C6 = 1046.5
 
-    private val countdown = Tone(Note(C6, millis = 60))
-    private val halfway = Tone(Note(E5, millis = 140))
-    private val start = Tone(Note(C5, millis = 200))
-    private val work = Tone(Note(C5, millis = 110), Note(G5, millis = 130))
-    private val rest = Tone(Note(G5, millis = 120), Note(C5, millis = 180))
-    private val finished = Tone(Note(E5, millis = 100), Note(G5, millis = 100), Note(C6, millis = 190))
+    /** Each of an interval's last seconds. */
+    val countdown = Tone(Note(C6, millis = 60))
 
-    fun tone(beep: Beep): Tone = when (beep) {
-        Beep.Countdown -> countdown
-        Beep.Halfway -> halfway
-        Beep.Start -> start
-        Beep.Work -> work
-        Beep.Rest -> rest
-        Beep.Finished -> finished
-    }
+    /** Halfway through an interval. */
+    val halfway = Tone(Note(E5, millis = 140))
 
-    /** [beep]'s samples, -1 to 1, silent at both ends. */
-    fun samples(beep: Beep): FloatArray = samples(tone(beep))
+    /** Get ready, and the warm-up. */
+    val start = Tone(Note(C5, millis = 200))
 
+    /** Go: work, an EMOM's minute, a rest's end. */
+    val work = Tone(Note(C5, millis = 110), Note(G5, millis = 130))
+
+    /** Into a rest. */
+    val rest = Tone(Note(G5, millis = 120), Note(C5, millis = 180))
+
+    /** The end of a workout, or of an EMOM. */
+    val finished = Tone(Note(E5, millis = 100), Note(G5, millis = 100), Note(C6, millis = 190))
+
+    /** The six, for what checks them all. */
+    val all: List<Tone> = listOf(countdown, halfway, start, work, rest, finished)
+
+    /** [tone]'s samples, -1 to 1, silent at both ends. */
     fun samples(tone: Tone): FloatArray {
         val out = FloatArray(samplesIn(tone.millis))
         var at = 0
@@ -75,15 +78,15 @@ object ToneSynth {
         return out
     }
 
-    /** [beep]'s samples as signed 16-bit PCM, for Android's `AudioTrack`. */
-    fun pcm16(beep: Beep): ShortArray {
-        val samples = samples(beep)
+    /** [tone]'s samples as signed 16-bit PCM, for Android's `AudioTrack`. */
+    fun pcm16(tone: Tone): ShortArray {
+        val samples = samples(tone)
         return ShortArray(samples.size) { (samples[it] * Short.MAX_VALUE).toInt().toShort() }
     }
 
-    /** [beep] as a WAV file in memory: [WAV_HEADER_BYTES] of header, then [pcm16] little-endian. */
-    fun wav(beep: Beep): ByteArray {
-        val pcm = pcm16(beep)
+    /** [tone] as a WAV file in memory: [WAV_HEADER_BYTES] of header, then [pcm16] little-endian. */
+    fun wav(tone: Tone): ByteArray {
+        val pcm = pcm16(tone)
         val data = pcm.size * BYTES_PER_SAMPLE
         val out = ByteArray(WAV_HEADER_BYTES + data)
         var at = 0
@@ -117,4 +120,21 @@ object ToneSynth {
     private const val SHORT_BYTES = 2
     private const val BITS_PER_BYTE = 8
     private const val MILLIS_PER_SECOND = 1000
+}
+
+/**
+ * Plays [ToneSynth]'s tones, mixed over the user's music. One per process, which both sides' cue players play
+ * through: Android's on the media stream, iOS's on the Ambient session, the desktop's through Java Sound. A tone
+ * that fails to build or play is logged and goes unheard; a missing beep must never stop a workout.
+ */
+interface TonePlayer {
+    fun play(tone: Tone)
+
+    /** Lets go of what the platform holds for the tones. The container calls it on close. */
+    fun release() = Unit
+}
+
+/** Plays nothing: a test's, and anything built without a platform's. */
+object NoTones : TonePlayer {
+    override fun play(tone: Tone) = Unit
 }

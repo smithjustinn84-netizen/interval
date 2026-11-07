@@ -1,4 +1,4 @@
-# What Lift needs from the platform: the timers' `Beeper`, the `SessionKeepAlive` for a rest, an EMOM or a hold
+# What Lift needs from the platform: the timers' `Beeper` (core's tones, through its `TonePlayer`), the `SessionKeepAlive` for a rest, an EMOM or a hold
 # with the app off screen (Android's `TimerService` and its notification, iOS's scheduled notification), and the Koin module each
 # platform builds them in, with the database file's location. Lift's counterpart of `interval-platform`, so
 # `lift-data` stays free of Compose and its Room KSP reruns only when storage changes.
@@ -13,7 +13,7 @@ apply:
 dependencies:
   # Exported: the platform module supplies `RoomDatabase.Builder<LiftDatabase>`.
   - //lift/lift-data: exported
-  # `epochMillisNow`, `formatClock`, and Android's notification helpers.
+  # `epochMillisNow`, `formatClock`, Android's notification helpers, and the tones the timers beep in.
   - //core/core-platform
   # The platform module is built in composition, because Android's database builder needs a `Context`.
   - $compose.runtime
