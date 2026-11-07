@@ -84,7 +84,8 @@ core/
                      `dev.justinsmith.core.resources`
   core-platform      what the platform gives that isn't drawing, with no Compose: the clocks (`WallClock`,
                      `epochMillisNow`, `realElapsedTime`, `days`), `IdGenerator` (`Ids.kt`), `TimestampFormatter`,
-                     `AppInfo`, `Sharer`, `HealthStore` (`Health.kt`: the workout both sides hand it as they finish;
+                     `AppInfo`, `Sharer`, `Speaker` (the device's voice, both sides', and `SpokenLines`, which
+                     words a side's lines one at a time), `HealthStore` (`Health.kt`: the workout both sides hand it as they finish;
                      Android's is
                      `HealthConnectStore`, in src@android, writes workouts and reads the weight and the heart rate; iOS's is
                      `HealthKitStore`, Apple Health; desktop's `NoHealthStore`),
@@ -149,7 +150,7 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      (`Estimate.kt`, from its sets, each lift's pace and the rest between sets), the program to
                      start someone on with one bell (`StarterProgram.kt`). The coaching (docs/kettlebell-coaching.md):
                      how each lift moves (`Movement.kt`: pattern, tempo ballistic/grind/hold, grip, lifts in a rep),
-                     the grip's load (`Grip.kt`, BJJ days in it) and how ready the lifter is (`Readiness.kt`), a
+                     the faults it is prone to, from that (`Faults.kt`, which the rests say), the grip's load (`Grip.kt`, BJJ days in it) and how ready the lifter is (`Readiness.kt`), a
                      taxed day's easier plan (`Autoregulate.kt`), density and pace (`Density.kt`, only from sets
                      logged as done) and the challenges and totals (`Benchmarks.kt`), all worked out from sets
                      logged, nothing stored. No dependencies
@@ -162,9 +163,11 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      `ProgramRepository`, `ExerciseRepository`, `GearRepository`, over one `SerialWriter`; the
                      mappers in `LiftMappers.kt`), `LiftDatabase` (Room, KSP, `schemas/`), `liftModules` (di/);
                      exports `lift-api`. No Compose
-  lift-platform      `Beeper`, `SessionKeepAlive` and its `TimerRun` (+ Android's `TimerService`), the `ActiveTimers`
-                     port, the timers' notification words, and each platform's `liftPlatformModule` (the database
-                     builder too); Lift's `interval-platform`
+  lift-platform      `Beeper`, `LiftVoice` (the timers' typed `Coaching` lines; `SpokenCoaching` in lift-session
+                     words them, from lift-ui's `cues()` and each `Fault`'s `words()`), `SessionKeepAlive` and its
+                     `TimerRun` (+ Android's `TimerService`), the `ActiveTimers` port, the timers' notification
+                     words, and each platform's `liftPlatformModule` (the database builder too); Lift's
+                     `interval-platform`
   lift-ui            Lift's words and widgets (`exerciseName`, `setLine`, `programName`, `LoadPicker`, `Stepper`,
                      `SessionStats`, `BalanceBars`), the built-ins' cues (`cues.xml`, mapped in `ExerciseCues.kt`); most of
                      Lift's strings

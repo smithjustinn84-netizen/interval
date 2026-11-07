@@ -315,7 +315,7 @@ class SessionFlowTest {
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
         waitForText("16 kg × 10")
-        onNodeWithContentDescription("Remove 16 kg × 10").performClick()
+        onNodeWithContentDescription("Remove 16 kg × 10").performScrollTo().performClick()
         waitForText("Removed 16 kg × 10")
         assertTrue(app.storage.sessions.sets.value.isEmpty())
         onNodeWithText("Undo").performClick()

@@ -4,12 +4,9 @@ import android.content.Context
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
-import android.speech.tts.TextToSpeech
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import co.touchlab.kermit.Logger
@@ -22,12 +19,12 @@ import org.koin.dsl.module
 /**
  * The interval side's services on Android, over the application's [context]. The [CuePlayer] is built on first
  * use rather than with the container, which also starts for a reminder's alarm with no screen to cue: the app
- * asks for it as its UI opens, so the speech engine has started before the first workout cue.
+ * asks for it as its UI opens. Its voice is core's [Speaker], which Lift speaks through too.
  */
 fun platformModule(context: Context): Module = context.applicationContext.let { app ->
     module {
         single<PlatformStorage> { AndroidStorage(app) }
-        single<CuePlayer> { AndroidCuePlayer(app) }.withOptions {
+        single<CuePlayer> { AndroidCuePlayer(app, get()) }.withOptions {
             onClose { it?.release() }
         }
         single<BackgroundWorkout> { AndroidBackgroundWorkout(app) }
@@ -45,7 +42,7 @@ private class AndroidStorage(private val context: Context) : PlatformStorage {
         context.filesDir.resolve("datastore/$PREFERENCES_NAME").absolutePath
 }
 
-private class AndroidCuePlayer(context: Context) : CuePlayer {
+private class AndroidCuePlayer(context: Context, speaker: Speaker) : CuePlayer {
     private val log = Logger.withTag("AndroidCuePlayer")
 
     // STREAM_MUSIC so beeps follow the media volume and mix over the user's workout music.
@@ -53,23 +50,8 @@ private class AndroidCuePlayer(context: Context) : CuePlayer {
         .onFailure { log.w(it) { "No tone generator; beeps disabled" } }
         .getOrNull()
 
-    // A line asked for before the engine is ready is held and spoken once it is, so the first cue isn't
-    // lost. Both fields are touched only on the main thread: SpeechQueue hands lines over there, and the
-    // init callback, which may run on another thread, is posted there. Checking and holding a line on
-    // two threads at once could drop it between the check and the hold.
-    private val main = Handler(Looper.getMainLooper())
-    private var speechReady = false
-    private var pendingSpeech: String? = null
-
-    private val speech: TextToSpeech = TextToSpeech(context) { status ->
-        main.post {
-            speechReady = status == TextToSpeech.SUCCESS
-            pendingSpeech?.let { if (speechReady) say(it) }
-            pendingSpeech = null
-        }
-    }
-
-    private val lines = SpeechQueue { text -> if (speechReady) say(text) else pendingSpeech = text }
+    // The process's voice, core's: its engine starts with it, and outlives this player.
+    private val lines = SpeechQueue(say = speaker::speak)
 
     private val vibrator: Vibrator? = runCatching {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -96,11 +78,6 @@ private class AndroidCuePlayer(context: Context) : CuePlayer {
         lines.speak(speech)
     }
 
-    private fun say(text: String) {
-        runCatching { speech.speak(text, TextToSpeech.QUEUE_FLUSH, null, "cue") }
-            .onFailure { log.w(it) { "Speech failed" } }
-    }
-
     override fun vibrate(haptic: Haptic) {
         val timings = when (haptic) {
             Haptic.Work -> longArrayOf(0, 150)
@@ -115,7 +92,6 @@ private class AndroidCuePlayer(context: Context) : CuePlayer {
     override fun release() {
         lines.close()
         runCatching { tones?.release() }
-        runCatching { speech.shutdown() }
     }
 }
 

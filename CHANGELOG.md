@@ -110,6 +110,12 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 - Challenges under the program on Lift's Today: 10,000 swings, the snatch test (100 in 5 minutes), the Armor
   Building Complex's best twenty minutes, and a get-up at your body weight. A lift's page says its reps in all, and
   the summary names a new best and a milestone crossed.
+- Lift speaks, never mid-rep: an EMOM minute's count-in says one of the lift's cues, the next minute the next;
+  the last ten seconds of a rest say how to set up the lift coming; and the rest after a set of a swing, a clean,
+  a snatch or a deadlift says one fault it is prone to ("Hips back, shins stay vertical", "Loosen at the top, grip
+  on the way down", "Knuckles to the floor, wrist straight", "Punch through before it lands"), once a set, a
+  different one each set. The set's card shows the worst under its figure ("Watch for · …"). Settings' Voice
+  switch silences Lift as it does the Timer.
 - Exports are schema 10, with a block's own rest.
 
 - The week on iOS's Home Screen, as Android's widget shows it: small and medium widgets with the week's ring

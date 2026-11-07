@@ -2,6 +2,7 @@ package dev.justinsmith.lift.di
 
 import dev.justinsmith.lift.history.LiftDetailViewModel
 import dev.justinsmith.lift.platform.ActiveTimers
+import dev.justinsmith.lift.platform.LiftVoice
 import dev.justinsmith.lift.programs.ProgramCopy
 import dev.justinsmith.lift.programs.ProgramEditorViewModel
 import dev.justinsmith.lift.programs.ProgramProgressViewModel
@@ -11,6 +12,7 @@ import dev.justinsmith.lift.session.FinishSession
 import dev.justinsmith.lift.session.SessionHealth
 import dev.justinsmith.lift.session.SessionTimers
 import dev.justinsmith.lift.session.SessionViewModel
+import dev.justinsmith.lift.session.SpokenCoaching
 import dev.justinsmith.lift.session.TodayPlanEditor
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.onClose
@@ -21,7 +23,8 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 
 /**
- * The session's timers, one for the process (the platform reaches them as [ActiveTimers]), and its health store
+ * The session's timers, one for the process (the platform reaches them as [ActiveTimers]), the voice they speak
+ * through ([SpokenCoaching], behind the voice switch the interval side's cues share), and its health store
  * writer, which outlives a summary ([SessionHealth]); the session's ViewModel with the parts it is made of (today's
  * [TodayPlanEditor] and the [FinishSession] behind its summary, one each),
  * the programs' (their list, editor and progress) and a finished session's. The editor
@@ -29,9 +32,12 @@ import org.koin.dsl.module
  * from its back-stack entry.
  */
 val liftSessionModule: Module = module {
-    single { SessionTimers(get(), get(), get(), get(), get()) }.withOptions {
+    single { SessionTimers(get(), get(), get(), get(), get(), get()) }.withOptions {
         onClose { it?.close() }
     } bind ActiveTimers::class
+    single { SpokenCoaching(get(), get()) }.withOptions {
+        onClose { it?.close() }
+    } bind LiftVoice::class
     single { SessionHealth(get(), get()) }.withOptions {
         onClose { it?.close() }
     }

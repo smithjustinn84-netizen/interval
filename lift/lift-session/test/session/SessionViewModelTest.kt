@@ -35,6 +35,7 @@ import dev.justinsmith.lift.fakes.FakeIntervalActivity
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import dev.justinsmith.lift.fakes.RecordingBeeper
 import dev.justinsmith.lift.fakes.RecordingKeepAlive
+import dev.justinsmith.lift.fakes.RecordingVoice
 import dev.justinsmith.lift.fakes.logSet
 import dev.justinsmith.lift.platform.TimerRun
 import kotlinx.coroutines.CoroutineScope
@@ -82,13 +83,24 @@ class SessionViewModelTest {
     fun setMainDispatcher() = Dispatchers.setMain(main)
 
     private val keepAlive = RecordingKeepAlive()
+    private val voice = RecordingVoice()
 
     // The timers tick on a dispatcher nothing advances: these tests drive the session, not the time.
     private val timerScope = CoroutineScope(SupervisorJob() + StandardTestDispatcher())
 
     /** The process's timers: every ViewModel a test makes shares them, as every session in a process does. */
     private val timers =
-        SessionTimers(repository.sets, WallClock { now }, TestTimeSource(), RecordingBeeper(), keepAlive, timerScope)
+        SessionTimers(
+            repository.sets,
+            WallClock {
+                now
+            },
+            TestTimeSource(),
+            RecordingBeeper(),
+            keepAlive,
+            voice,
+            timerScope,
+        )
 
     @AfterTest
     fun resetMainDispatcher() {

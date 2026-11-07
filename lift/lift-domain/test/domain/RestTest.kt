@@ -30,4 +30,16 @@ class RestTest {
         assertEquals(listOf(EmomCue.Start), clock.cuesBetween(59_500, 70_000))
         assertEquals(emptyList(), clock.cuesBetween(60_000, 70_000))
     }
+
+    @Test
+    fun `the set-up line comes in the last ten seconds`() {
+        assertFalse(clock.setUpBetween(0, 49_999))
+        assertTrue(clock.setUpBetween(49_999, 50_000))
+        assertFalse(clock.setUpBetween(50_000, 60_000))
+    }
+
+    @Test
+    fun `a rest of ten seconds or less has no set-up line`() {
+        assertFalse(RestClock(10).setUpBetween(-1, 10_000))
+    }
 }

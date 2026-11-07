@@ -15,13 +15,16 @@ data class IntervalWorkout(val uid: String, val finishedAtEpochMillis: Long, val
  * What Lift reads of the rest of the app, which it can't see: the interval workouts, newest first, the days of a
  * sport logged ([sportDays], which count in the week as a workout does, each saying whether it was grappling), the
  * weekly goal, set on the Plan page, null for none, the body weight set in Settings ([bodyWeightKg], null for
- * none), and the calorie estimate the app makes for a session from it. The app binds it over its own repository.
+ * none), whether the voice is on ([voice], the switch in Settings that speaks the interval side's cues and Lift's
+ * coaching alike), and the calorie estimate the app makes for a session from the body weight. The app binds it over
+ * its own repository.
  */
 interface IntervalActivity {
     val workouts: StateFlow<List<IntervalWorkout>>
     val sportDays: StateFlow<List<SportDay>>
     val weeklyGoal: StateFlow<Int?>
     val bodyWeightKg: StateFlow<Double?>
+    val voice: StateFlow<Boolean>
 
     /** The calories a session of [elapsedSeconds] is estimated to have burned, or null without a body weight. */
     fun sessionCalories(elapsedSeconds: Int): Int?

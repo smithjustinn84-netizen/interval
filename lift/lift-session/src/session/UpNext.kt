@@ -92,6 +92,7 @@ private fun NextSetCard(
     val skipped = stringResource(Res.string.notice_block_skipped, liftName(set.exercise, set.double))
     ListCard(Modifier.padding(top = Spacing.space8)) {
         NextFigure(set.exercise, set.double, actions.onOpenExercise)
+        FaultsNote(set.exercise)
         Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
             Text(
                 stringResource(

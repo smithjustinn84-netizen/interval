@@ -123,7 +123,7 @@ that depends on the data module.
     `fakeStorageModule(...)` binds a `FakeStorage` in place of the real `storageModule`.
   - `tabataPreset`, `hiitPreset`, `hangboardPreset`: the built-ins tests lean on, found by name.
 - **`lift-testing`** (`dev.justinsmith.lift.fakes`): `FakeLiftStorage` over the six fake DAOs (plus `InMemoryGearStore`), with
-  `repository()` and `finished(...)`; `FakeIntervalActivity`; `RecordingBeeper`, `RecordingKeepAlive` and `LiftTestClock` (moving the wall clock and the timers' monotonic time together); `fakeLiftPlatformModule`,
+  `repository()` and `finished(...)`; `FakeIntervalActivity`; `RecordingBeeper`, `RecordingVoice`, `RecordingKeepAlive` and `LiftTestClock` (moving the wall clock and the timers' monotonic time together); `fakeLiftPlatformModule`,
   `fakeLiftStorageModule`; `liftTestKoin(...)`, Lift's part of the container over them.
 - **`testKoin(...)`** (`apps/app/test/fakes/TestKoin.kt`): the app's real container over the fakes of both
   sides, with the `WallClock` fixed at `now` (or following `clock`), and a workout counting `timeSource`

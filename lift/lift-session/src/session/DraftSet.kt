@@ -55,6 +55,7 @@ internal fun DraftSetCard(
     val draft = state.draft
     ListCard(Modifier.padding(top = Spacing.space8)) {
         NextFigure(draft.exercise, draft.doubled, actions.onOpenExercise)
+        FaultsNote(draft.exercise)
         Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
             Text(
                 stringResource(Res.string.next_free_title),

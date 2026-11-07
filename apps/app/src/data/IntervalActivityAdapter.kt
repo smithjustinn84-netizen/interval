@@ -35,6 +35,10 @@ class RepositoryIntervalActivity(
         .map { it.body.weightKg }
         .stateIn(scope, SharingStarted.Eagerly, settingsStore.appSettings.value.body.weightKg)
 
+    override val voice: StateFlow<Boolean> = settingsStore.cueSettings
+        .map { it.voice }
+        .stateIn(scope, SharingStarted.Eagerly, settingsStore.cueSettings.value.voice)
+
     /** As History counts a session's calories: all of it as kettlebell work, its rests being short. */
     override fun sessionCalories(elapsedSeconds: Int): Int? =
         settingsStore.appSettings.value.body.calories(elapsedSeconds, 0, Activity.Kettlebell)

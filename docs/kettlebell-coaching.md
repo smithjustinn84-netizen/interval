@@ -39,17 +39,17 @@ A class that is planned but not yet logged doesn't count.
 - A lift done with two bells steps up only to a weight the lifter owns a pair of (`GearStore.pairs`).
 - Bells come in fixed sizes. Where the next one is a big jump, progression goes through density first (section 4).
 
-## 2. Guidance and safety during the set (planned)
+## 2. Guidance and safety during the set
 
-Lift's timers beep and say nothing. The plan:
-- **Speech for Lift.** Move the speech engine into `core-platform`, so Lift's EMOM, rest and hold timers can speak. They follow the same voice switch as the interval side.
-- **Set-up cues.** At an EMOM minute's count-in, say one of the lift's three cues (`cues.xml`), rotating. In the last ten seconds of rest, say the next lift's set-up cue. Never speak mid-rep.
-- **Fault cues.** Each ballistic or hinge lift gets a `faults_*` array, said at most once a set and shown under the set's figure:
+Lift's timers speak, never mid-rep:
+- **Speech for Lift.** The speech engine is `Speaker` in `core-platform` (Android's text-to-speech, iOS's synthesizer, none on desktop), one per process. The timers hand typed lines (`Coaching`, through `LiftVoice`) to `SpokenCoaching`, which words them. Settings' Voice switch governs Lift as it does the interval side (`IntervalActivity.voice`).
+- **Set-up cues.** At an EMOM minute's count-in, nine seconds before it (`EmomClock.countInsBetween`), Lift says one of the lift's three cues (`cues.xml`), the minute's own so they rotate. From the second minute on, it speaks only once the minute before has its set done, since until then the lifter may still be lifting. In the last ten seconds of rest (`RestClock.setUpBetween`) it says the next lift's set-up cue: the plan's next, or the Next set card's.
+- **Fault cues.** A loaded kettlebell hinge has faults (`Fault` and `Exercise.faults`, from its `Movement`); a thrown one has more, and the snatch has one of its own. One is said as the rest after a set starts, or as an EMOM minute's set is done: at most once a set, a different one each set. The worst is shown under the set's figure ("Watch for · …"):
   - **Squatting the swing**: "Hips back, shins stay vertical."
   - **Death grip in the float**: "Loosen at the top, grip on the way down." Squeezing through the float wears the forearm flexors and tears calluses.
   - **Wrist flexion in the hinge**: "Knuckles to the floor, wrist straight." A straight line from elbow to handle spares the wrist extensors.
   - **Late hand insertion on the snatch**: "Punch through before it lands."
-- **Safety lines.** Before the first ballistic set at a new bell: "Groove five light first." On a Taxed day: "Stop a rep early."
+- **Safety lines (planned).** Before the first ballistic set at a new bell: "Groove five light first." On a Taxed day: "Stop a rep early."
 
 ## 3. Grip and fatigue
 

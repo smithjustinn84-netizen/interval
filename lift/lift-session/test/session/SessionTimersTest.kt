@@ -14,6 +14,8 @@ import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import dev.justinsmith.lift.fakes.RecordingBeeper
 import dev.justinsmith.lift.fakes.RecordingKeepAlive
+import dev.justinsmith.lift.fakes.RecordingVoice
+import dev.justinsmith.lift.platform.Coaching
 import dev.justinsmith.lift.platform.TimerRun
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -38,6 +40,7 @@ class SessionTimersTest {
     private val repository = storage.repository { now }
     private val beeper = RecordingBeeper()
     private val keepAlive = RecordingKeepAlive()
+    private val voice = RecordingVoice()
 
     /** Timers ticking on the test's scheduler, under its background scope, so none outlives the test. */
     private fun TestScope.timers() = SessionTimers(
@@ -46,6 +49,7 @@ class SessionTimersTest {
         testScheduler.timeSource,
         beeper,
         keepAlive,
+        voice,
         CoroutineScope(backgroundScope.coroutineContext + SupervisorJob(backgroundScope.coroutineContext.job)),
     )
 
@@ -248,5 +252,18 @@ class SessionTimersTest {
         timers.restore(SavedTimer.Rest(now - 10_000, 90))
         assertEquals(30, timers.state.value.rest?.seconds)
         assertEquals(SavedTimer.Rest(now, 30), repository.sessions.active.value?.timer)
+    }
+
+    @Test
+    fun `a rest after a set says one fault of the lift then the set-up of the lift coming`() = runTest {
+        val timers = timers()
+        val snatch = BuiltInExercise.Snatch
+        timers.upNext(BuiltInExercise.GobletSquat)
+        timers.startRest(30, after = snatch)
+        run(25_000)
+        assertEquals(listOf(Coaching.Fault(snatch, 0), Coaching.Cue(BuiltInExercise.GobletSquat, 0)), voice.lines)
+        timers.startRest(30, after = snatch)
+        assertEquals(Coaching.Fault(snatch, 1), voice.lines.last())
+        timers.stopAll()
     }
 }

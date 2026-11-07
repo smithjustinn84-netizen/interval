@@ -34,7 +34,19 @@ class RestClock(val seconds: Int) {
         return cues
     }
 
+    /**
+     * Whether the set-up line for the lift coming came due after [fromMillis] up to [toMillis]: [SET_UP_LEAD_SECONDS]
+     * before the rest ends, ahead of its 3-2-1. A rest no longer than that has none.
+     */
+    fun setUpBetween(fromMillis: Long, toMillis: Long): Boolean {
+        val at = endMillis - SET_UP_LEAD_SECONDS * SECOND_MILLIS
+        return at > 0 && at in (fromMillis + 1)..toMillis
+    }
+
     companion object {
+        /** In a rest's last this many seconds, the next lift's set-up is said. */
+        const val SET_UP_LEAD_SECONDS = 10
+
         /** A rest is a minute and a half until the user says otherwise. */
         const val DEFAULT_SECONDS = 90
 

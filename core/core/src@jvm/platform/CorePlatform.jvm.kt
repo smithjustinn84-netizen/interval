@@ -2,7 +2,7 @@ package dev.justinsmith.interval.platform
 
 import org.koin.core.module.Module
 
-/** What both sides take from the desktop. */
+/** What both sides take from the desktop, which has no health store and no voice. */
 fun corePlatformModule(): Module =
     sharedCorePlatformModule(appInfo = { DesktopAppInfo() }, sharer = { DesktopSharer() })
 

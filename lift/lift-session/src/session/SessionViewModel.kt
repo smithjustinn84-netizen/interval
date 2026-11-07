@@ -161,6 +161,10 @@ class SessionViewModel(
         viewModelScope.launch {
             timers.heldSets.collect(draft::flipSide)
         }
+        // The timers say the lift coming in a rest's last seconds: the plan's next, or the Next set card's.
+        viewModelScope.launch {
+            state.map { it.liftComing }.distinctUntilChanged().collect(timers::upNext)
+        }
         // An exercise added from the sheet's search is the one the sheet goes on with.
         viewModelScope.launch {
             exerciseStore.customExercises.collect(draft::exercisesChanged)
@@ -178,7 +182,7 @@ class SessionViewModel(
             seconds = seconds.takeIf { set.held },
         )
         draft.flipSide(set)
-        timers.startRest(rest ?: setStore.restSeconds.value)
+        timers.startRest(rest ?: setStore.restSeconds.value, after = set.exercise)
     }
 
     /** Logs the plan's next set as planned, with its suggested load: a hold for its seconds. */
@@ -192,7 +196,7 @@ class SessionViewModel(
             set.side,
             seconds = set.reps.takeIf { set.held },
         )
-        timers.startRest(set.rest ?: setStore.restSeconds.value)
+        timers.startRest(set.rest ?: setStore.restSeconds.value, after = set.exercise)
     }
 
     /** Saves the set being changed as the sheet's draft now has it. */

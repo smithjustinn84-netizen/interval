@@ -450,7 +450,11 @@ flowchart TD
   - `Estimate.kt` (`lift-domain`) estimates each program day's duration from set/rep counts, movement pace, EMOM minutes, and configured set rest.
 - **Audio & Cues**:
   - Audio cues are managed by `CuePlayer` (interval) and `Beeper` (Lift).
-  - Voice cues use system text-to-speech queues (`SpeechQueue`) with localized strings.
+  - Voice is one `Speaker` per process (`core-platform`: Android's text-to-speech, iOS's speech synthesizer, none on
+    desktop), bound in `corePlatformModule`. Each side puts its own lines into words through `SpokenLines`: the
+    interval side's `Speech` in `SpeechQueue`, Lift's `Coaching` (a lift's cue at an EMOM count-in and a rest's end,
+    a fault after a set) in `SpokenCoaching`. Settings' Voice switch governs both (Lift reads it as
+    `IntervalActivity.voice`).
 - **Health store** (`HealthStore`, `core-platform`):
   - As a workout or a Lift session finishes, its ViewModel hands the store a `HealthWorkout`: when it ran, a segment
     per interval, rest, pause or set (the workout's course is kept as `CourseSpan`s in `WorkoutProgress`, so a

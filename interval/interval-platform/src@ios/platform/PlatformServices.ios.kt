@@ -37,12 +37,6 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.onClose
 import org.koin.core.module.dsl.withOptions
 import org.koin.dsl.module
-import platform.AVFAudio.AVAudioSession
-import platform.AVFAudio.AVAudioSessionCategoryAmbient
-import platform.AVFAudio.AVSpeechBoundary
-import platform.AVFAudio.AVSpeechSynthesizer
-import platform.AVFAudio.AVSpeechUtterance
-import platform.AVFAudio.setActive
 import platform.AudioToolbox.AudioServicesPlaySystemSound
 import platform.Foundation.NSApplicationSupportDirectory
 import platform.Foundation.NSFileManager
@@ -65,7 +59,7 @@ import platform.UserNotifications.UNUserNotificationCenter
 /** The interval side's services on iOS. */
 fun platformModule(): Module = module {
     single<PlatformStorage> { IosStorage() }
-    single<CuePlayer> { IosCuePlayer() }.withOptions {
+    single<CuePlayer> { IosCuePlayer(get()) }.withOptions {
         onClose { it?.release() }
     }
     // Lazily: the workout it reads is the workout feature's session, which takes this keeper in turn.
@@ -260,20 +254,10 @@ private class IosStorage : PlatformStorage {
 }
 
 /**
- * System sounds for beeps, AVSpeechSynthesizer for voice, and the feedback generators for haptics. The
- * audio session is Ambient: cues mix over the user's music rather than stopping it, and voice follows
- * the ringer switch as the system-sound beeps do.
+ * System sounds for beeps, core's [Speaker] (the speech synthesizer, which sets the audio session Ambient) for
+ * voice, and the feedback generators for haptics. Cues mix over the user's music rather than stopping it.
  */
-private class IosCuePlayer : CuePlayer {
-    private val synthesizer = AVSpeechSynthesizer()
-
-    init {
-        AVAudioSession.sharedInstance().run {
-            setCategory(AVAudioSessionCategoryAmbient, error = null)
-            setActive(true, error = null)
-        }
-    }
-
+private class IosCuePlayer(speaker: Speaker) : CuePlayer {
     override fun beep(beep: Beep) {
         val sound: UInt = when (beep) {
             Beep.Countdown -> 1103u
@@ -286,10 +270,7 @@ private class IosCuePlayer : CuePlayer {
         AudioServicesPlaySystemSound(sound)
     }
 
-    private val speech = SpeechQueue { text ->
-        synthesizer.stopSpeakingAtBoundary(AVSpeechBoundary.AVSpeechBoundaryImmediate)
-        synthesizer.speakUtterance(AVSpeechUtterance(string = text))
-    }
+    private val speech = SpeechQueue(say = speaker::speak)
 
     override fun speak(speech: Speech) {
         this.speech.speak(speech)
@@ -310,6 +291,5 @@ private class IosCuePlayer : CuePlayer {
 
     override fun release() {
         speech.close()
-        synthesizer.stopSpeakingAtBoundary(AVSpeechBoundary.AVSpeechBoundaryImmediate)
     }
 }

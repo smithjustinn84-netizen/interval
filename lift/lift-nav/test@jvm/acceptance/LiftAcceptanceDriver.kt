@@ -211,6 +211,34 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
     /** Logs the set on the Log sheet: its Log set is drawn over the session's own. */
     fun logFromSheet() = tap("Log set")
 
+    /** On the card about the next set, under its figure: the worst fault the lift is prone to. */
+    fun seeWatchFor(fault: String) = see("Watch for · $fault")
+
+    /** On the Log sheet: An EMOM, then Start EMOM on its draft's lift, which counts in. */
+    fun startEmom() {
+        tap("An EMOM")
+        tap("Start EMOM")
+        see("Get ready")
+    }
+
+    /** In an EMOM's minute, once its Work shows: Set done, and it rests out the minute. */
+    fun emomSetDone() {
+        see("Work")
+        tap("Set done")
+        see("Rest")
+    }
+
+    /** [seconds] pass on the clocks the timers keep. */
+    fun secondsPass(seconds: Int) = app.clock.set(app.clock.get() + seconds * MILLIS_PER_SECOND)
+
+    /** The last line the session said aloud is [line], in the lift's own words. */
+    fun hear(line: String) = waitFor("to hear \"$line\" last") {
+        app.speaker.lines.value.lastOrNull() == line
+    }
+
+    /** Nothing has been said aloud at all. */
+    fun heardNothing() = assertEquals(emptyList(), app.speaker.lines.value)
+
     /** Changes the block Up next: its Change, then [chip] on the sheet (a bell, say), then Done. */
     fun changeUpNext(chip: String) {
         tap("Change")
@@ -355,6 +383,8 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
         ui.waitForIdle()
     }
 }
+
+private const val MILLIS_PER_SECOND = 1_000L
 
 /** A Lift acceptance test: Lift's pages over [storage], in [window], driven through [LiftAcceptanceDriver]. */
 fun liftScenario(

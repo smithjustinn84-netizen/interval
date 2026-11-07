@@ -1,0 +1,25 @@
+<journey name="Lift: the timers coach aloud">
+  <description>
+    Lift's timers speak through the same voice as the interval side's cues, and only where a lifter is still: the
+    rest after a set of a ballistic or hinge lift says one fault it is prone to, and in its last ten seconds the next
+    lift's set-up; an EMOM's count-in says one of the lift's cues, each minute the next, and a minute's set done the
+    next fault. The set's card shows the worst fault under its figure. Settings' Voice switch silences Lift too.
+    Run on a fresh install (adb shell pm clear dev.justinsmith.interval), with the emulator's volume up and a
+    text-to-speech engine installed.
+  </description>
+  <actions>
+    <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
+    <action>Tap the "Train" tab, which opens on "Strength", then "Start session"</action>
+    <action>Verify that the "Next set" card shows, under the figure doing a two-hand swing, "Watch for · Hips back, shins stay vertical"</action>
+    <action>Tap the title bar's "Add set or EMOM", tap "Change", search "snatch" and tap "Snatch"</action>
+    <action>Tap the sheet's "Log set" and verify that the rest counts down from "1:30" and the phone says "Punch through before it lands" as it starts</action>
+    <action>Wait until the rest reads "0:10" and verify that the phone says "Hike the bell high, drive the hips and pull the elbow back to keep the arc close" before the 3-2-1 beeps</action>
+    <action>Verify that the "Next set" card shows "Watch for · Punch through before it lands" under the figure doing a snatch</action>
+    <action>Tap "Add set or EMOM", then "An EMOM", then "Start EMOM", and verify that during "Get ready" the phone says the snatch's first cue</action>
+    <action>Once the minute's "Work" shows, tap "Set done" and verify that the phone says "Hips back, shins stay vertical"</action>
+    <action>Verify that about nine seconds before the next minute, ahead of its 3-2-1, the phone says "Open the hand near the top and punch through so the bell settles softly overhead"</action>
+    <action>Let the next minute pass without tapping "Set done" and verify that nothing is said before the minute after it</action>
+    <action>Tap "Stop", open Settings from the gear, turn "Voice" off and go back to the session</action>
+    <action>Tap "Log set", wait for the rest to end, and verify that only the beeps play, with nothing said</action>
+  </actions>
+</journey>

@@ -155,3 +155,6 @@ data class SessionUiState(
     /** The exercise whose page is open, and the user's history with it. */
     val detail: ExerciseDetailUiState? = null,
 )
+
+/** The lift a rest leads to: the plan's next set's, none once the day is done, or in a free session the draft's. */
+val SessionUiState.liftComing: Exercise? get() = if (free) draft.exercise else upNext?.set?.exercise

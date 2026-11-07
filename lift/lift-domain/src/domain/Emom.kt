@@ -65,6 +65,19 @@ class EmomClock(val minutes: Int, private val countInMillis: Long = COUNT_IN_MIL
         return cues
     }
 
+    /**
+     * The minutes (from 1) whose count-in line came due after [fromMillis] up to [toMillis]: [SPOKEN_LEAD_MILLIS]
+     * before each starts, ahead of its 3-2-1. Never mid-rep: the first minute's comes in the count-in, and a later
+     * one's only once the minute before has its set [done], since until then the lifter may still be lifting.
+     */
+    fun countInsBetween(fromMillis: Long, toMillis: Long, done: Set<Int>): List<Int> {
+        if (toMillis <= fromMillis) return emptyList()
+        return (1..minutes).filter { minute ->
+            val at = countInMillis + (minute - 1) * MINUTE_MILLIS - SPOKEN_LEAD_MILLIS
+            at in (fromMillis + 1)..toMillis && at >= 0 && (minute == 1 || minute - 1 in done)
+        }
+    }
+
     private fun secondsUp(millis: Long) = ((millis + SECOND_MILLIS - 1) / SECOND_MILLIS).toInt()
 
     companion object {
@@ -74,6 +87,12 @@ class EmomClock(val minutes: Int, private val countInMillis: Long = COUNT_IN_MIL
 
         /** How many seconds before each minute get a beep: the last three. */
         const val COUNTDOWN = 3
+
+        /**
+         * How long before a minute starts its count-in line is said: early enough for a cue of a breath to end
+         * before the 3-2-1, late enough to fall a second into the first minute's count-in.
+         */
+        const val SPOKEN_LEAD_MILLIS = 9_000L
 
         /** Done stays on screen this long before the session comes back. */
         const val DONE_HOLD_MILLIS = 1_500L

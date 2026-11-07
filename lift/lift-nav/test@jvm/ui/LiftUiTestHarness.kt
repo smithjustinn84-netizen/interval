@@ -22,6 +22,7 @@ import androidx.navigationevent.NavigationEventDispatcherOwner
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import androidx.savedstate.serialization.SavedStateConfiguration
 import dev.justinsmith.interval.fakes.RecordingSharer
+import dev.justinsmith.interval.fakes.RecordingSpeaker
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.NoticeHost
@@ -48,7 +49,7 @@ import kotlin.time.Duration
 
 /**
  * What a whole-app test drives: the fake storage under the app, its clock, the beeps it played, what it
- * offered to share, and [back], the system back gesture.
+ * offered to share, what it said, and [back], the system back gesture.
  */
 class LiftAppFixture(
     val storage: FakeLiftStorage,
@@ -56,6 +57,8 @@ class LiftAppFixture(
     val beeper: RecordingBeeper,
     /** What the pages offered to share. */
     val sharer: RecordingSharer,
+    /** What the timers said aloud, in words. */
+    val speaker: RecordingSpeaker,
     private val backInput: DirectNavigationEventInput,
 ) {
     /** The system back gesture, completed, on the main thread as a device delivers it. */
@@ -108,6 +111,7 @@ fun liftAppTest(
     val clock = LiftTestClock()
     val beeper = RecordingBeeper()
     val sharer = RecordingSharer()
+    val speaker = RecordingSpeaker()
     val koin = liftTestKoin(
         storage,
         fakeLiftPlatformModule(beeper = beeper),
@@ -116,6 +120,7 @@ fun liftAppTest(
         intervals = intervals,
         sharer = sharer,
         features = liftFeatureModules,
+        speaker = speaker,
     )
     val owner = object : NavigationEventDispatcherOwner {
         override val navigationEventDispatcher = NavigationEventDispatcher()
@@ -124,7 +129,7 @@ fun liftAppTest(
     owner.navigationEventDispatcher.addInput(input)
     try {
         setContent { LiftHost(koin, owner) }
-        block(LiftAppFixture(storage, clock, beeper, sharer, input))
+        block(LiftAppFixture(storage, clock, beeper, sharer, speaker, input))
     } finally {
         koin.close()
     }

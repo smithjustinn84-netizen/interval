@@ -1,6 +1,7 @@
 package dev.justinsmith.lift.ui
 
 import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.Fault
 import dev.justinsmith.lift.ui.resources.Res
 import dev.justinsmith.lift.ui.resources.cues_air_squat
 import dev.justinsmith.lift.ui.resources.cues_armor_building_complex
@@ -104,7 +105,12 @@ import dev.justinsmith.lift.ui.resources.cues_thruster
 import dev.justinsmith.lift.ui.resources.cues_two_hand_swing
 import dev.justinsmith.lift.ui.resources.cues_wall_sit
 import dev.justinsmith.lift.ui.resources.cues_windmill
+import dev.justinsmith.lift.ui.resources.fault_bent_wrist
+import dev.justinsmith.lift.ui.resources.fault_death_grip
+import dev.justinsmith.lift.ui.resources.fault_late_hand
+import dev.justinsmith.lift.ui.resources.fault_squatted_hinge
 import org.jetbrains.compose.resources.StringArrayResource
+import org.jetbrains.compose.resources.StringResource
 
 /** How to do each built-in, a line each. Every one has its lines, so one added without them fails to build. */
 @Suppress("detekt.LongMethod") // One arm for each built-in.
@@ -211,4 +217,12 @@ fun BuiltInExercise.cues(): StringArrayResource = when (this) {
     BuiltInExercise.ShoulderBridge -> Res.array.cues_shoulder_bridge
     BuiltInExercise.Seal -> Res.array.cues_seal
     BuiltInExercise.LegPullFront -> Res.array.cues_leg_pull_front
+}
+
+/** The words of a fault, a short line to say between sets. */
+fun Fault.words(): StringResource = when (this) {
+    Fault.LateHand -> Res.string.fault_late_hand
+    Fault.SquattedHinge -> Res.string.fault_squatted_hinge
+    Fault.DeathGrip -> Res.string.fault_death_grip
+    Fault.BentWrist -> Res.string.fault_bent_wrist
 }

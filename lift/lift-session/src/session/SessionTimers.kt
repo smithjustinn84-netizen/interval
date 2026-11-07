@@ -13,6 +13,8 @@ import dev.justinsmith.lift.domain.SavedTimer
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.platform.ActiveTimers
 import dev.justinsmith.lift.platform.Beeper
+import dev.justinsmith.lift.platform.Coaching
+import dev.justinsmith.lift.platform.LiftVoice
 import dev.justinsmith.lift.platform.SessionKeepAlive
 import dev.justinsmith.lift.platform.TimerRun
 import kotlinx.coroutines.CoroutineScope
@@ -69,20 +71,32 @@ data class TimerState(
  *
  * The run going is kept on the session in progress at each change of course ([SetStore.saveTimer]), so a
  * process killed in it can go on with it: the session's screen [restore]s it, timed by the wall clock.
+ *
+ * They speak through [voice], never mid-rep: an EMOM minute's count-in says one of the lift's cues, a rest's last
+ * seconds the set-up of the lift coming ([upNext], which the session's screen keeps current), and the rest after a
+ * set of a ballistic or hinge lift one fault it is prone to, once, taken round set by set.
  */
+@Suppress("detekt.TooManyFunctions") // A control for each thing the screen does to a timer, and the voice's two.
 class SessionTimers(
     private val setStore: SetStore,
     clock: WallClock,
     timeSource: TimeSource.WithComparableMarks,
     beeper: Beeper,
     private val keepAlive: SessionKeepAlive,
+    private val voice: LiftVoice,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
 ) : ActiveTimers {
     private val time = RunClock(clock, timeSource)
 
-    private val rest = RestTimer(time, beeper)
+    /** The lift coming after this rest, as the session's screen last said; null with none known. */
+    private var next: Exercise? = null
 
-    private val emom = EmomRunner(time, beeper) { run, minute ->
+    /** How many faults each lift has had said, by its key, so the next set hears the next. */
+    private val faultsSaid = mutableMapOf<String, Int>()
+
+    private val rest = RestTimer(time, beeper, voice) { next }
+
+    private val emom = EmomRunner(time, beeper, voice, ::nextFault) { run, minute ->
         setStore.logSet(run.exercise, run.load, run.reps, run.sideOf(minute))
     }
 
@@ -103,10 +117,19 @@ class SessionTimers(
     private var saved: SavedTimer? = null
     private var ticking: Job? = null
 
-    /** Starts a rest of [seconds] from now, in place of any already running. */
-    fun startRest(seconds: Int) {
+    /**
+     * Starts a rest of [seconds] from now, in place of any already running, after a set of [after]: one fault it is
+     * prone to is said as the rest starts.
+     */
+    fun startRest(seconds: Int, after: Exercise? = null) {
         rest.start(seconds)
+        after?.let { voice.say(nextFault(it)) }
         changed()
+    }
+
+    /** The lift coming after a rest, said in its last seconds; null when none is known. */
+    fun upNext(exercise: Exercise?) {
+        next = exercise
     }
 
     /** Makes the rest running [seconds] long, from when it started. */
@@ -161,6 +184,8 @@ class SessionTimers(
         emom.stop()
         holds.cancel()
         rest.skip()
+        next = null
+        faultsSaid.clear()
         changed()
     }
 
@@ -206,6 +231,13 @@ class SessionTimers(
         setStore.logSet(set.exercise, set.load, 0, set.side, seconds = seconds)
         rest.start(setStore.restSeconds.value)
         held.tryEmit(set)
+    }
+
+    /** The fault [exercise]'s next set hears, the one after the last said. */
+    private fun nextFault(exercise: Exercise): Coaching.Fault {
+        val index = faultsSaid[exercise.key] ?: 0
+        faultsSaid[exercise.key] = index + 1
+        return Coaching.Fault(exercise, index)
     }
 
     private fun tick() {

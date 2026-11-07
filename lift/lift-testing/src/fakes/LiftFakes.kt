@@ -2,9 +2,11 @@ package dev.justinsmith.lift.fakes
 
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.RecordingSharer
+import dev.justinsmith.interval.fakes.RecordingSpeaker
 import dev.justinsmith.interval.fakes.fakeCorePlatformModule
 import dev.justinsmith.interval.platform.IdGenerator
 import dev.justinsmith.interval.platform.Sharer
+import dev.justinsmith.interval.platform.Speaker
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.lift.data.BandDao
 import dev.justinsmith.lift.data.BandEntity
@@ -31,6 +33,8 @@ import dev.justinsmith.lift.di.liftModules
 import dev.justinsmith.lift.domain.EmomCue
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.platform.Beeper
+import dev.justinsmith.lift.platform.Coaching
+import dev.justinsmith.lift.platform.LiftVoice
 import dev.justinsmith.lift.platform.SessionKeepAlive
 import dev.justinsmith.lift.platform.TimerRun
 import kotlinx.coroutines.CoroutineScope
@@ -247,12 +251,13 @@ class FakeBandDao(private val sessions: FakeSessionDao) : BandDao {
     override suspend fun inUse(id: String) = sessions.sets.value.any { it.band == id }
 }
 
-/** The rest of the app as Lift sees it: interval workouts and a weekly goal a test sets. */
+/** The rest of the app as Lift sees it: interval workouts, a weekly goal and the voice switch a test sets. */
 class FakeIntervalActivity : IntervalActivity {
     override val workouts = MutableStateFlow(emptyList<IntervalWorkout>())
     override val sportDays = MutableStateFlow(emptyList<SportDay>())
     override val weeklyGoal = MutableStateFlow<Int?>(null)
     override val bodyWeightKg = MutableStateFlow<Double?>(null)
+    override val voice = MutableStateFlow(true)
 
     /** The estimate the app would make, or null as with no body weight set; a test sets it. */
     var caloriesPerSecond: Double? = null
@@ -409,8 +414,9 @@ fun fakeLiftStorageModule(storage: FakeLiftStorage = FakeLiftStorage()): Module 
 
 /**
  * Lift's part of the container over fakes, with what core and the app would supply: a clock reading [now], the
- * timers' [timeSource], the [FixedTimestampFormatter], [sharer] and [intervals]. [features] are the feature modules
- * whose ViewModels the test's Routes resolve: `lift-nav`'s `liftFeatureModules` (this module sees no feature).
+ * timers' [timeSource], the [FixedTimestampFormatter], [sharer], [speaker] and [intervals]. [features] are the
+ * feature modules whose ViewModels the test's Routes resolve: `lift-nav`'s `liftFeatureModules` (this module sees
+ * no feature).
  */
 fun liftTestKoin(
     storage: FakeLiftStorage = FakeLiftStorage(),
@@ -420,14 +426,24 @@ fun liftTestKoin(
     intervals: IntervalActivity = FakeIntervalActivity(),
     sharer: Sharer = RecordingSharer(),
     features: List<Module> = emptyList(),
+    speaker: Speaker = RecordingSpeaker(),
 ): KoinApplication = koinApplication {
     val app = module {
         single<IntervalActivity> { intervals }
     }
     modules(
-        listOf(fakeCorePlatformModule(WallClock(now), sharer = sharer, timeSource = timeSource)) +
+        listOf(fakeCorePlatformModule(WallClock(now), sharer = sharer, timeSource = timeSource, speaker = speaker)) +
             liftModules(platformModule, fakeLiftStorageModule(storage)) +
             features +
             app,
     )
+}
+
+/** The lines the timers had Lift say, in order, as typed lines: no words, which need the app's strings. */
+class RecordingVoice : LiftVoice {
+    val lines = mutableListOf<Coaching>()
+
+    override fun say(line: Coaching) {
+        lines += line
+    }
 }

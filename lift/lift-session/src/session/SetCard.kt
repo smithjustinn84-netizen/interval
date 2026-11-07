@@ -23,6 +23,7 @@ import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.SetLog
+import dev.justinsmith.lift.domain.faults
 import dev.justinsmith.lift.domain.stepped
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.next_change
@@ -30,6 +31,7 @@ import dev.justinsmith.lift.session.resources.next_figure_cd
 import dev.justinsmith.lift.session.resources.next_how_to
 import dev.justinsmith.lift.session.resources.next_how_to_cd
 import dev.justinsmith.lift.session.resources.next_last_time
+import dev.justinsmith.lift.session.resources.next_watch_for
 import dev.justinsmith.lift.ui.LiftSizes
 import dev.justinsmith.lift.ui.LoadStepper
 import dev.justinsmith.lift.ui.demo.ExerciseFigure
@@ -39,6 +41,7 @@ import dev.justinsmith.lift.ui.liftName
 import dev.justinsmith.lift.ui.loadLine
 import dev.justinsmith.lift.ui.platesLine
 import dev.justinsmith.lift.ui.setLine
+import dev.justinsmith.lift.ui.words
 import org.jetbrains.compose.resources.stringResource
 
 // The pieces a card about one set shares: Up next on a program day, and Next set in a free session.
@@ -72,6 +75,21 @@ internal fun NextFigure(exercise: Exercise, double: Boolean, onHowTo: (String) -
             modifier = Modifier.fillMaxSize().padding(Spacing.space8),
         )
     }
+}
+
+/**
+ * The worst fault the lift is prone to, a line under its figure ("Watch for · Hips back, shins stay vertical"): the
+ * first of those its rests say, set by set. Nothing for a lift with none, any but a ballistic or hinge built-in.
+ */
+@Composable
+internal fun FaultsNote(exercise: Exercise) {
+    val worst = exercise.faults.firstOrNull() ?: return
+    Text(
+        stringResource(Res.string.next_watch_for, stringResource(worst.words())),
+        style = IntervalTheme.type.meta,
+        color = IntervalTheme.palette.textDim,
+        modifier = Modifier.padding(start = Spacing.space16, end = Spacing.space16, top = Spacing.space12),
+    )
 }
 
 /**

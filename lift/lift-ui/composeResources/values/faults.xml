@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The faults a ballistic or hinge lift is prone to (`Fault`, lift-domain), a line each: said once in the rest
+     after a set of it, and the worst shown under the set's figure. -->
+<resources>
+    <string name="fault_late_hand">Punch through before it lands</string>
+    <string name="fault_squatted_hinge">Hips back, shins stay vertical</string>
+    <string name="fault_death_grip">Loosen at the top, grip on the way down</string>
+    <string name="fault_bent_wrist">Knuckles to the floor, wrist straight</string>
+</resources>

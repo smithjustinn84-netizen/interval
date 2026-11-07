@@ -7,6 +7,8 @@ import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.domain.double
 import dev.justinsmith.lift.platform.Beeper
+import dev.justinsmith.lift.platform.Coaching
+import dev.justinsmith.lift.platform.LiftVoice
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,11 +40,14 @@ data class EmomRun(
 
 /**
  * Runs an EMOM: starts it, [log]s each minute's set as it is done, beeps its cues and ends it once its minutes
- * are up. [tick] moves it on.
+ * are up. [tick] moves it on. Its [voice] says one of the lift's cues at each minute's count-in, the minute's own
+ * so they rotate, and after a minute's set a fault the lift is prone to ([fault], which takes them round).
  */
 class EmomRunner(
     private val clock: RunClock,
     private val beeper: Beeper,
+    private val voice: LiftVoice,
+    private val fault: (Exercise) -> Coaching.Fault,
     private val log: (run: EmomRun, minute: Int) -> Unit,
 ) {
     private val run = MutableStateFlow<EmomRun?>(null)
@@ -75,18 +80,25 @@ class EmomRunner(
         if (now.phase != EmomPhase.Work) return
         log(current, now.minute)
         run.value = current.copy(done = current.done + now.minute)
+        voice.say(fault(current.exercise))
     }
 
     fun stop() {
         run.value = null
     }
 
-    /** Beeps whatever cue came due since the last tick, and ends the EMOM once its minutes are up. */
+    /**
+     * Beeps whatever cue came due since the last tick, says the count-in's line if one did, and ends the EMOM once
+     * its minutes are up.
+     */
     fun tick(now: Long) {
         val current = run.value ?: return
         val clockOfRun = EmomClock(current.minutes)
         val elapsed = now - current.startedAtMillis
         clockOfRun.cuesBetween(lastCueMillis, elapsed).lastOrNull()?.let(beeper::beep)
+        clockOfRun.countInsBetween(lastCueMillis, elapsed, current.done).lastOrNull()?.let { minute ->
+            voice.say(Coaching.Cue(current.exercise, minute - 1))
+        }
         lastCueMillis = elapsed
         if (clockOfRun.isOver(elapsed)) run.value = null
     }

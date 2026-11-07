@@ -9,12 +9,14 @@ import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.IdGenerator
 import dev.justinsmith.interval.platform.ShareableFile
 import dev.justinsmith.interval.platform.Sharer
+import dev.justinsmith.interval.platform.Speaker
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.MINUTES_PER_HOUR
 import dev.justinsmith.interval.timer.dateOfEpochDay
 import dev.justinsmith.interval.timer.epochDayOf
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import kotlin.time.TimeSource
@@ -128,10 +130,20 @@ class RecordingHealthStore(initial: HealthStatus = HealthStatus.Disconnected) : 
     }
 }
 
+/** A [Speaker] that keeps each line said, in order, as a flow a test can wait on (lines arrive on the main thread). */
+class RecordingSpeaker : Speaker {
+    val lines = MutableStateFlow(emptyList<String>())
+
+    override fun speak(text: String) {
+        lines.update { it + text }
+    }
+}
+
 /**
  * Stands in for core's `corePlatformModule`: a [clock] standing at 0 unless a test moves it, real monotonic
  * time unless a test passes a `TestTimeSource` as [timeSource], the [FixedTimestampFormatter], [FakeAppInfo], a
- * [sharer] that records, a [health] store that does too, and random [ids] unless a test passes [SequentialIds].
+ * [sharer] that records, a [health] store and a [speaker] that do too, and random [ids] unless a test passes
+ * [SequentialIds].
  */
 fun fakeCorePlatformModule(
     clock: WallClock = WallClock { 0L },
@@ -140,6 +152,7 @@ fun fakeCorePlatformModule(
     health: HealthStore = RecordingHealthStore(),
     timeSource: TimeSource.WithComparableMarks = TimeSource.Monotonic,
     ids: IdGenerator = IdGenerator.Random,
+    speaker: Speaker = RecordingSpeaker(),
 ): Module = module {
     single { clock }
     single { timeSource }
@@ -148,4 +161,5 @@ fun fakeCorePlatformModule(
     single { sharer }
     single { health }
     single { ids }
+    single { speaker }
 }

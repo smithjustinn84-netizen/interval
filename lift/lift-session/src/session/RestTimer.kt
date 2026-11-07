@@ -1,7 +1,10 @@
 package dev.justinsmith.lift.session
 
+import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.platform.Beeper
+import dev.justinsmith.lift.platform.Coaching
+import dev.justinsmith.lift.platform.LiftVoice
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,8 +17,16 @@ data class RestRun(val startedAtMillis: Long, val seconds: Int, val startedAtEpo
     val clock: RestClock get() = RestClock(seconds)
 }
 
-/** Counts a rest down after a set: beeps 3-2-1 and Start as it ends, then is over. [tick] moves it on. */
-class RestTimer(private val clock: RunClock, private val beeper: Beeper) {
+/**
+ * Counts a rest down after a set: beeps 3-2-1 and Start as it ends, then is over. [tick] moves it on. In its last
+ * seconds its [voice] says the set-up of the lift coming, the [next] one as it stands then, if one is known.
+ */
+class RestTimer(
+    private val clock: RunClock,
+    private val beeper: Beeper,
+    private val voice: LiftVoice,
+    private val next: () -> Exercise?,
+) {
     private val run = MutableStateFlow<RestRun?>(null)
     val state: StateFlow<RestRun?> = run.asStateFlow()
 
@@ -48,6 +59,7 @@ class RestTimer(private val clock: RunClock, private val beeper: Beeper) {
         val rest = run.value ?: return
         val elapsed = now - rest.startedAtMillis
         rest.clock.cuesBetween(lastCueMillis, elapsed).lastOrNull()?.let(beeper::beep)
+        if (rest.clock.setUpBetween(lastCueMillis, elapsed)) next()?.let { voice.say(Coaching.Cue(it, 0)) }
         lastCueMillis = elapsed
         if (rest.clock.isDone(elapsed)) run.value = null
     }
