@@ -125,8 +125,9 @@ fun LinkRow(
 }
 
 /**
- * A row that switches a setting: a [title], an optional [subtitle] and a switch drawing [checked].
- * When not [enabled] (a setting that cannot apply right now) the whole row dims and takes no touch.
+ * A row that switches a setting: a [title], an optional [subtitle], an optional [note] under it in the accent (why
+ * it is offered), and a switch drawing [checked]. When not [enabled] (a setting that cannot apply right now) the
+ * whole row dims and takes no touch.
  */
 @Composable
 fun ToggleRow(
@@ -136,6 +137,7 @@ fun ToggleRow(
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    note: String? = null,
 ) {
     val palette = IntervalTheme.palette
     val haptics = LocalHapticFeedback.current
@@ -170,6 +172,7 @@ fun ToggleRow(
         Column(Modifier.weight(1f)) {
             Text(title, style = IntervalTheme.type.label, color = palette.text)
             if (subtitle != null) Text(subtitle, style = IntervalTheme.type.meta, color = palette.textDim)
+            if (note != null) Text(note, style = IntervalTheme.type.meta, color = palette.accent)
         }
         // The row owns the toggle and its semantics; the switch only draws the state. One thumb, in
         // onAccent, in both states, the track's accent or text-dim saying which, as the design system draws it.

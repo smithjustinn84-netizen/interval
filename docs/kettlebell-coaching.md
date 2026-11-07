@@ -37,7 +37,7 @@ A class that is planned but not yet logged doesn't count.
 
 **Equipment.**
 - A lift done with two bells steps up only to a weight the lifter owns a pair of (`GearStore.pairs`).
-- Bells come in fixed sizes. Where the next one is a big jump, progression goes through density first (section 4).
+- Bells come in fixed sizes. Before the next one, progression goes through density, more work and a harder lift at the same bell, as the jump calls for (section 4).
 
 ## 2. Guidance and safety during the set
 
@@ -74,13 +74,54 @@ Lift's timers speak, never mid-rep:
 **Density** (`Density.kt`) is reps per minute across a lift's sets in a session. Each set's start is inferred from its time logged and the lift's pace.
 - Sets logged in a batch afterwards give no density, since their inferred times overlap. So a pace record or a benchmark is always one the lifter actually did.
 
-**The ladder past fixed bell sizes**, in this order:
-1. reps up the range;
-2. where the next bell is more than 20% heavier, rest shortens 15 s a time, down to 30 s for ballistics and 60 s for grinds; an EMOM adds reps a minute first;
-3. more minutes or sets;
-4. only then the next bell, with the reps and the rest back to where they start.
+**The ladder past fixed bell sizes** (`rungOf`, `Progression.kt`). A block steps only once every planned set,
+each ladder rung too, was done at its reps and bell. How it climbs depends on how big the jump to the next owned
+bell is (a two-bell block counts only pairs owned):
 
-A block keeps its own rest (`Block.rest`) once it has stepped.
+| Jump | Ratio | For example | What comes before the bell |
+|---|---|---|---|
+| Small | up to 10% | 24→26 | the reps up the range |
+| Medium | over 10% and up to 20% | 16→18, 20→24, 24→28 | the reps, denser, then more |
+| Big | over 20% | 16→20, a gap like 16→24 | the reps, denser, more, then a harder lift |
+| None | no heavier bell owned | — | as Big, then Topped out |
+
+The rungs, tried in order. The first with room left is the step:
+1. **Reps** up the range.
+2. **Denser.**
+   - Sets: rest shortens 15 s at a time, down to 30 s for ballistics and 60 s for grinds.
+   - An EMOM: a rep more a minute, up to 10 for ballistics and 5 for grinds.
+3. **More.**
+   - Sets: a set more, up to 10 for ballistics and 5 for grinds.
+   - An EMOM: a minute more, up to 30.
+   - A ladder: another ladder, up to 5. If its rungs climb from 1, a rung more after that, up to 5. That is the
+     Rite of Passage's 3 ladders of 1-2-3, then 5, then 5 of 1-2-3-4-5.
+4. **A harder lift at the same bell**, once (`Variations.kt`):
+
+   | From | To |
+   |---|---|
+   | Two-hand swing | One-hand swing |
+   | High pull, half snatch | Snatch |
+   | Push press | Strict press |
+   | Goblet squat | Front squat |
+   | A lift that can take two bells | The same lift with two, once a pair of that bell is owned |
+
+   It starts where the block started and climbs rungs 2 and 3 itself. A lift the user made has none, nor does a
+   ladder of set counts that doesn't climb from 1 (10,000 Swings' 10-15-25-50), which is volume, not strength.
+5. **The next bell**, back where the block started: its own lift again, the reps at the bottom of the range, and
+   Lift's rest.
+
+With nothing left and no heavier bell, the summary says Top of the range. Sets with no range then take a rep more.
+
+`Block.origin` keeps the block as it stood before its first step at the bell that wasn't a rep. That is what the
+bell step goes back to. A block keeps its own rest (`Block.rest`) once it has stepped.
+
+The summary's Next time says why each step is the one it is:
+- "Denser first: the same work in less rest";
+- "More work at 16 kg";
+- "Same bell, harder lift";
+- "Back to where it started, at 20 kg".
+
+Holds, bars, bands and bodyweight keep their own steps. A density block steps by its rounds (below).
 
 **Pace records** sit beside the heaviest, most reps and longest hold: "New best pace: 9.4 swings a minute at 24 kg."
 

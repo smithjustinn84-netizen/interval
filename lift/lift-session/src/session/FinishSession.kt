@@ -109,7 +109,9 @@ class FinishSession(
             taken = programStore.customPrograms.value.mapNotNull { it.name }.toSet(),
             bands = gearStore.bands.value,
             lastDayOf = day?.program?.takeIf { day.number >= it.totalDays },
-            toppedOut = day?.let { toppedOut(it, session.sets, bells, bands, pairs) }.orEmpty(),
+            toppedOut = day?.let {
+                toppedOut(it, session.sets, bells, bands, pairs, setStore.restSeconds.value)
+            }.orEmpty(),
             heavyGrip = grip.heavyDay(done.gripLoad),
             handCare = done.wantsHandCare,
             paces = newPaces(sessionStore.sessions.value, done),

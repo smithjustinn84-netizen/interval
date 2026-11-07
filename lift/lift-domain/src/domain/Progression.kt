@@ -36,35 +36,20 @@ const val ADDED_KG_STEP = 2.5
 private const val HOLD_STEP = 5
 private const val HOLD_MAX = 600
 
-/** The next bell this much heavier is a big jump: the rest shortens first, the same work done denser. */
-private const val BIG_JUMP = 1.2
-
-/** The shortest a denser block rests: a thrown lift's, and any other's. */
-private const val BALLISTIC_REST_FLOOR = 30
-private const val GRIND_REST_FLOOR = 60
-
 /** An EMOM runs no longer than an hour, as the Log sheet allows. */
 private const val EMOM_MAX_MINUTES = 60
 
+/** Where a block done in full stands: a [Step] to take next time, or [ToppedOut], nothing left to step to. */
+sealed interface Rung {
+    data class Step(val to: Block) : Rung
+
+    /** Every step at this load used, and nothing heavier to go to. */
+    data object ToppedOut : Rung
+}
+
 /**
  * What [block] could ask for next time, [done] being the set logged for each of its planned sets: null unless
- * every one was done, at its reps (or a hold's seconds) or more and at its load or more. The load is the plan's,
- * or with none named the lightest done. Next time is a step up:
- * - a block building within a [Block.ranged] range, a rep more until its top, then the next load at the
- *   range's bottom; at the top with no heavier load to go to, nothing;
- * - a kettlebell lift in sets, the next bell of [bells] heavier; with none, a rep more;
- * - a barbell lift, [BAR_KG_STEP] more on the bar;
- * - weight added to bodyweight, [ADDED_KG_STEP] more; bodyweight without, and the mat, a rep more;
- * - a band, the next of [bands] heavier; with none, a rep more;
- * - a hold, five seconds more; an EMOM, a minute more; a ladder, nothing;
- * - a density block, nothing here: it steps by its rounds, which [progressions] counts across sessions.
- *
- * Bells come in fixed sizes. Where a bell lift in sets would step to a bell more than a fifth heavier, it is done
- * denser first: its rest ([Block.rest], else the [rest] set on Lift) [RestClock.STEP_SECONDS] shorter each time, down
- * to 30 seconds for a thrown lift and 60 for any other; only then the bell, its rest back to Lift's.
- *
- * A block done with two bells steps only to a weight of [pairs], the bells owned two of, once the user has said
- * which those are; with none said, to any of [bells].
+ * every one was done, at its reps (or a hold's seconds) or more and at its load or more; see [rungOf].
  */
 fun nextStep(
     block: Block,
@@ -73,15 +58,74 @@ fun nextStep(
     bands: List<Band>,
     pairs: Set<Double> = emptySet(),
     rest: Int = RestClock.DEFAULT_SECONDS,
-): Block? {
-    if (block.kind == BlockKind.Ladder || block.kind == BlockKind.Density) return null
+): Block? = (rungOf(block, done, bells, bands, pairs, rest) as? Rung.Step)?.to
+
+/**
+ * Where [block] stands, [done] being the set logged for each of its planned sets: null unless every one was done at
+ * its plan (a ladder's every rung), and for a density block, which steps by its rounds ([densityStep]). The load is
+ * the plan's, or with none named the lightest done.
+ *
+ * Bells come in fixed sizes, so a bell lift climbs at the same bell first, by how big the jump to the next one of
+ * [bells] is ([SMALL_JUMP], [BIG_JUMP]), each rung tried in turn:
+ * 1. a block building within a [Block.ranged] range, a rep more until its top;
+ * 2. denser, before a medium or big jump: rest [RestClock.STEP_SECONDS] shorter (its own, else [rest]), down to 30
+ *    seconds for a thrown lift and 60 for any other; an EMOM a rep more a minute instead, up to 10 or 5;
+ * 3. more, before a medium or big jump: a set, up to 10 or 5; an EMOM a minute, up to 30; a ladder another, up to 5,
+ *    then one that climbs from 1 a rung, up to 5;
+ * 4. before a big jump, or with none heavier owned, a harder lift at the same bell ([variationOf]), once;
+ * 5. the next bell, back as the block started ([Block.origin]), its own lift again, at the bottom of its range.
+ * With no bell heavier and nothing left, it has [Rung.ToppedOut], except sets with no range, which take a rep more.
+ *
+ * Every other load keeps its own steps: a hold five seconds more; within a range a rep more, then the next load at
+ * its bottom; else the next load: [BAR_KG_STEP] more on the bar, [ADDED_KG_STEP] more added to bodyweight, the next of
+ * [bands] heavier, else a rep more; an EMOM a minute more; a ladder another, then a rung.
+ *
+ * A block done with two bells steps only to a weight of [pairs], the bells owned two of, once the user has said
+ * which those are; with none said, to any of [bells]. It moves to two bells at the same bell only once [pairs] has it.
+ */
+@Suppress("detekt.LongParameterList") // What a step up goes by.
+fun rungOf(
+    block: Block,
+    done: List<SetLog?>,
+    bells: List<Double>,
+    bands: List<Band>,
+    pairs: Set<Double> = emptySet(),
+    rest: Int = RestClock.DEFAULT_SECONDS,
+): Rung? {
+    if (block.kind == BlockKind.Density) return null
     val sets = doneInFull(block, done) ?: return null
-    return stepUp(block, loadDone(block, sets, bands) ?: return null, bellsFor(block, bells, pairs), bands, rest)
+    val at = loadDone(block, sets, bands) ?: return null
+    return when {
+        block.exercise.measure == Measure.Time ->
+            block.copy(reps = (block.reps + HOLD_STEP).coerceAtMost(HOLD_MAX)).takeIf { it != block }?.let(Rung::Step)
+
+        at is Load.Bell -> bellRung(block, at, bells, pairs, rest)
+
+        else -> otherRung(block, at, bands)
+    }
 }
 
-/** The bells [block] can step to: for two bells, only those owned two of, once any are; else any of [bells]. */
-private fun bellsFor(block: Block, bells: List<Double>, pairs: Set<Double>): List<Double> =
-    if (block.double && pairs.isNotEmpty()) bells.filter { it in pairs } else bells
+/** [block], done at [at], a load other than a bell, a rung up, as [rungOf] lays its steps out. */
+private fun otherRung(block: Block, at: Load, bands: List<Band>): Rung? {
+    val range = block.ranged
+    val next = when {
+        range != null && block.reps < range.top -> block.copy(reps = block.reps + 1)
+
+        range != null -> return heavier(block, at, bands)?.copy(reps = range.bottom, rest = null)?.let(Rung::Step)
+            ?: Rung.ToppedOut
+
+        block.kind == BlockKind.Emom ->
+            block.copy(rounds = (block.rounds + 1).coerceAtMost(EMOM_MAX_MINUTES)).takeIf { it != block }
+
+        block.kind == BlockKind.Ladder -> moreLadder(block)
+
+        block.kind == BlockKind.Sets -> heavier(block, at, bands)?.copy(rest = null)
+            ?: block.copy(reps = block.reps + 1)
+
+        else -> null
+    }
+    return next?.let(Rung::Step)
+}
 
 /**
  * The load [block] was done at in [sets], of its lift's equipment: the plan's, or with none named the lightest
@@ -96,48 +140,12 @@ private fun loadDone(block: Block, sets: List<SetLog>, bands: List<Band>): Load?
     }
 }
 
-/** [block] a step up from [at], the load it was done at, as [nextStep] lays the steps out. */
-private fun stepUp(block: Block, at: Load, bells: List<Double>, bands: List<Band>, rest: Int): Block? {
-    block.ranged?.let { range ->
-        return if (block.reps < range.top) {
-            block.copy(reps = block.reps + 1)
-        } else {
-            denser(block, at, bells, rest) ?: heavier(block, at, bells, bands)?.copy(reps = range.bottom, rest = null)
-        }
-    }
-    return when {
-        block.exercise.measure == Measure.Time ->
-            block.copy(reps = (block.reps + HOLD_STEP).coerceAtMost(HOLD_MAX)).takeIf { it != block }
-
-        block.kind == BlockKind.Emom ->
-            block.copy(rounds = (block.rounds + 1).coerceAtMost(EMOM_MAX_MINUTES)).takeIf { it != block }
-
-        else -> denser(block, at, bells, rest)
-            ?: heavier(block, at, bells, bands)?.copy(rest = null)
-            ?: block.copy(reps = block.reps + 1)
-    }
-}
-
 /**
- * [block], a bell lift in sets, resting [RestClock.STEP_SECONDS] less than it does now (its own, else [rest]), when
- * the next of [bells] after [at] is a big jump and the rest is above its floor; else null.
+ * [block] at the next load up from [at], not a bell: [BAR_KG_STEP] more on the bar, [ADDED_KG_STEP] more added to
+ * bodyweight, the next of [bands] heavier. Null with none heavier, or none to add.
  */
-private fun denser(block: Block, at: Load, bells: List<Double>, rest: Int): Block? {
-    if (block.kind != BlockKind.Sets || at !is Load.Bell) return null
-    val next = bells.filter { it > at.kg }.minOrNull() ?: return null
-    if (next <= at.kg * BIG_JUMP) return null
-    val floor = if (block.exercise.movement.tempo == Tempo.Ballistic) BALLISTIC_REST_FLOOR else GRIND_REST_FLOOR
-    return ((block.rest ?: rest) - RestClock.STEP_SECONDS).takeIf { it >= floor }?.let { block.copy(rest = it) }
-}
-
-/**
- * [block] at the next load up from [at]: the next of [bells] heavier, [BAR_KG_STEP] more on the bar,
- * [ADDED_KG_STEP] more added to bodyweight, the next of [bands] heavier. Null with none heavier, or none to add.
- */
-private fun heavier(block: Block, at: Load, bells: List<Double>, bands: List<Band>): Block? {
+private fun heavier(block: Block, at: Load, bands: List<Band>): Block? {
     val next = when (at) {
-        is Load.Bell -> bells.filter { it > at.kg }.minOrNull()?.let { at.copy(kg = it) }
-
         is Load.Bar -> (at.kg + BAR_KG_STEP).coerceAtMost(MAX_BAR_KG).takeIf { it > at.kg }?.let(Load::Bar)
 
         is Load.Bodyweight -> Load.Bodyweight(at.kg + ADDED_KG_STEP).takeIf { at.kg > 0 }
@@ -145,7 +153,7 @@ private fun heavier(block: Block, at: Load, bells: List<Double>, bands: List<Ban
         is Load.Banded -> at.band?.let { b -> bands.firstOrNull { it.position > b.position && !it.archived } }
             ?.let(Load::Banded)
 
-        Load.Mat -> null
+        is Load.Bell, Load.Mat -> null
     }
     return next?.let { block.copy(load = it) }
 }
@@ -154,13 +162,20 @@ private fun heavier(block: Block, at: Load, bells: List<Double>, bands: List<Ban
 internal fun doneInFull(block: Block, done: List<SetLog?>): List<SetLog>? =
     done.filterNotNull().takeIf { it.isNotEmpty() && it.size == done.size && metPlan(block, it) }
 
-/** Whether every one of [sets] was at [block]'s reps (a hold's seconds) or more, and its load or more. */
+/**
+ * Whether every one of [sets], the n-th done for the n-th of [block]'s planned sets, was at its reps (a hold's
+ * seconds, a ladder's rung) or more, and the block's load or more.
+ */
 private fun metPlan(block: Block, sets: List<SetLog>): Boolean {
     val held = block.exercise.measure == Measure.Time
-    if (sets.any { (if (held) it.seconds ?: 0 else it.reps) < block.reps }) return false
-    val planned = block.load ?: return true
+    val planned = block.plannedSets()
+    val short = sets.withIndex().any { (i, set) ->
+        (if (held) set.seconds ?: 0 else set.reps) < (planned.getOrNull(i)?.reps ?: block.reps)
+    }
+    if (short) return false
+    val load = block.load ?: return true
     // A band weighs nothing, so none is under it here: whether one was lighter is bandUsed's to say.
-    return sets.none { it.load.kg < planned.kg }
+    return sets.none { it.load.kg < load.kg }
 }
 
 /** The band [block] was done with: the plan's, if every set used it or a heavier one, else the lightest used. */
@@ -197,23 +212,20 @@ fun progressions(
     }
 
 /**
- * Of [day]'s blocks, done as [logged], those done in full at the top of their [Block.ranged] range with no
- * heavier load to go to: none of [bells] or [bands] heavier, nor more to add. They have earned more than
- * [nextStep] can offer.
+ * Of [day]'s blocks, done as [logged], those with every step at their load used and nothing heavier to go to:
+ * [Rung.ToppedOut]. They have earned more than [rungOf] can offer.
  */
+@Suppress("detekt.LongParameterList") // What a step up goes by.
 fun toppedOut(
     day: ProgramDay,
     logged: List<SetLog>,
     bells: List<Double>,
     bands: List<Band>,
     pairs: Set<Double> = emptySet(),
+    rest: Int = RestClock.DEFAULT_SECONDS,
 ): List<Block> =
     blocksDone(day, logged).mapNotNull { (_, block, done) ->
-        val range = block.ranged?.takeIf { block.reps >= it.top } ?: return@mapNotNull null
-        val sets = doneInFull(block, done) ?: return@mapNotNull null
-        // Done with a lighter band than planned is short of the plan, not at the top of it.
-        val at = loadDone(block, sets, bands) ?: return@mapNotNull null
-        block.takeIf { heavier(block, at, bellsFor(block, bells, pairs), bands) == null }
+        block.takeIf { rungOf(block, done, bells, bands, pairs, rest) == Rung.ToppedOut }
     }
 
 /**

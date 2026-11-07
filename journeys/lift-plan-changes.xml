@@ -4,7 +4,8 @@
     the rows skipped), finish, and keep the change in a copy of the program, which is then followed from
     day 2 with the bell planned. Then day 2 done in full, said to have felt all out: its steps up wait, off,
     until one is turned on. Last, the ABC either way: 20 minutes beside BJJ's ABC on the minute taken as many as
-    you can for today, the program left on the minute. Run on a fresh install (adb shell pm clear
+    you can for today, the program left on the minute. And the bell waits: with only 16 and 20 kg owned, a new
+    program's 5 × 10 two-hand swings at 16 kg, done in full, step to rest shorter, not to the 20. Run on a fresh install (adb shell pm clear
     dev.justinsmith.interval).
   </description>
   <actions>
@@ -49,5 +50,9 @@
     <action>Verify that Up next reads "Up next · 15 min cap" and the foot offers "Start the clock"</action>
     <action>Press Back, then "Leave": nothing is logged, so the session isn't kept</action>
     <action>Verify that Lift shows "Day 1 of 12 · week 1", "Armor Building Complex" "1 every minute for 15 minutes": the program is still on the minute</action>
+    <action>Open "Your equipment" and leave only the 16 kg and 20 kg bells owned</action>
+    <action>Tap "All programs", then "New program"; tap "Add block", keep "Two-hand swing" 5 × 10, pick the "16" bell, tap "Done"; name it "Swings" and save it, then tap "Swings", "Follow this program" and "Switch"</action>
+    <action>Tap "Start day 1", then "Log set" five times (skipping each rest), then "Finish"</action>
+    <action>Verify that "Next time" lists "Two-hand swing" "5 × 10 · 16 kg → 5 × 10 · 75 s rest · 16 kg", switched on, with "Denser first: the same work in less rest" under it</action>
   </actions>
 </journey>

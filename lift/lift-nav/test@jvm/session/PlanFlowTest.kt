@@ -63,15 +63,19 @@ class PlanFlowTest {
     }
 
     @Test
-    fun `the top of a range on the heaviest bell owned says a heavier bell is next`() = liftAppTest(
+    fun `every step used on the heaviest bell owned says a heavier bell is next`() = liftAppTest(
         FakeLiftStorage().apply {
+            // Front squats in place of goblets at the same bell, at the shortest rest and the most sets a grind takes.
+            val goblets = Block(BuiltInExercise.GobletSquat, rounds = 5, reps = 10, load = Load.Bell(24.0))
             val squats =
                 Block(
-                    BuiltInExercise.GobletSquat,
-                    rounds = 2,
+                    BuiltInExercise.FrontSquat,
+                    rounds = 5,
                     reps = 12,
                     load = Load.Bell(24.0),
                     range = RepRange(10, 12),
+                    rest = 60,
+                    origin = goblets,
                 )
             programs.rows.value = listOf(CustomProgramEntity("p1", "Mine", 3, 4, encodeDays(listOf(listOf(squats))), 0))
             following.row.value = FollowingEntity(programId = "custom:p1", startedAtEpochMillis = 0)
@@ -79,14 +83,12 @@ class PlanFlowTest {
         },
     ) {
         onNodeWithText("Start day 1").performClick()
-        waitForText("Up next · 1 of 2 sets")
-        onNodeWithText("Log set").performClick()
-        waitForText("Up next · 2 of 2 sets")
-        onNodeWithText("Log set").performClick()
+        waitForText("Up next · 1 of 5 sets")
+        repeat(5) { onNodeWithText("Log set").performClick() }
         waitForText("Today's sets are done. Finish when you are.")
         onNodeWithText("Finish").performClick()
         waitForText("Top of the range")
-        onNodeWithText("2 × 12 (10–12) · 24 kg").performScrollTo().assertExists()
+        onNodeWithText("5 × 12 (10–12) · 60 s rest · 24 kg").performScrollTo().assertExists()
         // Nothing to step up to: no offer for next time.
         onNodeWithText("Ready for more?").assertDoesNotExist()
     }

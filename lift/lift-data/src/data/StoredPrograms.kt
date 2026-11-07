@@ -36,6 +36,8 @@ internal data class StoredBlock(
     val rangeBottom: Int? = null,
     val rangeTop: Int? = null,
     val rest: Int? = null,
+    /** The block it goes back to at the next bell ([Block.origin]); none for one never stepped at its bell. */
+    val origin: StoredBlock? = null,
 )
 
 private val json = Json { ignoreUnknownKeys = true }
@@ -68,7 +70,7 @@ fun decodeDraftDays(
     return stored.map { day -> day.mapNotNull { it.toBlock(made, bands) } }
 }
 
-internal fun Block.toStored() = StoredBlock(
+internal fun Block.toStored(): StoredBlock = StoredBlock(
     exercise.key,
     kind.name,
     rounds,
@@ -80,6 +82,7 @@ internal fun Block.toStored() = StoredBlock(
     range?.bottom,
     range?.top,
     rest,
+    origin?.toStored(),
 )
 
 /**
@@ -132,6 +135,8 @@ internal fun StoredBlock.toBlock(made: List<CustomExercise>, bands: List<Band>):
             null
         },
         rest = rest?.takeIf { it in RestClock.MIN_SECONDS..RestClock.MAX_SECONDS },
+        // An origin of a lift this build doesn't know is dropped: the block then goes on as it stands.
+        origin = origin?.toBlock(made, bands)?.copy(origin = null),
     )
 }
 

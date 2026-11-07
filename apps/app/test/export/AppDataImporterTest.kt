@@ -79,6 +79,10 @@ private class Phone(val now: Long) {
 class AppDataImporterTest {
     private val now = noonOf(TODAY)
 
+    /** A block with a rest of its own, stepped from where it started ([Block.origin]). */
+    private val steppedPushUps =
+        Block(BuiltInExercise.PushUp, rounds = 3, reps = 10, rest = 60, origin = Block(BuiltInExercise.PushUp, 3, 8))
+
     /** A phone with something of every kind on it. */
     private suspend fun stocked(): Phone = Phone(now).apply {
         // Called a hand at a time, which comes across with it.
@@ -142,7 +146,7 @@ class AppDataImporterTest {
             HeartRate(averageBpm = 118, peakBpm = 149),
         )
         // A program whose blocks name each kind of load (a pair of bells, a band of the user's own, and none), and a
-        // density block, schema 11's.
+        // density block and a block stepped at its bell, schema 11's.
         val loop = lift.gear.addBand("Door loop", BandColour.Purple)
         lift.programs.saveProgram(
             null,
@@ -154,7 +158,7 @@ class AppDataImporterTest {
                             .withLoad(Load.Bell(16.0)),
                         Block(BuiltInExercise.BandPullApart, rounds = 3, reps = 15)
                             .withLoad(Load.Banded(lift.gear.bands.value.single { it.id == loop })),
-                        Block(BuiltInExercise.PushUp, rounds = 3, reps = 10, rest = 60),
+                        steppedPushUps,
                         Block(BuiltInExercise.ArmorBuildingComplex, 20, 1, BlockKind.Density, double = true),
                     ),
                 ),

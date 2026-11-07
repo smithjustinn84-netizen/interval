@@ -30,7 +30,15 @@ data class Block(
      * easier day's by the lift's tempo. Null for the rest set on Lift.
      */
     val rest: Int? = null,
+    /**
+     * The block as it stood before its first step at this bell that wasn't a rep: what it goes back to at the next
+     * bell (see [nextStep]), its lift too when it has moved to a harder one at the same bell. Null for none taken.
+     */
+    val origin: Block? = null,
 ) {
+    /** Whether it has moved to a harder lift, or to two bells, at the same bell: its [origin] was another. */
+    val onDetour: Boolean get() = origin != null && (origin.exercise != exercise || origin.double != double)
+
     /** The [range] it builds within: none for a ladder, a density block or a hold, which never take one. */
     val ranged: RepRange?
         get() = range?.takeIf {
@@ -77,8 +85,11 @@ fun Block.withLoad(load: Load?): Block = copy(
         ?.let { Load.named(exercise.equipment, it.kg, double, it.band) },
 )
 
-/** This block done with two bells or one ([double]), the bell it names going with it. */
-fun Block.withDouble(double: Boolean): Block = copy(double = double).withLoad(load)
+/**
+ * This block done with two bells or one ([double]), the bell it names going with it; starting afresh, with no
+ * [Block.origin] to go back to.
+ */
+fun Block.withDouble(double: Boolean): Block = copy(double = double, origin = null).withLoad(load)
 
 /**
  * Reps to build within, from [bottom] to [top]: a set done at [top] every time earns the next load, back at

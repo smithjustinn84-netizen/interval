@@ -18,6 +18,16 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   the first, either side; the day's estimate takes its cap, an easier day cuts it by a quarter (never under 5
   minutes), the grip and the week's balance count it a round a minute, and a round's reps go up by one once the last
   two sessions each beat the best before them. Exports are schema 11.
+- The bell waits. Bells come in fixed sizes, so a Lift block done in full climbs at the bell it has before the next,
+  as far as the jump calls for. First the reps up its range. Then, before a jump of more than a tenth, it goes denser
+  (rest 15 s shorter, down to 30 s for a thrown lift and 60 s for any other; an EMOM a rep more a minute) and does
+  more (a set more, up to 10 or 5; an EMOM a minute more, up to 30; a ladder another, then a rung, up to 5 of
+  1-2-3-4-5). Before a jump of more than a fifth, or with no heavier bell owned, it then moves once to a harder lift
+  at the same bell: one-hand swings from two-hand, snatches from high pulls or half snatches, the strict press from
+  the push press, front squats from goblets, or two bells once a pair is owned. Only then the next bell, back to the
+  lift and the shape it started at. Ladders step now too. The summary's Next time says why each step is the one it
+  is ("Denser first: the same work in less rest", "Same bell, harder lift", "Back to where it started, at 20 kg"),
+  and Top of the range shows only once every step at the bell is done.
 - Start launches: pressed, it sends one ring of the accent out from its centre across the page as the workout
   rises, so the workout's ring reads as what the button sent up.
 

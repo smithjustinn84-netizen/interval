@@ -25,11 +25,20 @@ class ProgressionTest {
 
     private fun sets(n: Int, make: () -> SetLog) = List(n) { make() }
 
+    /** Every planned set of [block] done at [kg] a bell. */
+    private fun doneFor(block: Block, kg: Double) = block.plannedSets().map {
+        SetLog.of(0, it.exercise, kg, it.reps, it.side, 0, double = it.double)
+    }
+
+    /** [block], done in full at its bell, a step up, with [bells] and [pairs] owned and Lift's rest 90 s. */
+    private fun climb(block: Block, bells: List<Double> = this.bells, pairs: Set<Double> = emptySet()) =
+        nextStep(block, doneFor(block, block.load?.kg ?: 0.0), bells, bands, pairs, rest = 90)
+
     @Test
-    fun `a kettlebell block done in full goes up a bell`() {
-        val goblets = Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 10, load = Load.Bell(16.0))
-        val done = sets(3) { set(BuiltInExercise.GobletSquat, 16.0) }
-        assertEquals(goblets.copy(load = Load.Bell(24.0)), nextStep(goblets, done, bells, bands, rest = FLOOR))
+    fun `a kettlebell block done in full goes up a bell a small jump away`() {
+        val goblets = Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 10, load = Load.Bell(24.0))
+        val done = sets(3) { set(BuiltInExercise.GobletSquat, 24.0) }
+        assertEquals(goblets.copy(load = Load.Bell(26.0)), nextStep(goblets, done, listOf(24.0, 26.0), bands))
     }
 
     @Test
@@ -57,14 +66,14 @@ class ProgressionTest {
     fun `a block with no load named goes up from the lightest bell done`() {
         val goblets = Block(BuiltInExercise.GobletSquat, rounds = 2, reps = 10)
         val done = listOf(set(BuiltInExercise.GobletSquat, 24.0), set(BuiltInExercise.GobletSquat, 28.0))
-        assertEquals(goblets.copy(load = Load.Bell(28.0)), nextStep(goblets, done, bells, bands))
+        assertEquals(goblets.copy(load = Load.Bell(26.0)), nextStep(goblets, done, listOf(24.0, 26.0, 28.0), bands))
     }
 
     @Test
-    fun `the heaviest bell already done adds a rep`() {
-        val goblets = Block(BuiltInExercise.GobletSquat, rounds = 2, reps = 10, load = Load.Bell(28.0))
-        val done = sets(2) { set(BuiltInExercise.GobletSquat, 28.0) }
-        assertEquals(goblets.copy(reps = 11), nextStep(goblets, done, bells, bands))
+    fun `the heaviest bell already done with every rung used adds a rep`() {
+        // Rows have no harder lift with one bell, and no pair is owned: at the floor, at five sets, a rep more.
+        val rows = Block(BuiltInExercise.Row, rounds = 5, reps = 10, load = Load.Bell(28.0), rest = FLOOR)
+        assertEquals(rows.copy(reps = 11), nextStep(rows, doneFor(rows, 28.0), bells, bands))
     }
 
     @Test
@@ -105,7 +114,7 @@ class ProgressionTest {
     }
 
     @Test
-    fun `a hold goes up five seconds and an EMOM a minute and a ladder not at all`() {
+    fun `a hold goes up five seconds and an EMOM of a bell lift a minute once its reps are at their most`() {
         val plank = Block(BuiltInExercise.Plank, rounds = 1, reps = 30)
         val held = listOf(set(BuiltInExercise.Plank, reps = 0, seconds = 30))
         assertEquals(plank.copy(reps = 35), nextStep(plank, held, bells, bands))
@@ -114,10 +123,16 @@ class ProgressionTest {
         val emom =
             Block(BuiltInExercise.TwoHandSwing, rounds = 2, reps = 10, kind = BlockKind.Emom, load = Load.Bell(24.0))
         val swings = sets(2) { set(BuiltInExercise.TwoHandSwing, 24.0) }
-        assertEquals(emom.copy(rounds = 3), nextStep(emom, swings, bells, bands))
-
-        val ladder = Block(BuiltInExercise.TwoHandSwing, rounds = 1, kind = BlockKind.Ladder, rungs = listOf(1, 2))
-        assertNull(nextStep(ladder, sets(2) { set(BuiltInExercise.TwoHandSwing, 24.0) }, bells, bands))
+        assertEquals(emom.copy(rounds = 3, origin = emom), nextStep(emom, swings, bells, bands))
+        // Fewer than ten a minute: a rep more a minute first.
+        val eight = emom.copy(reps = 8)
+        assertEquals(eight.copy(reps = 9, origin = eight), nextStep(eight, doneFor(eight, 24.0), bells, bands))
+        // Half an hour of minutes: the next bell, as it started.
+        val long = emom.copy(rounds = 30, origin = eight)
+        assertEquals(eight.copy(load = Load.Bell(28.0)), nextStep(long, doneFor(long, 24.0), bells, bands))
+        // An EMOM of no bell keeps adding minutes.
+        val burpees = Block(BuiltInExercise.Burpee, rounds = 10, reps = 5, kind = BlockKind.Emom)
+        assertEquals(burpees.copy(rounds = 11), nextStep(burpees, doneFor(burpees, 0.0), bells, bands))
     }
 
     @Test
@@ -130,8 +145,8 @@ class ProgressionTest {
         val logged =
             sets(2) { set(BuiltInExercise.GobletSquat, 16.0) } + set(BuiltInExercise.Row, 16.0, side = Side.Left)
         assertEquals(
-            listOf(BlockChange(0, goblets, goblets.copy(load = Load.Bell(24.0)))),
-            progressions(day, logged, bells, bands, rest = FLOOR),
+            listOf(BlockChange(0, goblets, goblets.copy(load = Load.Bell(17.0)))),
+            progressions(day, logged, listOf(16.0, 17.0), bands, rest = FLOOR),
         )
     }
 
@@ -160,20 +175,26 @@ class ProgressionTest {
     @Test
     fun `the top of a range earns the next bell back at its bottom`() {
         val goblets =
-            Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 15, load = Load.Bell(16.0), range = RepRange(10, 15))
-        val done = sets(3) { set(BuiltInExercise.GobletSquat, 16.0, reps = 15) }
+            Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 15, load = Load.Bell(24.0), range = RepRange(10, 15))
+        val done = sets(3) { set(BuiltInExercise.GobletSquat, 24.0, reps = 15) }
         assertEquals(
-            goblets.copy(load = Load.Bell(24.0), reps = 10),
-            nextStep(goblets, done, bells, bands, rest = FLOOR),
+            goblets.copy(load = Load.Bell(26.0), reps = 10),
+            nextStep(goblets, done, listOf(24.0, 26.0), bands),
         )
     }
 
     @Test
-    fun `the top of a range with no heavier bell earns nothing`() {
-        val goblets =
-            Block(BuiltInExercise.GobletSquat, rounds = 2, reps = 15, load = Load.Bell(28.0), range = RepRange(10, 15))
-        val done = sets(2) { set(BuiltInExercise.GobletSquat, 28.0, reps = 15) }
-        assertNull(nextStep(goblets, done, bells, bands))
+    fun `the top of a range with every rung used and no heavier bell earns nothing`() {
+        val rows = Block(
+            BuiltInExercise.Row,
+            rounds = 5,
+            reps = 15,
+            load = Load.Bell(28.0),
+            range = RepRange(10, 15),
+            rest = FLOOR,
+        )
+        assertNull(nextStep(rows, doneFor(rows, 28.0), bells, bands))
+        assertEquals(Rung.ToppedOut, rungOf(rows, doneFor(rows, 28.0), bells, bands))
     }
 
     @Test
@@ -200,15 +221,24 @@ class ProgressionTest {
     }
 
     @Test
-    fun `the top of a range on the heaviest bell is topped out and short of it is not`() {
-        val goblets =
-            Block(BuiltInExercise.GobletSquat, rounds = 2, reps = 15, load = Load.Bell(28.0), range = RepRange(10, 15))
-        val program = Program(ProgramKey.Custom("p"), listOf(listOf(goblets)), daysPerWeek = 1, weeks = 1)
+    fun `the top of a range on the heaviest bell with every rung used is topped out and short of it is not`() {
+        val rows = Block(
+            BuiltInExercise.Row,
+            rounds = 5,
+            reps = 15,
+            load = Load.Bell(28.0),
+            range = RepRange(10, 15),
+            rest = FLOOR,
+        )
+        val program = Program(ProgramKey.Custom("p"), listOf(listOf(rows)), daysPerWeek = 1, weeks = 1)
         val day = program.dayAfter(0)!!
-        val full = sets(2) { set(BuiltInExercise.GobletSquat, 28.0, reps = 15) }
-        assertEquals(listOf(goblets), toppedOut(day, full, bells, bands))
+        val full = doneFor(rows, 28.0)
+        assertEquals(listOf(rows), toppedOut(day, full, bells, bands))
         assertEquals(emptyList(), toppedOut(day, full.take(1), bells, bands))
         assertEquals(emptyList(), toppedOut(day, full, bells + 32.0, bands))
+        // Short of the floor it still has a rung: rest shorter.
+        val rested = rows.copy(rest = null)
+        assertEquals(emptyList(), toppedOut(day.copy(blocks = listOf(rested)), full, bells, bands, rest = 90))
     }
 
     @Test
@@ -239,22 +269,23 @@ class ProgressionTest {
 
     @Test
     fun `two bells step only to a weight owned two of once pairs are known`() {
+        // Five sets of a grind, at the floor, with two bells: nothing left at this bell but the next.
         val fronts =
             Block(
                 BuiltInExercise.FrontSquat,
-                rounds = 2,
+                rounds = 5,
                 reps = 5,
                 double = true,
                 load = Load.Bell(16.0, double = true),
             )
-        val done = sets(2) { SetLog.of(0, BuiltInExercise.FrontSquat, 16.0, 5, null, 0, double = true) }
+        val done = sets(5) { SetLog.of(0, BuiltInExercise.FrontSquat, 16.0, 5, null, 0, double = true) }
         // A pair of 28s and one 24: the step skips the 24.
         assertEquals(
             fronts.copy(load = Load.Bell(28.0, double = true)),
             nextStep(fronts, done, bells, bands, setOf(16.0, 28.0), rest = FLOOR),
         )
         // No heavier pair: a rep more instead of a bell owned once.
-        assertEquals(fronts.copy(reps = 6), nextStep(fronts, done, bells, bands, setOf(16.0)))
+        assertEquals(fronts.copy(reps = 6), nextStep(fronts, done, bells, bands, setOf(16.0), rest = FLOOR))
         // Pairs never said: any bell, as before.
         assertEquals(
             fronts.copy(load = Load.Bell(24.0, double = true)),
@@ -264,30 +295,121 @@ class ProgressionTest {
         val goblets = Block(BuiltInExercise.GobletSquat, rounds = 1, reps = 10, load = Load.Bell(16.0))
         val one = listOf(set(BuiltInExercise.GobletSquat, 16.0))
         assertEquals(
-            goblets.copy(load = Load.Bell(24.0)),
-            nextStep(goblets, one, bells, bands, setOf(16.0), rest = FLOOR),
+            goblets.copy(load = Load.Bell(17.0)),
+            nextStep(goblets, one, listOf(16.0, 17.0), bands, setOf(16.0)),
         )
     }
 
     @Test
-    fun `a big jump to the next bell rests less first then steps the bell at the floor`() {
+    fun `a big jump to the next bell rests less then does more then a harder lift then the bell as it started`() {
         val goblets = Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 10, load = Load.Bell(16.0))
-        val done = sets(3) { set(BuiltInExercise.GobletSquat, 16.0) }
-        // 16 to 24 is half again: 90 s of rest becomes 75, then 60, then the bell with Lift's rest again.
-        assertEquals(goblets.copy(rest = 75), nextStep(goblets, done, bells, bands, rest = 90))
-        assertEquals(goblets.copy(rest = 60), nextStep(goblets.copy(rest = 75), done, bells, bands, rest = 90))
-        assertEquals(
-            goblets.copy(load = Load.Bell(24.0)),
-            nextStep(goblets.copy(rest = 60), done, bells, bands, rest = 90),
-        )
-        // 24 to 28 is a sixth: no denser step.
-        val heavier = goblets.copy(load = Load.Bell(24.0))
-        val at24 = sets(3) { set(BuiltInExercise.GobletSquat, 24.0) }
-        assertEquals(heavier.copy(load = Load.Bell(28.0)), nextStep(heavier, at24, bells, bands, rest = 90))
-        // A thrown lift rests down to 30 s.
+        // 16 to 24 is half again: 90 s of rest becomes 75, then 60, the shortest a grind rests.
+        val at75 = goblets.copy(rest = 75, origin = goblets)
+        assertEquals(at75, climb(goblets))
+        val at60 = goblets.copy(rest = 60, origin = goblets)
+        assertEquals(at60, climb(at75))
+        // Then a set more, up to five.
+        assertEquals(at60.copy(rounds = 4), climb(at60))
+        val five = at60.copy(rounds = 5)
+        // Then front squats at the same bell, as the goblets started.
+        val fronts = goblets.copy(exercise = BuiltInExercise.FrontSquat, origin = goblets)
+        assertEquals(fronts, climb(five))
+        // Which climb in turn, then go back to goblets at 24 kg, as they started, with Lift's rest.
+        assertEquals(fronts.copy(rest = 75), climb(fronts))
+        val frontsDone = fronts.copy(rest = 60, rounds = 5)
+        assertEquals(goblets.copy(load = Load.Bell(24.0)), climb(frontsDone))
+    }
+
+    @Test
+    fun `a medium jump rests less and does more but takes no harder lift`() {
+        // 24 to 28 is a sixth; 20 to 24 is a fifth, still medium.
+        val goblets = Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 10, load = Load.Bell(24.0))
+        assertEquals(goblets.copy(rest = 75, origin = goblets), climb(goblets))
+        val done = goblets.copy(rest = 60, rounds = 5, origin = goblets)
+        assertEquals(goblets.copy(load = Load.Bell(28.0)), climb(done))
+        // With no origin kept, it goes on as it stands, at Lift's rest.
+        val at20 = goblets.copy(load = Load.Bell(20.0), rest = 60, rounds = 5)
+        assertEquals(at20.copy(load = Load.Bell(24.0), rest = null), climb(at20, listOf(20.0, 24.0)))
+        // 16 to 18 is an eighth.
+        val at16 = goblets.copy(load = Load.Bell(16.0), rest = 60, rounds = 5)
+        assertEquals(at16.copy(load = Load.Bell(18.0), rest = null), climb(at16, listOf(16.0, 18.0)))
+        // 16 to 20 is a quarter: big.
+        assertEquals(BuiltInExercise.FrontSquat, climb(at16, listOf(16.0, 20.0))?.exercise)
+    }
+
+    @Test
+    fun `a thrown lift rests down to thirty seconds and adds sets up to ten`() {
         val swings = Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 15, load = Load.Bell(16.0), rest = 45)
-        val swung = sets(5) { set(BuiltInExercise.TwoHandSwing, 16.0, reps = 15) }
-        assertEquals(swings.copy(rest = 30), nextStep(swings, swung, bells, bands, rest = 90))
+        assertEquals(swings.copy(rest = 30, origin = swings), climb(swings))
+        val atFloor = swings.copy(rest = 30, rounds = 9)
+        assertEquals(atFloor.copy(rounds = 10, origin = atFloor), climb(atFloor))
+        // At ten, one hand at the same bell.
+        val one = climb(atFloor.copy(rounds = 10))!!
+        assertEquals(BuiltInExercise.OneHandSwing, one.exercise)
+        assertEquals(Load.Bell(16.0), one.load)
+        assertNull(one.rest)
+    }
+
+    @Test
+    fun `with no heavier bell a harder lift comes before the top`() {
+        val goblets = Block(BuiltInExercise.GobletSquat, rounds = 5, reps = 10, load = Load.Bell(28.0), rest = FLOOR)
+        assertEquals(goblets.copy(exercise = BuiltInExercise.FrontSquat, rest = null, origin = goblets), climb(goblets))
+        // On the harder lift with every rung used, there is nowhere further: a rep more, as sets with no range take.
+        val fronts = goblets.copy(exercise = BuiltInExercise.FrontSquat, origin = goblets)
+        assertEquals(fronts.copy(reps = 11), climb(fronts))
+    }
+
+    @Test
+    fun `one bell goes to two at the same bell only with a pair of it owned`() {
+        val rows = Block(BuiltInExercise.Row, rounds = 5, reps = 8, load = Load.Bell(16.0), rest = FLOOR)
+        val doubles = rows.copy(double = true, rest = null, load = Load.Bell(16.0, double = true), origin = rows)
+        assertEquals(doubles, climb(rows, pairs = setOf(16.0)))
+        // With no pairs said, an owned bell isn't taken to be two: the bell instead.
+        assertEquals(rows.copy(load = Load.Bell(24.0), rest = null), climb(rows))
+        // Back from two bells to one, at the next.
+        val doublesDone = doubles.copy(rounds = 5, rest = FLOOR)
+        assertEquals(rows.copy(load = Load.Bell(24.0), rest = null), climb(doublesDone, pairs = setOf(16.0)))
+    }
+
+    @Test
+    fun `a ladder adds ladders then climbing from one a rung`() {
+        val presses =
+            Block(
+                BuiltInExercise.Press,
+                rounds = 3,
+                kind = BlockKind.Ladder,
+                rungs = listOf(1, 2, 3),
+                load = Load.Bell(16.0),
+            )
+        assertEquals(presses.copy(rounds = 4, origin = presses), climb(presses))
+        val five = presses.copy(rounds = 5, origin = presses)
+        assertEquals(five.copy(rungs = listOf(1, 2, 3, 4)), climb(five))
+        val top = five.copy(rungs = (1..5).toList())
+        assertEquals(presses.copy(load = Load.Bell(24.0)), climb(top, pairs = emptySet()))
+        // Rungs that don't climb from one only add ladders, and take no harder lift: 10,000 swings go on two-handed.
+        val swings = Block(
+            BuiltInExercise.TwoHandSwing,
+            rounds = 5,
+            kind = BlockKind.Ladder,
+            rungs = listOf(10, 15, 25, 50),
+            load = Load.Bell(16.0),
+        )
+        assertEquals(swings.copy(load = Load.Bell(24.0)), climb(swings))
+        // A rung short earns nothing.
+        val short = doneFor(presses, 16.0).mapIndexed { i, set -> if (i == 5) set.copy(reps = 2) else set }
+        assertNull(nextStep(presses, short, bells, bands))
+    }
+
+    @Test
+    fun `a step says what kind it is`() {
+        val goblets = Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 10, load = Load.Bell(16.0))
+        val five = goblets.copy(rest = 60, rounds = 5, origin = goblets)
+        val fronts = climb(five)!!
+        assertEquals(StepKind.Denser, stepKind(goblets, climb(goblets)!!))
+        assertEquals(StepKind.Volume, stepKind(goblets.copy(rest = 60, origin = goblets), five.copy(rounds = 4)))
+        assertEquals(StepKind.Variation, stepKind(five, fronts))
+        assertEquals(StepKind.Bell, stepKind(fronts, goblets.copy(load = Load.Bell(24.0))))
+        assertEquals(StepKind.Reps, stepKind(goblets, goblets.copy(reps = 11)))
     }
 
     private val abcs = Block(

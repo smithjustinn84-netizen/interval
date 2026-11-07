@@ -13,7 +13,8 @@ import kotlinx.serialization.Serializable
  * of a day of a sport, `sport`, and the sport days logged, `sportDays`; schema 7 the session's length in the settings,
  * `sessionMinutes`; schema 8 the mobility flows the user built, `flows`; schema 9 whether a preset switches hands,
  * `alternateHands`, and the bells owned two of, `pairsKg`; schema 10 a block's own rest, `rest`; schema 11 a block
- * of a kind an older build would drop, `kind` "Density", the rest absent from older files). Lift's
+ * of a kind an older build would drop, `kind` "Density", and the block a stepped one goes back to at the next
+ * bell, `origin`, the rest absent from older files). Lift's
  * sessions carry their sets but not how a day's plan was changed: the sets are the record.
  */
 @Serializable
@@ -215,6 +216,8 @@ data class BlockExport(
     val rangeTop: Int?,
     /** Its own rest in seconds; null for Lift's, and in schema 1 to 9. */
     val rest: Int? = null,
+    /** The block it goes back to at the next bell, its origin; null for none, and in files from before it was kept. */
+    val origin: BlockExport? = null,
 )
 
 @Serializable

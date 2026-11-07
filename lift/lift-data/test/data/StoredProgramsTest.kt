@@ -53,6 +53,15 @@ class StoredProgramsTest {
                     load = Load.Bell(16.0),
                     range = RepRange(10, 15),
                 ),
+                // A harder lift at the same bell, and the block it goes back to at the next.
+                Block(
+                    BuiltInExercise.OneHandSwing,
+                    rounds = 5,
+                    reps = 10,
+                    load = Load.Bell(16.0),
+                    rest = 45,
+                    origin = Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 10, load = Load.Bell(16.0)),
+                ),
             ),
         )
         assertEquals(days, row(encodeDays(days)).toProgram()?.days)

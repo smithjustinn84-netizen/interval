@@ -166,6 +166,22 @@ Exercise in Health Connect. Check it before the next release. Ticket 4 of 0.5 mo
   - The import round-trips the count.
   - `journeys/lift-challenges.xml` gains the step.
 
+**7. The bell waits** (added during the sprint) · M
+- Fixed bell sizes, in one ordered ladder ([kettlebell-coaching.md](kettlebell-coaching.md), section 4):
+  `rungOf` in `Progression.kt` replaces `stepUp`'s branching.
+- The steps, before the next bell: reps up the range; denser (less rest, or an EMOM's reps a minute); more (a
+  set, a minute, a ladder, then a rung); and before a big jump, a harder lift at the same bell (`Variations.kt`).
+  The tier is graded by how big the jump to the next bell is.
+- `Block.origin` keeps where the block started, so the bell step goes back to it. That covers the lift it stood
+  in for, too. It's one nullable JSON field on the stored block, the session's plan and the export (schema 11).
+- Ladders step now. Each rung is checked against what it planned, where before any ladder passed.
+- The summary's Next time says why a step is the one it is. A harder lift and the return name both lifts.
+- Done when:
+  - `LiftPlanChangesAcceptanceTest`'s four swing stages pass;
+  - `ProgressionTest` pins the tiers (24→26, 16→18, 20→24, 16→20) and every rung's cap;
+  - `VariationsTest` pins the table;
+  - `journeys/lift-plan-changes.xml` sees the first rung on the device.
+
 --- cut line ---
 
 **6. Describe reads "then"** (0.5's ticket 4, unchanged) · S

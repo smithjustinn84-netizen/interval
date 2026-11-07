@@ -2,6 +2,7 @@ package dev.justinsmith.lift.domain
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -70,6 +71,45 @@ class PlanChangesTest {
         val days = changes.applied(SaveScope.EveryDay)
         assertEquals(BuiltInExercise.Deadlift, days[0][0].exercise)
         assertEquals(program.days[1], days[1])
+    }
+
+    @Test
+    fun `a harder lift at the same bell is a step not a swap and stays on its day`() {
+        val oneHand = swings.copy(exercise = BuiltInExercise.OneHandSwing, load = Load.Bell(16.0), origin = swings)
+        val changes = PlanChanges(
+            program,
+            1,
+            0,
+            emptyList(),
+            listOf(BlockChange(0, swings, oneHand)),
+        ).withNudges(setOf(0))
+        val change = changes.changes.single()
+        assertTrue(change.detour)
+        assertFalse(change.swapped)
+        val days = changes.applied(SaveScope.EveryDay)
+        assertEquals(oneHand, days[0][0])
+        assertEquals(program.days[1], days[1])
+        // Back from it to the lift it stood for is a step too.
+        assertFalse(BlockChange(0, oneHand, swings.copy(load = Load.Bell(20.0))).swapped)
+    }
+
+    @Test
+    fun `every day carries a denser step starting each block from itself`() {
+        val denser = swings.copy(rest = 75, origin = swings)
+        val days = PlanChanges(program, 1, 0, listOf(BlockChange(0, swings, denser))).applied(SaveScope.EveryDay)
+        // Sets of 15 had the same rest, so take the shorter one, and start from their own 15.
+        val fifteens = swings.copy(reps = 15)
+        assertEquals(fifteens.copy(rest = 75, origin = fifteens), days[1][1])
+        // At the next bell they go back as they started.
+        val back = PlanChanges(
+            program.copy(
+                days = listOf(listOf(denser, squats), listOf(swingEmom, fifteens.copy(rest = 30, origin = fifteens))),
+            ),
+            1,
+            0,
+            listOf(BlockChange(0, denser, swings.copy(load = Load.Bell(20.0)))),
+        ).applied(SaveScope.EveryDay)
+        assertEquals(fifteens.copy(load = Load.Bell(20.0)), back[1][1])
     }
 
     @Test

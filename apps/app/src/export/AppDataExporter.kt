@@ -158,7 +158,7 @@ private fun CustomExercise.export() =
 private fun Program.export() =
     ProgramExport(key.stored, name, daysPerWeek, weeks, days.map { day -> day.map { it.export() } })
 
-private fun Block.export() =
+private fun Block.export(): BlockExport =
     BlockExport(
         exercise.key,
         rounds,
@@ -171,6 +171,7 @@ private fun Block.export() =
         range?.bottom,
         range?.top,
         rest,
+        origin?.export(),
     )
 
 private fun Followed.export() = FollowedExport(program.key.stored, startedAtEpochMillis, daysBefore)

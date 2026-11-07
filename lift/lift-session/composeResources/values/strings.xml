@@ -92,7 +92,11 @@
     <string name="changes_next_time">Next time</string>
     <string name="changes_held_back">It felt very hard: these wait until you turn them on.</string>
     <string name="topped_out_title">Top of the range</string>
-    <string name="topped_out_hint">Every set reached the top, with nothing heavier to go to yet. Add a heavier bell or band in Your equipment, or plan more weight.</string>
+    <string name="topped_out_hint">Every step at this weight is done: the reps, less rest, more sets, and a harder lift where there is one. Add a heavier bell or band in Your equipment, or plan more weight.</string>
+    <string name="step_denser">Denser first: the same work in less rest</string>
+    <string name="step_volume">More work at %1$s</string>
+    <string name="step_variation">Same bell, harder lift</string>
+    <string name="step_back">Back to where it started, at %1$s</string>
     <string name="changes_this_day">This day</string>
     <string name="changes_every_day">Every day</string>
     <string name="changes_this_day_hint">Only day %1$d of the program changes.</string>

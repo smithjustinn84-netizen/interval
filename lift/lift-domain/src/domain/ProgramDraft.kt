@@ -64,11 +64,13 @@ data class ProgramDraft(
 /**
  * This block run as [kind]: a ladder gets rungs and sets or an EMOM reps if it had none. A density block caps its
  * minutes within [DensityClock.MIN_MINUTES] to [DensityClock.MAX_MINUTES] and builds within no range; a hold can't
- * be one, and stays as it is.
+ * be one, and stays as it is. Another kind starts afresh, with no [Block.origin] to go back to.
  */
 fun Block.asKind(kind: BlockKind): Block {
     if (kind == BlockKind.Density && exercise.measure == Measure.Time) return this
+    if (kind == this.kind) return this
     return copy(
+        origin = null,
         kind = kind,
         rounds = if (kind == BlockKind.Density) {
             rounds.coerceIn(DensityClock.MIN_MINUTES, DensityClock.MAX_MINUTES)
@@ -84,9 +86,10 @@ fun Block.asKind(kind: BlockKind): Block {
 /**
  * This block of [exercise]: still with two bells if it was and [exercise] can be, and with them if it must. Its
  * load stays while the equipment does; a hold is only ever sets, and a change between reps and time starts the
- * count afresh.
+ * count afresh. Another lift starts afresh, with no [Block.origin] to go back to.
  */
 fun Block.withExercise(exercise: Exercise): Block {
+    if (exercise == this.exercise) return this
     val sameMeasure = exercise.measure == this.exercise.measure
     val held = exercise.measure == Measure.Time
     return copy(
@@ -100,6 +103,7 @@ fun Block.withExercise(exercise: Exercise): Block {
         },
         load = null,
         range = range.takeIf { !held },
+        origin = null,
     ).withLoad(load)
 }
 

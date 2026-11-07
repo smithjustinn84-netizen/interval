@@ -24,11 +24,14 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ToggleRow
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.BlockChange
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.PlanChanges
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.SaveScope
+import dev.justinsmith.lift.domain.StepKind
 import dev.justinsmith.lift.domain.copyName
+import dev.justinsmith.lift.domain.stepKind
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.change_line
 import dev.justinsmith.lift.session.resources.changes_ask_text
@@ -51,9 +54,14 @@ import dev.justinsmith.lift.session.resources.changes_this_day_hint
 import dev.justinsmith.lift.session.resources.changes_title
 import dev.justinsmith.lift.session.resources.changes_title_next
 import dev.justinsmith.lift.session.resources.changes_today_only
+import dev.justinsmith.lift.session.resources.step_back
+import dev.justinsmith.lift.session.resources.step_denser
+import dev.justinsmith.lift.session.resources.step_variation
+import dev.justinsmith.lift.session.resources.step_volume
 import dev.justinsmith.lift.session.resources.topped_out_hint
 import dev.justinsmith.lift.session.resources.topped_out_title
 import dev.justinsmith.lift.ui.blockLine
+import dev.justinsmith.lift.ui.blockLoad
 import dev.justinsmith.lift.ui.liftName
 import dev.justinsmith.lift.ui.programName
 import org.jetbrains.compose.resources.stringResource
@@ -185,11 +193,41 @@ private fun NextTime(
     }
     nudges.forEachIndexed { i, nudge ->
         ToggleRow(
-            liftName(nudge.to.exercise, nudge.to.double),
+            changeTitle(nudge),
             stringResource(Res.string.change_line, blockLine(nudge.from, bands), blockLine(nudge.to, bands)),
             checked = i in taken,
             onToggle = { onToggle(i) },
+            note = stepWhy(nudge, bands),
         )
+    }
+}
+
+/** A change's lift; a swap, or a step to a harder lift or back, names both. */
+@Composable
+private fun changeTitle(change: BlockChange): String {
+    val (from, to) = change.from to change.to
+    return if (change.swapped || change.detour) {
+        stringResource(Res.string.change_line, liftName(from.exercise, from.double), liftName(to.exercise, to.double))
+    } else {
+        liftName(to.exercise, to.double)
+    }
+}
+
+/**
+ * Why a step up is the step it is, where the bell waits: denser, more, a harder lift at the same bell, or back to
+ * where it started at the next. Null for a step that says itself (a rep, a heavier load straight away).
+ */
+@Composable
+private fun stepWhy(nudge: BlockChange, bands: List<Band>): String? {
+    // Only a bell waits: every other load has its own steps, which say themselves.
+    if (nudge.to.load !is Load.Bell) return null
+    val load = blockLoad(nudge.to, bands)
+    return when (stepKind(nudge.from, nudge.to)) {
+        StepKind.Denser -> stringResource(Res.string.step_denser)
+        StepKind.Volume -> load?.let { stringResource(Res.string.step_volume, it) }
+        StepKind.Variation -> stringResource(Res.string.step_variation)
+        StepKind.Bell -> load?.takeIf { nudge.from.origin != null }?.let { stringResource(Res.string.step_back, it) }
+        StepKind.Reps, StepKind.Load -> null
     }
 }
 
@@ -273,15 +311,7 @@ private fun ChangeLine(change: BlockChange, bands: List<Band>) {
     val (from, to) = change.from to change.to
     Column {
         Text(
-            if (change.swapped) {
-                stringResource(
-                    Res.string.change_line,
-                    liftName(from.exercise, from.double),
-                    liftName(to.exercise, to.double),
-                )
-            } else {
-                liftName(to.exercise, to.double)
-            },
+            changeTitle(change),
             style = IntervalTheme.type.label,
             color = palette.text,
         )

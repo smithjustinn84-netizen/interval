@@ -302,6 +302,21 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
         see("Counts toward your week and your goal")
     }
 
+    /** Starts day 1 and logs its [sets] sets, then Finish. */
+    fun doTheDay(sets: Int) {
+        startProgramDay(1)
+        repeat(sets) { logNextSet() }
+        tap("Finish")
+    }
+
+    /** Next time on the summary offers [lift] stepped as [line], and says [why]. */
+    fun seeNextTime(lift: String, line: String, why: String) {
+        see("Next time")
+        see(lift)
+        see(line)
+        see(why)
+    }
+
     fun seeRecord(exercise: String, record: String) {
         see("New records")
         see(exercise)

@@ -154,7 +154,9 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      for none named; `Load.named`, `Block.withLoad`), records,
                      `EmomClock`/`HoldClock`/`RestClock`/`DensityClock` (a density block, `BlockKind.Density`:
                      as many rounds as fit a cap, planned as its first round, which takes every round logged within
-                     the cap, `plannedRounds`, and steps a rep a round by `densityStep`; the ABC's two protocols, `AbcProtocol`), suggestions, about how long a program's day takes
+                     the cap, `plannedRounds`, and steps a rep a round by `densityStep`; the ABC's two protocols, `AbcProtocol`), suggestions, the ladder past fixed bell sizes (`Progression.kt`'s `rungOf`: reps, denser, more, a harder lift
+                     at the same bell from `Variations.kt`, then the next bell back at the block's `origin`, by how big
+                     the jump is), about how long a program's day takes
                      (`Estimate.kt`, from its sets, each lift's pace and the rest between sets), the program to
                      start someone on with one bell (`StarterProgram.kt`). The coaching (docs/kettlebell-coaching.md):
                      how each lift moves (`Movement.kt`: pattern, tempo ballistic/grind/hold, grip, lifts in a rep),

@@ -2,8 +2,14 @@ package dev.justinsmith.lift.domain
 
 /** Block [index] of a program day, as programmed ([from]) and as the session left it ([to]). */
 data class BlockChange(val index: Int, val from: Block, val to: Block) {
-    /** Another exercise swapped in: kept on this day only, whatever the scope. */
-    val swapped: Boolean get() = from.exercise != to.exercise
+    /**
+     * Another exercise swapped in: kept on this day only, whatever the scope. A step to a harder lift at the same
+     * bell, or back from one ([Block.origin]), is a step, not a swap, though it too stays on this day.
+     */
+    val swapped: Boolean get() = from.exercise != to.exercise && !detour
+
+    /** A step to a harder lift at the same bell, or back from one to the lift it stands for. */
+    val detour: Boolean get() = to.onDetour != from.onDetour
 }
 
 /** How far a change to a program day reaches when it is kept. */
@@ -49,7 +55,10 @@ data class PlanChanges(
             val own = changes.firstOrNull { d == dayIndex && it.index == i }
             when {
                 own != null -> own.to
-                scope == SaveScope.EveryDay -> changes.filterNot { it.swapped }.fold(block) { b, c -> c.carry(b) }
+
+                scope == SaveScope.EveryDay ->
+                    changes.filterNot { it.swapped || it.detour }.fold(block) { b, c -> c.carry(b) }
+
                 else -> block
             }
         }
@@ -72,7 +81,10 @@ private fun BlockChange.carry(block: Block): Block {
     return if (block.kind == from.kind && from.kind == to.kind) carryCounts(carried) else carried
 }
 
-/** [block] with the rounds, reps, rungs and range this change changed, each where it had what this one had. */
+/**
+ * [block] with the rounds, reps, rungs, range and rest this change changed, each where it had what this one had, and
+ * its origin ([carryOrigin]).
+ */
 private fun BlockChange.carryCounts(block: Block): Block {
     var carried = block
     if (to.rounds != from.rounds && block.rounds == from.rounds) carried = carried.copy(rounds = to.rounds)
@@ -80,7 +92,21 @@ private fun BlockChange.carryCounts(block: Block): Block {
     if (to.rungs != from.rungs && block.rungs == from.rungs) carried = carried.copy(rungs = to.rungs)
     if (to.range != from.range && block.range == from.range) carried = carried.copy(range = to.range)
     if (to.rest != from.rest && block.rest == from.rest) carried = carried.copy(rest = to.rest)
-    return carried
+    return carryOrigin(block, carried)
+}
+
+/**
+ * [carried], [block] as this change carried it, with where it starts from: itself as it was, at its first step at its
+ * bell (not the block it was carried from); and once gone to the next bell, as it started there too.
+ */
+private fun BlockChange.carryOrigin(block: Block, carried: Block): Block {
+    val firstStep = to.origin != null && from.origin == null
+    val nextBell = to.origin == null && from.origin != null && to.load != from.load
+    return when {
+        firstStep && block.origin == null && carried != block -> carried.copy(origin = block)
+        nextBell && block.origin != null -> block.startingShape().copy(load = carried.load)
+        else -> carried
+    }
 }
 
 /**
