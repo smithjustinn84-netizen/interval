@@ -33,12 +33,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.history_day_cd
-import dev.justinsmith.interval.history.resources.history_kind_interval
-import dev.justinsmith.interval.history.resources.history_kind_lift
-import dev.justinsmith.interval.history.resources.history_kind_sport
 import dev.justinsmith.interval.history.resources.history_sport_logged_cd
 import dev.justinsmith.interval.history.resources.history_sport_passed_cd
 import dev.justinsmith.interval.history.resources.history_sport_planned_cd
+import dev.justinsmith.interval.history.resources.history_state_done
 import dev.justinsmith.interval.history.resources.history_state_done_cd
 import dev.justinsmith.interval.history.resources.history_state_missed
 import dev.justinsmith.interval.history.resources.history_state_missed_cd
@@ -200,28 +198,20 @@ private fun DayBar(day: DayCell, share: Float, index: Int) {
 }
 
 /**
- * The key under the week strip, for sighted users: the strip reads its days' states aloud itself. With [sport],
- * the block a sport day logged is drawn as joins it.
+ * The key under the month's calendar, for sighted users, of the three marks it draws: a day done, one planned,
+ * one missed. The calendar reads its days' states aloud itself.
  */
 @Composable
-internal fun Legend(modifier: Modifier = Modifier, sport: Boolean = false) {
+internal fun Legend(modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
-    // Four keys or five: on a narrow column they wrap rather than run off the card.
+    // On a narrow column the keys wrap rather than run off the card.
     FlowRow(
         modifier.clearAndSetSemantics {},
         horizontalArrangement = Arrangement.spacedBy(Spacing.space16),
         verticalArrangement = Arrangement.spacedBy(Spacing.space8),
     ) {
-        LegendItem(stringResource(Res.string.history_kind_interval)) {
-            Box(Modifier.size(Sizes.legendSwatch).clip(Corners.radius12).background(palette.workMark))
-        }
-        LegendItem(stringResource(Res.string.history_kind_lift)) {
+        LegendItem(stringResource(Res.string.history_state_done)) {
             Box(Modifier.size(Sizes.legendSwatch).clip(Corners.radius12).background(palette.accent))
-        }
-        if (sport) {
-            LegendItem(stringResource(Res.string.history_kind_sport)) {
-                Box(Modifier.size(Sizes.legendSwatch).clip(Corners.radius12).background(palette.textDim))
-            }
         }
         LegendItem(stringResource(Res.string.history_state_planned)) {
             Box(Modifier.size(Sizes.legendSwatch).border(Sizes.border, palette.accent, Corners.radius12))

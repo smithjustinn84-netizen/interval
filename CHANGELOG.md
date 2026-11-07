@@ -109,6 +109,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   and every row of the log leads with its kind ("Strength · 7:42 AM", "Conditioning · 20s on · 10s off · ×8 ·
   ended early · 7:42 PM", "Mobility · 6 moves") in place of "Planned" and "Kettlebell". "Earlier" keeps a card a
   day under its date.
+- Log's week card says things once: beside the ring, "2 to go" or "Goal met" rather than "2 more to hit 4", and
+  Time and Calories show once any time is logged this week, not as 0:00 and 0 on a week not begun or of a class
+  alone. The month's key
+  reads Done, Planned and Missed, the three marks its calendar draws, in place of the week strip's Interval and
+  Lift; All time's best streak shows once there is one.
 - Log's week shows a bar a kind (Strength, Conditioning, Mobility, Sport days), each what was done of it against
   what was planned, in place of the line that split the week. Under it, "Coming up" lists every plan of the next
   seven days, a row each with its day and its Start, then the log's days under "Done this week" and "Earlier". The

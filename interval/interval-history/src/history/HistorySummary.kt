@@ -40,11 +40,11 @@ import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.history_best_streak
 import dev.justinsmith.interval.history.resources.history_calories
 import dev.justinsmith.interval.history.resources.history_goal_cd
-import dev.justinsmith.interval.history.resources.history_goal_left
 import dev.justinsmith.interval.history.resources.history_goal_line
 import dev.justinsmith.interval.history.resources.history_goal_met
 import dev.justinsmith.interval.history.resources.history_goal_ring
 import dev.justinsmith.interval.history.resources.history_goal_set
+import dev.justinsmith.interval.history.resources.history_goal_to_go
 import dev.justinsmith.interval.history.resources.history_hours_minutes
 import dev.justinsmith.interval.history.resources.history_kind_cd
 import dev.justinsmith.interval.history.resources.history_kind_conditioning
@@ -144,9 +144,18 @@ internal fun WeekSummary(
     SummaryCard(modifier) {
         GoalRow(state.weekGoal, onSetGoal, split = state.byKind.isEmpty())
         if (state.byKind.isNotEmpty()) KindBars(state.byKind)
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-            Stat(stringResource(Res.string.history_time), state.summary.time, state.summary.totalSeconds, accent = true)
-            state.summary.calories?.let { Stat(stringResource(Res.string.history_calories), it.toString(), it) }
+        // The figures once any time is logged: a week not begun, or of a class alone, has no 0:00 to show at
+        // this size.
+        if (state.summary.totalSeconds > 0) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+                Stat(
+                    stringResource(Res.string.history_time),
+                    state.summary.time,
+                    state.summary.totalSeconds,
+                    accent = true,
+                )
+                state.summary.calories?.let { Stat(stringResource(Res.string.history_calories), it.toString(), it) }
+            }
         }
         WeekStrip(state.week, onDay)
     }
@@ -249,12 +258,13 @@ internal fun GoalRow(week: WeekGoal, onSetGoal: () -> Unit, split: Boolean = tru
                 style = IntervalTheme.type.caption,
                 color = palette.textDim,
             )
+            // The ring beside it carries the numbers: this says only what is left of them.
             val left = goal - week.count
             Text(
                 if (left <= 0) {
                     stringResource(Res.string.history_goal_met)
                 } else {
-                    pluralStringResource(Res.plurals.history_goal_left, left, left, goal)
+                    pluralStringResource(Res.plurals.history_goal_to_go, left, left)
                 },
                 style = IntervalTheme.type.title,
                 color = palette.text,
@@ -411,7 +421,7 @@ internal fun MonthSummary(
             }
         }
         MonthCalendar(state.month.cells, onDay)
-        Legend(sport = state.month.cells.any { it.sportLogged })
+        Legend()
     }
 }
 
@@ -437,7 +447,8 @@ internal fun AllTimeSummary(state: HistoryUiState, modifier: Modifier = Modifier
             )
         }
         val calories = state.summary.calories
-        val best = state.streak?.best
+        // A best streak once there is one: "0 weeks" says nothing.
+        val best = state.streak?.best?.takeIf { it > 0 }
         if (calories != null || best != null) {
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
                 calories?.let { Stat(stringResource(Res.string.history_calories), it.toString(), it) }

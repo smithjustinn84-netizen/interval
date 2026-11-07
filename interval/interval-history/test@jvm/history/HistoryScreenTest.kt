@@ -182,21 +182,39 @@ class HistoryScreenTest {
                 }
             },
         )
-        setThemedContent {
-            WeekStrip(state.week, onDay = {})
-            Legend(sport = true)
-        }
+        setThemedContent { WeekStrip(state.week, onDay = {}) }
 
         onNodeWithContentDescription("Monday, done, BJJ logged").assertExists()
         onNodeWithContentDescription("Tuesday, BJJ not logged").assertExists()
         onNodeWithContentDescription("Wednesday, done, Swimming logged").assertExists()
         onNodeWithContentDescription("Today, Climbing planned").assertExists()
         onNodeWithContentDescription("Friday, no workout").assertExists()
-        // The names under the days, short enough for their columns, and the block's key.
+        // The names under the days, short enough for their columns.
         onAllNodesWithText("BJJ", useUnmergedTree = true).assertCountEquals(2)
         onNodeWithText("Swimm", useUnmergedTree = true).assertExists()
         onNodeWithText("Climb", useUnmergedTree = true).assertExists()
-        onNodeWithText("Sport", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `a week with nothing done yet shows no time and the month keys only what it draws`() = runUiTest {
+        var state by mutableStateOf(
+            oneWorkout.copy(sections = emptyList(), summary = RangeSummary(0, "0:00", 0, null, 0, 0), hasPlans = true),
+        )
+        setThemedContent { HistoryScreen(state, actions) }
+        onNodeWithText("Time").assertDoesNotExist()
+        onNodeWithText("0:00").assertDoesNotExist()
+
+        state = oneWorkout
+        onNodeWithText("Time").assertExists()
+        // The week's time under its caption, and the workout's own on its row.
+        onAllNodesWithText("4:00").assertCountEquals(2)
+
+        state = oneWorkout.copy(range = TrainingRange.Month)
+        onNodeWithText("Done", useUnmergedTree = true).assertExists()
+        onNodeWithText("Planned", useUnmergedTree = true).assertExists()
+        onNodeWithText("Missed", useUnmergedTree = true).assertExists()
+        onNodeWithText("Interval", useUnmergedTree = true).assertDoesNotExist()
+        onNodeWithText("Lift", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test
@@ -227,11 +245,11 @@ class HistoryScreenTest {
         var state by mutableStateOf(oneWorkout.copy(weekCount = 3, goal = 4, streak = Streak(5, 7)))
         setThemedContent { HistoryScreen(state, actions) }
         onNodeWithContentDescription("3 of 4 workouts this week").assertExists()
-        onNodeWithText("1 more to hit 4").assertExists()
+        onNodeWithText("1 to go").assertExists()
         onNodeWithText("5-week streak").assertExists()
 
         state = state.copy(weekCount = 4)
-        onNodeWithText("Goal met this week").assertExists()
+        onNodeWithText("Goal met").assertExists()
 
         state = oneWorkout
         onNodeWithText("1 workout").assertExists()

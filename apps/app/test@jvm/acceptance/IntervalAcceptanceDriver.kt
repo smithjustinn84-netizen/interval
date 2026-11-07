@@ -383,9 +383,9 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         see(goal.toString())
     }
 
-    /** This week's words and its ring, which reads as "1 of 3 workouts this week". */
+    /** This week's words beside its ring, which reads as "1 of 3 workouts this week". */
     fun seeThisWeek(done: Int, goal: Int) {
-        see("${goal - done} more to hit $goal")
+        see("${goal - done} to go")
         see(hasContentDescription("$done of $goal workouts this week"))
     }
 
