@@ -274,7 +274,12 @@ For testing architecture, harnesses, and test fakes, see [docs/testing.md](./doc
 - [Testing Strategy](./docs/testing.md): Compose UI desktop harness, fakes, and on-device journeys.
 - [Kettlebell Coaching](./docs/kettlebell-coaching.md): How Lift weighs the grip and readiness, eases a taxed day, and works out density, pace and challenges.
 - [Release Guide](./docs/release.md): Release preparation, R8 optimization, keystore setup, and deployment checklist.
-- [Sprint 0.6](./docs/sprint-0.6.md): The current sprint's tickets, order and definition of done; [Sprint 0.5](./docs/sprint-0.5.md), [Sprint 0.4](./docs/archive/sprint-0.4.md), [Sprint 0.3](./docs/archive/sprint-0.3.md) and the [architecture sprint](./docs/archive/sprint-architecture.md) before it.
+- [Sprint 0.6](./docs/sprint-0.6.md): The current sprint's tickets, order and definition of done: release 0.5.0, a density block (rounds in a time cap) and the ABC either way, and 15:15's snatches counted in Lift. Before it:
+  - [Sprint 0.5](./docs/sprint-0.5.md): multi-block sequences, Today, Train's three pillars, sport days, mobility flows, first-run Set up, and the iOS Home Screen widget.
+  - [Sprint 0.4](./docs/archive/sprint-0.4.md): precomputed courses, sets of rounds, ladders, the per-store `IntervalRepository` split, iOS quick actions, and Android 15+'s widget picker preview (`v0.4.0`).
+  - [The architecture sprint](./docs/archive/sprint-architecture.md): one Koin container per process, `WorkoutSession` and `SessionTimers` owned by the process, narrow store ports, and the `SessionViewModel` and `LiftRepository` splits, from the [2026-10-31 review](./docs/archive/architecture-review.md).
+  - [Sprint 0.3](./docs/archive/sprint-0.3.md): Android 16 Live Updates, launcher shortcuts, "How was it?", JSON import, Health Connect reads, Apple Health, warm-up and cool-down, muscle balance, and the Android Glance widget (`v0.3.0`).
+- [Backlog](./docs/backlog.md): What no sprint holds yet, why, and what would bring each in.
 - [Developer Guide (CLAUDE.md)](./CLAUDE.md): Code conventions, architecture invariants, and toolchain command reference.
 - [Changelog](./CHANGELOG.md): History of notable changes and milestone releases.
 

@@ -2,8 +2,8 @@
 
 Compose Multiplatform app for **Android, iOS and desktop (JVM)**, built with the **Kotlin Toolchain**
 (`./kotlin`, Amper-based, version pinned in the `kotlin` wrapper). Docs: https://kotlin-toolchain.org/0.13/
-Full architecture guide: [docs/architecture.md](docs/architecture.md). Known debt and the plan for it:
-[docs/architecture-review.md](docs/architecture-review.md) and [docs/archive/sprint-architecture.md](docs/archive/sprint-architecture.md).
+Full architecture guide: [docs/architecture.md](docs/architecture.md). The current sprint: [docs/sprint-0.6.md](docs/sprint-0.6.md);
+what no sprint holds yet, and why: [docs/backlog.md](docs/backlog.md). Finished sprints and reviews: `docs/archive/`.
 
 > **NO GRADLE.** There is no `gradlew`, `build.gradle.kts` or `settings.gradle.kts`. Never run or suggest
 > Gradle commands. Build configuration lives in `project.yaml` and each module's `module.yaml`.

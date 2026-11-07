@@ -139,26 +139,7 @@ To change one later (a new password, say), run its command again: `gh secret set
    `interval-v<version>.aab` to the workflow run; upload it to the Play Console's internal testing track. Play
    vitals reports crashes and ANRs for a signed upload, so no crash-reporting SDK is needed.
 
-## Sprint History & Backlog
+## Sprints and the backlog
 
-Current and past sprints:
-- [Sprint 0.6](sprint-0.6.md): Release 0.5.0, a density block (rounds in a time cap) and the ABC either way, and 15:15's snatches counted in Lift.
-- [Sprint 0.5](sprint-0.5.md): Multi-block sequences, Today, Train's three pillars, sport days, mobility flows, first-run Set up, and the iOS Home Screen widget.
-- [Sprint 0.4](archive/sprint-0.4.md): Precomputed courses, sets of rounds, ladders, per-store `IntervalRepository` split, iOS quick actions, and Android 15+ widget picker preview (`v0.4.0`).
-- [Architecture Sprint](archive/sprint-architecture.md): Process-scoped Koin container, `WorkoutSession` and `SessionTimers` process owners, narrow store ports, and `SessionViewModel`/`LiftRepository` splits.
-- [Sprint 0.3](archive/sprint-0.3.md): Android 16 Live Updates, launcher shortcuts, "How was it?", JSON import, Health Connect reads, Apple Health (`HealthKitStore`), warm-up/cool-down, muscle balance, and the Android Glance widget (`v0.3.0`).
-- **Other workspaces' stacks.** Commits made in another jj workspace above an old `main` rebase onto the
-  new one with `jj rebase -d main`.
-
-## Left out on purpose
-
-- **Wear OS**: a platform project of its own. `HealthStore` (`core-platform`) writes workouts and reads body weight
-  and a connected watch's heart rate through Health Connect and Apple Health.
-- **AppFunctions**: `androidx.appfunctions` is still alpha; deferred until stable, over the start routes the
-  widget and launcher shortcuts already use.
-- **Localisation**: the built-in presets' and mobility flows' names are stored/spoken data by design, and both text
-  parsers are English-keyword; a second locale is a sprint, not a ticket.
-- **Import atomicity across both databases (`E5`)**: Interval's and Lift's Room databases commit in separate atomic
-  transactions; re-importing the same file safely completes any interrupted second half without duplicating the first.
-- **iOS signing and an Apple team**, screenshot tests, coverage: out of the Android-only store goal or blocked by
-  the toolchain (see [testing.md](testing.md)).
+What each sprint built is in the [README](../README.md)'s documentation list and the [CHANGELOG](../CHANGELOG.md); what
+no sprint holds yet, and why, is [backlog.md](backlog.md).

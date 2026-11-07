@@ -2,7 +2,7 @@
 
 A review of the whole codebase (29 modules, about 57k lines of Kotlin) against SOLID, Android's lifecycle and
 platform guidance, and data-layer correctness. The work it calls for is planned in
-[sprint-architecture.md](archive/sprint-architecture.md); the architecture as it stands is [architecture.md](architecture.md).
+[sprint-architecture.md](sprint-architecture.md); the architecture as it stands is [architecture.md](../architecture.md).
 
 Line numbers are as of commit `09a932a2` and will drift; the symbol named beside each is the stable reference.
 Each finding has an id (**A1**, **S3**, …) that the sprint's tickets cite.
@@ -66,15 +66,15 @@ from Android's `IntervalApplication`, desktop's `main` and iOS's first frame. `K
 `preferenceStores` are gone (A1a, A1b), the databases open once (A1c), and the container is never closed on
 Android, so no write arrives after it (A1e). Services and receivers can now reach it (A1d); using that is
 ticket 3's and 4's.
-`rememberAppKoin()` ([AppKoin.kt:84-92](../apps/app/src/di/AppKoin.kt)) builds the container inside
+`rememberAppKoin()` ([AppKoin.kt:84-92](../../apps/app/src/di/AppKoin.kt)) builds the container inside
 `viewModel { KoinHolder(...) }`. It survives a rotation and dies with the Activity. The platform modules are
 `@Composable` because they need `LocalContext`
-([PlatformServices.android.kt](../interval/interval-platform/src@android/platform/PlatformServices.android.kt)).
+([PlatformServices.android.kt](../../interval/interval-platform/src@android/platform/PlatformServices.android.kt)).
 What follows from that:
 
 - **A1a** `KoinHolder.onCleared` blocks the main thread with `runBlocking` for up to 2 s to drain both
-  repositories ([AppKoin.kt:61-74](../apps/app/src/di/AppKoin.kt)).
-- **A1b** `preferenceStores` ([DataKoin.kt:52-65](../interval/interval-data/src/di/DataKoin.kt)) is a process
+  repositories ([AppKoin.kt:61-74](../../apps/app/src/di/AppKoin.kt)).
+- **A1b** `preferenceStores` ([DataKoin.kt:52-65](../../interval/interval-data/src/di/DataKoin.kt)) is a process
   singleton outside DI. It exists only because a new container can be built before the old DataStore lets go of
   its file.
 - **A1c** The database is opened again each time the user backs out and relaunches in the same process.
@@ -84,7 +84,7 @@ What follows from that:
 - **A1e** Teardown order: if `KoinHolder` clears before the nav entries' ViewModel stores, the writes
   `WorkoutViewModel.onCleared` makes (`saveWorkoutProgress(null)`, the reflection) arrive after
   `SerialWriter.close()`. They are dropped with only a warning
-  ([Storage.kt:37-38](../core/core-platform/src/storage/Storage.kt)).
+  ([Storage.kt:37-38](../../core/core-platform/src/storage/Storage.kt)).
 
 **Recommendation.** Build the container once per process:
 - Android gets an `Application` subclass that builds it from `applicationContext`.
@@ -106,7 +106,7 @@ receivers; the workout's service is ticket 4's.
 - `PlanReminderReceiver` re-arms recorded alarms but never extends the window, so a user who doesn't open the app
   for two weeks stops being reminded.
 - The text is baked into the alarm's intent when the alarm is set
-  ([PlanReminders.android.kt](../interval/interval-platform/src@android/platform/PlanReminders.android.kt)), so a
+  ([PlanReminders.android.kt](../../interval/interval-platform/src@android/platform/PlanReminders.android.kt)), so a
   language change shows the old words.
 
 **Recommendation.** With **A1** fixed, the receiver runs the scheduler on each alarm (extending the window) and
@@ -125,8 +125,8 @@ ViewModel's part in it: the workout runs on when the screen is destroyed, and en
 
 - `WorkoutService`'s companion holds `internal val status = MutableStateFlow<WorkoutStatus?>` and
   `internal var controls: WorkoutControls?`. `controls` is not `@Volatile` and holds an object owned by the
-  ViewModel ([WorkoutService.kt](../interval/interval-platform/src@android/platform/WorkoutService.kt),
-  [BackgroundWorkout.android.kt](../interval/interval-platform/src@android/platform/BackgroundWorkout.android.kt)).
+  ViewModel ([WorkoutService.kt](../../interval/interval-platform/src@android/platform/WorkoutService.kt),
+  [BackgroundWorkout.android.kt](../../interval/interval-platform/src@android/platform/BackgroundWorkout.android.kt)).
 - The notification's Pause and End call into ViewModel code from `onStartCommand`.
 - The service mirrors an object in the UI layer: it can't work without that ViewModel in the same process, and
   a missed `stop()` leaks the ViewModel.
@@ -169,7 +169,7 @@ state is not kept: the set being changed is in Room, and the sheet comes back to
 **Resolved** in change `kroqzppq` ("Lift: a plan change never lost, whole writes, and the rest's wake lock renewed"): the lock is no longer reference-counted, and each rest acquires
 it afresh until its end, the linger and a few seconds' margin, so rests back to back never outlast it.
 `countDown` acquires for 15 minutes only when the lock isn't already held
-([RestAlerts.android.kt:125](../lift/lift-platform/src@android/platform/RestAlerts.android.kt)). A new rest
+([RestAlerts.android.kt:125](../../lift/lift-platform/src@android/platform/RestAlerts.android.kt)). A new rest
 replaces a running one without restarting the service, so back-to-back rests keep the service but lose the lock
 15 minutes after the first.
 
@@ -198,7 +198,7 @@ behind the set just logged with it), and the sessions and programs read the user
 `LiftMappers.kt`. The policy stayed with its kind (`saveChanges` in the programs', `removeBand` in the gear's)
 rather than in use cases of its own: each is one method behind a port. The root keeps what only the app does
 (`ready`, `writeErrors`, `importAll`, `close`); Koin binds each store to its repository.
-[LiftRepository.kt](../lift/lift-data/src/data/LiftRepository.kt) is 667 lines, takes 7 DAOs and carries
+[LiftRepository.kt](../../lift/lift-data/src/data/LiftRepository.kt) is 667 lines, takes 7 DAOs and carries
 `@Suppress TooManyFunctions`. It:
 - caches nine tables
 - runs the session lifecycle
@@ -215,7 +215,7 @@ rather than in use cases of its own: each is one method behind a port. The root 
 `GearRepository` over a shared catalog flow. Move the policy into use cases and the mappers into their own file.
 
 ### C2 · High · `IntervalRepository` does six jobs (SRP)
-[IntervalRepository.kt](../interval/interval-data/src/data/IntervalRepository.kt) covers settings (three
+[IntervalRepository.kt](../../interval/interval-data/src/data/IntervalRepository.kt) covers settings (three
 kinds), workout progress, presets (with naming rules), history, plans and import: 9 StateFlows and about 20
 mutators.
 
@@ -240,7 +240,7 @@ ViewModel but `SessionViewModel` (all five of Lift's, narrowed by its split, D1)
 - `GearViewModel` uses only bells, bar and bands. `TimerViewModel` uses only config and presets but can call
   `clearHistory()` and `importAll()`.
 - With no interface, every ViewModel test builds the real repository over fake DAOs.
-- `LiftActivity` ([LiftActivity.kt](../lift/lift-data/src/data/LiftActivity.kt)) already shows the pattern: a
+- `LiftActivity` ([LiftActivity.kt](../../lift/lift-data/src/data/LiftActivity.kt)) already shows the pattern: a
   narrow port per consumer.
 
 **Recommendation.**
@@ -283,7 +283,7 @@ Android's `PlanAlarms`, `AndroidSessionKeepAlive` and `TimerService` and iOS's `
 added exercise awaited), `TodayPlanEditor` (change, skip, swap, the next load stepped) and `FinishSession` (records,
 plan changes, topped out, week standing, Health, the summary's reflection), beside `SessionTimers` (B2). The
 ViewModel is under 300 lines with no `@Suppress`; the Route's actions call the parts it exposes.
-[SessionViewModel.kt](../lift/lift-session/src/session/SessionViewModel.kt) covers:
+[SessionViewModel.kt](../../lift/lift-session/src/session/SessionViewModel.kt) covers:
 - draft editing and suggestions
 - plan editing (change, skip, swap)
 - three timers, the tick loop and cues
@@ -304,7 +304,7 @@ the platform's hold), `WorkoutRecorder` keeps History and Health, and `WorkoutVi
 repository and maps one to `WorkoutUiState`, with no `var`s and no `@Suppress`. The reflection's second Health write
 runs as the session leaves, not in `onCleared` (A1e's last writes there).
 
-[WorkoutViewModel.kt](../interval/interval-workout/src/workout/WorkoutViewModel.kt) has 9 dependencies and about
+[WorkoutViewModel.kt](../../interval/interval-workout/src/workout/WorkoutViewModel.kt) has 9 dependencies and about
 15 mutable `var`s. The order `turn()` → `publish()` → `checkpoint()` matters. It mixes the ticker, cues, Health's
 course spans, checkpointing, the service lifecycle and the week standing.
 
@@ -353,7 +353,7 @@ lambda can run more than once.
 works it out inside the writer, behind every write before it; nothing is written to `active` optimistically, so a
 stale read can only lag the screen for a moment. `SessionViewModel`'s plan edits and `stepNextLoad` each pass one.
 No pending overlay: nothing depends on what is drawn.
-[`LiftRepository.setSessionPlan`](../lift/lift-data/src/data/LiftRepository.kt) (L353-359) sets
+[`LiftRepository.setSessionPlan`](../../lift/lift-data/src/data/LiftRepository.kt) (L353-359) sets
 `_active.value = _active.value?.copy(plan = plan)` optimistically on Main. The collector on IO (L154-159)
 overwrites `_active` with every database emission. An emission computed before the plan's write lands restores
 the old plan, and the next edit, built on `today()`, silently drops the change.
@@ -387,13 +387,13 @@ and `IntervalConfig.sanitized(...)` takes raw values to the nearest in range. Ev
 Room rows (`intervalConfig`), the DataStore (`toConfig`), the saved workout (`StoredProgress.toDomain`) and the preset
 editor's saved state. `ImportPlanner` still refuses a file out of range, field by field, before the constructor.
 The ranges are enforced only in `withValue`
-([IntervalConfig.kt](../interval/interval-domain/src/timer/IntervalConfig.kt)). The DataStore, Room, progress
+([IntervalConfig.kt](../../interval/interval-domain/src/timer/IntervalConfig.kt)). The DataStore, Room, progress
 and import mappers build configs unchecked, so `rounds = 0` gives a negative `totalSeconds`.
 
 **Recommendation.** `init { require(...) }`, or a `sanitized()` factory used by every mapper.
 
 ### E4 · Medium · Write failures are silent
-`SerialWriter.persist` logs and swallows ([Storage.kt:72-80](../core/core-platform/src/storage/Storage.kt)),
+`SerialWriter.persist` logs and swallows ([Storage.kt:72-80](../../core/core-platform/src/storage/Storage.kt)),
 and the repository APIs return `Unit`. A failed `logSet` or `recordWorkout` is invisible.
 
 **Recommendation.** `writeErrors: SharedFlow`, shown as a notice; `await` for the writes the user must see land.
@@ -428,7 +428,7 @@ reads it.
 
 ### F1 · Medium · First states built on the main thread
 - `HistoryViewModel` and `PlanViewModel` call `buildState(...)` for `initialValue`, on the caller, with
-  `SharingStarted.Eagerly` ([HistoryViewModel.kt:124-147](../interval/interval-history/src/history/HistoryViewModel.kt)).
+  `SharingStarted.Eagerly` ([HistoryViewModel.kt:124-147](../../interval/interval-history/src/history/HistoryViewModel.kt)).
   The build walks the whole history and calendar.
 - History's combine includes `repository.config`, so each Timer stepper tap rebuilds History.
 

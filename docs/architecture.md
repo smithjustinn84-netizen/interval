@@ -168,63 +168,13 @@ disagree; `--write-diagram` puts the current one here. The module table below sa
 5. **Multiplatform-First**: All feature code and screens are written in Compose Multiplatform. Platform-specific code
    (`expect`/`actual` or platform-specific interfaces) is kept behind injected abstractions.
 
-### Known architectural debt & resolutions
+### Holding the line
 
-The 2026-10-31 review ([architecture-review.md](architecture-review.md)) audited the architecture against lifecycle,
-modularity, and data-correctness guidelines. [sprint-architecture.md](archive/sprint-architecture.md) and sprint 0.3 resolved
-several core issues:
-
-- **Resolved — Container lifetime (A1)**: `initAppKoin` starts one Koin container per process from Android's `IntervalApplication`,
-  desktop's `main`, and iOS's `AppDelegate` at launch (through `startWidgetFeed`). `KoinHolder`, main-thread `runBlocking`, and global DataStore maps have been eliminated;
-  databases stay open across Activity restarts.
-- **Resolved — ViewModels in Koin (C4)**: ViewModels are declared in their respective feature Koin modules (`<feature>/src/di/`)
-  and resolved with `koinViewModel { parametersOf(id) }`. Positional `scope.get()` calls are removed, and `VerifyAppModulesTest`
-  verifies the entire graph in CI.
-- **Resolved — Atomic transactions & plan updates (E1, E2)**: `changeSessionPlan` applies plan edits atomically inside the writer,
-  and multi-statement DAO operations (`finishActive`, `discardActive`, `deleteProgram`, `removeOrArchive`) run in `@Transaction` methods.
-- **Resolved — Domain invariants & edge guards (E3, E5, E6, D5)**: `IntervalConfig` enforces ranges at construction and provides
-  `sanitized()` factories for storage mappers. `reviewImport` fails gracefully on corrupted files, and preset flows are derived safely.
-- **Resolved — Rest wake lock renewal (B4)**: the timers' service (now `TimerService`) renews the device wake lock
-  on every run's countdown.
-- **Resolved — Lift's timers owned by the process (B2, B5, F3)**: `SessionTimers`, a Koin single, runs the rest, the
-  EMOM and the hold on monotonic time, logs as they go and keeps whichever runs alive through `SessionKeepAlive`
-  (Android's `TimerService`, iOS's notification at its end). `SessionViewModel` starts them and shows their clocks
-  apart from the rest of its state. They end with the session, its page or the task.
-- **Resolved — The running workout owned by the process (B1, D2)**: `WorkoutSession`, a Koin single, runs the workout
-  (the ticker, cues, course, checkpoint and the service's lifetime); `WorkoutService` and iOS's keeper reach it as
-  the `ActiveWorkout` port, and `WorkoutViewModel` only maps its state. It ends when its page leaves the back stack.
-
-- **Resolved — Narrow ports (C3)**: each side's storage plays roles a consumer takes one by one, each a
-  repository of its own bound in Koin (C1, C2): the interval side's `SettingsStore`, `PresetStore`, `HistoryStore`, `PlanStore` and
-  `WorkoutProgressStore` (`interval-data`'s `Stores.kt`), Lift's `SessionStore`, `SetStore`, `ProgramStore`,
-  `ExerciseStore` and `GearStore` (`lift-data`'s). What only the app does (`ready`, `writeErrors`, `importAll`,
-  `close`) stays on the repository, which the app shell, export, import and `PlanReminderScheduler` (it waits on
-  `ready`) still take.
-
-- **Resolved — `LiftRepository`, split (C1)**: one repository per store, each over the DAOs of its kind:
-  `SessionRepository` (also the `LiftActivity` the interval side reads), `SetRepository`, `ProgramRepository`,
-  `ExerciseRepository` and `GearRepository`, sharing one `SerialWriter` so writes of different kinds keep their
-  order, with the mappers in `LiftMappers.kt`. `LiftRepository` is their root, what the app alone takes for `ready`,
-  `writeErrors`, `importAll` and `close`; Koin binds each store to its repository.
-
-- **Resolved — `IntervalRepository`, split (C2)**: the same shape on the interval side: `SettingsRepository` (the
-  DataStore's settings and the workout under way), `PresetRepository`, `HistoryRepository` and `PlanRepository`,
-  sharing one `SerialWriter`, with the mappers in `IntervalMappers.kt`. `IntervalRepository` is their root, for
-  `ready`, `writeErrors`, `importAll` and `close`.
-
-- **Resolved — `SessionViewModel`, split (D1, D3, F2; D4 in part)**: the Log sheet's draft is `SetDraftEditor`
-  (pure: what it goes by is a function it reads at each change), today's plan `TodayPlanEditor`, and the finish and
-  its summary `FinishSession`, whose health store copy outlives the summary (`SessionHealth`, a single, writes the
-  summary's words once they settle rather than in `onCleared`). The ViewModel exposes the three (`draft`, `plan`,
-  `summary`), which the Route's actions call, with the timers and `SetStore`'s remove and restore taken there
-  straight. Its state is built from the stores' flows (`SessionInputs.kt`): the sets before this session are flattened on a
-  computation dispatcher as the sessions change, and the records and recent lifts worked out as a set is logged,
-  not at each tap on the sheet, which shows at once. It starts no session: whatever opens its page does
-  (`SessionStore.startSession`: Train's Strength pillar, History, the launcher shortcut), and a page restored with no session
-  behind it closes (`sessionGone`).
-
-New code should not add to what these resolved: inject the stores it uses rather than a repository, keep new
-long-running work out of `viewModelScope`, and give a ViewModel's parts classes of their own rather than functions.
+The 2026-10-31 review ([archive/architecture-review.md](archive/architecture-review.md)) found four root causes, and
+the [architecture sprint](archive/sprint-architecture.md), 0.3 and 0.4 resolved every finding but E5 (import across
+the two stores, a trade-off kept on purpose: [backlog.md](backlog.md)). New code should not bring them back: inject
+the stores it uses rather than a repository, keep long-running work out of `viewModelScope` (a Koin single owns it,
+as `WorkoutSession` and `SessionTimers` do), and give a ViewModel's parts classes of their own rather than functions.
 
 ---
 
