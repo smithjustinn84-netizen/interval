@@ -169,17 +169,4 @@ class BuiltWeekTest {
         assertEquals(setOf(MON, THU), week.liftDays)
         assertEquals(6, week.goal)
     }
-
-    @Test
-    fun `days are spread as evenly as the free ones go`() {
-        val all = (MON..SUN).toSet()
-        assertEquals(setOf(MON), evenlySpread(all, 1))
-        assertEquals(setOf(MON, THU), evenlySpread(all, 2))
-        assertEquals(setOf(MON, WED, FRI), evenlySpread(all, 3))
-        assertEquals(setOf(MON, TUE, THU, SAT), evenlySpread(all, 4))
-        assertEquals(setOf(TUE, THU, SAT), evenlySpread(all - setOf(MON, WED, FRI), 3))
-        assertEquals(setOf(SAT, SUN), evenlySpread(setOf(SAT, SUN), 5))
-        assertTrue(evenlySpread(all, 0).isEmpty())
-        assertTrue(evenlySpread(emptySet(), 2).isEmpty())
-    }
 }

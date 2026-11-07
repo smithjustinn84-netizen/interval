@@ -125,7 +125,7 @@ class WeekSetupScreenTest {
         setThemedContent { WeekSetupScreen(state, WeekSetupActions()) }
         onNode(hasText("BJJ") and hasText("Pick its days")).assertExists()
 
-        state = state.copy(sport = SPORT_ANOTHER)
+        state = state.copy(sport = Sport.OTHER)
         onNode(hasText("Another sport") and hasText("Name it above")).assertExists()
 
         state = state.copy(sport = SPORT_NONE, bells = setOf(16.0))
@@ -138,7 +138,7 @@ class WeekSetupScreenTest {
         val names = mutableListOf<String>()
         setThemedContent {
             WeekSetupScreen(
-                WeekSetupUiState(sport = SPORT_ANOTHER),
+                WeekSetupUiState(sport = Sport.OTHER),
                 WeekSetupActions(onSportName = { names += it }),
             )
         }

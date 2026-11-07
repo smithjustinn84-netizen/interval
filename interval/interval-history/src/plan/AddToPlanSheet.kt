@@ -49,8 +49,10 @@ import dev.justinsmith.interval.history.resources.plan_once
 import dev.justinsmith.interval.history.resources.plan_when
 import dev.justinsmith.interval.history.resources.plan_workout
 import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
+import dev.justinsmith.interval.timer.spreadWeekdays
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.DayToggle
@@ -66,7 +68,9 @@ import dev.justinsmith.interval.ui.WeekdayForm
 import dev.justinsmith.interval.ui.WeekdayPicker
 import dev.justinsmith.interval.ui.joined
 import dev.justinsmith.interval.ui.surfaceButton
+import dev.justinsmith.interval.ui.weekdayMask
 import dev.justinsmith.interval.ui.weekdayText
+import dev.justinsmith.interval.ui.weekdaysOf
 import dev.justinsmith.interval.ui.workoutDescription
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.ui.programDayLine
@@ -122,7 +126,7 @@ fun AddToPlanSheet(
     var ofProgram by rememberSaveable { mutableStateOf(true) }
     var mode by rememberSaveable { mutableStateOf(repeat) }
     // The weekdays picked, as bits: Monday is bit 0.
-    var weekdays by rememberSaveable { mutableIntStateOf(1 shl (weekday - 1)) }
+    var weekdays by rememberSaveable { mutableIntStateOf(weekdayMask(setOf(weekday))) }
     var day by rememberSaveable { mutableLongStateOf(epochDay) }
     var sport by rememberSaveable { mutableIntStateOf(0) }
     val sportName = rememberTextFieldState()
@@ -159,19 +163,19 @@ fun AddToPlanSheet(
                 days = days,
                 day = day,
                 onDay = { day = it },
-                pace = pace?.let { it to spreadWeekdays(weekday, it) },
+                pace = pace?.let { it to spreadWeekdays((1..DAYS_PER_WEEK).toSet(), it, including = weekday) },
             )
             // Null while there is nothing to plan: no workout to pick from, or a sport still to be named.
             val workout: PlanWorkout? = when (kind) {
                 PlanKind.Interval -> choices.getOrNull(picked.coerceAtMost(choices.lastIndex))?.preset?.asPlan()
                 PlanKind.Lift -> liftPlan(ofProgram && programDay != null)
-                PlanKind.Sport -> pickedSport(sport, sportName.text.toString())?.let(PlanWorkout::SportDay)
+                PlanKind.Sport -> Sport.picked(sport, sportName.text.toString())?.let(PlanWorkout::SportDay)
             }
             AddButton(workout) {
                 when (mode) {
                     PlanRepeat.Weekly -> onPlanWeekly(
                         it,
-                        (1..DAYS_PER_WEEK).filter { weekday -> weekdays and (1 shl (weekday - 1)) != 0 }.toSet(),
+                        weekdaysOf(weekdays),
                     )
 
                     PlanRepeat.Once -> onPlanOnce(it, day)
@@ -326,7 +330,7 @@ private fun NoProgram() {
 @Composable
 private fun ProgramPace(pace: Int, suggested: Set<Int>, weekdays: Int, onUse: (Int) -> Unit) {
     val palette = IntervalTheme.palette
-    val bits = suggested.sumOf { 1 shl (it - 1) }
+    val bits = weekdayMask(suggested)
     Row(
         Modifier
             .fillMaxWidth()

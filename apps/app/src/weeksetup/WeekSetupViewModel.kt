@@ -26,11 +26,8 @@ import kotlinx.coroutines.flow.stateIn
 /** The first question unanswered: no sport picked, nor "Just the bell". */
 const val SPORT_UNANSWERED = -1
 
-/** The pick after [Sport.named]: a sport the user names. */
-val SPORT_ANOTHER = Sport.named.size
-
 /** The last pick: the bell alone, with no sport beside it. */
-val SPORT_NONE = SPORT_ANOTHER + 1
+val SPORT_NONE = Sport.OTHER + 1
 
 /** The bell sizes Set up offers, in kg; the gear page has every size. */
 val SETUP_BELLS = listOf(8.0, 12.0, 16.0, 20.0, 24.0, 32.0)
@@ -40,7 +37,7 @@ const val DEFAULT_SESSION_MINUTES = 15
 
 /**
  * Set up as it stands: the four answers, and the [week] they build. [sport] is a place among [Sport.named],
- * [SPORT_ANOTHER] (named by [sportName]), [SPORT_NONE] or [SPORT_UNANSWERED]; [weekdays] a bit per day, Monday
+ * [Sport.OTHER] (named by [sportName]), [SPORT_NONE] or [SPORT_UNANSWERED]; [weekdays] a bit per day, Monday
  * bit 0; [bellChoices] the sizes offered, the [bells] owned among them; [programMinutes] about how long the
  * week's program takes a day.
  */
@@ -55,11 +52,10 @@ data class WeekSetupUiState(
     val programMinutes: IntRange? = null,
 ) {
     /** The sport answered, as far as it is: null for none, the bell alone, or one not yet named. */
-    val answeredSport: Sport? get() = Sport.named.getOrNull(sport)
-        ?: Sport.custom(sportName).takeIf { sport == SPORT_ANOTHER }
+    val answeredSport: Sport? get() = Sport.picked(sport, sportName)
 
     /** Whether a sport is picked, so its days are asked for. */
-    val asksDays: Boolean get() = sport in 0..SPORT_ANOTHER
+    val asksDays: Boolean get() = sport in 0..Sport.OTHER
 
     /** Whether nothing is answered yet that a week could be made of. */
     val unanswered: Boolean get() = sport == SPORT_UNANSWERED && bells.isEmpty() && week.program == null
@@ -106,10 +102,10 @@ class WeekSetupViewModel(
             uiState(answers.value, planStore.planned.value, programStore.following.value, lift.restSeconds.value),
         )
 
-    /** Answers the first question: a place among [Sport.named], [SPORT_ANOTHER] or [SPORT_NONE]. */
+    /** Answers the first question: a place among [Sport.named], [Sport.OTHER] or [SPORT_NONE]. */
     fun pickSport(sport: Int) = answer { it.copy(sport = sport.coerceIn(0, SPORT_NONE)) }
 
-    /** Names the sport of [SPORT_ANOTHER]. */
+    /** Names the sport of [Sport.OTHER]. */
     fun nameSport(name: String) = answer { it.copy(sportName = name.take(Sport.NAME_MAX_LENGTH)) }
 
     /** The days the sport is on, a bit per day. */
@@ -181,7 +177,7 @@ class WeekSetupViewModel(
             sport = when {
                 was == null -> SPORT_UNANSWERED
                 named >= 0 -> named
-                else -> SPORT_ANOTHER
+                else -> Sport.OTHER
             },
             sportName = (was as? Sport.Custom)?.name.orEmpty(),
             weekdays = if (was == null) 0 else weekdayMask(days.toSet()),

@@ -76,7 +76,7 @@ internal fun SportQuestion(state: WeekSetupUiState, actions: WeekSetupActions) {
         label = { sportChoice(it) },
         onSelect = actions.onSport,
     )
-    if (state.sport == SPORT_ANOTHER) {
+    if (state.sport == Sport.OTHER) {
         val name = rememberTextFieldState(state.sportName)
         LaunchedEffect(name) { snapshotFlow { name.text.toString() }.collect(actions.onSportName) }
         NameField(
@@ -92,7 +92,7 @@ internal fun SportQuestion(state: WeekSetupUiState, actions: WeekSetupActions) {
 
 @Composable
 private fun sportChoice(index: Int): String = when (index) {
-    SPORT_ANOTHER -> stringResource(Res.string.setup_sport_another)
+    Sport.OTHER -> stringResource(Res.string.setup_sport_another)
     SPORT_NONE -> stringResource(Res.string.setup_sport_none)
     else -> sportName(Sport.named[index])
 }

@@ -20,6 +20,15 @@ sealed interface Sport {
         /** The sports offered by name, in the order they are listed. */
         val named: List<Sport> = listOf(Bjj, Climbing, Running)
 
+        /** The place after [named] in a list of them: the sport the user names themself. */
+        val OTHER: Int = named.size
+
+        /**
+         * The sport picked from a list of [named] then [OTHER]: one of them by [index], or at [OTHER] the one [typed]
+         * names, null while it names none or the pick is past both.
+         */
+        fun picked(index: Int, typed: String): Sport? = named.getOrNull(index) ?: custom(typed).takeIf { index == OTHER }
+
         /** The sport [typed] names, or null while it names none. */
         fun custom(typed: String): Custom? = typed.trim().take(NAME_MAX_LENGTH).trim().ifEmpty { null }?.let(::Custom)
     }

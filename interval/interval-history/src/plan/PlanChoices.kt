@@ -40,12 +40,6 @@ import org.jetbrains.compose.resources.stringResource
 
 // What the add sheet's lists are made of, and its Sport side.
 
-/** The pick after the sports the sheet names: one the user names themself. */
-internal val SPORT_OTHER = Sport.named.size
-
-/** The sport picked: one of [Sport.named] by [index], or past them the one [name] names, null while it names none. */
-internal fun pickedSport(index: Int, name: String): Sport? = Sport.named.getOrNull(index) ?: Sport.custom(name)
-
 /**
  * The Sport side: the sports named, the [picked] one checked, then one of the user's own, whose [name] is typed
  * under the list once it is the pick.
@@ -63,11 +57,11 @@ internal fun SportChoiceList(picked: Int, name: TextFieldState, onPick: (Int) ->
             PickRow(
                 stringResource(Res.string.sport_other),
                 detail = null,
-                selected = picked >= SPORT_OTHER,
-                onPick = { onPick(SPORT_OTHER) },
+                selected = picked >= Sport.OTHER,
+                onPick = { onPick(Sport.OTHER) },
             )
         }
-        if (picked >= SPORT_OTHER) {
+        if (picked >= Sport.OTHER) {
             NameField(
                 name,
                 placeholder = stringResource(Res.string.plan_sport_name_placeholder),

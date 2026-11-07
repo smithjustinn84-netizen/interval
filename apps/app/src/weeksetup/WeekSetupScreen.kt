@@ -68,7 +68,7 @@ fun WeekSetupRoute(onBack: () -> Unit, onShowWeek: () -> Unit, onPrograms: () ->
 class WeekSetupActions(
     /** Leaves with nothing built: Back, and Skip for now. */
     val onBack: () -> Unit = {},
-    /** The first answer: a place among the sports named, [SPORT_ANOTHER] or [SPORT_NONE]. */
+    /** The first answer: a place among the sports named, [Sport.OTHER] or [SPORT_NONE]. */
     val onSport: (Int) -> Unit = {},
     val onSportName: (String) -> Unit = {},
     /** The sport's days, a bit per day. */

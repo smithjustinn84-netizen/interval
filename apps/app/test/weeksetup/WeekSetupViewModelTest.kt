@@ -113,7 +113,7 @@ class WeekSetupViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `a sport of the user's own is planned once it is named`() {
-        viewModel.pickSport(SPORT_ANOTHER)
+        viewModel.pickSport(Sport.OTHER)
         viewModel.setWeekdays(weekdayMask(setOf(TUE)))
         assertNull(viewModel.state.value.week.sport)
 
@@ -160,7 +160,7 @@ class WeekSetupViewModelTest : MainDispatcherTest() {
 
         val state = viewModel.state.value
 
-        assertEquals(SPORT_ANOTHER, state.sport)
+        assertEquals(Sport.OTHER, state.sport)
         assertEquals("Judo", state.sportName)
         assertEquals(Sport.Custom("Judo"), state.week.sport)
     }
@@ -203,12 +203,12 @@ class WeekSetupViewModelTest : MainDispatcherTest() {
     @Test
     fun `the answers outlive the view model`() {
         answerBjj()
-        viewModel.pickSport(SPORT_ANOTHER)
+        viewModel.pickSport(Sport.OTHER)
         viewModel.nameSport("Judo")
 
         val state = viewModel().state.value
 
-        assertEquals(SPORT_ANOTHER, state.sport)
+        assertEquals(Sport.OTHER, state.sport)
         assertEquals("Judo", state.sportName)
         assertEquals(weekdayMask(setOf(MON, WED, FRI)), state.weekdays)
         assertEquals(setOf(16.0), state.bells)

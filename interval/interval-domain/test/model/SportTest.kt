@@ -26,4 +26,14 @@ class SportTest {
         assertEquals("Trail", shortSportName("Trail running"))
         assertEquals("Yoga", shortSportName(" Yoga flow"))
     }
+
+    @Test
+    fun `a pick from the list is a sport named or the one typed after them`() {
+        assertEquals(Sport.Bjj, Sport.picked(0, "ignored"))
+        assertEquals(Sport.Running, Sport.picked(2, ""))
+        assertEquals(Sport.Custom("Judo"), Sport.picked(Sport.OTHER, " Judo"))
+        assertNull(Sport.picked(Sport.OTHER, " "))
+        assertNull(Sport.picked(Sport.OTHER + 1, "Judo"))
+        assertNull(Sport.picked(-1, "Judo"))
+    }
 }
