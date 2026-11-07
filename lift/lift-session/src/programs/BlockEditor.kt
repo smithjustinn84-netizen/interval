@@ -155,7 +155,8 @@ internal fun BlockCounts(
     if (!held && !lockKind) {
         GroupLabel(stringResource(Res.string.block_kind))
         val kinds = if (block.kind in offeredKinds) offeredKinds else offeredKinds + block.kind
-        SegmentedPicker(kinds, block.kind, { kindName(it) }, { k -> onChange { it.asKind(k) } })
+        // Four kinds on a phone: no check, so the chosen one keeps its whole name.
+        SegmentedPicker(kinds, block.kind, { kindName(it) }, { k -> onChange { it.asKind(k) } }, check = false)
     }
     StepperRow(
         roundsName(block.kind),

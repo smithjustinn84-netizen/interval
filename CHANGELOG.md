@@ -28,6 +28,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   all under 400 ms, drawn as plain sines in the app and played on the media stream over the user's music. Lift's
   timers sound the same: an EMOM's or a rest's last three seconds tick, its minute or the next set starts on the
   rising "go", and an EMOM ends on the three-note resolve.
+- The Armor Building Complex either way: the ABC on the minute in Armor Building Formula and 20 minutes beside BJJ
+  can be taken as many as you can for the same minutes, from today's plan ("As many as you can", and back with
+  "On the minute"), before its first round; the program keeps its own. The ABC challenge says which way its best
+  was done ("Best: 14 complexes in 20 minutes, as many as you can"), and the session's Up next card says a density
+  block's cap ("Up next · 15 min cap") rather than "1 of 1 sets".
 
 ## [0.5.0] — Unreleased
 

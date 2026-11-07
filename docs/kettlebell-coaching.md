@@ -101,7 +101,10 @@ All of these are worked out from the logged sets, with nothing new stored (`Benc
 **Challenges:**
 - **10,000 Swings**: one- and two-hand swings counted over 28 days, or over the run while the program is followed.
 - **Snatch test**: the most snatches in any five minutes of a session, against 100.
-- **Armor Building Complex**: the most complexes in any twenty minutes, a personal best.
+- **Armor Building Complex**: the most complexes in any twenty minutes, a personal best, and which protocol it came
+  from: on the minute, or as many as you can (`AbcProtocol`, from the session's plan or its program's day). A
+  program's ABC on the minute can be taken the other way for a day from today's plan ("As many as you can", the
+  same minutes as a density block); the program keeps its own.
 - **Bodyweight get-up**: the heaviest get-up as a share of the body weight set in Settings.
 
 **Lifetime totals** for each lift appear on the lift's page, with milestones at 1,000, 5,000, 10,000 and 25,000 named on the summary.

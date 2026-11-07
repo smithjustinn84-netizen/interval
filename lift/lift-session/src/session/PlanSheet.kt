@@ -32,10 +32,12 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.sheetIsSideways
 import dev.justinsmith.lift.domain.Block
+import dev.justinsmith.lift.domain.BlockKind
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.ExerciseFilters
 import dev.justinsmith.lift.domain.PlanRow
 import dev.justinsmith.lift.domain.SessionPlan
+import dev.justinsmith.lift.domain.otherAbcProtocol
 import dev.justinsmith.lift.library.ExercisePicker
 import dev.justinsmith.lift.programs.BlockChoices
 import dev.justinsmith.lift.programs.BlockCounts
@@ -43,6 +45,8 @@ import dev.justinsmith.lift.programs.BlockLoad
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.block_done
 import dev.justinsmith.lift.session.resources.density_rounds
+import dev.justinsmith.lift.session.resources.plan_abc_as_many
+import dev.justinsmith.lift.session.resources.plan_abc_on_the_minute
 import dev.justinsmith.lift.session.resources.plan_block_title
 import dev.justinsmith.lift.session.resources.plan_changed
 import dev.justinsmith.lift.session.resources.plan_done_of
@@ -225,12 +229,7 @@ internal fun PlanBlockSheet(
                     modifier = Modifier.semantics { heading() },
                 )
                 Text(
-                    row.rounds?.let { pluralStringResource(Res.plurals.density_rounds, it, it) }
-                        ?: stringResource(
-                            Res.string.plan_done_of,
-                            row.done,
-                            row.entry.copy(kept = null).plannedSets().size,
-                        ),
+                    row.doneText(of = row.entry.copy(kept = null).plannedSets().size),
                     style = IntervalTheme.type.meta,
                     color = IntervalTheme.palette.textDim,
                 )
@@ -259,6 +258,7 @@ internal fun PlanBlockSheet(
                     lockKind = row.done > 0,
                     rangeEditable = false,
                 )
+                OtherAbcProtocol(row, actions.onChange)
                 AccentButton(
                     stringResource(Res.string.block_done),
                     onClick = hide,
@@ -278,8 +278,27 @@ internal fun PlanBlockSheet(
     }
 }
 
-/** How much of [PlanRow]'s block is done: "2 of 3", or a density block's rounds, "12 rounds". */
+/**
+ * The ABC either way: before its first round, the other protocol for the same minutes ("As many as you can", or
+ * "On the minute" back), for today only. Nothing for any other block.
+ */
 @Composable
-private fun PlanRow.doneText(): String =
+private fun OtherAbcProtocol(row: PlanRow, onChange: ((Block) -> Block) -> Unit) {
+    val other = row.block.otherAbcProtocol()?.takeIf { row.done == 0 } ?: return
+    SecondaryButton(
+        stringResource(
+            if (other.kind == BlockKind.Density) Res.string.plan_abc_as_many else Res.string.plan_abc_on_the_minute,
+        ),
+        { onChange { it.otherAbcProtocol() ?: it } },
+        Modifier.fillMaxWidth().padding(top = Spacing.space8),
+    )
+}
+
+/**
+ * How much of [PlanRow]'s block is done: "2 of 3" ([of] its sets, by default those planned now), or a density
+ * block's rounds, "12 rounds".
+ */
+@Composable
+private fun PlanRow.doneText(of: Int = total): String =
     rounds?.let { pluralStringResource(Res.plurals.density_rounds, it, it) }
-        ?: stringResource(Res.string.plan_done_of, done, total)
+        ?: stringResource(Res.string.plan_done_of, done, of)

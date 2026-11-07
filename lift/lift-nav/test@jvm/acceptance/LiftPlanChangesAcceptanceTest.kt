@@ -7,7 +7,8 @@ import kotlin.test.assertTrue
 /**
  * `journeys/lift-plan-changes.xml`: day 1 of Goblet squat and row changed in the session (a heavier bell, a
  * set changed after logging, the rows skipped), and the change kept in a copy followed from day 2. Then a day
- * done in full that felt all out: its steps up wait, and leaving keeps the program as it was.
+ * done in full that felt all out: its steps up wait, and leaving keeps the program as it was. And the ABC either
+ * way: *20 minutes beside BJJ*'s ABC on the minute taken as many as you can for today, the program untouched.
  */
 class LiftPlanChangesAcceptanceTest {
     @Test
@@ -67,4 +68,23 @@ class LiftPlanChangesAcceptanceTest {
         seeProgramDay("Day 2 of 8 · week 1", "Goblet squat and row", "Start day 2")
         assertTrue(app.storage.programs.rows.value.isEmpty())
     }
+
+    @Test
+    fun `the ABC on the minute is taken as many as you can for today and the program keeps it on the minute`() =
+        liftScenario {
+            followProgram("20 minutes beside BJJ")
+            tap("Start day 1")
+            see("Start EMOM")
+            openTodaysPlan()
+            tap("Armor Building Complex")
+            tap("As many as you can")
+            see("On the minute")
+            see("Minutes")
+            tap("Done")
+            see("Up next · 15 min cap")
+            see("Start the clock")
+            assertTrue(app.storage.programs.rows.value.isEmpty())
+            startTheClock()
+            roundsDone(2, total = 2)
+        }
 }

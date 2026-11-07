@@ -3,7 +3,9 @@
     Follow Goblet squat and row, change day 1 in the session (a heavier bell, a set changed after logging,
     the rows skipped), finish, and keep the change in a copy of the program, which is then followed from
     day 2 with the bell planned. Then day 2 done in full, said to have felt all out: its steps up wait, off,
-    until one is turned on. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
+    until one is turned on. Last, the ABC either way: 20 minutes beside BJJ's ABC on the minute taken as many as
+    you can for today, the program left on the minute. Run on a fresh install (adb shell pm clear
+    dev.justinsmith.interval).
   </description>
   <actions>
     <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
@@ -39,5 +41,13 @@
     <action>Verify that "It felt very hard: these wait until you turn them on." shows under "Next time", both switches are off, and no Save is offered</action>
     <action>Tap "Done"</action>
     <action>Verify that no "Keep today's changes?" question is asked, and Lift shows "Day 3 of 8 · week 2" with "Goblet squat" still "3 × 10 (10–15)"</action>
+    <action>Tap "All programs", find "20 minutes beside BJJ", tap it, then "Follow this program" and "Switch"</action>
+    <action>Tap "Start day 1" and verify that the session's foot offers "Start EMOM"</action>
+    <action>Tap "Today's plan", then "Armor Building Complex"</action>
+    <action>Verify that the sheet offers "As many as you can" under the block's minutes, at 15; tap it</action>
+    <action>Verify that "Time cap" is now picked, "Minutes" still reads 15, and the button reads "On the minute"; tap "Done"</action>
+    <action>Verify that Up next reads "Up next · 15 min cap" and the foot offers "Start the clock"</action>
+    <action>Press Back, then "Leave": nothing is logged, so the session isn't kept</action>
+    <action>Verify that Lift shows "Day 1 of 12 · week 1", "Armor Building Complex" "1 every minute for 15 minutes": the program is still on the minute</action>
   </actions>
 </journey>

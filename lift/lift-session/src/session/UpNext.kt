@@ -20,6 +20,7 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.fadeThroughContent
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_joined
+import dev.justinsmith.lift.session.resources.density_cap
 import dev.justinsmith.lift.session.resources.hold_time_it
 import dev.justinsmith.lift.session.resources.next_change
 import dev.justinsmith.lift.session.resources.next_day_done
@@ -98,7 +99,9 @@ private fun NextSetCard(
                 stringResource(
                     Res.string.common_joined,
                     stringResource(Res.string.next_title),
-                    stringResource(Res.string.next_progress, next.number, next.total),
+                    // A density block's one planned set is its whole cap: its minutes, not "1 of 1 sets".
+                    next.densityMinutes?.let { stringResource(Res.string.density_cap, it) }
+                        ?: stringResource(Res.string.next_progress, next.number, next.total),
                 ),
                 style = IntervalTheme.type.caption,
                 color = palette.textDim,

@@ -1,8 +1,11 @@
 package dev.justinsmith.lift.session
 
+import dev.justinsmith.lift.domain.BlockKind
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.otherAbcProtocol
+import dev.justinsmith.lift.domain.program
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -66,5 +69,19 @@ class TodayPlanEditorTest {
 
         editor.changeBlock(0) { it.copy(rounds = it.rounds + 1) }
         assertNull(repository.sessions.active.value?.plan)
+    }
+
+    @Test
+    fun `the ABC on the minute taken as many as you can changes today's plan and never the program`() {
+        val bjj = ProgramKey.BuiltIn(ProgramId.BjjKettlebell)
+        repository.programs.follow(bjj)
+        repository.sessions.startSession(bjj)
+        editor.changeBlock(0) { it.otherAbcProtocol() ?: it }
+
+        assertEquals(BlockKind.Density to 15, blocks.single().block.let { it.kind to it.rounds })
+        val day = assertNotNull(repository.programs.programDay.value)
+        assertEquals(BlockKind.Emom, day.program.day(1).blocks.single().kind)
+        assertEquals(15, editor.next(repository.sessions.active.value, emptyList(), SetDraft())?.densityMinutes)
+        assertEquals(program(ProgramId.BjjKettlebell), day.program)
     }
 }

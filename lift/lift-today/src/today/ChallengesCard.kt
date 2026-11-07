@@ -11,6 +11,7 @@ import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.ProgressBar
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.lift.domain.AbcProtocol
 import dev.justinsmith.lift.domain.Challenge
 import dev.justinsmith.lift.domain.SNATCH_TEST_REPS
 import dev.justinsmith.lift.domain.TEN_THOUSAND
@@ -18,6 +19,8 @@ import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.today.resources.Res
 import dev.justinsmith.lift.today.resources.today_challenge_abc
 import dev.justinsmith.lift.today.resources.today_challenge_abc_best
+import dev.justinsmith.lift.today.resources.today_challenge_abc_best_as_many
+import dev.justinsmith.lift.today.resources.today_challenge_abc_best_on_the_minute
 import dev.justinsmith.lift.today.resources.today_challenge_get_up
 import dev.justinsmith.lift.today.resources.today_challenge_get_up_best
 import dev.justinsmith.lift.today.resources.today_challenge_snatch
@@ -59,7 +62,14 @@ internal fun ChallengesCard(challenges: List<Challenge>, modifier: Modifier = Mo
 
                 is Challenge.ArmorBuilding -> ChallengeRow(
                     Res.string.today_challenge_abc,
-                    stringResource(Res.string.today_challenge_abc_best, challenge.best),
+                    stringResource(
+                        when (challenge.protocol) {
+                            AbcProtocol.OnTheMinute -> Res.string.today_challenge_abc_best_on_the_minute
+                            AbcProtocol.AsManyAsYouCan -> Res.string.today_challenge_abc_best_as_many
+                            null -> Res.string.today_challenge_abc_best
+                        },
+                        challenge.best,
+                    ),
                     share = null,
                 )
 

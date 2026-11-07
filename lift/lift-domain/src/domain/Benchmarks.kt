@@ -42,16 +42,32 @@ fun crossedMilestone(before: Int, after: Int): Int? = milestones.lastOrNull { it
  * The most reps of [exercise] in any [minutes] of one of [sessions], from sets logged as they were done
  * ([loggedAsDone]): each set's reps counted where it ended. Null with none counted.
  */
-fun mostInWindow(exercise: Exercise, sessions: List<LiftSession>, minutes: Int): Int? = sessions.mapNotNull { session ->
+fun mostInWindow(exercise: Exercise, sessions: List<LiftSession>, minutes: Int): Int? =
+    sessions.mapNotNull { mostInWindow(exercise, it, minutes) }.maxOrNull()
+
+/** The most reps of [exercise] in any [minutes] of [session], as [mostInWindow] counts them; null with none. */
+private fun mostInWindow(exercise: Exercise, session: LiftSession, minutes: Int): Int? {
     val sets = session.sets.filter { it.exercise.key == exercise.key && it.seconds == null && it.reps > 0 }
         .sortedBy { it.loggedAtEpochMillis }
-    if (sets.isEmpty() || !loggedAsDone(sets)) return@mapNotNull null
+    if (sets.isEmpty() || !loggedAsDone(sets)) return null
     val window = minutes * MILLIS_PER_MINUTE
-    sets.indices.maxOf { first ->
+    return sets.indices.maxOf { first ->
         val start = sets[first].loggedAtEpochMillis
         sets.drop(first).takeWhile { it.loggedAtEpochMillis - start < window }.sumOf { it.reps }
     }
-}.maxOrNull()
+}
+
+/**
+ * The ABC's best in any [ABC_MINUTES] of [sessions], and the protocol of the session it came from (by its plan, or
+ * its day of one of [programs]); the earliest session of a best tied wins. Null with none counted.
+ */
+fun armorBuildingBest(sessions: List<LiftSession>, programs: List<Program>): Challenge.ArmorBuilding? =
+    sessions.sortedBy { it.startedAtEpochMillis }
+        .mapNotNull { session ->
+            mostInWindow(BuiltInExercise.ArmorBuildingComplex, session, ABC_MINUTES)?.let { session to it }
+        }
+        .maxByOrNull { it.second }
+        ?.let { (session, best) -> Challenge.ArmorBuilding(best, abcProtocolOf(session, programs)) }
 
 /** A benchmark worth chasing, and how far toward it the sets logged have come. */
 sealed interface Challenge {
@@ -65,8 +81,11 @@ sealed interface Challenge {
         val done: Boolean get() = best >= SNATCH_TEST_REPS
     }
 
-    /** The most Armor Building Complexes in any twenty minutes: a best, with no target. */
-    data class ArmorBuilding(val best: Int) : Challenge
+    /**
+     * The most Armor Building Complexes in any twenty minutes: a best, with no target, and the [protocol] of the
+     * session it came from (null for a free session's).
+     */
+    data class ArmorBuilding(val best: Int, val protocol: AbcProtocol? = null) : Challenge
 
     /** The heaviest get-up, [kg], as a [share] of the body weight; a whole one is the goal. */
     data class BodyweightGetUp(val kg: Double, val share: Double) : Challenge {
@@ -77,7 +96,8 @@ sealed interface Challenge {
 /**
  * The challenges under way over [sessions] by [nowMillis]: 10,000 Swings with [SWING_CHALLENGE_FROM] swings in its
  * window (or while its program, [following], is followed, from [followedSince]), the snatch test and the ABC once
- * either has been done as it was logged, and the bodyweight get-up once there is a get-up and a [bodyWeightKg].
+ * either has been done as it was logged (the ABC's by the protocol of its best, its day found among [programs]), and
+ * the bodyweight get-up once there is a get-up and a [bodyWeightKg].
  */
 @Suppress("detekt.LongParameterList") // What the challenges are counted from.
 fun challenges(
@@ -86,6 +106,7 @@ fun challenges(
     following: ProgramKey?,
     followedSince: Long?,
     bodyWeightKg: Double?,
+    programs: List<Program> = builtInPrograms,
 ): List<Challenge> {
     val ofProgram = following == ProgramKey.BuiltIn(ProgramId.TenThousandSwings) && followedSince != null
     val since = if (ofProgram) followedSince else nowMillis - SWING_CHALLENGE_DAYS * MILLIS_PER_DAY
@@ -95,7 +116,7 @@ fun challenges(
     return listOfNotNull(
         Challenge.TenThousandSwings(swung, ofProgram).takeIf { swung >= SWING_CHALLENGE_FROM || ofProgram },
         mostInWindow(BuiltInExercise.Snatch, sessions, SNATCH_TEST_MINUTES)?.let(Challenge::SnatchTest),
-        mostInWindow(BuiltInExercise.ArmorBuildingComplex, sessions, ABC_MINUTES)?.let(Challenge::ArmorBuilding),
+        armorBuildingBest(sessions, programs),
         bodyWeightKg?.takeIf { it > 0 }?.let { weight ->
             getUps.maxOfOrNull { it.load.kg }?.takeIf { it > 0 }?.let { Challenge.BodyweightGetUp(it, it / weight) }
         },

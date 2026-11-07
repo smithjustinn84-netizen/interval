@@ -161,6 +161,7 @@ class TodayViewModel(
             followed?.program?.key,
             followed?.startedAtEpochMillis,
             weight,
+            builtInPrograms + programStore.customPrograms.value,
         ),
     )
 

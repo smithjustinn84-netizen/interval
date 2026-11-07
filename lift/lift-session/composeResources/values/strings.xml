@@ -235,6 +235,9 @@
     <string name="plan_skip_rest">Skip the rest</string>
     <string name="plan_skip_block">Skip this block</string>
     <string name="plan_unskip">Bring it back</string>
+    <!-- The Armor Building Complex's other protocol for today, for the same minutes. -->
+    <string name="plan_abc_as_many">As many as you can</string>
+    <string name="plan_abc_on_the_minute">On the minute</string>
     <string name="plan_hint">Changes here are for today. When you finish, you can keep them in the program.</string>
     <string name="emom_minutes">Minutes</string>
     <string name="emom_fewer_minutes">Fewer minutes</string>

@@ -88,4 +88,24 @@ class BenchmarksTest {
         val abc = challenges(listOf(session("abc", *rounds.toTypedArray())), 40 * DAY, null, null, null)
         assertEquals(Challenge.ArmorBuilding(14), abc.single())
     }
+
+    @Test
+    fun `the ABC's best says the protocol of the session it came from`() {
+        fun rounds(n: Int, gap: Long) = (0 until n).map {
+            SetLog.of(0, BuiltInExercise.ArmorBuildingComplex, 24.0, 1, null, 30_000L + it * gap, double = true)
+        }
+        val abf = ProgramKey.BuiltIn(ProgramId.ArmorBuildingFormula)
+        val onTheMinute = session("emom", *rounds(12, 60_000L).toTypedArray()).copy(program = abf, day = 1)
+        val day = program(ProgramId.ArmorBuildingFormula).day(1)
+        val capped = SessionPlan.of(day.blocks).change(0) { it.otherAbcProtocol() ?: it }
+        val asMany = session("cap", *rounds(14, 85_000L).toTypedArray()).copy(program = abf, day = 1, plan = capped)
+        assertEquals(
+            Challenge.ArmorBuilding(14, AbcProtocol.AsManyAsYouCan),
+            challenges(listOf(onTheMinute, asMany), 40 * DAY, null, null, null).single(),
+        )
+        assertEquals(
+            Challenge.ArmorBuilding(12, AbcProtocol.OnTheMinute),
+            challenges(listOf(onTheMinute), 40 * DAY, null, null, null).single(),
+        )
+    }
 }
