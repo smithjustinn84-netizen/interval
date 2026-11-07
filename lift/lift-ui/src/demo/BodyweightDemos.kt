@@ -541,8 +541,11 @@ private fun breathing(
     props = props,
 )
 
-/** On the back with the feet planted, the hips driven up off the floor and lowered; one leg held out if [single]. */
-private fun bridge(single: Boolean): ExerciseDemo {
+/**
+ * On the back with the feet planted, the hips driven up off the floor and lowered; one leg held out if [single],
+ * with [props] round it.
+ */
+internal fun bridge(single: Boolean, props: List<Prop> = emptyList()): ExerciseDemo {
     val down = Pose(shin = -40.8f, thigh = -126.2f, torso = -80f, upperArm = 90f, forearm = 90f)
     val up = Pose(shin = -27.9f, thigh = -102f, torso = -100f, upperArm = 90f, forearm = 90f)
     fun leg(pose: Pose) = if (single) pose.copy(farShin = pose.thigh, farThigh = pose.thigh) else pose
@@ -559,5 +562,6 @@ private fun bridge(single: Boolean): ExerciseDemo {
         secondsPerRep = 3f,
         still = 0.47f,
         view = Rect(left = -80f, top = 180f, right = 300f, bottom = 380f),
+        props = props,
     )
 }

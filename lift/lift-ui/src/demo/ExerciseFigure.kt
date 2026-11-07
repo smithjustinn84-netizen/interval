@@ -123,7 +123,7 @@ private fun rememberRepClock(demo: ExerciseDemo, playing: Boolean): FloatState {
  * Draws [demo]'s [figure] fitted and centred in the canvas, its bell in [bell] with [trail] behind it. Back to
  * front: the bench, the far limbs, the trunk, then the near arm and leg in whichever order keeps a bell low
  * between the legs behind the near one and a bell held high in front of it. A bell circled behind the head
- * goes behind the trunk.
+ * goes behind the trunk. A band tied to a post behind the figure runs behind it; any other is drawn over it.
  */
 private fun DrawScope.drawFigure(
     demo: ExerciseDemo,
@@ -143,6 +143,12 @@ private fun DrawScope.drawFigure(
     }) {
         drawFloor(colors)
         demo.props.filter { it !is Rail }.forEach { drawProp(it, colors.farLeg) }
+        val bands = demo.props.filterIsInstance<Band>()
+        // A band tied behind the figure runs behind it; any other is held in front.
+        val (behindBands, frontBands) = bands.partition { band ->
+            listOf(band.from, band.to).any { it is BandEnd.Post && it.at.x < figure.hip.x }
+        }
+        behindBands.forEach { drawBand(it, figure, bell) }
         drawTrail(trail, bell)
         val behind = Offset(-Rig.FAR_LEG_OFFSET, 0f)
         val farLeg = listOf(figure.farToe + behind, figure.farHeel + behind, figure.farAnkle + behind)
@@ -168,6 +174,7 @@ private fun DrawScope.drawFigure(
             }
         }
         if (demo.hold == Hold.Bar) drawPlate(figure.hand, bell)
+        frontBands.forEach { drawBand(it, figure, bell) }
         // A bar to hang from goes over the fists that grip it.
         demo.props.filterIsInstance<Rail>().forEach { drawProp(it, colors.farLeg) }
     }
@@ -243,9 +250,19 @@ private fun DrawScope.drawPlate(sleeve: Offset, color: Color) {
 /** A prop behind the figure: a bench's top and legs, a wall, a bar seen end on. */
 private fun DrawScope.drawProp(prop: Prop, color: Color) = when (prop) {
     is Bench -> drawBench(prop, color)
+
     is Wall -> drawLine(color, Offset(prop.x, Rig.FLOOR), Offset(prop.x, Rig.view.top), Rig.WALL)
+
     is Rail -> drawCircle(color, Rig.RAIL, prop.at)
+
+    is Band -> listOf(prop.from, prop.to).filterIsInstance<BandEnd.Post>().forEach { post ->
+        drawLine(color, Offset(post.at.x, Rig.FLOOR), post.at - Offset(0f, Rig.POST * 2), Rig.POST, StrokeCap.Round)
+    }
 }
+
+/** A band stretched between its two ends, where [figure] has them now. */
+private fun DrawScope.drawBand(band: Band, figure: Figure, color: Color) =
+    drawLine(color, figure.place(band.from), figure.place(band.to), Rig.BAND, StrokeCap.Round)
 
 private fun DrawScope.drawBench(bench: Bench, color: Color) {
     val top = Rig.FLOOR - bench.height
@@ -253,13 +270,6 @@ private fun DrawScope.drawBench(bench: Bench, color: Color) {
     listOf(bench.from, bench.to).forEach { x ->
         drawLine(color, Offset(x, top), Offset(x, Rig.FLOOR), Rig.BENCH_LEG)
     }
-}
-
-/** Whether a bell at [bell] lies back along the forearm from [elbow] to [hand], rather than past the grip. */
-private fun rests(elbow: Offset, hand: Offset, bell: Offset): Boolean {
-    val forearm = hand - elbow
-    val reach = bell - hand
-    return forearm.x * reach.x + forearm.y * reach.y < 0f
 }
 
 private fun DrawScope.drawNearLeg(figure: Figure, color: Color) =

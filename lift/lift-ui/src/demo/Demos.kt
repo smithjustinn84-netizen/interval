@@ -3,7 +3,7 @@ package dev.justinsmith.lift.ui.demo
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.Exercise
 
-/** The demo drawn for this exercise, or null for one not drawn yet. */
+/** The demo drawn for this exercise: every built-in has one, and one of the user's own has none. */
 val Exercise.demo: ExerciseDemo?
     get() = builtInDemos[this]
 
@@ -78,5 +78,38 @@ private val builtInDemos: Map<Exercise, ExerciseDemo> by lazy {
         BuiltInExercise.DeadBug to DeadBugDemo,
         BuiltInExercise.Burpee to BurpeeDemo,
         BuiltInExercise.MountainClimber to MountainClimberDemo,
+        BuiltInExercise.BandPullApart to BandPullApartDemo,
+        BuiltInExercise.BandFacePull to BandFacePullDemo,
+        BuiltInExercise.BandSeatedRow to BandSeatedRowDemo,
+        BuiltInExercise.BandLatPulldown to BandLatPulldownDemo,
+        BuiltInExercise.BandChestPress to BandChestPressDemo,
+        BuiltInExercise.BandOverheadPress to BandOverheadPressDemo,
+        BuiltInExercise.BandBicepsCurl to BandBicepsCurlDemo,
+        BuiltInExercise.BandTricepsPushdown to BandTricepsPushdownDemo,
+        BuiltInExercise.BandPallofPress to BandPallofPressDemo,
+        BuiltInExercise.BandWoodchop to BandWoodchopDemo,
+        BuiltInExercise.BandSquat to BandSquatDemo,
+        BuiltInExercise.BandGoodMorning to BandGoodMorningDemo,
+        BuiltInExercise.BandGluteBridge to BandGluteBridgeDemo,
+        BuiltInExercise.BandLateralWalk to BandLateralWalkDemo,
+        BuiltInExercise.BandClamshell to BandClamshellDemo,
+        BuiltInExercise.Hundred to HundredDemo,
+        BuiltInExercise.RollUp to RollUpDemo,
+        BuiltInExercise.SingleLegCircles to SingleLegCirclesDemo,
+        BuiltInExercise.RollingLikeABall to RollingLikeABallDemo,
+        BuiltInExercise.SingleLegStretch to SingleLegStretchDemo,
+        BuiltInExercise.DoubleLegStretch to DoubleLegStretchDemo,
+        BuiltInExercise.Scissors to ScissorsDemo,
+        BuiltInExercise.CrissCross to CrissCrossDemo,
+        BuiltInExercise.SpineStretchForward to SpineStretchForwardDemo,
+        BuiltInExercise.Saw to SawDemo,
+        BuiltInExercise.Swan to SwanDemo,
+        BuiltInExercise.SingleLegKick to SingleLegKickDemo,
+        BuiltInExercise.SideKickSeries to SideKickSeriesDemo,
+        BuiltInExercise.Teaser to TeaserDemo,
+        BuiltInExercise.Swimming to SwimmingDemo,
+        BuiltInExercise.ShoulderBridge to ShoulderBridgeDemo,
+        BuiltInExercise.Seal to SealDemo,
+        BuiltInExercise.LegPullFront to LegPullFrontDemo,
     )
 }

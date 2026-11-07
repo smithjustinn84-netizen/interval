@@ -25,8 +25,17 @@ class ExerciseFigureTest {
     }
 
     @Test
-    fun `a figure draws one bell or two or leaning on a bench at any moment`() = runUiTest {
-        val demos = listOf(GetUpDemo, ArmorBuildingComplexDemo, RowDemo, HaloDemo, SnatchDemo, FarmersWalkDemo)
+    fun `a figure draws one bell or two or leaning on a bench or a band at any moment`() = runUiTest {
+        val demos = listOf(
+            GetUpDemo,
+            ArmorBuildingComplexDemo,
+            RowDemo,
+            HaloDemo,
+            SnatchDemo,
+            FarmersWalkDemo,
+            BandChestPressDemo,
+            BandClamshellDemo,
+        )
         setThemedContent {
             Column {
                 demos.forEach { demo ->

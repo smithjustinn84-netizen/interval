@@ -1,10 +1,10 @@
 package dev.justinsmith.lift.ui.demo
 
 import dev.justinsmith.lift.domain.BuiltInExercise
-import dev.justinsmith.lift.domain.Equipment
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -12,13 +12,10 @@ class ExerciseDemoTest {
     private val demos = BuiltInExercise.entries.mapNotNull { it.demo }
 
     @Test
-    fun `every bell bar and bodyweight lift is drawn and nothing else yet`() {
+    fun `every built-in lift is drawn`() {
         assertSame(TwoHandSwingDemo, BuiltInExercise.TwoHandSwing.demo)
         assertSame(GobletSquatDemo, BuiltInExercise.GobletSquat.demo)
-        BuiltInExercise.entries.forEach { exercise ->
-            val drawn = exercise.equipment in setOf(Equipment.Kettlebell, Equipment.Barbell, Equipment.Bodyweight)
-            assertEquals(drawn, exercise.demo != null, "$exercise is drawn: ${exercise.demo != null}")
-        }
+        BuiltInExercise.entries.forEach { exercise -> assertNotNull(exercise.demo, "$exercise is not drawn") }
     }
 
     @Test
@@ -91,6 +88,9 @@ class ExerciseDemoTest {
                 val figure = demo.figureAt(step / 100f)
                 val drawn = if (demo.hold == Hold.Pair) figure.joints else figure.joints - figure.farBell
                 drawn.forEach { joint -> assertTrue(demo.view.contains(joint), "$at: $joint is outside the view") }
+                demo.props.filterIsInstance<Band>().flatMap { listOf(it.from, it.to) }.forEach { end ->
+                    assertTrue(demo.view.contains(figure.place(end)), "$at: the band's $end is outside the view")
+                }
                 drawn.forEach { joint -> assertTrue(joint.y <= Rig.FLOOR + 0.5f, "$at: $joint is through the floor") }
                 val weight = when (demo.hold) {
                     Hold.Bar -> Rig.PLATE

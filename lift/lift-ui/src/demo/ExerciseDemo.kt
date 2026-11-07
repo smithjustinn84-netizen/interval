@@ -24,6 +24,9 @@ import kotlin.math.sin
  * with the toes down, as on the back foot of a lunge); [farUpperArm], [farForearm] and [farBell] the far arm's
  * and the bell in it, when it has one. Each is the near side's unless said otherwise. The near foot stands flat
  * unless [foot] pitches it, as on the toes of a calf raise or a push-up.
+ *
+ * [reach] is how much of the arms' length shows, both arms': all of it (1) unless they point toward the eye or
+ * away, as arms spread out to the sides do, seen from the side.
  */
 data class Pose(
     val shin: Float,
@@ -39,6 +42,7 @@ data class Pose(
     val farForearm: Float = forearm,
     val farBell: Float = bell,
     val foot: Float = 0f,
+    val reach: Float = 1f,
 ) {
     internal fun angles(): FloatArray = floatArrayOf(
         shin,
@@ -54,10 +58,11 @@ data class Pose(
         farForearm,
         farBell,
         foot,
+        reach,
     )
 
     internal companion object {
-        const val JOINTS = 13
+        const val JOINTS = 14
 
         /** The pose whose joints are [angles], in the order [Pose.angles] gives them. */
         fun of(angles: FloatArray): Pose {
@@ -76,6 +81,7 @@ data class Pose(
                 farForearm = joint.next(),
                 farBell = joint.next(),
                 foot = joint.next(),
+                reach = joint.next(),
             )
         }
     }
@@ -115,6 +121,32 @@ data class Wall(val x: Float) : Prop
 
 /** A bar to hang from or pull to, seen end on [at] where it is. */
 data class Rail(val at: Offset) : Prop
+
+/** A resistance band stretched from [from] to [to], drawn in the beat's colour as a bell is. */
+data class Band(val from: BandEnd, val to: BandEnd) : Prop
+
+/** Where a band is held, stood on or looped round, or tied to a post. */
+sealed interface BandEnd {
+    /** In the near hand. */
+    data object Hand : BandEnd
+
+    /** In the far hand. */
+    data object FarHand : BandEnd
+
+    /** Under the near foot, stood on. */
+    data object Foot : BandEnd
+
+    /** Round the near knee, or the far one: a loop round both. */
+    data object Knee : BandEnd
+
+    data object FarKnee : BandEnd
+
+    /** Across the back of the neck. */
+    data object Neck : BandEnd
+
+    /** Tied to a post, standing on the floor, [at] this height. */
+    data class Post(val at: Offset) : BandEnd
+}
 
 /**
  * One exercise drawn as a figure doing it: [keyframes] from 0 to 1, the last the same as the first (give or
@@ -328,6 +360,10 @@ object Rig {
     const val WALL = 6f
     const val RAIL = 8f
 
+    /** A band, and the post it is tied to. */
+    const val BAND = 4f
+    const val POST = 6f
+
     /**
      * The box every standing lift is drawn in, so they all share a scale: room for a bell held bottoms-up
      * overhead, and for a lunge's back foot.
@@ -349,15 +385,15 @@ fun Pose.figure(
     val knee = ankle.up(Rig.SHIN, shin)
     val hip = knee.up(Rig.THIGH, thigh)
     val shoulder = hip.up(Rig.TORSO, torso)
-    val elbow = shoulder.down(Rig.UPPER_ARM, upperArm)
-    val hand = elbow.down(Rig.FOREARM, forearm)
+    val elbow = shoulder.down(Rig.UPPER_ARM * reach, upperArm)
+    val hand = elbow.down(Rig.FOREARM * reach, forearm)
     val farKnee = hip.down(Rig.THIGH, -farThigh)
     val farAnkle = farKnee.down(Rig.SHIN, -farShin)
     val nearFoot = Offset(cos(foot.radians()), sin(foot.radians()))
     val farFoot = Offset(cos(farFoot.radians()), sin(farFoot.radians()))
     val farShoulder = shoulder - Offset(Rig.FAR_ARM_OFFSET, 0f)
-    val farElbow = farShoulder.down(Rig.UPPER_ARM, farUpperArm)
-    val farHand = farElbow.down(Rig.FOREARM, farForearm)
+    val farElbow = farShoulder.down(Rig.UPPER_ARM * reach, farUpperArm)
+    val farHand = farElbow.down(Rig.FOREARM * reach, farForearm)
     val figure = Figure(
         toe = ankle + nearFoot * Rig.FOOT,
         heel = ankle - nearFoot * Rig.HEEL,
@@ -383,6 +419,24 @@ fun Pose.figure(
         Root.Hand -> figure.moved(anchor - figure.hand)
         Root.Hips -> figure.moved(Offset(anchor.x - hip.x, Rig.FLOOR - figure.lowest()))
     }
+}
+
+/** Where [end] of a band is on this figure, the far side drawn a step behind as it is. */
+internal fun Figure.place(end: BandEnd): Offset = when (end) {
+    BandEnd.Hand -> hand
+    BandEnd.FarHand -> farHand
+    BandEnd.Foot -> Offset((ankle.x + toe.x) / 2, (ankle.y + toe.y) / 2)
+    BandEnd.Knee -> knee
+    BandEnd.FarKnee -> farKnee + Offset(-Rig.FAR_LEG_OFFSET, 0f)
+    BandEnd.Neck -> shoulder
+    is BandEnd.Post -> end.at
+}
+
+/** Whether a bell at [bell] lies back along the forearm from [elbow] to [hand], rather than past the grip. */
+internal fun rests(elbow: Offset, hand: Offset, bell: Offset): Boolean {
+    val forearm = hand - elbow
+    val reach = bell - hand
+    return forearm.x * reach.x + forearm.y * reach.y < 0f
 }
 
 /** How far down the figure reaches, its trunk, head and limbs by their thickness and its feet by their soles. */
