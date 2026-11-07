@@ -18,6 +18,14 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   the first, either side; the day's estimate takes its cap, an easier day cuts it by a quarter (never under 5
   minutes), the grip and the week's balance count it a round a minute, and a round's reps go up by one once the last
   two sessions each beat the best before them. Exports are schema 11.
+- Start launches: pressed, it sends one ring of the accent out from its centre across the page as the workout
+  rises, so the workout's ring reads as what the button sent up.
+
+### Changed
+- The six sounds are the app's own, the same on Android, iOS and desktop, in place of each platform's stock
+  tones: a short high tick for each of the last seconds, one mid note at halfway, one low note for get ready and
+  the warm-up, two notes rising into work, two falling into rest, and three rising to the octave at the finish,
+  all under 400 ms, drawn as plain sines in the app and played on the media stream over the user's music.
 
 ## [0.5.0] — Unreleased
 

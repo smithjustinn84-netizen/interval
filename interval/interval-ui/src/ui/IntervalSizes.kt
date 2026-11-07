@@ -20,6 +20,13 @@ object IntervalSizes {
     /** The play glyph inside Start workout. */
     val playIcon = 26.dp
 
+    /**
+     * Start's launch: the square its ring of the accent opens across, centred on the button and reaching past a
+     * phone's top from its foot, and the ring's stroke as it sets out, between a screen's burst and a row's.
+     */
+    val launchBurst = 480.dp
+    val launchStroke = 10.dp
+
     /** The largest a Timer stepper value grows to when the row has room; it never shrinks below a stat. */
     val stepperValueMax = 72.sp
 

@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalForeignApi::class)
+@file:OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 
 package dev.justinsmith.interval.platform
 
@@ -22,7 +22,10 @@ import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.UpcomingChange
 import dev.justinsmith.interval.timer.stepFor
+import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.usePinned
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
@@ -37,13 +40,18 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.onClose
 import org.koin.core.module.dsl.withOptions
 import org.koin.dsl.module
-import platform.AudioToolbox.AudioServicesPlaySystemSound
+import platform.AVFAudio.AVAudioPlayer
+import platform.AVFAudio.AVAudioSession
+import platform.AVFAudio.AVAudioSessionCategoryAmbient
+import platform.AVFAudio.setActive
 import platform.Foundation.NSApplicationSupportDirectory
+import platform.Foundation.NSData
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
 import platform.Foundation.NSURL
 import platform.Foundation.NSUserDomainMask
+import platform.Foundation.create
 import platform.UIKit.UIApplicationDidEnterBackgroundNotification
 import platform.UIKit.UIApplicationWillEnterForegroundNotification
 import platform.UIKit.UIImpactFeedbackGenerator
@@ -254,20 +262,34 @@ private class IosStorage : PlatformStorage {
 }
 
 /**
- * System sounds for beeps, core's [Speaker] (the speech synthesizer, which sets the audio session Ambient) for
- * voice, and the feedback generators for haptics. Cues mix over the user's music rather than stopping it.
+ * [ToneSynth]'s tones through an [AVAudioPlayer] each, built from the tone as a WAV in memory the first time it
+ * plays and kept; core's [Speaker] (the speech synthesizer) for voice, and the feedback generators for haptics. The
+ * audio session is Ambient, set here as the speaker sets it: cues mix over the user's music rather than stopping
+ * it, and follow the ringer switch as the system's own sounds do.
  */
 private class IosCuePlayer(speaker: Speaker) : CuePlayer {
-    override fun beep(beep: Beep) {
-        val sound: UInt = when (beep) {
-            Beep.Countdown -> 1103u
-            Beep.Halfway -> 1104u
-            Beep.Start -> 1113u
-            Beep.Work -> 1005u
-            Beep.Rest -> 1114u
-            Beep.Finished -> 1025u
+    private val log = Logger.withTag("IosCuePlayer")
+    private val players = mutableMapOf<Beep, AVAudioPlayer>()
+
+    init {
+        AVAudioSession.sharedInstance().run {
+            setCategory(AVAudioSessionCategoryAmbient, error = null)
+            setActive(true, error = null)
         }
-        AudioServicesPlaySystemSound(sound)
+    }
+
+    override fun beep(beep: Beep) {
+        val player = players[beep] ?: player(beep)?.also { players[beep] = it } ?: return
+        player.setCurrentTime(0.0)
+        player.play()
+    }
+
+    private fun player(beep: Beep): AVAudioPlayer? {
+        val wav = ToneSynth.wav(beep)
+        val data = wav.usePinned { NSData.create(bytes = it.addressOf(0), length = wav.size.toULong()) }
+        return runCatching { AVAudioPlayer(data = data, error = null).apply { prepareToPlay() } }
+            .onFailure { log.w(it) { "No player for $beep; the cue goes unheard" } }
+            .getOrNull()
     }
 
     private val speech = SpeechQueue(say = speaker::speak)
@@ -295,5 +317,7 @@ private class IosCuePlayer(speaker: Speaker) : CuePlayer {
 
     override fun release() {
         speech.close()
+        players.values.forEach { it.stop() }
+        players.clear()
     }
 }

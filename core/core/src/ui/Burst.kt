@@ -18,18 +18,24 @@ import kotlin.math.hypot
 
 /**
  * A moment marked: rings of [colors], the first outermost, ride an edge that opens from the centre to
- * past the corners over [Motion.BURST_MILLIS], thinning and fading as they go, as the intro's ripple
- * does onto the app. Once, [delayMillis] after it is composed, behind whatever it marks; nothing at
- * all under reduced motion. The rings start [stroke] wide: a screen's at [Sizes.burstStroke], a row's at
- * [Sizes.rowBurstStroke].
+ * past the corners over [durationMillis] ([Motion.BURST_MILLIS] unless the moment has a time of its own, as
+ * Start's launch keeps the workout's rise), thinning and fading as they go, as the intro's ripple does onto
+ * the app. Once, [delayMillis] after it is composed, behind whatever it marks; nothing at all under reduced
+ * motion. The rings start [stroke] wide: a screen's at [Sizes.burstStroke], a row's at [Sizes.rowBurstStroke].
  */
 @Composable
-fun Burst(colors: List<Color>, modifier: Modifier = Modifier, delayMillis: Int = 0, stroke: Dp = Sizes.burstStroke) {
+fun Burst(
+    colors: List<Color>,
+    modifier: Modifier = Modifier,
+    delayMillis: Int = 0,
+    stroke: Dp = Sizes.burstStroke,
+    durationMillis: Int = Motion.BURST_MILLIS,
+) {
     if (prefersReducedMotion()) return
     val opened = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
         delay(delayMillis.toLong())
-        opened.animateTo(1f, tween(Motion.BURST_MILLIS, easing = FastOutSlowInEasing))
+        opened.animateTo(1f, tween(durationMillis, easing = FastOutSlowInEasing))
     }
     Canvas(modifier.clearAndSetSemantics {}) {
         val t = opened.value

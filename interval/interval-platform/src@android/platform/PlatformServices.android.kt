@@ -1,8 +1,9 @@
 package dev.justinsmith.interval.platform
 
 import android.content.Context
-import android.media.AudioManager
-import android.media.ToneGenerator
+import android.media.AudioAttributes
+import android.media.AudioFormat
+import android.media.AudioTrack
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -42,13 +43,14 @@ private class AndroidStorage(private val context: Context) : PlatformStorage {
         context.filesDir.resolve("datastore/$PREFERENCES_NAME").absolutePath
 }
 
+/**
+ * [ToneSynth]'s tones through [AudioTrack]s on the media stream, core's [Speaker] for the voice and the vibrator for
+ * the haptics.
+ */
 private class AndroidCuePlayer(context: Context, speaker: Speaker) : CuePlayer {
     private val log = Logger.withTag("AndroidCuePlayer")
 
-    // STREAM_MUSIC so beeps follow the media volume and mix over the user's workout music.
-    private val tones: ToneGenerator? = runCatching { ToneGenerator(AudioManager.STREAM_MUSIC, 100) }
-        .onFailure { log.w(it) { "No tone generator; beeps disabled" } }
-        .getOrNull()
+    private val tones = ToneTracks(log)
 
     // The process's voice, core's: its engine starts with it, and outlives this player.
     private val lines = SpeechQueue(say = speaker::speak)
@@ -63,15 +65,7 @@ private class AndroidCuePlayer(context: Context, speaker: Speaker) : CuePlayer {
     }.getOrNull()
 
     override fun beep(beep: Beep) {
-        val tone = when (beep) {
-            Beep.Countdown -> Tone(ToneGenerator.TONE_PROP_BEEP, millis = 120)
-            Beep.Halfway -> Tone(ToneGenerator.TONE_PROP_ACK, millis = 150)
-            Beep.Start -> Tone(ToneGenerator.TONE_PROP_BEEP2, millis = 200)
-            Beep.Work -> Tone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, millis = 300)
-            Beep.Rest -> Tone(ToneGenerator.TONE_PROP_BEEP2, millis = 300)
-            Beep.Finished -> Tone(ToneGenerator.TONE_CDMA_CONFIRM, millis = 600)
-        }
-        runCatching { tones?.startTone(tone.type, tone.millis) }.onFailure { log.w(it) { "Beep failed" } }
+        tones.play(beep)
     }
 
     override fun speak(speech: Speech) {
@@ -92,9 +86,53 @@ private class AndroidCuePlayer(context: Context, speaker: Speaker) : CuePlayer {
 
     override fun release() {
         lines.close()
-        runCatching { tones?.release() }
+        tones.release()
     }
 }
 
-/** A [ToneGenerator] tone type and how long to play it. */
-private class Tone(val type: Int, val millis: Int)
+/**
+ * The six tones as static [AudioTrack]s, each written from [ToneSynth]'s samples the first time it plays and kept
+ * for the next. On the media stream (`USAGE_MEDIA`), so they follow the media volume and mix over the user's
+ * workout music, as sonification. A failure to build or play one is logged and the cue goes unheard.
+ */
+private class ToneTracks(private val log: Logger) {
+    private val tracks = mutableMapOf<Beep, AudioTrack>()
+
+    fun play(beep: Beep) {
+        runCatching {
+            val track = tracks.getOrPut(beep) { build(beep) }
+            // A static track plays to its end and stays there: back to the start before it plays again.
+            if (track.playState != AudioTrack.PLAYSTATE_STOPPED) track.stop()
+            track.reloadStaticData()
+            track.play()
+        }.onFailure { log.w(it) { "Beep failed" } }
+    }
+
+    private fun build(beep: Beep): AudioTrack {
+        val pcm = ToneSynth.pcm16(beep)
+        return AudioTrack.Builder()
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build(),
+            )
+            .setAudioFormat(
+                AudioFormat.Builder()
+                    .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                    .setSampleRate(ToneSynth.SAMPLE_RATE)
+                    .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                    .build(),
+            )
+            .setTransferMode(AudioTrack.MODE_STATIC)
+            .setBufferSizeInBytes(pcm.size * ToneSynth.BYTES_PER_SAMPLE)
+            .setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
+            .build()
+            .also { it.write(pcm, 0, pcm.size) }
+    }
+
+    fun release() {
+        tracks.values.forEach { runCatching { it.release() } }
+        tracks.clear()
+    }
+}

@@ -318,7 +318,11 @@ toolchain (`$compose.*`).
   domain code expose typed data (enums, sealed types like `NextUp`/`HistoryDay`, numbers, clock strings
   like `"0:30"`); screens put it into words with `stringResource`/`pluralStringResource`. Spoken cues are
   the one non-composable path: `CuePlayer.speak(Speech)`, worded by `SpeechQueue` with `getString`
-  (`interval-platform`). A preset that `alternateHands` (15:15 MVO2, or a kettlebell preset with the editor's
+  (`interval-platform`). The six `Beep`s are the app's own tones, not the platform's: `ToneSynth`
+  (`interval-platform-api`) renders each as a few sines with no click at either end, under 400 ms, which each
+  platform's player keeps and plays (Android an `AudioTrack` a tone on the media stream, iOS an `AVAudioPlayer`
+  from a WAV in memory, desktop a `Clip`); a new tone is a `Tone` of `Note`s there, and `ToneSynthTest` holds
+  their shape. A preset that `alternateHands` (15:15 MVO2, or a kettlebell preset with the editor's
   switch on) has every work after the first said as "Switch hands. Work": `WorkoutSession` reads the flag from the
   preset the workout `matching`s as each cue plays, so nothing beside the workout stores it. Preset
   names are stored data, not labels: the built-ins' names live in `builtInPresets`. Never load a resource
@@ -336,7 +340,8 @@ toolchain (`$compose.*`).
   streak's flame); then `countUp` (Entrance.kt) for a summary's numbers, `rememberCountdownPulse`
   (`CountdownClock.kt`) for an interval's last seconds, which the clock pops to and `ProgressRing`'s
   `strokeScale` swells to, `Burst` for rings out from a moment (a phase change from the clock, a record's
-  row, the week's goal met), `StreakBadge` for the streak (rolling up with `grew`), `FinishHaptic` for a
+  row, the week's goal met; Start's launch, one ring of the accent out from the button over `Motion.LAUNCH_MILLIS`,
+  the workout's rise, in `StartButton`), `StreakBadge` for the streak (rolling up with `grew`), `FinishHaptic` for a
   summary's landing under the thumb. Page transitions are `pageTransition`/`pagePopTransition` (`Navigation.kt`);
   iOS keeps its native slide (`platformPageTransitions`). Looping, decorative motion (lanes, comets,
   the paused hint's breathing) checks `prefersReducedMotion()`; one-shot animations need not, Android

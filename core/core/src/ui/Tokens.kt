@@ -308,6 +308,12 @@ object Motion {
     /** A [Burst] of rings opens from the centre to past the corners in this long, as the intro's does. */
     const val BURST_MILLIS = 540
 
+    /**
+     * Start's launch: one ring of the accent sets out from the button as the workout rises, and is spent in the
+     * time the rise takes ([PAGE_MILLIS]), so the workout's ring reads as what the button sent up.
+     */
+    const val LAUNCH_MILLIS = PAGE_MILLIS
+
     /** The resume hint breathes while paused: a cycle this long, down to this alpha. */
     const val BREATH_MILLIS = 1600
     const val BREATH_MIN_ALPHA = 0.5f
