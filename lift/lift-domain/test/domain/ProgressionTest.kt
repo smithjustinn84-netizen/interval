@@ -227,4 +227,30 @@ class ProgressionTest {
             toppedOut(heavyDay, listOf(set(BuiltInExercise.BandPullApart, reps = 15, band = heaviest)), bells, owned),
         )
     }
+
+    @Test
+    fun `two bells step only to a weight owned two of once pairs are known`() {
+        val fronts =
+            Block(
+                BuiltInExercise.FrontSquat,
+                rounds = 2,
+                reps = 5,
+                double = true,
+                load = Load.Bell(16.0, double = true),
+            )
+        val done = sets(2) { SetLog.of(0, BuiltInExercise.FrontSquat, 16.0, 5, null, 0, double = true) }
+        // A pair of 28s and one 24: the step skips the 24.
+        assertEquals(
+            fronts.copy(load = Load.Bell(28.0, double = true)),
+            nextStep(fronts, done, bells, bands, setOf(16.0, 28.0)),
+        )
+        // No heavier pair: a rep more instead of a bell owned once.
+        assertEquals(fronts.copy(reps = 6), nextStep(fronts, done, bells, bands, setOf(16.0)))
+        // Pairs never said: any bell, as before.
+        assertEquals(fronts.copy(load = Load.Bell(24.0, double = true)), nextStep(fronts, done, bells, bands))
+        // One bell is not held back by the pairs.
+        val goblets = Block(BuiltInExercise.GobletSquat, rounds = 1, reps = 10, load = Load.Bell(16.0))
+        val one = listOf(set(BuiltInExercise.GobletSquat, 16.0))
+        assertEquals(goblets.copy(load = Load.Bell(24.0)), nextStep(goblets, one, bells, bands, setOf(16.0)))
+    }
 }

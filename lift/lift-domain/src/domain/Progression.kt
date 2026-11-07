@@ -30,12 +30,25 @@ private const val EMOM_MAX_MINUTES = 60
  * - weight added to bodyweight, [ADDED_KG_STEP] more; bodyweight without, and the mat, a rep more;
  * - a band, the next of [bands] heavier; with none, a rep more;
  * - a hold, five seconds more; an EMOM, a minute more; a ladder, nothing.
+ *
+ * A block done with two bells steps only to a weight of [pairs], the bells owned two of, once the user has said
+ * which those are; with none said, to any of [bells].
  */
-fun nextStep(block: Block, done: List<SetLog?>, bells: List<Double>, bands: List<Band>): Block? {
+fun nextStep(
+    block: Block,
+    done: List<SetLog?>,
+    bells: List<Double>,
+    bands: List<Band>,
+    pairs: Set<Double> = emptySet(),
+): Block? {
     if (block.kind == BlockKind.Ladder) return null
     val sets = doneInFull(block, done) ?: return null
-    return stepUp(block, loadDone(block, sets, bands) ?: return null, bells, bands)
+    return stepUp(block, loadDone(block, sets, bands) ?: return null, bellsFor(block, bells, pairs), bands)
 }
+
+/** The bells [block] can step to: for two bells, only those owned two of, once any are; else any of [bells]. */
+private fun bellsFor(block: Block, bells: List<Double>, pairs: Set<Double>): List<Double> =
+    if (block.double && pairs.isNotEmpty()) bells.filter { it in pairs } else bells
 
 /**
  * The load [block] was done at in [sets], of its lift's equipment: the plan's, or with none named the lightest
@@ -115,9 +128,15 @@ private fun bandUsed(block: Block, sets: List<SetLog>, bands: List<Band>): Band?
  * The step up each of [day]'s blocks earned, done as [logged]: one for each block of today's plan done in full
  * at its plan, as [nextStep] has it, from the block as it was done. A block swapped part way earns none.
  */
-fun progressions(day: ProgramDay, logged: List<SetLog>, bells: List<Double>, bands: List<Band>): List<BlockChange> =
+fun progressions(
+    day: ProgramDay,
+    logged: List<SetLog>,
+    bells: List<Double>,
+    bands: List<Band>,
+    pairs: Set<Double> = emptySet(),
+): List<BlockChange> =
     blocksDone(day, logged).mapNotNull { (i, block, done) ->
-        nextStep(block, done, bells, bands)?.let { BlockChange(i, block, it) }
+        nextStep(block, done, bells, bands, pairs)?.let { BlockChange(i, block, it) }
     }
 
 /**
@@ -125,13 +144,19 @@ fun progressions(day: ProgramDay, logged: List<SetLog>, bells: List<Double>, ban
  * heavier load to go to: none of [bells] or [bands] heavier, nor more to add. They have earned more than
  * [nextStep] can offer.
  */
-fun toppedOut(day: ProgramDay, logged: List<SetLog>, bells: List<Double>, bands: List<Band>): List<Block> =
+fun toppedOut(
+    day: ProgramDay,
+    logged: List<SetLog>,
+    bells: List<Double>,
+    bands: List<Band>,
+    pairs: Set<Double> = emptySet(),
+): List<Block> =
     blocksDone(day, logged).mapNotNull { (_, block, done) ->
         val range = block.ranged?.takeIf { block.reps >= it.top } ?: return@mapNotNull null
         val sets = doneInFull(block, done) ?: return@mapNotNull null
         // Done with a lighter band than planned is short of the plan, not at the top of it.
         val at = loadDone(block, sets, bands) ?: return@mapNotNull null
-        block.takeIf { heavier(block, at, bells, bands) == null }
+        block.takeIf { heavier(block, at, bellsFor(block, bells, pairs), bands) == null }
     }
 
 /** Block [index] of a day's plan, and the set logged for each of its planned sets, null for one not done. */

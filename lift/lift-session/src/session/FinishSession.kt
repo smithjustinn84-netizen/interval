@@ -64,8 +64,9 @@ class FinishSession(
         // Taken now: once the session is saved, the program day moves on to the next.
         val bells = gearStore.bells.value.ifEmpty { standardBells }
         val bands = offeredBands(gearStore.bands.value)
+        val pairs = gearStore.pairs.value
         val day = programDay(programStore.programDay.value, session)
-        val changes = day?.let { planChanges(it, progressions(it, session.sets, bells, bands)) }
+        val changes = day?.let { planChanges(it, progressions(it, session.sets, bells, bands, pairs)) }
         current.value = Finished(
             done,
             newRecords(sessionStore.sessions.value.flatMap { it.sets }, done),
@@ -74,7 +75,7 @@ class FinishSession(
             taken = programStore.customPrograms.value.mapNotNull { it.name }.toSet(),
             bands = gearStore.bands.value,
             lastDayOf = day?.program?.takeIf { day.number >= it.totalDays },
-            toppedOut = day?.let { toppedOut(it, session.sets, bells, bands) }.orEmpty(),
+            toppedOut = day?.let { toppedOut(it, session.sets, bells, bands, pairs) }.orEmpty(),
         )
         sessionStore.finishSession(title)
         val now = done.finishedAtEpochMillis ?: clock.nowMillis()
