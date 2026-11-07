@@ -58,7 +58,7 @@ const val SCHEMA_1_EXPORT = """
 """
 
 /** A file from a build newer than any this one knows. */
-const val SCHEMA_10_EXPORT = """{ "schema": 10, "app": "interval", "version": "0.9.0", "exportedAtEpochMillis": 0 }"""
+const val SCHEMA_11_EXPORT = """{ "schema": 11, "app": "interval", "version": "0.9.0", "exportedAtEpochMillis": 0 }"""
 
 /** Some other app's JSON. */
 const val FOREIGN_JSON = """{ "schema": 1, "app": "someone-else", "workouts": [] }"""

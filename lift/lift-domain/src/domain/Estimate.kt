@@ -6,18 +6,22 @@ import kotlin.math.roundToInt
 // the user takes between sets, never a promise. A session's own time is `LiftSession.elapsedSeconds`.
 
 /**
- * About how long this plan takes, in seconds, resting [restSeconds] between sets. An EMOM lasts its minutes and
- * its count-in, with no rest inside. A hold lasts its seconds and its count-in. Any other set takes its reps at
- * its lift's pace ([secondsPerRep]). A rest follows each set that isn't on the minute, a one-sided lift's two
- * sides sharing one (the rest timer offers one after each side, which few take), and none follows the last set
- * of the day. A skipped block counts for the sets it kept.
+ * About how long this plan takes, in seconds, resting [restSeconds] between sets, or a block's own rest. An EMOM
+ * lasts its minutes and its count-in, with no rest inside. A hold lasts its seconds and its count-in. Any other set
+ * takes its reps at its lift's pace ([secondsPerRep]). A rest follows each set that isn't on the minute, a
+ * one-sided lift's two sides sharing one (the rest timer offers one after each side, which few take), and none
+ * follows the last set of the day. A skipped block counts for the sets it kept.
  */
 fun SessionPlan.estimatedSeconds(restSeconds: Int): Int {
-    val parts = blocks.map { it.block.kind to it.plannedSets() }.filter { (_, sets) -> sets.isNotEmpty() }
-    val work = parts.sumOf { (kind, sets) -> if (kind == BlockKind.Emom) emomSeconds(sets) else setsSeconds(sets) }
-    val rests = parts.sumOf { (kind, sets) -> if (kind == BlockKind.Emom) 0 else rests(sets) }
-    val endsResting = parts.lastOrNull()?.first?.let { it != BlockKind.Emom } == true
-    return work + (rests - if (endsResting) 1 else 0).coerceAtLeast(0) * restSeconds
+    val parts = blocks.map { it.block to it.plannedSets() }.filter { (_, sets) -> sets.isNotEmpty() }
+    val work = parts.sumOf { (block, sets) ->
+        if (block.kind == BlockKind.Emom) emomSeconds(sets) else setsSeconds(sets)
+    }
+    // Each block rests its own, when it keeps one ([Block.rest]), else the user's.
+    val resting = parts.filter { (block, _) -> block.kind != BlockKind.Emom }
+    val rested = resting.sumOf { (block, sets) -> rests(sets) * (block.rest ?: restSeconds) }
+    val last = parts.lastOrNull()?.first?.takeIf { it.kind != BlockKind.Emom }
+    return work + (rested - (last?.let { it.rest ?: restSeconds } ?: 0)).coerceAtLeast(0)
 }
 
 /** About how long this day takes as it stands today, in seconds: see [SessionPlan.estimatedSeconds]. */

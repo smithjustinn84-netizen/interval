@@ -1,0 +1,12 @@
+<journey name="Lift: an easier day">
+  <description>
+    After a session that felt very hard, Lift's next session on the program offers an easier day before its first
+    set. Run on a fresh install with a bell owned.
+  </description>
+  <actions>
+    <action>On Train's Strength pillar, tap "Follow a program", find "20 minutes beside BJJ", open it and tap "Follow this program"</action>
+    <action>Start a session, log a set, tap "Finish", pick "Very hard" under "How was it?" and tap "Done"</action>
+    <action>Tap "Start day 1" and verify that a card "Easier today" says "Your last session felt very hard, and it was a day and a half ago at most", "Presses and squats a bell lighter, swings and snatches shorter, rests by the lift" and "Day 2 of this program is the lighter one on the grip", with "Use it"</action>
+    <action>Tap "Use it" and verify that the card goes and Up next counts 12 sets of the Armor Building Complex, not 15</action>
+  </actions>
+</journey>

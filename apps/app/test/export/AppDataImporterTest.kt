@@ -8,7 +8,7 @@ import dev.justinsmith.interval.fakes.TODAY
 import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.fixtures.DAMAGED_EXPORT
 import dev.justinsmith.interval.fixtures.FOREIGN_JSON
-import dev.justinsmith.interval.fixtures.SCHEMA_10_EXPORT
+import dev.justinsmith.interval.fixtures.SCHEMA_11_EXPORT
 import dev.justinsmith.interval.fixtures.SCHEMA_1_EXPORT
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
@@ -152,7 +152,7 @@ class AppDataImporterTest {
                             .withLoad(Load.Bell(16.0)),
                         Block(BuiltInExercise.BandPullApart, rounds = 3, reps = 15)
                             .withLoad(Load.Banded(lift.gear.bands.value.single { it.id == loop })),
-                        Block(BuiltInExercise.PushUp, rounds = 3, reps = 10),
+                        Block(BuiltInExercise.PushUp, rounds = 3, reps = 10, rest = 60),
                     ),
                 ),
                 daysPerWeek = 3,
@@ -295,7 +295,7 @@ class AppDataImporterTest {
     @Test
     fun `a newer file says so and changes nothing`() = runTest {
         val target = Phone(now)
-        val file = ShareableFile("new.json", ExportBundle.MIME_TYPE, SCHEMA_10_EXPORT)
+        val file = ShareableFile("new.json", ExportBundle.MIME_TYPE, SCHEMA_11_EXPORT)
         assertEquals(ImportReview.TooNew("0.9.0"), target.importer.review(file))
         assertFailsWith<IllegalArgumentException> { target.importer.import(file, withSettings = true) }
         assertTrue(target.intervals.history.history.value.isEmpty())

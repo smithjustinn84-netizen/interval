@@ -51,6 +51,7 @@ class SessionViewModel(
     private val filters: ExerciseFilterStore,
     val plan: TodayPlanEditor,
     val summary: FinishSession,
+    val easierDay: EasierDay,
     private val timers: SessionTimers,
     timestamps: TimestampFormatter,
     clock: WallClock,
@@ -120,8 +121,8 @@ class SessionViewModel(
 
     // On the main thread, so a tap on the sheet shows at once: what scans the history is worked out apart, above.
     val state: StateFlow<SessionUiState> =
-        combine(inputs.map(Inputs::state), detail, rested) { state, page, rested ->
-            state.copy(detail = page, asksToShowNotifications = rested)
+        combine(inputs.map(Inputs::state), detail, rested, easierDay.offer) { state, page, rested, easier ->
+            state.copy(detail = page, asksToShowNotifications = rested, easier = easier)
         }.stateIn(viewModelScope, SharingStarted.Eagerly, inputsNow.state())
 
     /** The wall clock, once a tick, for the session's own clocks: they move with no timer running. */
@@ -168,6 +169,7 @@ class SessionViewModel(
 
     /** Logs [set], by default the sheet's: a hold for [seconds], fewer when a timed one is stopped early. */
     fun logSet(set: SetDraft = draft.draft.value, seconds: Int = set.seconds) {
+        val rest = upNextNow?.set?.takeIf { it.exercise.key == set.exercise.key }?.rest
         setStore.logSet(
             set.exercise,
             set.load,
@@ -176,7 +178,7 @@ class SessionViewModel(
             seconds = seconds.takeIf { set.held },
         )
         draft.flipSide(set)
-        timers.startRest(setStore.restSeconds.value)
+        timers.startRest(rest ?: setStore.restSeconds.value)
     }
 
     /** Logs the plan's next set as planned, with its suggested load: a hold for its seconds. */
@@ -190,7 +192,7 @@ class SessionViewModel(
             set.side,
             seconds = set.reps.takeIf { set.held },
         )
-        timers.startRest(setStore.restSeconds.value)
+        timers.startRest(set.rest ?: setStore.restSeconds.value)
     }
 
     /** Saves the set being changed as the sheet's draft now has it. */

@@ -124,6 +124,8 @@ data class SessionUiState(
     val dayDone: Boolean = false,
     /** For a program day: its blocks as today's plan has them. */
     val plan: List<PlanRow> = emptyList(),
+    /** On a taxed day, before the first set: the easier day to offer; null with none. */
+    val easier: EasierOffer? = null,
     /** The program day the session is, null for a free one: what names it to the health store. */
     val programDay: ProgramDay? = null,
     val emom: EmomRun? = null,

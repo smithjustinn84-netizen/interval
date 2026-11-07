@@ -21,6 +21,11 @@ data class Block(
     val double: Boolean = false,
     val load: Load? = null,
     val range: RepRange? = null,
+    /**
+     * The rest after each of its sets, in seconds, when it keeps one of its own: one stepped down for density, or an
+     * easier day's by the lift's tempo. Null for the rest set on Lift.
+     */
+    val rest: Int? = null,
 ) {
     /** The [range] it builds within: none for a ladder or a hold, which never take one. */
     val ranged: RepRange? get() = range?.takeIf { kind != BlockKind.Ladder && exercise.measure == Measure.Reps }
@@ -42,9 +47,9 @@ data class Block(
 
     private fun sides(reps: Int) =
         if (exercise.sided(double)) {
-            Side.entries.map { PlannedSet(exercise, reps, it, double, load) }
+            Side.entries.map { PlannedSet(exercise, reps, it, double, load, rest) }
         } else {
-            listOf(PlannedSet(exercise, reps, null, double, load))
+            listOf(PlannedSet(exercise, reps, null, double, load, rest))
         }
 }
 
@@ -80,6 +85,8 @@ data class PlannedSet(
     val side: Side?,
     val double: Boolean = false,
     val load: Load? = null,
+    /** The rest after it, its block's own ([Block.rest]); null for the rest set on Lift. */
+    val rest: Int? = null,
 ) {
     /** Whether it is a hold, timed rather than counted. */
     val held: Boolean get() = exercise.measure == Measure.Time

@@ -220,6 +220,7 @@ private fun sessionActions(parts: ActionTargets, title: String, healthTitle: Str
     with(parts) {
         SessionActions(
             onDraft = viewModel.draft::update,
+            onUseEasier = viewModel.easierDay::use,
             onFilters = filters::update,
             onAddExercise = viewModel.draft::expectNewExercise,
             onLog = viewModel::logSet,
@@ -338,6 +339,8 @@ data class SessionActions(
     val onUnskipBlock: (Int) -> Unit = {},
     /** The rest a step shorter (−1) or longer (+1), and every one after; or skipped. */
     val onStepRest: (Int) -> Unit = {},
+    /** Takes the easier day offered on a taxed one. */
+    val onUseEasier: () -> Unit = {},
     val onSkipRest: () -> Unit = {},
     val onFinish: () -> Unit = {},
     val onDiscard: () -> Unit = {},
@@ -456,6 +459,7 @@ private fun SessionPlanContent(
             },
         )
     } else if (!state.free) {
+        state.easier?.let { EasierCard(it, actions.onUseEasier) }
         UpNextCard(
             state,
             opening,

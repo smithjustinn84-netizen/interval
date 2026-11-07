@@ -249,6 +249,22 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
 
     fun closeSummary() = tap("Done")
 
+    /** Before the first set of a taxed day: the easier day offered, and why. */
+    fun seeEasierDay(why: String) {
+        see("Easier today")
+        see(why)
+    }
+
+    /** Takes the easier day: the offer goes, and today's plan is kept easier, its first block of [rounds]. */
+    fun useEasierDay(rounds: Int) {
+        tap("Use it")
+        seeNo("Easier today")
+        waitFor("today's plan kept with $rounds rounds") {
+            app.storage.sessions.sessions.value
+                .any { it.finishedAtEpochMillis == null && it.plan?.contains("\"rounds\":$rounds") == true }
+        }
+    }
+
     /** On the summary, under "How was it?": how hard the session felt, then a note on it. */
     fun sayHowItWas(effort: String, note: String) {
         see("How was it?")

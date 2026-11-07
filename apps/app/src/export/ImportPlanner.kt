@@ -384,6 +384,7 @@ private fun BlockExport.toDomain(exercises: List<CustomExercise>, bands: List<Ba
         double = double,
         load = Load.named(lift.equipment, kg, double, band?.let { bandOf(it, bands) }),
         range = if (rangeBottom != null && rangeTop != null) RepRange(rangeBottom, rangeTop) else null,
+        rest = rest?.takeIf { it in RestClock.MIN_SECONDS..RestClock.MAX_SECONDS },
     )
 }
 

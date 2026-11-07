@@ -49,6 +49,13 @@
     <string name="log_more_reps">More reps</string>
     <string name="summary_done">Done</string>
     <string name="summary_how_was_it">How was it?</string>
+    <string name="session_easier_title">Easier today</string>
+    <string name="session_easier_hard">Your last session felt very hard, and it was a day and a half ago at most</string>
+    <string name="session_easier_mat">BJJ today or yesterday, and your grip has done more than usual this week</string>
+    <string name="session_easier_grip">Your grip has done a lot more this week than in the weeks before</string>
+    <string name="session_easier_what">Presses and squats a bell lighter, swings and snatches shorter, rests by the lift</string>
+    <string name="session_easier_lighter_day">Day %1$d of this program is the lighter one on the grip</string>
+    <string name="session_easier_use">Use it</string>
     <string name="summary_heavy_grip">A heavy day on the grip: half again your usual. Go lighter on swings and snatches next time</string>
     <string name="summary_hand_care">Look after your hands: file the calluses down, and loosen your grip as the bell floats</string>
     <string name="summary_note_placeholder">A note on it</string>

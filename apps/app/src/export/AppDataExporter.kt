@@ -170,6 +170,7 @@ private fun Block.export() =
         load?.band?.id,
         range?.bottom,
         range?.top,
+        rest,
     )
 
 private fun Followed.export() = FollowedExport(program.key.stored, startedAtEpochMillis, daysBefore)

@@ -6,6 +6,7 @@ import dev.justinsmith.lift.programs.ProgramCopy
 import dev.justinsmith.lift.programs.ProgramEditorViewModel
 import dev.justinsmith.lift.programs.ProgramProgressViewModel
 import dev.justinsmith.lift.programs.ProgramsViewModel
+import dev.justinsmith.lift.session.EasierDay
 import dev.justinsmith.lift.session.FinishSession
 import dev.justinsmith.lift.session.SessionHealth
 import dev.justinsmith.lift.session.SessionTimers
@@ -36,8 +37,9 @@ val liftSessionModule: Module = module {
     }
     factory { TodayPlanEditor(get(), get(), get()) }
     factory { FinishSession(get(), get(), get(), get(), get(), get(), get()) }
+    factory { EasierDay(get(), get(), get(), get(), get(), get(), get()) }
     viewModel {
-        SessionViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
+        SessionViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
     }
     viewModelOf(::ProgramsViewModel)
     viewModel { (uid: String?, copy: ProgramCopy?) ->

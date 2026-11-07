@@ -11,6 +11,7 @@ import dev.justinsmith.lift.domain.PlanBlock
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.RepRange
+import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.SessionPlan
 import dev.justinsmith.lift.domain.band
 import dev.justinsmith.lift.domain.bandOf
@@ -34,6 +35,7 @@ internal data class StoredBlock(
     val band: String? = null,
     val rangeBottom: Int? = null,
     val rangeTop: Int? = null,
+    val rest: Int? = null,
 )
 
 private val json = Json { ignoreUnknownKeys = true }
@@ -77,6 +79,7 @@ internal fun Block.toStored() = StoredBlock(
     load?.band?.id,
     range?.bottom,
     range?.top,
+    rest,
 )
 
 /**
@@ -128,6 +131,7 @@ internal fun StoredBlock.toBlock(made: List<CustomExercise>, bands: List<Band>):
         } else {
             null
         },
+        rest = rest?.takeIf { it in RestClock.MIN_SECONDS..RestClock.MAX_SECONDS },
     )
 }
 
