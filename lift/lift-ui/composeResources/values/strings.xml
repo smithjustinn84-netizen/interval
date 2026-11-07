@@ -204,7 +204,7 @@
     <string name="program_easy_strength_name">Easy Strength</string>
     <string name="program_easy_strength_summary">Press, row and goblet squat 2 × 5, swings, a get-up and a suitcase carry a side, light and easy · 5 days a week for 8 weeks</string>
     <string name="program_abf_name">Armor Building Formula</string>
-    <string name="program_abf_summary">20 minutes of the Armor Building Complex on the minute one day, 5 double press ladders of 2-3-5-10 the next. Build to 30 complexes and 100 presses · 3 days a week for 8 weeks</string>
+    <string name="program_abf_summary">20 minutes of the Armor Building Complex on the minute one day, 5 double press ladders of 2-3-5-10 the next · 3 days a week for 8 weeks</string>
     <string name="program_ten_thousand_name">10,000 swings</string>
     <string name="program_ten_thousand_summary">500 swings a day in ladders of 10-15-25-50, with press, goblet squat, chin-up or dip ladders · 5 days a week for 4 weeks</string>
     <string name="program_countdown_name">Swing and squat countdown</string>
@@ -216,7 +216,7 @@
     <string name="program_program_minimum_name">Program Minimum</string>
     <string name="program_program_minimum_summary">12 minutes of swings on the minute one day, 5 get-ups a side the next, after Enter the Kettlebell · 4 days a week for 4 weeks</string>
     <string name="program_rite_of_passage_name">Rite of Passage</string>
-    <string name="program_rite_of_passage_summary">5 clean and press ladders: to 5 on the heavy day, 3 on the light and 4 on the medium, then snatches or swings. Build to it from 3 ladders of 1-2-3 · 3 days a week for 12 weeks</string>
+    <string name="program_rite_of_passage_summary">5 press ladders a side: to 5 on the heavy day, 3 on the light and 4 on the medium, then snatches or swings · 3 days a week for 12 weeks</string>
     <string name="program_iron_cardio_name">Iron Cardio</string>
     <string name="program_iron_cardio_summary">A clean, a press and a squat as one rep, on the minute for 20 or 30 minutes, with 100 swings on the shorter day · 3 days a week for 6 weeks</string>
     <string name="program_snatch_test_name">Snatch test prep</string>
@@ -238,7 +238,7 @@
     <string name="program_foundations_name">Kettlebell foundations</string>
     <string name="program_foundations_summary">Deadlifts, goblet squats and halos one day; swings, push-ups and get-ups the next. Learn each lift light · 3 days a week for 4 weeks</string>
     <string name="program_first_hundred_name">Your first 100 swings</string>
-    <string name="program_first_hundred_summary">Deadlifts to groove the hinge, then two-hand swings on the minute for 10 minutes, from 5 a minute up to 10 · 3 days a week for 4 weeks</string>
+    <string name="program_first_hundred_summary">Deadlifts to groove the hinge, then two-hand swings on the minute for 10 minutes: 5 a minute, then 8, then 10 each week · 3 days a week for 4 weeks</string>
     <string name="program_beginner_full_body_name">Full body for beginners</string>
     <string name="program_beginner_full_body_summary">Goblet squats, presses, push-ups and rows one day; deadlifts, cleans and swings the other, a few sets of each · 2 days a week for 6 weeks</string>
     <string name="program_get_up_practice_name">Get-up practice</string>

@@ -258,7 +258,7 @@ enum class BuiltInExercise(
     override val key: String get() = name
 }
 
-/** The built-in kettlebell lifts, in order: all the Log sheet and the program editor offer for now. */
+/** The built-in kettlebell lifts, in order. */
 val kettlebellLifts: List<BuiltInExercise> = BuiltInExercise.entries.filter { it.equipment == Equipment.Kettlebell }
 
 /** The built-in barbell lifts, in order. */
