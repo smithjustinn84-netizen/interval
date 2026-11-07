@@ -11,7 +11,6 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import dev.justinsmith.interval.fakes.hangboardPreset
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Preset
@@ -20,6 +19,7 @@ import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class PresetsScreenTest {
     private val started = mutableListOf<Preset>()
@@ -40,7 +40,7 @@ class PresetsScreenTest {
     }
 
     @Test
-    fun `a card opens its sheet, which starts the preset or puts it on the Timer`() = runUiTest {
+    fun `a row opens its sheet, which starts the preset or puts it on the Timer`() = runUiTest {
         setThemedContent { Screen() }
         onNodeWithText("Hangboard").performClick()
         inSheet("Built-in").assertExists()
@@ -75,7 +75,7 @@ class PresetsScreenTest {
     }
 
     @Test
-    fun `tapping a card changes nothing by itself`() = runUiTest {
+    fun `tapping a row changes nothing by itself`() = runUiTest {
         setThemedContent { Screen() }
         onNodeWithText("Tabata").performClick()
         assertEquals(emptyList(), started + putOnTimer)
@@ -119,20 +119,25 @@ class PresetsScreenTest {
     }
 
     @Test
-    fun `the card on the Timer says so`() = runUiTest {
+    fun `the row on the Timer says so`() = runUiTest {
         setThemedContent { Screen(state(selected = morning, canSaveCurrent = false)) }
         onNodeWithText("On the Timer").assertExists()
         onNodeWithText("On the Timer · not saved").assertDoesNotExist()
     }
 
     @Test
-    fun `cards show each preset's shape`() = runUiTest {
+    fun `rows show each preset's shape and total in the order given`() = runUiTest {
         setThemedContent { Screen() }
         onNodeWithText("25s on · 10s off · ×8").assertExists()
+        onNodeWithText("10s on · 50s off · ×6 · Climbing").assertExists()
+        onNodeWithText("4:00").assertExists()
+        val tabata = onNodeWithText("Tabata").fetchSemanticsNode().positionInRoot.y
+        val hangboard = onNodeWithText("Hangboard").fetchSemanticsNode().positionInRoot.y
+        assertTrue(tabata < hangboard, "Tabata above Hangboard")
     }
 
     @Test
-    fun `an estimate made with the Timer's activity says which`() = runUiTest {
+    fun `the sheet carries the estimate and says which activity a borrowed one used`() = runUiTest {
         val state = state(custom = emptyList()).let { s ->
             s.copy(
                 builtIn = s.builtIn.map { item ->
@@ -145,15 +150,29 @@ class PresetsScreenTest {
             )
         }
         setThemedContent { Screen(state) }
-        onNodeWithText("20s on · 10s off · ×8 · ≈ 43 kcal as Jump rope").assertExists()
-        onNodeWithText("10s on · 50s off · ×6 · Climbing · ≈ 22 kcal").performScrollTo().assertExists()
+        // The row says the shape alone; the estimate is the sheet's.
+        onNodeWithText("20s on · 10s off · ×8").assertExists()
+        onNodeWithText("≈ 43 kcal as Jump rope").assertDoesNotExist()
+        onNodeWithText("Tabata").performClick()
+        inSheet("20s on · 10s off · ×8").assertExists()
+        inSheet("≈ 43 kcal as Jump rope").assertExists()
     }
 
     @Test
-    fun `with no presets of their own the user is told where they go`() = runUiTest {
+    fun `an estimate with the preset's own activity names no other`() = runUiTest {
+        val state = state(custom = emptyList()).let { s ->
+            s.copy(builtIn = s.builtIn.map { if (it.preset.name == "Hangboard") it.copy(calories = 22) else it })
+        }
+        setThemedContent { Screen(state) }
+        onNodeWithText("Hangboard").performClick()
+        inSheet("≈ 22 kcal").assertExists()
+    }
+
+    @Test
+    fun `with no presets of their own there is no group of theirs`() = runUiTest {
         setThemedContent { Screen(state(custom = emptyList())) }
-        onNodeWithText("Nothing saved yet").assertExists()
-        onNodeWithText("Save one from the Timer or the end of a workout.").assertExists()
+        onNodeWithText("Yours").assertDoesNotExist()
+        onNodeWithText("Built-in").assertExists()
     }
 
     @Test

@@ -459,7 +459,7 @@ class AppNavigationTest {
         onNodeWithText("Delete").performClick()
         onAllNodesWithText("Delete").onLast().performClick()
         onNodeWithText("Deleted 30/15 ×8").assertExists()
-        onNodeWithText("Nothing saved yet").assertExists()
+        onNodeWithText("Yours").assertDoesNotExist()
         onNodeWithText("Undo").performClick()
         onNodeWithText("30/15 ×8").assertExists()
     }

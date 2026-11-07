@@ -22,8 +22,6 @@ data class PresetRowItem(
     val total: String,
     /** This is the preset the Timer's settings count as ([matching]): at most one row is. */
     val selected: Boolean,
-    /** This preset's length as a share of the longest on the screen, so its timeline can be drawn to scale. */
-    val share: Float = 1f,
     /** The estimated calories it will burn, with the user's get-ready countdown; null without a body weight. */
     val calories: Int? = null,
     /**
@@ -34,7 +32,7 @@ data class PresetRowItem(
 )
 
 data class PresetsUiState(
-    /** The user's own presets, in the order they were saved. */
+    /** The user's own presets, shortest first, as [builtIn] are: the totals read as a scale down the list. */
     val custom: List<PresetRowItem>,
     val builtIn: List<PresetRowItem>,
     /** False when the current settings already match a preset, so saving would duplicate it. */
@@ -101,13 +99,11 @@ class PresetsViewModel(private val presetStore: PresetStore, private val setting
         val longest = (presets.map { totalOf(it) } + if (canSaveCurrent) config.totalSeconds else 0)
             .max()
             .coerceAtLeast(1)
-        val rows = presets.map { preset ->
-            val total = totalOf(preset)
+        val rows = presets.sortedBy { totalOf(it) }.map { preset ->
             PresetRowItem(
                 preset = preset,
-                total = formatClock(total),
+                total = formatClock(totalOf(preset)),
                 selected = preset == onTimer,
-                share = total.toFloat() / longest,
                 calories = app.body.plannedCalories(asRun(preset)),
                 estimatedAs = config.activity.takeIf {
                     preset.config.activity == Activity.General && it != Activity.General

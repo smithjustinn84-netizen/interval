@@ -8,9 +8,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import dev.justinsmith.interval.presets.resources.Res
+import dev.justinsmith.interval.presets.resources.common_calories_estimate
 import dev.justinsmith.interval.presets.resources.common_prep_line
 import dev.justinsmith.interval.presets.resources.preset_copy_name
 import dev.justinsmith.interval.presets.resources.presets_built_in
+import dev.justinsmith.interval.presets.resources.presets_calories_estimate_as
 import dev.justinsmith.interval.presets.resources.presets_delete
 import dev.justinsmith.interval.presets.resources.presets_edit
 import dev.justinsmith.interval.presets.resources.presets_put_on_timer
@@ -26,12 +28,14 @@ import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StartButton
 import dev.justinsmith.interval.ui.Timeline
+import dev.justinsmith.interval.ui.labelRes
 import dev.justinsmith.interval.ui.workoutDescription
 import org.jetbrains.compose.resources.stringResource
 
 /**
  * What one preset leads to, in a sheet over the list: its group and name, its total with the user's
- * get-ready countdown over a full-width timeline and its shape, then Start workout and Put on Timer.
+ * get-ready countdown over a full-width timeline, its shape and the calories it is estimated to burn, then
+ * Start workout and Put on Timer.
  * Put on Timer is left out for the preset already there. When [replacesUnsaved], the Timer holds
  * settings no preset has, and a line over the buttons says either one replaces them. One of the
  * user's own ends with Edit and Delete; a built-in with Save a copy, which opens the editor on a copy
@@ -79,6 +83,7 @@ internal fun PresetSheet(
             }
             Timeline(preset.config, Modifier.fillMaxWidth(), showPrep = false)
             Text(workoutDescription(preset.config), style = IntervalTheme.type.body, color = palette.textDim)
+            estimateText(row)?.let { Text(it, style = IntervalTheme.type.meta, color = palette.textDim) }
         }
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             if (replacesUnsaved) {
@@ -115,4 +120,15 @@ internal fun PresetSheet(
             )
         }
     }
+}
+
+/**
+ * "≈ 32 kcal", or "≈ 32 kcal as Bike" when the estimate borrows the Timer's activity because the preset names
+ * none; null without a body weight to estimate from.
+ */
+@Composable
+private fun estimateText(row: PresetRowItem): String? {
+    val calories = row.calories ?: return null
+    val estimatedAs = row.estimatedAs ?: return stringResource(Res.string.common_calories_estimate, calories)
+    return stringResource(Res.string.presets_calories_estimate_as, calories, stringResource(estimatedAs.labelRes))
 }

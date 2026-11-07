@@ -534,7 +534,8 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     fun seeNoUnsavedTimerCard() = seeNo("On the Timer · not saved")
 
-    fun seeNothingSavedYet() = see("Nothing saved yet")
+    /** With no preset of the user's own there is no "Yours" group, only the built-ins. */
+    fun seeNoPresetsOfYours() = seeNo("Yours")
 
     /** Opens Save as preset from the unsaved card at the top of Presets. */
     fun startSavingTimerSettings() {

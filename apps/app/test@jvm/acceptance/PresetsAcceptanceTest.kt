@@ -13,7 +13,7 @@ class PresetsAcceptanceTest {
         seeTimerTotalFor("Custom")
         openAllPresets()
         seeUnsavedTimerCard("30s on · 15s off · ×8")
-        seeNothingSavedYet()
+        seeNoPresetsOfYours()
 
         startSavingTimerSettings()
         seeNameCount("0 / 24")
@@ -55,7 +55,7 @@ class PresetsAcceptanceTest {
         see("Edit")
         askToDeletePreset("Journey")
         confirmDelete()
-        seeNothingSavedYet()
+        seeNoPresetsOfYours()
         seeUnsavedTimerCard("30s on · 15s off · ×12")
         savedPresets()
 

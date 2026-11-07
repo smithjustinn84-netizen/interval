@@ -27,12 +27,24 @@ class PresetsViewModelTest : MainDispatcherTest() {
         repository.settings.updateConfig { morning }
         viewModel.save(Preset("Morning", morning))
         val state = viewModel.state.value
-        assertEquals(builtInPresets, state.builtIn.map { it.preset })
+        assertEquals(builtInPresets.toSet(), state.builtIn.map { it.preset }.toSet())
         assertEquals(listOf("Morning"), state.custom.map { it.preset.name })
-        assertEquals(listOf("Morning") + builtInPresets.map { it.name }, state.rows.map { it.preset.name })
+        assertEquals(listOf("Morning") + state.builtIn.map { it.preset.name }, state.rows.map { it.preset.name })
         assertTrue(state.custom.single().selected)
         assertTrue(state.custom.single().preset.custom)
         assertFalse(state.canSaveCurrent)
+    }
+
+    @Test
+    fun `each group lists its presets shortest first`() {
+        val state = viewModel.state.value
+        assertEquals(
+            listOf("Tabata", "Hangboard", "HIIT 30/30", "Long efforts", "15:15 MVO2"),
+            state.builtIn.map { it.preset.name },
+        )
+        viewModel.save(Preset("Long", IntervalConfig(workSeconds = 60, restSeconds = 30, rounds = 10)))
+        viewModel.save(Preset("Short", IntervalConfig(workSeconds = 20, restSeconds = 10, rounds = 4)))
+        assertEquals(listOf("Short", "Long"), viewModel.state.value.custom.map { it.preset.name })
     }
 
     @Test
@@ -71,17 +83,6 @@ class PresetsViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun `timelines are scaled to the longest workout on the screen`() {
-        repository.settings.updateConfig { builtInPresets.first().config }
-        val state = viewModel.state.value
-        val longest = state.builtIn.maxBy { it.share }
-        assertEquals("15:15 MVO2", longest.preset.name)
-        assertEquals(1f, longest.share)
-        // Tabata, 4:00 with its countdown, against 15:15 MVO2's 19:55.
-        assertEquals(240f / 1195f, state.builtIn.first().share)
-    }
-
-    @Test
     fun `unsaved settings longer than every preset set the scale`() {
         repository.settings.updateConfig {
             IntervalConfig(prepSeconds = 10, workSeconds = 60, restSeconds = 30, rounds = 15)
@@ -89,7 +90,6 @@ class PresetsViewModelTest : MainDispatcherTest() {
         val state = viewModel.state.value
         assertTrue(state.canSaveCurrent)
         assertEquals(1f, state.currentShare)
-        assertTrue(state.builtIn.all { it.share < 1f })
     }
 
     @Test
