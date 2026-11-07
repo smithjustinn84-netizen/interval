@@ -83,6 +83,7 @@ import dev.justinsmith.lift.library.resources.detail_demo_timeline
 import dev.justinsmith.lift.library.resources.detail_done
 import dev.justinsmith.lift.library.resources.detail_edit
 import dev.justinsmith.lift.library.resources.detail_history
+import dev.justinsmith.lift.library.resources.detail_lifetime
 import dev.justinsmith.lift.library.resources.detail_never
 import dev.justinsmith.lift.library.resources.detail_no_cues
 import dev.justinsmith.lift.library.resources.detail_open_session
@@ -124,6 +125,8 @@ data class ExerciseDetailUiState(
     val trend: Trend? = null,
     /** Its fastest, reps a minute at a weight, from sets logged as they were done; null with none. */
     val bestPace: Pace? = null,
+    /** Its reps ever (a swing's, both swings'); 0 for none or a hold. */
+    val lifetime: Int = 0,
 )
 
 /**
@@ -429,6 +432,13 @@ private fun ColumnScope.History(state: ExerciseDetailUiState, onOpen: ((uid: Str
                 RecordRow(record, named = history.records.size > 1)
             }
         }
+    }
+    if (state.lifetime > 0) {
+        Text(
+            stringResource(Res.string.detail_lifetime, state.lifetime),
+            style = IntervalTheme.type.meta,
+            color = palette.textDim,
+        )
     }
     state.bestPace?.let { pace ->
         Text(

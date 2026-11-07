@@ -176,7 +176,10 @@ fun TodayScreen(
     ) {
         item(key = "following") {
             Group(stringResource(Res.string.today_group_following), group) {
-                ProgramCard(state, onChooseProgram, onOpenProgram)
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+                    ProgramCard(state, onChooseProgram, onOpenProgram)
+                    if (state.challenges.isNotEmpty()) ChallengesCard(state.challenges)
+                }
             }
         }
         item(key = "beside") {

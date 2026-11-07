@@ -1,0 +1,12 @@
+<journey name="Lift: challenges and totals">
+  <description>
+    The benchmarks under way show under the program on Lift's Today, worked out from the sets logged; a lift's page
+    says its reps in all; the summary names a new best and a milestone crossed. Run with a bell owned.
+  </description>
+  <actions>
+    <action>Start a session and log a set of 100 two-hand swings; finish it and verify that the summary says "1000 in all" only once the swings ever pass 1,000</action>
+    <action>On Lift's Today once a thousand swings are logged in four weeks, verify that under the program a "10,000 swings" row says how many in the last four weeks, with a bar</action>
+    <action>Start a session, log ten sets of 10 snatches about a minute apart, finish it, and verify that the summary says "Snatch test: 50 in 5 minutes, your best" (or as many as five minutes held), and that Today shows "Snatch test: 100 in 5 minutes" with that best</action>
+    <action>Open Exercises, then Snatch, and verify that it says its reps in all</action>
+  </actions>
+</journey>

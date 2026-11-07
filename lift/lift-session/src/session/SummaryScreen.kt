@@ -50,19 +50,23 @@ import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.domain.formatPace
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_joined
+import dev.justinsmith.lift.session.resources.summary_abc_best
 import dev.justinsmith.lift.session.resources.summary_done
 import dev.justinsmith.lift.session.resources.summary_hand_care
 import dev.justinsmith.lift.session.resources.summary_heavy_grip
 import dev.justinsmith.lift.session.resources.summary_how_was_it
+import dev.justinsmith.lift.session.resources.summary_milestone
 import dev.justinsmith.lift.session.resources.summary_note_placeholder
 import dev.justinsmith.lift.session.resources.summary_pace
 import dev.justinsmith.lift.session.resources.summary_program_finished
 import dev.justinsmith.lift.session.resources.summary_share
 import dev.justinsmith.lift.session.resources.summary_shared
+import dev.justinsmith.lift.session.resources.summary_snatch_test
 import dev.justinsmith.lift.session.resources.summary_streak
 import dev.justinsmith.lift.session.resources.summary_week_count
 import dev.justinsmith.lift.session.resources.summary_week_of_goal
 import dev.justinsmith.lift.session.resources.today_goal_met
+import dev.justinsmith.lift.ui.exerciseName
 import dev.justinsmith.lift.ui.liftName
 import dev.justinsmith.lift.ui.programName
 import org.jetbrains.compose.resources.pluralStringResource
@@ -248,7 +252,13 @@ private fun GripNotes(finished: Finished) {
             formatKg(pace.kg),
         )
     }
-    val lines = paces + listOfNotNull(
+    val bests = listOfNotNull(
+        finished.snatchTest?.let { stringResource(Res.string.summary_snatch_test, it) },
+        finished.armorBuilding?.let { stringResource(Res.string.summary_abc_best, it) },
+    ) + finished.milestones.map { (exercise, count) ->
+        stringResource(Res.string.summary_milestone, count, exerciseName(exercise))
+    }
+    val lines = bests + paces + listOfNotNull(
         Res.string.summary_heavy_grip.takeIf { finished.heavyGrip },
         Res.string.summary_hand_care.takeIf { finished.handCare },
     ).map { stringResource(it) }

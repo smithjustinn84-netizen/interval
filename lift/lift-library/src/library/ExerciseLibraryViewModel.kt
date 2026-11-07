@@ -15,6 +15,7 @@ import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.bestPaceOf
 import dev.justinsmith.lift.domain.exerciseHistory
 import dev.justinsmith.lift.domain.exerciseTrend
+import dev.justinsmith.lift.domain.lifetimeReps
 import dev.justinsmith.lift.domain.offeredExercises
 import dev.justinsmith.lift.domain.ownedEquipment
 import dev.justinsmith.lift.domain.recentExercises
@@ -93,5 +94,6 @@ fun exerciseDetail(
         recent = history.recent.map { DatedSession(it, timestamps.date(it.startedAtEpochMillis)) },
         trend = exerciseTrend(exercise, history.recent),
         bestPace = bestPaceOf(exercise, sessions),
+        lifetime = lifetimeReps(exercise, sessions.flatMap { it.sets }),
     )
 }

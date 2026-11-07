@@ -91,6 +91,21 @@ class FinishSessionTest {
     }
 
     @Test
+    fun `snatches logged as done set a snatch test best`() = runTest {
+        repository.sessions.startSession(null)
+        repeat(6) {
+            now += 60_000
+            repository.sets.logSet(BuiltInExercise.Snatch, 16.0, 10, null)
+        }
+        val finishing = finishing(backgroundScope)
+
+        assertTrue(finishing.finish("Snatches"))
+
+        // Five minutes hold five of the six sets.
+        assertEquals(50, finishing.finished.value?.snatchTest)
+    }
+
+    @Test
     fun `a session with no sets is thrown away and written nowhere`() = runTest {
         repository.sessions.startSession(null)
         val finishing = finishing(backgroundScope)

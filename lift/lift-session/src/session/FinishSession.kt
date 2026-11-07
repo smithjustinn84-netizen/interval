@@ -12,9 +12,17 @@ import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.data.SetStore
+import dev.justinsmith.lift.domain.ABC_MINUTES
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.Exercise
+import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.PerceivedEffort
+import dev.justinsmith.lift.domain.SNATCH_TEST_MINUTES
 import dev.justinsmith.lift.domain.SaveScope
+import dev.justinsmith.lift.domain.crossedMilestone
 import dev.justinsmith.lift.domain.gripLoad
+import dev.justinsmith.lift.domain.lifetimeReps
+import dev.justinsmith.lift.domain.mostInWindow
 import dev.justinsmith.lift.domain.newPaces
 import dev.justinsmith.lift.domain.newRecords
 import dev.justinsmith.lift.domain.offeredBands
@@ -93,6 +101,9 @@ class FinishSession(
             heavyGrip = grip.heavyDay(done.gripLoad),
             handCare = done.wantsHandCare,
             paces = newPaces(sessionStore.sessions.value, done),
+            milestones = milestonesIn(sessionStore.sessions.value, done),
+            snatchTest = newBest(BuiltInExercise.Snatch, SNATCH_TEST_MINUTES, done),
+            armorBuilding = newBest(BuiltInExercise.ArmorBuildingComplex, ABC_MINUTES, done),
         )
         sessionStore.finishSession(title)
         val now = done.finishedAtEpochMillis ?: clock.nowMillis()
@@ -150,6 +161,13 @@ class FinishSession(
         sessionStore.reflectOnSession(done.session.uid, done.session.effort, done.note)
     }
 
+    /** The most reps of [exercise] in any [minutes] of [done], when it beat every session before; else null. */
+    private fun newBest(exercise: Exercise, minutes: Int, done: LiftSession): Int? {
+        val now = mostInWindow(exercise, listOf(done), minutes) ?: return null
+        val before = mostInWindow(exercise, sessionStore.sessions.value, minutes) ?: 0
+        return now.takeIf { it > before }
+    }
+
     /** The week as it stands with this session in it, the interval workouts counted too, as Lift's week card counts. */
     private fun weekWithThis(): WeekStanding {
         val today = timestamps.dayNumber(clock.nowMillis())
@@ -205,4 +223,22 @@ class SessionHealth(
         /** Long enough for a note being typed to settle, short enough that leaving straight after keeps it. */
         const val SETTLE_MILLIS = 1_000L
     }
+}
+
+/** The lifts of [done] whose reps ever crossed a milestone in it over the [before] sessions, a swing's once. */
+private fun milestonesIn(before: List<LiftSession>, done: LiftSession): List<Pair<Exercise, Int>> {
+    val earlier = before.flatMap { it.sets }
+    return done.sets.map { it.exercise }.distinctBy {
+        if (it ==
+            BuiltInExercise.OneHandSwing
+        ) {
+            BuiltInExercise.TwoHandSwing
+        } else {
+            it
+        }
+    }
+        .mapNotNull { exercise ->
+            crossedMilestone(lifetimeReps(exercise, earlier), lifetimeReps(exercise, earlier + done.sets))
+                ?.let { exercise to it }
+        }
 }

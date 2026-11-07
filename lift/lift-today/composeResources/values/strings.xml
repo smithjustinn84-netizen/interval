@@ -53,6 +53,15 @@
     <string name="session_leave_title">Leave the session?</string>
     <string name="today_balance_span">Sets, last 4 weeks</string>
     <string name="today_balance_untrained">Not trained in four weeks: %1$s</string>
+    <string name="today_challenge_swings">10,000 swings</string>
+    <string name="today_challenge_swings_count">%1$d in the last four weeks</string>
+    <string name="today_challenge_swings_program">%1$d since you started the program</string>
+    <string name="today_challenge_snatch">Snatch test: 100 in 5 minutes</string>
+    <string name="today_challenge_snatch_best">Best: %1$d in 5 minutes</string>
+    <string name="today_challenge_abc">Armor Building Complex</string>
+    <string name="today_challenge_abc_best">Best: %1$d complexes in 20 minutes</string>
+    <string name="today_challenge_get_up">A get-up at your body weight</string>
+    <string name="today_challenge_get_up_best">Heaviest: %1$s kg, %2$d%% of your weight</string>
     <string name="today_grip_week">Grip this week: %1$d</string>
     <string name="today_grip_thrown">%1$d%% of it swings, cleans and snatches</string>
     <string name="today_grip_overreached">More than the weeks before carried: spare your grip, go for goblet squats, get-ups and carries done short</string>

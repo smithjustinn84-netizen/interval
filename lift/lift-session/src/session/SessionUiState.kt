@@ -5,6 +5,7 @@ import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.EmomState
+import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.HoldState
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.Load
@@ -54,6 +55,12 @@ data class Finished(
     val handCare: Boolean = false,
     /** The lifts it did faster than ever at the same weight, from sets logged as they were done. */
     val paces: List<Pace> = emptyList(),
+    /** Each lift whose reps ever crossed a milestone in it, and the milestone: 1,000 swings. */
+    val milestones: List<Pair<Exercise, Int>> = emptyList(),
+    /** The most snatches in any five minutes of it, when that beat every session before; else null. */
+    val snatchTest: Int? = null,
+    /** The most Armor Building Complexes in any twenty minutes of it, when that beat every session before. */
+    val armorBuilding: Int? = null,
 )
 
 /**

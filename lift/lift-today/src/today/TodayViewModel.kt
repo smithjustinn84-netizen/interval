@@ -14,8 +14,10 @@ import dev.justinsmith.lift.data.SetStore
 import dev.justinsmith.lift.data.SportDay
 import dev.justinsmith.lift.domain.BALANCE_DAYS
 import dev.justinsmith.lift.domain.Block
+import dev.justinsmith.lift.domain.Challenge
 import dev.justinsmith.lift.domain.DEFAULT_BELL_KG
 import dev.justinsmith.lift.domain.Exercise
+import dev.justinsmith.lift.domain.Followed
 import dev.justinsmith.lift.domain.GripLoad
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.MuscleBalance
@@ -28,6 +30,7 @@ import dev.justinsmith.lift.domain.ReadinessCheck
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.barbellLifts
 import dev.justinsmith.lift.domain.builtInPrograms
+import dev.justinsmith.lift.domain.challenges
 import dev.justinsmith.lift.domain.estimatedMinutes
 import dev.justinsmith.lift.domain.family
 import dev.justinsmith.lift.domain.gripLoad
@@ -72,6 +75,8 @@ data class TodayUiState(
     val grip: GripLoad? = null,
     /** How ready for today's training, from the last session, the mat and the grip. */
     val readiness: ReadinessCheck = ReadinessCheck(Readiness.Normal),
+    /** The benchmarks under way: 10,000 swings, the snatch test, the ABC's best, a bodyweight get-up. */
+    val challenges: List<Challenge> = emptyList(),
 ) {
     /** How far through the program followed: the days done of all of them, 1 once it is over. */
     val progress: Float
@@ -124,6 +129,9 @@ class TodayViewModel(
                     { state: TodayUiState -> state.withProgram(following, day, rest, bells) }
                 },
             ) { state, with -> with(state) }
+            .combine(
+                combine(sessionStore.sessions, programStore.followed, intervals.bodyWeightKg, ::Triple),
+            ) { state, (sessions, followed, weight) -> state.withChallenges(sessions, followed, weight) }
             .flowOn(computation)
             .stateIn(
                 viewModelScope,
@@ -138,8 +146,23 @@ class TodayViewModel(
                     programStore.programDay.value,
                     setStore.restSeconds.value,
                     gearStore.bells.value,
+                ).withChallenges(
+                    sessionStore.sessions.value,
+                    programStore.followed.value,
+                    intervals.bodyWeightKg.value,
                 ),
             )
+
+    /** [state] with the challenges under way over [sessions], the program [followed], and the body [weight]. */
+    private fun TodayUiState.withChallenges(sessions: List<LiftSession>, followed: Followed?, weight: Double?) = copy(
+        challenges = challenges(
+            sessions,
+            clock.nowMillis(),
+            followed?.program?.key,
+            followed?.startedAtEpochMillis,
+            weight,
+        ),
+    )
 
     /** Starts the session about to open: [program]'s next day, or a free one with null; none with one in progress. */
     fun start(program: ProgramKey?) {

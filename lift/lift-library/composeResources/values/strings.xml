@@ -41,6 +41,7 @@
     </plurals>
     <string name="detail_never">Not logged yet. Its sets will show here.</string>
     <string name="detail_best">Your best</string>
+    <string name="detail_lifetime">%1$d reps in all</string>
     <string name="detail_best_pace">Best pace: %1$s a minute at %2$s kg</string>
     <string name="detail_trend">Best each session</string>
     <plurals name="detail_trend_span">
