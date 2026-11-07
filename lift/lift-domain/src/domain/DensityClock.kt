@@ -1,5 +1,8 @@
 package dev.justinsmith.lift.domain
 
+/** What Lift says of a density block's cap as it runs: the minutes left at five and at one, then that time is up. */
+enum class DensityCall { FiveMinutes, OneMinute, Time }
+
 /** Where a density block stands: counting in, working against the cap, or over. */
 enum class DensityPhase { GetReady, Work, Done }
 
@@ -67,6 +70,21 @@ class DensityClock(val minutes: Int, private val countInMillis: Long = EmomClock
         return due.filter { (at, _) -> at >= 0 && at in (fromMillis + 1)..toMillis }.map { it.second }
     }
 
+    /**
+     * The calls due after [fromMillis] up to [toMillis]: "Five minutes" left (only with more than five to the cap,
+     * so it never talks over the start), "One minute" left, and Time as the cap ends. Between rounds, as the
+     * lifter goes, never a cue mid-rep: these mark the clock, not the lift.
+     */
+    fun callsBetween(fromMillis: Long, toMillis: Long): List<DensityCall> {
+        if (toMillis <= fromMillis) return emptyList()
+        val due = buildList {
+            if (minutes > FIVE) add(lengthMillis - FIVE * EmomClock.MINUTE_MILLIS to DensityCall.FiveMinutes)
+            if (minutes > 1) add(lengthMillis - EmomClock.MINUTE_MILLIS to DensityCall.OneMinute)
+            add(lengthMillis to DensityCall.Time)
+        }
+        return due.filter { (at, _) -> at in (fromMillis + 1)..toMillis }.map { it.second }
+    }
+
     private fun secondsUp(millis: Long) =
         ((millis + EmomClock.SECOND_MILLIS - 1) / EmomClock.SECOND_MILLIS).toInt()
 
@@ -77,5 +95,7 @@ class DensityClock(val minutes: Int, private val countInMillis: Long = EmomClock
 
         /** The tone that says the cap is nearly up, this many seconds before it ends. */
         const val WARNING_SECONDS = 10
+
+        private const val FIVE = 5
     }
 }

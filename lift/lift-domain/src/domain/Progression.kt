@@ -10,8 +10,9 @@ fun plannedMatches(planned: List<PlannedSet>, logged: List<SetLog>): List<SetLog
 /**
  * Of [planned], the sets [logged] did each: one at most, as [plannedMatches] has it, except a density block's first
  * round ([PlannedSet.capMinutes]). That is the first set of its lift left on either side, and it takes every later
- * one logged within the cap from when that round began (its reps at its lift's pace before it was logged), so a
- * round done past the first never counts toward a block after it. Empty for one not done.
+ * one logged within the cap of it, timed from that round's log: never earlier than the clock's, so a round tapped
+ * as the cap ends counts however quick the first was, and a round past it counts toward the block after. Empty
+ * for one not done.
  */
 fun plannedRounds(planned: List<PlannedSet>, logged: List<SetLog>): List<List<SetLog>> {
     val byKey = logged.groupBy { it.exercise.key to it.side }.mapValues { (_, sets) -> ArrayDeque(sets) }
@@ -21,8 +22,7 @@ fun plannedRounds(planned: List<PlannedSet>, logged: List<SetLog>): List<List<Se
         val ofLift = byKey.filterKeys { (key, _) -> key == set.exercise.key }.values
         val first = ofLift.mapNotNull { it.firstOrNull() }.minByOrNull { it.loggedAtEpochMillis }
             ?: return@map emptyList()
-        val began = first.loggedAtEpochMillis - first.reps * first.exercise.secondsPerRep * EmomClock.SECOND_MILLIS
-        val until = began + cap * EmomClock.MINUTE_MILLIS
+        val until = first.loggedAtEpochMillis + cap * EmomClock.MINUTE_MILLIS
         ofLift.flatMap { sets ->
             sets.filter { it.loggedAtEpochMillis in first.loggedAtEpochMillis..until }.also { sets.removeAll(it) }
         }.sortedBy { it.loggedAtEpochMillis }

@@ -4,6 +4,8 @@ import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.Block
+import dev.justinsmith.lift.domain.DensityDone
+import dev.justinsmith.lift.domain.DensityState
 import dev.justinsmith.lift.domain.EmomState
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.HoldState
@@ -61,6 +63,8 @@ data class Finished(
     val snatchTest: Int? = null,
     /** The most Armor Building Complexes in any twenty minutes of it, when that beat every session before. */
     val armorBuilding: Int? = null,
+    /** Its density blocks, each with the rounds it came to and whether that beat the block's best. */
+    val densities: List<DensityDone> = emptyList(),
 )
 
 /**
@@ -77,6 +81,8 @@ data class UpNext(
     val block: Int = 0,
     /** The last set of the lift in a session before this one, to go by; null the first time. */
     val lastTime: SetLog? = null,
+    /** When it opens a density block, the minutes of its cap. */
+    val densityMinutes: Int? = null,
 )
 
 /**
@@ -92,6 +98,7 @@ data class SessionClocks(
     val rest: RestState? = null,
     val emomState: EmomState? = null,
     val holdState: HoldState? = null,
+    val densityState: DensityState? = null,
 )
 
 /** The [session]'s clocks [now], and its [timing]'s. */
@@ -103,6 +110,7 @@ internal fun clocksAt(session: LiftSession?, now: Long, timing: TimerState) = Se
     rest = timing.restState,
     emomState = timing.emomState,
     holdState = timing.holdState,
+    densityState = timing.densityState,
 )
 
 private const val MILLIS_PER_SECOND = 1_000L
@@ -139,6 +147,8 @@ data class SessionUiState(
     /** The program day the session is, null for a free one: what names it to the health store. */
     val programDay: ProgramDay? = null,
     val emom: EmomRun? = null,
+    /** A density block running. */
+    val density: DensityRun? = null,
     /** A hold being timed on the Log sheet. */
     val hold: HoldRun? = null,
     /** The side to time next, for the same length, after the first side of a one-sided hold. */

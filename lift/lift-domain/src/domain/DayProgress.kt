@@ -15,10 +15,17 @@ data class NextSet(
 )
 
 /**
- * One of the day's blocks as today's plan has it: [done] of its [total] sets done, and whether the session
- * [changed] it from the program (its load, its count or its exercise).
+ * One of the day's blocks as today's plan has it: [done] of its [total] sets done, whether the session [changed]
+ * it from the program (its load, its count or its exercise), and for a density block, whose one planned set is
+ * its first round, the [rounds] done in its cap (null for any other block).
  */
-data class PlanRow(val entry: PlanBlock, val done: Int, val total: Int, val changed: Boolean) {
+data class PlanRow(
+    val entry: PlanBlock,
+    val done: Int,
+    val total: Int,
+    val changed: Boolean,
+    val rounds: Int? = null,
+) {
     val block: Block get() = entry.block
 
     /** Whether something is left to change: not every set done, or skipped and so to bring back. */
@@ -47,12 +54,13 @@ fun ProgramDay.nextSet(logged: List<SetLog>): NextSet? {
 /** The day's blocks as today's plan has them, with the sets of each [logged] has done. */
 fun ProgramDay.planRows(logged: List<SetLog>): List<PlanRow> {
     val sets = blockSets()
-    val done = plannedDone(sets.flatten(), logged)
+    val matched = plannedRounds(sets.flatten(), logged)
     val starts = sets.starts()
     return today.blocks.mapIndexed { i, entry ->
         val size = sets[i].size
-        val count = done.subList(starts[i], starts[i] + size).count { it }
-        PlanRow(entry, count, size, changed = entry.block != blocks.getOrNull(i))
+        val mine = matched.subList(starts[i], starts[i] + size)
+        val rounds = mine.singleOrNull()?.size?.takeIf { entry.block.kind == BlockKind.Density }
+        PlanRow(entry, mine.count { it.isNotEmpty() }, size, changed = entry.block != blocks.getOrNull(i), rounds)
     }
 }
 

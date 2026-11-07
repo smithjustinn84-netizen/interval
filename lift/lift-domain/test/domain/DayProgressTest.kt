@@ -151,12 +151,22 @@ class DayProgressTest {
     }
 
     @Test
-    fun `the cap is counted from when the first round began`() {
-        // The first round of an ABC was logged 20 seconds after it began, so the cap ends 20 seconds earlier.
+    fun `a round tapped as the cap ends counts however quick the first round was`() {
+        // An ABC is paced at well over five seconds, but the clock's cap began before this first round's log.
         val more = Block(BuiltInExercise.ArmorBuildingComplex, rounds = 1, reps = 1, double = true)
-        val first = round(20_000L)
-        val past = round(20 * 60_000L + 10_000L)
-        assertEquals(1, plannedRounds(abcs.plannedSets(), listOf(first, past)).single().size)
-        assertEquals(1, day(abcs, more).planRows(listOf(first, past))[1].done)
+        val first = round(5_000L)
+        val last = round(5_000L + 20 * 60_000L - 1_000L)
+        val past = round(5_000L + 20 * 60_000L + 1_000L)
+        assertEquals(2, plannedRounds(abcs.plannedSets(), listOf(first, last, past)).single().size)
+        assertEquals(1, day(abcs, more).planRows(listOf(first, last, past))[1].done)
+    }
+
+    @Test
+    fun `a density block's row says its rounds and any other's none`() {
+        val rounds = (0 until 4).map { round(100_000L + it * 60_000L) }
+        val rows = day(swings, abcs).planRows(logged(BuiltInExercise.TwoHandSwing, 3) + rounds)
+        assertNull(rows[0].rounds)
+        assertEquals(4, rows[1].rounds)
+        assertEquals(0, day(abcs).planRows(emptyList()).single().rounds)
     }
 }

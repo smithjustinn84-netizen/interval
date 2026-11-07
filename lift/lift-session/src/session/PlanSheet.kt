@@ -42,6 +42,7 @@ import dev.justinsmith.lift.programs.BlockCounts
 import dev.justinsmith.lift.programs.BlockLoad
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.block_done
+import dev.justinsmith.lift.session.resources.density_rounds
 import dev.justinsmith.lift.session.resources.plan_block_title
 import dev.justinsmith.lift.session.resources.plan_changed
 import dev.justinsmith.lift.session.resources.plan_done_of
@@ -53,6 +54,7 @@ import dev.justinsmith.lift.session.resources.plan_title
 import dev.justinsmith.lift.session.resources.plan_unskip
 import dev.justinsmith.lift.ui.blockLine
 import dev.justinsmith.lift.ui.liftName
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -133,7 +135,7 @@ internal fun PlanSheet(state: SessionUiState, onOpen: (Int) -> Unit, onDismiss: 
                                 color = palette.textDim,
                             )
                             Text(
-                                stringResource(Res.string.plan_done_of, row.done, row.total),
+                                row.doneText(),
                                 style = IntervalTheme.type.meta,
                                 color = palette.textDim,
                             )
@@ -223,7 +225,12 @@ internal fun PlanBlockSheet(
                     modifier = Modifier.semantics { heading() },
                 )
                 Text(
-                    stringResource(Res.string.plan_done_of, row.done, row.entry.copy(kept = null).plannedSets().size),
+                    row.rounds?.let { pluralStringResource(Res.plurals.density_rounds, it, it) }
+                        ?: stringResource(
+                            Res.string.plan_done_of,
+                            row.done,
+                            row.entry.copy(kept = null).plannedSets().size,
+                        ),
                     style = IntervalTheme.type.meta,
                     color = IntervalTheme.palette.textDim,
                 )
@@ -270,3 +277,9 @@ internal fun PlanBlockSheet(
         )
     }
 }
+
+/** How much of [PlanRow]'s block is done: "2 of 3", or a density block's rounds, "12 rounds". */
+@Composable
+private fun PlanRow.doneText(): String =
+    rounds?.let { pluralStringResource(Res.plurals.density_rounds, it, it) }
+        ?: stringResource(Res.string.plan_done_of, done, total)

@@ -266,4 +266,50 @@ class SessionTimersTest {
         assertEquals(Coaching.Fault(snatch, 1), voice.lines.last())
         timers.stopAll()
     }
+
+    @Test
+    fun `a density block logs its rounds and is kept by the platform to its cap`() = runTest {
+        val timers = timers()
+        repository.sessions.startSession()
+        timers.startRest(90)
+        timers.startDensity(BuiltInExercise.Snatch, Load.Bell(16.0), 5, minutes = 5, firstSide = Side.Left, best = 9)
+        assertNull(timers.state.value.rest)
+        assertEquals(TimerRun.Density(now, 5), keepAlive.runs.last())
+        run(EmomClock.COUNT_IN_MILLIS)
+        repeat(2) { timers.densityRoundDone() }
+        assertEquals(listOf(Side.Left, Side.Right), repository.sessions.active.value?.sets?.map { it.side })
+        assertEquals(
+            SavedTimer.Density(now, BuiltInExercise.Snatch, Load.Bell(16.0), 5, 5, 2, Side.Left, best = 9),
+            repository.sessions.active.value?.timer,
+        )
+        timers.stopDensity()
+        assertNull(timers.state.value.density)
+        assertNull(repository.sessions.active.value?.timer)
+    }
+
+    @Test
+    fun `a density block a killed process left goes on with its rounds and one over is dropped`() = runTest {
+        repository.sessions.startSession()
+        timers().apply {
+            startDensity(BuiltInExercise.Snatch, Load.Bell(16.0), 5, minutes = 5, firstSide = Side.Left, best = null)
+            run(EmomClock.COUNT_IN_MILLIS)
+            densityRoundDone()
+        }.close()
+        val kept = repository.sessions.active.value?.timer ?: error("Kept no density block")
+        now += 2 * EmomClock.MINUTE_MILLIS
+        val timers = timers()
+        timers.restore(kept)
+        run(0)
+        assertEquals(1, timers.state.value.density?.rounds)
+        timers.densityRoundDone()
+        assertEquals(listOf(Side.Left, Side.Right), repository.sessions.active.value?.sets?.map { it.side })
+        timers.stopAll()
+
+        now += 10 * EmomClock.MINUTE_MILLIS
+        val later = timers()
+        later.restore(kept)
+        run(0)
+        assertNull(later.state.value.density)
+        assertNull(repository.sessions.active.value?.timer)
+    }
 }

@@ -160,7 +160,7 @@ internal fun BlockCounts(
     StepperRow(
         roundsName(block.kind),
         block.rounds,
-        fewestRounds.coerceAtLeast(1)..maxRounds(block.kind),
+        fewestRounds.coerceAtLeast(leastRounds(block.kind))..maxRounds(block.kind),
         onSet = { n -> onChange { it.copy(rounds = n) } },
     )
     when {
@@ -176,7 +176,8 @@ internal fun BlockCounts(
         block.kind == BlockKind.Ladder ->
             RungsEditor(block.rungs, onSet = { rungs -> onChange { it.copy(rungs = rungs) } })
 
-        rangeEditable -> RepsEditor(block, onChange)
+        // A density block's reps are a round's, and step by its rounds beating the best, never within a range.
+        rangeEditable && block.kind != BlockKind.Density -> RepsEditor(block, onChange)
 
         else -> StepperRow(
             stringResource(Res.string.block_reps),
@@ -309,11 +310,8 @@ private fun roundsName(kind: BlockKind): String = stringResource(
     },
 )
 
-/**
- * The kinds a block can be made: not yet a density block, until a session can run one. One already a density block
- * still shows its kind.
- */
-private val offeredKinds = listOf(BlockKind.Sets, BlockKind.Emom, BlockKind.Ladder)
+/** The kinds a block can be made; one of another kind (none yet) still shows its own. */
+private val offeredKinds = listOf(BlockKind.Sets, BlockKind.Emom, BlockKind.Ladder, BlockKind.Density)
 
 /**
  * An EMOM runs no longer than the timer allows and a density block's cap no longer than
@@ -324,3 +322,6 @@ private fun maxRounds(kind: BlockKind): Int = when (kind) {
     BlockKind.Density -> DensityClock.MAX_MINUTES
     BlockKind.Sets, BlockKind.Ladder -> ProgramDraft.MAX_ROUNDS
 }
+
+/** A density block's cap is [DensityClock.MIN_MINUTES] at the least; any other block a round. */
+private fun leastRounds(kind: BlockKind): Int = if (kind == BlockKind.Density) DensityClock.MIN_MINUTES else 1

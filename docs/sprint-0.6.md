@@ -114,7 +114,7 @@ Exercise in Health Connect. Check it before the next release. Ticket 4 of 0.5 mo
   - one big "Round done".
 - Lift's voice says one of the lift's cues at the count-in, then "Five minutes", "One minute", and, once the cap
   ends, "Time. 14 rounds". It never speaks mid-round.
-- The block editor offers the kind ("Rounds in a time cap"), its minutes from the same stepper as an EMOM's, and
+- The block editor offers the kind ("Time cap", short so the picker never cuts it), its minutes from the same stepper as an EMOM's, and
   `ProgramWords` says "As many rounds as you can in 20 min · 1 a round".
 - The summary says the rounds, and "New best: 15 rounds in 20 min" when it beats the block's best.
 - Done when:

@@ -67,7 +67,7 @@ internal data class Inputs(
     val draft: SetDraft,
     val editing: SetLog?,
     val finished: Finished?,
-    val runs: Pair<EmomRun?, HoldTiming>,
+    val runs: Triple<EmomRun?, HoldTiming, DensityRun?>,
     val filters: ExerciseFilters,
 ) {
     /** Everything but the clocks, worked out again only when something changes, not every tick. */
@@ -78,7 +78,7 @@ internal data class Inputs(
         val sets = active?.sets.orEmpty()
         val records = logged.records
         val offered = offeredBands(bands)
-        val (emom, timing) = runs
+        val (emom, timing, density) = runs
         return SessionUiState(
             session = active,
             bells = owned.ifEmpty { standardBells },
@@ -93,6 +93,7 @@ internal data class Inputs(
             plan = plan?.planRows(sets).orEmpty(),
             programDay = plan,
             emom = emom,
+            density = density,
             hold = timing.run,
             otherSide = timing.offer?.takeIf { it.exercise == draft.exercise && it.side == draft.side }?.side,
             finished = finished,

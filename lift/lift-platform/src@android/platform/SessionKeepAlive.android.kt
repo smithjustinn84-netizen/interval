@@ -18,6 +18,7 @@ import dev.justinsmith.interval.platform.openAppIntent
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.lift.domain.EmomClock
 import dev.justinsmith.lift.platform.resources.Res
+import dev.justinsmith.lift.platform.resources.density_title
 import dev.justinsmith.lift.platform.resources.emom_title
 import dev.justinsmith.lift.platform.resources.hold_title
 import dev.justinsmith.lift.platform.resources.rest_title
@@ -77,14 +78,15 @@ internal class AndroidSessionKeepAlive(private val context: Context, private val
             is TimerRun.Rest -> TimerService.KIND_REST
             is TimerRun.Emom -> TimerService.KIND_EMOM
             is TimerRun.Hold -> TimerService.KIND_HOLD
+            is TimerRun.Density -> TimerService.KIND_DENSITY
         }
 }
 
 /**
- * The foreground service behind a run of the session's timers: a rest between sets, an EMOM or a hold. It holds
- * the CPU awake so the session's cues play with the screen off, and shows the run counting down as an ongoing
- * notification. It ends with the run, or when the session stops it. On Android 16 and later it is a Live Update,
- * as the workout's is: the time left in a chip in the status bar, and the run as a bar on the lock screen.
+ * The foreground service behind a run of the session's timers: a rest between sets, an EMOM, a density block or a
+ * hold. It holds the CPU awake so the session's cues play with the screen off, and shows the run counting down as an
+ * ongoing notification. It ends with the run, or when the session stops it. On Android 16 and later it is a Live
+ * Update, as the workout's is: the time left in a chip in the status bar, and the run as a bar on the lock screen.
  * Special use, as the workout's is: a rest can run ten minutes and an EMOM an hour, past a short service's three.
  */
 class TimerService : Service(), KoinComponent {
@@ -183,10 +185,10 @@ class TimerService : Service(), KoinComponent {
     }
 
     /**
-     * What is running ("Resting", "EMOM · minute 2 of 10", "Holding") over the time left, silent and ongoing, on
-     * the lock screen; tapping it opens the app. An EMOM's time left is its minute's, the others' the whole run's.
-     * From Android 16 the time left is the status bar's chip, and the run one segment the tracker crosses as it
-     * runs; below 16 the builder drops both, and the request to promote it.
+     * What is running ("Resting", "EMOM · minute 2 of 10", "Holding", "Rounds in a time cap") over the time left,
+     * silent and ongoing, on the lock screen; tapping it opens the app. An EMOM's time left is its minute's, the
+     * others' the whole run's. From Android 16 the time left is the status bar's chip, and the run one segment the
+     * tracker crosses as it runs; below 16 the builder drops both, and the request to promote it.
      */
     private suspend fun notification(run: Run): Notification {
         val now = clock.nowMillis()
@@ -196,6 +198,7 @@ class TimerService : Service(), KoinComponent {
         val title = when {
             emom != null -> getString(Res.string.emom_title, emom.minute, emom.minutes)
             run.kind == KIND_HOLD -> getString(Res.string.hold_title)
+            run.kind == KIND_DENSITY -> getString(Res.string.density_title)
             else -> getString(Res.string.rest_title)
         }
         val length = ceilSeconds(run.endAt - run.startedAt).coerceAtLeast(1)
@@ -243,6 +246,7 @@ class TimerService : Service(), KoinComponent {
         internal const val KIND_REST = "rest"
         internal const val KIND_EMOM = "emom"
         internal const val KIND_HOLD = "hold"
+        internal const val KIND_DENSITY = "density"
 
         /** The id the rests' channel had, so a user's settings for it carry over to every run's. */
         private const val CHANNEL_ID = "rest"

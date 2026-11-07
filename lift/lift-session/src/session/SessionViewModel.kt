@@ -14,6 +14,7 @@ import dev.justinsmith.lift.data.SetStore
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.Side
+import dev.justinsmith.lift.domain.densityBest
 import dev.justinsmith.lift.domain.offeredBands
 import dev.justinsmith.lift.domain.standardBells
 import dev.justinsmith.lift.library.ExerciseDetailUiState
@@ -35,12 +36,12 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
- * The session in progress, which whatever opens its page has started ([SessionStore.startSession]): it logs sets
- * (from the plan, the sheet or an EMOM), and finishes or discards it, and starts none itself. Its parts are its
- * own: the sheet's [draft], today's [plan] and the [summary]; its rest, EMOM and hold are the process's [timers],
- * which it starts and stops and shows. Its state follows what is stored as it changes, the sets before this
- * session flattened on [computation]; [tickMillis] is how often the session's own clocks (its time, the time
- * since the last set) move.
+ * The session in progress, which whatever opens its page has started ([SessionStore.startSession]): it logs sets (from
+ * the plan, the sheet, an EMOM or a density block), and finishes or discards it, and starts none itself. Its parts are
+ * its own: the sheet's [draft], today's [plan] and the [summary]; its rest, EMOM and hold are the process's [timers],
+ * which it starts and stops and shows. Its state follows what is stored as it changes, the sets before this session
+ * flattened on [computation]; [tickMillis] is how often the session's own clocks (its time, the time since the last
+ * set) move.
  */
 class SessionViewModel(
     private val sessionStore: SessionStore,
@@ -113,7 +114,7 @@ class SessionViewModel(
         combine(logged, programStore.programDay, ::Pair),
         combine(gearStore.bells, gearStore.bands, gearStore.bar, ::Triple),
         combine(draft.draft, draft.editing, summary.finished, ::Triple),
-        timers.state.map { it.emom to it.hold }.distinctUntilChanged(),
+        timers.state.map { Triple(it.emom, it.hold, it.density) }.distinctUntilChanged(),
         filters.filters,
     ) { (logged, day), (owned, bands, bar), (draft, editing, finished), runs, narrowed ->
         Inputs(logged, day, owned, bands, bar, draft, editing, finished, runs, narrowed)
@@ -233,13 +234,25 @@ class SessionViewModel(
         opened.value = key
     }
 
-    /** Starts the plan's next block as an EMOM, if it is one. */
-    fun startPlannedEmom() {
-        val next = upNextNow ?: return
-        val minutes = next.emomMinutes ?: return
-        if (next.set.held) return
+    /**
+     * Starts the plan's next block on its clock: an EMOM for its minutes, or rounds in a time cap against the
+     * block's best. Nothing when the next set is neither, or a hold.
+     */
+    fun startPlannedClock() {
+        val next = upNextNow?.takeUnless { it.set.held } ?: return
         val set = next.set
-        timers.startEmom(set.exercise, next.load, set.reps, minutes, set.side ?: Side.Left)
+        val side = set.side ?: Side.Left
+        val emom = next.emomMinutes
+        if (emom != null) {
+            timers.startEmom(set.exercise, next.load, set.reps, emom, side)
+        } else {
+            val minutes = next.densityMinutes ?: return
+            val day = state.value.programDay
+            val best = day?.today?.blocks?.getOrNull(next.block)?.let {
+                densityBest(it.block, day.program, sessionStore.sessions.value)
+            }
+            timers.startDensity(set.exercise, next.load, set.reps, minutes, side, best)
+        }
     }
 
     /** Starts timing the plan's next set when it is a hold, putting it on the sheet first. */
@@ -299,7 +312,7 @@ class SessionViewModel(
             draft.draft.value,
             draft.editing.value,
             summary.finished.value,
-            timers.state.value.let { it.emom to it.hold },
+            timers.state.value.let { Triple(it.emom, it.hold, it.density) },
             filters.filters.value,
         )
 

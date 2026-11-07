@@ -7,11 +7,17 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.6.0] — Unreleased
 
 ### Added
-- A density block in a Lift program: as many rounds of one lift as fit a time cap of 5 to 30 minutes (the domain and
-  storage; the editor offers it once the session can run one). Its rounds are counted from the sets of that lift
-  logged within the cap, either side, from when the first began; the day's estimate takes its cap, an easier day
-  cuts it by a quarter (never under 5 minutes), the grip counts it as an EMOM a round a minute, and a round's reps
-  go up by one once the last two sessions each beat the best before them. Exports are schema 11.
+- A density block in a Lift program: as many rounds of one lift as fit a time cap of 5 to 30 minutes, offered by the
+  block editor as "Time cap" and read "As many rounds as you can in 20 min · 1 a round". Start the clock
+  at the session's foot and it counts in, then takes a tap of Round done a round, the rounds rolling up beside the
+  block's best ("Best: 14"); a one-sided lift turns sides each round. The voice says one of the lift's cues as it
+  counts in, then only the clock: "Five minutes", "One minute" and "Time. 14 rounds", never a word mid-round. It
+  keeps counting with the screen off (Android's notification, iOS's alert at the cap) and goes on after the app is
+  killed. The summary says the rounds, and "New best: 15 rounds in 20 min" when it beat the block's best; Today's
+  plan says a block's rounds rather than "1 of 1". Its rounds are the sets of that lift logged within the cap from
+  the first, either side; the day's estimate takes its cap, an easier day cuts it by a quarter (never under 5
+  minutes), the grip and the week's balance count it a round a minute, and a round's reps go up by one once the last
+  two sessions each beat the best before them. Exports are schema 11.
 
 ## [0.5.0] — Unreleased
 

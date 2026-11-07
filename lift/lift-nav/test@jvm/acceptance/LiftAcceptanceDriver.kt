@@ -228,6 +228,39 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
         see("Rest")
     }
 
+    /**
+     * From Today: a new program named [name] of one day, its one block the editor's first (two-hand swings, 5 × 10)
+     * made rounds in a time cap, which opens at its least, five minutes; then follow it.
+     */
+    fun followNewDensityProgram(name: String) {
+        tap("Follow a program")
+        scrollTo("New program")
+        tap("New program")
+        see("Day 1")
+        tap("Add block")
+        tap("Time cap")
+        tap("Done")
+        see("As many rounds as you can in 5 min · 10 a round")
+        ui.onNode(hasSetTextAction()).performTextReplacement(name)
+        saveProgram()
+        tap(name)
+        tap("Follow this program")
+    }
+
+    /** In a program day with a density block up next: Start the clock, which counts in, then the cap's Go. */
+    fun startTheClock() {
+        tap("Start the clock")
+        see("Get ready")
+        secondsPass(10)
+        see("Go")
+    }
+
+    /** In a density block's cap: Round done [times], the rounds counting up to [total]. */
+    fun roundsDone(times: Int, total: Int) {
+        repeat(times) { tap("Round done") }
+        see("$total rounds")
+    }
+
     /** [seconds] pass on the clocks the timers keep. */
     fun secondsPass(seconds: Int) = app.clock.set(app.clock.get() + seconds * MILLIS_PER_SECOND)
 

@@ -84,8 +84,14 @@ A block keeps its own rest (`Block.rest`) once it has stepped.
 
 **Pace records** sit beside the heaviest, most reps and longest hold: "New best pace: 9.4 swings a minute at 24 kg."
 
+**A time-capped block** (`BlockKind.Density`, `DensityClock`): as many good rounds as you can in a cap of 5 to 30
+minutes, the ABC's second option. The program editor offers it as "Time cap". The session runs it on its
+own page: a tap a round, the rounds rolling up beside the best to beat, and the voice calling only the clock (five
+minutes, one minute, then time and the rounds), never a word mid-round. The rounds are the sets of its lift logged in
+the cap; a round's reps go up by one once the last two sessions each beat the best before them, and the bell waits.
+The summary says the rounds, and "New best: 15 rounds in 20 min" when it beat the block's best.
+
 **Planned:**
-- A time-capped block (`BlockKind.Density`): as many good rounds as you can in 15–20 minutes, the ABC's second option.
 - Counting snatches in 15:15. At the end of a 15:15 workout, the lifter gives about how many a set (7–9 is the target), so the interval side's 15:15 counts toward snatch totals and density.
 
 ## 5. Benchmarks and engagement

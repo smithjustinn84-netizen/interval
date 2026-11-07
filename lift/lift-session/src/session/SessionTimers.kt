@@ -2,6 +2,8 @@ package dev.justinsmith.lift.session
 
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.lift.data.SetStore
+import dev.justinsmith.lift.domain.DensityClock
+import dev.justinsmith.lift.domain.DensityState
 import dev.justinsmith.lift.domain.EmomClock
 import dev.justinsmith.lift.domain.EmomState
 import dev.justinsmith.lift.domain.Exercise
@@ -47,27 +49,33 @@ class RunClock(private val wall: WallClock, timeSource: TimeSource.WithComparabl
     fun epochNow(): Long = wall.nowMillis()
 }
 
-/** The session's timers at one tick: [now] on the [RunClock], and the rest, EMOM and hold, any of which may run. */
+/**
+ * The session's timers at one tick: [now] on the [RunClock], and the rest, EMOM, hold and density block, any of
+ * which may run.
+ */
 data class TimerState(
     val now: Long = 0L,
     val rest: RestRun? = null,
     val emom: EmomRun? = null,
     val hold: HoldTiming = HoldTiming(),
+    val density: DensityRun? = null,
 ) {
     val restState: RestState? get() = rest?.let { it.clock.at(now - it.startedAtMillis) }
     val emomState: EmomState? get() = emom?.let { EmomClock(it.minutes).at(now - it.startedAtMillis, it.done) }
     val holdState: HoldState? get() = hold.run?.let { it.clock.at(now - it.startedAtMillis) }
+    val densityState: DensityState?
+        get() = density?.let { DensityClock(it.minutes).at(now - it.startedAtMillis, it.rounds) }
 }
 
 /**
- * The session's timers: the rest after a set, an EMOM and a hold, one at a time. They live as long as the process,
- * not the session's screen, so they keep time, beep and log while the app is off screen; the platform keeps the
- * run going there ([keepAlive]). While a run goes they tick every [TICK_MILLIS] in [scope], on the main thread,
- * where the screen's actions on them run too; with none going nothing ticks.
+ * The session's timers: the rest after a set, an EMOM, a hold and a density block, one at a time. They live as long as
+ * the process, not the session's screen, so they keep time, beep and log while the app is off screen; the platform
+ * keeps the run going there ([keepAlive]). While a run goes they tick every [TICK_MILLIS] in [scope], on the main
+ * thread, where the screen's actions on them run too; with none going nothing ticks.
  *
- * An EMOM's sets and a hold are logged here as they are done, a hold then resting as a set logged does; the screen
- * hears of a hold logged through [heldSets]. The session ends them ([stopAll]) as it finishes, is discarded or is
- * left, and Android's keep-alive as the app is swiped away.
+ * An EMOM's sets, a density block's rounds and a hold are logged here as they are done, a hold then resting as a set
+ * logged does; the screen hears of a hold logged through [heldSets]. The session ends them ([stopAll]) as it finishes,
+ * is discarded or is left, and Android's keep-alive as the app is swiped away.
  *
  * The run going is kept on the session in progress at each change of course ([SetStore.saveTimer]), so a
  * process killed in it can go on with it: the session's screen [restore]s it, timed by the wall clock.
@@ -98,6 +106,10 @@ class SessionTimers(
 
     private val emom = EmomRunner(time, beeper, voice, ::nextFault) { run, minute ->
         setStore.logSet(run.exercise, run.load, run.reps, run.sideOf(minute))
+    }
+
+    private val density = DensityRunner(time, beeper, voice) { run, round ->
+        setStore.logSet(run.exercise, run.load, run.reps, run.sideOf(round))
     }
 
     private val holds = HoldTimer(time, beeper) { set, seconds -> logHeld(set, seconds) }
@@ -161,6 +173,29 @@ class SessionTimers(
         changed()
     }
 
+    /**
+     * Starts a density block of [reps] a round capped at [minutes], ending the rest; [best] is the most rounds the
+     * block has had before, to beat.
+     */
+    @Suppress("detekt.LongParameterList") // A block's own: its lift, load, reps and cap, a side and its best.
+    fun startDensity(exercise: Exercise, load: Load, reps: Int, minutes: Int, firstSide: Side, best: Int?) {
+        rest.skip()
+        density.start(exercise, load, reps, minutes, firstSide, best)
+        changed()
+    }
+
+    /** Logs a round of the density block, while its cap runs. */
+    fun densityRoundDone() {
+        density.roundDone()
+        changed()
+    }
+
+    /** Ends the density block before its cap, keeping the rounds logged. */
+    fun stopDensity() {
+        density.stop()
+        changed()
+    }
+
     /** Starts timing [set], ending the rest: the other side of the hold just done, if that is on offer. */
     fun startHold(set: SetDraft) {
         rest.skip()
@@ -182,6 +217,7 @@ class SessionTimers(
 
     override fun stopAll() {
         emom.stop()
+        density.stop()
         holds.cancel()
         rest.skip()
         next = null
@@ -221,8 +257,19 @@ class SessionTimers(
                 .takeUnless { it.clock.at(elapsed).phase == HoldPhase.Done }
                 ?.let(holds::resume)
 
-            // Nothing runs a density block yet, so there is none to go on with.
-            is SavedTimer.Density -> Unit
+            is SavedTimer.Density -> DensityRun(
+                timer.exercise,
+                timer.load,
+                timer.reps,
+                timer.minutes,
+                timer.firstSide,
+                startedAt,
+                timer.rounds,
+                timer.startedAtEpochMillis,
+                timer.best,
+            )
+                .takeUnless { DensityClock(it.minutes).isOver(elapsed) }
+                ?.let(density::resume)
         }
         changed()
     }
@@ -248,12 +295,13 @@ class SessionTimers(
         rest.tick(now)
         holds.tick(now)
         emom.tick(now)
+        density.tick(now)
         changed()
     }
 
     /** Publishes where the timers stand, tells the platform of a run started or ended, and ticks while one goes. */
     private fun changed() {
-        val now = TimerState(time.now(), rest.state.value, emom.state.value, holds.state.value)
+        val now = TimerState(time.now(), rest.state.value, emom.state.value, holds.state.value, density.state.value)
         current.value = now
         val keep = now.keeping
         if (keep != saved) {
@@ -303,6 +351,8 @@ private val TimerState.running: TimerRun? get() = rest?.let {
     TimerRun.Emom(it.startedAtEpochMillis, it.minutes)
 } ?: hold.run?.let {
     TimerRun.Hold(it.startedAtEpochMillis, it.set.seconds)
+} ?: density?.let {
+    TimerRun.Density(it.startedAtEpochMillis, it.minutes)
 }
 
 /** The run going, as the session keeps it. */
@@ -331,5 +381,16 @@ private val TimerState.keeping: SavedTimer? get() = rest?.let {
         set.seconds,
         set.band,
         it.firstSide,
+    )
+} ?: density?.let {
+    SavedTimer.Density(
+        it.startedAtEpochMillis,
+        it.exercise,
+        it.load,
+        it.reps,
+        it.minutes,
+        it.rounds,
+        it.firstSide,
+        it.best,
     )
 }

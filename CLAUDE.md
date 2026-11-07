@@ -181,7 +181,7 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      and how far through it; Beside the mat and the wall, `suggestedPrograms`, each opening the
                      `ProgramSheet` key; On your own; Lately, the last session and the balance, `MuscleBalance` in
                      lift-domain) and the gear (bells, bar, bands, records)
-  lift-session       the session (log sheet, EMOM, hold and rest timers under `SessionTimers`, plan sheets,
+  lift-session       the session (log sheet, EMOM, hold, density and rest timers under `SessionTimers`, plan sheets,
                      summary), the programs
                      and their editor and progress (they share the block editor), a finished session's page
   lift-library       the exercise library, each exercise's page and editor, the picker
@@ -365,7 +365,8 @@ toolchain (`$compose.*`).
   and drops them on return; its actual says why not background audio. Desktop keeps nothing.
   Lift's timers go the same way. A session is started by whatever pushes `Lifting` (`SessionStore.startSession`:
   Train's Strength pillar, History, the shortcut in `App.kt`), never by `SessionViewModel`, which only reads; its page
-  restored with no session behind it closes (`sessionGone`). The rest, an EMOM and a hold are `SessionTimers`
+  restored with no session behind it closes (`sessionGone`). The rest, an EMOM, a hold and a density block
+  (`DensityRunner`, its page `DensityScreen`, rounds logged as they are tapped and the clock called aloud) are `SessionTimers`
   (`lift-session`, a Koin single), not `SessionViewModel`, which starts them and shows their `state`. They time by `realElapsedTime` (core's
   `corePlatformModule` binds it for both sides), tick only while one runs, beep and log as they go, and end with
   the session (finish, discard, Leave), when the `Lifting` key leaves the back stack (`App.kt`, through the

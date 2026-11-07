@@ -73,7 +73,6 @@ import dev.justinsmith.interval.ui.risingEnter
 import dev.justinsmith.lift.data.ExerciseFilterStore
 import dev.justinsmith.lift.data.SetStore
 import dev.justinsmith.lift.domain.Block
-import dev.justinsmith.lift.domain.EmomState
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.ExerciseFilters
 import dev.justinsmith.lift.domain.SetLog
@@ -81,6 +80,7 @@ import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.library.ExerciseDetailSheet
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_cancel
+import dev.justinsmith.lift.session.resources.density_start
 import dev.justinsmith.lift.session.resources.kg_value
 import dev.justinsmith.lift.session.resources.next_emom
 import dev.justinsmith.lift.session.resources.notice_record
@@ -93,6 +93,7 @@ import dev.justinsmith.lift.session.resources.session_extra_set
 import dev.justinsmith.lift.session.resources.session_finish
 import dev.justinsmith.lift.session.resources.session_health_title
 import dev.justinsmith.lift.session.resources.session_leave
+import dev.justinsmith.lift.session.resources.session_leave_density_text
 import dev.justinsmith.lift.session.resources.session_leave_emom_text
 import dev.justinsmith.lift.session.resources.session_leave_empty_text
 import dev.justinsmith.lift.session.resources.session_leave_text
@@ -113,6 +114,7 @@ import dev.justinsmith.lift.ui.programName
 import dev.justinsmith.lift.ui.sessionTitle
 import dev.justinsmith.lift.ui.setLine
 import kotlinx.coroutines.delay
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -141,11 +143,9 @@ fun SessionRoute(onExit: () -> Unit) {
         if (unread) viewModel.readHeartRate()
         onStopOrDispose {}
     }
-    val emom = state.emom
-    val emomState = clocks.value.emomState
     if (finished == null) {
         LeaveGuard(
-            emomRunning = emom != null,
+            running = state.clockStopping,
             hasSets = !state.session?.sets.isNullOrEmpty(),
             onLeave = {
                 viewModel.leave()
@@ -167,12 +167,9 @@ fun SessionRoute(onExit: () -> Unit) {
         remember(viewModel, title, healthTitle, onExit) {
             sessionActions(ActionTargets(viewModel, timers, sets, filters), title, healthTitle, onExit)
         }
-    val page = when {
-        finished != null -> SessionPage.Summary(finished)
-        emom != null && emomState != null -> SessionPage.Emom(emom, emomState)
-        else -> SessionPage.Logging
-    }
-    // The session, its EMOM and its summary take one another's place with a fade through, as pages do.
+    val page = sessionPage(state, clocks.value)
+    // The session, its EMOM or density block, and its summary take one another's place with a fade through, as
+    // pages do.
     AnimatedContent(
         targetState = page,
         transitionSpec = { fadeThrough(Motion.PAGE_MILLIS) },
@@ -197,19 +194,25 @@ fun SessionRoute(onExit: () -> Unit) {
                 onStop = timers::stopEmom,
             )
 
+            is SessionPage.Density -> DensityScreen(
+                shown.run,
+                shown.state,
+                onFinishRound = timers::densityRoundDone,
+                onStop = timers::stopDensity,
+            )
+
             SessionPage.Logging -> SessionScreen(state, readClocks, actions)
         }
     }
 }
 
-/** Which of the Lifting page's faces is up. Each carries what it shows, so a face on its way out still has it. */
-private sealed interface SessionPage {
-    data class Summary(val finished: Finished) : SessionPage
-
-    data class Emom(val run: EmomRun, val state: EmomState) : SessionPage
-
-    data object Logging : SessionPage
-}
+/** What Leave says of the clock it stops: an EMOM's or a density block's; null with neither running. */
+private val SessionUiState.clockStopping: StringResource?
+    get() = when {
+        emom != null -> Res.string.session_leave_emom_text
+        density != null -> Res.string.session_leave_density_text
+        else -> null
+    }
 
 /** What the Lifting page's actions act on: the session, its timers, its sets and the picker's filters. */
 private class ActionTargets(
@@ -232,7 +235,7 @@ private fun sessionActions(parts: ActionTargets, title: String, healthTitle: Str
             onStepLoad = viewModel::stepNextLoad,
             onStepDraftLoad = viewModel.draft::stepLoad,
             onOpenExercise = viewModel::openExercise,
-            onStartPlannedEmom = viewModel::startPlannedEmom,
+            onStartPlannedClock = viewModel::startPlannedClock,
             onTimePlannedHold = viewModel::startPlannedHold,
             onStartEmom = viewModel::startDraftEmom,
             onTimeHold = viewModel::startHold,
@@ -260,12 +263,13 @@ private fun sessionActions(parts: ActionTargets, title: String, healthTitle: Str
     }
 
 /**
- * Back, or the back gesture, asks before leaving a session: with sets logged or an EMOM running, the sets stay,
- * for Resume session on Lift, but the EMOM's clock can't. With nothing logged there is nothing to keep, and Leave
- * drops the session, as × → Discard does: a session with no sets is never kept.
+ * Back, or the back gesture, asks before leaving a session: with sets logged or an EMOM or a density block running,
+ * the sets stay, for Resume session on Lift, but the clock running can't ([running] the words that say so). With
+ * nothing logged there is nothing to keep, and Leave drops the session, as × → Discard does: a session with no sets is
+ * never kept.
  */
 @Composable
-private fun LeaveGuard(emomRunning: Boolean, hasSets: Boolean, onLeave: () -> Unit, onDiscard: () -> Unit) {
+private fun LeaveGuard(running: StringResource?, hasSets: Boolean, onLeave: () -> Unit, onDiscard: () -> Unit) {
     var asking by rememberSaveable { mutableStateOf(false) }
     NavigationBackHandler(
         state = rememberNavigationEventState(NavigationEventInfo.None),
@@ -273,7 +277,7 @@ private fun LeaveGuard(emomRunning: Boolean, hasSets: Boolean, onLeave: () -> Un
     )
     if (asking) {
         LeaveDialog(
-            emomRunning = emomRunning,
+            running = running,
             hasSets = hasSets,
             onLeave = {
                 asking = false
@@ -289,13 +293,13 @@ private fun LeaveGuard(emomRunning: Boolean, hasSets: Boolean, onLeave: () -> Un
  * on every session, Finish on one with nothing logged.
  */
 @Composable
-private fun LeaveDialog(emomRunning: Boolean, hasSets: Boolean, onLeave: () -> Unit, onDismiss: () -> Unit) {
+private fun LeaveDialog(running: StringResource?, hasSets: Boolean, onLeave: () -> Unit, onDismiss: () -> Unit) {
     ConfirmDialog(
         title = stringResource(Res.string.session_leave_title),
         text = stringResource(
             when {
                 !hasSets -> Res.string.session_leave_empty_text
-                emomRunning -> Res.string.session_leave_emom_text
+                running != null -> running
                 else -> Res.string.session_leave_text
             },
         ),
@@ -322,7 +326,8 @@ data class SessionActions(
     val onStepDraftLoad: (Int) -> Unit = {},
     /** An exercise's page, by its key, opened; null closes it. */
     val onOpenExercise: (String?) -> Unit = {},
-    val onStartPlannedEmom: () -> Unit = {},
+    /** The plan's next block started on its clock: an EMOM or a density block. */
+    val onStartPlannedClock: () -> Unit = {},
     val onTimePlannedHold: () -> Unit = {},
     val onStartEmom: () -> Unit = {},
     /** Times the sheet's hold; Stop logs the seconds held, Cancel drops it. */
@@ -491,7 +496,7 @@ private fun EndDialogs(
 ) {
     if (leaving) {
         LeaveDialog(
-            emomRunning = false,
+            running = null,
             hasSets = false,
             onLeave = {
                 onLeaving(false)
@@ -698,8 +703,8 @@ private fun SessionFoot(
 }
 
 /**
- * Finish beside Log set (or Start EMOM when an EMOM block is up next); once a program day's sets are done, Extra
- * set beside Finish in the accent.
+ * Finish beside Log set (or Start EMOM when an EMOM block is up next, Start the clock when a density block is); once a
+ * program day's sets are done, Extra set beside Finish in the accent.
  */
 @Composable
 private fun SessionButtons(
@@ -719,10 +724,17 @@ private fun SessionButtons(
         } else {
             SecondaryButton(stringResource(Res.string.session_finish), onFinish, Modifier.weight(1f))
             val emom = next?.emomMinutes != null
+            val density = next?.densityMinutes != null
             AccentButton(
-                stringResource(if (emom) Res.string.next_emom else Res.string.session_log),
+                stringResource(
+                    when {
+                        emom -> Res.string.next_emom
+                        density -> Res.string.density_start
+                        else -> Res.string.session_log
+                    },
+                ),
                 onClick = when {
-                    emom -> actions.onStartPlannedEmom
+                    emom || density -> actions.onStartPlannedClock
                     next != null -> actions.onLogNext
                     else -> actions.onLog
                 },

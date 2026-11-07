@@ -5,14 +5,20 @@ import dev.justinsmith.interval.platform.SpokenLines
 import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.CustomExercise
+import dev.justinsmith.lift.domain.DensityCall
 import dev.justinsmith.lift.domain.UnknownExercise
 import dev.justinsmith.lift.domain.faults
 import dev.justinsmith.lift.platform.Coaching
 import dev.justinsmith.lift.platform.LiftVoice
+import dev.justinsmith.lift.session.resources.Res
+import dev.justinsmith.lift.session.resources.density_five_minutes
+import dev.justinsmith.lift.session.resources.density_one_minute
+import dev.justinsmith.lift.session.resources.density_time
 import dev.justinsmith.lift.ui.cues
 import dev.justinsmith.lift.ui.words
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import org.jetbrains.compose.resources.getPluralString
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.getStringArray
 
@@ -45,7 +51,10 @@ class SpokenCoaching(
     }
 }
 
-/** The words of this line: the lift's cue or fault it names, taken round as many as it has; empty for none. */
+/**
+ * The words of this line: the lift's cue or fault it names, taken round as many as it has, or a density block's
+ * call of its clock; empty for none.
+ */
 internal suspend fun Coaching.words(): String = when (this) {
     is Coaching.Cue -> when (val lift = exercise) {
         is BuiltInExercise -> getStringArray(lift.cues()).taken(index)
@@ -54,6 +63,12 @@ internal suspend fun Coaching.words(): String = when (this) {
         is CustomExercise -> lift.cues.lineSequence().map(String::trim).firstOrNull(String::isNotEmpty).orEmpty()
 
         is UnknownExercise -> ""
+    }
+
+    is Coaching.Clock -> when (call) {
+        DensityCall.FiveMinutes -> getString(Res.string.density_five_minutes)
+        DensityCall.OneMinute -> getString(Res.string.density_one_minute)
+        DensityCall.Time -> getPluralString(Res.plurals.density_time, rounds, rounds)
     }
 
     is Coaching.Fault -> exercise.faults.let { if (it.isEmpty()) "" else getString(it[index.mod(it.size)].words()) }

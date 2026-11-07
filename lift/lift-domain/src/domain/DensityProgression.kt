@@ -32,6 +32,17 @@ fun densityRounds(block: Block, program: Program, sessions: List<LiftSession>): 
 fun densityBest(block: Block, program: Program, sessions: List<LiftSession>): Int? =
     densityRounds(block, program, sessions).maxOrNull()
 
+/** A density block done in a session: its [block], the [rounds] it came to and the [best] before it (null for none). */
+data class DensityDone(val block: Block, val rounds: Int, val best: Int?) {
+    /** Whether it beat a best standing before it: the first of a block sets none. */
+    val newBest: Boolean get() = best != null && rounds > best
+}
+
+/** Each density block of [day] that [logged] did a round of, against the best of it in the [before] sessions. */
+fun densityDone(day: ProgramDay, logged: List<SetLog>, before: List<LiftSession>): List<DensityDone> =
+    blocksDone(day, logged).filter { it.block.kind == BlockKind.Density && it.rounds > 0 }
+        .map { DensityDone(it.block, it.rounds, densityBest(it.block, day.program, before)) }
+
 private fun Block.likeDensity(other: Block): Boolean = kind == BlockKind.Density &&
     other.kind == BlockKind.Density &&
     exercise.key == other.exercise.key &&

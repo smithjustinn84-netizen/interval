@@ -1,0 +1,26 @@
+<journey name="Lift: a density block heard with the screen off">
+  <description>
+    A density block (rounds in a time cap) is made in the program editor and run from the session: it counts in, takes
+    a tap a round, and keeps counting and calling the clock while the screen is off, held awake by the timers'
+    service and shown as a Live Update, then says the time and the rounds as the cap ends and lets go. The summary
+    says the rounds. Run with the emulator's volume up, the Voice switch on in Settings, notifications allowed
+    (lift-rest-alert.xml asks).
+  </description>
+  <actions>
+    <action>Tap the "Train" tab, which opens on "Strength", then "Follow a program", scroll to "New program" and tap it</action>
+    <action>Tap "Add block", then "Time cap" under "How it runs", and verify that its stepper reads "Minutes" at 5; tap "Done"</action>
+    <action>Verify that the day's block reads "As many rounds as you can in 5 min · 10 a round"</action>
+    <action>Name the program "Density", tap "Save program", tap "Density" on the list and then "Follow this program"</action>
+    <action>Tap "Start day 1" and verify that the session's foot offers "Start the clock" where "Log set" would be</action>
+    <action>Tap "Start the clock" and verify that the block's screen shows "Get ready", then "Go" with "5 min cap" and "0 rounds"</action>
+    <action>Tap "Round done" twice and verify that it reads "2 rounds"</action>
+    <action>Verify with adb shell dumpsys notification --noredact that an ongoing notification titled "Rounds in a time cap" is showing, with PROMOTED_ONGOING among its flags (Android 16+)</action>
+    <action>Turn the screen off (adb shell input keyevent KEYCODE_SLEEP)</action>
+    <action>Verify with adb shell dumpsys power that a PARTIAL_WAKE_LOCK tagged "interval:timer" is held</action>
+    <action>Wait until four minutes into the cap and verify that "One minute" was said with the screen off (the emulator's audio, or logcat's TextToSpeech lines)</action>
+    <action>Wait until the cap ends and verify that its last beeps played and "Time. 2 rounds" was said with the screen off</action>
+    <action>Wait ten seconds and verify with adb shell dumpsys power that no wake lock tagged "interval:timer" is held, and that the notification is gone</action>
+    <action>Turn the screen on (adb shell input keyevent KEYCODE_WAKEUP), swipe to unlock, and verify that the session shows again with "Extra set" beside "Finish"</action>
+    <action>Tap "Finish" and verify that the summary shows "2 rounds in 5 min"</action>
+  </actions>
+</journey>

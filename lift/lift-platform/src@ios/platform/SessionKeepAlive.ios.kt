@@ -5,6 +5,7 @@ package dev.justinsmith.lift.platform
 import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.lift.platform.resources.Res
+import dev.justinsmith.lift.platform.resources.density_over
 import dev.justinsmith.lift.platform.resources.emom_over
 import dev.justinsmith.lift.platform.resources.hold_over
 import dev.justinsmith.lift.platform.resources.rest_over
@@ -23,10 +24,10 @@ import platform.UserNotifications.UNTimeIntervalNotificationTrigger
 import platform.UserNotifications.UNUserNotificationCenter
 
 /**
- * One local notification for the end of the run: a rest, an EMOM or a hold. iOS suspends the app soon after it
- * leaves the screen, so the session's own cue can't play there; the notification says the run is over instead.
- * While the app is up the system shows none (the app's notification delegate shows only plan reminders), and the
- * session's beep is the cue.
+ * One local notification for the end of the run: a rest, an EMOM, a density block or a hold. iOS suspends the app soon
+ * after it leaves the screen, so the session's own cue can't play there; the notification says the run is over
+ * instead. While the app is up the system shows none (the app's notification delegate shows only plan reminders), and
+ * the session's beep is the cue.
  */
 internal class IosSessionKeepAlive(private val clock: WallClock) : SessionKeepAlive {
     private val log = Logger.withTag("IosSessionKeepAlive")
@@ -45,6 +46,7 @@ internal class IosSessionKeepAlive(private val clock: WallClock) : SessionKeepAl
                 is TimerRun.Rest -> Res.string.rest_over
                 is TimerRun.Emom -> Res.string.emom_over
                 is TimerRun.Hold -> Res.string.hold_over
+                is TimerRun.Density -> Res.string.density_over
             }
             val content = UNMutableNotificationContent().apply {
                 setTitle(getString(title))

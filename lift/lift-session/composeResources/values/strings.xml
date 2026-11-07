@@ -21,6 +21,7 @@
     <string name="session_leave_title">Leave the session?</string>
     <string name="session_leave_text">Its sets are kept: Resume session on Lift picks it up.</string>
     <string name="session_leave_emom_text">The EMOM stops. Its sets so far are kept: Resume session on Lift picks it up.</string>
+    <string name="session_leave_density_text">The clock stops. Its rounds so far are kept: Resume session on Lift picks it up.</string>
     <string name="session_leave_empty_text">Nothing is logged yet, so the session isn't kept.</string>
     <string name="session_leave">Leave</string>
     <string name="session_stay">Stay</string>
@@ -193,7 +194,8 @@
     <string name="block_kind_sets">Sets</string>
     <string name="block_kind_emom">EMOM</string>
     <string name="block_kind_ladder">Ladder</string>
-    <string name="block_kind_density">Rounds in a time cap</string>
+    <!-- A density block, as many rounds as fit a cap; short, as the picker gives it a quarter of a phone. -->
+    <string name="block_kind_density">Time cap</string>
     <string name="block_rounds_sets">Sets</string>
     <string name="block_rounds_emom">Minutes</string>
     <string name="block_rounds_ladder">Ladders</string>
@@ -247,6 +249,33 @@
     <string name="emom_stop_title">Stop EMOM?</string>
     <string name="emom_stop_text">Sets completed so far stay in the session.</string>
     <string name="emom_next">Next: %1$s</string>
+    <!-- A density block: as many rounds of one lift as fit a time cap. -->
+    <string name="density_start">Start the clock</string>
+    <string name="density_cap">%1$d min cap</string>
+    <string name="density_go">Go</string>
+    <string name="density_round_done">Round done</string>
+    <string name="density_best">Best: %1$d</string>
+    <string name="density_stop_title">Stop the clock?</string>
+    <string name="density_stop_text">Rounds done so far stay in the session.</string>
+    <plurals name="density_rounds">
+        <item quantity="one">%1$d round</item>
+        <item quantity="other">%1$d rounds</item>
+    </plurals>
+    <!-- Said aloud as a density block's cap runs, between rounds. -->
+    <string name="density_five_minutes">Five minutes</string>
+    <string name="density_one_minute">One minute</string>
+    <plurals name="density_time">
+        <item quantity="one">Time. %1$d round</item>
+        <item quantity="other">Time. %1$d rounds</item>
+    </plurals>
+    <plurals name="summary_density">
+        <item quantity="one">%1$d round in %2$d min</item>
+        <item quantity="other">%1$d rounds in %2$d min</item>
+    </plurals>
+    <plurals name="summary_density_best">
+        <item quantity="one">New best: %1$d round in %2$d min</item>
+        <item quantity="other">New best: %1$d rounds in %2$d min</item>
+    </plurals>
     <string name="notice_block_skipped">Skipped %1$s</string>
     <string name="notice_program_saved">Saved %1$s</string>
     <string name="notice_program_followed">Following %1$s</string>

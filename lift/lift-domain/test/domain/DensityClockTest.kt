@@ -53,4 +53,22 @@ class DensityClockTest {
         assertEquals(emptyList(), clock.cuesBetween(10_000, 299_000))
         assertEquals(emptyList(), clock.cuesBetween(20_000, 20_000))
     }
+
+    @Test
+    fun `a five-minute cap calls one minute left and time but never five minutes`() {
+        assertEquals(emptyList(), clock.callsBetween(0, 249_000))
+        assertEquals(listOf(DensityCall.OneMinute), clock.callsBetween(249_000, 250_000))
+        assertEquals(listOf(DensityCall.Time), clock.callsBetween(309_000, 310_000))
+    }
+
+    @Test
+    fun `a longer cap calls five minutes left too`() {
+        val twenty = DensityClock(20)
+        val end = twenty.lengthMillis
+        assertEquals(listOf(DensityCall.FiveMinutes), twenty.callsBetween(end - 300_500, end - 300_000))
+        assertEquals(
+            listOf(DensityCall.FiveMinutes, DensityCall.OneMinute, DensityCall.Time),
+            twenty.callsBetween(0, end),
+        )
+    }
 }

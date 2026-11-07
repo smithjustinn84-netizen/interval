@@ -20,6 +20,7 @@ import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.SNATCH_TEST_MINUTES
 import dev.justinsmith.lift.domain.SaveScope
 import dev.justinsmith.lift.domain.crossedMilestone
+import dev.justinsmith.lift.domain.densityDone
 import dev.justinsmith.lift.domain.gripLoad
 import dev.justinsmith.lift.domain.lifetimeReps
 import dev.justinsmith.lift.domain.mostInWindow
@@ -115,6 +116,7 @@ class FinishSession(
             milestones = milestonesIn(sessionStore.sessions.value, done),
             snatchTest = newBest(BuiltInExercise.Snatch, SNATCH_TEST_MINUTES, done),
             armorBuilding = newBest(BuiltInExercise.ArmorBuildingComplex, ABC_MINUTES, done),
+            densities = day?.let { densityDone(it, session.sets, sessionStore.sessions.value) }.orEmpty(),
         )
         sessionStore.finishSession(title)
         val now = done.finishedAtEpochMillis ?: clock.nowMillis()

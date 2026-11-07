@@ -34,6 +34,7 @@ internal data class StoredTimer(
     val done: List<Int> = emptyList(),
     val firstSide: Boolean = true,
     val rounds: Int = 0,
+    val best: Int? = null,
 )
 
 private val json = Json { ignoreUnknownKeys = true }
@@ -73,6 +74,7 @@ internal fun encodeTimer(timer: SavedTimer): String = json.encodeToString(
             double = timer.load.double,
             band = timer.load.band?.id,
             rounds = timer.rounds,
+            best = timer.best,
         )
 
         is SavedTimer.Hold -> StoredTimer(
@@ -125,6 +127,7 @@ internal fun decodeTimer(stored: String, made: List<CustomExercise>, bands: List
             timer.minutes,
             timer.rounds.coerceAtLeast(0),
             side,
+            timer.best?.takeIf { it > 0 },
         ).takeIf { timer.minutes > 0 }
 
         HOLD -> SavedTimer.Hold(

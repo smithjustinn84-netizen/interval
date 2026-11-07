@@ -121,6 +121,7 @@ internal fun upNext(
         emomMinutes = next.emomMinutes,
         block = next.block,
         lastTime = lastTime(before, next.set.exercise, next.set.double),
+        densityMinutes = next.densityMinutes,
     )
 }
 

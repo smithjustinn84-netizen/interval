@@ -23,7 +23,7 @@ sealed interface SavedTimer {
 
     /**
      * A density block of a lift, its load and a round's reps, capped at [minutes], with the [rounds] done so far, a
-     * one-sided lift's rounds turning sides from [firstSide].
+     * one-sided lift's rounds turning sides from [firstSide], and the [best] the block had before (null for none).
      */
     data class Density(
         override val startedAtEpochMillis: Long,
@@ -33,6 +33,7 @@ sealed interface SavedTimer {
         val minutes: Int,
         val rounds: Int,
         val firstSide: Side,
+        val best: Int? = null,
     ) : SavedTimer
 
     /** A hold of [seconds], the set it logs as the Log sheet had it, and whether it is the [firstSide]. */

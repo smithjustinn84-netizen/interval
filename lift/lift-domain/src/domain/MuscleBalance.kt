@@ -95,10 +95,13 @@ data class MuscleBalance(val loads: List<MuscleLoad>) {
 
 /**
  * What a week of this program plans, by muscle group: its days taken in turn for a week's [Program.daysPerWeek],
- * each of their planned sets counted as [MuscleBalance.of] counts a set done.
+ * each of their planned sets counted as [MuscleBalance.of] counts a set done. A density block plans its first
+ * round alone; it counts a round a minute of its cap, as its grip does.
  */
-fun Program.weekBalance(): MuscleBalance =
-    MuscleBalance.ofSets((1..daysPerWeek).flatMap { day(it).plannedSets() }.map { it.exercise to it.side })
+fun Program.weekBalance(): MuscleBalance = MuscleBalance.ofSets(
+    (1..daysPerWeek).flatMap { day(it).plannedSets() }
+        .flatMap { set -> List(set.capMinutes ?: 1) { set.exercise to set.side } },
+)
 
 /** How many days back the Lift tab's balance looks, today among them. */
 const val BALANCE_DAYS = 28

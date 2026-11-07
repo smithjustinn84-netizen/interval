@@ -75,4 +75,12 @@ class MuscleBalanceTest {
             assertEquals(1, MuscleGroup.entries.count { muscle in it.muscles }, "$muscle")
         }
     }
+
+    @Test
+    fun `a density block plans a round a minute of its cap for the week's balance`() {
+        fun week(block: Block) = Program(ProgramKey.Custom("p"), listOf(listOf(block)), daysPerWeek = 2, weeks = 4)
+        val density = Block(BuiltInExercise.TwoHandSwing, rounds = 10, reps = 10, kind = BlockKind.Density)
+        val sets = Block(BuiltInExercise.TwoHandSwing, rounds = 10, reps = 10)
+        assertEquals(week(sets).weekBalance(), week(density).weekBalance())
+    }
 }

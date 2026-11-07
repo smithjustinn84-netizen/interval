@@ -114,6 +114,7 @@ class LiftRepositoryTest {
                 20,
                 7,
                 Side.Left,
+                best = 14,
             ),
             SavedTimer.Density(500, BuiltInExercise.Snatch, Load.Bell(16.0), 5, 10, 0, Side.Right),
             SavedTimer.Hold(500, BuiltInExercise.Plank, 0.0, 10.0, 20.0, Side.Left, false, 45, Band.Default, false),

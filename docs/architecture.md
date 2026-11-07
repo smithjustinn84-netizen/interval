@@ -197,7 +197,7 @@ Each module applies a reusable template from `templates/`:
 | **Core** | `core`, `core-platform`, `core-time`, `core-testing` | Design tokens (`Spacing`, `Radius`, `Sizes`, `Motion`), `IntervalTheme`, navigation primitives; the clocks, timestamp formatter, `HealthStore`, and storage utilities in `core-platform`, which has no Compose so the data modules (and their Room KSP) don't rebuild on a UI change; calendar and clock maths in `core-time`, which has no dependencies so the domains compile without Compose; UI test harness. |
 | **Interval Domain & Data** | `interval-domain`, `interval-data`, `interval-platform-api`, `interval-platform` | Timer calculation engine, multi-block `Course`, mobility `Flow`s, `Sport` days, Room database (`AppDatabase`), DataStore preferences, audio/speech cues, Android Foreground Service, iOS notifications. |
 | **Interval Features** | `interval-timer`, `interval-workout`, `interval-presets`, `interval-mobility`, `interval-history`, `interval-settings`, `interval-ui` | The Timer, active workout & flow screen, preset & block sequence editor, mobility flows, `Today` home tab, the Log (calendar & training log) & routine/sport-day planner, settings, shared workout components. |
-| **Lift Domain & Data** | `lift-domain`, `lift-api`, `lift-data`, `lift-platform` | Kettlebell exercises, training programs, duration estimates, starter program selection, EMOM/hold/rest timers, each lift's `Movement` and the coaching read from it (grip, readiness, autoregulation, density, benchmarks), the ports to the interval side (`lift-api`), Room database (`LiftDatabase`); `Beeper` and `TimerService` keep-alive in `lift-platform`. |
+| **Lift Domain & Data** | `lift-domain`, `lift-api`, `lift-data`, `lift-platform` | Kettlebell exercises, training programs, duration estimates, starter program selection, EMOM/hold/rest/density timers, each lift's `Movement` and the coaching read from it (grip, readiness, autoregulation, density, benchmarks), the ports to the interval side (`lift-api`), Room database (`LiftDatabase`); `Beeper` and `TimerService` keep-alive in `lift-platform`. |
 | **Lift Features** | `lift-nav`, `lift-today`, `lift-session`, `lift-library`, `lift-ui` | Lift navigation registry, Train's Strength pillar (`TodayRoute`) & gear, active session logger & timers, exercise library & editor, shared Lift UI (its words, widgets and the exercise figures in `lift-ui`'s `demo/`). |
 | **Test Fakes** | `interval-testing`, `lift-testing` | In-memory storage, recording cue players, fake DAOs, and mock platform services for tests. |
 | **Toolchain Plugins** | `lint-plugin`, `detekt-plugin` | Kotlin Toolchain task plugins for ktlint formatting and Detekt static analysis. |
@@ -343,8 +343,9 @@ flowchart TD
   - **Live Updates (Android 16+)**: Built with `NotificationCompat.ProgressStyle` and `setRequestPromotedOngoing(true)`.
     Promotes an active workout to a compact chip with clock countdown in the status bar, and displays a phase-colored
     progress bar (per interval, per set, or per block within the system's 10-segment cap) on the lock screen and notification shade.
-  - `TimerService` keeps Lift's rest, EMOM or hold counting with the screen off: a Live Update naming the run
-    ("Resting", "EMOM · minute 2 of 10", "Holding"), a wake lock to each run's end, while `SessionTimers` beeps.
+  - `TimerService` keeps Lift's rest, EMOM, hold or density block counting with the screen off: a Live Update
+    naming the run ("Resting", "EMOM · minute 2 of 10", "Holding", "Rounds in a time cap"), a wake lock to each
+    run's end, while `SessionTimers` beeps and speaks.
   - **Home-Screen Widget (`WeekWidget`)**: Glance widget in `apps/androidApp/src/widget/` backed by `WeekStandingSource`
     (combining interval workouts, mobility flows, sport days, and Lift sessions), drawing the progress ring in `PhaseColors`,
     turning the day at local midnight via `WidgetDayAlarm`, and publishing a rendered sample preview to Android 15+ widget pickers (`WidgetPreview`).
@@ -422,8 +423,9 @@ flowchart TD
   - Audio cues are managed by `CuePlayer` (interval) and `Beeper` (Lift).
   - Voice is one `Speaker` per process (`core-platform`: Android's text-to-speech, iOS's speech synthesizer, none on
     desktop), bound in `corePlatformModule`. Each side puts its own lines into words through `SpokenLines`: the
-    interval side's `Speech` in `SpeechQueue`, Lift's `Coaching` (a lift's cue at an EMOM count-in and a rest's end,
-    a fault after a set) in `SpokenCoaching`. Settings' Voice switch governs both (Lift reads it as
+    interval side's `Speech` in `SpeechQueue`, Lift's `Coaching` (a lift's cue at an EMOM's or a density block's
+    count-in and a rest's end, a fault after a set, a density block's clock: five minutes, one minute, then time
+    and the rounds) in `SpokenCoaching`. Settings' Voice switch governs both (Lift reads it as
     `IntervalActivity.voice`).
 - **Health store** (`HealthStore`, `core-platform`):
   - As a workout or a Lift session finishes, its ViewModel hands the store a `HealthWorkout`: when it ran, a segment

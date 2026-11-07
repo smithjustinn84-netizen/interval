@@ -2,7 +2,9 @@ package dev.justinsmith.lift.domain
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /** A grind's shortest rest: a block resting so steps to the next bell, however big the jump. */
 private const val FLOOR = 60
@@ -328,5 +330,17 @@ class ProgressionTest {
     fun `a density block never steps by the EMOM's minute or the load`() {
         assertNull(nextStep(abcs, abcRounds(1), bells, bands))
         assertNull(densityStep(abcs, listOf(null), listOf(8, 10, 10)))
+    }
+
+    @Test
+    fun `a density block done says its rounds against the best before it`() {
+        val day = abcProgram.day(1)
+        val before = listOf(abcSession(10, DAY), abcSession(14, 2 * DAY))
+        assertEquals(listOf(DensityDone(abcs, 15, 14)), densityDone(day, abcRounds(15, 3 * DAY), before))
+        assertTrue(densityDone(day, abcRounds(15, 3 * DAY), before).single().newBest)
+        assertFalse(densityDone(day, abcRounds(14, 3 * DAY), before).single().newBest)
+        // The first time sets the best rather than beating one, and a block not begun says nothing.
+        assertFalse(densityDone(day, abcRounds(9, 3 * DAY), emptyList()).single().newBest)
+        assertEquals(emptyList(), densityDone(day, emptyList(), before))
     }
 }
