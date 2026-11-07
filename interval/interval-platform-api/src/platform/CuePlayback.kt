@@ -8,18 +8,19 @@ import dev.justinsmith.interval.timer.Phase
 /**
  * Turns an engine [Cue] into the sounds, speech and vibration the user has switched on. In a flow, [step] is the
  * move the cue lands in, or the one coming: its phases are said in the flow's words, and a hold has no halfway.
+ * [switchHands] when a work starting now is worked with the other hand from the last ([Speech.Work.switchHands]).
  */
-fun playCue(cue: Cue, settings: CueSettings, player: CuePlayer, step: FlowStep? = null) {
+fun playCue(cue: Cue, settings: CueSettings, player: CuePlayer, step: FlowStep? = null, switchHands: Boolean = false) {
     val switched = SwitchedPlayer(settings, player)
     when {
-        step == null -> switched.playWorkoutCue(cue)
+        step == null -> switched.playWorkoutCue(cue, switchHands)
         cue is Cue.PhaseStarted -> switched.playFlowCue(cue.phase, step)
         cue != Cue.Halfway -> switched.playWorkoutCue(cue)
     }
 }
 
 /** A cue of any workout but a flow's change of phase, in the phases' own words. */
-private fun SwitchedPlayer.playWorkoutCue(cue: Cue) {
+private fun SwitchedPlayer.playWorkoutCue(cue: Cue, switchHands: Boolean = false) {
     when (cue) {
         is Cue.Countdown -> {
             beep(Beep.Countdown)
@@ -30,7 +31,7 @@ private fun SwitchedPlayer.playWorkoutCue(cue: Cue) {
             if (settings.sound) beep(Beep.Halfway) else say(Speech.Halfway)
         }
 
-        is Cue.PhaseStarted -> playPhaseCue(cue)
+        is Cue.PhaseStarted -> playPhaseCue(cue, switchHands)
 
         Cue.Finished -> {
             beep(Beep.Finished)
@@ -40,7 +41,7 @@ private fun SwitchedPlayer.playWorkoutCue(cue: Cue) {
     }
 }
 
-private fun SwitchedPlayer.playPhaseCue(cue: Cue.PhaseStarted) {
+private fun SwitchedPlayer.playPhaseCue(cue: Cue.PhaseStarted, switchHands: Boolean) {
     when (cue.phase) {
         Phase.Prep -> {
             beep(Beep.Start)
@@ -50,7 +51,7 @@ private fun SwitchedPlayer.playPhaseCue(cue: Cue.PhaseStarted) {
         Phase.Work -> {
             beep(Beep.Work)
             buzz(Haptic.Work)
-            say(Speech.Work(cue.lastRound, cue.set, cue.block))
+            say(Speech.Work(cue.lastRound, cue.set, cue.block, switchHands))
         }
 
         Phase.Rest -> {

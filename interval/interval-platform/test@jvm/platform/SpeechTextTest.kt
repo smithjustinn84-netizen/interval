@@ -22,6 +22,8 @@ class SpeechTextTest {
             Speech.Work(lastRound = false) to "Work",
             Speech.Work(lastRound = true) to "Last round. Work",
             Speech.Work(lastRound = false, set = 2) to "Set 2. Work",
+            Speech.Work(lastRound = false, switchHands = true) to "Switch hands. Work",
+            Speech.Work(lastRound = true, switchHands = true) to "Last round. Switch hands",
             Speech.Rest to "Rest",
             Speech.SetRest to "Rest between sets",
             Speech.BlockRest(block = 2) to "Rest before block 2",

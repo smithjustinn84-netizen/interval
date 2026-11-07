@@ -75,6 +75,7 @@ class FlowSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
             recorder,
             ticker,
             repository.flows,
+            repository.presets,
         )
             .apply { open(1, key) }
     }

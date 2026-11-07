@@ -101,7 +101,9 @@ internal fun PresetSheet(
             if (preset.custom) {
                 QuietTextButton(
                     stringResource(Res.string.presets_edit),
-                    onClick = { onEdit(PresetDraft(EditorMode.Edit, preset.name, preset.config, preset.id)) },
+                    onClick = {
+                        onEdit(PresetDraft(EditorMode.Edit, preset.name, preset.config, preset.id, preset.alternateHands))
+                    },
                     modifier = Modifier.weight(1f),
                 )
                 QuietTextButton(
@@ -113,7 +115,9 @@ internal fun PresetSheet(
             } else {
                 QuietTextButton(
                     stringResource(Res.string.presets_save_copy),
-                    onClick = { onEdit(PresetDraft(EditorMode.Copy, copyName, preset.config)) },
+                    onClick = {
+                        onEdit(PresetDraft(EditorMode.Copy, copyName, preset.config, alternateHands = preset.alternateHands))
+                    },
                     modifier = Modifier.weight(1f),
                 )
             }

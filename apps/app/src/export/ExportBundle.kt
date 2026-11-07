@@ -11,7 +11,8 @@ import kotlinx.serialization.Serializable
  * session's heart rate, `averageBpm` and `peakBpm`; schema 4 every shape's `sets`, `setRestSeconds` and
  * `workStepSeconds`; schema 5 a sequence's blocks after its first, `then`, and `blockRestSeconds`; schema 6 a plan
  * of a day of a sport, `sport`, and the sport days logged, `sportDays`; schema 7 the session's length in the settings,
- * `sessionMinutes`; schema 8 the mobility flows the user built, `flows`, all absent from older files). Lift's
+ * `sessionMinutes`; schema 8 the mobility flows the user built, `flows`; schema 9 whether a preset switches hands,
+ * `alternateHands`, all absent from older files). Lift's
  * sessions carry their sets but not how a day's plan was changed: the sets are the record.
  */
 @Serializable
@@ -34,7 +35,7 @@ data class ExportBundle(
     val flows: List<FlowExport> = emptyList(),
 ) {
     companion object {
-        const val SCHEMA = 8
+        const val SCHEMA = 9
         const val APP = "interval"
         const val MIME_TYPE = "application/json"
 
@@ -96,7 +97,13 @@ data class IntervalBlockExport(
 )
 
 @Serializable
-data class PresetExport(val id: Long?, val name: String, val config: ConfigExport)
+data class PresetExport(
+    val id: Long?,
+    val name: String,
+    val config: ConfigExport,
+    /** False, and in schema 1 to 8. */
+    val alternateHands: Boolean = false,
+)
 
 /** A flow the user built: [use] a `FlowUse`'s name, its moves in order. */
 @Serializable

@@ -54,5 +54,7 @@
     <string name="cue_right_side">Right side</string>
     <string name="cue_begin">Begin</string>
     <string name="cue_switch_sides">Switch sides</string>
+    <string name="cue_switch_hands_work">Switch hands. Work</string>
+    <string name="cue_switch_hands_last_round">Last round. Switch hands</string>
     <string name="flow_move_count">Move %1$d of %2$d</string>
 </resources>

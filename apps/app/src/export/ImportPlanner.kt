@@ -270,7 +270,7 @@ private fun ConfigExport.toDomain(): IntervalConfig {
 
 private fun PresetExport.toDomain(): Preset {
     require(name.isNotBlank()) { "name" }
-    return Preset(name, config.toDomain())
+    return Preset(name, config.toDomain(), alternateHands = alternateHands)
 }
 
 private fun WorkoutExport.toDomain(): HistoryEntry {

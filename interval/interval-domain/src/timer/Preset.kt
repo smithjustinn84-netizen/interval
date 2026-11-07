@@ -2,9 +2,15 @@ package dev.justinsmith.interval.timer
 
 /**
  * A named configuration. Built-ins ship with the app; custom ones are saved by the user and carry the
- * [id] they are stored under.
+ * [id] they are stored under. [alternateHands] has every work after the first called with "Switch hands", for a
+ * bell worked one hand at a time; it is how the preset is spoken, not its shape, so it never decides [matching].
  */
-data class Preset(val name: String, val config: IntervalConfig, val id: Long? = null) {
+data class Preset(
+    val name: String,
+    val config: IntervalConfig,
+    val id: Long? = null,
+    val alternateHands: Boolean = false,
+) {
     /** One of the user's own, which can be edited and deleted; built-ins have no [id]. */
     val custom: Boolean get() = id != null
 
@@ -23,6 +29,9 @@ fun List<Preset>.matching(config: IntervalConfig): Preset? {
     val same = filter { it.config.sameShape(config) }
     return same.firstOrNull { it.custom } ?: same.firstOrNull()
 }
+
+/** Whether a workout of [config] switches hands each work: the flag of the preset it counts as ([matching]). */
+fun List<Preset>.alternateHands(config: IntervalConfig): Boolean = matching(config)?.alternateHands == true
 
 /**
  * The name a preset gets when the user gives it none: its shape, "40/20 ×6", with a whole number of
@@ -105,5 +114,6 @@ val builtInPresets: List<Preset> = listOf(
             rounds = 40,
             activity = Activity.Kettlebell,
         ),
+        alternateHands = true,
     ),
 )

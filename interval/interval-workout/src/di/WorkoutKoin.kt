@@ -25,7 +25,7 @@ val workoutModule: Module = module {
         onClose { it?.close() }
     }
     single { WorkoutRecorder(get(), get(), get(), get(), get(), get(), get(), get()) }
-    single { WorkoutSession(get(), get(), get(), get(), get(), get(), get(), get()) } bind ActiveWorkout::class
+    single { WorkoutSession(get(), get(), get(), get(), get(), get(), get(), get(), get()) } bind ActiveWorkout::class
     single {
         with(PhaseColors) {
             StatusColors(prep.toArgb(), work.toArgb(), rest.toArgb(), done.toArgb(), paused.toArgb(), setRest.toArgb())

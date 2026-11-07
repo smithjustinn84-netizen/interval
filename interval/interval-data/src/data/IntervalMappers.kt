@@ -155,6 +155,7 @@ internal fun PresetEntity.toDomain() =
             blockRestSeconds,
         ),
         id = id,
+        alternateHands = alternateHands,
     )
 
 internal fun Preset.toEntity() = PresetEntity(
@@ -172,6 +173,7 @@ internal fun Preset.toEntity() = PresetEntity(
     thenBlocks = encodeBlocks(config.then),
     blockRestSeconds = config.blockRestSeconds,
     activity = config.activity.name,
+    alternateHands = alternateHands,
 )
 
 /**

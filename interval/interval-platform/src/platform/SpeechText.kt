@@ -16,6 +16,8 @@ import dev.justinsmith.interval.platform.resources.cue_rest
 import dev.justinsmith.interval.platform.resources.cue_right_side
 import dev.justinsmith.interval.platform.resources.cue_set_rest
 import dev.justinsmith.interval.platform.resources.cue_set_work
+import dev.justinsmith.interval.platform.resources.cue_switch_hands_last_round
+import dev.justinsmith.interval.platform.resources.cue_switch_hands_work
 import dev.justinsmith.interval.platform.resources.cue_switch_sides
 import dev.justinsmith.interval.platform.resources.cue_warm_up
 import dev.justinsmith.interval.platform.resources.cue_work
@@ -40,6 +42,8 @@ internal suspend fun Speech.text(): String = when (this) {
         val set = set
         val block = block
         when {
+            switchHands && lastRound -> getString(Res.string.cue_switch_hands_last_round)
+            switchHands -> getString(Res.string.cue_switch_hands_work)
             lastRound -> getString(Res.string.cue_last_round_work)
             block != null -> getString(Res.string.cue_block_work, block)
             set != null -> getString(Res.string.cue_set_work, set)

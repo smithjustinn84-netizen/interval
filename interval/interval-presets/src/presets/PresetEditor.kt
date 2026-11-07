@@ -47,6 +47,8 @@ import dev.justinsmith.interval.presets.resources.preset_editor_remove_block
 import dev.justinsmith.interval.presets.resources.preset_editor_same_shape
 import dev.justinsmith.interval.presets.resources.preset_editor_save_as_preset
 import dev.justinsmith.interval.presets.resources.preset_editor_saves_as
+import dev.justinsmith.interval.presets.resources.preset_editor_switch_hands
+import dev.justinsmith.interval.presets.resources.preset_editor_switch_hands_text
 import dev.justinsmith.interval.presets.resources.preset_editor_timer_title
 import dev.justinsmith.interval.presets.resources.preset_editor_total
 import dev.justinsmith.interval.presets.resources.preset_name_count
@@ -82,6 +84,7 @@ import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.ToggleRow
 import dev.justinsmith.interval.ui.ValueSheet
 import dev.justinsmith.interval.ui.labelRes
 import org.jetbrains.compose.resources.stringResource
@@ -96,14 +99,19 @@ enum class EditorMode { Edit, New, Copy, SaveCurrent, Timer }
 
 /**
  * A preset as the editor has it: the shape being set, the name it opened with (the field holds what
- * is typed after that) and, for one of the user's own being edited, its [id].
+ * is typed after that) and, for one of the user's own being edited, its [id]; whether it [alternateHands], which
+ * only a kettlebell preset keeps ([handsKept]).
  */
 data class PresetDraft(
     val mode: EditorMode,
     val name: String,
     val config: IntervalConfig,
     val id: Long? = null,
+    val alternateHands: Boolean = false,
 ) {
+    /** Whether the preset saved from this draft switches hands: only one worked with a bell can. */
+    val handsKept: Boolean get() = alternateHands && config.activity == Activity.Kettlebell
+
     companion object {
         /** A new, unnamed preset in [config]'s shape, to save the settings on the Timer. */
         fun saveCurrent(config: IntervalConfig) = PresetDraft(EditorMode.SaveCurrent, name = "", config = config)
@@ -132,6 +140,7 @@ internal fun PresetEditor(
     onSave: (Preset) -> Unit,
     onDismiss: () -> Unit,
     onSaveAsPreset: () -> Unit = {},
+    onAlternateHands: (Boolean) -> Unit = {},
 ) {
     val palette = IntervalTheme.palette
     val name = rememberTextFieldState(draft.name)
@@ -153,7 +162,7 @@ internal fun PresetEditor(
     val savedText = stringResource(Res.string.notice_preset_saved, storedName)
     IntervalSheet(title = title, onDismiss = onDismiss) { hide ->
         val save = {
-            onSave(Preset(wanted, draft.config, draft.id))
+            onSave(Preset(wanted, draft.config, draft.id, alternateHands = draft.handsKept))
             if (!timer) notices.show(savedText)
             hide()
         }
@@ -162,7 +171,13 @@ internal fun PresetEditor(
             EditorName(name, placeholder, storedName, wanted, save)
         }
         EditorBlocks(draft.config, { block, field -> editingKey = "$block:${field.name}" }, onChangeShape)
-        EditorWorkoutCard(draft.config, { editingKey = "0:${it.name}" }, { choosingActivity = true })
+        EditorWorkoutCard(
+            draft.config,
+            { editingKey = "0:${it.name}" },
+            { choosingActivity = true },
+            hands = draft.alternateHands.takeIf { !timer && draft.config.activity == Activity.Kettlebell },
+            onHands = onAlternateHands,
+        )
         EditorTotal(total)
         if (!timer) sameShape?.let { EditorHint(stringResource(Res.string.preset_editor_same_shape, it.name)) }
         if (timer) {
@@ -331,13 +346,18 @@ private fun BlockHeader(
     }
 }
 
-/** What is the whole workout's rather than a block's: the rest between blocks, the bookends and the activity. */
+/**
+ * What is the whole workout's rather than a block's: the rest between blocks, the bookends and the activity, and
+ * for a kettlebell preset whether it switches [hands] each work (null where it can't).
+ */
 @Composable
 private fun EditorWorkoutCard(
     config: IntervalConfig,
     onEditField: (ConfigField) -> Unit,
     onChooseActivity: () -> Unit,
     modifier: Modifier = Modifier,
+    hands: Boolean? = null,
+    onHands: (Boolean) -> Unit = {},
 ) {
     Column(modifier.fillMaxWidth().clip(Corners.radius18).background(IntervalTheme.palette.surfaceVariant)) {
         val fields = listOfNotNull(ConfigField.BlockRest.takeIf { config.isSequence }) + ConfigField.bookends
@@ -351,6 +371,15 @@ private fun EditorWorkoutCard(
             stringResource(config.activity.labelRes),
             onClick = onChooseActivity,
         )
+        if (hands != null) {
+            RowDivider()
+            ToggleRow(
+                stringResource(Res.string.preset_editor_switch_hands),
+                stringResource(Res.string.preset_editor_switch_hands_text),
+                checked = hands,
+                onToggle = { onHands(!hands) },
+            )
+        }
     }
 }
 
@@ -437,15 +466,20 @@ fun PresetEditorHost(
         onSave = { onSave(draft, it) },
         onDismiss = { onDraftChange(null) },
         onSaveAsPreset = { onDraftChange(draft.copy(mode = EditorMode.SaveCurrent)) },
+        onAlternateHands = { onDraftChange(draft.copy(alternateHands = it)) },
     )
 }
 
 /** A preset saved by its values, as a dialog's open state is. */
 internal val PresetSaver: Saver<Preset?, Any> = mapSaver(
     save = { preset ->
-        if (preset == null) emptyMap() else mapOf(NAME to preset.name, ID to preset.id) + preset.config.saved()
+        if (preset == null) {
+            emptyMap()
+        } else {
+            mapOf(NAME to preset.name, ID to preset.id, HANDS to preset.alternateHands) + preset.config.saved()
+        }
     },
-    restore = { Preset(it[NAME] as String, it.restoredConfig(), it[ID] as Long?) },
+    restore = { Preset(it[NAME] as String, it.restoredConfig(), it[ID] as Long?, it[HANDS] as Boolean? ?: false) },
 )
 
 private val PresetDraftSaver: Saver<PresetDraft?, Any> = mapSaver(
@@ -453,11 +487,18 @@ private val PresetDraftSaver: Saver<PresetDraft?, Any> = mapSaver(
         if (draft == null) {
             emptyMap()
         } else {
-            mapOf(MODE to draft.mode.name, NAME to draft.name, ID to draft.id) + draft.config.saved()
+            mapOf(MODE to draft.mode.name, NAME to draft.name, ID to draft.id, HANDS to draft.alternateHands) +
+                draft.config.saved()
         }
     },
     restore = {
-        PresetDraft(EditorMode.valueOf(it[MODE] as String), it[NAME] as String, it.restoredConfig(), it[ID] as Long?)
+        PresetDraft(
+            EditorMode.valueOf(it[MODE] as String),
+            it[NAME] as String,
+            it.restoredConfig(),
+            it[ID] as Long?,
+            it[HANDS] as Boolean? ?: false,
+        )
     },
 )
 
@@ -503,6 +544,7 @@ private fun Map<String, Any?>.restoredConfig(): IntervalConfig =
 private const val MODE = "mode"
 private const val NAME = "name"
 private const val ID = "id"
+private const val HANDS = "alternate_hands"
 private const val PREP = "prep"
 private const val WORK = "work"
 private const val REST = "rest"

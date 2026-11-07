@@ -42,7 +42,8 @@ import kotlinx.coroutines.flow.Flow
  * ([HistoryEntity.workStepSeconds]), none in rows from before; version 12 the blocks of a sequence after its first
  * and the rest between them ([HistoryEntity.thenBlocks], [HistoryEntity.blockRestSeconds]), one block in rows from
  * before; version 13 let a plan be a day of a sport ([PlannedEntity.sport]) and added the sport days logged
- * ([SportLogEntity]); version 14 the mobility flows the user built ([FlowEntity]).
+ * ([SportLogEntity]); version 14 the mobility flows the user built ([FlowEntity]); version 15 whether a preset
+ * switches hands each work ([PresetEntity.alternateHands]), not in rows from before.
  */
 @Database(
     entities = [
@@ -52,7 +53,7 @@ import kotlinx.coroutines.flow.Flow
         SportLogEntity::class,
         FlowEntity::class,
     ],
-    version = 14,
+    version = 15,
     // 3 to 4 and 4 to 5 are MIGRATION_3_4 and MIGRATION_4_5, added by buildAppDatabase.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -66,6 +67,7 @@ import kotlinx.coroutines.flow.Flow
         AutoMigration(from = 11, to = 12),
         AutoMigration(from = 12, to = 13),
         AutoMigration(from = 13, to = 14),
+        AutoMigration(from = 14, to = 15),
     ],
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -374,6 +376,8 @@ data class PresetEntity(
     /** As [HistoryEntity.thenBlocks]. */
     @ColumnInfo(name = "then_blocks", defaultValue = "'[]'") val thenBlocks: String = "[]",
     @ColumnInfo(name = "block_rest_seconds", defaultValue = "0") val blockRestSeconds: Int = 0,
+    /** As [dev.justinsmith.interval.timer.Preset.alternateHands]. */
+    @ColumnInfo(name = "alternate_hands", defaultValue = "0") val alternateHands: Boolean = false,
 )
 
 /**

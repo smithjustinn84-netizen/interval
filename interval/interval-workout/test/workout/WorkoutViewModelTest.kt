@@ -81,6 +81,7 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
             ),
             WorkoutTicker(testScheduler.timeSource, tickerScope()).also { tickers += it },
             repository.flows,
+            repository.presets,
         )
 
     private fun workoutViewModel(

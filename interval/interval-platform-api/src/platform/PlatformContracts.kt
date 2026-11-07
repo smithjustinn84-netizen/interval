@@ -25,9 +25,15 @@ sealed interface Speech {
 
     /**
      * [set] is said with a set's first work in a workout of sets ("Set 2. Work"), null otherwise; [block] with a
-     * block's first in a workout of blocks ("Block 2. Work"), which it says in place of the set.
+     * block's first in a workout of blocks ("Block 2. Work"), which it says in place of the set. [switchHands] in a
+     * workout worked a hand at a time, every work but the first: "Switch hands. Work".
      */
-    data class Work(val lastRound: Boolean, val set: Int? = null, val block: Int? = null) : Speech
+    data class Work(
+        val lastRound: Boolean,
+        val set: Int? = null,
+        val block: Int? = null,
+        val switchHands: Boolean = false,
+    ) : Speech
 
     data object Rest : Speech
 

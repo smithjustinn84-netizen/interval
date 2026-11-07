@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.workout
 
 import dev.justinsmith.interval.data.FlowStore
+import dev.justinsmith.interval.data.PresetStore
 import dev.justinsmith.interval.data.SettingsStore
 import dev.justinsmith.interval.data.WorkoutProgressStore
 import dev.justinsmith.interval.model.BodySettings
@@ -19,6 +20,7 @@ import dev.justinsmith.interval.timer.Step
 import dev.justinsmith.interval.timer.UpcomingChange
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.timer.WorkoutState
+import dev.justinsmith.interval.timer.alternateHands
 import dev.justinsmith.interval.timer.keyed
 import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.stepAt
@@ -49,6 +51,7 @@ class WorkoutSession(
     private val recorder: WorkoutRecorder,
     private val ticker: WorkoutTicker,
     private val flowStore: FlowStore,
+    private val presetStore: PresetStore,
 ) : ActiveWorkout {
     private val _state = MutableStateFlow<WorkoutRun?>(null)
     private val _status = MutableStateFlow<WorkoutStatus?>(null)
@@ -246,11 +249,16 @@ class WorkoutSession(
         if (next.turnedFrom(before.engine)) checkpoint()
     }
 
-    /** Plays [cues] as the user has them switched on; in a flow, in the words of the move [state] has reached. */
+    /**
+     * Plays [cues] as the user has them switched on; in a flow, in the words of the move [state] has reached, and in
+     * a preset worked a hand at a time with every work but the workout's first a change of hands.
+     */
     private fun play(cues: List<Cue>, state: WorkoutState) {
         if (cues.isEmpty()) return
         val step = flowStore.flows.value.matching(state.config)?.stepAt(state)
-        cues.forEach { playCue(it, settingsStore.cueSettings.value, player, step) }
+        val first = state.block == 0 && state.set == 1 && state.round == 1
+        val switchHands = !first && presetStore.presets.value.alternateHands(state.config)
+        cues.forEach { playCue(it, settingsStore.cueSettings.value, player, step, switchHands) }
     }
 
     /** Keeps the workout going and in view off screen, or lets it go; the platform hears of each once. */

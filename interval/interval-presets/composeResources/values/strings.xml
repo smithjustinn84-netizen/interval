@@ -33,6 +33,8 @@
     <string name="preset_editor_prep_hint">Get ready time comes from Settings.</string>
     <string name="preset_editor_saves_as">Saves as %1$s</string>
     <string name="preset_editor_same_shape">Same shape as %1$s</string>
+    <string name="preset_editor_switch_hands">Switch hands</string>
+    <string name="preset_editor_switch_hands_text">Each work after the first is called with the other hand</string>
     <string name="preset_editor_timer_title">Edit workout</string>
     <string name="preset_editor_block">Block %1$d</string>
     <string name="preset_editor_add_block">Add a block</string>

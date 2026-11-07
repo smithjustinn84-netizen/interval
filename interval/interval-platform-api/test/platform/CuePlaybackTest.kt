@@ -117,4 +117,12 @@ class CuePlaybackTest {
             assertEquals(listOf<Speech>(Speech.Work(lastRound = false, set = 1, block = 2)), spoken)
         }
     }
+
+    @Test
+    fun `a work with a change of hands says so and nothing else does`() {
+        val player = RecordingCuePlayer()
+        playCue(Cue.PhaseStarted(Phase.Work, lastRound = false), CueSettings(), player, switchHands = true)
+        playCue(Cue.PhaseStarted(Phase.Rest, lastRound = false), CueSettings(), player, switchHands = true)
+        assertEquals(listOf(Speech.Work(lastRound = false, switchHands = true), Speech.Rest), player.spoken)
+    }
 }

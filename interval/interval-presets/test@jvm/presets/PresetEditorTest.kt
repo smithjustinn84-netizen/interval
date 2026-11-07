@@ -223,4 +223,17 @@ class PresetEditorTest {
         saveInEditor()
         assertEquals(listOf(Preset("Morning", morning.config.copy(rounds = 4), id = 7)), saved)
     }
+
+    @Test
+    fun `a kettlebell preset can switch hands each work and no other is asked`() = runUiTest {
+        setThemedContent { Screen() }
+        onNodeWithText("Morning").performClick()
+        onNodeWithText("Edit").performClick()
+        onNodeWithText("Switch hands").assertDoesNotExist()
+        onNodeWithText("Activity").performScrollTo().performClick()
+        onNodeWithText("Kettlebell").performScrollTo().performClick()
+        onNodeWithText("Switch hands").performScrollTo().performClick()
+        saveInEditor()
+        assertEquals(true, saved.single().alternateHands)
+    }
 }

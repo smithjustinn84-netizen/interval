@@ -105,7 +105,7 @@ private fun IntervalConfig.export() = ConfigExport(
     blockRestSeconds = blockRestSeconds,
 )
 
-private fun Preset.export() = PresetExport(id, name, config.export())
+private fun Preset.export() = PresetExport(id, name, config.export(), alternateHands)
 
 private fun Flow.export() = FlowExport(
     name,
