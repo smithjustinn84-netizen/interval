@@ -2,7 +2,6 @@
 <resources>
     <string name="common_cancel">Cancel</string>
     <string name="common_joined">%1$s · %2$s</string>
-    <string name="activity_kettlebell">Kettlebell</string>
     <string name="history_title">Log</string>
     <string name="history_more_options_cd">More options</string>
     <string name="history_plan_cd">Plan</string>
@@ -25,7 +24,6 @@
     <string name="history_calories">Calories</string>
     <string name="history_calories_value">%1$d kcal</string>
     <string name="history_ended_early">ended early</string>
-    <string name="history_planned">Planned</string>
     <string name="history_today">Today</string>
     <string name="history_yesterday">Yesterday</string>
     <string name="history_tomorrow">Tomorrow</string>

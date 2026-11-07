@@ -105,6 +105,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   kind leading one line of what it is ("Strength · Day 1 of 12 · week 1 · Deadlift · Goblet squat"), and its
   length as a figure ("9:40", "15 min"). Today's rows keep Start, Resume or Log it; a later row opens the look at
   it, where Start is. "Edit plan" beside the heading is plain words, with no fill of its own.
+- "Done this week" is one card read the same way, each workout a row with its day in the column ("Today", "Wed"),
+  and every row of the log leads with its kind ("Strength · 7:42 AM", "Conditioning · 20s on · 10s off · ×8 ·
+  ended early · 7:42 PM", "Mobility · 6 moves") in place of "Planned" and "Kettlebell". "Earlier" keeps a card a
+  day under its date.
 - Log's week shows a bar a kind (Strength, Conditioning, Mobility, Sport days), each what was done of it against
   what was planned, in place of the line that split the week. Under it, "Coming up" lists every plan of the next
   seven days, a row each with its day and its Start, then the log's days under "Done this week" and "Earlier". The

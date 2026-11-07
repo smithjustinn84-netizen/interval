@@ -23,7 +23,7 @@
     <action>Verify that Train is shown again on "Mobility"</action>
     <action>Tap the "Train" tab's "Conditioning" pillar, then "Timer", and verify that the Timer's settings are as they were (0:30 work, 0:15 rest, 8 rounds); go back</action>
     <action>Tap the "Today" tab and verify that the week says "1 workout" and "1 mobility", with today marked done</action>
-    <action>Tap the "Log" tab and verify that today lists "Wrists and fingers" with "Mobility · 5 moves"</action>
+    <action>Tap the "Log" tab and verify that "Done this week" lists "Wrists and fingers" with "Mobility · 5 moves" on the "Today" row</action>
     <action>Tap it, then "Repeat now", and verify that the workout shows "Get ready" with "Wrist circles"; tap "End", then "End workout"</action>
   </actions>
 </journey>

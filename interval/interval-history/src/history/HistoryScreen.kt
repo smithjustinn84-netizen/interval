@@ -404,8 +404,14 @@ private fun SummaryBesideLog(
                 ) {
                     state.logGroups().forEach { (heading, sections) ->
                         heading?.let { item(key = it.name) { LogHeading(it, Modifier.animateItem().then(Gutter)) } }
-                        items(sections, key = { it.dayNumber }) { section ->
-                            DaySection(section, actions, selected, Modifier.animateItem().then(Gutter))
+                        if (heading == LogGroup.ThisWeek) {
+                            item(key = DONE_WEEK) {
+                                WeekDoneCard(sections, actions, selected, Modifier.animateItem().then(DoneWeekCard))
+                            }
+                        } else {
+                            items(sections, key = { it.dayNumber }) { section ->
+                                DaySection(section, actions, selected, Modifier.animateItem().then(Gutter))
+                            }
                         }
                     }
                 }
@@ -414,7 +420,10 @@ private fun SummaryBesideLog(
     }
 }
 
-/** The log's days, in their groups under their headings on the week. */
+/**
+ * The log's days, in their groups under their headings on the week: this week's in one card across the line,
+ * Earlier's and the other ranges' a card a day.
+ */
 private fun LazyStaggeredGridScope.logItems(
     state: HistoryUiState,
     actions: HistoryActions,
@@ -426,14 +435,24 @@ private fun LazyStaggeredGridScope.logItems(
                 LogHeading(it, Modifier.animateItem().then(Gutter))
             }
         }
-        sections.forEach { section ->
-            // A day is one cell, its label with its card, so a column never splits a day.
-            item(key = section.dayNumber) {
-                DaySection(section, actions, selected, Modifier.animateItem().then(Gutter))
+        if (heading == LogGroup.ThisWeek) {
+            item(key = DONE_WEEK, span = StaggeredGridItemSpan.FullLine) {
+                WeekDoneCard(sections, actions, selected, Modifier.animateItem().then(DoneWeekCard))
+            }
+        } else {
+            sections.forEach { section ->
+                // A day is one cell, its label with its card, so a column never splits a day.
+                item(key = section.dayNumber) {
+                    DaySection(section, actions, selected, Modifier.animateItem().then(Gutter))
+                }
             }
         }
     }
 }
+
+/** The week's done card's key in the lists, and its place: in the gutters, under its heading's room. */
+private const val DONE_WEEK = "doneWeek"
+private val DoneWeekCard = Modifier.padding(horizontal = Spacing.space16).padding(top = Spacing.space8)
 
 /** The range picker, its summary card, and Up next or the most done shapes under it. */
 private fun LazyStaggeredGridScope.summaryItems(

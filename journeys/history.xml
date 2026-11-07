@@ -24,8 +24,8 @@
     <action>Verify that the summary shows "Ended" and "Saved to your log"</action>
     <action>Tap "Done"</action>
     <action>Tap "Back" on the Timer, which returns to Conditioning, then tap the "Log" tab</action>
-    <action>Verify that "Week" is picked, "This week" reads "2 more to hit 3" with a 1/3 ring, a "Conditioning" bar reads "1 of 1", and "Done this week" heads a "Today" section listing one workout</action>
-    <action>Tap the workout under "Today"</action>
+    <action>Verify that "Week" is picked, "This week" reads "2 more to hit 3" with a 1/3 ring, a "Conditioning" bar reads "1 of 1", and "Done this week" heads one card whose row is marked "Today" and reads "Conditioning · 30s on · 15s off · ×8 · ended early" with the time</action>
+    <action>Tap the workout on the "Today" row</action>
     <action>Verify that its page shows "ended early", "Repeat now" and "Plan again"</action>
     <action>Tap "Back"</action>
     <action>Tap "Month"</action>

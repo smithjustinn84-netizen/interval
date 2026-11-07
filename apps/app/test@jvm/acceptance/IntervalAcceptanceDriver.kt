@@ -13,7 +13,6 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
-import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.onNodeWithText
@@ -391,9 +390,9 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     }
 
     fun openWorkoutUnderToday(name: String) {
-        // The day's heading on the log: the Today tab's label is on screen everywhere.
-        see(hasText("Today") and isHeading())
-        tap(name)
+        // The week's done card, and its row marked Today: the Today tab's label is on screen everywhere.
+        see("Done this week")
+        tap(hasText("Today") and hasText(name))
         see("Repeat now")
     }
 

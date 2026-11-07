@@ -41,7 +41,7 @@ class LiftFlowTest {
         tab("Log").performClick()
         val row = hasText("Two-hand swing") and hasClickAction()
         waitUntil(timeoutMillis = STATE_TIMEOUT_MILLIS) { onAllNodes(row).fetchSemanticsNodes().isNotEmpty() }
-        onNode(hasText("Kettlebell", substring = true) and hasText("at 90000", substring = true)).assertExists()
+        onNode(hasText("Strength", substring = true) and hasText("at 90000", substring = true)).assertExists()
         // History's week counts it too.
         onNodeWithText("1 workout").assertExists()
     }

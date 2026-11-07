@@ -146,15 +146,17 @@ class HistoryScreenTest {
                         HistoryItem(null, custom, endedEarly = false, "6:15 PM", "1:40"),
                     ),
                 ),
-                HistorySection(HistoryDay.On("Sunday, Oct 11"), dayNumber = 20_737, emptyList()),
+                HistorySection(HistoryDay.On("Sunday, Oct 11"), dayNumber = 20_737, emptyList(), listOf(Sport.Bjj)),
             ),
         )
         setThemedContent { HistoryScreen(state, actions) }
-        onNodeWithText("Yesterday").assertExists()
-        onNodeWithText("Sunday, Oct 11").assertExists()
-        onNodeWithText("Planned · 20s on · 10s off · ×8 · ended early · 7:42 PM").assertExists()
+        // One card for the week, a day a column: yesterday's first row says "Wed", the second nothing.
+        onNode(hasText("Wed") and hasText("Tabata")).assertExists()
+        onNodeWithText("Yesterday").assertDoesNotExist()
+        onNode(hasText("Sun") and hasText("BJJ class")).assertExists()
+        onNodeWithText("Conditioning · 20s on · 10s off · ×8 · ended early · 7:42 PM").assertExists()
         onNodeWithText("25s on · 5s off · ×4").assertExists()
-        onNodeWithText("6:15 PM").assertExists()
+        onNodeWithText("Conditioning · 6:15 PM").assertExists()
     }
 
     @Test
@@ -420,7 +422,7 @@ class HistoryScreenTest {
             sections = listOf(HistorySection(HistoryDay.Today, dayNumber = 20_741, listOf(item))),
         )
         setThemedContent { HistoryScreen(state, actions) }
-        onNodeWithText("20s on · 10s off · ×8 · All out · 7:42 PM").assertExists()
+        onNodeWithText("Conditioning · 20s on · 10s off · ×8 · All out · 7:42 PM").assertExists()
         onNodeWithText("New best").assertExists()
     }
 
@@ -582,7 +584,7 @@ class HistoryScreenTest {
         val state = oneWorkout.copy(sections = listOf(HistorySection(HistoryDay.Today, 20_741, listOf(swings))))
         val opened = mutableListOf<String>()
         setThemedContent { HistoryScreen(state, HistoryActions(onOpenLift = { opened += it })) }
-        onNodeWithText("Kettlebell · 7:42 AM").assertExists()
+        onNodeWithText("Strength · 7:42 AM").assertExists()
         onNode(hasClickAction() and hasText("Swings")).performClick()
         assertEquals(listOf("b1"), opened)
     }

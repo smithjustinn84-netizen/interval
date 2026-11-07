@@ -27,16 +27,18 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import dev.justinsmith.interval.history.resources.Res
-import dev.justinsmith.interval.history.resources.activity_kettlebell
 import dev.justinsmith.interval.history.resources.history_calories_value
 import dev.justinsmith.interval.history.resources.history_ended_early
-import dev.justinsmith.interval.history.resources.history_planned
+import dev.justinsmith.interval.history.resources.history_kind_conditioning
+import dev.justinsmith.interval.history.resources.history_kind_mobility
+import dev.justinsmith.interval.history.resources.history_kind_strength
 import dev.justinsmith.interval.history.resources.history_remove_cd
 import dev.justinsmith.interval.history.resources.history_sport_logged
 import dev.justinsmith.interval.history.resources.notice_plan_removed
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.plan.sportTitle
 import dev.justinsmith.interval.timer.Activity
+import dev.justinsmith.interval.timer.isFlowShaped
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
@@ -81,22 +83,73 @@ internal fun DaySection(
 }
 
 /**
- * A day of a sport logged: its name, that it was logged, and the × that takes it off again. It has no page to
- * open: there is nothing more to it than the day.
+ * This week's finished workouts in one card, read like the schedule over it: each row keyed by its day in the
+ * column, the first row of a day carrying it and the rest of that day blank under it; the sports logged on a day
+ * follow its workouts, each with the way to take it off.
  */
 @Composable
-internal fun SportRow(sport: Sport, epochDay: Long, actions: HistoryActions, modifier: Modifier = Modifier) {
+internal fun WeekDoneCard(
+    sections: List<HistorySection>,
+    actions: HistoryActions,
+    selected: (HistoryItem) -> Boolean,
+    modifier: Modifier = Modifier,
+) {
+    ListCard(modifier) {
+        var rows = 0
+        sections.forEach { section ->
+            val label = dayColumn(section.day, section.dayNumber)
+            val today = section.day == HistoryDay.Today
+            var shown = 0
+
+            // The day on its first row alone.
+            fun day() = DayMark(if (shown++ == 0) label else "", today)
+            section.items.forEach { item ->
+                if (rows++ > 0) RowDivider(Modifier.padding(start = Spacing.space20))
+                HistoryRow(
+                    item,
+                    actions.onOpenWorkout,
+                    onOpenLift = actions.onOpenLift,
+                    selected = selected(item),
+                    day = day(),
+                )
+            }
+            section.sports.forEach { sport ->
+                if (rows++ > 0) RowDivider(Modifier.padding(start = Spacing.space20))
+                SportRow(sport, section.dayNumber, actions, day = day())
+            }
+        }
+    }
+}
+
+/** A row's day for its column: its words ("Today", "Wed"; none under the same day's row above) and whether today. */
+internal class DayMark(val text: String, val today: Boolean)
+
+/**
+ * A day of a sport logged: its name, that it was logged, and the × that takes it off again. It has no page to
+ * open: there is nothing more to it than the day. With [day], its day stands in the column before it.
+ */
+@Composable
+internal fun SportRow(
+    sport: Sport,
+    epochDay: Long,
+    actions: HistoryActions,
+    modifier: Modifier = Modifier,
+    day: DayMark? = null,
+) {
     val palette = IntervalTheme.palette
     val name = sportTitle(sport)
     val removed = stringResource(Res.string.notice_plan_removed, name)
     Row(
         modifier
             .fillMaxWidth()
+            // Read as one row, its remove a button of its own.
+            .semantics(mergeDescendants = true) {}
             .heightIn(min = Sizes.listRow)
             .padding(start = Spacing.space16, end = Spacing.space4, top = Spacing.space8, bottom = Spacing.space8),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
+        day?.let { DayLabel(it.text, it.today) }
         StripeMark(palette.textDim, height = IntervalSizes.historyMarkHeight)
         Column(Modifier.weight(1f)) {
             Text(name, style = IntervalTheme.type.label, color = palette.text)
@@ -116,6 +169,20 @@ internal fun SportRow(sport: Sport, epochDay: Long, actions: HistoryActions, mod
 }
 
 /**
+ * What a row's line leads with: its kind, and its shape where its name doesn't say it. A session on Lift is
+ * "Strength"; a named workout "Conditioning · 20s on · 10s off · ×8" or "Mobility · 6 moves"; one named by its
+ * shape its kind alone, or nothing when the shape says it (a flow's, "Mobility · 6 moves").
+ */
+@Composable
+private fun kindLead(item: HistoryItem): String? = when {
+    item.liftUid != null -> stringResource(Res.string.history_kind_strength)
+    item.presetName != null -> kindDescription(item.config)
+    item.config.isFlowShaped -> null
+    item.config.activity == Activity.Mobility -> stringResource(Res.string.history_kind_mobility)
+    else -> stringResource(Res.string.history_kind_conditioning)
+}
+
+/**
  * A row's stripe: kettlebell sessions take the accent, as Lift draws them; mobility the rest mark, as its rows on
  * Train do; interval workouts, the work mark.
  */
@@ -129,6 +196,8 @@ private fun markOf(item: HistoryItem): Color = when {
 /**
  * One finished workout, opening its page with a chevron saying so: an interval workout once stored, a
  * kettlebell session by [onOpenLift]. [selected] while its page is open beside the log, in the accent's tint.
+ * With [day], its day stands in the column before it. Its line leads with its kind ("Strength · 7:42 AM",
+ * "Conditioning · 20s on · 10s off · ×8 · ended early · 7:42 PM"), then how it went, its calories and its time.
  */
 @Composable
 internal fun HistoryRow(
@@ -137,6 +206,7 @@ internal fun HistoryRow(
     modifier: Modifier = Modifier,
     onOpenLift: (String) -> Unit = {},
     selected: Boolean = false,
+    day: DayMark? = null,
 ) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
@@ -161,7 +231,8 @@ internal fun HistoryRow(
             .then(if (selected) Modifier.semantics { this.selected = true } else Modifier)
             .then(
                 if (click == null) {
-                    Modifier
+                    // Read as one row all the same.
+                    Modifier.semantics(mergeDescendants = true) {}
                 } else {
                     Modifier
                         .clickable(
@@ -177,18 +248,12 @@ internal fun HistoryRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
+        day?.let { DayLabel(it.text, it.today) }
         StripeMark(markOf(item), height = IntervalSizes.historyMarkHeight)
         Column(Modifier.weight(1f)) {
             val shape = workoutDescription(item.config)
             val detail = listOfNotNull(
-                stringResource(Res.string.history_planned).takeIf { item.planned },
-                if (lift ==
-                    null
-                ) {
-                    shape.takeIf { item.presetName != null }
-                } else {
-                    stringResource(Res.string.activity_kettlebell)
-                },
+                kindLead(item),
                 stringResource(Res.string.history_ended_early).takeIf { item.endedEarly },
                 item.effort?.let { effortWord(it) },
                 item.calories?.let { stringResource(Res.string.history_calories_value, it) },
