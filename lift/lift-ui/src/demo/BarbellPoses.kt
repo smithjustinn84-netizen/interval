@@ -89,8 +89,6 @@ internal object BarbellPoses {
     /** A pull's pose: the arms straight, [arm] from hanging, the bar in the hands. */
     fun bar(shin: Float, thigh: Float, torso: Float, arm: Float) =
         Pose(shin = shin, thigh = thigh, torso = torso, upperArm = arm, forearm = arm)
-
-    private const val FULL_TURN = 360f
 }
 
 /** The arms of this pose over the legs and torso of [legs]. */

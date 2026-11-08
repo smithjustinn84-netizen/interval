@@ -45,6 +45,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   rounds of the one before where its words leave them out ("40/20 x8 then x4"), and a preset's name starts its
   block. "Then" inside one interval stays one ("40 on then 20 off x8"), and the field takes 160 characters. Plan's
   routines still read "then" as the start of another workout.
+- The figure on a Lift session's Up next or Next set card marks a record with you: as the two beats land it stands
+  tall and raises what it holds overhead (a bell, a pair, a bar) or, with nothing in hand, takes a short bow, then
+  goes on with its lift where it was. A figure lying down, hanging or on its hands (presses on the bench, push-ups,
+  pull-ups, planks, the mat work) leaves it to the row's tag. Nothing under reduced motion.
 
 ### Changed
 - The six sounds are the app's own, the same on Android, iOS and desktop, in place of each platform's stock

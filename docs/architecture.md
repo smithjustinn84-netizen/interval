@@ -470,8 +470,9 @@ The visual identity is defined in `core/core/src/ui/`:
   - `PhaseColors`: Semantic colors representing workout states (Get Ready = Amber, Work = Coral/Red, Rest = Mint/Green).
 - **Motion System** (`Motion.kt`, `Entrance.kt`, `Burst.kt`, `CountdownClock.kt`, `StreakBadge.kt`, `FinishHaptic.kt`):
   - Micro-interactions: `pressScale` for button presses, `enterRising` for list item entry, `RollingText` for animated number transitions.
-  - Moments: `stampIn` (a Record tag landing on its set, with a `Burst` of the accent behind the row and two
-    beats under the thumb), `rememberCountdownPulse` (an interval's last seconds: the clock pops and the ring's
+  - Moments: `stampIn` (a Record tag landing on its set, with a `Burst` of the accent behind the row, two
+    beats under the thumb, and the next lift's figure on the session card raising what it holds or taking a bow,
+    a one-rep `ExerciseDemo` built from where it stood by lift-ui's `Celebration`), `rememberCountdownPulse` (an interval's last seconds: the clock pops and the ring's
     stroke swells with each beep, a `Haptic.Countdown` tick with them; Lift's rest band the same), a `Burst`
     of the new phase's colour from the clock on each change of interval, `countUp` for both summaries' numbers,
     `FinishHaptic` as a summary lands (firmer for a record or the week's goal), `StreakBadge` rolling up a week

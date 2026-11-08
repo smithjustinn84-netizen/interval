@@ -49,10 +49,16 @@ import org.jetbrains.compose.resources.stringResource
 /**
  * A figure doing the lift, a band across the top of its card: it sets up and then does the lift over and over,
  * as on the exercise's page, which a tap on it opens ([onHowTo], by the exercise's key; the page has Pause). Only a
- * built-in has one: for an exercise of the user's own the card starts with its words.
+ * built-in has one: for an exercise of the user's own the card starts with its words. As a record lands
+ * ([celebrating], the set's id while its moment is on) the figure raises what it holds, or takes a bow.
  */
 @Composable
-internal fun NextFigure(exercise: Exercise, double: Boolean, onHowTo: (String) -> Unit) {
+internal fun NextFigure(
+    exercise: Exercise,
+    double: Boolean,
+    onHowTo: (String) -> Unit,
+    celebrating: Long? = null,
+) {
     val demo = exercise.demo ?: return
     val player = rememberDemoPlayer(demo)
     val interaction = remember { MutableInteractionSource() }
@@ -73,6 +79,7 @@ internal fun NextFigure(exercise: Exercise, double: Boolean, onHowTo: (String) -
             player,
             contentDescription = stringResource(Res.string.next_figure_cd, liftName(exercise, double)),
             modifier = Modifier.fillMaxSize().padding(Spacing.space8),
+            celebrating = celebrating,
         )
     }
 }

@@ -6,7 +6,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -24,6 +26,7 @@ import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.Measure
 import dev.justinsmith.lift.domain.RestState
 import dev.justinsmith.lift.domain.SetLog
+import dev.justinsmith.lift.ui.demo.Celebration
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -63,7 +66,7 @@ class SessionScreenTest {
     }
 
     @Test
-    fun `a record set logged while the screen is up lands with two beats`() = runUiTest {
+    fun `a record set logged while the screen is up lands with two beats and the figure raises the bell`() = runUiTest {
         val haptics = RecordingHaptics()
         val open = LiftSession("s", 0, null, "Swings", emptyList())
         var state by mutableStateOf(free.copy(session = open))
@@ -71,11 +74,17 @@ class SessionScreenTest {
             WithHaptics(haptics) { SessionScreen(state, { SessionClocks() }, SessionActions()) }
         }
         onNodeWithText("Record").assertDoesNotExist()
+        onNode(figure("Raising the bell")).assertDoesNotExist()
+        mainClock.autoAdvance = false
         val set = SetLog.of(1, BuiltInExercise.TwoHandSwing, 24.0, 10, null, 0)
         state = state.copy(session = open.copy(sets = listOf(set)), recordSetIds = setOf(1), latestRecord = set)
         mainClock.advanceTimeBy(Motion.ENTER_MILLIS + Motion.RECORD_BEAT_GAP_MILLIS + Motion.CONTENT_MILLIS)
         onNodeWithText("Record").assertExists()
         assertEquals(listOf(HapticFeedbackType.LongPress, HapticFeedbackType.Confirm), haptics.performed)
+        // The figure is still up with the bell: its gesture outlasts the tag's landing.
+        onNode(figure("Raising the bell")).assertExists()
+        mainClock.advanceTimeBy(Celebration.MILLIS.toLong())
+        onNode(figure("Raising the bell")).assertDoesNotExist()
     }
 
     @Test
@@ -93,7 +102,10 @@ class SessionScreenTest {
         mainClock.advanceTimeBy(Motion.ENTER_MILLIS + Motion.RECORD_BEAT_GAP_MILLIS)
         onNodeWithText("Record").assertExists()
         assertTrue(haptics.performed.isEmpty(), "beat ${haptics.performed}")
+        onNode(figure("Raising the bell")).assertDoesNotExist()
     }
+
+    private fun figure(doing: String) = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, doing)
 
     @Test
     fun `with no rest running the band is gone`() = runUiTest {

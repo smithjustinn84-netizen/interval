@@ -310,4 +310,6 @@
     <string name="muscle_group_core">Core</string>
     <string name="muscle_group_hips">Glutes and hamstrings</string>
     <string name="muscle_group_legs">Quads and calves</string>
+    <string name="figure_raising_bell">Raising the bell</string>
+    <string name="figure_bowing">Taking a bow</string>
 </resources>

@@ -1,6 +1,7 @@
 package dev.justinsmith.lift.ui.demo
 
 import dev.justinsmith.lift.ui.demo.KettlebellPoses.BOTTOMS_UP
+import dev.justinsmith.lift.ui.demo.KettlebellPoses.HORNS
 import dev.justinsmith.lift.ui.demo.KettlebellPoses.RESTING
 import dev.justinsmith.lift.ui.demo.KettlebellPoses.castPose
 import dev.justinsmith.lift.ui.demo.KettlebellPoses.dip
@@ -201,9 +202,6 @@ private fun pressDemo(bottomsUp: Boolean): ExerciseDemo {
         still = 0.53f,
     )
 }
-
-/** A bell held by the horns hangs under the hands, a little forward, clear of the ribs and the face. */
-private const val HORNS = 12f
 
 /** A forearm held upright under a bottoms-up bell, the fist straight over the elbow, the elbow out in front. */
 private const val UPRIGHT = 178f

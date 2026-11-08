@@ -15,6 +15,9 @@ internal object KettlebellPoses {
     /** A bell turned bottoms-up, standing straight over the fist. */
     const val BOTTOMS_UP = 180f
 
+    /** A bell held by the horns in two hands, hanging just ahead of them, as a goblet or a thruster has it. */
+    const val HORNS = 12f
+
     /** Standing tall, the arm hanging with the bell past the grip. */
     val stand = Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 0f, forearm = 0f)
 
@@ -94,6 +97,5 @@ internal fun Pose.turned(by: Float = FULL_TURN) = copy(bell = bell + by, farBell
 private const val FREE_SWAY = 0.35f
 private const val FREE_REACH = 90f
 private const val FREE_BEND = 10f
-private const val FULL_TURN = 360f
 private const val BALANCE_ARM = 70f
 private const val BALANCE_FOREARM = 80f

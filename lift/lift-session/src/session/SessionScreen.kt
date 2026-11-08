@@ -109,6 +109,7 @@ import dev.justinsmith.lift.session.resources.session_title
 import dev.justinsmith.lift.session.resources.session_undo
 import dev.justinsmith.lift.ui.RecordTag
 import dev.justinsmith.lift.ui.StatTile
+import dev.justinsmith.lift.ui.demo.Celebration
 import dev.justinsmith.lift.ui.liftName
 import dev.justinsmith.lift.ui.programName
 import dev.justinsmith.lift.ui.sessionTitle
@@ -381,7 +382,9 @@ fun SessionScreen(
     if (state.asksToShowNotifications) AskToShowNotifications()
     val notices = LocalNotices.current
     val undo = stringResource(Res.string.session_undo)
-    AnnounceRecord(state, notices)
+    // The record set whose moment is on, for the next lift's figure to mark; null between moments.
+    var celebrating by remember { mutableStateOf<Long?>(null) }
+    AnnounceRecord(state, notices, onCelebrate = { celebrating = it })
     val openSheet = {
         actions.onOpenLog()
         logging = true
@@ -418,6 +421,7 @@ fun SessionScreen(
                 onChange = { changing = it },
                 onPlan = { planning = true },
                 onLog = { logging = true },
+                celebrating = celebrating,
             )
         },
         foot = {
@@ -448,6 +452,7 @@ private fun SessionPlanContent(
     onChange: (Int) -> Unit,
     onPlan: () -> Unit,
     onLog: () -> Unit,
+    celebrating: Long?,
 ) {
     val opening = actions.copy(
         onOpenExercise = {
@@ -465,6 +470,7 @@ private fun SessionPlanContent(
                 actions.onTimeHold()
                 onLog()
             },
+            celebrating = celebrating,
         )
     } else if (!state.free) {
         state.easier?.let { EasierCard(it, actions.onUseEasier) }
@@ -477,6 +483,7 @@ private fun SessionPlanContent(
                 actions.onTimePlannedHold()
                 onLog()
             },
+            celebrating = celebrating,
         )
     }
     LoggedSets(state, sets)
@@ -541,21 +548,27 @@ private fun ExercisePageSheet(state: SessionUiState, actions: SessionActions, on
 
 /**
  * A set logged while the screen is up that beat a record is announced once, under the thumb (two beats,
- * [Motion.RECORD_BEAT_GAP_MILLIS] apart, which no other moment has) and in a notice; a record already
- * standing when the screen opened (a session resumed) is not.
+ * [Motion.RECORD_BEAT_GAP_MILLIS] apart, which no other moment has), in a notice, and by the next lift's figure
+ * ([onCelebrate] takes the set's id with the first beat and null once the figure's gesture is over, so a card that
+ * comes in on the moment joins it and one that comes in later does not); a record already standing when the
+ * screen opened (a session resumed) is not.
  */
 @Composable
-private fun AnnounceRecord(state: SessionUiState, notices: Notices) {
+private fun AnnounceRecord(state: SessionUiState, notices: Notices, onCelebrate: (Long?) -> Unit) {
     val haptics = LocalHapticFeedback.current
     val latest = state.latestRecord
     val recordText = latest?.let { stringResource(Res.string.notice_record, setLine(it)) }
     val seenAtOpen = remember { latest?.id }
+    val celebrate by rememberUpdatedState(onCelebrate)
     LaunchedEffect(latest?.id) {
         if (latest != null && latest.id != seenAtOpen && recordText != null) {
             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
             notices.show(recordText)
+            celebrate(latest.id)
             delay(Motion.RECORD_BEAT_GAP_MILLIS)
             haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+            delay(Celebration.MILLIS.toLong())
+            celebrate(null)
         }
     }
 }

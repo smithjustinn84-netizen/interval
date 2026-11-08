@@ -51,10 +51,11 @@ internal fun DraftSetCard(
     actions: SessionActions,
     onChange: () -> Unit,
     onTimeIt: () -> Unit,
+    celebrating: Long? = null,
 ) {
     val draft = state.draft
     ListCard(Modifier.padding(top = Spacing.space8)) {
-        NextFigure(draft.exercise, draft.doubled, actions.onOpenExercise)
+        NextFigure(draft.exercise, draft.doubled, actions.onOpenExercise, celebrating)
         FaultsNote(draft.exercise)
         Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
             Text(

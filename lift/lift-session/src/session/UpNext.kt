@@ -47,6 +47,7 @@ internal fun UpNextCard(
     onChange: (Int) -> Unit,
     onPlan: () -> Unit,
     onTimeIt: (() -> Unit)? = null,
+    celebrating: Long? = null,
 ) {
     val palette = IntervalTheme.palette
     // Each set logged fades the card through to the next; the last fades it through to the day's done.
@@ -69,7 +70,7 @@ internal fun UpNextCard(
                 }
             }
         } else {
-            NextSetCard(next, state, actions, onChange, onPlan, onTimeIt)
+            NextSetCard(next, state, actions, onChange, onPlan, onTimeIt, celebrating)
         }
     }
 }
@@ -85,6 +86,7 @@ private fun NextSetCard(
     onChange: (Int) -> Unit,
     onPlan: () -> Unit,
     onTimeIt: (() -> Unit)?,
+    celebrating: Long?,
 ) {
     val palette = IntervalTheme.palette
     val notices = LocalNotices.current
@@ -92,7 +94,7 @@ private fun NextSetCard(
     val undo = stringResource(Res.string.session_undo)
     val skipped = stringResource(Res.string.notice_block_skipped, liftName(set.exercise, set.double))
     ListCard(Modifier.padding(top = Spacing.space8)) {
-        NextFigure(set.exercise, set.double, actions.onOpenExercise)
+        NextFigure(set.exercise, set.double, actions.onOpenExercise, celebrating)
         FaultsNote(set.exercise)
         Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
             Text(

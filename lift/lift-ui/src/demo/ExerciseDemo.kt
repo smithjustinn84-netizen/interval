@@ -560,6 +560,6 @@ private fun hermite(from: Float, leaving: Float, to: Float, arriving: Float, sha
 }
 
 private const val HALF_TURN = 180.0
-private const val FULL_TURN = 360f
+internal const val FULL_TURN = 360f
 private const val SAME_ANGLE = 0.01f
 private const val THREE = 3f

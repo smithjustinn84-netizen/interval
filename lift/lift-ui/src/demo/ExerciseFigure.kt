@@ -1,7 +1,17 @@
 package dev.justinsmith.lift.ui.demo
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -14,7 +24,14 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import dev.justinsmith.interval.platform.prefersReducedMotion
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.lift.ui.resources.Res
+import dev.justinsmith.lift.ui.resources.figure_bowing
+import dev.justinsmith.lift.ui.resources.figure_raising_bell
+import kotlinx.coroutines.flow.filterNotNull
+import org.jetbrains.compose.resources.stringResource
 
 /** The colours a figure is drawn in: the body, the far leg, the floor and its shadow, and each beat's bell. */
 data class FigureColors(
@@ -53,6 +70,11 @@ data class FigureColors(
 /**
  * [demo] where [player] has it: running on a rep each [ExerciseDemo.secondsPerRep] while it plays, held where it
  * is paused or dragged. [contentDescription] says what it shows, for a screen reader.
+ *
+ * Each new [celebrating] (anything but null: a record set's id) has the figure mark it once, from wherever it is:
+ * it raises what it holds or takes a bow ([ExerciseDemo.celebrating]) over [Celebration.MILLIS], the player held
+ * meanwhile, then goes on with its rep where it left it. One standing as the figure appears counts too, so a card
+ * that comes in on the record's moment joins in. Nothing under reduced motion, or for a figure not on its feet.
  */
 @Composable
 fun ExerciseFigure(
@@ -61,8 +83,47 @@ fun ExerciseFigure(
     contentDescription: String?,
     modifier: Modifier = Modifier,
     colors: FigureColors = FigureColors.theme(),
+    celebrating: Any? = null,
 ) {
-    ExerciseFigure(demo, { player.progress }, contentDescription, modifier, colors)
+    val key by rememberUpdatedState(celebrating)
+    val still = prefersReducedMotion()
+    var interlude by remember { mutableStateOf<ExerciseDemo?>(null) }
+    val run = remember { Animatable(0f) }
+    LaunchedEffect(player, still) {
+        if (still) return@LaunchedEffect
+        snapshotFlow { key }.filterNotNull().collect {
+            val gesture = demo.celebrating(player.progress) ?: return@collect
+            val wasPlaying = player.playing
+            player.pause()
+            interlude = gesture
+            try {
+                run.snapTo(0f)
+                run.animateTo(1f, tween(Celebration.MILLIS, easing = LinearEasing))
+            } finally {
+                interlude = null
+                if (wasPlaying) player.play()
+            }
+        }
+    }
+    val celebration = interlude?.celebration
+    val described = if (celebration == null) {
+        modifier
+    } else {
+        val words = stringResource(
+            when (celebration) {
+                Celebration.RaisedBell -> Res.string.figure_raising_bell
+                Celebration.Bow -> Res.string.figure_bowing
+            },
+        )
+        modifier.semantics { stateDescription = words }
+    }
+    ExerciseFigure(
+        interlude ?: demo,
+        { if (interlude == null) player.progress else run.value },
+        contentDescription,
+        described,
+        colors,
+    )
 }
 
 /**

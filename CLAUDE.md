@@ -185,7 +185,8 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
   lift-ui            Lift's words and widgets (`exerciseName`, `setLine`, `programName`, `LoadPicker`, `Stepper`,
                      `SessionStats`, `BalanceBars`), the built-ins' cues (`cues.xml`, mapped in `ExerciseCues.kt`), the
                      figure every built-in is shown by (`demo/`: `ExerciseFigure`, an `ExerciseDemo` a lift through
-                     `Exercise.demo`, `rememberDemoPlayer`, `DemoTimeline`); most of Lift's strings
+                     `Exercise.demo`, `rememberDemoPlayer`, `DemoTimeline`, and `Celebration`, the raised bell or bow
+                     a figure on its feet gives a record, a one-rep demo from where it stood); most of Lift's strings
   lift-testing       `FakeLiftStorage` and the fake DAOs, `FakeIntervalActivity`, `RecordingBeeper`,
                      `RecordingKeepAlive`, `LiftTestClock` (the wall clock and the timers' time, moved together),
                      `liftTestKoin`
@@ -354,7 +355,9 @@ toolchain (`$compose.*`).
   shared moves: `pressScale` on anything tappable (`surfaceButton` adds the clip, fill and tap),
   `rememberEntrance` + `enterRising` for content that arrives, `RollingText` for a value that changes
   in place, `animateColorAsState` for a control following its state. The moments get their own (`Moments.kt`): `stampIn`
-  for a tag landing (Record), `popOnce` for a snap and spring back on a change (the goal ring closing, the
+  for a tag landing (Record, with the next lift's figure raising its bell or bowing on the session card:
+  `ExerciseFigure`'s `celebrating`, keyed by `AnnounceRecord` for the gesture's length), `popOnce` for a snap and
+  spring back on a change (the goal ring closing, the
   streak's flame); then `countUp` (Entrance.kt) for a summary's numbers, `rememberCountdownPulse`
   (`CountdownClock.kt`) for an interval's last seconds, which the clock pops to and `ProgressRing`'s
   `strokeScale` swells to, `Burst` for rings out from a moment (a phase change from the clock, a record's

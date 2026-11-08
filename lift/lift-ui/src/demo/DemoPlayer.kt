@@ -43,6 +43,15 @@ class DemoPlayer(progress: Float, playing: Boolean, private val earliest: Float 
         playing = !playing
     }
 
+    /** Holds it where it is, as a figure does while it marks a record; [play] has it run on from there. */
+    fun pause() {
+        playing = false
+    }
+
+    fun play() {
+        playing = true
+    }
+
     /** Moves it on to [at] while it runs. */
     internal fun runTo(at: Float) {
         progress = at
