@@ -122,6 +122,48 @@ class RoutineDescriptionTest {
     }
 
     @Test
+    fun `then with no day between chains blocks into one sequence`() {
+        val plan = read("8 x 20/10 then 5 x 1:00/0:30 mon")!!.plans.single()
+        assertEquals(setOf(1), plan.weekdays)
+        val sequence = plan.workout.interval
+        assertEquals(listOf(20 to 8, 60 to 5), sequence.config.blocks.map { it.workSeconds to it.rounds })
+        assertEquals("20/10 ×8, then 1m/30 ×5", sequence.name)
+        assertNull(sequence.presetId)
+    }
+
+    @Test
+    fun `days said first go with the whole sequence`() {
+        val plan = read("mon: tabata then 40/20 x8")!!.plans.single()
+        assertEquals(setOf(1), plan.weekdays)
+        assertEquals(2, plan.workout.interval.config.blocks.size)
+    }
+
+    @Test
+    fun `a sequence takes its rest between blocks`() {
+        val config = read("8 x 20/10 then 5 x 1:00/0:30 with 1:00 between blocks on wed")!!.plans.single()
+            .workout.interval.config
+        assertEquals(2, config.blocks.size)
+        assertEquals(60, config.blockRestSeconds)
+    }
+
+    @Test
+    fun `followed by chains blocks too`() {
+        assertEquals(2, read("tabata followed by 40/20 x8 fri")!!.plans.single().workout.interval.config.blocks.size)
+    }
+
+    @Test
+    fun `then between work and rest stays one block`() {
+        assertEquals(listOf("40/20 ×8 [1] []"), plans("40 on then 20 off x8 mon"))
+    }
+
+    @Test
+    fun `a sequence keeps its days beside another workout`() {
+        val routine = read("8 x 20/10 then 5 x 1:00/0:30 mon, 20 min bike sat")!!
+        assertEquals(listOf(setOf(1), setOf(6)), routine.plans.map { it.weekdays })
+        assertEquals(listOf(2, 1), routine.plans.map { it.workout.interval.config.blocks.size })
+    }
+
+    @Test
     fun `a workout split over clauses stays one`() {
         assertEquals(listOf("40/20 ×6 [3] []"), plans("40 on 20 off and 6 rounds on wednesday"))
     }

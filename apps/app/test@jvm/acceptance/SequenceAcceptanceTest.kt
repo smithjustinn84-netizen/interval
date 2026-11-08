@@ -85,4 +85,12 @@ class SequenceAcceptanceTest {
         see("1m on · 30s off · ×5")
         nothingSavedAsPreset()
     }
+
+    @Test
+    fun `a routine described with then plans one sequence`() = acceptanceScenario {
+        openPlanFromToday()
+        describeRoutineOnPlan("8 x 20/10 then 5 x 1:00/0:30 mon")
+        seeRoutineWorkout("20/10 ×8, then 1m/30 ×5", "Mon")
+        planRoutineOfOneSequence(blocks = 2, weekday = 1)
+    }
 }

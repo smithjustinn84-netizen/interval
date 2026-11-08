@@ -225,6 +225,15 @@ Exercise in Health Connect. Check it before the next release. Ticket 4 of 0.5 mo
     `HistoryViewModelTest` marks a plan done on a day gone by and dates today's now; `WorkoutDetailViewModelTest`
     reads no heart rate for one; `HistoryScreenTest` drives the sheet's three kinds and the row's Log it.
 
+**10. Plan's routines read sequences** (added during the sprint, from below the cut line) · XS
+- `describeRoutine` (`RoutineDescription.kt`) no longer breaks clauses at "then". A clause is split at "then" or
+  "followed by" only where the words before and after it both name days ("tabata mon then 40/20 x8 wed" is two
+  workouts); otherwise its pieces stay joined, so `describeWorkout` reads them as a sequence ("8 × 20/10 then
+  5 × 1:00/0:30 mon" is one, named by `defaultPresetName`), with its bookends and rest between blocks.
+- Done when: `RoutineDescriptionTest` reads a sequence on its day, days said first, the rest between blocks,
+  "followed by", one block from "40 on then 20 off", and a sequence beside another workout; and
+  `SequenceAcceptanceTest` plans one from Plan's Describe a routine.
+
 --- cut line ---
 
 **6. Describe reads "then"** (0.5's ticket 4, unchanged) · S
@@ -233,7 +242,7 @@ Exercise in Health Connect. Check it before the next release. Ticket 4 of 0.5 mo
 - The bookends are read from the whole text, so "5 min warm-up, then 40/20 x8" keeps its meaning. A part that is
   a bookend alone is no block.
 - "1:00 between blocks" names the block rest.
-- Routines keep "then" as a clause break.
+- Routines keep "then" as a clause break (until ticket 10).
 - Done when: `WorkoutDescriptionTest` reads "8 × 20/10 then 5 × 1:00/0:30" as two blocks, and every existing case
   reads as before.
 - As built: the rest between blocks is read before the parts, so "1:00 between blocks" is never a set rest. A later
@@ -244,7 +253,6 @@ Exercise in Health Connect. Check it before the next release. Ticket 4 of 0.5 mo
   and in a sequence a bare "1:00 between" said of a block of one set is the rest between blocks.
 
 Also below it:
-- Plan's routines reading sequences.
 - The iOS widget's Lock Screen (accessory) sizes.
 - A density block for the interval side, the Timer's own "as many rounds as you can".
 

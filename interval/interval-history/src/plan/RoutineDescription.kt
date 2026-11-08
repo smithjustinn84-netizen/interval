@@ -29,9 +29,11 @@ data class DescribedPlan(val workout: PlanWorkout, val weekdays: Set<Int>, val d
  * with it: a weekday ("mondays", "on tue"), a run of them ("mon-fri", "weekdays", "weekends", "every
  * day") every week, or once on "today", "tomorrow" or "this"/"next" friday, counted from [today].
  * Days said before a workout ("mon wed fri: tabata") or after it in their own clause ("tabata mon, wed")
- * are that workout's. A clause that names Lift ("lift", "kettlebells", "strength") and no interval shape is a
- * session on Lift, the next day of the program followed. "N a week" is the goal. Null when the words give
- * neither a workout nor a goal.
+ * are that workout's. "Then" (or "followed by") starts another workout only when the words on both sides of it
+ * name their own days ("tabata mon then 40/20 x8 wed"); otherwise it chains blocks into one sequence, as
+ * [describeWorkout] reads it ("8 x 20/10 then 5 x 1:00/0:30 mon"). A clause that names Lift ("lift",
+ * "kettlebells", "strength") and no interval shape is a session on Lift, the next day of the program followed.
+ * "N a week" is the goal. Null when the words give neither a workout nor a goal.
  *
  * The keywords are English, as [describeWorkout]'s are, and live here rather than in strings.xml.
  */
@@ -41,7 +43,7 @@ fun describeRoutine(text: String, current: IntervalConfig, presets: List<Preset>
         rest = rest.replaceRange(match.range, " ")
         match.groupValues[1].toInt().coerceIn(AppSettings.WEEKLY_GOAL_RANGE)
     }
-    val plans = clauses(rest)
+    val plans = clauses(rest, today)
         .map { Clause(it, today, current, presets) }
         .fold(mutableListOf<MutableList<Clause>>()) { groups, clause ->
             val group = groups.lastOrNull()
@@ -82,9 +84,24 @@ private class Clause(val text: String, today: Long, current: IntervalConfig, pre
     val workout = readWorkout(schedule.rest, current, presets)
 }
 
-/** Commas, semicolons, new lines, a full stop ending a sentence, and the words that chain clauses. */
-private fun clauses(text: String): List<String> =
-    text.split(CLAUSE_BREAK).filter { it.isNotBlank() }
+/**
+ * Commas, semicolons, new lines, a full stop ending a sentence, and the words that chain clauses; then a "then"
+ * between two pieces that each name their days. A "then" with a piece of no day beside it stays, so the clause is
+ * read as a sequence of blocks.
+ */
+private fun clauses(text: String, today: Long): List<String> =
+    text.split(CLAUSE_BREAK).filter { it.isNotBlank() }.flatMap { clause -> chains(clause, today) }
+
+/** The [clause] split at each "then" whose pieces before and after both name days, the rest joined by "then". */
+private fun chains(clause: String, today: Long): List<String> {
+    val chains = mutableListOf<MutableList<String>>()
+    clause.split(BLOCK_BREAK).filter { it.isNotBlank() }.forEach { piece ->
+        val chain = chains.lastOrNull()
+        val bothDated = chain != null && Schedule(chain.joinToString(" "), today).said && Schedule(piece, today).said
+        if (chain == null || bothDated) chains += mutableListOf(piece) else chain += piece
+    }
+    return chains.map { it.joinToString(" then ") }
+}
 
 /** The days [text] names, taken out of it so the rest can be read as a workout, which is [rest]. */
 private class Schedule(text: String, today: Long) {
@@ -125,7 +142,10 @@ private fun weekdayNamed(name: String): Int = WEEKDAY_NAMES.indexOfFirst { it.ma
 // What names a session on Lift rather than an interval workout, when no shape comes with it.
 private val LIFT_WORDS = Regex("""\b(?:lift(?:s|ing)?|strength|kettlebells?|kbs?|bells?)\b""")
 
-private val CLAUSE_BREAK = Regex("""[,;\n&+]|\.(?=\s|$)|\b(?:and|then|plus|also)\b""")
+private val CLAUSE_BREAK = Regex("""[,;\n&+]|\.(?=\s|$)|\b(?:and|plus|also)\b""")
+
+// What chains blocks in describeWorkout, and here also what can start another workout.
+private val BLOCK_BREAK = Regex("""\bthen\b|\bfollowed\s+by\b""")
 
 // "4 a week", "3 times per week", "5x/week", "4 days a wk".
 private val GOAL =
