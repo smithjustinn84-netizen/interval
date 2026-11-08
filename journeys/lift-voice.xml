@@ -22,7 +22,9 @@
     <action>Let the next minute pass without tapping "Set done" and verify that nothing is said before the minute after it</action>
     <action>Tap "Stop", then "Finish" and the summary's "Done"</action>
     <action>Tap "Follow a program", tap "20 minutes beside BJJ", then "Follow this program", and tap "Start day 1": verify that the phone says "Groove five light first" as the session opens</action>
-    <action>Open Settings from the gear, turn "Voice" off and go back to the session</action>
-    <action>Tap "Log set", wait for the rest to end, and verify that only the beeps play, with nothing said</action>
+    <action>Tap Back and verify that "Leave the session?" says nothing is logged yet, so the session isn't kept; tap "Leave"</action>
+    <action>Open Settings from Train's gear, turn "Voice" off and go back to Train</action>
+    <action>Tap "Start day 1" and verify that nothing is said as the session opens</action>
+    <action>Tap the title bar's "Add set or EMOM" and the sheet's "Log set" (day 1 is an EMOM day, so the foot offers "Start EMOM"), wait for the rest to end, and verify that only the beeps play, with nothing said</action>
   </actions>
 </journey>

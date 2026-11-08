@@ -51,7 +51,7 @@
     <action>Press Back, then "Leave": nothing is logged, so the session isn't kept</action>
     <action>Verify that Lift shows "Day 1 of 12 · week 1", "Armor Building Complex" "1 every minute for 15 minutes": the program is still on the minute</action>
     <action>Open "Your equipment" and leave only the 16 kg and 20 kg bells owned</action>
-    <action>Tap "All programs", then "New program"; tap "Add block", keep "Two-hand swing" 5 × 10, pick the "16" bell, tap "Done"; name it "Swings" and save it, then tap "Swings", "Follow this program" and "Switch"</action>
+    <action>Tap "All programs", then "New program"; tap "Add block", keep "Two-hand swing" 5 × 10, pick the "16" bell, tap "Done"; name it "Swings" and save it, then tap "Swings" and "Follow this program": no "Switch" is asked, since the program it replaces is still on day 1</action>
     <action>Tap "Start day 1", then "Log set" five times (skipping each rest), then "Finish"</action>
     <action>Verify that "Next time" lists "Two-hand swing" "5 × 10 · 16 kg → 5 × 10 · 75 s rest · 16 kg", switched on, with "Denser first: the same work in less rest" under it</action>
   </actions>

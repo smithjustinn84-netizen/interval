@@ -30,7 +30,7 @@
     <action>Tap today's dot on the week</action>
     <action>Verify that the day sheet lists the planned workout reading "Every" and today's weekday with "Start" and "Log it", and under the plans "Open plan", "Add workout" and "Log a workout"</action>
     <action>Tap the row's "Log it"</action>
-    <action>Verify that a notice says the workout is logged, the plan's row reads "Done · Every" and today's weekday, with neither "Start" nor "Log it", and the workout is listed among the day's</action>
+    <action>Verify that the plan's row reads "Done · Every" and today's weekday, with neither "Start" nor "Log it", and the workout is listed among the day's (the sheet stays open, so its notice shows under it, as a sport's "Log it" there does)</action>
     <action>Close the sheet and tap the "Today" tab</action>
     <action>Verify that the card under the week says "Nothing more due" and the week counts "3 workouts"</action>
     <action>Tap the "Log" tab, then tomorrow's dot on the week if the week has one</action>

@@ -336,3 +336,24 @@ The order follows the dependencies:
 5. A finished 15:15 counted at 8 a set moves Lift's snatch total, the snatch test and the week's grip load, and a
    second import doesn't double them.
 6. `CHANGELOG.md`'s 0.6.0 lists tickets 2 to 5 (and 6 if it lands). About shows 0.6.0 on Android and iOS.
+
+As verified, 2026-11-08, on `main` at `1caf8f98`:
+1. CI green on it (lint, detekt, the JVM and Android tests, the build), and `./kotlin build` green locally.
+2. On `amper-37`, from a fresh install each: `lift-density.xml`, `lift-plan-changes.xml`, `lift-voice.xml`,
+   `log-past-workout.xml` and `exercise-library.xml` pass on screen; `lift-challenges.xml` passes every step the device's state let it reach
+   (a snatch-test best of 100 and over a thousand swings already stood, so "1000 in all" and a first best had
+   nothing to show). Spoken lines are checked by their moment and length in logcat (the engine never logs the
+   words): every one went to the speaker at its moment, and none between. Three steps were reworded to what the
+   app does: following a program asks "Switch" only when the one it replaces is past day 1; the session page has no
+   gear, so Voice is turned off from Train after leaving; and the day sheet's "Log it" shows its notice under the
+   open sheet, as a sport's does. The 15:15 summary's bell row sits under Repeat on a phone until the readout is
+   scrolled, with no sign there is more below.
+3. By `AppDataImporterTest`: a 0.6 export imports on an empty phone to the same data, imports again adding
+   nothing, and a 0.5 file (schema 10) reads, since schema 11 only adds fields older files leave out; a file newer
+   than the build is refused as too new (`ImportPlanner`). No 0.5 build was run.
+4. By the tests (`DensityClockTest`, `SessionTimersTest`, `SessionViewModelTest`, `BenchmarksTest`) and the
+   5-minute cap run on the device in `lift-density.xml`; the ABC was swapped to "As many as you can" in
+   `lift-plan-changes.xml` but not run for 20 minutes there.
+5. On the device, 15:15 counted at 10 a set raised the snatch's reps in all by 50 (five intervals done); the best
+   stood at 100, so the test did not move. The second import is item 3's.
+6. Checked: the changelog lists tickets 2 to 7 and `check_versions.py` says 0.6.0 (6) on both.
