@@ -47,6 +47,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 - Plan's routines in words read "then" the same way: "8 × 20/10 then 5 × 1:00/0:30 mon" plans one sequence of those
   blocks every Monday, named by its blocks, with its rest between blocks and bookends if said. "Then" still starts
   another workout when each side names its own days ("tabata mon then 40/20 x8 wed").
+- Three more bell lifts in Lift's library, each with its muscles, cues and figure: the walking lunge (a bell at the
+  side, or one in each hand with a pair), the renegade row (a plank on two bells, so it needs a pair and is in no
+  one-bell program) and the kettlebell dead bug (one bell held over the chest; the bodyweight dead bug stays). The
+  library has 105 exercises, 30 of them for the kettlebell.
 - The figure on a Lift session's Up next or Next set card marks a record with you: as the two beats land it stands
   tall and raises what it holds overhead (a bell, a pair, a bar) or, with nothing in hand, takes a short bow, then
   goes on with its lift where it was. A figure lying down, hanging or on its hands (presses on the bench, push-ups,
