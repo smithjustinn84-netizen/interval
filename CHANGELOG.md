@@ -39,6 +39,12 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   snatches behind them. Exports carry the count (schema 11).
 - Start launches: pressed, it sends one ring of the accent out from its centre across the page as the workout
   rises, so the workout's ring reads as what the button sent up.
+- Describe reads "then": a workout typed as "8 × 20/10 then 5 × 1:00/0:30" (or "followed by") goes onto the Timer
+  as a sequence of those blocks, "1:00 between blocks" is the rest from one to the next, and the sheet shows a row
+  a block. A warm-up or cool-down is the whole workout's wherever it is said, a later block keeps the work, rest and
+  rounds of the one before where its words leave them out ("40/20 x8 then x4"), and a preset's name starts its
+  block. "Then" inside one interval stays one ("40 on then 20 off x8"), and the field takes 160 characters. Plan's
+  routines still read "then" as the start of another workout.
 
 ### Changed
 - The six sounds are the app's own, the same on Android, iOS and desktop, in place of each platform's stock

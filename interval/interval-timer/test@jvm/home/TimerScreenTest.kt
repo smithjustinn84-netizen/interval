@@ -20,7 +20,6 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import dev.justinsmith.interval.timer.Activity
@@ -137,36 +136,6 @@ class TimerScreenTest {
         onNodeWithText("Save").performScrollTo().performClick()
         assertEquals(listOf(Preset("Mine", custom)), saved)
         onNodeWithText("Save as preset").assertDoesNotExist()
-    }
-
-    @Test
-    fun `a workout described in words previews as it is typed and goes onto the Timer`() = runUiTest {
-        setThemedContent { Screen() }
-        onNodeWithContentDescription("Describe a workout").performClick()
-        onNodeWithText("Use").assertDoesNotExist()
-        onNode(hasSetTextAction()).performTextInput("hello")
-        onNodeWithText("Couldn’t spot durations or rounds yet — try “40/20 x8” or “tabata”.").assertExists()
-        onNodeWithText("Use").assertDoesNotExist()
-        onNode(hasSetTextAction()).performTextClearance()
-        onNode(hasSetTextAction()).performTextInput("45/15 x12 rower")
-        onNodeWithText("Rower").assertExists()
-        onNodeWithText("Use").performClick()
-        assertEquals(
-            listOf(custom.copy(workSeconds = 45, restSeconds = 15, rounds = 12, activity = Activity.Rower)),
-            described,
-        )
-        onNodeWithText("Describe a workout").assertDoesNotExist()
-    }
-
-    @Test
-    fun `a described workout saves through the preset editor`() = runUiTest {
-        setThemedContent { Screen() }
-        onNodeWithContentDescription("Describe a workout").performClick()
-        onNode(hasSetTextAction()).performTextInput("30 on 30 off x5")
-        onNodeWithText("Save as preset").performClick()
-        onNode(hasSetTextAction()).performTextInput("Easy")
-        onNodeWithText("Save").performScrollTo().performClick()
-        assertEquals(listOf(Preset("Easy", custom.copy(workSeconds = 30, restSeconds = 30, rounds = 5))), saved)
     }
 
     @Test

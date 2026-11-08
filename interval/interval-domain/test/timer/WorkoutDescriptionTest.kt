@@ -214,12 +214,124 @@ class WorkoutDescriptionTest {
     }
 
     @Test
-    fun `a description is one block whatever the Timer held after its first`() {
+    fun `a description of one part is one block whatever the Timer held after its first`() {
         val sequence =
             IntervalConfig(then = listOf(Block(workSeconds = 60, restSeconds = 30, rounds = 4)), blockRestSeconds = 60)
         val described = describeWorkout("40/20 x6", sequence, emptyList())!!.config
         assertEquals(1, described.blocks.size)
         assertEquals(0, described.blockRestSeconds)
         assertEquals(Triple(40, 20, 6), Triple(described.workSeconds, described.restSeconds, described.rounds))
+    }
+
+    /** The blocks as [text] reads them. */
+    private fun blocks(text: String): List<Block>? = read(text)?.config?.blocks
+
+    @Test
+    fun `then splits the words into blocks run one after another`() {
+        val described = read("8 × 20/10 then 5 × 1:00/0:30")!!
+        assertEquals(
+            listOf(
+                Block(workSeconds = 20, restSeconds = 10, rounds = 8),
+                Block(workSeconds = 60, restSeconds = 30, rounds = 5),
+            ),
+            described.config.blocks,
+        )
+        assertEquals(0, described.config.blockRestSeconds)
+        assertEquals(setOf(ConfigField.Work, ConfigField.Rest, ConfigField.Rounds), described.understood)
+    }
+
+    @Test
+    fun `followed by splits the same way`() {
+        assertEquals(blocks("8 x 20/10 then 5 x 1:00/0:30"), blocks("8 x 20/10 followed by 5 x 1:00/0:30"))
+    }
+
+    @Test
+    fun `a rest between blocks is the block rest and no set rest`() {
+        val described = read("8 x 20/10 then 5 x 1:00/0:30, 1:00 between blocks")!!
+        assertEquals(60, described.config.blockRestSeconds)
+        assertTrue(ConfigField.BlockRest in described.understood)
+        assertTrue(described.config.blocks.all { it.sets == 1 && it.setRestSeconds == 0 })
+        assertEquals(90, read("40/20 x8 then 30/30 x6 with 1.5 min rest between blocks")!!.config.blockRestSeconds)
+        assertEquals(120, read("40/20 x8 then 30/30 x6, between blocks 2 min")!!.config.blockRestSeconds)
+    }
+
+    @Test
+    fun `the bookends are the whole workout's and a part that is one alone is no block`() {
+        val described = read("5 min warm-up then 40/20 x8 then 3 min cool down")!!.config
+        assertEquals(listOf(Block(workSeconds = 40, restSeconds = 20, rounds = 8)), described.blocks)
+        assertEquals(300, described.warmUpSeconds)
+        assertEquals(180, described.coolDownSeconds)
+        val inTheMiddle = read("40/20 x8 then 30/30 x4 cool down 3 min")!!.config
+        assertEquals(2, inTheMiddle.blocks.size)
+        assertEquals(180, inTheMiddle.coolDownSeconds)
+    }
+
+    @Test
+    fun `a later block keeps what its words leave out from the block before`() {
+        assertEquals(
+            listOf(
+                Block(workSeconds = 40, restSeconds = 20, rounds = 8),
+                Block(workSeconds = 40, restSeconds = 20, rounds = 4),
+            ),
+            blocks("40/20 x8 then x4"),
+        )
+    }
+
+    @Test
+    fun `sets and ladders are each block's own`() {
+        val (first, second) = blocks("4 x (8 x 20/10) then ladder 20 to 60 by 10, 10 off")!!
+        assertEquals(Block(workSeconds = 20, restSeconds = 10, rounds = 8, sets = 4, setRestSeconds = 60), first)
+        assertEquals(Block(workSeconds = 20, restSeconds = 10, rounds = 5, workStepSeconds = 10), second)
+    }
+
+    @Test
+    fun `a preset named in a part starts that block and no preset names the whole`() {
+        val described = read("tabata then 5 x 1:00/0:30")!!
+        assertEquals(
+            listOf(
+                Block(workSeconds = 20, restSeconds = 10, rounds = 8),
+                Block(workSeconds = 60, restSeconds = 30, rounds = 5),
+            ),
+            described.config.blocks,
+        )
+        assertNull(described.preset)
+        assertEquals(Block(workSeconds = 20, restSeconds = 10, rounds = 8), blocks("40/20 x6 then tabata")!![1])
+    }
+
+    @Test
+    fun `the activity is the first named in any part`() {
+        assertEquals(Activity.Rower, read("40/20 x8 then 30/30 x4 on the rower")!!.config.activity)
+    }
+
+    @Test
+    fun `a part with nothing to read is no block`() {
+        assertEquals(1, blocks("40/20 x8 then something fun")!!.size)
+        assertNull(read("something then fun"))
+    }
+
+    @Test
+    fun `more parts than a sequence holds keep the first ten`() {
+        val text = (1..12).joinToString(" then ") { "${it + 10}/10 x2" }
+        val blocks = blocks(text)!!
+        assertEquals(IntervalConfig.MAX_BLOCKS, blocks.size)
+        assertEquals(20, blocks.last().workSeconds)
+    }
+
+    @Test
+    fun `then within one interval is no new block`() {
+        assertEquals(listOf(Block(workSeconds = 40, restSeconds = 20, rounds = 8)), blocks("40 on then 20 off x8"))
+        assertEquals(listOf(Block(workSeconds = 40, restSeconds = 20, rounds = 8)), blocks("work 40 then rest 20 x8"))
+    }
+
+    @Test
+    fun `a bare rest between in a sequence of single sets is the block rest`() {
+        val described = read("8 x 20/10 then 5 x 1:00/0:30, 1:00 between")!!.config
+        assertEquals(60, described.blockRestSeconds)
+        assertTrue(described.blocks.all { it.setRestSeconds == 0 })
+        val sets = read("4 x (8 x 20/10), 1:00 between then 30/30 x4")!!.config
+        assertEquals(
+            Triple(4, 60, 0),
+            Triple(sets.blocks[0].sets, sets.blocks[0].setRestSeconds, sets.blockRestSeconds),
+        )
     }
 }

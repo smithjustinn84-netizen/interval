@@ -115,6 +115,13 @@ class RoutineDescriptionTest {
     }
 
     @Test
+    fun `then still breaks a routine into its workouts`() {
+        val routine = read("tabata mon then 40/20 x8 wed")!!
+        assertEquals(listOf(setOf(1), setOf(3)), routine.plans.map { it.weekdays })
+        assertEquals(listOf(1, 1), routine.plans.map { it.workout.interval.config.blocks.size })
+    }
+
+    @Test
     fun `a workout split over clauses stays one`() {
         assertEquals(listOf("40/20 ×6 [3] []"), plans("40 on 20 off and 6 rounds on wednesday"))
     }

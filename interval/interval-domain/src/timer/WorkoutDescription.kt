@@ -27,41 +27,112 @@ data class DescribedWorkout(
  * leave out keeps [current]'s value, and the get-ready countdown is always [current]'s, as it is when
  * a preset goes onto the Timer. Values are clamped to their ranges. Null when nothing is understood.
  *
+ * "Then" and "followed by" split the words into blocks, run one after another: "8 × 20/10 then 5 × 1:00/0:30". The
+ * warm-up, the cool-down and the rest "between blocks" are read from the whole text first, so a part that is a
+ * bookend alone is no block. A later block keeps the work, rest and rounds of the block before where its words leave
+ * them out, or starts from the preset it names, and has sets or a ladder only where its own words give them. The
+ * activity is the first named in any part, and only a description of one part names a [DescribedWorkout.preset].
+ * [DescribedWorkout.understood] is the first block's fields and the whole workout's.
+ *
  * The keywords are English. They read the user's input rather than speak to the user, so they live
  * here, not in strings.xml; the numbers carry most descriptions in any language.
  */
 fun describeWorkout(text: String, current: IntervalConfig, presets: List<Preset>): DescribedWorkout? {
-    val reading = Reading(normalized(text))
-    val preset = reading.takePreset(presets)
-    reading.readShape()
-    val activity = activityIn(reading.text)
-    if (preset == null) reading.vagueRest?.let { reading.values.getOrPut(ConfigField.Rest) { it } }
-    if (preset == null && reading.readNothing && activity == null) return null
+    val whole = Reading(normalized(text)).apply { readWholeWorkout() }
+    val parts = whole.text.split(BLOCK_BREAK).map { Reading(it).apply { readPart(presets) } }
+    val activity = activityIn(parts.joinToString(" ") { it.text })
+    val blocks = joinedHalves(parts.filter { it.preset != null || !it.readNothing }).take(IntervalConfig.MAX_BLOCKS)
+    if (blocks.size > 1) whole.takeBlockRestFrom(blocks)
+    if (blocks.isEmpty() && whole.readNothing && activity == null) return null
 
-    // A description is one block: what the Timer held after its first is not kept.
-    var config = preset?.let(current::withPreset) ?: current.withBlocks(current.blocks.take(1))
-    val understood = if (preset != null) ConfigField.shape.toMutableSet() else mutableSetOf()
-    // The ladder's step last, so it is fitted to the work and rounds the words give, not to the Timer's.
-    reading.values.entries.sortedBy { it.key == ConfigField.WorkStep }.forEach { (field, value) ->
+    val first = blocks.firstOrNull()
+    // One part is one block: what the Timer held after its first is not kept.
+    val start = first?.preset?.let(current::withPreset) ?: current.withBlocks(current.blocks.take(1))
+    val understood = if (first?.preset != null) ConfigField.shape.toMutableSet() else mutableSetOf()
+    var config = first?.applyTo(start, understood) ?: start
+    if (blocks.size > 1) config = config.withLaterBlocks(blocks.drop(1), current)
+    config = config.withWholeWorkout(whole.values, understood)
+    if (activity != null) config = config.copy(activity = activity)
+    val preset = first?.preset?.takeIf { blocks.size == 1 }
+    return DescribedWorkout(config, understood, activityFound = activity != null, preset = preset)
+}
+
+/**
+ * [parts] with "then" read as within one interval where it is: a part that gives a rest and no work ("20 off x8")
+ * joins the part before it when that one gave work and no rest ("40 on"), so "40 on then 20 off x8" is one block.
+ */
+private fun joinedHalves(parts: List<Reading>): List<Reading> = parts.fold(mutableListOf()) { kept, part ->
+    val before = kept.lastOrNull()
+    if (before != null && before.isWorkHalf && part.isRestHalf) {
+        part.values.forEach { (field, value) -> before.values.getOrPut(field) { value } }
+        before.totalSeconds = before.totalSeconds ?: part.totalSeconds
+    } else {
+        kept += part
+    }
+    kept
+}
+
+/**
+ * This config with the whole workout's [values] in it, each added to [understood]: a block rest only between blocks.
+ */
+private fun IntervalConfig.withWholeWorkout(values: Map<ConfigField, Int>, understood: MutableSet<ConfigField>) =
+    values.entries.fold(this) { config, (field, value) ->
+        if (field == ConfigField.BlockRest && !config.isSequence) return@fold config
+        understood += field
+        config.withValue(field, value)
+    }
+
+/**
+ * This config, one block, followed by a block for each of [parts]: each starts from the preset it names (over
+ * [current], as the Timer takes a preset), else from the work, rest and rounds of the block before. No rest between
+ * blocks but the one the words name.
+ */
+private fun IntervalConfig.withLaterBlocks(parts: List<Reading>, current: IntervalConfig): IntervalConfig {
+    val later = parts.runningFold(this) { before, part ->
+        val base = part.preset?.let { current.withPreset(it).withBlocks(it.config.blocks.take(1)) }
+            ?: before.withBlocks(listOf(before.blocks.first().plain))
+        part.applyTo(base, mutableSetOf())
+    }.drop(1)
+    return withBlocks(blocks.take(1) + later.map { it.blocks.first() }).copy(blockRestSeconds = 0)
+}
+
+/**
+ * [base], one block, with this part's values in it, each field it gives added to [understood]. The ladder's step
+ * last, so it is fitted to the work and rounds the words give, not to the Timer's.
+ */
+private fun Reading.applyTo(base: IntervalConfig, understood: MutableSet<ConfigField>): IntervalConfig {
+    var config = base
+    values.entries.sortedBy { it.key == ConfigField.WorkStep }.forEach { (field, value) ->
         config = config.withValue(field, value)
         understood += field
     }
-    if (ConfigField.Sets in reading.values && ConfigField.SetRest !in reading.values) {
+    if (ConfigField.Sets in values && ConfigField.SetRest !in values) {
         config = config.withValue(ConfigField.SetRest, IntervalConfig.DEFAULT_SET_REST_SECONDS)
         understood += ConfigField.SetRest
     }
-    reading.totalSeconds?.takeIf { ConfigField.Rounds !in reading.values }?.let { total ->
+    totalSeconds?.takeIf { ConfigField.Rounds !in values }?.let { total ->
         config = config.withValue(ConfigField.Rounds, config.roundsIn(total))
         understood += ConfigField.Rounds
     }
-    if (activity != null) config = config.copy(activity = activity)
-    return DescribedWorkout(config, understood, activityFound = activity != null, preset = preset)
+    return config
 }
+
+/** This block's work, rest and rounds alone: what a later block of a description keeps where its words say nothing. */
+private val Block.plain: Block get() = Block(workSeconds, restSeconds, rounds)
 
 /** The text being read, each part taken out as a rule reads it so that no later rule reads it again. */
 private class Reading(var text: String) {
     val values = mutableMapOf<ConfigField, Int>()
     var totalSeconds: Int? = null
+
+    /** Gives work and no rest: the first half of an interval said across "then". */
+    val isWorkHalf: Boolean get() = ConfigField.Work in values && ConfigField.Rest !in values
+
+    /** Gives a rest and no work, nor a preset: the second half of one. */
+    val isRestHalf: Boolean get() = preset == null && ConfigField.Rest in values && ConfigField.Work !in values
+
+    /** The preset this part names, if any. */
+    var preset: Preset? = null
 
     /** No value, and no length to make rounds of. */
     val readNothing: Boolean get() = values.isEmpty() && totalSeconds == null
@@ -98,14 +169,40 @@ private class Reading(var text: String) {
         return null
     }
 
-    fun readShape() {
-        readSets()
-        readLadder()
-        // So that "5 min warm-up" is neither the work nor the whole workout's length.
+    /**
+     * What belongs to the whole workout rather than a block, before the text is split into blocks: the warm-up and
+     * cool-down, so that "5 min warm-up" is neither the work nor the whole workout's length, and the rest between
+     * blocks, before a part could read "1:00 between" out of it as a rest between sets.
+     */
+    fun readWholeWorkout() {
         for ((regex, field) in BOOKENDS) {
             if (field in values) continue
             take(regex)?.secondsAt(1)?.let { values[field] = it }
         }
+        BLOCK_RESTS.firstNotNullOfOrNull(::take)?.secondsAt(1)?.let { values[ConfigField.BlockRest] = it }
+    }
+
+    /**
+     * In a sequence with no rest named "between blocks", a bare "1:00 between" said of a block of one set is the rest
+     * between blocks rather than between that block's sets, which it has none of.
+     */
+    fun takeBlockRestFrom(blocks: List<Reading>) {
+        if (ConfigField.BlockRest in values) return
+        val part = blocks.firstOrNull { ConfigField.SetRest in it.values && ConfigField.Sets !in it.values } ?: return
+        values[ConfigField.BlockRest] = part.values.getValue(ConfigField.SetRest)
+        part.values.remove(ConfigField.SetRest)
+    }
+
+    /** One block's words: the preset they name, the shape, and a word like "short" for a rest no preset gives. */
+    fun readPart(presets: List<Preset>) {
+        preset = takePreset(presets)
+        readShape()
+        if (preset == null) vagueRest?.let { values.getOrPut(ConfigField.Rest) { it } }
+    }
+
+    private fun readShape() {
+        readSets()
+        readLadder()
         take(SLASH_PAIR)?.let { match ->
             match.secondsAt(1)?.let { values[ConfigField.Work] = it }
             match.secondsAt(DURATION_GROUPS + 1)?.let { values[ConfigField.Rest] = it }
@@ -246,6 +343,15 @@ private val LADDER_STEPS = listOf(
     Regex("""(?:\b(?:climbing|rising|adding|up|plus)\s*(?:by\s+)?|\+\s*)$DURATION$A_ROUND""") to 1,
     Regex("""(?:\b(?:falling|dropping|down|less|minus)\s*(?:by\s+)?|-\s*)$DURATION$A_ROUND""") to -1,
 )
+
+// "1:00 between blocks", "1 min rest between blocks", "between blocks 90s", "rest between the blocks: 2 min".
+private val BLOCK_RESTS = listOf(
+    Regex("""\b$DURATION\s*(?:of\s+)?(?:rest\s+|break\s+)?between\s+(?:the\s+)?blocks?\b"""),
+    Regex("""\b(?:rest\s+|break\s+)?between\s+(?:the\s+)?blocks?\s*(?:of\s+|for\s+)?:?\s*$DURATION"""),
+)
+
+// What splits the words into blocks: "8 × 20/10 then 5 × 1:00/0:30", "… followed by …".
+private val BLOCK_BREAK = Regex("""\bthen\b|\bfollowed\s+by\b""")
 
 // "1:00 between", "1 min between sets", "1 min rest between sets", "between sets 90s", "rest between sets: 2 min".
 private val SET_RESTS = listOf(

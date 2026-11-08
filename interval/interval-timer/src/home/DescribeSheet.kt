@@ -32,6 +32,7 @@ import dev.justinsmith.interval.home.resources.describe_title
 import dev.justinsmith.interval.home.resources.describe_unrecognized
 import dev.justinsmith.interval.home.resources.describe_use
 import dev.justinsmith.interval.home.resources.preset_editor_total
+import dev.justinsmith.interval.home.resources.timer_block
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.DescribedWorkout
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -50,6 +51,7 @@ import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StandardEasing
+import dev.justinsmith.interval.ui.blockDescription
 import dev.justinsmith.interval.ui.labelRes
 import dev.justinsmith.interval.ui.valueColor
 import dev.justinsmith.interval.ui.valueText
@@ -124,19 +126,34 @@ internal fun DescribeSheet(
 }
 
 /**
- * What the words come to: one row per value (a ladder, sets, a warm-up or cool-down only when there are), then
- * the total, and a note when some values are kept.
+ * What the words come to: one row per value (a ladder, sets, a warm-up or cool-down only when there are), or for a
+ * sequence one row per block and the rest between them, then the total, and a note when some values are kept.
  */
 @Composable
 private fun DescribedPreview(described: DescribedWorkout) {
     val config = described.config
     val bookends = ConfigField.bookends.filter { it in described.understood || config.valueOf(it) > 0 }
-    val sets = ConfigField.setsOf(config).takeIf { config.sets > 1 || ConfigField.Sets in described.understood }
-    val ladder = ConfigField.ladder.filter { it in described.understood || config.valueOf(it) != 0 }
-    val fields = ConfigField.shape + ladder + sets.orEmpty() + bookends
+    val fields = if (config.isSequence) {
+        listOfNotNull(ConfigField.BlockRest.takeIf { it in described.understood }) + bookends
+    } else {
+        val sets = ConfigField.setsOf(config).takeIf { config.sets > 1 || ConfigField.Sets in described.understood }
+        val ladder = ConfigField.ladder.filter { it in described.understood || config.valueOf(it) != 0 }
+        ConfigField.shape + ladder + sets.orEmpty() + bookends
+    }
     ListCard {
+        if (config.isSequence) {
+            config.blocks.forEachIndexed { index, block ->
+                if (index > 0) RowDivider()
+                PreviewRow(
+                    stringResource(Res.string.timer_block, index + 1),
+                    blockDescription(block),
+                    understood = true,
+                    color = IntervalTheme.palette.text,
+                )
+            }
+        }
         fields.forEachIndexed { index, field ->
-            if (index > 0) RowDivider()
+            if (index > 0 || config.isSequence) RowDivider()
             PreviewRow(
                 stringResource(field.labelRes),
                 field.valueText(config.valueOf(field)),
@@ -191,5 +208,5 @@ private fun PreviewRow(label: String, value: String, understood: Boolean, color:
     }
 }
 
-/** Long enough for any way of saying a workout, short enough to stay one line's worth of thought. */
-private const val MAX_DESCRIPTION_LENGTH = 80
+/** Long enough for any way of saying a workout, a sequence of a few blocks with its bookends among them. */
+private const val MAX_DESCRIPTION_LENGTH = 160

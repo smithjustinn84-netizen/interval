@@ -72,4 +72,17 @@ class SequenceAcceptanceTest {
         seeRound("Block 2 of 2 · Round 1 of 2")
         seePhase("Work")
     }
+
+    @Test
+    fun `a sequence described in words goes onto the Timer as its blocks`() = acceptanceScenario {
+        openTimer()
+        seeTimer()
+        describeOnTimer("8 x 20/10 then 5 x 1:00/0:30, 1:00 between blocks")
+        seeDescribedBlock(1, "20s on · 10s off · ×8")
+        seeDescribedBlock(2, "1m on · 30s off · ×5")
+        useDescription(blocks = 2, blockRest = 60)
+        see("20s on · 10s off · ×8")
+        see("1m on · 30s off · ×5")
+        nothingSavedAsPreset()
+    }
 }

@@ -211,6 +211,12 @@ Exercise in Health Connect. Check it before the next release. Ticket 4 of 0.5 mo
 - Routines keep "then" as a clause break.
 - Done when: `WorkoutDescriptionTest` reads "8 × 20/10 then 5 × 1:00/0:30" as two blocks, and every existing case
   reads as before.
+- As built: the rest between blocks is read before the parts, so "1:00 between blocks" is never a set rest. A later
+  block takes the work, rest and rounds of the one before where its words leave them out, but not its sets or
+  ladder. A preset's name in a part starts that block, and only a description of one part names a preset. The
+  sheet shows a row a block (`DescribeSheet`, its field up to 160 characters), and `SequenceAcceptanceTest` types
+  one onto the Timer. A part giving a rest and no work joins the one before ("40 on then 20 off x8" is one block),
+  and in a sequence a bare "1:00 between" said of a block of one set is the rest between blocks.
 
 Also below it:
 - Plan's routines reading sequences.
