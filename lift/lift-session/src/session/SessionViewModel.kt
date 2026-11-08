@@ -14,10 +14,13 @@ import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.data.SetStore
 import dev.justinsmith.lift.data.snatchSets
 import dev.justinsmith.lift.domain.Exercise
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.domain.densityBest
+import dev.justinsmith.lift.domain.firstAtBell
 import dev.justinsmith.lift.domain.offeredBands
+import dev.justinsmith.lift.domain.sets
 import dev.justinsmith.lift.domain.standardBells
 import dev.justinsmith.lift.library.ExerciseDetailUiState
 import dev.justinsmith.lift.library.exerciseDetail
@@ -77,6 +80,9 @@ class SessionViewModel(
      */
     val sessionGone: Boolean = savedState.openedBefore() && sessionStore.active.value == null
 
+    /** Whether the page is opening for the first time, not coming back from a killed process: it may speak at once. */
+    private val openedFresh: Boolean = !savedState.openedBefore()
+
     /** The Log sheet's draft, and a set logged opened on it to change. */
     val draft = SetDraftEditor {
         DraftContext(
@@ -134,6 +140,26 @@ class SessionViewModel(
             state.copy(detail = page, asksToShowNotifications = rested, easier = easier)
         }.stateIn(viewModelScope, SharingStarted.Eagerly, inputsNow.state())
 
+    /**
+     * The set coming, as the timers hear of it: with its bell when it is a ballistic lift's first at a new one, by
+     * every set before it, this session's and 15:15's snatches too.
+     */
+    private val comingSet: Flow<ComingSet?> = combine(
+        state.map { it.setComing }.distinctUntilChanged(),
+        before,
+        sessionStore.active,
+        intervals.workouts,
+        gearStore.bells,
+    ) { coming, before, active, workouts, owned ->
+        coming?.let { (exercise, load) ->
+            val history = before.oldestFirst + active?.sets.orEmpty() + workouts.snatchSets.sets
+            val bell = (load as? Load.Bell)?.takeIf {
+                exercise.firstAtBell(it, owned.ifEmpty { standardBells }, history)
+            }
+            ComingSet(exercise, bell)
+        }
+    }.distinctUntilChanged()
+
     /** The wall clock, once a tick, for the session's own clocks: they move with no timer running. */
     private val ticks = flow {
         while (true) {
@@ -170,9 +196,27 @@ class SessionViewModel(
         viewModelScope.launch {
             timers.heldSets.collect(draft::flipSide)
         }
-        // The timers say the lift coming in a rest's last seconds: the plan's next, or the Next set card's.
+        // The timers say the set coming in a rest's last seconds, the plan's next or the Next set card's, or a safety
+        // line due in its place. A session opening fresh, before its first set, says the one due at once: a program
+        // day's on its first set, a free one's only on a taxed day, since its card's lift may not be the one done.
         viewModelScope.launch {
-            state.map { it.liftComing }.distinctUntilChanged().collect(timers::upNext)
+            var opening = openedFresh
+            // The session landing is an input of its own: on a device it reaches the store after the page opens,
+            // and the set coming may read the same before and after.
+            combine(
+                comingSet,
+                easierDay.taxed.distinctUntilChanged(),
+                sessionStore.active.map { it != null }.distinctUntilChanged(),
+                ::Triple,
+            ).collect { (coming, taxed, _) ->
+                timers.upNext(coming)
+                timers.taxed(taxed)
+                val active = sessionStore.active.value
+                if (opening && active != null) {
+                    opening = false
+                    if (active.sets.isEmpty()) timers.opened(grooving = !state.value.free)
+                }
+            }
         }
         // An exercise added from the sheet's search is the one the sheet goes on with.
         viewModelScope.launch {

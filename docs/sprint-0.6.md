@@ -249,6 +249,21 @@ Exercise in Health Connect. Check it before the next release. Ticket 4 of 0.5 mo
   and rectangular on the Lock Screen with no goal ("1 this week", "This week · 1 workout"). The rectangular's ring is
   drawn smaller than the circular size so "2-week streak" fits beside it, and with no goal it says the count in words.
 
+**12. Lift's safety lines** (added during the sprint, from the backlog) · S
+- Coaching section 2's last planned item: "Groove five light first" before a ballistic lift's first set at a bell new
+  to it, and "Stop a rep early" on a Taxed day.
+- `firstAtBell` (`lift-domain`, `Safety.kt`): a ballistic lift at a bell, or a pair, heavier than any it was done at,
+  15:15's snatches with the sessions' sets, with a lighter bell owned. A lift never done is new at any bell.
+- Each line takes a set-up cue's place (a rest's last ten seconds, an EMOM's or density block's count-in), since
+  the speaker cuts a line short when the next one starts: the groove once for each lift and bell a session, then
+  stopping early once a session. `SessionTimers` hears of the set coming (`ComingSet`) and the day
+  (`EasierDay.taxed`, the offer's own reading, which holds after the first set and on a free session).
+- A session opening before its first set says the line due at once (`SessionTimers.opened`), never after a killed
+  process; a free session's says only "Stop a rep early", as its card's lift may not be the one done.
+- Done when: `SafetyTest` pins the rule, `SessionTimersTest` the cue each takes the place of, and
+  `LiftVoiceAcceptanceTest` hears the groove as a program day opens and "Stop a rep early" after a very hard
+  session (`journeys/lift-voice.xml`).
+
 --- cut line ---
 
 **6. Describe reads "then"** (0.5's ticket 4, unchanged) · S

@@ -2,6 +2,7 @@ package dev.justinsmith.lift.platform
 
 import dev.justinsmith.lift.domain.DensityCall
 import dev.justinsmith.lift.domain.Exercise
+import dev.justinsmith.lift.domain.SafetyLine
 
 /** A line Lift says in a session, about [exercise]. Never one mid-rep: the timers say each where a lifter is still. */
 sealed interface Coaching {
@@ -22,6 +23,12 @@ sealed interface Coaching {
 
     /** A density block's cap of [exercise] has this [call] due: five minutes left, one, or time with its [rounds]. */
     data class Clock(override val exercise: Exercise, val call: DensityCall, val rounds: Int) : Coaching
+
+    /**
+     * A safety [line] before a set of [exercise], said in place of the set-up cue that moment would say, or as a
+     * program day's session opens on it.
+     */
+    data class Safety(override val exercise: Exercise, val line: SafetyLine) : Coaching
 }
 
 /**

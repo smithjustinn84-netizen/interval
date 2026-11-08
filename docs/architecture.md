@@ -432,7 +432,9 @@ flowchart TD
     desktop), bound in `corePlatformModule`. Each side puts its own lines into words through `SpokenLines`: the
     interval side's `Speech` in `SpeechQueue`, Lift's `Coaching` (a lift's cue at an EMOM's or a density block's
     count-in and a rest's end, a fault after a set, a density block's clock: five minutes, one minute, then time
-    and the rounds) in `SpokenCoaching`. Settings' Voice switch governs both (Lift reads it as
+    and the rounds, and the two safety lines, `Coaching.Safety`, which take a set-up cue's place: "Groove five light
+    first" before a thrown lift's first set at a new bell, `firstAtBell`, and "Stop a rep early" once a session on a
+    taxed day, `EasierDay.taxed`) in `SpokenCoaching`. Settings' Voice switch governs both (Lift reads it as
     `IntervalActivity.voice`).
 - **Health store** (`HealthStore`, `core-platform`):
   - As a workout or a Lift session finishes, its ViewModel hands the store a `HealthWorkout`: when it ran, a segment

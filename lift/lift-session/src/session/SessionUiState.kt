@@ -166,5 +166,9 @@ data class SessionUiState(
     val detail: ExerciseDetailUiState? = null,
 )
 
-/** The lift a rest leads to: the plan's next set's, none once the day is done, or in a free session the draft's. */
-val SessionUiState.liftComing: Exercise? get() = if (free) draft.exercise else upNext?.set?.exercise
+/**
+ * The set a rest leads to, its lift and load: the plan's next set, none once the day is done, or in a free session
+ * the draft.
+ */
+val SessionUiState.setComing: Pair<Exercise, Load>?
+    get() = if (free) draft.exercise to draft.load else upNext?.let { it.set.exercise to it.load }

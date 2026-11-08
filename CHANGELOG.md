@@ -63,6 +63,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 - The week on iOS's Lock Screen: the widget comes in the Lock Screen's three sizes, the ring with "3/5" in it, the
   ring beside how far to go and the streak, and one line over the clock ("3/5 this week · 2-week streak"), in the
   wallpaper's tint. A tap opens the app.
+- Lift's two safety lines. Before a swing, clean, snatch or other thrown lift's first set at a bell heavier than any
+  it has been done at (15:15's snatches counted), with a lighter one owned, the voice says "Groove five light
+  first", once for each lift and bell; on a day Lift reads as taxed it says "Stop a rep early", once a session.
+  Each takes the place of the set-up cue the moment would say (a rest's last ten seconds, an EMOM's or a density
+  block's count-in), and a session opening before its first set says the one due at once.
 
 ### Changed
 - The six sounds are the app's own, the same on Android, iOS and desktop, in place of each platform's stock

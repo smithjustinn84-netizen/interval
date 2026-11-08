@@ -49,7 +49,9 @@ Lift's timers speak, never mid-rep:
   - **Death grip in the float**: "Loosen at the top, grip on the way down." Squeezing through the float wears the forearm flexors and tears calluses.
   - **Wrist flexion in the hinge**: "Knuckles to the floor, wrist straight." A straight line from elbow to handle spares the wrist extensors.
   - **Late hand insertion on the snatch**: "Punch through before it lands."
-- **Safety lines (planned).** Before the first ballistic set at a new bell: "Groove five light first." On a Taxed day: "Stop a rep early."
+- **Safety lines.** Each is said in place of a set-up cue (a rest's last ten seconds, an EMOM's or a density block's count-in), since the speaker cuts a line short when the next starts; a session opening before its first set says the one due at once.
+  - **"Groove five light first."** Before a ballistic lift's first set at a bell, or a pair, heavier than any it has been done at, 15:15's snatches counted (`firstAtBell`, `Safety.kt`), with a lighter bell owned to groove with. Once for each lift and bell a session; a free session's opening leaves it out, as its card's lift may not be the one done.
+  - **"Stop a rep early."** Once a session on a Taxed day (`Readiness`, the same reading as the easier day's offer, `EasierDay.taxed`), after a groove line due.
 
 ## 3. Grip and fatigue
 

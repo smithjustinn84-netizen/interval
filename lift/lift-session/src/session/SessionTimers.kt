@@ -11,6 +11,7 @@ import dev.justinsmith.lift.domain.HoldPhase
 import dev.justinsmith.lift.domain.HoldState
 import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.RestState
+import dev.justinsmith.lift.domain.SafetyLine
 import dev.justinsmith.lift.domain.SavedTimer
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.platform.ActiveTimers
@@ -50,6 +51,12 @@ class RunClock(private val wall: WallClock, timeSource: TimeSource.WithComparabl
 }
 
 /**
+ * The set a rest leads to: its lift, and the bell when it is the lift's first at a new one
+ * ([dev.justinsmith.lift.domain.firstAtBell]).
+ */
+data class ComingSet(val exercise: Exercise, val newBell: Load.Bell? = null)
+
+/**
  * The session's timers at one tick: [now] on the [RunClock], and the rest, EMOM, hold and density block, any of
  * which may run.
  */
@@ -82,7 +89,10 @@ data class TimerState(
  *
  * They speak through [voice], never mid-rep: an EMOM minute's count-in says one of the lift's cues, a rest's last
  * seconds the set-up of the lift coming ([upNext], which the session's screen keeps current), and the rest after a
- * set of a ballistic or hinge lift one fault it is prone to, once, taken round set by set.
+ * set of a ballistic or hinge lift one fault it is prone to, once, taken round set by set. A safety line due takes
+ * a set-up cue's place, since a line cut short by the next says neither: "Groove five light first" before the coming
+ * set when it is a ballistic lift's first at a new bell, once for each lift and bell, then "Stop a rep early" once
+ * a session on a taxed day ([taxed]). A session opening says the one due at once ([opened]).
  */
 @Suppress("detekt.TooManyFunctions") // A control for each thing the screen does to a timer, and the voice's two.
 class SessionTimers(
@@ -96,19 +106,29 @@ class SessionTimers(
 ) : ActiveTimers {
     private val time = RunClock(clock, timeSource)
 
-    /** The lift coming after this rest, as the session's screen last said; null with none known. */
-    private var next: Exercise? = null
+    /** The set coming after this rest, as the session's screen last said; null with none known. */
+    private var next: ComingSet? = null
 
     /** How many faults each lift has had said, by its key, so the next set hears the next. */
     private val faultsSaid = mutableMapOf<String, Int>()
 
-    private val rest = RestTimer(time, beeper, voice) { next }
+    /** Whether today is a taxed day, as the session's screen last said. */
+    private var taxedDay = false
 
-    private val emom = EmomRunner(time, beeper, voice, ::nextFault) { run, minute ->
+    /** The lifts and bells told to groove light first this session, so each is told once. */
+    private val grooved = mutableSetOf<Pair<String, Load.Bell>>()
+    private var stopEarlySaid = false
+
+    /** What the timers say: a set-up cue gives way to a safety line due. */
+    private val coach = LiftVoice { line -> voice.say(if (line is Coaching.Cue) safetyDue() ?: line else line) }
+
+    private val rest = RestTimer(time, beeper, coach) { next?.exercise }
+
+    private val emom = EmomRunner(time, beeper, coach, ::nextFault) { run, minute ->
         setStore.logSet(run.exercise, run.load, run.reps, run.sideOf(minute))
     }
 
-    private val density = DensityRunner(time, beeper, voice) { run, round ->
+    private val density = DensityRunner(time, beeper, coach) { run, round ->
         setStore.logSet(run.exercise, run.load, run.reps, run.sideOf(round))
     }
 
@@ -139,9 +159,22 @@ class SessionTimers(
         changed()
     }
 
-    /** The lift coming after a rest, said in its last seconds; null when none is known. */
-    fun upNext(exercise: Exercise?) {
-        next = exercise
+    /** The set coming after a rest, its lift's set-up said in its last seconds; null when none is known. */
+    fun upNext(coming: ComingSet?) {
+        next = coming
+    }
+
+    /** Whether today is a taxed day: a set-up cue gives way to "Stop a rep early" once while it is. */
+    fun taxed(taxed: Boolean) {
+        taxedDay = taxed
+    }
+
+    /**
+     * A session opening before its first set: the safety line due, if one is, is said now; grooving light only when
+     * [grooving], as the coming set is the program day's first rather than a free session's card.
+     */
+    fun opened(grooving: Boolean = true) {
+        safetyDue(grooving)?.let(voice::say)
     }
 
     /** Makes the rest running [seconds] long, from when it started. */
@@ -222,6 +255,9 @@ class SessionTimers(
         rest.skip()
         next = null
         faultsSaid.clear()
+        taxedDay = false
+        grooved.clear()
+        stopEarlySaid = false
         changed()
     }
 
@@ -281,6 +317,26 @@ class SessionTimers(
         setStore.logSet(set.exercise, set.load, 0, set.side, seconds = seconds)
         rest.start(setStore.restSeconds.value)
         held.tryEmit(set)
+    }
+
+    /**
+     * The safety line due before the coming set, marked said: grooving light at a new bell first, then stopping a
+     * rep early on a taxed day; null with neither due.
+     */
+    private fun safetyDue(grooving: Boolean = true): Coaching.Safety? {
+        val coming = next ?: return null
+        val bell = coming.newBell?.takeIf { grooving }
+        return when {
+            bell != null && grooved.add(coming.exercise.key to bell) ->
+                Coaching.Safety(coming.exercise, SafetyLine.GrooveLight)
+
+            taxedDay && !stopEarlySaid -> {
+                stopEarlySaid = true
+                Coaching.Safety(coming.exercise, SafetyLine.StopEarly)
+            }
+
+            else -> null
+        }
     }
 
     /** The fault [exercise]'s next set hears, the one after the last said. */

@@ -9,8 +9,12 @@ import androidx.compose.ui.test.performScrollTo
 import dev.justinsmith.interval.ui.UI_TEST_TIMEOUT
 import dev.justinsmith.interval.ui.performClick
 import dev.justinsmith.interval.ui.waitForText
+import dev.justinsmith.lift.data.SessionEntity
+import dev.justinsmith.lift.data.SetEntity
+import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.fakes.FakeIntervalActivity
+import dev.justinsmith.lift.fakes.FakeLiftStorage
 import dev.justinsmith.lift.ui.liftAppTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -21,8 +25,15 @@ class SpokenCoachingFlowTest {
     private val swingFault = "Hips back, shins stay vertical"
     private val timeout = UI_TEST_TIMEOUT.inWholeMilliseconds
 
+    /** Swings done at the sheet's 16 kg the day before, so the bell is no new one to groove light first at. */
+    private fun swungBefore() = FakeLiftStorage().apply {
+        val at = -DAY_MILLIS
+        sessions.sets.value += SetEntity(0, "before", BuiltInExercise.TwoHandSwing.key, 16.0, 10, null, at)
+        sessions.sessions.value += SessionEntity("before", at - HOUR_MILLIS, at, "Swings", at)
+    }
+
     @Test
-    fun `an EMOM's count-in says one of the lift's cues`() = liftAppTest { app ->
+    fun `an EMOM's count-in says one of the lift's cues`() = liftAppTest(swungBefore()) { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithContentDescription("Add set or EMOM").performClick()
@@ -31,7 +42,7 @@ class SpokenCoachingFlowTest {
         onNodeWithText("Start EMOM").performScrollTo().performClick()
         waitForText("Get ready")
 
-        app.clock.set(2_000)
+        app.clock.set(app.clock.get() + 2_000)
         waitUntil(timeoutMillis = timeout) { app.speaker.lines.value.isNotEmpty() }
         assertEquals(listOf(swingSetUp), app.speaker.lines.value)
     }
@@ -65,3 +76,6 @@ class SpokenCoachingFlowTest {
         }
     }
 }
+
+private const val HOUR_MILLIS = 3_600_000L
+private const val DAY_MILLIS = 24 * HOUR_MILLIS

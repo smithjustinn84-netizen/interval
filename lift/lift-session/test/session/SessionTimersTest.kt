@@ -9,6 +9,7 @@ import dev.justinsmith.lift.domain.EmomCue
 import dev.justinsmith.lift.domain.HoldClock
 import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.RestClock
+import dev.justinsmith.lift.domain.SafetyLine
 import dev.justinsmith.lift.domain.SavedTimer
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.fakes.FakeLiftStorage
@@ -258,13 +259,61 @@ class SessionTimersTest {
     fun `a rest after a set says one fault of the lift then the set-up of the lift coming`() = runTest {
         val timers = timers()
         val snatch = BuiltInExercise.Snatch
-        timers.upNext(BuiltInExercise.GobletSquat)
+        timers.upNext(ComingSet(BuiltInExercise.GobletSquat))
         timers.startRest(30, after = snatch)
         run(25_000)
         assertEquals(listOf(Coaching.Fault(snatch, 0), Coaching.Cue(BuiltInExercise.GobletSquat, 0)), voice.lines)
         timers.startRest(30, after = snatch)
         assertEquals(Coaching.Fault(snatch, 1), voice.lines.last())
         timers.stopAll()
+    }
+
+    @Test
+    fun `a new bell coming says groove light in place of its set-up once for the lift and bell`() = runTest {
+        val timers = timers()
+        val swing = BuiltInExercise.OneHandSwing
+        timers.upNext(ComingSet(swing, newBell = Load.Bell(24.0)))
+        timers.startRest(30)
+        run(25_000)
+        assertEquals(listOf<Coaching>(Coaching.Safety(swing, SafetyLine.GrooveLight)), voice.lines)
+        timers.startRest(30)
+        run(25_000)
+        assertEquals(Coaching.Cue(swing, 0), voice.lines.last())
+        timers.stopAll()
+    }
+
+    @Test
+    fun `a taxed day says stop a rep early once in place of a set-up cue after any groove`() = runTest {
+        val timers = timers()
+        val swing = BuiltInExercise.OneHandSwing
+        timers.taxed(true)
+        timers.upNext(ComingSet(swing, newBell = Load.Bell(24.0)))
+        timers.opened()
+        repeat(2) {
+            timers.startRest(30)
+            run(25_000)
+        }
+        assertEquals(
+            listOf(
+                Coaching.Safety(swing, SafetyLine.GrooveLight),
+                Coaching.Safety(swing, SafetyLine.StopEarly),
+                Coaching.Cue(swing, 0),
+            ),
+            voice.lines,
+        )
+        timers.stopAll()
+    }
+
+    @Test
+    fun `a free session opening says no groove and a calm day nothing`() = runTest {
+        val timers = timers()
+        timers.upNext(ComingSet(BuiltInExercise.Snatch, newBell = Load.Bell(16.0)))
+        timers.opened(grooving = false)
+        timers.opened(grooving = false)
+        assertEquals(emptyList<Coaching>(), voice.lines)
+        timers.taxed(true)
+        timers.opened(grooving = false)
+        assertEquals(listOf<Coaching>(Coaching.Safety(BuiltInExercise.Snatch, SafetyLine.StopEarly)), voice.lines)
     }
 
     @Test

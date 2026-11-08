@@ -275,6 +275,10 @@
         <item quantity="one">Time. %1$d round</item>
         <item quantity="other">Time. %1$d rounds</item>
     </plurals>
+    <!-- Spoken before a ballistic lift's first set at a bell new to it, in place of its set-up cue. -->
+    <string name="safety_groove_light">Groove five light first</string>
+    <!-- Spoken once a session on a taxed day, in place of a set-up cue. -->
+    <string name="safety_stop_early">Stop a rep early</string>
     <plurals name="summary_density">
         <item quantity="one">%1$d round in %2$d min</item>
         <item quantity="other">%1$d rounds in %2$d min</item>

@@ -17,9 +17,6 @@ rather than copying the list forward. What is in a sprint is in that sprint's fi
 
 ## Planned, not yet scheduled
 
-- **Lift's safety lines** ([kettlebell-coaching.md](kettlebell-coaching.md), section 2): before the first
-  ballistic set at a new bell, "Groove five light first"; on a Taxed day, "Stop a rep early". Small, and spoken
-  through the `Speaker` that Lift's cues already use. *Brings it in:* the next sprint with room for Lift.
 
 ## Left out on purpose
 

@@ -13,6 +13,7 @@ import dev.justinsmith.lift.domain.DEFAULT_BELL_KG
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.Readiness
+import dev.justinsmith.lift.domain.ReadinessCheck
 import dev.justinsmith.lift.domain.ReadinessReason
 import dev.justinsmith.lift.domain.SessionPlan
 import dev.justinsmith.lift.domain.SetLog
@@ -59,6 +60,19 @@ class EasierDay(
         offerFor(active, sessions, workouts.snatchSets.sets, sportDays.filter { it.grappling }.map { it.epochDay }, day)
     }
 
+    /**
+     * Whether today is a taxed day, by the same reading as the [offer]'s, whatever the session is and however far
+     * through: what Lift's voice says "Stop a rep early" on.
+     */
+    val taxed: Flow<Boolean> = combine(
+        sessionStore.sessions,
+        intervals.sportDays,
+        intervals.workouts,
+    ) { sessions, sportDays, workouts ->
+        check(sessions, workouts.snatchSets.sets, sportDays.filter { it.grappling }.map { it.epochDay })
+            .readiness == Readiness.Taxed
+    }
+
     /** Makes today's plan easier, as offered. */
     fun use() {
         setStore.changeSessionPlan { session ->
@@ -75,13 +89,18 @@ class EasierDay(
         day: ProgramDay?,
     ): EasierOffer? {
         val today = dayToEase(active, day) ?: return null
-        val now = clock.nowMillis()
-        val lifted = sessions.flatMap { it.sets } + alongside
-        val grip = gripLoad(lifted, grappling, timestamps.dayNumber(now), timestamps::dayNumber)
-        val check = readiness(sessions, grappling, grip, now, timestamps::dayNumber)
+        val check = check(sessions, alongside, grappling)
         val reason = check.reason?.takeIf { check.readiness == Readiness.Taxed } ?: return null
         eased(today, sessions) ?: return null
         return EasierOffer(reason, today.program.lighterDayThan(today.number))
+    }
+
+    /** How ready the lifter is now, from the [sessions] finished, the sets [alongside] and the [grappling] days. */
+    private fun check(sessions: List<LiftSession>, alongside: List<SetLog>, grappling: List<Long>): ReadinessCheck {
+        val now = clock.nowMillis()
+        val lifted = sessions.flatMap { it.sets } + alongside
+        val grip = gripLoad(lifted, grappling, timestamps.dayNumber(now), timestamps::dayNumber)
+        return readiness(sessions, grappling, grip, now, timestamps::dayNumber)
     }
 
     /** [session]'s program day, while its plan is as programmed and nothing is logged; else null. */

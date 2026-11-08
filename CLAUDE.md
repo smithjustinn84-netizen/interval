@@ -163,7 +163,8 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      start someone on with one bell (`StarterProgram.kt`). The coaching (docs/kettlebell-coaching.md):
                      how each lift moves (`Movement.kt`: pattern, tempo ballistic/grind/hold, grip, lifts in a rep),
                      the faults it is prone to, from that (`Faults.kt`, which the rests say), the grip's load (`Grip.kt`, BJJ days in it) and how ready the lifter is (`Readiness.kt`), a
-                     taxed day's easier plan (`Autoregulate.kt`), density and pace (`Density.kt`, only from sets
+                     taxed day's easier plan (`Autoregulate.kt`), the safety lines (`Safety.kt`: `SafetyLine`, and
+                     `firstAtBell`, a thrown lift's first set at a bell new to it), density and pace (`Density.kt`, only from sets
                      logged as done) and the challenges and totals (`Benchmarks.kt`), all worked out from sets
                      logged, nothing stored. No dependencies
   lift-api           the ports between the sides, package `dev.justinsmith.lift.data`: `IntervalActivity` (what
@@ -177,7 +178,7 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      `ProgramRepository`, `ExerciseRepository`, `GearRepository`, over one `SerialWriter`; the
                      mappers in `LiftMappers.kt`), `LiftDatabase` (Room, KSP, `schemas/`), `liftModules` (di/);
                      exports `lift-api`. No Compose
-  lift-platform      `Beeper`, `LiftVoice` (the timers' typed `Coaching` lines; `SpokenCoaching` in lift-session
+  lift-platform      `Beeper`, `LiftVoice` (the timers' typed `Coaching` lines, the safety lines among them in place of a set-up cue; `SpokenCoaching` in lift-session
                      words them, from lift-ui's `cues()` and each `Fault`'s `words()`), `SessionKeepAlive` and its
                      `TimerRun` (+ Android's `TimerService`), the `ActiveTimers` port, the timers' notification
                      words, and each platform's `liftPlatformModule` (the database builder too); Lift's
