@@ -234,6 +234,21 @@ Exercise in Health Connect. Check it before the next release. Ticket 4 of 0.5 mo
   "followed by", one block from "40 on then 20 off", and a sequence beside another workout; and
   `SequenceAcceptanceTest` plans one from Plan's Describe a routine.
 
+**11. The week on iOS's Lock Screen** (added during the sprint, from below the cut line) · XS
+- `WeekWidget.swift` takes the three accessory families beside small and medium, from the same `WeekSnapshot`:
+  - circular, the ring alone as a capacity gauge with "3/5" in it, or the count on the system's disc with no goal;
+  - rectangular, the ring beside "This week", how far to go and the streak;
+  - inline, "3/5 this week · 2-week streak" over the clock, the figure alone where the streak won't fit.
+- The words are the Home Screen's (`WeekSnapshot.caption`, `streakWords`, `spoken`), drawn in the system's
+  foreground so the Lock Screen's tint takes them, the ring as the tinted part.
+- No Workout or Lift there: the whole widget is one tap, and it opens the app as it was, since a glance at the Lock
+  Screen shouldn't start anything.
+- Done when: checked on the simulator, each size in the gallery and on the Lock Screen. No journey changes:
+  `journeys/` run on `amper-37`, and Android has no Lock Screen widgets.
+- As built: checked on iOS 27's simulator, the three sizes in the gallery with a goal and a streak, and the circular
+  and rectangular on the Lock Screen with no goal ("1 this week", "This week · 1 workout"). The rectangular's ring is
+  drawn smaller than the circular size so "2-week streak" fits beside it, and with no goal it says the count in words.
+
 --- cut line ---
 
 **6. Describe reads "then"** (0.5's ticket 4, unchanged) · S
@@ -253,7 +268,6 @@ Exercise in Health Connect. Check it before the next release. Ticket 4 of 0.5 mo
   and in a sequence a bare "1:00 between" said of a block of one set is the rest between blocks.
 
 Also below it:
-- The iOS widget's Lock Screen (accessory) sizes.
 - A density block for the interval side, the Timer's own "as many rounds as you can".
 
 ## Explicitly not this sprint

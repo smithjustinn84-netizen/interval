@@ -56,6 +56,9 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   logged in full on that day and counted toward the week, the streak and the widget, with Undo on the notice. A
   workout planned that day and still to do, or missed, has "Log it" on its row, which reads Done and leaves Today
   with nothing more due. Nothing goes to Health Connect or Apple Health for one, and its page reads no heart rate.
+- The week on iOS's Lock Screen: the widget comes in the Lock Screen's three sizes, the ring with "3/5" in it, the
+  ring beside how far to go and the streak, and one line over the clock ("3/5 this week · 2-week streak"), in the
+  wallpaper's tint. A tap opens the app.
 
 ### Changed
 - The six sounds are the app's own, the same on Android, iOS and desktop, in place of each platform's stock

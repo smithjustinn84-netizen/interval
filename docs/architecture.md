@@ -196,7 +196,7 @@ Each module applies a reusable template from `templates/`:
 
 | Layer | Modules | Responsibilities |
 |---|---|---|
-| **App Targets** | `androidApp`, `iosApp`, `desktopApp` | Platform entry points, manifests, splash/launch assets, packaging; Android's home-screen widget (Glance, `androidApp/src/widget/`) and launcher shortcuts; iOS Home Screen quick actions and widget (`iosApp/widget/`). |
+| **App Targets** | `androidApp`, `iosApp`, `desktopApp` | Platform entry points, manifests, splash/launch assets, packaging; Android's home-screen widget (Glance, `androidApp/src/widget/`) and launcher shortcuts; iOS Home Screen quick actions and the Home and Lock Screen widget (`iosApp/widget/`). |
 | **Container** | `app` | Application entry (`App.kt`), Navigation 3 routing table and `Train` pillar host, Koin graph assembly, root theme host, `Set up` (`weeksetup/`), `WeekStandingSource`, `About`, and JSON export/import (`export/`). |
 | **Core** | `core`, `core-platform`, `core-time`, `core-testing` | Design tokens (`Spacing`, `Radius`, `Sizes`, `Motion`), `IntervalTheme`, navigation primitives; the clocks, timestamp formatter, `HealthStore`, and storage utilities in `core-platform`, which has no Compose so the data modules (and their Room KSP) don't rebuild on a UI change; calendar and clock maths in `core-time`, which has no dependencies so the domains compile without Compose; UI test harness. |
 | **Interval Domain & Data** | `interval-domain`, `interval-data`, `interval-platform-api`, `interval-platform` | Timer calculation engine, multi-block `Course`, mobility `Flow`s, `Sport` days, Room database (`AppDatabase`), DataStore preferences, audio/speech cues, Android Foreground Service, iOS notifications. |
@@ -362,8 +362,9 @@ flowchart TD
     Kotlin). The app writes each `WeekStandingSource` standing as a `WeekSnapshot` JSON (`apps/app/src/data/`) to the
     App Group `group.dev.justinsmith.interval` (`WidgetFeed.kt`, iosApp) and has `WidgetCenter` redraw; the widget's
     timeline turns the week at Monday's midnight itself. Its Workout and Lift links (`interval://shortcut/<id>`) go
-    through `SceneDelegate` to `openShortcut`, as the quick actions do. Both targets carry the same version
-    (`tools/check_versions.py`).
+    through `SceneDelegate` to `openShortcut`, as the quick actions do. On the Lock Screen it comes in the three
+    accessory sizes (the ring as a gauge, the ring beside its words, one line), drawn in the system's tint, with no
+    links: a tap opens the app as it was. Both targets carry the same version (`tools/check_versions.py`).
 - **Plan Reminders (`PlanReminderScheduler`)**:
   - Recomputes the next 14 days with open plans (`plannedReminders` from `TrainingLog.upNext`) on plan/history changes and at midnight.
   - Android arms one inexact alarm per day (`PlanAlarms`), and `PlanReminderReceiver` words the notification at delivery (`PlanReminderSource`) and extends the 14-day window even when the app hasn't been opened (as well as across reboots and clock changes); iOS schedules calendar-triggered local notifications while reserving slots for active workout alerts.

@@ -131,30 +131,57 @@ struct WeekWidgetView: View {
     @Environment(\.widgetFamily) private var family
 
     var body: some View {
-        Group {
-            if family == .systemMedium {
-                HStack(spacing: 16) {
-                    Ring(week: week)
-                    Words(week: week, alignment: .leading).frame(maxWidth: .infinity, alignment: .leading)
-                    VStack(spacing: 8) {
-                        StartButton(start: .workout)
-                        StartButton(start: .lift)
-                    }
-                    .frame(width: 96)
+        switch family {
+        case .systemMedium:
+            HStack(spacing: 16) {
+                Ring(week: week)
+                Words(week: week, alignment: .leading).frame(maxWidth: .infinity, alignment: .leading)
+                VStack(spacing: 8) {
+                    StartButton(start: .workout)
+                    StartButton(start: .lift)
                 }
-            } else {
-                VStack(spacing: 6) {
-                    Ring(week: week, diameter: 60, stroke: 7, figure: 18)
-                    Words(week: week, alignment: .center)
-                    Spacer(minLength: 0)
-                    HStack(spacing: 8) {
-                        StartButton(start: .workout)
-                        StartButton(start: .lift)
-                    }
+                .frame(width: 96)
+            }
+            .containerBackground(Palette.card, for: .widget)
+        case .accessoryCircular:
+            LockRing(week: week).containerBackground(.clear, for: .widget)
+        case .accessoryRectangular:
+            LockCard(week: week).containerBackground(.clear, for: .widget)
+        case .accessoryInline:
+            LockLine(week: week).containerBackground(.clear, for: .widget)
+        default:
+            VStack(spacing: 6) {
+                Ring(week: week, diameter: 60, stroke: 7, figure: 18)
+                Words(week: week, alignment: .center)
+                Spacer(minLength: 0)
+                HStack(spacing: 8) {
+                    StartButton(start: .workout)
+                    StartButton(start: .lift)
                 }
             }
+            .containerBackground(Palette.card, for: .widget)
         }
-        .containerBackground(Palette.card, for: .widget)
+    }
+}
+
+/// The words every size says, so the Lock Screen's read as the Home Screen's do.
+extension WeekSnapshot {
+    /// "3/4", or the count alone with no goal.
+    var figure: String { goal.map { "\(count)/\($0)" } ?? "\(count)" }
+
+    /// The ring's share of the goal: full at a goal of 0, as `Ring` draws it, and empty with no goal.
+    var share: Double { goal.map { $0 > 0 ? min(Double(count) / Double($0), 1) : 1 } ?? 0 }
+
+    var caption: Text {
+        guard let goal else { return Text("This week") }
+        return goalMet ? Text("Goal met this week") : Text("\(goal - count) to go")
+    }
+
+    var streakWords: Text? { streak > 0 ? Text("\(streak)-week streak") : nil }
+
+    var spoken: Text {
+        goal.map { Text("\(count) of \($0) workouts this week") }
+            ?? Text("^[\(count) workout](inflect: true) this week")
     }
 }
 
@@ -166,7 +193,7 @@ struct Ring: View {
     var figure: CGFloat = 22
 
     var body: some View {
-        let share = week.goal.map { $0 > 0 ? min(Double(week.count) / Double($0), 1) : 1 } ?? 0
+        let share = week.share
         ZStack {
             Circle().stroke(Palette.upcoming, lineWidth: stroke)
             if share > 0 {
@@ -175,7 +202,7 @@ struct Ring: View {
                     .stroke(Palette.done, style: StrokeStyle(lineWidth: stroke, lineCap: .round))
                     .rotationEffect(.degrees(-90))
             }
-            Text(verbatim: week.goal.map { "\(week.count)/\($0)" } ?? "\(week.count)")
+            Text(verbatim: week.figure)
                 .font(.system(size: figure, weight: .bold))
                 .foregroundStyle(Palette.onGround)
                 .minimumScaleFactor(0.6)
@@ -183,10 +210,7 @@ struct Ring: View {
         .padding(stroke / 2)
         .frame(width: diameter, height: diameter)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(
-            week.goal.map { Text("\(week.count) of \($0) workouts this week") }
-                ?? Text("^[\(week.count) workout](inflect: true) this week")
-        )
+        .accessibilityLabel(week.spoken)
     }
 }
 
@@ -197,11 +221,11 @@ struct Words: View {
 
     var body: some View {
         VStack(alignment: alignment, spacing: 2) {
-            caption
+            week.caption
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(Palette.onGround)
-            if week.streak > 0 {
-                Text("\(week.streak)-week streak")
+            if let streak = week.streakWords {
+                streak
                     .font(.system(size: 14))
                     .foregroundStyle(Palette.onGroundDim)
             }
@@ -210,10 +234,75 @@ struct Words: View {
         .lineLimit(1)
         .minimumScaleFactor(0.8)
     }
+}
 
-    private var caption: Text {
-        guard let goal = week.goal else { return Text("This week") }
-        return week.goalMet ? Text("Goal met this week") : Text("\(goal - week.count) to go")
+// The Lock Screen's sizes. The system draws them in the wallpaper's tint, so they take its foreground rather than the
+// palette, with the ring as the tinted part. The whole widget is one tap there, and it opens the app as it was: no
+// Workout or Lift, since a glance at the Lock Screen shouldn't start anything.
+
+/// The ring alone, the figure in it: a gauge of the goal, or the count on the system's disc with none.
+struct LockRing: View {
+    let week: WeekSnapshot
+
+    var body: some View {
+        Group {
+            if week.goal != nil {
+                Gauge(value: week.share) {
+                    Text("This week")
+                } currentValueLabel: {
+                    Text(verbatim: week.figure).minimumScaleFactor(0.6)
+                }
+                .gaugeStyle(.accessoryCircularCapacity)
+                .widgetAccentable()
+            } else {
+                ZStack {
+                    AccessoryWidgetBackground().clipShape(Circle()) // a square anywhere but the circular size
+                    VStack(spacing: 0) {
+                        Text(verbatim: week.figure).font(.system(size: 20, weight: .bold))
+                        Text("this week").font(.system(size: 9)).lineLimit(1).minimumScaleFactor(0.8)
+                    }
+                    .widgetAccentable()
+                }
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(week.spoken)
+    }
+}
+
+/// The ring beside the words: "This week", how far to go (the count, with no goal) and the streak.
+struct LockCard: View {
+    let week: WeekSnapshot
+
+    var body: some View {
+        HStack(spacing: 6) {
+            LockRing(week: week).frame(width: 50, height: 50) // smaller than the circular size, so the words fit
+            VStack(alignment: .leading, spacing: 0) {
+                Text("This week").font(.headline).widgetAccentable()
+                (week.goal == nil ? Text("^[\(week.count) workout](inflect: true)") : week.caption)
+                    .font(.subheadline)
+                if let streak = week.streakWords { streak.font(.subheadline).foregroundStyle(.secondary) }
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// One line over the clock: the figure and the streak, or the figure alone where the streak won't fit.
+struct LockLine: View {
+    let week: WeekSnapshot
+
+    var body: some View {
+        ViewThatFits {
+            if let streak = week.streakWords {
+                Text("\(week.figure) this week · \(streak)")
+            }
+            Text("\(week.figure) this week")
+        }
+        .accessibilityLabel(week.spoken)
     }
 }
 
@@ -242,7 +331,7 @@ struct WeekWidget: Widget {
             WeekWidgetView(week: entry.week)
         }
         .configurationDisplayName("This week")
-        .description("This week's workouts against your goal, with Workout and Lift to start one")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .description("This week's workouts against your goal")
+        .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
 }

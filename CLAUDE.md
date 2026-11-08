@@ -218,8 +218,9 @@ apps/
   desktopApp         Desktop host application: main.kt entry point, Swing integration, window sizing
   iosApp             iOS host application: ViewController.kt (and `openShortcut`, the quick actions' and the widget's
                      links'), iosApp.swift, Xcode project, Info.plist (the quick actions, as `UIApplicationShortcutItems`;
-                     the `interval://` scheme), Assets, and the Home Screen widget: `widget/WeekWidget.swift`, a Swift-only
-                     WidgetKit target beside `app` (the toolchain allows one target with its Kotlin phase), fed the week by
+                     the `interval://` scheme), Assets, and the Home Screen and Lock Screen widget:
+                     `widget/WeekWidget.swift`, a Swift-only WidgetKit target beside `app` (the toolchain allows one
+                     target with its Kotlin phase), fed the week by
                      `WidgetFeed.kt` as a `WeekSnapshot` (app's `data/`) JSON in the App Group's defaults
 
 tooling/
