@@ -23,6 +23,7 @@ import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInFlows
 import dev.justinsmith.interval.timer.epochDayOf
 import dev.justinsmith.interval.timer.estimateCalories
+import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.sameShape
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
@@ -470,6 +471,42 @@ class HistoryViewModelTest : MainDispatcherTest() {
         // Gone by unlogged, it is not missed.
         assertEquals(PlanState.Passed, after.plans.single().state)
         assertEquals(listOf(TODAY), viewModel.state.value.sections.map { it.dayNumber })
+    }
+
+    @Test
+    fun `a workout logged by hand on a day gone by goes on it in full and does its plan`() {
+        repository.plans.planOnce(tabataPreset.asPlan(), TODAY - 2)
+        val uid = viewModel.logWorkout(tabata, TODAY - 2)
+        viewModel.openDay(TODAY - 2)
+
+        val state = viewModel.state.value
+        val sheet = requireNotNull(state.daySheet)
+        assertEquals(PlanState.Done, sheet.plans.single().state)
+        val row = sheet.workouts.single()
+        assertEquals("Tabata", row.presetName)
+        assertEquals(formatClock(tabata.totalSeconds), row.total)
+        assertEquals("at ${noonOf(TODAY - 2)}", row.time)
+        assertTrue(row.planned)
+        assertFalse(row.endedEarly)
+        assertEquals(1, state.weekCount)
+
+        viewModel.unlogWorkout(uid)
+        val after = requireNotNull(viewModel.state.value.daySheet)
+        assertEquals(emptyList(), after.workouts)
+        assertEquals(PlanState.Missed, after.plans.single().state)
+        assertEquals(0, viewModel.state.value.weekCount)
+    }
+
+    @Test
+    fun `a flow logged by hand today is dated now and the flows are offered`() {
+        val flow = builtInFlows.first()
+        viewModel.logWorkout(flow.config, TODAY)
+
+        assertEquals(clock, repository.history.history.value.single().finishedAtEpochMillis)
+        val state = viewModel.state.value
+        assertEquals(flow.name, state.sections.single().items.single().presetName)
+        assertEquals(1 to 1, state.weekCount to state.weekMobility)
+        assertEquals(builtInFlows, state.flows)
     }
 
     @Test

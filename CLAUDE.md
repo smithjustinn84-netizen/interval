@@ -316,7 +316,13 @@ toolchain (`$compose.*`).
   pace, grip), never storing them, so nothing is counted twice. A sport day is
   planned from `AddToPlanSheet`'s Sport side (`plan/PlanChoices.kt`) and worded by `plan/SportWords.kt`; the week
   strip names it under its day (`DayCell.sport`). It is logged from Today (`HomeViewModel.logSport`) or from its
-  day in History, each with Undo. `todayAgenda` (`history/TodayAgenda.kt`) is how Today and History lead with what
+  day in History, each with Undo. A workout done away from the app, or without the Timer, is logged after the fact
+  from its day's sheet in the Log, today or a day gone by ("Log a workout": a preset or the Timer's workout, a
+  flow, or a sport day, `LogWorkoutSheet`; a planned interval workout's row has "Log it"): `HistoryStore.logWorkout`
+  stores a plain `HistoryEntry.loggedByHand` (the whole course, work estimated, the start run back from the finish,
+  which with no work time is the mark, `loggedByHand`; no column) dated `TimestampFormatter.middayOf(day)`, today's
+  at the moment, and `unlogWorkout(uid)` is the notice's Undo. Nothing goes to the health store, and its page in
+  the Log reads no heart rate. Nothing of Lift's is logged that way. `todayAgenda` (`history/TodayAgenda.kt`) is how Today and History lead with what
   is up next: on a day with a sport still to log, the program's unplanned day stands beside the lead
   (`today/AlsoToday.kt`) rather than taking it, and with no workout the user planned themself the lead is the
   flow to do before the sport (`UpNextItem.Flow`, which `upNext` adds until mobility is done that day and History

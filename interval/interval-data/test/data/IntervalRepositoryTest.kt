@@ -117,6 +117,23 @@ class IntervalRepositoryTest {
     }
 
     @Test
+    fun `a workout logged by hand is dated as given and its undo leaves a tombstone`() = runTest {
+        val repository = repository()
+        val tabata = IntervalConfig(prepSeconds = 10, workSeconds = 20, restSeconds = 10, rounds = 8)
+        val uid = repository.history.logWorkout(tabata, finishedAtEpochMillis = 500_000L)
+
+        val logged = repository.history.history.value.single()
+        assertEquals(500_000L, logged.finishedAtEpochMillis)
+        assertEquals(tabata.totalSeconds, logged.elapsedSeconds)
+        assertEquals(500_000L - tabata.totalSeconds * 1_000L, logged.startedAt)
+        assertTrue(logged.loggedByHand)
+
+        repository.history.unlogWorkout(uid)
+        assertEquals(emptyList(), repository.history.history.value)
+        assertTrue(storage.history.all().single().deleted)
+    }
+
+    @Test
     fun `a write that fails is dropped and the next one still lands`() {
         var inserts = 0
         val flaky = object : HistoryDao by storage.history {

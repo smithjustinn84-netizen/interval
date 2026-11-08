@@ -3,7 +3,9 @@ package dev.justinsmith.interval.model
 import dev.justinsmith.interval.timer.snatchIntervals
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class HistoryEntryTest {
     private val start = 1_000_000L
@@ -31,6 +33,22 @@ class HistoryEntryTest {
 
         assertEquals(10, ends.size)
         assertEquals(start + 295_000L, ends.last())
+    }
+
+    @Test
+    fun `a workout logged by hand runs the whole course back from its finish`() {
+        val finished = 2_000_000L
+        val logged = HistoryEntry.loggedByHand(snatchIntervals.config, finished)
+
+        assertEquals(snatchIntervals.config.totalSeconds, logged.elapsedSeconds)
+        assertFalse(logged.endedEarly)
+        assertNull(logged.workActiveSeconds)
+        assertEquals(finished - logged.elapsedSeconds * 1_000L, logged.startedAt)
+        assertEquals(40, logged.workEnds().size)
+        assertTrue(logged.loggedByHand)
+        // A timed run keeps its work time; an older entry kept neither its work time nor its start.
+        assertFalse(fifteenFifteen(1_195, endedEarly = false).copy(workActiveSeconds = 600).loggedByHand)
+        assertFalse(HistoryEntry(finished, snatchIntervals.config, 1_195, endedEarly = false).loggedByHand)
     }
 
     @Test

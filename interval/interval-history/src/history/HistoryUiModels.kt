@@ -195,6 +195,8 @@ data class HistoryUiState(
     val daySheet: DaySheet? = null,
     /** What the day sheet's Add workout can plan: the Timer's workout, then every preset, or a session on Lift. */
     val choices: List<PlanChoice> = emptyList(),
+    /** The flows the day sheet's Log a workout offers under Mobility, beside [choices] and the sports. */
+    val flows: List<MobilityFlow> = emptyList(),
     /** The day of the program followed to do next, which a plan of the program's next day starts. */
     val programDay: ProgramDay? = null,
     /** Not built yet: the screen waits rather than taking it for the first run. */

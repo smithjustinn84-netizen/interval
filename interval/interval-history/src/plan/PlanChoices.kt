@@ -22,10 +22,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import dev.justinsmith.interval.history.resources.Res
+import dev.justinsmith.interval.history.resources.common_joined
+import dev.justinsmith.interval.history.resources.plan_on_timer
 import dev.justinsmith.interval.history.resources.plan_sport_name_label
 import dev.justinsmith.interval.history.resources.plan_sport_name_placeholder
 import dev.justinsmith.interval.history.resources.plan_sport_text
 import dev.justinsmith.interval.history.resources.plan_sport_which
+import dev.justinsmith.interval.history.resources.plan_workout
 import dev.justinsmith.interval.history.resources.sport_other
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.ui.IntervalIcons
@@ -36,9 +39,36 @@ import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.pressScale
+import dev.justinsmith.interval.ui.workoutDescription
 import org.jetbrains.compose.resources.stringResource
 
-// What the add sheet's lists are made of, and its Sport side.
+// What the add sheet's and the log sheet's lists are made of, and their Sport side.
+
+/** The interval workouts to pick from, the [picked] one checked; nothing to pick with only one. */
+@Composable
+internal fun IntervalChoiceList(choices: List<PlanChoice>, picked: Int, onPick: (Int) -> Unit) {
+    if (choices.size <= 1) return
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.space16)) {
+        Caption(stringResource(Res.string.plan_workout))
+        ListCard(Modifier.selectableGroup()) {
+            choices.forEachIndexed { index, choice ->
+                if (index > 0) RowDivider()
+                ChoiceRow(choice, selected = index == picked, onPick = { onPick(index) })
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChoiceRow(choice: PlanChoice, selected: Boolean, onPick: () -> Unit) {
+    val shape = workoutDescription(choice.preset.config)
+    PickRow(
+        name = if (choice.onTimer) stringResource(Res.string.plan_on_timer) else choice.preset.name,
+        detail = if (choice.onTimer) stringResource(Res.string.common_joined, choice.preset.name, shape) else shape,
+        selected = selected,
+        onPick = onPick,
+    )
+}
 
 /**
  * The Sport side: the sports named, the [picked] one checked, then one of the user's own, whose [name] is typed

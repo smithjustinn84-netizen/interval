@@ -124,10 +124,12 @@ class WorkoutDetailViewModel(
 
     /**
      * Reads the workout's heart rate from the health store as the page comes into view, unless it has one, and keeps
-     * it in History once found: a watch may have synced since the summary. Only the page on show may read.
+     * it in History once found: a watch may have synced since the summary. Only the page on show may read. One
+     * logged by hand is never read: its times are estimated, so a reading over them would be someone else's hour.
      */
     fun readHeartRate() {
-        val entry = historyStore.history.value.firstOrNull { it.id == id }?.takeIf { it.averageBpm == null } ?: return
+        val entry = historyStore.history.value.firstOrNull { it.id == id }
+            ?.takeIf { it.averageBpm == null && !it.loggedByHand } ?: return
         viewModelScope.launch {
             val heartRate = health.heartRate(entry.startedAt, entry.finishedAtEpochMillis) ?: return@launch
             historyStore.keepHeartRateOf(id, heartRate)

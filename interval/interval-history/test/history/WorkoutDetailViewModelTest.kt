@@ -150,7 +150,13 @@ class WorkoutDetailViewModelTest : MainDispatcherTest() {
     @Test
     fun `the page reads a watch's heart rate over the workout and keeps it`() {
         val started = clock - 600_000
-        repository.history.recordWorkout(hiit.config, elapsedSeconds = 580, startedAtEpochMillis = started)
+        // Timed, so its work time is kept: one without it was logged by hand, which is never read.
+        repository.history.recordWorkout(
+            hiit.config,
+            elapsedSeconds = 580,
+            workSeconds = 300,
+            startedAtEpochMillis = started,
+        )
         health.heartRate = HeartRate(averageBpm = 142, peakBpm = 171)
         val viewModel = viewModel()
         assertNull(viewModel.state.value.workout?.heartRate)
@@ -163,6 +169,16 @@ class WorkoutDetailViewModelTest : MainDispatcherTest() {
         // Kept: the next time the page shows, the store isn't asked again.
         viewModel.readHeartRate()
         assertEquals(1, health.heartRateReads.size)
+    }
+
+    @Test
+    fun `a workout logged by hand is never read for a heart rate`() {
+        repository.history.logWorkout(hiit.config, noonOf(TODAY - 1))
+        health.heartRate = HeartRate(142, 171)
+        val viewModel = viewModel()
+        viewModel.readHeartRate()
+        assertEquals(emptyList(), health.heartRateReads)
+        assertNull(viewModel.state.value.workout?.heartRate)
     }
 
     @Test

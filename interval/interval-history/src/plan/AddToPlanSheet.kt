@@ -44,7 +44,6 @@ import dev.justinsmith.interval.history.resources.plan_lift_days_use
 import dev.justinsmith.interval.history.resources.plan_lift_none_text
 import dev.justinsmith.interval.history.resources.plan_lift_none_title
 import dev.justinsmith.interval.history.resources.plan_lift_program_next
-import dev.justinsmith.interval.history.resources.plan_on_timer
 import dev.justinsmith.interval.history.resources.plan_once
 import dev.justinsmith.interval.history.resources.plan_when
 import dev.justinsmith.interval.history.resources.plan_workout
@@ -71,7 +70,6 @@ import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.interval.ui.weekdayMask
 import dev.justinsmith.interval.ui.weekdayText
 import dev.justinsmith.interval.ui.weekdaysOf
-import dev.justinsmith.interval.ui.workoutDescription
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.ui.programDayLine
 import dev.justinsmith.lift.ui.programName
@@ -225,21 +223,6 @@ private fun KindPicker(kinds: List<PlanKind>, kind: PlanKind, onPick: (PlanKind)
     )
 }
 
-/** The interval workouts to pick from, the [picked] one checked; nothing to pick with only one. */
-@Composable
-private fun IntervalChoiceList(choices: List<PlanChoice>, picked: Int, onPick: (Int) -> Unit) {
-    if (choices.size <= 1) return
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.space16)) {
-        Caption(stringResource(Res.string.plan_workout))
-        ListCard(Modifier.selectableGroup()) {
-            choices.forEachIndexed { index, choice ->
-                if (index > 0) RowDivider()
-                ChoiceRow(choice, selected = index == picked, onPick = { onPick(index) })
-            }
-        }
-    }
-}
-
 /**
  * Every week on the [weekdays] picked, or once on [day]; with [pace], the program's days a week and the weekdays
  * they spread over, a tap that picks those.
@@ -364,17 +347,6 @@ private fun ProgramPace(pace: Int, suggested: Set<Int>, weekdays: Int, onUse: (I
             }
         }
     }
-}
-
-@Composable
-private fun ChoiceRow(choice: PlanChoice, selected: Boolean, onPick: () -> Unit) {
-    val shape = workoutDescription(choice.preset.config)
-    PickRow(
-        name = if (choice.onTimer) stringResource(Res.string.plan_on_timer) else choice.preset.name,
-        detail = if (choice.onTimer) stringResource(Res.string.common_joined, choice.preset.name, shape) else shape,
-        selected = selected,
-        onPick = onPick,
-    )
 }
 
 /** [days] a week to a row, the [picked] one accent; a short last row keeps the columns. */

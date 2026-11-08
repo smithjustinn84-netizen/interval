@@ -71,6 +71,8 @@ interface PresetStore {
 }
 
 /** The finished workouts, newest first, and the days of a sport logged beside them. */
+// One store, as the log is one: a workout timed, logged by hand or a sport day, each with its undo.
+@Suppress("detekt.TooManyFunctions")
 interface HistoryStore {
     val history: StateFlow<List<HistoryEntry>>
 
@@ -109,6 +111,19 @@ interface HistoryStore {
 
     /** Takes back [logSport]: Undo, or the day's own remove. */
     fun unlogSport(sport: Sport, epochDay: Long)
+
+    /**
+     * Logs a workout of [config] done away from the app, or without the Timer, as finished at [finishedAtEpochMillis]
+     * and run in full ([HistoryEntry.loggedByHand]). Nothing goes to the health store. Returns the uid it is stored
+     * under, for [unlogWorkout].
+     */
+    fun logWorkout(config: IntervalConfig, finishedAtEpochMillis: Long): String
+
+    /**
+     * Takes back [logWorkout]: Undo. By uid, since its id is not known until the write lands; the row stays,
+     * marked.
+     */
+    fun unlogWorkout(uid: String)
 
     fun clearHistory()
 }

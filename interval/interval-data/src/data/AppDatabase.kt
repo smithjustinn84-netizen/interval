@@ -155,6 +155,8 @@ internal fun RoomDatabase.Builder<AppDatabase>.buildAppDatabase(): AppDatabase =
         .setQueryCoroutineContext(Dispatchers.IO)
         .build()
 
+// The workouts and their undo, by id or, before one is known, by uid.
+@Suppress("detekt.TooManyFunctions")
 @Dao
 interface HistoryDao {
     /** Newest first, deleted ones left out. */
@@ -175,6 +177,10 @@ interface HistoryDao {
     /** Brings a deleted workout back at [now]: Undo on [delete]. */
     @Query("UPDATE history SET deleted = 0, updated_at = :now WHERE id = :id")
     suspend fun restore(id: Long, now: Long)
+
+    /** As [delete], by the uid a workout was stored under: Undo on one logged, before its id is known. */
+    @Query("UPDATE history SET deleted = 1, updated_at = :now WHERE uid = :uid")
+    suspend fun deleteByUid(uid: String, now: Long)
 
     /** Sets how the workout [uid] felt, at [now]: an effort level, 1 to 5, and a note, either null for none. */
     @Query("UPDATE history SET effort = :effort, note = :note, updated_at = :now WHERE uid = :uid")

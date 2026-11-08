@@ -1,0 +1,40 @@
+<journey name="Log a past workout">
+  <description>
+    A workout done away from the app, or without the Timer, goes into the Log after the fact from its day's
+    sheet, today or a day gone by: a preset, a flow or a sport day, logged in full on that day with Undo. A
+    workout planned that day and still to do, or missed, is logged from its own row. Run on a fresh install
+    (adb shell pm clear dev.justinsmith.interval).
+  </description>
+  <actions>
+    <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
+    <action>Tap the "Log" tab and verify that it reads "Train to a plan"</action>
+    <action>Tap "Plan your week", then the "+" on today's weekday row in "Routine", and in the "Add to plan" sheet tap "Add to plan"</action>
+    <action>Tap "Back" and verify that the week shows, today's dot marked planned</action>
+    <action>Tap yesterday's dot on the week</action>
+    <action>Verify that the day sheet reads "Yesterday" over "Nothing done or planned.", with one button, "Log a workout", and neither "Open plan" nor "Add workout"</action>
+    <action>Tap "Log a workout"</action>
+    <action>Verify that a "Log a workout" sheet opens with "Interval", "Mobility" and "Sport" to pick from, a list of workouts headed "Workout" ("On the Timer" first, then the presets), the line "Done away from the app, or without the Timer. It goes on this day in full and counts toward your week." and a "Log it" button</action>
+    <action>Tap "Tabata", then "Log it"</action>
+    <action>Verify that a notice says "Tabata logged" with "Undo"</action>
+    <action>Verify that yesterday's dot on the week is filled, the week card counts "1 workout", and the log lists "Tabata" under "Yesterday" with "Conditioning" and "4:00"</action>
+    <action>Tap "Undo"</action>
+    <action>Verify that the "Tabata" row is gone and yesterday's dot is the plain one again</action>
+    <action>Tap yesterday's dot, then "Log a workout", then "Mobility"</action>
+    <action>Verify that the list is headed "Which flow" and lists "Hips and shoulders" with "Mobility · 6 moves", picked</action>
+    <action>Tap "Log it"</action>
+    <action>Verify that a notice says "Hips and shoulders logged", the log lists "Hips and shoulders" with "Mobility · 6 moves" under "Yesterday", and the Today tab's week card counts "1 workout" and "1 mobility"</action>
+    <action>On the "Log" tab, tap yesterday's dot, then "Log a workout", then "Sport"</action>
+    <action>Verify that the list is headed "Which sport" and lists "BJJ", "Climbing", "Running" and "Something else"</action>
+    <action>Tap "Climbing", then "Log it"</action>
+    <action>Verify that a notice says "Climbing logged" and the log lists "Climbing" under "Yesterday"</action>
+    <action>Tap today's dot on the week</action>
+    <action>Verify that the day sheet lists the planned workout reading "Every" and today's weekday with "Start" and "Log it", and under the plans "Open plan", "Add workout" and "Log a workout"</action>
+    <action>Tap the row's "Log it"</action>
+    <action>Verify that a notice says the workout is logged, the plan's row reads "Done · Every" and today's weekday, with neither "Start" nor "Log it", and the workout is listed among the day's</action>
+    <action>Close the sheet and tap the "Today" tab</action>
+    <action>Verify that the card under the week says "Nothing more due" and the week counts "3 workouts"</action>
+    <action>Tap the "Log" tab, then tomorrow's dot on the week if the week has one</action>
+    <action>Verify that the day sheet offers "Open plan" and "Add workout" and no "Log a workout": nothing is logged ahead of its day</action>
+    <action>Open the "Tabata" row under "Yesterday" from earlier if it is still there, or any logged workout's page, and verify that it shows the whole workout as done with no heart rate</action>
+  </actions>
+</journey>

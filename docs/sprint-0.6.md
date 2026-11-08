@@ -200,6 +200,31 @@ Exercise in Health Connect. Check it before the next release. Ticket 4 of 0.5 mo
   - `TrainingTest` pins the keys;
   - `BellDemosTest` holds the renegade row's far bell on the floor and the dead bug's bell still.
 
+**9. Log a past workout** (added during the sprint) · M
+- A workout done away from the app, or without the Timer, goes into the Log after the fact. The day sheet, on today
+  or a day gone by, gets "Log a workout" (the one button a day gone by has; today keeps "Open plan" and "Add
+  workout" over it), which opens `LogWorkoutSheet`: Interval (the Timer's workout, then the presets), Mobility (the
+  flows) or Sport, with no Weekly/Once and "Log it" to confirm. A planned interval workout's row that is Missed
+  (a day gone by) or Open (today) has "Log it" too, as a planned sport day has. Nothing of Lift's: a session is its
+  sets, and finishing one assumes it ends now.
+- Logged in full: `HistoryEntry.loggedByHand(config, finishedAt)` runs the whole course (`totalSeconds`, not
+  ended early, work estimated from the plan, the start run back from the finish). A start kept with no work time
+  is the mark (`loggedByHand`), so no column is added; a finished workout's page reads no heart rate for one.
+  `HistoryStore.logWorkout` keeps it and `unlogWorkout(uid)` is the notice's Undo (`HistoryDao.deleteByUid`, a
+  tombstone, by uid because the id isn't known until the write lands). Nothing goes to the health store.
+- Dated by `TimestampFormatter.middayOf(epochDay)` on a day gone by, midday because a daylight-saving change can
+  skip or double midnight; today's at the moment, never ahead of now. `TrainingLog` then matches its plan by day and
+  shape as any workout's, so a week gone by can change its count and streak, and a plan matched today leaves Up
+  next and drops its reminder: intended.
+- Done when:
+  - `LogPastWorkoutAcceptanceTest` logs yesterday's Tabata from its day and undoes it from the notice, logs a flow
+    there and sees it count as mobility, and logs today's plan from its row to "Done" with nothing more due
+    (`journeys/log-past-workout.xml`);
+  - `HistoryEntryTest` holds the whole course run back from the finish and the mark; `JavaTimeFormatterTest` keeps
+    midday on its day where midnight is skipped; `IntervalRepositoryTest` dates it as given and tombstones the undo;
+    `HistoryViewModelTest` marks a plan done on a day gone by and dates today's now; `WorkoutDetailViewModelTest`
+    reads no heart rate for one; `HistoryScreenTest` drives the sheet's three kinds and the row's Log it.
+
 --- cut line ---
 
 **6. Describe reads "then"** (0.5's ticket 4, unchanged) · S

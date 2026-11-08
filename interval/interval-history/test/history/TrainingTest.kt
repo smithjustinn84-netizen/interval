@@ -56,6 +56,15 @@ class TrainingTest {
     }
 
     @Test
+    fun `a plan is done by a workout of its shape logged by hand on its day`() {
+        val plan = once(monday)
+        val logged = HistoryEntry.loggedByHand(tabata, monday * DAY_MILLIS + 12 * HOUR_MILLIS).copy(id = nextId++)
+        val day = log(listOf(logged), listOf(plan)).day(monday)
+        assertEquals(PlanState.Done, day.plans.single().state)
+        assertEquals(DayState.Done, day.state)
+    }
+
+    @Test
     fun `a workout of another shape leaves the plan missed but the day done`() {
         val day = log(listOf(workout(monday, hiit)), listOf(once(monday))).day(monday)
         assertEquals(PlanState.Missed, day.plans.single().state)

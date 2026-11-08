@@ -142,6 +142,10 @@ fun HistoryRoute(
                 viewModel.logSport(sport, day)
                 notices.show(loggedText, NoticeAction(undo) { viewModel.unlogSport(sport, day) })
             },
+            onLogWorkout = { config, day, loggedText ->
+                val uid = viewModel.logWorkout(config, day)
+                notices.show(loggedText, NoticeAction(undo) { viewModel.unlogWorkout(uid) })
+            },
             onUnlogSport = { sport, day, removedText ->
                 viewModel.unlogSport(sport, day)
                 notices.show(removedText, NoticeAction(undo) { viewModel.logSport(sport, day) })
@@ -178,6 +182,11 @@ class HistoryActions(
     val onLogSport: (sport: Sport, epochDay: Long, loggedText: String) -> Unit = { _, _, _ -> },
     /** Takes a day of this sport logged off its day, with the line saying so ("Removed BJJ class"). */
     val onUnlogSport: (sport: Sport, epochDay: Long, removedText: String) -> Unit = { _, _, _ -> },
+    /**
+     * Logs a workout of this shape, done away from the app, on an epoch day, with the line saying so ("Tabata
+     * logged").
+     */
+    val onLogWorkout: (config: IntervalConfig, epochDay: Long, loggedText: String) -> Unit = { _, _, _ -> },
     val onPlanWeekly: (PlanWorkout, Set<Int>) -> Unit = { _, _ -> },
     val onPlanOnce: (PlanWorkout, Long) -> Unit = { _, _ -> },
     val onOpenWorkout: (Long) -> Unit = {},
@@ -210,6 +219,8 @@ fun HistoryScreen(
 ) {
     // The day the day sheet's Add workout is planning on, while its add sheet is open.
     var addingOn by rememberSaveable { mutableStateOf<Long?>(null) }
+    // The day the day sheet's Log a workout is logging on, while its log sheet is open.
+    var loggingOn by rememberSaveable { mutableStateOf<Long?>(null) }
     // Planning from the title bar's +, on any of the next two weeks' days, rather than one day's.
     var planning by rememberSaveable { mutableStateOf(false) }
     // The row of Coming up looked at before Start, by its place.
@@ -242,7 +253,23 @@ fun HistoryScreen(
         }
     }
     state.daySheet?.let { sheet ->
-        DaySheetContent(sheet, actions, onAddWorkout = { addingOn = sheet.epochDay }, programDay = state.programDay)
+        DaySheetContent(
+            sheet,
+            actions,
+            onAddWorkout = { addingOn = sheet.epochDay },
+            onLogWorkout = { loggingOn = sheet.epochDay },
+            programDay = state.programDay,
+        )
+    }
+    loggingOn?.let { day ->
+        LogWorkoutSheet(
+            choices = state.choices,
+            flows = state.flows,
+            epochDay = day,
+            onLogWorkout = actions.onLogWorkout,
+            onLogSport = actions.onLogSport,
+            onDismiss = { loggingOn = null },
+        )
     }
     addingOn?.let { day ->
         AddToPlanSheet(

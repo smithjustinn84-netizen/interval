@@ -49,6 +49,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   tall and raises what it holds overhead (a bell, a pair, a bar) or, with nothing in hand, takes a short bow, then
   goes on with its lift where it was. A figure lying down, hanging or on its hands (presses on the bench, push-ups,
   pull-ups, planks, the mat work) leaves it to the row's tag. Nothing under reduced motion.
+- Log a workout after the fact. A day in the Log, today or gone by, takes a workout done away from the app or without
+  the Timer: "Log a workout" on its sheet offers a preset or the Timer's workout, a mobility flow, or a sport day,
+  logged in full on that day and counted toward the week, the streak and the widget, with Undo on the notice. A
+  workout planned that day and still to do, or missed, has "Log it" on its row, which reads Done and leaves Today
+  with nothing more due. Nothing goes to Health Connect or Apple Health for one, and its page reads no heart rate.
 
 ### Changed
 - The six sounds are the app's own, the same on Android, iOS and desktop, in place of each platform's stock

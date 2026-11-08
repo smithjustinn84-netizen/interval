@@ -90,6 +90,8 @@ private class FoundationTimestampFormatter : TimestampFormatter {
         return parts.hour.toInt() * MINUTES_PER_HOUR + parts.minute.toInt()
     }
 
+    override fun middayOf(epochDay: Long): Long = noonOn(epochDay).timeIntervalSince1970.seconds.inWholeMilliseconds
+
     // Noon rather than midnight, which a daylight-saving change can skip.
     private fun noonOn(epochDay: Long): NSDate {
         val date = dateOfEpochDay(epochDay)

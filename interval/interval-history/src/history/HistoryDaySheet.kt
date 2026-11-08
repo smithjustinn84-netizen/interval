@@ -18,6 +18,7 @@ import dev.justinsmith.interval.history.resources.history_add_workout
 import dev.justinsmith.interval.history.resources.history_day_nothing
 import dev.justinsmith.interval.history.resources.history_day_planned
 import dev.justinsmith.interval.history.resources.history_every
+import dev.justinsmith.interval.history.resources.history_log_workout
 import dev.justinsmith.interval.history.resources.history_once
 import dev.justinsmith.interval.history.resources.history_open_plan
 import dev.justinsmith.interval.history.resources.history_remove_cd
@@ -26,6 +27,7 @@ import dev.justinsmith.interval.history.resources.history_state_done
 import dev.justinsmith.interval.history.resources.history_state_missed
 import dev.justinsmith.interval.history.resources.notice_plan_removed
 import dev.justinsmith.interval.history.resources.notice_sport_logged
+import dev.justinsmith.interval.history.resources.notice_workout_logged
 import dev.justinsmith.interval.history.resources.sport_log_it
 import dev.justinsmith.interval.history.resources.sport_state_passed
 import dev.justinsmith.interval.model.PlanWorkout
@@ -51,15 +53,17 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * One day, opened from the week strip or the calendar: its plans, each startable (a sport's, on its day or
- * after, logged) and a one-off removable, and the workouts done and the sports logged on it. A day still to come
- * can have a workout added on it ([onAddWorkout]). A weekly plan is changed in Plan, for every week, as the sheet
- * says. A plan of the program's next day starts [programDay]'s program.
+ * after, logged; an interval workout's too, done away from the app) and a one-off removable, and the workouts done
+ * and the sports logged on it. A day still to come can have a workout added on it ([onAddWorkout]); today or a day
+ * gone by can have one logged on it after the fact ([onLogWorkout]). A weekly plan is changed in Plan, for every
+ * week, as the sheet says. A plan of the program's next day starts [programDay]'s program.
  */
 @Composable
 internal fun DaySheetContent(
     sheet: DaySheet,
     actions: HistoryActions,
     onAddWorkout: () -> Unit,
+    onLogWorkout: () -> Unit,
     programDay: ProgramDay? = null,
 ) {
     val palette = IntervalTheme.palette
@@ -116,30 +120,62 @@ internal fun DaySheetContent(
                     }
                 }
             }
-            if (!sheet.past) {
-                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-                    DialogButton(
-                        stringResource(Res.string.history_open_plan),
-                        {
-                            hide()
-                            actions.onPlan()
-                        },
-                        primary = false,
-                    )
-                    // Plans on this day: the add sheet opens over History as this one closes.
-                    DialogButton(
-                        stringResource(Res.string.history_add_workout),
-                        {
-                            hide()
-                            onAddWorkout()
-                        },
-                        primary = true,
-                    )
-                }
+            DayActions(sheet, hide, onPlan = actions.onPlan, onAddWorkout = onAddWorkout, onLogWorkout = onLogWorkout)
+        }
+    }
+}
+
+/**
+ * What the day takes: a day still to come, or today, is planned on (Open plan, Add workout); today, or a day gone
+ * by, has a workout logged on it after the fact, never a day ahead. Each closes the sheet ([hide]) first, so the
+ * sheet it opens comes over History rather than over this one.
+ */
+@Composable
+private fun DayActions(
+    sheet: DaySheet,
+    hide: () -> Unit,
+    onPlan: () -> Unit,
+    onAddWorkout: () -> Unit,
+    onLogWorkout: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+        if (!sheet.past) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+                DialogButton(
+                    stringResource(Res.string.history_open_plan),
+                    {
+                        hide()
+                        onPlan()
+                    },
+                    primary = false,
+                )
+                DialogButton(
+                    stringResource(Res.string.history_add_workout),
+                    {
+                        hide()
+                        onAddWorkout()
+                    },
+                    primary = true,
+                )
+            }
+        }
+        if (sheet.canLog) {
+            Row {
+                DialogButton(
+                    stringResource(Res.string.history_log_workout),
+                    {
+                        hide()
+                        onLogWorkout()
+                    },
+                    primary = sheet.past,
+                )
             }
         }
     }
 }
+
+/** Whether the day takes a workout logged after the fact: today, or one gone by. */
+private val DaySheet.canLog: Boolean get() = past || day == HistoryDay.Today
 
 @Composable
 private fun PlanRow(plan: SheetPlan, sheet: DaySheet, programDay: ProgramDay?, actions: HistoryActions) {
@@ -183,8 +219,18 @@ private fun PlanRow(plan: SheetPlan, sheet: DaySheet, programDay: ProgramDay?, a
             is PlanWorkout.SportDay -> null
         }
         if (plan.state == PlanState.Open && start != null) StartPill(primary = false, onClick = start)
+        // An interval workout done away from the app, or without the Timer, is logged on its day or after.
+        val interval = (workout as? PlanWorkout.Interval)?.takeIf { sheet.canLog }
+        if (interval != null && plan.state != PlanState.Done) {
+            val logged = stringResource(Res.string.notice_workout_logged, name)
+            StartPill(
+                primary = false,
+                onClick = { actions.onLogWorkout(interval.config, sheet.epochDay, logged) },
+                label = stringResource(Res.string.sport_log_it),
+            )
+        }
         // A sport is logged on its day or after, never ahead of it.
-        val sport = (workout as? PlanWorkout.SportDay)?.sport?.takeIf { sheet.past || sheet.day == HistoryDay.Today }
+        val sport = (workout as? PlanWorkout.SportDay)?.sport?.takeIf { sheet.canLog }
         if (sport != null && plan.state != PlanState.Done) {
             val logged = stringResource(Res.string.notice_sport_logged, name)
             StartPill(

@@ -80,6 +80,8 @@ private data class HistoryView(
  * first is built. The Timer's steps change only the day sheet's [HistoryUiState.choices], which are worked out
  * on their own and rebuild nothing else.
  */
+// One function a thing the Log's screen does: a plan, a sport day or a workout logged, each with its undo.
+@Suppress("detekt.TooManyFunctions")
 class HistoryViewModel(
     private val historyStore: HistoryStore,
     private val presetStore: PresetStore,
@@ -112,7 +114,9 @@ class HistoryViewModel(
     private val choices = combine(presetStore.presets, settingsStore.config, ::planChoices).distinctUntilChanged()
 
     val state: StateFlow<HistoryUiState> =
-        combine(built, choices) { state, choices -> state.copy(choices = choices) }
+        combine(built, choices, flowStore.flows) { state, choices, flows ->
+            state.copy(choices = choices, flows = flows)
+        }
             .flowOn(computation)
             .stateIn(viewModelScope, SharingStarted.Eagerly, HistoryUiState.Loading)
 
@@ -166,6 +170,20 @@ class HistoryViewModel(
 
     fun unlogSport(sport: Sport, epochDay: Long) {
         historyStore.unlogSport(sport, epochDay)
+    }
+
+    /**
+     * Logs a workout of [config] done away from the app on [epochDay], in full: today's as of now, a day gone by at
+     * its midday, since the day is all that is known of when. Returns its uid, for Undo ([unlogWorkout]).
+     */
+    fun logWorkout(config: IntervalConfig, epochDay: Long): String {
+        val now = clock.nowMillis()
+        val finishedAt = if (epochDay == timestamps.dayNumber(now)) now else timestamps.middayOf(epochDay)
+        return historyStore.logWorkout(config, finishedAt)
+    }
+
+    fun unlogWorkout(uid: String) {
+        historyStore.unlogWorkout(uid)
     }
 
     /**

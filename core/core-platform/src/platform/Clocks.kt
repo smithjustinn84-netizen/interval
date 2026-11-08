@@ -27,6 +27,13 @@ interface TimestampFormatter {
 
     /** The moment's minutes after local midnight, the count [timeOfDay] takes. */
     fun minuteOfDay(epochMillis: Long): Int
+
+    /**
+     * Midday of [epochDay] in the device's time zone, as a moment: when a workout logged on a day, rather than at a
+     * moment, is dated. Midday rather than midnight, which a daylight-saving change can skip or double, so
+     * `dayNumber(middayOf(day)) == day` in every zone.
+     */
+    fun middayOf(epochDay: Long): Long
 }
 
 /** The platform's [TimestampFormatter], in the device's time zone and locale. */

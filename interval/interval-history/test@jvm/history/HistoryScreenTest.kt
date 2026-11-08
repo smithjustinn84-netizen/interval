@@ -10,6 +10,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -23,6 +24,7 @@ import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.builtInFlows
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.Motion
@@ -84,6 +86,7 @@ class HistoryScreenTest {
         onRemovePlanned = { id, _ -> events += "remove $id" },
         onLogSport = { sport, day, text -> events += "log $sport $day: $text" },
         onUnlogSport = { sport, day, text -> events += "unlog $sport $day: $text" },
+        onLogWorkout = { config, day, text -> events += "logWorkout ${config.workSeconds} $day: $text" },
         onPlanOnce = { workout, day -> events += "once ${(workout as? PlanWorkout.Interval)?.name ?: workout} $day" },
         onOpenWorkout = { events += "open $it" },
         onPlan = { events += "plan" },
@@ -577,6 +580,89 @@ class HistoryScreenTest {
         onNodeWithText("HIIT 30/30").performClick()
         onNode(hasText("Add to plan") and hasClickAction()).performClick()
         assertEquals(listOf("once HIIT 30/30 20743"), events)
+    }
+
+    /** A day's sheet over the log, with the presets and flows to log, closing as the screen asks. */
+    private fun logging(sheet: DaySheet): Pair<() -> HistoryUiState, HistoryActions> {
+        var state by mutableStateOf(
+            oneWorkout.copy(daySheet = sheet, choices = builtInPresets.map { PlanChoice(it) }, flows = builtInFlows),
+        )
+        val closing = HistoryActions(
+            onOpenDay = { if (it == null) state = state.copy(daySheet = null) },
+            onLogWorkout = actions.onLogWorkout,
+            onLogSport = actions.onLogSport,
+        )
+        return ({ state }) to closing
+    }
+
+    @Test
+    fun `a day gone by logs a workout done away from the app and plans none`() = runUiTest {
+        val monday = HistoryDay.On("Monday, Oct 12")
+        val (state, closing) = logging(DaySheet(20_738, monday, weekday = 1, emptyList(), emptyList(), past = true))
+        setThemedContent { HistoryScreen(state(), closing) }
+
+        onNodeWithText("Add workout").assertDoesNotExist()
+        onNodeWithText("Open plan").assertDoesNotExist()
+        onNodeWithText("Log a workout").performClick()
+        onNode(hasText("HIIT 30/30") and isSelectable()).performClick()
+        onNode(hasText("Log it") and hasClickAction()).performClick()
+        assertEquals(listOf("logWorkout ${hiit.config.workSeconds} 20738: HIIT 30/30 logged"), events)
+    }
+
+    @Test
+    fun `today plans and logs and the log sheet offers a flow under Mobility`() = runUiTest {
+        val (state, closing) = logging(
+            DaySheet(20_741, HistoryDay.Today, weekday = 4, emptyList(), emptyList(), past = false),
+        )
+        setThemedContent { HistoryScreen(state(), closing) }
+
+        onNodeWithText("Add workout").assertExists()
+        onNodeWithText("Log a workout").performClick()
+        onNode(hasText("Mobility") and isSelectable()).performClick()
+        val flow = builtInFlows.first()
+        onNode(hasText(flow.name) and isSelectable()).performClick()
+        onNode(hasText("Log it") and hasClickAction()).performClick()
+        assertEquals(listOf("logWorkout ${flow.config.workSeconds} 20741: ${flow.name} logged"), events)
+    }
+
+    @Test
+    fun `the log sheet logs a day of a sport`() = runUiTest {
+        val (state, closing) = logging(
+            DaySheet(20_741, HistoryDay.Today, weekday = 4, emptyList(), emptyList(), past = false),
+        )
+        setThemedContent { HistoryScreen(state(), closing) }
+
+        onNodeWithText("Log a workout").performClick()
+        onNode(hasText("Sport") and isSelectable()).performClick()
+        onNode(hasText("Climbing") and isSelectable()).performClick()
+        onNode(hasText("Log it") and hasClickAction()).performClick()
+        assertEquals(listOf("log Climbing 20741: Climbing logged"), events)
+    }
+
+    @Test
+    fun `a planned workout is logged from its row on its day or after and never ahead`() = runUiTest {
+        val plan = SheetPlan(1, PlanWorkout.Interval(hiit.name, hiit.config), weekly = true, state = PlanState.Missed)
+        val monday =
+            DaySheet(20_738, HistoryDay.On("Monday, Oct 12"), weekday = 1, listOf(plan), emptyList(), past = true)
+        var state by mutableStateOf(oneWorkout.copy(daySheet = monday))
+        setThemedContent { HistoryScreen(state, actions) }
+
+        onNodeWithText("Missed · Every Monday", substring = true).assertExists()
+        onNodeWithText("Start").assertDoesNotExist()
+        onNodeWithText("Log it").performClick()
+        assertEquals(listOf("logWorkout ${hiit.config.workSeconds} 20738: HIIT 30/30 logged"), events)
+
+        // Done, there is nothing to log. Today an open plan starts or is logged. A day to come only waits.
+        state = state.copy(daySheet = monday.copy(plans = listOf(plan.copy(state = PlanState.Done))))
+        onNodeWithText("Log it").assertDoesNotExist()
+        val open = listOf(plan.copy(state = PlanState.Open))
+        state = state.copy(daySheet = DaySheet(20_741, HistoryDay.Today, weekday = 4, open, emptyList(), past = false))
+        onNodeWithText("Start").assertExists()
+        onNodeWithText("Log it").assertExists()
+        val saturday = HistoryDay.On("Saturday, Oct 17")
+        state = state.copy(daySheet = DaySheet(20_743, saturday, weekday = 6, open, emptyList(), past = false))
+        onNodeWithText("Log it").assertDoesNotExist()
+        onNodeWithText("Log a workout").assertDoesNotExist()
     }
 
     @Test

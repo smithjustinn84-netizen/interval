@@ -219,6 +219,13 @@
     <string name="sport_log_it">Log it</string>
     <string name="notice_sport_logged">%1$s logged</string>
     <string name="history_sport_logged">Logged</string>
+
+    <!-- Logging a workout done away from the app, or without the Timer, on its day -->
+    <string name="history_log_workout">Log a workout</string>
+    <string name="log_workout_text">Done away from the app, or without the Timer. It goes on this day in full and counts toward your week.</string>
+    <string name="log_flow_which">Which flow</string>
+    <string name="log_workout_confirm">Log it</string>
+    <string name="notice_workout_logged">%1$s logged</string>
     <string name="home_before_class">Before class</string>
     <string name="home_before_climbing">Before climbing</string>
     <string name="home_before_run">Before your run</string>

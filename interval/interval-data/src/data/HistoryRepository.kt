@@ -149,6 +149,20 @@ class HistoryRepository(
         writer.persist { sportLogDao.delete(epochDay, sport.key, sport.storedName) }
     }
 
+    override fun logWorkout(config: IntervalConfig, finishedAtEpochMillis: Long): String {
+        val now = clock.nowMillis()
+        val uid = ids.newId()
+        val entry = HistoryEntry.loggedByHand(config, finishedAtEpochMillis)
+        writer.persist { historyDao.insert(entry.toEntity(uid = uid, updatedAtEpochMillis = now)) }
+        return uid
+    }
+
+    /** In order after the write that logged it, so Undo never runs first. */
+    override fun unlogWorkout(uid: String) {
+        val now = clock.nowMillis()
+        writer.persist { historyDao.deleteByUid(uid, now) }
+    }
+
     /**
      * Removes every workout from the history, leaving each row marked deleted as [deleteWorkout] does, and every
      * sport day logged.

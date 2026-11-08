@@ -37,6 +37,9 @@ internal class JavaTimeFormatter : TimestampFormatter {
     override fun minuteOfDay(epochMillis: Long): Int =
         zoned(epochMillis).toLocalTime().let { it.hour * MINUTES_PER_HOUR + it.minute }
 
+    override fun middayOf(epochDay: Long): Long =
+        LocalDate.ofEpochDay(epochDay).atTime(LocalTime.NOON).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
     private fun zoned(epochMillis: Long) = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault())
 
     private fun formats(): Formats {

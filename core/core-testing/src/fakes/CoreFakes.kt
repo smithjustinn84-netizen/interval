@@ -52,6 +52,8 @@ object FixedTimestampFormatter : TimestampFormatter {
         "${minuteOfDay / MINUTES_PER_HOUR}:${(minuteOfDay % MINUTES_PER_HOUR).toString().padStart(2, '0')}"
 
     override fun minuteOfDay(epochMillis: Long): Int = (epochMillis.mod(DAY_MILLIS) / MINUTE_MILLIS).toInt()
+
+    override fun middayOf(epochDay: Long): Long = noonOf(epochDay)
 }
 
 /** Ids numbered from 1 ("id-1", "id-2", …), so a test can name what it stored. */
