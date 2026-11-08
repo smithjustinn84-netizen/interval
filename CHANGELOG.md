@@ -72,6 +72,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   "On the minute"), before its first round; the program keeps its own. The ABC challenge says which way its best
   was done ("Best: 14 complexes in 20 minutes, as many as you can"), and the session's Up next card says a density
   block's cap ("Up next · 15 min cap") rather than "1 of 1 sets".
+- The Log's week card colours a day's bar by kind, as its rows and Today's dots are: Lift's sessions in the accent
+  under the interval workouts in the work colour, under mobility in green, each its share of the day, so a day of
+  only a flow, or a flow and a climb, is green rather than the work colour. Today's dot for a Lift session that took
+  no time is the accent, as its bar is, not a sport day's dim.
 
 ## [0.5.0] — Unreleased
 

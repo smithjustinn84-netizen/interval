@@ -5,9 +5,12 @@ package dev.justinsmith.interval.history
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
@@ -27,6 +30,9 @@ import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInFlows
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.formatClock
+import dev.justinsmith.interval.ui.IntervalPalette
+import dev.justinsmith.interval.ui.IntervalSizes
+import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
@@ -240,6 +246,43 @@ class HistoryScreenTest {
         onNodeWithContentDescription("Sunday, planned").assertExists()
         onNodeWithContentDescription("Monday, done").performClick()
         assertEquals(listOf("day 20738"), events)
+    }
+
+    @Test
+    fun `the week strip marks each kind's share of a day in its colour`() = runUiTest {
+        var palette: IntervalPalette? = null
+        val days = week(*Array(7) { DayState.Rest })
+        // A flow alone, a day of all three kinds, a session that took no time, a climb logged alone.
+        val strip = days.mapIndexed { index, day ->
+            when (index) {
+                0 -> day.copy(state = DayState.Done, seconds = 360, mobilitySeconds = 360)
+                1 -> day.copy(state = DayState.Done, seconds = 360, liftSeconds = 120, mobilitySeconds = 120)
+                2 -> day.copy(state = DayState.Done, seconds = 0)
+                3 -> day.copy(state = DayState.Done, seconds = 0, sport = Sport.Climbing, sportLogged = true)
+                else -> day
+            }
+        }
+        setThemedContent {
+            palette = IntervalTheme.palette
+            WeekStrip(strip, onDay = {})
+        }
+        val colors = checkNotNull(palette)
+        val kinds = listOf(colors.accent, colors.workMark, colors.restMark, colors.textDim)
+        val barHeight = with(density) { IntervalSizes.weekBar.roundToPx() }
+
+        // The kinds a day's bar shows, top to bottom, down its middle.
+        fun barOf(description: String): List<Color> {
+            val image = onNodeWithContentDescription(description).captureToImage().toPixelMap()
+            return (0 until minOf(barHeight, image.height))
+                .map { y -> image[image.width / 2, y] }
+                .filter { it in kinds }
+                .fold(emptyList()) { seen, color -> if (seen.lastOrNull() == color) seen else seen + color }
+        }
+
+        assertEquals(listOf(colors.restMark), barOf("Monday, done"))
+        assertEquals(listOf(colors.restMark, colors.workMark, colors.accent), barOf("Tuesday, done"))
+        assertEquals(listOf(colors.accent), barOf("Wednesday, done"))
+        assertEquals(listOf(colors.textDim), barOf("Today, done, Climbing logged"))
     }
 
     @Test

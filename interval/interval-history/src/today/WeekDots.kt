@@ -227,13 +227,16 @@ private fun DayDot(day: DayCell, drawOn: Boolean, delayMillis: Int, modifier: Mo
     }
 }
 
-/** A done day's colour: the kind most of its time went on; a sport logged with nothing timed is dim. */
+/**
+ * A done day's colour: the kind most of its time went on; with nothing timed, a sport logged is dim and anything
+ * else a Lift session that took no time, in the accent, as the strip on Log draws it.
+ */
 @Composable
 private fun doneColor(day: DayCell): Color {
     val palette = IntervalTheme.palette
     val intervalSeconds = day.seconds - day.liftSeconds - day.mobilitySeconds
     return when {
-        day.seconds == 0 -> palette.textDim
+        day.seconds == 0 -> if (day.sportLogged) palette.textDim else palette.accent
         day.liftSeconds >= day.mobilitySeconds && day.liftSeconds >= intervalSeconds -> palette.accent
         day.mobilitySeconds >= intervalSeconds -> palette.restMark
         else -> palette.workMark

@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -62,8 +61,9 @@ import dev.justinsmith.interval.ui.weekdayText
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * Monday to Sunday: a bar for each day worked, as tall as its time against the longest and split by kind, Lift's
- * sessions in the accent under the interval workouts in the work mark; an outlined block for a day still
+ * Monday to Sunday: a bar for each day worked, as tall as its time against the longest and split by kind, each in
+ * its colour on the log's rows: Lift's sessions in the accent under the interval workouts in the work mark, under
+ * mobility in the rest mark; an outlined block for a day still
  * planned, a filled one for a missed day, and a short bar for a rest day. The bars grow
  * up from the baseline as the tab opens, one after another. A day of a sport has it named under its initial
  * ("BJJ", "Climb"), brighter once logged, and a day that holds nothing else is a dim block when it is; a week with
@@ -124,6 +124,21 @@ internal fun WeekStrip(week: List<DayCell>, onDay: (Long) -> Unit, modifier: Mod
     }
 }
 
+/** A kind's share of a day's bar: its [seconds] and the colour it is marked in. */
+private data class DayPart(val seconds: Int, val color: Color)
+
+/** A day's time by kind, as its bar stacks it from the top: mobility, the interval workouts, Lift's sessions. */
+@Composable
+private fun dayParts(day: DayCell): List<DayPart> {
+    val palette = IntervalTheme.palette
+    val intervalSeconds = day.seconds - day.liftSeconds - day.mobilitySeconds
+    return listOf(
+        DayPart(day.mobilitySeconds, palette.restMark),
+        DayPart(intervalSeconds, palette.workMark),
+        DayPart(day.liftSeconds, palette.accent),
+    ).filter { it.seconds > 0 }
+}
+
 @Composable
 private fun DayBar(day: DayCell, share: Float, index: Int) {
     val palette = IntervalTheme.palette
@@ -147,17 +162,18 @@ private fun DayBar(day: DayCell, share: Float, index: Int) {
                     grown.animateTo(share, tween(Motion.ENTER_MILLIS, index * Motion.STAGGER_MILLIS, EnterEasing))
                 }
             }
-            // A day with no time to share out (a session that took none) shows as Lift's if it held one.
-            val liftShare = if (day.seconds > 0) day.liftSeconds.toFloat() / day.seconds else 0f
             Column(
                 Modifier
                     .fillMaxWidth()
                     .height((IntervalSizes.weekBar * grown.value).coerceAtLeast(Sizes.weekBarEmpty))
-                    .clip(Corners.radius12)
-                    .background(if (day.seconds > 0) palette.workMark else palette.accent),
-                verticalArrangement = Arrangement.Bottom,
+                    .clip(Corners.radius12),
             ) {
-                if (liftShare > 0f) Box(Modifier.fillMaxWidth().fillMaxHeight(liftShare).background(palette.accent))
+                // Top to bottom: mobility over the interval workouts over Lift's sessions, each its share of the
+                // day in its kind's colour. A day with no time to share out (a session that took none) is Lift's.
+                val parts = dayParts(day).ifEmpty { listOf(DayPart(1, palette.accent)) }
+                parts.forEach { part ->
+                    Box(Modifier.fillMaxWidth().weight(part.seconds.toFloat()).background(part.color))
+                }
             }
         }
 
