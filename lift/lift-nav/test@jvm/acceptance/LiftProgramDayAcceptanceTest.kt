@@ -16,7 +16,6 @@ class LiftProgramDayAcceptanceTest {
         see("Next set")
         see("Pick a day of any program to do now")
         doAProgramDay()
-        see("Built-in")
         seeNo("Your programs")
         pickProgram("Your first 100 swings")
         seeDays("Day 1", "Day 2", "Day 3")

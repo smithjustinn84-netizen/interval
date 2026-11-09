@@ -159,10 +159,10 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
 
     // A program's day in a free session
 
-    /** Opens the programs under the Next set card, to take a day of one. */
+    /** Opens the programs under the Next set card, to take a day of one; the sheet's title is only read aloud. */
     fun doAProgramDay() {
         tap("Do a program day")
-        see("Program days")
+        see("Built-in")
     }
 
     /** Opens the program [name] on the sheet, on its days. */

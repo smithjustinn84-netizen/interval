@@ -24,7 +24,8 @@ class EditSetFlowTest {
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
         waitForText("16 kg × 10")
-        onNodeWithText("16 kg × 10").performClick()
+        // Under the Next set card and the program-day row, the set is below a phone's fold.
+        onNodeWithText("16 kg × 10").performScrollTo().performClick()
         onNode(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, "Change the set")).assertExists()
         // A set logged keeps its exercise, and is never an EMOM.
         onNodeWithText("An EMOM").assertDoesNotExist()
