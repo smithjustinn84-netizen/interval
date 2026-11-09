@@ -5,6 +5,7 @@ import dev.justinsmith.lift.domain.CustomExercise
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.ExerciseFilters
 import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.nextPlanned
@@ -57,13 +58,18 @@ internal class Logged(
     }
 }
 
-/** Everything the state is worked out from, as it last changed. */
+/** The user's gear as it stands, and the rest between sets. */
+internal data class Gear(val owned: List<Double>, val bands: List<Band>, val bar: Double?, val restSeconds: Int)
+
+/**
+ * Everything the state is worked out from, as it last changed: [programDay] is the day to do next of the program
+ * followed, and [programs] every program there is, the built-ins then the user's own.
+ */
 internal data class Inputs(
     val logged: Logged,
     val programDay: ProgramDay?,
-    val owned: List<Double>,
-    val bands: List<Band>,
-    val bar: Double?,
+    val programs: List<Program>,
+    val gear: Gear,
     val draft: SetDraft,
     val editing: SetLog?,
     val finished: Finished?,
@@ -74,9 +80,12 @@ internal data class Inputs(
     fun state(): SessionUiState {
         val active = logged.active
         val before = logged.before
-        val plan = programDay(programDay, active)
+        val plan = programDay(programDay, programs, active)
         val sets = active?.sets.orEmpty()
         val records = logged.records
+        val owned = gear.owned
+        val bands = gear.bands
+        val bar = gear.bar
         val offered = offeredBands(bands)
         val (emom, timing, density) = runs
         return SessionUiState(
@@ -92,6 +101,9 @@ internal data class Inputs(
             dayDone = plan != null && nextPlanned(plan.plannedSets(), sets) == null,
             plan = plan?.planRows(sets).orEmpty(),
             programDay = plan,
+            programs = programs,
+            followingDay = programDay,
+            restSeconds = gear.restSeconds,
             emom = emom,
             density = density,
             hold = timing.run,

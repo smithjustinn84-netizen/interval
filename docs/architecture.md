@@ -426,6 +426,11 @@ flowchart TD
   `rememberDemoPlayer` sets up once then loops the reps, standing still under `prefersReducedMotion()`;
   `DemoTimeline` scrubs a rep's parts beside its cues on an exercise's page (`lift-library`), and the session's
   set card shows the next lift's (`lift-session`).
+- **A session's program day (Lift)**: a session is stored with its program and day (`SessionEntity.programId`,
+  `programDay`), and `lift-session` reads the day it is from them among every program (`List<Program>.dayOf`,
+  `lift-domain`), falling back to the followed program's next day only for a session logged before days were kept.
+  A free session takes a day of any program from `ProgramDaySheet` (`SetStore.setProgramDay`, which also drops the
+  plan); `Program.pickedDayNumber` numbers it so that only the followed program's next day moves the program on.
 - **Audio & Cues**:
   - Audio cues are managed by `CuePlayer` (interval) and `Beeper` (Lift).
   - Voice is one `Speaker` per process (`core-platform`: Android's text-to-speech, iOS's speech synthesizer, none on

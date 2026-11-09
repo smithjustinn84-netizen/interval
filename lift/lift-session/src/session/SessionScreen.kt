@@ -55,6 +55,7 @@ import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.Motion
@@ -75,6 +76,7 @@ import dev.justinsmith.lift.data.SetStore
 import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.ExerciseFilters
+import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.library.ExerciseDetailSheet
@@ -83,6 +85,8 @@ import dev.justinsmith.lift.session.resources.common_cancel
 import dev.justinsmith.lift.session.resources.density_start
 import dev.justinsmith.lift.session.resources.kg_value
 import dev.justinsmith.lift.session.resources.next_emom
+import dev.justinsmith.lift.session.resources.next_program_day
+import dev.justinsmith.lift.session.resources.next_program_day_hint
 import dev.justinsmith.lift.session.resources.notice_record
 import dev.justinsmith.lift.session.resources.session_add_cd
 import dev.justinsmith.lift.session.resources.session_discard
@@ -253,6 +257,7 @@ private fun sessionActions(parts: ActionTargets, title: String, healthTitle: Str
             onUnskipBlock = viewModel.plan::unskipBlock,
             onStepRest = viewModel::stepRest,
             onSkipRest = timers::skipRest,
+            onPickDay = viewModel.plan::pickDay,
             // The screen asks first when nothing is logged; should one slip through, it is thrown away and the page
             // closes.
             onFinish = { if (!viewModel.finish(title, healthTitle)) onExit() },
@@ -350,6 +355,8 @@ data class SessionActions(
     val onStepRest: (Int) -> Unit = {},
     /** Takes the easier day offered on a taxed one. */
     val onUseEasier: () -> Unit = {},
+    /** A free session made day [Int] (from 0) of [Program]: see [TodayPlanEditor.pickDay]. */
+    val onPickDay: (Program, Int) -> Unit = { _, _ -> },
     val onSkipRest: () -> Unit = {},
     val onFinish: () -> Unit = {},
     val onDiscard: () -> Unit = {},
@@ -375,6 +382,8 @@ fun SessionScreen(
     var reading by rememberSaveable { mutableStateOf(false) }
     // The library open over a free session, to pick the next set's lift.
     var picking by rememberSaveable { mutableStateOf(false) }
+    // The programs open over a free session, to take a day of one.
+    var pickingDay by rememberSaveable { mutableStateOf(false) }
     // The block of today's plan open to change, -1 for none: a plain number saves on every platform.
     var changing by rememberSaveable { mutableIntStateOf(-1) }
     KeepScreenOn()
@@ -418,6 +427,7 @@ fun SessionScreen(
                 sets = sets,
                 onRead = { reading = true },
                 onPick = { picking = true },
+                onPickDay = { pickingDay = true },
                 onChange = { changing = it },
                 onPlan = { planning = true },
                 onLog = { logging = true },
@@ -438,6 +448,7 @@ fun SessionScreen(
     if (logging) LogSetSheet(state, clocks, actions, onDismiss = { logging = false })
     if (reading) ExercisePageSheet(state, actions, onDismiss = { reading = false })
     if (picking) ExercisePickerSheet(state, actions, onDismiss = { picking = false })
+    if (pickingDay) ProgramDaySheet(state, onPick = actions.onPickDay, onDismiss = { pickingDay = false })
     PlanSheets(state, actions, planning, changing, onPlanning = { planning = it }, onChanging = { changing = it })
     EndDialogs(leaving, discarding, actions.onDiscard, { leaving = it }, { discarding = it })
 }
@@ -449,6 +460,7 @@ private fun SessionPlanContent(
     sets: SetActions,
     onRead: () -> Unit,
     onPick: () -> Unit,
+    onPickDay: () -> Unit,
     onChange: (Int) -> Unit,
     onPlan: () -> Unit,
     onLog: () -> Unit,
@@ -472,6 +484,14 @@ private fun SessionPlanContent(
             },
             celebrating = celebrating,
         )
+        // A day of any program, to do as this session instead of composing each set.
+        ListCard(Modifier.padding(top = Spacing.space8)) {
+            LinkRow(
+                stringResource(Res.string.next_program_day),
+                stringResource(Res.string.next_program_day_hint),
+                onClick = onPickDay,
+            )
+        }
     } else if (!state.free) {
         state.easier?.let { EasierCard(it, actions.onUseEasier) }
         UpNextCard(

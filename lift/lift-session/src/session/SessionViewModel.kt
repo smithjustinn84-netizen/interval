@@ -17,6 +17,7 @@ import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.Side
+import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.densityBest
 import dev.justinsmith.lift.domain.firstAtBell
 import dev.justinsmith.lift.domain.offeredBands
@@ -125,13 +126,13 @@ class SessionViewModel(
         combine(before, sessionStore.active, exerciseStore.customExercises, Logged::of)
 
     private val inputs: Flow<Inputs> = combine(
-        combine(logged, programStore.programDay, ::Pair),
-        combine(gearStore.bells, gearStore.bands, gearStore.bar, ::Triple),
+        combine(logged, programStore.programDay, programStore.customPrograms, ::Triple),
+        combine(gearStore.bells, gearStore.bands, gearStore.bar, setStore.restSeconds, ::Gear),
         combine(draft.draft, draft.editing, summary.finished, ::Triple),
         timers.state.map { Triple(it.emom, it.hold, it.density) }.distinctUntilChanged(),
         filters.filters,
-    ) { (logged, day), (owned, bands, bar), (draft, editing, finished), runs, narrowed ->
-        Inputs(logged, day, owned, bands, bar, draft, editing, finished, runs, narrowed)
+    ) { (logged, day, custom), gear, (draft, editing, finished), runs, narrowed ->
+        Inputs(logged, day, builtInPrograms + custom, gear, draft, editing, finished, runs, narrowed)
     }
 
     // On the main thread, so a tap on the sheet shows at once: what scans the history is worked out apart, above.
@@ -358,9 +359,8 @@ class SessionViewModel(
         get() = Inputs(
             Logged.of(before.value, sessionStore.active.value, exerciseStore.customExercises.value),
             programStore.programDay.value,
-            gearStore.bells.value,
-            gearStore.bands.value,
-            gearStore.bar.value,
+            programStore.programs,
+            Gear(gearStore.bells.value, gearStore.bands.value, gearStore.bar.value, setStore.restSeconds.value),
             draft.draft.value,
             draft.editing.value,
             summary.finished.value,

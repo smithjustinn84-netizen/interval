@@ -1,0 +1,29 @@
+<journey name="Lift: a free session takes a program day">
+  <description>
+    A free session does a day of a program instead of composing each set: the programs on a sheet under its
+    Next set card, a day's sets up next once one is picked, and the session logged as that day. A day of a
+    program not followed counts for none; the followed program's next day, taken this way, moves it on as
+    Start day N does. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
+  </description>
+  <actions>
+    <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
+    <action>Tap the "Train" tab, which opens on "Strength", then "Start session"</action>
+    <action>Verify that the session shows "Next set" and, under its card, "Do a program day" over "Pick a day of any program to do now"</action>
+    <action>Tap "Do a program day"</action>
+    <action>Verify that a sheet lists programs under "Built-in", "Your first 100 swings" among them, each over what it asks for, and no "Your programs" group</action>
+    <action>Scroll to "Your first 100 swings" and tap it</action>
+    <action>Verify that the sheet is titled "Your first 100 swings", with "All programs" above "Day 1", "Day 2" and "Day 3", each over "Deadlift · Two-hand swing" and about how long it takes, and that none is marked "Next"</action>
+    <action>Tap "Day 2"</action>
+    <action>Verify that the session shows "Up next · 1 of 12 sets" with a figure doing the deadlift over "Deadlift", "Today's plan", and neither "Next set" nor "Do a program day"</action>
+    <action>Tap "Log set", then "Finish", then "Done"</action>
+    <action>Verify that Strength still shows "Follow a program": the day done was of no program followed</action>
+    <action>Tap "Follow a program", scroll to "Your first 100 swings", tap it, then tap "Follow this program"</action>
+    <action>Verify that Strength shows "Day 1 of 12 · week 1"; scroll to "Free session" under "On your own" and tap it</action>
+    <action>Tap "Do a program day"</action>
+    <action>Verify that the sheet lists "Your first 100 swings" under "Following", above "Built-in"</action>
+    <action>Tap "Your first 100 swings" on the sheet and verify that "Day 1" is marked "Next"</action>
+    <action>Tap "Day 1"</action>
+    <action>Verify that "Up next · 1 of 12 sets" is shown; tap "Log set", then "Finish", then "Done"</action>
+    <action>Verify that Strength shows "Day 2 of 12 · week 1"</action>
+  </actions>
+</journey>

@@ -497,6 +497,40 @@ class SessionViewModelTest {
     }
 
     @Test
+    fun `a free session that takes a program's day is that day`() {
+        val swings = program(ProgramId.FirstHundredSwings)
+        viewModel().use {
+            assertTrue(state.value.free)
+            plan.pickDay(swings, 1)
+            assertFalse(state.value.free)
+            assertEquals(2, state.value.programDay?.number)
+            assertEquals(swings.key, state.value.programDay?.program?.key)
+            assertEquals(BuiltInExercise.Deadlift, state.value.upNext?.set?.exercise)
+            assertNull(state.value.draftLastTime)
+        }
+        val stored = storage.sessions.sessions.value.single()
+        assertEquals(swings.key.stored, stored.programId)
+        assertEquals(2, stored.programDay)
+    }
+
+    @Test
+    fun `a day of the program followed taken in a free session is numbered by where it stands`() {
+        val swings = program(ProgramId.FirstHundredSwings)
+        storage.following.row.value = FollowingEntity(programId = swings.key.stored, startedAtEpochMillis = 0)
+        // Its day 2 done, day 3 is next: its first day is day 1 again, and its third day 3.
+        storage.sessions.sessions.update {
+            it + SessionEntity(OLDER, 0, 30_000, "Day 2", 30_000, programId = swings.key.stored, programDay = 2)
+        }
+        viewModel().use {
+            assertEquals(3, state.value.followingDay?.number)
+            plan.pickDay(swings, 0)
+            assertEquals(1, state.value.programDay?.number)
+            assertFalse(state.value.free)
+        }
+        assertEquals(1, storage.sessions.sessions.value.single { it.finishedAtEpochMillis == null }.programDay)
+    }
+
+    @Test
     fun `last time is the lift's last set before this session not one just logged`() {
         earlier(1, BuiltInExercise.Press, 12.0)
         viewModel().use {

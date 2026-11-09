@@ -7,6 +7,12 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.6.0] — Unreleased
 
 ### Added
+- A free Lift session can do a day of any program. "Do a program day" under its Next set card opens the programs,
+  the one followed first with its next day marked, then yours, then the built-ins; a program opens on its days,
+  each with its lifts and about how long it takes. The day picked is up next from there, with Today's plan, and
+  the session is logged as that day: a day of a program not followed counts for none, and the followed program's
+  next day moves it on as Start day N does, while another of its days is logged as the last time it came round, so
+  the program's place stays.
 - A density block in a Lift program: as many rounds of one lift as fit a time cap of 5 to 30 minutes, offered by the
   block editor as "Time cap" and read "As many rounds as you can in 20 min · 1 a round". Start the clock
   at the session's foot and it counts in, then takes a tap of Round done a round, the rounds rolling up beside the

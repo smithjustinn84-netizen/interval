@@ -11,12 +11,14 @@ import dev.justinsmith.lift.data.snatchSets
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.DEFAULT_BELL_KG
 import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.Readiness
 import dev.justinsmith.lift.domain.ReadinessCheck
 import dev.justinsmith.lift.domain.ReadinessReason
 import dev.justinsmith.lift.domain.SessionPlan
 import dev.justinsmith.lift.domain.SetLog
+import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.easier
 import dev.justinsmith.lift.domain.gripLoad
 import dev.justinsmith.lift.domain.lighterDayThan
@@ -54,10 +56,17 @@ class EasierDay(
         sessionStore.active,
         sessionStore.sessions,
         combine(intervals.sportDays, intervals.workouts, ::Pair),
-        programStore.programDay,
+        combine(programStore.programDay, programStore.customPrograms) { day, custom ->
+            day to builtInPrograms + custom
+        },
         gearStore.bells,
-    ) { active, sessions, (sportDays, workouts), day, _ ->
-        offerFor(active, sessions, workouts.snatchSets.sets, sportDays.filter { it.grappling }.map { it.epochDay }, day)
+    ) { active, sessions, (sportDays, workouts), (day, programs), _ ->
+        offerFor(
+            dayToEase(active, day, programs),
+            sessions,
+            workouts.snatchSets.sets,
+            sportDays.filter { it.grappling }.map { it.epochDay },
+        )
     }
 
     /**
@@ -76,19 +85,20 @@ class EasierDay(
     /** Makes today's plan easier, as offered. */
     fun use() {
         setStore.changeSessionPlan { session ->
-            val day = dayToEase(session, programStore.programDay.value) ?: return@changeSessionPlan null
+            val day = dayToEase(session, programStore.programDay.value, programStore.programs)
+                ?: return@changeSessionPlan null
             eased(day, sessionStore.sessions.value)
         }
     }
 
+    /** The offer for [today], the session's day to ease ([dayToEase]); null with none, or nothing to ease. */
     private fun offerFor(
-        active: LiftSession?,
+        today: ProgramDay?,
         sessions: List<LiftSession>,
         alongside: List<SetLog>,
         grappling: List<Long>,
-        day: ProgramDay?,
     ): EasierOffer? {
-        val today = dayToEase(active, day) ?: return null
+        if (today == null) return null
         val check = check(sessions, alongside, grappling)
         val reason = check.reason?.takeIf { check.readiness == Readiness.Taxed } ?: return null
         eased(today, sessions) ?: return null
@@ -104,8 +114,8 @@ class EasierDay(
     }
 
     /** [session]'s program day, while its plan is as programmed and nothing is logged; else null. */
-    private fun dayToEase(session: LiftSession?, day: ProgramDay?): ProgramDay? =
-        programDay(day, session)?.takeIf { session?.plan == null && session?.sets.isNullOrEmpty() }
+    private fun dayToEase(session: LiftSession?, day: ProgramDay?, programs: List<Program>): ProgramDay? =
+        programDay(day, programs, session)?.takeIf { session?.plan == null && session?.sets.isNullOrEmpty() }
 
     /** [day]'s plan made easier, its loads as they would be suggested from the [sessions] before; null if unchanged. */
     private fun eased(day: ProgramDay, sessions: List<LiftSession>): SessionPlan? {

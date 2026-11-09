@@ -147,8 +147,44 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
 
     // A session
 
+    /** From Today, with a program followed: the free session under On your own. */
+    fun startFreeSession() {
+        scrollTo("Free session")
+        tap("Free session")
+        see("Log set")
+    }
+
     /** Logs the set the session's Next set card offers. */
     fun logNextSet() = tap("Log set")
+
+    // A program's day in a free session
+
+    /** Opens the programs under the Next set card, to take a day of one; the sheet's title is only read aloud. */
+    fun doAProgramDay() {
+        tap("Do a program day")
+        see("Built-in")
+    }
+
+    /** Opens the program [name] on the sheet, on its days. */
+    fun pickProgram(name: String) {
+        tap(name)
+        see("All programs")
+    }
+
+    fun seeDays(vararg days: String) = days.forEach { see(it) }
+
+    /** [day] on the sheet marked as the followed program's next. */
+    fun seeDayNext(day: String) {
+        see(day)
+        see("Next")
+    }
+
+    fun pickDay(day: String) {
+        tap(day)
+        see("Today's plan")
+    }
+
+    fun seeUpNext(progress: String) = see("Up next · $progress")
 
     /** A figure doing [exercise] on the card about the next set. */
     fun seeNextLiftShown(exercise: String) = see(hasContentDescription("A figure doing $exercise"))

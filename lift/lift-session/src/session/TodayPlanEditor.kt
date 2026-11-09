@@ -7,11 +7,15 @@ import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.SessionPlan
 import dev.justinsmith.lift.domain.SetLog
+import dev.justinsmith.lift.domain.builtInPrograms
+import dev.justinsmith.lift.domain.dayOf
 import dev.justinsmith.lift.domain.nextSet
 import dev.justinsmith.lift.domain.offeredBands
+import dev.justinsmith.lift.domain.pickedDayNumber
 import dev.justinsmith.lift.domain.planRows
 import dev.justinsmith.lift.domain.plannedLoad
 import dev.justinsmith.lift.domain.standardBells
@@ -22,12 +26,21 @@ import dev.justinsmith.lift.domain.withLoad
  * Today's plan, on a program day: a block's load, rounds or reps changed, skipped or planned again, another lift
  * swapped in, the next set's load stepped. Each change is worked out in the write, from the session as stored
  * behind every write before it ([SetStore.changeSessionPlan]), so one made straight after another builds on it.
+ * And a free session's plan to begin with: a day of a program taken ([pickDay]).
  */
 class TodayPlanEditor(
     private val setStore: SetStore,
     private val programStore: ProgramStore,
     private val gearStore: GearStore,
 ) {
+    /**
+     * Makes the free session in progress day [index] (from 0) of [program]: its sets are up next from here, on
+     * today's plan, and the session is logged as the day [pickedDayNumber] says, by where the program followed stands.
+     */
+    fun pickDay(program: Program, index: Int) {
+        setStore.setProgramDay(program.key, program.pickedDayNumber(index, programStore.programDay.value))
+    }
+
     /** Changes block [index] of today's plan by [transform]: its load, rounds or reps. */
     fun changeBlock(index: Int, transform: (Block) -> Block) {
         setStore.changeSessionPlan { session -> today(session)?.let { (plan, _) -> plan.change(index, transform) } }
@@ -89,13 +102,22 @@ class TodayPlanEditor(
     }
 
     /** The program day [session] is, with today's plan as it has it; null in a free session. */
-    private fun dayOf(session: LiftSession): ProgramDay? = programDay(programStore.programDay.value, session)
+    private fun dayOf(session: LiftSession): ProgramDay? =
+        programDay(programStore.programDay.value, programStore.programs, session)
 }
 
-/** The program [day] that [session] is, with today's plan as [session] has it; null in a free session. */
-internal fun programDay(day: ProgramDay?, session: LiftSession?): ProgramDay? {
+/** Every program there is: the built-ins, then those the user made. */
+internal val ProgramStore.programs: List<Program> get() = builtInPrograms + customPrograms.value
+
+/**
+ * The program day [session] is, with today's plan as [session] has it: its own day among [programs] (the day it
+ * was started as, or took in a free session), or for one logged before sessions kept their day the program
+ * followed's next [day]; null in a free session.
+ */
+internal fun programDay(day: ProgramDay?, programs: List<Program>, session: LiftSession?): ProgramDay? {
     if (session?.program == null) return null
-    return day?.takeIf { it.program.key == session.program }?.copy(plan = session.plan)
+    return programs.dayOf(session)
+        ?: day?.takeIf { it.program.key == session.program }?.copy(plan = session.plan)
 }
 
 /**

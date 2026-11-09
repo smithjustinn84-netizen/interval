@@ -83,7 +83,7 @@ class FinishSession(
         val bells = gearStore.bells.value.ifEmpty { standardBells }
         val bands = offeredBands(gearStore.bands.value)
         val pairs = gearStore.pairs.value
-        val day = programDay(programStore.programDay.value, session)
+        val day = programDay(programStore.programDay.value, programStore.programs, session)
         val changes = day?.let {
             planChanges(
                 it,
@@ -114,7 +114,10 @@ class FinishSession(
             changes,
             taken = programStore.customPrograms.value.mapNotNull { it.name }.toSet(),
             bands = gearStore.bands.value,
-            lastDayOf = day?.program?.takeIf { day.number >= it.totalDays },
+            // Only the program followed ends: a day of another, taken in a free session, finishes nothing.
+            lastDayOf = day?.program?.takeIf {
+                it.key == programStore.following.value?.key && day.number >= it.totalDays
+            },
             toppedOut = day?.let {
                 toppedOut(it, session.sets, bells, bands, pairs, setStore.restSeconds.value)
             }.orEmpty(),

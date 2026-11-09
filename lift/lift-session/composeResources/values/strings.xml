@@ -229,6 +229,13 @@
     <string name="next_figure_cd">A figure doing %1$s</string>
     <string name="next_last_time">Last time · %1$s</string>
     <string name="next_free_title">Next set</string>
+    <!-- A free session taking a day of a program: the row under its Next set card, and the sheet it opens. -->
+    <string name="next_program_day">Do a program day</string>
+    <string name="next_program_day_hint">Pick a day of any program to do now</string>
+    <string name="pick_day_title">Program days</string>
+    <string name="pick_day_built_in">Built-in</string>
+    <string name="pick_day_all">All programs</string>
+    <string name="pick_day_next">Next</string>
     <string name="next_watch_for">Watch for · %1$s</string>
     <string name="log_back_to_set">Back to the set</string>
     <string name="plan_title">Today's plan</string>
