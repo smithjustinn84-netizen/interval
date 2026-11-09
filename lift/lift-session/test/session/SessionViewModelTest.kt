@@ -501,7 +501,7 @@ class SessionViewModelTest {
         val swings = program(ProgramId.FirstHundredSwings)
         viewModel().use {
             assertTrue(state.value.free)
-            pickDay(swings, 1)
+            plan.pickDay(swings, 1)
             assertFalse(state.value.free)
             assertEquals(2, state.value.programDay?.number)
             assertEquals(swings.key, state.value.programDay?.program?.key)
@@ -523,7 +523,7 @@ class SessionViewModelTest {
         }
         viewModel().use {
             assertEquals(3, state.value.followingDay?.number)
-            pickDay(swings, 0)
+            plan.pickDay(swings, 0)
             assertEquals(1, state.value.programDay?.number)
             assertFalse(state.value.free)
         }

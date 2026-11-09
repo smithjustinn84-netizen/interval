@@ -15,14 +15,12 @@ import dev.justinsmith.lift.data.SetStore
 import dev.justinsmith.lift.data.snatchSets
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.Load
-import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.densityBest
 import dev.justinsmith.lift.domain.firstAtBell
 import dev.justinsmith.lift.domain.offeredBands
-import dev.justinsmith.lift.domain.pickedDayNumber
 import dev.justinsmith.lift.domain.sets
 import dev.justinsmith.lift.domain.standardBells
 import dev.justinsmith.lift.library.ExerciseDetailUiState
@@ -269,14 +267,6 @@ class SessionViewModel(
             .coerceIn(RestClock.MIN_SECONDS, RestClock.MAX_SECONDS)
         setStore.setRestSeconds(seconds)
         timers.adjustRest(seconds)
-    }
-
-    /**
-     * Makes this free session day [index] (from 0) of [program]: its sets are up next from here, on today's plan, and
-     * the session is logged as the day [Program.pickedDayNumber] says, by where the program followed stands.
-     */
-    fun pickDay(program: Program, index: Int) {
-        setStore.setProgramDay(program.key, program.pickedDayNumber(index, programStore.programDay.value))
     }
 
     /** Steps the next set's load one [step] (−1 or +1), for the rest of its block today: see [TodayPlanEditor]. */

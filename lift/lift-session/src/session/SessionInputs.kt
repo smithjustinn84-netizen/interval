@@ -83,7 +83,9 @@ internal data class Inputs(
         val plan = programDay(programDay, programs, active)
         val sets = active?.sets.orEmpty()
         val records = logged.records
-        val (owned, bands, bar, restSeconds) = gear
+        val owned = gear.owned
+        val bands = gear.bands
+        val bar = gear.bar
         val offered = offeredBands(bands)
         val (emom, timing, density) = runs
         return SessionUiState(
@@ -101,7 +103,7 @@ internal data class Inputs(
             programDay = plan,
             programs = programs,
             followingDay = programDay,
-            restSeconds = restSeconds,
+            restSeconds = gear.restSeconds,
             emom = emom,
             density = density,
             hold = timing.run,

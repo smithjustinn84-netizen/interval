@@ -257,7 +257,7 @@ private fun sessionActions(parts: ActionTargets, title: String, healthTitle: Str
             onUnskipBlock = viewModel.plan::unskipBlock,
             onStepRest = viewModel::stepRest,
             onSkipRest = timers::skipRest,
-            onPickDay = viewModel::pickDay,
+            onPickDay = viewModel.plan::pickDay,
             // The screen asks first when nothing is logged; should one slip through, it is thrown away and the page
             // closes.
             onFinish = { if (!viewModel.finish(title, healthTitle)) onExit() },
@@ -355,7 +355,7 @@ data class SessionActions(
     val onStepRest: (Int) -> Unit = {},
     /** Takes the easier day offered on a taxed one. */
     val onUseEasier: () -> Unit = {},
-    /** A free session made day [Int] (from 0) of [Program]: see [SessionViewModel.pickDay]. */
+    /** A free session made day [Int] (from 0) of [Program]: see [TodayPlanEditor.pickDay]. */
     val onPickDay: (Program, Int) -> Unit = { _, _ -> },
     val onSkipRest: () -> Unit = {},
     val onFinish: () -> Unit = {},
@@ -448,16 +448,7 @@ fun SessionScreen(
     if (logging) LogSetSheet(state, clocks, actions, onDismiss = { logging = false })
     if (reading) ExercisePageSheet(state, actions, onDismiss = { reading = false })
     if (picking) ExercisePickerSheet(state, actions, onDismiss = { picking = false })
-    if (pickingDay) {
-        ProgramDaySheet(
-            state,
-            onPick = { program, day ->
-                actions.onPickDay(program, day)
-                pickingDay = false
-            },
-            onDismiss = { pickingDay = false },
-        )
-    }
+    if (pickingDay) ProgramDaySheet(state, onPick = actions.onPickDay, onDismiss = { pickingDay = false })
     PlanSheets(state, actions, planning, changing, onPlanning = { planning = it }, onChanging = { changing = it })
     EndDialogs(leaving, discarding, actions.onDiscard, { leaving = it }, { discarding = it })
 }

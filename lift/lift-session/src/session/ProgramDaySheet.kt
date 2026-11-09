@@ -51,7 +51,7 @@ import org.jetbrains.compose.resources.stringResource
  * A day of a program for a free session to take, from "Do a program day" under its Next set card: the programs
  * first, the one followed at the top, then the user's own, then the built-ins; a program opens on its days, each
  * with its lifts and about how long it takes, the followed program's next day marked. A tap on a day [onPick]s
- * it, the program and which of its days (from 0), and the session is that day from then on.
+ * it, the program and which of its days (from 0), and closes the sheet: the session is that day from then on.
  */
 @Composable
 internal fun ProgramDaySheet(state: SessionUiState, onPick: (Program, Int) -> Unit, onDismiss: () -> Unit) {
@@ -61,7 +61,7 @@ internal fun ProgramDaySheet(state: SessionUiState, onPick: (Program, Int) -> Un
     IntervalSheet(
         title = program?.let { programName(it) } ?: stringResource(Res.string.pick_day_title),
         onDismiss = onDismiss,
-    ) {
+    ) { hide ->
         Column(
             Modifier.padding(vertical = Spacing.space8),
             verticalArrangement = Arrangement.spacedBy(Spacing.space8),
@@ -70,7 +70,10 @@ internal fun ProgramDaySheet(state: SessionUiState, onPick: (Program, Int) -> Un
                 ProgramChoices(state, onOpen = { opened = it.key.stored })
             } else {
                 QuietTextButton(stringResource(Res.string.pick_day_all), { opened = null })
-                DayChoices(program, state.followingDay, state.restSeconds, onPick = { onPick(program, it) })
+                DayChoices(program, state.followingDay, state.restSeconds) { day ->
+                    onPick(program, day)
+                    hide()
+                }
             }
         }
     }
