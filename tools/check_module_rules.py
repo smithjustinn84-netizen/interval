@@ -57,7 +57,8 @@ ALLOWED = {
     "api": {"time", "domain"},
     "data": {"time", "core-platform", "domain", "api"},
     "platform": FOUNDATION | {"domain", "api", "data"},
-    "ui": FOUNDATION | {"domain", "api"},
+    # A side's shared UI may draw the other side's (interval-ui shows a flow's move by lift-ui's figure).
+    "ui": FOUNDATION | {"domain", "api", "ui"},
     "testing": FOUNDATION | {"core-testing", "domain", "api", "data", "platform", "testing"},
     "feature": FOUNDATION | {"domain", "api", "data", "platform", "ui", "feature"},
     "entry": FOUNDATION | {"domain", "api", "data", "platform", "ui", "feature"},
@@ -376,6 +377,7 @@ def self_test() -> None:
             fake("lift-library", "lift", ["lift-data", "lift-ui", "core"]),
             fake("interval-domain", "interval", ["core-time"]),
             fake("interval-data", "interval", ["interval-domain", "core-platform"]),
+            fake("interval-ui", "interval", ["interval-domain", "lift-domain", "lift-ui", "core"]),
             fake("interval-platform-api", "interval", ["interval-domain"], ["interval-testing"]),
             fake("interval-platform", "interval", ["interval-platform-api", "interval-data", "core-platform"]),
             fake("interval-testing", "interval", ["interval-platform-api", "interval-data", "core-testing"]),

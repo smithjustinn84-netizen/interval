@@ -99,6 +99,17 @@ class FlowTest {
     }
 
     @Test
+    fun `a move's exercise is no part of the flow's shape`() {
+        val plain = Flow("k", "Core", FlowUse.After, listOf(Move("Plank", 30, "Long line.")))
+        val keyed = Flow("k", "Core", FlowUse.After, listOf(Move("Plank", 30, "Long line.", exercise = "Plank")))
+        assertEquals(plain.config, keyed.config)
+        assertEquals(keyed, listOf(keyed).matching(plain.config))
+        // The mat flow names each of its moves as one of Lift's; the stretches name none.
+        assertTrue(builtInFlows.first { it.key == "core-mat" }.moves.all { it.exercise != null })
+        assertTrue(builtInFlows.filter { it.key != "core-mat" }.flatMap { it.moves }.all { it.exercise == null })
+    }
+
+    @Test
     fun `the wrists come before the wall and the hips before the rest`() {
         assertEquals("wrists-fingers", flowBefore(Sport.Climbing).key)
         assertEquals("hips-shoulders", flowBefore(Sport.Bjj).key)

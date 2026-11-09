@@ -7,6 +7,12 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.6.0] — Unreleased
 
 ### Added
+- A mobility flow's move that is one of Lift's exercises is shown by Lift's figure: a still at the end of its row on
+  the flow's sheet and Today's look before Start, its page from a tap on the row (its time and words, then the
+  figure doing it over its timeline with its cues lit in turn, as on the exercise's page), and the figure moving in
+  a band between the move's name and the ring as the flow runs, held while paused, its page a tap away. Core on
+  the mat has them all; a move picked from the library in a flow of your own keeps its figure. The stretches show
+  their words alone until each is drawn.
 - A free Lift session can do a day of any program. "Do a program day" under its Next set card opens the programs,
   the one followed first with its next day marked, then yours, then the built-ins; a program opens on its days,
   each with its lifts and about how long it takes. The day picked is up next from there, with Today's plan, and

@@ -13,6 +13,8 @@ dependencies:
   - //interval/interval-domain: exported
   # Lift's bell sizes and its way of writing a weight, for the snatches counted under 15:15.
   - //lift/lift-domain
+  # Lift's figure and its card of cues, for a flow's move that is one of Lift's exercises.
+  - //lift/lift-ui
 
 settings:
   compose:

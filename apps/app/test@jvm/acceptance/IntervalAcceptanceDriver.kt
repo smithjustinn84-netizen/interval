@@ -56,7 +56,7 @@ import kotlin.time.Duration
  * Swing's thread), every tap goes in on that thread, outcomes are checked in the repository as well as on
  * screen, and time moves only through [AppFixture.advance].
  */
-@Suppress("detekt.TooManyFunctions")
+@Suppress("detekt.TooManyFunctions", "detekt.LargeClass") // A step per journey action, as the journeys say them.
 class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : AcceptanceSteps(ui) {
 
     // Navigation
@@ -108,6 +108,29 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     }
 
     fun startFlow() = tap("Start")
+
+    /** A move's page from its row on the sheet: its words and, for one of Lift's exercises, Lift's figure doing it. */
+    fun openMoveInSheet(name: String) {
+        tap(name)
+        see("Back to the moves")
+    }
+
+    fun seeMoveShownByFigure(name: String) = see(hasContentDescription("$name, shown by a figure"))
+
+    fun backToMoves() {
+        tap("Back to the moves")
+        see("Start")
+    }
+
+    /** The move's figure between its name and the ring on the workout screen; a tap on it opens the move's page. */
+    fun seeMoveFigure(name: String) = see(hasContentDescription("How $name goes"))
+
+    fun openMoveFigure(name: String) {
+        tap(hasContentDescription("How $name goes"))
+        see("Back to the moves")
+    }
+
+    fun closeMovePage() = tap("Back to the moves")
 
     /** The move on the workout screen, held or coming, and where it is among the flow's. */
     fun seeMove(name: String, count: String) {

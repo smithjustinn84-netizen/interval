@@ -64,6 +64,24 @@ data class FigureColors(
                 ease = palette.restMark,
             )
         }
+
+        /**
+         * The workout screen's: Gym dark, the same in both themes, the body in the clock's colour and the beats in
+         * the phases' own, so a flow's move over the ring reads as the ring does.
+         */
+        @Composable
+        fun workout(): FigureColors {
+            val colors = IntervalTheme.workout
+            return FigureColors(
+                body = colors.onGround,
+                farLeg = colors.onGroundDim,
+                floor = colors.control,
+                shadow = colors.control,
+                set = colors.prep,
+                drive = colors.work,
+                ease = colors.rest,
+            )
+        }
     }
 }
 

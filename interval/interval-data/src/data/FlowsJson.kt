@@ -23,6 +23,8 @@ internal class StoredMove(
     val cue: String = "",
     val sided: Boolean = false,
     val held: Boolean = true,
+    /** The Lift exercise it is, by key; null for none, and in rows written before it was kept. */
+    val exercise: String? = null,
 ) {
     fun toDomain() = Move(
         name.take(Move.NAME_MAX_LENGTH),
@@ -30,10 +32,11 @@ internal class StoredMove(
         cue.take(Move.CUE_MAX_LENGTH),
         sided,
         held,
+        exercise?.ifBlank { null },
     )
 }
 
-internal fun Move.stored() = StoredMove(name, seconds, cue, sided, held)
+internal fun Move.stored() = StoredMove(name, seconds, cue, sided, held, exercise)
 
 /** [moves] as the text a column holds. */
 internal fun encodeMoves(moves: List<Move>): String = json.encodeToString(moves.map { it.stored() })

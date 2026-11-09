@@ -6,6 +6,7 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -78,6 +79,41 @@ class MobilityScreenTest {
         // The lunge, and the world's greatest stretch after it.
         onAllNodesWithText("0:40 a side").assertCountEquals(2)
         onNodeWithText("to get ready", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `a move on the mat opens on Lift's figure and comes back to the flow`() = runUiTest {
+        setThemedContent { MobilityScreen(mobilityState(prepSeconds = 10), page, actions) }
+        onNode(hasText("Core on the mat") and hasClickAction()).performScrollTo().performClick()
+        waitForIdle()
+        onNodeWithText("Tap one to see how it goes", substring = true).assertExists()
+        onNode(hasText("The hundred") and hasClickAction()).performScrollTo().performClick()
+        waitForIdle()
+
+        onNodeWithText("Move 1 of 9 · 1:40 · Moved through").assertExists()
+        onNodeWithText("Head and shoulders up, legs long. Pump the arms: in for five, out for five.").assertExists()
+        onNodeWithContentDescription("The hundred, shown by a figure").assertExists()
+        onNodeWithContentDescription("Where in the rep").assertExists()
+        onNodeWithText("Start").assertDoesNotExist()
+        onNode(hasText("Back to the moves") and hasClickAction()).performScrollTo().performClick()
+        waitForIdle()
+
+        onNodeWithText("Start").assertExists()
+        onNodeWithText("Roll-up").assertExists()
+    }
+
+    @Test
+    fun `a stretch opens on its words alone`() = runUiTest {
+        setThemedContent { MobilityScreen(mobilityState(prepSeconds = 10), page, actions) }
+        onNode(hasText("Hips and shoulders") and hasClickAction()).performClick()
+        waitForIdle()
+        onNode(hasText("Deep squat") and hasClickAction()).performScrollTo().performClick()
+        waitForIdle()
+
+        onNodeWithText("Move 3 of 6 · 1:00 · Held").assertExists()
+        onNodeWithText("Heels down, chest up. Elbows inside the knees, pressing them out.").assertExists()
+        onNode(hasContentDescription(", shown by a figure", substring = true)).assertDoesNotExist()
+        onNodeWithText("Back to the moves").assertExists()
     }
 
     @Test

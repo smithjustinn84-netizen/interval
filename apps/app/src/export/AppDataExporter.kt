@@ -112,7 +112,7 @@ private fun Flow.export() = FlowExport(
     name,
     use.name,
     note,
-    moves.map { MoveExport(it.name, it.seconds, it.cue, it.sided, it.held) },
+    moves.map { MoveExport(it.name, it.seconds, it.cue, it.sided, it.held, it.exercise) },
 )
 
 private fun HistoryEntry.export() =

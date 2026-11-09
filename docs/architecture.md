@@ -88,12 +88,10 @@ graph TD
     app --> intervalPlatform
 
     intervalHistory --> intervalUi
-    intervalHistory --> liftUi
     intervalHistory --> intervalData
     intervalHistory --> intervalPlatformApi
     intervalHistory --> liftApi
     intervalMobility --> intervalUi
-    intervalMobility --> liftUi
     intervalMobility --> intervalData
     intervalPresets --> intervalUi
     intervalPresets --> intervalData
@@ -115,9 +113,8 @@ graph TD
     liftToday --> liftData
 
     core --> corePlatform
-    intervalUi --> core
+    intervalUi --> liftUi
     intervalUi --> intervalDomain
-    intervalUi --> liftDomain
     liftUi --> core
     liftUi --> liftDomain
 
@@ -390,6 +387,7 @@ flowchart TD
 - **Guided Mobility Flows (`Flow`)**:
   - A `Flow` (`interval-domain`, `timer/Flow.kt`) is an ordered list of timed `Move`s (optional left/right `sided` execution and one-line form cues) that compiles into a multi-block `IntervalConfig` (`Flow.config`, with `Activity.Mobility`, 10s between moves, and 5s between sides).
   - `FlowStore.flows` holds the shipped flows (`builtInFlows`) then the user's own (`FlowRepository`, built in `FlowEditor` from the library's mat moves and floor holds or moves typed in, or copied from a shipped one with "Make it yours"). Because no two flows share a shape (`FlowTest` for the shipped ones, `FlowDraft.clash` refusing a draft that matches any flow or preset), `WorkoutSession`, `SpeechQueue` (`Speech.NextMove`, `LeftSide`, `SwitchSides` with halfway warnings suppressed), `FlowStatusText` notifications, and the Log identify a run from its `IntervalConfig` (`flows.matching(config)`), so nothing about a run is stored, and sync them to Health Connect and Apple Health as stretching (`HealthWorkoutKind.Mobility`).
+  - A `Move` that is one of Lift's exercises carries its key (`Move.exercise`, a plain string, no part of the shape; stored in the moves' JSON, exported since schema 12). `interval-ui` resolves it over `lift-ui` (`Move.builtIn`, `Move.demo`) and shows it by Lift's figure: a still at the end of its row (`FlowMoves`), its page in place on the flow's sheet and Today's look before Start (`MoveDetail`, with lift-ui's `Demonstration`, the card the exercise page shows), and the figure running in a band between the move's name and the ring (`MoveFigureBand`, `FlowNow.figures` keeping its room for the whole run). A move with no figure shows its words alone.
 - **Sport Days, `Today` Agenda & Guided `Set up`**:
   - Off-app training (`Sport`: BJJ, Climbing, Running, or custom) is planned via `PlanWorkout.SportDay` and logged per calendar day via `HistoryStore.logSport`, counting toward `TrainingLog`, `WeekStandingSource`, and `IntervalActivity.sportDays` without counting unlogged days as missed workouts.
   - A workout done away from the app, or without the Timer, is logged after the fact from its day's sheet in the Log (`LogWorkoutSheet`, `interval-history`: a preset or the Timer's workout, a flow, or a sport day; a planned interval workout's row has "Log it"), today or a day gone by. `HistoryStore.logWorkout` stores a plain `HistoryEntry` built by `HistoryEntry.loggedByHand` (the whole course, work estimated, the start run back from the finish; a start kept with no work time is the mark, no column added), dated midday of its day by `TimestampFormatter.middayOf` (today's at the moment), so `TrainingLog`, `WorkoutNames` and every week count treat it as any finished workout; `unlogWorkout(uid)` is the notice's Undo. Nothing goes to the health store, and its page reads no heart rate.

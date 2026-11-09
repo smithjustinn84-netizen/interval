@@ -5,7 +5,9 @@ import dev.justinsmith.interval.model.Sport
 /**
  * One move of a [Flow]: [name]d, done for [seconds], on each side in turn when [sided], and explained in one line
  * by its [cue]. [held] is a position kept still; one that isn't is moved through for the time. Its words are data,
- * like a preset's name, so the app can say them aloud.
+ * like a preset's name, so the app can say them aloud. [exercise] is the key of the Lift built-in it is, when it is
+ * one (a plain string: the domains stand apart), which the screens show it by, its figure and its cues; none for a
+ * stretch of the flow's own or a move typed in. It is no part of the flow's shape.
  */
 data class Move(
     val name: String,
@@ -13,6 +15,7 @@ data class Move(
     val cue: String,
     val sided: Boolean = false,
     val held: Boolean = true,
+    val exercise: String? = null,
 ) {
     /** The time it takes in all: both sides and the change between them, of one with sides. */
     val totalSeconds: Int get() = if (sided) 2 * seconds + Flow.SIDE_CHANGE_SECONDS else seconds

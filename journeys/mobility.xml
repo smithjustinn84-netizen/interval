@@ -2,7 +2,8 @@
   <description>
     Train's Mobility pillar lists the flows by when each is for. A flow opens on a sheet of what is in it, and
     Start runs it on the workout screen: each move named with how it is done, counted down, a side at a time,
-    with a few seconds to change sides and to get into the next. A finished flow is kept as mobility: it counts
+    with a few seconds to change sides and to get into the next. A move that is one of Lift's exercises (the mat
+    flow's) is shown by Lift's figure: on its page from the sheet, and over the ring as it runs. A finished flow is kept as mobility: it counts
     toward the week, and Log names it. Run on a fresh install (adb shell pm clear dev.justinsmith.interval),
     with the voice on and the sound up.
   </description>
@@ -25,5 +26,10 @@
     <action>Tap the "Today" tab and verify that the week says "1 workout" and "1 mobility", with today marked done</action>
     <action>Tap the "Log" tab and verify that "Done this week" lists "Wrists and fingers" with "Mobility · 5 moves" on the "Today" row</action>
     <action>Tap it, then "Repeat now", and verify that the workout shows "Get ready" with "Wrist circles"; tap "End", then "End workout"</action>
+    <action>Tap the "Train" tab, "Mobility", then "Core on the mat", and verify that each move's row ends in a small still of a figure; tap "The hundred"</action>
+    <action>Verify that the sheet now shows the move's page: "Move 1 of 9 · 1:40 · Moved through", its line on how it is done, a figure doing the hundred with "Pause" over it, a timeline under it and three cues lit in turn as the figure does them; tap the last cue and verify the figure jumps to it; tap "Back to the moves" and verify "Start" is back</action>
+    <action>Tap "Start" and verify that "Get ready" shows the hundred's figure moving in a band between its name and the ring, the ring smaller than on "Wrists and fingers"; tap the ring to pause and verify the figure holds still; tap again and verify it moves on</action>
+    <action>Tap the figure and verify its page opens over the running workout with the figure, its cues and "Back to the moves"; tap it and verify the clock has run on meanwhile; tap "End", then "End workout"</action>
+    <action>Tap "Hips and shoulders" and verify that its rows end in no figure, that tapping "Deep squat" shows its page with its words alone and "Back to the moves", and that Start runs it with no band over the ring</action>
   </actions>
 </journey>

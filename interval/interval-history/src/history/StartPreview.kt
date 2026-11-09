@@ -47,6 +47,7 @@ import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.MoveDetail
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
@@ -89,6 +90,14 @@ fun StartPreviewSheet(preview: StartPreview, actions: PreviewActions, onDismiss:
     val palette = IntervalTheme.palette
     val title = previewTitle(preview)
     IntervalSheet(title = title, onDismiss = onDismiss) { hide ->
+        // A flow's move tapped takes the sheet over with its page, as on the Mobility pillar.
+        val flow = (preview as? StartPreview.Workout)?.flow
+        var openMove by rememberSaveable { mutableStateOf<Int?>(null) }
+        val open = openMove
+        if (flow != null && open != null && open in flow.moves.indices) {
+            MoveDetail(flow.moves[open], number = open + 1, of = flow.moves.size, onBack = { openMove = null })
+            return@IntervalSheet
+        }
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -110,7 +119,6 @@ fun StartPreviewSheet(preview: StartPreview, actions: PreviewActions, onDismiss:
             )
         }
         // A flow's moves follow its Start, as on the Mobility pillar: ten of them are a long way to scroll for it.
-        val flow = (preview as? StartPreview.Workout)?.flow
         if (flow == null) {
             when (preview) {
                 is StartPreview.Lift -> LiftContents(preview.day)
@@ -118,7 +126,7 @@ fun StartPreviewSheet(preview: StartPreview, actions: PreviewActions, onDismiss:
             }
         }
         PreviewButtons(preview, actions, hide)
-        flow?.let { FlowMoves(it.moves) }
+        flow?.let { FlowMoves(it.moves, onOpen = { openMove = it }) }
     }
 }
 

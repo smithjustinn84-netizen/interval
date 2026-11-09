@@ -14,8 +14,8 @@ import kotlinx.serialization.Serializable
  * `sessionMinutes`; schema 8 the mobility flows the user built, `flows`; schema 9 whether a preset switches hands,
  * `alternateHands`, and the bells owned two of, `pairsKg`; schema 10 a block's own rest, `rest`; schema 11 a block
  * of a kind an older build would drop, `kind` "Density", and the block a stepped one goes back to at the next
- * bell, `origin`, and about how many snatches a set a workout held and the bell, `snatchesPerSet` and `snatchBellKg`,
- * the rest absent from older files). Lift's
+ * bell, `origin`, and about how many snatches a set a workout held and the bell, `snatchesPerSet` and `snatchBellKg`;
+ * schema 12 the Lift exercise a flow's move is, `exercise`, the rest absent from older files). Lift's
  * sessions carry their sets but not how a day's plan was changed: the sets are the record.
  */
 @Serializable
@@ -38,7 +38,7 @@ data class ExportBundle(
     val flows: List<FlowExport> = emptyList(),
 ) {
     companion object {
-        const val SCHEMA = 11
+        const val SCHEMA = 12
         const val APP = "interval"
         const val MIME_TYPE = "application/json"
 
@@ -119,6 +119,8 @@ data class MoveExport(
     val cue: String = "",
     val sided: Boolean = false,
     val held: Boolean = true,
+    /** The Lift exercise it is, by key; null for none, and in files before schema 12. */
+    val exercise: String? = null,
 )
 
 @Serializable

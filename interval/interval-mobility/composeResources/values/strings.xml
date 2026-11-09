@@ -5,7 +5,7 @@
     <string name="mobility_open_cd">What is in it</string>
     <string name="mobility_kind">Mobility</string>
     <string name="mobility_prep_line">after %1$s to get ready</string>
-    <string name="mobility_sheet_note">Each move is named and counted as you go, with a few seconds to change sides and to get into the next.</string>
+    <string name="mobility_sheet_note">Each move is named and counted as you go, with a few seconds to change sides and to get into the next. Tap one to see how it goes.</string>
     <string name="mobility_move_time_sides">%1$s a side</string>
     <string name="mobility_start">Start</string>
     <string name="mobility_own">On your own</string>

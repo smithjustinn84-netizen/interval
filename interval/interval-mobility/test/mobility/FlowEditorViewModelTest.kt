@@ -86,6 +86,17 @@ class FlowEditorViewModelTest : MainDispatcherTest() {
     }
 
     @Test
+    fun `a move from the library keeps its exercise through the draft and the save`() {
+        val hundred = Move("The hundred", 30, "Pump the arms.", held = false, exercise = "Hundred")
+        editor().change { it.copy(name = "Mat").adding(hundred).adding(plank) }
+
+        val back = editor()
+        assertEquals(listOf("Hundred", null), back.state.value.draft.moves.map { it.exercise })
+        assertTrue(back.save())
+        assertEquals(listOf(hundred, plank), repository.flows.customFlows.value.single().moves)
+    }
+
+    @Test
     fun `the draft outlives the view model`() {
         editor().change { it.copy(name = "Floor core", note = "on the mat", use = FlowUse.Before).adding(plank) }
 

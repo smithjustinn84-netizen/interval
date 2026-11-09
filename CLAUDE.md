@@ -130,12 +130,13 @@ interval/            the interval timer
   interval-ui        the workout's shared words and widgets (`ConfigText`, `FieldRow`, `ValueSheet`, `Timeline`,
                      `WeekdayForm`, `WeekdayPicker`, `ActivitySheet`, `StartButton`, `DescribeHint`, `SnatchQuestion`:
                      "About how many snatches a set?", the summary's and the Log page's, over `lift-domain`'s bell
-                     sizes), `PhaseColorsOf`, the intro (splash/: `WithIntro`, `IntervalMark`)
+                     sizes), a flow's moves shown by Lift's figure (`FlowMoves`, `MoveDetail`, `MoveFigureBand`,
+                     `Move.demo`, over `lift-ui`), `PhaseColorsOf`, the intro (splash/: `WithIntro`, `IntervalMark`)
   interval-testing   `FakeStorage` and the fake DAOs, `RecordingCuePlayer`, `RecordingBackgroundWorkout`,
                      `RecordingPlanReminders`, `fakePlatformModule`/`fakeStorageModule`, the presets tests lean on
   interval-timer     the Timer, a page pushed over Train's Conditioning pillar, and its describe sheet (package
                      `dev.justinsmith.interval.home`)
-  interval-workout   the running workout, its readout, controls and summary
+  interval-workout   the running workout, its readout, controls and summary; a flow's move's figure over the ring
   interval-presets   the presets, sheet and editor (`PresetEditorHost`, `PresetDraft`): Train's Conditioning
                      pillar, a tab's page (`PresetsTab`), with the row that opens the Timer, saying what is on it
   interval-mobility  the flows by when each is for, a flow's sheet (its moves, then Start), and the editor of the
@@ -187,7 +188,9 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      `SessionStats`, `BalanceBars`), the built-ins' cues (`cues.xml`, mapped in `ExerciseCues.kt`), the
                      figure every built-in is shown by (`demo/`: `ExerciseFigure`, an `ExerciseDemo` a lift through
                      `Exercise.demo`, `rememberDemoPlayer`, `DemoTimeline`, and `Celebration`, the raised bell or bow
-                     a figure on its feet gives a record, a one-rep demo from where it stood); most of Lift's strings
+                     a figure on its feet gives a record, a one-rep demo from where it stood), and `Demonstration`,
+                     the card of the figure over its timeline and cues lit in turn, which the exercise page and a
+                     flow's move both show; most of Lift's strings
   lift-testing       `FakeLiftStorage` and the fake DAOs, `FakeIntervalActivity`, `RecordingBeeper`,
                      `RecordingKeepAlive`, `LiftTestClock` (the wall clock and the timers' time, moved together),
                      `liftTestKoin`
@@ -231,7 +234,8 @@ tooling/
 Dependencies point toward `core/`: a feature depends on its side's `*-ui`, `*-data` and `*-domain` (through
 `exported`), `app` on every feature and `lift-nav`, the interval side on `lift-api`/`lift-domain`/`lift-ui`
 where History and the workout count Lift's sessions (their ViewModels take `LiftActivity`, never Lift's
-storage), the interval features on `interval-platform-api` (only `app` sees `interval-platform`), and `lift-nav`
+storage) and `interval-ui` on `lift-ui` for the figure (a side's shared ui may take the other side's), the
+interval features on `interval-platform-api` (only `app` sees `interval-platform`), and `lift-nav`
 never on anything of the interval side. `tools/check_module_rules.py`
 enforces this in CI: `lift/` never sees `interval/`, the pure layers (`core-time`, `core-platform`, the domains,
 the `*-api` modules and the data modules) take no Compose, an `*-api` module depends on a domain alone, a
@@ -431,7 +435,16 @@ toolchain (`$compose.*`).
   flow or preset (`FlowDraft.clash`). A flow the user builds (`FlowRepository`, the `flow` table, its moves one JSON
   column) carries the `id` it is stored under and a key made of it (`ownFlowKey`); it is built in `FlowEditor` (an
   app key: new, `copyOf` a shipped one's key, or `id`) from the library's mat moves and floor holds, their name and
-  first cue copied in as text, or moves typed in, and is exported (schema 8) and matched by name on import. A flow's words are
+  first cue copied in as text, or moves typed in, and is exported (schema 8) and matched by name on import. A move
+  that is one of Lift's exercises carries its key (`Move.exercise`, a plain string, no part of the shape; the Pilates
+  flow's moves, and one picked from the library; stored in the moves' JSON and exported since schema 12): the
+  interval side resolves it through `interval-ui`'s `Move.builtIn`/`Move.demo` (over `lift-ui`, which a ui module may
+  take of the other side) and shows it by Lift's figure, a still at the end of its row (`FlowMoves`, `MoveThumb`), its
+  page in place of the flow's on the sheet and Today's look before Start (`MoveDetail`: the words, then lift-ui's
+  `Demonstration`, the card the exercise page shows), and the figure running in a band between the move's name
+  and the ring (`MoveFigureBand`, `FlowFigure` in `WorkoutFlow.kt`; its room kept for the whole run when any move
+  has one, `FlowNow.figures`; held while paused; a tap opens the page as a sheet). A stretch, which no built-in is
+  yet, shows its words alone. A flow's words are
   data, like a built-in preset's name, so they can be spoken: `playCue` takes the `FlowStep` and says "Next:
   Cat-cow", "Left side", "Switch sides" (`Speech.NextMove` and the rest), with no halfway. The screen's part is
   `WorkoutFlow.kt`; the notifications' is `FlowStatusText.kt` (`interval-platform`). It is written to the health

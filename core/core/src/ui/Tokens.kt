@@ -136,6 +136,16 @@ object Sizes {
     val ringMax = 420.dp
 
     /**
+     * The figure showing how an exercise goes, which both sides draw: on its page, tall enough to read a swing's
+     * arc on a phone; as a band across a card or over the workout's ring, where the arc still reads; and a still
+     * of it at the end of a list row.
+     */
+    val figurePage = 220.dp
+    val figureBand = 140.dp
+    val figureThumbWidth = 64.dp
+    val figureThumbHeight = 48.dp
+
+    /**
      * The lanes behind the Setup tabs: a track whose centre sits this far past the column's start
      * edge and below its bottom, so the lanes sweep in from the side and bend down; the innermost
      * lane's radius, the step out to the next, and the line between lanes.

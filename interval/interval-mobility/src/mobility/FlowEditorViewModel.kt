@@ -117,13 +117,25 @@ private class StoredDraft(val name: String, val use: String, val note: String, v
         name,
         FlowUse.entries.firstOrNull { it.name == use } ?: FlowUse.After,
         note,
-        moves.map { Move(it.name, it.seconds.coerceIn(Move.SECONDS_RANGE), it.cue, it.sided, it.held) },
+        moves.map { Move(it.name, it.seconds.coerceIn(Move.SECONDS_RANGE), it.cue, it.sided, it.held, it.exercise) },
         id,
     )
 }
 
 @Serializable
-private class StoredMove(val name: String, val seconds: Int, val cue: String, val sided: Boolean, val held: Boolean)
+private class StoredMove(
+    val name: String,
+    val seconds: Int,
+    val cue: String,
+    val sided: Boolean,
+    val held: Boolean,
+    val exercise: String? = null,
+)
 
 private fun FlowDraft.stored() =
-    StoredDraft(name, use.name, note, moves.map { StoredMove(it.name, it.seconds, it.cue, it.sided, it.held) })
+    StoredDraft(
+        name,
+        use.name,
+        note,
+        moves.map { StoredMove(it.name, it.seconds, it.cue, it.sided, it.held, it.exercise) },
+    )

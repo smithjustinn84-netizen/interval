@@ -12,6 +12,8 @@ dependencies:
   - //interval/interval-platform-api
   # The week's standing counts Lift's sessions too.
   - //lift/lift-api
+  # Lift's figure, for a flow's move that is one of Lift's exercises, in the workout's colours.
+  - //lift/lift-ui
 
 test-dependencies:
   - //interval/interval-testing

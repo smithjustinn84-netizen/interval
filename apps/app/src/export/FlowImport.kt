@@ -13,7 +13,14 @@ internal fun FlowExport.toDomain(): Flow {
         use = FlowUse.entries.firstOrNull { it.name == use } ?: throw IllegalArgumentException("use"),
         moves = moves.map {
             require(it.name.isNotBlank() && it.seconds in Move.SECONDS_RANGE) { "move" }
-            Move(it.name.take(Move.NAME_MAX_LENGTH), it.seconds, it.cue.take(Move.CUE_MAX_LENGTH), it.sided, it.held)
+            Move(
+                it.name.take(Move.NAME_MAX_LENGTH),
+                it.seconds,
+                it.cue.take(Move.CUE_MAX_LENGTH),
+                it.sided,
+                it.held,
+                it.exercise?.ifBlank { null },
+            )
         },
         note = note?.take(Flow.NOTE_MAX_LENGTH)?.ifBlank { null },
     )

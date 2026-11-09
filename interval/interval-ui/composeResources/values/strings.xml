@@ -129,6 +129,13 @@
     <string name="weekday_initial_6">S</string>
     <string name="weekday_initial_7">S</string>
     <string name="flow_move_time_sides">%1$s a side</string>
+    <!-- A flow's move: its row opens its page; the figure doing it, where it is one of Lift's exercises. -->
+    <string name="move_show_how">Show how it goes</string>
+    <string name="move_figure_cd">How %1$s goes</string>
+    <string name="move_number">Move %1$d of %2$d</string>
+    <string name="move_held">Held</string>
+    <string name="move_moved">Moved through</string>
+    <string name="move_back_to_moves">Back to the moves</string>
     <!-- About how many snatches a set, under a workout of kettlebell intervals that switch hands. -->
     <string name="snatch_question">About how many snatches a set?</string>
     <string name="snatch_per_set">%1$d a set</string>

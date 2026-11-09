@@ -1,6 +1,9 @@
 package dev.justinsmith.interval.workout
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -16,6 +19,9 @@ import dev.justinsmith.interval.timer.FlowSide
 import dev.justinsmith.interval.timer.FlowStep
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.MoveFigureBand
+import dev.justinsmith.interval.ui.Sizes
+import dev.justinsmith.interval.ui.demo
 import dev.justinsmith.interval.workout.resources.Res
 import dev.justinsmith.interval.workout.resources.flow_hold
 import dev.justinsmith.interval.workout.resources.flow_left_side
@@ -27,6 +33,7 @@ import dev.justinsmith.interval.workout.resources.next_move
 import dev.justinsmith.interval.workout.resources.next_right_side
 import dev.justinsmith.interval.workout.resources.phase_done
 import dev.justinsmith.interval.workout.resources.phase_get_ready
+import dev.justinsmith.lift.ui.demo.FigureColors
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -71,6 +78,29 @@ internal fun FlowHeading(step: FlowStep, accent: Color, modifier: Modifier = Mod
 
 /** The lines a move's cue is given, used or not. */
 private const val CUE_LINES = 2
+
+/**
+ * The figure doing the move held, or coming, between the heading and the ring: Lift's, in the workout's colours,
+ * holding still while [paused]; a tap opens the move's page ([onOpen]). Its room is kept whenever the flow has a
+ * figure to show ([FlowNow.figures]), empty for a move without one, so the ring never moves between moves.
+ */
+@Composable
+internal fun FlowFigure(flow: FlowNow, paused: Boolean, onOpen: () -> Unit, modifier: Modifier = Modifier) {
+    val move = flow.step?.move
+    val demo = move?.demo
+    Box(modifier.fillMaxWidth().height(Sizes.figureBand)) {
+        if (move != null && demo != null) {
+            MoveFigureBand(
+                move,
+                demo,
+                paused = paused,
+                onOpen = onOpen,
+                fill = IntervalTheme.workout.control,
+                colors = FigureColors.workout(),
+            )
+        }
+    }
+}
 
 private fun sideWord(side: FlowSide): StringResource =
     if (side == FlowSide.Left) Res.string.flow_left_side else Res.string.flow_right_side

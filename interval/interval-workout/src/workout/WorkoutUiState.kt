@@ -17,6 +17,7 @@ import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.stepAfter
 import dev.justinsmith.interval.timer.stepAt
 import dev.justinsmith.interval.ui.SnatchAsk
+import dev.justinsmith.interval.ui.demo
 
 /** What the line under the clock says comes next. */
 sealed interface NextUp {
@@ -54,9 +55,18 @@ sealed interface NextUp {
 /**
  * A flow as it stands on the workout screen: its [name], how many [of] its moves there are and how many are
  * [done], both sides of one with sides; the [step] held or, in a change-over, about to start (null once it is
- * over); and, while one is held, the step [next] after it, null in the last.
+ * over); and, while one is held, the step [next] after it, null in the last. [figures] says whether any of its
+ * moves has Lift's figure to show, so the screen keeps the figure's room for the whole run and the ring stands still
+ * between a move with one and a move without.
  */
-data class FlowNow(val name: String, val of: Int, val done: Int, val step: FlowStep?, val next: FlowStep?)
+data class FlowNow(
+    val name: String,
+    val of: Int,
+    val done: Int,
+    val step: FlowStep?,
+    val next: FlowStep?,
+    val figures: Boolean = false,
+)
 
 data class WorkoutUiState(
     val phase: Phase,
@@ -214,6 +224,7 @@ private fun WorkoutState.flowNow(flow: Flow): FlowNow {
         done = step?.let { it.number - 1 } ?: flow.moves.size,
         step = step,
         next = step?.takeIf { phase == Phase.Work }?.let(flow::stepAfter),
+        figures = flow.moves.any { it.demo != null },
     )
 }
 

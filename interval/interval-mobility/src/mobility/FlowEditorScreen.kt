@@ -62,6 +62,7 @@ import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
+import dev.justinsmith.interval.ui.MoveThumb
 import dev.justinsmith.interval.ui.NameField
 import dev.justinsmith.interval.ui.NoticeAction
 import dev.justinsmith.interval.ui.QuietTextButton
@@ -71,6 +72,7 @@ import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.demo
 import dev.justinsmith.interval.ui.pressScale
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -257,29 +259,34 @@ private fun MoveList(moves: List<Move>, onOpen: (Int) -> Unit) {
 private fun EditorMoveRow(move: Move, onOpen: () -> Unit) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
-    Column(
+    Row(
         Modifier
             .fillMaxWidth()
             .heightIn(min = Sizes.listRow)
             .clickable(interaction, LocalIndication.current, role = Role.Button, onClick = onOpen)
             .pressScale(interaction)
             .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space12), verticalAlignment = Alignment.Top) {
-            Text(
-                move.name.ifBlank { stringResource(Res.string.flow_move_unnamed) },
-                style = IntervalTheme.type.label,
-                color = if (move.name.isBlank()) palette.danger else palette.text,
-                modifier = Modifier.weight(1f),
-            )
-            val time = formatClock(move.seconds)
-            Text(
-                if (move.sided) stringResource(Res.string.mobility_move_time_sides, time) else time,
-                style = IntervalTheme.type.label,
-                color = palette.textDim,
-            )
+        Column(Modifier.weight(1f)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space12), verticalAlignment = Alignment.Top) {
+                Text(
+                    move.name.ifBlank { stringResource(Res.string.flow_move_unnamed) },
+                    style = IntervalTheme.type.label,
+                    color = if (move.name.isBlank()) palette.danger else palette.text,
+                    modifier = Modifier.weight(1f),
+                )
+                val time = formatClock(move.seconds)
+                Text(
+                    if (move.sided) stringResource(Res.string.mobility_move_time_sides, time) else time,
+                    style = IntervalTheme.type.label,
+                    color = palette.textDim,
+                )
+            }
+            if (move.cue.isNotBlank()) Text(move.cue, style = IntervalTheme.type.meta, color = palette.textDim)
         }
-        if (move.cue.isNotBlank()) Text(move.cue, style = IntervalTheme.type.meta, color = palette.textDim)
+        move.demo?.let { MoveThumb(it) }
     }
 }
 

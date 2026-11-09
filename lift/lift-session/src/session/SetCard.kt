@@ -18,6 +18,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.QuietTextButton
+import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.lift.domain.Exercise
@@ -32,7 +33,6 @@ import dev.justinsmith.lift.session.resources.next_how_to
 import dev.justinsmith.lift.session.resources.next_how_to_cd
 import dev.justinsmith.lift.session.resources.next_last_time
 import dev.justinsmith.lift.session.resources.next_watch_for
-import dev.justinsmith.lift.ui.LiftSizes
 import dev.justinsmith.lift.ui.LoadStepper
 import dev.justinsmith.lift.ui.demo.ExerciseFigure
 import dev.justinsmith.lift.ui.demo.demo
@@ -65,7 +65,7 @@ internal fun NextFigure(
     Box(
         Modifier
             .fillMaxWidth()
-            .height(LiftSizes.nextFigure)
+            .height(Sizes.figureBand)
             .surfaceButton(
                 interaction,
                 shape = RectangleShape,

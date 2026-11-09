@@ -57,10 +57,12 @@ import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
+import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LaneAnchor
 import dev.justinsmith.interval.ui.Motion
+import dev.justinsmith.interval.ui.MoveDetail
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
@@ -93,6 +95,8 @@ internal class WorkoutActions(
     val onAddTime: () -> Unit,
     /** Asks before ending: pauses, then shows the confirmation. */
     val onEnd: () -> Unit,
+    /** Opens the page of the flow's move held or coming, over the running workout. */
+    val onOpenMove: () -> Unit = {},
 )
 
 /**
@@ -162,6 +166,8 @@ fun WorkoutScreen(
     reflection: SummaryReflection = SummaryReflection(),
 ) {
     var confirmingEnd by rememberSaveable { mutableStateOf(false) }
+    // A flow's move read on its page while the workout runs on.
+    var readingMove by rememberSaveable { mutableStateOf(false) }
     val requestEnd = {
         if (state.running) onTogglePause()
         confirmingEnd = true
@@ -200,7 +206,14 @@ fun WorkoutScreen(
         WorkoutLanes(anchor, accent, Modifier.matchParentSize())
         PhaseBand(accent, landscape)
         // Built afresh each time: requestEnd reads this composition's state.
-        val actions = WorkoutActions(onTogglePause, onSkip, onBack, onAddTime, onEnd = requestEnd)
+        val actions = WorkoutActions(
+            onTogglePause,
+            onSkip,
+            onBack,
+            onAddTime,
+            onEnd = requestEnd,
+            onOpenMove = { readingMove = true },
+        )
         if (state.isDone) {
             SummaryLayout(state, landscape, onRestart, onSavePreset, onExit, onShare, reflection)
         } else if (landscape) {
@@ -229,6 +242,17 @@ fun WorkoutScreen(
             },
             destructive = true,
         )
+    }
+    if (readingMove && !state.isDone) MoveReading(state, onClose = { readingMove = false })
+}
+
+/** The page of the flow's move held or coming, a sheet over the running workout; nothing once the flow is over. */
+@Composable
+private fun MoveReading(state: WorkoutUiState, onClose: () -> Unit) {
+    val flow = state.flow ?: return
+    val step = flow.step ?: return
+    IntervalSheet(title = step.move.name, onDismiss = onClose) { hide ->
+        MoveDetail(step.move, number = step.number, of = flow.of, onBack = hide)
     }
 }
 
@@ -302,8 +326,9 @@ private fun PortraitWorkout(
             .padding(vertical = Spacing.space16),
     ) {
         TopBar(state, actions)
-        state.flow?.step?.let {
-            FlowHeading(it, accent, Modifier.fillMaxWidth().padding(top = Spacing.space16))
+        state.flow?.let { flow ->
+            flow.step?.let { FlowHeading(it, accent, Modifier.fillMaxWidth().padding(top = Spacing.space16)) }
+            if (flow.figures) FlowFigure(flow, state.paused, actions.onOpenMove, Modifier.padding(top = Spacing.space8))
         }
         BoxWithConstraints(
             Modifier
@@ -363,7 +388,14 @@ private fun LandscapeWorkout(
             contentAlignment = Alignment.Center,
         ) {
             val diameter = minOf(maxHeight, maxWidth / 2, Sizes.ringMax)
-            LandscapeReadout(state, accent, diameter, Modifier.fillMaxWidth(), ringModifier = Modifier.laneRing(anchor))
+            LandscapeReadout(
+                state,
+                accent,
+                diameter,
+                Modifier.fillMaxWidth(),
+                ringModifier = Modifier.laneRing(anchor),
+                onOpenMove = actions.onOpenMove,
+            )
         }
         Column(
             Modifier.width(IntervalSizes.rail).fillMaxHeight(),

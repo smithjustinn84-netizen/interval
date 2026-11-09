@@ -202,6 +202,7 @@ internal fun LandscapeReadout(
     diameter: Dp,
     modifier: Modifier = Modifier,
     ringModifier: Modifier = Modifier,
+    onOpenMove: () -> Unit = {},
 ) {
     Row(
         modifier,
@@ -214,7 +215,10 @@ internal fun LandscapeReadout(
             Clock(state, accent, ringClockSize(diameter, state.clock.length, IntervalTheme.type.clock.fontSize))
         }
         Column(Modifier.weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-            state.flow?.step?.let { FlowHeading(it, accent, centered = false) }
+            state.flow?.let { flow ->
+                flow.step?.let { FlowHeading(it, accent, centered = false) }
+                if (flow.figures) FlowFigure(flow, state.paused, onOpenMove)
+            }
             PhaseLabel(state, accent)
             val nextText = nextText(state)
             if (nextText.isNotEmpty()) {

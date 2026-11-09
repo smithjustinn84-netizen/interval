@@ -312,4 +312,13 @@
     <string name="muscle_group_legs">Quads and calves</string>
     <string name="figure_raising_bell">Raising the bell</string>
     <string name="figure_bowing">Taking a bow</string>
+    <!-- A figure doing the exercise, looping a rep, on a built-in's page and on a flow's move; read by a screen reader. -->
+    <string name="demo">%1$s, shown by a figure</string>
+    <string name="demo_pause">Pause</string>
+    <string name="demo_play">Play</string>
+    <string name="demo_timeline">Where in the rep</string>
+    <string name="demo_cue_jump">Show this part</string>
+    <string name="demo_set_up">Set up</string>
+    <string name="demo_each_rep">Each rep</string>
+    <string name="demo_set_up_jump">Show the set-up</string>
 </resources>

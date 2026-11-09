@@ -4,6 +4,7 @@ package dev.justinsmith.interval.workout
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -32,6 +33,13 @@ private val switchSides = states[4]
 private val lungeRight = states[5]
 private val lastMove = states.last { it.phase == Phase.Work }
 private val done = states.last()
+
+private val mat = builtInFlows.first { it.key == "core-mat" }
+private val matStates: List<WorkoutState> = generateSequence(WorkoutEngine.start(mat.config).state) { state ->
+    if (state.isDone) null else WorkoutEngine.advance(state).state
+}.toList()
+private val hundred = matStates[1]
+private val toRollUp = matStates[2]
 
 /** The workout screen running a mobility flow: the move, its side and its cue in place of rounds and work. */
 class WorkoutFlowScreenTest {
@@ -109,6 +117,37 @@ class WorkoutFlowScreenTest {
         setThemedContent { Screen(lastMove.toUiState(running = true, flows = builtInFlows)) }
         onNodeWithText("Shoulder circles").assertExists()
         onNodeWithText("Last move").assertExists()
+    }
+
+    @Test
+    fun `a move on the mat has Lift's figure over the ring and its page on a tap`() = runUiTest {
+        setThemedContent { Screen(hundred.toUiState(running = true, flows = builtInFlows)) }
+        onNodeWithText("The hundred").assertExists()
+        onNodeWithContentDescription("How The hundred goes").performClick()
+        waitForIdle()
+
+        onNodeWithText("Move 1 of 9 · 1:40 · Moved through").assertExists()
+        onNodeWithContentDescription("The hundred, shown by a figure").assertExists()
+        onNodeWithText("Back to the moves").performClick()
+        waitForIdle()
+        onNodeWithText("Back to the moves").assertDoesNotExist()
+        onNodeWithContentDescription("How The hundred goes").assertExists()
+        // Reading the page touched nothing of the workout.
+        assertEquals(emptyList(), calls)
+    }
+
+    @Test
+    fun `a change-over shows the coming move's figure and a paused flow keeps it`() = runUiTest(Window.PhoneSideways) {
+        setThemedContent { Screen(toRollUp.toUiState(running = false, flows = builtInFlows)) }
+        onNodeWithText("Roll-up").assertExists()
+        onNodeWithContentDescription("How Roll-up goes").assertExists()
+        onNodeWithContentDescription("How The hundred goes").assertDoesNotExist()
+    }
+
+    @Test
+    fun `a flow of stretches has no figure`() = runUiTest {
+        setThemedContent { Screen(lungeLeft.toUiState(running = true, flows = builtInFlows)) }
+        onNode(hasContentDescription("How ", substring = true)).assertDoesNotExist()
     }
 
     @Test

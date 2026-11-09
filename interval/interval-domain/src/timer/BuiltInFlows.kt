@@ -127,30 +127,69 @@ val builtInFlows: List<Flow> = listOf(
     ),
 )
 
+// Each is one of Lift's mat exercises, named by its key, so the flow shows it by Lift's figure and cues.
 private val corePilates: List<Move>
     get() = listOf(
-        pilates("The hundred", 100, "Head and shoulders up, legs long. Pump the arms: in for five, out for five."),
-        pilates("Roll-up", 120, "Arms overhead, roll up one bone at a time to reach past your toes, and back down."),
+        pilates(
+            "The hundred",
+            "Hundred",
+            100,
+            "Head and shoulders up, legs long. Pump the arms: in for five, out for five.",
+        ),
+        pilates(
+            "Roll-up",
+            "RollUp",
+            120,
+            "Arms overhead, roll up one bone at a time to reach past your toes, and back down.",
+        ),
         pilates(
             "Single-leg circles",
+            "SingleLegCircles",
             60,
             "One leg to the ceiling, hips still. Circle it across, down and round.",
             true,
         ),
-        pilates("Rolling like a ball", 90, "Hold the shins, chin down. Roll back to the shoulders and up to balance."),
-        pilates("Single-leg stretch", 120, "Head up, one knee in, the other leg long. Change legs with each breath."),
+        pilates(
+            "Rolling like a ball",
+            "RollingLikeABall",
+            90,
+            "Hold the shins, chin down. Roll back to the shoulders and up to balance.",
+        ),
+        pilates(
+            "Single-leg stretch",
+            "SingleLegStretch",
+            120,
+            "Head up, one knee in, the other leg long. Change legs with each breath.",
+        ),
         pilates(
             "Double-leg stretch",
+            "DoubleLegStretch",
             120,
             "Curl in, then reach arms and legs long. Circle the arms back to the shins.",
         ),
-        pilates("Criss-cross", 120, "Hands behind the head, elbow to the far knee, the other leg long. Slowly."),
-        pilates("Swimming", 90, "Face down, arms and legs long and lifted. Flutter the opposite arm and leg."),
-        pilates("Side kicks", 50, "On your side, hips stacked. Top leg kicks forward twice, then sweeps back.", true),
+        pilates(
+            "Criss-cross",
+            "CrissCross",
+            120,
+            "Hands behind the head, elbow to the far knee, the other leg long. Slowly.",
+        ),
+        pilates(
+            "Swimming",
+            "Swimming",
+            90,
+            "Face down, arms and legs long and lifted. Flutter the opposite arm and leg.",
+        ),
+        pilates(
+            "Side kicks",
+            "SideKickSeries",
+            50,
+            "On your side, hips stacked. Top leg kicks forward twice, then sweeps back.",
+            true,
+        ),
     )
 
-private fun pilates(name: String, seconds: Int, cue: String, sided: Boolean = false) =
-    Move(name, seconds, cue, sided = sided, held = false)
+private fun pilates(name: String, exercise: String, seconds: Int, cue: String, sided: Boolean = false) =
+    Move(name, seconds, cue, sided = sided, held = false, exercise = exercise)
 
 private fun hipSwitch(seconds: Int) = Move(
     "90/90 hip switch",

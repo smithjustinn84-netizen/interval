@@ -5,7 +5,9 @@ import kotlin.time.Duration.Companion.seconds
 
 /**
  * `journeys/mobility.xml`: Train's Mobility pillar lists the flows; one opens on what is in it, and runs on the
- * workout screen move by move. A finished flow is kept as mobility: it counts toward the week and History names it.
+ * workout screen move by move. A move that is one of Lift's exercises is shown by Lift's figure, on its page from
+ * the sheet and over the ring as it runs. A finished flow is kept as mobility: it counts toward the week and History
+ * names it.
  */
 class MobilityAcceptanceTest {
     private companion object {
@@ -42,6 +44,27 @@ class MobilityAcceptanceTest {
         letTimePass((30 + 10 + 65).seconds)
         seeFlowSaved("Wrists and fingers", moves = 5)
         timerIsAsItWas()
+    }
+
+    @Test
+    fun `a move on the mat is shown by Lift's figure before Start and over the clock`() = acceptanceScenario {
+        openTab("Train")
+        pickPillar("Mobility")
+        openFlow("Core on the mat")
+        openMoveInSheet("The hundred")
+        seeMoveShownByFigure("The hundred")
+        backToMoves()
+        startFlow()
+
+        seePhase("Get ready")
+        seeMove("The hundred", "Move 1 of 9")
+        seeMoveFigure("The hundred")
+        letTimePass(11.seconds)
+        seePhase("Move")
+        openMoveFigure("The hundred")
+        seeMoveShownByFigure("The hundred")
+        closeMovePage()
+        seeMove("The hundred", "Move 1 of 9")
     }
 
     @Test

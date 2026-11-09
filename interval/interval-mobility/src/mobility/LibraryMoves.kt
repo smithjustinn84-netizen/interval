@@ -21,8 +21,8 @@ private const val LIBRARY_MOVE_SECONDS = 30
 
 /**
  * [exercise] as a move of a flow, in the words of the moment: its name and the first line of how it is done,
- * copied, so the flow keeps them as its own (and can say them aloud). Done a side at a time when the lift is; a
- * hold is held still, a mat move moved through.
+ * copied, so the flow keeps them as its own (and can say them aloud), and its key, so the flow shows it by Lift's
+ * figure and cues. Done a side at a time when the lift is; a hold is held still, a mat move moved through.
  */
 @Composable
 internal fun libraryMove(exercise: BuiltInExercise): Move = Move(
@@ -31,4 +31,5 @@ internal fun libraryMove(exercise: BuiltInExercise): Move = Move(
     cue = stringArrayResource(exercise.cues()).firstOrNull().orEmpty().take(Move.CUE_MAX_LENGTH),
     sided = exercise.perSide,
     held = exercise.measure == Measure.Time,
+    exercise = exercise.key,
 )
