@@ -185,6 +185,10 @@ interface SessionDao {
     @Query("UPDATE session SET plan = :plan WHERE uid = :uid")
     suspend fun setPlan(uid: String, plan: String?)
 
+    /** Makes the session [uid] day [day] of the program stored as [programId], its plan as programmed again. */
+    @Query("UPDATE session SET program_id = :programId, program_day = :day, plan = NULL WHERE uid = :uid")
+    suspend fun setProgramDay(uid: String, programId: String, day: Int)
+
     /** Sets the timer running in the session [uid], in [encodeTimer]'s shape; null for none. */
     @Query("UPDATE session SET timer = :timer WHERE uid = :uid")
     suspend fun setTimer(uid: String, timer: String?)

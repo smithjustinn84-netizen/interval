@@ -7,9 +7,12 @@ import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.SessionPlan
 import dev.justinsmith.lift.domain.SetLog
+import dev.justinsmith.lift.domain.builtInPrograms
+import dev.justinsmith.lift.domain.dayOf
 import dev.justinsmith.lift.domain.nextSet
 import dev.justinsmith.lift.domain.offeredBands
 import dev.justinsmith.lift.domain.planRows
@@ -89,13 +92,22 @@ class TodayPlanEditor(
     }
 
     /** The program day [session] is, with today's plan as it has it; null in a free session. */
-    private fun dayOf(session: LiftSession): ProgramDay? = programDay(programStore.programDay.value, session)
+    private fun dayOf(session: LiftSession): ProgramDay? =
+        programDay(programStore.programDay.value, programStore.programs, session)
 }
 
-/** The program [day] that [session] is, with today's plan as [session] has it; null in a free session. */
-internal fun programDay(day: ProgramDay?, session: LiftSession?): ProgramDay? {
+/** Every program there is: the built-ins, then those the user made. */
+internal val ProgramStore.programs: List<Program> get() = builtInPrograms + customPrograms.value
+
+/**
+ * The program day [session] is, with today's plan as [session] has it: its own day among [programs] (the day it
+ * was started as, or took in a free session), or for one logged before sessions kept their day the program
+ * followed's next [day]; null in a free session.
+ */
+internal fun programDay(day: ProgramDay?, programs: List<Program>, session: LiftSession?): ProgramDay? {
     if (session?.program == null) return null
-    return day?.takeIf { it.program.key == session.program }?.copy(plan = session.plan)
+    return programs.dayOf(session)
+        ?: day?.takeIf { it.program.key == session.program }?.copy(plan = session.plan)
 }
 
 /**

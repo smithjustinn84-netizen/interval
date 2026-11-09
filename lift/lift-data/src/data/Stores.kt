@@ -66,6 +66,9 @@ interface SetStore {
 
     fun changeSessionPlan(change: (LiftSession) -> SessionPlan?)
 
+    /** Makes the session in progress day [day] of [program], its plan as programmed: a free session taking a day. */
+    fun setProgramDay(program: ProgramKey, day: Int)
+
     fun saveTimer(timer: SavedTimer?)
 
     fun setRestSeconds(seconds: Int)

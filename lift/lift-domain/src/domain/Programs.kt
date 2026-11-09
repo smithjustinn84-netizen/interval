@@ -152,6 +152,29 @@ data class Program(
 }
 
 /**
+ * The number to log a session of this program's day [index] (from 0, among [Program.days]) under when it is
+ * picked in a free session, where [next] is the day to do next of the program followed (null with none, or it
+ * over): the next day itself when that is the one picked, else the last time the day came round before it, so
+ * the program's place stays where it is; with no time before, as with another program, the first time it comes.
+ */
+fun Program.pickedDayNumber(index: Int, next: ProgramDay?): Int {
+    require(index in days.indices) { "No day $index among ${days.size}" }
+    if (next == null || next.program.key != key) return index + 1
+    val back = (next.dayIndex - index + days.size) % days.size
+    return (next.number - back).takeIf { it >= 1 } ?: (index + 1)
+}
+
+/**
+ * The program day [session] is among these programs, with its plan as [session] has it: null for a free session,
+ * one logged before sessions kept their day, or one of a program not among them.
+ */
+fun List<Program>.dayOf(session: LiftSession): ProgramDay? {
+    val key = session.program ?: return null
+    val number = session.day ?: return null
+    return firstOrNull { it.key == key }?.day(number)?.copy(plan = session.plan)
+}
+
+/**
  * Day [number] (from 1) of [program], in [week] (from 1), and what it asks for: its [blocks] as programmed, or
  * as a session's [plan] changed them.
  */

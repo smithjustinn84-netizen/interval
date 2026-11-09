@@ -19,10 +19,12 @@ import dev.justinsmith.lift.domain.PlannedSet
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.RestState
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.domain.bands
+import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.offeredBands
 import dev.justinsmith.lift.domain.offeredExercises
 import dev.justinsmith.lift.domain.recordSetIds
@@ -146,6 +148,12 @@ data class SessionUiState(
     val easier: EasierOffer? = null,
     /** The program day the session is, null for a free one: what names it to the health store. */
     val programDay: ProgramDay? = null,
+    /** Every program there is, the built-ins then the user's own: what a free session may take a day of. */
+    val programs: List<Program> = builtInPrograms,
+    /** The day to do next of the program followed, null with none or it over: marked among the days on offer. */
+    val followingDay: ProgramDay? = null,
+    /** The rest between sets, in seconds: what a day on offer is timed with. */
+    val restSeconds: Int = RestClock.DEFAULT_SECONDS,
     val emom: EmomRun? = null,
     /** A density block running. */
     val density: DensityRun? = null,

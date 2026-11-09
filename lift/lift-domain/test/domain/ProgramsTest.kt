@@ -320,4 +320,40 @@ class ProgramsTest {
     }
 
     private fun assertNotNullDay(day: ProgramDay?): ProgramDay = kotlin.test.assertNotNull(day)
+
+    @Test
+    fun `a day picked in a free session is numbered by where the program followed stands`() {
+        // Three days in turn: with no program followed, or another, a day is its first time round.
+        val swings = program(ProgramId.FirstHundredSwings)
+        val ladders = program(ProgramId.PressLadders)
+        assertEquals(2, swings.pickedDayNumber(1, next = null))
+        assertEquals(2, swings.pickedDayNumber(1, next = ladders.day(5)))
+        // Day 5 next, the second of the three: it is day 5; the first is its last time round, day 4, and the third
+        // day 3, so the program's place stays.
+        assertEquals(5, swings.pickedDayNumber(1, next = swings.day(5)))
+        assertEquals(4, swings.pickedDayNumber(0, next = swings.day(5)))
+        assertEquals(3, swings.pickedDayNumber(2, next = swings.day(5)))
+        // Just followed, a later day has had no time round: it is its first.
+        assertEquals(3, swings.pickedDayNumber(2, next = swings.day(1)))
+    }
+
+    @Test
+    fun `a session's own day is found among the programs and a free one has none`() {
+        val swings = program(ProgramId.FirstHundredSwings)
+        val session = LiftSession(
+            uid = "s",
+            startedAtEpochMillis = 0,
+            finishedAtEpochMillis = null,
+            title = "",
+            sets = emptyList(),
+            program = swings.key,
+            day = 2,
+        )
+        val day = builtInPrograms.dayOf(session)
+        assertEquals(swings.days[1], day?.blocks)
+        assertEquals(2, day?.number)
+        assertNull(builtInPrograms.dayOf(session.copy(day = null)))
+        assertNull(builtInPrograms.dayOf(session.copy(program = null)))
+        assertNull(emptyList<Program>().dayOf(session))
+    }
 }

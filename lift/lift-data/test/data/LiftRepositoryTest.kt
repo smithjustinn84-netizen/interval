@@ -20,6 +20,7 @@ import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.SaveScope
 import dev.justinsmith.lift.domain.SavedTimer
+import dev.justinsmith.lift.domain.SessionPlan
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.domain.UnknownExercise
 import dev.justinsmith.lift.domain.band
@@ -463,6 +464,32 @@ class LiftRepositoryTest {
         repository.programs.follow(ladders)
         repository.sessions.startSession(ProgramKey.BuiltIn(ProgramId.EasyStrength))
         assertNull(repository.sessions.active.value?.day)
+    }
+
+    @Test
+    fun `a free session given a program's day is logged as it with its plan as programmed`() = runTest {
+        repository.sessions.startSession()
+        repository.sets.changeSessionPlan { SessionPlan.of(program(ProgramId.PressLadders).days[0]) }
+        assertNotNull(repository.sessions.active.value?.plan)
+        val swings = ProgramKey.BuiltIn(ProgramId.FirstHundredSwings)
+        repository.sets.setProgramDay(swings, 2)
+        val active = repository.sessions.active.value
+        assertEquals(swings, active?.program)
+        assertEquals(2, active?.day)
+        assertNull(active?.plan)
+        assertEquals(swings.stored, sessionDao.sessions.value.single().programId)
+    }
+
+    @Test
+    fun `a free session that takes the followed program's next day moves it on`() = runTest {
+        val swings = ProgramKey.BuiltIn(ProgramId.FirstHundredSwings)
+        repository.programs.follow(swings)
+        repository.sessions.startSession()
+        assertNull(repository.sessions.active.value?.program)
+        repository.sets.setProgramDay(swings, 1)
+        repository.sets.logSet(BuiltInExercise.TwoHandSwing, 16.0, 5, null)
+        repository.sessions.finishSession("Swings")
+        assertEquals(2, repository.programs.programDay.value?.number)
     }
 
     @Test

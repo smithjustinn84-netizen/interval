@@ -8,6 +8,7 @@ import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.Measure
+import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.SavedTimer
 import dev.justinsmith.lift.domain.SessionPlan
@@ -131,6 +132,17 @@ class SetRepository(
             val session = row.toDomain(sessionDao.sets(row.uid).map { it.toDomain(made, bands) }, made, bands)
             val plan = change(session) ?: return@persist
             if (plan != session.plan) sessionDao.setPlan(row.uid, encodePlan(plan))
+        }
+    }
+
+    /**
+     * Makes the session in progress day [day] of [program], as a free session takes one: it is logged as that day
+     * from then on, and its plan starts as programmed. Nothing without a session in progress.
+     */
+    override fun setProgramDay(program: ProgramKey, day: Int) {
+        writer.persist {
+            val row = sessionDao.active() ?: return@persist
+            sessionDao.setProgramDay(row.uid, program.stored, day)
         }
     }
 
