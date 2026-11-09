@@ -265,6 +265,28 @@ enum class BuiltInExercise(
     ShoulderBridge(Equipment.Mat, perSide = true, Focus.LowerBody),
     Seal(Equipment.Mat, perSide = false, Focus.Core),
     LegPullFront(Equipment.Mat, perSide = false, Focus.FullBody),
+
+    // The stretches of the shipped mobility flows, held for a time: the hips and shoulders, the wrists and
+    // fingers, the spine and hamstrings. Each sided one is done a side at a time.
+    HipSwitch(Equipment.Mat, perSide = false, Focus.LowerBody, Measure.Time),
+    HipFlexorLunge(Equipment.Mat, perSide = true, Focus.LowerBody, Measure.Time),
+    DeepSquat(Equipment.Mat, perSide = false, Focus.LowerBody, Measure.Time),
+    WorldsGreatestStretch(Equipment.Mat, perSide = true, Focus.FullBody, Measure.Time),
+    ThreadTheNeedle(Equipment.Mat, perSide = true, Focus.UpperBody, Measure.Time),
+    ShoulderCircles(Equipment.Mat, perSide = true, Focus.UpperBody, Measure.Time),
+    WristCircles(Equipment.Mat, perSide = false, Focus.UpperBody, Measure.Time),
+    PalmsDownFingersBack(Equipment.Mat, perSide = false, Focus.UpperBody, Measure.Time),
+    BacksOfTheHands(Equipment.Mat, perSide = false, Focus.UpperBody, Measure.Time),
+    FingerPulls(Equipment.Mat, perSide = true, Focus.UpperBody, Measure.Time),
+    ForearmStretch(Equipment.Mat, perSide = true, Focus.UpperBody, Measure.Time),
+    CatCow(Equipment.Mat, perSide = false, Focus.Core, Measure.Time),
+    ChildsPose(Equipment.Mat, perSide = false, Focus.FullBody, Measure.Time),
+    Cobra(Equipment.Mat, perSide = false, Focus.Core, Measure.Time),
+    DownwardDog(Equipment.Mat, perSide = false, Focus.FullBody, Measure.Time),
+    HalfSplit(Equipment.Mat, perSide = true, Focus.LowerBody, Measure.Time),
+    ForwardFold(Equipment.Mat, perSide = false, Focus.LowerBody, Measure.Time),
+    Pigeon(Equipment.Mat, perSide = true, Focus.LowerBody, Measure.Time),
+    LyingTwist(Equipment.Mat, perSide = true, Focus.Core, Measure.Time),
     ;
 
     override val key: String get() = name

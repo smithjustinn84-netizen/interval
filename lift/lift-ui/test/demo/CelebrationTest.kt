@@ -58,7 +58,24 @@ class CelebrationTest {
             BuiltInExercise.Seal,
             BuiltInExercise.LegPullFront,
         )
-        assertEquals(lying + onTheHands + seated + onTheMat, none)
+        // The stretches done kneeling, sitting, lying or on the hands; the ones stood up for take a bow.
+        val stretching = setOf(
+            BuiltInExercise.HipSwitch,
+            BuiltInExercise.HipFlexorLunge,
+            BuiltInExercise.DeepSquat,
+            BuiltInExercise.WorldsGreatestStretch,
+            BuiltInExercise.ThreadTheNeedle,
+            BuiltInExercise.PalmsDownFingersBack,
+            BuiltInExercise.BacksOfTheHands,
+            BuiltInExercise.CatCow,
+            BuiltInExercise.ChildsPose,
+            BuiltInExercise.Cobra,
+            BuiltInExercise.DownwardDog,
+            BuiltInExercise.HalfSplit,
+            BuiltInExercise.Pigeon,
+            BuiltInExercise.LyingTwist,
+        )
+        assertEquals(lying + onTheHands + seated + onTheMat + stretching, none)
         demos.forEach { (exercise, demo) ->
             val celebration = demo.celebration ?: return@forEach
             val expected = if (demo.hold == Hold.Free) Celebration.Bow else Celebration.RaisedBell

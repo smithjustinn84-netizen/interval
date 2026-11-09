@@ -4,6 +4,7 @@ package dev.justinsmith.interval.timer
  * The flows the app ships with, in the order they are listed. Their words are data, like the built-in presets'
  * names: a flow's name is kept with what it is, and a move's is said aloud. Each takes a round number of minutes
  * with the default get-ready countdown, and no two share a shape, since a finished one is named by its shape.
+ * Every move is one of Lift's exercises, named by its key, so the flow shows it by Lift's figure and cues.
  */
 val builtInFlows: List<Flow> = listOf(
     Flow(
@@ -21,6 +22,7 @@ val builtInFlows: List<Flow> = listOf(
                 cue = "Long lunge, elbow to the instep, then turn and reach that arm up.",
                 sided = true,
                 held = false,
+                exercise = "WorldsGreatestStretch",
             ),
             threadTheNeedle(seconds = 30),
             Move(
@@ -29,6 +31,7 @@ val builtInFlows: List<Flow> = listOf(
                 cue = "Arm long, the biggest slow circle the shoulder allows, forward then back.",
                 sided = true,
                 held = false,
+                exercise = "ShoulderCircles",
             ),
         ),
     ),
@@ -43,16 +46,19 @@ val builtInFlows: List<Flow> = listOf(
                 seconds = 30,
                 cue = "Fists loose, slow circles, one way then the other.",
                 held = false,
+                exercise = "WristCircles",
             ),
             Move(
                 "Palms down, fingers back",
                 seconds = 45,
                 cue = "On all fours, fingers pointing at your knees. Rock back until the forearms pull.",
+                exercise = "PalmsDownFingersBack",
             ),
             Move(
                 "Backs of the hands",
                 seconds = 45,
                 cue = "On all fours, backs of the hands down, fingers in. Lean in lightly.",
+                exercise = "BacksOfTheHands",
             ),
             Move(
                 "Finger pulls",
@@ -60,12 +66,14 @@ val builtInFlows: List<Flow> = listOf(
                 cue = "Draw each finger back in turn with the other hand, thumb last.",
                 sided = true,
                 held = false,
+                exercise = "FingerPulls",
             ),
             Move(
                 "Forearm stretch",
                 seconds = 30,
                 cue = "Arm long, palm up. Draw the fingers down and back with the other hand.",
                 sided = true,
+                exercise = "ForearmStretch",
             ),
         ),
     ),
@@ -82,12 +90,14 @@ val builtInFlows: List<Flow> = listOf(
                 "Downward dog",
                 seconds = 60,
                 cue = "Hips high, back long. Bend one knee, then the other, to walk the heels down.",
+                exercise = "DownwardDog",
             ),
             halfSplit(seconds = 60),
             Move(
                 "Forward fold",
                 seconds = 60,
                 cue = "Feet hip width, knees soft, hang from the hips and let the head go.",
+                exercise = "ForwardFold",
             ),
         ),
     ),
@@ -111,6 +121,7 @@ val builtInFlows: List<Flow> = listOf(
                 seconds = 120,
                 cue = "Front shin across, back leg long, hips square. Fold forward over the shin.",
                 sided = true,
+                exercise = "Pigeon",
             ),
             hipFlexorLunge(seconds = 60),
             halfSplit(seconds = 60),
@@ -121,6 +132,7 @@ val builtInFlows: List<Flow> = listOf(
                 seconds = 120,
                 cue = "On your back, one knee across the body, both shoulders down, look the other way.",
                 sided = true,
+                exercise = "LyingTwist",
             ),
             deepSquat(seconds = 120),
         ),
@@ -196,6 +208,7 @@ private fun hipSwitch(seconds: Int) = Move(
     seconds,
     cue = "Sit with both knees bent square. Swing them over to the other side and sit tall.",
     held = false,
+    exercise = "HipSwitch",
 )
 
 private fun hipFlexorLunge(seconds: Int) = Move(
@@ -203,16 +216,22 @@ private fun hipFlexorLunge(seconds: Int) = Move(
     seconds,
     cue = "Back knee down, tail tucked. Ease the hips forward, ribs over hips.",
     sided = true,
+    exercise = "HipFlexorLunge",
 )
 
-private fun deepSquat(seconds: Int) =
-    Move("Deep squat", seconds, cue = "Heels down, chest up. Elbows inside the knees, pressing them out.")
+private fun deepSquat(seconds: Int) = Move(
+    "Deep squat",
+    seconds,
+    cue = "Heels down, chest up. Elbows inside the knees, pressing them out.",
+    exercise = "DeepSquat",
+)
 
 private fun threadTheNeedle(seconds: Int) = Move(
     "Thread the needle",
     seconds,
     cue = "On all fours, slide one arm under the other and rest that shoulder down.",
     sided = true,
+    exercise = "ThreadTheNeedle",
 )
 
 private fun catCow(seconds: Int) = Move(
@@ -220,17 +239,27 @@ private fun catCow(seconds: Int) = Move(
     seconds,
     cue = "On all fours, round the back to the ceiling, then let it sink and look ahead.",
     held = false,
+    exercise = "CatCow",
 )
 
-private fun childsPose(seconds: Int) =
-    Move("Child's pose", seconds, cue = "Knees wide, sit back to the heels, arms long, forehead down.")
+private fun childsPose(seconds: Int) = Move(
+    "Child's pose",
+    seconds,
+    cue = "Knees wide, sit back to the heels, arms long, forehead down.",
+    exercise = "ChildsPose",
+)
 
-private fun cobra(seconds: Int) =
-    Move("Cobra", seconds, cue = "Face down, hands under the shoulders. Press the chest up, hips heavy.")
+private fun cobra(seconds: Int) = Move(
+    "Cobra",
+    seconds,
+    cue = "Face down, hands under the shoulders. Press the chest up, hips heavy.",
+    exercise = "Cobra",
+)
 
 private fun halfSplit(seconds: Int) = Move(
     "Half split",
     seconds,
     cue = "From a low lunge sit back, front leg straight, toes up. Fold over it with a long back.",
     sided = true,
+    exercise = "HalfSplit",
 )

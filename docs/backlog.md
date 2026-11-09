@@ -17,15 +17,7 @@ rather than copying the list forward. What is in a sprint is in that sprint's fi
 
 ## Planned, not yet scheduled
 
-- **Draw the stretches.** A flow's move that is one of Lift's exercises is shown by Lift's figure (its row, its
-  page, the band over the ring), which today means the Pilates flow and the floor holds the editor offers. The
-  shipped stretches are plain words: 90/90 hip switch, hip flexor lunge, deep squat, world's greatest stretch,
-  thread the needle, shoulder circles, wrist circles, palms down fingers back, backs of the hands, finger pulls,
-  forearm stretch, cat-cow, child's pose, cobra, downward dog, half split, forward fold, pigeon, lying twist. Each
-  becomes a built-in (`Equipment.Mat`, `Measure.Time`, its muscles and three cues) with a demo in `MatDemos.kt`,
-  and `BuiltInFlows.kt` names it; `ShippedMovesTest` then pins the figure. They would show in Lift's library too.
-  *Brings it in:* a sprint with room for nineteen figures, about a day each at the pace the mat demos took.
-
+Nothing at present: the last item here, the stretches' figures, landed on 2026-11-08.
 
 ## Left out on purpose
 

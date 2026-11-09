@@ -6,7 +6,6 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -103,7 +102,7 @@ class MobilityScreenTest {
     }
 
     @Test
-    fun `a stretch opens on its words alone`() = runUiTest {
+    fun `a stretch opens on its words and its figure`() = runUiTest {
         setThemedContent { MobilityScreen(mobilityState(prepSeconds = 10), page, actions) }
         onNode(hasText("Hips and shoulders") and hasClickAction()).performClick()
         waitForIdle()
@@ -112,7 +111,7 @@ class MobilityScreenTest {
 
         onNodeWithText("Move 3 of 6 · 1:00 · Held").assertExists()
         onNodeWithText("Heels down, chest up. Elbows inside the knees, pressing them out.").assertExists()
-        onNode(hasContentDescription(", shown by a figure", substring = true)).assertDoesNotExist()
+        onNodeWithContentDescription("Deep squat, shown by a figure").assertExists()
         onNodeWithText("Back to the moves").assertExists()
     }
 

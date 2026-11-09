@@ -2,6 +2,7 @@ package dev.justinsmith.lift.domain
 
 import dev.justinsmith.lift.domain.BuiltInExercise.AirSquat
 import dev.justinsmith.lift.domain.BuiltInExercise.ArmorBuildingComplex
+import dev.justinsmith.lift.domain.BuiltInExercise.BacksOfTheHands
 import dev.justinsmith.lift.domain.BuiltInExercise.BandBicepsCurl
 import dev.justinsmith.lift.domain.BuiltInExercise.BandChestPress
 import dev.justinsmith.lift.domain.BuiltInExercise.BandClamshell
@@ -43,21 +44,32 @@ import dev.justinsmith.lift.domain.BuiltInExercise.BottomsUpPress
 import dev.justinsmith.lift.domain.BuiltInExercise.BulgarianSplitSquat
 import dev.justinsmith.lift.domain.BuiltInExercise.Burpee
 import dev.justinsmith.lift.domain.BuiltInExercise.CalfRaise
+import dev.justinsmith.lift.domain.BuiltInExercise.CatCow
+import dev.justinsmith.lift.domain.BuiltInExercise.ChildsPose
 import dev.justinsmith.lift.domain.BuiltInExercise.ChinUp
 import dev.justinsmith.lift.domain.BuiltInExercise.Clean
 import dev.justinsmith.lift.domain.BuiltInExercise.CleanAndPress
+import dev.justinsmith.lift.domain.BuiltInExercise.Cobra
 import dev.justinsmith.lift.domain.BuiltInExercise.CrissCross
 import dev.justinsmith.lift.domain.BuiltInExercise.DeadBug
 import dev.justinsmith.lift.domain.BuiltInExercise.Deadlift
+import dev.justinsmith.lift.domain.BuiltInExercise.DeepSquat
 import dev.justinsmith.lift.domain.BuiltInExercise.DoubleLegStretch
+import dev.justinsmith.lift.domain.BuiltInExercise.DownwardDog
 import dev.justinsmith.lift.domain.BuiltInExercise.FarmersWalk
+import dev.justinsmith.lift.domain.BuiltInExercise.FingerPulls
+import dev.justinsmith.lift.domain.BuiltInExercise.ForearmStretch
+import dev.justinsmith.lift.domain.BuiltInExercise.ForwardFold
 import dev.justinsmith.lift.domain.BuiltInExercise.FrontSquat
 import dev.justinsmith.lift.domain.BuiltInExercise.GetUp
 import dev.justinsmith.lift.domain.BuiltInExercise.GluteBridge
 import dev.justinsmith.lift.domain.BuiltInExercise.GobletSquat
 import dev.justinsmith.lift.domain.BuiltInExercise.HalfSnatch
+import dev.justinsmith.lift.domain.BuiltInExercise.HalfSplit
 import dev.justinsmith.lift.domain.BuiltInExercise.Halo
 import dev.justinsmith.lift.domain.BuiltInExercise.HighPull
+import dev.justinsmith.lift.domain.BuiltInExercise.HipFlexorLunge
+import dev.justinsmith.lift.domain.BuiltInExercise.HipSwitch
 import dev.justinsmith.lift.domain.BuiltInExercise.HollowHold
 import dev.justinsmith.lift.domain.BuiltInExercise.Hundred
 import dev.justinsmith.lift.domain.BuiltInExercise.InclinePushUp
@@ -67,8 +79,11 @@ import dev.justinsmith.lift.domain.BuiltInExercise.Jerk
 import dev.justinsmith.lift.domain.BuiltInExercise.KettlebellDeadBug
 import dev.justinsmith.lift.domain.BuiltInExercise.LegPullFront
 import dev.justinsmith.lift.domain.BuiltInExercise.LongCycle
+import dev.justinsmith.lift.domain.BuiltInExercise.LyingTwist
 import dev.justinsmith.lift.domain.BuiltInExercise.MountainClimber
 import dev.justinsmith.lift.domain.BuiltInExercise.OneHandSwing
+import dev.justinsmith.lift.domain.BuiltInExercise.PalmsDownFingersBack
+import dev.justinsmith.lift.domain.BuiltInExercise.Pigeon
 import dev.justinsmith.lift.domain.BuiltInExercise.PikePushUp
 import dev.justinsmith.lift.domain.BuiltInExercise.Plank
 import dev.justinsmith.lift.domain.BuiltInExercise.Press
@@ -86,6 +101,7 @@ import dev.justinsmith.lift.domain.BuiltInExercise.Saw
 import dev.justinsmith.lift.domain.BuiltInExercise.Scissors
 import dev.justinsmith.lift.domain.BuiltInExercise.Seal
 import dev.justinsmith.lift.domain.BuiltInExercise.ShoulderBridge
+import dev.justinsmith.lift.domain.BuiltInExercise.ShoulderCircles
 import dev.justinsmith.lift.domain.BuiltInExercise.SideKickSeries
 import dev.justinsmith.lift.domain.BuiltInExercise.SidePlank
 import dev.justinsmith.lift.domain.BuiltInExercise.SingleLegCircles
@@ -100,11 +116,14 @@ import dev.justinsmith.lift.domain.BuiltInExercise.SuitcaseCarry
 import dev.justinsmith.lift.domain.BuiltInExercise.Swan
 import dev.justinsmith.lift.domain.BuiltInExercise.Swimming
 import dev.justinsmith.lift.domain.BuiltInExercise.Teaser
+import dev.justinsmith.lift.domain.BuiltInExercise.ThreadTheNeedle
 import dev.justinsmith.lift.domain.BuiltInExercise.Thruster
 import dev.justinsmith.lift.domain.BuiltInExercise.TwoHandSwing
 import dev.justinsmith.lift.domain.BuiltInExercise.WalkingLunge
 import dev.justinsmith.lift.domain.BuiltInExercise.WallSit
 import dev.justinsmith.lift.domain.BuiltInExercise.Windmill
+import dev.justinsmith.lift.domain.BuiltInExercise.WorldsGreatestStretch
+import dev.justinsmith.lift.domain.BuiltInExercise.WristCircles
 
 // How a lift moves, for the coaching that tells a swing from a squat and spares the grip.
 
@@ -241,6 +260,15 @@ val BuiltInExercise.movement: Movement
         -> grind(Pattern.Core, grip = 0)
 
         SingleLegKick, SideKickSeries, ShoulderBridge -> grind(Pattern.Hinge, grip = 0)
+
+        // The stretches, held still with nothing in hand: the hips and legs as a squat or a lunge, the trunk as core.
+        HipSwitch, DeepSquat, ForwardFold -> hold(Pattern.Squat, grip = 0)
+
+        HipFlexorLunge, WorldsGreatestStretch, HalfSplit, Pigeon -> hold(Pattern.Lunge, grip = 0)
+
+        ThreadTheNeedle, ShoulderCircles, WristCircles, PalmsDownFingersBack, BacksOfTheHands, FingerPulls,
+        ForearmStretch, CatCow, ChildsPose, Cobra, DownwardDog, LyingTwist,
+        -> hold(Pattern.Core, grip = 0)
     }
 
 /**

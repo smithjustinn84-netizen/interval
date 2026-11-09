@@ -104,9 +104,8 @@ class FlowTest {
         val keyed = Flow("k", "Core", FlowUse.After, listOf(Move("Plank", 30, "Long line.", exercise = "Plank")))
         assertEquals(plain.config, keyed.config)
         assertEquals(keyed, listOf(keyed).matching(plain.config))
-        // The mat flow names each of its moves as one of Lift's; the stretches name none.
-        assertTrue(builtInFlows.first { it.key == "core-mat" }.moves.all { it.exercise != null })
-        assertTrue(builtInFlows.filter { it.key != "core-mat" }.flatMap { it.moves }.all { it.exercise == null })
+        // Every shipped flow names each of its moves as one of Lift's.
+        assertTrue(builtInFlows.flatMap { it.moves }.all { it.exercise != null })
     }
 
     @Test

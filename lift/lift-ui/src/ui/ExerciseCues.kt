@@ -5,6 +5,7 @@ import dev.justinsmith.lift.domain.Fault
 import dev.justinsmith.lift.ui.resources.Res
 import dev.justinsmith.lift.ui.resources.cues_air_squat
 import dev.justinsmith.lift.ui.resources.cues_armor_building_complex
+import dev.justinsmith.lift.ui.resources.cues_backs_of_the_hands
 import dev.justinsmith.lift.ui.resources.cues_band_biceps_curl
 import dev.justinsmith.lift.ui.resources.cues_band_chest_press
 import dev.justinsmith.lift.ui.resources.cues_band_clamshell
@@ -46,21 +47,32 @@ import dev.justinsmith.lift.ui.resources.cues_bottoms_up_press
 import dev.justinsmith.lift.ui.resources.cues_bulgarian_split_squat
 import dev.justinsmith.lift.ui.resources.cues_burpee
 import dev.justinsmith.lift.ui.resources.cues_calf_raise
+import dev.justinsmith.lift.ui.resources.cues_cat_cow
+import dev.justinsmith.lift.ui.resources.cues_childs_pose
 import dev.justinsmith.lift.ui.resources.cues_chin_up
 import dev.justinsmith.lift.ui.resources.cues_clean
 import dev.justinsmith.lift.ui.resources.cues_clean_and_press
+import dev.justinsmith.lift.ui.resources.cues_cobra
 import dev.justinsmith.lift.ui.resources.cues_criss_cross
 import dev.justinsmith.lift.ui.resources.cues_dead_bug
 import dev.justinsmith.lift.ui.resources.cues_deadlift
+import dev.justinsmith.lift.ui.resources.cues_deep_squat
 import dev.justinsmith.lift.ui.resources.cues_double_leg_stretch
+import dev.justinsmith.lift.ui.resources.cues_downward_dog
 import dev.justinsmith.lift.ui.resources.cues_farmers_walk
+import dev.justinsmith.lift.ui.resources.cues_finger_pulls
+import dev.justinsmith.lift.ui.resources.cues_forearm_stretch
+import dev.justinsmith.lift.ui.resources.cues_forward_fold
 import dev.justinsmith.lift.ui.resources.cues_front_squat
 import dev.justinsmith.lift.ui.resources.cues_get_up
 import dev.justinsmith.lift.ui.resources.cues_glute_bridge
 import dev.justinsmith.lift.ui.resources.cues_goblet_squat
 import dev.justinsmith.lift.ui.resources.cues_half_snatch
+import dev.justinsmith.lift.ui.resources.cues_half_split
 import dev.justinsmith.lift.ui.resources.cues_halo
 import dev.justinsmith.lift.ui.resources.cues_high_pull
+import dev.justinsmith.lift.ui.resources.cues_hip_flexor_lunge
+import dev.justinsmith.lift.ui.resources.cues_hip_switch
 import dev.justinsmith.lift.ui.resources.cues_hollow_hold
 import dev.justinsmith.lift.ui.resources.cues_hundred
 import dev.justinsmith.lift.ui.resources.cues_incline_push_up
@@ -70,8 +82,11 @@ import dev.justinsmith.lift.ui.resources.cues_jerk
 import dev.justinsmith.lift.ui.resources.cues_kettlebell_dead_bug
 import dev.justinsmith.lift.ui.resources.cues_leg_pull_front
 import dev.justinsmith.lift.ui.resources.cues_long_cycle
+import dev.justinsmith.lift.ui.resources.cues_lying_twist
 import dev.justinsmith.lift.ui.resources.cues_mountain_climber
 import dev.justinsmith.lift.ui.resources.cues_one_hand_swing
+import dev.justinsmith.lift.ui.resources.cues_palms_down_fingers_back
+import dev.justinsmith.lift.ui.resources.cues_pigeon
 import dev.justinsmith.lift.ui.resources.cues_pike_push_up
 import dev.justinsmith.lift.ui.resources.cues_plank
 import dev.justinsmith.lift.ui.resources.cues_press
@@ -89,6 +104,7 @@ import dev.justinsmith.lift.ui.resources.cues_saw
 import dev.justinsmith.lift.ui.resources.cues_scissors
 import dev.justinsmith.lift.ui.resources.cues_seal
 import dev.justinsmith.lift.ui.resources.cues_shoulder_bridge
+import dev.justinsmith.lift.ui.resources.cues_shoulder_circles
 import dev.justinsmith.lift.ui.resources.cues_side_kick_series
 import dev.justinsmith.lift.ui.resources.cues_side_plank
 import dev.justinsmith.lift.ui.resources.cues_single_leg_circles
@@ -103,11 +119,14 @@ import dev.justinsmith.lift.ui.resources.cues_suitcase_carry
 import dev.justinsmith.lift.ui.resources.cues_swan
 import dev.justinsmith.lift.ui.resources.cues_swimming
 import dev.justinsmith.lift.ui.resources.cues_teaser
+import dev.justinsmith.lift.ui.resources.cues_thread_the_needle
 import dev.justinsmith.lift.ui.resources.cues_thruster
 import dev.justinsmith.lift.ui.resources.cues_two_hand_swing
 import dev.justinsmith.lift.ui.resources.cues_walking_lunge
 import dev.justinsmith.lift.ui.resources.cues_wall_sit
 import dev.justinsmith.lift.ui.resources.cues_windmill
+import dev.justinsmith.lift.ui.resources.cues_worlds_greatest_stretch
+import dev.justinsmith.lift.ui.resources.cues_wrist_circles
 import dev.justinsmith.lift.ui.resources.fault_bent_wrist
 import dev.justinsmith.lift.ui.resources.fault_death_grip
 import dev.justinsmith.lift.ui.resources.fault_late_hand
@@ -223,6 +242,25 @@ fun BuiltInExercise.cues(): StringArrayResource = when (this) {
     BuiltInExercise.ShoulderBridge -> Res.array.cues_shoulder_bridge
     BuiltInExercise.Seal -> Res.array.cues_seal
     BuiltInExercise.LegPullFront -> Res.array.cues_leg_pull_front
+    BuiltInExercise.HipSwitch -> Res.array.cues_hip_switch
+    BuiltInExercise.HipFlexorLunge -> Res.array.cues_hip_flexor_lunge
+    BuiltInExercise.DeepSquat -> Res.array.cues_deep_squat
+    BuiltInExercise.WorldsGreatestStretch -> Res.array.cues_worlds_greatest_stretch
+    BuiltInExercise.ThreadTheNeedle -> Res.array.cues_thread_the_needle
+    BuiltInExercise.ShoulderCircles -> Res.array.cues_shoulder_circles
+    BuiltInExercise.WristCircles -> Res.array.cues_wrist_circles
+    BuiltInExercise.PalmsDownFingersBack -> Res.array.cues_palms_down_fingers_back
+    BuiltInExercise.BacksOfTheHands -> Res.array.cues_backs_of_the_hands
+    BuiltInExercise.FingerPulls -> Res.array.cues_finger_pulls
+    BuiltInExercise.ForearmStretch -> Res.array.cues_forearm_stretch
+    BuiltInExercise.CatCow -> Res.array.cues_cat_cow
+    BuiltInExercise.ChildsPose -> Res.array.cues_childs_pose
+    BuiltInExercise.Cobra -> Res.array.cues_cobra
+    BuiltInExercise.DownwardDog -> Res.array.cues_downward_dog
+    BuiltInExercise.HalfSplit -> Res.array.cues_half_split
+    BuiltInExercise.ForwardFold -> Res.array.cues_forward_fold
+    BuiltInExercise.Pigeon -> Res.array.cues_pigeon
+    BuiltInExercise.LyingTwist -> Res.array.cues_lying_twist
 }
 
 /** The words of a fault, a short line to say between sets. */

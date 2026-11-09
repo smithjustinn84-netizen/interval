@@ -25,7 +25,7 @@ class ExerciseLibraryTest {
     fun `the library opens from Lift and finds an exercise however it is typed`() = liftAppTest {
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
-        onNodeWithText("105 exercises").assertExists()
+        onNodeWithText("124 exercises").assertExists()
         onNode(hasSetTextAction()).performTextInput("PUSHUP")
         // The push-up and its two variations, in a card of their own, each with its facts.
         waitForText("3 exercises")
@@ -34,7 +34,7 @@ class ExerciseLibraryTest {
         onNodeWithText("Pike push-up").assertExists()
         onAllNodesWithText("Reps · Upper body").assertCountEquals(3)
         onNodeWithText("Clear").performClick()
-        waitForText("105 exercises")
+        waitForText("124 exercises")
     }
 
     @Test
@@ -42,12 +42,13 @@ class ExerciseLibraryTest {
         onNodeWithText("Exercises").performScrollTo().performClick()
         waitForText("Search exercises")
         onNodeWithText("Mat").performClick()
-        waitForText("18 exercises")
+        waitForText("37 exercises")
         onNodeWithText("Filters").performClick()
         waitForText("Measured by")
         onNodeWithText("Time").performClick()
-        waitForText("1 exercise")
+        waitForText("20 exercises")
         onNodeWithText("Swimming").assertExists()
+        onNodeWithText("Cat-cow").assertExists()
         onNodeWithText("Filters · 1").assertExists()
     }
 
@@ -58,7 +59,7 @@ class ExerciseLibraryTest {
         onNode(hasSetTextAction()).performTextInput("zercher carry")
         waitForText("No exercise matches “zercher carry”")
         onNode(hasSetTextAction()).performTextClearance()
-        waitForText("105 exercises")
+        waitForText("124 exercises")
     }
 
     @Test

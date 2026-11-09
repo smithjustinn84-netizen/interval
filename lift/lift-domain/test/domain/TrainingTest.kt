@@ -5,6 +5,29 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+/** The stretches of the shipped mobility flows, on the mat, each held for a time. */
+private val stretches = listOf(
+    BuiltInExercise.HipSwitch,
+    BuiltInExercise.HipFlexorLunge,
+    BuiltInExercise.DeepSquat,
+    BuiltInExercise.WorldsGreatestStretch,
+    BuiltInExercise.ThreadTheNeedle,
+    BuiltInExercise.ShoulderCircles,
+    BuiltInExercise.WristCircles,
+    BuiltInExercise.PalmsDownFingersBack,
+    BuiltInExercise.BacksOfTheHands,
+    BuiltInExercise.FingerPulls,
+    BuiltInExercise.ForearmStretch,
+    BuiltInExercise.CatCow,
+    BuiltInExercise.ChildsPose,
+    BuiltInExercise.Cobra,
+    BuiltInExercise.DownwardDog,
+    BuiltInExercise.HalfSplit,
+    BuiltInExercise.ForwardFold,
+    BuiltInExercise.Pigeon,
+    BuiltInExercise.LyingTwist,
+)
+
 class TrainingTest {
     private var nextId = 1L
 
@@ -266,14 +289,14 @@ class TrainingTest {
     }
 
     @Test
-    fun `the starter catalogue has 105 exercises across five kinds of equipment`() {
+    fun `the starter catalogue has 124 exercises across five kinds of equipment`() {
         assertEquals(
             mapOf(
                 Equipment.Kettlebell to 30,
                 Equipment.Barbell to 20,
                 Equipment.Bodyweight to 22,
                 Equipment.Band to 15,
-                Equipment.Mat to 18,
+                Equipment.Mat to 18 + stretches.size,
             ),
             BuiltInExercise.entries.groupingBy { it.equipment }.eachCount(),
         )
@@ -316,7 +339,7 @@ class TrainingTest {
                 BuiltInExercise.SidePlank,
                 BuiltInExercise.HollowHold,
                 BuiltInExercise.Swimming,
-            ),
+            ) + stretches,
             BuiltInExercise.entries.filter { it.measure == Measure.Time },
         )
     }

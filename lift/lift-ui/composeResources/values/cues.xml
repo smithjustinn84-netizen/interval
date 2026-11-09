@@ -525,4 +525,99 @@
         <item>Lift one leg without the hips shifting</item>
         <item>Lower it and switch</item>
     </string-array>
+    <string-array name="cues_hip_switch">
+        <item>Sit with both knees bent square, feet wide</item>
+        <item>Swing the knees over to the other side</item>
+        <item>Sit tall over the front shin</item>
+    </string-array>
+    <string-array name="cues_hip_flexor_lunge">
+        <item>Kneel on one knee, the other foot forward</item>
+        <item>Tuck the tail and ease the hips forward</item>
+        <item>Ribs over the hips, breathe</item>
+    </string-array>
+    <string-array name="cues_deep_squat">
+        <item>Feet a little wider than the hips, heels down</item>
+        <item>Sink to the bottom with the chest up</item>
+        <item>Elbows inside the knees, pressing them out</item>
+    </string-array>
+    <string-array name="cues_worlds_greatest_stretch">
+        <item>Long lunge, the hands inside the front foot</item>
+        <item>Drop the elbow to the instep</item>
+        <item>Turn and reach that arm to the ceiling</item>
+    </string-array>
+    <string-array name="cues_thread_the_needle">
+        <item>On all fours, hips over the knees</item>
+        <item>Slide one arm under the other, palm up</item>
+        <item>Rest that shoulder and ear on the mat</item>
+    </string-array>
+    <string-array name="cues_shoulder_circles">
+        <item>Stand tall, one arm long</item>
+        <item>The biggest slow circle the shoulder allows, forward</item>
+        <item>Then back the other way</item>
+    </string-array>
+    <string-array name="cues_wrist_circles">
+        <item>Fists loose, elbows soft</item>
+        <item>Slow circles one way</item>
+        <item>Then the other way</item>
+    </string-array>
+    <string-array name="cues_palms_down_fingers_back">
+        <item>On all fours, fingers pointing at the knees</item>
+        <item>Rock back until the forearms pull</item>
+        <item>Ease off, then rock back again</item>
+    </string-array>
+    <string-array name="cues_backs_of_the_hands">
+        <item>On all fours, backs of the hands down, fingers in</item>
+        <item>Lean in lightly</item>
+        <item>Breathe, no bouncing</item>
+    </string-array>
+    <string-array name="cues_finger_pulls">
+        <item>One arm long, palm forward</item>
+        <item>Draw each finger back in turn with the other hand</item>
+        <item>Thumb last</item>
+    </string-array>
+    <string-array name="cues_forearm_stretch">
+        <item>Arm long, palm up</item>
+        <item>Draw the fingers down and back with the other hand</item>
+        <item>Hold, elbow straight</item>
+    </string-array>
+    <string-array name="cues_cat_cow">
+        <item>On all fours, hands under the shoulders</item>
+        <item>Round the back to the ceiling, chin tucked</item>
+        <item>Let it sink and look ahead</item>
+    </string-array>
+    <string-array name="cues_childs_pose">
+        <item>Kneel with the knees wide</item>
+        <item>Sit back to the heels, arms long</item>
+        <item>Forehead down, breathe into the back</item>
+    </string-array>
+    <string-array name="cues_cobra">
+        <item>Face down, hands under the shoulders</item>
+        <item>Press the chest up</item>
+        <item>Hips heavy, shoulders down</item>
+    </string-array>
+    <string-array name="cues_downward_dog">
+        <item>Hands and feet down, hips high</item>
+        <item>Back long, heels toward the mat</item>
+        <item>Bend one knee, then the other</item>
+    </string-array>
+    <string-array name="cues_half_split">
+        <item>From a low lunge, sit back onto the back knee</item>
+        <item>Front leg straight, toes up</item>
+        <item>Fold over it with a long back</item>
+    </string-array>
+    <string-array name="cues_forward_fold">
+        <item>Feet hip width, knees soft</item>
+        <item>Hang from the hips</item>
+        <item>Let the head go</item>
+    </string-array>
+    <string-array name="cues_pigeon">
+        <item>Front shin across, back leg long</item>
+        <item>Square the hips</item>
+        <item>Fold forward over the shin</item>
+    </string-array>
+    <string-array name="cues_lying_twist">
+        <item>On your back, one knee across the body</item>
+        <item>Both shoulders down</item>
+        <item>Look the other way</item>
+    </string-array>
 </resources>

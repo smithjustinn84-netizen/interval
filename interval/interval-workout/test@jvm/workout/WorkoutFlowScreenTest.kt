@@ -4,7 +4,6 @@ package dev.justinsmith.interval.workout
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -145,9 +144,9 @@ class WorkoutFlowScreenTest {
     }
 
     @Test
-    fun `a flow of stretches has no figure`() = runUiTest {
+    fun `a stretch runs with its figure too`() = runUiTest {
         setThemedContent { Screen(lungeLeft.toUiState(running = true, flows = builtInFlows)) }
-        onNode(hasContentDescription("How ", substring = true)).assertDoesNotExist()
+        onNodeWithContentDescription("How Hip flexor lunge goes").assertExists()
     }
 
     @Test
