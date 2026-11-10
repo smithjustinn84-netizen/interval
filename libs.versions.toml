@@ -4,7 +4,7 @@
 
 [versions]
 androidx-activity-compose = "1.13.0"
-androidx-core-ktx = "1.18.0"
+androidx-core-ktx = "1.19.1"
 androidx-core-splashscreen = "1.2.0"
 androidx-datastore = "1.3.0"
 androidx-glance = "1.2.0"
@@ -13,7 +13,7 @@ androidx-health-connect = "1.1.0"
 androidx-lifecycle = "2.11.0"
 # Two refs on purpose: the runtime is Google's androidx artifact and the UI is JetBrains' multiplatform
 # port, released on different cadences. navigation3-ui 1.2.0 was built against navigation3-runtime 1.2.0.
-androidx-navigation3-runtime = "1.2.0"
+androidx-navigation3-runtime = "1.2.1"
 androidx-navigation3-ui = "1.2.0"
 # Keep sqlite (the bundled driver) at the version room-runtime resolves: `./kotlin show dependencies -m shared`.
 androidx-room = "2.8.5"
@@ -24,7 +24,7 @@ compose-material3-navigation-suite = "1.12.0-alpha03"
 # compose-rules 0.6.8 is built against detekt 2.0.0-alpha.6; bump the two together.
 compose-rules = "0.6.8"
 # Headless components drawn from Interval tokens. One version for every composeunstyled-* module.
-composeunstyled = "2.10.1"
+composeunstyled = "2.10.2"
 detekt = "2.0.0-alpha.6"
 kermit = "2.2.0"
 koin = "4.2.2"
