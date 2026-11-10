@@ -31,7 +31,7 @@ val builtInFlows: List<Flow> = listOf(
     // The five minutes worth doing every day: the spine, the hips, the squat, the upper back and the backs of the
     // legs, once through. Ahead of the wrists, so five minutes picked on Today are spent on it.
     Flow(
-        key = "daily-five",
+        key = DAILY_FIVE_KEY,
         name = "Daily five",
         use = FlowUse.After,
         note = "every day",

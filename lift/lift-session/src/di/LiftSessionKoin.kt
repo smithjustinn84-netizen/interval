@@ -1,5 +1,6 @@
 package dev.justinsmith.lift.di
 
+import dev.justinsmith.lift.data.LiftReadiness
 import dev.justinsmith.lift.history.LiftDetailViewModel
 import dev.justinsmith.lift.platform.ActiveTimers
 import dev.justinsmith.lift.platform.LiftVoice
@@ -43,7 +44,7 @@ val liftSessionModule: Module = module {
     }
     factory { TodayPlanEditor(get(), get(), get()) }
     factory { FinishSession(get(), get(), get(), get(), get(), get(), get(), get()) }
-    factory { EasierDay(get(), get(), get(), get(), get(), get(), get()) }
+    factory { EasierDay(get(), get(), get(), get(), get(), get(), get()) } bind LiftReadiness::class
     viewModel {
         SessionViewModel(
             get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),

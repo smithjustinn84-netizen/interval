@@ -18,15 +18,15 @@
     <action>Tap "Back"</action>
     <action>Verify that "BJJ" is written under today's dot on the week, which is the plain one of a rest day</action>
     <action>Verify that the card under the week reads "Before class" over "Before rolling" and "Mobility · 6 moves · before BJJ · 9:00", with a "Start" button</action>
-    <action>Verify that "Also today" lists "BJJ class" with "Counts toward your week" and "Log it"</action>
+    <action>Verify that a line under the title reads today's weekday and "class day" over "Today is for the mat. Loosen up first.", and that the card's second step is "BJJ class" with "Counts toward your week" and "Log it"</action>
     <action>Tap "Log it"</action>
     <action>Verify that a notice says "BJJ class logged" with "Undo"</action>
-    <action>Verify that today's dot on the week is filled and checked, the week card counts "1 workout" and the card under it says "Nothing more due"</action>
+    <action>Verify that today's dot on the week is filled and checked, the week card counts "1 workout", the card under it says "Done for today" with "BJJ class" ticked and no "Start" shows, and the card after it says "Nothing more due"</action>
     <action>Tap "Undo"</action>
-    <action>Verify that "Before class" leads again with "BJJ class" and its "Log it" under "Also today", and today's dot is the plain one again</action>
+    <action>Verify that "Before class" leads again with "BJJ class" and its "Log it" as the step after it, and today's dot is the plain one again</action>
     <action>Tap "Start" and verify that the workout shows "Get ready" with "90/90 hip switch" and "Move 1 of 6"</action>
     <action>Tap "Skip" until the summary shows "6 moves", then tap "Done"</action>
-    <action>Verify that Today now shows "Up next · Today" with "BJJ class" and "Counts toward your week" over a "Log it" button, with no "Before class" and no "Also today", and the week counts "1 workout" and "1 mobility"</action>
+    <action>Verify that Today's card now shows "Before rolling" ticked, then "Up next · Today" with "BJJ class" and "Counts toward your week" over a "Log it" button, with no "Before class", and the week counts "1 workout" and "1 mobility"</action>
     <action>Tap the "Log" tab</action>
     <action>Tap today's dot on the week</action>
     <action>Verify that the day sheet shows "BJJ class" reading "Every" and today's weekday, with "Log it"</action>
@@ -39,8 +39,8 @@
     <action>Tap the "Train" tab, then "Programs", and follow "15-minute kettlebell plan"</action>
     <action>Tap the "Today" tab</action>
     <action>Verify that "Up next · Today" still leads with "BJJ class" and "Log it" (the flow is done for today)</action>
-    <action>Verify that "Also today" lists "15-minute kettlebell plan" with "about 15 min" and "Do it now", and no "Start day 1" shows</action>
+    <action>Verify that the step after it is "15-minute kettlebell plan" under "If there is time", with "about 15 min" and "Do it now", and no "Start day 1" shows</action>
     <action>Tap "Log it"</action>
-    <action>Verify that "Up next · Today" now shows "15-minute kettlebell plan" with "Start day 1" and "Also today" is gone</action>
+    <action>Verify that the card now says "Done for today" under a line ending "done" and "That is the day.", and that "15-minute kettlebell plan" waits in the card after it under "If there is time" with "Do it now" and no "Start day 1"</action>
   </actions>
 </journey>

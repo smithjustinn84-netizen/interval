@@ -9,7 +9,8 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * `journeys/sport-days.xml`: a class or a day on the wall, trained away from the app, goes on the plan, shows on
  * the week beside the workouts done here, and is logged with one tap, which counts it toward the week. On its day
- * a flow to do before it leads Today, with the class beside it.
+ * a flow to do before it leads Today, with the class the step after it; the program's day stands back for spare
+ * time, and once the class is logged the day is done.
  */
 class SportDaysAcceptanceTest {
     // The app's clock starts on Thursday 1 January 1970.
@@ -22,7 +23,8 @@ class SportDaysAcceptanceTest {
 
         seeTodayTab()
         seeSportOnTheWeek("Today, BJJ planned")
-        seeAlsoToday("BJJ class")
+        seeCoachSays("class day", "Today is for the mat. Loosen up first.")
+        seeStepAfter("BJJ class")
     }
 
     @Test
@@ -31,17 +33,18 @@ class SportDaysAcceptanceTest {
         planSportEvery("BJJ", weekday = "Thursday")
         goBack()
 
-        seeAlsoToday("BJJ class")
+        seeStepAfter("BJJ class")
         logClassFromToday()
         seeSportOnTheWeek("Today, done, BJJ logged")
         seeThisWeekOnToday("1 workout")
+        seeDoneForToday()
         seeNothingMoreDue()
         sportDaysLogged(1)
 
         undoNotice()
         sportDaysLogged(0)
         seeSportOnTheWeek("Today, BJJ planned")
-        seeAlsoToday("BJJ class")
+        seeStepAfter("BJJ class")
     }
 
     @Test
@@ -51,7 +54,7 @@ class SportDaysAcceptanceTest {
         goBack()
 
         seeFlowLeads("Before class", "Before rolling")
-        seeAlsoToday("BJJ class")
+        seeStepAfter("BJJ class")
         startFlowFromToday()
         seePhase("Get ready")
         seeMove("Hip escape", "Move 1 of 6")
@@ -77,11 +80,11 @@ class SportDaysAcceptanceTest {
         goBack()
 
         seeFlowLeads("Before climbing", "Wrists and fingers")
-        seeAlsoToday("Climbing")
+        seeStepAfter("Climbing")
     }
 
     @Test
-    fun `on a class day the program steps back and returns once the class is logged`() = acceptanceScenario(
+    fun `on a class day the program steps back and waits once the class is logged`() = acceptanceScenario(
         lift = FakeLiftStorage().apply {
             val program = ProgramId.FifteenMinuteKettlebell.name
             following.row.value = FollowingEntity(programId = program, startedAtEpochMillis = 0)
@@ -97,18 +100,20 @@ class SportDaysAcceptanceTest {
         openTab("Today")
 
         seeFlowLeads("Before class", "Before rolling")
-        seeAlsoToday("BJJ class")
-        seeAlsoToday("15-minute kettlebell plan")
+        seeStepAfter("BJJ class")
+        seeStepAfter("15-minute kettlebell plan")
         seeProgramDayStandsBack()
 
+        // The class logged, that is the day: the program's day stands back still, to do if there is time.
         logClassFromToday()
         sportDaysLogged(1)
-        seeUpNext("15-minute kettlebell plan")
-        seeProgramDayLeads()
+        seeDoneForToday()
+        seeStepAfter("15-minute kettlebell plan")
+        seeProgramDayStandsBack()
     }
 
     @Test
-    fun `the program's day starts from beside the class`() = acceptanceScenario(
+    fun `the program's day starts from its step after the class`() = acceptanceScenario(
         lift = FakeLiftStorage().apply {
             val program = ProgramId.FifteenMinuteKettlebell.name
             following.row.value = FollowingEntity(programId = program, startedAtEpochMillis = 0)
@@ -120,27 +125,27 @@ class SportDaysAcceptanceTest {
         goBack()
         openTab("Today")
 
-        seeAlsoToday("15-minute kettlebell plan")
+        seeStepAfter("15-minute kettlebell plan")
         doProgramDayNow()
         seeLiftingPage()
     }
 
     @Test
-    fun `a workout planned on a class day still leads and the class is logged beside it`() = acceptanceScenario {
+    fun `a workout planned on a class day leads and the class is the step after it`() = acceptanceScenario {
         openPlanFromToday()
         planAnyLiftSessionEvery("Thursday")
         planSportEvery("BJJ", weekday = "Thursday")
         goBack()
 
         seeUpNext("Lift session")
-        seeAlsoToday("BJJ class")
+        seeStepAfter("BJJ class")
         seeNoFlowSuggested()
         logClassFromToday()
 
         seeSportOnTheWeek("Today, done, BJJ logged")
         sportDaysLogged(1)
         seeUpNext("Lift session")
-        seeNo("Also today")
+        seeNo("If there is time")
     }
 
     @Test

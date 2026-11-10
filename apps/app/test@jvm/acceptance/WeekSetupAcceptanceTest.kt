@@ -202,9 +202,9 @@ class WeekSetupAcceptanceTest {
         buildMyWeek()
 
         weekHolds(1, programDays = 3, program = ProgramId.KettlebellFoundations, bells = listOf(12.0), goal = 4)
-        // Thursday is the wall's day: the wrists come first, with the day to log beside them.
+        // Thursday is the wall's day: the wrists come first, with the day to log the step after them.
         seeFlowLeads("Before climbing", "Wrists and fingers")
-        seeAlsoToday("Climbing")
+        seeStepAfter("Climbing")
     }
 
     @Test

@@ -1,6 +1,11 @@
 package dev.justinsmith.interval.acceptance
 
+import androidx.compose.ui.test.hasText
 import dev.justinsmith.lift.data.FollowingEntity
+import dev.justinsmith.lift.data.SessionEntity
+import dev.justinsmith.lift.data.SetEntity
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlin.test.Test
@@ -93,6 +98,9 @@ class TodayAcceptanceTest {
             following.row.value = FollowingEntity(programId = program, startedAtEpochMillis = 0)
         },
     ) {
+        // The program's day leads, so the picks are folded under it.
+        seePicksFolded(minutes = 10)
+        openSomethingElse()
         pickMinutes(10)
         seeNoStrengthPick(minutes = 15)
         pickMinutes(15)
@@ -100,4 +108,48 @@ class TodayAcceptanceTest {
         tap("Start day 1")
         seeLiftingPage()
     }
+
+    @Test
+    fun `a day with nothing planned is a rest day and tomorrow's stands back`() = acceptanceScenario {
+        openPlanFromToday()
+        planSportEvery("BJJ", weekday = "Friday")
+        goBack()
+
+        // The app's clock starts on a Thursday.
+        seeCoachSays("rest day", "Nothing is planned today. Rest is part of the week.")
+        see("Rest day")
+        see("Nothing due until tomorrow")
+        see("Up next · Tomorrow")
+        see("BJJ class")
+        seeNo("Log it")
+        seePicksFolded(minutes = 10)
+    }
+
+    @Test
+    fun `after a very hard session today says so and starts the program's day easier`() = acceptanceScenario(
+        lift = FakeLiftStorage().apply {
+            // A session finished an hour before the clock's start, said to have felt very hard.
+            val at = -HOUR_MILLIS
+            sessions.sets.value += SetEntity(0, "hard", BuiltInExercise.Snatch.key, 24.0, 20, null, at)
+            sessions.sessions.value += SessionEntity(
+                "hard",
+                at - HOUR_MILLIS,
+                at,
+                "Snatches",
+                at,
+                effort = PerceivedEffort.VeryHard.level,
+            )
+            following.row.value = FollowingEntity(programId = ProgramId.BjjKettlebell.name, startedAtEpochMillis = 0)
+        },
+    ) {
+        seeCoachSays("strength day", "The last session felt very hard. Take today a notch easier.")
+        see("Easier today")
+        tap("Start day 1, easier")
+        // The ABC on the minute is thrown: its 15 minutes are 12 already, with no offer left to take.
+        see("Start EMOM")
+        see(hasText("1 of 12 sets", substring = true))
+        sessionIsEased()
+    }
 }
+
+private const val HOUR_MILLIS = 3_600_000L

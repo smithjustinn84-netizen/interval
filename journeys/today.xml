@@ -2,7 +2,8 @@
   <description>
     The app opens on Today. With nothing planned it leads to Set up and to the plan; a session planned for today is up next
     there and starts from it; a preset that fits a few minutes starts from "Or pick by time", and so does the
-    flow that fits; and a program followed puts its next day up next, saying about how long it takes. Run on a fresh install
+    flow that fits; and a program followed puts its next day up next, saying about how long it takes. A line under the title says what
+    kind of day it is; once today's steps are done the day says so, and a day with nothing planned is a rest day. Run on a fresh install
     (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
@@ -23,12 +24,13 @@
     <action>Verify that Today shows "Up next · Today" with "Lift session" and a "Start session" button</action>
     <action>Tap "Start session"</action>
     <action>Tap "Log set", then "Finish", then "Done"</action>
-    <action>Verify that the Today tab is shown, "This week" reads "1 workout" with today's dot filled and checked in the accent, and the card under it says "Nothing more due" with "Edit plan", not "Nothing planned"</action>
+    <action>Verify that the Today tab is shown, "This week" reads "1 workout" with today's dot filled and checked in the accent, a line under the title ends "done" over "That is the day.", the card under the week says "Done for today" with "Lift session" ticked and no "Start" shows, and the card after it says "Nothing more due" with "Edit plan", not "Nothing planned"</action>
     <action>Tap "Edit plan", remove "Lift session" from today's weekday row in "Routine" (its "Remove" button), then tap "Back"</action>
     <action>Tap the "Train" tab, which opens on "Strength", tap "Follow a program", scroll to "15-minute kettlebell plan", tap it and tap "Follow this program"</action>
     <action>Tap the "Today" tab</action>
     <action>Verify that Today shows "Up next · Today" with "15-minute kettlebell plan", a line starting "about 15 min" before "Day 1 of 18 · week 1", and a "Start day 1" button</action>
     <action>Tap the "15-minute kettlebell plan" title and verify that a sheet opens with "Strength · about 15 min", the day's lifts each with its sets, "Start day 1" and "Plan for later"; tap outside it to close it</action>
-    <action>Tap "15 min" under "Or pick by time" and verify that "15-minute kettlebell plan" leads the picks with "Strength · Day 1 of 18 · week 1" and "15 min"; tap "10 min" and verify that it is gone</action>
+    <action>Verify that the picks are folded to a row "Something else" over "Pick by time" and the length picked; tap it, then tap "15 min" under "Or pick by time" and verify that "15-minute kettlebell plan" leads the picks with "Strength · Day 1 of 18 · week 1" and "15 min"; tap "10 min" and verify that it is gone</action>
+    <action>Tap "Edit plan" (or the week card's goal chip) to open the plan, add "Tabata" to tomorrow's weekday row and unfollow the program on Train's Strength pillar; back on Today (with nothing done today, on a fresh day) verify a line ending "rest day" over "Nothing is planned today. Rest is part of the week.", a card "Rest day" with "Nothing due until tomorrow" and "Daily five" under "If moving feels good" with a quiet "Start", and under it "Up next · Tomorrow" with "Tabata" and "Do it today", with no raised Start on the tab</action>
   </actions>
 </journey>

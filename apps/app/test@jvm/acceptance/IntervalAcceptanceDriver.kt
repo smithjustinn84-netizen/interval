@@ -44,6 +44,7 @@ import dev.justinsmith.interval.ui.AcceptanceSteps
 import dev.justinsmith.interval.ui.JOURNEY_TIMEOUT
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.performClick
+import dev.justinsmith.lift.data.LiftRepository
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlin.test.assertEquals
 import kotlin.time.Duration
@@ -234,6 +235,15 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         tap("Plan your week")
         see("Weekly goal")
     }
+
+    /** On a day with its plan the picks by time are folded to a row: this opens them. */
+    fun openSomethingElse() {
+        tap("Something else")
+        see("Or pick by time")
+    }
+
+    /** The picks by time folded to their row, which says the length picked. */
+    fun seePicksFolded(minutes: Int) = see("Pick by time · $minutes min")
 
     /** Or pick by time: one of its lengths, which the presets under it then fit. */
     fun pickMinutes(minutes: Int) = tap(hasText("$minutes min") and isSelectable())
@@ -464,13 +474,29 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     /** A day of the week strip as it is read out, its sport after its state: "Today, BJJ planned". */
     fun seeSportOnTheWeek(day: String) = see(hasContentDescription(day))
 
-    /** Today's Log it: the class's own when it leads, or its row's under "Also today". */
+    /** Today's Log it: the class's own when it leads the day, or its step's after what does. */
     fun logClassFromToday() = tap("Log it")
 
-    /** What stands beside the lead on a class day, under its own heading. */
-    fun seeAlsoToday(name: String) {
-        see("Also today")
+    /** A step of today's after the one that leads, in the day's card. */
+    fun seeStepAfter(name: String) = see(name)
+
+    /** The line over the day: what kind of day it is, and what there is to say of it. */
+    fun seeCoachSays(kind: String, words: String) {
+        see(hasText(kind, substring = true))
+        see(words)
+    }
+
+    /** Everything today asked for is done: the card says so, with no Start left on the tab. */
+    fun seeDoneForToday() {
+        see("Done for today")
+        seeNo("Start")
+    }
+
+    /** What comes after today stands back under its day, with only a quiet way to do it today. */
+    fun seeNextStandsBack(day: String, name: String) {
+        see("Up next · $day")
         see(name)
+        see("Do it today")
     }
 
     /** A flow to do before the day's sport, leading Today under what it is before, with the lead's own Start. */
@@ -480,7 +506,9 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         see("Start")
     }
 
-    fun seeNoFlowSuggested() = seeNo(hasText("Before ", substring = true))
+    /** No flow leads under what it comes before; one done today is ticked by its own name, which may say "Before". */
+    fun seeNoFlowSuggested() =
+        seeNo(hasText("Before class") or hasText("Before climbing") or hasText("Before your run"))
 
     /** The lead's own Start: the flow runs, with the Timer left as it is. */
     fun startFlowFromToday() = tap("Start")
@@ -488,13 +516,22 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     /** The program's day as Today's lead: its Start is the big one, by the day's number. */
     fun seeProgramDayLeads() = see(hasText("Start day", substring = true))
 
-    /** The program's day stood back beside the class: no Start of its own, only "Do it now". */
+    /** The program's day stood back behind the class, for spare time: no Start of its own, only "Do it now". */
     fun seeProgramDayStandsBack() {
         seeNo(hasText("Start day", substring = true))
+        see("If there is time")
         see("Do it now")
     }
 
     fun doProgramDayNow() = tap("Do it now")
+
+    /** The session under way has its plan eased, as Today started it: the easier day is taken, not offered again. */
+    fun sessionIsEased() {
+        waitFor("the session's plan eased") {
+            app.koin.koin.get<LiftRepository>().sessions.active.value?.plan != null
+        }
+        seeNo("Use it")
+    }
 
     /** Lifting is open on a session, with a set to log. */
     fun seeLiftingPage() = see("Log set")

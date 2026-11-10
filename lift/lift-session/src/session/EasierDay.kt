@@ -4,6 +4,7 @@ import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.lift.data.GearStore
 import dev.justinsmith.lift.data.IntervalActivity
+import dev.justinsmith.lift.data.LiftReadiness
 import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.data.SetStore
@@ -41,7 +42,8 @@ data class EasierOffer(val reason: ReadinessReason, val lighterDay: Int? = null)
  * The easier day a program day's session is offered before its first set, while its plan is as programmed: how
  * ready the lifter is comes from the sessions finished, the BJJ logged ([IntervalActivity.sportDays]) and the
  * grip, 15:15's snatches in it; [use] makes today's plan easier ([SessionPlan.easier]): grinds a bell down,
- * ballistics shorter, rests by tempo. Once used, or once a set is logged, it is offered no more.
+ * ballistics shorter, rests by tempo. Once used, or once a set is logged, it is offered no more. It is the
+ * [LiftReadiness] Today reads too: why the day is a taxed one, and whether the program's day to come can be eased.
  */
 class EasierDay(
     private val sessionStore: SessionStore,
@@ -51,7 +53,7 @@ class EasierDay(
     private val intervals: IntervalActivity,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
-) {
+) : LiftReadiness {
     /** The offer for the session in progress; null with none to make. */
     val offer: Flow<EasierOffer?> = combine(
         sessionStore.active,
@@ -82,6 +84,33 @@ class EasierDay(
         check(sessions, workouts.snatchSets.sets, sportDays.filter { it.grappling }.map { it.epochDay })
             .readiness == Readiness.Taxed
     }
+
+    override val taxedBy: Flow<ReadinessReason?> = combine(
+        sessionStore.sessions,
+        intervals.sportDays,
+        intervals.workouts,
+    ) { sessions, sportDays, workouts ->
+        val check = check(sessions, workouts.snatchSets.sets, sportDays.filter { it.grappling }.map { it.epochDay })
+        check.reason?.takeIf { check.readiness == Readiness.Taxed }
+    }
+
+    override val easierAhead: Flow<Boolean> = combine(
+        sessionStore.active,
+        sessionStore.sessions,
+        combine(intervals.sportDays, intervals.workouts, ::Pair),
+        programStore.programDay,
+        gearStore.bells,
+    ) { active, sessions, (sportDays, workouts), day, _ ->
+        // A session under way is offered its own easier day, on its page.
+        active == null && offerFor(
+            day?.takeIf { !it.program.test },
+            sessions,
+            workouts.snatchSets.sets,
+            sportDays.filter { it.grappling }.map { it.epochDay },
+        ) != null
+    }
+
+    override fun useEasier() = use()
 
     /** Makes today's plan easier, as offered. */
     fun use() {

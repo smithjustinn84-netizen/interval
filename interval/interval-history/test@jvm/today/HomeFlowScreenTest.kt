@@ -56,7 +56,9 @@ class HomeFlowScreenTest {
         onNodeWithText("Up next · Today").assertDoesNotExist()
         onNodeWithText("Before rolling").assertIsDisplayed()
         onNodeWithText("Mobility · 6 moves · before BJJ · 9:00").assertIsDisplayed()
-        onNodeWithText("Also today").assertIsDisplayed()
+        // The day in order: the flow first under the one Start, then the class to log.
+        onNodeWithText("Thursday · class day").assertIsDisplayed()
+        onNodeWithText("Today is for the mat. Loosen up first.").assertIsDisplayed()
         onNodeWithText("BJJ class").assertIsDisplayed()
         onNodeWithText("Start").performClick()
         onNodeWithText("Log it").performClick()

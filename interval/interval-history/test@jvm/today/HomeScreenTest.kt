@@ -9,6 +9,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.isSelectable
@@ -29,12 +30,14 @@ import dev.justinsmith.interval.history.WeekGoal
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
+import dev.justinsmith.interval.timer.flowBefore
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.ReadinessReason
 import dev.justinsmith.lift.domain.program
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -171,7 +174,8 @@ class HomeScreenTest {
         onNodeWithText("BJJ class").assertIsDisplayed()
         onNodeWithText("Counts toward your week").assertIsDisplayed()
         onNodeWithText("Start").assertDoesNotExist()
-        onNodeWithText("Also today").assertDoesNotExist()
+        onNodeWithText("Thursday · class day").assertIsDisplayed()
+        onNodeWithText("Today is for the mat.").assertIsDisplayed()
         onNodeWithText("Log it").performClick()
         assertEquals(listOf("Bjj: BJJ class logged"), logged)
     }
@@ -190,7 +194,7 @@ class HomeScreenTest {
     }
 
     @Test
-    fun `on a class day the program's day sits beside the class and starts from there`() = runUiTest {
+    fun `on a class day the program's day is a step for spare time after the class`() = runUiTest {
         val started = mutableListOf<ProgramKey?>()
         val day = program(ProgramId.PressLadders).day(3)
         val state = empty.copy(
@@ -202,10 +206,11 @@ class HomeScreenTest {
         )
         setThemedContent { HomeScreen(state, HomeActions(onStartLift = { started += it })) }
 
-        // The class leads, to be logged; the program's day is a row under "Also today", with no Start of its own.
+        // The class leads, to be logged; the program's day is the step after it, with no Start of its own.
+        onNodeWithText("Thursday · climbing day").assertIsDisplayed()
         onNodeWithText("Climbing").assertIsDisplayed()
         onNodeWithText("Log it").assertIsDisplayed()
-        onNodeWithText("Also today").assertIsDisplayed()
+        onNodeWithText("If there is time").assertIsDisplayed()
         onNodeWithText("Press ladders 1-2-3").assertIsDisplayed()
         onNodeWithText("about 35 min · Day 3 of", substring = true).assertIsDisplayed()
         onNodeWithText("Start day 3").assertDoesNotExist()
@@ -214,7 +219,7 @@ class HomeScreenTest {
     }
 
     @Test
-    fun `a workout planned on a class day leads and the class is logged from beside it`() = runUiTest {
+    fun `a workout planned on a class day leads and the class is the step after it`() = runUiTest {
         val events = mutableListOf<String>()
         val state = empty.copy(
             upNext = listOf(
@@ -233,8 +238,8 @@ class HomeScreenTest {
             )
         }
 
-        onNodeWithText("Also today").assertIsDisplayed()
         onNodeWithText("Counts toward your week").assertIsDisplayed()
+        onNodeWithText("If there is time").assertDoesNotExist()
         onNodeWithText("Log it").performClick()
         onNodeWithText("Start").performClick()
         assertEquals(listOf("BJJ class logged", "start HIIT 30/30"), events)
@@ -303,6 +308,148 @@ class HomeScreenTest {
 
         onNodeWithText("Nothing that short yet").performClick()
         assertEquals(1, opened)
+    }
+
+    @Test
+    fun `what is done today is ticked above the step still to do`() = runUiTest {
+        val logged = mutableListOf<String>()
+        val flow = flowBefore(Sport.Bjj)
+        val state = empty.copy(
+            upNext = listOf(UpNextItem.SportDay(1, THURSDAY, HistoryDay.Today, Sport.Bjj)),
+            done = listOf(DoneStep.Workout(flow.name, flow.config, elapsedSeconds = 540)),
+            hasPlans = true,
+        )
+        setThemedContent { HomeScreen(state, HomeActions(onLogSport = { _, text -> logged += text })) }
+
+        onNodeWithText("Before rolling").assertIsDisplayed()
+        onNodeWithText("9:00").assertIsDisplayed()
+        onNode(hasStateDescription("Done")).assertExists()
+        onNodeWithText("Log it").performClick()
+        assertEquals(listOf("BJJ class logged"), logged)
+    }
+
+    @Test
+    fun `with today's steps done it says so and what comes after waits behind a quiet button`() = runUiTest {
+        val started = mutableListOf<String>()
+        val state = empty.copy(
+            weekGoal = WeekGoal(count = 3, goal = 3),
+            upNext = listOf(
+                UpNextItem.Planned(1, THURSDAY + 1, HistoryDay.Tomorrow, tabataPreset.name, tabataPreset.config),
+                UpNextItem.Planned(2, THURSDAY + 2, HistoryDay.On("Sat"), hiitPreset.name, hiitPreset.config),
+            ),
+            done = listOf(DoneStep.Session("Press ladders", 1_200), DoneStep.SportLogged(Sport.Bjj)),
+            hasPlans = true,
+        )
+        setThemedContent { HomeScreen(state, HomeActions(onStart = { name, _ -> started += name })) }
+
+        onNodeWithText("Thursday · done").assertIsDisplayed()
+        onNodeWithText("That is the day, and the goal for the week is met.").assertIsDisplayed()
+        onNode(hasText("Done for today") and isHeading()).assertIsDisplayed()
+        onNodeWithText("Press ladders").assertIsDisplayed()
+        onNodeWithText("Logged · Counts toward your week").assertIsDisplayed()
+        // Tomorrow's is named, with no raised Start: only a quiet way to do it today.
+        onNodeWithText("Up next · Tomorrow").assertIsDisplayed()
+        onNodeWithText("Start").assertDoesNotExist()
+        onNodeWithText("Then Sat · HIIT 30/30").assertIsDisplayed()
+        onNodeWithText("Do it today").performClick()
+        assertEquals(listOf("Tabata"), started)
+    }
+
+    @Test
+    fun `once the class is logged the program's day waits for spare time and the day is done`() = runUiTest {
+        val started = mutableListOf<ProgramKey?>()
+        val day = program(ProgramId.PressLadders).day(3)
+        val state = empty.copy(
+            upNext = listOf(UpNextItem.Lift(THURSDAY, HistoryDay.Today, day, minutes = 35)),
+            done = listOf(DoneStep.SportLogged(Sport.Bjj)),
+            hasPlans = true,
+        )
+        setThemedContent { HomeScreen(state, HomeActions(onStartLift = { started += it })) }
+
+        onNode(hasText("Done for today") and isHeading()).assertIsDisplayed()
+        onNodeWithText("If there is time").assertIsDisplayed()
+        onNodeWithText("Start day 3").assertDoesNotExist()
+        onNodeWithText("Do it now").performClick()
+        assertEquals(listOf<ProgramKey?>(day.program.key), started)
+    }
+
+    @Test
+    fun `a day with nothing planned is a rest day with a flow to do and tomorrow's standing back`() = runUiTest {
+        val started = mutableListOf<String>()
+        val state = empty.copy(
+            upNext = listOf(
+                UpNextItem.Planned(1, THURSDAY + 1, HistoryDay.Tomorrow, tabataPreset.name, tabataPreset.config),
+            ),
+            hasPlans = true,
+        )
+        setThemedContent { HomeScreen(state, HomeActions(onStart = { name, _ -> started += name })) }
+
+        onNodeWithText("Thursday · rest day").assertIsDisplayed()
+        onNodeWithText("Nothing is planned today. Rest is part of the week.").assertIsDisplayed()
+        onNode(hasText("Rest day") and isHeading()).assertIsDisplayed()
+        onNodeWithText("Nothing due until tomorrow").assertIsDisplayed()
+        onNodeWithText("If moving feels good").assertIsDisplayed()
+        onNodeWithText("Up next · Tomorrow").assertIsDisplayed()
+        onNodeWithText("Start").performClick()
+        onNodeWithText("Do it today").performClick()
+        assertEquals(listOf("Daily five", "Tabata"), started)
+    }
+
+    @Test
+    fun `a taxed day says why and starts the program's day easier unless switched off`() = runUiTest {
+        val started = mutableListOf<String>()
+        val day = program(ProgramId.PressLadders).day(3)
+        val state = empty.copy(
+            upNext = listOf(UpNextItem.Lift(THURSDAY, HistoryDay.Today, day, minutes = 35)),
+            hasPlans = true,
+            taxed = ReadinessReason.Mat,
+            easier = true,
+        )
+        setThemedContent {
+            HomeScreen(
+                state,
+                HomeActions(onStartLift = { started += "as planned" }, onStartLiftEasier = { started += "easier" }),
+            )
+        }
+
+        onNodeWithText("Thursday · strength day").assertIsDisplayed()
+        onNodeWithText("Take today a notch easier.", substring = true).assertIsDisplayed()
+        onNodeWithText("Start day 3, easier").performClick()
+        onNodeWithText("Easier today").performClick()
+        onNodeWithText("Start day 3").performClick()
+        assertEquals(listOf("easier", "as planned"), started)
+    }
+
+    @Test
+    fun `a taxed day with nothing to ease says why and starts the day as it is`() = runUiTest {
+        val day = program(ProgramId.PressLadders).day(3)
+        val state = empty.copy(
+            upNext = listOf(UpNextItem.Lift(THURSDAY, HistoryDay.Today, day, minutes = 35)),
+            hasPlans = true,
+            taxed = ReadinessReason.HardSession,
+        )
+        setThemedContent { HomeScreen(state, HomeActions()) }
+
+        onNodeWithText("The last session felt very hard. Take today a notch easier.").assertIsDisplayed()
+        onNodeWithText("Easier today").assertDoesNotExist()
+        onNodeWithText("Start day 3").assertIsDisplayed()
+    }
+
+    @Test
+    fun `on a day with its plan the picks fold to a row that opens them`() = runUiTest {
+        val state = empty.copy(
+            minutes = 20,
+            upNext = listOf(UpNextItem.Planned(1, THURSDAY, HistoryDay.Today, hiitPreset.name, hiitPreset.config)),
+            hasPlans = true,
+        )
+        setThemedContent { HomeScreen(state, HomeActions()) }
+
+        onNodeWithText("Thursday · conditioning day").assertIsDisplayed()
+        onNodeWithText("Or pick by time").assertDoesNotExist()
+        onNodeWithText("Pick by time · 20 min").assertIsDisplayed()
+        onNodeWithText("Something else").performScrollTo().performClick()
+        onNodeWithText("Or pick by time").assertExists()
+        onNode(option("20 min")).assertExists()
     }
 
     @Test

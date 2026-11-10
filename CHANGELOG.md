@@ -115,6 +115,14 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   block's count-in), and a session opening before its first set says the one due at once.
 
 ### Changed
+- Today lays the day out in order, as a coach would. A line under the title says what kind of day it is and the one
+  thing worth saying of it. The day is one card: what is done is ticked, the step to do now is under the one Start,
+  and the steps after it have quiet buttons, the program's day on a class day under "If there is time". Once nothing
+  is left it says "Done for today", and a class logged ends the day: the lifting waits rather than leading again. A
+  day with nothing planned is a "Rest day" with Daily five to do if moving feels good, and what comes tomorrow
+  stands back behind "Do it today" rather than under Start. After a very hard session, or the mat on a grip that has
+  done more than usual, Today says so and starts the program's day easier unless "Easier today" is switched off.
+  "Or pick by time" is behind "Something else" on a day that has its plan.
 - Five programs are no longer offered: Daily 100 swings + 10 get-ups, Clean and press EMOM, Long cycle EMOM, Grip
   and pull and Bodyweight EMOM. Each is said better by another or is hard on a shoulder, a grip or the knees for
   what it gives. If you follow one you keep it, and the sessions you did of it read as they did.

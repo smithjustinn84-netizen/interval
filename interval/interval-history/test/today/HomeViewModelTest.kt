@@ -17,6 +17,8 @@ import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.ReadinessReason
+import dev.justinsmith.lift.fakes.FakeLiftReadiness
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -34,6 +36,7 @@ class HomeViewModelTest : MainDispatcherTest() {
     private val repository = FakeStorage().repository(now = { clock })
     private val lift = FakeLiftStorage()
     private val bells = lift.repository(now = { clock })
+    private val readiness = FakeLiftReadiness()
     private val savedState = SavedStateHandle()
 
     private fun viewModel() = HomeViewModel(
@@ -43,6 +46,7 @@ class HomeViewModelTest : MainDispatcherTest() {
         repository.plans,
         repository.settings,
         bells.sessions,
+        readiness,
         FixedTimestampFormatter,
         clock = { clock },
         savedState = savedState,
@@ -210,6 +214,69 @@ class HomeViewModelTest : MainDispatcherTest() {
         val done = viewModel().state.value.agenda
         assertIs<UpNextItem.SportDay>(done.lead)
         assertTrue(done.also.isEmpty())
+    }
+
+    @Test
+    fun `the day's steps come in order and what is done today is ticked off them`() {
+        bells.programs.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
+        repository.plans.planOnce(PlanWorkout.SportDay(Sport.Bjj), TODAY)
+
+        val morning = viewModel().state.value.plan
+        assertEquals(3, morning.steps.size)
+        val flow = assertIs<UpNextItem.Flow>(morning.steps[0])
+        assertIs<UpNextItem.SportDay>(morning.steps[1])
+        assertTrue(morning.spare(morning.steps[2]))
+        assertEquals(DayKind.SportDay(Sport.Bjj), morning.kind)
+        assertEquals(CoachNote.ForSport(Sport.Bjj, flowFirst = true), morning.note(taxed = null, goalMet = false))
+        assertTrue(morning.done.isEmpty())
+
+        repository.history.recordWorkout(flow.flow.config(prepSeconds = 10), elapsedSeconds = 540)
+        val warm = viewModel().state.value.plan
+        assertEquals(listOf<DoneStep>(DoneStep.Workout("Before rolling", flow.flow.config(10), 540)), warm.done)
+        assertIs<UpNextItem.SportDay>(warm.steps.first())
+
+        // The class logged, the program's day stands back still: the day is done, and it waits for spare time.
+        repository.history.logSport(Sport.Bjj, TODAY)
+        val evening = viewModel().state.value.plan
+        assertTrue(evening.steps.isEmpty())
+        assertIs<UpNextItem.Lift>(evening.next)
+        assertTrue(evening.waiting)
+        assertEquals(DayKind.Done, evening.kind)
+        assertEquals(CoachNote.DayDone(goalMet = false), evening.note(taxed = null, goalMet = false))
+        assertEquals(DoneStep.SportLogged(Sport.Bjj), evening.done.last())
+    }
+
+    @Test
+    fun `a day with nothing asked of it and plans to come is a rest day`() {
+        repository.plans.planOnce(tabataPreset.asPlan(), TODAY + 1)
+
+        val plan = viewModel.state.value.plan
+        assertTrue(plan.resting)
+        assertFalse(plan.waiting)
+        assertEquals(DayKind.Rest, plan.kind)
+        assertEquals(CoachNote.RestDay, plan.note(taxed = null, goalMet = false))
+        assertIs<UpNextItem.Planned>(plan.next)
+    }
+
+    @Test
+    fun `a taxed day is Lift's reading and starting the day easier uses its easier plan`() {
+        val press = ProgramKey.BuiltIn(ProgramId.PressLadders)
+        bells.programs.follow(press)
+        assertNull(viewModel.state.value.taxed)
+        assertFalse(viewModel.state.value.easier)
+
+        // An easier plan with no taxed day to offer it on is none.
+        readiness.easierAhead.value = true
+        assertFalse(viewModel.state.value.easier)
+        readiness.taxedBy.value = ReadinessReason.Mat
+        val state = viewModel.state.value
+        assertEquals(ReadinessReason.Mat, state.taxed)
+        assertTrue(state.easier)
+        assertEquals(CoachNote.Taxed(ReadinessReason.Mat), state.plan.note(state.taxed, goalMet = false))
+
+        viewModel.startLift(press, easier = true)
+        assertNotNull(bells.sessions.active.value)
+        assertEquals(1, readiness.used)
     }
 
     @Test

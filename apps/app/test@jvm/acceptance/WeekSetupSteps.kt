@@ -92,9 +92,9 @@ fun IntervalAcceptanceDriver.weekHolds(
     assertEquals(goal, app.repository.settings.appSettings.value.weeklyGoal)
 }
 
-/** The session's length is kept, and Today's pick by time stands on it. */
+/** The session's length is kept, and Today's pick by time stands on it, folded to its row under the day's plan. */
 fun IntervalAcceptanceDriver.seeMinutesPicked(minutes: Int) {
-    see(hasText("$minutes min") and isSelected())
+    seePicksFolded(minutes)
     assertEquals(minutes, app.repository.settings.appSettings.value.sessionMinutes)
 }
 

@@ -165,7 +165,11 @@ fun flowBefore(sport: Sport): Flow = builtInFlows.first {
     }
 }
 
+/** The flow for a day off: the five minutes worth doing every day. */
+val restDayFlow: Flow get() = builtInFlows.first { it.key == DAILY_FIVE_KEY }
+
 internal const val HIPS_KEY = "hips-shoulders"
+internal const val DAILY_FIVE_KEY = "daily-five"
 internal const val WRISTS_KEY = "wrists-fingers"
 internal const val FALLS_KEY = "core-falls"
 internal const val BEFORE_ROLLING_KEY = "before-rolling"

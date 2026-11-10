@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,12 +25,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.intl.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.data.FlowStore
-import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.history.PreviewHost
 import dev.justinsmith.interval.history.StartPreview
 import dev.justinsmith.interval.history.SummaryCard
 import dev.justinsmith.interval.history.UpNextItem
-import dev.justinsmith.interval.history.UpNextLater
 import dev.justinsmith.interval.history.dayHeading
 import dev.justinsmith.interval.history.flowKeyOf
 import dev.justinsmith.interval.history.preview
@@ -42,7 +41,6 @@ import dev.justinsmith.interval.history.resources.history_kind_mobility
 import dev.justinsmith.interval.history.resources.history_kind_strength
 import dev.justinsmith.interval.history.resources.history_lift_any
 import dev.justinsmith.interval.history.resources.history_lift_session
-import dev.justinsmith.interval.history.resources.history_start
 import dev.justinsmith.interval.history.resources.history_up_next
 import dev.justinsmith.interval.history.resources.home_before_class
 import dev.justinsmith.interval.history.resources.home_before_climbing
@@ -57,10 +55,9 @@ import dev.justinsmith.interval.history.resources.home_minutes
 import dev.justinsmith.interval.history.resources.home_no_pick
 import dev.justinsmith.interval.history.resources.home_no_pick_hint
 import dev.justinsmith.interval.history.resources.home_pick_by_time
-import dev.justinsmith.interval.history.resources.home_resume_session
+import dev.justinsmith.interval.history.resources.home_pick_time
 import dev.justinsmith.interval.history.resources.home_setup
-import dev.justinsmith.interval.history.resources.home_start_day
-import dev.justinsmith.interval.history.resources.home_start_session
+import dev.justinsmith.interval.history.resources.home_something_else
 import dev.justinsmith.interval.history.resources.home_title
 import dev.justinsmith.interval.history.resources.notice_undo
 import dev.justinsmith.interval.history.resources.preview_open_cd
@@ -88,7 +85,6 @@ import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.SettingsAction
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
-import dev.justinsmith.interval.ui.StartButton
 import dev.justinsmith.interval.ui.StripeMark
 import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.interval.ui.configDescription
@@ -158,6 +154,10 @@ fun HomeRoute(
                 viewModel.startLift(program)
                 startSession()
             },
+            onStartLiftEasier = { program ->
+                viewModel.startLift(program, easier = true)
+                startSession()
+            },
             onLogSport = { sport, loggedText ->
                 val day = viewModel.logSport(sport)
                 notices.show(loggedText, NoticeAction(undo) { viewModel.unlogSport(sport, day) })
@@ -187,6 +187,8 @@ class HomeActions(
     val onStartPick: (Preset) -> Unit = {},
     /** Opens Lifting: on a new day of this program, or with null a free session; either way, on one in progress. */
     val onStartLift: (ProgramKey?) -> Unit = {},
+    /** Opens Lifting on a new day of this program with its plan eased, as Lift offers on a taxed day. */
+    val onStartLiftEasier: (ProgramKey) -> Unit = {},
     /** Logs a day of this sport today, with the line saying so ("BJJ class logged"). */
     val onLogSport: (sport: Sport, loggedText: String) -> Unit = { _, _ -> },
     val onMinutes: (Int) -> Unit = {},
@@ -207,25 +209,33 @@ class HomeActions(
 )
 
 /**
- * Today: the week in a line and a dot a day, then what is up next under the one raised Start, or the ways to a plan
- * while there is none, or a word that the plan is done for now; on a day with a sport, what else the day holds
- * beside what leads it ([AlsoToday]); in a new install's first week, the few things to do once ([FirstWeekCard]);
- * under them the presets that fit the minutes picked, each with a Start of its
- * own. A grid of cards as Lift's tab is, so a wide window sets them side by side. Nothing shows until the first
- * state is built.
+ * Today, laid out as a coach would: a line saying what kind of day it is and the one thing worth saying of it
+ * ([CoachLine]), the week in a line and a dot a day, then the day in order ([DayCard]: what is done ticked off, the
+ * step to do now under the tab's one raised Start, the steps after it behind quiet buttons). Once today's steps
+ * are done it says so ([DoneCard]), a day with none is a rest day ([RestCard]), and what comes after stands back
+ * with a quiet button ([NextCard]); with nothing to come, the ways to a plan, or a word that the plan is done for
+ * now. In a new install's first week, the few things to do once ([FirstWeekCard]). Under them the picks by time,
+ * folded to a row on a day that has its plan. A grid of cards as Lift's tab is, so a wide window sets them side by
+ * side. Nothing shows until the first state is built.
  */
 @Composable
 fun HomeScreen(state: HomeUiState, actions: HomeActions, modifier: Modifier = Modifier) {
     val card = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4)
     // What is being looked at before Start, by where it is: kept by place, so a rotation keeps it open.
     var looking by rememberSaveable { mutableStateOf<String?>(null) }
+    // Whether the picks by time are unfolded, on a day whose plan keeps them to a row.
+    var picking by rememberSaveable { mutableStateOf(false) }
     // Kept while what is up next is: the agenda is worked out again with every state, its lists new each time,
     // which a screen comparing them by instance (iOS) would compose again.
     val agenda = remember(state.upNext) { state.agenda }
+    val plan = state.plan
+    // The line over the day, once there is a day to speak of: a plan, or something done.
+    val coached = !state.loading && (state.hasPlans || plan.done.isNotEmpty())
     TabGrid(
         stringResource(Res.string.home_title),
         modifier,
         actions = { SettingsAction(actions.onOpenSettings) },
+        header = if (coached) ({ Coach(state) }) else null,
     ) {
         if (state.loading) return@TabGrid
         item(key = "week") {
@@ -235,21 +245,18 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, modifier: Modifier = Mo
                 WeekDots(state.week, onDay = { actions.onOpenHistory() })
             }
         }
-        item(key = "next") {
-            when {
-                agenda.lead != null -> UpNext(agenda.lead, agenda.later, actions, { looking = LEAD }, card)
-                state.hasPlans -> NothingDue(actions, card)
-                else -> NothingPlanned(actions, card)
-            }
-        }
-        if (agenda.also.isNotEmpty()) item(key = "also") { AlsoToday(agenda.also, actions, card) }
+        dayItems(state, actions, card, onLook = { looking = LEAD })
         state.firstWeek?.let { week ->
             // A flow or a sport's day in the lead has no workout under its Start: that one is picked by time.
             val leads = agenda.lead is UpNextItem.Planned || agenda.lead is UpNextItem.Lift
             item(key = "first-week") { FirstWeekCard(week, leads, actions, card) }
         }
         item(key = "picks") {
-            Picks(state.minutes, state.strength, state.picks, actions, { looking = "$PICK$it" }, card)
+            if (plan.settled && !picking) {
+                SomethingElse(state.minutes, { picking = true }, card)
+            } else {
+                Picks(state.minutes, state.strength, state.picks, actions, { looking = "$PICK$it" }, card)
+            }
         }
     }
     looking?.let { state.previewAt(it) }?.let { preview ->
@@ -262,6 +269,45 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, modifier: Modifier = Mo
             onPlanOnce = actions.onPlanOnce,
             onDone = { looking = null },
         )
+    }
+}
+
+/** The line over the day: its kind, and what there is to say of it by the week's goal and Lift's reading. */
+@Composable
+private fun Coach(state: HomeUiState) {
+    val goal = state.weekGoal.goal
+    CoachLine(
+        state.week.firstOrNull { it.today }?.weekday,
+        state.plan.kind,
+        state.plan.note(state.taxed, goalMet = goal != null && state.weekGoal.count >= goal),
+        Modifier.padding(horizontal = Spacing.space20).padding(bottom = Spacing.space8),
+    )
+}
+
+/**
+ * The day's cards: its steps while any is left, else that it is done or a rest day; and with no step left, what
+ * comes after standing back, or with nothing to come the ways to a plan.
+ */
+private fun LazyStaggeredGridScope.dayItems(
+    state: HomeUiState,
+    actions: HomeActions,
+    card: Modifier,
+    onLook: () -> Unit,
+) {
+    val plan = state.plan
+    val next = plan.next
+    when {
+        plan.steps.isNotEmpty() -> item(key = "day") { DayCard(plan, state.easier, actions, onLook, card) }
+        plan.done.isNotEmpty() -> item(key = "day") { DoneCard(plan.done, card) }
+        plan.resting && next != null -> item(key = "day") { RestCard(next, actions, card) }
+    }
+    if (plan.steps.isNotEmpty()) return
+    item(key = "next") {
+        when {
+            next != null -> NextCard(next, plan.later, plan.waiting, actions, onLook, card)
+            state.hasPlans -> NothingDue(actions, card)
+            else -> NothingPlanned(actions, card)
+        }
     }
 }
 
@@ -284,76 +330,9 @@ private fun HomeUiState.previewAt(place: String): StartPreview? = when {
     else -> null
 }
 
-/**
- * What is up next, by its day: its name over what it is, its Start, and the first of [later] in a line. A day of
- * a sport has nothing to start: on its day it is logged, and before it only named.
- */
-@Composable
-private fun UpNext(
-    next: UpNextItem,
-    later: List<UpNextItem>,
-    actions: HomeActions,
-    onLook: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val palette = IntervalTheme.palette
-    SummaryCard(modifier) {
-        // What it is opens a look at it; Start, under it, starts it at once.
-        val look = next.preview()?.let { onLook }
-        val described = stringResource(Res.string.preview_open_cd, upNextTitle(next))
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .then(
-                    if (look != null) {
-                        Modifier.clickable(onClickLabel = described, onClick = look)
-                    } else {
-                        Modifier
-                    },
-                ),
-            verticalArrangement = Arrangement.spacedBy(Spacing.space4),
-        ) {
-            Text(upNextCaption(next), style = IntervalTheme.type.caption, color = palette.textDim)
-            Text(upNextTitle(next), style = IntervalTheme.type.value, color = palette.text)
-            Text(upNextDetail(next), style = IntervalTheme.type.meta, color = palette.textDim)
-        }
-        // The card names what it starts, so its Start says no more: "Start", "Start day 3", "Resume session".
-        val start = stringResource(Res.string.history_start)
-        when (next) {
-            is UpNextItem.Planned ->
-                StartButton({ actions.onStart(next.name, next.config) }, Modifier.fillMaxWidth(), label = start)
-
-            is UpNextItem.Lift -> {
-                val day = next.programDay
-                StartButton(
-                    { actions.onStartLift(day?.program?.key.takeUnless { next.resume }) },
-                    Modifier.fillMaxWidth(),
-                    label = when {
-                        next.resume -> stringResource(Res.string.home_resume_session)
-                        day != null -> stringResource(Res.string.home_start_day, day.number)
-                        else -> stringResource(Res.string.home_start_session)
-                    },
-                )
-            }
-
-            is UpNextItem.SportDay ->
-                if (next.day == HistoryDay.Today) LogSportButton(next.sport, actions, Modifier.fillMaxWidth())
-
-            // Started as any workout is, and known for the flow it is by its shape.
-            is UpNextItem.Flow -> StartButton(
-                { actions.onStart(next.flow.name, next.flow.config) },
-                Modifier.fillMaxWidth(),
-                label = start,
-            )
-        }
-        // The next thing alone: Log's Coming up has the rest.
-        UpNextLater(later, count = 1)
-    }
-}
-
 /** The line over what leads: the day it is up next on, or, for a flow suggested, the sport it comes before. */
 @Composable
-private fun upNextCaption(next: UpNextItem): String = when (next) {
+internal fun upNextCaption(next: UpNextItem): String = when (next) {
     is UpNextItem.Flow -> when (val sport = next.sport) {
         Sport.Bjj -> stringResource(Res.string.home_before_class)
         Sport.Climbing -> stringResource(Res.string.home_before_climbing)
@@ -366,7 +345,7 @@ private fun upNextCaption(next: UpNextItem): String = when (next) {
 
 /** What leads Up next: the plan's name, the program's, a session on Lift, a sport's day or a flow. */
 @Composable
-private fun upNextTitle(next: UpNextItem): String = when (next) {
+internal fun upNextTitle(next: UpNextItem): String = when (next) {
     is UpNextItem.Planned -> next.name
 
     is UpNextItem.Flow -> next.flow.name
@@ -379,7 +358,7 @@ private fun upNextTitle(next: UpNextItem): String = when (next) {
 
 /** The line under it: the workout's shape and length, or about how long the program's day takes, its day and lifts. */
 @Composable
-private fun upNextDetail(next: UpNextItem): String = when (next) {
+internal fun upNextDetail(next: UpNextItem): String = when (next) {
     is UpNextItem.Planned -> stringResource(
         Res.string.common_joined,
         workoutDescription(next.config),
@@ -437,6 +416,18 @@ private fun NothingDue(actions: HomeActions, modifier: Modifier = Modifier) {
             Modifier
                 .fillMaxWidth()
                 .padding(start = Spacing.space16, end = Spacing.space16, bottom = Spacing.space16),
+        )
+    }
+}
+
+/** The picks by time, folded to a row on a day that has its plan: the length picked, opening them. */
+@Composable
+private fun SomethingElse(minutes: Int, onOpen: () -> Unit, modifier: Modifier = Modifier) {
+    ListCard(modifier) {
+        LinkRow(
+            stringResource(Res.string.home_something_else),
+            stringResource(Res.string.home_pick_time, stringResource(Res.string.home_minutes, minutes)),
+            onOpen,
         )
     }
 }

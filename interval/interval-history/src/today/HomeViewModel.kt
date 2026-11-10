@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package dev.justinsmith.interval.today
 
 import androidx.lifecycle.SavedStateHandle
@@ -14,6 +16,7 @@ import dev.justinsmith.interval.history.TodayAgenda
 import dev.justinsmith.interval.history.TrainingLog
 import dev.justinsmith.interval.history.UpNextItem
 import dev.justinsmith.interval.history.WeekGoal
+import dev.justinsmith.interval.history.WorkoutNames
 import dev.justinsmith.interval.history.asLiftWorkouts
 import dev.justinsmith.interval.history.dayCell
 import dev.justinsmith.interval.history.keptFrom
@@ -33,15 +36,19 @@ import dev.justinsmith.interval.platform.days
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.lift.data.LiftActivity
+import dev.justinsmith.lift.data.LiftReadiness
 import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.ReadinessReason
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.runningReduce
@@ -68,11 +75,20 @@ data class HomeUiState(
     val picks: List<QuickPick> = emptyList(),
     /** The First week card, while it is on: null for anyone it was never shown to, and once it is hidden. */
     val firstWeek: FirstWeek? = null,
+    /** What is done today, oldest first: the ticks on the day's card. */
+    val done: List<DoneStep> = emptyList(),
+    /** Why today is a day to take easier, as Lift reads it; null on any other. */
+    val taxed: ReadinessReason? = null,
+    /** Whether the program's next day has an easier plan to start it with, on a taxed day. */
+    val easier: Boolean = false,
     /** Not built yet: the screen waits rather than taking it for a day with nothing planned. */
     val loading: Boolean = false,
 ) {
     /** What leads the tab, with its Start or its Log it, what else today holds beside it, and what comes after. */
     val agenda: TodayAgenda = todayAgenda(upNext)
+
+    /** The day in order, as the tab lays it out: what is done, the steps still to do, and what can wait. */
+    val plan: TodayPlan = todayPlan(agenda, done)
 
     companion object {
         /** What the screen shows until the first state is built. */
@@ -96,6 +112,7 @@ class HomeViewModel(
     private val planStore: PlanStore,
     private val settingsStore: SettingsStore,
     private val lift: LiftActivity,
+    private val readiness: LiftReadiness,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
     private val savedState: SavedStateHandle = SavedStateHandle(),
@@ -115,12 +132,22 @@ class HomeViewModel(
     // The dates are formatted here, which outlives a language change, so they are formatted again when it changes.
     private val locale = MutableStateFlow<String?>(null)
 
+    private val days = clock.days(timestamps, dayCheckMillis)
+
     private val built = combine(
         combine(historyStore.history, historyStore.sportDays, lift.lifting(), ::Triple),
         planStore.planned,
         settingsStore.appSettings,
-        combine(clock.days(timestamps, dayCheckMillis), locale) { day, _ -> day },
-    ) { (history, sports, lifting), planned, app, _ -> buildState(history, sports, lifting, planned, app) }
+        combine(presetStore.presets, flowStore.flows, ::WorkoutNames),
+        combine(days, locale) { day, _ -> day },
+    ) { (history, sports, lifting), planned, app, names, _ ->
+        buildState(history, sports, lifting, planned, app, names)
+    }
+
+    /** Lift's reading of the day, taken again as the day turns: it goes by the clock. */
+    private val ready = days.flatMapLatest {
+        combine(readiness.taxedBy, readiness.easierAhead) { taxed, easier -> taxed to (easier && taxed != null) }
+    }.distinctUntilChanged()
 
     private val picks = combine(
         presetStore.presets,
@@ -136,7 +163,7 @@ class HomeViewModel(
     }
 
     val state: StateFlow<HomeUiState> =
-        combine(built, picks) { state, picked ->
+        combine(built, picks, ready) { state, picked, (taxed, easier) ->
             // A flow suggested runs after the get-ready the Timer is set to, as one picked by time does.
             val upNext = state.upNext.map {
                 if (it is UpNextItem.Flow) {
@@ -147,7 +174,14 @@ class HomeViewModel(
                     it
                 }
             }
-            state.copy(minutes = picked.minutes, strength = picked.strength, picks = picked.picks, upNext = upNext)
+            state.copy(
+                minutes = picked.minutes,
+                strength = picked.strength,
+                picks = picked.picks,
+                upNext = upNext,
+                taxed = taxed,
+                easier = easier,
+            )
         }
             .runningReduce { before, now -> now.keepingListsOf(before) }
             .flowOn(computation)
@@ -191,9 +225,14 @@ class HomeViewModel(
         planStore.planOnce(workout, epochDay)
     }
 
-    /** Starts the next day of [program], or a free session with none, for the Lifting page about to open. */
-    fun startLift(program: ProgramKey?) {
+    /**
+     * Starts the next day of [program], or a free session with none, for the Lifting page about to open; [easier]
+     * with its plan eased, as Lift offers on a taxed day.
+     */
+    fun startLift(program: ProgramKey?, easier: Boolean = false) {
         lift.startSession(program)
+        // After the start, on the same writer: the plan eased is the session's just begun.
+        if (easier) readiness.useEasier()
     }
 
     /** Logs a day of [sport] today. Returns the day it went on, for Undo to take off ([unlogSport]). */
@@ -223,6 +262,7 @@ class HomeViewModel(
         lifting: Lifting,
         planned: List<PlannedWorkout>,
         app: AppSettings,
+        names: WorkoutNames,
     ): HomeUiState {
         val today = timestamps.dayNumber(clock.nowMillis())
         val log = TrainingLog(history, planned, today, lifting.sessions.asLiftWorkouts(), sports, timestamps::dayNumber)
@@ -240,6 +280,7 @@ class HomeViewModel(
             ),
             upNext = timestamps.upNext(log, planned, lifting, today),
             hasPlans = planned.isNotEmpty() || lifting.programDay != null,
+            done = log.day(today).doneSteps(names::of),
             firstWeek = if (app.firstWeek) {
                 firstWeek(planned, lifting.programDay != null, history, lifting.sessions.isNotEmpty(), sports)
             } else {
@@ -265,5 +306,6 @@ private data class Picked(
 private fun HomeUiState.keepingListsOf(before: HomeUiState) = copy(
     week = week.keptFrom(before.week),
     upNext = upNext.keptFrom(before.upNext),
+    done = done.keptFrom(before.done),
     picks = picks.keptFrom(before.picks),
 )

@@ -319,7 +319,7 @@ internal fun MostDone(rows: List<ShapeRow>, modifier: Modifier = Modifier) {
 
 /** A day in a line of them: "Today", "Tomorrow", else its weekday, "Fri"; [midSentence], after "Then", "tomorrow". */
 @Composable
-private fun shortDay(day: HistoryDay, epochDay: Long, midSentence: Boolean = false): String = when (day) {
+internal fun shortDay(day: HistoryDay, epochDay: Long, midSentence: Boolean = false): String = when (day) {
     HistoryDay.Today, HistoryDay.Tomorrow, HistoryDay.Yesterday ->
         dayHeading(day).let { if (midSentence) it.replaceFirstChar { first -> first.lowercase() } else it }
 
