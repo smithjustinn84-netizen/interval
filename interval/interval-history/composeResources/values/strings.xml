@@ -187,6 +187,26 @@
     <string name="home_empty_text">Answer four questions and Today picks for you, or plan the week yourself.</string>
     <string name="home_setup">Set up your week</string>
     <string name="home_follow_program">Follow a program</string>
+    <!-- The First week card, on Today from a new install's first open until it is hidden.
+         "First week · 1 of 4": how many of its steps are done. -->
+    <string name="first_week_title">First week · %1$d of %2$d</string>
+    <string name="first_week_hide">Hide</string>
+    <!-- The same button once every step is done -->
+    <string name="first_week_done">Done</string>
+    <string name="first_week_build">Build the week</string>
+    <string name="first_week_build_hint">Four answers in Set up</string>
+    <string name="first_week_workout">Do the first workout</string>
+    <!-- Where the first workout is: under what is up next, or with nothing up next among the picks by time -->
+    <string name="first_week_workout_start">Start, above</string>
+    <string name="first_week_workout_pick">Pick by time, below</string>
+    <string name="first_week_flow">Follow a flow</string>
+    <string name="first_week_flow_hint">Train · Mobility</string>
+    <!-- %1$s is the sport: "Log BJJ", "Log Climbing" -->
+    <string name="first_week_sport">Log %1$s</string>
+    <string name="first_week_sport_hint">Here, on its day</string>
+    <!-- A step's state, for screen readers -->
+    <string name="first_week_step_done">Done</string>
+    <string name="first_week_step_todo">To do</string>
     <string name="home_done_title">Nothing more due</string>
     <string name="home_done_text">What's planned for the next seven days is done. Pick by time, or add to the plan.</string>
     <string name="home_start_session">Start session</string>

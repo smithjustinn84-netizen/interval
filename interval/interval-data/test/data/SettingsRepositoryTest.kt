@@ -184,4 +184,13 @@ class SettingsRepositoryTest {
         repository().settings.updateAppSettings { it.copy(setupOffered = true) }
         assertEquals(true, repository().settings.appSettings.value.setupOffered)
     }
+
+    @Test
+    fun `the first week card stays on after a restart until it is hidden`() {
+        assertEquals(false, repository().settings.appSettings.value.firstWeek)
+        repository().settings.updateAppSettings { it.copy(firstWeek = true) }
+        assertEquals(true, repository().settings.appSettings.value.firstWeek)
+        repository().settings.updateAppSettings { it.copy(firstWeek = false) }
+        assertEquals(false, repository().settings.appSettings.value.firstWeek)
+    }
 }

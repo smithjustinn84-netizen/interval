@@ -6,7 +6,7 @@
     (adb shell pm clear dev.justinsmith.interval), whose default workout matches no preset.
   </description>
   <actions>
-    <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
+    <action>On the welcome, which a fresh install opens on, tap "Skip to Set up", then "Skip for now" on "Set up"</action>
     <action>Tap the "Train" tab, tap "Conditioning", then tap "Timer" at the top of the presets, and verify that the Timer is shown, its total labelled "Custom · Total"</action>
     <action>Tap "All presets" beside "Start workout"</action>
     <action>Verify that Train is shown on "Conditioning", with "New preset" and "Settings" in the title bar and a "Timer" row at the top reading "30s on · 15s off · ×8" with "5:55" at its end</action>

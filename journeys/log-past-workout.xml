@@ -6,7 +6,7 @@
     (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
-    <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
+    <action>On the welcome, which a fresh install opens on, tap "Skip to Set up", then "Skip for now" on "Set up"</action>
     <action>Tap the "Log" tab and verify that it reads "Train to a plan"</action>
     <action>Tap "Plan your week", then the "+" on today's weekday row in "Routine", and in the "Add to plan" sheet tap "Add to plan"</action>
     <action>Tap "Back" and verify that the week shows, today's dot marked planned</action>

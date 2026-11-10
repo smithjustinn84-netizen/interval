@@ -41,6 +41,7 @@ private val WEEKLY_GOAL = intPreferencesKey("weekly_goal")
 private val REMINDER_MINUTE = intPreferencesKey("reminder_minute")
 private val SESSION_MINUTES = intPreferencesKey("session_minutes")
 private val SETUP_OFFERED = booleanPreferencesKey("setup_offered")
+private val FIRST_WEEK = booleanPreferencesKey("first_week")
 
 private val BODY_WEIGHT_KG = doublePreferencesKey("body_weight_kg")
 private val BODY_UNIT = stringPreferencesKey("body_unit")
@@ -112,6 +113,7 @@ internal fun Preferences.toAppSettings(): AppSettings {
         // A length this build doesn't offer reads as none picked.
         sessionMinutes = this[SESSION_MINUTES]?.takeIf { it in AppSettings.SESSION_MINUTES },
         setupOffered = this[SETUP_OFFERED] ?: defaults.setupOffered,
+        firstWeek = this[FIRST_WEEK] ?: defaults.firstWeek,
     )
 }
 
@@ -125,6 +127,7 @@ internal fun MutablePreferences.write(app: AppSettings) {
     val session = app.sessionMinutes
     if (session == null) remove(SESSION_MINUTES) else this[SESSION_MINUTES] = session
     this[SETUP_OFFERED] = app.setupOffered
+    this[FIRST_WEEK] = app.firstWeek
     write(app.body)
 }
 

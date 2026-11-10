@@ -6,7 +6,7 @@
     (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
-    <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
+    <action>On the welcome, which a fresh install opens on, tap "Skip to Set up", then "Skip for now" on "Set up"</action>
     <action>Tap the "Train" tab, which opens on "Strength"</action>
     <action>Tap "Follow a program" and verify that "Strong for life" is listed under "Dan John–inspired" and "One bell beside BJJ" under the grapplers' programs, and that "Grip and pull", "Clean and press EMOM", "Long cycle EMOM", "Bodyweight EMOM" and "Daily 100 swings + 10 get-ups" are not listed; go back</action>
     <action>Tap "Follow a program", scroll to "Simple &amp; Sinister" and tap it</action>

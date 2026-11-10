@@ -6,7 +6,7 @@
     Start day N does. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
-    <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
+    <action>On the welcome, which a fresh install opens on, tap "Skip to Set up", then "Skip for now" on "Set up"</action>
     <action>Tap the "Train" tab, which opens on "Strength", then "Start session"</action>
     <action>Verify that the session shows "Next set" and, under its card, "Do a program day" over "Pick a day of any program to do now"</action>
     <action>Tap "Do a program day"</action>

@@ -7,7 +7,7 @@
     dev.justinsmith.interval), with the voice on and the sound up.
   </description>
   <actions>
-    <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
+    <action>On the welcome, which a fresh install opens on, tap "Skip to Set up", then "Skip for now" on "Set up"</action>
     <action>Tap the "Train" tab, then "Mobility" in the picker, and scroll to "On your own"</action>
     <action>Verify that it holds "Build a flow" with "From the mat exercises and timed holds, or moves of your own"; tap it</action>
     <action>Verify that "Build a flow" opens with a name field, "When it is for" on "After, or on a day off", a note field, "No moves yet: add the first." and "Save flow" dimmed</action>

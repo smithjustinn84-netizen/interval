@@ -1,0 +1,25 @@
+<journey name="Welcome and the first week">
+  <description>
+    A fresh install opens on the welcome, once: what the app is, then a page each for Today, Train and Log, then
+    Set up. From then Today carries a First week card (build the week, do the first workout, follow a flow, and
+    with a sport planned log a day of it), each ticked as it is done, until it is hidden. Someone who had the app
+    before never sees either. Run on a fresh install (adb shell pm clear dev.justinsmith.interval), on a Thursday or
+    with the day below moved to suit.
+  </description>
+  <actions>
+    <action>Open the app and verify that, after the intro, it shows the mark over "Interval", "Strength, conditioning and mobility, in one week.", "Three pages, then four questions.", a "Get started" button and "Skip to Set up", with nothing under the status bar or the gesture bar</action>
+    <action>Tap "Get started" and verify a page headed by the Today tab's icon on the accent beside "Today", titled "Today picks for you", with an example "Up next" card and the minutes 5 to 30, three marks at the top with the first lit, Back and "Skip"</action>
+    <action>Tap the example's "Start" and a minute, and verify that nothing happens</action>
+    <action>Tap "Next" and verify "Three ways to train" under "Train", with Strength, Conditioning and Mobility each over a line of what it holds, and the second mark lit</action>
+    <action>Swipe back (or press Back) and verify that "Today picks for you" is shown again, not Today itself; tap "Next" twice</action>
+    <action>Verify "Everything counts toward the week" under "Log", with a week of dots, "BJJ" under two of them, and "Done", "Today" and "Planned" under the card; turn the phone and verify that the same page is still shown, then turn it back</action>
+    <action>Tap "Set up my week" and verify that "Set up" is shown; tap "Climbing", then T (Thursday), "12" and "20 min", and "Build my week"</action>
+    <action>Verify that Today is shown with "Week built", and under what is up next a card headed "First week · 1 of 4" beside "Hide": "Build the week" ticked and dimmed, then "Do the first workout" over "Start, above", "Follow a flow" over "Train · Mobility" with a chevron, and "Log Climbing" over "Here, on its day"</action>
+    <action>Tap "Log it" beside "Climbing" under "Also today" and verify that the card reads "First week · 2 of 4" with "Log Climbing" ticked</action>
+    <action>Tap "Follow a flow" and verify that Train opens on "Mobility"; start "Daily five", skip to its end, tap "Done", and go back to Today; verify "First week · 3 of 4"</action>
+    <action>Start what is up next, or a pick by time, end it after its first round and tap "Done"; verify that the card reads "First week · 4 of 4" with every row ticked and "Done" where "Hide" was</action>
+    <action>Tap "Done" on the card and verify that it goes; close the app from Recents, open it again and verify that it opens on Today with no welcome and no First week card</action>
+    <action>Clear the app, open it, tap "Skip to Set up" and then "Skip for now"; verify that Today shows "Nothing planned" and "First week · 0 of 3", with no row for a sport, and that "Build the week" opens "Set up"; go back, tap "Hide" and verify that the card goes</action>
+    <action>Clear the app, open it and swipe back on the welcome's first page; verify that Today is shown, and that opening the app again goes to Today</action>
+  </actions>
+</journey>

@@ -9,7 +9,7 @@
     (it cancels alarms), and set the clock back to the host's time at the end.
   </description>
   <actions>
-    <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
+    <action>On the welcome, which a fresh install opens on, tap "Skip to Set up", then "Skip for now" on "Set up"</action>
     <action>Tap the "Log" tab</action>
     <action>Tap "Plan your week"</action>
     <action>Verify that a "Reminder" row reads "Off. Set a time to be reminded on days with a workout planned"</action>

@@ -6,7 +6,7 @@
     balance counts their sets per muscle group. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
-    <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
+    <action>On the welcome, which a fresh install opens on, tap "Skip to Set up", then "Skip for now" on "Set up"</action>
     <action>Tap the "Train" tab, which opens on "Strength"</action>
     <action>Verify that "No sessions yet" is shown and an "Exercises" card says "Bells, barbells, bodyweight, bands and the mat"</action>
     <action>Tap "Start session"</action>

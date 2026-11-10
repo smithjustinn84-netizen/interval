@@ -108,7 +108,7 @@ import org.koin.compose.viewmodel.koinViewModel
  * minutes. [onStartWorkout] opens the workout the Timer was just handed, or the flow it names, which the Timer
  * is not handed, and [onStartSession] the session Lift
  * was just told to start; the rest lead to the plan, Lift's programs, the History tab, the Timer, Settings and
- * Set up, which [onSetup] opens.
+ * Set up, which [onSetup] opens, and Train's Mobility pillar, which [onOpenMobility] does for the First week card.
  */
 @Composable
 fun HomeRoute(
@@ -121,6 +121,7 @@ fun HomeRoute(
     modifier: Modifier = Modifier,
     onOpenSettings: () -> Unit = {},
     onSetup: () -> Unit = {},
+    onOpenMobility: () -> Unit = {},
 ) {
     val viewModel = koinViewModel<HomeViewModel>()
     // Read as a start is tapped: a flow of the user's starts as itself, as a shipped one does.
@@ -137,6 +138,7 @@ fun HomeRoute(
     val openTimer by rememberUpdatedState(onOpenTimer)
     val openSettings by rememberUpdatedState(onOpenSettings)
     val setup by rememberUpdatedState(onSetup)
+    val openMobility by rememberUpdatedState(onOpenMobility)
     val notices = LocalNotices.current
     val undo = stringResource(Res.string.notice_undo)
     val actions = remember(viewModel, notices, undo) {
@@ -169,6 +171,8 @@ fun HomeRoute(
             onOpenTimer = { openTimer() },
             onOpenSettings = { openSettings() },
             onSetup = { setup() },
+            onOpenMobility = { openMobility() },
+            onHideFirstWeek = viewModel::hideFirstWeek,
         )
     }
     HomeScreen(state, actions, modifier)
@@ -196,12 +200,17 @@ class HomeActions(
     val onOpenSettings: () -> Unit = {},
     /** Opens Set up, which builds a week from four answers. */
     val onSetup: () -> Unit = {},
+    /** Opens Train's Mobility pillar, where the flows are. */
+    val onOpenMobility: () -> Unit = {},
+    /** Puts the First week card away for good. */
+    val onHideFirstWeek: () -> Unit = {},
 )
 
 /**
  * Today: the week in a line and a dot a day, then what is up next under the one raised Start, or the ways to a plan
  * while there is none, or a word that the plan is done for now; on a day with a sport, what else the day holds
- * beside what leads it ([AlsoToday]); under them the presets that fit the minutes picked, each with a Start of its
+ * beside what leads it ([AlsoToday]); in a new install's first week, the few things to do once ([FirstWeekCard]);
+ * under them the presets that fit the minutes picked, each with a Start of its
  * own. A grid of cards as Lift's tab is, so a wide window sets them side by side. Nothing shows until the first
  * state is built.
  */
@@ -232,6 +241,11 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, modifier: Modifier = Mo
             }
         }
         if (agenda.also.isNotEmpty()) item(key = "also") { AlsoToday(agenda.also, actions, card) }
+        state.firstWeek?.let { week ->
+            // A flow or a sport's day in the lead has no workout under its Start: that one is picked by time.
+            val leads = agenda.lead is UpNextItem.Planned || agenda.lead is UpNextItem.Lift
+            item(key = "first-week") { FirstWeekCard(week, leads, actions, card) }
+        }
         item(key = "picks") { Picks(state, actions, { looking = "$PICK$it" }, card) }
     }
     looking?.let { state.previewAt(it) }?.let { preview ->

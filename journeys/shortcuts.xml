@@ -4,7 +4,8 @@
     over its tab, and a workout already running is kept; a workout started from a shortcut with the app closed
     comes back from its notification as one app, not two. Run on a fresh install (adb shell pm clear
     dev.justinsmith.interval). The app's icon is the one on the home screen or, without one there, in All apps. A
-    shortcut never opens "Set up": it waits for the first open from the icon itself, where "Skip for now" leaves it.
+    shortcut never opens the welcome or "Set up": they wait for the first open from the icon itself, where "Skip to Set up" and
+    "Skip for now" leave them.
   </description>
   <actions>
     <action>Long-press the app's icon on the home screen</action>

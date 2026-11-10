@@ -85,6 +85,7 @@ import dev.justinsmith.interval.nav.Tab
 import dev.justinsmith.interval.nav.Timer
 import dev.justinsmith.interval.nav.TodayTab
 import dev.justinsmith.interval.nav.WeekSetup
+import dev.justinsmith.interval.nav.Welcome
 import dev.justinsmith.interval.nav.Workout
 import dev.justinsmith.interval.nav.WorkoutDetail
 import dev.justinsmith.interval.nav.push
@@ -130,6 +131,7 @@ import dev.justinsmith.interval.weeksetup.WeekSetupRoute
 import dev.justinsmith.interval.weeksetup.isSetupTurn
 import dev.justinsmith.interval.weeksetup.nothingYet
 import dev.justinsmith.interval.weeksetup.opensOnSetup
+import dev.justinsmith.interval.welcome.WelcomeRoute
 import dev.justinsmith.interval.workout.WorkoutRoute
 import dev.justinsmith.lift.data.LiftRepository
 import dev.justinsmith.lift.nav.LiftDetail
@@ -174,6 +176,7 @@ internal val navConfiguration = SavedStateConfiguration {
             subclass(Plan::class)
             subclass(Presets::class)
             subclass(WeekSetup::class)
+            subclass(Welcome::class)
             subclass(FlowEditor::class)
             liftRoutes()
         }
@@ -196,8 +199,9 @@ fun App(shortcut: Shortcut? = null, onShortcutOpen: () -> Unit = {}) {
 /**
  * [App] with its container passed in, so tests can run the whole app over fake platform services.
  * While [introPlaying], the system bar icons suit the intro over it rather than the app. With [offerSetup], as
- * the app itself runs, a new install's first plain open (no shortcut) lands on Set up over Today, once: a test
- * leaves it off unless that is what it is about, so the app opens on Today whatever its storage holds.
+ * the app itself runs, a new install's first plain open (no shortcut) lands on the welcome over Today, which ends
+ * on Set up, once, and Today shows its First week card from then: a test leaves it off unless that is what it is
+ * about, so the app opens on Today whatever its storage holds.
  */
 @Composable
 internal fun AppContent(
@@ -227,12 +231,17 @@ internal fun AppContent(
             // Set up's turn is this open's, if it is a plain one: decided once, as storage stands on arrival, and
             // marked taken whether or not it opens, so someone with the app already never meets it unasked.
             val setupTurn = remember { isSetupTurn(offerSetup, shortcut != null, settings.setupOffered) }
+            // A new install is welcomed on the way to Set up, and has its first week on Today from here on.
+            val welcomed = remember { opensOnSetup(setupTurn, nothingYet(repository, lift)) }
             val start = remember {
-                val onSetup = opensOnSetup(setupTurn, nothingYet(repository, lift))
-                if (onSetup) arrayOf<NavKey>(TodayTab, WeekSetup) else arrayOf<NavKey>(TodayTab)
+                if (welcomed) arrayOf<NavKey>(TodayTab, Welcome) else arrayOf<NavKey>(TodayTab)
             }
             LaunchedEffect(setupTurn) {
-                if (setupTurn) repository.settings.updateAppSettings { it.copy(setupOffered = true) }
+                if (setupTurn) {
+                    repository.settings.updateAppSettings {
+                        it.copy(setupOffered = true, firstWeek = it.firstWeek || welcomed)
+                    }
+                }
             }
             // A stack restored takes the place of [start]: the page left open is the one that comes back.
             val backStack = rememberNavBackStack(navConfiguration, *start)
@@ -516,11 +525,13 @@ private fun appEntries(
 }
 
 /**
- * Set up, pushed over Today or Settings. Back and Skip leave it as it was found; a week built shows on Today,
- * whatever it was opened from; and its link to Lift's programs opens them over it, so one followed there is the
- * one its week keeps.
+ * Set up, pushed over Today or Settings, or put in the welcome's place. Back and Skip leave it as it was found; a
+ * week built shows on Today, whatever it was opened from; and its link to Lift's programs opens them over it, so
+ * one followed there is the one its week keeps.
  */
 private fun EntryProviderScope<NavKey>.setupEntry(backStack: NavBackStack<NavKey>, selectTab: (Tab) -> Unit) {
+    // The welcome before it on a new install: Set up takes its place, so Back and Skip there land on Today.
+    entry<Welcome> { WelcomeRoute(onSetUp = { backStack.replaceTop(WeekSetup) }) }
     entry<WeekSetup> {
         WeekSetupRoute(
             onBack = { backStack.removeLastOrNull() },
@@ -635,6 +646,7 @@ private fun EntryProviderScope<NavKey>.todayEntry(
             onOpenTimer = { backStack.showTimer() },
             onOpenSettings = { backStack.push(Settings) },
             onSetup = { backStack.push(WeekSetup) },
+            onOpenMobility = { selectTab(MobilityTab) },
         )
     }
 }

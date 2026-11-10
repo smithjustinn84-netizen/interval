@@ -75,8 +75,15 @@ data class WorkoutDetail(val id: Long) : NavKey
 data object Plan : NavKey
 
 /**
+ * The welcome: what the app is, then a page for each tab. A new install opens on it over Today, once, and
+ * [WeekSetup] takes its place from its last page or its Skip; nothing else pushes it.
+ */
+@Serializable
+data object Welcome : NavKey
+
+/**
  * Set up: what else you train, on which days, which bells you own and how long a session is, and the week those
- * build. Pushed from Today's card while nothing is planned and from Settings; a new install opens on it, once.
+ * build. Pushed from Today's card while nothing is planned and from Settings; a new install's welcome ends on it.
  */
 @Serializable
 data object WeekSetup : NavKey

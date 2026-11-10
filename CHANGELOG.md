@@ -7,6 +7,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.6.0] — Unreleased
 
 ### Added
+- A welcome for a new install, once, on the way to Set up: what the app is, then a page each for Today, Train and
+  Log, each showing what is on its tab. Skip goes on to Set up from any page, and Back steps a page back. Today
+  then carries a First week card: build the week, do the first workout, follow a flow and, with a sport planned,
+  log a day of it, each ticked as it is done, with the way to Set up and to the flows from it. Hide puts it away
+  for good. Someone who had the app before sees neither.
 - Tests, on Train's Strength pillar under On your own: a benchmark done on purpose, to compare. The snatch test (five
   minutes against 100) and the Armor Building Complex (twenty minutes) run on the clock, with the reps of a round
   the cap cut short added after it; the press, push-ups and pull-ups are the most reps in a set, the plank the

@@ -6,7 +6,7 @@
     and Back from any returns to Today. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
-    <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
+    <action>On the welcome, which a fresh install opens on, tap "Skip to Set up", then "Skip for now" on "Set up"</action>
     <action>Tap the "Train" tab</action>
     <action>Verify that the page is titled "Train", the picker under the title has "Strength" chosen beside "Conditioning" and "Mobility", and "Start session" is pinned at the bottom</action>
     <action>Verify that Strength's groups read "Following" (with "Follow a program"), "Beside the mat and the wall" (with "One bell beside BJJ", "Shoulder armor" and "All programs"), "On your own" (with "Free session", "Exercises" and "Your equipment") and "Lately"</action>

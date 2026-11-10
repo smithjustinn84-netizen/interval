@@ -215,7 +215,8 @@ apps/
                      it: `selectTab`, `showTimer`, a shortcut's `open`, the fix-ups for a stack an older build saved), `di/AppKoin.kt` (`appModules`,
                      `initAppKoin`, the `IntervalActivity` Lift reads, over `IntervalRepository`, and the
                      `WeekStandingSource` the widget shows, over both sides' stores; `data/`),
-                     `nav/Routes.kt` (the app's own keys), `ui/AppNavigation.kt`, about/, export/, weeksetup/
+                     `nav/Routes.kt` (the app's own keys), `ui/AppNavigation.kt`, about/, export/, welcome/ (what a
+                     new install opens on: the app in four pages, then Set up), weeksetup/
                      (Set up, the one page that writes both sides' stores, so the one feature the app holds),
                      `app_name` and `app_icon`. What `androidApp`, `iosApp` and `desktopApp` depend on
   androidApp         Android host application: `IntervalApplication` (starts the container, and keeps the widget
@@ -264,7 +265,7 @@ toolchain (`$compose.*`).
   3. `entry<X> { XRoute() }` in the `entryProvider` (App.kt; a Lift page in `liftEntries`, `lift/lift-nav/src/nav/LiftEntries.kt`)
   `TodayTab` is the start destination and the back stack's root: Back from Train or History returns to it
   (`selectTab`), and a stack saved by a build that opened on the Timer gets it put underneath (`rootAtToday`).
-  A new install's first open has Set up over it (see Set up, below).
+  A new install's first open has the welcome over it, which ends on Set up (see Set up, below).
   A tab implements core's `Tab` (`core/core/src/nav/Tab.kt`, with the `push` helper every entry uses), and its
   title bar ends in core's `SettingsAction`; Lift's takes what it opens through `liftEntries`.
   Train is one destination of the bar in three tabs, its pillars (`apps/app/src/ui/Train.kt`): Strength is Lift's
@@ -479,11 +480,19 @@ toolchain (`$compose.*`).
   `SavedStateHandle`, opens on what stands, and builds once: it never calls `ProgramStore.follow` while a program
   is followed, since following restarts it. The session's length is `AppSettings.sessionMinutes`, which Today's
   pick by time opens on (`HomeViewModel`, until a length is picked by hand). Today's empty card and Settings'
-  Plan group open it, and a new install opens on it, once: `AppContent` starts the back stack at `TodayTab,
-  WeekSetup` when it is Set up's turn (`isSetupTurn`, `FirstRun.kt`: the app offers it, the open is a plain one
+  Plan group open it, and a new install comes to it through the welcome, once: `AppContent` starts the back stack
+  at `TodayTab, Welcome` when it is Set up's turn (`isSetupTurn`, `FirstRun.kt`: the app offers it, the open is a plain one
   rather than a shortcut's, and `AppSettings.setupOffered` is unset) and there is nothing in the app
   (`nothingYet`: no workout, sport day, plan, preset, goal, session, program or bell), and marks the turn taken
-  either way, so someone who had the app before never meets it unasked. `App()` passes `offerSetup = true`;
+  either way, so someone who had the app before never meets it unasked. The welcome (`apps/app/src/welcome/`, the
+  `Welcome` key) is one entry of four pages, the one shown kept by `rememberSaveable`: the opening page, then a
+  page each for Today, Train and Log, each an example drawn from the tab's own parts that takes no tap
+  (`WelcomePages.kt`). The system's Back steps a page back; its last page and Skip put Set up in its place
+  (`replaceTop`), so Back and Skip there land on Today. The same open turns on Today's First week card
+  (`AppSettings.firstWeek`, not in the export; `today/FirstWeek.kt`, `FirstWeekCard.kt` in `interval-history`): its
+  steps are worked out from the plan, the log and Lift (`firstWeek`: the week built, a workout or session done, a
+  flow followed and, with a sport planned or logged, a day of it logged), nothing of them stored, and Hide
+  (`HomeViewModel.hideFirstWeek`) turns it off for good. `App()` passes `offerSetup = true`;
   `AppContent`'s default is off, so every whole-app test opens on Today unless it asks (`appTest(firstRun =
   true)`, `acceptanceScenario(firstRun = true)`). An import of settings sets `setupOffered`, which is not in the
   export.

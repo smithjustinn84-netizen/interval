@@ -9,7 +9,7 @@
     text-to-speech engine installed.
   </description>
   <actions>
-    <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
+    <action>On the welcome, which a fresh install opens on, tap "Skip to Set up", then "Skip for now" on "Set up"</action>
     <action>Tap the "Train" tab, which opens on "Strength", then "Start session"</action>
     <action>Verify that the "Next set" card shows, under the figure doing a two-hand swing, "Watch for · Hips back, shins stay vertical"</action>
     <action>Tap the title bar's "Add set or EMOM", tap "Change", search "snatch" and tap "Snatch"</action>

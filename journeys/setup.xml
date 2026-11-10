@@ -2,13 +2,13 @@
   <description>
     Set up asks four things (what else you train, on which days, which bells you own, how long a session is),
     shows the week they come to, and builds it: the sport on its days, a program one bell and the time are enough
-    for on the days between, the bells and a goal. A fresh install opens on it, once; after that Today's card
+    for on the days between, the bells and a goal. A fresh install comes to it from the welcome, once (`welcome.xml`); after that Today's card
     offers it while nothing is planned, and Settings always has it, where it shows what stands and builds again
     without starting the program over. Run on a fresh
     install (adb shell pm clear dev.justinsmith.interval), on a Thursday or with the days below moved to suit.
   </description>
   <actions>
-    <action>Open the app and verify that it opens on "Set up", with Back in its title bar</action>
+    <action>Open the app, tap "Skip to Set up" on the welcome it opens on, and verify that "Set up" is shown, with Back in its title bar</action>
     <action>Verify that "Set up" asks "What else do you train?", "Which bells do you own, in kg?" and "How long is a session?" with "15 min" picked, that "Your week" says "Answer above and your week shows here.", and that "Build my week" is dimmed</action>
     <action>Tap "BJJ" and verify that "On which days?" appears under it with M T W T F S S, none picked, and that "Your week" says "BJJ" over "Pick its days"</action>
     <action>Tap M, W and F; tap "16"; leave "15 min"</action>
@@ -26,7 +26,7 @@
     <action>Open Settings and tap "Set up"; tap M, W, F off and the second T (Thursday) on, so BJJ is on Tuesday and Thursday only; with 16 and 24 still ticked, under "Which do you have two of?" tick "24", and pick "20 min"; verify that "Your week" reads "20 minutes beside BJJ" over its minutes and "Mon, Fri", "15:15 MVO2" over "Wed" and "Goal: 5 workouts a week"; tap "Build my week"</action>
     <action>Start "15:15 MVO2" from Today on Wednesday (or from Conditioning) with the voice on, and verify that the first work says "Work" and the second "Switch hands. Work"; end it</action>
     <action>Open Settings, tap "Set up", then "Skip for now", and verify that Settings is shown again with nothing changed</action>
-    <action>Close the app from Recents and open it from its icon; verify that it opens on Today, not on "Set up"</action>
-    <action>Clear the app (adb shell pm clear dev.justinsmith.interval), open it and verify "Set up" again; tap "Skip for now" and verify that Today says "Nothing planned" with "Set up your week" first; close and open the app again and verify that it opens on Today</action>
+    <action>Close the app from Recents and open it from its icon; verify that it opens on Today, not on the welcome or "Set up"</action>
+    <action>Clear the app (adb shell pm clear dev.justinsmith.interval), open it, tap "Skip to Set up" on the welcome and verify "Set up" again; tap "Skip for now" and verify that Today says "Nothing planned" with "Set up your week" first; close and open the app again and verify that it opens on Today</action>
   </actions>
 </journey>

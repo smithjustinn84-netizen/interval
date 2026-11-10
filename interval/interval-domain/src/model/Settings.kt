@@ -65,6 +65,11 @@ data class AppSettings(
      * an install with nothing in it, and only once.
      */
     val setupOffered: Boolean = false,
+    /**
+     * Whether Today shows its First week card: on from a new install's first open, off once it is hidden, and
+     * never on for someone who had the app before it.
+     */
+    val firstWeek: Boolean = false,
 ) {
     companion object {
         val WEEKLY_GOAL_RANGE = 1..14

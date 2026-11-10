@@ -52,6 +52,13 @@ internal fun NavBackStack<NavKey>.startWorkout(clock: WallClock, flow: String? =
     if (lastOrNull() !is Workout) add(Workout(clock.nowMillis(), flow))
 }
 
+/** Puts [key] where the page on top is: Back from it goes to what was under that page. */
+internal fun NavBackStack<NavKey>.replaceTop(key: NavKey) {
+    if (lastOrNull() == key) return
+    if (size > 1) removeLastOrNull()
+    add(key)
+}
+
 /** Settings pairs with the Timer alone: over another tab it is a page of its own, whatever the window. */
 internal val NavBackStack<NavKey>.settingsOverTimer: Boolean
     get() = getOrNull(indexOf(Settings) - 1) == Timer

@@ -6,7 +6,7 @@
     Run on a fresh install (adb shell pm clear dev.justinsmith.interval), with the emulator's volume up.
   </description>
   <actions>
-    <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
+    <action>On the welcome, which a fresh install opens on, tap "Skip to Set up", then "Skip for now" on "Set up"</action>
     <action>Tap the "Train" tab, which opens on "Strength", then "Start session"</action>
     <action>Tap "Log set" and verify that a rest counts down from "1:30" with − and + beside it, just above "Log set"</action>
     <action>Verify that the system asks to allow notifications (Android 13+, the first rest only), and tap "Allow"</action>

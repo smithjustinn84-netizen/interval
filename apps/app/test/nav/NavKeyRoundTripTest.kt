@@ -48,6 +48,7 @@ class NavKeyRoundTripTest {
             WorkoutDetail(7),
             Plan,
             WeekSetup,
+            Welcome,
             FlowEditor(),
             FlowEditor(id = 3),
             FlowEditor(copyOf = "hips-shoulders"),

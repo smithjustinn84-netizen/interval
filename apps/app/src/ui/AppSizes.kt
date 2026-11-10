@@ -21,4 +21,11 @@ internal object AppSizes {
 
     /** The app's mark on the About screen: the launcher icon's coin, at a size that reads as a logo. */
     val aboutMark = 112.dp
+
+    /** The mark on the welcome's opening page, bare on the page: larger than About's, which sits on its coin. */
+    val welcomeMark = 144.dp
+
+    /** A tab at the head of its page of the welcome: the pill the bar draws behind the selected tab's icon. */
+    val welcomeTabWidth = 56.dp
+    val welcomeTabHeight = 32.dp
 }

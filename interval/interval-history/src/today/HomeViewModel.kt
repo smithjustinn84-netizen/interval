@@ -64,6 +64,8 @@ data class HomeUiState(
     /** The program's next day, first among the picks while it fits the minutes. */
     val strength: StrengthPick? = null,
     val picks: List<QuickPick> = emptyList(),
+    /** The First week card, while it is on: null for anyone it was never shown to, and once it is hidden. */
+    val firstWeek: FirstWeek? = null,
     /** Not built yet: the screen waits rather than taking it for a day with nothing planned. */
     val loading: Boolean = false,
 ) {
@@ -90,7 +92,7 @@ class HomeViewModel(
     private val presetStore: PresetStore,
     flowStore: FlowStore,
     private val planStore: PlanStore,
-    settingsStore: SettingsStore,
+    private val settingsStore: SettingsStore,
     private val lift: LiftActivity,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
@@ -202,6 +204,11 @@ class HomeViewModel(
         historyStore.unlogSport(sport, epochDay)
     }
 
+    /** Puts the First week card away, for good. */
+    fun hideFirstWeek() {
+        settingsStore.updateAppSettings { it.copy(firstWeek = false) }
+    }
+
     /** The app's locale, as a language tag: the days are named again when it changes. */
     fun setLocale(languageTag: String) {
         locale.value = languageTag
@@ -230,6 +237,11 @@ class HomeViewModel(
             ),
             upNext = timestamps.upNext(log, planned, lifting, today),
             hasPlans = planned.isNotEmpty() || lifting.programDay != null,
+            firstWeek = if (app.firstWeek) {
+                firstWeek(planned, lifting.programDay != null, history, lifting.sessions.isNotEmpty(), sports)
+            } else {
+                null
+            },
         )
     }
 }

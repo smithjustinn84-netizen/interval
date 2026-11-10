@@ -51,6 +51,20 @@ class HomeViewModelTest : MainDispatcherTest() {
     private val viewModel by lazy { viewModel() }
 
     @Test
+    fun `the first week shows only while its card is on and hiding it is kept`() {
+        assertNull(viewModel.state.value.firstWeek)
+
+        repository.settings.updateAppSettings { it.copy(firstWeek = true) }
+        assertEquals(0, viewModel.state.value.firstWeek?.done)
+        repository.history.recordWorkout(tabata, tabata.totalSeconds)
+        assertEquals(1, viewModel.state.value.firstWeek?.done)
+
+        viewModel.hideFirstWeek()
+        assertNull(viewModel.state.value.firstWeek)
+        assertFalse(repository.settings.appSettings.value.firstWeek)
+    }
+
+    @Test
     fun `with nothing planned and no program nothing is up next`() {
         val state = viewModel.state.value
         assertFalse(state.loading)

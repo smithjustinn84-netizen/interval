@@ -59,6 +59,41 @@
     <string name="license_public_domain">Public domain</string>
 
 
+    <!-- The welcome: what a new install opens on, before Set up. An opening page, then one for each tab. -->
+    <string name="welcome_tagline">Strength, conditioning and mobility, in one week.</string>
+    <string name="welcome_about">Kettlebell programs, an interval timer and mobility flows, planned around whatever else you train.</string>
+    <string name="welcome_ahead">Three pages, then four questions.</string>
+    <string name="welcome_start">Get started</string>
+    <string name="welcome_skip_to_set_up">Skip to Set up</string>
+    <string name="welcome_skip">Skip</string>
+    <string name="welcome_next">Next</string>
+    <string name="welcome_set_up">Set up my week</string>
+    <!-- How far through the tabs' pages, for screen readers: "Page 2 of 3" -->
+    <string name="welcome_page_cd">Page %1$d of %2$d</string>
+    <string name="welcome_today_title">Today picks for you</string>
+    <string name="welcome_today_lead">It leads with what is next in the week.</string>
+    <string name="welcome_today_time">Short on time? Pick the minutes and take what fits.</string>
+    <string name="welcome_train_title">Three ways to train</string>
+    <string name="welcome_train_lead">Train holds all of it, a pillar each.</string>
+    <string name="welcome_train_strength">Kettlebell programs, a day at a time. Log each set and the next is suggested.</string>
+    <string name="welcome_train_conditioning">Interval presets and the Timer, every change called aloud.</string>
+    <string name="welcome_train_mobility">Flows followed move by move, each shown by a figure.</string>
+    <string name="welcome_log_title">Everything counts toward the week</string>
+    <string name="welcome_log_lead">A workout, a session, a flow, and a class or a climb logged with a tap.</string>
+    <string name="welcome_log_legend_done">Done</string>
+    <string name="welcome_log_legend_today">Today</string>
+    <string name="welcome_log_legend_planned">Planned</string>
+    <string name="welcome_log_keeps">Log keeps each one, by week and by month.</string>
+    <!-- The pages' examples: a day of a program up next on Today, the minutes it picks by, and a week on Log -->
+    <string name="welcome_example_up_next">Up next</string>
+    <string name="welcome_example_program">Kettlebell foundations</string>
+    <string name="welcome_example_detail">Strength · Day 1 · about 15 min</string>
+    <string name="welcome_example_start">Start</string>
+    <string name="welcome_example_minutes">%1$d min</string>
+    <string name="welcome_example_week">This week</string>
+    <string name="welcome_example_week_count">3 of 5 done</string>
+    <string name="welcome_example_sport">BJJ</string>
+
     <!-- Set up: four answers that build the week -->
     <string name="setup_title">Set up</string>
     <string name="setup_intro">Four answers, so Today can pick for you. Change any of them later in Settings.</string>

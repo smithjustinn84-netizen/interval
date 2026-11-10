@@ -5,7 +5,7 @@
     (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
-    <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
+    <action>On the welcome, which a fresh install opens on, tap "Skip to Set up", then "Skip for now" on "Set up"</action>
     <action>Tap the "Train" tab, which opens on "Strength", then scroll to "Your equipment" under "On your own" and tap it</action>
     <action>Verify that "Your bar" offers "None" selected, "10 kg", "15 kg" and "20 kg", above "Your bands"</action>
     <action>Tap "20 kg" under "Your bar", then go back</action>

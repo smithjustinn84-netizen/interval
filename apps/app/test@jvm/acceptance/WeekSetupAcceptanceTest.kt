@@ -170,10 +170,10 @@ class WeekSetupAcceptanceTest {
         }
 
     @Test
-    fun `a new install opens on set up and skipping leaves today offering it`() {
+    fun `a new install comes to set up and skipping leaves today offering it`() {
         val storage = FakeStorage()
         acceptanceScenario(storage = storage, firstRun = true) {
-            seeSetUp()
+            skipWelcome()
             setUpOffered(true)
             tap("Skip for now")
 
@@ -193,7 +193,7 @@ class WeekSetupAcceptanceTest {
 
     @Test
     fun `a week built on the first open shows on today`() = acceptanceScenario(firstRun = true) {
-        seeSetUp()
+        skipWelcome()
         answerSport("Climbing")
         trainOn("Thursday")
         ownBells(12)
@@ -220,8 +220,8 @@ class WeekSetupAcceptanceTest {
     }
 
     @Test
-    fun `a shortcut taken while set up shows goes where it asks`() = acceptanceScenario(firstRun = true) {
-        seeSetUp()
+    fun `a shortcut taken while the welcome shows goes where it asks`() = acceptanceScenario(firstRun = true) {
+        seeWelcome()
         launchFrom(Shortcut.StartWorkout)
         seePhase("Get ready")
         // Set up has had its turn: it is on Today's card and in Settings from here on.
