@@ -219,6 +219,9 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, modifier: Modifier = Mo
     val card = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4)
     // What is being looked at before Start, by where it is: kept by place, so a rotation keeps it open.
     var looking by rememberSaveable { mutableStateOf<String?>(null) }
+    // Kept while what is up next is: the agenda is worked out again with every state, its lists new each time,
+    // which a screen comparing them by instance (iOS) would compose again.
+    val agenda = remember(state.upNext) { state.agenda }
     TabGrid(
         stringResource(Res.string.home_title),
         modifier,
@@ -232,7 +235,6 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, modifier: Modifier = Mo
                 WeekDots(state.week, onDay = { actions.onOpenHistory() })
             }
         }
-        val agenda = state.agenda
         item(key = "next") {
             when {
                 agenda.lead != null -> UpNext(agenda.lead, agenda.later, actions, { looking = LEAD }, card)
@@ -246,7 +248,9 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, modifier: Modifier = Mo
             val leads = agenda.lead is UpNextItem.Planned || agenda.lead is UpNextItem.Lift
             item(key = "first-week") { FirstWeekCard(week, leads, actions, card) }
         }
-        item(key = "picks") { Picks(state, actions, { looking = "$PICK$it" }, card) }
+        item(key = "picks") {
+            Picks(state.minutes, state.strength, state.picks, actions, { looking = "$PICK$it" }, card)
+        }
     }
     looking?.let { state.previewAt(it) }?.let { preview ->
         PreviewHost(
@@ -439,32 +443,39 @@ private fun NothingDue(actions: HomeActions, modifier: Modifier = Modifier) {
 
 /** Or pick by time: a length, then the presets that fit it, or the way to the Timer when none does. */
 @Composable
-private fun Picks(state: HomeUiState, actions: HomeActions, onLook: (Int) -> Unit, modifier: Modifier = Modifier) {
+private fun Picks(
+    minutes: Int,
+    strength: StrengthPick?,
+    picks: List<QuickPick>,
+    actions: HomeActions,
+    onLook: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     // The program's day is looked at by a place of its own, before the presets' from 0.
     Column(modifier) {
         GroupLabel(stringResource(Res.string.home_pick_by_time))
         // Five lengths on a phone's width: at a large font a label breaks over two lines rather than losing "min".
         SegmentedPicker(
             options = PICK_MINUTES,
-            selected = state.minutes,
+            selected = minutes,
             label = { stringResource(Res.string.home_minutes, it) },
             onSelect = actions.onMinutes,
             check = false,
             maxLines = 2,
         )
         ListCard(Modifier.padding(top = Spacing.space8)) {
-            state.strength?.let { strength ->
+            strength?.let { strength ->
                 StrengthRow(strength, onLook = { onLook(STRENGTH_PLACE) })
-                if (state.picks.isNotEmpty()) RowDivider(Modifier.padding(start = Spacing.space4))
+                if (picks.isNotEmpty()) RowDivider(Modifier.padding(start = Spacing.space4))
             }
-            if (state.picks.isEmpty() && state.strength == null) {
+            if (picks.isEmpty() && strength == null) {
                 LinkRow(
                     stringResource(Res.string.home_no_pick),
                     stringResource(Res.string.home_no_pick_hint),
                     actions.onOpenTimer,
                 )
             }
-            state.picks.forEachIndexed { index, pick ->
+            picks.forEachIndexed { index, pick ->
                 if (index > 0) RowDivider(Modifier.padding(start = Spacing.space4))
                 PickRow(pick, onLook = { onLook(index) })
             }

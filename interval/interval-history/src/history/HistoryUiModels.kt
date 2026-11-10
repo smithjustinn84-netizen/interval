@@ -208,9 +208,6 @@ data class HistoryUiState(
     /** This week's count, goal and streak together, as the goal row takes them. */
     val weekGoal: WeekGoal get() = WeekGoal(weekCount, weekLifts, goal, streak, weekSports, weekMobility)
 
-    /** The most workouts in one of [weeks], for scaling its bars; at least the goal, so its line fits. */
-    val weeksMax: Int get() = maxOf(weeks.maxOfOrNull { it.count } ?: 0, goal ?: 0, 1)
-
     companion object {
         /** What the screen shows until the first state is built. */
         val Loading = HistoryUiState(sections = emptyList(), loading = true)

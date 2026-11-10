@@ -484,10 +484,26 @@ private fun SummaryFor(state: HistoryUiState, actions: HistoryActions, modifier:
         transitionSpec = { fadeThroughContent() },
         label = "summary",
     ) { (range, _) ->
+        // Each card takes only the figures it shows, so a day opened, or anything else the state carries, leaves
+        // it as it was.
         when (range) {
-            TrainingRange.Week -> WeekSummary(state, { actions.onOpenDay(it) }, actions.onPlan)
-            TrainingRange.Month -> MonthSummary(state, actions.onShiftMonth, { actions.onOpenDay(it) })
-            TrainingRange.AllTime -> AllTimeSummary(state)
+            TrainingRange.Week -> WeekSummary(
+                state.weekGoal,
+                state.byKind,
+                state.summary,
+                state.week,
+                { actions.onOpenDay(it) },
+                actions.onPlan,
+            )
+
+            TrainingRange.Month -> MonthSummary(
+                state.month,
+                state.summary,
+                actions.onShiftMonth,
+                { actions.onOpenDay(it) },
+            )
+
+            TrainingRange.AllTime -> AllTimeSummary(state.summary, state.streak, state.goal, state.weeks)
         }
     }
 }

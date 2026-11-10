@@ -142,28 +142,31 @@ internal fun SummaryCard(modifier: Modifier = Modifier, content: @Composable Col
  */
 @Composable
 internal fun WeekSummary(
-    state: HistoryUiState,
+    weekGoal: WeekGoal,
+    byKind: List<KindTally>,
+    summary: RangeSummary,
+    week: List<DayCell>,
     onDay: (Long) -> Unit,
     onSetGoal: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     SummaryCard(modifier) {
-        GoalRow(state.weekGoal, onSetGoal, split = state.byKind.isEmpty())
-        if (state.byKind.isNotEmpty()) KindBars(state.byKind)
+        GoalRow(weekGoal, onSetGoal, split = byKind.isEmpty())
+        if (byKind.isNotEmpty()) KindBars(byKind)
         // The figures once any time is logged: a week not begun, or of a class alone, has no 0:00 to show at
         // this size.
-        if (state.summary.totalSeconds > 0) {
+        if (summary.totalSeconds > 0) {
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
                 Stat(
                     stringResource(Res.string.history_time),
-                    state.summary.time,
-                    state.summary.totalSeconds,
+                    summary.time,
+                    summary.totalSeconds,
                     accent = true,
                 )
-                state.summary.calories?.let { Stat(stringResource(Res.string.history_calories), it.toString(), it) }
+                summary.calories?.let { Stat(stringResource(Res.string.history_calories), it.toString(), it) }
             }
         }
-        WeekStrip(state.week, onDay)
+        WeekStrip(week, onDay)
     }
 }
 
@@ -395,7 +398,8 @@ internal fun RowScope.Stat(caption: String, value: String, rank: Int = 0, accent
 /** A month: its title between the ways to the months either side, its figures, and its calendar. */
 @Composable
 internal fun MonthSummary(
-    state: HistoryUiState,
+    month: MonthView,
+    summary: RangeSummary,
     onShiftMonth: (Int) -> Unit,
     onDay: (Long) -> Unit,
     modifier: Modifier = Modifier,
@@ -407,7 +411,7 @@ internal fun MonthSummary(
                 onShiftMonth(-1)
             })
             Text(
-                state.month.title,
+                month.title,
                 style = IntervalTheme.type.section,
                 color = palette.text,
                 textAlign = TextAlign.Center,
@@ -416,31 +420,37 @@ internal fun MonthSummary(
             IconAction(IntervalIcons.Chevron, stringResource(Res.string.history_month_next_cd), { onShiftMonth(1) })
         }
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-            Stat(stringResource(Res.string.history_workouts), state.summary.count.toString(), state.summary.count)
-            Stat(stringResource(Res.string.history_time), state.summary.time, state.summary.totalSeconds, accent = true)
-            if (state.summary.plannedDue > 0) {
+            Stat(stringResource(Res.string.history_workouts), summary.count.toString(), summary.count)
+            Stat(stringResource(Res.string.history_time), summary.time, summary.totalSeconds, accent = true)
+            if (summary.plannedDue > 0) {
                 Stat(
                     stringResource(Res.string.history_planned_done),
                     stringResource(
                         Res.string.history_planned_done_value,
-                        state.summary.plannedDone,
-                        state.summary.plannedDue,
+                        summary.plannedDone,
+                        summary.plannedDue,
                     ),
-                    state.summary.plannedDone,
+                    summary.plannedDone,
                 )
             }
         }
-        MonthCalendar(state.month.cells, onDay)
+        MonthCalendar(month.cells, onDay)
         Legend()
     }
 }
 
 /** Everything so far: the totals, the best streak, and workouts a week over the last twelve. */
 @Composable
-internal fun AllTimeSummary(state: HistoryUiState, modifier: Modifier = Modifier) {
+internal fun AllTimeSummary(
+    summary: RangeSummary,
+    streak: Streak?,
+    goal: Int?,
+    weeks: List<WeekCount>,
+    modifier: Modifier = Modifier,
+) {
     val palette = IntervalTheme.palette
     SummaryCard(modifier) {
-        state.summary.since?.let {
+        summary.since?.let {
             Text(
                 stringResource(Res.string.history_since, it),
                 style = IntervalTheme.type.caption,
@@ -448,17 +458,17 @@ internal fun AllTimeSummary(state: HistoryUiState, modifier: Modifier = Modifier
             )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-            Stat(stringResource(Res.string.history_workouts), state.summary.count.toString(), state.summary.count)
+            Stat(stringResource(Res.string.history_workouts), summary.count.toString(), summary.count)
             Stat(
                 stringResource(Res.string.history_time),
-                longTotal(state.summary.totalSeconds),
-                state.summary.totalSeconds,
+                longTotal(summary.totalSeconds),
+                summary.totalSeconds,
                 accent = true,
             )
         }
-        val calories = state.summary.calories
+        val calories = summary.calories
         // A best streak once there is one: "0 weeks" says nothing.
-        val best = state.streak?.best?.takeIf { it > 0 }
+        val best = streak?.best?.takeIf { it > 0 }
         if (calories != null || best != null) {
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
                 calories?.let { Stat(stringResource(Res.string.history_calories), it.toString(), it) }
@@ -471,7 +481,7 @@ internal fun AllTimeSummary(state: HistoryUiState, modifier: Modifier = Modifier
                 }
             }
         }
-        WeekBars(state)
+        WeekBars(goal, weeks)
     }
 }
 
@@ -490,10 +500,9 @@ internal fun longTotal(seconds: Int): String =
 
 /** A bar a week, this week outlined as it is still going; a dashed line marks the goal when there is one. */
 @Composable
-private fun WeekBars(state: HistoryUiState, modifier: Modifier = Modifier) {
+private fun WeekBars(goal: Int?, weeks: List<WeekCount>, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
-    val goal = state.goal
-    val description = stringResource(Res.string.history_weeks_cd, state.weeks.joinToString { it.count.toString() })
+    val description = stringResource(Res.string.history_weeks_cd, weeks.joinToString { it.count.toString() })
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         Row(Modifier.fillMaxWidth()) {
             Text(
@@ -511,10 +520,11 @@ private fun WeekBars(state: HistoryUiState, modifier: Modifier = Modifier) {
             }
         }
         Bars(
-            bars = state.weeks.map { week ->
+            bars = weeks.map { week ->
                 Bar(week.count.toFloat(), filled = goal == null || week.count >= goal, outlined = week.current)
             },
-            max = state.weeksMax.toFloat(),
+            // The most workouts in a week, at least the goal so its line fits.
+            max = maxOf(weeks.maxOfOrNull { it.count } ?: 0, goal ?: 0, 1).toFloat(),
             description = description,
             line = goal?.toFloat(),
         )
