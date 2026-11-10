@@ -356,6 +356,27 @@ class HomeScreenTest {
     }
 
     @Test
+    fun `the first week's workout points at a start above only when today has one`() = runUiTest {
+        val week = FirstWeek(
+            listOf(
+                FirstWeekStep(FirstWeekStep.Kind.Build, done = true),
+                FirstWeekStep(FirstWeekStep.Kind.Workout, done = false),
+            ),
+        )
+        val tomorrow = UpNextItem.Planned(1, THURSDAY + 1, HistoryDay.Tomorrow, tabataPreset.name, tabataPreset.config)
+        val today = UpNextItem.Planned(2, THURSDAY, HistoryDay.Today, hiitPreset.name, hiitPreset.config)
+        var state by mutableStateOf(empty.copy(upNext = listOf(tomorrow), hasPlans = true, firstWeek = week))
+        setThemedContent { HomeScreen(state, HomeActions()) }
+
+        // Tomorrow's leads with no raised Start: the first workout is picked by time.
+        onNodeWithText("Pick by time, below").performScrollTo().assertIsDisplayed()
+        onNodeWithText("Start, above").assertDoesNotExist()
+
+        state = state.copy(upNext = listOf(today, tomorrow))
+        onNodeWithText("Start, above").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
     fun `once the class is logged the program's day waits for spare time and the day is done`() = runUiTest {
         val started = mutableListOf<ProgramKey?>()
         val day = program(ProgramId.PressLadders).day(3)

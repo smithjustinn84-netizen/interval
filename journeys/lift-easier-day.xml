@@ -5,10 +5,11 @@
   </description>
   <actions>
     <action>On Train's Strength pillar, tap "Follow a program", find "20 minutes beside BJJ", open it and tap "Follow this program"</action>
-    <action>Start a session, log a set, tap "Finish", pick "Very hard" under "How was it?" and tap "Done"</action>
+    <action>Start a free session (not the program's day 1), log a set, tap "Finish", pick "Very hard" under "How was it?" and tap "Done"</action>
     <action>Tap the "Today" tab and verify a line ending "strength day" over "The last session felt very hard. Take today a notch easier.", and under the program's day a switch "Easier today", on, over "Presses and squats a bell lighter, swings and snatches shorter", with the button reading "Start day 1, easier"; switch it off and verify the button reads "Start day 1"</action>
     <action>On Train's Strength pillar, tap "Start day 1" and verify that a card "Easier today" says "Your last session felt very hard, and it was a day and a half ago at most", "Presses and squats a bell lighter, swings and snatches shorter, rests by the lift" and "Day 2 of this program is the lighter one on the grip", with "Use it"</action>
     <action>Tap "Use it" and verify that the card goes and Up next counts 12 sets of the Armor Building Complex, not 15</action>
-    <action>Finish the session without a "Very hard", and on another taxed day tap "Start day 2, easier" on Today instead: verify that Lifting opens with the day already eased and no "Easier today" card</action>
+    <action>Finish the session without a "Very hard" and tap "Drop" on "Keep today's changes?"</action>
+    <action>Clear the app and repeat the first three steps (the switch left on), then tap "Start day 1, easier" on Today instead: verify that Lifting opens with the day already eased ("1 of 12 sets") and no "Easier today" card</action>
   </actions>
 </journey>

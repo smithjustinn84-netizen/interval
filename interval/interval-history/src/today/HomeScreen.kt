@@ -247,8 +247,10 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, modifier: Modifier = Mo
         }
         dayItems(state, actions, card, onLook = { looking = LEAD })
         state.firstWeek?.let { week ->
-            // A flow or a sport's day in the lead has no workout under its Start: that one is picked by time.
-            val leads = agenda.lead is UpNextItem.Planned || agenda.lead is UpNextItem.Lift
+            // A flow or a sport's day in the lead has no workout under its Start, and another day's has no Start:
+            // that one is picked by time.
+            val first = plan.steps.firstOrNull()
+            val leads = first is UpNextItem.Planned || first is UpNextItem.Lift
             item(key = "first-week") { FirstWeekCard(week, leads, actions, card) }
         }
         item(key = "picks") {
