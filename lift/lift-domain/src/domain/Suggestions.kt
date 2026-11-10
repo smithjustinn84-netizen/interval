@@ -32,14 +32,35 @@ fun Load.suggestedFor(exercise: Exercise, history: List<SetLog>, bar: Double?, b
 /** The bell a lift starts at before it has a history or the user's own bells say otherwise. */
 const val DEFAULT_BELL_KG = 16.0
 
+/** The bell a lift held overhead starts at when the user has said nothing of the bells they own. */
+const val LIGHT_BELL_KG = 8.0
+
+/**
+ * Whether a lift starts light: a kettlebell pressed or held overhead, or upside down, or taken through a get-up or
+ * a windmill, where a first try at the bell that swings well is how a shoulder gets hurt.
+ */
+val Exercise.startsLight: Boolean
+    get() = equipment == Equipment.Kettlebell &&
+        (movement.pattern in lightPatterns || key == BuiltInExercise.BottomsUpCarry.key)
+
+private val lightPatterns = setOf(Pattern.Press, Pattern.GetUp, Pattern.Core)
+
+/**
+ * The bell [exercise] starts at with no history: [fallback], or for a lift that [startsLight] the lightest of the
+ * bells [owned] ([LIGHT_BELL_KG] with none said), never above [fallback].
+ */
+fun startingBellKg(exercise: Exercise, owned: List<Double>, fallback: Double = DEFAULT_BELL_KG): Double =
+    if (exercise.startsLight) minOf(fallback, owned.minOrNull() ?: LIGHT_BELL_KG) else fallback
+
 /** What [exercise] starts at with nothing to go on: the standard bar for a barbell lift, else [DEFAULT_BELL_KG]. */
 fun startingLoadKg(exercise: Exercise): Double =
     if (exercise.equipment == Equipment.Barbell) DEFAULT_BAR_KG else DEFAULT_BELL_KG
 
 /**
  * The load to suggest for [set]: the plan's, when it names one, else of its lift's equipment as it was last done
- * in [history] ([suggestedFor]). With nothing to go on a bell is [bellKg], a bar the user's [bar], weight added to
- * bodyweight none and a band [band]. A band the plan names stands only while still [offered]; else the one last
+ * in [history] ([suggestedFor]). With nothing to go on a bell is [bellKg], or for a lift that starts light the
+ * lightest of those [owned] ([startingBellKg]), a bar the user's [bar], weight added to bodyweight none and a band
+ * [band]. A band the plan names stands only while still [offered]; else the one last
  * used for it.
  */
 @Suppress("detekt.LongParameterList") // What a suggestion goes by.
@@ -50,8 +71,9 @@ fun plannedLoad(
     offered: List<Band>,
     bellKg: Double,
     band: Band,
+    owned: List<Double>,
 ): Load {
-    val unnamed = Load.of(set.exercise.equipment, bellKg, set.double, band)
+    val unnamed = Load.of(set.exercise.equipment, startingBellKg(set.exercise, owned, bellKg), set.double, band)
     return when (val named = set.load) {
         null -> unnamed.suggestedFor(set.exercise, history, bar, offered)
 

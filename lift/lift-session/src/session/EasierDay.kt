@@ -122,10 +122,11 @@ class EasierDay(
         val history = sessions.reversed().flatMap { it.sets }
         val bar = gearStore.bar.value
         val bands = offeredBands(gearStore.bands.value)
+        val owned = gearStore.bells.value
         return day.today.easier(
             loadOf = { block ->
                 block.plannedSets().firstOrNull()
-                    ?.let { plannedLoad(it, history, bar, bands, DEFAULT_BELL_KG, Band.Default) }
+                    ?.let { plannedLoad(it, history, bar, bands, DEFAULT_BELL_KG, Band.Default, owned) }
             },
             bells = gearStore.bells.value.ifEmpty { standardBells },
             pairs = gearStore.pairs.value,

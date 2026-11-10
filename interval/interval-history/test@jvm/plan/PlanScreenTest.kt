@@ -15,6 +15,7 @@ import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.TODAY
@@ -63,7 +64,8 @@ private val state = PlanUiState(
 
 /** The sheet's confirming button: the sheet's title says "Add to plan" too, so take the clickable one. */
 private fun SemanticsNodeInteractionsProvider.clickAdd() {
-    onNode(hasText("Add to plan") and hasClickAction()).performClick()
+    // Under the presets, more than a phone's sheet shows at once.
+    onNode(hasText("Add to plan") and hasClickAction()).performScrollTo().performClick()
 }
 
 class PlanScreenTest {

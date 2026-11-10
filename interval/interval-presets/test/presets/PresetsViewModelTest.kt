@@ -39,7 +39,15 @@ class PresetsViewModelTest : MainDispatcherTest() {
     fun `each group lists its presets shortest first`() {
         val state = viewModel.state.value
         assertEquals(
-            listOf("Tabata", "Hangboard", "HIIT 30/30", "Long efforts", "15:15 MVO2"),
+            listOf(
+                "Tabata",
+                "Hangboard",
+                "Swings on the minute",
+                "HIIT 30/30",
+                "Long efforts",
+                "15:15 MVO2",
+                "Mat rounds",
+            ),
             state.builtIn.map { it.preset.name },
         )
         viewModel.save(Preset("Long", IntervalConfig(workSeconds = 60, restSeconds = 30, rounds = 10)))

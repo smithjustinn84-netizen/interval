@@ -68,11 +68,21 @@ class BuiltWeekTest {
     }
 
     @Test
-    fun `a grappler with half an hour gets rounds`() {
-        val week = build(WeekAnswers(Sport.Bjj, setOf(TUE, THU), bell, minutes = 30))
-        assertEquals(ProgramId.RoundConditioning, week.programId)
-        assertEquals(setOf(MON, FRI), week.liftDays)
-        assertEquals(4, week.goal)
+    fun `a grappler with one bell gets the program for it and the intervals on a third day`() {
+        listOf(20, 30).forEach { minutes ->
+            val week = build(WeekAnswers(Sport.Bjj, setOf(TUE, THU), bell, minutes = minutes))
+            assertEquals(ProgramId.BjjOneBell, week.programId)
+            assertEquals(setOf(MON, FRI), week.liftDays)
+            assertEquals(WED, week.conditioningDay)
+            assertEquals(5, week.goal)
+        }
+    }
+
+    @Test
+    fun `a grappler with a quarter of an hour starts as anyone does`() {
+        val week = build(WeekAnswers(Sport.Bjj, setOf(TUE, THU), bell, minutes = 15))
+        assertEquals(ProgramId.FirstHundredSwings, week.programId)
+        assertNull(week.conditioningDay)
     }
 
     @Test
@@ -195,10 +205,20 @@ class BuiltWeekTest {
     }
 
     @Test
-    fun `without a pair a grappler is started as before and gets no intervals`() {
-        val week = build(WeekAnswers(Sport.Bjj, setOf(TUE, THU), pair, minutes = 30))
-        assertEquals(ProgramId.RoundConditioning, week.programId)
+    fun `on the mat three days the one-bell program keeps to its two as well`() {
+        val week = build(WeekAnswers(Sport.Bjj, setOf(MON, WED, FRI), bell, minutes = 20))
+        assertEquals(ProgramId.BjjOneBell, week.programId)
+        assertEquals(2, week.liftDays.size)
         assertNull(week.conditioningDay)
+    }
+
+    @Test
+    fun `building again beside the one-bell program takes its intervals off first too`() {
+        val planned = listOf(weekly(3, PlanWorkout.Lift.ProgramDay, MON), intervals(5, WED))
+        val answers = WeekAnswers(Sport.Bjj, setOf(TUE, THU), bell, minutes = 20)
+        val again = build(answers, planned, followed = ProgramId.BjjOneBell, was = Sport.Bjj)
+        assertEquals(listOf(3L, 5L), again.remove)
+        assertEquals(WED, again.conditioningDay)
     }
 
     @Test
@@ -221,7 +241,7 @@ class BuiltWeekTest {
     @Test
     fun `intervals planned beside another program stay`() {
         val planned = listOf(intervals(5, SAT))
-        val week = build(WeekAnswers(Sport.Bjj, setOf(TUE, THU), bell, minutes = 30), planned)
+        val week = build(WeekAnswers(Sport.Bjj, setOf(TUE, THU), bell, minutes = 15), planned)
         assertTrue(week.remove.isEmpty())
         assertFalse(SAT in week.liftDays)
     }

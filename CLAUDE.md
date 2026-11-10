@@ -113,7 +113,7 @@ interval/            the interval timer
                      counted, and `workEnds`), `PlannedWorkout`, `LiftWorkout`,
                      `WorkoutProgress`, `Sport` (a class or a day on the wall, trained away from the app: planned as
                      `PlanWorkout.SportDay`, logged as a `LoggedSport`), `Flow` (a mobility session followed along,
-                     `Flow.kt`, and the eight shipped, `BuiltInFlows.kt`); over `core-time` alone, neither `core` nor
+                     `Flow.kt`, and the nine shipped, `BuiltInFlows.kt`); over `core-time` alone, neither `core` nor
                      anything of Lift's (History makes a `LiftWorkout` from a Lift session, `asLiftWorkouts` in
                      interval-history)
   interval-data      `IntervalRepository`, the root of a repository per store (`SettingsRepository`, the
@@ -462,11 +462,12 @@ toolchain (`$compose.*`).
   and `ProgramStore`), which no feature may reach together. Its two decisions are pure: `starterProgram`
   (`lift-domain`, `StarterProgram.kt`) picks among the built-ins one bell is enough for (`Program.oneBell`: no
   lift with two bells, none under a bar or against a band, none that needs a bar to hang from or a bench;
-  `StarterProgramTest` pins the set, so a new built-in says which side it is on), or with a pair of bells owned
+  `StarterProgramTest` pins the set, so a new built-in says which side it is on; never one of `retiredPrograms`,
+  the built-ins `programCatalogue` no longer offers but whoever follows one keeps, since a program is stored by its id), or with a pair of bells owned
   (`GearStore.pairs`, asked under the bells) those two are enough for (`Program.pairOfBells`), those whose longest
-  day fits the session, a grappler's first for BJJ (with a pair, `BjjKettlebell` once it fits), then a beginner's,
+  day fits the session, a grappler's first for BJJ (`BjjKettlebell` with a pair, else `BjjOneBell`, once it fits), then a beginner's,
   then any; `buildWeek` (`BuiltWeek.kt`) puts the sport on its days and the program's on the free ones, spread
-  evenly with a rest day left (`spreadWeekdays`, interval-domain, the Plan sheet's too), beside `BjjKettlebell`
+  evenly with a rest day left (`spreadWeekdays`, interval-domain, the Plan sheet's too), beside either of those two (`grapplersPrograms`)
   with the sport on two days or fewer the 15:15 preset (`snatchIntervals`) on a third (`conditioningDay`), and
   says which plans a rebuild takes off first (the weekly days of the sport it opened with and of the program, and
   beside that program the weekly 15:15; everything else planned stays and its weekdays are taken). `WeekSetupViewModel` keeps the answers in its entry's

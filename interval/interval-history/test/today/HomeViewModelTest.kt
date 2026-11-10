@@ -208,14 +208,14 @@ class HomeViewModelTest : MainDispatcherTest() {
     fun `the presets offered fit the minutes picked and a flow that fits follows them`() {
         assertEquals(DEFAULT_PICK_MINUTES, viewModel.state.value.minutes)
         assertEquals(
-            listOf("HIIT 30/30", "Hangboard", "Tabata", "Spine and hamstrings"),
+            listOf("HIIT 30/30", "Swings on the minute", "Hangboard", "Spine and hamstrings"),
             viewModel.state.value.picks.map { it.preset.name },
         )
 
         viewModel.setMinutes(5)
         assertEquals(5, viewModel.state.value.minutes)
         assertEquals(
-            listOf("Hangboard", "Tabata", "Wrists and fingers"),
+            listOf("Hangboard", "Tabata", "Daily five"),
             viewModel.state.value.picks.map { it.preset.name },
         )
 

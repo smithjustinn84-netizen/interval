@@ -14,7 +14,7 @@
     <action>Tap M, W and F; tap "16"; leave "15 min"</action>
     <action>Verify that "Your week" reads "BJJ" over "Mon, Wed, Fri", "Your first 100 swings" over "about 15 min · Tue, Thu, Sat" and "Goal: 6 workouts a week", with "Pick another program" under the card</action>
     <action>Tap "Just the bell" and verify that the days go and the week is the program alone on Mon, Wed, Fri; tap "BJJ" again and verify that M, W and F are still picked</action>
-    <action>Tap "30 min" and verify that the program becomes "Round conditioning" on two days; tap "15 min" again</action>
+    <action>Tap "30 min" and verify that the program becomes "One bell beside BJJ" on two days; tap "15 min" again</action>
     <action>Tap "Build my week"</action>
     <action>Verify that Today is shown with the notice "Week built", the week's dots naming "BJJ" under Monday, Wednesday and Friday, "15 min" picked under "Or pick by time", and (on a Tuesday, Thursday or Saturday) "Your first 100 swings" up next with "about 15 min" and "Start day 1"</action>
     <action>Tap the "Train" tab, then "Your equipment" on Strength, and verify that 16 kg alone is picked; go back</action>

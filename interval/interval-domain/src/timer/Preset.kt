@@ -123,4 +123,17 @@ val builtInPresets: List<Preset> = listOf(
     ),
     Preset("Long efforts", IntervalConfig(prepSeconds = 5, workSeconds = 45, restSeconds = 15, rounds = 12)),
     snatchIntervals,
+    // Five five-minute rounds with a minute between: rolling, drilling, or rounds of anything.
+    Preset("Mat rounds", IntervalConfig(prepSeconds = 10, workSeconds = 300, restSeconds = 60, rounds = 5)),
+    // Ten swings at the top of each minute for ten: hard enough, with most of every minute to recover.
+    Preset(
+        "Swings on the minute",
+        IntervalConfig(
+            prepSeconds = 10,
+            workSeconds = 20,
+            restSeconds = 40,
+            rounds = 10,
+            activity = Activity.Kettlebell,
+        ),
+    ),
 )

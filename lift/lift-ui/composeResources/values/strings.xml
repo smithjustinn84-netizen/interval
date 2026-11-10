@@ -243,6 +243,8 @@
     <string name="program_countdown_summary">Goblet squats from 10 down to 1 and 10 sets of 15 swings, after the Humane Burpee · 3 days a week for 4 weeks</string>
     <string name="program_one_stop_shop_name">One-stop shop</string>
     <string name="program_one_stop_shop_summary">5 sets of 25 swings with presses, rows, deadlifts, goblet squats and suitcase carries: every basic move in one session · 3 days a week for 6 weeks</string>
+    <string name="program_strong_for_life_name">Strong for life</string>
+    <string name="program_strong_for_life_summary">Get-ups, goblet squats and a suitcase carry one day; swings, push-ups, rows and a rack carry the next. Every basic move, short, with a rep left in each set · 3 days a week for 8 weeks</string>
     <string name="program_simple_sinister_name">Simple &amp; Sinister</string>
     <string name="program_simple_sinister_summary">100 one-arm swings in sets of 10, then 10 get-ups, a side at a time · 5 days a week for 12 weeks</string>
     <string name="program_program_minimum_name">Program Minimum</string>
@@ -268,6 +270,8 @@
     <string name="program_shoulder_armor_name">Shoulder armor</string>
     <string name="program_bjj_kettlebell_name">20 minutes beside BJJ</string>
     <string name="program_bjj_kettlebell_summary">The Armor Building Complex with a pair, on the minute for 15 minutes, one day; get-ups, a bottoms-up carry, windmills and dead bugs the next. Add 15:15 snatches from the Timer on a third · 2 days a week for 6 weeks</string>
+    <string name="program_bjj_one_bell_name">One bell beside BJJ</string>
+    <string name="program_bjj_one_bell_summary">Goblet squats, presses and rows, few and slow, with a suitcase carry one day; 8 minutes of swings on the minute, get-ups and a rack carry the next. Add 15:15 snatches from the Timer on a third · 2 days a week for 6 weeks</string>
     <string name="program_shoulder_armor_summary">Halos, get-ups, windmills and bottoms-up presses, for shoulders that hold up under frames and locks · 3 days a week for 6 weeks</string>
     <string name="program_foundations_name">Kettlebell foundations</string>
     <string name="program_foundations_summary">Deadlifts, goblet squats and halos one day; swings, push-ups and get-ups the next. Learn each lift light · 3 days a week for 4 weeks</string>

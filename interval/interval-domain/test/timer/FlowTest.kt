@@ -86,6 +86,7 @@ class FlowTest {
         assertEquals(
             mapOf(
                 "Hips and shoulders" to 8 * 60,
+                "Daily five" to 5 * 60,
                 "Wrists and fingers" to 5 * 60,
                 "Core for falls" to 7 * 60,
                 "Before rolling" to 9 * 60,

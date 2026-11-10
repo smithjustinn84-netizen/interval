@@ -17,7 +17,6 @@ import dev.justinsmith.lift.data.snatchSets
 import dev.justinsmith.lift.domain.BALANCE_DAYS
 import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.Challenge
-import dev.justinsmith.lift.domain.DEFAULT_BELL_KG
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.Followed
 import dev.justinsmith.lift.domain.GripLoad
@@ -25,21 +24,24 @@ import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.MuscleBalance
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
-import dev.justinsmith.lift.domain.ProgramFamily
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.Readiness
 import dev.justinsmith.lift.domain.ReadinessCheck
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.barbellLifts
+import dev.justinsmith.lift.domain.besideTheMat
 import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.challenges
 import dev.justinsmith.lift.domain.estimatedMinutes
-import dev.justinsmith.lift.domain.family
 import dev.justinsmith.lift.domain.gripLoad
 import dev.justinsmith.lift.domain.kettlebellLifts
+import dev.justinsmith.lift.domain.oneBell
+import dev.justinsmith.lift.domain.pairOfBells
+import dev.justinsmith.lift.domain.program
 import dev.justinsmith.lift.domain.readiness
 import dev.justinsmith.lift.domain.sets
 import dev.justinsmith.lift.domain.setsOldestFirst
+import dev.justinsmith.lift.domain.startingBellKg
 import dev.justinsmith.lift.domain.startingLoadKg
 import dev.justinsmith.lift.domain.suggestedBar
 import dev.justinsmith.lift.domain.suggestedBell
@@ -118,18 +120,19 @@ class TodayViewModel(
         combine(
             sessionStore.sessions,
             sessionStore.active,
-            gearStore.bar,
+            combine(gearStore.bar, gearStore.bells, ::Pair),
             combine(intervals.sportDays, intervals.workouts, ::Pair),
             clock.days(timestamps, dayCheckMillis),
-        ) { sessions, active, bar, (sportDays, workouts), _ -> build(sessions, active, bar, sportDays, workouts) }
+        ) { sessions, active, gear, (sportDays, workouts), _ -> build(sessions, active, gear, sportDays, workouts) }
             .combine(
                 combine(
                     programStore.following,
                     programStore.programDay,
                     setStore.restSeconds,
                     gearStore.bells,
-                ) { following, day, rest, bells ->
-                    { state: TodayUiState -> state.withProgram(following, day, rest, bells) }
+                    gearStore.pairs,
+                ) { following, day, rest, bells, pairs ->
+                    { state: TodayUiState -> state.withProgram(following, day, rest, bells, pairs.isNotEmpty()) }
                 },
             ) { state, with -> with(state) }
             .combine(
@@ -149,7 +152,7 @@ class TodayViewModel(
                 build(
                     sessionStore.sessions.value,
                     sessionStore.active.value,
-                    gearStore.bar.value,
+                    gearStore.bar.value to gearStore.bells.value,
                     intervals.sportDays.value,
                     intervals.workouts.value,
                 ).withProgram(
@@ -157,6 +160,7 @@ class TodayViewModel(
                     programStore.programDay.value,
                     setStore.restSeconds.value,
                     gearStore.bells.value,
+                    gearStore.pairs.value.isNotEmpty(),
                 ).withChallenges(
                     sessionStore.sessions.value,
                     programStore.followed.value,
@@ -200,10 +204,11 @@ class TodayViewModel(
     private fun build(
         sessions: List<LiftSession>,
         active: LiftSession?,
-        bar: Double?,
+        gear: Pair<Double?, List<Double>>,
         sportDays: List<SportDay>,
         workouts: List<IntervalWorkout>,
     ): TodayUiState {
+        val (bar, owned) = gear
         val now = clock.nowMillis()
         val today = timestamps.dayNumber(now)
         val balanceFrom = today - BALANCE_DAYS + 1
@@ -231,25 +236,37 @@ class TodayViewModel(
                 kettlebellLifts.flatMap {
                     listOf(it to false, it to true)
                 }.associateWith { (exercise, double) ->
-                    suggestedBell(exercise, double, history, DEFAULT_BELL_KG)
+                    suggestedBell(exercise, double, history, startingBellKg(exercise, owned))
                 } + barbellLifts.associate { (it to false) to suggestedBar(it, history, bar) }
             },
         )
     }
 }
 
-/** [this] with the program followed, its next [day], the [rest] between sets and the [bells] owned. */
-private fun TodayUiState.withProgram(following: Program?, day: ProgramDay?, rest: Int, bells: List<Double>) = copy(
+/**
+ * [this] with the program followed, its next [day], the [rest] between sets and the [bells] owned, a [pair] among
+ * them or not.
+ */
+private fun TodayUiState.withProgram(
+    following: Program?,
+    day: ProgramDay?,
+    rest: Int,
+    bells: List<Double>,
+    pair: Boolean,
+) = copy(
     following = following,
     programDay = day,
     restSeconds = rest,
-    suggested = suggestedPrograms(following),
+    suggested = suggestedPrograms(following, pair),
     ownedBells = bells.sorted(),
 )
 
-/** The built-ins for grapplers, which suit a climber's week too, other than [following]: two at most. */
-fun suggestedPrograms(following: Program?): List<Program> = builtInPrograms
-    .filter { it.family == ProgramFamily.Grappling && it.key != following?.key }
+/**
+ * The built-ins for grapplers, which suit a climber's week too, other than [following]: the first two of
+ * [besideTheMat] that one bell is enough for, or with a [pair] owned that two are.
+ */
+fun suggestedPrograms(following: Program?, pair: Boolean = false): List<Program> = besideTheMat.map(::program)
+    .filter { (if (pair) it.pairOfBells else it.oneBell) && it.key != following?.key }
     .take(SUGGESTED_SHOWN)
 
 private const val SUGGESTED_SHOWN = 2

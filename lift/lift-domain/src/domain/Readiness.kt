@@ -14,7 +14,7 @@ data class ReadinessCheck(val readiness: Readiness, val reason: ReadinessReason?
 /** A session felt this hard or more is still in the legs within [HARD_SESSION_HOURS]. */
 private val HARD_SESSION = PerceivedEffort.VeryHard
 
-private const val HARD_SESSION_HOURS = 36L
+private const val HARD_SESSION_HOURS = 48L
 private const val MILLIS_PER_HOUR = 3_600_000L
 
 /** Days off since the last session that leave one fresh. */
@@ -23,7 +23,7 @@ private const val FRESH_AFTER_DAYS = 3
 /**
  * How ready the lifter is at [nowMillis], from the [sessions] logged, the [grappling] days (an epoch day each,
  * only those logged: a class planned or not yet logged doesn't count) and the [grip]'s load. Taxed after a
- * session that felt very hard or more within a day and a half; after BJJ today or yesterday with the grip above
+ * session that felt very hard or more within two days; after BJJ today or yesterday with the grip above
  * the weeks before; or with the grip overreached. Fresh after [FRESH_AFTER_DAYS] days or more with no session,
  * otherwise normal.
  */

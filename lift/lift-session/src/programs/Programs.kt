@@ -55,6 +55,7 @@ import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.dayMinutes
 import dev.justinsmith.lift.domain.estimatedMinutes
+import dev.justinsmith.lift.domain.programCatalogue
 import dev.justinsmith.lift.domain.weekBalance
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.notice_program_followed
@@ -157,7 +158,7 @@ fun ProgramsScreen(
     restSeconds: Int = RestClock.DEFAULT_SECONDS,
     open: String? = null,
 ) {
-    val families = builtInPrograms.groupBy { (it.key as? ProgramKey.BuiltIn)?.id?.family }
+    val families = programCatalogue(following).groupBy { (it.key as? ProgramKey.BuiltIn)?.id?.family }
     // Saved by their stored keys: a program is not saveable.
     var previewing by rememberSaveable { mutableStateOf(open) }
     var switching by rememberSaveable { mutableStateOf<String?>(null) }

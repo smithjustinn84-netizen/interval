@@ -33,6 +33,7 @@ import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.estimatedMinutes
+import dev.justinsmith.lift.domain.retired
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.pick_day_all
 import dev.justinsmith.lift.session.resources.pick_day_built_in
@@ -79,12 +80,12 @@ internal fun ProgramDaySheet(state: SessionUiState, onPick: (Program, Int) -> Un
     }
 }
 
-/** The programs to take a day of, in groups: the one followed, the user's own, the built-ins. */
+/** The programs to take a day of, in groups: the one followed, the user's own, the built-ins on offer. */
 @Composable
 private fun ProgramChoices(state: SessionUiState, onOpen: (Program) -> Unit) {
     val following = state.followingDay?.program
     val (yours, builtIn) = state.programs
-        .filter { it.key != following?.key }
+        .filter { it.key != following?.key && !it.retired }
         .partition { it.key is ProgramKey.Custom }
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         following?.let { ProgramGroup(stringResource(Res.string.program_following), listOf(it), onOpen) }

@@ -97,7 +97,7 @@ internal data class Inputs(
             draft = draft,
             free = active != null && plan == null,
             draftLastTime = if (plan == null) lastTime(before.oldestFirst, draft.exercise, draft.doubled) else null,
-            upNext = plan?.let { upNext(it, sets, before.oldestFirst, bar, offered, draft) },
+            upNext = plan?.let { upNext(it, sets, before.oldestFirst, bar, offered, draft, owned) },
             dayDone = plan != null && nextPlanned(plan.plannedSets(), sets) == null,
             plan = plan?.planRows(sets).orEmpty(),
             programDay = plan,

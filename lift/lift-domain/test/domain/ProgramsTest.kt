@@ -187,6 +187,33 @@ class ProgramsTest {
     }
 
     @Test
+    fun `a retired built-in is off the catalogue and still a program`() {
+        val offered = programCatalogue().map { (it.key as ProgramKey.BuiltIn).id }
+        assertEquals(ProgramId.entries - retiredPrograms, offered)
+        retiredPrograms.forEach { id ->
+            // Stored by its id: a session done of it, or someone following it, finds it as before.
+            assertEquals(ProgramKey.BuiltIn(id), ProgramKey.parse(id.name))
+            assertTrue(program(id).retired)
+        }
+    }
+
+    @Test
+    fun `the catalogue keeps a retired program for whoever follows it`() {
+        val followed = ProgramKey.BuiltIn(ProgramId.GripAndPull)
+        val offered = programCatalogue(followed)
+        assertEquals(listOf(program(ProgramId.GripAndPull)), offered - programCatalogue().toSet())
+        // In its place among the others, so its family lists it where it always was.
+        assertEquals(builtInPrograms.filter { it in offered }, offered)
+    }
+
+    @Test
+    fun `the programs put before a grappler are grapplers' programs on offer`() {
+        assertEquals(ProgramId.BjjKettlebell, besideTheMat.first())
+        assertTrue(besideTheMat.all { it.family == ProgramFamily.Grappling && it !in retiredPrograms })
+        assertTrue(grapplersPrograms.all { it in besideTheMat })
+    }
+
+    @Test
     fun `every built-in has days and each day a block`() {
         assertEquals(ProgramId.entries.size, builtInPrograms.size)
         assertEquals(ProgramId.entries.map { ProgramKey.BuiltIn(it) }, builtInPrograms.map { it.key })
@@ -257,6 +284,7 @@ class ProgramsTest {
                 ProgramId.GripAndPull,
                 ProgramId.ShoulderArmor,
                 ProgramId.BjjKettlebell,
+                ProgramId.BjjOneBell,
             ),
             ProgramId.entries.filter { it.family == ProgramFamily.Grappling },
         )

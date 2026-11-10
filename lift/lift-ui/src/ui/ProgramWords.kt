@@ -38,6 +38,8 @@ import dev.justinsmith.lift.ui.resources.program_bells_bodyweight_name
 import dev.justinsmith.lift.ui.resources.program_bells_bodyweight_summary
 import dev.justinsmith.lift.ui.resources.program_bjj_kettlebell_name
 import dev.justinsmith.lift.ui.resources.program_bjj_kettlebell_summary
+import dev.justinsmith.lift.ui.resources.program_bjj_one_bell_name
+import dev.justinsmith.lift.ui.resources.program_bjj_one_bell_summary
 import dev.justinsmith.lift.ui.resources.program_bodyweight_basics_name
 import dev.justinsmith.lift.ui.resources.program_bodyweight_basics_summary
 import dev.justinsmith.lift.ui.resources.program_bodyweight_emom_name
@@ -95,6 +97,8 @@ import dev.justinsmith.lift.ui.resources.program_simple_sinister_name
 import dev.justinsmith.lift.ui.resources.program_simple_sinister_summary
 import dev.justinsmith.lift.ui.resources.program_snatch_test_name
 import dev.justinsmith.lift.ui.resources.program_snatch_test_summary
+import dev.justinsmith.lift.ui.resources.program_strong_for_life_name
+import dev.justinsmith.lift.ui.resources.program_strong_for_life_summary
 import dev.justinsmith.lift.ui.resources.program_ten_thousand_name
 import dev.justinsmith.lift.ui.resources.program_ten_thousand_summary
 import org.jetbrains.compose.resources.pluralStringResource
@@ -145,6 +149,7 @@ fun programName(id: ProgramId): String = stringResource(
         ProgramId.TenThousandSwings -> Res.string.program_ten_thousand_name
         ProgramId.SwingSquatCountdown -> Res.string.program_countdown_name
         ProgramId.OneStopShop -> Res.string.program_one_stop_shop_name
+        ProgramId.StrongForLife -> Res.string.program_strong_for_life_name
         ProgramId.SimpleAndSinister -> Res.string.program_simple_sinister_name
         ProgramId.ProgramMinimum -> Res.string.program_program_minimum_name
         ProgramId.RiteOfPassage -> Res.string.program_rite_of_passage_name
@@ -157,6 +162,7 @@ fun programName(id: ProgramId): String = stringResource(
         ProgramId.GripAndPull -> Res.string.program_grip_pull_name
         ProgramId.ShoulderArmor -> Res.string.program_shoulder_armor_name
         ProgramId.BjjKettlebell -> Res.string.program_bjj_kettlebell_name
+        ProgramId.BjjOneBell -> Res.string.program_bjj_one_bell_name
         ProgramId.KettlebellFoundations -> Res.string.program_foundations_name
         ProgramId.FirstHundredSwings -> Res.string.program_first_hundred_name
         ProgramId.BeginnerFullBody -> Res.string.program_beginner_full_body_name
@@ -198,6 +204,7 @@ private fun programSummary(id: ProgramId): String = stringResource(
         ProgramId.TenThousandSwings -> Res.string.program_ten_thousand_summary
         ProgramId.SwingSquatCountdown -> Res.string.program_countdown_summary
         ProgramId.OneStopShop -> Res.string.program_one_stop_shop_summary
+        ProgramId.StrongForLife -> Res.string.program_strong_for_life_summary
         ProgramId.SimpleAndSinister -> Res.string.program_simple_sinister_summary
         ProgramId.ProgramMinimum -> Res.string.program_program_minimum_summary
         ProgramId.RiteOfPassage -> Res.string.program_rite_of_passage_summary
@@ -210,6 +217,7 @@ private fun programSummary(id: ProgramId): String = stringResource(
         ProgramId.GripAndPull -> Res.string.program_grip_pull_summary
         ProgramId.ShoulderArmor -> Res.string.program_shoulder_armor_summary
         ProgramId.BjjKettlebell -> Res.string.program_bjj_kettlebell_summary
+        ProgramId.BjjOneBell -> Res.string.program_bjj_one_bell_summary
         ProgramId.KettlebellFoundations -> Res.string.program_foundations_summary
         ProgramId.FirstHundredSwings -> Res.string.program_first_hundred_summary
         ProgramId.BeginnerFullBody -> Res.string.program_beginner_full_body_summary

@@ -57,24 +57,68 @@ class DayProgressTest {
         assertEquals(listOf(false, true), rows.map { it.open })
     }
 
+    private val medium = Band.of(BandLevel.Medium)
+
+    private fun loadFor(
+        set: PlannedSet,
+        history: List<SetLog>,
+        bar: Double?,
+        offered: List<Band>,
+        owned: List<Double> = emptyList(),
+    ) = plannedLoad(set, history, bar, offered, bellKg = 16.0, band = medium, owned = owned)
+
     @Test
     fun `a planned load wins and a bar lift with no history starts at the user's bar`() {
-        val medium = Band.of(BandLevel.Medium)
         val planned = PlannedSet(BuiltInExercise.Press, reps = 5, side = Side.Left, load = Load.Bell(20.0))
-        assertEquals(Load.Bell(20.0), plannedLoad(planned, emptyList(), bar = null, emptyList(), 16.0, medium))
+        assertEquals(Load.Bell(20.0), loadFor(planned, emptyList(), null, emptyList()))
         val squat = PlannedSet(barbellLifts.first(), reps = 5, side = null)
-        assertEquals(Load.Bar(15.0), plannedLoad(squat, emptyList(), bar = 15.0, emptyList(), 16.0, medium))
+        assertEquals(Load.Bar(15.0), loadFor(squat, emptyList(), 15.0, emptyList()))
+    }
+
+    @Test
+    fun `a lift held overhead starts at the lightest bell owned until it has a history`() {
+        val owned = listOf(12.0, 16.0, 24.0)
+        val overhead = listOf(
+            BuiltInExercise.Press,
+            BuiltInExercise.BottomsUpPress,
+            BuiltInExercise.GetUp,
+            BuiltInExercise.Windmill,
+            BuiltInExercise.Halo,
+            BuiltInExercise.BottomsUpCarry,
+        )
+        overhead.forEach { lift ->
+            val set = PlannedSet(lift, reps = 3, side = null)
+            assertEquals(12.0, loadFor(set, emptyList(), null, emptyList(), owned).kg, "$lift")
+            // With no bells said, a light one; and never above the bell in hand.
+            assertEquals(LIGHT_BELL_KG, loadFor(set, emptyList(), null, emptyList()).kg, "$lift")
+            assertEquals(16.0, loadFor(set, emptyList(), null, emptyList(), owned = listOf(20.0, 24.0)).kg, "$lift")
+        }
+        val pressed = listOf(SetLog.of(1, BuiltInExercise.Press, 20.0, 5, Side.Left, 0))
+        val press = PlannedSet(BuiltInExercise.Press, reps = 5, side = Side.Left)
+        assertEquals(20.0, loadFor(press, pressed, null, emptyList(), owned).kg)
+        // What is swung, squatted, rowed or carried at the side takes the bell in hand as before.
+        listOf(
+            BuiltInExercise.TwoHandSwing,
+            BuiltInExercise.GobletSquat,
+            BuiltInExercise.Row,
+            BuiltInExercise.SuitcaseCarry,
+        )
+            .forEach { lift ->
+                assertEquals(
+                    16.0,
+                    loadFor(PlannedSet(lift, reps = 5, side = null), emptyList(), null, emptyList(), owned).kg,
+                )
+            }
     }
 
     @Test
     fun `a lift with no load named takes the one in hand until it has a history`() {
-        val medium = Band.of(BandLevel.Medium)
-        val press = PlannedSet(BuiltInExercise.Press, reps = 5, side = Side.Left, double = true)
-        assertEquals(Load.Bell(16.0, double = true), plannedLoad(press, emptyList(), null, emptyList(), 16.0, medium))
-        val before = listOf(SetLog.of(1, BuiltInExercise.Press, 20.0, 5, Side.Left, 0, double = true))
-        assertEquals(Load.Bell(20.0, double = true), plannedLoad(press, before, null, emptyList(), 16.0, medium))
+        val squat = PlannedSet(BuiltInExercise.FrontSquat, reps = 5, side = null, double = true)
+        assertEquals(Load.Bell(16.0, double = true), loadFor(squat, emptyList(), null, emptyList()))
+        val before = listOf(SetLog.of(1, BuiltInExercise.FrontSquat, 20.0, 5, null, 0, double = true))
+        assertEquals(Load.Bell(20.0, double = true), loadFor(squat, before, null, emptyList()))
         val pushUp = PlannedSet(BuiltInExercise.PushUp, reps = 10, side = null)
-        assertEquals(Load.Bodyweight(0.0), plannedLoad(pushUp, emptyList(), null, emptyList(), 16.0, medium))
+        assertEquals(Load.Bodyweight(0.0), loadFor(pushUp, emptyList(), null, emptyList()))
     }
 
     @Test
@@ -86,11 +130,11 @@ class DayProgressTest {
             Band.of(BandLevel.Heavy),
         )
         val pulls = PlannedSet(BuiltInExercise.BandPullApart, reps = 15, side = null, load = Load.Banded(heavy))
-        assertEquals(Load.Banded(heavy), plannedLoad(pulls, emptyList(), null, offered, 16.0, medium))
+        assertEquals(Load.Banded(heavy), loadFor(pulls, emptyList(), null, offered))
         val before = listOf(SetLog.of(1, BuiltInExercise.BandPullApart, 0.0, 15, null, 0, band = light))
         val withoutHeavy = offered.filterNot { it.id == heavy.id }
-        assertEquals(Load.Banded(light), plannedLoad(pulls, before, null, withoutHeavy, 16.0, medium))
-        assertEquals(Load.Banded(medium), plannedLoad(pulls, emptyList(), null, withoutHeavy, 16.0, medium))
+        assertEquals(Load.Banded(light), loadFor(pulls, before, null, withoutHeavy))
+        assertEquals(Load.Banded(medium), loadFor(pulls, emptyList(), null, withoutHeavy))
     }
 
     private val abcs = Block(

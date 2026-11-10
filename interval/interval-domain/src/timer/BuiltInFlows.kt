@@ -28,6 +28,27 @@ val builtInFlows: List<Flow> = listOf(
             ),
         ),
     ),
+    // The five minutes worth doing every day: the spine, the hips, the squat, the upper back and the backs of the
+    // legs, once through. Ahead of the wrists, so five minutes picked on Today are spent on it.
+    Flow(
+        key = "daily-five",
+        name = "Daily five",
+        use = FlowUse.After,
+        note = "every day",
+        moves = listOf(
+            catCow(seconds = 40),
+            hipFlexorLunge(seconds = 30),
+            deepSquat(seconds = 45),
+            threadTheNeedle(seconds = 25),
+            Move(
+                "Downward dog",
+                seconds = 45,
+                cue = "Hips high, back long. Bend one knee, then the other, to walk the heels down.",
+                held = false,
+                exercise = "DownwardDog",
+            ),
+        ),
+    ),
     Flow(
         key = WRISTS_KEY,
         name = "Wrists and fingers",

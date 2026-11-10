@@ -107,6 +107,29 @@ class ProgramsPageTest {
     }
 
     @Test
+    fun `a program no longer offered is off the page`() = liftAppTest {
+        onNodeWithText("Follow a program").performClick()
+        scrollToText("One bell beside BJJ")
+        scrollToText("Strong for life")
+        listOf("Grip and pull", "Clean and press EMOM", "Long cycle EMOM", "Bodyweight EMOM").forEach {
+            onNodeWithText(it).assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun `whoever follows a program no longer offered still has it`() = liftAppTest(
+        FakeLiftStorage().apply {
+            following.row.value = FollowingEntity(programId = ProgramId.GripAndPull.name, startedAtEpochMillis = 0)
+        },
+    ) {
+        waitForText("Grip and pull")
+        scrollToText("All programs")
+        onNodeWithText("All programs").performClick()
+        scrollToText("Grip and pull")
+        onNodeWithText("Long cycle EMOM").assertDoesNotExist()
+    }
+
+    @Test
     fun `a program for grapplers is followed from its own group`() = liftAppTest { app ->
         onNodeWithText("Follow a program").performClick()
         scrollToText("For grapplers")

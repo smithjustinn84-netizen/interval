@@ -20,12 +20,17 @@ class ReadinessTest {
     ) = readiness(sessions, grappling, grip, now, dayOf)
 
     @Test
-    fun `a very hard session within a day and a half taxes today`() {
+    fun `a very hard session within two days taxes today`() {
         assertEquals(
             ReadinessCheck(Readiness.Taxed, ReadinessReason.HardSession),
             check(listOf(session(now - 30 * HOUR_MILLIS, PerceivedEffort.VeryHard))),
         )
-        assertEquals(Readiness.Normal, check(listOf(session(now - 40 * HOUR_MILLIS, PerceivedEffort.AllOut))).readiness)
+        // The morning after next still has it: recovery is slower than a day and a half.
+        assertEquals(
+            Readiness.Taxed,
+            check(listOf(session(now - 44 * HOUR_MILLIS, PerceivedEffort.VeryHard))).readiness,
+        )
+        assertEquals(Readiness.Normal, check(listOf(session(now - 50 * HOUR_MILLIS, PerceivedEffort.AllOut))).readiness)
         assertEquals(Readiness.Normal, check(listOf(session(now - 10 * HOUR_MILLIS, PerceivedEffort.Hard))).readiness)
     }
 

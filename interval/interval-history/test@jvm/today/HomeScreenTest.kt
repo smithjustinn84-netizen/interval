@@ -286,14 +286,14 @@ class HomeScreenTest {
         onNodeWithText("Conditioning · 30s on · 30s off", substring = true).assertIsDisplayed()
         onNodeWithText("Mobility · ", substring = true).assertExists()
         // Under the card's three ways to a plan, the third pick is below a phone's first screen.
-        onNodeWithText("Tabata").performScrollTo().performClick()
+        onNodeWithText("Hangboard").performScrollTo().performClick()
         // The look's own caption, under the rows' kinds.
         onAllNodesWithText("Conditioning · ", substring = true).onLast().assertExists()
         onNodeWithText("Plan for later").assertExists()
         onNodeWithText("Start").performClick()
         assertEquals(listOf(20), minutes)
         waitUntil { started.isNotEmpty() }
-        assertEquals(listOf("Tabata"), started)
+        assertEquals(listOf("Hangboard"), started)
     }
 
     @Test

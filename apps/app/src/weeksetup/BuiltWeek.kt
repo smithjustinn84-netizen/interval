@@ -11,8 +11,8 @@ import dev.justinsmith.interval.timer.snatchIntervals
 import dev.justinsmith.interval.timer.spreadWeekdays
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramFamily
-import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.grapplersPrograms
 import dev.justinsmith.lift.domain.starterProgram
 
 /**
@@ -50,17 +50,15 @@ private const val MOST_TRAINING_DAYS = DAYS_PER_WEEK - 1
 /** The most days of the sport a week beside which the grappler's program gets a third session, of intervals. */
 private const val MOST_SPORT_DAYS_FOR_INTERVALS = 2
 
-private val grapplersProgram = ProgramKey.BuiltIn(ProgramId.BjjKettlebell)
-
 /**
  * The week [answers] build, over what is [planned] now. The sport goes on its days. The program is the one
  * [followed], else the one that suits the bells owned and the session's length ([starterProgram], timed at the
  * [restSeconds] the user takes), a grappler's first for BJJ; with no bell and none followed there is none. Its
  * days go on weekdays with nothing planned every week, as many as it asks for while a rest day is left, spread
- * as evenly as they go; with no day free it isn't taken up. The grappler's program ([ProgramId.BjjKettlebell])
+ * as evenly as they go; with no day free it isn't taken up. A grappler's program ([grapplersPrograms])
  * beside the sport on two days or fewer gets [snatchIntervals] weekly on a third, the free day furthest from its
  * two while a rest day is left; on more days of the mat its two are enough. The weekly days of [was], the sport
- * Set up opened with, and of the sport answered are replaced, and so are the program's, and with the grappler's
+ * Set up opened with, and of the sport answered are replaced, and so are the program's, and with a grappler's
  * program followed or taken up the intervals planned weekly; everything else planned stays, and its weekdays are
  * taken.
  */
@@ -75,7 +73,7 @@ fun buildWeek(
     val sportDays = if (sport == null) emptySet() else answers.sportDays
     val replaced = setOfNotNull(answers.sport, was)
     val wanted = followed ?: starter(answers, restSeconds)
-    val grappler = wanted?.key == grapplersProgram
+    val grappler = (wanted?.key as? ProgramKey.BuiltIn)?.id in grapplersPrograms
     val weekly = planned.filter { it.schedule is PlanSchedule.Weekly }
     val remove = weekly.filter { plan ->
         when (val workout = plan.workout) {

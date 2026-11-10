@@ -7,6 +7,17 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.6.0] — Unreleased
 
 ### Added
+- Two programs. "One bell beside BJJ" (2 days a week, about 20 minutes) is for a grappler with a single bell: goblet
+  squats, presses and rows, few and slow, with a suitcase carry one day; eight minutes of swings on the minute,
+  get-ups and a rack carry the next. Set up starts a grappler with one bell on it and plans 15:15 on a third day,
+  as it does beside the program for a pair. "Strong for life" (3 days a week, about 20 minutes, with the Dan
+  John–inspired programs) covers every basic move across two days with a carry to end each and no set near its
+  limit.
+- Two presets: "Mat rounds", five five-minute rounds with a minute between, and "Swings on the minute", twenty
+  seconds on and forty off for ten minutes. Half an hour picked on Today now offers the rounds, ten minutes the
+  swings.
+- A flow for every day, "Daily five": cat-cow, the hip flexor lunge, the deep squat, thread the needle and the
+  downward dog in five minutes. Five minutes picked on Today offers it.
 - Three more shipped flows, two for BJJ. "Core for falls" (7 min, before training) is Mark Wildman's four foundations
   of the core: the spinal rock and the same-side shoulder roll it builds to, the sit-up, the cross touch and the
   V-up across. "Before rolling" (9 min) drills the hip escape, the bridge and roll, the technical stand-up, the
@@ -92,6 +103,15 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   block's count-in), and a session opening before its first set says the one due at once.
 
 ### Changed
+- Five programs are no longer offered: Daily 100 swings + 10 get-ups, Clean and press EMOM, Long cycle EMOM, Grip
+  and pull and Bodyweight EMOM. Each is said better by another or is hard on a shoulder, a grip or the knees for
+  what it gives. If you follow one you keep it, and the sessions you did of it read as they did.
+- Train's "Beside the mat and the wall" offers the programs made to sit beside BJJ first, the one your bells suit:
+  with a pair "20 minutes beside BJJ", otherwise "One bell beside BJJ" and "Shoulder armor".
+- A lift held overhead or upside down (presses, the get-up, the windmill, the halo, the bottoms-up carry) with no
+  history starts at your lightest bell, or 8 kg with no bells said, rather than the bell you swing.
+- A session felt very hard or more counts against the next two days, up from a day and a half, before Lift offers
+  the easier day.
 - The six sounds are the app's own, the same on Android, iOS and desktop, in place of each platform's stock
   tones: a short high tick for each of the last seconds, one mid note at halfway, one low note for get ready and
   the warm-up, two notes rising into work, two falling into rest, and three rising to the octave at the finish,

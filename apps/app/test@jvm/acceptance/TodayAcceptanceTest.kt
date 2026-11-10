@@ -48,10 +48,10 @@ class TodayAcceptanceTest {
     @Test
     fun `a flow that fits is offered by time and runs with the timer left alone`() = acceptanceScenario {
         pickMinutes(5)
-        seePick("Wrists and fingers")
-        startPick("Wrists and fingers")
+        seePick("Daily five")
+        startPick("Daily five")
         seePhase("Get ready")
-        seeMove("Wrist circles", "Move 1 of 5")
+        seeMove("Cat-cow", "Move 1 of 5")
         timerIsAsItWas()
     }
 

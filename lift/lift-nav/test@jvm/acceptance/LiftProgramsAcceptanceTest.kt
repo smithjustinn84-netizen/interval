@@ -13,11 +13,11 @@ import kotlin.test.Test
 class LiftProgramsAcceptanceTest {
     @Test
     fun `a program beside the mat and the wall opens with its sheet up and follows`() = liftScenario {
-        tap("Strength for the mat")
+        tap("One bell beside BJJ")
         see("Follow this program")
         tap("Follow this program")
         see("Following")
-        see("Day 1 of 16 · week 1")
+        see("Day 1 of 12 · week 1")
     }
 
     @Test

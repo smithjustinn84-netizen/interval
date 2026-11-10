@@ -32,13 +32,17 @@ class QuickPicksTest {
 
     @Test
     fun `at most three are offered and they are the longest that fit`() {
-        assertEquals(listOf("HIIT 30/30", "Hangboard", "Tabata"), builtInPresets.fitting(10, onTimer, noFlows).names())
+        assertEquals(
+            listOf("HIIT 30/30", "Swings on the minute", "Hangboard"),
+            builtInPresets.fitting(10, onTimer, noFlows).names(),
+        )
         assertEquals(
             listOf("15:15 MVO2", "Long efforts", "HIIT 30/30"),
             builtInPresets.fitting(20, onTimer, noFlows).names(),
         )
+        // Half an hour is five rounds on the mat.
         assertEquals(
-            listOf("15:15 MVO2", "Long efforts", "HIIT 30/30"),
+            listOf("Mat rounds", "15:15 MVO2", "Long efforts"),
             builtInPresets.fitting(30, onTimer, noFlows).names(),
         )
     }
@@ -64,22 +68,23 @@ class QuickPicksTest {
     @Test
     fun `the longest flow that fits comes after the presets`() {
         val five = builtInPresets.fitting(5, onTimer)
-        assertEquals(listOf("Hangboard", "Tabata", "Wrists and fingers"), five.names())
+        // Of the two flows of five minutes, the one for every day.
+        assertEquals(listOf("Hangboard", "Tabata", "Daily five"), five.names())
         assertEquals(listOf(false, false, true), five.map { it.mobility })
         assertEquals(300, five.last().totalSeconds)
         assertEquals("Spine and hamstrings", builtInPresets.fitting(10, onTimer).names().last())
         assertEquals("Core on the mat", builtInPresets.fitting(20, onTimer).names().last())
         assertEquals("Full reset", builtInPresets.fitting(30, onTimer).names().last())
         // With no preset that fits, a flow that does is still offered.
-        assertEquals(listOf("Wrists and fingers"), emptyList<Preset>().fitting(5, onTimer).names())
+        assertEquals(listOf("Daily five"), emptyList<Preset>().fitting(5, onTimer).names())
     }
 
     @Test
     fun `a flow is measured after the timer's get-ready and keeps its own shape`() {
-        // A minute to get ready makes the wrists 5:50, five whole minutes still; two make them 6:50.
+        // A minute to get ready makes the daily five 5:50, five whole minutes still; two make them 6:50.
         val picks = emptyList<Preset>().fitting(5, onTimer.copy(prepSeconds = 60))
         assertEquals(350, picks.single().totalSeconds)
-        assertEquals(builtInFlows.first { it.name == "Wrists and fingers" }.config, picks.single().preset.config)
+        assertEquals(builtInFlows.first { it.name == "Daily five" }.config, picks.single().preset.config)
         assertTrue(emptyList<Preset>().fitting(5, onTimer.copy(prepSeconds = 120)).isEmpty())
     }
 

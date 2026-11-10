@@ -143,6 +143,27 @@ time, logged as the interval ended, at every read and never stored, so a second 
 They count toward the lifetime total and its milestones, the snatch test (ten sets of eight in five minutes is 80,
 named "from 15:15 MVO2"), the pace, and the grip's load, and through it readiness and the easier day.
 
+## What ships, and why
+
+The built-ins are curated for someone who trains a sport as well, BJJ first, and expects to be lifting at sixty.
+
+- **Every new program covers the basic moves across its week**: push, pull, hinge, squat, a loaded carry and
+  getting up off the floor. A carry ends each day (`StrongForLife`, `BjjOneBell`).
+- **Beside a sport, two strength days of about twenty minutes**, nothing to failure. `BjjKettlebell` is the one for
+  a pair, `BjjOneBell` for a single bell (`grapplersPrograms`); Set up starts a grappler on whichever the bells suit
+  and plans 15:15 on a third day while the mat takes two days or fewer.
+- **A program is retired, never deleted or edited.** A built-in is stored by its id and a past session is planned
+  again from its blocks, so a shipped day never changes: a better version is a new id, and the old one joins
+  `retiredPrograms`, which `programCatalogue` leaves out for everyone but whoever follows it. Retired so far: the
+  daily swings and get-ups (Simple & Sinister says it), the clean and press EMOM and the long cycle (presses and
+  jerks on the minute under fatigue), Grip and pull (the mat loads the grip already) and the bodyweight EMOM
+  (burpees on the minute).
+- **A bell overhead starts light** (`startingBellKg`): presses, the get-up, the windmill, the halo and the
+  bottoms-up carry open at the lightest bell owned, or 8 kg with none said.
+- **Recovery is given two days**: a very hard session taxes the next 48 hours (`Readiness.kt`).
+- **Presets and flows are added, never retimed**: a finished workout is named by its shape. Mat rounds (5 × 5:00)
+  and Swings on the minute (10 × 0:20) sit beside the five; Daily five is the flow for every day.
+
 ## 5. Benchmarks and engagement
 
 All of these are worked out from the logged sets, with nothing new stored (`Benchmarks.kt`).

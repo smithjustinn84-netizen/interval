@@ -95,11 +95,11 @@ class HomeFlowScreenTest {
         }
 
         onNodeWithText("Mobility · 5 moves").assertExists()
-        onNodeWithText("Wrists and fingers").performScrollTo().performClick()
+        onNodeWithText("Daily five").performScrollTo().performClick()
         onNodeWithText("Mobility · 5 moves · 5:00").assertExists()
-        onNodeWithText("Wrist circles").assertExists()
+        onNodeWithText("Cat-cow").assertExists()
         onNodeWithText("Start").performClick()
         waitUntil { started.isNotEmpty() }
-        assertEquals(listOf("Wrists and fingers"), started)
+        assertEquals(listOf("Daily five"), started)
     }
 }

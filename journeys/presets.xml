@@ -11,7 +11,7 @@
     <action>Tap "All presets" beside "Start workout"</action>
     <action>Verify that Train is shown on "Conditioning", with "New preset" and "Settings" in the title bar and a "Timer" row at the top reading "30s on · 15s off · ×8" with "5:55" at its end</action>
     <action>Verify that a "Save as preset" row ("Keep what is on the Timer under a name") sits under the Timer row in the same card</action>
-    <action>Verify that no "Yours" group is shown, and that "Built-in" is one card of rows shortest first: "Tabata" with "20s on · 10s off · ×8" and "4:00", then "Hangboard", "HIIT 30/30", "Long efforts" and "15:15 MVO2", each with its shape and its length and no calorie figure</action>
+    <action>Verify that no "Yours" group is shown, and that "Built-in" is one card of rows shortest first: "Tabata" with "20s on · 10s off · ×8" and "4:00", then "Hangboard", "Swings on the minute", "HIIT 30/30", "Long efforts", "15:15 MVO2" and "Mat rounds", each with its shape and its length and no calorie figure</action>
     <action>Tap the "Save as preset" row</action>
     <action>Verify that a sheet titled "Save as preset" is shown with "Cancel", a "Name" field whose placeholder is "30/15 ×8" and a "0 / 24" count</action>
     <action>Type "Tabata" into the "Name" field</action>

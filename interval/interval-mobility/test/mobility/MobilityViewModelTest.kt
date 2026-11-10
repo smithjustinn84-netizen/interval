@@ -28,6 +28,7 @@ class MobilityViewModelTest : MainDispatcherTest() {
         )
         assertEquals(
             listOf(
+                "Daily five" to "5:00",
                 "Spine and hamstrings" to "10:00",
                 "Core on the mat" to "18:00",
                 "After rolling" to "12:00",

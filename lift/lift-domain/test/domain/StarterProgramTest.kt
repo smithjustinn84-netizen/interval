@@ -9,8 +9,14 @@ import kotlin.test.assertTrue
 class StarterProgramTest {
     private val rest = RestClock.DEFAULT_SECONDS
 
-    private fun pick(minutes: Int, prefer: ProgramFamily? = null, rest: Int = this.rest, pair: Boolean = false) =
-        (starterProgram(minutes, rest, prefer, pair)?.key as? ProgramKey.BuiltIn)?.id
+    private val oneBell = program(ProgramId.BjjOneBell)
+
+    private fun pick(
+        minutes: Int,
+        prefer: ProgramFamily? = null,
+        pair: Boolean = false,
+        programs: List<Program> = programCatalogue(),
+    ) = (starterProgram(minutes, rest, prefer, pair, programs)?.key as? ProgramKey.BuiltIn)?.id
 
     /** A new built-in lands on one side or the other here: say which before it can be picked for someone. */
     @Test
@@ -56,9 +62,24 @@ class StarterProgramTest {
     }
 
     @Test
-    fun `a grappler gets a grappler's program once one fits`() {
-        assertEquals(ProgramId.RoundConditioning, pick(30, ProgramFamily.Grappling))
-        assertEquals(ProgramId.KettlebellFoundations, pick(20, ProgramFamily.Grappling))
+    fun `a grappler with one bell is started on the program built around the mat once it fits`() {
+        assertEquals(20..20, oneBell.dayMinutes(RestClock.DEFAULT_SECONDS))
+        assertTrue(oneBell.oneBell)
+        assertEquals(ProgramId.BjjOneBell, pick(20, ProgramFamily.Grappling))
+        assertEquals(ProgramId.BjjOneBell, pick(30, ProgramFamily.Grappling))
+        // Not for someone who never said BJJ, and not when its days are too long.
+        assertEquals(ProgramId.KettlebellFoundations, pick(20))
+        assertEquals(pick(15), pick(15, ProgramFamily.Grappling))
+    }
+
+    @Test
+    fun `nobody is started on a program no longer offered`() {
+        val picked = (5..60 step 5).flatMap { minutes ->
+            ProgramFamily.entries.flatMap { family ->
+                listOf(pick(minutes, family), pick(minutes, family, pair = true))
+            }
+        }
+        assertTrue(picked.none { it in retiredPrograms })
     }
 
     @Test

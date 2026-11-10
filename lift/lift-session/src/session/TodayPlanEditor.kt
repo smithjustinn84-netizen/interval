@@ -89,7 +89,8 @@ class TodayPlanEditor(
      */
     fun next(session: LiftSession?, before: List<SetLog>, draft: SetDraft): UpNext? {
         val day = session?.let(::dayOf) ?: return null
-        return upNext(day, session.sets, before, gearStore.bar.value, offeredBands(gearStore.bands.value), draft)
+        val bands = offeredBands(gearStore.bands.value)
+        return upNext(day, session.sets, before, gearStore.bar.value, bands, draft, gearStore.bells.value)
     }
 
     /**
@@ -123,7 +124,8 @@ internal fun programDay(day: ProgramDay?, programs: List<Program>, session: Lift
 /**
  * What comes next on [day] after the sets [logged], with its load suggested from every set [before] this session
  * (oldest first) and those logged, the user's [bar] and [bands]: the [draft]'s bell and band stand in for a lift
- * with neither a planned load nor a past. Null once the day's sets are done.
+ * with neither a planned load nor a past, a lift that starts light taking the lightest bell [owned]. Null once the
+ * day's sets are done.
  */
 internal fun upNext(
     day: ProgramDay,
@@ -132,12 +134,13 @@ internal fun upNext(
     bar: Double?,
     bands: List<Band>,
     draft: SetDraft,
+    owned: List<Double>,
 ): UpNext? {
     val next = day.nextSet(logged) ?: return null
     val history = before + logged
     return UpNext(
         set = next.set,
-        load = plannedLoad(next.set, history, bar, bands, draft.bellKg, draft.band),
+        load = plannedLoad(next.set, history, bar, bands, draft.bellKg, draft.band, owned),
         number = next.index + 1,
         total = next.total,
         emomMinutes = next.emomMinutes,

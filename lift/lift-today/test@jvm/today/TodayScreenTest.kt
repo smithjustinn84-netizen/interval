@@ -228,8 +228,8 @@ class TodayScreenTest {
         }
         onNodeWithText("Following").assertExists()
         onNodeWithText("Beside the mat and the wall").assertExists()
-        onNodeWithText("Strength for the mat").performClick()
-        onNodeWithText("2 days a week · 8 weeks", substring = true).assertExists()
+        onNodeWithText("One bell beside BJJ").performClick()
+        onNodeWithText("2 days a week · 6 weeks", substring = true).assertExists()
         onNodeWithContentDescription("New program").performClick()
         onNode(hasScrollToNodeAction()).performScrollToNode(hasText("All programs"))
         onNodeWithText("All programs").performClick()
@@ -239,7 +239,7 @@ class TodayScreenTest {
         onNodeWithText("Exercises").performClick()
         assertEquals(
             listOf(
-                "sheet ${ProgramKey.BuiltIn(ProgramId.GrapplerStrength).stored}",
+                "sheet ${ProgramKey.BuiltIn(ProgramId.BjjOneBell).stored}",
                 "new",
                 "programs",
                 "gear",

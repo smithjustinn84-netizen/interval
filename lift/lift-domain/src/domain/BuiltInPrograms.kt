@@ -30,6 +30,7 @@ enum class ProgramId(val family: ProgramFamily = ProgramFamily.Classic) {
     TenThousandSwings(ProgramFamily.DanJohn),
     SwingSquatCountdown(ProgramFamily.DanJohn),
     OneStopShop(ProgramFamily.DanJohn),
+    StrongForLife(ProgramFamily.DanJohn),
     SimpleAndSinister,
     ProgramMinimum,
     RiteOfPassage,
@@ -42,6 +43,7 @@ enum class ProgramId(val family: ProgramFamily = ProgramFamily.Classic) {
     GripAndPull(ProgramFamily.Grappling),
     ShoulderArmor(ProgramFamily.Grappling),
     BjjKettlebell(ProgramFamily.Grappling),
+    BjjOneBell(ProgramFamily.Grappling),
     KettlebellFoundations(ProgramFamily.Beginner),
     FirstHundredSwings(ProgramFamily.Beginner),
     BeginnerFullBody(ProgramFamily.Beginner),
@@ -226,6 +228,26 @@ val builtInPrograms: List<Program> = listOf(
         daysPerWeek = 3,
         weeks = 6,
     ),
+    // The least that keeps someone strong for life, three short days a week: every basic human move across the two
+    // days, a carry to end each, and no set taken near its limit. One bell and the floor.
+    builtIn(
+        ProgramId.StrongForLife,
+        days = listOf(
+            listOf(
+                Block(BuiltInExercise.GetUp, rounds = 3, reps = 1),
+                Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 5).upTo(8),
+                Block(BuiltInExercise.SuitcaseCarry, rounds = 3, reps = 30),
+            ),
+            listOf(
+                Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 10).upTo(15),
+                Block(BuiltInExercise.PushUp, rounds = 3, reps = 5).upTo(10),
+                Block(BuiltInExercise.Row, rounds = 3, reps = 5).upTo(8),
+                Block(BuiltInExercise.RackCarry, rounds = 2, reps = 30),
+            ),
+        ),
+        daysPerWeek = 3,
+        weeks = 8,
+    ),
     // 100 one-arm swings and 10 get-ups, every training day.
     builtIn(
         ProgramId.SimpleAndSinister,
@@ -398,6 +420,27 @@ val builtInPrograms: List<Program> = listOf(
         daysPerWeek = 2,
         weeks = 6,
     ),
+    // Beside BJJ with one bell, twenty minutes and something left in the tank: the squat, the press and the row
+    // slow and few one day, with a carry at the side; swings on the minute, get-ups and a carry in the rack the
+    // next. The mat loads the grip already, so nothing here hangs on it for long.
+    builtIn(
+        ProgramId.BjjOneBell,
+        days = listOf(
+            listOf(
+                Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 5).upTo(8),
+                Block(BuiltInExercise.Press, rounds = 3, reps = 3).upTo(5),
+                Block(BuiltInExercise.Row, rounds = 3, reps = 5).upTo(8),
+                Block(BuiltInExercise.SuitcaseCarry, rounds = 2, reps = 30),
+            ),
+            listOf(
+                Block(BuiltInExercise.TwoHandSwing, rounds = 8, reps = 10, kind = BlockKind.Emom),
+                Block(BuiltInExercise.GetUp, rounds = 3, reps = 1),
+                Block(BuiltInExercise.RackCarry, rounds = 2, reps = 30),
+            ),
+        ),
+        daysPerWeek = 2,
+        weeks = 6,
+    ),
     // The hinge, the squat and the get-up, before anything fast.
     builtIn(
         ProgramId.KettlebellFoundations,
@@ -544,6 +587,37 @@ val builtInPrograms: List<Program> = listOf(
         weeks = 6,
     ),
 ) + barbellPrograms
+
+/**
+ * The built-ins no longer offered: each said better by another, or too hard on a shoulder, a grip or the knees to
+ * be anyone's default. They stay among [builtInPrograms], since a program is stored by its id: whoever follows one
+ * keeps it, and the sessions done of it keep their days.
+ */
+val retiredPrograms: Set<ProgramId> = setOf(
+    ProgramId.DailySwingsGetUps,
+    ProgramId.CleanPressEmom,
+    ProgramId.LongCycleEmom,
+    ProgramId.GripAndPull,
+    ProgramId.BodyweightEmom,
+)
+
+/** Whether this is a built-in no longer offered ([retiredPrograms]). */
+val Program.retired: Boolean get() = (key as? ProgramKey.BuiltIn)?.id in retiredPrograms
+
+/** The built-ins on offer: all but the [retiredPrograms], and of those the one [following], which is kept. */
+fun programCatalogue(following: ProgramKey? = null): List<Program> =
+    builtInPrograms.filter { !it.retired || it.key == following }
+
+/**
+ * The programs to put before someone who trains on the mat or the wall, the first that suit what they own first:
+ * the two made to sit beside BJJ, then the shoulders, then strength.
+ */
+val besideTheMat: List<ProgramId> = listOf(
+    ProgramId.BjjKettlebell,
+    ProgramId.BjjOneBell,
+    ProgramId.ShoulderArmor,
+    ProgramId.GrapplerStrength,
+)
 
 fun program(
     id: ProgramId,
