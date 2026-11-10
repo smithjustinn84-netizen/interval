@@ -87,14 +87,18 @@ class FlowTest {
             mapOf(
                 "Hips and shoulders" to 8 * 60,
                 "Wrists and fingers" to 5 * 60,
+                "Core for falls" to 7 * 60,
+                "Before rolling" to 9 * 60,
                 "Spine and hamstrings" to 10 * 60,
                 "Core on the mat" to 18 * 60,
+                "After rolling" to 12 * 60,
                 "Full reset" to 25 * 60,
             ),
             minutes,
         )
         builtInFlows.flatMap { it.moves }.forEach {
             assertTrue(it.name.isNotBlank() && it.cue.isNotBlank(), it.name)
+            assertTrue(it.name.length <= Move.NAME_MAX_LENGTH && it.cue.length <= Move.CUE_MAX_LENGTH, it.name)
         }
     }
 
@@ -109,9 +113,9 @@ class FlowTest {
     }
 
     @Test
-    fun `the wrists come before the wall and the hips before the rest`() {
+    fun `the wrists come before the wall the grappler's drills before BJJ and the hips before the rest`() {
         assertEquals("wrists-fingers", flowBefore(Sport.Climbing).key)
-        assertEquals("hips-shoulders", flowBefore(Sport.Bjj).key)
+        assertEquals("before-rolling", flowBefore(Sport.Bjj).key)
         assertEquals("hips-shoulders", flowBefore(Sport.Running).key)
         assertNotNull(flowBefore(Sport.Custom("Judo")))
     }

@@ -17,9 +17,22 @@ class MobilityViewModelTest : MainDispatcherTest() {
     fun `the flows are listed by when each is for with how long each runs`() {
         val state = mobilityState(prepSeconds = 10)
 
-        assertEquals(listOf("Hips and shoulders" to "8:00", "Wrists and fingers" to "5:00"), state.before.named())
         assertEquals(
-            listOf("Spine and hamstrings" to "10:00", "Core on the mat" to "18:00", "Full reset" to "25:00"),
+            listOf(
+                "Hips and shoulders" to "8:00",
+                "Wrists and fingers" to "5:00",
+                "Core for falls" to "7:00",
+                "Before rolling" to "9:00",
+            ),
+            state.before.named(),
+        )
+        assertEquals(
+            listOf(
+                "Spine and hamstrings" to "10:00",
+                "Core on the mat" to "18:00",
+                "After rolling" to "12:00",
+                "Full reset" to "25:00",
+            ),
             state.after.named(),
         )
         assertEquals(builtInFlows.count { it.use == FlowUse.Before }, state.before.size)

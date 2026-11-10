@@ -54,13 +54,13 @@ class HomeFlowScreenTest {
 
         onNodeWithText("Before class").assertIsDisplayed()
         onNodeWithText("Up next · Today").assertDoesNotExist()
-        onNodeWithText("Hips and shoulders").assertIsDisplayed()
-        onNodeWithText("Mobility · 6 moves · no bell · 8:00").assertIsDisplayed()
+        onNodeWithText("Before rolling").assertIsDisplayed()
+        onNodeWithText("Mobility · 6 moves · before BJJ · 9:00").assertIsDisplayed()
         onNodeWithText("Also today").assertIsDisplayed()
         onNodeWithText("BJJ class").assertIsDisplayed()
         onNodeWithText("Start").performClick()
         onNodeWithText("Log it").performClick()
-        assertEquals(listOf("Hips and shoulders true"), started)
+        assertEquals(listOf("Before rolling true"), started)
         assertEquals(listOf("Bjj"), logged)
     }
 

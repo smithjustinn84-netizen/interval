@@ -153,9 +153,20 @@ private val Block.isMoveShaped: Boolean
 
 private const val OWN_KEY_PREFIX = "own-"
 
-/** The flow to do before a day of [sport]: the wrists before the wall, the hips and shoulders before the rest. */
-fun flowBefore(sport: Sport): Flow =
-    builtInFlows.first { it.key == if (sport == Sport.Climbing) WRISTS_KEY else HIPS_KEY }
+/**
+ * The flow to do before a day of [sport]: the wrists before the wall, the grappler's drills before BJJ, the hips and
+ * shoulders before the rest.
+ */
+fun flowBefore(sport: Sport): Flow = builtInFlows.first {
+    it.key == when (sport) {
+        Sport.Climbing -> WRISTS_KEY
+        Sport.Bjj -> BEFORE_ROLLING_KEY
+        else -> HIPS_KEY
+    }
+}
 
 internal const val HIPS_KEY = "hips-shoulders"
 internal const val WRISTS_KEY = "wrists-fingers"
+internal const val FALLS_KEY = "core-falls"
+internal const val BEFORE_ROLLING_KEY = "before-rolling"
+internal const val AFTER_ROLLING_KEY = "after-rolling"

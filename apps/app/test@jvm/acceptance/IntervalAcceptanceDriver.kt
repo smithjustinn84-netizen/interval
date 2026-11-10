@@ -92,12 +92,15 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     /** Train's Mobility pillar: the flows, by when each is for. */
     fun seeMobility() {
+        // Back at the top of the list, where the picker is, from a row further down it.
+        scrollTo("Strength")
         see("Before training")
         seePillar("Mobility")
     }
 
-    /** A flow's sheet, from its row on Mobility: what is in it, with its Start. */
+    /** A flow's sheet, from its row on Mobility (scrolled to, as the list runs past the window): what is in it. */
     fun openFlow(name: String) {
+        scrollTo(name)
         tap(name)
         see(hasText("Each move is named and counted as you go", substring = true))
     }

@@ -113,7 +113,7 @@ interval/            the interval timer
                      counted, and `workEnds`), `PlannedWorkout`, `LiftWorkout`,
                      `WorkoutProgress`, `Sport` (a class or a day on the wall, trained away from the app: planned as
                      `PlanWorkout.SportDay`, logged as a `LoggedSport`), `Flow` (a mobility session followed along,
-                     `Flow.kt`, and the five shipped, `BuiltInFlows.kt`); over `core-time` alone, neither `core` nor
+                     `Flow.kt`, and the eight shipped, `BuiltInFlows.kt`); over `core-time` alone, neither `core` nor
                      anything of Lift's (History makes a `LiftWorkout` from a Lift session, `asLiftWorkouts` in
                      interval-history)
   interval-data      `IntervalRepository`, the root of a repository per store (`SettingsRepository`, the
@@ -454,7 +454,8 @@ toolchain (`$compose.*`).
   (`WeekGoal.mobility`, by the activity), and one repeated or planned starts as the flow again (`flowKeyOf`, which
   the Today and History routes ask before they put anything on the Timer). Today offers the longest flow that fits
   the minutes picked after the presets (`fitting`), and on a day with a sport still to log leads with the one for
-  before it (`flowBefore`).
+  before it (`flowBefore`: the wrists before climbing, "Before rolling" before BJJ, the hips and shoulders before
+  the rest).
 - **Set up**: one page (`apps/app/src/weeksetup/`, the `WeekSetup` key) that asks what else you train, on which
   days, which bells you own and how long a session is, shows the week those come to and builds it. It lives in
   `app` because building writes four stores across both sides (`PlanStore`, `SettingsStore`, Lift's `GearStore`

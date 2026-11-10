@@ -10,7 +10,7 @@
   <actions>
     <action>On "Set up", which a fresh install opens on, tap "Skip for now"</action>
     <action>Tap the "Train" tab, then "Mobility" in the picker under the title</action>
-    <action>Verify that "Before training" lists "Hips and shoulders" (6 moves · no bell, 8:00) and "Wrists and fingers" (5 moves · before the wall, 5:00), and "After, or on a day off" lists three more with their lengths</action>
+    <action>Verify that "Before training" lists "Hips and shoulders" (6 moves · no bell, 8:00), "Wrists and fingers" (5 moves · before the wall, 5:00), "Core for falls" (5 moves · no bell, 7:00) and "Before rolling" (6 moves · before BJJ, 9:00), and "After, or on a day off" lists four more with their lengths, "After rolling" (6 moves · after BJJ, 12:00) among them</action>
     <action>Tap "Wrists and fingers"</action>
     <action>Verify that its sheet says "Mobility · 5 moves · before the wall" and "5:00", has "Start" above the moves, and lists "Wrist circles" 0:30 down to "Forearm stretch" 0:30 a side, each with a line on how it is done</action>
     <action>Tap "Start"</action>
@@ -30,6 +30,6 @@
     <action>Verify that the sheet now shows the move's page: "Move 1 of 9 · 1:40 · Moved through", its line on how it is done, a figure doing the hundred with "Pause" over it, a timeline under it and three cues lit in turn as the figure does them; tap the last cue and verify the figure jumps to it; tap "Back to the moves" and verify "Start" is back</action>
     <action>Tap "Start" and verify that "Get ready" shows the hundred's figure moving in a band between its name and the ring, the ring smaller than on "Wrists and fingers"; tap the ring to pause and verify the figure holds still; tap again and verify it moves on</action>
     <action>Tap the figure and verify its page opens over the running workout with the figure, its cues and "Back to the moves"; tap it and verify the clock has run on meanwhile; tap "End", then "End workout"</action>
-    <action>Tap "Hips and shoulders" and verify that its rows end in no figure, that tapping "Deep squat" shows its page with its words alone and "Back to the moves", and that Start runs it with no band over the ring</action>
+    <action>Tap "Core for falls" and verify that each row ends in a figure; tap "Spinal rock" and verify its page shows a figure sitting up, rocking back onto the shoulders with the head off the mat and up again, then tap "Back to the moves"</action>
   </actions>
 </journey>

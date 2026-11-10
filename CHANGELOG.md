@@ -7,6 +7,13 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.6.0] — Unreleased
 
 ### Added
+- Three more shipped flows, two for BJJ. "Core for falls" (7 min, before training) is Mark Wildman's four foundations
+  of the core: the spinal rock and the same-side shoulder roll it builds to, the sit-up, the cross touch and the
+  V-up across. "Before rolling" (9 min) drills the hip escape, the bridge and roll, the technical stand-up, the
+  90/90 switch, the sit-out and the world's greatest stretch, and is now the flow Today leads with before a BJJ
+  class. "After rolling" (12 min) opens the hips and back with the butterfly, the frog, the pigeon, the lying
+  twist, thread the needle and child's pose. The ten new moves are Lift exercises on the mat, each with a figure,
+  three cues and what it works.
 - A mobility flow's move that is one of Lift's exercises is shown by Lift's figure: a still at the end of its row on
   the flow's sheet and Today's look before Start, its page from a tap on the row (its time and words, then the
   figure doing it over its timeline with its cues lit in turn, as on the exercise's page), and the figure moving in

@@ -50,13 +50,13 @@ class SportDaysAcceptanceTest {
         planSportEvery("BJJ", weekday = "Thursday")
         goBack()
 
-        seeFlowLeads("Before class", "Hips and shoulders")
+        seeFlowLeads("Before class", "Before rolling")
         seeAlsoToday("BJJ class")
         startFlowFromToday()
         seePhase("Get ready")
-        seeMove("90/90 hip switch", "Move 1 of 6")
-        letTimePass(481.seconds)
-        seeFlowSaved("Hips and shoulders", moves = 6)
+        seeMove("Hip escape", "Move 1 of 6")
+        letTimePass(541.seconds)
+        seeFlowSaved("Before rolling", moves = 6)
         timerIsAsItWas()
         closeSummary()
 
@@ -96,7 +96,7 @@ class SportDaysAcceptanceTest {
         goBack()
         openTab("Today")
 
-        seeFlowLeads("Before class", "Hips and shoulders")
+        seeFlowLeads("Before class", "Before rolling")
         seeAlsoToday("BJJ class")
         seeAlsoToday("15-minute kettlebell plan")
         seeProgramDayStandsBack()

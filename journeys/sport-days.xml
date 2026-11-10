@@ -17,7 +17,7 @@
     <action>Verify that the "Routine" heading reads "Every week · 1 sport day"</action>
     <action>Tap "Back"</action>
     <action>Verify that "BJJ" is written under today's dot on the week, which is the plain one of a rest day</action>
-    <action>Verify that the card under the week reads "Before class" over "Hips and shoulders" and "Mobility · 6 moves · no bell · 8:00", with a "Start" button</action>
+    <action>Verify that the card under the week reads "Before class" over "Before rolling" and "Mobility · 6 moves · before BJJ · 9:00", with a "Start" button</action>
     <action>Verify that "Also today" lists "BJJ class" with "Counts toward your week" and "Log it"</action>
     <action>Tap "Log it"</action>
     <action>Verify that a notice says "BJJ class logged" with "Undo"</action>
