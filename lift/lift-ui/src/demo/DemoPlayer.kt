@@ -27,6 +27,12 @@ class DemoPlayer(progress: Float, playing: Boolean, private val earliest: Float 
     var playing by mutableStateOf(playing)
         private set
 
+    /**
+     * Whether its figure is on screen: one scrolled away stops taking frames, but keeps [playing], so it runs on
+     * from where it was as it comes back, and nothing reads it as paused.
+     */
+    internal var inView by mutableStateOf(true)
+
     /** Stops it [at] this share of the rep, as a drag along the timeline or a picked cue does. */
     fun seek(at: Float) {
         playing = false
@@ -77,8 +83,8 @@ fun rememberDemoPlayer(demo: ExerciseDemo): DemoPlayer {
     val player = rememberSaveable(demo, saver = DemoPlayer.Saver) {
         DemoPlayer(progress = if (still) demo.still else demo.earliest, playing = !still, earliest = demo.earliest)
     }
-    LaunchedEffect(player, still, player.playing) {
-        if (still || !player.playing) return@LaunchedEffect
+    LaunchedEffect(player, still, player.playing, player.inView) {
+        if (still || !player.playing || !player.inView) return@LaunchedEffect
         val from = player.progress
         val start = withInfiniteAnimationFrameMillis { it }
         while (true) {

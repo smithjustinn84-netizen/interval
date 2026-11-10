@@ -66,22 +66,22 @@ data class Pose(
 
         /** The pose whose joints are [angles], in the order [Pose.angles] gives them. */
         fun of(angles: FloatArray): Pose {
-            val joint = angles.iterator()
+            @Suppress("detekt.MagicNumber") // Each joint's place in the array.
             return Pose(
-                shin = joint.next(),
-                thigh = joint.next(),
-                torso = joint.next(),
-                upperArm = joint.next(),
-                forearm = joint.next(),
-                bell = joint.next(),
-                farShin = joint.next(),
-                farThigh = joint.next(),
-                farFoot = joint.next(),
-                farUpperArm = joint.next(),
-                farForearm = joint.next(),
-                farBell = joint.next(),
-                foot = joint.next(),
-                reach = joint.next(),
+                shin = angles[0],
+                thigh = angles[1],
+                torso = angles[2],
+                upperArm = angles[3],
+                forearm = angles[4],
+                bell = angles[5],
+                farShin = angles[6],
+                farThigh = angles[7],
+                farFoot = angles[8],
+                farUpperArm = angles[9],
+                farForearm = angles[10],
+                farBell = angles[11],
+                foot = angles[12],
+                reach = angles[13],
             )
         }
     }
@@ -295,9 +295,30 @@ class ExerciseDemo(
 
     /** Where the bell was over the last [trail] of a rep before [progress], oldest first; empty with no trail. */
     fun trailAt(progress: Float): List<Offset> {
-        if (trail == 0f || progress < 0f) return emptyList()
-        return (TRAIL_STEPS downTo 1).map { step -> figureAt(looped(progress - trail * step / TRAIL_STEPS)).bell }
+        val places = FloatArray(2 * TRAIL_STEPS)
+        return List(trailInto(progress, places)) { Offset(places[2 * it], places[2 * it + 1]) }
     }
+
+    /**
+     * [trailAt] written into [places] as x, y pairs rather than a list, for a figure drawing every frame: how many
+     * places it wrote, [TRAIL_STEPS] or none.
+     */
+    fun trailInto(progress: Float, places: FloatArray): Int {
+        if (trail == 0f || progress < 0f) return 0
+        for (i in 0 until TRAIL_STEPS) {
+            val bell = figureAt(looped(progress - trail * (TRAIL_STEPS - i) / TRAIL_STEPS)).bell
+            places[2 * i] = bell.x
+            places[2 * i + 1] = bell.y
+        }
+        return TRAIL_STEPS
+    }
+
+    /** The props drawn behind the figure, every one but a bar to hang from, which goes over the fists. */
+    internal val propsBehind: List<Prop> = props.filter { it !is Rail }
+
+    internal val rails: List<Rail> = props.filterIsInstance<Rail>()
+
+    internal val bands: List<Band> = props.filterIsInstance<Band>()
 
     private fun span(stretch: Int): Float = times[stretch + 1] - times[stretch]
 

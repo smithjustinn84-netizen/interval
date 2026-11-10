@@ -39,6 +39,7 @@ import dev.justinsmith.lift.ui.demo.ExerciseDemo
 import dev.justinsmith.lift.ui.demo.ExerciseFigure
 import dev.justinsmith.lift.ui.demo.FigureColors
 import dev.justinsmith.lift.ui.demo.rememberDemoPlayer
+import dev.justinsmith.lift.ui.demo.showingPlayer
 import dev.justinsmith.lift.ui.resources.Res
 import dev.justinsmith.lift.ui.resources.demo
 import dev.justinsmith.lift.ui.resources.demo_cue_jump
@@ -64,7 +65,8 @@ fun Demonstration(demo: ExerciseDemo, name: String, cues: List<String>, modifier
     // Read as the phase changes, not every frame the figure moves.
     val phase by remember(demo, player) { derivedStateOf { demo.phaseAt(player.progress) } }
     val still = prefersReducedMotion()
-    ListCard(modifier, fill = IntervalTheme.palette.surfaceVariant) {
+    // The timeline and the cues follow the player too, so it runs while any of the card shows, not the figure alone.
+    ListCard(modifier.showingPlayer(player), fill = IntervalTheme.palette.surfaceVariant) {
         Box(Modifier.fillMaxWidth()) {
             ExerciseFigure(
                 demo,
@@ -72,6 +74,7 @@ fun Demonstration(demo: ExerciseDemo, name: String, cues: List<String>, modifier
                 contentDescription = stringResource(Res.string.demo, name),
                 modifier = Modifier.fillMaxWidth().height(Sizes.figurePage).padding(Spacing.space8),
                 colors = colors,
+                tracksView = false,
             )
             if (!still) {
                 QuietTextButton(
