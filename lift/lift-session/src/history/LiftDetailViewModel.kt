@@ -9,8 +9,8 @@ import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.PersonalRecord
 import dev.justinsmith.lift.domain.Program
-import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.newRecords
+import dev.justinsmith.lift.domain.shippedPrograms
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -75,7 +75,7 @@ class LiftDetailViewModel(
             date = timestamps.date(at),
             time = timestamps.time(at),
             records = newRecords(before, session),
-            program = session.program?.let { key -> (builtInPrograms + custom).firstOrNull { it.key == key } },
+            program = session.program?.let { key -> (shippedPrograms + custom).firstOrNull { it.key == key } },
         )
     }
 }

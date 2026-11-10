@@ -17,12 +17,14 @@ import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.Side
-import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.densityBest
 import dev.justinsmith.lift.domain.firstAtBell
 import dev.justinsmith.lift.domain.offeredBands
+import dev.justinsmith.lift.domain.other
 import dev.justinsmith.lift.domain.sets
+import dev.justinsmith.lift.domain.shippedPrograms
 import dev.justinsmith.lift.domain.standardBells
+import dev.justinsmith.lift.domain.testOf
 import dev.justinsmith.lift.library.ExerciseDetailUiState
 import dev.justinsmith.lift.library.exerciseDetail
 import kotlinx.coroutines.CoroutineDispatcher
@@ -49,6 +51,7 @@ import kotlinx.coroutines.launch
  * flattened on [computation]; [tickMillis] is how often the session's own clocks (its time, the time since the last
  * set) move.
  */
+@Suppress("detekt.TooManyFunctions") // One for each thing the session's page asks of it.
 class SessionViewModel(
     private val sessionStore: SessionStore,
     private val setStore: SetStore,
@@ -132,7 +135,7 @@ class SessionViewModel(
         timers.state.map { Triple(it.emom, it.hold, it.density) }.distinctUntilChanged(),
         filters.filters,
     ) { (logged, day, custom), gear, (draft, editing, finished), runs, narrowed ->
-        Inputs(logged, day, builtInPrograms + custom, gear, draft, editing, finished, runs, narrowed)
+        Inputs(logged, day, shippedPrograms + custom, gear, draft, editing, finished, runs, narrowed)
     }
 
     // On the main thread, so a tap on the sheet shows at once: what scans the history is worked out apart, above.
@@ -306,6 +309,19 @@ class SessionViewModel(
             }
             timers.startDensity(set.exercise, next.load, set.reps, minutes, side, best)
         }
+    }
+
+    /**
+     * Logs [reps] as the round a test's cap cut short ([partRoundOf]): of its lift, at the load of the last round
+     * and on the side the next would have been. Nothing unless they are fewer than a round.
+     */
+    fun logPartRound(reps: Int) {
+        val current = state.value
+        val round = current.partRoundOf ?: return
+        if (reps !in 1 until round) return
+        val exercise = testOf(current.programDay?.program?.key)?.exercise ?: return
+        val last = current.session?.sets?.lastOrNull { it.exercise.key == exercise.key } ?: return
+        setStore.logSet(exercise, last.load, reps, last.side?.other)
     }
 
     /** Starts timing the plan's next set when it is a hold, putting it on the sheet first. */

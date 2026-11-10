@@ -181,7 +181,27 @@ All of these are worked out from the logged sets, with nothing new stored (`Benc
 **Lifetime totals** for each lift appear on the lift's page, with milestones at 1,000, 5,000, 10,000 and 25,000 named on the summary.
 
 **Where it shows:**
-- A Challenges card under the program on Train's Strength pillar (`ChallengesCard`, `lift-today`), a bar for each challenge under way.
-- The summary names a new snatch test or ABC best.
+- A Challenges card under the program on Train's Strength pillar (`ChallengesCard`, `lift-today`), a bar for each challenge under way. The snatch test's row and the ABC's open their test.
+- The summary names a new snatch test or ABC best, and a test's attempt.
+- Tests, from On your own on the Strength pillar: each test with its last result and when.
+
+**Tests** (`Tests.kt`, the Tests page in `lift-today`): a challenge is a best found in whatever was logged; a test
+is the same benchmark done on purpose, so two attempts can be set side by side. Each is done fresh, the same way
+each time and at a known load:
+- **Snatch test**: five minutes on the density clock, a tap for each ten, against 100. The reps of the round the cap
+  cut short are added after it, since 97 and 100 are different results.
+- **Armor Building Complex**: twenty minutes, as many as you can, with two bells.
+- **Press, push-ups, pull-ups**: the most reps in one set. The next attempt at a bell opens on the number to beat.
+- **Plank**: the longest hold, on a clock that runs to five minutes.
+
+A test is a program of one day (`ProgramKey.Test`, `StrengthTest.program`), never in the catalogue and never
+followed, so its session carries a plan and runs on the timers a program's day does; an attempt is a finished
+session of it (`attempts`), and nothing more is stored. A result compares only with those at the same load
+(`List<Attempt>.at`). A test never steps up (`progressions` and `toppedOut` leave it), is never made easier, and
+its summary says the attempt against the last at its load in place of a density block's line or a passive best.
+The sheet says what a coach would before one: within a week of the last (`Retest.TooSoon`) another measures
+fatigue, from four weeks it is due, a Taxed day will not show your best, and warm up first. It advises and never
+refuses, as an easier day is offered and never imposed. A test attempt is also a session, so the challenges count
+it as they count any other.
 
 **The weekly streak** stays by the week, so a rest day never breaks it.

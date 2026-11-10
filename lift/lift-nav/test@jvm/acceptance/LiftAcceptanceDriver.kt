@@ -297,6 +297,35 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
         see("$total rounds")
     }
 
+    // Tests
+
+    /** From Today: the tests under On your own, each with its last result or that it hasn't been done. */
+    fun openTests() {
+        scrollTo("Tests")
+        tap("Tests")
+        see("Snatch test")
+    }
+
+    /** On Tests: opens the sheet of the test [name], which names it again over how it is done and Start. */
+    fun openTest(name: String) {
+        tap(name)
+        see("Start the test")
+    }
+
+    /** On a test's sheet: starts it, which opens its session with the test's one block up next. */
+    fun startTheTest() {
+        tap("Start the test")
+        see("Finish")
+    }
+
+    /** After a test's clock, part way through a round: its [reps] stepped up and added to the count. */
+    fun addPartRound(reps: Int) {
+        see("Reps in the round you were on when time was called")
+        repeat(reps) { tapDescribed("More reps") }
+        tap("Add to the count")
+        seeNo("Add to the count")
+    }
+
     /** [seconds] pass on the clocks the timers keep. */
     fun secondsPass(seconds: Int) = app.clock.set(app.clock.get() + seconds * MILLIS_PER_SECOND)
 

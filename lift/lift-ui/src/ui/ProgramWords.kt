@@ -109,6 +109,7 @@ import org.jetbrains.compose.resources.stringResource
 fun programName(program: Program): String = when (val key = program.key) {
     is ProgramKey.BuiltIn -> programName(key.id)
     is ProgramKey.Custom -> program.name.orEmpty()
+    is ProgramKey.Test -> testName(key.id)
 }
 
 /** Where a program day falls in its program: "Day 4 of 40 · week 2". */
@@ -190,6 +191,8 @@ fun programSummary(program: Program): String = when (val key = program.key) {
         pluralStringResource(Res.plurals.program_days_count, program.days.size, program.days.size),
         pluralStringResource(Res.plurals.program_schedule, program.weeks, program.weeks, program.daysPerWeek),
     )
+
+    is ProgramKey.Test -> testProtocol(key.id)
 }
 
 @Composable

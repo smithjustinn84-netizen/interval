@@ -89,4 +89,38 @@
         <item quantity="one">%1$d week</item>
         <item quantity="other">%1$d weeks</item>
     </plurals>
+    <string name="today_tests">Tests</string>
+    <string name="today_tests_hint">The snatch test, rep maxes and a hold, done to compare</string>
+    <string name="today_challenge_test_cd">Open this test</string>
+    <string name="tests_title">Tests</string>
+    <string name="tests_intro">A test is done fresh, the same way each time and at the same bell, so two attempts can be set side by side. Leave a few weeks between them.</string>
+    <string name="tests_never">Not tested yet</string>
+    <string name="tests_today">today</string>
+    <string name="tests_yesterday">yesterday</string>
+    <plurals name="tests_days_ago">
+        <item quantity="one">%1$d day ago</item>
+        <item quantity="other">%1$d days ago</item>
+    </plurals>
+    <plurals name="tests_weeks_ago">
+        <item quantity="one">%1$d week ago</item>
+        <item quantity="other">%1$d weeks ago</item>
+    </plurals>
+    <string name="tests_bell">Bell</string>
+    <string name="tests_attempts">Attempts</string>
+    <string name="tests_attempts_at">Attempts with %1$s</string>
+    <string name="tests_none_at">None with this bell yet: the first sets the mark.</string>
+    <string name="tests_none">None yet: the first sets the mark.</string>
+    <string name="tests_best_last">Best %1$s · last %2$s</string>
+    <string name="tests_pass">Pass mark: %1$s</string>
+    <plurals name="tests_bars_cd">
+        <item quantity="one">%1$d attempt, the best %2$s</item>
+        <item quantity="other">%1$d attempts, the best %2$s</item>
+    </plurals>
+    <string name="tests_too_soon">Tested %1$s. Another now measures how tired you are: give it a few weeks.</string>
+    <string name="tests_resting">Last tested %1$s.</string>
+    <string name="tests_due">Last tested %1$s: time for another.</string>
+    <string name="tests_taxed">You are carrying a hard day. A test today will not show your best.</string>
+    <string name="tests_warm_up">Warm up first, and stop when the reps stop looking the same.</string>
+    <string name="tests_start">Start the test</string>
+    <string name="tests_in_progress">Finish the session in progress first.</string>
 </resources>

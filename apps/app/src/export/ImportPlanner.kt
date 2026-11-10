@@ -41,7 +41,7 @@ import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.domain.UnknownExercise
 import dev.justinsmith.lift.domain.bandOf
-import dev.justinsmith.lift.domain.builtInPrograms
+import dev.justinsmith.lift.domain.shippedPrograms
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.intOrNull
@@ -212,7 +212,7 @@ private class LiftPlan(file: LiftExport, holdings: Holdings) {
 
     private val following: Followed? = file.following?.takeIf { holdings.followed == null }?.let { followed ->
         val key = ProgramKey.parse(followed.program)
-        val program = (builtInPrograms + holdings.programs + programs).firstOrNull { it.key == key }
+        val program = (shippedPrograms + holdings.programs + programs).firstOrNull { it.key == key }
         program?.let { Followed(it, followed.startedAtEpochMillis, followed.daysBefore) }
     }
 

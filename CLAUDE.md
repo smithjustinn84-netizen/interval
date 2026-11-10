@@ -166,8 +166,11 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      the faults it is prone to, from that (`Faults.kt`, which the rests say), the grip's load (`Grip.kt`, BJJ days in it) and how ready the lifter is (`Readiness.kt`), a
                      taxed day's easier plan (`Autoregulate.kt`), the safety lines (`Safety.kt`: `SafetyLine`, and
                      `firstAtBell`, a thrown lift's first set at a bell new to it), density and pace (`Density.kt`, only from sets
-                     logged as done) and the challenges and totals (`Benchmarks.kt`), all worked out from sets
-                     logged, nothing stored. No dependencies
+                     logged as done), the challenges and totals (`Benchmarks.kt`) and the tests (`Tests.kt`: a
+                     `StrengthTest` is a program of one day under `ProgramKey.Test`, never offered or followed, an
+                     attempt a finished session of it, compared only at the same load; `shippedPrograms`, the
+                     built-ins and the tests', is what a session's program is looked up among), all worked out from
+                     sets logged, nothing stored. No dependencies
   lift-api           the ports between the sides, package `dev.justinsmith.lift.data`: `IntervalActivity` (what
                      Lift reads of the interval side, the days a sport was logged on among it, each a `SportDay`
                      saying whether it was grappling, each workout's snatches as counted (`IntervalSnatches`, read as
@@ -197,7 +200,9 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
   lift-today         Train's Strength pillar, Lift's tab (`TodayRoute`, in groups: Following, the program's day
                      and how far through it; Beside the mat and the wall, `suggestedPrograms`, each opening the
                      `ProgramSheet` key; On your own; Lately, the last session and the balance, `MuscleBalance` in
-                     lift-domain) and the gear (bells, bar, bands, records)
+                     lift-domain), the gear (bells, bar, bands, records) and the tests (`tests/`: `TestsRoute`, each
+                     test's last result, and its sheet, the bell and the attempts with it, which starts one through
+                     `SessionStore.startTest`)
   lift-session       the session (log sheet, EMOM, hold, density and rest timers under `SessionTimers`, plan sheets,
                      summary; a free one takes a day of any program from `ProgramDaySheet`), the programs
                      and their editor and progress (they share the block editor), a finished session's page

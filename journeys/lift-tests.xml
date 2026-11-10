@@ -1,0 +1,19 @@
+<journey name="Lift: tests">
+  <description>
+    A test is a benchmark done on purpose: Tests lists each with its last result, a test's sheet says how it is done,
+    takes the bell and shows the attempts with it, and Start opens a session planned as the test. The summary says
+    what the attempt came to, and the next at that bell how it compares. Run with a bell owned and no session in
+    progress.
+  </description>
+  <actions>
+    <action>On Train's Strength pillar, scroll to On your own, tap "Tests" and verify that six tests are listed, each saying "Not tested yet" or its last result and when</action>
+    <action>Tap "Snatch test" and verify that the sheet names it, says how it is done, offers the bells owned, says "Pass mark: 100 reps" and that there is no attempt with the bell picked yet</action>
+    <action>Tap "Start the test" and verify that the session opens with "Start the clock"; start it, wait out the count-in, and tap "Round done" after each ten snatches until the five minutes are up and "Time" is called with the rounds</action>
+    <action>Once the clock has gone, verify that the foot asks "Reps in the round you were on when time was called"; step it to 7 and tap "Add to the count", and verify that the question goes</action>
+    <action>Tap "Finish" and verify that the summary's Bests says "Snatch test:" with the reps, the bell and "the mark to beat"</action>
+    <action>Close the summary, open Tests again and verify that the snatch test's row says that result with the bell and "today", and that its sheet says another now measures how tired you are</action>
+    <action>On Train's Strength pillar, verify that the Challenges card's "Snatch test: 100 in 5 minutes" row opens the test's sheet</action>
+    <action>Open the "Plank: longest hold" test and verify that it offers no bell; start it, time the hold, stop it when it breaks, finish, and verify that the summary says the hold as a clock ("1:35")</action>
+    <action>In Log, open the snatch test's session and verify that it is headed "Snatch test"</action>
+  </actions>
+</journey>

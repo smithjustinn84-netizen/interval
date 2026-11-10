@@ -18,7 +18,6 @@ import dev.justinsmith.lift.domain.ReadinessCheck
 import dev.justinsmith.lift.domain.ReadinessReason
 import dev.justinsmith.lift.domain.SessionPlan
 import dev.justinsmith.lift.domain.SetLog
-import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.easier
 import dev.justinsmith.lift.domain.gripLoad
 import dev.justinsmith.lift.domain.lighterDayThan
@@ -26,7 +25,9 @@ import dev.justinsmith.lift.domain.offeredBands
 import dev.justinsmith.lift.domain.plannedLoad
 import dev.justinsmith.lift.domain.readiness
 import dev.justinsmith.lift.domain.sets
+import dev.justinsmith.lift.domain.shippedPrograms
 import dev.justinsmith.lift.domain.standardBells
+import dev.justinsmith.lift.domain.test
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 
@@ -57,7 +58,7 @@ class EasierDay(
         sessionStore.sessions,
         combine(intervals.sportDays, intervals.workouts, ::Pair),
         combine(programStore.programDay, programStore.customPrograms) { day, custom ->
-            day to builtInPrograms + custom
+            day to shippedPrograms + custom
         },
         gearStore.bells,
     ) { active, sessions, (sportDays, workouts), (day, programs), _ ->
@@ -113,9 +114,14 @@ class EasierDay(
         return readiness(sessions, grappling, grip, now, timestamps::dayNumber)
     }
 
-    /** [session]'s program day, while its plan is as programmed and nothing is logged; else null. */
+    /**
+     * [session]'s program day, while its plan is as programmed and nothing is logged, unless it is a test; else
+     * null.
+     */
     private fun dayToEase(session: LiftSession?, day: ProgramDay?, programs: List<Program>): ProgramDay? =
-        programDay(day, programs, session)?.takeIf { session?.plan == null && session?.sets.isNullOrEmpty() }
+        programDay(day, programs, session)
+            // A test is done as it stands or left for another day: an easier one measures nothing.
+            ?.takeIf { session?.plan == null && session?.sets.isNullOrEmpty() && !it.program.test }
 
     /** [day]'s plan made easier, its loads as they would be suggested from the [sessions] before; null if unchanged. */
     private fun eased(day: ProgramDay, sessions: List<LiftSession>): SessionPlan? {

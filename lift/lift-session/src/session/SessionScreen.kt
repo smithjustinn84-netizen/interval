@@ -81,6 +81,7 @@ import dev.justinsmith.lift.domain.ExerciseFilters
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.formatKg
+import dev.justinsmith.lift.domain.testOf
 import dev.justinsmith.lift.library.ExerciseDetailSheet
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_cancel
@@ -120,6 +121,7 @@ import dev.justinsmith.lift.ui.liftName
 import dev.justinsmith.lift.ui.programName
 import dev.justinsmith.lift.ui.sessionTitle
 import dev.justinsmith.lift.ui.setLine
+import dev.justinsmith.lift.ui.testName
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -164,9 +166,11 @@ fun SessionRoute(onExit: () -> Unit) {
             },
         )
     }
-    val title = sessionTitle(state.session?.exercises.orEmpty())
+    // A test's session is headed by the test, in the log and in health: its one day needs no number.
+    val test = testOf(state.programDay?.program?.key)
+    val title = test?.let { testName(it.id) } ?: sessionTitle(state.session?.exercises.orEmpty())
     val healthTitle = state.programDay?.let {
-        stringResource(Res.string.session_health_title, programName(it.program), it.number)
+        if (test != null) title else stringResource(Res.string.session_health_title, programName(it.program), it.number)
     }
     // One set of actions for as long as nothing they close over changes: the state changes every tick while a
     // rest or a hold runs, and a child that takes the actions alone can then skip.
@@ -262,6 +266,7 @@ private fun sessionActions(parts: ActionTargets, title: String, healthTitle: Str
             onUnskipBlock = viewModel.plan::unskipBlock,
             onStepRest = viewModel::stepRest,
             onSkipRest = timers::skipRest,
+            onLogPartRound = viewModel::logPartRound,
             onPickDay = viewModel.plan::pickDay,
             // The screen asks first when nothing is logged; should one slip through, it is thrown away and the page
             // closes.
@@ -363,6 +368,8 @@ data class SessionActions(
     /** A free session made day [Int] (from 0) of [Program]: see [TodayPlanEditor.pickDay]. */
     val onPickDay: (Program, Int) -> Unit = { _, _ -> },
     val onSkipRest: () -> Unit = {},
+    /** Adds the reps of the round a test's cap cut short. */
+    val onLogPartRound: (Int) -> Unit = {},
     val onFinish: () -> Unit = {},
     val onDiscard: () -> Unit = {},
 )
@@ -740,6 +747,13 @@ private fun SessionFoot(
             progress = remember(clocks) { heldShare { clocks().rest?.progress } },
             Modifier.padding(start = Spacing.space16, end = Spacing.space16, top = Spacing.space8),
         )
+        state.partRoundOf?.let { round ->
+            PartRound(
+                round,
+                actions.onLogPartRound,
+                Modifier.padding(start = Spacing.space16, end = Spacing.space16, top = Spacing.space8),
+            )
+        }
         SessionButtons(state, actions, onFinish, onOpenSheet)
     }
 }

@@ -52,10 +52,10 @@ import dev.justinsmith.lift.domain.ProgramFamily
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.RestClock
-import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.dayMinutes
 import dev.justinsmith.lift.domain.estimatedMinutes
 import dev.justinsmith.lift.domain.programCatalogue
+import dev.justinsmith.lift.domain.shippedPrograms
 import dev.justinsmith.lift.domain.weekBalance
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.notice_program_followed
@@ -162,7 +162,7 @@ fun ProgramsScreen(
     // Saved by their stored keys: a program is not saveable.
     var previewing by rememberSaveable { mutableStateOf(open) }
     var switching by rememberSaveable { mutableStateOf<String?>(null) }
-    val programOf = { stored: String? -> (builtInPrograms + custom).firstOrNull { it.key.stored == stored } }
+    val programOf = { stored: String? -> (shippedPrograms + custom).firstOrNull { it.key.stored == stored } }
     val notices = LocalNotices.current
     val onOpen = { key: ProgramKey -> previewing = key.stored }
     val gutter = Modifier.padding(horizontal = Spacing.space16)

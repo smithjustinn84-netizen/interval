@@ -217,14 +217,24 @@ sealed interface ProgramKey {
         override val stored: String get() = CUSTOM_PREFIX + uid
     }
 
+    /** A test's one-day program ([StrengthTest]), stored by its [TestId]'s name: never offered, never followed. */
+    data class Test(val id: TestId) : ProgramKey {
+        override val stored: String get() = TEST_PREFIX + id.name
+    }
+
     companion object {
-        /** The key [stored] names; null for a built-in this build doesn't know. */
-        fun parse(stored: String): ProgramKey? = if (stored.startsWith(CUSTOM_PREFIX)) {
-            stored.removePrefix(CUSTOM_PREFIX).takeIf { it.isNotEmpty() }?.let(::Custom)
-        } else {
-            ProgramId.entries.firstOrNull { it.name == stored }?.let(::BuiltIn)
+        /** The key [stored] names; null for a built-in or a test this build doesn't know. */
+        fun parse(stored: String): ProgramKey? = when {
+            stored.startsWith(CUSTOM_PREFIX) ->
+                stored.removePrefix(CUSTOM_PREFIX).takeIf { it.isNotEmpty() }?.let(::Custom)
+
+            stored.startsWith(TEST_PREFIX) ->
+                TestId.entries.firstOrNull { it.name == stored.removePrefix(TEST_PREFIX) }?.let(::Test)
+
+            else -> ProgramId.entries.firstOrNull { it.name == stored }?.let(::BuiltIn)
         }
     }
 }
 
 private const val CUSTOM_PREFIX = "custom:"
+private const val TEST_PREFIX = "test:"

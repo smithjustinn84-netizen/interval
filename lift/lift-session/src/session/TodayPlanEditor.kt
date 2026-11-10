@@ -11,13 +11,13 @@ import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.SessionPlan
 import dev.justinsmith.lift.domain.SetLog
-import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.dayOf
 import dev.justinsmith.lift.domain.nextSet
 import dev.justinsmith.lift.domain.offeredBands
 import dev.justinsmith.lift.domain.pickedDayNumber
 import dev.justinsmith.lift.domain.planRows
 import dev.justinsmith.lift.domain.plannedLoad
+import dev.justinsmith.lift.domain.shippedPrograms
 import dev.justinsmith.lift.domain.standardBells
 import dev.justinsmith.lift.domain.stepped
 import dev.justinsmith.lift.domain.withLoad
@@ -108,7 +108,7 @@ class TodayPlanEditor(
 }
 
 /** Every program there is: the built-ins, then those the user made. */
-internal val ProgramStore.programs: List<Program> get() = builtInPrograms + customPrograms.value
+internal val ProgramStore.programs: List<Program> get() = shippedPrograms + customPrograms.value
 
 /**
  * The program day [session] is, with today's plan as [session] has it: its own day among [programs] (the day it

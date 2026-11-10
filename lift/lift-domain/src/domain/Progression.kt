@@ -201,14 +201,19 @@ fun progressions(
     rest: Int = RestClock.DEFAULT_SECONDS,
     before: List<LiftSession> = emptyList(),
 ): List<BlockChange> =
-    blocksDone(day, logged).mapNotNull { done ->
-        val block = done.block
-        val next = if (block.kind == BlockKind.Density) {
-            densityStep(block, done.done, densityRounds(block, day.program, before) + done.rounds)
-        } else {
-            nextStep(block, done.done, bells, bands, pairs, rest)
+    // A test is done as it stands each time, or two attempts measure different things.
+    if (day.program.test) {
+        emptyList()
+    } else {
+        blocksDone(day, logged).mapNotNull { done ->
+            val block = done.block
+            val next = if (block.kind == BlockKind.Density) {
+                densityStep(block, done.done, densityRounds(block, day.program, before) + done.rounds)
+            } else {
+                nextStep(block, done.done, bells, bands, pairs, rest)
+            }
+            next?.let { BlockChange(done.index, block, it) }
         }
-        next?.let { BlockChange(done.index, block, it) }
     }
 
 /**
@@ -224,8 +229,12 @@ fun toppedOut(
     pairs: Set<Double> = emptySet(),
     rest: Int = RestClock.DEFAULT_SECONDS,
 ): List<Block> =
-    blocksDone(day, logged).mapNotNull { (_, block, done) ->
-        block.takeIf { rungOf(block, done, bells, bands, pairs, rest) == Rung.ToppedOut }
+    if (day.program.test) {
+        emptyList()
+    } else {
+        blocksDone(day, logged).mapNotNull { (_, block, done) ->
+            block.takeIf { rungOf(block, done, bells, bands, pairs, rest) == Rung.ToppedOut }
+        }
     }
 
 /**

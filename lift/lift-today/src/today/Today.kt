@@ -51,6 +51,7 @@ import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.TestId
 import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.dayMinutes
 import dev.justinsmith.lift.domain.formatKg
@@ -89,6 +90,8 @@ import dev.justinsmith.lift.today.resources.today_resume
 import dev.justinsmith.lift.today.resources.today_start
 import dev.justinsmith.lift.today.resources.today_start_day
 import dev.justinsmith.lift.today.resources.today_start_day_over_text
+import dev.justinsmith.lift.today.resources.today_tests
+import dev.justinsmith.lift.today.resources.today_tests_hint
 import dev.justinsmith.lift.today.resources.today_title
 import dev.justinsmith.lift.today.resources.today_weeks
 import dev.justinsmith.lift.ui.blockLine
@@ -111,6 +114,7 @@ fun TodayRoute(
     onOpenSettings: () -> Unit = {},
     onNewProgram: () -> Unit = {},
     onOpenProgramSheet: (ProgramKey) -> Unit = {},
+    onOpenTests: (TestId?) -> Unit = {},
     header: (@Composable () -> Unit)? = null,
 ) {
     val viewModel = koinViewModel<TodayViewModel>()
@@ -137,6 +141,7 @@ fun TodayRoute(
         onOpenSettings = onOpenSettings,
         onNewProgram = onNewProgram,
         onOpenProgramSheet = onOpenProgramSheet,
+        onOpenTests = onOpenTests,
         header = header,
     )
 }
@@ -161,6 +166,7 @@ fun TodayScreen(
     onOpenSettings: () -> Unit = {},
     onNewProgram: () -> Unit = {},
     onOpenProgramSheet: (ProgramKey) -> Unit = {},
+    onOpenTests: (TestId?) -> Unit = {},
     header: (@Composable () -> Unit)? = null,
 ) {
     val group = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4)
@@ -178,7 +184,7 @@ fun TodayScreen(
             Group(stringResource(Res.string.today_group_following), group) {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
                     ProgramCard(state, onChooseProgram, onOpenProgram)
-                    if (state.challenges.isNotEmpty()) ChallengesCard(state.challenges)
+                    if (state.challenges.isNotEmpty()) ChallengesCard(state.challenges, onOpenTests)
                 }
             }
         }
@@ -189,7 +195,7 @@ fun TodayScreen(
         }
         item(key = "own") {
             Group(stringResource(Res.string.today_group_own), group) {
-                OwnCard(state, onStartSession, onOpenExercises, onOpenBells)
+                OwnCard(state, onStartSession, onOpenExercises, onOpenBells, { onOpenTests(null) })
             }
         }
         item(key = "lately") {
@@ -242,13 +248,17 @@ private fun programLine(program: Program, restSeconds: Int): String = listOf(
     estimateLine(program.dayMinutes(restSeconds)),
 ).reduce { joined, part -> stringResource(Res.string.common_joined, joined, part) }
 
-/** A session of one's own, while none is under way; the exercises; and the equipment, with the bells owned. */
+/**
+ * A session of one's own, while none is under way; the tests; the exercises; and the equipment, with the bells
+ * owned.
+ */
 @Composable
 private fun OwnCard(
     state: TodayUiState,
     onStartSession: (ProgramKey?) -> Unit,
     onOpenExercises: () -> Unit,
     onOpenBells: () -> Unit,
+    onOpenTests: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ListCard(modifier) {
@@ -260,6 +270,8 @@ private fun OwnCard(
             )
             RowDivider()
         }
+        LinkRow(stringResource(Res.string.today_tests), stringResource(Res.string.today_tests_hint), onOpenTests)
+        RowDivider()
         LinkRow(
             stringResource(Res.string.library_title),
             stringResource(Res.string.library_entry_text),

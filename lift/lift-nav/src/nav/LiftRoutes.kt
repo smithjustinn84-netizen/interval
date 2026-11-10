@@ -55,6 +55,14 @@ data object ProgramProgress : NavKey
 @SerialName("dev.justinsmith.bells.nav.ProgramEditor")
 data class ProgramEditor(val uid: String? = null, val copyOf: String? = null) : NavKey
 
+/**
+ * The tests, each with its attempts, and the sheet of one up when [open] names it (a `TestId`'s name): a
+ * challenge's row opens its own. Pushed from Lift.
+ */
+@Serializable
+@SerialName("dev.justinsmith.lift.nav.Tests")
+data class Tests(val open: String? = null) : NavKey
+
 /** The bells the user owns and the records set with them. Pushed from Lift. */
 @Serializable
 @SerialName("dev.justinsmith.bells.nav.OwnedBells")
@@ -85,6 +93,7 @@ fun PolymorphicModuleBuilder<NavKey>.liftRoutes() {
     subclass(ProgramProgress::class)
     subclass(ProgramEditor::class)
     subclass(OwnedBells::class)
+    subclass(Tests::class)
     subclass(ExerciseLibrary::class)
     subclass(LiftDetail::class)
 }

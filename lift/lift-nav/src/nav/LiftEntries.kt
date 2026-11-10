@@ -12,6 +12,7 @@ import dev.justinsmith.interval.nav.push
 import dev.justinsmith.interval.ui.PageKind
 import dev.justinsmith.interval.ui.pageKind
 import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.domain.TestId
 import dev.justinsmith.lift.gear.GearRoute
 import dev.justinsmith.lift.history.LiftDetailRoute
 import dev.justinsmith.lift.library.ExerciseLibraryRoute
@@ -19,6 +20,7 @@ import dev.justinsmith.lift.programs.ProgramEditorRoute
 import dev.justinsmith.lift.programs.ProgramProgressRoute
 import dev.justinsmith.lift.programs.ProgramsRoute
 import dev.justinsmith.lift.session.SessionRoute
+import dev.justinsmith.lift.tests.TestsRoute
 import dev.justinsmith.lift.today.TodayRoute
 
 /**
@@ -48,6 +50,7 @@ fun EntryProviderScope<NavKey>.liftEntries(
             onOpenSettings = onOpenSettings,
             onNewProgram = { backStack.push(ProgramEditor()) },
             onOpenProgramSheet = { backStack.push(ProgramSheet(it.stored)) },
+            onOpenTests = { backStack.push(Tests(it?.name)) },
         )
     }
     entry<Lifting>(metadata = pageKind(PageKind.Mode)) {
@@ -74,6 +77,17 @@ fun EntryProviderScope<NavKey>.liftEntries(
         )
     }
     entry<OwnedBells> { GearRoute(onBack = { backStack.removeLastOrNull() }) }
+    entry<Tests> { key ->
+        TestsRoute(
+            open = TestId.entries.firstOrNull { it.name == key.open },
+            // In place of the page, so leaving the session lands on Lift, as a session started there does.
+            onStart = {
+                backStack.removeLastOrNull()
+                backStack.push(Lifting)
+            },
+            onBack = { backStack.removeLastOrNull() },
+        )
+    }
     entry<ExerciseLibrary> {
         ExerciseLibraryRoute(
             onBack = { backStack.removeLastOrNull() },

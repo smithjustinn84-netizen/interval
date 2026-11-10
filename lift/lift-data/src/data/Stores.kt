@@ -20,6 +20,7 @@ import dev.justinsmith.lift.domain.SavedTimer
 import dev.justinsmith.lift.domain.SessionPlan
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.Side
+import dev.justinsmith.lift.domain.StrengthTest
 import kotlinx.coroutines.flow.StateFlow
 
 // The roles Lift's storage plays, one per kind of thing it keeps, so a screen takes only what it reads and
@@ -37,6 +38,12 @@ interface SessionStore {
     val active: StateFlow<LiftSession?>
 
     fun startSession(program: ProgramKey? = null)
+
+    /**
+     * Starts a session of [test] at [load] (null for what its lift was done with last), unless one is in
+     * progress already: a day of the test's own program, planned as [StrengthTest.blockAt] has it.
+     */
+    fun startTest(test: StrengthTest, load: Load?)
 
     fun finishSession(title: String)
 

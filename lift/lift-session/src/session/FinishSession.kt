@@ -34,6 +34,8 @@ import dev.justinsmith.lift.domain.progressions
 import dev.justinsmith.lift.domain.sets
 import dev.justinsmith.lift.domain.snatchTest
 import dev.justinsmith.lift.domain.standardBells
+import dev.justinsmith.lift.domain.testOf
+import dev.justinsmith.lift.domain.testResult
 import dev.justinsmith.lift.domain.toppedOut
 import dev.justinsmith.lift.domain.wantsHandCare
 import kotlinx.coroutines.CoroutineScope
@@ -84,7 +86,10 @@ class FinishSession(
         val bands = offeredBands(gearStore.bands.value)
         val pairs = gearStore.pairs.value
         val day = programDay(programStore.programDay.value, programStore.programs, session)
-        val changes = day?.let {
+        // A test's attempt is said as its own line, against the last at its load: it changes no program, and the
+        // marks its clock would set are that line's to say.
+        val test = testOf(session.program)
+        val changes = day?.takeIf { test == null }?.let {
             planChanges(
                 it,
                 progressions(
@@ -125,14 +130,24 @@ class FinishSession(
             handCare = done.wantsHandCare,
             paces = newPaces(sessionStore.sessions.value, done, alongside),
             milestones = milestonesIn(sessionStore.sessions.value, done, alongside.sets),
-            snatchTest = newBest(
-                BuiltInExercise.Snatch,
-                SNATCH_TEST_MINUTES,
-                done,
-                before = snatchTest(sessionStore.sessions.value, alongside)?.best,
-            ),
-            armorBuilding = newBest(BuiltInExercise.ArmorBuildingComplex, ABC_MINUTES, done),
-            densities = day?.let { densityDone(it, session.sets, sessionStore.sessions.value) }.orEmpty(),
+            snatchTest = if (test != null) {
+                null
+            } else {
+                newBest(
+                    BuiltInExercise.Snatch,
+                    SNATCH_TEST_MINUTES,
+                    done,
+                    before = snatchTest(sessionStore.sessions.value, alongside)?.best,
+                )
+            },
+            armorBuilding = if (test != null) {
+                null
+            } else {
+                newBest(BuiltInExercise.ArmorBuildingComplex, ABC_MINUTES, done)
+            },
+            densities = day?.takeIf { test == null }
+                ?.let { densityDone(it, session.sets, sessionStore.sessions.value) }.orEmpty(),
+            test = test?.let { testResult(it, session.sets, sessionStore.sessions.value) },
         )
         sessionStore.finishSession(title)
         val now = done.finishedAtEpochMillis ?: clock.nowMillis()

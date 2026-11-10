@@ -354,4 +354,25 @@
     <string name="demo_set_up">Set up</string>
     <string name="demo_each_rep">Each rep</string>
     <string name="demo_set_up_jump">Show the set-up</string>
+    <string name="test_snatch_name">Snatch test</string>
+    <string name="test_abc_name">Armor Building Complex test</string>
+    <string name="test_press_name">Press: most reps</string>
+    <string name="test_push_up_name">Push-ups: most reps</string>
+    <string name="test_pull_up_name">Pull-ups: most reps</string>
+    <string name="test_plank_name">Plank: longest hold</string>
+    <string name="test_snatch_protocol">As many snatches as you can in 5 minutes with one bell, switching hands as you like. 100 passes. Tap each ten as you finish it.</string>
+    <string name="test_abc_protocol">As many Armor Building Complexes as you can in 20 minutes with two bells. Tap each one as you finish it.</string>
+    <string name="test_press_protocol">One set a side with one bell: as many strict presses as you can, with no help from the legs.</string>
+    <string name="test_push_up_protocol">One set: chest to the floor and arms straight at the top, until a rep breaks form.</string>
+    <string name="test_pull_up_protocol">One set from a dead hang, chin over the bar each rep, until no more come.</string>
+    <string name="test_plank_protocol">One hold on the forearms with the hips level, stopped when they sag. The clock runs to 5 minutes.</string>
+    <plurals name="test_result_reps">
+        <item quantity="one">%1$d rep</item>
+        <item quantity="other">%1$d reps</item>
+    </plurals>
+    <plurals name="test_result_complexes">
+        <item quantity="one">%1$d complex</item>
+        <item quantity="other">%1$d complexes</item>
+    </plurals>
+    <string name="test_result_with">%1$s with %2$s</string>
 </resources>

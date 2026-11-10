@@ -8,7 +8,12 @@ import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.lift.data.SportDay
 import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.PerceivedEffort
+import dev.justinsmith.lift.domain.Side
+import dev.justinsmith.lift.domain.TestId
+import dev.justinsmith.lift.domain.TestResult
+import dev.justinsmith.lift.domain.strengthTest
 import dev.justinsmith.lift.fakes.FakeIntervalActivity
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import dev.justinsmith.lift.fakes.logSet
@@ -62,6 +67,36 @@ class FinishSessionTest {
         assertNull(repository.sessions.active.value)
         assertEquals("Squats", repository.sessions.sessions.value.single().title)
         assertEquals(1, health.workouts.size)
+    }
+
+    /** A snatch test at 24 kg: [rounds] of ten half a minute apart, then finished as [title] says. */
+    private fun snatchTest(finishing: FinishSession, rounds: Int) {
+        repository.sessions.startTest(strengthTest(TestId.SnatchTest), Load.Bell(24.0))
+        repeat(rounds) {
+            now += 30_000
+            repository.sets.logSet(BuiltInExercise.Snatch, Load.Bell(24.0), 10, Side.entries[it % 2])
+        }
+        assertTrue(finishing.finish("Snatch test"))
+    }
+
+    @Test
+    fun `a test's attempt is said against the last at its bell and changes no program`() = runTest {
+        val finishing = finishing(backgroundScope)
+        snatchTest(finishing, rounds = 8)
+        val first = assertNotNull(finishing.finished.value)
+        assertEquals(TestResult(TestId.SnatchTest, Load.Bell(24.0), 80, last = null, target = 100), first.test)
+        // Its line is the test's to say: no density block's rounds, no passive best, nothing to keep.
+        assertNull(first.snatchTest)
+        assertEquals(emptyList(), first.densities)
+        assertNull(first.changes)
+
+        now += 30 * 86_400_000L
+        snatchTest(finishing, rounds = 10)
+        val second = assertNotNull(finishing.finished.value?.test)
+        assertEquals(80, second.last)
+        assertEquals(20, second.change)
+        assertTrue(second.passed)
+        assertNull(finishing.finished.value?.changes)
     }
 
     @Test

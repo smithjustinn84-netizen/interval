@@ -7,6 +7,13 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.6.0] — Unreleased
 
 ### Added
+- Tests, on Train's Strength pillar under On your own: a benchmark done on purpose, to compare. The snatch test (five
+  minutes against 100) and the Armor Building Complex (twenty minutes) run on the clock, with the reps of a round
+  the cap cut short added after it; the press, push-ups and pull-ups are the most reps in a set, the plank the
+  longest hold. A test's sheet says how it is done, takes the bell, charts the attempts with that bell against the
+  pass mark, and says when another is too soon, when one is due and when today is a day to leave it. The summary
+  says what the attempt came to against the last at its bell. The snatch test's and the complex's challenge rows
+  open their test.
 - Two programs. "One bell beside BJJ" (2 days a week, about 20 minutes) is for a grappler with a single bell: goblet
   squats, presses and rows, few and slow, with a suitcase carry one day; eight minutes of swings on the minute,
   get-ups and a rack carry the next. Set up starts a grappler with one bell on it and plans 15:15 on a third day,

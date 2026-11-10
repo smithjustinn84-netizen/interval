@@ -306,4 +306,14 @@
     <string name="session_moved">Moved</string>
     <string name="session_time">Time</string>
     <string name="summary_reps">Reps</string>
+    <string name="summary_test">%1$s: %2$s</string>
+    <string name="summary_test_passed">%1$s passed: %2$s</string>
+    <string name="summary_test_first">%1$s, the mark to beat</string>
+    <string name="summary_test_same">%1$s, the same as last time</string>
+    <string name="summary_test_more">%1$s, %2$d more than last time</string>
+    <string name="summary_test_fewer">%1$s, %2$d fewer than last time</string>
+    <string name="summary_test_longer">%1$s, %2$s longer than last time</string>
+    <string name="summary_test_shorter">%1$s, %2$s shorter than last time</string>
+    <string name="session_test_part_round">Reps in the round you were on when time was called</string>
+    <string name="session_test_part_add">Add to the count</string>
 </resources>

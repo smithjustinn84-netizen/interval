@@ -264,6 +264,25 @@ Exercise in Health Connect. Check it before the next release. Ticket 4 of 0.5 mo
   `LiftVoiceAcceptanceTest` hears the groove as a program day opens and "Stop a rep early" after a very hard
   session (`journeys/lift-voice.xml`).
 
+**13. Tests** (added during the sprint) · L
+- A challenge is a best found in what was logged; a test is the benchmark done on purpose: fresh, the same way
+  each time and at a known load, so two attempts compare. Six: the snatch test and the ABC against the clock, the
+  press, push-ups and pull-ups for most reps, the plank for the longest hold.
+- A test is a program of one day (`ProgramKey.Test`, stored `test:<TestId>`; `StrengthTest`, `Tests.kt` in
+  `lift-domain`), never offered and never followed, so its session carries a plan and runs on the density clock
+  and the log as a program's day does. An attempt is a finished session of it (`attempts`): nothing new stored, no
+  schema change. Sessions' programs are looked up among `shippedPrograms` (the built-ins and the tests').
+- `SessionStore.startTest(test, load)` starts one at the bell picked, a most-reps test opening on the last result
+  there. `TestsViewModel`/`TestsScreen` (`lift-today/src/tests/`, the `Tests` key) list them, and a test's sheet
+  says the protocol, takes the bell, charts the attempts with it and advises (`retest`, readiness, warm up).
+- A test never steps up or is eased; the cap's unfinished round is added after it (`partRoundOf`,
+  `SessionViewModel.logPartRound`); the summary's `Finished.test` says the attempt against the last at its load.
+- Done when: `TestsTest`, `LiftRepositoryTest` (a test starts as its own day), `TestsViewModelTest`,
+  `TestsScreenTest`, `FinishSessionTest` and `LiftTestsAcceptanceTest` (`journeys/lift-tests.xml`).
+- As built: the key is a kind of its own rather than new `ProgramId`s, so the catalogue, Set up and every test
+  that pins the built-ins never see a test; the unfinished round is asked on the session's foot once the clock has
+  gone (its Done shows for three seconds), not on the clock's page.
+
 --- cut line ---
 
 **6. Describe reads "then"** (0.5's ticket 4, unchanged) · S

@@ -16,7 +16,7 @@ import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.domain.UnknownExercise
 import dev.justinsmith.lift.domain.band
 import dev.justinsmith.lift.domain.bandOf
-import dev.justinsmith.lift.domain.builtInPrograms
+import dev.justinsmith.lift.domain.shippedPrograms
 
 // Lift's rows as the domain reads them, and the domain as a row stores it: what every repository of
 // LiftRepository maps through. A program's blocks and a session's plan and timer are encoded in StoredPrograms.kt
@@ -130,5 +130,5 @@ internal fun Program.importRow(now: Long): CustomProgramEntity? {
 
 /** The program [stored] names: a built-in, or one of [made]; null for one gone or unknown. */
 internal fun resolveProgram(stored: String, made: List<Program>): Program? = ProgramKey.parse(stored)?.let { key ->
-    (builtInPrograms + made).firstOrNull { it.key == key }
+    (shippedPrograms + made).firstOrNull { it.key == key }
 }

@@ -23,12 +23,14 @@ import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.RestState
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.Side
+import dev.justinsmith.lift.domain.TestResult
 import dev.justinsmith.lift.domain.bands
 import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.offeredBands
 import dev.justinsmith.lift.domain.offeredExercises
 import dev.justinsmith.lift.domain.recordSetIds
 import dev.justinsmith.lift.domain.standardBells
+import dev.justinsmith.lift.domain.testOf
 import dev.justinsmith.lift.library.ExerciseDetailUiState
 import dev.justinsmith.lift.library.LibraryList
 
@@ -67,6 +69,8 @@ data class Finished(
     val armorBuilding: Int? = null,
     /** Its density blocks, each with the rounds it came to and whether that beat the block's best. */
     val densities: List<DensityDone> = emptyList(),
+    /** For a test's session, what the attempt came to against the last at its load; null for any other. */
+    val test: TestResult? = null,
 )
 
 /**
@@ -180,3 +184,17 @@ data class SessionUiState(
  */
 val SessionUiState.setComing: Pair<Exercise, Load>?
     get() = if (free) draft.exercise to draft.load else upNext?.let { it.set.exercise to it.load }
+
+/**
+ * The reps of a round, when the session is a test against the clock whose cap has run with a whole round logged
+ * last: a round the cap cut short can then be added ([SessionViewModel.logPartRound]), since such a test counts
+ * every rep and the clock logs whole rounds. Null otherwise, and once the part is in.
+ */
+val SessionUiState.partRoundOf: Int?
+    get() {
+        val day = programDay?.takeIf { dayDone && density == null } ?: return null
+        val test = testOf(day.program.key)?.takeIf { it.capMinutes != null } ?: return null
+        val round = day.today.blocks.firstOrNull()?.block?.reps ?: return null
+        val last = session?.sets?.lastOrNull { it.exercise.key == test.exercise.key } ?: return null
+        return round.takeIf { it > 1 && last.reps == it }
+    }

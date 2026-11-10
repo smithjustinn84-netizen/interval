@@ -30,7 +30,6 @@ import dev.justinsmith.lift.domain.ReadinessCheck
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.barbellLifts
 import dev.justinsmith.lift.domain.besideTheMat
-import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.challenges
 import dev.justinsmith.lift.domain.estimatedMinutes
 import dev.justinsmith.lift.domain.gripLoad
@@ -41,6 +40,7 @@ import dev.justinsmith.lift.domain.program
 import dev.justinsmith.lift.domain.readiness
 import dev.justinsmith.lift.domain.sets
 import dev.justinsmith.lift.domain.setsOldestFirst
+import dev.justinsmith.lift.domain.shippedPrograms
 import dev.justinsmith.lift.domain.startingBellKg
 import dev.justinsmith.lift.domain.startingLoadKg
 import dev.justinsmith.lift.domain.suggestedBar
@@ -185,7 +185,7 @@ class TodayViewModel(
             followed?.program?.key,
             followed?.startedAtEpochMillis,
             weight,
-            builtInPrograms + programStore.customPrograms.value,
+            shippedPrograms + programStore.customPrograms.value,
             intervals = workouts.snatchSets,
         ),
     )

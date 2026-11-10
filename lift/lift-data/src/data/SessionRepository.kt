@@ -9,9 +9,14 @@ import dev.justinsmith.interval.storage.orEmptyOnError
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.CustomExercise
 import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.SessionPlan
+import dev.justinsmith.lift.domain.StrengthTest
+import dev.justinsmith.lift.domain.at
+import dev.justinsmith.lift.domain.attempts
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -94,6 +99,29 @@ class SessionRepository(
                         updatedAtEpochMillis = now,
                         programId = program?.stored,
                         programDay = day,
+                    ),
+                )
+            }
+        }
+    }
+
+    override fun startTest(test: StrengthTest, load: Load?) {
+        val last = load?.let { attempts(test, _sessions.value).at(it).lastOrNull()?.result }
+        val block = test.blockAt(load, last)
+        val plan = SessionPlan.of(listOf(block)).takeIf { block != test.block }
+        writer.persist {
+            if (sessionDao.active() == null) {
+                val now = clock.nowMillis()
+                sessionDao.insert(
+                    SessionEntity(
+                        ids.newId(),
+                        now,
+                        null,
+                        title = "",
+                        updatedAtEpochMillis = now,
+                        programId = test.key.stored,
+                        plan = plan?.let(::encodePlan),
+                        programDay = 1,
                     ),
                 )
             }
