@@ -7,6 +7,7 @@ product:
 
 apply:
   - //templates/tested-lib.module-template.yaml
+  - //templates/compose-stability.module-template.yaml
 
 dependencies:
   # The theme, components and platform hooks every app shares; exported so the app shells see them too.

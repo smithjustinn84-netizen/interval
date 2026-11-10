@@ -427,6 +427,23 @@ class HistoryViewModelTest : MainDispatcherTest() {
     }
 
     @Test
+    fun `opening a day keeps the log's lists as they were`() {
+        // The screen compares these by instance where the compiler can't tell they are stable (iOS): kept, the
+        // rows under the day's sheet compose nothing again as it opens.
+        repository.history.recordWorkout(tabata, tabata.totalSeconds)
+        val before = viewModel.state.value
+
+        viewModel.openDay(TODAY)
+
+        val after = viewModel.state.value
+        assertTrue(after.daySheet != null)
+        assertSame(before.sections, after.sections)
+        assertSame(before.week, after.week)
+        assertSame(before.month, after.month)
+        assertSame(before.upNext, after.upNext)
+    }
+
+    @Test
     fun `a flow done is named in the log and counted as mobility in the week`() {
         val flow = builtInFlows.first()
         repository.history.recordWorkout(tabata, tabata.totalSeconds)

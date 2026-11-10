@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.runningReduce
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
@@ -110,6 +111,7 @@ class HistoryViewModel(
         settingsStore.appSettings,
         combine(days, view) { _, view -> view },
     ) { logged, planned, names, app, view -> buildState(logged, planned, names, app, view) }
+        .runningReduce { before, now -> now.keepingListsOf(before) }
 
     private val choices = combine(presetStore.presets, settingsStore.config, ::planChoices).distinctUntilChanged()
 
@@ -347,3 +349,21 @@ private fun daySheet(day: TrainingDay, heading: HistoryDay, past: Boolean, item:
         past = past,
         sports = day.sports.map { it.sport },
     )
+
+/**
+ * This state with each of [before]'s lists in place of its own where they are equal: a rebuild for the day sheet,
+ * the range or a change elsewhere hands the screen the instances it had, which a screen comparing them by instance
+ * (iOS, where the compiler takes them as unstable) skips. The day sheet and the summary are whatever was built.
+ */
+private fun HistoryUiState.keepingListsOf(before: HistoryUiState) = copy(
+    sections = sections.keptFrom(before.sections),
+    byKind = byKind.keptFrom(before.byKind),
+    week = week.keptFrom(before.week),
+    month = month.keptFrom(before.month),
+    weeks = weeks.keptFrom(before.weeks),
+    mostDone = mostDone.keptFrom(before.mostDone),
+    upNext = upNext.keptFrom(before.upNext),
+)
+
+/** [before] where it equals this, so a state rebuilt with the same contents hands on the instance it had. */
+internal fun <T> T.keptFrom(before: T): T = if (this == before) before else this

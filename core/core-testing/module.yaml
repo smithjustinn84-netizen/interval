@@ -9,6 +9,7 @@ product:
 
 apply:
   - //templates/lib.module-template.yaml
+  - //templates/compose-stability.module-template.yaml
 
 dependencies:
   - //core/core

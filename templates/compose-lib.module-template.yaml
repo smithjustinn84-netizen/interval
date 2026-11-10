@@ -3,6 +3,7 @@
 # the test libraries and fakes of `tested-lib`.
 apply:
   - //templates/tested-lib.module-template.yaml
+  - //templates/compose-stability.module-template.yaml
 
 dependencies:
   - //core/core

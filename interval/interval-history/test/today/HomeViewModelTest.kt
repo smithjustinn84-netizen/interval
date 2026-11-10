@@ -24,6 +24,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 private val tabata = tabataPreset.config
@@ -236,6 +237,21 @@ class HomeViewModelTest : MainDispatcherTest() {
         // Not one of the lengths offered: nothing changes.
         viewModel.setMinutes(7)
         assertEquals(5, viewModel.state.value.minutes)
+    }
+
+    @Test
+    fun `a length picked changes the picks and keeps the week and up next as they were`() {
+        // The screen compares these by instance where the compiler can't tell they are stable (iOS).
+        repository.plans.planOnce(PlanWorkout.SportDay(Sport.Climbing), TODAY)
+        val before = viewModel.state.value
+        assertTrue(before.upNext.any { it is UpNextItem.Flow })
+
+        viewModel.setMinutes(5)
+
+        val after = viewModel.state.value
+        assertEquals(5, after.minutes)
+        assertSame(before.week, after.week)
+        assertSame(before.upNext, after.upNext)
     }
 
     @Test

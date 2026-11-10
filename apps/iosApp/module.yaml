@@ -1,6 +1,9 @@
 description: "iOS host: Xcode project, launch assets"
 product: ios/app
 
+apply:
+  - //templates/compose-stability.module-template.yaml
+
 dependencies:
   - //apps/app
   - $compose.ui

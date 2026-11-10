@@ -9,6 +9,7 @@ product:
 
 apply:
   - //templates/tested-lib.module-template.yaml
+  - //templates/compose-stability.module-template.yaml
 
 dependencies:
   - //interval/interval-platform-api: exported

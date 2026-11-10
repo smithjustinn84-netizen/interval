@@ -1,6 +1,9 @@
 description: "Android host: manifest, resources, R8, signing"
 product: android/app
 
+apply:
+  - //templates/compose-stability.module-template.yaml
+
 dependencies:
   - //apps/app
   # `IntervalApplication` starts the container, whose type `initAppKoin` hands back.

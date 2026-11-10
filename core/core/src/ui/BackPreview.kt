@@ -25,6 +25,8 @@ import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventTransitionState
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 // Android's back preview (Material 3): while the finger is down the page shrinks, rounds its
 // corners and drifts with the swipe, and the page underneath slides in beneath it. Releasing past
@@ -61,10 +63,13 @@ fun <T : Any> backPreviewCorners(): NavEntryDecorator<T> = remember {
 private fun BackPreviewCorners(content: @Composable () -> Unit) {
     val leaving = LocalNavAnimatedContentScope.current.transition.targetState == EnterExitState.PostExit
     val dispatcher = LocalNavigationEventDispatcherOwner.current?.navigationEventDispatcher
-    val gesture by remember(dispatcher) {
-        dispatcher?.transitionState ?: MutableStateFlow(NavigationEventTransitionState.Idle)
-    }.collectAsState()
-    val swiping = leaving && gesture is NavigationEventTransitionState.InProgress
+    // Whether a swipe is under way, not how far: every page wears this, and a swipe moves every frame.
+    val inProgress by remember(dispatcher) {
+        (dispatcher?.transitionState ?: MutableStateFlow(NavigationEventTransitionState.Idle))
+            .map { it is NavigationEventTransitionState.InProgress }
+            .distinctUntilChanged()
+    }.collectAsState(initial = false)
+    val swiping = leaving && inProgress
     val corner by animateDpAsState(
         if (swiping) Radius.radius24 else 0.dp,
         backPreviewSpring(),

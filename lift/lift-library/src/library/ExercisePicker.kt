@@ -25,6 +25,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -119,9 +120,12 @@ data class PickerMatches(val names: Map<String, String>, val shown: List<Exercis
 fun pickerMatches(list: LibraryList, picker: PickerState): PickerMatches {
     val names = list.exercises.associate { it.key to exerciseName(it) }
     val text = picker.query.text.toString()
-    val shown = list.exercises.filter {
-        list.filters.matches(it, list.owned) &&
-            nameMatches(names.getValue(it.key), text)
+    // Kept while neither the list, the names nor the search change: the picker composes again for more than that.
+    val shown = remember(list, names, text) {
+        list.exercises.filter {
+            list.filters.matches(it, list.owned) &&
+                nameMatches(names.getValue(it.key), text)
+        }
     }
     return PickerMatches(names, shown, narrowed = text.isNotBlank() || !list.filters.isEmpty)
 }
@@ -288,48 +292,54 @@ internal fun ExerciseList(
 ) {
     ListCard(modifier.then(if (!opens && onPick != null) Modifier.selectableGroup() else Modifier)) {
         exercises.forEachIndexed { i, exercise ->
-            if (i > 0) RowDivider()
-            ExerciseRow(
-                exercise,
-                names.getValue(exercise.key),
-                exerciseFacts(exercise, equipment),
-                selected = exercise.key == selected?.key,
-                onPick = onPick?.takeIf { canPick(exercise) }?.let { pick -> { pick(exercise) } },
-                opens = opens,
-                tagYours = tagYours,
-            )
+            // Keyed, so a search that narrows the list moves the rows still shown rather than composing each
+            // again as the exercise that came to its place.
+            key(exercise.key) {
+                if (i > 0) RowDivider()
+                ExerciseRow(
+                    exercise,
+                    names.getValue(exercise.key),
+                    equipment = equipment,
+                    selected = exercise.key == selected?.key,
+                    onPick = onPick?.takeIf { canPick(exercise) },
+                    opens = opens,
+                    tagYours = tagYours,
+                )
+            }
         }
     }
 }
 
 /**
- * An exercise's name over its [facts], tagged when the user added it (or archived it), ticked when [selected].
- * One that [opens] on [onPick] ends in a chevron; one with no [onPick] takes no tap and shows none.
+ * An exercise's name over its facts ([exerciseFacts], without what it is done with unless [equipment]), tagged
+ * when the user added it (or archived it), ticked when [selected]. One that [opens] on [onPick] ends in a
+ * chevron; one with no [onPick] takes no tap and shows none.
  */
 @Composable
 private fun ExerciseRow(
     exercise: Exercise,
     name: String,
-    facts: String,
+    equipment: Boolean,
     selected: Boolean,
-    onPick: (() -> Unit)?,
+    onPick: ((Exercise) -> Unit)?,
     opens: Boolean,
     tagYours: Boolean,
 ) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
+    val pick = onPick?.let { { it(exercise) } }
     val tap = when {
-        onPick == null -> Modifier
+        pick == null -> Modifier
 
         opens ->
             Modifier
-                .clickable(interaction, LocalIndication.current, role = Role.Button, onClick = onPick)
+                .clickable(interaction, LocalIndication.current, role = Role.Button, onClick = pick)
                 // After the ripple, so the content shrinks while the ripple keeps the card's full width.
                 .pressScale(interaction)
 
         else ->
             Modifier
-                .selectable(selected, interaction, LocalIndication.current, role = Role.RadioButton, onClick = onPick)
+                .selectable(selected, interaction, LocalIndication.current, role = Role.RadioButton, onClick = pick)
                 .pressScale(interaction)
     }
     Row(
@@ -343,7 +353,7 @@ private fun ExerciseRow(
     ) {
         Column(Modifier.weight(1f)) {
             Text(name, style = IntervalTheme.type.label, color = palette.text)
-            Text(facts, style = IntervalTheme.type.meta, color = palette.textDim)
+            Text(exerciseFacts(exercise, equipment), style = IntervalTheme.type.meta, color = palette.textDim)
         }
         if (exercise is CustomExercise && (tagYours || exercise.archived)) {
             Text(
@@ -360,7 +370,7 @@ private fun ExerciseRow(
                 modifier = Modifier.size(Sizes.icon),
             )
 
-            opens && onPick != null -> Icon(
+            opens && pick != null -> Icon(
                 IntervalIcons.Chevron,
                 contentDescription = null,
                 tint = palette.textDim,

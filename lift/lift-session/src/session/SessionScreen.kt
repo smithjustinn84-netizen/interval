@@ -518,7 +518,7 @@ private fun SessionPlanContent(
             celebrating = celebrating,
         )
     }
-    LoggedSets(state, sets)
+    LoggedSets(state.session?.sets.orEmpty(), state.recordSetIds, sets)
 }
 
 /**
@@ -803,15 +803,18 @@ private fun SessionButtons(
 /** What a logged set's row does: × removes it (the row words the notice), a tap opens it to change. */
 private class SetActions(val onRemove: (SetLog, removedText: String) -> Unit, val onEdit: (SetLog) -> Unit)
 
-/** The sets logged so far, by lift. */
+/**
+ * The sets logged so far, by lift, those in [recordSetIds] tagged. Given the sets alone, not the session's state,
+ * so a change to the draft regroups nothing.
+ */
 @Composable
-private fun LoggedSets(state: SessionUiState, actions: SetActions) {
-    val sets = state.session?.sets.orEmpty()
+private fun LoggedSets(sets: List<SetLog>, recordSetIds: Set<Long>, actions: SetActions) {
     // The sets on show when the screen opened stand still; one logged since rises into its card, and one that
     // beat a record has its tag stamp in and the accent ring out from behind it. (A set edited into a record
     // keeps its id, so it is tagged without the ceremony.)
     val atOpen = remember { sets.map { it.id }.toSet() }
-    sets.groupBy { it.exercise to it.double }.forEach { (lift, done) ->
+    val byLift = remember(sets) { sets.groupBy { it.exercise to it.double } }
+    byLift.forEach { (lift, done) ->
         GroupLabel(liftName(lift.first, lift.second))
         ListCard(Modifier.animateContentSize()) {
             done.forEachIndexed { i, set ->
@@ -819,7 +822,7 @@ private fun LoggedSets(state: SessionUiState, actions: SetActions) {
                     AnimatedVisibility(rememberArrival(set.id !in atOpen), enter = risingEnter()) {
                         Column {
                             if (i > 0) RowDivider()
-                            val record = set.id in state.recordSetIds
+                            val record = set.id in recordSetIds
                             SetRow(
                                 set,
                                 record = record,

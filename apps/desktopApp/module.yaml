@@ -1,6 +1,9 @@
 description: "Desktop (JVM) host"
 product: jvm/app
 
+apply:
+  - //templates/compose-stability.module-template.yaml
+
 dependencies:
   - //apps/app
   # `initAppKoin` hands back the container, which `main` closes as the window does.

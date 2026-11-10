@@ -251,7 +251,6 @@ internal fun HistoryRow(
         day?.let { DayLabel(it.text, it.today) }
         StripeMark(markOf(item), height = IntervalSizes.historyMarkHeight)
         Column(Modifier.weight(1f)) {
-            val shape = workoutDescription(item.config)
             val detail = listOfNotNull(
                 kindLead(item),
                 stringResource(Res.string.history_ended_early).takeIf { item.endedEarly },
@@ -259,7 +258,12 @@ internal fun HistoryRow(
                 item.calories?.let { stringResource(Res.string.history_calories_value, it) },
                 item.time,
             )
-            Text(item.presetName ?: shape, style = IntervalTheme.type.label, color = palette.text)
+            // The shape is put into words only for a row with no name to show.
+            Text(
+                item.presetName ?: workoutDescription(item.config),
+                style = IntervalTheme.type.label,
+                color = palette.text,
+            )
             Text(
                 joined(detail),
                 style = IntervalTheme.type.meta,

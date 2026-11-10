@@ -25,10 +25,11 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -44,9 +45,11 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneDecoratorStrategy
 import androidx.navigation3.scene.SceneInfo
+import androidx.navigationevent.NavigationEventHistory
 import androidx.navigationevent.NavigationEventTransitionState
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 
 /**
  * The navigation area: the bar along a phone's foot or the rail along a wider window's start. It lies over the
@@ -129,7 +132,7 @@ fun NavigationAreaBar(
     // The rail leaves toward the start: left in LTR, right in RTL.
     val start = if (LocalLayoutDirection.current == LayoutDirection.Rtl) 1 else -1
     val shown = rememberUpdatedState(visible)
-    val swipe = rememberUpdatedState(backSwipeToTab())
+    val swipe = rememberBackSwipeToTab()
     val state = remember { SeekableTransitionState(visible) }
     LaunchedEffect(state) {
         snapshotFlow { shown.value to swipe.value }.collectLatest { (target, fraction) ->
@@ -163,14 +166,23 @@ fun NavigationAreaBar(
 
 /**
  * How far a back swipe that NavDisplay would answer by returning to a tab's scene has come, from 0 to 1, or
- * null while there is no such swipe. The dispatcher's history is the active handler's: a sheet's or a
- * dialog's names no scene, and a swipe toward any other page leaves the area where it is.
+ * null while there is no such swipe: a state the area reads in its effect, so a swipe's every move recomposes
+ * nothing.
  */
 @Composable
-private fun backSwipeToTab(): Float? {
-    val dispatcher = LocalNavigationEventDispatcherOwner.current?.navigationEventDispatcher ?: return null
-    val gesture by dispatcher.transitionState.collectAsState()
-    val history by dispatcher.history.collectAsState()
+private fun rememberBackSwipeToTab(): State<Float?> {
+    val dispatcher = LocalNavigationEventDispatcherOwner.current?.navigationEventDispatcher
+    return produceState<Float?>(null, dispatcher) {
+        dispatcher ?: return@produceState
+        combine(dispatcher.transitionState, dispatcher.history, ::swipeToTab).collect { value = it }
+    }
+}
+
+/**
+ * How far [gesture] has come toward a tab's scene. The dispatcher's [history] is the active handler's: a sheet's
+ * or a dialog's names no scene, and a swipe toward any other page leaves the area where it is.
+ */
+private fun swipeToTab(gesture: NavigationEventTransitionState, history: NavigationEventHistory): Float? {
     val swipe = gesture as? NavigationEventTransitionState.InProgress ?: return null
     if (swipe.direction != NavigationEventTransitionState.TRANSITIONING_BACK) return null
     val back = history.mergedHistory.getOrNull(history.currentIndex - 1) as? SceneInfo<*> ?: return null

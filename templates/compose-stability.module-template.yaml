@@ -1,0 +1,19 @@
+# Every module that turns Compose on: the Compose compiler reads `compose-stability.conf`, so the pure layers'
+# types and read-only collections passed to a composable are compared by equals rather than by instance. Applied
+# by `compose-lib` and by each module that enables Compose itself.
+#
+# The JVM and Android only. The path is relative to the compiler's working directory: the project root for those,
+# but Kotlin/Native's compiler runs from its own distribution in the user's cache, where no relative path reaches the
+# project, and a file not found is a warning, which fails the build. So on iOS the types stay compared by instance,
+# and a ViewModel keeping a list's instance while nothing in it changed still counts there.
+settings@jvm:
+  kotlin:
+    freeCompilerArgs:
+      - -P
+      - plugin:androidx.compose.compiler.plugins.kotlin:stabilityConfigurationPath=compose-stability.conf
+
+settings@android:
+  kotlin:
+    freeCompilerArgs:
+      - -P
+      - plugin:androidx.compose.compiler.plugins.kotlin:stabilityConfigurationPath=compose-stability.conf

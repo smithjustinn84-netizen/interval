@@ -10,6 +10,7 @@ product:
 # `lib`, not `compose-lib` or `tested-lib`: those depend on core and core-testing, which depend on this.
 apply:
   - //templates/lib.module-template.yaml
+  - //templates/compose-stability.module-template.yaml
 
 dependencies:
   - //core/core-platform: exported

@@ -570,6 +570,15 @@ Strategy, commands and limits: [docs/testing.md](docs/testing.md).
 - **`allWarningsAsErrors` is on everywhere.** Opt in per file (`@file:OptIn(...)`), **never** with module-wide
   `optIns`. Since toolchain 0.13 a module's flags reach the Kotlin/Native cache build of every dependency, and
   an unresolved marker there fails the iOS link. Only a full `./kotlin build` catches it; `-p jvm` passes.
+- **`compose-stability.conf`** (the root) tells the Compose compiler that the pure domains' types
+  (`dev.justinsmith.interval.timer`/`.model`, `dev.justinsmith.lift.domain`), read-only collections and a few named
+  classes are stable, so a composable handed one compares it by equals and skips. A class in those packages that
+  gains a public `var`, a mutable collection or an array, or an open class or interface, must come out of the
+  file. `templates/compose-stability.module-template.yaml` passes it, on the JVM and Android only: Kotlin/Native's
+  compiler runs from its distribution in the user's cache, where the relative path finds nothing, and the
+  warning fails the build. So iOS still compares those by instance, and a ViewModel that rebuilds a state hands
+  on the lists that came out equal (`keptFrom`, interval-history). A new module that enables Compose applies
+  the template (`compose-lib` does).
 - **Moving files between modules can leave the Kotlin/Native incremental cache stale** ("File … is not found
   in cache … per-file-cache" on an iOS compile). Delete `build/tasks/*/kotlin-native-ic-cache` and build again;
   not `./kotlin clean`.

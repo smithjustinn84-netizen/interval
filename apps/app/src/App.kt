@@ -299,7 +299,7 @@ private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
     val twoPane = panes.historyBeside
     val settingsBeside = panes.settingsBeside && backStack.settingsOverTimer
     val currentTab = top as? Tab ?: HistoryTab.takeIf { twoPane && top.opensBesideHistory }
-    val selectTab = { tab: Tab -> backStack.selectTab(tab) }
+    val selectTab = remember(backStack) { { tab: Tab -> backStack.selectTab(tab) } }
     val pillar = rememberTrainPillar(backStack)
     val palette = IntervalTheme.palette
     BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -340,14 +340,11 @@ private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
                             defaultPredictivePopTransitionSpec()
                         },
                         modifier = Modifier.fillMaxSize(),
-                        entryProvider = appEntries(
-                            backStack,
-                            twoPane,
-                            settingsBeside,
-                            selectTab,
-                            sharedScope = this,
-                            clock,
-                        ),
+                        // Built again only when what it takes changes, not at every navigation: a new provider
+                        // gives every entry on show new content, and each of them composes again.
+                        entryProvider = remember(backStack, twoPane, settingsBeside, this, clock) {
+                            appEntries(backStack, twoPane, settingsBeside, selectTab, sharedScope = this, clock)
+                        },
                     )
                 }
                 NavigationAreaBar(

@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -68,6 +69,11 @@ fun ExerciseLibraryScreen(
     val onPick = { exercise: Exercise -> onOpen(exercise.key) }
     val canPick = { _: Exercise -> true }
     val card = Modifier.padding(horizontal = Spacing.space16)
+    // Grouped once a change to what is shown, not each time the grid's content runs, so each group keeps its list.
+    val (yours, byEquipment) = remember(matches.shown) {
+        val (custom, builtIn) = matches.shown.partition { it is CustomExercise }
+        custom to builtIn.groupBy { it.equipment }
+    }
     TabGrid(
         stringResource(Res.string.library_title),
         modifier,
@@ -85,7 +91,6 @@ fun ExerciseLibraryScreen(
                 }
             }
         }
-        val (yours, builtIn) = matches.shown.partition { it is CustomExercise }
         if (yours.isNotEmpty()) {
             item(key = "yours") {
                 Column(card) {
@@ -96,7 +101,6 @@ fun ExerciseLibraryScreen(
                 }
             }
         }
-        val byEquipment = builtIn.groupBy { it.equipment }
         Equipment.entries.forEach { equipment ->
             val exercises = byEquipment[equipment] ?: return@forEach
             item(key = "group-${equipment.name}") {

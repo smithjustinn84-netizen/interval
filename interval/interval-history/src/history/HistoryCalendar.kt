@@ -26,10 +26,12 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.constrainHeight
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.history_day_cd
 import dev.justinsmith.interval.history.resources.history_sport_logged_cd
@@ -165,7 +167,14 @@ private fun DayBar(day: DayCell, share: Float, index: Int) {
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .height((IntervalSizes.weekBar * grown.value).coerceAtLeast(Sizes.weekBarEmpty))
+                    // Grown in the layout, not the composition: the bar is laid out again each frame it grows,
+                    // and nothing in it composed again.
+                    .layout { measurable, constraints ->
+                        val grownTo = (IntervalSizes.weekBar * grown.value).coerceAtLeast(Sizes.weekBarEmpty)
+                        val height = constraints.constrainHeight(grownTo.roundToPx())
+                        val placeable = measurable.measure(constraints.copy(minHeight = height, maxHeight = height))
+                        layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                    }
                     .clip(Corners.radius12),
             ) {
                 // Top to bottom: mobility over the interval workouts over Lift's sessions, each its share of the

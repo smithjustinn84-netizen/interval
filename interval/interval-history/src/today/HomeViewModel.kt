@@ -16,6 +16,7 @@ import dev.justinsmith.interval.history.UpNextItem
 import dev.justinsmith.interval.history.WeekGoal
 import dev.justinsmith.interval.history.asLiftWorkouts
 import dev.justinsmith.interval.history.dayCell
+import dev.justinsmith.interval.history.keptFrom
 import dev.justinsmith.interval.history.lifting
 import dev.justinsmith.interval.history.todayAgenda
 import dev.justinsmith.interval.history.upNext
@@ -43,6 +44,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.runningReduce
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -147,6 +149,7 @@ class HomeViewModel(
             }
             state.copy(minutes = picked.minutes, strength = picked.strength, picks = picked.picks, upNext = upNext)
         }
+            .runningReduce { before, now -> now.keepingListsOf(before) }
             .flowOn(computation)
             .stateIn(viewModelScope, SharingStarted.Eagerly, HomeUiState.Loading)
 
@@ -252,4 +255,15 @@ private data class Picked(
     val strength: StrengthPick?,
     val picks: List<QuickPick>,
     val prepSeconds: Int,
+)
+
+/**
+ * This state with each of [before]'s lists in place of its own where they are equal: a length picked rebuilds the
+ * picks, and the week and what is up next reach the screen as the instances it had, which a screen comparing them
+ * by instance (iOS, where the compiler takes them as unstable) skips.
+ */
+private fun HomeUiState.keepingListsOf(before: HomeUiState) = copy(
+    week = week.keptFrom(before.week),
+    upNext = upNext.keptFrom(before.upNext),
+    picks = picks.keptFrom(before.picks),
 )
