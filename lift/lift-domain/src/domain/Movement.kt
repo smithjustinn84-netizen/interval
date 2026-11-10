@@ -41,8 +41,10 @@ import dev.justinsmith.lift.domain.BuiltInExercise.BarbellSnatchPull
 import dev.justinsmith.lift.domain.BuiltInExercise.BenchDip
 import dev.justinsmith.lift.domain.BuiltInExercise.BottomsUpCarry
 import dev.justinsmith.lift.domain.BuiltInExercise.BottomsUpPress
+import dev.justinsmith.lift.domain.BuiltInExercise.BridgeAndRoll
 import dev.justinsmith.lift.domain.BuiltInExercise.BulgarianSplitSquat
 import dev.justinsmith.lift.domain.BuiltInExercise.Burpee
+import dev.justinsmith.lift.domain.BuiltInExercise.Butterfly
 import dev.justinsmith.lift.domain.BuiltInExercise.CalfRaise
 import dev.justinsmith.lift.domain.BuiltInExercise.CatCow
 import dev.justinsmith.lift.domain.BuiltInExercise.ChildsPose
@@ -51,6 +53,7 @@ import dev.justinsmith.lift.domain.BuiltInExercise.Clean
 import dev.justinsmith.lift.domain.BuiltInExercise.CleanAndPress
 import dev.justinsmith.lift.domain.BuiltInExercise.Cobra
 import dev.justinsmith.lift.domain.BuiltInExercise.CrissCross
+import dev.justinsmith.lift.domain.BuiltInExercise.CrossVUp
 import dev.justinsmith.lift.domain.BuiltInExercise.DeadBug
 import dev.justinsmith.lift.domain.BuiltInExercise.Deadlift
 import dev.justinsmith.lift.domain.BuiltInExercise.DeepSquat
@@ -60,6 +63,7 @@ import dev.justinsmith.lift.domain.BuiltInExercise.FarmersWalk
 import dev.justinsmith.lift.domain.BuiltInExercise.FingerPulls
 import dev.justinsmith.lift.domain.BuiltInExercise.ForearmStretch
 import dev.justinsmith.lift.domain.BuiltInExercise.ForwardFold
+import dev.justinsmith.lift.domain.BuiltInExercise.FrogStretch
 import dev.justinsmith.lift.domain.BuiltInExercise.FrontSquat
 import dev.justinsmith.lift.domain.BuiltInExercise.GetUp
 import dev.justinsmith.lift.domain.BuiltInExercise.GluteBridge
@@ -68,6 +72,7 @@ import dev.justinsmith.lift.domain.BuiltInExercise.HalfSnatch
 import dev.justinsmith.lift.domain.BuiltInExercise.HalfSplit
 import dev.justinsmith.lift.domain.BuiltInExercise.Halo
 import dev.justinsmith.lift.domain.BuiltInExercise.HighPull
+import dev.justinsmith.lift.domain.BuiltInExercise.HipEscape
 import dev.justinsmith.lift.domain.BuiltInExercise.HipFlexorLunge
 import dev.justinsmith.lift.domain.BuiltInExercise.HipSwitch
 import dev.justinsmith.lift.domain.BuiltInExercise.HollowHold
@@ -102,13 +107,17 @@ import dev.justinsmith.lift.domain.BuiltInExercise.Scissors
 import dev.justinsmith.lift.domain.BuiltInExercise.Seal
 import dev.justinsmith.lift.domain.BuiltInExercise.ShoulderBridge
 import dev.justinsmith.lift.domain.BuiltInExercise.ShoulderCircles
+import dev.justinsmith.lift.domain.BuiltInExercise.ShoulderRoll
 import dev.justinsmith.lift.domain.BuiltInExercise.SideKickSeries
 import dev.justinsmith.lift.domain.BuiltInExercise.SidePlank
 import dev.justinsmith.lift.domain.BuiltInExercise.SingleLegCircles
 import dev.justinsmith.lift.domain.BuiltInExercise.SingleLegGluteBridge
 import dev.justinsmith.lift.domain.BuiltInExercise.SingleLegKick
 import dev.justinsmith.lift.domain.BuiltInExercise.SingleLegStretch
+import dev.justinsmith.lift.domain.BuiltInExercise.SitOut
+import dev.justinsmith.lift.domain.BuiltInExercise.SitUp
 import dev.justinsmith.lift.domain.BuiltInExercise.Snatch
+import dev.justinsmith.lift.domain.BuiltInExercise.SpinalRock
 import dev.justinsmith.lift.domain.BuiltInExercise.SpineStretchForward
 import dev.justinsmith.lift.domain.BuiltInExercise.SplitSquat
 import dev.justinsmith.lift.domain.BuiltInExercise.StepUp
@@ -116,6 +125,7 @@ import dev.justinsmith.lift.domain.BuiltInExercise.SuitcaseCarry
 import dev.justinsmith.lift.domain.BuiltInExercise.Swan
 import dev.justinsmith.lift.domain.BuiltInExercise.Swimming
 import dev.justinsmith.lift.domain.BuiltInExercise.Teaser
+import dev.justinsmith.lift.domain.BuiltInExercise.TechnicalStandUp
 import dev.justinsmith.lift.domain.BuiltInExercise.ThreadTheNeedle
 import dev.justinsmith.lift.domain.BuiltInExercise.Thruster
 import dev.justinsmith.lift.domain.BuiltInExercise.TwoHandSwing
@@ -269,6 +279,16 @@ val BuiltInExercise.movement: Movement
         ThreadTheNeedle, ShoulderCircles, WristCircles, PalmsDownFingersBack, BacksOfTheHands, FingerPulls,
         ForearmStretch, CatCow, ChildsPose, Cobra, DownwardDog, LyingTwist,
         -> hold(Pattern.Core, grip = 0)
+
+        // The floor drills: the trunk rocked, curled and rolled as core, the bridge from the hips, getting up off the
+        // mat as a get-up is, and the two hip openers held as a squat is.
+        SpinalRock, ShoulderRoll, SitUp, CrossVUp, HipEscape -> grind(Pattern.Core, grip = 0)
+
+        BridgeAndRoll -> grind(Pattern.Hinge, grip = 0)
+
+        TechnicalStandUp, SitOut -> grind(Pattern.GetUp, grip = 0)
+
+        Butterfly, FrogStretch -> hold(Pattern.Squat, grip = 0)
     }
 
 /**

@@ -28,6 +28,20 @@ private val stretches = listOf(
     BuiltInExercise.LyingTwist,
 )
 
+/** The floor drills of the shipped flows: Wildman's core, the grappler's drills and the two hip openers. */
+private val floorDrills = listOf(
+    BuiltInExercise.SpinalRock,
+    BuiltInExercise.ShoulderRoll,
+    BuiltInExercise.SitUp,
+    BuiltInExercise.CrossVUp,
+    BuiltInExercise.HipEscape,
+    BuiltInExercise.BridgeAndRoll,
+    BuiltInExercise.TechnicalStandUp,
+    BuiltInExercise.SitOut,
+    BuiltInExercise.Butterfly,
+    BuiltInExercise.FrogStretch,
+)
+
 class TrainingTest {
     private var nextId = 1L
 
@@ -289,14 +303,14 @@ class TrainingTest {
     }
 
     @Test
-    fun `the starter catalogue has 124 exercises across five kinds of equipment`() {
+    fun `the starter catalogue has 134 exercises across five kinds of equipment`() {
         assertEquals(
             mapOf(
                 Equipment.Kettlebell to 30,
                 Equipment.Barbell to 20,
                 Equipment.Bodyweight to 22,
                 Equipment.Band to 15,
-                Equipment.Mat to 18 + stretches.size,
+                Equipment.Mat to 18 + stretches.size + floorDrills.size,
             ),
             BuiltInExercise.entries.groupingBy { it.equipment }.eachCount(),
         )
@@ -339,7 +353,7 @@ class TrainingTest {
                 BuiltInExercise.SidePlank,
                 BuiltInExercise.HollowHold,
                 BuiltInExercise.Swimming,
-            ) + stretches,
+            ) + stretches + listOf(BuiltInExercise.Butterfly, BuiltInExercise.FrogStretch),
             BuiltInExercise.entries.filter { it.measure == Measure.Time },
         )
     }

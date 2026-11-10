@@ -620,4 +620,54 @@
         <item>Both shoulders down</item>
         <item>Look the other way</item>
     </string-array>
+    <string-array name="cues_spinal_rock">
+        <item>Sit with the knees bent and the chest up</item>
+        <item>Round into a C and rock back, the head off the mat</item>
+        <item>Rock forward and sit all the way up</item>
+    </string-array>
+    <string-array name="cues_shoulder_roll">
+        <item>Crouch low with the same hand and foot forward</item>
+        <item>Tuck the head and roll over that shoulder</item>
+        <item>Come all the way back up</item>
+    </string-array>
+    <string-array name="cues_sit_up">
+        <item>Lie flat with the ribs open</item>
+        <item>Close the ribs and sit all the way up</item>
+        <item>Extend the spine, then lie back down</item>
+    </string-array>
+    <string-array name="cues_cross_v_up">
+        <item>Lie long with the hands on the mat</item>
+        <item>Close the ribs and sit up into a V</item>
+        <item>Touch a hand to the opposite foot</item>
+    </string-array>
+    <string-array name="cues_hip_escape">
+        <item>On your back, knees bent and feet flat</item>
+        <item>Turn onto one shoulder and push the hips away</item>
+        <item>Bring the knees back in and turn the other way</item>
+    </string-array>
+    <string-array name="cues_bridge_and_roll">
+        <item>On your back, the heels close to the hips</item>
+        <item>Bridge high off the feet</item>
+        <item>Turn over one shoulder and look at the mat</item>
+    </string-array>
+    <string-array name="cues_technical_stand_up">
+        <item>Sit up on one hand, the other arm guarding</item>
+        <item>Lift the hips and swing the leg back under</item>
+        <item>Stand up into your stance</item>
+    </string-array>
+    <string-array name="cues_sit_out">
+        <item>On the hands and feet, knees off the mat</item>
+        <item>Thread one leg through under the body</item>
+        <item>Back to the hands and feet, then the other</item>
+    </string-array>
+    <string-array name="cues_butterfly">
+        <item>Sit with the soles of the feet together</item>
+        <item>Let the knees fall open</item>
+        <item>Fold forward with a long back</item>
+    </string-array>
+    <string-array name="cues_frog_stretch">
+        <item>On the forearms with the knees wide</item>
+        <item>Shins in line with the knees</item>
+        <item>Ease the hips back</item>
+    </string-array>
 </resources>

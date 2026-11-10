@@ -10,6 +10,20 @@ import kotlin.test.assertTrue
 class CelebrationTest {
     private val demos = BuiltInExercise.entries.associateWith { it.demo!! }
 
+    // The floor drills lie, sit or kneel at some moment of the rep, so none takes a bow, even those that stand up.
+    private val floorDrills = setOf(
+        BuiltInExercise.SpinalRock,
+        BuiltInExercise.ShoulderRoll,
+        BuiltInExercise.SitUp,
+        BuiltInExercise.CrossVUp,
+        BuiltInExercise.HipEscape,
+        BuiltInExercise.BridgeAndRoll,
+        BuiltInExercise.TechnicalStandUp,
+        BuiltInExercise.SitOut,
+        BuiltInExercise.Butterfly,
+        BuiltInExercise.FrogStretch,
+    )
+
     @Test
     fun `a lift on its feet raises what it holds or bows and one lying hanging or on its hands gives nothing`() {
         val none = demos.filterValues { it.celebration == null }.keys
@@ -75,7 +89,7 @@ class CelebrationTest {
             BuiltInExercise.Pigeon,
             BuiltInExercise.LyingTwist,
         )
-        assertEquals(lying + onTheHands + seated + onTheMat + stretching, none)
+        assertEquals(lying + onTheHands + seated + onTheMat + stretching + floorDrills, none)
         demos.forEach { (exercise, demo) ->
             val celebration = demo.celebration ?: return@forEach
             val expected = if (demo.hold == Hold.Free) Celebration.Bow else Celebration.RaisedBell

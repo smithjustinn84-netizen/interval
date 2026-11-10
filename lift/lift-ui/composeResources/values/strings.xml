@@ -144,6 +144,16 @@
     <string name="exercise_forward_fold">Forward fold</string>
     <string name="exercise_pigeon">Pigeon</string>
     <string name="exercise_lying_twist">Lying twist</string>
+    <string name="exercise_spinal_rock">Spinal rock</string>
+    <string name="exercise_shoulder_roll">Shoulder roll</string>
+    <string name="exercise_sit_up">Sit-up</string>
+    <string name="exercise_cross_v_up">V-up across</string>
+    <string name="exercise_hip_escape">Hip escape</string>
+    <string name="exercise_bridge_and_roll">Bridge and roll</string>
+    <string name="exercise_technical_stand_up">Technical stand-up</string>
+    <string name="exercise_sit_out">Sit-out</string>
+    <string name="exercise_butterfly">Butterfly</string>
+    <string name="exercise_frog_stretch">Frog stretch</string>
     <string name="side_left">Left</string>
     <string name="side_right">Right</string>
     <string name="session_title_two">%1$s and %2$s</string>

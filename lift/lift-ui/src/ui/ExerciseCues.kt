@@ -44,8 +44,10 @@ import dev.justinsmith.lift.ui.resources.cues_barbell_snatch_pull
 import dev.justinsmith.lift.ui.resources.cues_bench_dip
 import dev.justinsmith.lift.ui.resources.cues_bottoms_up_carry
 import dev.justinsmith.lift.ui.resources.cues_bottoms_up_press
+import dev.justinsmith.lift.ui.resources.cues_bridge_and_roll
 import dev.justinsmith.lift.ui.resources.cues_bulgarian_split_squat
 import dev.justinsmith.lift.ui.resources.cues_burpee
+import dev.justinsmith.lift.ui.resources.cues_butterfly
 import dev.justinsmith.lift.ui.resources.cues_calf_raise
 import dev.justinsmith.lift.ui.resources.cues_cat_cow
 import dev.justinsmith.lift.ui.resources.cues_childs_pose
@@ -54,6 +56,7 @@ import dev.justinsmith.lift.ui.resources.cues_clean
 import dev.justinsmith.lift.ui.resources.cues_clean_and_press
 import dev.justinsmith.lift.ui.resources.cues_cobra
 import dev.justinsmith.lift.ui.resources.cues_criss_cross
+import dev.justinsmith.lift.ui.resources.cues_cross_v_up
 import dev.justinsmith.lift.ui.resources.cues_dead_bug
 import dev.justinsmith.lift.ui.resources.cues_deadlift
 import dev.justinsmith.lift.ui.resources.cues_deep_squat
@@ -63,6 +66,7 @@ import dev.justinsmith.lift.ui.resources.cues_farmers_walk
 import dev.justinsmith.lift.ui.resources.cues_finger_pulls
 import dev.justinsmith.lift.ui.resources.cues_forearm_stretch
 import dev.justinsmith.lift.ui.resources.cues_forward_fold
+import dev.justinsmith.lift.ui.resources.cues_frog_stretch
 import dev.justinsmith.lift.ui.resources.cues_front_squat
 import dev.justinsmith.lift.ui.resources.cues_get_up
 import dev.justinsmith.lift.ui.resources.cues_glute_bridge
@@ -71,6 +75,7 @@ import dev.justinsmith.lift.ui.resources.cues_half_snatch
 import dev.justinsmith.lift.ui.resources.cues_half_split
 import dev.justinsmith.lift.ui.resources.cues_halo
 import dev.justinsmith.lift.ui.resources.cues_high_pull
+import dev.justinsmith.lift.ui.resources.cues_hip_escape
 import dev.justinsmith.lift.ui.resources.cues_hip_flexor_lunge
 import dev.justinsmith.lift.ui.resources.cues_hip_switch
 import dev.justinsmith.lift.ui.resources.cues_hollow_hold
@@ -105,13 +110,17 @@ import dev.justinsmith.lift.ui.resources.cues_scissors
 import dev.justinsmith.lift.ui.resources.cues_seal
 import dev.justinsmith.lift.ui.resources.cues_shoulder_bridge
 import dev.justinsmith.lift.ui.resources.cues_shoulder_circles
+import dev.justinsmith.lift.ui.resources.cues_shoulder_roll
 import dev.justinsmith.lift.ui.resources.cues_side_kick_series
 import dev.justinsmith.lift.ui.resources.cues_side_plank
 import dev.justinsmith.lift.ui.resources.cues_single_leg_circles
 import dev.justinsmith.lift.ui.resources.cues_single_leg_glute_bridge
 import dev.justinsmith.lift.ui.resources.cues_single_leg_kick
 import dev.justinsmith.lift.ui.resources.cues_single_leg_stretch
+import dev.justinsmith.lift.ui.resources.cues_sit_out
+import dev.justinsmith.lift.ui.resources.cues_sit_up
 import dev.justinsmith.lift.ui.resources.cues_snatch
+import dev.justinsmith.lift.ui.resources.cues_spinal_rock
 import dev.justinsmith.lift.ui.resources.cues_spine_stretch_forward
 import dev.justinsmith.lift.ui.resources.cues_split_squat
 import dev.justinsmith.lift.ui.resources.cues_step_up
@@ -119,6 +128,7 @@ import dev.justinsmith.lift.ui.resources.cues_suitcase_carry
 import dev.justinsmith.lift.ui.resources.cues_swan
 import dev.justinsmith.lift.ui.resources.cues_swimming
 import dev.justinsmith.lift.ui.resources.cues_teaser
+import dev.justinsmith.lift.ui.resources.cues_technical_stand_up
 import dev.justinsmith.lift.ui.resources.cues_thread_the_needle
 import dev.justinsmith.lift.ui.resources.cues_thruster
 import dev.justinsmith.lift.ui.resources.cues_two_hand_swing
@@ -261,6 +271,16 @@ fun BuiltInExercise.cues(): StringArrayResource = when (this) {
     BuiltInExercise.ForwardFold -> Res.array.cues_forward_fold
     BuiltInExercise.Pigeon -> Res.array.cues_pigeon
     BuiltInExercise.LyingTwist -> Res.array.cues_lying_twist
+    BuiltInExercise.SpinalRock -> Res.array.cues_spinal_rock
+    BuiltInExercise.ShoulderRoll -> Res.array.cues_shoulder_roll
+    BuiltInExercise.SitUp -> Res.array.cues_sit_up
+    BuiltInExercise.CrossVUp -> Res.array.cues_cross_v_up
+    BuiltInExercise.HipEscape -> Res.array.cues_hip_escape
+    BuiltInExercise.BridgeAndRoll -> Res.array.cues_bridge_and_roll
+    BuiltInExercise.TechnicalStandUp -> Res.array.cues_technical_stand_up
+    BuiltInExercise.SitOut -> Res.array.cues_sit_out
+    BuiltInExercise.Butterfly -> Res.array.cues_butterfly
+    BuiltInExercise.FrogStretch -> Res.array.cues_frog_stretch
 }
 
 /** The words of a fault, a short line to say between sets. */

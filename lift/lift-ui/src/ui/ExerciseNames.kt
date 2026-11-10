@@ -43,8 +43,10 @@ import dev.justinsmith.lift.ui.resources.exercise_barbell_snatch_pull
 import dev.justinsmith.lift.ui.resources.exercise_bench_dip
 import dev.justinsmith.lift.ui.resources.exercise_bottoms_up_carry
 import dev.justinsmith.lift.ui.resources.exercise_bottoms_up_press
+import dev.justinsmith.lift.ui.resources.exercise_bridge_and_roll
 import dev.justinsmith.lift.ui.resources.exercise_bulgarian_split_squat
 import dev.justinsmith.lift.ui.resources.exercise_burpee
+import dev.justinsmith.lift.ui.resources.exercise_butterfly
 import dev.justinsmith.lift.ui.resources.exercise_calf_raise
 import dev.justinsmith.lift.ui.resources.exercise_cat_cow
 import dev.justinsmith.lift.ui.resources.exercise_childs_pose
@@ -53,6 +55,7 @@ import dev.justinsmith.lift.ui.resources.exercise_clean
 import dev.justinsmith.lift.ui.resources.exercise_clean_and_press
 import dev.justinsmith.lift.ui.resources.exercise_cobra
 import dev.justinsmith.lift.ui.resources.exercise_criss_cross
+import dev.justinsmith.lift.ui.resources.exercise_cross_v_up
 import dev.justinsmith.lift.ui.resources.exercise_dead_bug
 import dev.justinsmith.lift.ui.resources.exercise_deadlift
 import dev.justinsmith.lift.ui.resources.exercise_deep_squat
@@ -62,6 +65,7 @@ import dev.justinsmith.lift.ui.resources.exercise_farmers_walk
 import dev.justinsmith.lift.ui.resources.exercise_finger_pulls
 import dev.justinsmith.lift.ui.resources.exercise_forearm_stretch
 import dev.justinsmith.lift.ui.resources.exercise_forward_fold
+import dev.justinsmith.lift.ui.resources.exercise_frog_stretch
 import dev.justinsmith.lift.ui.resources.exercise_front_squat
 import dev.justinsmith.lift.ui.resources.exercise_get_up
 import dev.justinsmith.lift.ui.resources.exercise_glute_bridge
@@ -70,6 +74,7 @@ import dev.justinsmith.lift.ui.resources.exercise_half_snatch
 import dev.justinsmith.lift.ui.resources.exercise_half_split
 import dev.justinsmith.lift.ui.resources.exercise_halo
 import dev.justinsmith.lift.ui.resources.exercise_high_pull
+import dev.justinsmith.lift.ui.resources.exercise_hip_escape
 import dev.justinsmith.lift.ui.resources.exercise_hip_flexor_lunge
 import dev.justinsmith.lift.ui.resources.exercise_hip_switch
 import dev.justinsmith.lift.ui.resources.exercise_hollow_hold
@@ -104,13 +109,17 @@ import dev.justinsmith.lift.ui.resources.exercise_scissors
 import dev.justinsmith.lift.ui.resources.exercise_seal
 import dev.justinsmith.lift.ui.resources.exercise_shoulder_bridge
 import dev.justinsmith.lift.ui.resources.exercise_shoulder_circles
+import dev.justinsmith.lift.ui.resources.exercise_shoulder_roll
 import dev.justinsmith.lift.ui.resources.exercise_side_kick_series
 import dev.justinsmith.lift.ui.resources.exercise_side_plank
 import dev.justinsmith.lift.ui.resources.exercise_single_leg_circles
 import dev.justinsmith.lift.ui.resources.exercise_single_leg_glute_bridge
 import dev.justinsmith.lift.ui.resources.exercise_single_leg_kick
 import dev.justinsmith.lift.ui.resources.exercise_single_leg_stretch
+import dev.justinsmith.lift.ui.resources.exercise_sit_out
+import dev.justinsmith.lift.ui.resources.exercise_sit_up
 import dev.justinsmith.lift.ui.resources.exercise_snatch
+import dev.justinsmith.lift.ui.resources.exercise_spinal_rock
 import dev.justinsmith.lift.ui.resources.exercise_spine_stretch_forward
 import dev.justinsmith.lift.ui.resources.exercise_split_squat
 import dev.justinsmith.lift.ui.resources.exercise_step_up
@@ -118,6 +127,7 @@ import dev.justinsmith.lift.ui.resources.exercise_suitcase_carry
 import dev.justinsmith.lift.ui.resources.exercise_swan
 import dev.justinsmith.lift.ui.resources.exercise_swimming
 import dev.justinsmith.lift.ui.resources.exercise_teaser
+import dev.justinsmith.lift.ui.resources.exercise_technical_stand_up
 import dev.justinsmith.lift.ui.resources.exercise_thread_the_needle
 import dev.justinsmith.lift.ui.resources.exercise_thruster
 import dev.justinsmith.lift.ui.resources.exercise_two_hand_swing
@@ -255,4 +265,14 @@ internal fun BuiltInExercise.label(): StringResource = when (this) {
     BuiltInExercise.ForwardFold -> Res.string.exercise_forward_fold
     BuiltInExercise.Pigeon -> Res.string.exercise_pigeon
     BuiltInExercise.LyingTwist -> Res.string.exercise_lying_twist
+    BuiltInExercise.SpinalRock -> Res.string.exercise_spinal_rock
+    BuiltInExercise.ShoulderRoll -> Res.string.exercise_shoulder_roll
+    BuiltInExercise.SitUp -> Res.string.exercise_sit_up
+    BuiltInExercise.CrossVUp -> Res.string.exercise_cross_v_up
+    BuiltInExercise.HipEscape -> Res.string.exercise_hip_escape
+    BuiltInExercise.BridgeAndRoll -> Res.string.exercise_bridge_and_roll
+    BuiltInExercise.TechnicalStandUp -> Res.string.exercise_technical_stand_up
+    BuiltInExercise.SitOut -> Res.string.exercise_sit_out
+    BuiltInExercise.Butterfly -> Res.string.exercise_butterfly
+    BuiltInExercise.FrogStretch -> Res.string.exercise_frog_stretch
 }

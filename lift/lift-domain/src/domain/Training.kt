@@ -287,6 +287,20 @@ enum class BuiltInExercise(
     ForwardFold(Equipment.Mat, perSide = false, Focus.LowerBody, Measure.Time),
     Pigeon(Equipment.Mat, perSide = true, Focus.LowerBody, Measure.Time),
     LyingTwist(Equipment.Mat, perSide = true, Focus.Core, Measure.Time),
+
+    // The floor drills: Mark Wildman's four foundations of the core (the spinal rock, which builds to the same-side
+    // shoulder roll, the sit-up and the V-up across; the cross touch is the criss-cross), what a grappler drills
+    // before rolling, and the two hip openers after it, held for a time.
+    SpinalRock(Equipment.Mat, perSide = false, Focus.Core),
+    ShoulderRoll(Equipment.Mat, perSide = true, Focus.Core),
+    SitUp(Equipment.Mat, perSide = false, Focus.Core),
+    CrossVUp(Equipment.Mat, perSide = false, Focus.Core),
+    HipEscape(Equipment.Mat, perSide = true, Focus.Core),
+    BridgeAndRoll(Equipment.Mat, perSide = true, Focus.FullBody),
+    TechnicalStandUp(Equipment.Mat, perSide = true, Focus.FullBody),
+    SitOut(Equipment.Mat, perSide = false, Focus.FullBody),
+    Butterfly(Equipment.Mat, perSide = false, Focus.LowerBody, Measure.Time),
+    FrogStretch(Equipment.Mat, perSide = false, Focus.LowerBody, Measure.Time),
     ;
 
     override val key: String get() = name

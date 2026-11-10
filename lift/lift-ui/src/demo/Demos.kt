@@ -165,5 +165,15 @@ private val drawnLifts: Map<Exercise, ExerciseDemo> by lazy {
         BuiltInExercise.ForwardFold to ForwardFoldDemo,
         BuiltInExercise.Pigeon to PigeonDemo,
         BuiltInExercise.LyingTwist to LyingTwistDemo,
+        BuiltInExercise.SpinalRock to SpinalRockDemo,
+        BuiltInExercise.ShoulderRoll to ShoulderRollDemo,
+        BuiltInExercise.SitUp to SitUpDemo,
+        BuiltInExercise.CrossVUp to CrossVUpDemo,
+        BuiltInExercise.HipEscape to HipEscapeDemo,
+        BuiltInExercise.BridgeAndRoll to BridgeAndRollDemo,
+        BuiltInExercise.TechnicalStandUp to TechnicalStandUpDemo,
+        BuiltInExercise.SitOut to SitOutDemo,
+        BuiltInExercise.Butterfly to ButterflyDemo,
+        BuiltInExercise.FrogStretch to FrogStretchDemo,
     )
 }
