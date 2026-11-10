@@ -22,11 +22,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
@@ -89,14 +92,25 @@ import org.jetbrains.compose.resources.stringResource
 fun IntervalSheet(
     title: String,
     onDismiss: () -> Unit,
+    list: SheetList? = null,
     content: @Composable ColumnScope.(hide: () -> Unit) -> Unit,
 ) {
     // Read here, not inside the modal, which may be a window of its own. Kept for as long as the
     // sheet is open, so resizing the window mid-edit does not swap the sheet and lose its content.
     val windowSize = currentWindowAdaptiveInfoV2().windowSizeClass
     val beside = remember { opensBeside(windowSize) }
-    if (beside) SideSheet(title, onDismiss, content) else BottomSheet(title, onDismiss, content)
+    if (beside) SideSheet(title, onDismiss, list, content) else BottomSheet(title, onDismiss, list, content)
 }
+
+/**
+ * What a sheet shows in place of its content while it is a long list: [items] in a lazy list, composed only as
+ * far as they are in view, under [modifier]. The items space themselves; the sheet adds only its top padding.
+ */
+@Immutable
+class SheetList(
+    val modifier: Modifier = Modifier,
+    val items: LazyListScope.(hide: () -> Unit) -> Unit,
+)
 
 /**
  * A sheet's form in two parts, [first] (what it is) then [second] (how much, and the action): one column, or
@@ -130,6 +144,7 @@ fun SheetColumns(
 private fun BottomSheet(
     title: String,
     onDismiss: () -> Unit,
+    list: SheetList?,
     content: @Composable ColumnScope.(hide: () -> Unit) -> Unit,
 ) {
     val palette = IntervalTheme.palette
@@ -192,7 +207,8 @@ private fun BottomSheet(
                             .semantics { contentDescription = dragHandle }
                             .handle(palette.textDim.copy(alpha = Opacity.HANDLE)),
                     )
-                    SheetBody(hide, content = content)
+                    // A list is bounded by what is left under the handle, as it must be to scroll lazily.
+                    SheetBody(hide, list, if (list != null) Modifier.weight(1f, fill = false) else Modifier, content)
                 }
             }
         }
@@ -208,6 +224,7 @@ private fun BottomSheet(
 private fun SideSheet(
     title: String,
     onDismiss: () -> Unit,
+    list: SheetList?,
     content: @Composable ColumnScope.(hide: () -> Unit) -> Unit,
 ) {
     val palette = IntervalTheme.palette
@@ -263,7 +280,7 @@ private fun SideSheet(
                         onClick = hide,
                         modifier = Modifier.align(Alignment.End),
                     )
-                    SheetBody(hide, Modifier.weight(1f, fill = false), content)
+                    SheetBody(hide, list, Modifier.weight(1f, fill = false), content)
                 }
             }
         }
@@ -294,9 +311,14 @@ private fun ModalBottomSheetState.shownShare(): Float =
 @Composable
 private fun SheetBody(
     hide: () -> Unit,
+    list: SheetList?,
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.(hide: () -> Unit) -> Unit,
 ) {
+    if (list != null) {
+        LazyColumn(modifier.fillMaxWidth().padding(top = Spacing.space8).then(list.modifier)) { list.items(this, hide) }
+        return
+    }
     Column(
         modifier.fillMaxWidth().padding(top = Spacing.space8).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(Spacing.space20),

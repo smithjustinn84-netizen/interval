@@ -92,7 +92,9 @@ class ProgramEditorTest {
 
         onNodeWithText("Two-hand swing").performClick()
         onNodeWithText("Change").performClick()
-        onNodeWithText("Band pull-apart").performScrollTo().performClick()
+        // The library is a lazy list: scrolled to, not into view.
+        scrollToText("Band pull-apart")
+        onNodeWithText("Band pull-apart").performClick()
         // A band exercise takes a band, not the bell it had.
         onNodeWithText("Medium").performScrollTo().performClick()
         onNodeWithText("Done").performScrollTo().performClick()

@@ -140,7 +140,12 @@ internal fun ExercisePickerSheet(state: SessionUiState, actions: SessionActions,
     IntervalSheet(
         stringResource(if (adding == null) Res.string.library_title else Res.string.exercise_editor_new),
         onDismiss,
+        list = if (adding == null) {
+            exerciseChoiceList(state, actions, onPick = {}, onAdd = { adding = it }, closeOnPick = true)
+        } else {
+            null
+        },
     ) { hide ->
-        ExerciseChoice(state, actions, adding, onPick = hide, onAdd = { adding = it }, onSave = hide)
+        adding?.let { NewExercise(it, onSave = hide) }
     }
 }

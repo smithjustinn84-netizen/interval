@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -38,6 +39,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import com.composeunstyled.Thumb
 import com.composeunstyled.Track
 import com.composeunstyled.UnstyledSwitch
@@ -72,6 +74,16 @@ fun ListCard(
             .background(fill),
         content = content,
     )
+}
+
+/**
+ * One row of a [ListCard] that a lazy list lays out a row at a time: the card's fill, and its corners on the
+ * [first] row's top and the [last] row's bottom, so the rows together look as one card does.
+ */
+fun Modifier.cardRow(first: Boolean, last: Boolean, fill: Color): Modifier {
+    val top = if (first) Radius.radius18 else 0.dp
+    val bottom = if (last) Radius.radius18 else 0.dp
+    return fillMaxWidth().clip(RoundedCornerShape(top, top, bottom, bottom)).background(fill)
 }
 
 /** The hairline between rows in a [ListCard], inset from the leading edge. */

@@ -38,7 +38,7 @@ import dev.justinsmith.lift.domain.ExerciseFilters
 import dev.justinsmith.lift.domain.PlanRow
 import dev.justinsmith.lift.domain.SessionPlan
 import dev.justinsmith.lift.domain.otherAbcProtocol
-import dev.justinsmith.lift.library.ExercisePicker
+import dev.justinsmith.lift.library.rememberPickerList
 import dev.justinsmith.lift.programs.BlockChoices
 import dev.justinsmith.lift.programs.BlockCounts
 import dev.justinsmith.lift.programs.BlockLoad
@@ -203,20 +203,16 @@ internal fun PlanBlockSheet(
 ) {
     var picking by rememberSaveable { mutableStateOf(false) }
     val sideways = sheetIsSideways()
-    IntervalSheet(stringResource(Res.string.plan_block_title), onDismiss = onDismiss) { hide ->
-        if (picking) {
-            ExercisePicker(
-                state.library,
-                onFilters,
-                Modifier.padding(vertical = Spacing.space8),
-                selected = row.block.exercise,
-                onPick = { e ->
-                    actions.onSwap(e)
-                    picking = false
-                },
-            )
-            return@IntervalSheet
-        }
+    // The library is the sheet's whole list while it picks.
+    val list = if (picking) {
+        rememberPickerList(state.library, onFilters, selected = row.block.exercise, onPick = { e ->
+            actions.onSwap(e)
+            picking = false
+        })
+    } else {
+        null
+    }
+    IntervalSheet(stringResource(Res.string.plan_block_title), onDismiss = onDismiss, list = list) { hide ->
         if (row.entry.skipped) {
             Column(
                 Modifier.padding(vertical = Spacing.space8),

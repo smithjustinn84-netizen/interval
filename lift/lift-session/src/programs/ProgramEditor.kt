@@ -61,7 +61,7 @@ import dev.justinsmith.lift.domain.ProgramDraft
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.program
 import dev.justinsmith.lift.domain.withExercise
-import dev.justinsmith.lift.library.ExercisePicker
+import dev.justinsmith.lift.library.rememberPickerList
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.block_done
 import dev.justinsmith.lift.session.resources.block_remove
@@ -451,23 +451,23 @@ private fun BlockSheet(
     var removing by remember { mutableStateOf(false) }
     var picking by rememberSaveable { mutableStateOf(false) }
     val sideways = sheetIsSideways()
-    IntervalSheet(stringResource(Res.string.block_title), onDismiss = {
-        if (removing) onRemove()
-        onDismiss()
-    }) { hide ->
-        if (picking) {
-            ExercisePicker(
-                choices.library,
-                onFilters,
-                Modifier.padding(vertical = Spacing.space8),
-                selected = block.exercise,
-                onPick = { e ->
-                    onChange { it.withExercise(e) }
-                    picking = false
-                },
-            )
-            return@IntervalSheet
-        }
+    // The library is the sheet's whole list while it picks.
+    val list = if (picking) {
+        rememberPickerList(choices.library, onFilters, selected = block.exercise, onPick = { e ->
+            onChange { it.withExercise(e) }
+            picking = false
+        })
+    } else {
+        null
+    }
+    IntervalSheet(
+        stringResource(Res.string.block_title),
+        onDismiss = {
+            if (removing) onRemove()
+            onDismiss()
+        },
+        list = list,
+    ) { hide ->
         SheetColumns(
             sideways,
             first = { BlockLoad(block, choices, onChange, onPickExercise = { picking = true }) },

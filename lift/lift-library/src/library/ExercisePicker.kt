@@ -9,10 +9,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.input.TextFieldState
@@ -32,6 +36,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import dev.justinsmith.interval.ui.GroupLabel
@@ -42,8 +47,10 @@ import dev.justinsmith.interval.ui.NameField
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SecondaryButton
+import dev.justinsmith.interval.ui.SheetList
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.cardRow
 import dev.justinsmith.interval.ui.enterExpanding
 import dev.justinsmith.interval.ui.exitShrinking
 import dev.justinsmith.interval.ui.pressScale
@@ -131,37 +138,91 @@ fun pickerMatches(list: LibraryList, picker: PickerState): PickerMatches {
 }
 
 /**
- * The exercise library: a search, the equipment to narrow to, and behind Filters the focus, what it is
- * measured by and only the user's own; then the recent ones, while nothing narrows, and all that match. With
- * [onPick] a row picks its exercise ([canPick] says which can be), the [selected] one ticked; without, the
- * rows just inform. With [onAdd], a search that finds nothing offers to add it as the user's own. Only an
- * [archivable] picker, the library's, offers the user's archived exercises among its filters. One column, for
- * a sheet; the library lays the same parts out as a grid.
+ * The exercise library as a sheet's lazy list ([SheetList]), for a sheet that shows nothing else while it picks:
+ * a search, the equipment to narrow to, and behind Filters the focus, what it is measured by and only the user's
+ * own; then the recent ones, while nothing narrows, and all that match. A row picks its exercise with [onPick]
+ * ([canPick] says which can be), the [selected] one ticked; with [onAdd], a search that finds nothing offers to
+ * add it as the user's own. Only an [archivable] picker offers the user's archived exercises among its filters.
+ * Laid out a row at a time, so the sheet composes only the rows in view rather than the whole library as it
+ * opens; the library's page lays the same parts out as a grid. With [closeOnPick] a pick also hides the sheet.
  */
 @Composable
-fun ExercisePicker(
+fun rememberPickerList(
     list: LibraryList,
     onFilters: ((ExerciseFilters) -> ExerciseFilters) -> Unit,
-    modifier: Modifier = Modifier,
     selected: Exercise? = null,
     onPick: ((Exercise) -> Unit)? = null,
     canPick: (Exercise) -> Boolean = { true },
     onAdd: ((name: String) -> Unit)? = null,
     archivable: Boolean = false,
-) {
+    closeOnPick: Boolean = false,
+): SheetList {
     val picker = rememberPickerState()
     val matches = pickerMatches(list, picker)
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-        PickerHeader(list, matches, picker, onFilters, archivable = archivable)
+    val fill = IntervalTheme.palette.surface
+    val group = if (onPick != null) Modifier.selectableGroup() else Modifier
+    return SheetList(group) { hide ->
+        val pick = onPick?.let { picked ->
+            { exercise: Exercise ->
+                picked(exercise)
+                if (closeOnPick) hide()
+            }
+        }
+        // The picker's column is spaced by eight between its parts, with eight above and below it all.
+        val gap = Modifier.padding(top = Spacing.space8)
+        item(key = "header", contentType = "header") {
+            PickerHeader(list, matches, picker, onFilters, gap, archivable = archivable)
+        }
         if (!matches.narrowed && list.recents.isNotEmpty()) {
-            GroupLabel(stringResource(Res.string.library_recent))
-            ExerciseList(list.recents, matches.names, selected, onPick, canPick)
-            GroupLabel(stringResource(Res.string.library_all))
+            item(key = "recent", contentType = "label") {
+                GroupLabel(stringResource(Res.string.library_recent), gap)
+            }
+            exerciseRows("recent", list.recents, matches.names, selected, pick, canPick, fill)
+            item(key = "all", contentType = "label") {
+                GroupLabel(stringResource(Res.string.library_all), gap)
+            }
         }
         if (matches.shown.isEmpty()) {
-            NoMatch(picker.query.text.toString(), onAdd)
+            item(key = "none", contentType = "none") {
+                NoMatch(picker.query.text.toString(), onAdd, gap)
+            }
         } else {
-            ExerciseList(matches.shown, matches.names, selected, onPick, canPick)
+            exerciseRows("shown", matches.shown, matches.names, selected, pick, canPick, fill)
+        }
+        item(key = "foot", contentType = "foot") { Spacer(Modifier.height(Spacing.space8)) }
+    }
+}
+
+/** [exercises] a row an item, keyed by [group] and the exercise, each its part of one card in [fill]. */
+private fun LazyListScope.exerciseRows(
+    group: String,
+    exercises: List<Exercise>,
+    names: Map<String, String>,
+    selected: Exercise?,
+    onPick: ((Exercise) -> Unit)?,
+    canPick: (Exercise) -> Boolean,
+    fill: Color,
+) {
+    itemsIndexed(
+        exercises,
+        key = { _, exercise -> "$group:${exercise.key}" },
+        contentType = { _, _ -> "exercise" },
+    ) { i, exercise ->
+        Column(
+            Modifier
+                .then(if (i == 0) Modifier.padding(top = Spacing.space8) else Modifier)
+                .cardRow(first = i == 0, last = i == exercises.lastIndex, fill = fill),
+        ) {
+            if (i > 0) RowDivider()
+            ExerciseRow(
+                exercise,
+                names.getValue(exercise.key),
+                equipment = true,
+                selected = exercise.key == selected?.key,
+                onPick = onPick?.takeIf { canPick(exercise) },
+                opens = false,
+                tagYours = true,
+            )
         }
     }
 }

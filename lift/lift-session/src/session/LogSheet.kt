@@ -40,6 +40,7 @@ import dev.justinsmith.interval.ui.RollingText
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.SheetColumns
+import dev.justinsmith.interval.ui.SheetList
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.sheetIsSideways
 import dev.justinsmith.lift.domain.CustomExercise
@@ -51,8 +52,8 @@ import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.library.ExerciseDetailContent
 import dev.justinsmith.lift.library.ExerciseDetailUiState
 import dev.justinsmith.lift.library.ExerciseEditorForm
-import dev.justinsmith.lift.library.ExercisePicker
 import dev.justinsmith.lift.library.rememberExerciseEditor
+import dev.justinsmith.lift.library.rememberPickerList
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_joined
 import dev.justinsmith.lift.session.resources.emom_fewer_minutes
@@ -129,7 +130,19 @@ internal fun LogSetSheet(
         onDismiss()
     }
     val sideways = sheetIsSideways()
-    IntervalSheet(logSheetTitle(draft.exercise, reading, adding != null, editing), onDismiss = onClose) { hide ->
+    val list = if (choosesInList(state, picking, adding, reading)) {
+        exerciseChoiceList(state, actions, onPick = { picking = false }, onAdd = {
+            picking = false
+            adding = it
+        })
+    } else {
+        null
+    }
+    IntervalSheet(
+        logSheetTitle(draft.exercise, reading, adding != null, editing),
+        onDismiss = onClose,
+        list = list,
+    ) { hide ->
         val hold = state.hold
         // Derived: the sheet's root then hears the clocks only while a hold runs, not on every tick of a rest.
         val holdState = remember(clocks) { derivedStateOf { clocks().holdState } }.value
@@ -142,18 +155,8 @@ internal fun LogSetSheet(
             ExercisePage(detail, onBack = { reading = false }, actions)
             return@IntervalSheet
         }
-        if (picking || adding != null) {
-            ExerciseChoice(
-                state,
-                actions,
-                adding,
-                onPick = { picking = false },
-                onAdd = {
-                    picking = false
-                    adding = it
-                },
-                onSave = { adding = null },
-            )
+        adding?.let { name ->
+            NewExercise(name, onSave = { adding = null })
             return@IntervalSheet
         }
         // What the set is first, then how much of it and the action, side by side on a phone on its side.
@@ -197,45 +200,50 @@ internal fun LogSetSheet(
 
 /**
  * What the Log sheet shows in place of the set, and the Next set card's sheet shows, while the exercise is
- * being chosen: the library, until one is picked ([onPick]) or Add starts a new one by its name ([onAdd]);
- * then, while [adding], that exercise's form, until it is saved ([onSave]) and comes back picked.
+ * being chosen: the library, as the sheet's list, until one is picked ([onPick]) or Add starts a new one by its
+ * name ([onAdd]), which [NewExercise] then shows. With [closeOnPick] a pick also hides the sheet.
  */
 @Composable
-internal fun ExerciseChoice(
+internal fun exerciseChoiceList(
     state: SessionUiState,
     actions: SessionActions,
-    adding: String?,
     onPick: () -> Unit,
     onAdd: (name: String) -> Unit,
-    onSave: () -> Unit,
-) {
-    val modifier = Modifier.padding(vertical = Spacing.space8)
-    if (adding == null) {
-        ExercisePicker(
-            state.library,
-            actions.onFilters,
-            modifier,
-            selected = state.draft.exercise,
-            onPick = { e ->
-                actions.onDraft { it.copy(exercise = e) }
-                onPick()
-            },
-            onAdd = { name ->
-                actions.onAddExercise()
-                onAdd(name)
-            },
-        )
-    } else {
-        val editor = rememberExerciseEditor(uid = null, name = adding)
-        val editorState by editor.state.collectAsStateWithLifecycle()
-        ExerciseEditorForm(
-            editorState,
-            onChange = editor::change,
-            onSave = { typed, cues -> if (editor.save(typed, cues)) onSave() },
-            modifier = modifier,
-        )
-    }
+    closeOnPick: Boolean = false,
+): SheetList = rememberPickerList(
+    state.library,
+    actions.onFilters,
+    selected = state.draft.exercise,
+    onPick = { e ->
+        actions.onDraft { it.copy(exercise = e) }
+        onPick()
+    },
+    onAdd = { name ->
+        actions.onAddExercise()
+        onAdd(name)
+    },
+    closeOnPick = closeOnPick,
+)
+
+/** The form of the exercise [adding], by the name searched, until it is saved ([onSave]) and comes back picked. */
+@Composable
+internal fun NewExercise(adding: String, onSave: () -> Unit) {
+    val editor = rememberExerciseEditor(uid = null, name = adding)
+    val editorState by editor.state.collectAsStateWithLifecycle()
+    ExerciseEditorForm(
+        editorState,
+        onChange = editor::change,
+        onSave = { typed, cues -> if (editor.save(typed, cues)) onSave() },
+        modifier = Modifier.padding(vertical = Spacing.space8),
+    )
 }
+
+/**
+ * Whether the library is the Log sheet's whole list: while it [picking] an exercise, unless one is being added
+ * by name, a hold is running or the exercise's page is up ([reading]), each of which takes the sheet instead.
+ */
+private fun choosesInList(state: SessionUiState, picking: Boolean, adding: String?, reading: Boolean): Boolean =
+    picking && adding == null && state.hold == null && !(reading && state.detail != null)
 
 /** The Log sheet's title: the exercise while its page is up, else what the sheet is doing. */
 @Composable
