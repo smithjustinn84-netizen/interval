@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -108,6 +110,8 @@ fun WorkoutRoute(id: Long, onExit: () -> Unit, modifier: Modifier = Modifier, fl
     val sharer = koinInject<Sharer>()
     val viewModel = koinViewModel<WorkoutViewModel> { parametersOf(id, flow) }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // Apart from the state: it moves every tick, and only the ring reads it, where it is drawn.
+    val progress = viewModel.progress.collectAsStateWithLifecycle()
     if (state.running && state.keepScreenOn) KeepScreenOn()
     if (!state.isDone) AskToShowNotifications()
     val exit by rememberUpdatedState(onExit)
@@ -119,6 +123,7 @@ fun WorkoutRoute(id: Long, onExit: () -> Unit, modifier: Modifier = Modifier, fl
     }
     WorkoutScreen(
         state = state,
+        progress = remember(progress) { { progress.value } },
         onTogglePause = viewModel::togglePause,
         onSkip = viewModel::skip,
         onBack = viewModel::back,
@@ -149,6 +154,9 @@ fun WorkoutRoute(id: Long, onExit: () -> Unit, modifier: Modifier = Modifier, fl
  *
  * With a keyboard (desktop, a Chromebook, a tablet's keyboard cover): Space or Enter pauses and
  * resumes, the arrow keys go back and skip, and Escape ends, the same as the End button.
+ *
+ * [progress], how far through its interval the workout is, and the phase colour are providers read where they
+ * are drawn: the one moves every tick and the other every frame of a crossfade, and neither recomposes the screen.
  */
 @Composable
 fun WorkoutScreen(
@@ -162,6 +170,7 @@ fun WorkoutScreen(
     onSavePreset: (Preset) -> Unit,
     onExit: () -> Unit,
     modifier: Modifier = Modifier,
+    progress: () -> Float = { 0f },
     onShare: (String) -> Unit = {},
     reflection: SummaryReflection = SummaryReflection(),
 ) {
@@ -177,8 +186,10 @@ fun WorkoutScreen(
         isBackEnabled = !state.isDone,
         onBackCompleted = requestEnd,
     )
-    val accent = phaseColor(state, primary = false)
-    val primaryFill = phaseColor(state, primary = true)
+    val accentState = phaseColor(state, primary = false)
+    val fillState = phaseColor(state, primary = true)
+    val accent = remember(accentState) { { accentState.value } }
+    val primaryFill = remember(fillState) { { fillState.value } }
     val focus = remember { FocusRequester() }
     var rootFocused by remember { mutableStateOf(false) }
     val anchor = rememberLaneAnchor()
@@ -217,9 +228,9 @@ fun WorkoutScreen(
         if (state.isDone) {
             SummaryLayout(state, landscape, onRestart, onSavePreset, onExit, onShare, reflection)
         } else if (landscape) {
-            LandscapeWorkout(state, accent, primaryFill, anchor, actions)
+            LandscapeWorkout(state, progress, accent, primaryFill, anchor, actions)
         } else {
-            PortraitWorkout(state, accent, primaryFill, anchor, actions)
+            PortraitWorkout(state, progress, accent, primaryFill, anchor, actions)
         }
     }
     if (confirmingEnd && !state.isDone) {
@@ -267,19 +278,18 @@ private fun endProgressText(state: WorkoutUiState): String = state.flow?.let {
  * [primary] control's fill, paused is [WorkoutColors.onGround] instead, since no label reads on the grey.
  */
 @Composable
-private fun phaseColor(state: WorkoutUiState, primary: Boolean): Color {
+private fun phaseColor(state: WorkoutUiState, primary: Boolean): State<Color> {
     val colors = IntervalTheme.workout
     val target = when {
         state.isDone -> colors.done
         state.paused -> if (primary) colors.onGround else colors.paused
         else -> colors.of(state.phase)
     }
-    val color by animateColorAsState(
+    return animateColorAsState(
         target,
         tween(Motion.PHASE_CROSSFADE_MILLIS),
         label = if (primary) "primary" else "phase",
     )
-    return color
 }
 
 /**
@@ -313,8 +323,9 @@ private fun Modifier.workoutKeys(
 @Composable
 private fun PortraitWorkout(
     state: WorkoutUiState,
-    accent: Color,
-    primaryFill: Color,
+    progress: () -> Float,
+    accent: () -> Color,
+    primaryFill: () -> Color,
     anchor: LaneAnchor,
     actions: WorkoutActions,
 ) {
@@ -339,7 +350,7 @@ private fun PortraitWorkout(
         ) {
             val diameter = minOf(maxWidth, maxHeight - IntervalSizes.tapHint, Sizes.ringMax)
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                RingReadout(state, accent, diameter, Modifier.laneRing(anchor))
+                RingReadout(state, progress, accent, diameter, Modifier.laneRing(anchor))
                 TapHint(state, Modifier.padding(top = Spacing.space12))
             }
         }
@@ -360,8 +371,9 @@ private fun PortraitWorkout(
 @Composable
 private fun LandscapeWorkout(
     state: WorkoutUiState,
-    accent: Color,
-    primaryFill: Color,
+    progress: () -> Float,
+    accent: () -> Color,
+    primaryFill: () -> Color,
     anchor: LaneAnchor,
     actions: WorkoutActions,
 ) {
@@ -390,6 +402,7 @@ private fun LandscapeWorkout(
             val diameter = minOf(maxHeight, maxWidth / 2, Sizes.ringMax)
             LandscapeReadout(
                 state,
+                progress,
                 accent,
                 diameter,
                 Modifier.fillMaxWidth(),
@@ -416,14 +429,14 @@ private fun LandscapeWorkout(
 
 /** The band of phase colour along the top edge, or the start edge sideways, just inside the system bars. */
 @Composable
-private fun BoxScope.PhaseBand(accent: Color, landscape: Boolean) {
+private fun BoxScope.PhaseBand(accent: () -> Color, landscape: Boolean) {
     val inset = Modifier.safeDrawingPadding()
     val band = if (landscape) {
         Modifier.align(Alignment.CenterStart).then(inset).fillMaxHeight().width(Sizes.phaseBand)
     } else {
         Modifier.align(Alignment.TopCenter).then(inset).fillMaxWidth().height(Sizes.phaseBand)
     }
-    Box(band.clip(Corners.full).background(accent))
+    Box(band.clip(Corners.full).drawBehind { drawRect(accent()) })
 }
 
 /** The readout area pauses or resumes on tap, with no ripple: the background change and toggle haptic answer. */
@@ -458,10 +471,11 @@ private fun TopBar(state: WorkoutUiState, actions: WorkoutActions) {
 }
 
 @Composable
-private fun WorkoutPreview(state: WorkoutUiState) {
+private fun WorkoutPreview(state: WorkoutUiState, progress: Float = 0f) {
     IntervalTheme {
         WorkoutScreen(
             state = state,
+            progress = { progress },
             onTogglePause = {},
             onSkip = {},
             onBack = {},
@@ -474,14 +488,19 @@ private fun WorkoutPreview(state: WorkoutUiState) {
     }
 }
 
-private fun previewWorkState(): WorkoutUiState =
-    WorkoutEngine.advance(WorkoutEngine.start(IntervalConfig()).state).state.toUiState(running = true)
+private val previewWork = WorkoutEngine.tick(
+    WorkoutEngine.advance(WorkoutEngine.start(IntervalConfig()).state).state,
+    PREVIEW_INTO_WORK_MILLIS,
+).state
 
 @PreviewFormFactors
 @Composable
 private fun WorkoutScreenPreview() {
-    WorkoutPreview(previewWorkState())
+    WorkoutPreview(previewWork.toUiState(running = true), previewWork.progress)
 }
+
+/** How far into its first work interval the preview shows the workout, so its ring is part filled. */
+private const val PREVIEW_INTO_WORK_MILLIS = 12_000L
 
 @PreviewFormFactors
 @Composable

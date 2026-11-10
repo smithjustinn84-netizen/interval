@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -103,6 +104,7 @@ fun DensityScreen(
     onFinishRound: () -> Unit,
     onStop: () -> Unit,
     modifier: Modifier = Modifier,
+    progress: () -> Float = { state.progress },
 ) {
     val colors = IntervalTheme.workout
     val phaseColor = when (state.phase) {
@@ -110,7 +112,9 @@ fun DensityScreen(
         DensityPhase.Work -> colors.work
         DensityPhase.Done -> colors.done
     }
-    val color by animateColorAsState(phaseColor, tween(Motion.PHASE_CROSSFADE_MILLIS))
+    // Read where it is drawn or written, so a crossfade's frames recompose only what shows it.
+    val colorState = animateColorAsState(phaseColor, tween(Motion.PHASE_CROSSFADE_MILLIS))
+    val color = remember(colorState) { { colorState.value } }
     var confirmingStop by rememberSaveable { mutableStateOf(false) }
     val requestStop = { if (state.phase != DensityPhase.Done) confirmingStop = true }
     val focus = remember { FocusRequester() }
@@ -142,9 +146,9 @@ fun DensityScreen(
         val roomy = windowIsRoomy()
         if (isLandscape && !roomy) {
             val sideWidth = minOf(Sizes.setupColumnLandscape, maxWidth * LANDSCAPE_PRIMARY_SHARE)
-            LandscapeDensity(run, state, color, sideWidth, onFinishRound, requestStop)
+            LandscapeDensity(run, state, color, progress, sideWidth, onFinishRound, requestStop)
         } else {
-            PortraitDensity(run, state, color, onFinishRound, requestStop, roomy)
+            PortraitDensity(run, state, color, progress, onFinishRound, requestStop, roomy)
         }
     }
     if (confirmingStop && state.phase != DensityPhase.Done) {
@@ -192,7 +196,8 @@ private fun Modifier.densityKeys(
 private fun PortraitDensity(
     run: DensityRun,
     state: DensityState,
-    color: Color,
+    color: () -> Color,
+    progress: () -> Float,
     onFinishRound: () -> Unit,
     onStop: () -> Unit,
     roomy: Boolean,
@@ -202,7 +207,7 @@ private fun PortraitDensity(
             .padding(horizontal = Spacing.space16),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(Modifier.fillMaxWidth().height(Sizes.phaseBand).clip(Corners.full).background(color))
+        Box(Modifier.fillMaxWidth().height(Sizes.phaseBand).clip(Corners.full).drawBehind { drawRect(color()) })
         Row(
             Modifier.fillMaxWidth().padding(top = Spacing.space8),
             verticalAlignment = Alignment.CenterVertically,
@@ -212,7 +217,7 @@ private fun PortraitDensity(
         }
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             val diameter = minOf(maxWidth, maxHeight, if (roomy) LiftSizes.ringMaxRoomy else Sizes.ringMax)
-            ProgressRing(state.progress, color, Modifier.size(diameter), glideMillis = Motion.EMOM_RING_GLIDE_MILLIS)
+            ProgressRing(progress, color, Modifier.size(diameter), glideMillis = Motion.EMOM_RING_GLIDE_MILLIS)
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 PhaseWord(state, color)
                 val type = IntervalTheme.type
@@ -230,7 +235,8 @@ private fun PortraitDensity(
 private fun LandscapeDensity(
     run: DensityRun,
     state: DensityState,
-    color: Color,
+    color: () -> Color,
+    progress: () -> Float,
     sideWidth: Dp,
     onFinishRound: () -> Unit,
     onStop: () -> Unit,
@@ -243,7 +249,7 @@ private fun LandscapeDensity(
                 .fillMaxHeight()
                 .width(Sizes.phaseBand)
                 .clip(Corners.full)
-                .background(color),
+                .drawBehind { drawRect(color()) },
         )
         Row(
             Modifier
@@ -257,7 +263,7 @@ private fun LandscapeDensity(
                 val diameter = minOf(maxWidth, maxHeight, Sizes.ringMax)
                 Box(Modifier.size(diameter), contentAlignment = Alignment.Center) {
                     ProgressRing(
-                        state.progress,
+                        progress,
                         color,
                         Modifier.fillMaxSize(),
                         glideMillis = Motion.EMOM_RING_GLIDE_MILLIS,
@@ -319,8 +325,14 @@ private fun Rounds(run: DensityRun, state: DensityState, modifier: Modifier = Mo
 
 /** Round done, in the phase colour and live only while the cap runs. */
 @Composable
-private fun RoundDone(state: DensityState, color: Color, onFinishRound: () -> Unit, modifier: Modifier = Modifier) {
+private fun RoundDone(
+    state: DensityState,
+    color: () -> Color,
+    onFinishRound: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val colors = IntervalTheme.workout
+    val fill = color()
     val working = state.phase == DensityPhase.Work
     val interaction = remember { MutableInteractionSource() }
     Box(
@@ -329,7 +341,7 @@ private fun RoundDone(state: DensityState, color: Color, onFinishRound: () -> Un
             .surfaceButton(
                 interaction,
                 Corners.radius18,
-                if (working) color else colors.control,
+                if (working) fill else colors.control,
                 onClick = onFinishRound,
                 enabled = working,
             )
@@ -339,7 +351,7 @@ private fun RoundDone(state: DensityState, color: Color, onFinishRound: () -> Un
         Text(
             stringResource(Res.string.density_round_done),
             style = IntervalTheme.type.stat,
-            color = if (working) colors.onFill(color) else colors.onGroundDim,
+            color = if (working) colors.onFill(fill) else colors.onGroundDim,
         )
     }
 }
@@ -351,7 +363,7 @@ private fun StopPill(onStop: () -> Unit) {
 
 /** Get ready, Go, or Done, in the phase colour. */
 @Composable
-private fun PhaseWord(state: DensityState, color: Color) {
+private fun PhaseWord(state: DensityState, color: () -> Color) {
     Text(
         stringResource(
             when (state.phase) {
@@ -361,21 +373,21 @@ private fun PhaseWord(state: DensityState, color: Color) {
             },
         ),
         style = IntervalTheme.type.stat,
-        color = color,
+        color = color(),
         modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
     )
 }
 
 /** The time left of the cap (or the count-in), popping on its last three seconds as the beeps go. */
 @Composable
-private fun ClockText(state: DensityState, color: Color, diameter: Dp, style: TextStyle) {
+private fun ClockText(state: DensityState, color: () -> Color, diameter: Dp, style: TextStyle) {
     val text = formatClock(state.secondsLeft)
     val size = ringClockSize(diameter, text.length, style.fontSize)
     CountdownClock(
         text,
         intervalKey = state.phase,
         countingDown = state.phase != DensityPhase.Done && state.secondsLeft in 1..EmomClock.COUNTDOWN,
-        accent = color,
+        accent = color(),
         style = style.copy(fontSize = size, lineHeight = size),
     )
 }

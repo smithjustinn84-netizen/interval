@@ -43,7 +43,7 @@ import org.jetbrains.compose.resources.stringResource
  * words beside it. The side and the cue keep their lines when a move has none, so the ring under them stays put.
  */
 @Composable
-internal fun FlowHeading(step: FlowStep, accent: Color, modifier: Modifier = Modifier, centered: Boolean = true) {
+internal fun FlowHeading(step: FlowStep, accent: () -> Color, modifier: Modifier = Modifier, centered: Boolean = true) {
     val align = if (centered) TextAlign.Center else TextAlign.Start
     Column(modifier, horizontalAlignment = if (centered) Alignment.CenterHorizontally else Alignment.Start) {
         Text(
@@ -61,7 +61,7 @@ internal fun FlowHeading(step: FlowStep, accent: Color, modifier: Modifier = Mod
         Text(
             step.side?.let { stringResource(sideWord(it)) }.orEmpty(),
             style = IntervalTheme.type.label,
-            color = accent,
+            color = accent(),
             textAlign = align,
         )
         Text(

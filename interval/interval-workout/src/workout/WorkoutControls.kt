@@ -92,7 +92,7 @@ internal fun AddTimeButton(onAddTime: () -> Unit, modifier: Modifier = Modifier)
 @Composable
 internal fun BottomControls(
     state: WorkoutUiState,
-    primaryFill: Color,
+    primaryFill: () -> Color,
     actions: WorkoutActions,
 ) {
     val height = Sizes.control
@@ -111,15 +111,16 @@ internal fun BottomControls(
 @Composable
 internal fun PrimaryButton(
     state: WorkoutUiState,
-    primaryFill: Color,
+    primaryFill: () -> Color,
     onTogglePause: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val content = IntervalTheme.workout.onFill(primaryFill)
+    val fill = primaryFill()
+    val content = IntervalTheme.workout.onFill(fill)
     BigButton(
         onTogglePause,
         modifier,
-        background = primaryFill,
+        background = fill,
         haptic = if (state.running) HapticFeedbackType.ToggleOff else HapticFeedbackType.ToggleOn,
     ) {
         AnimatedContent(state.running, transitionSpec = { fadeThroughContent() }, label = "pauseResume") { running ->

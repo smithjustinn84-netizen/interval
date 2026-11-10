@@ -492,6 +492,7 @@ private fun ColumnScope.SummaryTitle(state: WorkoutUiState, entrance: MutableTra
             modifier = Modifier.semantics { heading() },
         )
     }
+    val done = IntervalTheme.workout.done
     if (ring) {
         val reduced = prefersReducedMotion()
         val target = state.completedRounds.toFloat() / state.rounds
@@ -504,13 +505,13 @@ private fun ColumnScope.SummaryTitle(state: WorkoutUiState, entrance: MutableTra
             }
         }
         Box(Modifier.size(IntervalSizes.summaryRing), contentAlignment = Alignment.Center) {
-            ProgressRing(sweep.value, IntervalTheme.workout.done, Modifier.fillMaxSize(), glide = false)
+            ProgressRing({ sweep.value }, { done }, Modifier.fillMaxSize(), glide = false)
             Column { AnimatedVisibility(entrance, enter = risingEnter()) { title() } }
         }
     } else {
         AnimatedVisibility(entrance, enter = risingEnter()) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                RoundDots(state, IntervalTheme.workout.done, Modifier.padding(bottom = Spacing.space12))
+                RoundDots(state, { done }, Modifier.padding(bottom = Spacing.space12))
                 title()
             }
         }

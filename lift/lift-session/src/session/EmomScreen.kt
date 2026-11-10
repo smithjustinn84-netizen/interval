@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -100,6 +101,7 @@ fun EmomScreen(
     onFinishSet: () -> Unit,
     onStop: () -> Unit,
     modifier: Modifier = Modifier,
+    progress: () -> Float = { state.minuteProgress },
 ) {
     val colors = IntervalTheme.workout
     val phaseColor = when (state.phase) {
@@ -108,7 +110,9 @@ fun EmomScreen(
         EmomPhase.Rest -> colors.rest
         EmomPhase.Done -> colors.done
     }
-    val color by animateColorAsState(phaseColor, tween(Motion.PHASE_CROSSFADE_MILLIS))
+    // Read where it is drawn or written, so a crossfade's frames recompose only what shows it.
+    val colorState = animateColorAsState(phaseColor, tween(Motion.PHASE_CROSSFADE_MILLIS))
+    val color = remember(colorState) { { colorState.value } }
     var confirmingStop by rememberSaveable { mutableStateOf(false) }
     val requestStop = { if (state.phase != EmomPhase.Done) confirmingStop = true }
     val focus = remember { FocusRequester() }
@@ -140,9 +144,9 @@ fun EmomScreen(
         val roomy = windowIsRoomy()
         if (isLandscape && !roomy) {
             val sideWidth = minOf(Sizes.setupColumnLandscape, maxWidth * LANDSCAPE_PRIMARY_SHARE)
-            LandscapeEmom(run, state, color, sideWidth, onFinishSet, requestStop)
+            LandscapeEmom(run, state, color, progress, sideWidth, onFinishSet, requestStop)
         } else {
-            PortraitEmom(run, state, color, onFinishSet, requestStop, roomy)
+            PortraitEmom(run, state, color, progress, onFinishSet, requestStop, roomy)
         }
     }
     if (confirmingStop && state.phase != EmomPhase.Done) {
@@ -194,7 +198,8 @@ private fun Modifier.emomKeys(
 private fun PortraitEmom(
     run: EmomRun,
     state: EmomState,
-    color: Color,
+    color: () -> Color,
+    progress: () -> Float,
     onFinishSet: () -> Unit,
     onStop: () -> Unit,
     roomy: Boolean,
@@ -205,7 +210,7 @@ private fun PortraitEmom(
         ).fillMaxSize().safeDrawingPadding().padding(horizontal = Spacing.space16),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(Modifier.fillMaxWidth().height(Sizes.phaseBand).clip(Corners.full).background(color))
+        Box(Modifier.fillMaxWidth().height(Sizes.phaseBand).clip(Corners.full).drawBehind { drawRect(color()) })
         Row(
             Modifier.fillMaxWidth().padding(top = Spacing.space8),
             verticalAlignment = Alignment.CenterVertically,
@@ -216,7 +221,7 @@ private fun PortraitEmom(
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             val diameter = minOf(maxWidth, maxHeight, if (roomy) LiftSizes.ringMaxRoomy else Sizes.ringMax)
             ProgressRing(
-                state.minuteProgress,
+                progress,
                 color,
                 Modifier.size(diameter),
                 glideMillis = Motion.EMOM_RING_GLIDE_MILLIS,
@@ -241,7 +246,8 @@ private fun PortraitEmom(
 private fun LandscapeEmom(
     run: EmomRun,
     state: EmomState,
-    color: Color,
+    color: () -> Color,
+    progress: () -> Float,
     sideWidth: Dp,
     onFinishSet: () -> Unit,
     onStop: () -> Unit,
@@ -254,7 +260,7 @@ private fun LandscapeEmom(
                 .fillMaxHeight()
                 .width(Sizes.phaseBand)
                 .clip(Corners.full)
-                .background(color),
+                .drawBehind { drawRect(color()) },
         )
         Row(
             Modifier
@@ -268,7 +274,7 @@ private fun LandscapeEmom(
                 val diameter = minOf(maxWidth, maxHeight, Sizes.ringMax)
                 Box(Modifier.size(diameter), contentAlignment = Alignment.Center) {
                     ProgressRing(
-                        state.minuteProgress,
+                        progress,
                         color,
                         Modifier.fillMaxSize(),
                         glideMillis = Motion.EMOM_RING_GLIDE_MILLIS,
@@ -307,8 +313,9 @@ private fun MinuteText(state: EmomState, modifier: Modifier = Modifier) {
 
 /** Set done, in the phase colour and live only while working. */
 @Composable
-private fun SetDone(state: EmomState, color: Color, onFinishSet: () -> Unit, modifier: Modifier = Modifier) {
+private fun SetDone(state: EmomState, color: () -> Color, onFinishSet: () -> Unit, modifier: Modifier = Modifier) {
     val colors = IntervalTheme.workout
+    val fill = color()
     val working = state.phase == EmomPhase.Work
     val interaction = remember { MutableInteractionSource() }
     Box(
@@ -317,7 +324,7 @@ private fun SetDone(state: EmomState, color: Color, onFinishSet: () -> Unit, mod
             .surfaceButton(
                 interaction,
                 Corners.radius18,
-                if (working) color else colors.control,
+                if (working) fill else colors.control,
                 onClick = onFinishSet,
                 enabled = working,
             )
@@ -327,7 +334,7 @@ private fun SetDone(state: EmomState, color: Color, onFinishSet: () -> Unit, mod
         Text(
             stringResource(Res.string.emom_set_done),
             style = IntervalTheme.type.value,
-            color = if (working) colors.onFill(color) else colors.onGroundDim,
+            color = if (working) colors.onFill(fill) else colors.onGroundDim,
         )
     }
 }
@@ -339,7 +346,7 @@ private fun StopPill(onStop: () -> Unit) {
 
 /** The phase word, in the phase colour. */
 @Composable
-private fun PhaseWord(state: EmomState, color: Color) {
+private fun PhaseWord(state: EmomState, color: () -> Color) {
     Text(
         stringResource(
             when (state.phase) {
@@ -350,7 +357,7 @@ private fun PhaseWord(state: EmomState, color: Color) {
             },
         ),
         style = IntervalTheme.type.stat,
-        color = color,
+        color = color(),
         modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
     )
 }
@@ -361,14 +368,14 @@ private fun PhaseWord(state: EmomState, color: Color) {
  * style between the phase word and the set, the clock style alone in the ring or in a tablet's.
  */
 @Composable
-private fun ClockText(state: EmomState, color: Color, diameter: Dp, style: TextStyle) {
+private fun ClockText(state: EmomState, color: () -> Color, diameter: Dp, style: TextStyle) {
     val text = formatClock(state.secondsLeft)
     val size = ringClockSize(diameter, text.length, style.fontSize)
     CountdownClock(
         text,
         intervalKey = state.phase to state.minute,
         countingDown = state.phase != EmomPhase.Done && state.secondsLeft in 1..EmomClock.COUNTDOWN,
-        accent = color,
+        accent = color(),
         style = style.copy(fontSize = size, lineHeight = size),
     )
 }

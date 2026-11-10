@@ -43,17 +43,18 @@ class MotionTest {
     fun `the countdown pulse rises with each last second and falls back`() = runUiTest {
         mainClock.autoAdvance = false
         var text by mutableStateOf("0:05")
-        var pulse = -1f
-        setThemedContent { pulse = rememberCountdownPulse(text, countingDown = text <= "0:03") }
+        var read: () -> Float = { -1f }
+        setThemedContent { read = rememberCountdownPulse(text, countingDown = text <= "0:03") }
         mainClock.advanceTimeByFrame()
         mainClock.advanceTimeByFrame()
-        assertEquals(0f, pulse)
+        assertEquals(0f, read())
         text = "0:03"
         mainClock.advanceTimeByFrame()
         mainClock.advanceTimeByFrame()
+        val pulse = read()
         assertTrue(pulse > 0.5f, "pulse $pulse")
         mainClock.advanceTimeBy(Motion.CLOCK_POP_MILLIS.toLong() + SETTLE_MILLIS)
-        assertEquals(0f, pulse)
+        assertEquals(0f, read())
     }
 
     @Test

@@ -27,6 +27,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -35,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -172,7 +174,8 @@ fun SessionRoute(onExit: () -> Unit) {
         remember(viewModel, title, healthTitle, onExit) {
             sessionActions(ActionTargets(viewModel, timers, sets, filters), title, healthTitle, onExit)
         }
-    val page = sessionPage(state, clocks.value)
+    // Derived, so the clocks' ticks reach this page only when the face up changes or what it says does.
+    val page by remember { derivedStateOf(structuralEqualityPolicy()) { sessionPage(state, clocks.value) } }
     // The session, its EMOM or density block, and its summary take one another's place with a fade through, as
     // pages do.
     AnimatedContent(
@@ -197,6 +200,7 @@ fun SessionRoute(onExit: () -> Unit) {
                 shown.state,
                 onFinishSet = timers::emomSetDone,
                 onStop = timers::stopEmom,
+                progress = remember(clocks) { heldShare { clocks.value.emomState?.minuteProgress } },
             )
 
             is SessionPage.Density -> DensityScreen(
@@ -204,6 +208,7 @@ fun SessionRoute(onExit: () -> Unit) {
                 shown.state,
                 onFinishRound = timers::densityRoundDone,
                 onStop = timers::stopDensity,
+                progress = remember(clocks) { heldShare { clocks.value.densityState?.progress } },
             )
 
             SessionPage.Logging -> SessionScreen(state, readClocks, actions)
@@ -714,7 +719,7 @@ private fun SessionTiles(state: SessionUiState, clocks: () -> SessionClocks, wid
 
 /**
  * The session's foot: the rest counting down while one does ([RestBand]), read from [clocks] here so each tick
- * redraws only the band, over the buttons ([SessionButtons]).
+ * redraws only the band's bar, over the buttons ([SessionButtons]).
  */
 @Composable
 private fun SessionFoot(
@@ -724,11 +729,15 @@ private fun SessionFoot(
     onFinish: () -> Unit,
     onOpenSheet: () -> Unit,
 ) {
+    // What the band says changes once a second, and only while a rest runs; its bar moves every tick, read where
+    // it is drawn.
+    val rest by remember(clocks) { derivedStateOf(structuralEqualityPolicy()) { clocks().rest?.copy(progress = 0f) } }
     Column {
         RestBand(
-            clocks().rest,
+            rest,
             actions.onStepRest,
             actions.onSkipRest,
+            progress = remember(clocks) { heldShare { clocks().rest?.progress } },
             Modifier.padding(start = Spacing.space16, end = Spacing.space16, top = Spacing.space8),
         )
         SessionButtons(state, actions, onFinish, onOpenSheet)

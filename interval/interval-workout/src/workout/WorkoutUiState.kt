@@ -84,7 +84,6 @@ data class WorkoutUiState(
     val clock: String,
     /** Whole seconds left in the interval, as the clock shows them; the last few get a countdown. */
     val secondsLeft: Int,
-    val progress: Float,
     /** What follows this interval, or null once the workout is done. */
     val next: NextUp?,
     /** Time left in the whole session. */
@@ -192,7 +191,6 @@ fun WorkoutState.toUiState(
         activeRound = round.takeIf { phase == Phase.Work },
         clock = formatClock(secondsLeft),
         secondsLeft = secondsLeft,
-        progress = if (isDone) 0f else progress,
         next = nextUp(),
         sessionLeft = formatClock(ceilSeconds(sessionRemainingMillis)),
         total = formatClock(config.totalSeconds),

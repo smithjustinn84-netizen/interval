@@ -180,7 +180,7 @@ fun Modifier.laneRing(anchor: LaneAnchor): Modifier = onPlaced { anchor.ring = i
  * draws nothing while no ring is placed, as on the summary. With reduced motion on, the comets rest.
  */
 @Composable
-fun WorkoutLanes(anchor: LaneAnchor, accent: Color, modifier: Modifier = Modifier) {
+fun WorkoutLanes(anchor: LaneAnchor, accent: () -> Color, modifier: Modifier = Modifier) {
     val clock = rememberLaneClock()
     val colors = IntervalTheme.workout
     Spacer(
@@ -202,7 +202,7 @@ fun WorkoutLanes(anchor: LaneAnchor, accent: Color, modifier: Modifier = Modifie
                     val now = clock.longValue
                     val leadHead = Angles.TWELVE_O_CLOCK + now / Motion.LEAD_COMET_TURN_MILLIS * Angles.FULL_TURN
                     val chaseHead = CHASE_COMET_START_DEGREES + now / Motion.CHASE_COMET_TURN_MILLIS * Angles.FULL_TURN
-                    lead.draw(this, center, first + lead.lane * step, leadHead, accent.copy(alpha = LEAD_COMET_ALPHA))
+                    lead.draw(this, center, first + lead.lane * step, leadHead, accent().copy(alpha = LEAD_COMET_ALPHA))
                     val dim = colors.onGroundDim.copy(alpha = CHASE_COMET_ALPHA)
                     chase.draw(this, center, first + chase.lane * step, chaseHead, dim)
                 }

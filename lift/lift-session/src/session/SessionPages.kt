@@ -14,8 +14,13 @@ internal fun sessionPage(state: SessionUiState, clocks: SessionClocks): SessionP
     val densityState = clocks.densityState
     return when {
         finished != null -> SessionPage.Summary(finished)
-        emom != null && emomState != null -> SessionPage.Emom(emom, emomState)
-        density != null && densityState != null -> SessionPage.Density(density, densityState)
+
+        // Without the ring's share, which moves every tick: the page changes only as what it says does, and the ring
+        // reads it from the clocks where it is drawn.
+        emom != null && emomState != null -> SessionPage.Emom(emom, emomState.copy(minuteProgress = 0f))
+
+        density != null && densityState != null -> SessionPage.Density(density, densityState.copy(progress = 0f))
+
         else -> SessionPage.Logging
     }
 }
@@ -29,4 +34,13 @@ internal sealed interface SessionPage {
     data class Density(val run: DensityRun, val state: DensityState) : SessionPage
 
     data object Logging : SessionPage
+}
+
+/**
+ * A ring's share as [read] gives it, held at the last one once it gives none: a page fading out after its clock
+ * stopped keeps its ring where it was.
+ */
+internal fun heldShare(read: () -> Float?): () -> Float {
+    var last = 0f
+    return { read()?.also { last = it } ?: last }
 }

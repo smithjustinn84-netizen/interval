@@ -3,9 +3,9 @@ package dev.justinsmith.lift.session
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -19,8 +19,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.unit.LayoutDirection
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.CountdownClock
@@ -47,16 +51,22 @@ import org.jetbrains.compose.resources.stringResource
  * colour with a tick under the thumb, in step with the beeps, as the workout's clock does.
  */
 @Composable
-internal fun RestBand(rest: RestState?, onStep: (Int) -> Unit, onSkip: () -> Unit, modifier: Modifier = Modifier) {
+internal fun RestBand(
+    rest: RestState?,
+    onStep: (Int) -> Unit,
+    onSkip: () -> Unit,
+    progress: () -> Float,
+    modifier: Modifier = Modifier,
+) {
     var shown by remember { mutableStateOf(rest) }
     if (rest != null) shown = rest
     AnimatedVisibility(rest != null, modifier, enter = enterExpanding(), exit = exitShrinking()) {
-        shown?.let { RestBandContent(it, onStep, onSkip) }
+        shown?.let { RestBandContent(it, onStep, onSkip, progress) }
     }
 }
 
 @Composable
-private fun RestBandContent(rest: RestState, onStep: (Int) -> Unit, onSkip: () -> Unit) {
+private fun RestBandContent(rest: RestState, onStep: (Int) -> Unit, onSkip: () -> Unit, progress: () -> Float) {
     val palette = IntervalTheme.palette
     val countingDown = rest.secondsLeft in 1..RestClock.COUNTDOWN
     val haptics = LocalHapticFeedback.current
@@ -108,18 +118,18 @@ private fun RestBandContent(rest: RestState, onStep: (Int) -> Unit, onSkip: () -
             )
             QuietTextButton(stringResource(Res.string.session_rest_skip), onSkip)
         }
-        Box(
+        // The bar runs out from the end edge, drawn rather than laid out: it moves every tick.
+        val mark = palette.restMark
+        Spacer(
             Modifier
                 .fillMaxWidth()
                 .height(Sizes.timelineMini)
-                .background(palette.surfaceVariant),
-        ) {
-            Box(
-                Modifier
-                    .fillMaxWidth(1f - rest.progress)
-                    .height(Sizes.timelineMini)
-                    .background(palette.restMark),
-            )
-        }
+                .background(palette.surfaceVariant)
+                .drawBehind {
+                    val left = size.width * (1f - progress())
+                    val start = if (layoutDirection == LayoutDirection.Rtl) size.width - left else 0f
+                    drawRect(mark, topLeft = Offset(start, 0f), size = Size(left, size.height))
+                },
+        )
     }
 }

@@ -57,7 +57,7 @@ fun CountdownClock(
         maxLines = 1,
         softWrap = false,
         modifier = modifier.graphicsLayer {
-            val popped = scale.value * (1f + pulse * (Motion.COUNTDOWN_POP_SCALE - 1f))
+            val popped = scale.value * (1f + pulse() * (Motion.COUNTDOWN_POP_SCALE - 1f))
             scaleX = popped
             scaleY = popped
         },
@@ -67,10 +67,11 @@ fun CountdownClock(
 /**
  * The pop of an interval's last seconds, which [CountdownClock] and the ring round it share: 1 as each
  * second of [text] arrives while [countingDown], falling to 0 over [Motion.CLOCK_POP_MILLIS]; 0 at rest,
- * and always under reduced motion.
+ * and always under reduced motion. A provider, so it is read where it is drawn (a `graphicsLayer`, the ring's
+ * stroke) and the pop's frames recompose nothing.
  */
 @Composable
-fun rememberCountdownPulse(text: String, countingDown: Boolean): Float {
+fun rememberCountdownPulse(text: String, countingDown: Boolean): () -> Float {
     val reducedMotion = prefersReducedMotion()
     val pulse = remember { Animatable(0f) }
     LaunchedEffect(text, countingDown, reducedMotion) {
@@ -79,7 +80,7 @@ fun rememberCountdownPulse(text: String, countingDown: Boolean): Float {
             pulse.animateTo(0f, tween(Motion.CLOCK_POP_MILLIS))
         }
     }
-    return pulse.value
+    return remember(pulse) { { pulse.value } }
 }
 
 /**

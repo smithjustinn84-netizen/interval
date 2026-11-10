@@ -4,6 +4,7 @@ import dev.justinsmith.interval.timer.Block
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.WorkoutEngine
+import dev.justinsmith.interval.timer.builtInFlows
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -30,6 +31,22 @@ class WorkoutUiStateTest {
         assertTrue(after(17_100).toUiState(running = true).countingDown, "3 seconds left")
         assertTrue(after(19_900).toUiState(running = true).countingDown, "1 second left")
         assertFalse(after(19_900).toUiState(running = false).countingDown, "paused")
+    }
+
+    // The screen recomposes as its state changes, and the ring's progress, which moves every tick, is apart from it.
+    @Test
+    fun `the screen's state stands still between ticks of one second`() {
+        assertEquals(after(16_100).toUiState(running = true), after(16_900).toUiState(running = true))
+    }
+
+    @Test
+    fun `a flow's state stands still between ticks of one second`() {
+        val flow = builtInFlows.first()
+        val held = WorkoutEngine.advance(WorkoutEngine.start(flow.config).state).state
+        fun shown(elapsedMillis: Long) =
+            WorkoutEngine.tick(held, elapsedMillis).state.toUiState(running = true, flows = builtInFlows)
+        assertEquals(flow.name, shown(2_100).flow?.name)
+        assertEquals(shown(2_100), shown(2_900))
     }
 
     @Test

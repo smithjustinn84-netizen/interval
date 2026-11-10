@@ -127,6 +127,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   under the interval workouts in the work colour, under mobility in green, each its share of the day, so a day of
   only a flow, or a flow and a climb, is green rather than the work colour. Today's dot for a Lift session that took
   no time is the accent, as its bar is, not a sport day's dim.
+- The running screens do less work for the same picture. A workout's screen is recomposed once a second, not ten
+  times: the ring's share, which moves every tick, is drawn apart from the rest, as are the countdown's pop and the
+  phase colour's crossfade. An EMOM's, a density block's and a rest's rings and bar likewise, and a session's page
+  hears its clocks only when what it says changes. Lift's figure draws every frame on one path and the same strokes
+  rather than new ones, and stops taking frames while it is scrolled out of sight.
 
 ## [0.5.0] — Unreleased
 

@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -61,6 +62,16 @@ class WorkoutViewModel(
                 lift.bells.value,
             ),
         )
+
+    /**
+     * How far through its interval the workout is, 0 to 1, for the ring; 0 once it is over. Apart from [state],
+     * which changes once a second, since this moves every tick.
+     */
+    val progress: StateFlow<Float> = session.state.filterNotNull().filter { it.id == id }
+        .map { it.ringProgress }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, checkNotNull(session.state.value).ringProgress)
+
+    private val WorkoutRun.ringProgress: Float get() = if (ended || engine.isDone) 0f else engine.progress
 
     /** [WorkoutRun.toUiState], with the snatch question once it is over and the workout is one of snatches. */
     private fun WorkoutRun.shown(

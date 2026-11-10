@@ -132,7 +132,7 @@ internal fun RoundStatus(state: WorkoutUiState, modifier: Modifier = Modifier) {
  * nothing. A flow has a bar a move.
  */
 @Composable
-internal fun RoundDots(state: WorkoutUiState, accent: Color, modifier: Modifier = Modifier) {
+internal fun RoundDots(state: WorkoutUiState, accent: () -> Color, modifier: Modifier = Modifier) {
     val marks = roundMarks(state) ?: return
     Row(
         modifier.clearAndSetSemantics {},
@@ -141,7 +141,7 @@ internal fun RoundDots(state: WorkoutUiState, accent: Color, modifier: Modifier 
         repeat(marks.count) { index ->
             val round = index + 1
             val target = when {
-                round == marks.active -> accent
+                round == marks.active -> accent()
                 round <= marks.completed -> IntervalTheme.workout.onGround
                 else -> IntervalTheme.workout.upcoming
             }
@@ -174,10 +174,16 @@ private fun roundMarks(state: WorkoutUiState): RoundMarks? {
 
 /** The ring with the phase word, clock and next up inside it, [diameter] across. */
 @Composable
-internal fun RingReadout(state: WorkoutUiState, accent: Color, diameter: Dp, modifier: Modifier = Modifier) {
+internal fun RingReadout(
+    state: WorkoutUiState,
+    progress: () -> Float,
+    accent: () -> Color,
+    diameter: Dp,
+    modifier: Modifier = Modifier,
+) {
     Box(modifier.size(diameter), contentAlignment = Alignment.Center) {
         PhaseBurst(state, Modifier.matchParentSize())
-        ProgressRing(state.progress, accent, Modifier.fillMaxSize(), strokeScale = ringSwell(state))
+        ProgressRing(progress, accent, Modifier.fillMaxSize(), strokeScale = ringSwell(state))
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             PhaseLabel(state, accent)
             Clock(state, accent, ringClockSize(diameter, state.clock.length, IntervalTheme.type.clock.fontSize))
@@ -198,7 +204,8 @@ internal fun RingReadout(state: WorkoutUiState, accent: Color, diameter: Dp, mod
 @Composable
 internal fun LandscapeReadout(
     state: WorkoutUiState,
-    accent: Color,
+    progress: () -> Float,
+    accent: () -> Color,
     diameter: Dp,
     modifier: Modifier = Modifier,
     ringModifier: Modifier = Modifier,
@@ -211,7 +218,7 @@ internal fun LandscapeReadout(
     ) {
         Box(ringModifier.size(diameter), contentAlignment = Alignment.Center) {
             PhaseBurst(state, Modifier.matchParentSize())
-            ProgressRing(state.progress, accent, Modifier.fillMaxSize(), strokeScale = ringSwell(state))
+            ProgressRing(progress, accent, Modifier.fillMaxSize(), strokeScale = ringSwell(state))
             Clock(state, accent, ringClockSize(diameter, state.clock.length, IntervalTheme.type.clock.fontSize))
         }
         Column(Modifier.weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
@@ -233,8 +240,10 @@ internal fun LandscapeReadout(
 
 /** The ring thickens with the clock's pop on each of an interval's last seconds: [rememberCountdownPulse]. */
 @Composable
-private fun ringSwell(state: WorkoutUiState): Float =
-    1f + rememberCountdownPulse(state.clock, state.countingDown) * (Motion.COUNTDOWN_RING_SCALE - 1f)
+private fun ringSwell(state: WorkoutUiState): () -> Float {
+    val pulse = rememberCountdownPulse(state.clock, state.countingDown)
+    return remember(pulse) { { 1f + pulse() * (Motion.COUNTDOWN_RING_SCALE - 1f) } }
+}
 
 /**
  * A change of interval sends one ring of the new phase's colour out from the clock as the ground crossfades
@@ -253,7 +262,7 @@ private fun PhaseBurst(state: WorkoutUiState, modifier: Modifier = Modifier) {
 
 /** The phase word, in the phase colour. A new word rises in as the old one slips away above it. */
 @Composable
-private fun PhaseLabel(state: WorkoutUiState, accent: Color) {
+private fun PhaseLabel(state: WorkoutUiState, accent: () -> Color) {
     val reducedMotion = prefersReducedMotion()
     val label: StringResource = when {
         state.paused -> Res.string.workout_paused
@@ -295,7 +304,7 @@ private fun PhaseLabel(state: WorkoutUiState, accent: Color) {
         Text(
             stringResource(res),
             style = IntervalTheme.type.stat,
-            color = if (state.paused) IntervalTheme.workout.onGroundDim else accent,
+            color = if (state.paused) IntervalTheme.workout.onGroundDim else accent(),
         )
     }
 }
@@ -335,12 +344,12 @@ private fun nextUpText(next: NextUp?): String = when (next) {
 
 /** The digits inside the ring: see [CountdownClock]. A phase or round change starts a new interval. */
 @Composable
-private fun Clock(state: WorkoutUiState, accent: Color, size: TextUnit) {
+private fun Clock(state: WorkoutUiState, accent: () -> Color, size: TextUnit) {
     CountdownClock(
         state.clock,
         intervalKey = state.phase to state.completedRounds,
         countingDown = state.countingDown,
-        accent = accent,
+        accent = accent(),
         style = IntervalTheme.type.clock.copy(fontSize = size, lineHeight = size),
     )
 }

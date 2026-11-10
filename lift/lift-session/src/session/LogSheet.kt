@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -130,7 +131,8 @@ internal fun LogSetSheet(
     val sideways = sheetIsSideways()
     IntervalSheet(logSheetTitle(draft.exercise, reading, adding != null, editing), onDismiss = onClose) { hide ->
         val hold = state.hold
-        val holdState = clocks().holdState
+        // Derived: the sheet's root then hears the clocks only while a hold runs, not on every tick of a rest.
+        val holdState = remember(clocks) { derivedStateOf { clocks().holdState } }.value
         CloseWhenTimed(timing = hold != null, offering = state.otherSide != null, hide)
         if (hold != null && holdState != null) {
             HoldCountdown(hold, holdState, actions.onStopHold)
