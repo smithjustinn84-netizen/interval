@@ -146,9 +146,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   rather than new ones, and stops taking frames while it is scrolled out of sight.
 - The other screens do less work too. On Android and desktop a list or a workout handed to a screen is compared by
   what it holds, so a part of a page whose data didn't change no longer redraws. On iOS as well, opening a day in
-  the Log leaves its rows alone, and picking a length on Today leaves the week. A search in the exercise library or a
-  picker redraws only the rows that come and go. A back swipe and a step between pages no longer redraw every page
-  on show, and the Log's week bars grow without redrawing their contents.
+  the Log leaves its rows alone and its summary card as it was, and picking a length on Today leaves the week and
+  what is up next. A search in the exercise library or a picker redraws only the rows that come and go. A back swipe
+  and a step between pages no longer redraw every page on show, and the Log's week bars grow without redrawing
+  their contents. The sheet that picks an exercise opens in about a third of the time: it lays out only the rows in
+  view rather than the whole library.
 
 ## [0.5.0] — Unreleased
 

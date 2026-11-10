@@ -293,6 +293,9 @@ toolchain (`$compose.*`).
   `TabGrid`. Any screen that saves or edits a preset opens it through `PresetEditorHost`
   (`PresetDraft.saveCurrent(config)` for the settings on the Timer; `PresetDraft.timer(config)` shapes the Timer's
   own workout, a sequence's blocks and all, and Done puts it back on the Timer without saving a preset).
+  A sheet that shows nothing but a long list while it does passes `IntervalSheet` a `SheetList` (core's
+  `Sheet.kt`), a lazy list in place of its content, each row its part of a card by `cardRow`; the exercise
+  picker is one (`rememberPickerList`, lift-library), so a test reaches a row far down it with `scrollToText`.
   The navigation bar or rail is an overlay (`NavigationAreaBar`, `core/core/src/ui/NavigationArea.kt`) that slides
   away as a page is pushed over a tab; a tab's scene reserves its room through `NavigationArea.tabScenes()`, so a
   tab screen pads nothing itself and a pushed page pads `safeDrawing`.

@@ -12,7 +12,8 @@ androidx-glance = "1.2.0"
 androidx-health-connect = "1.1.0"
 androidx-lifecycle = "2.11.0"
 # Two refs on purpose: the runtime is Google's androidx artifact and the UI is JetBrains' multiplatform
-# port, released on different cadences. navigation3-ui 1.2.0 was built against navigation3-runtime 1.2.0.
+# port, released on different cadences. navigation3-ui 1.2.0 was built against navigation3-runtime 1.2.0; the
+# runtime's 1.2.1 under it builds, links iOS and passes every JVM test. Bump the UI to match once JetBrains ships one.
 androidx-navigation3-runtime = "1.2.1"
 androidx-navigation3-ui = "1.2.0"
 # Keep sqlite (the bundled driver) at the version room-runtime resolves: `./kotlin show dependencies -m shared`.
