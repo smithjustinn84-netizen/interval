@@ -2,7 +2,6 @@ package dev.justinsmith.interval.history
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -28,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -325,50 +325,46 @@ private fun GoalRing(count: Int, goal: Int, modifier: Modifier = Modifier) {
         modifier
             .size(IntervalSizes.goalRing)
             .popOnce(closed, Motion.RING_CLOSE_POP_SCALE)
-            .clearAndSetSemantics { contentDescription = description },
+            .clearAndSetSemantics { contentDescription = description }
+            .drawWithCache {
+                val stroke = IntervalSizes.goalRingStroke.toPx()
+                val topLeft = Offset(stroke / 2, stroke / 2)
+                val arcSize = Size(size.width - stroke, size.height - stroke)
+                val trackStroke = Stroke(stroke)
+                val arcStroke = Stroke(stroke, cap = StrokeCap.Round)
+                // Met, the ring wears the three phase colours round: the intro's ripple, and the summary's.
+                val metBrush = Brush.sweepGradient(
+                    listOf(palette.prepMark, palette.workMark, palette.restMark, palette.prepMark),
+                )
+                onDrawBehind {
+                    drawArc(palette.surfaceVariant, 0f, Angles.FULL_TURN, false, topLeft, arcSize, style = trackStroke)
+                    if (share.value > 0f && closed) {
+                        rotate(Angles.TWELVE_O_CLOCK) {
+                            drawArc(
+                                metBrush,
+                                0f,
+                                Angles.FULL_TURN * share.value,
+                                false,
+                                topLeft,
+                                arcSize,
+                                style = arcStroke,
+                            )
+                        }
+                    } else if (share.value > 0f) {
+                        drawArc(
+                            palette.accent,
+                            Angles.TWELVE_O_CLOCK,
+                            Angles.FULL_TURN * share.value,
+                            false,
+                            topLeft,
+                            arcSize,
+                            style = arcStroke,
+                        )
+                    }
+                }
+            },
         contentAlignment = Alignment.Center,
     ) {
-        // Met, the ring wears the three phase colours round: the intro's ripple, and the summary's.
-        val metBrush = Brush.sweepGradient(
-            listOf(palette.prepMark, palette.workMark, palette.restMark, palette.prepMark),
-        )
-        Canvas(Modifier.size(IntervalSizes.goalRing)) {
-            val stroke = IntervalSizes.goalRingStroke.toPx()
-            val inset = stroke / 2
-            val arcSize = Size(size.width - stroke, size.height - stroke)
-            drawArc(
-                palette.surfaceVariant,
-                0f,
-                Angles.FULL_TURN,
-                false,
-                Offset(inset, inset),
-                arcSize,
-                style = Stroke(stroke),
-            )
-            if (share.value > 0f && closed) {
-                rotate(Angles.TWELVE_O_CLOCK) {
-                    drawArc(
-                        metBrush,
-                        0f,
-                        Angles.FULL_TURN * share.value,
-                        false,
-                        Offset(inset, inset),
-                        arcSize,
-                        style = Stroke(stroke, cap = StrokeCap.Round),
-                    )
-                }
-            } else if (share.value > 0f) {
-                drawArc(
-                    palette.accent,
-                    Angles.TWELVE_O_CLOCK,
-                    Angles.FULL_TURN * share.value,
-                    false,
-                    Offset(inset, inset),
-                    arcSize,
-                    style = Stroke(stroke, cap = StrokeCap.Round),
-                )
-            }
-        }
         RollingText(
             stringResource(Res.string.history_goal_ring, count, goal),
             rising = rememberRising(count),

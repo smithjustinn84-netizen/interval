@@ -12,7 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.semantics.contentDescription
@@ -44,16 +44,20 @@ fun Bars(
             .fillMaxWidth()
             .height(Sizes.weeksChart)
             .semantics { contentDescription = description }
-            .drawBehind {
-                if (line != null) {
-                    val y = size.height * (1 - line / top)
-                    drawLine(
-                        palette.line,
-                        Offset(0f, y),
-                        Offset(size.width, y),
-                        strokeWidth = Sizes.border.toPx(),
-                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(DASH, DASH)),
-                    )
+            .drawWithCache {
+                val dash = line?.let { PathEffect.dashPathEffect(floatArrayOf(DASH, DASH)) }
+                val stroke = Sizes.border.toPx()
+                onDrawBehind {
+                    if (line != null && dash != null) {
+                        val y = size.height * (1 - line / top)
+                        drawLine(
+                            palette.line,
+                            Offset(0f, y),
+                            Offset(size.width, y),
+                            strokeWidth = stroke,
+                            pathEffect = dash,
+                        )
+                    }
                 }
             },
         horizontalArrangement = Arrangement.spacedBy(Spacing.space4),

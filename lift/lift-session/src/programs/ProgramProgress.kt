@@ -3,7 +3,6 @@ package dev.justinsmith.lift.programs
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -26,6 +25,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -266,7 +266,7 @@ private fun DayMark(number: Int, standing: DayStanding) {
         Modifier
             .size(LiftSizes.programDayMark)
             .clip(Corners.full)
-            .background(dot)
+            .drawBehind { drawRect(dot) }
             .then(if (ring != null) Modifier.border(Sizes.border, ring, Corners.full) else Modifier)
             .clearAndSetSemantics { contentDescription = description },
     )
@@ -280,8 +280,8 @@ private fun DaysDone(
     modifier: Modifier = Modifier,
 ) {
     val palette = IntervalTheme.palette
-    val before = state.rows.count { it.day.session == null }
-    val logged = state.rows.filter { it.day.session != null }
+    val before = remember(state.rows) { state.rows.count { it.day.session == null } }
+    val logged = remember(state.rows) { state.rows.filter { it.day.session != null } }
     Column(modifier) {
         GroupLabel(stringResource(Res.string.program_days_done))
         ListCard {

@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -181,7 +182,7 @@ fun ToggleRow(
                 Modifier
                     .size(Sizes.switchWidth, Sizes.switchHeight)
                     .clip(Corners.full)
-                    .background(track)
+                    .drawBehind { drawRect(track) }
                     .padding((Sizes.switchHeight - Sizes.switchThumb) / 2),
             ) {
                 Thumb(

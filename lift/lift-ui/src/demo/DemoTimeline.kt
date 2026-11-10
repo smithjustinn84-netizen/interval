@@ -7,6 +7,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -45,7 +46,8 @@ fun DemoTimeline(
 ) {
     val marker = IntervalTheme.palette.text
     val stretches = demo.stretches
-    val bar = DemoBar(demo, LocalDensity.current)
+    val density = LocalDensity.current
+    val bar = remember(demo, density) { DemoBar(demo, density) }
     Canvas(
         modifier
             .fillMaxWidth()
@@ -91,7 +93,8 @@ fun DemoTimeline(
             cornerRadius = round,
         )
         if (demo.setUp != null) stretch(0f, bar.setUpWidth(size.width), DemoBeat.Set)
-        stretches.forEach { (start, phase) ->
+        for (i in stretches.indices) {
+            val (start, phase) = stretches[i]
             stretch(bar.xOf(start, size.width), bar.xOf(phase.until.coerceAtMost(1f), size.width), phase.beat)
         }
         val markerWidth = LiftSizes.demoMarkerWidth.toPx()

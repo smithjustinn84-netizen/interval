@@ -3,7 +3,6 @@ package dev.justinsmith.interval.history
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.semantics.Role
@@ -226,7 +226,7 @@ internal fun HistoryRow(
         modifier
             .fillMaxWidth()
             .heightIn(min = Sizes.listRow)
-            .background(fill)
+            .drawBehind { drawRect(fill) }
             // Only the open row says so: a phone's log has no selection to read out.
             .then(if (selected) Modifier.semantics { this.selected = true } else Modifier)
             .then(

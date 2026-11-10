@@ -138,7 +138,8 @@ fun SetupLanes(modifier: Modifier = Modifier) {
                 onDrawBehind {
                     drawLanes(center, first, step, palette.laneLine, palette.laneFill, laneStrokes)
                     val now = clock.longValue
-                    comets.forEach { comet ->
+                    for (i in comets.indices) {
+                        val comet = comets[i]
                         val progress = (now / comet.periodMillis + comet.start) % 1f
                         val head = cometHead(comet.arc, comet.tail, progress)
                         drawComet(center, comet.radius, head / DEGREE, comet.tail / DEGREE, comet.brush, cometStroke)

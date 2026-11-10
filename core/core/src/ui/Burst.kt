@@ -44,10 +44,11 @@ fun Burst(
         val reach = hypot(size.width, size.height) / 2 + gap * colors.size
         val edge = reach * t
         val width = stroke.toPx() * (1 - t)
-        colors.forEachIndexed { i, color ->
+        val ringStroke = Stroke(width)
+        for (i in colors.indices) {
             val radius = edge - gap * i
             // Not until it is wider than its stroke, which would otherwise fill it in.
-            if (radius > width) drawCircle(color, radius, alpha = 1 - t, style = Stroke(width))
+            if (radius > width) drawCircle(colors[i], radius, alpha = 1 - t, style = ringStroke)
         }
     }
 }

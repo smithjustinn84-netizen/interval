@@ -93,9 +93,7 @@ internal fun Splash(ready: Boolean, onFinish: () -> Unit, modifier: Modifier = M
             finish()
             return@LaunchedEffect
         }
-        launch {
-            title.animateTo(1f, tween(TITLE_MILLIS, TITLE_DELAY_MILLIS, LinearOutSlowInEasing))
-        }
+        launch { title.animateTo(1f, tween(TITLE_MILLIS, TITLE_DELAY_MILLIS, LinearOutSlowInEasing)) }
         hand.animateTo(1f, tween(SPIN_MILLIS, easing = SpinEasing))
         snapshotFlow { isReady }.first { it }
         // Likewise the app's first composition, below, which starts once it is ready.
@@ -133,10 +131,11 @@ internal fun Splash(ready: Boolean, onFinish: () -> Unit, modifier: Modifier = M
                     val hole = reach * opened
                     drawCircle(Color.Black, hole, blendMode = BlendMode.Clear)
                     val width = RippleWidth.toPx() * (1 - opened)
-                    Ripples.forEachIndexed { i, color ->
+                    val ringStroke = Stroke(width)
+                    for (i in Ripples.indices) {
                         val radius = hole - ripple * i
                         // Not until it is wider than its stroke, which would otherwise fill it in.
-                        if (radius > width) drawCircle(color, radius, alpha = 1 - opened, style = Stroke(width))
+                        if (radius > width) drawCircle(Ripples[i], radius, alpha = 1 - opened, style = ringStroke)
                     }
                 }
                 drawIntervalMark(

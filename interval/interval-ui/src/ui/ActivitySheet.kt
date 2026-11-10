@@ -20,7 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
@@ -107,7 +107,7 @@ private fun ActivityRow(activity: Activity, selected: Boolean, onClick: () -> Un
             IntervalIcons.Check,
             contentDescription = null,
             tint = palette.accent,
-            modifier = Modifier.size(Sizes.icon).alpha(check),
+            modifier = Modifier.size(Sizes.icon).graphicsLayer { alpha = check },
         )
     }
 }

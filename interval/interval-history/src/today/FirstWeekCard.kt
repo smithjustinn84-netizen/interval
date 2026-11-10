@@ -1,7 +1,6 @@
 package dev.justinsmith.interval.today
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -126,7 +126,7 @@ private fun Tick(done: Boolean, modifier: Modifier = Modifier) {
         modifier
             .size(Sizes.icon)
             .clip(CircleShape)
-            .background(fill)
+            .drawBehind { drawRect(fill) }
             .then(if (done) Modifier else Modifier.border(Sizes.border, palette.textDim, CircleShape)),
         contentAlignment = Alignment.Center,
     ) {

@@ -15,9 +15,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -59,25 +61,7 @@ fun Timeline(
         Phase.Work -> work
         else -> rest
     }
-    val course = Course.of(config).filter { showPrep || it.phase != Phase.Prep }
-    val segments = if (config.blocks.sumOf { it.rounds } <= MAX_ROUND_MARKS) {
-        course.map { colorOf(it.phase) to it.seconds }
-    } else {
-        // Only the shares: what comes before the rounds, each block's work and rest, the rest between the blocks,
-        // then the cool-down.
-        fun total(phase: Phase, block: Int) =
-            course.filter { it.phase == phase && it.block == block }.sumOf { it.seconds }
-        buildList {
-            course.takeWhile { it.phase != Phase.Work }.forEach { add(colorOf(it.phase) to it.seconds) }
-            config.blocks.indices.forEach { block ->
-                add(work to total(Phase.Work, block))
-                if (total(Phase.Rest, block) > 0) add(rest to total(Phase.Rest, block))
-                course.filter { it.block == block && config.isBlockRest(it) }.forEach { add(rest to it.seconds) }
-            }
-            val coolDown = course.filter { it.phase == Phase.CoolDown }.sumOf { it.seconds }
-            if (coolDown > 0) add(rest to coolDown)
-        }
-    }
+    val segments = remember(config, showPrep) { timelineSegments(config, showPrep) }
     Row(
         modifier
             .fillMaxWidth()
@@ -86,9 +70,29 @@ fun Timeline(
             .clearAndSetSemantics {},
         horizontalArrangement = Arrangement.spacedBy(gap),
     ) {
-        segments.forEach { (color, seconds) ->
-            Box(Modifier.weight(seconds.toFloat()).fillMaxHeight().background(color))
+        segments.forEach { (phase, seconds) ->
+            Box(Modifier.weight(seconds.toFloat()).fillMaxHeight().background(colorOf(phase)))
         }
+    }
+}
+
+private fun timelineSegments(config: IntervalConfig, showPrep: Boolean): List<Pair<Phase, Int>> {
+    val course = Course.of(config).filter { showPrep || it.phase != Phase.Prep }
+    if (config.blocks.sumOf { it.rounds } <= MAX_ROUND_MARKS) {
+        return course.map { it.phase to it.seconds }
+    }
+    // Only the shares: what comes before the rounds, each block's work and rest, the rest between the blocks,
+    // then the cool-down.
+    fun total(phase: Phase, block: Int) = course.filter { it.phase == phase && it.block == block }.sumOf { it.seconds }
+    return buildList {
+        course.takeWhile { it.phase != Phase.Work }.forEach { add(it.phase to it.seconds) }
+        config.blocks.indices.forEach { block ->
+            add(Phase.Work to total(Phase.Work, block))
+            if (total(Phase.Rest, block) > 0) add(Phase.Rest to total(Phase.Rest, block))
+            course.filter { it.block == block && config.isBlockRest(it) }.forEach { add(Phase.Rest to it.seconds) }
+        }
+        val coolDown = course.filter { it.phase == Phase.CoolDown }.sumOf { it.seconds }
+        if (coolDown > 0) add(Phase.CoolDown to coolDown)
     }
 }
 
@@ -108,7 +112,7 @@ fun Modifier.selectableCard(
     val fill by animateColorAsState(if (selected) palette.accentTint else palette.surface, spec, label = "fill")
     val line by animateColorAsState(if (selected) palette.accent else palette.line, spec, label = "line")
     return clip(shape)
-        .background(fill)
+        .drawBehind { drawRect(fill) }
         .border(Sizes.border, line, shape)
         .then(if (announceSelection) Modifier.semantics { this.selected = selected } else Modifier)
 }

@@ -13,7 +13,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +27,8 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -150,7 +151,8 @@ internal fun RoundDots(state: WorkoutUiState, accent: () -> Color, modifier: Mod
                 Modifier
                     .weight(1f, fill = false)
                     .size(IntervalSizes.roundMarkWidth, IntervalSizes.roundMarkHeight)
-                    .background(color, Corners.full),
+                    .clip(Corners.full)
+                    .drawBehind { drawRect(color) },
             )
         }
     }

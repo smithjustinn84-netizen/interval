@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
+import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
@@ -235,9 +236,10 @@ fun HistoryScreen(
     val selected = { item: HistoryItem ->
         (item.id != null && item.id == selectedWorkout) || (item.liftUid != null && item.liftUid == selectedLift)
     }
+    val groups = remember(state.range, state.sections, state.weekStart) { state.logGroups() }
     BoxWithConstraints(modifier.fillMaxSize()) {
         if (maxWidth >= Sizes.listColumn * 2 && state.sections.isNotEmpty()) {
-            SummaryBesideLog(title, titleActions, state, actions, selected, onLook = { looking = it })
+            SummaryBesideLog(title, titleActions, state, groups, actions, selected, onLook = { looking = it })
         } else {
             TabGrid(title, actions = titleActions) {
                 // While loading, neither: no first run's card for a moment, and no summary of nothing.
@@ -248,7 +250,7 @@ fun HistoryScreen(
                 } else if (!state.loading) {
                     summaryItems(state, actions, onLook = { looking = it })
                 }
-                logItems(state, actions, selected)
+                logItems(groups, actions, selected)
             }
         }
     }
@@ -342,6 +344,7 @@ private fun SummaryBesideLog(
     title: String,
     titleActions: @Composable RowScope.() -> Unit,
     state: HistoryUiState,
+    groups: List<Pair<LogGroup?, List<HistorySection>>>,
     actions: HistoryActions,
     selected: (HistoryItem) -> Boolean,
     onLook: (Int) -> Unit,
@@ -375,14 +378,18 @@ private fun SummaryBesideLog(
                     Modifier.weight(1f, fill = false).widthIn(max = Sizes.content).fillMaxHeight(),
                     contentPadding = PaddingValues(bottom = Spacing.space24),
                 ) {
-                    state.logGroups().forEach { (heading, sections) ->
-                        heading?.let { item(key = it.name) { LogHeading(it, Modifier.animateItem().then(Gutter)) } }
+                    groups.forEach { (heading, sections) ->
+                        heading?.let {
+                            item(key = it.name, contentType = it) {
+                                LogHeading(it, Modifier.animateItem().then(Gutter))
+                            }
+                        }
                         if (heading == LogGroup.ThisWeek) {
-                            item(key = DONE_WEEK) {
+                            item(key = DONE_WEEK, contentType = DONE_WEEK) {
                                 WeekDoneCard(sections, actions, selected, Modifier.animateItem().then(DoneWeekCard))
                             }
                         } else {
-                            items(sections, key = { it.dayNumber }) { section ->
+                            items(sections, key = { it.dayNumber }, contentType = { DAY_SECTION }) { section ->
                                 DaySection(section, actions, selected, Modifier.animateItem().then(Gutter))
                             }
                         }
@@ -398,26 +405,24 @@ private fun SummaryBesideLog(
  * Earlier's and the other ranges' a card a day.
  */
 private fun LazyStaggeredGridScope.logItems(
-    state: HistoryUiState,
+    groups: List<Pair<LogGroup?, List<HistorySection>>>,
     actions: HistoryActions,
     selected: (HistoryItem) -> Boolean,
 ) {
-    state.logGroups().forEach { (heading, sections) ->
+    groups.forEach { (heading, sections) ->
         heading?.let {
-            item(key = it.name, span = StaggeredGridItemSpan.FullLine) {
+            item(key = it.name, contentType = it, span = StaggeredGridItemSpan.FullLine) {
                 LogHeading(it, Modifier.animateItem().then(Gutter))
             }
         }
         if (heading == LogGroup.ThisWeek) {
-            item(key = DONE_WEEK, span = StaggeredGridItemSpan.FullLine) {
+            item(key = DONE_WEEK, contentType = DONE_WEEK, span = StaggeredGridItemSpan.FullLine) {
                 WeekDoneCard(sections, actions, selected, Modifier.animateItem().then(DoneWeekCard))
             }
         } else {
-            sections.forEach { section ->
-                // A day is one cell, its label with its card, so a column never splits a day.
-                item(key = section.dayNumber) {
-                    DaySection(section, actions, selected, Modifier.animateItem().then(Gutter))
-                }
+            // A day is one cell, its label with its card, so a column never splits a day.
+            items(sections, key = { it.dayNumber }, contentType = { DAY_SECTION }) { section ->
+                DaySection(section, actions, selected, Modifier.animateItem().then(Gutter))
             }
         }
     }
@@ -425,6 +430,7 @@ private fun LazyStaggeredGridScope.logItems(
 
 /** The week's done card's key in the lists, and its place: in the gutters, under its heading's room. */
 private const val DONE_WEEK = "doneWeek"
+private const val DAY_SECTION = "day"
 private val DoneWeekCard = Modifier.padding(horizontal = Spacing.space16).padding(top = Spacing.space8)
 
 /** The range picker, its summary card, and Up next or the most done shapes under it. */
