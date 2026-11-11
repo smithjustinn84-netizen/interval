@@ -18,8 +18,8 @@ import platform.UserNotifications.UNUserNotificationCenter
  * time zone of their own fire by the device's zone as it stands then, so a zone change moves them with the
  * user. Its identifier is its day, so the set is replaced by removing every day a reminder could still be
  * pending for, around today, and adding the new ones; no record is kept. Each is worded here, as it is
- * scheduled, since reading the app's strings suspends. A reminder due while the app is open is not shown:
- * the app installs no notification-centre delegate, and the plan is on screen for the asking.
+ * scheduled, since reading the app's strings suspends. A reminder due while the app is open is shown all the
+ * same: iosApp.swift's notification-centre delegate presents it by its [REQUEST_PREFIX], and nothing else then.
  */
 internal class IosPlanReminders(private val clock: WallClock) : PlanReminders {
     private val log = Logger.withTag("IosPlanReminders")
