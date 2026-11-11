@@ -187,11 +187,17 @@ class FakePlannedDao : PlannedDao {
 
     override fun observeAll(): Flow<List<PlannedEntity>> = rows
 
+    override suspend fun all(): List<PlannedEntity> = rows.value
+
     override suspend fun insert(planned: List<PlannedEntity>) {
         val stored = planned.map { row ->
             row.copy(id = ids.assign(row.id))
         }
         rows.update { all -> (all + stored).sortedBy { it.id } }
+    }
+
+    override suspend fun update(planned: PlannedEntity) {
+        rows.update { all -> all.map { if (it.id == planned.id) planned else it } }
     }
 
     override suspend fun delete(id: Long) {

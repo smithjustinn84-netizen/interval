@@ -11,6 +11,7 @@ import dev.justinsmith.interval.fixtures.FOREIGN_JSON
 import dev.justinsmith.interval.fixtures.SCHEMA_13_EXPORT
 import dev.justinsmith.interval.fixtures.SCHEMA_1_EXPORT
 import dev.justinsmith.interval.model.PerceivedEffort
+import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.model.Sport
@@ -240,6 +241,22 @@ class AppDataImporterTest {
         assertEquals(
             setOf(TODAY - 2 to Sport.Bjj, TODAY to Sport.Custom("Judo")),
             target.intervals.history.sportDays.value.map { it.epochDay to it.sport }.toSet(),
+        )
+        assertEquals(ImportCounts(), target.importer.import(source.file(), withSettings = false))
+    }
+
+    @Test
+    fun `a plan moved off its day comes across still moved and is not added twice`() = runTest {
+        val source = Phone(now).apply {
+            intervals.plans.planWeekly(PlanWorkout.Lift.ProgramDay, setOf(2))
+            intervals.plans.movePlanned(intervals.plans.planned.value.single(), fromDay = TODAY - 1, toDay = TODAY + 1)
+        }
+        val target = Phone(now + 1)
+        target.importer.import(source.file(), withSettings = false)
+
+        assertEquals(
+            listOf(PlanSchedule.Weekly(2), PlanSchedule.Once(TODAY + 1, movedFromDay = TODAY - 1)),
+            target.intervals.plans.planned.value.map { it.schedule },
         )
         assertEquals(ImportCounts(), target.importer.import(source.file(), withSettings = false))
     }

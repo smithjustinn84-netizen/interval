@@ -8,6 +8,7 @@ import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.Sport
+import dev.justinsmith.interval.model.sameAs
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -30,6 +31,12 @@ enum class PlanState {
 
     /** A sport day gone by unlogged: not missed as far as the app can tell, so it counts for nothing either way. */
     Passed,
+
+    /**
+     * Moved to another day by the user: the day sheet's row for one of [TrainingDay.movedAway], the one-off it became
+     * on the day it went to. Never among [TrainingDay.plans].
+     */
+    Moved,
 }
 
 /**
@@ -70,6 +77,11 @@ data class TrainingDay(
     val workouts: List<HistoryEntry>,
     val liftWorkouts: List<LiftWorkout> = emptyList(),
     val sports: List<LoggedSport> = emptyList(),
+    /**
+     * The plans the user moved off the day, each the one-off it became on its new day: kept apart from [plans], so
+     * nothing counts, marks or offers them here but the day sheet's line saying where each went.
+     */
+    val movedAway: List<PlannedWorkout> = emptyList(),
 ) {
     /** 1 for Monday through 7 for Sunday. */
     val weekday: Int get() = weekdayOf(epochDay)
@@ -166,9 +178,26 @@ class TrainingLog(
 
     private val firstWorkoutDay: Long? = (byDay.keys + liftsByDay.keys + sportsByDay.keys).minOrNull()
 
-    /** The plans that fall on [epochDay], in the order they were planned. */
-    fun plansOn(epochDay: Long): List<PlannedWorkout> = planned.filter { plan ->
-        plan.fallsOn(epochDay) && (plan.schedule is PlanSchedule.Once || (madeOn[plan.id] ?: epochDay) <= epochDay)
+    /** The one-offs moved off each day to another, by the day they left. */
+    private val movedOff: Map<Long, List<PlannedWorkout>> = planned
+        .filter { plan -> plan.movedFromDay.let { it != null && !plan.fallsOn(it) } }
+        .groupBy { it.movedFromDay ?: 0 }
+
+    /**
+     * The plans that fall on [epochDay], in the order they were planned, but for a weekly plan's day the user moved
+     * elsewhere: each plan moved off the day takes the first weekly plan there of its workout. A one-off moved off
+     * remembers only the day, so beside a weekly plan of the same workout that day it takes that one too: rare, and
+     * the day still reads as moved.
+     */
+    fun plansOn(epochDay: Long): List<PlannedWorkout> {
+        val falling = planned.filter { plan ->
+            plan.fallsOn(epochDay) && (plan.schedule is PlanSchedule.Once || (madeOn[plan.id] ?: epochDay) <= epochDay)
+        }.toMutableList()
+        movedOff[epochDay].orEmpty().forEach { moved ->
+            falling.firstOrNull { it.schedule is PlanSchedule.Weekly && it.workout.sameAs(moved.workout) }
+                ?.let(falling::remove)
+        }
+        return falling
     }
 
     fun day(epochDay: Long): TrainingDay {
@@ -176,7 +205,7 @@ class TrainingLog(
         val lifts = liftsByDay[epochDay].orEmpty()
         val sports = sportsByDay[epochDay].orEmpty()
         val plans = matchPlans(epochDay, workouts, lifts, sports)
-        return TrainingDay(epochDay, epochDay == today, plans, workouts, lifts, sports)
+        return TrainingDay(epochDay, epochDay == today, plans, workouts, lifts, sports, movedOff[epochDay].orEmpty())
     }
 
     /** Monday to Sunday of this week. */

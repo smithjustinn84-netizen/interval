@@ -12,6 +12,7 @@ import dev.justinsmith.interval.data.PresetStore
 import dev.justinsmith.interval.data.SettingsStore
 import dev.justinsmith.interval.history.DayCell
 import dev.justinsmith.interval.history.Lifting
+import dev.justinsmith.interval.history.PlanMove
 import dev.justinsmith.interval.history.TodayAgenda
 import dev.justinsmith.interval.history.TrainingLog
 import dev.justinsmith.interval.history.UpNextItem
@@ -29,6 +30,8 @@ import dev.justinsmith.interval.model.LoggedSport
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.Sport
+import dev.justinsmith.interval.plan.MoveSheet
+import dev.justinsmith.interval.plan.moveSheet
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
@@ -56,6 +59,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 private const val KEY_MINUTES = "home_minutes"
+private const val KEY_MOVING = "home_moving"
 
 /**
  * What the Today tab shows: this week against the goal, what is up next, and the presets that fit the
@@ -81,6 +85,8 @@ data class HomeUiState(
     val taxed: ReadinessReason? = null,
     /** Whether the program's next day has an easier plan to start it with, on a taxed day. */
     val easier: Boolean = false,
+    /** The sheet moving one of today's plans to a day after, while it is open. */
+    val moveSheet: MoveSheet? = null,
     /** Not built yet: the screen waits rather than taking it for a day with nothing planned. */
     val loading: Boolean = false,
 ) {
@@ -134,14 +140,17 @@ class HomeViewModel(
 
     private val days = clock.days(timestamps, dayCheckMillis)
 
+    /** The plan of today's the move sheet is moving, by its id, kept in the entry's saved state. */
+    private val moving = MutableStateFlow(savedState.get<Long>(KEY_MOVING))
+
     private val built = combine(
         combine(historyStore.history, historyStore.sportDays, lift.lifting(), ::Triple),
         planStore.planned,
         settingsStore.appSettings,
         combine(presetStore.presets, flowStore.flows, ::WorkoutNames),
-        combine(days, locale) { day, _ -> day },
-    ) { (history, sports, lifting), planned, app, names, _ ->
-        buildState(history, sports, lifting, planned, app, names)
+        combine(days, locale, moving) { _, _, moving -> moving },
+    ) { (history, sports, lifting), planned, app, names, moving ->
+        buildState(history, sports, lifting, planned, app, names, moving)
     }
 
     /** Lift's reading of the day, taken again as the day turns: it goes by the clock. */
@@ -256,6 +265,29 @@ class HomeViewModel(
         locale.value = languageTag
     }
 
+    /** Opens the move sheet on today's plan [planId], "Not today", or closes it with null. */
+    fun openMove(planId: Long?) {
+        moving.value = planId
+        savedState[KEY_MOVING] = planId
+    }
+
+    /**
+     * Moves the move sheet's plan off today to [toDay] and closes the sheet, handing back what Undo
+     * ([unmovePlanned]) needs; null when the plan was gone already.
+     */
+    fun movePlanned(toDay: Long): PlanMove? {
+        val planId = moving.value
+        openMove(null)
+        val plan = planStore.planned.value.firstOrNull { it.id == planId } ?: return null
+        val today = timestamps.dayNumber(clock.nowMillis())
+        planStore.movePlanned(plan, today, toDay)
+        return PlanMove(plan, today, toDay)
+    }
+
+    fun unmovePlanned(move: PlanMove) {
+        planStore.unmovePlanned(move.plan, move.fromDay, move.toDay)
+    }
+
     private fun buildState(
         history: List<HistoryEntry>,
         sports: List<LoggedSport>,
@@ -263,6 +295,7 @@ class HomeViewModel(
         planned: List<PlannedWorkout>,
         app: AppSettings,
         names: WorkoutNames,
+        moving: Long?,
     ): HomeUiState {
         val today = timestamps.dayNumber(clock.nowMillis())
         val log = TrainingLog(history, planned, today, lifting.sessions.asLiftWorkouts(), sports, timestamps::dayNumber)
@@ -286,6 +319,7 @@ class HomeViewModel(
             } else {
                 null
             },
+            moveSheet = planned.firstOrNull { it.id == moving }?.let { moveSheet(it, today, today, log) },
         )
     }
 }

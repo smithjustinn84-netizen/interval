@@ -69,6 +69,15 @@
     </plurals>
     <string name="history_every">Every %1$s</string>
     <string name="history_once">Once</string>
+    <string name="history_moved_to">Moved to %1$s</string>
+    <string name="history_moved_from">Moved from %1$s</string>
+    <string name="move_plan">Move</string>
+    <string name="home_not_today">Not today</string>
+    <string name="move_plan_title">Move %1$s</string>
+    <string name="move_plan_to">Move to %1$s</string>
+    <string name="move_plan_today">Today</string>
+    <string name="move_plan_free">Nothing planned</string>
+    <string name="notice_plan_moved">Moved %1$s to %2$s</string>
     <string name="history_remove_cd">Remove %1$s</string>
     <string name="history_routine_note">A routine workout changes in Plan, for every week.</string>
     <string name="history_open_plan">Open plan</string>

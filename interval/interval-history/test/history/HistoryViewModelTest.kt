@@ -25,6 +25,7 @@ import dev.justinsmith.interval.timer.epochDayOf
 import dev.justinsmith.interval.timer.estimateCalories
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.sameShape
+import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.fakes.FakeLiftStorage
@@ -317,6 +318,36 @@ class HistoryViewModelTest : MainDispatcherTest() {
         assertEquals(emptyList(), repository.plans.planned.value.filter { it.schedule == PlanSchedule.Once(TODAY + 2) })
         viewModel.openDay(null)
         assertNull(viewModel.state.value.daySheet)
+    }
+
+    @Test
+    fun `a missed weekly plan moves to the free day suggested and reads as moved on both days`() {
+        at(TODAY - 8)
+        repository.plans.planWeekly(hiit.asPlan(), setOf(weekdayOf(TODAY - 1)))
+        at(TODAY)
+        viewModel.openDay(TODAY - 1)
+        val missed = requireNotNull(viewModel.state.value.daySheet).plans.single()
+        assertEquals(PlanState.Missed, missed.state)
+        assertTrue(missed.movable)
+
+        viewModel.openMove(missed.planId, TODAY - 1)
+        val sheet = requireNotNull(viewModel.state.value.moveSheet)
+        assertEquals(TODAY, sheet.days.first().epochDay)
+        assertEquals(TODAY, sheet.suggested)
+
+        val move = requireNotNull(viewModel.movePlanned(TODAY + 2))
+        assertNull(viewModel.state.value.moveSheet)
+        viewModel.openDay(TODAY - 1)
+        val left = requireNotNull(viewModel.state.value.daySheet).plans.single()
+        assertEquals(PlanState.Moved, left.state)
+        assertEquals(TODAY + 2, left.movedTo)
+        assertFalse(left.movable)
+        viewModel.openDay(TODAY + 2)
+        assertEquals(TODAY - 1, requireNotNull(viewModel.state.value.daySheet).plans.single().movedFrom)
+
+        viewModel.unmovePlanned(move)
+        viewModel.openDay(TODAY - 1)
+        assertEquals(PlanState.Missed, requireNotNull(viewModel.state.value.daySheet).plans.single().state)
     }
 
     @Test

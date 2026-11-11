@@ -139,6 +139,15 @@ interface PlanStore {
     fun removePlanned(id: Long)
 
     fun restorePlanned(plan: PlannedWorkout)
+
+    /**
+     * Moves [plan]'s day [fromDay] to [toDay]: a weekly plan's by a one-off there that remembers the day it left, a
+     * one-off by moving it, the day it first stood on remembered.
+     */
+    fun movePlanned(plan: PlannedWorkout, fromDay: Long, toDay: Long)
+
+    /** Undoes [movePlanned] with the same arguments, [plan] as it stood before the move. */
+    fun unmovePlanned(plan: PlannedWorkout, fromDay: Long, toDay: Long)
 }
 
 /** The workout under way or just over, as it last stood, for a restart to pick up. */

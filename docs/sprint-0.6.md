@@ -283,6 +283,22 @@ Exercise in Health Connect. Check it before the next release. Ticket 4 of 0.5 mo
   that pins the built-ins never see a test; the unfinished round is asked on the session's foot once the clock has
   gone (its Done shows for three seconds), not on the clock's page.
 
+**14. Move a plan** (added during the sprint) · M
+- A plan that can't be done on its day goes to another, one day at a time. A missed one moves from its row in the
+  Log ("Move"), and today's from Today's "Not today" under its Start. Either way it goes to a day of the week ahead:
+  the first free day is picked, never an earlier day, never the day it first left. Undo comes with it.
+- A weekly plan's day becomes a one-off that remembers the day it left (`PlanSchedule.Once.movedFromDay`; `AppDatabase`
+  version 17's `moved_from_day`; `PlannedExport.movedFromDay`, folded into schema 12 since 0.6 is unreleased). A
+  one-off moves itself and keeps the day it first stood on. The source is found again by what it holds
+  (`PlanWorkout.sameAs`), not by id, so an import keeps the move. A weekly plan removed later leaves its moved
+  one-offs standing, since the user moved them on purpose.
+- `TrainingLog.plansOn` drops the day left and keeps the move in `TrainingDay.movedAway`, which only the day sheet
+  reads ("Moved to Saturday", "Moved from Wednesday"). The week strip, Today, the reminders and the widget see a
+  rest day there, not a missed one. A sport keeps its day.
+- Done when: `TrainingTest`, `MovePlanTest`, `PlanRepositoryTest`, `StorageTest` (a version-16 database),
+  `AppDataImporterTest`, `HistoryViewModelTest`, `HistoryScreenTest`, `HomeViewModelTest`, `HomeScreenTest` and
+  `MovePlanAcceptanceTest` pass, and `journeys/move-plan.xml` runs on `amper-37`.
+
 --- cut line ---
 
 **6. Describe reads "then"** (0.5's ticket 4, unchanged) · S

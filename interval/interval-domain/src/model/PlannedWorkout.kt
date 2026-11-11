@@ -2,6 +2,7 @@ package dev.justinsmith.interval.model
 
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.timer.sameShape
 import dev.justinsmith.interval.timer.weekdayOf
 
 /** When a planned workout falls: every week on one weekday, or once on one day. */
@@ -9,8 +10,12 @@ sealed interface PlanSchedule {
     /** Every week on [weekday], 1 for Monday through 7 for Sunday. */
     data class Weekly(val weekday: Int) : PlanSchedule
 
-    /** Once, on [epochDay] (see `CalendarDate`). */
-    data class Once(val epochDay: Long) : PlanSchedule
+    /**
+     * Once, on [epochDay] (see `CalendarDate`). [movedFromDay] is the day it was moved from, when the user moved it
+     * there: a weekly plan's day leaves that day for this one, and a one-off keeps the day it first stood on through
+     * every move after. Null for one planned on its day.
+     */
+    data class Once(val epochDay: Long, val movedFromDay: Long? = null) : PlanSchedule
 }
 
 /** What a plan asks for: an interval workout of one shape, a session on Lift, or a day of a sport. */
@@ -48,11 +53,23 @@ data class PlannedWorkout(
     val schedule: PlanSchedule,
     val createdAtEpochMillis: Long = 0,
 ) {
+    /** The day it was moved from, if it was moved: see [PlanSchedule.Once.movedFromDay]. */
+    val movedFromDay: Long? get() = (schedule as? PlanSchedule.Once)?.movedFromDay
+
     /** Whether its schedule falls on [epochDay]. When it was made is the caller's to weigh. */
     fun fallsOn(epochDay: Long): Boolean = when (schedule) {
         is PlanSchedule.Weekly -> schedule.weekday == weekdayOf(epochDay)
         is PlanSchedule.Once -> schedule.epochDay == epochDay
     }
+}
+
+/**
+ * Whether this asks for the same workout as [other]: an interval workout of the same name and shape, the same kind
+ * of session on Lift, or a day of the same sport. A plan moved off a weekly one's day is known again by it.
+ */
+fun PlanWorkout.sameAs(other: PlanWorkout): Boolean = when (this) {
+    is PlanWorkout.Interval -> other is PlanWorkout.Interval && name == other.name && config.sameShape(other.config)
+    else -> this == other
 }
 
 /** This preset as a plan asks for it. */

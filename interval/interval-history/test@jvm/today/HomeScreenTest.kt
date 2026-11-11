@@ -160,6 +160,24 @@ class HomeScreenTest {
     }
 
     @Test
+    fun `a planned workout leading the day can be put off with Not today and a class cannot`() = runUiTest {
+        val moved = mutableListOf<Long>()
+        var state by mutableStateOf(
+            empty.copy(
+                upNext = listOf(UpNextItem.Planned(7, THURSDAY, HistoryDay.Today, hiitPreset.name, hiitPreset.config)),
+            ),
+        )
+        setThemedContent { HomeScreen(state, HomeActions(onNotToday = { moved += it })) }
+
+        onNodeWithText("Not today").performClick()
+        assertEquals(listOf(7L), moved)
+
+        state =
+            empty.copy(upNext = listOf(UpNextItem.SportDay(1, THURSDAY, HistoryDay.Today, Sport.Bjj)), hasPlans = true)
+        onNodeWithText("Not today").assertDoesNotExist()
+    }
+
+    @Test
     fun `a class today is named under its day and leads up next to be logged`() = runUiTest {
         val logged = mutableListOf<String>()
         val state = empty.copy(

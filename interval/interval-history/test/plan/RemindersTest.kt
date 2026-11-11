@@ -49,6 +49,15 @@ class RemindersTest {
     }
 
     @Test
+    fun `a weekly day moved to tomorrow is reminded tomorrow and not today`() {
+        val thursdays = weekly(4)
+        val moved = PlannedWorkout(nextId++, thursdays.workout, PlanSchedule.Once(TODAY + 1, movedFromDay = TODAY))
+        val reminders = reminders(listOf(thursdays, moved))
+        assertEquals(listOf(TODAY + 1, TODAY + 7), reminders.map { it.epochDay })
+        assertEquals(listOf(listOf(moved), listOf(thursdays)), reminders.map { it.plans })
+    }
+
+    @Test
     fun `today's reminder goes once its time has come`() {
         val plans = listOf(once(TODAY))
         assertEquals(listOf(TODAY), reminders(plans, now = EVENING - 1).map { it.epochDay })

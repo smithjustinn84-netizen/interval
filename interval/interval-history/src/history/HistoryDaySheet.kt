@@ -19,12 +19,15 @@ import dev.justinsmith.interval.history.resources.history_day_nothing
 import dev.justinsmith.interval.history.resources.history_day_planned
 import dev.justinsmith.interval.history.resources.history_every
 import dev.justinsmith.interval.history.resources.history_log_workout
+import dev.justinsmith.interval.history.resources.history_moved_from
+import dev.justinsmith.interval.history.resources.history_moved_to
 import dev.justinsmith.interval.history.resources.history_once
 import dev.justinsmith.interval.history.resources.history_open_plan
 import dev.justinsmith.interval.history.resources.history_remove_cd
 import dev.justinsmith.interval.history.resources.history_routine_note
 import dev.justinsmith.interval.history.resources.history_state_done
 import dev.justinsmith.interval.history.resources.history_state_missed
+import dev.justinsmith.interval.history.resources.move_plan
 import dev.justinsmith.interval.history.resources.notice_plan_removed
 import dev.justinsmith.interval.history.resources.notice_sport_logged
 import dev.justinsmith.interval.history.resources.notice_workout_logged
@@ -33,6 +36,7 @@ import dev.justinsmith.interval.history.resources.sport_state_passed
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.plan.planMark
 import dev.justinsmith.interval.plan.planName
+import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.interval.ui.DialogButton
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
@@ -96,7 +100,7 @@ internal fun DaySheetContent(
                 ListCard {
                     sheet.plans.forEachIndexed { index, plan ->
                         if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
-                        PlanRow(plan, sheet, programDay, actions)
+                        PlanRow(plan, sheet, programDay, actions, hide)
                     }
                 }
                 if (sheet.plans.any { it.weekly }) {
@@ -178,7 +182,13 @@ private fun DayActions(
 private val DaySheet.canLog: Boolean get() = past || day == HistoryDay.Today
 
 @Composable
-private fun PlanRow(plan: SheetPlan, sheet: DaySheet, programDay: ProgramDay?, actions: HistoryActions) {
+private fun PlanRow(
+    plan: SheetPlan,
+    sheet: DaySheet,
+    programDay: ProgramDay?,
+    actions: HistoryActions,
+    hide: () -> Unit,
+) {
     val palette = IntervalTheme.palette
     val workout = plan.workout
     val name = planName(workout)
@@ -191,25 +201,16 @@ private fun PlanRow(plan: SheetPlan, sheet: DaySheet, programDay: ProgramDay?, a
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
         StripeMark(planMark(workout), height = IntervalSizes.historyMarkHeight)
-        Column(Modifier.weight(1f)) {
-            Text(name, style = IntervalTheme.type.label, color = palette.text)
-            val repeat = if (plan.weekly) {
-                stringResource(Res.string.history_every, weekdayText(sheet.weekday))
-            } else {
-                stringResource(Res.string.history_once)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+            Column {
+                Text(name, style = IntervalTheme.type.label, color = palette.text)
+                Text(
+                    joined(planLine(plan, sheet)),
+                    style = IntervalTheme.type.meta,
+                    color = palette.textDim,
+                )
             }
-            val state = when (plan.state) {
-                PlanState.Done -> stringResource(Res.string.history_state_done)
-                PlanState.Missed -> stringResource(Res.string.history_state_missed)
-                PlanState.Open -> null
-                PlanState.Passed -> stringResource(Res.string.sport_state_passed)
-            }
-            val shape = (workout as? PlanWorkout.Interval)?.let { workoutDescription(it.config) }
-            Text(
-                joined(listOfNotNull(state, repeat, shape)),
-                style = IntervalTheme.type.meta,
-                color = palette.textDim,
-            )
+            SecondaryActions(plan, sheet, name, actions, hide)
         }
         // Nothing here starts a sport.
         val start: (() -> Unit)? = when (workout) {
@@ -219,9 +220,57 @@ private fun PlanRow(plan: SheetPlan, sheet: DaySheet, programDay: ProgramDay?, a
             is PlanWorkout.SportDay -> null
         }
         if (plan.state == PlanState.Open && start != null) StartPill(primary = false, onClick = start)
-        // An interval workout done away from the app, or without the Timer, is logged on its day or after.
-        val interval = (workout as? PlanWorkout.Interval)?.takeIf { sheet.canLog }
-        if (interval != null && plan.state != PlanState.Done) {
+        if (!plan.weekly && plan.state != PlanState.Done && plan.state != PlanState.Moved) {
+            val removed = stringResource(Res.string.notice_plan_removed, name)
+            IconAction(
+                IntervalIcons.Close,
+                stringResource(Res.string.history_remove_cd, name),
+                { actions.onRemovePlanned(plan.planId, removed) },
+                haptic = HapticFeedbackType.SegmentTick,
+            )
+        }
+    }
+}
+
+/** The plan's line under its name: how it stands, whether it repeats or where it was moved, and its shape. */
+@Composable
+private fun planLine(plan: SheetPlan, sheet: DaySheet): List<String> {
+    val state = when (plan.state) {
+        PlanState.Done -> stringResource(Res.string.history_state_done)
+        PlanState.Missed -> stringResource(Res.string.history_state_missed)
+        PlanState.Open -> null
+        PlanState.Passed -> stringResource(Res.string.sport_state_passed)
+        PlanState.Moved -> plan.movedTo?.let { stringResource(Res.string.history_moved_to, weekdayText(weekdayOf(it))) }
+    }
+    val repeat = when {
+        plan.state == PlanState.Moved -> null
+        plan.weekly -> stringResource(Res.string.history_every, weekdayText(sheet.weekday))
+        plan.movedFrom != null -> stringResource(Res.string.history_moved_from, weekdayText(weekdayOf(plan.movedFrom)))
+        else -> stringResource(Res.string.history_once)
+    }
+    val shape = (plan.workout as? PlanWorkout.Interval)?.let { workoutDescription(it.config) }
+    return listOfNotNull(state, repeat, shape)
+}
+
+/**
+ * Under the plan's line, what else can be done with it: an interval workout done away from the app, or without the
+ * Timer, logged on its day or after; a sport logged on its day or after, never ahead of it; a plan still to do, or
+ * missed, moved to another day.
+ */
+@Composable
+private fun SecondaryActions(
+    plan: SheetPlan,
+    sheet: DaySheet,
+    name: String,
+    actions: HistoryActions,
+    hide: () -> Unit,
+) {
+    val stillToDo = plan.state != PlanState.Done && plan.state != PlanState.Moved
+    val interval = (plan.workout as? PlanWorkout.Interval)?.takeIf { sheet.canLog && stillToDo }
+    val sport = (plan.workout as? PlanWorkout.SportDay)?.sport?.takeIf { sheet.canLog && stillToDo }
+    if (interval == null && sport == null && !plan.movable) return
+    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+        if (interval != null) {
             val logged = stringResource(Res.string.notice_workout_logged, name)
             StartPill(
                 primary = false,
@@ -229,9 +278,7 @@ private fun PlanRow(plan: SheetPlan, sheet: DaySheet, programDay: ProgramDay?, a
                 label = stringResource(Res.string.sport_log_it),
             )
         }
-        // A sport is logged on its day or after, never ahead of it.
-        val sport = (workout as? PlanWorkout.SportDay)?.sport?.takeIf { sheet.canLog }
-        if (sport != null && plan.state != PlanState.Done) {
+        if (sport != null) {
             val logged = stringResource(Res.string.notice_sport_logged, name)
             StartPill(
                 primary = false,
@@ -239,13 +286,14 @@ private fun PlanRow(plan: SheetPlan, sheet: DaySheet, programDay: ProgramDay?, a
                 label = stringResource(Res.string.sport_log_it),
             )
         }
-        if (!plan.weekly && plan.state != PlanState.Done) {
-            val removed = stringResource(Res.string.notice_plan_removed, name)
-            IconAction(
-                IntervalIcons.Close,
-                stringResource(Res.string.history_remove_cd, name),
-                { actions.onRemovePlanned(plan.planId, removed) },
-                haptic = HapticFeedbackType.SegmentTick,
+        if (plan.movable) {
+            StartPill(
+                primary = false,
+                onClick = {
+                    hide()
+                    actions.onOpenMove(plan.planId, sheet.epochDay)
+                },
+                label = stringResource(Res.string.move_plan),
             )
         }
     }

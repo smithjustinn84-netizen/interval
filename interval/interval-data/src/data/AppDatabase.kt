@@ -45,7 +45,8 @@ import kotlinx.coroutines.flow.Flow
  * ([SportLogEntity]); version 14 the mobility flows the user built ([FlowEntity]); version 15 whether a preset
  * switches hands each work ([PresetEntity.alternateHands]), not in rows from before; version 16 about how many
  * snatches a set a workout held and the bell ([HistoryEntity.snatchesPerSet], [HistoryEntity.snatchBellKg]), none
- * in rows from before.
+ * in rows from before; version 17 the day a one-off plan was moved from ([PlannedEntity.movedFromDay]), none in
+ * rows from before.
  */
 @Database(
     entities = [
@@ -55,7 +56,7 @@ import kotlinx.coroutines.flow.Flow
         SportLogEntity::class,
         FlowEntity::class,
     ],
-    version = 16,
+    version = 17,
     // 3 to 4 and 4 to 5 are MIGRATION_3_4 and MIGRATION_4_5, added by buildAppDatabase.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -71,6 +72,7 @@ import kotlinx.coroutines.flow.Flow
         AutoMigration(from = 13, to = 14),
         AutoMigration(from = 14, to = 15),
         AutoMigration(from = 15, to = 16),
+        AutoMigration(from = 16, to = 17),
     ],
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -329,8 +331,15 @@ interface PlannedDao {
     @Query("SELECT * FROM planned ORDER BY id")
     fun observeAll(): Flow<List<PlannedEntity>>
 
+    /** As [observeAll], once. */
+    @Query("SELECT * FROM planned ORDER BY id")
+    suspend fun all(): List<PlannedEntity>
+
     @Insert
     suspend fun insert(planned: List<PlannedEntity>)
+
+    @Update
+    suspend fun update(planned: PlannedEntity)
 
     @Query("DELETE FROM planned WHERE id = :id")
     suspend fun delete(id: Long)
@@ -439,6 +448,8 @@ data class PlannedEntity(
     @ColumnInfo(name = "block_rest_seconds", defaultValue = "0") val blockRestSeconds: Int = 0,
     /** Null in rows from before version 13, none of which is a sport. */
     val sport: String? = null,
+    /** A one-off's `PlanSchedule.Once.movedFromDay`; null in rows from before version 17. */
+    @ColumnInfo(name = "moved_from_day") val movedFromDay: Long? = null,
 )
 
 /**

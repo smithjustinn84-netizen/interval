@@ -3,6 +3,7 @@ package dev.justinsmith.interval.history
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.Sport
+import dev.justinsmith.interval.plan.MoveSheet
 import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.formatClock
@@ -151,7 +152,15 @@ data class SheetPlan(
     val workout: PlanWorkout,
     val weekly: Boolean,
     val state: PlanState,
-)
+    /** The day it went to, for a [PlanState.Moved] row. */
+    val movedTo: Long? = null,
+    /** The day it was moved from, for a plan moved onto this day. */
+    val movedFrom: Long? = null,
+) {
+    /** Whether it can be moved on: an interval workout or a session still to do, or missed. A sport keeps its day. */
+    val movable: Boolean
+        get() = workout !is PlanWorkout.SportDay && (state == PlanState.Open || state == PlanState.Missed)
+}
 
 /** The day sheet: the day a tap opened, with its plans, its workouts and the [sports] logged on it. */
 data class DaySheet(
@@ -193,6 +202,8 @@ data class HistoryUiState(
     val upNext: List<UpNextItem> = emptyList(),
     val hasPlans: Boolean = false,
     val daySheet: DaySheet? = null,
+    /** The sheet moving a plan to another day, while it is open. */
+    val moveSheet: MoveSheet? = null,
     /** What the day sheet's Add workout can plan: the Timer's workout, then every preset, or a session on Lift. */
     val choices: List<PlanChoice> = emptyList(),
     /** The flows the day sheet's Log a workout offers under Mobility, beside [choices] and the sports. */

@@ -433,6 +433,28 @@ class StorageTest {
     }
 
     @Test
+    fun `a version 16 database keeps its plans unmoved and moves one from then on`() {
+        BundledSQLiteDriver().open(directory.resolve(DATABASE_NAME).absolutePath).use { connection ->
+            V16_SCHEMA.forEach(connection::execSQL)
+            connection.execSQL(
+                "INSERT INTO planned (weekday, epoch_day, name, prep_seconds, work_seconds, rest_seconds, rounds, " +
+                    "created_at, lift) VALUES (2, NULL, '', 0, 0, 0, 0, $NOW, 'program_day')",
+            )
+            connection.execSQL("PRAGMA user_version = 16")
+        }
+        withApp { repository ->
+            val tuesdays = repository.plans.planned.value.single()
+            assertEquals(PlanSchedule.Weekly(2), tuesdays.schedule)
+
+            repository.plans.movePlanned(tuesdays, fromDay = 20_745, toDay = 20_747)
+            settled(repository) { it.plans.planned.value.size == 2 }
+        }
+        withApp { repository ->
+            assertEquals(PlanSchedule.Once(20_747, 20_745), repository.plans.planned.value.last().schedule)
+        }
+    }
+
+    @Test
     fun `deleted workouts stay on disk as tombstones`() {
         withApp { repository ->
             repeat(3) { repository.history.recordWorkout(IntervalConfig(), elapsedSeconds = it + 1) }
@@ -779,4 +801,12 @@ private val V15_SCHEMA = listOf(
     "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
     "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, " +
         "'6b9d2f9ff87e13df65aa44eb8a746024')",
+)
+
+/** Version 16 as 0.6 built it (no release shipped it): version 15 and a workout's snatches. */
+private val V16_SCHEMA = V15_SCHEMA.dropLast(1) + listOf(
+    "ALTER TABLE `history` ADD COLUMN `snatches_per_set` INTEGER",
+    "ALTER TABLE `history` ADD COLUMN `snatch_bell_kg` REAL",
+    "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, " +
+        "'b8551776ecd5707af902e515f1c0f695')",
 )

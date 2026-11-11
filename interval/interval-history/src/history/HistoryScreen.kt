@@ -57,6 +57,7 @@ import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.plan.AddToPlanSheet
 import dev.justinsmith.interval.plan.LiftChoices
+import dev.justinsmith.interval.plan.MovePlanSheet
 import dev.justinsmith.interval.plan.PlanRepeat
 import dev.justinsmith.interval.plan.dayChoices
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -139,6 +140,13 @@ fun HistoryRoute(
                     notices.show(removedText, NoticeAction(undo) { viewModel.restorePlanned(plan) })
                 }
             },
+            onOpenMove = viewModel::openMove,
+            onCloseMove = { viewModel.openMove(null) },
+            onMovePlanned = { toDay, movedText ->
+                viewModel.movePlanned(toDay)?.let { move ->
+                    notices.show(movedText, NoticeAction(undo) { viewModel.unmovePlanned(move) })
+                }
+            },
             onLogSport = { sport, day, loggedText ->
                 viewModel.logSport(sport, day)
                 notices.show(loggedText, NoticeAction(undo) { viewModel.unlogSport(sport, day) })
@@ -179,6 +187,11 @@ class HistoryActions(
     val onStart: (String, IntervalConfig) -> Unit = { _, _ -> },
     /** Takes a one-off off the plan, with the line saying so ("Removed Tabata"). */
     val onRemovePlanned: (planId: Long, removedText: String) -> Unit = { _, _ -> },
+    /** Opens the move sheet on a plan, by its id, off an epoch day, as the day sheet closes. */
+    val onOpenMove: (planId: Long, fromDay: Long) -> Unit = { _, _ -> },
+    val onCloseMove: () -> Unit = {},
+    /** Moves the move sheet's plan to an epoch day, with the line saying so ("Moved Tabata to Thursday"). */
+    val onMovePlanned: (toDay: Long, movedText: String) -> Unit = { _, _ -> },
     /** Logs a day of this sport on an epoch day, with the line saying so ("BJJ class logged"). */
     val onLogSport: (sport: Sport, epochDay: Long, loggedText: String) -> Unit = { _, _, _ -> },
     /** Takes a day of this sport logged off its day, with the line saying so ("Removed BJJ class"). */
@@ -262,6 +275,9 @@ fun HistoryScreen(
             onLogWorkout = { loggingOn = sheet.epochDay },
             programDay = state.programDay,
         )
+    }
+    state.moveSheet?.let { sheet ->
+        MovePlanSheet(sheet, state.today, onMove = actions.onMovePlanned, onDismiss = actions.onCloseMove)
     }
     loggingOn?.let { day ->
         LogWorkoutSheet(

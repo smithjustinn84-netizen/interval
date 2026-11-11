@@ -50,6 +50,7 @@ import dev.justinsmith.interval.history.resources.home_done_logged
 import dev.justinsmith.interval.history.resources.home_done_today
 import dev.justinsmith.interval.history.resources.home_easier_title
 import dev.justinsmith.interval.history.resources.home_easier_what
+import dev.justinsmith.interval.history.resources.home_not_today
 import dev.justinsmith.interval.history.resources.home_rest_move
 import dev.justinsmith.interval.history.resources.home_rest_title
 import dev.justinsmith.interval.history.resources.home_rest_until
@@ -76,6 +77,7 @@ import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
@@ -331,8 +333,26 @@ private fun LeadStep(
             is UpNextItem.Flow ->
                 StartButton({ actions.onStart(item.flow.name, item.flow.config) }, button, label = start)
         }
+        item.movablePlan?.let { planId ->
+            QuietTextButton(
+                stringResource(Res.string.home_not_today),
+                onClick = { actions.onNotToday(planId) },
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+            )
+        }
     }
 }
+
+/**
+ * The plan behind a step that "Not today" can move to a day after: an interval workout planned or a session on
+ * Lift planned, not one under way. A sport keeps its day, and the program's day unplanned and a flow have no plan.
+ */
+private val UpNextItem.movablePlan: Long?
+    get() = when (this) {
+        is UpNextItem.Planned -> planId
+        is UpNextItem.Lift -> planId.takeUnless { resume }
+        is UpNextItem.SportDay, is UpNextItem.Flow -> null
+    }
 
 /**
  * A step after the first: its name over what it is, with a quiet button of its own. The program's day stood back

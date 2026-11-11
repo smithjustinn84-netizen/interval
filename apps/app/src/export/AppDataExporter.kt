@@ -149,6 +149,7 @@ private fun PlannedWorkout.export(): PlannedExport {
             is PlanWorkout.SportDay -> null
         },
         sport = sport?.exportKey,
+        movedFromDay = movedFromDay,
     )
 }
 

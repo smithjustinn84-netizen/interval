@@ -306,7 +306,7 @@ private fun requireHeartRate(averageBpm: Int?, peakBpm: Int?) {
 private fun PlannedExport.toDomain(presets: List<Preset>): PlannedWorkout {
     val schedule = when {
         weekday != null -> PlanSchedule.Weekly(weekday.also { require(it in WEEKDAYS) { "weekday" } })
-        epochDay != null -> PlanSchedule.Once(epochDay)
+        epochDay != null -> PlanSchedule.Once(epochDay, movedFromDay)
         else -> throw IllegalArgumentException("schedule")
     }
     val workout = when {

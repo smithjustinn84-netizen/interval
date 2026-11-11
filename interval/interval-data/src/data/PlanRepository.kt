@@ -4,6 +4,7 @@ import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
+import dev.justinsmith.interval.model.sameAs
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.storage.SerialWriter
 import dev.justinsmith.interval.storage.orEmptyOnError
@@ -69,6 +70,38 @@ class PlanRepository(
     /** Puts a plan [removePlanned] took off back as it was, its id and the day it was made included: Undo. */
     override fun restorePlanned(plan: PlannedWorkout) {
         writer.persist { plannedDao.insert(listOf(plan.toEntity())) }
+    }
+
+    override fun movePlanned(plan: PlannedWorkout, fromDay: Long, toDay: Long) {
+        writer.persist {
+            when (val schedule = plan.schedule) {
+                is PlanSchedule.Weekly ->
+                    plannedDao.insert(listOf(plan.workout.planned(PlanSchedule.Once(toDay, fromDay)).toEntity()))
+
+                is PlanSchedule.Once -> plannedDao.update(
+                    plan.copy(schedule = PlanSchedule.Once(toDay, schedule.movedFromDay ?: fromDay)).toEntity(),
+                )
+            }
+        }
+    }
+
+    /**
+     * A weekly plan's move is undone by taking off the latest one-off it made, found in the database rather than in
+     * [planned], which may not have caught up with the move yet; the writer has written it by now.
+     */
+    override fun unmovePlanned(plan: PlannedWorkout, fromDay: Long, toDay: Long) {
+        writer.persist {
+            when (plan.schedule) {
+                is PlanSchedule.Weekly -> plannedDao.all()
+                    .mapNotNull { it.toDomain() }
+                    .lastOrNull {
+                        it.schedule == PlanSchedule.Once(toDay, fromDay) && it.workout.sameAs(plan.workout)
+                    }
+                    ?.let { plannedDao.delete(it.id) }
+
+                is PlanSchedule.Once -> plannedDao.update(plan.toEntity())
+            }
+        }
     }
 
     private fun PlanWorkout.planned(schedule: PlanSchedule) = PlannedWorkout(

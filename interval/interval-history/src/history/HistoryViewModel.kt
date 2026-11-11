@@ -17,6 +17,7 @@ import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.loggedWorkouts
+import dev.justinsmith.interval.plan.moveSheet
 import dev.justinsmith.interval.plan.planChoices
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.platform.TimestampFormatter
@@ -46,27 +47,37 @@ import kotlinx.coroutines.flow.updateAndGet
 private const val KEY_RANGE = "history_range"
 private const val KEY_MONTH_OFFSET = "history_month_offset"
 private const val KEY_OPEN_DAY = "history_open_day"
+private const val KEY_MOVING = "history_moving"
+private const val KEY_MOVING_FROM = "history_moving_from"
 
 private fun SavedStateHandle.restoredView() = HistoryView(
     range = TrainingRange.entries.firstOrNull { it.name == get<String>(KEY_RANGE) } ?: TrainingRange.Week,
     monthOffset = get<Int>(KEY_MONTH_OFFSET) ?: 0,
     openDay = get<Long>(KEY_OPEN_DAY),
+    moving = get<Long>(KEY_MOVING),
+    movingFrom = get<Long>(KEY_MOVING_FROM),
 )
 
 private fun SavedStateHandle.keep(view: HistoryView) {
     this[KEY_RANGE] = view.range.name
     this[KEY_MONTH_OFFSET] = view.monthOffset
     this[KEY_OPEN_DAY] = view.openDay
+    this[KEY_MOVING] = view.moving
+    this[KEY_MOVING_FROM] = view.movingFrom
 }
 
 /**
- * What the screen is looking at, apart from the data: the range, the month and the open day, each kept in the
- * entry's saved state so that they outlive the process. The locale is the screen's, set again as it shows.
+ * What the screen is looking at, apart from the data: the range, the month, the open day and the plan being moved,
+ * each kept in the entry's saved state so that they outlive the process. The locale is the screen's, set again as it
+ * shows.
  */
 private data class HistoryView(
     val range: TrainingRange = TrainingRange.Week,
     val monthOffset: Int = 0,
     val openDay: Long? = null,
+    /** The plan the move sheet is moving, by its id, off [movingFrom]. */
+    val moving: Long? = null,
+    val movingFrom: Long? = null,
     val locale: String? = null,
 )
 
@@ -163,6 +174,29 @@ class HistoryViewModel(
 
     fun restorePlanned(plan: PlannedWorkout) {
         planStore.restorePlanned(plan)
+    }
+
+    /** Opens the move sheet on the plan [planId] off [fromDay], or closes it with null. */
+    fun openMove(planId: Long?, fromDay: Long? = null) {
+        changeView { it.copy(moving = planId, movingFrom = fromDay.takeIf { planId != null }) }
+    }
+
+    /**
+     * Moves the move sheet's plan to [toDay] and closes the sheet, handing back what Undo ([unmovePlanned]) needs;
+     * null when the plan was gone already.
+     */
+    fun movePlanned(toDay: Long): PlanMove? {
+        val current = view.value
+        openMove(null)
+        val plan = planStore.planned.value.firstOrNull { it.id == current.moving }
+        val from = current.movingFrom
+        if (plan == null || from == null) return null
+        planStore.movePlanned(plan, from, toDay)
+        return PlanMove(plan, from, toDay)
+    }
+
+    fun unmovePlanned(move: PlanMove) {
+        planStore.unmovePlanned(move.plan, move.fromDay, move.toDay)
     }
 
     /** Logs a day of [sport] on [epochDay]: today's from Up next, or a day's own from its sheet. */
@@ -264,6 +298,9 @@ class HistoryViewModel(
                     timestamps.item(it, names, body, training.plans)
                 }
             },
+            moveSheet = view.movingFrom?.let { from ->
+                planned.firstOrNull { it.id == view.moving }?.let { moveSheet(it, from, today, log) }
+            },
         )
     }
 
@@ -272,6 +309,9 @@ class HistoryViewModel(
         const val MOST_DONE_SHOWN = 3
     }
 }
+
+/** A plan moved, as Undo needs it: the plan as it stood and the days it went between. */
+data class PlanMove(val plan: PlannedWorkout, val fromDay: Long, val toDay: Long)
 
 /** [workout]'s row, [HistoryItem.planned] when it did one of its day's [plans]. */
 private fun TimestampFormatter.item(
@@ -343,7 +383,21 @@ private fun daySheet(day: TrainingDay, heading: HistoryDay, past: Boolean, item:
         day = heading,
         weekday = day.weekday,
         plans = day.plans.map { plan ->
-            SheetPlan(plan.plan.id, plan.plan.workout, weekly = plan.plan.schedule is PlanSchedule.Weekly, plan.state)
+            SheetPlan(
+                plan.plan.id,
+                plan.plan.workout,
+                weekly = plan.plan.schedule is PlanSchedule.Weekly,
+                plan.state,
+                movedFrom = plan.plan.movedFromDay,
+            )
+        } + day.movedAway.map { moved ->
+            SheetPlan(
+                moved.id,
+                moved.workout,
+                weekly = false,
+                PlanState.Moved,
+                movedTo = (moved.schedule as? PlanSchedule.Once)?.epochDay,
+            )
         },
         workouts = loggedWorkouts(day.workouts, day.liftWorkouts).map(item),
         past = past,

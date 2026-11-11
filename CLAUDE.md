@@ -339,7 +339,15 @@ toolchain (`$compose.*`).
   stores a plain `HistoryEntry.loggedByHand` (the whole course, work estimated, the start run back from the finish,
   which with no work time is the mark, `loggedByHand`; no column) dated `TimestampFormatter.middayOf(day)`, today's
   at the moment, and `unlogWorkout(uid)` is the notice's Undo. Nothing goes to the health store, and its page in
-  the Log reads no heart rate. Nothing of Lift's is logged that way. `todayAgenda` (`history/TodayAgenda.kt`) is how Today and History lead with what
+  the Log reads no heart rate. Nothing of Lift's is logged that way. A plan moves to another day, one day at a
+  time (`PlanStore.movePlanned`, with `unmovePlanned` as Undo): a missed one from its row in the Log ("Move"), today's
+  from Today's "Not today", to a day of the week ahead (`plan/MovePlan.kt`'s `moveSheet`, the first free day picked,
+  never earlier, never back to the day it first left; `MovePlanSheet`). A weekly plan's day becomes a one-off
+  remembering the day it left (`PlanSchedule.Once.movedFromDay`, the `moved_from_day` column, exported in schema 12),
+  a one-off moves itself; plans are told apart by what they hold (`PlanWorkout.sameAs`), not by id, so it survives
+  an import. `TrainingLog.plansOn` drops the weekly plan's day it left and keeps the move in
+  `TrainingDay.movedAway`, which only the day sheet reads ("Moved to Saturday"): no week count, mark, reminder or
+  Up next sees it there. A sport keeps its day. `todayAgenda` (`history/TodayAgenda.kt`) is how Today and History lead with what
   is up next: on a day with a sport still to log, the program's unplanned day stands beside the lead
   rather than taking it, and with no workout the user planned themself the lead is the
   flow to do before the sport (`UpNextItem.Flow`, which `upNext` adds until mobility is done that day and History

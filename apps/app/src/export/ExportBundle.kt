@@ -15,7 +15,8 @@ import kotlinx.serialization.Serializable
  * `alternateHands`, and the bells owned two of, `pairsKg`; schema 10 a block's own rest, `rest`; schema 11 a block
  * of a kind an older build would drop, `kind` "Density", and the block a stepped one goes back to at the next
  * bell, `origin`, and about how many snatches a set a workout held and the bell, `snatchesPerSet` and `snatchBellKg`;
- * schema 12 the Lift exercise a flow's move is, `exercise`, the rest absent from older files). Lift's
+ * schema 12 the Lift exercise a flow's move is, `exercise`, and the day a one-off plan was moved from, `movedFromDay`,
+ * the rest absent from older files). Lift's
  * sessions carry their sets but not how a day's plan was changed: the sets are the record.
  */
 @Serializable
@@ -157,6 +158,8 @@ data class PlannedExport(
     val lift: String? = null,
     /** A day of a sport: `Bjj`, `Climbing`, `Running`, or `Custom` with its name in [name]; null for a workout. */
     val sport: String? = null,
+    /** The day a one-off was moved from, when the user moved it; null otherwise, and in files before schema 12. */
+    val movedFromDay: Long? = null,
 )
 
 /** A day of a sport the user logged, on [epochDay]: [sport] and [name] as [PlannedExport]'s. */

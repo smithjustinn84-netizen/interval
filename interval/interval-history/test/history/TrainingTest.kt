@@ -107,6 +107,40 @@ class TrainingTest {
     }
 
     @Test
+    fun `a weekly plan moved off its day reads as moved there and counts on the day it went to`() {
+        val tuesdays = weekly(2)
+        val moved = PlannedWorkout(nextId++, tuesdays.workout, PlanSchedule.Once(today, movedFromDay = monday + 1))
+        val log = log(emptyList(), listOf(tuesdays, moved))
+        val tuesday = log.day(monday + 1)
+        assertEquals(emptyList(), tuesday.plans)
+        assertEquals(listOf(moved), tuesday.movedAway)
+        assertEquals(DayState.Rest, tuesday.state)
+        assertEquals(listOf(moved), log.plansOn(today))
+        assertEquals(PlanState.Open, log.day(today).plans.single().state)
+        assertEquals(listOf(tuesdays), log.plansOn(monday + 8))
+        assertEquals(0, log.stats(TrainingRange.Week, BodySettings()).plannedDue)
+    }
+
+    @Test
+    fun `a move takes only the weekly plan of its own workout off the day`() {
+        val tabatas = weekly(2)
+        val hiits = weekly(2, hiit)
+        val moved = PlannedWorkout(nextId++, hiits.workout, PlanSchedule.Once(today, movedFromDay = monday + 1))
+        val tuesday = log(emptyList(), listOf(tabatas, hiits, moved)).day(monday + 1)
+        assertEquals(listOf(DayPlan(tabatas, PlanState.Missed)), tuesday.plans)
+        assertEquals(listOf(moved), tuesday.movedAway)
+    }
+
+    @Test
+    fun `a one-off moved shows as moved on the day it left and done where it is done`() {
+        val moved = PlannedWorkout(nextId++, PlanWorkout.Lift.ProgramDay, PlanSchedule.Once(monday + 2, monday))
+        val log = TrainingLog(emptyList(), listOf(moved), today, listOf(bells(monday + 2))) { it.floorDiv(DAY_MILLIS) }
+        assertEquals(listOf(moved), log.day(monday).movedAway)
+        assertEquals(DayState.Rest, log.day(monday).state)
+        assertEquals(PlanState.Done, log.day(monday + 2).plans.single().state)
+    }
+
+    @Test
     fun `the week runs Monday to Sunday with today marked`() {
         val week = log(emptyList()).week()
         assertEquals((monday..monday + 6).toList(), week.map { it.epochDay })

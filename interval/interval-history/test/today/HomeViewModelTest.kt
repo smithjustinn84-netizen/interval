@@ -15,6 +15,7 @@ import dev.justinsmith.interval.history.UpNextItem
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.asPlan
+import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.ReadinessReason
@@ -87,6 +88,26 @@ class HomeViewModelTest : MainDispatcherTest() {
         val next = assertIs<UpNextItem.Planned>(upNext.first())
         assertEquals(hiitPreset.name, next.name)
         assertEquals(listOf(HistoryDay.Today, HistoryDay.Tomorrow), upNext.map { it.day })
+    }
+
+    @Test
+    fun `not today moves the plan leading the day to a day after and Undo brings it back`() {
+        repository.plans.planWeekly(hiitPreset.asPlan(), setOf(weekdayOf(TODAY)))
+        val planId = assertIs<UpNextItem.Planned>(viewModel.state.value.upNext.first()).planId
+
+        viewModel.openMove(planId)
+        val sheet = requireNotNull(viewModel.state.value.moveSheet)
+        assertEquals(TODAY + 1, sheet.days.first().epochDay)
+        assertEquals(TODAY + 1, sheet.suggested)
+
+        val move = requireNotNull(viewModel.movePlanned(TODAY + 2))
+        assertNull(viewModel.state.value.moveSheet)
+        val next = assertIs<UpNextItem.Planned>(viewModel.state.value.upNext.first())
+        assertEquals(TODAY + 2, next.epochDay)
+        assertTrue(viewModel.state.value.upNext.none { it.epochDay == TODAY })
+
+        viewModel.unmovePlanned(move)
+        assertEquals(TODAY, viewModel.state.value.upNext.first().epochDay)
     }
 
     @Test

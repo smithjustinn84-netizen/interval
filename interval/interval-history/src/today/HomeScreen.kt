@@ -64,6 +64,7 @@ import dev.justinsmith.interval.history.resources.preview_open_cd
 import dev.justinsmith.interval.history.resources.sport_counts
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.Sport
+import dev.justinsmith.interval.plan.MovePlanSheet
 import dev.justinsmith.interval.plan.sportTitle
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
@@ -162,6 +163,13 @@ fun HomeRoute(
                 val day = viewModel.logSport(sport)
                 notices.show(loggedText, NoticeAction(undo) { viewModel.unlogSport(sport, day) })
             },
+            onNotToday = viewModel::openMove,
+            onCloseMove = { viewModel.openMove(null) },
+            onMovePlanned = { toDay, movedText ->
+                viewModel.movePlanned(toDay)?.let { move ->
+                    notices.show(movedText, NoticeAction(undo) { viewModel.unmovePlanned(move) })
+                }
+            },
             onMinutes = viewModel::setMinutes,
             onPlanWeekly = viewModel::planWeekly,
             onPlanOnce = viewModel::planOnce,
@@ -191,6 +199,11 @@ class HomeActions(
     val onStartLiftEasier: (ProgramKey) -> Unit = {},
     /** Logs a day of this sport today, with the line saying so ("BJJ class logged"). */
     val onLogSport: (sport: Sport, loggedText: String) -> Unit = { _, _ -> },
+    /** Opens the move sheet on today's plan, by its id: "Not today". */
+    val onNotToday: (planId: Long) -> Unit = {},
+    val onCloseMove: () -> Unit = {},
+    /** Moves the move sheet's plan to an epoch day, with the line saying so ("Moved Tabata to Thursday"). */
+    val onMovePlanned: (toDay: Long, movedText: String) -> Unit = { _, _ -> },
     val onMinutes: (Int) -> Unit = {},
     /** Plans a workout looked at before Start, every week or once. */
     val onPlanWeekly: (PlanWorkout, Set<Int>) -> Unit = { _, _ -> },
@@ -271,6 +284,9 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, modifier: Modifier = Mo
             onPlanOnce = actions.onPlanOnce,
             onDone = { looking = null },
         )
+    }
+    state.moveSheet?.let { sheet ->
+        MovePlanSheet(sheet, today = sheet.fromDay, onMove = actions.onMovePlanned, onDismiss = actions.onCloseMove)
     }
 }
 

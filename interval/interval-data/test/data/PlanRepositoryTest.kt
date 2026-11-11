@@ -38,6 +38,43 @@ class PlanRepositoryTest {
     }
 
     @Test
+    fun `a weekly plan moved off its day is a one-off on the new day that remembers the day it left`() {
+        val repository = repository()
+        repository.plans.planWeekly(PlanWorkout.Lift.ProgramDay, setOf(2))
+        val tuesdays = repository.plans.planned.value.single()
+        repository.plans.movePlanned(tuesdays, fromDay = 20_745, toDay = 20_747)
+        val planned = repository().plans.planned.value
+        assertEquals(listOf(PlanSchedule.Weekly(2), PlanSchedule.Once(20_747, 20_745)), planned.map { it.schedule })
+        assertEquals(PlanWorkout.Lift.ProgramDay, planned[1].workout)
+    }
+
+    @Test
+    fun `a one-off moved twice keeps the day it first stood on and Undo puts it back`() {
+        val repository = repository()
+        repository.plans.planOnce(builtInPresets.first().asPlan(), epochDay = 20_745)
+        val once = repository.plans.planned.value.single()
+        repository.plans.movePlanned(once, fromDay = 20_745, toDay = 20_746)
+        val moved = repository.plans.planned.value.single()
+        repository.plans.movePlanned(moved, fromDay = 20_746, toDay = 20_748)
+        assertEquals(PlanSchedule.Once(20_748, 20_745), repository.plans.planned.value.single().schedule)
+        repository.plans.unmovePlanned(moved, fromDay = 20_746, toDay = 20_748)
+        assertEquals(listOf(moved), repository().plans.planned.value)
+    }
+
+    @Test
+    fun `undoing a weekly plan moved takes off the one-off it made and nothing else`() {
+        val repository = repository()
+        val tabata = builtInPresets.first().asPlan()
+        repository.plans.planWeekly(tabata, setOf(2))
+        repository.plans.planOnce(tabata, epochDay = 20_747)
+        val tuesdays = repository.plans.planned.value.first()
+        repository.plans.movePlanned(tuesdays, fromDay = 20_745, toDay = 20_747)
+        repository.plans.unmovePlanned(tuesdays, fromDay = 20_745, toDay = 20_747)
+        val planned = repository().plans.planned.value
+        assertEquals(listOf(PlanSchedule.Weekly(2), PlanSchedule.Once(20_747)), planned.map { it.schedule })
+    }
+
+    @Test
     fun `a weekly plan is one plan per weekday and survives a restart`() {
         val tabata = builtInPresets.first()
         repository().plans.planWeekly(tabata.asPlan(), setOf(4, 1, 9))

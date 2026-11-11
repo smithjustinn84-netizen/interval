@@ -7,6 +7,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.6.0] — Unreleased
 
 ### Added
+- A plan moves to another day when its own won't do. A missed one has "Move" on its row in the Log, and today's
+  workout has "Not today" under its Start. Either opens the week ahead, each day saying what it holds, with the
+  first free day picked, and moves it there with Undo. The day it left reads "Moved to Saturday" instead of
+  Missed, so the week isn't marked against you. The day it went to has it like any plan: Today leads with it, its
+  reminder fires and doing it counts. A weekly plan moves for that one day only. A sport day keeps its day.
 - A welcome for a new install, once, on the way to Set up: what the app is, then a page each for Today, Train and
   Log, each showing what is on its tab. Skip goes on to Set up from any page, and Back steps a page back. Today
   then carries a First week card: build the week, do the first workout, follow a flow and, with a sport planned,

@@ -187,7 +187,7 @@ internal fun Preset.toEntity() = PresetEntity(
 internal fun PlannedEntity.toDomain(): PlannedWorkout? {
     val schedule = when {
         weekday != null -> PlanSchedule.Weekly(weekday)
-        epochDay != null -> PlanSchedule.Once(epochDay)
+        epochDay != null -> PlanSchedule.Once(epochDay, movedFromDay)
         else -> return null
     }
     if (sport != null) {
@@ -253,5 +253,6 @@ internal fun PlannedWorkout.toEntity(): PlannedEntity {
             is PlanWorkout.SportDay -> null
         },
         sport = sport?.key,
+        movedFromDay = movedFromDay,
     )
 }

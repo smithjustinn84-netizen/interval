@@ -1,0 +1,27 @@
+<journey name="Move a plan">
+  <description>
+    A plan the user can't do on its day goes to another, one day at a time: today's from Today's "Not today", a
+    missed one from its day in the Log. The day it left reads as moved rather than missed, and the day it went to
+    has it as any plan does, its reminder included. Run on a fresh install (adb shell pm clear
+    dev.justinsmith.interval); the second half jumps the clock a day (adb -s emulator-5554 shell cmd alarm set-time)
+    and puts it back after.
+  </description>
+  <actions>
+    <action>On the welcome, which a fresh install opens on, tap "Skip to Set up", then "Skip for now" on "Set up"</action>
+    <action>Tap the "Log" tab, then "Plan your week", then the "+" on today's weekday row in "Routine", and in the "Add to plan" sheet tap "Add to plan"</action>
+    <action>Tap "Back", then the "Today" tab, and verify that the day's card leads with the planned workout under "Start", with "Not today" under it</action>
+    <action>Tap "Not today"</action>
+    <action>Verify that a sheet titled "Move" and the workout's name lists the next seven days from tomorrow, each saying what it holds ("Nothing planned" for a free one), tomorrow picked, over a "Move to" button naming tomorrow's weekday</action>
+    <action>Tap "Move to" and tomorrow's weekday</action>
+    <action>Verify that a notice says "Moved", the workout's name, "to" and tomorrow's weekday, with "Undo"; that the day's card no longer offers a raised "Start"; and that tomorrow's dot on the week is marked planned</action>
+    <action>Tap "Undo" and verify that the day's card leads with the workout under "Start" again</action>
+    <action>On Plan, set a reminder for a time later today, then jump the clock forward a day with cmd alarm set-time</action>
+    <action>Relaunch the app from the launcher and tap the "Log" tab</action>
+    <action>Verify that yesterday's dot on the week is marked missed, and tap it</action>
+    <action>Verify that the day sheet lists the workout reading "Missed · Every" and the weekday, with "Log it" and "Move" under it</action>
+    <action>Tap "Move", then the day after today, then "Move to" and its weekday</action>
+    <action>Verify that yesterday's dot is no longer marked missed, that its sheet reads "Moved to" and that weekday with no "Log it", "Move" or remove, and that the day it went to has the workout reading "Moved from" and yesterday's weekday</action>
+    <action>Verify that the reminder for the day it went to is scheduled (adb -s emulator-5554 shell dumpsys alarm | grep dev.justinsmith.interval)</action>
+    <action>Put the clock back with cmd alarm set-time</action>
+  </actions>
+</journey>
