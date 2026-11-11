@@ -87,6 +87,9 @@ object IntervalSizes {
     /** The least the summary's ring shrinks to, on a phone too short for it and "How was it?" both. */
     val summaryRingLeast = 160.dp
 
+    /** How tall the fade at the foot of the summary's readout is while more of it lies below. */
+    val summaryFade = 48.dp
+
     /** Minimum height of a Timer interval row. */
     val intervalRow = 72.dp
 

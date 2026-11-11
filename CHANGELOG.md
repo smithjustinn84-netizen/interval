@@ -160,6 +160,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   their contents. The sheet that picks an exercise opens in about a third of the time: it lays out only the rows in
   view rather than the whole library.
 
+### Fixed
+- A workout summary taller than a phone, such as 15:15's with "About how many snatches a set?", fades at the foot of
+  what it says while more lies below, so the bell row under the stepper no longer looks like the end of it.
+
 ## [0.5.0] — Unreleased
 
 ### Added

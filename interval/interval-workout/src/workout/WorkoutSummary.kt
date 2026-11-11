@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,7 +32,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -238,8 +247,9 @@ private fun SummaryActions(
 }
 
 /**
- * The title, then the lines, stats and "How was it?" under it, in a column that scrolls when they don't fit. In
- * the [ring], the ring gives way first: it takes the height the rest leaves, down to its least.
+ * The title, then the lines, stats and "How was it?" under it, in a column that scrolls when they don't fit, its
+ * foot fading while more lies below. In the [ring], the ring gives way first: it takes the height the rest leaves,
+ * down to its least.
  */
 @Composable
 private fun SummaryReadout(
@@ -251,8 +261,9 @@ private fun SummaryReadout(
 ) {
     BoxWithConstraints(modifier) {
         val viewport = constraints.maxHeight
+        val scroll = rememberScrollState()
         Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+            Modifier.fillMaxSize().fadeWhenMoreBelow(scroll).verticalScroll(scroll),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
@@ -269,6 +280,27 @@ private fun SummaryReadout(
         }
     }
 }
+
+/**
+ * Fades the foot of a column scrolled by [scroll] while more of it lies below, so what is cut off reads as there:
+ * the fade is [IntervalSizes.summaryFade] tall, shrinking over the last of the way so it is gone at the end. Read
+ * as it draws, so scrolling only redraws.
+ */
+private fun Modifier.fadeWhenMoreBelow(scroll: ScrollState): Modifier = this
+    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+    .drawWithContent {
+        drawContent()
+        val fade = minOf(IntervalSizes.summaryFade.toPx(), (scroll.maxValue - scroll.value).toFloat())
+        if (fade > 0f) {
+            val top = size.height - fade
+            drawRect(
+                Brush.verticalGradient(listOf(Color.Black, Color.Transparent), startY = top, endY = size.height),
+                topLeft = Offset(0f, top),
+                size = Size(size.width, fade),
+                blendMode = BlendMode.DstIn,
+            )
+        }
+    }
 
 /**
  * The [ring] over the [details], as large as the [viewport]'s height leaves it: at most its full size, at least
